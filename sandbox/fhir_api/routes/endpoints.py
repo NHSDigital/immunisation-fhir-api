@@ -5,6 +5,7 @@ from fastapi.responses import PlainTextResponse
 
 router = APIRouter()
 
+
 @router.get('/_ping',
             description="Ping check endpoint only returns 200")
 def ping():
