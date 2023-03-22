@@ -1,11 +1,13 @@
-FROM node:12
+FROM python:3.9-slim
 
-COPY . /sandbox
+RUN pip install poetry
 
 WORKDIR /sandbox
 
-RUN npm install
+ADD pyproject.toml .
+RUN poetry config virtualenvs.create false
+RUN poetry install
 
-EXPOSE 9000
+COPY . /sandbox
 
-CMD ["npm", "start"]
+CMD uvicorn fhir_api:app --reload --host 0.0.0.0 --port 8000 --log-level=warning
