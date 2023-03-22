@@ -4,12 +4,16 @@ SHELL=/bin/bash -euo pipefail
 install-python:
 	poetry install
 
+#Installs dependencies using npm.
+install-node:
+	npm install --legacy-peer-deps
+
 #Configures Git Hooks, which are scripts that run given a specified event.
 .git/hooks/pre-commit:
 	cp scripts/pre-commit .git/hooks/pre-commit
 
 #Condensed Target to run all targets above.
-install: install-python .git/hooks/pre-commit
+install: install-node install-python .git/hooks/pre-commit
 
 #Run the npm linting script (specified in package.json). Used to check the syntax and formatting of files.
 lint:
@@ -20,6 +24,11 @@ clean:
 	rm -rf build
 	rm -rf dist
 
+#Creates the fully expanded OAS spec in json
+publish: clean
+	mkdir -p build
+	npm run publish 2> /dev/null
+
 #Runs build proxy script
 build-proxy:
 	scripts/build_proxy.sh
@@ -28,7 +37,7 @@ build-proxy:
 _dist_include="pytest.ini poetry.lock poetry.toml pyproject.toml Makefile build/. tests"
 
 #Create /dist/ sub-directory and copy files into directory
-release: clean build-proxy
+release: clean publish build-proxy
 	mkdir -p dist
 	for f in $(_dist_include); do cp -r $$f dist; done
 	cp ecs-proxies-deploy.yml dist/ecs-deploy-sandbox.yml
