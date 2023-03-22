@@ -8,6 +8,7 @@ from fastapi.responses import PlainTextResponse
 
 router = APIRouter()
 
+
 @router.get('/')
 def root():
     """ root """

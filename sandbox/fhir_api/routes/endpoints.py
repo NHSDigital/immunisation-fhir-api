@@ -12,18 +12,21 @@ def ping():
     """ ping sandbox """
     return PlainTextResponse(None, 200)
 
+
 @router.get('/_status',
             description="Status check endpoint only returns 200")
 def status():
     """ status sandbox """
-    data = {"status": "pass", "ping":"pong", "service": "immunisations-fhir-api", "version":"{}"}
+    data = {"status": "pass", "ping": "pong", "service": "immunisations-fhir-api", "version": "{}"}
     return data
+
 
 @router.get('/health',
             description="Health check endpoint only returns 200")
 def health():
     """ health sandbox """
     return PlainTextResponse(None, 200)
+
 
 @router.get('/hello',
             description="Hello endpoint only returns Hello World")
