@@ -32,4 +32,4 @@ def health():
             description="Hello endpoint only returns Hello World")
 def hello():
     """ hello sandbox """
-    return {"message": "Hello World"}
+    return {"message": "Hello World!"}
