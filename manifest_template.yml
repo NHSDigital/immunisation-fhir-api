@@ -22,9 +22,9 @@ APIGEE_ENVIRONMENTS:
   # - name: internal-qa-sandbox
   #   display_name: Internal QA Sandbox
   #   portal_visibility: false
-  # - name: sandbox
-  #   display_name: Sandbox
-  #   portal_visibility: false
+  - name: sandbox
+    display_name: Sandbox
+    portal_visibility: false
   # - name: int
   #   display_name: Integration Testing
 ---
