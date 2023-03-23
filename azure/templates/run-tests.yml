@@ -19,7 +19,7 @@ steps:
   - ${{ if parameters.full }}:
     # In order to run tests in prod you must supply the unique ID of an Apigee app
     # that has authorized access to your service proxy.
-  - bash: |
+    - bash: |
         export PROXY_NAME="$(FULLY_QUALIFIED_SERVICE_NAME)"
         export APIGEE_ACCESS_TOKEN="$(secret.AccessToken)"
         export APIGEE_APP_ID="MY APP ID"
