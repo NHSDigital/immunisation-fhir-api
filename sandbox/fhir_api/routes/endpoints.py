@@ -33,4 +33,3 @@ def health():
 def hello():
     """ hello sandbox """
     return {"message": "Hello World!"}
-
