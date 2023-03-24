@@ -3,15 +3,16 @@
 from typing import Optional
 from pydantic import (
     BaseModel,
-    Field,
 )
 
 from fhir_api.models.fhir_r4.fhir_datatype_fields import FhirR4Fields
 
+
 class DataInput(BaseModel):
     ''' Data input model '''
-    nhsNumber: str = FhirR4Fields.string 
+    nhsNumber: str = FhirR4Fields.string
     data: Optional[dict]
+
 
 class SuccessModel(BaseModel):
     ''' SuccessModel for interacting with DynamoDB'''

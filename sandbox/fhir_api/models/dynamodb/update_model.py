@@ -19,6 +19,7 @@ from fhir_api.models.fhir_r4.immunization import (
     Annotation
 )
 
+
 class UpdateImmunizationRecord(BaseModel):
     '''Update Immunization Record '''
     resourceType: Literal["Immunization"] = Field(default='Immunization')
@@ -44,7 +45,7 @@ class UpdateImmunizationRecord(BaseModel):
     reasonReference: Optional[list[Reference]]
     isSubpotent: Optional[bool] = FhirR4Fields.boolean
     subpotentReason: Optional[list[CodeableConceptType]]
-    education: Optional[list[dict]] # TODO: Education Model to be created
+    education: Optional[list[dict]]  # TODO: Education Model to be created
     procotolApplied: Optional[list[ProtocolApplied]]
 
     def dict(self, *args, **kwargs) -> dict[str, Any]:

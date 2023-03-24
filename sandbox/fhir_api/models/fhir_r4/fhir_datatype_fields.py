@@ -36,7 +36,8 @@ class FhirR4Fields:
     )
 
     integer: int = Field(
-        description="A signed integer in the range −2,147,483,648..2,147,483,647 (32-bit; for larger values, use decimal)",
+        description="A signed integer in the range −2,147,483,648..2,147,483,647 \
+            (32-bit; for larger values, use decimal)",
         example=100,
     )
 
@@ -85,7 +86,6 @@ class FhirR4Fields:
     dateTime: str = Field(
         description="A date, date-time or partial date (e.g. just year or year + month) as used in human communication.",
         example="2015-02-07T13:28:17-05:00",
-#        regex=r"([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)(-(0[1-9]|1[0-2])(-(0[1-9]|[1-2][0-9]|3[0-1])(T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00)))?)?)?"
     )
 
     time: datetime.time = Field(

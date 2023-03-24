@@ -42,6 +42,7 @@ class Link(BaseModel):
     other: Reference
     type: code_types.link_code
 
+
 class Patient(BaseModel):
     ''' Patient Base Model '''
     resourceType: Literal["Patient"]
