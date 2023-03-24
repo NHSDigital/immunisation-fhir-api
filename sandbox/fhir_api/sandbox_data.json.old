@@ -1,0 +1,114 @@
+{
+    "nhsNumber": "88981422",
+    "fullUrl": "urn:uuid:a44e7d02-5f68-46f1-8036-3c1198c97d65",
+    "entityType": "immunization",
+    "data": {
+        "resourceType": "Immunization",
+        "identifier": [
+            {
+                "use": "temp",
+                "system": "https://supplierABC/identifiers/vacc",
+                "value": "5323571"
+            }
+        ],
+        "status": "completed",
+        "vaccineCode": {
+            "coding": [
+                {
+                    "system": "http://snomed.info/sct",
+                    "code": "7949326",
+                    "display": "designation intel shine journal payment dirty spoken farms heath apache transparent dsl indication immune"
+                },
+                {
+                    "system": "http://snomed.info/sct",
+                    "code": "3465303",
+                    "display": "broker ashley climbing creativity convert vitamin bath explicitly zen toe estimation medium prisoners democrat"
+                }
+            ]
+        },
+        "patient": {
+            "reference": "urn:uuid:bc617f3d-b33a-419b-8d24-9e892532d9a6",
+            "type": "Patient",
+            "identifier": {
+                "use": "old",
+                "system": "https://supplierABC/identifiers/vacc",
+                "value": "5476259"
+            }
+        },
+        "occurrenceDateTime": "2020-08-27T08:10:35.377230",
+        "recorded": "2021-12-04",
+        "primarySource": true,
+        "manufacturer": {
+            "reference": "urn:uuid:a3361718-5d29-4f3e-9bbe-090f94352479",
+            "type": "Manufacturer",
+            "identifier": {
+                "use": "official",
+                "system": "https://supplierABC/identifiers/vacc",
+                "value": "5084095"
+            }
+        },
+        "lotNumber": "54JF",
+        "expirationDate": "2022-03-25",
+        "site": {
+            "coding": [
+                {
+                    "system": "http://snomed.info/sct",
+                    "code": "4083813",
+                    "display": "tests jc if citizen taken away indicating whilst attending tr overseas functions nfl partly rachel"
+                }
+            ]
+        },
+        "route": {
+            "coding": [
+                {
+                    "system": "http://snomed.info/sct",
+                    "code": "8431851",
+                    "display": "nearest sells opened suburban blowing resolve around fresh womens porter helmet war generators mails staff"
+                },
+                {
+                    "system": "http://snomed.info/sct",
+                    "code": "9958169",
+                    "display": "honduras trek burn finnish bar eagle legendary wound an show disk markets bargains robert sleeve"
+                }
+            ]
+        },
+        "doseQuantity": {
+            "system": "http://snomed.info/sct",
+            "value": 64,
+            "unit": "wan claims ability brian volumes media captured",
+            "code": "7966718438067878"
+        },
+        "reportOrigin": {},
+        "performer": [
+            {
+                "actor": {
+                    "reference": "urn:uuid:5168a090-15d8-41e6-9e7a-7c9324e66f48",
+                    "type": "Organization",
+                    "identifier": {
+                        "use": "temp",
+                        "system": "https://supplierABC/identifiers/vacc",
+                        "value": "9350711"
+                    },
+                    "display": "moisture-vs"
+                }
+            }
+        ],
+        "reasonCode": [
+            {
+                "coding": [
+                    {
+                        "system": "http://snomed.info/sct",
+                        "code": "4875925",
+                        "display": "kingston dresses angels columbia eco based crest thee petite remix feof joins bt argued attract"
+                    }
+                ]
+            }
+        ],
+        "protocolApplied": [
+            {
+                "doseNumberPositiveInt": 9
+            }
+        ]
+    },
+    "dateModified": "2023-03-20T11:44:33.377320"
+}

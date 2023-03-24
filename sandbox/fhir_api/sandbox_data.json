@@ -1,0 +1,116 @@
+{
+    "resourceType": "Bundle",
+    "type": "targeted",
+    "total": 1,
+    "entry": [
+      {
+        "fullUrl": "urn:uuid:e36a489e-7981-46c8-8e06-f442cfdf0578",
+        "resource": {
+          "resourceType": "Immunization",
+          "identifier": [
+            {
+              "system": "https://supplierABC/identifiers/vacc",
+              "value": "7813712"
+            },
+            {
+              "system": "https://supplierABC/identifiers/vacc",
+              "value": "4294646"
+            }
+          ],
+          "status": "entered-in-error",
+          "vaccineCode": {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "7791476",
+                "display": "fm blades metabolism strategy sole side minority soft animated cnetcom rights admission rules abroad grey"
+              },
+              {
+                "system": "http://snomed.info/sct",
+                "code": "8263634",
+                "display": "tgp yugoslavia cds takes comedy registration ronald further belts symposium activated mhz defined ef bedrooms"
+              }
+            ]
+          },
+          "patient": {
+            "reference": "urn:uuid:02be8166-bde8-4925-88cd-0778dc685570",
+            "type": "Patient",
+            "identifier": {
+              "system": "https://supplierABC/identifiers/vacc",
+              "value": "4829723"
+            }
+          },
+          "occurrenceDateTime": "2020-09-01T05:50:41.118609",
+          "recorded": "2022-02-14",
+          "primarySource": true,
+          "reportOrigin": {},
+          "manufacturer": {
+            "reference": "urn:uuid:ac18d3ac-816b-4619-a2fb-0eefd7ea0e5d",
+            "type": "Manufacturer",
+            "identifier": {
+              "system": "https://supplierABC/identifiers/vacc",
+              "value": "1651921"
+            }
+          },
+          "lotNumber": "TMA0",
+          "expirationDate": "2021-01-21",
+          "site": {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "4271227",
+                "display": "wow hub knight treaty seminars totals civil indiana carol selective reviewer confidential incentive saw scanners"
+              }
+            ]
+          },
+          "route": {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "5751353",
+                "display": "tight obituaries directions erik twist layer category taste pulse mechanisms exhibitions lots pitch hawk ever"
+              }
+            ]
+          },
+          "doseQuantity": {
+            "value": 25,
+            "unit": "horizontal seek lance dramatic ties cube anal",
+            "system": "http://snomed.info/sct",
+            "code": "2855493871015690"
+          },
+          "performer": [
+            {
+              "actor": {
+                "reference": "urn:uuid:5548ae78-8d34-447a-91e6-24899aa642ce",
+                "type": "Organization",
+                "identifier": {
+                  "system": "https://supplierABC/identifiers/vacc",
+                  "value": "1506853"
+                },
+                "display": "assembled-testimonials"
+              }
+            }
+          ],
+          "reasonCode": [
+            {
+              "coding": [
+                {
+                  "system": "http://snomed.info/sct",
+                  "code": "4280288",
+                  "display": "meters repairs fine bahrain flyer doctors flights oven owen cayman andrews identity vehicles muscle button"
+                },
+                {
+                  "system": "http://snomed.info/sct",
+                  "code": "1696672",
+                  "display": "coordinate learners inns z date shipment ah oval writing defence camera actors dis debut jenny"
+                }
+              ]
+            }
+          ]
+        },
+        "search": {
+          "mode": "query"
+        }
+      }
+    ]
+  }
