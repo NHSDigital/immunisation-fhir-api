@@ -7,12 +7,12 @@ from typing import Optional
 
 from fhir_api.models.dynamodb.read_models import BatchImmunizationRead
 
-ENDPOINT = '/dynamodb'
+ENDPOINT = '/Immunization'
 router = APIRouter(prefix=ENDPOINT)
 
 
 @router.get(
-    "/Immunization",
+    "",
     description="Read Method for Immunization Endpoint",
     tags=['Dynamodb', 'CRUD', 'Read'],
     response_model=BatchImmunizationRead
