@@ -10,4 +10,4 @@ RUN poetry install
 
 COPY . /sandbox
 
-CMD uvicorn fhir_api:app --reload --host 0.0.0.0 --port 8000 --log-level=warning
+CMD uvicorn fhir_api:app --reload --host 0.0.0.0 --port 9000 --log-level=warning
