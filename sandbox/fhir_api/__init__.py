@@ -6,8 +6,8 @@ from fastapi import FastAPI
 
 from fhir_api.routes import (
     root,
-    health,
     dynamodb,
+    status_endpoints,
 )
 
 from fhir_api.models.fhir_r4.common import Reference, Identifier
@@ -27,5 +27,5 @@ app = FastAPI(
 
 # ENDPOINT ROUTERS
 app.include_router(root.router)
-app.include_router(health.router)
 app.include_router(dynamodb.router)
+app.include_router(status_endpoints.router)
