@@ -2,6 +2,8 @@ FROM python:3.9-slim
 
 ARG SERVICE_BASE_PATH
 
+ENV ROOT_PATH=${SERVICE_BASE_PATH}
+
 RUN pip install poetry
 
 WORKDIR /sandbox

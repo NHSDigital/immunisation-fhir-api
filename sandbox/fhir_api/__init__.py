@@ -20,7 +20,7 @@ app = FastAPI(
     description=os.getenv(
         'FASTAPI_DESC', 'API'),
     version=os.getenv('VERSION', 'DEVELOPMENT'),
-    root_path=f'/{os.getenv("SERVICE_BASE_PATH")}/',
+    root_path=f'/{os.getenv("ROOT_PATH")}/',
     docs_url="/documentation",
     redoc_url="/redocumentation")
 
