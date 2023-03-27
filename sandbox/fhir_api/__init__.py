@@ -20,7 +20,7 @@ app = FastAPI(
     description=os.getenv(
         'FASTAPI_DESC', 'API'),
     version=os.getenv('VERSION', 'DEVELOPMENT'),
-    root_path='/internal-dev-sandbox.api.service.nhs.uk/',
+    root_path='/immunisation-fhir-api-pr-12/',
     docs_url="/documentation",
     redoc_url="/redocumentation")
 
