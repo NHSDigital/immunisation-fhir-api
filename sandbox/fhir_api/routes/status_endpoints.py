@@ -5,6 +5,7 @@ from fastapi.responses import PlainTextResponse
 
 router = APIRouter()
 
+
 @router.get('/_ping',
             description="Ping check endpoint only returns 200")
 def ping():
@@ -19,9 +20,9 @@ def status():
     data = {"status": "pass", "ping": "pong", "service": "immunisations-fhir-api", "version": "{}"}
     return data
 
+
 @router.get('/health',
             description="Health check endpoint only returns 200",
             tags=['health'])
 def health():
     return PlainTextResponse(None, 200)
-
