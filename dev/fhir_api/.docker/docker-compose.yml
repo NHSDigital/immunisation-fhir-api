@@ -1,0 +1,31 @@
+version: '3.7'
+
+volumes: 
+  dynamodb_data:
+
+services:
+  dynamodb:
+    container_name: dps-poc-dynamodb
+    image:  amazon/dynamodb-local
+    hostname: dynamodb
+    restart: always
+    ports:
+      - 8000:8000
+    command: -jar DynamoDBLocal.jar -sharedDb -dbPath /home/dynamodblocal/data/
+    volumes:
+      - /share/dynamodb/dsp_poc_data:/home/dynamodblocal/data
+
+  fhir_api:
+    build:
+      dockerfile: .docker/Dockerfile
+      context: ..
+    ports:
+      - 8888:8888
+    environment:
+      DYNAMODB_HOST: dps-poc-dynamodb
+      DYNAMODB_PORT: 8000
+      AWS_ACCESS_KEY: test
+      AWS_SECRET_KEY: test
+      AWS_REGION_NAME: us-west-2
+
+    command: uvicorn fhir_api:app --reload --host 0.0.0.0 --port 8888 --log-level=info

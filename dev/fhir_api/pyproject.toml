@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "immunization-fhir-api"
+version = "0.1.0"
+description = ""
+authors = ["Jim Alcock <james.alcock1@nhs.net>"]
+readme = "README.md"
+packages = []
+
+[tool.poetry.dependencies]
+python = "^3.9"
+fastapi = "^0.93.0"
+uvicorn = "^0.20.0"
+boto3 = "^1.26.88"
+
+
+[tool.poetry.group.dev.dependencies]
+pylint = "^2.17.0"
+autopep8 = "^2.0.2"
+isort = "^5.12.0"
+pylance = "^0.3.13"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

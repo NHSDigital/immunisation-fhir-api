@@ -1,6 +1,6 @@
 {
     "resourceType": "Bundle",
-    "type": "targeted",
+    "type": "searchset",
     "total": 1,
     "entry": [
       {
@@ -109,7 +109,7 @@
           ]
         },
         "search": {
-          "mode": "query"
+          "mode": "match"
         }
       }
     ]
