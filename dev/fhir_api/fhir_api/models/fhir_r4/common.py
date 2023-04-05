@@ -2,7 +2,6 @@
 
 from typing import (
     Optional,
-    Union
 )
 
 from pydantic import (
@@ -16,6 +15,7 @@ from datetime import datetime
 import fhir_api.models.fhir_r4.code_types as code_types
 from fhir_api.models.fhir_r4.fhir_datatype_fields import FhirR4Fields
 
+
 class CodingType(BaseModel):
     ''' Code Data Model '''
     system: Optional[str] = FhirR4Fields.string
@@ -24,19 +24,22 @@ class CodingType(BaseModel):
     display: Optional[str] = FhirR4Fields.string
     userSelected: Optional[bool]
 
+
 class CodeableConceptType(BaseModel):
     ''' Codeable Concept Data Model '''
     coding: Optional[list[CodingType]]
     text: Optional[str] = FhirR4Fields.string
 
+
 class Period(BaseModel):
     '''  A time period defined by a start and end date/time. '''
     start: datetime = FhirR4Fields.dateTime
-    end: datetime = FhirR4Fields.dateTime 
+    end: datetime = FhirR4Fields.dateTime
+
 
 class HumanName(BaseModel):
     '''
-    A name of a human with text, parts and usage information. 
+    A name of a human with text, parts and usage information.
     '''
     use: Optional[code_types.human_name_use]
     text: Optional[str] = FhirR4Fields.string
@@ -46,6 +49,7 @@ class HumanName(BaseModel):
     suffix: Optional[list[str]]
     period: Optional[Period]
 
+
 class Quantity(BaseModel):
     ''' Quantity Type '''
     value: Optional[float] = FhirR4Fields.decimal
@@ -54,12 +58,13 @@ class Quantity(BaseModel):
     system: Optional[str] = FhirR4Fields.uri
     code: Optional[str] = FhirR4Fields.code
 
+
 class ContactPoint(BaseModel):
-    '''  
-    Details for all kinds of technology-mediated contact points 
-    for a person or organization, including telephone, email, etc. 
     '''
-    system: code_types.contact_point_system_types = None # Required
+    Details for all kinds of technology-mediated contact points
+    for a person or organization, including telephone, email, etc.
+    '''
+    system: code_types.contact_point_system_types = None  # Required
     value: Optional[str] = FhirR4Fields.string
     use: Optional[code_types.contact_point_use_types]
     rank: Optional[PositiveInt] = FhirR4Fields.positiveInt
@@ -75,10 +80,10 @@ class ContactPoint(BaseModel):
 
 class Address(BaseModel):
     '''
-    An address expressed using postal conventions (as opposed to GPS or other location definition formats). 
-    This data type may be used to convey addresses for use in delivering mail as well as for visiting 
+    An address expressed using postal conventions (as opposed to GPS or other location definition formats).
+    This data type may be used to convey addresses for use in delivering mail as well as for visiting
     locations which might not be valid for mail delivery.
-    There are a variety of postal address formats defined around the world. 
+    There are a variety of postal address formats defined around the world.
     '''
     use: Optional[code_types.address_use_type]
     type: Optional[code_types.address_type_type]
@@ -91,6 +96,7 @@ class Address(BaseModel):
     country: Optional[str] = FhirR4Fields.string
     period: Optional[Period]
 
+
 class Reference(BaseModel):
     ''' Reference data Model '''
     reference: Optional[str] = FhirR4Fields.string
@@ -98,10 +104,12 @@ class Reference(BaseModel):
     identifier: Optional["Identifier"]
     display: Optional[str] = FhirR4Fields.string
 
+
 class CodeableReference(BaseModel):
     ''' Codeable Reference '''
     concept: Optional[CodeableConceptType]
     reference: Optional[Reference]
+
 
 class Identifier(BaseModel):
     ''' Identifier Data Model '''
@@ -111,6 +119,7 @@ class Identifier(BaseModel):
     value: Optional[str] = FhirR4Fields.string
     period: Optional[Period]
     assigner: Optional[Reference]
+
 
 class Attachment(BaseModel):
     ''' Attachment Model '''

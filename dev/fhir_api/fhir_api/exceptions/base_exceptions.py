@@ -9,7 +9,6 @@ from fastapi.responses import JSONResponse
 from fhir_api.models.errors import (
     NotFoundError,
     AlreadyExistsError,
-    WebSocketError,
     BaseError,
     BaseIdentifiedError
 )

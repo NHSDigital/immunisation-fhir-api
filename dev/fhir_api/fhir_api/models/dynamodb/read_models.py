@@ -18,7 +18,7 @@ class Resource(BaseModel):
     ''' Wrapper Model for returned resource '''
     fullUrl: str = FhirR4Fields.uri
     resource: Union[Immunization, Patient]
-    search: Optional[dict] = {"mode": "match"} # This looks to be api specific
+    search: Optional[dict] = {"mode": "match"}  # This looks to be api specific
 
 
 class BatchImmunizationRead(BaseModel):

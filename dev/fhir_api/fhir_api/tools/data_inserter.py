@@ -1,3 +1,5 @@
+# flake8: noqa
+
 import boto3
 from boto3.dynamodb.conditions import Key, Attr
 import json

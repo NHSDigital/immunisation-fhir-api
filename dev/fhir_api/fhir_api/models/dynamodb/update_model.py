@@ -19,6 +19,7 @@ from fhir_api.models.fhir_r4.immunization import (
     Annotation
 )
 
+
 class UpdateImmunizationRecord(BaseModel):
     '''Update Immunization Record '''
     resourceType: Literal["Immunization"] = Field(default='Immunization')
@@ -53,6 +54,7 @@ class UpdateImmunizationRecord(BaseModel):
         """
         kwargs.pop('exclude_none', None)
         return super().dict(*args, exclude_none=True, **kwargs)
+
 
 class UpdateSnomedModel(BaseModel):
     snomed_code: str = FhirR4Fields.string

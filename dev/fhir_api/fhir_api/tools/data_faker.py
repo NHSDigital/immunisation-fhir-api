@@ -1,4 +1,5 @@
 ''' Populate Table with fake data '''
+# flake8: noqa E501
 
 from datetime import datetime, timedelta
 from uuid import uuid4

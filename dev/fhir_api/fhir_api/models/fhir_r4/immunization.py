@@ -16,9 +16,11 @@ from fhir_api.models.fhir_r4.common import (
     Quantity,
 )
 
+
 class Performer(BaseModel):
     function: Optional[CodeableConceptType]
     actor: Reference
+
 
 class ProtocolApplied(BaseModel):
     series: Optional[str] = FhirR4Fields.string
@@ -29,16 +31,19 @@ class ProtocolApplied(BaseModel):
     seriesDosesPositiveInt: Optional[PositiveInt] = FhirR4Fields.positiveInt
     seriesDosesString: Optional[str] = FhirR4Fields.string
 
+
 class Author(BaseModel):
     ''' Author Model '''
     authorRefernce: Optional[Reference]
     authorString: Optional[str] = FhirR4Fields.string
+
 
 class Annotation(BaseModel):
     ''' Annotation Model '''
     author: Optional[Author]
     time: Optional[datetime.datetime] = FhirR4Fields.dateTime
     text: Optional[str] = FhirR4Fields.markdown
+
 
 class Immunization(BaseModel):
     ''' Immunization Record for Reading '''
@@ -67,7 +72,7 @@ class Immunization(BaseModel):
     reasonReference: Optional[list[Reference]]
     isSubpotent: Optional[bool] = FhirR4Fields.boolean
     subpotentReason: Optional[list[CodeableConceptType]]
-    education: Optional[list[dict]] # TODO: Education Model to be created
+    education: Optional[list[dict]]  # TODO: Education Model to be created
     procotolApplied: Optional[list[ProtocolApplied]]
 
     def dict(self, *args, **kwargs) -> dict[str, Any]:

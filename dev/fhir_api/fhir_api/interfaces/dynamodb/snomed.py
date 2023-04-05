@@ -51,7 +51,7 @@ class SnomedDynamoDBMethods:
         table = dynamodb.database.Table(SNOMED_TABLE)
         response = table.delete_item(
             Key={"snomed_code": snomed_code})
-        
+
         print(response)
         if response.get('ResponseMetadata').get('HTTPStatusCode') == 200:
             status = True
