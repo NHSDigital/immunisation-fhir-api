@@ -60,13 +60,6 @@ class AlreadyExistsException(BaseIdentifiedException):
     model = AlreadyExistsError
 
 
-class WebSocketException(BaseAPIException):
-    """ Base Error for websocket exceptions """
-    message = "Websocket encountered an error"
-    code = fastapi.status.HTTP_418_IM_A_TEAPOT
-    model = WebSocketError
-
-
 def get_exception_responses(*args: Type[BaseAPIException]) -> dict:
     """ return a dict of responses used on FastAPI endpoint """
     responses = {}
