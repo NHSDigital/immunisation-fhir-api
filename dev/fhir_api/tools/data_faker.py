@@ -44,7 +44,7 @@ def generate_coding_list() -> dict[str: list]:
     }
 
 
-def generate_reference(ref_type: str, display: bool = False) -> dict:
+def generate_reference(ref_type: str, display: bool = False, patient_id: str = uuid4) -> dict:
     '''
     Generate Reference Dictionary
 
@@ -59,7 +59,7 @@ def generate_reference(ref_type: str, display: bool = False) -> dict:
 
     '''
     ref_dict = {}
-    ref_dict['reference'] = f"urn:uuid:{uuid4()}"
+    ref_dict['reference'] = f"urn:uuid:{patient_id}"
     ref_dict['type'] = ref_type
     ref_dict['identifier'] = generate_identifier()
     if display:
@@ -108,7 +108,7 @@ def generate_random_string(str_size: int) -> str:
     return ''.join(choice(ascii_letters + digits) for x in range(str_size))
 
 
-def generate_immunization_data() -> dict:
+def generate_immunization_data(patient_id) -> dict:
     '''
     Generate FHIR immunization Data Dictionary
 
@@ -120,7 +120,7 @@ def generate_immunization_data() -> dict:
         'identifier': [generate_identifier() for i in range(randint(1, 2))],
         'status': generate_status(),
         'vaccineCode': generate_coding_list(),
-        'patient': generate_reference('Patient'),
+        'patient': generate_reference('Patient', patient_id=patient_id),
         'occurrenceDateTime': generate_random_time(),
         'recorded': generate_random_time().split('T')[0],
         'primarySource': choice([True, False]),
@@ -194,7 +194,7 @@ def generate_address() -> dict:
     add_dict['district'] = choice(RANDOM_WORDS)
     add_dict['state'] = choice(RANDOM_WORDS)
     add_dict['postalCode'] = generate_postal_code()
-    add_dict['text'] = f"{' '.join(add_dict['line'])} {add_dict['city']}, {add_dict['district']}, {add_dict['state']}, {add_dict['postalCode']}"
+    add_dict['text'] = f"{''.join(add_dict['line'])} {add_dict['city']}, {add_dict['district']}, {add_dict['state']}, {add_dict['postalCode']}"
     if choice([True, False]):
         add_dict['country'] = choice(RANDOM_WORDS)
     add_dict['period'] = {
@@ -245,7 +245,7 @@ def generate_patient_data() -> dict:
     return data
 
 
-def generate_immunization_records(nhs_number) -> dict:
+def generate_immunization_records(nhs_number, patient_id) -> dict:
     '''
     Generate Immunization Record Wrapper
 
@@ -259,7 +259,7 @@ def generate_immunization_records(nhs_number) -> dict:
     record_dict['nhsNumber'] = nhs_number
     record_dict['fullUrl'] = f"urn:uuid:{uuid4()}"
     record_dict['entityType'] = 'immunization'
-    record_dict['data'] = generate_immunization_data()
+    record_dict['data'] = generate_immunization_data(patient_id)
     record_dict['dateModified'] = datetime.now().isoformat()
     return record_dict
 
@@ -292,13 +292,14 @@ def generate_record_data() -> tuple:
 
     '''
     nhs_number = str(randint(10000000, 99999999))
+    patient_record = generate_patient_records(nhs_number=nhs_number)
     return (
-        generate_patient_records(nhs_number=nhs_number),
-        generate_immunization_records(nhs_number=nhs_number)
+        patient_record,
+        generate_immunization_records(nhs_number=nhs_number, patient_id=patient_record['fullUrl'])
     )
 
 
 if __name__ == '__main__':
     NHS_NUMBER = str(randint(10000000, 99999999))
-    print(json.dumps(generate_immunization_records(NHS_NUMBER), indent=4))
-    print(json.dumps(generate_patient_records(NHS_NUMBER), indent=4))
+    for i in generate_record_data():
+        print(json.dumps(i, indent=4))
