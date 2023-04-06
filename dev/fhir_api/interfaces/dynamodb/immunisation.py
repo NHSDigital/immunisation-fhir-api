@@ -16,6 +16,8 @@ from fhir_api.tools.utils import generate_fullurl
 dynamodb = DynamoDB()
 IMMUNIZATION_TABLE = 'fhir_api_test'  # Possible ENV_VAR
 
+MATCH = 'match'
+INCLUDE = 'include'
 
 class ImmunisationCRUDMethods:
     @staticmethod
@@ -42,11 +44,11 @@ class ImmunisationCRUDMethods:
         include_record: Optional[str] = None
     ) -> BatchImmunizationRead:
         ''' Read DynamoDB table for immunization records '''
-        def create_resource(item, model) -> dict:
+        def create_resource(item, model, mode) -> dict:
             resource = {}
             resource['fullUrl'] = item.get('fullUrl')
             resource['resource'] = model(**item.get('data'))
-            resource['search'] = {'mode': 'match'}
+            resource['search'] = {'mode': mode}
             return resource
 
         if not include_record:
@@ -64,7 +66,8 @@ class ImmunisationCRUDMethods:
             })
 
             immunisation_data = create_resource(immunisation_response.get('Item'),
-                                                model=Immunization)
+                                                model=Immunization,
+                                                mode=MATCH)
             batch['total'] = 1
             batch['entry'].append(Resource(**immunisation_data))
         else:
@@ -86,15 +89,17 @@ class ImmunisationCRUDMethods:
             batch['total'] = len(response.get('Items'))
 
             for i in response.get('Items'):
-                resource = create_resource(i, model=Immunization)
+                resource = create_resource(i, model=Immunization, mode=MATCH)
                 batch['entry'].append(Resource(**resource))
 
         if include_record == "Immunization:patient":
             patient_response = table.query(KeyConditionExpression=Key("nhsNumber").eq(nhs_number),
                                            FilterExpression=Attr('entityType').eq('patient'))
-            print("PATIENT_RESPONSE:", patient_response)
-            patient_data = create_resource(patient_response.get('Items')[0], model=Patient)
-            print("PATIENT_DATA:", patient_data)
+            patient_data = create_resource(
+                patient_response.get('Items')[0],
+                model=Patient,
+                mode=INCLUDE
+            )
             batch['entry'].append(Resource(**patient_data))
 
         batch_model = BatchImmunizationRead(**batch)
