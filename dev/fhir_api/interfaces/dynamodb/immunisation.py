@@ -10,6 +10,7 @@ from fhir_api.models.dynamodb.data_input import DataInput
 from fhir_api.models.dynamodb.read_models import BatchImmunizationRead, Resource
 from fhir_api.models.dynamodb.update_model import UpdateImmunizationRecord
 from fhir_api.models.fhir_r4.immunization import Immunization
+from fhir_api.models.fhir_r4.patient import Patient
 from fhir_api.tools.utils import generate_fullurl
 
 dynamodb = DynamoDB()
@@ -26,6 +27,7 @@ class ImmunisationCRUDMethods:
         data_input['fullUrl'] = generate_fullurl()
         date_modified = datetime.now().isoformat()
         data_input['dateModified'] = date_modified
+        data_input['dieseaseType'] = data_input.data
         response = table.put_item(Item=data_input)
         if response.get('ResponseMetadata').get('HTTPStatusCode') == 200:
             status = True
@@ -40,11 +42,11 @@ class ImmunisationCRUDMethods:
         include_record: Optional[str] = None
     ) -> BatchImmunizationRead:
         ''' Read DynamoDB table for immunization records '''
-        def create_resource(item, mode) -> dict:
+        def create_resource(item, model) -> dict:
             resource = {}
             resource['fullUrl'] = item.get('fullUrl')
-            resource['resource'] = Immunization(**item.get('data'))
-            resource['search'] = {'mode': mode}
+            resource['resource'] = model(**item.get('data'))
+            resource['search'] = {'mode': 'match'}
             return resource
 
         if not include_record:
@@ -56,13 +58,22 @@ class ImmunisationCRUDMethods:
 
         if full_url:
             batch['type'] = 'searchset'
-            response = table.get_item(Key={
+            immunisation_response = table.get_item(Key={
                 'nhsNumber': nhs_number,
-                'fullUrl': full_url
+                'fullUrl': full_url,
             })
-            data = create_resource(response.get('Item'), mode='match')
+
+            patient_response = table.query(KeyConditionExpression=Key("nhsNumber").eq(nhs_number),
+                                           FilterExpression=Attr('entityType').eq('patient')
+                                           )
+            print("PATIENT_RESPONSE:", patient_response)
+            immunisation_data = create_resource(immunisation_response.get('Item'),
+                                                model=Immunization)
+            patient_data = create_resource(patient_response.get('Items')[0], model=Patient)
+            print("IMMUNISATION_DATA:", immunisation_data)
+            print("PATIENT_DATA:", patient_data)
             batch['total'] = 1
-            batch['entry'].append(Resource(**data))
+            batch['entry'].append(Resource(**immunisation_data))
         else:
             filter_expression = filter_expression &\
                 Attr('nhsNumber').eq(nhs_number) &\
@@ -82,7 +93,7 @@ class ImmunisationCRUDMethods:
             batch['total'] = len(response.get('Items'))
 
             for i in response.get('Items'):
-                resource = create_resource(i, mode='match')
+                resource = create_resource(i, model=Immunization)
                 batch['entry'].append(Resource(**resource))
 
         batch_model = BatchImmunizationRead(**batch)

@@ -54,7 +54,7 @@ class Patient(BaseModel):
     birthDate: Optional[str] = FhirR4Fields.date
     deceasedBoolean: Optional[bool] = FhirR4Fields.boolean
     deceasedDateTime: Optional[datetime] = FhirR4Fields.dateTime
-    address: Optional[Address]
+    address: Optional[list[Address]]
     maritalStatus: Optional[CodeableConceptType]
     multipleBirthBoolean: Optional[bool] = FhirR4Fields.boolean
     multipleBirthInteger: Optional[int] = FhirR4Fields.integer

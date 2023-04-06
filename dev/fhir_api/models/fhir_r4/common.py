@@ -6,7 +6,6 @@ from typing import (
 
 from pydantic import (
     BaseModel,
-    validator,
     PositiveInt
     )
 
@@ -34,7 +33,7 @@ class CodeableConceptType(BaseModel):
 class Period(BaseModel):
     '''  A time period defined by a start and end date/time. '''
     start: datetime = FhirR4Fields.dateTime
-    end: datetime = FhirR4Fields.dateTime
+    end: Optional[datetime] = FhirR4Fields.dateTime
 
 
 class HumanName(BaseModel):
@@ -69,13 +68,6 @@ class ContactPoint(BaseModel):
     use: Optional[code_types.contact_point_use_types]
     rank: Optional[PositiveInt] = FhirR4Fields.positiveInt
     period: Optional[Period]
-
-    @validator('system')
-    def value_validator(cls, _v):
-        ''' cpt-2: A system is required is a value is provided '''
-        if cls.value:
-            assert _v is None, "System must be populated if a value exists"
-            return _v
 
 
 class Address(BaseModel):

@@ -87,10 +87,10 @@ def generate_protocol_applied() -> list[dict]:
     ]
 
 
-def generate_random_time() -> str:
+def generate_random_time(before = 0, after = 1000) -> str:
     ''' Generates a random datetime (upto 1000 days ago) in isoformat '''
     random_date = (datetime.utcnow() - timedelta(
-        days=randint(0, 1000),
+        days=randint(before, after),
         hours=randint(0, 23),
         minutes=randint(0, 59),
         seconds=randint(0, 59),
@@ -154,12 +154,12 @@ def generate_human_name() -> dict:
     hn_dict['family'] = choice(RANDOM_WORDS)
     hn_dict['given'] = [choice(RANDOM_WORDS) for i in range(randint(1, 3))]
     if choice([True, False]):
-        hn_dict['prefix'] = choice(RANDOM_WORDS)
+        hn_dict['prefix'] = [choice(RANDOM_WORDS)]
     if choice([True, False]):
-        hn_dict['suffix'] = choice(RANDOM_WORDS)
+        hn_dict['suffix'] = [choice(RANDOM_WORDS)]
     hn_dict['period'] = {
         'start': generate_random_time(),
-        'end': '9999-01-01'
+        'end': '9999-01-01T00:00:01.000001Z'
     }
     return hn_dict
 
@@ -173,7 +173,8 @@ def generate_contact_point() -> dict:
     tc_dict['value'] = f"0{randint(0,10)} {randint(1000, 9999)} {randint(1000, 9999)}"
     tc_dict['rank'] = str(randint(1, 10))
     tc_dict['period'] = {
-        'end': generate_random_time()
+        'start': generate_random_time(),
+        'end': generate_random_time(1000, 2000)
     }
     return tc_dict
 
@@ -188,8 +189,7 @@ def generate_address() -> dict:
     add_dict = {}
     add_dict['use'] = choice(["home", "work", "temp", "old", "billing"])
     add_dict['type'] = choice(["postal", "physical", "both"])
-    add_dict['line'] = [
-        f"{randint(1,999)} {' '.join(choices(RANDOM_WORDS, k=randint(1,3)))}"]
+    add_dict['line'] = f"{randint(1,999)} {' '.join(choices(RANDOM_WORDS, k=randint(1,3)))}"
     add_dict['city'] = choice(RANDOM_WORDS)
     add_dict['district'] = choice(RANDOM_WORDS)
     add_dict['state'] = choice(RANDOM_WORDS)
@@ -201,8 +201,17 @@ def generate_address() -> dict:
         'start': generate_random_time(),
     }
     if choice([True, False]):
-        add_dict['period']['end'] = generate_random_time()
+        add_dict['period']['end'] = generate_random_time(1000, 2000)
     return add_dict
+
+
+def generate_period() -> dict:
+    period = {'start': generate_random_time()}
+    if choice([True, False]):
+        period['end'] = generate_random_time(1000, 2000)
+   
+    return period
+
 
 
 def generate_patient_data() -> dict:
@@ -214,7 +223,7 @@ def generate_patient_data() -> dict:
     '''
     data = {
         'resourceType': 'Patient',
-        'identifier': generate_identifier(),
+        'identifier': [generate_identifier() for i in range(randint(1, 2))],
         'active': choice([True, False]),
         'name': [generate_human_name() for i in range(randint(1, 3))],
         'telecom': [generate_contact_point() for i in range(randint(1, 3))],
@@ -222,19 +231,15 @@ def generate_patient_data() -> dict:
         'birthDate':  generate_random_time().split('T')[0],
         'deceasedBoolean': choice([True, False]),
         'address': generate_address(),
-        'contact': {
-            'relationship': generate_coding_list(),
+        'contact': [{
+            'relationship': [generate_coding_list()],
             'name': [generate_human_name() for i in range(randint(1, 3))],
             'telecom': [generate_contact_point() for i in range(randint(1, 3))],
             'address': generate_address(),
             'gender': choice(["male", "female", "other", "unknown"]),
-        }
+            'period': generate_period()}]
     }
-    data['contact']['period'] = {
-        'start': generate_random_time(),
-    }
-    if choice([True, False]):
-        data['contact']['period']['end'] = generate_random_time()
+
     data['managingOrganization'] = generate_reference('Organization')
 
     return data

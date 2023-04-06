@@ -6,7 +6,7 @@ import json
 import uuid
 import datetime
 
-from fhir_api.tools.data_faker import generate_record_data
+from new_data_faker import generate_record_data
 
 DYNAMODB = 'dynamodb'
 
@@ -18,7 +18,7 @@ dynamodb =  boto3.resource(
             aws_secret_access_key="test",
             region_name="us-west-2"
         )
-
+ 
 table = dynamodb.Table(table_db)
 # data = generate_records()
 # data['nhsNumber'] = str(46409800)
