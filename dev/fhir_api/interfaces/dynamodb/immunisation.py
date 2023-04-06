@@ -63,15 +63,8 @@ class ImmunisationCRUDMethods:
                 'fullUrl': full_url,
             })
 
-            patient_response = table.query(KeyConditionExpression=Key("nhsNumber").eq(nhs_number),
-                                           FilterExpression=Attr('entityType').eq('patient')
-                                           )
-            print("PATIENT_RESPONSE:", patient_response)
             immunisation_data = create_resource(immunisation_response.get('Item'),
                                                 model=Immunization)
-            patient_data = create_resource(patient_response.get('Items')[0], model=Patient)
-            print("IMMUNISATION_DATA:", immunisation_data)
-            print("PATIENT_DATA:", patient_data)
             batch['total'] = 1
             batch['entry'].append(Resource(**immunisation_data))
         else:
@@ -95,6 +88,14 @@ class ImmunisationCRUDMethods:
             for i in response.get('Items'):
                 resource = create_resource(i, model=Immunization)
                 batch['entry'].append(Resource(**resource))
+
+        if include_record == "Immunization:patient":
+            patient_response = table.query(KeyConditionExpression=Key("nhsNumber").eq(nhs_number),
+                                           FilterExpression=Attr('entityType').eq('patient'))
+            print("PATIENT_RESPONSE:", patient_response)
+            patient_data = create_resource(patient_response.get('Items')[0], model=Patient)
+            print("PATIENT_DATA:", patient_data)
+            batch['entry'].append(Resource(**patient_data))
 
         batch_model = BatchImmunizationRead(**batch)
         return batch_model

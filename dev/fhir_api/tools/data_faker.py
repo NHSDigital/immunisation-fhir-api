@@ -197,7 +197,7 @@ def generate_address() -> dict:
     add_dict['district'] = choice(RANDOM_WORDS)
     add_dict['state'] = choice(RANDOM_WORDS)
     add_dict['postalCode'] = generate_postal_code()
-    add_dict['text'] = f"{' '.join(add_dict['line'])} {add_dict['city']}, {add_dict['district']}, {add_dict['state']}, {add_dict['postalCode']}"
+    add_dict['text'] = f"{''.join(add_dict['line'])} {add_dict['city']}, {add_dict['district']}, {add_dict['state']}, {add_dict['postalCode']}"
     if choice([True, False]):
         add_dict['country'] = choice(RANDOM_WORDS)
     add_dict['period'] = generate_period_data()

@@ -6,7 +6,7 @@ import json
 import uuid
 import datetime
 
-from dev.fhir_api.tools.data_faker import generate_record_data
+from data_faker import generate_record_data
 
 DYNAMODB = 'dynamodb'
 
