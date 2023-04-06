@@ -19,6 +19,7 @@ IMMUNIZATION_TABLE = 'fhir_api_test'  # Possible ENV_VAR
 MATCH = 'match'
 INCLUDE = 'include'
 
+
 class ImmunisationCRUDMethods:
     @staticmethod
     def create_immunization_record(data_input: DataInput) -> bool:
