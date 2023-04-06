@@ -44,7 +44,7 @@ def generate_coding_list() -> dict[str: list]:
     }
 
 
-def generate_reference(ref_type: str, display: bool = False, patient_id: str = uuid4) -> dict:
+def generate_reference(ref_type: str, display: bool = False, id=uuid4) -> dict:
     '''
     Generate Reference Dictionary
 
@@ -59,7 +59,7 @@ def generate_reference(ref_type: str, display: bool = False, patient_id: str = u
 
     '''
     ref_dict = {}
-    ref_dict['reference'] = f"urn:uuid:{patient_id}"
+    ref_dict['reference'] = f"urn:uuid:{id}"
     ref_dict['type'] = ref_type
     ref_dict['identifier'] = generate_identifier()
     if display:
@@ -87,7 +87,7 @@ def generate_protocol_applied() -> list[dict]:
     ]
 
 
-def generate_random_time(before = 0, after = 1000) -> str:
+def generate_random_time(before=0, after=1000) -> str:
     ''' Generates a random datetime (upto 1000 days ago) in isoformat '''
     random_date = (datetime.utcnow() - timedelta(
         days=randint(before, after),
@@ -108,7 +108,16 @@ def generate_random_string(str_size: int) -> str:
     return ''.join(choice(ascii_letters + digits) for x in range(str_size))
 
 
-def generate_immunization_data(patient_id) -> dict:
+def generate_period_data() -> dict():
+    ''' Generate random period start and end time '''
+    period_dict = {'start': generate_random_time(1000,2000)}
+    if choice([True, False]):
+        period_dict['end'] = generate_random_time()
+    
+    return period_dict
+
+
+def generate_immunization_data(patient_id=None) -> dict:
     '''
     Generate FHIR immunization Data Dictionary
 
@@ -120,7 +129,7 @@ def generate_immunization_data(patient_id) -> dict:
         'identifier': [generate_identifier() for i in range(randint(1, 2))],
         'status': generate_status(),
         'vaccineCode': generate_coding_list(),
-        'patient': generate_reference('Patient', patient_id=patient_id),
+        'patient': generate_reference('Patient', id=patient_id),
         'occurrenceDateTime': generate_random_time(),
         'recorded': generate_random_time().split('T')[0],
         'primarySource': choice([True, False]),
@@ -157,10 +166,7 @@ def generate_human_name() -> dict:
         hn_dict['prefix'] = [choice(RANDOM_WORDS)]
     if choice([True, False]):
         hn_dict['suffix'] = [choice(RANDOM_WORDS)]
-    hn_dict['period'] = {
-        'start': generate_random_time(),
-        'end': '9999-01-01T00:00:01.000001Z'
-    }
+    hn_dict['period'] = generate_period_data()
     return hn_dict
 
 
@@ -172,10 +178,7 @@ def generate_contact_point() -> dict:
     tc_dict['use'] = choice(['home', 'work', 'temp', 'old', 'mobile'])
     tc_dict['value'] = f"0{randint(0,10)} {randint(1000, 9999)} {randint(1000, 9999)}"
     tc_dict['rank'] = str(randint(1, 10))
-    tc_dict['period'] = {
-        'start': generate_random_time(),
-        'end': generate_random_time(1000, 2000)
-    }
+    tc_dict['period'] = generate_period_data()
     return tc_dict
 
 
@@ -194,25 +197,23 @@ def generate_address() -> dict:
     add_dict['district'] = choice(RANDOM_WORDS)
     add_dict['state'] = choice(RANDOM_WORDS)
     add_dict['postalCode'] = generate_postal_code()
-    add_dict['text'] = f"{''.join(add_dict['line'])} {add_dict['city']}, {add_dict['district']}, {add_dict['state']}, {add_dict['postalCode']}"
+    add_dict['text'] = f"{' '.join(add_dict['line'])} {add_dict['city']}, {add_dict['district']}, {add_dict['state']}, {add_dict['postalCode']}"
     if choice([True, False]):
         add_dict['country'] = choice(RANDOM_WORDS)
-    add_dict['period'] = {
-        'start': generate_random_time(),
-    }
-    if choice([True, False]):
-        add_dict['period']['end'] = generate_random_time(1000, 2000)
+    add_dict['period'] = generate_period_data()
     return add_dict
 
-
-def generate_period() -> dict:
-    period = {'start': generate_random_time()}
-    if choice([True, False]):
-        period['end'] = generate_random_time(1000, 2000)
-   
-    return period
-
-
+def generate_random_contact() -> dict:
+    ''' Generates random contact info '''
+    contact_dict = {
+        'relationship': [generate_coding_list()],
+        'name': generate_human_name(),
+        'telecom': [generate_contact_point() for i in range(randint(1, 3))],
+        'address': generate_address(),
+        'gender': choice(["male", "female", "other", "unknown"]),
+        'period': generate_period_data(),
+    }
+    return contact_dict
 
 def generate_patient_data() -> dict:
     '''
@@ -230,22 +231,15 @@ def generate_patient_data() -> dict:
         'gender': choice(["male", "female", "other", "unknown"]),
         'birthDate':  generate_random_time().split('T')[0],
         'deceasedBoolean': choice([True, False]),
-        'address': generate_address(),
-        'contact': [{
-            'relationship': [generate_coding_list()],
-            'name': [generate_human_name() for i in range(randint(1, 3))],
-            'telecom': [generate_contact_point() for i in range(randint(1, 3))],
-            'address': generate_address(),
-            'gender': choice(["male", "female", "other", "unknown"]),
-            'period': generate_period()}]
+        'address': [generate_address() for i in range(randint(1, 3))],
+        'contact': [generate_random_contact() for i in range(randint(1,3))],
+        'managingOrganization': generate_reference('Organization'),
     }
-
-    data['managingOrganization'] = generate_reference('Organization')
 
     return data
 
 
-def generate_immunization_records(nhs_number, patient_id) -> dict:
+def generate_immunization_records(nhs_number, patient_id=None) -> dict:
     '''
     Generate Immunization Record Wrapper
 
@@ -259,7 +253,7 @@ def generate_immunization_records(nhs_number, patient_id) -> dict:
     record_dict['nhsNumber'] = nhs_number
     record_dict['fullUrl'] = f"urn:uuid:{uuid4()}"
     record_dict['entityType'] = 'immunization'
-    record_dict['data'] = generate_immunization_data(patient_id)
+    record_dict['data'] = generate_immunization_data(patient_id=patient_id)
     record_dict['dateModified'] = datetime.now().isoformat()
     return record_dict
 
