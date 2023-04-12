@@ -39,6 +39,7 @@ def create_immunization_record(data_input: DataInput) -> SuccessModel:
 def read_immunization_record(
     nhsNumber: str,
     fullUrl: Optional[str] = None,
+    diseaseType: Optional[str] = None,
     from_date: Optional[str] = None,
     to_date: Optional[str] = "9999-01-01",
     include_record: Optional[str] = None
@@ -46,6 +47,7 @@ def read_immunization_record(
     return ImmunisationCRUDMethods.read_immunization_record(
         nhs_number=nhsNumber,
         full_url=fullUrl,
+        disease_type=diseaseType,
         from_date=from_date,
         to_date=to_date,
         include_record=include_record
@@ -82,7 +84,7 @@ def delete_immunization_record(nhsNumber: str, fullUrl: str) -> SuccessModel:
         )
     )
 
-
+# TODO: delete before production
 @router.get("/search",
             description="Search Method for Immunization Endpoint", 
             tags=['Dynamodb', 'CRUD', 'Search'])

@@ -27,7 +27,9 @@ def create_resource(item, model, mode) -> dict:
     resource['search'] = {'mode': mode}
     return resource
 
+
 class ImmunisationCRUDMethods:
+    ''' CRUD Methods for Immunisation Endpoint '''
     @staticmethod
     def create_immunization_record(data_input: DataInput) -> bool:
         ''' Create dynamodb document using DataInput Model provided '''
@@ -68,18 +70,17 @@ class ImmunisationCRUDMethods:
     def read_immunization_record(
         nhs_number: str,
         full_url: Optional[str],
+        disease_type: Optional[str] = None,
         from_date: Optional[str] = None,
         to_date: Optional[str] = "9999-01-01",
         include_record: Optional[str] = None
     ) -> BatchImmunizationRead:
         ''' Read DynamoDB table for immunization records '''
 
-        if not include_record:
-            filter_expression = Attr("entityType").eq('immunization')
-
         batch = {}
         batch['entry'] = []
         table = dynamodb.database.Table(IMMUNIZATION_TABLE)
+        filter_expression = Attr('data.recorded').lte(to_date)
 
         if full_url:
             batch['type'] = 'searchset'
@@ -94,20 +95,26 @@ class ImmunisationCRUDMethods:
             batch['total'] = 1
             batch['entry'].append(Resource(**immunisation_data))
         else:
-            filter_expression = filter_expression &\
-                Attr('nhsNumber').eq(nhs_number) &\
-                Attr('data.recorded').gte(from_date) &\
-                Attr("data.recorded").lte(to_date)
-
             batch['type'] = 'searchset'
+
+            key_condition_expression = Key('nhsNumber').eq(nhs_number)
+
+            if not include_record:
+                filter_expression = filter_expression &\
+                    Attr('entityType').eq('immunization')
+
+            if disease_type:
+                filter_expression = filter_expression &\
+                    Attr('diseaseType').eq(disease_type)
+
             if from_date:
-                response = table.scan(
-                    FilterExpression=filter_expression)
-            else:
-                response = table.query(
-                    KeyConditionExpression=Key("nhsNumber").eq(nhs_number),
-                    FilterExpression=filter_expression
-                )
+                filter_expression = filter_expression &\
+                    Attr('data.recorded').gte(from_date)
+
+            response = table.query(
+                KeyConditionExpression=key_condition_expression,
+                FilterExpression=filter_expression
+            )
 
             batch['total'] = len(response.get('Items'))
 

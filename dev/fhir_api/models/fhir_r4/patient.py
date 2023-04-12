@@ -1,7 +1,7 @@
 ''' Patient Data Model based on Fhir Revision 4 spec '''
 
 from datetime import datetime
-from typing import Optional, Literal
+from typing import Optional, Literal, Any
 from pydantic import (
     BaseModel,
 )
@@ -64,3 +64,10 @@ class Patient(BaseModel):
     generalPractitioner: Optional[list[Reference]]
     managingOrganization: Optional[Reference]
     link: Optional[list[Link]]
+
+    def dict(self, *args, **kwargs) -> dict[str, Any]:
+        """
+            Override the default dict method to exclude None values in the response
+        """
+        kwargs.pop('exclude_none', None)
+        return super().dict(*args, exclude_none=True, **kwargs)

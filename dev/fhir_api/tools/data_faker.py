@@ -286,7 +286,8 @@ def generate_record_data() -> tuple:
         tuple -- returns patient and immunization data using the same nhs_number
 
     '''
-    nhs_number = str(randint(10000000, 99999999))
+    #nhs_number = str(randint(10000000, 99999999))
+    nhs_number = "23838008"
     patient_record = generate_patient_records(nhs_number=nhs_number)
     return (
         patient_record,

@@ -25,9 +25,9 @@ table = dynamodb.Table(table_db)
 # table.put_item(Item=data)
 
 data = []
-for i in range(1000):
+for i in range(3):
     patient, immunization = generate_record_data()
-    data.append(patient)
+    #data.append(patient)
     data.append(immunization)
 
 with table.batch_writer() as batch:
