@@ -81,3 +81,10 @@ def delete_immunization_record(nhsNumber: str, fullUrl: str) -> SuccessModel:
             full_url=fullUrl
         )
     )
+
+
+@router.get("/search",
+            description="Search Method for Immunization Endpoint", 
+            tags=['Dynamodb', 'CRUD', 'Search'])
+def search_immunization_record(nhsNumber: str, dt: str) -> BatchImmunizationRead:
+    return ImmunisationCRUDMethods.query_index(nhsNumber, "diseaseType-index", "diseaseType", dt)

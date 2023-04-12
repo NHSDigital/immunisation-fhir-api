@@ -20,6 +20,13 @@ MATCH = 'match'
 INCLUDE = 'include'
 
 
+def create_resource(item, model, mode) -> dict:
+    resource = {}
+    resource['fullUrl'] = item.get('fullUrl')
+    resource['resource'] = model(**item.get('data'))
+    resource['search'] = {'mode': mode}
+    return resource
+
 class ImmunisationCRUDMethods:
     @staticmethod
     def create_immunization_record(data_input: DataInput) -> bool:
@@ -37,6 +44,27 @@ class ImmunisationCRUDMethods:
         return status
 
     @staticmethod
+    def query_index(nhsNumber: str, index_name: str, key: str, value: str) -> BatchImmunizationRead:
+        ''' Query index for nhsNumber '''
+        table = dynamodb.database.Table(IMMUNIZATION_TABLE)
+        response = table.query(
+            IndexName=index_name,
+            KeyConditionExpression=Key(key).eq(value),
+            FilterExpression=Attr('nhsNumber').eq(nhsNumber)
+        )
+        batch = {}
+        batch['entry'] = []
+        batch['total'] = len(response.get('Items'))
+        batch['type'] = 'searchset'
+        for i in response.get('Items'):
+            resource = create_resource(i, model=Immunization, mode=MATCH)
+            batch['entry'].append(Resource(**resource))
+
+        batch_model = BatchImmunizationRead(**batch)
+
+        return batch_model
+
+    @staticmethod
     def read_immunization_record(
         nhs_number: str,
         full_url: Optional[str],
@@ -45,12 +73,6 @@ class ImmunisationCRUDMethods:
         include_record: Optional[str] = None
     ) -> BatchImmunizationRead:
         ''' Read DynamoDB table for immunization records '''
-        def create_resource(item, model, mode) -> dict:
-            resource = {}
-            resource['fullUrl'] = item.get('fullUrl')
-            resource['resource'] = model(**item.get('data'))
-            resource['search'] = {'mode': mode}
-            return resource
 
         if not include_record:
             filter_expression = Attr("entityType").eq('immunization')

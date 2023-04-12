@@ -44,7 +44,7 @@ def generate_coding_list() -> dict[str: list]:
     }
 
 
-def generate_reference(ref_type: str, display: bool = False, id=uuid4) -> dict:
+def generate_reference(ref_type: str, display: bool = False, id=uuid4()) -> dict:
     '''
     Generate Reference Dictionary
 
@@ -255,6 +255,7 @@ def generate_immunization_records(nhs_number, patient_id=None) -> dict:
     record_dict['entityType'] = 'immunization'
     record_dict['data'] = generate_immunization_data(patient_id=patient_id)
     record_dict['dateModified'] = datetime.now().isoformat()
+    record_dict['diseaseType'] = choice(['COVID-19', 'Influenza', 'Pneumococcal'])
     return record_dict
 
 
