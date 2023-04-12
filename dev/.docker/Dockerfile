@@ -10,4 +10,4 @@ RUN poetry install
 
 ADD fhir_api ./fhir_api
 
-CMD uvicorn fhir_api:app --reload --host $SERVER_HOST --port $SERVER_PORT --log-level=warning
+CMD ["__init__.handler"]

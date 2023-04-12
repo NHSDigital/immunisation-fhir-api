@@ -3,6 +3,7 @@ APP for fastapi
 '''
 import os
 from fastapi import FastAPI
+from mangum import Mangum
 from fhir_api.routes import (
     immunisation,
     root,
@@ -27,3 +28,5 @@ app.include_router(root.router)
 app.include_router(health.router)
 app.include_router(immunisation.router)
 app.include_router(snomed.router)
+
+hander = Mangum(app)
