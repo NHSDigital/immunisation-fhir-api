@@ -1,8 +1,7 @@
 ''' Immunization Data Model based on Fhir Revision 4 spec '''
 
-from typing import Optional, Literal, Any
+from typing import Optional, Literal
 from pydantic import (
-    BaseModel,
     PositiveInt
 )
 import datetime
@@ -10,6 +9,7 @@ import datetime
 import fhir_api.models.fhir_r4.code_types as code_types
 from fhir_api.models.fhir_r4.fhir_datatype_fields import FhirR4Fields
 from fhir_api.models.fhir_r4.common import (
+    FhirBaseModel,
     Identifier,
     CodeableConceptType,
     Reference,
@@ -17,12 +17,12 @@ from fhir_api.models.fhir_r4.common import (
 )
 
 
-class Performer(BaseModel):
+class Performer(FhirBaseModel):
     function: Optional[CodeableConceptType]
     actor: Reference
 
 
-class ProtocolApplied(BaseModel):
+class ProtocolApplied(FhirBaseModel):
     series: Optional[str] = FhirR4Fields.string
     authority: Optional[Reference]
     targetDisease: Optional[list[CodeableConceptType]]
@@ -32,20 +32,20 @@ class ProtocolApplied(BaseModel):
     seriesDosesString: Optional[str] = FhirR4Fields.string
 
 
-class Author(BaseModel):
+class Author(FhirBaseModel):
     ''' Author Model '''
     authorRefernce: Optional[Reference]
     authorString: Optional[str] = FhirR4Fields.string
 
 
-class Annotation(BaseModel):
+class Annotation(FhirBaseModel):
     ''' Annotation Model '''
     author: Optional[Author]
     time: Optional[datetime.datetime] = FhirR4Fields.dateTime
     text: Optional[str] = FhirR4Fields.markdown
 
 
-class Immunization(BaseModel):
+class Immunization(FhirBaseModel):
     ''' Immunization Record for Reading '''
     resourceType: Literal["Immunization"]
     identifier: Optional[list[Identifier]]
@@ -74,10 +74,3 @@ class Immunization(BaseModel):
     subpotentReason: Optional[list[CodeableConceptType]]
     education: Optional[list[dict]]  # TODO: Education Model to be created
     procotolApplied: Optional[list[ProtocolApplied]]
-
-    def dict(self, *args, **kwargs) -> dict[str, Any]:
-        """
-            Override the default dict method to exclude None values in the response
-        """
-        kwargs.pop('exclude_none', None)
-        return super().dict(*args, exclude_none=True, **kwargs)

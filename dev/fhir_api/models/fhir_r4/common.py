@@ -2,6 +2,7 @@
 
 from typing import (
     Optional,
+    Any
 )
 
 from pydantic import (
@@ -15,7 +16,18 @@ import fhir_api.models.fhir_r4.code_types as code_types
 from fhir_api.models.fhir_r4.fhir_datatype_fields import FhirR4Fields
 
 
-class CodingType(BaseModel):
+class FhirBaseModel(BaseModel):
+    ''' Base Model for FHIR Models '''
+    def dict(self, *args, **kwargs) -> dict[str, Any]:
+        """
+            Override the default dict method to exclude None values in the response
+        """
+        kwargs.pop('exclude_none', None)
+        return super().dict(*args, exclude_none=True, **kwargs)
+
+
+
+class CodingType(FhirBaseModel):
     ''' Code Data Model '''
     system: Optional[str] = FhirR4Fields.string
     version: Optional[str] = FhirR4Fields.string
@@ -24,19 +36,19 @@ class CodingType(BaseModel):
     userSelected: Optional[bool]
 
 
-class CodeableConceptType(BaseModel):
+class CodeableConceptType(FhirBaseModel):
     ''' Codeable Concept Data Model '''
     coding: Optional[list[CodingType]]
     text: Optional[str] = FhirR4Fields.string
 
 
-class Period(BaseModel):
+class Period(FhirBaseModel):
     '''  A time period defined by a start and end date/time. '''
     start: datetime = FhirR4Fields.dateTime
     end: Optional[datetime] = FhirR4Fields.dateTime
 
 
-class HumanName(BaseModel):
+class HumanName(FhirBaseModel):
     '''
     A name of a human with text, parts and usage information.
     '''
@@ -49,7 +61,7 @@ class HumanName(BaseModel):
     period: Optional[Period]
 
 
-class Quantity(BaseModel):
+class Quantity(FhirBaseModel):
     ''' Quantity Type '''
     value: Optional[float] = FhirR4Fields.decimal
     comparator: Optional[str] = FhirR4Fields.code
@@ -58,7 +70,7 @@ class Quantity(BaseModel):
     code: Optional[str] = FhirR4Fields.code
 
 
-class ContactPoint(BaseModel):
+class ContactPoint(FhirBaseModel):
     '''
     Details for all kinds of technology-mediated contact points
     for a person or organization, including telephone, email, etc.
@@ -70,7 +82,7 @@ class ContactPoint(BaseModel):
     period: Optional[Period]
 
 
-class Address(BaseModel):
+class Address(FhirBaseModel):
     '''
     An address expressed using postal conventions (as opposed to GPS or other location definition formats).
     This data type may be used to convey addresses for use in delivering mail as well as for visiting
@@ -89,7 +101,7 @@ class Address(BaseModel):
     period: Optional[Period]
 
 
-class Reference(BaseModel):
+class Reference(FhirBaseModel):
     ''' Reference data Model '''
     reference: Optional[str] = FhirR4Fields.string
     type: Optional[str] = FhirR4Fields.string
@@ -97,13 +109,13 @@ class Reference(BaseModel):
     display: Optional[str] = FhirR4Fields.string
 
 
-class CodeableReference(BaseModel):
+class CodeableReference(FhirBaseModel):
     ''' Codeable Reference '''
     concept: Optional[CodeableConceptType]
     reference: Optional[Reference]
 
 
-class Identifier(BaseModel):
+class Identifier(FhirBaseModel):
     ''' Identifier Data Model '''
     use_type: Optional[str] = FhirR4Fields.string
     type: Optional[CodeableConceptType]
@@ -113,7 +125,7 @@ class Identifier(BaseModel):
     assigner: Optional[Reference]
 
 
-class Attachment(BaseModel):
+class Attachment(FhirBaseModel):
     ''' Attachment Model '''
     contentType: Optional[str] = FhirR4Fields.string
     language: Optional[str] = FhirR4Fields.string

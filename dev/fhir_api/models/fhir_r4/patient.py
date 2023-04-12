@@ -1,14 +1,12 @@
 ''' Patient Data Model based on Fhir Revision 4 spec '''
 
 from datetime import datetime
-from typing import Optional, Literal, Any
-from pydantic import (
-    BaseModel,
-)
+from typing import Optional, Literal
 
 import fhir_api.models.fhir_r4.code_types as code_types
 from fhir_api.models.fhir_r4.fhir_datatype_fields import FhirR4Fields
 from fhir_api.models.fhir_r4.common import (
+    FhirBaseModel,
     Identifier,
     HumanName,
     ContactPoint,
@@ -20,7 +18,7 @@ from fhir_api.models.fhir_r4.common import (
 )
 
 
-class Contact(BaseModel):
+class Contact(FhirBaseModel):
     ''' Contact Model '''
     relationship: Optional[list[CodeableConceptType]]
     name: Optional[HumanName]
@@ -31,19 +29,19 @@ class Contact(BaseModel):
     period: Optional[Period]
 
 
-class Communication(BaseModel):
+class Communication(FhirBaseModel):
     ''' Communication Model '''
     language: CodeableConceptType
     preferred: Optional[bool] = FhirR4Fields.boolean
 
 
-class Link(BaseModel):
+class Link(FhirBaseModel):
     ''' Link Model '''
     other: Reference
     type: code_types.link_code
 
 
-class Patient(BaseModel):
+class Patient(FhirBaseModel):
     ''' Patient Base Model '''
     resourceType: Literal["Patient"]
     identifier: Optional[list[Identifier]]
@@ -64,10 +62,3 @@ class Patient(BaseModel):
     generalPractitioner: Optional[list[Reference]]
     managingOrganization: Optional[Reference]
     link: Optional[list[Link]]
-
-    def dict(self, *args, **kwargs) -> dict[str, Any]:
-        """
-            Override the default dict method to exclude None values in the response
-        """
-        kwargs.pop('exclude_none', None)
-        return super().dict(*args, exclude_none=True, **kwargs)
