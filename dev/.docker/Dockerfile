@@ -1,4 +1,5 @@
-FROM python:3.9-slim
+FROM public.ecr.aws/lambda/python:3.9
+
 
 RUN pip install poetry
 
@@ -10,4 +11,4 @@ RUN poetry install
 
 ADD fhir_api ./fhir_api
 
-CMD ["__init__.handler"]
+CMD ["fhir_api.app.handler"]
