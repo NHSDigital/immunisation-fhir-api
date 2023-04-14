@@ -1,5 +1,4 @@
-FROM public.ecr.aws/lambda/python:3.9
-
+FROM python:3.9-slim
 
 RUN pip install poetry
 
@@ -11,4 +10,4 @@ RUN poetry install
 
 ADD fhir_api ./fhir_api
 
-CMD ["fhir_api.app.handler"]
+CMD uvicorn fhir_api.app:app --reload --host $SERVER_HOST --port $SERVER_PORT --log-level=warning

@@ -20,10 +20,11 @@ class DynamoDB:
     ''' Class to interact with DynamoDB '''
 
     def __init__(self):
-        self.database = boto3.resource(
-            DYNAMODB,
-            endpoint_url=DynamoDBSettings.uri,
-            aws_access_key_id=DynamoDBSettings.access_key,
-            aws_secret_access_key=DynamoDBSettings.secret_key,
-            region_name=DynamoDBSettings.region
-        )
+        self.database = boto3.resource(DYNAMODB, region_name="eu-west-2")
+        #self.database = boto3.resource(
+        #    DYNAMODB,
+        #    endpoint_url=DynamoDBSettings.uri,
+        #    aws_access_key_id=DynamoDBSettings.access_key,
+        #    aws_secret_access_key=DynamoDBSettings.secret_key,
+        #    region_name=DynamoDBSettings.region
+        #)

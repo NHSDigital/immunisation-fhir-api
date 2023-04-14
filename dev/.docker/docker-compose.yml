@@ -28,4 +28,4 @@ services:
       AWS_SECRET_KEY: test
       AWS_REGION_NAME: us-west-2
 
-    command: uvicorn fhir_api:app --reload --host 0.0.0.0 --port 8888 --log-level=info
+    command: uvicorn fhir_api.app:app --reload --host 0.0.0.0 --port 8888 --log-level=info
