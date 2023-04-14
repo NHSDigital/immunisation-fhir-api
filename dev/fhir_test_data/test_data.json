@@ -1,0 +1,105 @@
+{
+    "data": {
+        "resourceType": "Immunization",
+        "extension": [
+            {
+                "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure",
+                "valueCodeableConcept": {
+                    "coding": [
+                        {
+                            "system": "http://snomed.info/sct",
+                            "code": "1324681000000101",
+                            "display": "Administration of first dose of severe acute respiratory syndrome coronavirus 2 vaccine (procedure)"
+                        }
+                    ]
+                }
+            }
+        ],
+        "identifier": [
+            {
+                "use": "secondary",
+                "system": "https://supplierABC/identifiers/vacc",
+                "value": "1324761000000100"
+            }
+        ],
+        "status": "complete",
+        "vaccineCode": {
+            "coding": [
+                {
+                    "system": "http://snomed.info/sct",
+                    "code": "39114911000001105",
+                    "display": "COVID-19 Vaccine AstraZeneca (ChAdOx1 S [recombinant]) 5x10,000,000,000 viral particles/0.5ml dose solution for injection multidose vials (AstraZeneca UK Ltd) (product)"
+                }
+            ]
+        },
+        "patient": {
+            "reference": "urn:uuid:124fcb63-669c-4a3c-af2b-caf55de167ec",
+            "type": "Patient",
+            "identifier": {
+                "system": "https://fhir.nhs.uk/Id/nhs-number",
+                "value": "9000000009"
+            }
+        },
+        "occurrenceDateTime": "2020-12-10T13:00:08.476+00:00",
+        "recorded": "2020-12-10",
+        "primarySource": true,
+        "manufacturer": {
+            "display": "AstraZeneca Ltd"
+        },
+        "lotNumber": "R04X",
+        "expirationDate": "2021-04-29",
+        "site": {
+            "coding": [
+                {
+                    "system": "http://snomed.info/sct",
+                    "code": "368208006",
+                    "display": "Left upper arm structure (body structure)"
+                }
+            ]
+        },
+        "route": {
+            "coding": [
+                {
+                    "system": "http://snomed.info/sct",
+                    "code": "78421000",
+                    "display": "Intramuscular route (qualifier value)"
+                }
+            ]
+        },
+        "doseQuantity": {
+            "system": "http://snomed.info/sct",
+            "value": 1,
+            "unit": "pre-filled disposable injection",
+            "code": "3318611000001103"
+        },
+        "reportOrigin": {},
+        "performer": [
+            {
+                "actor": {
+                    "type": "Organization",
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                        "value": "RX809"
+                    },
+                    "display": "TEST-SITE"
+                }
+            }
+        ],
+        "reasonCode": [
+            {
+                "coding": [
+                    {
+                        "system": "http://snomed.info/sct",
+                        "code": "443684005",
+                        "display": "Disease outbreak (event)"
+                    }
+                ]
+            }
+        ],
+        "protocolApplied": [
+            {
+                "doseNumberPositiveInt": 1
+            }
+        ]
+    }
+}
