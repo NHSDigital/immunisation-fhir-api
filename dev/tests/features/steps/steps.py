@@ -1,6 +1,7 @@
 from behave import given, when, then
 from libs.api_ops import api_ops as api
 from libs.wrapper import *
+import os
 
 @given('I am testing the {env} environment')
 def step_impl(context, env: str):
@@ -33,3 +34,8 @@ def step_impl(context, response_text: str):
     actual = context.response_text
     assert expected == actual, f'Response text does not match.  Expected {expected}, but actual {actual}'
 
+@then('The response json should match {response_file}')
+def step_impl(context, response_file: str):
+    expected = get_expected_result_file(result_type=response_file)
+    actual = context.response_text
+    assert expected == actual, f'Response text does not match.  Expected {expected}, but actual {actual}'
