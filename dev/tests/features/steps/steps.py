@@ -13,10 +13,11 @@ def step_impl(context, type: str):
     context.response_code=resp.status_code
     context.response_text=resp.text
 
-@when('I invoke the {type} endpoint with the parameters {nhs_number} and {to_date}')
-def step_impl(context, type: str, nhs_number: str, to_date: str):
+@when('I {request_type} the {type} endpoint with the parameters {params}')
+def step_impl(context, request_type: str, type: str, params: str):
     endpoint = f'{context.base_url}{get_endpoint(type=type)}'
-    resp = api.api_get(endpoint=endpoint, header=None, param=None)
+    params=params.replace(' ','&')
+    resp = api.api_get(endpoint=endpoint, header=None, param=params)
     context.response_code=resp.status_code
     context.response_text=resp.text
 

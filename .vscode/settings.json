@@ -1,5 +1,6 @@
 {
     "behave-vsc.featuresPath": "dev/tests/features",
+    "behave-vsc.justMyCode": true,
     "python.testing.pytestArgs": [
         "tests"
     ],
