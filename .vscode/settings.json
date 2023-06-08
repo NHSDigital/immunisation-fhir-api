@@ -1,0 +1,8 @@
+{
+    "behave-vsc.featuresPath": "dev/tests/features",
+    "python.testing.pytestArgs": [
+        "tests"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true
+}
