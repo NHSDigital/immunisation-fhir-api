@@ -19,5 +19,5 @@ Feature: SmokeTests
 		And The response json should match <response_file>
 		Examples:
 			| nhsNumber | to_date    | status_code | response_file                   |
-			| 675476587 | 9999-01-01 | 200         | immunization_invalid_nhs_number |
-			| 675476587 | 9999-01-01 | 200         | immunization_invalid_nhs_number |
+			| 67547658  | 9999-01-01 | 200         | immunization_invalid_nhs_number |
+			| 23838008  | 9999-01-01 | 200         | immunization_valid_nhs_number   |

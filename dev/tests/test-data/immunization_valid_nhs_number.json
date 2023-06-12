@@ -1,0 +1,326 @@
+{
+    "resourceType": "Bundle",
+    "type": "searchset",
+    "total": 3,
+    "entry": [
+      {
+        "fullUrl": "urn:uuid:120f0d88-39df-402d-b9e2-5e74107f14c9",
+        "resource": {
+          "resourceType": "Immunization",
+          "identifier": [
+            {
+              "system": "https://supplierABC/identifiers/vacc",
+              "value": "4669220"
+            },
+            {
+              "system": "https://supplierABC/identifiers/vacc",
+              "value": "6273846"
+            }
+          ],
+          "status": "not-done",
+          "vaccineCode": {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "7685158",
+                "display": "how united searches confusion classified anne neural gem providence gold duties replication govt executed locations"
+              },
+              {
+                "system": "http://snomed.info/sct",
+                "code": "4914947",
+                "display": "bernard hostel profits theatre private nj phpbb syntax fbi compatible winner renaissance count danny show"
+              }
+            ]
+          },
+          "patient": {
+            "reference": "urn:uuid:urn:uuid:7fc6e0b6-816d-4231-a719-49b88a1d776b",
+            "type": "Patient",
+            "identifier": {
+              "system": "https://supplierABC/identifiers/vacc",
+              "value": "5540279"
+            }
+          },
+          "occurrenceDateTime": "2023-01-22T01:27:39.677201+00:00",
+          "recorded": "2023-02-18",
+          "primarySource": true,
+          "reportOrigin": {},
+          "manufacturer": {
+            "reference": "urn:uuid:394b361e-7e86-4a6b-b65c-de7722876a5e",
+            "type": "Manufacturer",
+            "identifier": {
+              "system": "https://supplierABC/identifiers/vacc",
+              "value": "7325867"
+            }
+          },
+          "lotNumber": "MTAB",
+          "expirationDate": "2022-06-13",
+          "site": {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "7946987",
+                "display": "needed mls forest site mass along ks marking invoice kernel floppy steal earnings ap dublin"
+              },
+              {
+                "system": "http://snomed.info/sct",
+                "code": "8419713",
+                "display": "citations recipient extreme tasks app ez circus heather diego person events women family thought perform"
+              }
+            ]
+          },
+          "route": {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "5633189",
+                "display": "convert meanwhile bid hwy unexpected invitations feeding questions motels relatives idol msn ob obtained dick"
+              },
+              {
+                "system": "http://snomed.info/sct",
+                "code": "9714509",
+                "display": "returned freight tier bacon jumping vs professor adware semi choir toe actually identifying glow stick"
+              }
+            ]
+          },
+          "doseQuantity": {
+            "value": 31,
+            "unit": "app faces finances serve trips brings citizenship",
+            "system": "http://snomed.info/sct",
+            "code": "2499483502453460"
+          },
+          "performer": [
+            {
+              "actor": {
+                "reference": "urn:uuid:394b361e-7e86-4a6b-b65c-de7722876a5e",
+                "type": "Organization",
+                "identifier": {
+                  "system": "https://supplierABC/identifiers/vacc",
+                  "value": "1676864"
+                },
+                "display": "doctrine-introducing"
+              }
+            }
+          ],
+          "reasonCode": [
+            {
+              "coding": [
+                {
+                  "system": "http://snomed.info/sct",
+                  "code": "3754083",
+                  "display": "examining equation merry rated seen mechanical salvador occasionally appliance bet ima zone flashing escape include"
+                }
+              ]
+            }
+          ]
+        },
+        "search": {
+          "mode": "match"
+        }
+      },
+      {
+        "fullUrl": "urn:uuid:425af226-d390-4a37-a86b-01ab464f46f6",
+        "resource": {
+          "resourceType": "Immunization",
+          "identifier": [
+            {
+              "system": "https://supplierABC/identifiers/vacc",
+              "value": "9604549"
+            }
+          ],
+          "status": "completed",
+          "vaccineCode": {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "6020037",
+                "display": "podcasts griffin attractive bios enzyme earlier ensures robert location funeral lincoln doors relief cambridge gotta"
+              }
+            ]
+          },
+          "patient": {
+            "reference": "urn:uuid:urn:uuid:2f50e6d0-789f-4f87-b44e-a68b5455c08e",
+            "type": "Patient",
+            "identifier": {
+              "system": "https://supplierABC/identifiers/vacc",
+              "value": "9827499"
+            }
+          },
+          "occurrenceDateTime": "2021-01-22T19:07:31.677548+00:00",
+          "recorded": "2021-08-28",
+          "primarySource": false,
+          "reportOrigin": {},
+          "manufacturer": {
+            "reference": "urn:uuid:394b361e-7e86-4a6b-b65c-de7722876a5e",
+            "type": "Manufacturer",
+            "identifier": {
+              "system": "https://supplierABC/identifiers/vacc",
+              "value": "6121455"
+            }
+          },
+          "lotNumber": "HRTJ",
+          "expirationDate": "2022-09-20",
+          "site": {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "2128392",
+                "display": "erp earliest bestsellers magazine basis centres lenders pokemon person parliament cove mines reviewing instructors importance"
+              }
+            ]
+          },
+          "route": {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "6502160",
+                "display": "himself models installed directed arizona tremendous beer wolf legs shark rights reason songs love received"
+              },
+              {
+                "system": "http://snomed.info/sct",
+                "code": "7842100",
+                "display": "characters pleasure increasingly premier released nickname signatures anywhere bow bigger avenue concentration life anger korea"
+              }
+            ]
+          },
+          "doseQuantity": {
+            "value": 58,
+            "unit": "big displays bottom dee suppose temporarily organizations",
+            "system": "http://snomed.info/sct",
+            "code": "8433974163813435"
+          },
+          "performer": [
+            {
+              "actor": {
+                "reference": "urn:uuid:394b361e-7e86-4a6b-b65c-de7722876a5e",
+                "type": "Organization",
+                "identifier": {
+                  "system": "https://supplierABC/identifiers/vacc",
+                  "value": "5029404"
+                },
+                "display": "mounted-microphone"
+              }
+            }
+          ],
+          "reasonCode": [
+            {
+              "coding": [
+                {
+                  "system": "http://snomed.info/sct",
+                  "code": "9172466",
+                  "display": "saving pj mr kidney sand census shock disaster single madonna nano arrival solved astrology senegal"
+                }
+              ]
+            }
+          ]
+        },
+        "search": {
+          "mode": "match"
+        }
+      },
+      {
+        "fullUrl": "urn:uuid:5ae8e817-4b3d-4693-bf5d-18204d910c24",
+        "resource": {
+          "resourceType": "Immunization",
+          "identifier": [
+            {
+              "system": "https://supplierABC/identifiers/vacc",
+              "value": "6775854"
+            }
+          ],
+          "status": "not-done",
+          "vaccineCode": {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "5437686",
+                "display": "understand criteria preferred investments imaging township driving casey tenant taiwan purchasing leaf need shoe inspector"
+              },
+              {
+                "system": "http://snomed.info/sct",
+                "code": "4485809",
+                "display": "introduces jean db fellowship afford true benz roger chick bd biodiversity pain dp achieved moore"
+              }
+            ]
+          },
+          "patient": {
+            "reference": "urn:uuid:urn:uuid:619aad23-2251-44f2-8a00-1c85daad873b",
+            "type": "Patient",
+            "identifier": {
+              "system": "https://supplierABC/identifiers/vacc",
+              "value": "7648121"
+            }
+          },
+          "occurrenceDateTime": "2022-08-12T18:57:14.677833+00:00",
+          "recorded": "2021-11-26",
+          "primarySource": false,
+          "reportOrigin": {},
+          "manufacturer": {
+            "reference": "urn:uuid:394b361e-7e86-4a6b-b65c-de7722876a5e",
+            "type": "Manufacturer",
+            "identifier": {
+              "system": "https://supplierABC/identifiers/vacc",
+              "value": "4571190"
+            }
+          },
+          "lotNumber": "UDEX",
+          "expirationDate": "2022-12-24",
+          "site": {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "5359049",
+                "display": "create sega newer hr rocket dept younger scholar instruments railway connecting photo hartford dg g"
+              },
+              {
+                "system": "http://snomed.info/sct",
+                "code": "6059680",
+                "display": "organizing pro xanax disposition gore admitted monitored accountability wiring upgrade packing improvements split pollution professionals"
+              }
+            ]
+          },
+          "route": {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "6337479",
+                "display": "achieved scientists brussels carrying catering affiliated sleeve boutique stanford scanners erp chester hopefully lbs chest"
+              }
+            ]
+          },
+          "doseQuantity": {
+            "value": 7,
+            "unit": "sb uv obj deutschland vulnerable disclose watch",
+            "system": "http://snomed.info/sct",
+            "code": "2683855301810395"
+          },
+          "performer": [
+            {
+              "actor": {
+                "reference": "urn:uuid:394b361e-7e86-4a6b-b65c-de7722876a5e",
+                "type": "Organization",
+                "identifier": {
+                  "system": "https://supplierABC/identifiers/vacc",
+                  "value": "6043539"
+                },
+                "display": "ha-bondage"
+              }
+            }
+          ],
+          "reasonCode": [
+            {
+              "coding": [
+                {
+                  "system": "http://snomed.info/sct",
+                  "code": "4115241",
+                  "display": "rounds robin yellow destinations jeff formed develop parameters stays holmes opponents animated protest verbal toy"
+                }
+              ]
+            }
+          ]
+        },
+        "search": {
+          "mode": "match"
+        }
+      }
+    ]
+  }
