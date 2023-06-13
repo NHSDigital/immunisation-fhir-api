@@ -13,7 +13,7 @@ Feature: SmokeTests
 		Then The response status code should be 200
 		And The response text should be empty
 
-	Scenario Outline: Immunization Health Check2
+	Scenario Outline: Get Immunization Record
 		When I get the immunisation endpoint with the parameters nhsNumber=<nhsNumber> to_date=<to_date>
 		Then The response status code should be <status_code>
 		And The response json should match <response_file>
