@@ -9,12 +9,18 @@ class endpoints:
     ROOT='/'
     HEALTH='/health'
     IMMUNISATION='/immunisation'
+    IMMUNISATION_SEARCH='/immunisation/search'
+    SNOMED='/snomed'
 
 
 endpoint_dict = {
     'root': endpoints.ROOT,
     'health': endpoints.HEALTH,
-    'immunisation': endpoints.IMMUNISATION
+    'immunisation': endpoints.IMMUNISATION,
+    'immunization': endpoints.IMMUNISATION,
+    'immunisation search': endpoints.IMMUNISATION_SEARCH,
+    'immunization search': endpoints.IMMUNISATION_SEARCH,
+    'snomed': endpoints.SNOMED,
 }
 
 def get_endpoint(type: str = None) -> str:
@@ -25,8 +31,3 @@ def get_expected_result_file(result_type: str) -> json:
     with open(os.path.join(file_path), 'r') as text_file:
         text_data = text_file.read()
     return text_data
-
-def compare_json(expected: json, actual: json) -> bool:
-    expected = json.dumps(expected, sort_keys=True)
-    actual = json.dumps(actual, sort_keys=True)
-    return expected==actual
