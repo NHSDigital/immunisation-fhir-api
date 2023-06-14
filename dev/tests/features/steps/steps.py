@@ -1,7 +1,7 @@
 from behave import given, when, then
-from libs.api_ops import api_ops as api
-from libs.wrapper import *
-from libs.comparison_ops import *
+from helpers.api_ops import api_ops as api
+from helpers.wrapper import *
+from helpers.comparison_ops import *
 
 @given('I am testing the {env} environment')
 def step_impl(context, env: str):
