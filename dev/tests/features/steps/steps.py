@@ -17,7 +17,7 @@ def step_impl(context, type: str):
 @when('I get the {type} endpoint with the parameters {params}')
 def step_impl(context, type: str, params: str):
     endpoint = f'{context.base_url}{get_endpoint(type=type)}'
-    params=params.replace(' ','&')
+    params=params.replace(' ','&').replace('&&','&').replace(',','&')
     resp = api.api_get(endpoint=endpoint, header=None, param=params)
     context.response_code=resp.status_code
     context.response_text=resp.text

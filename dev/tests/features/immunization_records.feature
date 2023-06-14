@@ -13,9 +13,9 @@ Feature: Immunization Record Verification
             | 23838008  | 9999-01-01 | 200         | immunization_valid_nhs_number   |
 
     Scenario Outline: Search Immunization Records
-        When I get the immunisation search endpoint with the parameters nhsNumber=<nhsNumber> dt=<dt>
+        When I get the immunisation search endpoint with the parameters nhsNumber=<nhsNumber>
         Then The response status code should be <status_code>
         And The response json should match <response_file>
         Examples:
-            | nhsNumber | dt           | status_code | response_file                 |
-            | 23838008  | Pneumococcal | 200         | immunization_valid_nhs_number |
+            | nhsNumber | status_code | response_file                 |
+            | 23838008  | 200         | immunization_valid_nhs_number |
