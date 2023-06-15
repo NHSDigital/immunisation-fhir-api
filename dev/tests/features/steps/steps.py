@@ -1,5 +1,4 @@
 from behave import given, when, then
-from helpers.api_ops import api_ops as api
 from helpers.wrapper import *
 from helpers.comparison_ops import *
 
@@ -7,18 +6,18 @@ from helpers.comparison_ops import *
 def step_impl(context, env: str):
     context.base_url = base_url.LOCAL if env.lower()=='local' else base_url.REF
 
-@when('I invoke the {type} endpoint for the Immunization api')
-def step_impl(context, type: str):
-    endpoint = f'{context.base_url}{get_endpoint(type=type)}'
-    resp = api.api_get(endpoint=endpoint, header=None, param=None)
+@when('I invoke the {action} endpoint for the Immunization api')
+def step_impl(context, action: str):
+    endpoint = f'{context.base_url}{get_endpoint(action=action, type="immunization")}'
+    resp = invoke_api(action_type='get', endpoint=endpoint, headers=None, params=None, body=None)
     context.response_code=resp.status_code
     context.response_text=resp.text
 
-@when('I get the {type} endpoint with the parameters {params}')
-def step_impl(context, type: str, params: str):
-    endpoint = f'{context.base_url}{get_endpoint(type=type)}'
+@when('I {action} {type} records with the parameters {params}')
+def step_impl(context, action: str, type: str, params: str):
+    endpoint = f'{context.base_url}{get_endpoint(action=action, type=type)}'
     params=params.replace(' ','&').replace('&&','&').replace(',','&')
-    resp = api.api_get(endpoint=endpoint, header=None, param=params)
+    resp = invoke_api(action_type=action, endpoint=endpoint, headers=None, params=params, body=None)
     context.response_code=resp.status_code
     context.response_text=resp.text
 

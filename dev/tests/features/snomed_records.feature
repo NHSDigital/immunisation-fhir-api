@@ -4,7 +4,7 @@ Feature: Immunization Record Verification
         Given I am testing the local environment
 
     Scenario Outline: Get Snomed Records
-        When I get the snomed endpoint with the parameters snomed_code=<snomed_code>
+        When I retrieve snomed records with the parameters snomed_code=<snomed_code>
         Then The response status code should be <status_code>
         And The response json should match <response_file>
         Examples:
