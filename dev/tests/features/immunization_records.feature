@@ -26,3 +26,10 @@ Feature: Immunization Record Verification
         Examples:
             | nhsNumber | fullUrl                              | status_code | response_file                 |
             | 23838008  | 120f0d88-39df-402d-b9e2-5e74107f14c9 | 200         | immunization_valid_nhs_number |
+
+    Scenario Outline: Update Immunization Records
+        When I update immunization records with the parameters nhsNumber=<nhsNumber> fullUrl=<fullUrl>
+        Then The response status code should be <status_code>
+        Examples:
+            | nhsNumber | fullUrl                              | status_code | response_file                 |
+            | 23838008  | 120f0d88-39df-402d-b9e2-5e74107f14c9 | 200         | immunization_valid_nhs_number |

@@ -39,6 +39,8 @@ def invoke_api(action_type, endpoint, headers, params, body):
     match action_type.lower():
         case 'get' | 'retrieve' | 'search':
             resp = api.api_get(endpoint=endpoint, header=headers, param=params)
+        case 'update' | 'put':
+            resp = api.api_put(endpoint=endpoint, header=headers, param=params, payload=body)
         case 'delete':
             pass
             # resp = api.api_delete(endpoint=endpoint, header=headers, param=params)
