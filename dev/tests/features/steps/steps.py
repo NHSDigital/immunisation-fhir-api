@@ -6,9 +6,9 @@ from helpers.comparison_ops import *
 def step_impl(context, env: str):
     context.base_url = base_url.LOCAL if env.lower()=='local' else base_url.REF
 
-@when('I invoke the {action} endpoint for the Immunization api')
+@when('I invoke the {action} endpoint for the Immunisation api')
 def step_impl(context, action: str):
-    endpoint = f'{context.base_url}{get_endpoint(action=action, type="immunization")}'
+    endpoint = f'{context.base_url}{get_endpoint(action=action, type="immunisation")}'
     resp = invoke_api(action_type='get', endpoint=endpoint, headers=None, params=None, body=None)
     context.response_code=resp.status_code
     context.response_text=resp.text

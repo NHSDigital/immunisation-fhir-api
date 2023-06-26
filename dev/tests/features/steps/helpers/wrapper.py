@@ -17,10 +17,8 @@ endpoint_dict = {
     'root': endpoints.ROOT,
     'health': endpoints.HEALTH,
     'immunisation': endpoints.IMMUNISATION,
-    'immunization': endpoints.IMMUNISATION,
     'retrieve': endpoints.IMMUNISATION,
     'immunisation search': endpoints.IMMUNISATION_SEARCH,
-    'immunization search': endpoints.IMMUNISATION_SEARCH,
     'search': endpoints.IMMUNISATION_SEARCH,
     'snomed': endpoints.SNOMED,
 }

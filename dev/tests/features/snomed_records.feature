@@ -1,4 +1,4 @@
-Feature: Immunization Record Verification
+Feature: Immunisation Record Verification
 
     Background: I am testing the local environment
         Given I am testing the local environment
