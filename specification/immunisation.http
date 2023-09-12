@@ -1,0 +1,18 @@
+### Get immunisation event by id
+GET http://{{host}}/immunization/event/3
+
+### Create immunisation event
+POST http://{{host}}/immunization/event
+Content-Type: application/fhir+json
+
+{}
+
+### Update immunisation event
+PUT http://{{host}}/immunization/event
+Content-Type: application/fhir+json
+
+{}
+
+### Delete immunisation event
+DELETE http://{{host}}/immunization/event/3
+

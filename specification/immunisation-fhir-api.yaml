@@ -38,4 +38,54 @@ servers:
     description: Integration test environment.
   - url: 'https://api.service.nhs.uk/immunisation-fhir-api'
     description: Production environment.
-paths: {}
+paths:
+  /immunization/event/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: 
+          type: string
+    get:
+      responses:
+        200:
+          description: GET success
+          content:
+            application/fhir+json:
+              schema:
+                $ref: "fhir/fhir.schema.json"
+    delete:
+      responses:
+        200:
+          description: GET success
+          content:
+            application/fhir+json:
+              schema:
+                type: object
+    put:
+      requestBody:
+        content:
+          application/fhir+json:
+            schema:
+              type: object
+      responses:
+        200:
+          description: GET success
+          content:
+            application/fhir+json:
+              schema:
+                type: object
+  /immunization/event:
+    post:
+      requestBody: 
+        content: 
+          application/fhir+json:
+            schema: 
+              type: object
+      responses:
+        200:
+          description: GET success
+          content:
+            application/fhir+json:
+              schema:
+                type: object
