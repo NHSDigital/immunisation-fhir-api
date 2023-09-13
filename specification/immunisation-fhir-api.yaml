@@ -53,7 +53,7 @@ paths:
           content:
             application/fhir+json:
               schema:
-                $ref: "fhir/fhir.schema.json"
+                type: object
     delete:
       responses:
         200:
