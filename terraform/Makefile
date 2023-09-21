@@ -39,3 +39,9 @@ destroy: workspace
 
 output:
 	$(tf_cmd) output -raw $(name)
+
+#Make lambda zip file in /terraform/zips directory. Whenever code gets changed in lamdba_typescript directory , new zip file gets uploaded to s3. For local,you can you this make target
+lambda-zip:
+	cd ../lambda_typescript
+	chmod +x ./deploy.sh
+	./deploy.sh

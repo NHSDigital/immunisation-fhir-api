@@ -34,9 +34,14 @@ extends:
     service_base_path: ${{ variables.service_base_path }} 
     apigee_deployments:
       - environment: internal-dev
+        jinja_templates:
+          DOMAIN_ENDPOINT: https://pr-${{ variables.pr_number }}.imms.dev.api.platform.nhs.uk
         post_deploy:
           - template: ./templates/post-deploy.yml
       - environment: internal-dev-sandbox
         proxy_path: sandbox
+        jinja_templates:
+          DOMAIN_ENDPOINT: just-dummy-value-for-successful-build
         post_deploy:
           - template: ./templates/post-deploy.yml
+

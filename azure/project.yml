@@ -6,3 +6,6 @@ variables:
     value: ifa
   - name: service_base_path
     value: immunisation-fhir-api
+  - name: pr_number
+    value: ${{ split(variables['Build.SourceBranch'], '/')[2] }}
+    

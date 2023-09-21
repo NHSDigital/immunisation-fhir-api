@@ -20,20 +20,8 @@
       <Condition>oauthV2.OauthV2.VerifyAccessToken.failed</Condition>
     </FaultRule>
   </FaultRules>
-  <!--
-    To point to a named target server as this is how it SHOULD be implemented:
-    For example:
-    <HTTPTargetConnection>
-      <SSLInfo>
-        <Enabled>true</Enabled>
-      </SSLInfo>
-      <LoadBalancer>
-        <Server name="immunisation-fhir-api" />
-      </LoadBalancer>
-    </HTTPTargetConnection>
-  -->
   <HTTPTargetConnection>
-    <URL>http://mocktarget.apigee.net</URL>
+    <URL>{{ DOMAIN_ENDPOINT }}</URL>
     <Properties>
       <Property name="supports.http10">true</Property>
       <Property name="request.retain.headers">User-Agent,Referer,Accept-Language</Property>

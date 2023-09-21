@@ -2,6 +2,7 @@ SHELL=/bin/bash -euo pipefail
 
 #Installs dependencies using poetry.
 install-python:
+	poetry lock --no-update
 	poetry install
 
 #Installs dependencies using npm.
@@ -17,6 +18,7 @@ install: install-node install-python .git/hooks/pre-commit
 
 #Run the npm linting script (specified in package.json). Used to check the syntax and formatting of files.
 lint:
+	npm run lint
 	find . -name '*.py' -not -path '**/.venv/*' | xargs poetry run flake8
 
 #Removes build/ + dist/ directories
@@ -36,7 +38,7 @@ build-proxy:
 	scripts/build_proxy.sh
 
 #Files to loop over in release
-_dist_include="pytest.ini poetry.lock poetry.toml pyproject.toml Makefile build/. tests specification sandbox terraform"
+_dist_include="pytest.ini poetry.lock poetry.toml pyproject.toml Makefile build/. tests specification sandbox terraform lambda_typescript scripts"
 
 #Create /dist/ sub-directory and copy files into directory
 release: clean publish build-proxy

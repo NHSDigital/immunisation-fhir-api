@@ -16,6 +16,8 @@ __pycache__/
 .venv/
 .env
 smoketest-report.xml
+lambda_typescript/**/*.js
+terraform/zips
 .dir-locals.el
 *.pyc
 .python-version
