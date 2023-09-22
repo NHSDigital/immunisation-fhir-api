@@ -16,7 +16,7 @@
 <!--        <Path>/_ping</Path>-->
 <!--    </HTTPTargetConnection>-->
     <HTTPTargetConnection>
-        <URL>http://pr-24.imms.dev.api.platform.nhs.uk/_status</URL>
+        <URL>http://pr-28.imms.dev.api.platform.nhs.uk/_status</URL>
         <Properties>
             <Property name="supports.http10">true</Property>
             <Property name="request.retain.headers">User-Agent,Referer,Accept-Language</Property>
