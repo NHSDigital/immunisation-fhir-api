@@ -10,7 +10,7 @@ import pytest
 import requests
 from assertpy import assert_that
 
-
+@pytest.mark.debug
 def lambda_crud(url, headers):
     timestamp = int(time.time())
     random.seed(timestamp)
