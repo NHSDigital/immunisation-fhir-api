@@ -7,7 +7,7 @@
     </Request>
     <Response>healthcheckResponse</Response>
     <HTTPTargetConnection>
-        {{ HOSTED_TARGET_HEALTHCHECK }}
+        {{ HOSTED_TARGET_CONNECTION }}
     </HTTPTargetConnection>
     <Timeout>20000</Timeout>
 </ServiceCallout>
