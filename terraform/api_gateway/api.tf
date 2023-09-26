@@ -62,6 +62,7 @@ resource "aws_lambda_permission" "api_gw" {
 data "aws_lambda_function" "imms_lambda" {
   function_name = var.lambda_name
 }
+
 resource "aws_apigatewayv2_integration" "route_integration" {
   api_id             = aws_apigatewayv2_api.service_api.id
   integration_uri    = data.aws_lambda_function.imms_lambda.invoke_arn
@@ -85,6 +86,10 @@ resource "aws_route53_record" "api_domain" {
     name                   = aws_apigatewayv2_domain_name.service_api_domain_name.domain_name_configuration[0].target_domain_name
     zone_id                = aws_apigatewayv2_domain_name.service_api_domain_name.domain_name_configuration[0].hosted_zone_id
   }
+}
+
+data "aws_lambda_function" "status_lambda" {
+  function_name = var.lambda_name
 }
 
 resource "aws_apigatewayv2_integration" "status_integration" {
