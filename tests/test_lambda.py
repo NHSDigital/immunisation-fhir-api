@@ -10,7 +10,7 @@ import pytest
 import requests
 from assertpy import assert_that
 
-@pytest.mark.debug
+
 def lambda_crud(url, headers):
     timestamp = int(time.time())
     random.seed(timestamp)
@@ -61,7 +61,6 @@ def test_lambda_crud_nhs_login(nhsd_apim_proxy_url, nhsd_apim_auth_headers):
 
 
 @pytest.mark.smoketest
-@pytest.mark.debug
 @pytest.mark.nhsd_apim_authorization({"access": "application", "level": "level3"})
 def test_lambda_crud_app_restricted(nhsd_apim_proxy_url, nhsd_apim_auth_headers):
     """
