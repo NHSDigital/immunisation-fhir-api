@@ -87,6 +87,14 @@ resource "aws_route53_record" "api_domain" {
   }
 }
 
+resource "aws_apigatewayv2_integration" "status_integration" {
+  api_id             = aws_apigatewayv2_api.service_api.id
+  integration_uri    = data.aws_lambda_function.status_lambda.invoke_arn
+  integration_type   = "AWS_PROXY"
+  integration_method = "GET"
+}
+
+
 output "service_domain_name" {
   value = aws_apigatewayv2_api_mapping.api_mapping.domain_name
 }
