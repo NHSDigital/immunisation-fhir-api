@@ -96,7 +96,7 @@ resource "aws_apigatewayv2_integration" "status_integration" {
   api_id             = aws_apigatewayv2_api.service_api.id
   integration_uri    = data.aws_lambda_function.status_lambda.invoke_arn
   integration_type   = "AWS_PROXY"
-  integration_method = "GET"
+  integration_method = "POST"
 }
 
 
