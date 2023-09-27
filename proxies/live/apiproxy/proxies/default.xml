@@ -53,10 +53,20 @@
       </Step>
     </Response>
   </PostClientFlow>
+  <Request>
+      <Step>
+        <Name>AssignMessage.SetHealthcheckVar</Name>
+    </Step>
+  </Request>
   <HTTPProxyConnection>
     <BasePath>{{ SERVICE_BASE_PATH }}</BasePath>
     <VirtualHost>secure</VirtualHost>
   </HTTPProxyConnection>
+  <Request>
+      <Step>
+        <Name>LogMessage.LogHealthcheckVar</Name>
+    </Step>
+  </Request>
   <RouteRule name="NoRoute">
     <Condition>(request.verb = "OPTIONS") and (request.header.origin != null) and (request.header.Access-Control-Request-Method != null)</Condition>
   </RouteRule>

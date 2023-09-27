@@ -1,4 +1,4 @@
-<LogMessage name="LogHealthcheckVar">
+<LogMessage name="LogServiceBasePathVar">
     <DisplayName>Log ServiceBasePath Variable</DisplayName>
     <LogMessage>
         <Format>ServiceBasePath: {ServiceBasePathVar}</Format>

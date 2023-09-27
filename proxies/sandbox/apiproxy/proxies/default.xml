@@ -47,10 +47,20 @@
       </Step>
     </Response>
   </PostClientFlow>
+  <Request>
+      <Step>
+        <Name>AssignMessage.HealthcheckUrl</Name>
+    </Step>
+  </Request>
   <HTTPProxyConnection>
     <BasePath>{{ SERVICE_BASE_PATH }}</BasePath>
     <VirtualHost>secure</VirtualHost>
   </HTTPProxyConnection>
+  <Request>
+      <Step>
+        <Name>LogMessage.HealthcheckUrl</Name>
+    </Step>
+  </Request>
   <RouteRule name="NoRoutePing">
     <Condition>(proxy.pathsuffix MatchesPath "/_ping") and ((request.verb = "GET") or (request.verb = "HEAD"))</Condition>
   </RouteRule>
