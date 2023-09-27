@@ -1,6 +1,6 @@
-<LogMessage name="LogHealthcheckVar">
+<MessageLogging name="LogHealthcheckVar">
     <DisplayName>Log Healthcheck Variable</DisplayName>
-    <LogMessage>
+    <MessageLogging>
         <Format>healthcheckVar: {healthcheckVar}</Format>
-    </LogMessage>
-</LogMessage>
+    </MessageLogging>
+</MessageLogging>

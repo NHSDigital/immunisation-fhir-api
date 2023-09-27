@@ -58,7 +58,7 @@
   </HTTPProxyConnection>
   <Request>
       <Step>
-        <Name>LogMessage.HealthcheckUrl</Name>
+        <Name>MessageLogging.HealthcheckUrl</Name>
     </Step>
   </Request>
   <RouteRule name="NoRoutePing">

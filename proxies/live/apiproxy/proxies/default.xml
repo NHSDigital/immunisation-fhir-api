@@ -64,7 +64,7 @@
   </HTTPProxyConnection>
   <Request>
       <Step>
-        <Name>LogMessage.LogHealthcheckVar</Name>
+        <Name>MessageLogging.LogHealthcheckVar</Name>
     </Step>
   </Request>
   <RouteRule name="NoRoute">
