@@ -16,7 +16,7 @@
 <!--        <Path>/_ping</Path>-->
 <!--    </HTTPTargetConnection>-->
     <HTTPTargetConnection>
-        <URL>{{ SERVICE_BASE_PATH }}_status</URL>
+        <URL>{{ SERVICE_BASE_PATH }}/_status</URL>
         <Properties>
             <Property name="supports.http10">true</Property>
             <Property name="request.retain.headers">User-Agent,Referer,Accept-Language</Property>

@@ -1,6 +1,0 @@
-<MessageLogging name="LogHealthcheckVar">
-    <DisplayName>Log Healthcheck Variable</DisplayName>
-    <MessageLogging>
-        <Format>healthcheckVar: {healthcheckVar}</Format>
-    </MessageLogging>
-</MessageLogging>

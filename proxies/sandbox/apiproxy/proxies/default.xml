@@ -46,21 +46,21 @@
         <Name>FlowCallout.LogToSplunk</Name>
       </Step>
     </Response>
+    <Response>
+      <Step>
+        <Name>MessageLogging.LogHealthcheckUrl</Name>
+    </Step>
+  </Response>
   </PostClientFlow>
-  <Request>
+  <Response>
       <Step>
         <Name>AssignMessage.SetHealthcheckUrl</Name>
     </Step>
-  </Request>
+  </Response>
   <HTTPProxyConnection>
     <BasePath>{{ SERVICE_BASE_PATH }}</BasePath>
     <VirtualHost>secure</VirtualHost>
   </HTTPProxyConnection>
-  <Request>
-      <Step>
-        <Name>MessageLogging.LogHealthcheckUrl</Name>
-    </Step>
-  </Request>
   <RouteRule name="NoRoutePing">
     <Condition>(proxy.pathsuffix MatchesPath "/_ping") and ((request.verb = "GET") or (request.verb = "HEAD"))</Condition>
   </RouteRule>

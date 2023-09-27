@@ -1,6 +1,0 @@
-<MessageLogging name="LogServiceBasePathVar">
-    <DisplayName>Log ServiceBasePath Variable</DisplayName>
-    <MessageFormat>
-        <Format>ServiceBasePath: {ServiceBasePathVar}</Format>
-    </MessageFormat>
-</MessageLogging>
