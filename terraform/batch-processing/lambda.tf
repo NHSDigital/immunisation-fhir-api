@@ -16,4 +16,12 @@ resource "aws_lambda_function" "batch_processing_lambda" {
     handler          = "batch_processing.lambda_handler"
     runtime          = "python3.9"
     source_code_hash = data.archive_file.lambda_zip.output_base64sha256
+
+    environment {
+    variables = {
+      "SERVICE_DOMAIN_NAME" : var.service_domain_name
+    }
+  }
 }
+
+

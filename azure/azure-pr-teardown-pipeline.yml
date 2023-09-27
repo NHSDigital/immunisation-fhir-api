@@ -48,6 +48,6 @@ jobs:
 
           cd terraform
           make init
-          terraform workspace select $(WORKSPACE) && make init && terraform destroy -auto-approve -force && /
+          terraform workspace select $(WORKSPACE) && make init && terraform destroy -auto-approve -force -input=false && /
           terraform workspace select default && terraform workspace delete $(WORKSPACE)
         displayName: Destroy terraform PR workspace and linked resources

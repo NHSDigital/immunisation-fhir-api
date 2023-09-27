@@ -6,7 +6,7 @@ export const handler = async (event: any): Promise<any> => {
   const operation = event.httpMethod;
   const dynamoDBTableName = process.env.DYNAMODB_TABLE_NAME || 'DefaultTableName';
   
-  if (operation === 'POST') {
+  if (operation === 'POST' && event.path === '/event') {
     // Handle the POST request to create a new item
     const params = {
       TableName: dynamoDBTableName,
@@ -26,7 +26,7 @@ export const handler = async (event: any): Promise<any> => {
         body: JSON.stringify('Error creating the item.'),
       };
     }
-  } else if (operation === 'GET') {
+  } else if (operation === 'GET' && event.path === '/event') {
     // Handle the GET request to retrieve an item
     const params = {
       TableName: dynamoDBTableName,
@@ -55,7 +55,7 @@ export const handler = async (event: any): Promise<any> => {
         body: JSON.stringify('Error retrieving the item.'),
       };
     }
-  } else if (operation === 'DELETE') {
+  } else if (operation === 'DELETE' && event.path === '/event') {
     // Handle the DELETE request to delete an item
     const params = {
       TableName: dynamoDBTableName,
