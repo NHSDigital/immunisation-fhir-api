@@ -1,0 +1,10 @@
+<AssignMessage name="SetServiceBasePathVar">
+    <DisplayName>Set ServiceBasePath Variable</DisplayName>
+    <Set>
+        <Variable name="ServiceBasePathVar">
+        {{ SERVICE_BASE_PATH }}
+        </Variable>
+        <Value>Assigning ServiceBasePathVar</Value>
+    </Set>
+    <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
+</AssignMessage>
