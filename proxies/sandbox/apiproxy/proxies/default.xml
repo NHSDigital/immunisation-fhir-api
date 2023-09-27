@@ -49,7 +49,7 @@
   </PostClientFlow>
   <Request>
       <Step>
-        <Name>AssignMessage.HealthcheckUrl</Name>
+        <Name>AssignMessage.SetHealthcheckUrl</Name>
     </Step>
   </Request>
   <HTTPProxyConnection>
@@ -58,7 +58,7 @@
   </HTTPProxyConnection>
   <Request>
       <Step>
-        <Name>MessageLogging.HealthcheckUrl</Name>
+        <Name>MessageLogging.LogHealthcheckUrl</Name>
     </Step>
   </Request>
   <RouteRule name="NoRoutePing">
