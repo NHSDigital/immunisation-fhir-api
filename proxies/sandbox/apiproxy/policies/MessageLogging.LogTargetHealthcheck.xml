@@ -1,0 +1,11 @@
+<Step>
+  <Name>MessageLogging.LogTargetHealthcheck</Name>
+  <DisplayName>LogTargetHealthcheck</DisplayName>
+  <Type>MessageLogging</Type>
+  <MessageLogging>
+    <Verb>Info</Verb>
+    <Message logVariables="true">
+      <Variable>{{ HOSTED_TARGET_HEALTHCHECK }}</Variable>
+    </Message>
+  </MessageLogging>
+</Step>
