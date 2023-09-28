@@ -38,10 +38,13 @@ def test_wait_for_ping(nhsd_apim_proxy_url):
 
 @pytest.mark.smoketest
 def test_status(nhsd_apim_proxy_url, status_endpoint_auth_headers):
+    print(nhsd_apim_proxy_url, "<<<<<<<<< PROXY URL")
+    print(status_endpoint_auth_headers, "<<<<<<<< AUTH HEADERS")
     resp = requests.get(
         f"{nhsd_apim_proxy_url}/_status", headers=status_endpoint_auth_headers
-    )
+        )
     assert resp.status_code == 200
+    assert 200 == 200
     # Make some additional assertions about your status response here!
 
 

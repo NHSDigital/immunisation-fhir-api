@@ -5,6 +5,14 @@
         <Name>FlowCallout.GetEnvironmentKeyValueMapData</Name>
       </Step>
     </Request>
+    <FaultRules>
+      <FaultRule name="HandleAuthErrors">
+        <Step>
+          <Name>AssignMessage.SetAuthError</Name>
+        </Step>
+        <Condition>Condition to detect error</Condition>
+      </FaultRule>
+    </FaultRules>
   </PreFlow>
   
   <Flows>
@@ -17,6 +25,7 @@
       </Response>
       <Condition>(request.verb = "OPTIONS") and (request.header.origin != null) and (request.header.Access-Control-Request-Method != null)</Condition>
     </Flow>
+
     <Flow name="AddPayloadToPing">
       <Description/>
       <Request/>
@@ -27,6 +36,7 @@
       </Response>
       <Condition>(proxy.pathsuffix MatchesPath "/_ping") and ((request.verb = "GET") or (request.verb = "HEAD"))</Condition>
     </Flow>
+
     <Flow name="StatusEndpoint">
       <Request>
         <Step>
@@ -46,6 +56,7 @@
       </Condition>
     </Flow>
   </Flows>
+
   <PostClientFlow name="PostClientFlow">
     <Response>
       <Step>
@@ -53,25 +64,37 @@
       </Step>
     </Response>
   </PostClientFlow>
+
   <HTTPProxyConnection>
     <BasePath>{{ SERVICE_BASE_PATH }}</BasePath>
     <VirtualHost>secure</VirtualHost>
   </HTTPProxyConnection>
+
   <RouteRule name="NoRoute">
     <Condition>(request.verb = "OPTIONS") and (request.header.origin != null) and (request.header.Access-Control-Request-Method != null)</Condition>
   </RouteRule>
+
   <RouteRule name="NoRoutePing">
     <Condition>(proxy.pathsuffix MatchesPath "/_ping") and ((request.verb = "GET") or (request.verb = "HEAD"))</Condition>
   </RouteRule>
+
   <RouteRule name="NoRouteStatus">
     <Condition>(proxy.pathsuffix MatchesPath "/_status") and ((request.verb = "GET") or (request.verb = "HEAD"))</Condition>
   </RouteRule>
+
   <RouteRule name="immunisation-fhir-api-target">
     <TargetEndpoint>immunisation-fhir-api-target</TargetEndpoint>
   </RouteRule>
-  <DefaultFaultRule>
-    <Step>
-      <Name>AssignMessage.Errors.CatchAllMessage</Name>
-    </Step>
-  </DefaultFaultRule>
+
+  <FaultRules>
+    <FaultRule name="allow_raisefaults">
+      <Step>
+        <Name>AssignMessage.CatchallErrorMessage</Name>
+        <Condition>(fault.name NotEquals "RaiseFault")</Condition>
+      </Step>
+      <Condition>(fault.name Equals "RaiseFault")</Condition>
+    </FaultRule>
+
+  </FaultRules
+
 </ProxyEndpoint>

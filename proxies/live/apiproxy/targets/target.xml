@@ -1,4 +1,5 @@
 <TargetEndpoint name="immunisation-fhir-api-target">
+
   <PreFlow>
     <Request>
       <Step>
@@ -9,6 +10,7 @@
       </Step>
     </Request>
   </PreFlow>
+
   <FaultRules>
     <FaultRule name="access_token_expired">
       <Step>
@@ -20,6 +22,7 @@
       <Condition>oauthV2.OauthV2.VerifyAccessToken.failed</Condition>
     </FaultRule>
   </FaultRules>
+
   <HTTPTargetConnection>
     <URL>{{ DOMAIN_ENDPOINT }}</URL>
     <Properties>
@@ -28,4 +31,5 @@
       <Property name="retain.queryparams">apikey</Property>
     </Properties>
   </HTTPTargetConnection>
+
 </TargetEndpoint>

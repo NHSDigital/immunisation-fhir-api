@@ -57,6 +57,7 @@ def test_lambda_crud_nhs_login(nhsd_apim_proxy_url, nhsd_apim_auth_headers):
 
 
 @pytest.mark.smoketest
+@pytest.mark.debug
 @pytest.mark.nhsd_apim_authorization(
     {
         "access": "application",
@@ -66,5 +67,6 @@ def test_lambda_crud_app_restricted(nhsd_apim_proxy_url, nhsd_apim_auth_headers)
     """
     Test for the POST,GET and Delete for Lambda endpoints. Using app-restricted
     """
+    print(nhsd_apim_auth_headers)
     print(nhsd_apim_proxy_url)
     lambda_crud(nhsd_apim_proxy_url, nhsd_apim_auth_headers)
