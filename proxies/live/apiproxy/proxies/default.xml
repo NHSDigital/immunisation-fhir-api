@@ -5,14 +5,6 @@
         <Name>FlowCallout.GetEnvironmentKeyValueMapData</Name>
       </Step>
     </Request>
-    <!-- <FaultRules>
-      <FaultRule name="HandleAuthErrors">
-        <Step>
-          <Name>AssignMessage.SetAuthError</Name>
-        </Step>
-        <Condition>Condition to detect error</Condition>
-      </FaultRule>
-    </FaultRules> -->
   </PreFlow>
   
   <Flows>
@@ -85,4 +77,13 @@
   <RouteRule name="immunisation-fhir-api-target">
     <TargetEndpoint>immunisation-fhir-api-target</TargetEndpoint>
   </RouteRule>
+  <DefaultFaultRule>
+    <Step>
+      <Name>Javascript.HandleErrors</Name>
+    </Step>
+    <Step>
+      <Name>AssignMessage.SetErrorResponse</Name>
+    </Step>
+  </DefaultFaultRule>
+
 </ProxyEndpoint>
