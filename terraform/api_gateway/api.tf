@@ -39,18 +39,15 @@ resource "aws_apigatewayv2_domain_name" "service_api_domain_name" {
     endpoint_type   = "REGIONAL"
     security_policy = "TLS_1_2"
   }
-
   tags = {
     Name = "${var.prefix}-api-domain-name"
   }
 }
-
 resource "aws_apigatewayv2_api_mapping" "api_mapping" {
   api_id      = aws_apigatewayv2_api.service_api.id
   domain_name = aws_apigatewayv2_domain_name.service_api_domain_name.id
   stage       = aws_apigatewayv2_stage.default.id
 }
-
 resource "aws_lambda_permission" "api_gw" {
   statement_id  = "AllowExecutionFromAPIGateway"
   action        = "lambda:InvokeFunction"
@@ -85,6 +82,15 @@ resource "aws_route53_record" "api_domain" {
     name                   = aws_apigatewayv2_domain_name.service_api_domain_name.domain_name_configuration[0].target_domain_name
     zone_id                = aws_apigatewayv2_domain_name.service_api_domain_name.domain_name_configuration[0].hosted_zone_id
   }
+}
+data "aws_lambda_function" "status_lambda" {
+  function_name = var.lambda_name
+}
+resource "aws_apigatewayv2_integration" "status_integration" {
+  api_id             = aws_apigatewayv2_api.service_api.id
+  integration_uri    = data.aws_lambda_function.status_lambda.invoke_arn
+  integration_type   = "AWS_PROXY"
+  integration_method = "POST"
 }
 
 output "service_domain_name" {

@@ -1,18 +1,28 @@
 import { DynamoDB } from 'aws-sdk';
 
+
 const dynamoDB = new DynamoDB.DocumentClient();
 
 export const handler = async (event: any): Promise<any> => {
+
   const operation = event.httpMethod;
   const dynamoDBTableName = process.env.DYNAMODB_TABLE_NAME || 'DefaultTableName';
-  
-  if (operation === 'POST' && event.path === '/event') {
+
+  if (event.path === '/_status' && operation === 'GET') {
+    const statusResponse = {
+      status: 'healthy',
+      message: 'Backend is up and running.',
+    };
+    return {
+      statusCode: 200,
+      body: JSON.stringify(statusResponse),
+    };
+  } else if (operation === 'POST' && event.path === '/event') {
     // Handle the POST request to create a new item
     const params = {
       TableName: dynamoDBTableName,
       Item: JSON.parse(event.body),
     };
-
     try {
       await dynamoDB.put(params).promise();
       return {
@@ -34,7 +44,6 @@ export const handler = async (event: any): Promise<any> => {
         id: event.queryStringParameters.id,
       },
     };
-
     try {
       const data = await dynamoDB.get(params).promise();
       if (!data.Item) {
@@ -63,7 +72,6 @@ export const handler = async (event: any): Promise<any> => {
         id: event.queryStringParameters.id,
       },
     };
-
     try {
         const data = await dynamoDB.get(params).promise();
         if (!data.Item) {
@@ -87,7 +95,6 @@ export const handler = async (event: any): Promise<any> => {
       };
     }
   }
-
   return {
     statusCode: 400,
     body: JSON.stringify('Invalid operation.'),
