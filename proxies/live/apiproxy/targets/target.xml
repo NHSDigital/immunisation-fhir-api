@@ -11,7 +11,7 @@
     </Request>
   </PreFlow>
 
-  <FaultRules>
+  <!-- <FaultRules>
     <FaultRule name="access_token_expired">
       <Step>
         <Name>ExtractVariables.OAuthErrorFaultString</Name>
@@ -23,6 +23,19 @@
         <Name>AssignMessage.SetErrorResponse</Name>
       </Step>
       <Condition>oauthV2.OauthV2.VerifyAccessToken.failed</Condition>
+    </FaultRule> -->
+
+    <FaultRule name="invalid_access_token">
+      <Step>
+        <Name>ExtractVariables.OAuthErrorFaultString</Name>
+      </Step>
+      <Step>
+        <Name>ExtractVariables.OAuthErrorFaultCode</Name>
+      </Step>
+      <Step>
+        <Name>AssignMessage.SetErrorResponse</Name>
+      </Step>
+      <Condition>oauthV2.OauthV2.VerifyAccessToken.fault.name == keymanagement.service.invalid_access_token</Condition>
     </FaultRule>
   </FaultRules>
 
