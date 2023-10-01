@@ -23,7 +23,7 @@
         <Name>AssignMessage.SetErrorResponse</Name>
       </Step>
       <Condition>oauthV2.OauthV2.VerifyAccessToken.failed</Condition>
-    </FaultRule>  -->
+    </FaultRule> -->
 
     <FaultRule name="invalid_access_token">
       <Step>
@@ -33,9 +33,12 @@
         <Name>ExtractVariables.OAuthErrorFaultCode</Name>
       </Step>
       <Step>
-        <Name>AssignMessage.SetErrorResponse</Name>
+        <Name>Javascript.HandleErrors</Name>
       </Step>
-      <Condition>oauthV2.OauthV2.VerifyAccessToken.fault.name == keymanagement.service.invalid_access_token</Condition>
+      <Step>
+      <Name>AssignMessage.SetErrorResponse</Name>
+      </Step>
+      <Condition>oauthV2.OauthV2.VerifyAccessToken.failed</Condition>
     </FaultRule>
   </FaultRules>
 
