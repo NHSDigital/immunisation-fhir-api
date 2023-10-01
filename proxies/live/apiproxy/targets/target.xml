@@ -17,7 +17,10 @@
         <Name>ExtractVariables.OAuthErrorFaultString</Name>
       </Step>
       <Step>
-        <Name>AssignMessage.OAuthPolicyErrorResponse</Name>
+        <Name>ExtractVariables.OAuthErrorFaultCode</Name>
+      </Step>
+      <Step>
+        <Name>AssignMessage.SetErrorResponse</Name>
       </Step>
       <Condition>oauthV2.OauthV2.VerifyAccessToken.failed</Condition>
     </FaultRule>

@@ -52,6 +52,15 @@ function makeError(id, profile, severity, code, system, systemCode, diagnostics)
       system = "https://fhir.nhs.uk/Codesystem/http-error-codes",
       systemCode = "SEND_UNAUTHORIZED",
       diagnostics = "The access token has expired or is invalid."
+    ),
+    "403ProxyNotEnabled": makeError(
+      id = "3ce474db-cbc8-4682-a5ab-ca2a4eda1dae",
+      profile = "https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome",
+      severity = "error",
+      code = "forbidden",
+      system = "https://fhir.nhs.uk/Codesystem/http-error-codes",
+      systemCode = "SEND_FORBIDDEN",
+      diagnostics = "The access token was provided, but BaRS is not enabled."
     )
   }
   
