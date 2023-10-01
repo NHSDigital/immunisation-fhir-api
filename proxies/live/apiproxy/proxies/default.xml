@@ -77,16 +77,4 @@
   <RouteRule name="immunisation-fhir-api-target">
     <TargetEndpoint>immunisation-fhir-api-target</TargetEndpoint>
   </RouteRule>
-
-  <FaultRules>
-    <FaultRule name="access_token_expired">
-      <Step>
-        <Name>Javascript.HandleErrors</Name>
-      </Step>
-      <Step>
-        <Name>AssignMessage.SetErrorResponse</Name>
-      </Step>
-    </FaultRule>
-  </FaultRules>
-
 </ProxyEndpoint>

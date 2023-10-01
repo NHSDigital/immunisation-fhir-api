@@ -1,0 +1,24 @@
+<AssignMessage async="false" continueOnError="false" enabled="true" name="AssignMessage.InvalidAccessToken">
+  <Set>
+    <StatusCode>401</StatusCode>
+    <Payload contentType="application/json">
+    {
+      "resourceType": "OperationOutcome",
+      "issue": [
+        {
+          "severity": "error",
+          "code": "unauthorized",
+          "diagnostics": "Invalid access token",
+          "details": {
+            "text": "The access token provided is invalid or null. Please check your credentials and try again."
+          }
+        }
+      ],
+      "statusCode": "401",
+      "status": "Unauthorized"
+    }
+    </Payload>
+  </Set>
+  <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+  <AssignTo createNew="false" transport="http" type="response" />
+</AssignMessage>
