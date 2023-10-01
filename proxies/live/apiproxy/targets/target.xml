@@ -25,7 +25,7 @@
       <Condition>oauthV2.OauthV2.VerifyAccessToken.failed</Condition>
     </FaultRule> -->
 
-    <FaultRule name="invalid_access_token">
+    <FaultRule name="access_token_expired">
       <Step>
         <Name>ExtractVariables.OAuthErrorFaultString</Name>
       </Step>
