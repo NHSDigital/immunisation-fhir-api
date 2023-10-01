@@ -78,22 +78,13 @@
     <TargetEndpoint>immunisation-fhir-api-target</TargetEndpoint>
   </RouteRule>
 
-  <FaultRules>
-    <FaultRule name="invalid_access_token">
-      <Step>
-        <Name>ExtractVariables.OAuthErrorFaultString</Name>
-      </Step>
-      <Step>
-        <Name>ExtractVariables.OAuthErrorFaultCode</Name>
-      </Step>
-      <Step>
-        <Name>Javascript.HandleErrors</Name>
-      </Step>
-      <Step>
+  <DefaultFaultRule>
+    <Step>
+      <Name>Javascript.HandleErrors</Name>
+    </Step>
+    <Step>
       <Name>AssignMessage.SetErrorResponse</Name>
-      </Step>
-      <Condition>oauthV2.OauthV2.VerifyAccessToken.failed</Condition>
-    </FaultRule>
-  </FaultRules>
+    </Step>
+  </DefaultFaultRule>
 
 </ProxyEndpoint>
