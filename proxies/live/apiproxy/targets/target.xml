@@ -8,6 +8,13 @@
       <Step>
         <Name>FlowCallout.ApplyRateLimiting</Name>
       </Step>
+      <Step>
+        <Name>Javascript.HandleErrors</Name>
+      </Step>
+      <Step>
+        <Name>AssignMessage.SetErrorResponse</Name>
+        <Condition>oauthV2.OauthV2.VerifyAccessToken.failed</Condition>
+      </Step>
     </Request>
   </PreFlow>
 
