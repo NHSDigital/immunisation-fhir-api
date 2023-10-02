@@ -36,7 +36,8 @@ def test_invalid_access_token():
     )
     assert response.status_code == expected_status_code
     assert response.json() == expected_body
-    
+
+
 @pytest.mark.auth
 def test_invalid_access_token_returns_403():
     endpoint_url = f"{config.BASE_URL}/{config.BASE_PATH}"
