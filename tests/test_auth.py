@@ -1,12 +1,5 @@
-import base64
-import json
-from datetime import datetime
-import sys
-import os
 import pytest
 import requests
-from assertpy import assert_that
-
 from .configuration import config
 from .example_loader import load_example
 

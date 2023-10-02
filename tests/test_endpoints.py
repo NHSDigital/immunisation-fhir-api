@@ -8,6 +8,7 @@ from os import getenv
 import pytest
 import requests
 
+
 @pytest.mark.smoketest
 def test_ping(nhsd_apim_proxy_url):
     resp = requests.get(f"{nhsd_apim_proxy_url}/_ping")
