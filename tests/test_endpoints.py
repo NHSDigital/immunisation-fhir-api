@@ -8,7 +8,6 @@ from os import getenv
 import pytest
 import requests
 
-
 @pytest.mark.smoketest
 def test_ping(nhsd_apim_proxy_url):
     resp = requests.get(f"{nhsd_apim_proxy_url}/_ping")
@@ -38,8 +37,6 @@ def test_wait_for_ping(nhsd_apim_proxy_url):
 
 @pytest.mark.smoketest
 def test_status(nhsd_apim_proxy_url, status_endpoint_auth_headers):
-    print(nhsd_apim_proxy_url, "<<<<<<<<< PROXY URL")
-    print(status_endpoint_auth_headers, "<<<<<<<< AUTH HEADERS")
     resp = requests.get(
         f"{nhsd_apim_proxy_url}/_status", headers=status_endpoint_auth_headers
         )
@@ -74,5 +71,7 @@ def test_wait_for_status(nhsd_apim_proxy_url, status_endpoint_auth_headers):
 
 @pytest.mark.nhsd_apim_authorization({"access": "application", "level": "level0"})
 def test_app_level0(nhsd_apim_proxy_url, nhsd_apim_auth_headers):
+    print(nhsd_apim_proxy_url, "<<<<<<<<< PROXY URL")
+    print(nhsd_apim_auth_headers, "<<<<<<<< AUTH HEADERS")
     resp = requests.get(f"{nhsd_apim_proxy_url}", headers=nhsd_apim_auth_headers)
     assert resp.status_code == 401  # unauthorized
