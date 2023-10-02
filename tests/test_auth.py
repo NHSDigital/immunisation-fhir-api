@@ -35,6 +35,6 @@ def test_invalid_access_token():
             "X-Correlation-Id": "9562466f-c982-4bd5-bb0e-255e9f5e6689"
         },
     )
-    
+
     assert response.status_code == expected_status_code
     assert response.json() == expected_body
