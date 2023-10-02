@@ -17,7 +17,7 @@
           </Step>
       </FaultRule>
       <FaultRule name="401_invalid_token">
-          <Condition>(oauthV2.OauthV2.VerifyAccessTokenAppLevel3OrCis2Aal3.fault.cause == "Invalid access token")</Condition>
+          <Condition>(oauthV2.OauthV2.VerifyAccessTokenAppLevel3OrCis2Aal3.fault.cause == "Invalid access token") or (oauthV2.OauthV2.VerifyAccessTokenAppLevel3OrCis2Aal3.fault.cause == "invalid_token") or (oauthV2.OauthV2.VerifyAccessTokenAppLevel3OrCis2Aal3.fault.name == keymanagement.service.invalid_access_token)</Condition>
           <Step>
               <Name>AssignMessage.InvalidAccessToken</Name>
           </Step>
