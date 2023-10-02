@@ -23,6 +23,8 @@ def test_invalid_operation_returns_400(nhsd_apim_auth_headers):
 
 
 @pytest.mark.auth
+@pytest.mark.debug
+@pytest.mark.nhsd_apim_authorization({"access": "application", "level": "level0"})
 def test_invalid_access_token():
     expected_status_code = 401
     expected_body = load_example("OperationOutcome/401-invalid_access_token.json")
