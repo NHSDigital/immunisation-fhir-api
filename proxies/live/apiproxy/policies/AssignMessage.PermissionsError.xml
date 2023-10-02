@@ -4,18 +4,27 @@
     <Payload contentType="application/json">
     {
     "resourceType": "OperationOutcome",
+    "id": "a5abca2a-4eda-41da-b2cc-95d48c6b791d",
+    "meta": {
+        "profile": [
+            "https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"
+        ]
+    },
     "issue": [
-        {
-        "severity": "error",
-        "code": "forbidden",
-        "diagnostics": "Access to the resource is forbidden",
-        "details": {
-            "text": "You do not have permission to access this resource. Please check your credentials and permissions."
-        }
-        }
-    ],
-    "statusCode": "403",
-    "status": "Unauthorized"
+            {
+                "severity": "error",
+                "code": "forbidden",
+                 "details": {
+                    "coding": [
+                     {
+                         "system": "https://fhir.nhs.uk/Codesystem/http-error-codes",
+                         "code": "SEND_UNAUTHORIZED"
+                     }
+                    ]
+                },
+                "diagnostics": "The sender does not have permissions to access this resource. Please check your credentials and permissions."
+            }
+        ]
     }
     </Payload>
   </Set>
