@@ -1,4 +1,4 @@
-  <TargetEndpoint name="immunisation-fhir-api-target">
+<TargetEndpoint name="immunisation-fhir-api-target">
   <PreFlow>
     <Request>
         <Step>
