@@ -43,6 +43,7 @@ def test_status(nhsd_apim_proxy_url, status_endpoint_auth_headers):
         )
     assert resp.status_code == 200
 
+
 @pytest.mark.smoketest
 def test_wait_for_status(nhsd_apim_proxy_url, status_endpoint_auth_headers):
     retries = 0
