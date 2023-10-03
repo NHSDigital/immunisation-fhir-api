@@ -45,7 +45,7 @@
       <Condition>(proxy.pathsuffix MatchesPath "/_status") and ((request.verb = "GET") or (request.verb = "HEAD"))</Condition>
     </Flow>
     <Flow name="Route404InvalidRequest">
-        <Condition>(proxy.pathsuffix MatchesPath "{/proxy+}")</Condition>
+        <Condition>(request.verb = "GET" and proxy.path MatchesPath "/*" and proxy.path DoesNotMatch "/event")</Condition>
         <Request>
             <TargetEndpoint>handle-404</TargetEndpoint>
         </Request>
