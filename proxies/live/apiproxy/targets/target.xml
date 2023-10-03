@@ -1,40 +1,54 @@
-<TargetEndpoint name="immunisation-fhir-api-target">
-  <PreFlow>
-    <Request>
-        <Step>
-            <Name>OauthV2.VerifyAccessTokenAppLevel3OrCis2Aal3</Name>
-        </Step>
-        <Step>
-            <Name>FlowCallout.ApplyRateLimiting</Name>
-        </Step>
-    </Request>
-  </PreFlow>
-    <FaultRules>
-      <FaultRule name="400_invalid_operation">
-          <Condition>(oauthV2.failed == false) and (request.verb = "GET")</Condition>
+<TargetEndpoints>  
+  <TargetEndpoint name="immunisation-fhir-api-target">
+    <PreFlow>
+      <Request>
           <Step>
-              <Name>AssignMessage.InvalidOperation</Name>
+              <Name>OauthV2.VerifyAccessTokenAppLevel3OrCis2Aal3</Name>
           </Step>
-      </FaultRule>
-      <FaultRule name="401_invalid_token">
-          <Condition>oauthV2.OauthV2.VerifyAccessTokenAppLevel3OrCis2Aal3.fault.cause == "Invalid access token"</Condition>
           <Step>
-              <Name>AssignMessage.InvalidAccessToken</Name>
+              <Name>FlowCallout.ApplyRateLimiting</Name>
           </Step>
-      </FaultRule>
-      <FaultRule name="403_invalid_permissions">
-          <Condition>(oauthV2.OauthV2.VerifyAccessTokenAppLevel3OrCis2Aal3.fault.cause != "Invalid access token") and (oauthV2.OauthV2.VerifyAccessTokenAppLevel3OrCis2Aal3.failed == true)</Condition>
+      </Request>
+    </PreFlow>
+      <FaultRules>
+        <FaultRule name="400_invalid_operation">
+            <Condition>(oauthV2.failed == false) and (request.verb = "GET")</Condition>
+            <Step>
+                <Name>AssignMessage.InvalidOperation</Name>
+            </Step>
+        </FaultRule>
+        <FaultRule name="401_invalid_token">
+            <Condition>oauthV2.OauthV2.VerifyAccessTokenAppLevel3OrCis2Aal3.fault.cause == "Invalid access token"</Condition>
+            <Step>
+                <Name>AssignMessage.InvalidAccessToken</Name>
+            </Step>
+        </FaultRule>
+        <FaultRule name="403_invalid_permissions">
+            <Condition>(oauthV2.OauthV2.VerifyAccessTokenAppLevel3OrCis2Aal3.fault.cause != "Invalid access token") and (oauthV2.OauthV2.VerifyAccessTokenAppLevel3OrCis2Aal3.failed == true)</Condition>
+            <Step>
+                <Name>AssignMessage.PermissionsError</Name>
+            </Step>
+        </FaultRule>
+      </FaultRules>
+    <HTTPTargetConnection>
+      <URL>{{ DOMAIN_ENDPOINT }}</URL>
+      <Properties>
+        <Property name="supports.http10">true</Property>
+        <Property name="request.retain.headers">User-Agent,Referer,Accept-Language</Property>
+        <Property name="retain.queryparams">apikey</Property>
+      </Properties>
+    </HTTPTargetConnection>
+  </TargetEndpoint>
+  <TargetEndpoint name="handle-404">
+    <Flows>
+      <Flow name="Generate404Response">
+        <Request>
           <Step>
-              <Name>AssignMessage.PermissionsError</Name>
+            <Name>AssignMessage.404NotFound</Name>
           </Step>
-      </FaultRule>
-    </FaultRules>
-  <HTTPTargetConnection>
-    <URL>{{ DOMAIN_ENDPOINT }}</URL>
-    <Properties>
-      <Property name="supports.http10">true</Property>
-      <Property name="request.retain.headers">User-Agent,Referer,Accept-Language</Property>
-      <Property name="retain.queryparams">apikey</Property>
-    </Properties>
-  </HTTPTargetConnection>
-</TargetEndpoint>
+        </Request>
+        <Response/>
+      </Flow>
+    </Flows>
+  </TargetEndpoint>
+</TargetEndpoints>

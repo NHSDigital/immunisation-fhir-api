@@ -68,4 +68,8 @@
   <RouteRule name="immunisation-fhir-api-target">
     <TargetEndpoint>immunisation-fhir-api-target</TargetEndpoint>
   </RouteRule>
+  <RouteRule name="CatchAll">
+    <TargetEndpoint>handle-404</TargetEndpoint>
+    <Condition>(proxy.pathsuffix MatchesPath "{/proxy+}")</Condition>
+  </RouteRule>
 </ProxyEndpoint>
