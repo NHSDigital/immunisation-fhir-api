@@ -44,6 +44,17 @@
       </Response>
       <Condition>(proxy.pathsuffix MatchesPath "/_status") and ((request.verb = "GET") or (request.verb = "HEAD"))</Condition>
     </Flow>
+    <Flow name="Route404InvalidRequest">
+        <Condition>(proxy.pathsuffix MatchesPath "{/proxy+}")</Condition>
+        <Request>
+            <TargetEndpoint>handle-404</TargetEndpoint>
+        </Request>
+        <Response>
+        <Step>
+          <Name>AssignMessage.404NotFound</Name>
+        </Step>
+      </Response>
+    </Flow>
   </Flows>
   <PostClientFlow name="PostClientFlow">
     <Response>
@@ -67,9 +78,5 @@
   </RouteRule>
   <RouteRule name="immunisation-fhir-api-target">
     <TargetEndpoint>immunisation-fhir-api-target</TargetEndpoint>
-  </RouteRule>
-  <RouteRule name="CatchAll">
-    <TargetEndpoint>handle-404</TargetEndpoint>
-    <Condition>(proxy.pathsuffix MatchesPath "{/proxy+}")</Condition>
   </RouteRule>
 </ProxyEndpoint>
