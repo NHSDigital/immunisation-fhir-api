@@ -67,7 +67,6 @@ resource "aws_lambda_function" "catch_all_lambda" {
   function_name = "${var.prefix}-catch-all-lambda"
   handler      = "catch-all.handler"  
   runtime      = "nodejs14.x"    
-  filename     = "${path.module}/terraform/zips/catch-all.zip"
   role         = aws_iam_role.lambda_role.arn
   timeout      = 10
   memory_size  = 1024
