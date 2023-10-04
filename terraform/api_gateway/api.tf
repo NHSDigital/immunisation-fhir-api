@@ -114,6 +114,9 @@ resource "aws_apigatewayv2_integration" "event_integration" {
   integration_method = "POST"
 }
 
+data "aws_lambda_function" "catch_all_lambda" {
+  function_name = "catch_all_function_code"
+}
 resource "aws_apigatewayv2_integration" "catch_all_integration" {
   api_id             = aws_apigatewayv2_api.service_api.id
   integration_uri    = data.aws_lambda_function.catch_all_lambda.invoke_arn
