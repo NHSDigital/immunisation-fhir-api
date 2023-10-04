@@ -40,3 +40,17 @@ output "lambda_function_name" {
   value = aws_lambda_function.imms_lambda.function_name
 }
 
+resource "aws_lambda_function" "catch_all_lambda" {
+  function_name = "catch-all-function"
+  handler      = "catch-all.handler"  
+  runtime      = "nodejs14.x"    
+  filename     = "${path.module}/terraform/zips/catch-all.zip"
+  role         = aws_iam_role.lambda_execution_role.arn
+  timeout      = 10
+  memory_size  = 1024
+}
+
+output "lambda_catch_all" {
+  value = aws_lambda_function.catch_all_lambda.function_name
+}
+
