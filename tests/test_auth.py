@@ -53,10 +53,13 @@ def test_invalid_access_token_returns_401():
 def test_invalid_endpoint_returns_404(nhsd_apim_auth_headers):
     expected_status_code = 404
     expected_body = load_example("OperationOutcome/404-not_found.json")
-    endpoint_url = f"{config.BASE_URL}/{config.BASE_PATH}/invalid_route"
+    endpoint_url = "https://pr-36.imms.dev.api.platform.nhs.uk/invalid_route"
     print(endpoint_url)
 
     response = requests.get(url=endpoint_url, headers=nhsd_apim_auth_headers)
+    
+    print(response.status_code)
+    print(response.json(), "<<<<<<<<<<<<<")
 
     assert response.status_code == expected_status_code
     assert response.json() == expected_body
