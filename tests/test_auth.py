@@ -57,7 +57,7 @@ def test_invalid_endpoint_returns_404(nhsd_apim_auth_headers):
     print(endpoint_url)
 
     response = requests.get(url=endpoint_url, headers=nhsd_apim_auth_headers)
-    
+
     print(response.status_code)
     print(response.json(), "<<<<<<<<<<<<<")
 
