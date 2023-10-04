@@ -40,8 +40,31 @@ output "lambda_function_name" {
   value = aws_lambda_function.imms_lambda.function_name
 }
 
+resource "aws_s3_bucket" "catch_all_bucket" {
+  bucket        = aws_s3_bucket.catch_all_bucket.bucket
+  force_destroy = true
+}
+
+#Upload object for the first time, then it gets updated via local-exec
+resource "aws_s3_object" "catch_all_function_code" {
+  bucket = aws_s3_bucket.catch_all_bucket.bucket
+  key    = "catch-all.zip"
+  source = "zips/catch-all.zip"  # Local path to your ZIP file
+}
+
+#Getting latest object that got uploaded via local-exec
+data "aws_s3_object" "catch_all_lambda" {
+  bucket = aws_s3_bucket.catch_all_bucket.bucket
+  key    = "catch-all.zip"
+}
+
 resource "aws_lambda_function" "catch_all_lambda" {
-  function_name = "catch-all-function"
+  depends_on  = [null_resource.lambda_typescript_dist,
+                aws_s3_object.catch_all_function_code
+  ]
+  s3_bucket=aws_s3_bucket.catch_all_bucket.bucket
+  s3_key  ="catch-all.zip"
+  function_name = "${var.prefix}-catch-all-lambda"
   handler      = "catch-all.handler"  
   runtime      = "nodejs14.x"    
   filename     = "${path.module}/terraform/zips/catch-all.zip"
