@@ -41,7 +41,7 @@ output "lambda_function_name" {
 }
 
 resource "aws_s3_bucket" "catch_all_lambda_bucket" {
-  bucket        = aws_s3_bucket."${var.prefix}-catch-all-lambda-bucket"
+  bucket        = "${var.prefix}-catch-all-lambda-bucket"
   force_destroy = true
 }
 
