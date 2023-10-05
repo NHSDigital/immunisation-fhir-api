@@ -108,6 +108,6 @@
   },
   "include": [
     "src/index.ts",
-    "src/catchAllLambda.ts"
+    "src/catch-all.ts"
   ]
 }

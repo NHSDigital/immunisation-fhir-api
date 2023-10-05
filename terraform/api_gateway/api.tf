@@ -66,13 +66,6 @@ resource "aws_apigatewayv2_integration" "route_integration" {
   integration_method = "POST"
 }
 
-# resource "aws_apigatewayv2_route" "root_route" {
-#   api_id               = aws_apigatewayv2_api.service_api.id
-#   route_key            = "ANY /{proxy+}"
-#   target               = "integrations/${aws_apigatewayv2_integration.route_integration.id}"
-#   authorization_type   = "NONE"
-# }
-
 resource "aws_route53_record" "api_domain" {
   zone_id = var.zone_id
   name    = aws_apigatewayv2_domain_name.service_api_domain_name.domain_name
