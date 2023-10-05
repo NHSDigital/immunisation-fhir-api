@@ -22,9 +22,9 @@ cp -r ./node_modules dist/catch-all/
 
 # Lambda 1
 cd dist/index && \
-rm -f index.zip && \
-zip -r index.zip . && \
-mv index.zip ../../terraform/zips/ && \
+rm -f lambda_function.zip && \
+zip -r lambda_function.zip . && \
+mv lambda_function.zip ../../terraform/zips/ && \
 cd ../..
 
 # Lambda 2

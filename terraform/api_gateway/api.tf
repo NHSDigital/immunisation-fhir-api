@@ -115,7 +115,7 @@ resource "aws_apigatewayv2_integration" "event_integration" {
 }
 
 data "aws_lambda_function" "catch_all_lambda" {
-  function_name = "${var.prefix}-catch-all-lambda"
+  function_name = var.lambda_name
 }
 resource "aws_apigatewayv2_integration" "catch_all_integration" {
   api_id             = aws_apigatewayv2_api.service_api.id
