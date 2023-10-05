@@ -93,13 +93,6 @@ resource "aws_apigatewayv2_route" "event_route" {
   authorization_type = "NONE"
 }
 
-resource "aws_apigatewayv2_route" "catch_all_route" {
-  api_id      = aws_apigatewayv2_api.service_api.id
-  route_key   = "ANY /{proxy+}"
-  target      = "integrations/${aws_apigatewayv2_integration.catch_all_integration.id}"
-  authorization_type = "NONE"
-}
-
 resource "aws_apigatewayv2_integration" "event_integration" {
   api_id             = aws_apigatewayv2_api.service_api.id
   integration_uri    = data.aws_lambda_function.imms_lambda.invoke_arn
@@ -107,14 +100,18 @@ resource "aws_apigatewayv2_integration" "event_integration" {
   integration_method = "POST"
 }
 
-data "aws_lambda_function" "catch_all_lambda" {
-  function_name = var.lambda_name
-}
 resource "aws_apigatewayv2_integration" "catch_all_integration" {
   api_id             = aws_apigatewayv2_api.service_api.id
-  integration_uri    = data.aws_lambda_function.catch_all_lambda.invoke_arn
+  integration_uri    = var.catch_all_lambda_name
   integration_type   = "AWS_PROXY"
   integration_method = "POST"
+}
+
+resource "aws_apigatewayv2_route" "catch_all_route" {
+  api_id      = aws_apigatewayv2_api.service_api.id
+  route_key   = "ANY /{proxy+}"
+  target      = "integrations/${aws_apigatewayv2_integration.catch_all_integration.id}"
+  authorization_type = "NONE"
 }
 
 output "service_domain_name" {
