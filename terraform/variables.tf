@@ -1,7 +1,9 @@
 variable "project_name" {
+  default = "immunisation"
 }
 
 variable "project_short_name" {
+  default = "imms"
 }
 
 variable "service" {
