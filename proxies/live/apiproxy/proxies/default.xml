@@ -42,8 +42,7 @@
           <Name>javascript.SetStatusResponse</Name>
         </Step>
       </Response>
-      <Condition>(proxy.pathsuffix MatchesPath "/_status") and ((request.verb = "GET") or (request.verb = "HEAD"))
-      </Condition>
+      <Condition>(proxy.pathsuffix MatchesPath "/_status") and ((request.verb = "GET") or (request.verb = "HEAD"))</Condition>
     </Flow>
   </Flows>
   <PostClientFlow name="PostClientFlow">
@@ -69,9 +68,4 @@
   <RouteRule name="immunisation-fhir-api-target">
     <TargetEndpoint>immunisation-fhir-api-target</TargetEndpoint>
   </RouteRule>
-  <DefaultFaultRule>
-    <Step>
-      <Name>AssignMessage.Errors.CatchAllMessage</Name>
-    </Step>
-  </DefaultFaultRule>
 </ProxyEndpoint>

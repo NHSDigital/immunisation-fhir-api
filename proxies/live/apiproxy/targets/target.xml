@@ -1,25 +1,34 @@
 <TargetEndpoint name="immunisation-fhir-api-target">
   <PreFlow>
     <Request>
-      <Step>
-        <Name>OauthV2.VerifyAccessTokenAppLevel3OrCis2Aal3</Name>
-      </Step>
-      <Step>
-        <Name>FlowCallout.ApplyRateLimiting</Name>
-      </Step>
+        <Step>
+            <Name>OauthV2.VerifyAccessTokenAppLevel3OrCis2Aal3</Name>
+        </Step>
+        <Step>
+            <Name>FlowCallout.ApplyRateLimiting</Name>
+        </Step>
     </Request>
   </PreFlow>
-  <FaultRules>
-    <FaultRule name="access_token_expired">
-      <Step>
-        <Name>ExtractVariables.OAuthErrorFaultString</Name>
-      </Step>
-      <Step>
-        <Name>AssignMessage.OAuthPolicyErrorResponse</Name>
-      </Step>
-      <Condition>oauthV2.OauthV2.VerifyAccessToken.failed</Condition>
-    </FaultRule>
-  </FaultRules>
+    <FaultRules>
+      <FaultRule name="400_invalid_operation">
+          <Condition>(oauthV2.failed == false) and (request.verb = "GET")</Condition>
+          <Step>
+              <Name>AssignMessage.InvalidOperation</Name>
+          </Step>
+      </FaultRule>
+      <FaultRule name="401_invalid_token">
+          <Condition>oauthV2.OauthV2.VerifyAccessTokenAppLevel3OrCis2Aal3.fault.cause == "Invalid access token"</Condition>
+          <Step>
+              <Name>AssignMessage.InvalidAccessToken</Name>
+          </Step>
+      </FaultRule>
+      <FaultRule name="403_invalid_permissions">
+          <Condition>(oauthV2.OauthV2.VerifyAccessTokenAppLevel3OrCis2Aal3.fault.cause != "Invalid access token") and (oauthV2.OauthV2.VerifyAccessTokenAppLevel3OrCis2Aal3.failed == true)</Condition>
+          <Step>
+              <Name>AssignMessage.PermissionsError</Name>
+          </Step>
+      </FaultRule>
+    </FaultRules>
   <HTTPTargetConnection>
     <URL>{{ DOMAIN_ENDPOINT }}</URL>
     <Properties>

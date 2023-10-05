@@ -42,7 +42,6 @@ def test_status(nhsd_apim_proxy_url, status_endpoint_auth_headers):
         f"{nhsd_apim_proxy_url}/_status", headers=status_endpoint_auth_headers
     )
     assert resp.status_code == 200
-    # Make some additional assertions about your status response here!
 
 
 @pytest.mark.smoketest
