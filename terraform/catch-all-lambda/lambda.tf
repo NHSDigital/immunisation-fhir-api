@@ -6,7 +6,7 @@ resource "aws_s3_bucket" "catch_all_lambda_bucket" {
 #Upload object for the first time, then it gets updated via local-exec
 resource "aws_s3_object" "catch_all_function_code" {
   bucket = aws_s3_bucket.catch_all_lambda_bucket.bucket
-  key    = "catch-all.zip"
+  key    = "${var.lambda_zip_name}.zip"
   source = "zips/catch-all.zip"  # Local path to your ZIP file
 }
 
