@@ -30,6 +30,6 @@ resource "aws_lambda_function" "catch_all_lambda" {
   memory_size  = 1024
 }
 
-output "catch_all_name" {
+output "catch_all_lambda_name" {
   value = aws_lambda_function.catch_all_lambda.function_name
 }
