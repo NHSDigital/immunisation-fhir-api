@@ -7,6 +7,6 @@ module "api_gateway" {
   api_domain_name = local.service_domain_name
   environment     = local.environment
   lambda_name    = module.lambda.lambda_function_name
-  catch_all_name = module.catch_all_lambda.catch_all_name
+  catch_all_name = module.catch_all_lambda.catch_all_lambda_name
   depends_on = [module.lambda]
 }
