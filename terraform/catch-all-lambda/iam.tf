@@ -20,7 +20,7 @@ EOF
 
 resource "aws_iam_role_policy" "catch_all_lambda_role_policy" {
   name = "${var.prefix}-catch-all-policy"
-  role = aws_iam_role.lambda_role.id
+  role = aws_iam_role.catch_all_lambda_role.name
 
   policy = <<EOF
 {

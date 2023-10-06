@@ -102,7 +102,7 @@ resource "aws_apigatewayv2_integration" "event_integration" {
 
 resource "aws_apigatewayv2_integration" "catch_all_integration" {
   api_id             = aws_apigatewayv2_api.service_api.id
-  integration_uri    = var.catch_all_lambda_name
+  integration_uri    = var.catch_all_lambda_arn
   integration_type   = "AWS_PROXY"
   integration_method = "POST"
 }
