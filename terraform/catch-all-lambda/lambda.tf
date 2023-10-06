@@ -1,26 +1,14 @@
 # Copy the zip archive to an S3 bucket (optional)
 resource "aws_s3_bucket" "catch_all_lambda_bucket" {
   bucket = "${var.prefix}-catch-all-lambda-bucket"
-}
-
-# Create a null_resource to manage the dependency
-resource "null_resource" "catch_all_lambda_dependency" {
-  triggers = {
-    # Trigger when the zip file is created or its content changes
-    zip_file_sha = filesha256(data.archive_file.catch_all_code.output_path)
-  }
-
-  provisioner "local-exec" {
-    # Copy the zip file to the desired location for your Lambda function
-    command = "cp ${data.archive_file.catch_all_code.output_path} ${path.module}/terraform/zips/catch-all.zip"
-  }
+  force_destroy = true
 }
 
 # Upload the zip file to S3 after the zip file is created
 resource "aws_s3_object" "catch_all_function_code" {
   bucket = aws_s3_bucket.catch_all_lambda_bucket.bucket
   key    = "catch-all.zip"
-  source = null_resource.catch_all_lambda_dependency.triggers["zip_file_sha"] == filesha256(data.archive_file.catch_all_code.output_path) ? data.archive_file.catch_all_code.output_path : null
+  source = "zips/catch-all.zip"
 }
 
 # Create the Lambda function after the zip file is uploaded to S3
