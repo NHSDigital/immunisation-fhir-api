@@ -1,7 +1,6 @@
-data "aws_caller_identity" "current" {}
 data "archive_file" "catch_all_lambda_archive" {
   type        = "zip"
-  source_dir  = "${path.root}/../catch_all_lambda"
+  source_dir  = "${path.module}/catch_all_lambda/src"
   output_path = "build/catch_all_lambda.zip"
 }
 
