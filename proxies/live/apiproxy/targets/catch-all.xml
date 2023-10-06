@@ -9,7 +9,7 @@
   </PreFlow>
 
   <FaultRules>
-    <FaultRule>
+    <FaultRule name="404_invalid_route">
       <Condition>(Check-URL-EndsWith-Event == false)</Condition>
       <Step>
         <Name>AssignMessage.404NotFound</Name>
