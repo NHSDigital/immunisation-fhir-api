@@ -1,8 +1,8 @@
 # Create a zip archive of catch-all.py
 data "archive_file" "catch_all_code" {
   type        = "zip"
-  source_dir  = "../catch_all_lambda/src"
-  output_path = "./zips/catch-all.zip"
+  source_dir  = "${path.module}/../catch_all_lambda/src"
+  output_path = "${path.module}/terraform/zips/catch-all.zip"
 }
 
 # Copy the zip archive to an S3 bucket (optional)
