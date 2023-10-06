@@ -1,5 +1,22 @@
-<TargetEndpoint name="immunisation-fhir-api-target">
-  
+<TargetEndpoint name="catch-all-target">
+  <PreFlow name="PreFlow">
+    <Request>
+      <Step>
+        <Name>Check-URL-EndsWith-Event</Name>
+      </Step>
+      <Condition>request.uri.path !~ "/event$"</Condition>
+    </Request>
+  </PreFlow>
+
+  <FaultRules>
+    <FaultRule>
+      <Condition>(Check-URL-EndsWith-Event == false)</Condition>
+      <Step>
+        <Name>AssignMessage.404NotFound</Name>
+      </Step>
+    </FaultRule>
+  </FaultRules>
+
   <HTTPTargetConnection>
     <URL>{{ DOMAIN_ENDPOINT }}</URL>
     <Properties>
