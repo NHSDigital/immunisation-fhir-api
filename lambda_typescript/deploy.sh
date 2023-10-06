@@ -19,7 +19,7 @@ cp -r ./node_modules dist/index/
 cd dist/index && \
 rm -f lambda_function.zip && \
 zip -r lambda_function.zip . && \
-mv lambda_function.zip ../../terraform/zips/ && \
+mv lambda_function.zip ../../../terraform/zips/ && \
 cd ../..
 
 # Delete the dist folder for cleanup
