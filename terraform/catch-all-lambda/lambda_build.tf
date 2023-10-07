@@ -1,6 +1,6 @@
 data "archive_file" "catch_all_code_archive" {
   type        = "zip"
-  source_dir  = "${path.root}/../catch_all_lambda/src"
+  source_dir  = "${path.root}/../catch_all_lambda"
   output_path = "build/catch_all_lambda.zip"
 }
 
