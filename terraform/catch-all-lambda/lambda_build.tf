@@ -21,12 +21,13 @@ resource "null_resource" "catch_all_lambda_dist" {
     command = <<EOF
 cd ../catch_all_lambda/ && \
 mkdir -p dist && \
-cp -r ./src/catch-all.py dist/ && \
+cp -r src/catch-all.py dist/ && \
+mkdir ../terraform/zips/ && \
 cd dist && \
 zip -r ../../terraform/zips/catch_all_lambda.zip . && \
 cd ..
 rm -rf dist
-aws s3 cp ../../terraform/zips/catch_all_lambda.zip s3://immunisation-fhir-api-pr-36-catch-all-lambda-bucket/catch_all_lambda.zip
+aws s3 cp ../terraform/zips/catch_all_lambda.zip s3://${aws_s3_bucket.lambda_bucket.bucket}/catch_all_lambda.zip
 EOF
   }
 }
