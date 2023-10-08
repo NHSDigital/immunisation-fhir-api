@@ -19,7 +19,7 @@ resource "aws_lambda_function" "catch_all_lambda" {
   s3_key       = "catch-all.zip"
   function_name = "${var.prefix}-catch-all-lambda"
   handler      = "catch-all.handler"
-  runtime      = "python3.8"  # Assuming your Python script is compatible with this runtime
+  runtime      = "nodejs18.x"  # Assuming your Python script is compatible with this runtime
   role         = aws_iam_role.catch_all_lambda_role.arn
   timeout      = 10
   memory_size  = 1024

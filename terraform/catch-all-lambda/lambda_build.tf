@@ -22,7 +22,7 @@ resource "null_resource" "catch_all_lambda_dist" {
 cd ../catch_all_lambda/ && \
 mkdir -p dist && \
 cp -r src/catch-all.py dist/ && \
-mkdir ../terraform/zips/ && \
+mkdir -p ../terraform/zips/ && \
 cd dist && \
 zip -r ../../terraform/zips/catch_all_lambda.zip . && \
 cd ..
