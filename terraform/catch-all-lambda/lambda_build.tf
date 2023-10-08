@@ -1,6 +1,12 @@
+variable "lambda_source_dir" {
+  description = "Absolute path to the Lambda source directory"
+  type        = string
+  default     = "../lambda_typescript"
+}
+
 data "archive_file" "catch_all_code_archive" {
   type        = "zip"
-  source_dir  = "${path.root}/../catch_all_lambda"
+  source_dir  = var.lambda_source_dir
   output_path = "build/catch_all_lambda.zip"
 }
 
