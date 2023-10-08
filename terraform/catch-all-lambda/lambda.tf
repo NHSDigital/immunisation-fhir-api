@@ -8,7 +8,7 @@ resource "aws_s3_bucket" "catch_all_lambda_bucket" {
 resource "aws_s3_object" "catch_all_function_code" {
   bucket = aws_s3_bucket.catch_all_lambda_bucket.bucket
   key    = "catch-all.zip"
-  source = "zips/catch-all.zip"
+  source = "zips/catch_all_lambda.zip"
 }
 
 # Create the Lambda function after the zip file is uploaded to S3
