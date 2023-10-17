@@ -1,9 +1,10 @@
 import json
 from time import time
+from csv_to_model import read_csv_to_immunizations
+from model_to_fhir import convert_to_fhir
 from boto3 import resource
 from boto3 import client
-from lambdas.batch_processing.csv_to_model import read_csv_to_immunizations
-from lambdas.batch_processing.model_to_fhir import convert_to_fhir
+
 
 
 # This is yet to be integrated with main logic
@@ -54,3 +55,4 @@ def lambda_handler(_event, _context):
     except Exception as e:
         print(f"Error reading CSV file: {str(e)}")
         return {"statusCode": 500, "body": "Error reading CSV file from S3."}
+

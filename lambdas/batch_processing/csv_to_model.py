@@ -1,6 +1,6 @@
 import csv
 from models.immunization import ImmunizationModel
-import datetime
+from datetime import datetime
 
 
 def parse_iso8601_datetime(iso_datetime_str):

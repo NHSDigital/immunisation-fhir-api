@@ -214,8 +214,8 @@ def convert_to_fhir(immunization_model):
     # reference to practitioner but we want actual Practitioner content
     uk_fhir_immunization.actor = FHIRPractitioner(
         resource_type="Practitioner",
-        identifier=performer_identifier,
-        name=performer_name,
+        identifier=performer_identifier, #Populate only if its only None, test it
+        name=performer_name,  #Populate only if its only None, test it
     )
     uk_fhir_immunization.immunization.primarySource = immunization_model.PRIMARY_SOURCE
     extension1 = FHIRExtension(
@@ -245,7 +245,7 @@ def convert_to_fhir(immunization_model):
     uk_fhir_immunization.immunization.extension = [extension1, extension2]
 
     # Check if status is empty,
-    if not uk_fhir_immunization.immunization.status:
+    if  uk_fhir_immunization.immunization.status =="empty":
         uk_fhir_immunization.immunization.status = immunization_model.NOT_GIVEN
     uk_fhir_immunization.immunization.statusReason = FHIRCodeableConcept(
         coding=[
