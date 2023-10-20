@@ -7,16 +7,16 @@
         "issue": [
             {
             "severity": "error",
-            "code": "%error.status.code#",
+            "code": "not-found",
             "details": {
                 "coding": [
                 {
-                    "code": "%error.status.code#",
-                    "display": "%error.reason.phrase#"
+                    "code": "NOT_FOUND",
+                    "system": "https://fhir.nhs.uk/Codesystem/http-error-codes"
                 }
                 ]
             },
-            "diagnostics": "%error.content#"
+            "diagnostics": "The requested resource was not found."
             }
         ]
     }

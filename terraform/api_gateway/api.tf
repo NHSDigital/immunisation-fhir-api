@@ -25,6 +25,15 @@ resource "aws_apigatewayv2_stage" "default" {
     format          = "{ \"requestId\":\"$context.requestId\", \"extendedRequestId\":\"$context.extendedRequestId\", \"ip\": \"$context.identity.sourceIp\", \"caller\":\"$context.identity.caller\", \"user\":\"$context.identity.user\", \"requestTime\":\"$context.requestTime\", \"httpMethod\":\"$context.httpMethod\", \"resourcePath\":\"$context.resourcePath\", \"status\":\"$context.status\", \"protocol\":\"$context.protocol\",  \"responseLength\":\"$context.responseLength\", \"authorizerError\":\"$context.authorizer.error\", \"authorizerStatus\":\"$context.authorizer.status\", \"requestIsValid\":\"$context.authorizer.is_valid\"\"environment\":\"$context.authorizer.environment\"}"
   }
 
+  route_settings {
+    route_key = "ANY /{proxy+}"
+    data_trace_enabled = false
+    detailed_metrics_enabled = false
+    logging_level = "ERROR"
+    throttling_burst_limit = 100
+    throttling_rate_limit  = 100
+  }
+
   # Bug in terraform-aws-provider with perpetual diff
   lifecycle {
     ignore_changes = [deployment_id]
@@ -59,17 +68,17 @@ resource "aws_lambda_permission" "api_gw" {
 data "aws_lambda_function" "imms_lambda" {
   function_name = var.lambda_name
 }
-resource "aws_apigatewayv2_integration" "route_integration" {
+resource "aws_apigatewayv2_integration" "event_integration" {
   api_id             = aws_apigatewayv2_api.service_api.id
   integration_uri    = data.aws_lambda_function.imms_lambda.invoke_arn
   integration_type   = "AWS_PROXY"
   integration_method = "POST"
 }
 
-resource "aws_apigatewayv2_route" "root_route" {
+resource "aws_apigatewayv2_route" "event_route" {
   api_id               = aws_apigatewayv2_api.service_api.id
-  route_key            = "ANY /{proxy+}"
-  target               = "integrations/${aws_apigatewayv2_integration.route_integration.id}"
+  route_key            = "ANY /event"
+  target               = "integrations/${aws_apigatewayv2_integration.event_integration.id}"
   authorization_type   = "NONE"
 }
 
@@ -83,6 +92,7 @@ resource "aws_route53_record" "api_domain" {
     zone_id                = aws_apigatewayv2_domain_name.service_api_domain_name.domain_name_configuration[0].hosted_zone_id
   }
 }
+
 data "aws_lambda_function" "status_lambda" {
   function_name = var.lambda_name
 }
@@ -91,6 +101,38 @@ resource "aws_apigatewayv2_integration" "status_integration" {
   integration_uri    = data.aws_lambda_function.status_lambda.invoke_arn
   integration_type   = "AWS_PROXY"
   integration_method = "POST"
+}
+
+resource "aws_apigatewayv2_route" "status_route" {
+  api_id               = aws_apigatewayv2_api.service_api.id
+  route_key            = "ANY /_status"
+  target               = "integrations/${aws_apigatewayv2_integration.status_integration.id}"
+  authorization_type   = "NONE"
+}
+
+resource "aws_lambda_permission" "catch_all_lambda_api_gw" {
+  statement_id  = "AllowExecutionFromAPIGateway"
+  action        = "lambda:InvokeFunction"
+  function_name = var.catch_all_lambda_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn = "${aws_apigatewayv2_api.service_api.execution_arn}/*/*"
+}
+
+data "aws_lambda_function" "catch_all_lambda" {
+  function_name = var.catch_all_lambda_name
+}
+resource "aws_apigatewayv2_integration" "catch_all_route_integration" {
+  api_id             = aws_apigatewayv2_api.service_api.id
+  integration_uri    = data.aws_lambda_function.catch_all_lambda.invoke_arn
+  integration_type   = "AWS_PROXY"
+  integration_method = "POST"
+}
+
+resource "aws_apigatewayv2_route" "catch_all_route" {
+  api_id               = aws_apigatewayv2_api.service_api.id
+  route_key            = "ANY /{proxy+}"
+  target               = "integrations/${aws_apigatewayv2_integration.catch_all_route_integration.id}"
+  authorization_type   = "NONE"
 }
 
 output "service_domain_name" {

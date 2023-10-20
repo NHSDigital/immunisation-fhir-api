@@ -10,12 +10,6 @@
     </Request>
   </PreFlow>
     <FaultRules>
-      <FaultRule name="400_invalid_operation">
-          <Condition>(oauthV2.failed == false) and (request.verb = "GET")</Condition>
-          <Step>
-              <Name>AssignMessage.InvalidOperation</Name>
-          </Step>
-      </FaultRule>
       <FaultRule name="401_invalid_token">
           <Condition>oauthV2.OauthV2.VerifyAccessTokenAppLevel3OrCis2Aal3.fault.cause == "Invalid access token"</Condition>
           <Step>

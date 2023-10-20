@@ -65,6 +65,7 @@
   </RouteRule>
   <DefaultFaultRule>
     <Step>
+      <Condition>!(proxy.pathsuffix MatchesPath "/_status" or proxy.pathsuffix MatchesPath "/_ping" or proxy.pathsuffix MatchesPath "/event")</Condition>
       <Name>AssignMessage.Errors.CatchAllMessage</Name>
     </Step>
   </DefaultFaultRule>

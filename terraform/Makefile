@@ -42,6 +42,12 @@ output:
 
 #Make lambda zip file in /terraform/zips directory. Whenever code gets changed in lamdba_typescript directory , new zip file gets uploaded to s3. For local,you can you this make target
 lambda-zip:
-	cd ../lambda_typescript
-	chmod +x ./deploy.sh
+	cd ../lambda_typescript && \
+	chmod +x ./deploy.sh && \
+	./deploy.sh
+
+#Make catch-all-lambda zip file in /terraform/zips directory. Whenever code gets changed in lamdba_typescript directory , new zip file gets uploaded to s3. For local,you can you this make target
+catch-all-zip:
+	cd ../catch_all_lambda && \
+	chmod +x ./deploy.sh && \
 	./deploy.sh

@@ -8,18 +8,18 @@ steps:
   - ${{ if parameters.is_ptl }}:
     - template: "azure/components/aws-assume-role.yml@common"
       parameters:
-          role: "auto-ops"
-          profile: "apm_ptl"
+        role: "auto-ops"
+        profile: "apm_ptl"
     
     - template: "azure/components/get-aws-secrets-and-ssm-params.yml@common"
       parameters:
-          secret_file_ids:
-              - ptl/app-credentials/jwt_testing/non-prod/JWT_TESTING_PRIVATE_KEY
-          secret_ids:
-              - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INTROSPECTION_CLIENT_ID  
-              - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INTROSPECTION_CLIENT_SECRET
-              - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INTROSPECTION_CLIENT_ID_INT
-              - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INTROSPECTION_CLIENT_SECRET_INT
+        secret_file_ids:
+          - ptl/app-credentials/jwt_testing/non-prod/JWT_TESTING_PRIVATE_KEY
+        secret_ids:
+          - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INTROSPECTION_CLIENT_ID
+          - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INTROSPECTION_CLIENT_SECRET
+          - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INTROSPECTION_CLIENT_ID_INT
+          - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INTROSPECTION_CLIENT_SECRET_INT
 
   - bash: |
       make install-python
@@ -55,9 +55,20 @@ steps:
         echo pr_no: $pr_no
 
         cd terraform
+
+        cd ../lambda_typescript && \
+          chmod +x ./deploy.sh && \
+          ./deploy.sh
+
+        cd ../catch_all_lambda && \
+          chmod +x ./deploy.sh && \
+          ./deploy.sh
+
+        cd ../terraform
+
         make init
         make apply aws_account_no=${aws_account_no} environment=$workspace 
-        
+
       fi
     displayName: Deploy sandbox
     workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)"
@@ -76,11 +87,11 @@ steps:
       marker="not sandbox_int"
       if [[ $APIGEE_ENVIRONMENT =~ .*-*sandbox ]]
       then
-        echo "Sandox env tests"
+        echo "Sandbox env tests"
         marker="not nhsd_apim_authorization and not sandbox_int"
       elif [[ $APIGEE_ENVIRONMENT == "int" ]]
       then
-       echo "Int tests to be set as of now"
+        echo "Int tests to be set as of now"
       fi
       echo $marker 
       poetry run pytest -v -m "$marker" --api-name=immunisation-fhir-api --proxy-name=$PROXY_NAME -o junit_logging=all --junitxml=test-report.xml
