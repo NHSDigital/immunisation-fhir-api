@@ -6,7 +6,6 @@ from boto3 import resource
 from boto3 import client
 
 
-
 # This is yet to be integrated with main logic
 def lambda_handler(_event, _context):
     s3_client = client("s3")
@@ -55,4 +54,3 @@ def lambda_handler(_event, _context):
     except Exception as e:
         print(f"Error reading CSV file: {str(e)}")
         return {"statusCode": 500, "body": "Error reading CSV file from S3."}
-

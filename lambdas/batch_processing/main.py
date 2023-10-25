@@ -1,28 +1,27 @@
 import csv
-from models.samplemodel import SampleModel
-from datetime import datetime, timezone
+from models.ImmunizationModel import ImmunizationModel
 
-    
+
 def read_csv_to_sample(csv_file):
-    samples = []
+    immunizations = []
 
-    with open(csv_file, newline='') as csvfile:
+    with open(csv_file, newline="") as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
-            
+
             try:
                 # Filter out unwanted fields
-                sample = SampleModel(**row)
-                samples.append(sample)
+                imms = ImmunizationModel(**row)
+                immunizations.append(imms)
             except ValueError as e:
                 print(e)
 
-    return samples
+    return immunizations
+
 
 if __name__ == "__main__":
-    csv_file = 'sample_data/patient_data3.csv'
-    samples = read_csv_to_sample(csv_file)
+    csv_file = "sample_data/patient_data3.csv"
+    immunizations = read_csv_to_sample(csv_file)
 
-    for sample in samples:
-        print(sample)
-        
+    for imms in immunizations:
+        print(imms)

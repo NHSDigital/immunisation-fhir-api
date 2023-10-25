@@ -3,6 +3,7 @@ from fhir.resources.immunization import (
     ImmunizationProtocolApplied as FHIRImmunizationProtocolApplied,
 )
 from models.FHIRUKImmunization import UKFHIRImmunization
+from models.ImmunizationModel import Constants
 from fhir.resources.patient import Patient as FHIRPatient
 from fhir.resources.humanname import HumanName as FHIRHumanName
 from fhir.resources.address import Address as FHIRAddress
@@ -214,8 +215,8 @@ def convert_to_fhir(immunization_model):
     # reference to practitioner but we want actual Practitioner content
     uk_fhir_immunization.actor = FHIRPractitioner(
         resource_type="Practitioner",
-        identifier=performer_identifier, #Populate only if its only None, test it
-        name=performer_name,  #Populate only if its only None, test it
+        identifier=performer_identifier,  # Populate only if its only None, test it
+        name=performer_name,  # Populate only if its only None, test it
     )
     uk_fhir_immunization.immunization.primarySource = immunization_model.PRIMARY_SOURCE
     extension1 = FHIRExtension(
@@ -244,8 +245,8 @@ def convert_to_fhir(immunization_model):
     )
     uk_fhir_immunization.immunization.extension = [extension1, extension2]
 
-    # Check if status is empty,
-    if  uk_fhir_immunization.immunization.status =="empty":
+    # Check if status is not-done,
+    if uk_fhir_immunization.immunization.status == Constants.vaccination_not_given_flag:
         uk_fhir_immunization.immunization.status = immunization_model.NOT_GIVEN
     uk_fhir_immunization.immunization.statusReason = FHIRCodeableConcept(
         coding=[
