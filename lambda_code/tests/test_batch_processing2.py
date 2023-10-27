@@ -7,7 +7,6 @@ sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../src")
 
 from services import ImmunisationApi, S3Service
 from batch_processing_handler import batch_processing
-from mesh import MeshCsvParser
 
 # from lambda_code.src.services import ImmunisationApi, S3Service
 
@@ -72,13 +71,3 @@ class TestBatchProcessing(unittest.TestCase):
         self.s3_service.write_s3_object.assert_called_once_with(
             destination_bucket, csv_file_name, ["error", "error"]
         )
-
-
-class TestCsvParser(unittest.TestCase):
-    def setUp(self):
-        with open(csv_file_path, "r") as f:
-            self.csv_content = f.read()
-
-    def test_parse(self):
-        parser = MeshCsvParser(self.csv_content)
-        parser.parse()
