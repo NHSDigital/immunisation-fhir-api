@@ -1,4 +1,8 @@
 from dataclasses import dataclass
+from model_to_fhir import convert_to_fhir
+from csv_to_model import read_csv_to_immunizations
+from datetime import datetime
+from icecream import ic
 
 import boto3
 
@@ -17,16 +21,14 @@ class MeshImmunisationReportEntry:
 
 # TODO: This is just a POC. See if you can bring logic from previous work. It doesn't have to be a dataclass.
 # As long as we convert csv into some object (dataclass/dic/etc) we're good.
-@dataclass
-class MeshImmunisationRecord:
-    nhs_number: str
-    person_forename: str
-    person_surname: str
 
+
+class MeshImmunisationRecord:
     # TODO: This class should have a to_immunisation_fhir() method. So we can convert a csv record into Fhir object
     # convert it to Almas's FHIR object or fhir.resource. For now anything that makes the POST call happy will do.
     def to_immunisation_fhir(self):
-        pass
+        # pass
+        return convert_to_fhir(self)
 
 
 # This object captures any kind of error. Either validation of API call errors. This means at end of batch processing
@@ -42,7 +44,6 @@ class MeshImmunisationError:
 
 
 class MeshCsvParser:
-
     def __init__(self, content):
         self.content = content
 
@@ -53,8 +54,13 @@ class MeshCsvParser:
         # TODO: parse the content line-by-line and generate two lists. One list is the record and one list is the error
         # For example 20 lines of CSV will produce 15 MeshImmunisationRecord and 4 MeshImmunisationError + 1 field row
         # For now assume every record is ok and return an empty list for errors
-        return ([MeshImmunisationRecord("", "", ""), MeshImmunisationRecord("", "", "")],
-                [MeshImmunisationError("error1"), MeshImmunisationError("error2")])
+        immunization_records = read_csv_to_immunizations(self.content)
+        ic(immunization_records)
+        return (
+            immunization_records
+            # [MeshImmunisationRecord("", "", ""), MeshImmunisationRecord("", "", "")],
+            # [MeshImmunisationError("error1"), MeshImmunisationError("error2")],
+        )
 
 
 class MeshInputHandler:
@@ -76,7 +82,6 @@ class MeshInputHandler:
 
 
 class MeshOutputHandler:
-
     def __init__(self, bucket, key):
         self.bucket = bucket
         self.key = key

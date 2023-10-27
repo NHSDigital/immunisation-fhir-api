@@ -7,13 +7,16 @@ sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../src")
 
 from services import ImmunisationApi, S3Service
 from batch_processing_handler import batch_processing
+from mesh import MeshCsvParser
 
 # from lambda_code.src.services import ImmunisationApi, S3Service
 
 source_bucket = "source-bucket"
 destination_bucket = "destination-bucket"
 csv_file_name = "data.csv"
-csv_file_path = f"{os.path.dirname(os.path.abspath(__file__))}/sample_data/{csv_file_name}"
+csv_file_path = (
+    f"{os.path.dirname(os.path.abspath(__file__))}/sample_data/{csv_file_name}"
+)
 
 sample_event = {
     "Records": [
@@ -52,7 +55,9 @@ class TestBatchProcessing(unittest.TestCase):
         #  When
         batch_processing(self.event, self.context, self.s3_service, self.imms_api)
         # Then
-        self.s3_service.get_s3_object.assert_called_once_with(source_bucket, csv_file_name)
+        self.s3_service.get_s3_object.assert_called_once_with(
+            source_bucket, csv_file_name
+        )
         self.imms_api.post_event.assert_has_calls([call("field1"), call("field2")])
 
     def test_create_error_report(self):
@@ -64,4 +69,16 @@ class TestBatchProcessing(unittest.TestCase):
         #  When
         batch_processing(self.event, self.context, self.s3_service, self.imms_api)
         # Then
-        self.s3_service.write_s3_object.assert_called_once_with(destination_bucket, csv_file_name, ["error", "error"])
+        self.s3_service.write_s3_object.assert_called_once_with(
+            destination_bucket, csv_file_name, ["error", "error"]
+        )
+
+
+class TestCsvParser(unittest.TestCase):
+    def setUp(self):
+        with open(csv_file_path, "r") as f:
+            self.csv_content = f.read()
+
+    def test_parse(self):
+        parser = MeshCsvParser(self.csv_content)
+        parser.parse()
