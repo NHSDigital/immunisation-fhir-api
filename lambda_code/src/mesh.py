@@ -1,8 +1,6 @@
 from dataclasses import dataclass
 from model_to_fhir import convert_to_fhir
 from csv_to_model import read_csv_to_immunizations
-from datetime import datetime
-from icecream import ic
 
 import boto3
 
@@ -55,7 +53,8 @@ class MeshCsvParser:
         # For example 20 lines of CSV will produce 15 MeshImmunisationRecord and 4 MeshImmunisationError + 1 field row
         # For now assume every record is ok and return an empty list for errors
         immunization_records = read_csv_to_immunizations(self.content)
-        ic(immunization_records)
+
+        # TODO: Need something to handle/bundle the errors. For now just return an empty list
         return (
             immunization_records
             # [MeshImmunisationRecord("", "", ""), MeshImmunisationRecord("", "", "")],
