@@ -184,6 +184,8 @@ paths:
         the appropriate context, with search parameters included as HTTP Query
         Parameters.
       parameters:
+        - $ref: '#/components/parameters/NhsNumber'
+        - $ref: '#/components/parameters/DiseaseType'
         - $ref: '#/components/parameters/CorrelationID'
         - $ref: '#/components/parameters/RequestID'
       responses:
@@ -194,7 +196,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/GetResponse'
               example:
-                $ref: components/examples/Immunization/GET-Immunization.json
+                $ref: 'components/examples/List/SEARCH-Immunizations.json'
           headers:
             X-Correlation-ID:
               $ref: '#/components/headers/Correlation-Id'
@@ -361,6 +363,23 @@ components:
       schema:
         type: string
         example: 29dc4e84-7e72-11ee-b962-0242ac120002
+    NhsNumber:
+      in: query
+      name: nhsNumber
+      required: true
+      description: >
+        All patients in PDS have an NHS number which is unique. The 10-digit NHS number is used in England, Wales, the 
+        Isle of Man, Scotland and Northern Ireland, but not the Channel Islands. Scotland and Northern Ireland have 
+        their own distinct number ranges.
+      example: "9000000009"
+    # TODO: AMB-1849 should make this optional, and also an Enum type?
+    DiseaseType:
+      in: query
+      name: diseaseType
+      required: true
+      description: >
+        The diseaseType
+      example: "covid"
     CorrelationID:
       in: header
       name: X-Correlation-ID

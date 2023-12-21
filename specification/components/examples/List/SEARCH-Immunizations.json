@@ -1,0 +1,95 @@
+{
+  "resourceType": "List",
+  "entry": [
+    {
+      "resourceType": "Immunization",
+      "id": "c17df027-2f68-4c5b-bb0b-1bcaf273531d",
+      "identifier": [
+        {
+          "system": "https://supplierABC/ODSCode",
+          "value": "9000000009"
+        }
+      ],
+      "status": "completed",
+      "vaccineCode": {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "39114911000001105",
+            "display": "some text"
+          }
+        ]
+      },
+      "patient": {
+        "reference": "urn:uuid:124fcb63-669c-4a3c-af2b-caf55de167ec",
+        "type": "Patient",
+        "identifier": {
+          "system": "https://fhir.nhs.uk/Id/nhs-number",
+          "value": "9693632109"
+        }
+      },
+      "occurrenceDateTime": "2020-12-14T10:08:15+00:00",
+      "protocolApplied": [
+        {
+          "targetDisease": [
+            {
+              "coding": [
+                {
+                  "system": "http://snomed.info/sct",
+                  "code": "mmr-code-2345",
+                  "display": "flue vaccine"
+                }
+              ]
+            }
+          ],
+          "doseNumber": "1"
+        }
+      ]
+    },
+    {
+      "resourceType": "Immunization",
+      "id": "c84e0eaa-07eb-40c1-8757-9cf503f1d033",
+      "identifier": [
+        {
+          "system": "https://supplierABC/ODSCode",
+          "value": "9000000009"
+        }
+      ],
+      "status": "completed",
+      "vaccineCode": {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "39114911000001105",
+            "display": "some text"
+          }
+        ]
+      },
+      "patient": {
+        "reference": "urn:uuid:124fcb63-669c-4a3c-af2b-caf55de167ec",
+        "type": "Patient",
+        "identifier": {
+          "system": "https://fhir.nhs.uk/Id/nhs-number",
+          "value": "9693632109"
+        }
+      },
+      "occurrenceDateTime": "2020-12-14T10:08:15+00:00",
+      "protocolApplied": [
+        {
+          "targetDisease": [
+            {
+              "coding": [
+                {
+                  "system": "http://snomed.info/sct",
+                  "code": "mmr-code-2345",
+                  "display": "flue vaccine"
+                }
+              ]
+            }
+          ],
+          "doseNumber": "1"
+        }
+      ]
+    }
+  ]
+}
