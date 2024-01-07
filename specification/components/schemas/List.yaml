@@ -12,7 +12,7 @@ properties:
   entry: 
     type: array
     items:
-      $ref: 'GetResponse.yaml'
+      $ref: 'Immunization.yaml'
   extension:
     type: array
     minItems: 1

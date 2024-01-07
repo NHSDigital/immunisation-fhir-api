@@ -155,7 +155,7 @@ paths:
           content:
             application/fhir+json:
               schema:
-                $ref: '#/components/schemas/GetResponse'
+                $ref: '#/components/schemas/Immunization'
               example:
                 $ref: components/examples/Immunization/GET-Immunization.json
           headers:
@@ -219,7 +219,7 @@ paths:
           content:
             application/fhir+json:
               schema:
-                $ref: '#/components/schemas/GetResponse'
+                $ref: '#/components/schemas/Immunization'
               example:
                 $ref: components/examples/Immunization/GET-Immunization.json
           headers:
@@ -259,7 +259,7 @@ paths:
           content:
             application/fhir+json:
               schema:
-                $ref: '#/components/schemas/GetResponse'
+                $ref: '#/components/schemas/Immunization'
               example:
                 $ref: components/examples/Immunization/GET-Immunization.json
           headers:
@@ -286,7 +286,7 @@ paths:
           content:
             application/fhir+json:
               schema:
-                $ref: '#/components/schemas/GetResponse'
+                $ref: '#/components/schemas/Immunization'
               example:
                 $ref: components/examples/Immunization/GET-Immunization.json
           headers:
@@ -299,7 +299,7 @@ paths:
           content:
             application/fhir+json:
               schema:
-                $ref: '#/components/schemas/GetResponse'
+                $ref: '#/components/schemas/Immunization'
               example:
                 $ref: components/examples/Immunization/GET-Immunization.json
           headers:
@@ -347,8 +347,8 @@ components:
   schemas:
     OperationOutcome:
       $ref: components/schemas/OperationOutcome.yaml
-    GetResponse:
-      $ref: components/schemas/GetResponse.yaml
+    Immunization:
+      $ref: components/schemas/Immunization.yaml
     List:
       $ref: components/schemas/List.yaml
   parameters:
