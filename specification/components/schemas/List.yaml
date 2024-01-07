@@ -1,0 +1,154 @@
+type: object
+description: |
+  A List containing FHIR resources
+properties:
+  resourceType:
+    type: string
+    pattern: "List"
+    description: FHIR Resource Type.
+  id:
+    type: string
+    description: FHIR Resource Logical ID.
+  entry: 
+    type: array
+    items:
+      $ref: 'GetResponse.yaml'
+  extension:
+    type: array
+    minItems: 1
+    items:
+      type: object
+      required:
+        - url
+        - valueCodeableConcept
+      properties:
+        url:
+          type: string
+          default: >-
+            https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure
+        valueCodeableConcept:
+          type: object
+          required:
+            - coding
+          properties:
+            coding:
+              type: array
+              minItems: 1
+              items:
+                type: object
+                required:
+                  - system
+                  - code
+                  - display
+                properties:
+                  system:
+                    type: string
+                    default: 'http://snomed.info/sct'
+                  code:
+                    type: string
+                    default: snomed
+                  display:
+                    type: string
+                    default: snomed
+  identifier:
+    type: array
+    minItems: 1
+    items:
+      type: object
+      required:
+        - system
+        - value
+      properties:
+        system:
+          type: string
+          default: 'http://snomed.info/sct'
+        value:
+          type: string
+          default: snomed
+#  status:
+#    type: string
+#    description: Status of vaccination event.
+#    default: completed
+#  statusReason:
+#    type: object
+#    required:
+#      - coding
+#    properties:
+#      coding:
+#        type: array
+#        minItems: 1
+#        items:
+#          type: object
+#          required:
+#            - system
+#            - code
+#        properties:
+#          system:
+#            type: string
+#            default: 'http://snomed.info/sct'
+#          code:
+#            type: string
+#            default: snomed
+#  vaccineCode:
+#    type: object
+#    required:
+#      - coding
+#    properties:
+#      coding:
+#        type: array
+#        minItems: 1
+#        items:
+#          type: object
+#          required:
+#            - system
+#            - code
+#        properties:
+#          system:
+#            type: string
+#            default: 'http://snomed.info/sct'
+#          code:
+#            type: string
+#            default: snomed
+#  lotNumber:
+#    type: string
+#    description: ID of lot number
+#    default: AAJN11K
+#  patient:
+#    type: object
+#    properties:
+#      reference:
+#        type: string
+#        default: Patient
+#      type:
+#        type: string
+#      identifier:
+#        type: object
+#      display:
+#        type: string
+#  occurrenceDateTime:
+#    type: string
+#    default: 2020-12-14T10:08:15.000Z
+#  site:
+#    type: object
+#    required:
+#      - coding
+#    properties:
+#      coding:
+#        type: array
+#        minItems: 1
+#        items:
+#          type: object
+#          required:
+#            - system
+#            - display
+#            - code
+#          properties:
+#            code:
+#              type: string
+#              default: LA
+#            system:
+#              type: string
+#              default: 'http://snomed.info/sct'
+#            display:
+#              type: string
+#              default: left arm

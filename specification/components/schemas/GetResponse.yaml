@@ -6,6 +6,9 @@ properties:
     type: string
     description: FHIR Resource Type.
     default: Immunization
+  id:
+    type: string
+    description: FHIR Resource Logical ID.
   contained:
     type: array
     description: List of parameters.
@@ -104,12 +107,12 @@ properties:
       type: object
       required:
         - system
-        - code
+        - value
       properties:
         system:
           type: string
           default: 'http://snomed.info/sct'
-        code:
+        value:
           type: string
           default: snomed
   status:
@@ -162,64 +165,16 @@ properties:
     default: AAJN11K
   patient:
     type: object
-    required:
-      - resourceType
-      - identifier
-      - name
-      - gender
-      - birthDate
-      - address
     properties:
-      resourceType:
+      reference:
         type: string
         default: Patient
+      type: 
+        type: string
       identifier:
-        type: array
-        minItems: 1
-        items:
-          type: object
-          required:
-            - system
-            - value
-          properties:
-            system:
-              type: string
-              default: https//fhir.nhs.uk/Id/nhs-number
-            value:
-              type: string
-              default: 1234567891
-      name:
-        type: array
-        minItems: 1
-        items:
-          type: object
-          required:
-            - family
-            - given
-          properties:
-            family:
-              type: string
-              default: test
-            given:
-              type: array
-              default: test
-      gender:
+        type: object
+      display:
         type: string
-        default: 1
-      birthDate:
-        type: string
-        default: 1999-10-03T00:00:00.000Z
-      address:
-        type: array
-        minItems: 1
-        items:
-          type: object
-          required:
-            - postalCode
-          properties:
-            postalCode:
-              type: string
-              default: LS1 5HT
   occurrenceDateTime:
     type: string
     default: 2020-12-14T10:08:15.000Z

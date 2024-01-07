@@ -10,6 +10,11 @@ properties:
     type: string
     description: FHIR Resource Type.
     default: OperationOutcome
+  id:
+    type: string
+    description: FHIR Resource Logical ID.
+  meta:
+    type: object
   issue:
     type: array
     description: List of issues that have occurred.
@@ -68,11 +73,6 @@ properties:
         details:
           type: object
           description: Internal error code.
-  properties:
-    type: array
-    items:
-      type: object
-      properties:
         system:
           type: string
           description: URI of the coding system specification.
@@ -81,10 +81,6 @@ properties:
           type: string
           description: Version of the coding system in use.
           example: '1'
-        code:
-          type: string
-          description: Symbol in syntax defined by the system.
-          example: INVALID_VALUE
         display:
           type: string
           description: Representation defined by the system.

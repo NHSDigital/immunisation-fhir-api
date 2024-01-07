@@ -194,7 +194,7 @@ paths:
           content:
             application/fhir+json:
               schema:
-                $ref: '#/components/schemas/GetResponse'
+                $ref: '#/components/schemas/List'
               example:
                 $ref: 'components/examples/List/SEARCH-Immunizations.json'
           headers:
@@ -349,6 +349,8 @@ components:
       $ref: components/schemas/OperationOutcome.yaml
     GetResponse:
       $ref: components/schemas/GetResponse.yaml
+    List:
+      $ref: components/schemas/List.yaml
   parameters:
     Id:
       in: path
@@ -367,6 +369,8 @@ components:
       in: query
       name: nhsNumber
       required: true
+      schema: 
+        type: string
       description: >
         All patients in PDS have an NHS number which is unique. The 10-digit NHS number is used in England, Wales, the 
         Isle of Man, Scotland and Northern Ireland, but not the Channel Islands. Scotland and Northern Ireland have 
@@ -379,6 +383,10 @@ components:
       required: true
       description: >
         The diseaseType
+      schema: 
+        type: string
+        enum:
+          - covid
       example: "covid"
     CorrelationID:
       in: header
