@@ -1,14 +1,14 @@
 {
   "resourceType": "Patient",
+  "id": "9000000009",
   "name": [
     {
       "family": "test_family_name",
-      "given": ["test_given_name_first", "test_given_name_middle"]
+      "given": ["test_given_name_first"]
     }
   ],
-  "id": "9000000009",
-  "birthDate": "1990-01-01",
   "gender": "male",
+  "birthDate": "1990-01-01",
   "address": [
     {
       "postalCode": "HX1 1UN"

@@ -7,6 +7,13 @@ class NHSImmunizationValidators:
     """NHS Immunization specific validator methods"""
 
     @staticmethod
+    def validate_target_disease_type(disease_type: str):
+        """Validate disease type"""
+        if disease_type not in Constants.VALID_DISEASE_TYPES:
+            raise ValueError("TARGET_DISEASE_CODE must be for valid disease type")
+        return disease_type
+
+    @staticmethod
     def validate_patient_identifier_value(patient_identifier_value):
         """Validate patient identifier value (NHS number)"""
         if patient_identifier_value:
@@ -67,40 +74,69 @@ class NHSImmunizationValidators:
         return identifier_value
 
     @staticmethod
-    def validate_action_flag(action_flag):
-        """Validate Action Flag"""
-        if not action_flag:
-            raise ValueError("ACTION_FLAG is a mandatory field.")
-
-        if action_flag not in Constants.action_flags:
-            raise ValueError("ACTION_FLAG should be completed or entered-in-error")
-
-        return action_flag
+    def validate_identifier_system(identifier_system):
+        """Validate immunization identifier system"""
+        if not identifier_system:
+            raise ValueError("IDENTIFIER_SYSTEM is a mandatory field")
+        return identifier_system
 
     @staticmethod
-    def validate_recorded_date(recorded_date):
-        """Validate recorded date"""
-        if recorded_date:
-            parsed_date = Constants.convert_to_date(recorded_date)
-            return parsed_date
-        return None
+    def validate_status(status):
+        """Validate status (action flag)"""
+        if not status:
+            raise ValueError("STATUS is a mandatory field.")
 
-    @staticmethod
-    def validate_report_origin(report_origin, primary_source):
-        """Validate report origin"""
-        if primary_source and not report_origin:
+        if status not in Constants.STATUSES:
             raise ValueError(
-                "REPORT_ORIGIN is a mandatory field, when PRIMARY_SOURCE is given"
+                'STATUS should be "completed", "entered-in-error" or "not-done"'
             )
-        return report_origin
+
+        return status
+
+    @staticmethod
+    def validate_recorded(recorded):
+        """Validate recorded (recorded date)"""
+        if not recorded:
+            raise ValueError("RECORDED is a mandatory field")
+
+        parsed_date = Constants.convert_to_date(recorded)
+        return parsed_date
+
+    @staticmethod
+    def validate_primary_source(primary_source):
+        """Validate primary source"""
+        if not primary_source and primary_source is not False:
+            raise ValueError("PRIMARY_SOURCE is a mandatory field.")
+        if primary_source not in Constants.PRIMARY_SOURCE:
+            raise ValueError(
+                "PRIMARY_SOURCE should be boolean true or false (case-sensitive)"
+            )
+
+        return primary_source
+
+    @staticmethod
+    def validate_report_origin_text(report_origin_text, primary_source):
+        """Validate report origin text"""
+        if not primary_source and not report_origin_text:
+            error = (
+                "REPORT_ORIGIN_TEXT is a mandatory field, and must be a non-empty string,",
+                "when PRIMARY_SOURCE is false",
+            )
+            raise ValueError(" ".join(error))
+        if report_origin_text:
+            if len(report_origin_text) > 100:
+                raise ValueError(
+                    "REPORT_ORIGIN_TEXT has maximum length of 100 characters"
+                )
+        return report_origin_text
 
     @staticmethod
     def validate_not_given(not_given):
         """Validate not given flag"""
         if not_given:
             if not (
-                not_given == Constants.vaccination_not_given_flag
-                or not_given == Constants.vaccination_given_flag
+                not_given == Constants.VACCINATION_NOT_GIVEN_FLAG
+                or not_given == Constants.VACCINATION_GIVEN_FLAG
             ):
                 raise ValueError("NOT_GIVEN flag should be 'empty' or 'not-done'")
         return not_given
@@ -323,7 +359,7 @@ class NHSPatientValidators:
         if not gender:
             raise ValueError("GENDER is a mandatory field")
 
-        if gender not in Constants.genders:
+        if gender not in Constants.GENDERS:
             raise ValueError(
                 "Invalid value for GENDER. It must be male, female, other, or unknown."
             )
@@ -349,21 +385,55 @@ class NHSPractitionerValidators:
 
     @staticmethod
     def validate_performing_professional_forename(
-        performing_professional_forename, performing_professional_surname
+        disease_type, performing_professional_forename, performing_professional_surname
     ):
         """Validate performing professional forename"""
-        if performing_professional_forename:
-            if not performing_professional_surname:
-                raise ValueError(
-                    "If PERFORMING_PROFESSIONAL_FORENAME is given, \
-                        PERFORMING_PROFESSIONAL_SURNAME must also be given"
-                )
-            return performing_professional_forename
-        if performing_professional_surname:
+        excluded_disease_types = ("HPV", "MMR")
+        if disease_type in excluded_disease_types and performing_professional_forename:
             raise ValueError(
-                "If PERFORMING_PROFESSIONAL_SURNAME is given, \
-                    PERFORMING_PROFESSIONAL_FORENAME must also be given"
+                " ".join(
+                    (
+                        "PERFORMING_PROFESSIONAL_FORENAME",
+                        f"is not allowed for: {str(excluded_disease_types)}",
+                    )
+                )
             )
+        if performing_professional_surname and not performing_professional_forename:
+            raise ValueError(
+                " ".join(
+                    (
+                        "If PERFORMING_PROFESSIONAL_SURNAME is given,",
+                        "PERFORMING_PROFESSIONAL_FORENAME must also be given",
+                    )
+                )
+            )
+        return performing_professional_forename
+
+    @staticmethod
+    def validate_performing_professional_surname(
+        disease_type, performing_professional_surname, performing_professional_forename
+    ):
+        """Validate performing professional surname"""
+        excluded_disease_types = ("HPV", "MMR")
+        if disease_type in excluded_disease_types and performing_professional_surname:
+            raise ValueError(
+                " ".join(
+                    (
+                        "PERFORMING_PROFESSIONAL_SURNAME",
+                        f"is not allowed for: {str(excluded_disease_types)}",
+                    )
+                )
+            )
+        if performing_professional_forename and not performing_professional_surname:
+            raise ValueError(
+                " ".join(
+                    (
+                        "If PERFORMING_PROFESSIONAL_FORENAME is given,",
+                        "PERFORMING_PROFESSIONAL_SURNAME must also be given",
+                    )
+                )
+            )
+        return performing_professional_surname
 
     @staticmethod
     def validate_performing_professional_body_reg_code(

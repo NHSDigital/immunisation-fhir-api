@@ -1,15 +1,18 @@
 {
   "resourceType": "Practitioner",
+  "identifier": [
+    {
+      "system": "http://hl7.org/fhir/sid/us-npi",
+      "value": "1234567890",
+      "type": {
+        "coding": [{ "display": "test_display" }]
+      }
+    }
+  ],
   "name": [
     {
       "family": "test",
       "given": ["test"]
-    }
-  ],
-  "identifier": [
-    {
-      "system": "http://hl7.org/fhir/sid/us-npi",
-      "value": "1234567890"
     }
   ]
 }

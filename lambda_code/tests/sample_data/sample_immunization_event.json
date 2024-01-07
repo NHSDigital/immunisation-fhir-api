@@ -232,7 +232,14 @@
         {
           "coding": [
             {
-              "code": "40468003"
+              "code": "840539006"
+            }
+          ]
+        },
+        {
+          "coding": [
+            {
+              "code": "6142004"
             }
           ]
         }
@@ -247,8 +254,16 @@
     {
       "coding": [
         {
-          "code": "snomed",
-          "display": "test"
+          "code": "snomed1",
+          "display": "test1"
+        }
+      ]
+    },
+    {
+      "coding": [
+        {
+          "code": "snomed2",
+          "display": "test2"
         }
       ]
     }

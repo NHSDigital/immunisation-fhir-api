@@ -113,13 +113,15 @@ class CsvImmunizationModel(BaseModel):
     @validator("ACTION_FLAG", pre=True, always=True)
     def validate_action_flag(cls, value):
         """Validate action flag"""
-        return NHSImmunizationValidators.validate_action_flag(value)
+        return NHSImmunizationValidators.validate_status(value)
 
     @validator("PERFORMING_PROFESSIONAL_FORENAME", pre=True, always=True)
     def validate_professional_forename(cls, v, values):
         """Validate performing professional forename"""
         return NHSPractitionerValidators.validate_performing_professional_forename(
-            v, values.get("PERFORMING_PROFESSIONAL_SURNAME", None)
+            "FLU",  # TODO: This is hardcoded for now. We need to get this from the CSV
+            values.get("PERFORMING_PROFESSIONAL_SURNAME"),
+            values.get("PERFORMING_PROFESSIONAL_FORENAME"),
         )
 
     @validator("PERFORMING_PROFESSIONAL_BODY_REG_CODE", pre=True, always=True)
@@ -132,13 +134,13 @@ class CsvImmunizationModel(BaseModel):
     @validator("RECORDED_DATE", pre=True, always=True)
     def validate_recorded_date(cls, value):
         """Validate recorded date"""
-        return NHSImmunizationValidators.validate_recorded_date(value)
+        return NHSImmunizationValidators.validate_recorded(value)
 
     @validator("REPORT_ORIGIN", pre=True, always=True)
     def validate_report_origin(cls, v, values):
         """Validate report origin"""
         primary_source = values["PRIMARY_SOURCE"]
-        return NHSImmunizationValidators.validate_report_origin(v, primary_source)
+        return NHSImmunizationValidators.validate_report_origin_text(v, primary_source)
 
     @validator("NOT_GIVEN", pre=True, always=True)
     def validate_not_given_flag(cls, value):
