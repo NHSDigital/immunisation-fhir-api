@@ -308,10 +308,10 @@ def test_get_s_flag_patient(nhsd_apim_proxy_url, nhsd_apim_auth_headers, nhs_num
         pprint.pprint(retrieved_search_imms_result.text)
         assert retrieved_search_imms_result.status_code == 200
     retrieved_search_imms = next(imms for imms in retrieved_search_imms_result.json()["entry"]
-                                 if imms["id"] == created_imms["id"])
-
+                                 if imms["resource"]["id"] == created_imms["id"])
+    # Fetching Immunization resource form Bundle
+    retrieved_search_imms = retrieved_search_imms["resource"]
     all_retrieved_imms = [retrieved_get_imms, retrieved_search_imms]
-
     imms_api.delete_immunization(created_imms["id"])
 
     # Assert

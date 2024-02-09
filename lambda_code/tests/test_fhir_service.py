@@ -1,11 +1,13 @@
 import json
 import unittest
 from unittest.mock import create_autospec
+from fhir.resources.R4B.bundle import BundleEntry
+
 import os
 from fhir.resources.R4B.immunization import Immunization
-from fhir.resources.R4B.list import List as FhirList
+from fhir.resources.R4B.bundle import Bundle as FhirBundle
 from fhir_repository import ImmunizationRepository
-from fhir_service import FhirService, UpdateOutcome
+from fhir_service import FhirService, UpdateOutcome, get_service_url
 from models.errors import InvalidPatientId, CoarseValidationError, ResourceNotFoundError, InconsistentIdError
 from models.fhir_immunization import ImmunizationValidator
 from pds_service import PdsService
@@ -238,7 +240,9 @@ class TestDeleteImmunization(unittest.TestCase):
         self.imms_repo = create_autospec(ImmunizationRepository)
         self.pds_service = create_autospec(PdsService)
         self.validator = create_autospec(ImmunizationValidator)
-        self.fhir_service = FhirService(self.imms_repo, self.pds_service, self.validator)
+        self.fhir_service = FhirService(
+            self.imms_repo, self.pds_service, self.validator
+        )
 
     def test_delete_immunization(self):
         """it should delete Immunization record"""
@@ -260,32 +264,66 @@ class TestSearchImmunizations(unittest.TestCase):
         self.imms_repo = create_autospec(ImmunizationRepository)
         self.pds_service = create_autospec(PdsService)
         self.validator = create_autospec(ImmunizationValidator)
-        self.fhir_service = FhirService(self.imms_repo, self.pds_service, self.validator)
+        self.fhir_service = FhirService(
+            self.imms_repo, self.pds_service, self.validator
+        )
+        self.nhsSearchParam="-nhsNumber"
+        self.diseaseTypeSearchParam="-diseaseType"
+
+    def test_get_service_url(self):
+        """it should create service url"""
+        env = "internal-dev"
+        base_path = "my-base-path"
+        url = get_service_url(env, base_path)
+        self.assertEqual(url, f"https://{env}.api.service.nhs.uk/{base_path}")
+        # prod should not have subdomain
+        env = "prod"
+        base_path = "my-base-path"
+        url = get_service_url(env, base_path)
+        self.assertEqual(url, f"https://api.service.nhs.uk/{base_path}")
+        # any other env should fall back to internal-dev (like pr-xx or per-user)
+        env = "pr-42"
+        base_path = "my-base-path"
+        url = get_service_url(env, base_path)
+        self.assertEqual(url, f"https://internal-dev.api.service.nhs.uk/{base_path}")
 
     def test_map_disease_type_to_disease_code(self):
         """it should map disease_type to disease_code"""
         # TODO: for this ticket we are assuming code is provided
         nhs_number = "a-patient-id"
         disease_type = "a-disease-code"
+        params=f"{self.nhsSearchParam}={nhs_number}&{self.diseaseTypeSearchParam}={disease_type}"
         # TODO: here we are assuming disease_type=disease_code this is because the mapping is not in place yet
         disease_code = disease_type
-
-        # When
-        _ = self.fhir_service.search_immunizations(nhs_number, disease_code)
+         # When
+        _ = self.fhir_service.search_immunizations(nhs_number, disease_code,params)
 
         # Then
-        self.imms_repo.find_immunizations.assert_called_once_with(nhs_number, disease_code)
+        self.imms_repo.find_immunizations.assert_called_once_with(
+            nhs_number, disease_code
+        )
 
-    def test_make_fhir_list_from_search_result(self):
+    def test_make_fhir_bundle_from_search_result(self):
         """it should return a FHIR:List[Immunization] resource"""
         imms_ids = ["imms-1", "imms-2"]
         imms_list = [create_an_immunization_dict(imms_id) for imms_id in imms_ids]
         self.imms_repo.find_immunizations.return_value = imms_list
         self.pds_service.get_patient_details.return_value = {}
-
+        nhs_number = "an-id"
+        disease_type = "a-code"
+        params=f"{self.nhsSearchParam}={nhs_number}&{self.diseaseTypeSearchParam}={disease_type}"
         # When
-        result = self.fhir_service.search_immunizations("an-id", "a-code")
-
+        result = self.fhir_service.search_immunizations(nhs_number, disease_type,params)
         # Then
-        self.assertIsInstance(result, FhirList)
-        self.assertListEqual([entry.id for entry in result.entry], imms_ids)
+        self.assertIsInstance(result, FhirBundle)
+        self.assertEqual(result.type, "searchset")
+        self.assertEqual(len(result.entry), len(imms_ids))
+        # Assert each entry in the bundle
+        for i, entry in enumerate(result.entry):
+            self.assertIsInstance(entry, BundleEntry)
+            self.assertEqual(entry.resource.resource_type, "Immunization")
+            self.assertEqual(entry.resource.id, imms_ids[i])
+        # Assert self link
+        self.assertEqual(len(result.link), 1)  # Assert that there is only one link
+        self.assertEqual(result.link[0].relation, "self")  
+    

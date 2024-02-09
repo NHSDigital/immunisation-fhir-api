@@ -12,7 +12,7 @@ from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
 from models.errors import ResourceNotFoundError, UnhandledResponseError
 
 
-def create_table(table_name=None, endpoint_url=None, region_name='eu-west-2'):
+def create_table(table_name=None, endpoint_url=None, region_name="eu-west-2"):
     if not table_name:
         table_name = os.environ["DYNAMODB_TABLE_NAME"]
     config = Config(connect_timeout=1, read_timeout=1, retries={'max_attempts': 1})
@@ -58,7 +58,11 @@ class ImmunizationRepository:
         response = self.table.get_item(Key={"PK": _make_immunization_pk(imms_id)})
 
         if "Item" in response:
-            return None if "DeletedAt" in response["Item"] else json.loads(response["Item"]["Resource"])
+            return (
+                None
+                if "DeletedAt" in response["Item"]
+                else json.loads(response["Item"]["Resource"])
+            )
         else:
             return None
 
@@ -78,7 +82,9 @@ class ImmunizationRepository:
         if response["ResponseMetadata"]["HTTPStatusCode"] == 200:
             return immunization
         else:
-            raise UnhandledResponseError(message="Non-200 response from dynamodb", response=response)
+            raise UnhandledResponseError(
+                message="Non-200 response from dynamodb", response=response
+            )
 
     def update_immunization(self, imms_id: str, immunization: dict, patient: dict) -> dict:
         attr = RecordAttributes(immunization, patient)
@@ -121,7 +127,7 @@ class ImmunizationRepository:
                 Key={'PK': _make_immunization_pk(imms_id)},
                 UpdateExpression='SET DeletedAt = :timestamp',
                 ExpressionAttributeValues={
-                    ':timestamp': now_timestamp,
+                    ":timestamp": now_timestamp,
                 },
                 ReturnValues="ALL_NEW",
                 ConditionExpression=Attr("PK").eq(_make_immunization_pk(imms_id)) & Attr("DeletedAt").not_exists()
@@ -147,13 +153,14 @@ class ImmunizationRepository:
         response = self.table.query(
             IndexName="PatientGSI",
             KeyConditionExpression=condition,
-            FilterExpression=is_not_deleted
+            FilterExpression=is_not_deleted,
         )
-
         if "Items" in response:
             return [json.loads(item["Resource"]) for item in response["Items"]]
         else:
-            raise UnhandledResponseError(message=f"Unhandled error. Query failed", response=response)
+            raise UnhandledResponseError(
+                message=f"Unhandled error. Query failed", response=response
+            )
 
     @staticmethod
     def _handle_dynamo_response(response):

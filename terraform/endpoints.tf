@@ -2,6 +2,7 @@
 
 locals {
     policy_path = "${path.root}/policies"
+    domain_name_url = "https://${local.service_domain_name}"
 }
 
 data "aws_iam_policy_document" "logs_policy_document" {

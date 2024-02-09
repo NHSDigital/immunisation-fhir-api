@@ -21,6 +21,15 @@ The tests are in a separate module so in order for them to see each other we nee
 - Run the `Python: Configure Tests` command and when it asks for a directory give it `lambda_code`.
 
 
+### Running Test
+
+- Open `lambda_code` directory
+- Install dependencies by running this command `pip install -r requirements.txt`
+- Run tests by `make test`
+- If you want to run specific test, you can try testing one single class or single function like 
+  `python -m unittest tests.test_fhir_controller.TestSearchImmunizations        `
+  `python -m unittest tests.test_fhir_controller.TestSearchImmunizations.test_search_immunizations`
+
 ## Troubleshooting
 
 ### Tests fail with `No products grant access to proxy [...]`

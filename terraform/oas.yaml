@@ -76,12 +76,12 @@ paths:
         timeoutInMillis: 30000
         type: "AWS_PROXY"
       parameters:
-        - name: NhsNumber
+        - name: -NhsNumber
           in: query
           required: true
           schema:
             type: string
-        - name: diseaseType
+        - name: -diseaseType
           in: query
           schema:
             type: string
@@ -106,6 +106,32 @@ paths:
           headers:
             Location:
               $ref: "#/components/headers/Location"
+  /Immunization/_search:
+    post:
+      x-amazon-apigateway-integration:
+        uri: "${search_event.lambda_arn}"
+        payloadFormatVersion: "1.0"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        timeoutInMillis: 30000
+        type: "AWS_PROXY"
+      parameters:
+        - name: -NhsNumber
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: -diseaseType
+          in: query
+          schema:
+            type: string
+      responses:
+        '201':
+          description: An Immunisation search event
+          content:
+            application/fhir+json:
+              schema:
+                type: object
   /{proxy+}:
     x-amazon-apigateway-any-method:
       parameters:

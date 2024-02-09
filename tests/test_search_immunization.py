@@ -78,7 +78,6 @@ def test_search_immunization(nhsd_apim_proxy_url, nhsd_apim_auth_headers):
         },
     ]
     stored_records = seed_records(imms_api, records)
-
     # Tests
     # Search patient with multiple disease types
     response = imms_api.search_immunizations(stored_records[0]["nhs_number"], mmr_code)
@@ -87,9 +86,9 @@ def test_search_immunization(nhsd_apim_proxy_url, nhsd_apim_auth_headers):
 
     # Then
     results = response.json()
-    result_ids = [result["id"] for result in results["entry"]]
+    result_ids = [result["resource"]["id"] for result in results["entry"]]
     assert response.status_code == 200
-    assert results["resourceType"] == "List"
+    assert results["resourceType"] == "Bundle"
     for resource in stored_records[0]["responses"]:
         assert resource["id"] in result_ids
     for resource in stored_records[1]["responses"]:
@@ -137,10 +136,10 @@ def test_search_immunization_ignore_deleted(
 
     # Then
     results = response.json()
-    result_ids = [result["id"] for result in results["entry"]]
+    result_ids = [result["resource"]["id"] for result in results["entry"]]
 
     assert response.status_code == 200
-    assert results["resourceType"] == "List"
+    assert results["resourceType"] == "Bundle"
     assert id_to_delete not in result_ids
     for record in stored_records:
         for resource in record["responses"]:
