@@ -42,7 +42,6 @@ def handle_s_flag(imms, patient):
         None,
     )
 
-    # Handle Questionnaire SiteCode
     performer_actor_organization = next(
         (
             item
@@ -70,6 +69,7 @@ def handle_s_flag(imms, patient):
         if "linkId" not in item or item["linkId"] not in questionnaire_items_to_remove
     ]
 
+    # Handle Patient removals
     patient_items_to_remove = ["name", "gender", "birthDate", "address"]
     for item in patient_items_to_remove:
         try:
@@ -77,6 +77,7 @@ def handle_s_flag(imms, patient):
         except KeyError:
             pass
 
+    # Handle Practitioner removals
     practitioner_items_to_remove = ["identifier", "name"]
     for item in practitioner_items_to_remove:
         try:
