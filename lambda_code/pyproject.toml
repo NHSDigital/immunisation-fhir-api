@@ -16,7 +16,7 @@ requests                = "~2.31.0"
 responses               = "~0.24.1"
 pydantic                = "~1.10.13"
 pyjwt                   = "~2.8.0"
-cryptography            = "~42.0.0"
+cryptography            = "~42.0.2"
 cffi                    = "~1.16.0"
 jsonpath-ng             = "^1.6.0"
 
