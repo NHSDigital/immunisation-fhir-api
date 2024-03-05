@@ -12,7 +12,7 @@ class Code(str, Enum):
     invalid = "invalid"
     server_error = "internal-server-error"
     invariant = "invariant"
-    invalid_resource = "invalid_resource"
+    unprocessable_entity = "unprocessable_entity"
 
 
 @dataclass
@@ -110,7 +110,7 @@ class IdentifierDuplicationError(RuntimeError):
     def to_operation_outcome(self) -> dict:
         msg = self.__str__()
         return create_operation_outcome(
-            resource_id=str(uuid.uuid4()), severity=Severity.error, code=Code.invalid_resource, diagnostics=msg
+            resource_id=str(uuid.uuid4()), severity=Severity.error, code=Code.unprocessable_entity, diagnostics=msg
         )
 
 

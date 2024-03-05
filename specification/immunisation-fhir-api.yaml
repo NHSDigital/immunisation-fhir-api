@@ -415,6 +415,7 @@ components:
         violated applicable FHIR profiles or server business rules. This should
         be accompanied by an OperationOutcome resource providing additional
         detail  |
+
       content:
         application/fhir+json:
           schema:

@@ -1,22 +1,15 @@
-// Parse the response content
 var responseContent = context.getVariable("response.content");
 var response = JSON.parse(responseContent);
-
-// Set debug message
-context.setVariable("debugMessage", "Executing DynamicPayload.js. Parsed Response: " + JSON.stringify(response));
-
 var diagnosticsMessage = "";
 
-// Check response status code
-if (response.issue[0].code === "invalid_resource") {
-    diagnosticsMessage = "Submitted resource is not valid.";
+if (response.issue[0].code === "unprocessable_entity") {
+    diagnosticsMessage = "The proposed resource violated applicable FHIR profiles or server business rules."
 } else if (response.issue[0].code === "internal_server_error") {
     diagnosticsMessage = "Unexpected internal server error.";
 }
-// Build dynamic payload
+
 var dynamicPayload = {
     "resourceType": "OperationOutcome",
-    // Replace "id" with the correct property from the response
     "id": response.id,
     "meta": {
         "profile": [
@@ -26,7 +19,6 @@ var dynamicPayload = {
     "issue": [
         {
             "severity": "error",
-            // Replace "code" and "diagnostics" with correct properties
             "code": response.issue[0].code,
             "details": {
                 "coding": [
@@ -41,5 +33,4 @@ var dynamicPayload = {
     ]
 };
 
-// Set the dynamic payload as a variable
 context.setVariable("Javascript_dynamic_response", JSON.stringify(dynamicPayload));
