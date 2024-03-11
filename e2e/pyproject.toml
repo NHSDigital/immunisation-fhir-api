@@ -13,7 +13,7 @@ python = "~3.8"
 [tool.poetry.group.dev.dependencies]
 requests = "^2.31.0"
 pyjwt = "^2.8.0"
-cryptography = "^42.0.3"
+cryptography = "^42.0.4"
 lxml = "~4.9.0"
 
 [build-system]
