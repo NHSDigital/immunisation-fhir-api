@@ -1,11 +1,12 @@
 import os
-
 from enum import Enum
-from typing import Optional
-
 from fhir.resources.R4B.bundle import Bundle as FhirBundle, BundleEntry, BundleLink
 from fhir.resources.R4B.immunization import Immunization
+from pydantic import ValidationError
+from typing import Optional
+
 from fhir_repository import ImmunizationRepository
+from logs import timed
 from models.errors import (
     InvalidPatientId,
     CustomValidationError,
@@ -16,9 +17,7 @@ from models.fhir_immunization import ImmunizationValidator
 from models.utils.generic_utils import nhs_number_mod11_check
 from models.utils.post_validation_utils import MandatoryError, NotApplicableError
 from pds_service import PdsService
-from pydantic import ValidationError
 from s_flag_handler import handle_s_flag
-from timer import timed
 
 
 def get_service_url(

@@ -99,6 +99,10 @@ resource "aws_cloudwatch_event_target" "serverlessland-s3-event-ecs-event-target
         {
           "name" : "OBJECT_KEY",
           "value" : <object_key>
+        },
+        {
+          "name" : "SPLUNK_FIREHOSE_NAME",
+          "value" : "${module.splunk.firehose_stream_name}"
         }
       ]
     }

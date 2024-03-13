@@ -1,4 +1,4 @@
-resource "aws_kinesis_firehose_delivery_stream" "test_stream" {
+resource "aws_kinesis_firehose_delivery_stream" "splunk_firehose_stream" {
     name        = "${local.prefix}-firehose"
     destination = "splunk"
 

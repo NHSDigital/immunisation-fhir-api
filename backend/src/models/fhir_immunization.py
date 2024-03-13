@@ -1,12 +1,13 @@
 """Immunization FHIR R4B validator"""
 
+from fhir.resources.R4B.immunization import Immunization
 from typing import Literal
 
-from fhir.resources.R4B.immunization import Immunization
+from logs import timed
 from models.fhir_immunization_post_validators import FHIRImmunizationPostValidators
 from models.fhir_immunization_pre_validators import FHIRImmunizationPreValidators
 from models.utils.generic_utils import get_generic_questionnaire_response_value
-from timer import timed
+
 
 class ImmunizationValidator:
     """
