@@ -1,3 +1,3 @@
 [flake8]
 max-line-length=121
-exclude = .git,__pycache__,dist,.venv/*,node_modules/*,utils/*,tests/.venv/*,dynamodb/*,lambda_code/*,backend/*,.direnv
+exclude = .git,__pycache__,dist,.venv/*,node_modules/*,utils/*,tests/.venv/*,dynamodb/*,backend/*,.direnv
