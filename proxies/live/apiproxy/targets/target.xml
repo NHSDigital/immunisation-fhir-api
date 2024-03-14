@@ -3,7 +3,7 @@
   <PreFlow>
     <Request>
       <Step>
-        <Name>OauthV2.VerifyAccessTokenAppLevel3OrCis2Aal3</Name>
+        <Name>OauthV2.VerifyAccessToken</Name>
       </Step>
       <Step>
         <Name>FlowCallout.ApplyRateLimiting</Name>
@@ -18,13 +18,13 @@
   </PreFlow>
   <FaultRules>
     <FaultRule name="401_invalid_token">
-      <Condition>oauthV2.OauthV2.VerifyAccessTokenAppLevel3OrCis2Aal3.fault.cause == "Invalid access token"</Condition>
+      <Condition>oauthV2.OauthV2.VerifyAccessToken.fault.cause == "Invalid access token"</Condition>
       <Step>
         <Name>AssignMessage.InvalidAccessToken</Name>
       </Step>
     </FaultRule>
     <FaultRule name="403_invalid_permissions">
-      <Condition>(oauthV2.OauthV2.VerifyAccessTokenAppLevel3OrCis2Aal3.fault.cause != "Invalid access token") and (oauthV2.OauthV2.VerifyAccessTokenAppLevel3OrCis2Aal3.failed == true)
+      <Condition>(oauthV2.OauthV2.VerifyAccessToken.fault.cause != "Invalid access token") and (oauthV2.OauthV2.VerifyAccessToken.failed == true)
       </Condition>
       <Step>
         <Name>AssignMessage.PermissionsError</Name>

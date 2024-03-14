@@ -3,9 +3,9 @@ import uuid
 from typing import List
 
 from lib.apigee import ApigeeService, ApigeeApp, ApigeeProduct
-from lib.authentication import AppRestrictedAuthentication, Cis2Authentication, LoginUser
+from lib.authentication import AppRestrictedAuthentication, Cis2Authentication, LoginUser, NHSLoginAuthentication
 from lib.env import get_auth_url, get_proxy_name, get_service_base_path
-from utils.constants import cis2_user
+from utils.constants import cis2_user, nhs_login_user
 from utils.factories import make_apigee_service, make_app_restricted_app, make_cis2_app, make_apigee_product
 from utils.immunisation_api import ImmunisationApi, parse_location
 from utils.resource import create_an_imms_obj
@@ -67,8 +67,14 @@ class ImmunizationBaseTest(unittest.TestCase):
             cls.imms_apis.append(cis2_imms_api)
 
             # NhsLogin
-            # TODO(NhsLogin_AMB-1923) create an app for NhsLogin and append it to the cls.apps,
-            #  then create ImmunisationApi and append it to cls.imms_apis
+            app_data = make_app_data()
+            nhs_login_app, app_res_cfg = make_cis2_app(cls.apigee_service, app_data)
+            cls.apps.append(nhs_login_app)
+
+            nhs_login_auth = NHSLoginAuthentication(get_auth_url(), app_res_cfg, LoginUser(username=nhs_login_user))
+            nhs_login_imms_api = ImmunisationApi(base_url, nhs_login_auth)
+            cls.imms_apis.append(nhs_login_imms_api)
+
         except Exception as e:
             cls.tearDownClass()
             raise e

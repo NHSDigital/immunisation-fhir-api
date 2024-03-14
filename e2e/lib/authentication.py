@@ -153,15 +153,6 @@ class AuthCodeFlow:
         return token_resp.json()["access_token"]
 
 
-class NhsLoginAuthentication(BaseAuthentication):
-    def __str__(self):
-        return AuthType.NHS_LOGIN.value
-
-    def get_access_token(self) -> str:
-        # TODO(NhsLogin_AMB-1923) add NHSLogin
-        pass
-
-
 class Cis2Authentication(BaseAuthentication):
     def __init__(self, auth_url: str, config: UserRestrictedCredentials, default_user: LoginUser):
         self.code_flow = AuthCodeFlow(auth_url, config)
@@ -175,3 +166,18 @@ class Cis2Authentication(BaseAuthentication):
 
     def get_access_token(self) -> str:
         return self.code_flow.get_access_token("nhs-cis2", self.user)
+
+
+class NHSLoginAuthentication(BaseAuthentication):
+    def __init__(self, auth_url: str, config: UserRestrictedCredentials, default_user: LoginUser):
+        self.code_flow = AuthCodeFlow(auth_url, config)
+        self.user = default_user
+
+    def __str__(self):
+        return AuthType.NHS_LOGIN.value
+
+    def set_user(self, user: LoginUser):
+        self.user = user
+
+    def get_access_token(self) -> str:
+        return self.code_flow.get_access_token("nhs-login", self.user)

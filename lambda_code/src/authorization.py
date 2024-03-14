@@ -63,7 +63,8 @@ class Authorization:
             self._app_restricted(operation, aws_event)
         if auth_type == AuthType.CIS2:
             self._cis2(operation, aws_event)
-        # TODO(NhsLogin_AMB-1923) add NHSLogin
+        if auth_type == AuthType.NHS_LOGIN:
+            self._nhs_login(operation, aws_event)
         else:
             UnauthorizedError()
 
@@ -83,6 +84,10 @@ class Authorization:
 
     def _cis2(self, operation: EndpointOperation, aws_event: dict) -> None:
         # Cis2 works exactly the same as ApplicationRestricted
+        self._app_restricted(operation, aws_event)
+
+    def _nhs_login(self, operation: EndpointOperation, aws_event: dict) -> None:
+        # NHS Login works exactly the same as ApplicationRestricted
         self._app_restricted(operation, aws_event)
 
     @staticmethod
