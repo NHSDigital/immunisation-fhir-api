@@ -11,7 +11,7 @@ from .utils.generic_utils import (
 )
 from .utils.pre_validation_test_utils import ValidatorModelTests
 from .utils.values_for_tests import ValidValues, InvalidValues
-from models.fhir_immunization import ImmunizationValidator
+from src.models.fhir_immunization import ImmunizationValidator
 
 
 class TestImmunizationModelPreValidationRules(unittest.TestCase):
@@ -82,8 +82,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
             self,
             valid_contained_with_patient,
             invalid_patient_pat1,
-            expected_error_message="patient.reference must be a single reference to a contained "
-            + "Patient resource",
+            expected_error_message="patient.reference must be a single reference to a contained " + "Patient resource",
         )
 
         # Test case: Pat1 in contained, patient reference is #Pat2 - reject
@@ -91,8 +90,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
             self,
             valid_contained_with_patient,
             valid_patient_pat2,
-            expected_error_message="The reference '#Pat2' does not exist in the contained "
-            + "Patient resource",
+            expected_error_message="The reference '#Pat2' does not exist in the contained " + "Patient resource",
         )
         # Test case: contained Patient has no id, patient reference is #Pat1 - reject
         ValidatorModelTests.test_invalid_patient_reference_rejected(
@@ -132,15 +130,15 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         ValidatorModelTests.test_string_value(
             self,
             field_location="contained[?(@.resourceType=='Patient')].identifier[0].value",
-            valid_strings_to_test=["1234567890"],
+            valid_strings_to_test=["9990548609"],
             defined_length=10,
-            invalid_length_strings_to_test=["123456789", "12345678901", ""],
+            invalid_length_strings_to_test=["999054860", "99905486091", ""],
             spaces_allowed=False,
             invalid_strings_with_spaces_to_test=[
-                "12345 7890",
-                " 123456789",
-                "123456789 ",
-                "1234  7890",
+                "99905 8609",
+                " 990548609",
+                "999054860 ",
+                "9990  8609",
             ],
         )
 
@@ -175,9 +173,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
 
     def test_pre_validate_patient_birth_date(self):
         """Test pre_validate_patient_birth_date accepts valid values and rejects invalid values"""
-        ValidatorModelTests.test_date_value(
-            self, field_location="contained[?(@.resourceType=='Patient')].birthDate"
-        )
+        ValidatorModelTests.test_date_value(self, field_location="contained[?(@.resourceType=='Patient')].birthDate")
 
     def test_pre_validate_patient_gender(self):
         """Test pre_validate_patient_gender accepts valid values and rejects invalid values"""
@@ -242,8 +238,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
 
             ValidatorModelTests.test_list_value(
                 self,
-                field_location="contained[?(@.resourceType=='QuestionnaireResponse')]"
-                + f".item[{i}].answer",
+                field_location="contained[?(@.resourceType=='QuestionnaireResponse')]" + f".item[{i}].answer",
                 valid_lists_to_test=[[valid_list_element]],
                 predefined_list_length=1,
                 valid_list_element=valid_list_element,
@@ -287,9 +282,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         valid_json_data = deepcopy(self.json_data)
 
         # Test that valid data is accepted
-        _test_valid_values_accepted(
-            self, valid_json_data, "performer", [ValidValues.performer]
-        )
+        _test_valid_values_accepted(self, valid_json_data, "performer", [ValidValues.performer])
 
         # Test lists with duplicate values
         _test_invalid_values_rejected(
@@ -297,8 +290,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
             valid_json_data,
             field_location="performer",
             invalid_value=InvalidValues.performer_with_two_organizations,
-            expected_error_message="performer.actor[?@.type=='Organization'] must be unique",
-            expected_error_type="value_error",
+            expected_error_message="performer.actor[?@.type=='Organization'] must be unique"
         )
 
     def test_pre_validate_performer_actor_reference(self):
@@ -307,9 +299,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         values
         """
 
-        valid_contained_with_no_practitioner = [
-            ValidValues.empty_patient_resource_id_Pat1
-        ]
+        valid_contained_with_no_practitioner = [ValidValues.empty_patient_resource_id_Pat1]
 
         valid_contained_with_practitioner = [
             ValidValues.empty_practitioner_resource_id_Pract1,
@@ -386,8 +376,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
             self,
             valid_contained_with_practitioner,
             valid_performer_with_no_actor_reference,
-            expected_error_message="contained Practitioner ID must be referenced by "
-            + "performer.actor.reference",
+            expected_error_message="contained Practitioner ID must be referenced by " + "performer.actor.reference",
         )
 
         # Test case: Pract1 in contained, 1 actor of #Pract2 in performer - reject
@@ -587,9 +576,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         ValidatorModelTests.test_unique_list(
             self,
             field_location="extension",
-            valid_lists_to_test=[
-                [ValidValues.vaccination_procedure_with_one_snomed_code]
-            ],
+            valid_lists_to_test=[[ValidValues.vaccination_procedure_with_one_snomed_code]],
             invalid_list_with_duplicates_to_test=[
                 ValidValues.vaccination_procedure_with_one_snomed_code,
                 ValidValues.vaccination_procedure_with_one_snomed_code,
@@ -636,9 +623,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
             + "[?(@.system=='http://snomed.info/sct')].code"
         )
 
-        ValidatorModelTests.test_string_value(
-            self, field_location=field_location, valid_strings_to_test=["dummy"]
-        )
+        ValidatorModelTests.test_string_value(self, field_location=field_location, valid_strings_to_test=["dummy"])
 
     def test_pre_validate_vaccination_procedure_display(self):
         """
@@ -651,9 +636,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
             + "[?(@.system=='http://snomed.info/sct')].display"
         )
 
-        ValidatorModelTests.test_string_value(
-            self, field_location=field_location, valid_strings_to_test=["dummy"]
-        )
+        ValidatorModelTests.test_string_value(self, field_location=field_location, valid_strings_to_test=["dummy"])
 
     def test_pre_validate_protocol_applied(self):
         """Test pre_validate_protocol_applied accepts valid values and rejects invalid values"""
@@ -689,8 +672,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
                 ValidValues.snomed_coding_element,
                 ValidValues.snomed_coding_element,
             ],
-            expected_error_message="vaccineCode.coding[?(@.system=='http://snomed.info/sct')]"
-            + " must be unique",
+            expected_error_message="vaccineCode.coding[?(@.system=='http://snomed.info/sct')]" + " must be unique",
         )
 
     def test_pre_validate_vaccine_code_coding_code(self):
@@ -749,8 +731,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
                 ValidValues.snomed_coding_element,
                 ValidValues.snomed_coding_element,
             ],
-            expected_error_message="site.coding[?(@.system=='http://snomed.info/sct')]"
-            + " must be unique",
+            expected_error_message="site.coding[?(@.system=='http://snomed.info/sct')]" + " must be unique",
         )
 
     def test_pre_validate_site_coding_code(self):
@@ -779,8 +760,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
                 ValidValues.snomed_coding_element,
                 ValidValues.snomed_coding_element,
             ],
-            expected_error_message="route.coding[?(@.system=='http://snomed.info/sct')]"
-            + " must be unique",
+            expected_error_message="route.coding[?(@.system=='http://snomed.info/sct')]" + " must be unique",
         )
 
     def test_pre_validate_route_coding_code(self):
@@ -1042,9 +1022,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
             self,
             field_location="contained[?(@.resourceType=='QuestionnaireResponse')]"
             + ".item[?(@.linkId=='CareSetting')].answer[0].valueCoding.display",
-            valid_strings_to_test=[
-                "SNOMED-CT Term description Community health services (qualifier value)"
-            ],
+            valid_strings_to_test=["SNOMED-CT Term description Community health services (qualifier value)"],
         )
 
     def test_pre_validate_ip_address(self):
@@ -1181,8 +1159,7 @@ class TestImmunizationModelPreValidationRulesForNotDone(unittest.TestCase):
                 ValidValues.snomed_coding_element,
                 ValidValues.snomed_coding_element,
             ],
-            expected_error_message="statusReason.coding[?(@.system=='http://snomed.info/sct')]"
-            + " must be unique",
+            expected_error_message="statusReason.coding[?(@.system=='http://snomed.info/sct')]" + " must be unique",
         )
 
     def test_pre_validate_status_reason_coding_code(self):
@@ -1215,9 +1192,7 @@ class TestImmunizationModelPreValidationRulesForReduceValidation(unittest.TestCa
 
     def setUp(self):
         """Set up for each test. This runs before every test"""
-        self.json_data = load_json_data(
-            "sample_immunization_reduce_validation_event.json"
-        )
+        self.json_data = load_json_data("sample_immunization_reduce_validation_event.json")
         self.validator = ImmunizationValidator(add_post_validators=False)
 
     def test_pre_validate_reduce_validation_reason_answer(self):

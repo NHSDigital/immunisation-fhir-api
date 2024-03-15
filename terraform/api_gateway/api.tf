@@ -17,9 +17,10 @@ resource "aws_apigatewayv2_stage" "default" {
     auto_deploy = true
 
   default_route_settings {
-    logging_level          = "ERROR"
+    logging_level          = "INFO"
     throttling_burst_limit = 100
     throttling_rate_limit  = 100
+    detailed_metrics_enabled = true
   }
   access_log_settings {
     destination_arn = aws_cloudwatch_log_group.api_access_log.arn

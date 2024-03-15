@@ -1,11 +1,14 @@
+import base64
 import json
 import unittest
 import uuid
 from unittest.mock import create_autospec
 from urllib.parse import urlencode
-from fhir.resources.R4B.immunization import Immunization
+
 from fhir.resources.R4B.bundle import Bundle
-import base64
+from fhir.resources.R4B.immunization import Immunization
+
+from authorization import Authorization
 from fhir_controller import FhirController
 from fhir_service import FhirService, UpdateOutcome
 from models.errors import (
@@ -13,55 +16,15 @@ from models.errors import (
     UnhandledResponseError,
     InvalidPatientId,
     CustomValidationError,
-    IdentifierDuplicationError,
 )
 from .immunization_utils import create_an_immunization
-
-
-def _create_a_post_event(body: str) -> dict:
-    return {
-        "version": "2.0",
-        "routeKey": "POST /event",
-        "rawPath": "/jaho3/event",
-        "rawQueryString": "",
-        "headers": {
-            "accept-encoding": "br,deflate,gzip,x-gzip",
-            "content-length": "688",
-            "content-type": "application/fhir+json",
-            "host": "jaho3.imms.dev.api.platform.nhs.uk",
-            "user-agent": "Apache-HttpClient/4.5.14 (Java/17.0.8.1)",
-            "x-amzn-trace-id": "Root=1-6556ab07-72760aca0fdf068e5997f65a",
-            "x-forwarded-for": "81.110.196.79",
-            "x-forwarded-port": "443",
-            "x-forwarded-proto": "https",
-        },
-        "requestContext": {
-            "accountId": "790083933819",
-            "apiId": "bgllbuiz2i",
-            "domainName": "jaho3.imms.dev.api.platform.nhs.uk",
-            "domainPrefix": "jaho3",
-            "http": {
-                "method": "POST",
-                "path": "/jaho3/event",
-                "protocol": "HTTP/1.1",
-                "sourceIp": "81.110.196.79",
-                "userAgent": "Apache-HttpClient/4.5.14 (Java/17.0.8.1)",
-            },
-            "requestId": "Og-pShuvLPEEM1Q=",
-            "routeKey": "POST /event",
-            "stage": "jaho3",
-            "time": "16/Nov/2023:23:51:35 +0000",
-            "timeEpoch": 1700178695954,
-        },
-        "body": '{\n  "resourceType": "Immunization",\n  "id": "e045626e-4dc5-4df3-bc35-da25263f901e",\n  "identifier": [\n    {\n      "system": "https://supplierABC/ODSCode",\n      "value": "e045626e-4dc5-4df3-bc35-da25263f901e"\n    }\n  ],\n  "status": "completed",\n  "vaccineCode": {\n    "coding": [\n      {\n        "system": "http://snomed.info/sct",\n        "code": "39114911000001105",\n        "display": "some text"\n      }\n    ]\n  },\n  "patient": {\n    "reference": "urn:uuid:124fcb63-669c-4a3c-af2b-caf55de167ec",\n    "type": "Patient",\n    "identifier": {\n      "system": "https://fhir.nhs.uk/Id/nhs-number",\n      "value": "9000000009"\n    }\n  },\n  "occurrenceDateTime": "2020-12-14T10:08:15+00:00"\n}',
-        "isBase64Encoded": False,
-    }
 
 
 class TestFhirController(unittest.TestCase):
     def setUp(self):
         self.service = create_autospec(FhirService)
-        self.controller = FhirController(self.service)
+        self.authorizer = create_autospec(Authorization)
+        self.controller = FhirController(self.authorizer, self.service)
 
     def test_create_response(self):
         """it should return application/fhir+json with correct status code"""
@@ -88,7 +51,8 @@ class TestFhirController(unittest.TestCase):
 class TestFhirControllerGetImmunizationById(unittest.TestCase):
     def setUp(self):
         self.service = create_autospec(FhirService)
-        self.controller = FhirController(self.service)
+        self.authorizer = create_autospec(Authorization)
+        self.controller = FhirController(self.authorizer, self.service)
 
     def test_get_imms_by_id(self):
         """it should return Immunization resource if it exists"""
@@ -140,7 +104,8 @@ class TestFhirControllerGetImmunizationById(unittest.TestCase):
 class TestCreateImmunization(unittest.TestCase):
     def setUp(self):
         self.service = create_autospec(FhirService)
-        self.controller = FhirController(self.service)
+        self.authorizer = create_autospec(Authorization)
+        self.controller = FhirController(self.authorizer, self.service)
 
     def test_create_immunization(self):
         """it should create Immunization and return resource's location"""
@@ -199,17 +164,15 @@ class TestCreateImmunization(unittest.TestCase):
 class TestUpdateImmunization(unittest.TestCase):
     def setUp(self):
         self.service = create_autospec(FhirService)
-        self.controller = FhirController(self.service)
+        self.authorizer = create_autospec(Authorization)
+        self.controller = FhirController(self.authorizer, self.service)
 
     def test_create_immunization(self):
         """it should update Immunization"""
         imms = "{}"
         imms_id = "valid-id"
         aws_event = {"body": imms, "pathParameters": {"id": imms_id}}
-        self.service.update_immunization.return_value = (
-            UpdateOutcome.UPDATE,
-            "value doesn't matter",
-        )
+        self.service.update_immunization.return_value = UpdateOutcome.UPDATE, "value doesn't matter"
 
         response = self.controller.update_immunization(aws_event)
 
@@ -225,10 +188,7 @@ class TestUpdateImmunization(unittest.TestCase):
 
         new_id = "newly-created-id"
         created_imms = create_an_immunization(imms_id=new_id)
-        self.service.update_immunization.return_value = (
-            UpdateOutcome.CREATE,
-            created_imms,
-        )
+        self.service.update_immunization.return_value = UpdateOutcome.CREATE, created_imms
 
         # When
         response = self.controller.update_immunization(aws_event)
@@ -278,7 +238,8 @@ class TestUpdateImmunization(unittest.TestCase):
 class TestDeleteImmunization(unittest.TestCase):
     def setUp(self):
         self.service = create_autospec(FhirService)
-        self.controller = FhirController(self.service)
+        self.authorizer = create_autospec(Authorization)
+        self.controller = FhirController(self.authorizer, self.service)
 
     def test_validate_imms_id(self):
         """it should validate lambda's Immunization id"""
@@ -342,7 +303,8 @@ class TestDeleteImmunization(unittest.TestCase):
 class TestSearchImmunizations(unittest.TestCase):
     def setUp(self):
         self.service = create_autospec(FhirService)
-        self.controller = FhirController(self.service)
+        self.authorizer = create_autospec(Authorization)
+        self.controller = FhirController(self.authorizer, self.service)
         self.nhs_search_param = "-nhsNumber"
         self.disease_type_search_param = "-diseaseType"
 
@@ -354,12 +316,10 @@ class TestSearchImmunizations(unittest.TestCase):
         nhs_number = "an-patient-id"
         disease_type = "a-disease-type"
         params = f"{self.nhs_search_param}={nhs_number}&{self.disease_type_search_param}={disease_type}"
-        lambda_event = {
-            "queryStringParameters": {
-                self.disease_type_search_param: disease_type,
-                self.nhs_search_param: nhs_number,
-            }
-        }
+        lambda_event = {"queryStringParameters": {
+            self.disease_type_search_param: disease_type,
+            self.nhs_search_param: nhs_number
+        }}
 
         # When
         response = self.controller.search_immunizations(lambda_event)

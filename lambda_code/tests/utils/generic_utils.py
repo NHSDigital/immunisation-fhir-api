@@ -56,10 +56,7 @@ def test_invalid_values_rejected(
     valid_json_data: dict,
     field_location: str,
     invalid_value: Any,
-    expected_error_message: str,
-    expected_error_type: Literal[
-        "type_error", "value_error", "type_error.none.not_allowed"
-    ],
+    expected_error_message: str
 ):
     """
     Test that invalid json data is rejected by the model, with an appropriate validation error
@@ -72,11 +69,8 @@ def test_invalid_values_rejected(
     # Create invalid json data by amending the value of the relevant field
     invalid_json_data = parse(field_location).update(valid_json_data, invalid_value)
 
-    # Test that correct error message is raised
-    with test_instance.assertRaises(ValidationError) as error:
+    # Test that correct error type is raised
+    with test_instance.assertRaises(ValueError or TypeError) as error:
         test_instance.validator.validate(invalid_json_data)
 
-    test_instance.assertTrue(
-        (expected_error_message + f" (type={expected_error_type})")
-        in str(error.exception)
-    )
+    test_instance.assertEqual(expected_error_message, str(error.exception))

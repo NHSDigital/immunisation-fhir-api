@@ -92,7 +92,7 @@ class PostValidation:
         of another field.
         """
         try:
-            obj = values[key] if index is None else values[key][index]
+            obj = getattr(values, key) if index is None else getattr(values, key)[index]
             field_value = obj if attribute is None else get_deep_attr(obj, attribute)
         except (KeyError, IndexError, AttributeError, TypeError):
             field_value = None

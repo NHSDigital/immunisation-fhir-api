@@ -1,59 +1,48 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <TargetEndpoint name="immunisation-fhir-api-target">
-    <PreFlow>
-        <Request>
-            <Step>
-                <Name>OauthV2.VerifyAccessTokenAppLevel3OrCis2Aal3</Name>
-            </Step>
-            <Step>
-                <Name>FlowCallout.ApplyRateLimiting</Name>
-            </Step>
-        </Request>
-    </PreFlow>
-    <FaultRules>
-        <FaultRule name="401_invalid_token">
-            <Condition>oauthV2.OauthV2.VerifyAccessTokenAppLevel3OrCis2Aal3.fault.cause == "Invalid access token"</Condition>
-            <Step>
-                <Name>AssignMessage.InvalidAccessToken</Name>
-            </Step>
-        </FaultRule>
-        <FaultRule name="403_invalid_permissions">
-            <Condition>(oauthV2.OauthV2.VerifyAccessTokenAppLevel3OrCis2Aal3.fault.cause != "Invalid access token") and (oauthV2.OauthV2.VerifyAccessTokenAppLevel3OrCis2Aal3.failed == true)</Condition>
-            <Step>
-                <Name>AssignMessage.PermissionsError</Name>
-            </Step>
-        </FaultRule>
-        <FaultRule name="422InvalidResource">
-            <Condition>response.status.code == 422</Condition>
-            <Step>
-                <Name>JavaScriptDynamicPayload</Name>
-            </Step>
-            <Step>
-                <Name>AssignMessage.422InvalidResource</Name>
-            </Step>
-        </FaultRule>
-        <FaultRule name="500InternalServerError">
-            <Condition>response.status.code == 500</Condition>
-            <Step>
-                <Name>JavaScriptDynamicPayload</Name>
-            </Step>
-            <Step>
-                <Name>AssignMessage.500InternalServerError</Name>
-            </Step>
-        </FaultRule>
-    </FaultRules>
-    <HTTPTargetConnection>
-        <URL>{{ DOMAIN_ENDPOINT }}</URL>
-        <SSLInfo>
-            <Enabled>true</Enabled>
-            <ClientAuthEnabled>true</ClientAuthEnabled>
-            <KeyStore>ref://imms-client</KeyStore>
-            <KeyAlias>cert</KeyAlias>
-        </SSLInfo>
-        <Properties>
-            <Property name="supports.http10">true</Property>
-            <Property name="request.retain.headers">User-Agent,Referer,Accept-Language</Property>
-            <Property name="retain.queryparams">apikey</Property>
-        </Properties>
-    </HTTPTargetConnection>
+  <PreFlow>
+    <Request>
+      <Step>
+        <Name>OauthV2.VerifyAccessTokenAppLevel3OrCis2Aal3</Name>
+      </Step>
+      <Step>
+        <Name>FlowCallout.ApplyRateLimiting</Name>
+      </Step>
+      <Step>
+        <Name>VerifyAPIKey.CustomAttributes</Name>
+      </Step>
+      <Step>
+        <Name>AssignMessage.AddAuthorizationHeaders</Name>
+      </Step>
+    </Request>
+  </PreFlow>
+  <FaultRules>
+    <FaultRule name="401_invalid_token">
+      <Condition>oauthV2.OauthV2.VerifyAccessTokenAppLevel3OrCis2Aal3.fault.cause == "Invalid access token"</Condition>
+      <Step>
+        <Name>AssignMessage.InvalidAccessToken</Name>
+      </Step>
+    </FaultRule>
+    <FaultRule name="403_invalid_permissions">
+      <Condition>(oauthV2.OauthV2.VerifyAccessTokenAppLevel3OrCis2Aal3.fault.cause != "Invalid access token") and (oauthV2.OauthV2.VerifyAccessTokenAppLevel3OrCis2Aal3.failed == true)
+      </Condition>
+      <Step>
+        <Name>AssignMessage.PermissionsError</Name>
+      </Step>
+    </FaultRule>
+  </FaultRules>
+  <HTTPTargetConnection>
+    <URL>{{ DOMAIN_ENDPOINT }}</URL>
+    <SSLInfo>
+      <Enabled>true</Enabled>
+      <ClientAuthEnabled>true</ClientAuthEnabled>
+      <KeyStore>ref://imms-client</KeyStore>
+      <KeyAlias>cert</KeyAlias>
+    </SSLInfo>
+    <Properties>
+      <Property name="supports.http10">true</Property>
+      <Property name="request.retain.headers">User-Agent,Referer,Accept-Language</Property>
+      <Property name="retain.queryparams">apikey</Property>
+    </Properties>
+  </HTTPTargetConnection>
 </TargetEndpoint>

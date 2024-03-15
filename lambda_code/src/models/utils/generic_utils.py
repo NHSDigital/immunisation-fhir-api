@@ -8,7 +8,7 @@ def get_contained_resource_from_model(
     resource: Literal["Patient", "Practitioner", "QuestionnaireResponse"],
 ):
     """Extract and return the requested contained resource from values model"""
-    return [x for x in values["contained"] if x.resource_type == resource][0]
+    return [x for x in values.contained if x.resource_type == resource][0]
 
 
 def get_generic_questionnaire_response_value(
@@ -31,11 +31,7 @@ def get_generic_questionnaire_response_value(
         The value coding field type to be validated, must be provided for valueCoding fields
     """
 
-    questionnaire_reponse = [
-        x
-        for x in json_data["contained"]
-        if x.get("resourceType") == "QuestionnaireResponse"
-    ][0]
+    questionnaire_reponse = [x for x in json_data["contained"] if x.get("resourceType") == "QuestionnaireResponse"][0]
 
     item = [x for x in questionnaire_reponse["item"] if x.get("linkId") == link_id][0]
 
@@ -70,9 +66,7 @@ def get_generic_questionnaire_response_value_from_model(
     value_coding_field_type: Optional[Literal["code", "display", "system"]]
         The value coding field type to be validated, must be provided for valueCoding fields
     """
-    questionnaire_reponse = get_contained_resource_from_model(
-        values, "QuestionnaireResponse"
-    )
+    questionnaire_reponse = get_contained_resource_from_model(values, "QuestionnaireResponse")
 
     item = [x for x in questionnaire_reponse.item if x.linkId == link_id][0]
 
@@ -97,13 +91,11 @@ def get_generic_extension_value(
     """
     Get the value of an extension field, given its url, field_type, and system
     """
-    value_codeable_concept_coding = [
-        x for x in json_data["extension"] if x.get("url") == url
-    ][0]["valueCodeableConcept"]["coding"]
+    value_codeable_concept_coding = [x for x in json_data["extension"] if x.get("url") == url][0][
+        "valueCodeableConcept"
+    ]["coding"]
 
-    value = [x for x in value_codeable_concept_coding if x.get("system") == system][0][
-        field_type
-    ]
+    value = [x for x in value_codeable_concept_coding if x.get("system") == system][0][field_type]
 
     return value
 
@@ -117,7 +109,7 @@ def get_generic_extension_value_from_model(
     """
     Get the value of an extension field, given its url, field_type, and system
     """
-    value_codeable_concept_coding = [x for x in values["extension"] if x.url == url][
+    value_codeable_concept_coding = [x for x in values.extension if x.url == url][
         0
     ].valueCodeableConcept.coding
 
@@ -136,10 +128,7 @@ def generate_field_location_for_questionnnaire_response(
     field_type: Literal["code", "display", "system"] = None,
 ) -> str:
     """Generate the field location string for questionnaire response items"""
-    location = (
-        "contained[?(@.resourceType=='QuestionnaireResponse')]"
-        + f".item[?(@.linkId=='{link_id}')].answer[0]"
-    )
+    location = "contained[?(@.resourceType=='QuestionnaireResponse')]" + f".item[?(@.linkId=='{link_id}')].answer[0]"
     if answer_type == "valueCoding":
         return f"{location}.{answer_type}.{field_type}"
     if answer_type == "valueReference":
@@ -148,14 +137,9 @@ def generate_field_location_for_questionnnaire_response(
         return f"{location}.{answer_type}"
 
 
-def generate_field_location_for_extension(
-    url: str, system: str, field_type: Literal["code", "display"]
-) -> str:
+def generate_field_location_for_extension(url: str, system: str, field_type: Literal["code", "display"]) -> str:
     """Generate the field location string for extension items"""
-    return (
-        f"extension[?(@.url=='{url}')].valueCodeableConcept."
-        + f"coding[?(@.system=='{system}')].{field_type}"
-    )
+    return f"extension[?(@.url=='{url}')].valueCodeableConcept." + f"coding[?(@.system=='{system}')].{field_type}"
 
 
 def get_deep_attr(obj, attrs):
@@ -169,3 +153,31 @@ def is_organization(x):
         return x.actor.type == "Organization"
     except (AttributeError, TypeError):
         return False
+
+
+def nhs_number_mod11_check(nhs_number: str) -> bool:
+    """
+    Parameters:-
+    nhs_number: str
+        The NHS number to be checked.
+    Returns:-
+        True if the nhs number passes the mod 11 check, False otherwise.
+
+    Definition of NHS number can be found at:
+    https://www.datadictionary.nhs.uk/attributes/nhs_number.html
+    """
+    is_mod11 = False
+    if nhs_number.isdigit() and len(nhs_number) == 10:
+        # Create a reversed list of weighting factors
+        weighting_factors = list(range(2, 11))[::-1]
+        # Multiply each of the first nine digits by the weighting factor and add the results of each multiplication
+        # together
+        total = sum(int(digit) * weight for digit, weight in zip(nhs_number[:-1], weighting_factors))
+        # Divide the total by 11 and establish the remainder and subtract the remainder from 11 to give the check digit.
+        # If the result is 11 then a check digit of 0 is used. If the result is 10 then the NHS NUMBER is invalid and
+        # not used.
+        check_digit = 0 if (total % 11 == 0) else (11 - (total % 11))
+        # Check the remainder matches the check digit. If it does not, the NHS NUMBER is invalid.
+        is_mod11 = check_digit == int(nhs_number[-1])
+
+    return is_mod11

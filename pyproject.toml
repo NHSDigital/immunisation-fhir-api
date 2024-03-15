@@ -4,15 +4,13 @@ python = "^3.8"
 [tool.poetry]
 name = "immunisation-fhir-api"
 version = "0.0.1-alpha"
-description = "TODO"
-authors = [
-    #TODO add authors
-]
+description = "FHIR server for Immunization resource"
+authors = []
 readme = 'README.md'
 license = "MIT"
 repository = "https://github.com/NHSDigital/immunisation-fhir-api"
 homepage = "https://github.com/NHSDigital/immunisation-fhir-api"
-keywords = ["healthcare", "uk", "nhs"] #TODO add additional keywords
+keywords = ["healthcare", "uk", "nhs"]
 
 
 [tool.poetry.dependencies]

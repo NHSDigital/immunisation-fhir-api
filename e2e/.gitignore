@@ -1,0 +1,43 @@
+*.key
+*.pem
+*.pub
+*.iml
+.well-known
+.keys
+# default poetry gitignore
+*.pyc
+
+# Packages
+*.egg
+/*.egg-info
+/dist/*
+build
+_build
+.cache
+*.so
+
+# Installer logs
+pip-log.txt
+
+# Unit test / coverage reports
+.coverage
+.pytest_cache
+
+.DS_Store
+.idea/*
+.python-version
+.vscode/*
+
+
+/setup.cfg
+MANIFEST.in
+/setup.py
+/docs/site/*
+.mypy_cache
+
+.venv
+/releases/*
+pip-wheel-metadata
+/poetry.toml
+
+poetry/core/*

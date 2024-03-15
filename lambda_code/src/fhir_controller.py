@@ -1,14 +1,16 @@
+import base64
 import json
 import os
 import re
 import uuid
-from typing import Optional
 from decimal import Decimal
+from typing import Optional
+from urllib.parse import parse_qs
 
 import boto3
-import base64
 from botocore.config import Config
 
+from authorization import Authorization, EndpointOperation, UnknownPermission
 from cache import Cache
 from fhir_repository import ImmunizationRepository, create_table
 from fhir_service import FhirService, UpdateOutcome, get_service_url
@@ -16,13 +18,13 @@ from models.errors import (
     Severity,
     Code,
     create_operation_outcome,
+    UnauthorizedError,
     ResourceNotFoundError,
     UnhandledResponseError,
     ValidationError,
     IdentifierDuplicationError
 )
 from pds_service import PdsService, Authenticator
-from urllib.parse import parse_qs
 
 
 def make_controller(
@@ -38,26 +40,29 @@ def make_controller(
     )
     pds_service = PdsService(authenticator, pds_env)
 
+    authorizer = Authorization()
     service = FhirService(imms_repo=imms_repo, pds_service=pds_service)
 
-    return FhirController(fhir_service=service)
+    return FhirController(authorizer=authorizer, fhir_service=service)
 
 
 class FhirController:
     immunization_id_pattern = r"^[A-Za-z0-9\-.]{1,64}$"
 
-    def __init__(self, fhir_service: FhirService):
+    def __init__(self, authorizer: Authorization, fhir_service: FhirService):
         self.fhir_service = fhir_service
+        self.authorizer = authorizer
 
     def get_immunization_by_id(self, aws_event) -> dict:
+        if response := self.authorize_request(EndpointOperation.READ, aws_event):
+            return response
+
         imms_id = aws_event["pathParameters"]["id"]
 
-        id_error = self._validate_id(imms_id)
-        if id_error:
+        if id_error := self._validate_id(imms_id):
             return self.create_response(400, id_error)
 
-        resource = self.fhir_service.get_immunization_by_id(imms_id)
-        if resource:
+        if resource := self.fhir_service.get_immunization_by_id(imms_id):
             return FhirController.create_response(200, resource.json())
         else:
             msg = "The requested resource was not found."
@@ -70,12 +75,13 @@ class FhirController:
             return FhirController.create_response(404, id_error)
 
     def create_immunization(self, aws_event):
+        if response := self.authorize_request(EndpointOperation.CREATE, aws_event):
+            return response
+
         try:
             imms = json.loads(aws_event["body"], parse_float=Decimal)
         except json.decoder.JSONDecodeError as e:
-            return self._create_bad_request(
-                f"Request's body contains malformed JSON: {e}"
-            )
+            return self._create_bad_request(f"Request's body contains malformed JSON: {e}")
 
         try:
             resource = self.fhir_service.create_immunization(imms)
@@ -89,9 +95,11 @@ class FhirController:
             return self.create_response(500, unhandled_error.to_operation_outcome())
 
     def update_immunization(self, aws_event):
+        if response := self.authorize_request(EndpointOperation.UPDATE, aws_event):
+            return response
+
         imms_id = aws_event["pathParameters"]["id"]
-        id_error = self._validate_id(imms_id)
-        if id_error:
+        if id_error := self._validate_id(imms_id):
             return FhirController.create_response(400, json.dumps(id_error))
         try:
             imms = json.loads(aws_event["body"], parse_float=Decimal)
@@ -113,10 +121,12 @@ class FhirController:
             return self.create_response(422, invalid_error.to_operation_outcome())
 
     def delete_immunization(self, aws_event):
+        if response := self.authorize_request(EndpointOperation.DELETE, aws_event):
+            return response
+
         imms_id = aws_event["pathParameters"]["id"]
 
-        id_error = self._validate_id(imms_id)
-        if id_error:
+        if id_error := self._validate_id(imms_id):
             return FhirController.create_response(400, id_error)
 
         try:
@@ -128,9 +138,10 @@ class FhirController:
             return self.create_response(500, unhandled_error.to_operation_outcome())
 
     def search_immunizations(self, aws_event) -> dict:
+        if response := self.authorize_request(EndpointOperation.SEARCH, aws_event):
+            return response
+
         http_method = aws_event.get("httpMethod")
-        nhs_number_list = []
-        disease_type_list = []
         nhs_number_value = None
         disease_type_value = None
         nhs_number_param = "-nhsNumber"
@@ -206,6 +217,21 @@ class FhirController:
             diagnostics=message,
         )
         return self.create_response(400, error)
+
+    def authorize_request(self, operation: EndpointOperation, aws_event: dict) -> Optional[dict]:
+        try:
+            self.authorizer.authorize(operation, aws_event)
+        except UnauthorizedError as e:
+            return self.create_response(403, e.to_operation_outcome())
+        except UnknownPermission:
+            # TODO: I think when AuthenticationType is not present, then we don't get below message. Double check again
+            id_error = create_operation_outcome(
+                resource_id=str(uuid.uuid4()),
+                severity=Severity.error,
+                code=Code.server_error,
+                diagnostics='application includes invalid authorization values',
+            )
+            return self.create_response(500, id_error)
 
     @staticmethod
     def create_response(status_code, body=None, headers=None):

@@ -64,7 +64,7 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
             field_location=field_location,
             valid_values_to_test=["1324681000000101"],
         )
-        self.assertEqual(VaccineTypes.covid_19, self.validator.immunization.vaccine_type)
+        self.assertEqual(VaccineTypes.covid_19, self.validator.vaccine_type)
 
         # Test that an invalid code is rejected
         _test_invalid_values_rejected(
@@ -72,8 +72,7 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
             valid_json_data=valid_json_data,
             field_location=field_location,
             invalid_value="INVALID_VALUE",
-            expected_error_message=f"{field_location}:" + " INVALID_VALUE is not a valid code for this service",
-            expected_error_type="value_error",
+            expected_error_message=f"{field_location}: INVALID_VALUE is not a valid code for this service"
         )
 
         # Test that json data which doesn't contain vaccination_procedure_code is rejected
@@ -439,7 +438,7 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
             field_location=field_location,
             valid_json_data=deepcopy(self.not_done_json_data),
         )
-
+        
         # Test that valid values are accepted when status is 'not-done'
         _test_valid_values_accepted(
             self,
@@ -455,8 +454,7 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
             field_location=field_location,
             invalid_value="39114911000001105",
             expected_error_message=f"{field_location} must be one of the following:"
-            + " NAVU, UNC, UNK, NA when status is 'not-done'",
-            expected_error_type="value_error",
+            + " NAVU, UNC, UNK, NA when status is 'not-done'"
         )
 
     def test_post_vaccine_code_coding_display(self):

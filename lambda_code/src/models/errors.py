@@ -8,11 +8,21 @@ class Severity(str, Enum):
 
 
 class Code(str, Enum):
+    forbidden = "forbidden"
     not_found = "not-found"
     invalid = "invalid"
     server_error = "internal-server-error"
     invariant = "invariant"
     unprocessable_entity = "unprocessable_entity"
+
+
+@dataclass
+class UnauthorizedError(RuntimeError):
+    @staticmethod
+    def to_operation_outcome() -> dict:
+        msg = f"Unauthorized request"
+        return create_operation_outcome(
+            resource_id=str(uuid.uuid4()), severity=Severity.error, code=Code.forbidden, diagnostics=msg)
 
 
 @dataclass

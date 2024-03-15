@@ -2,6 +2,7 @@ import re
 from datetime import datetime
 from typing import Union
 from decimal import Decimal
+from models.utils.generic_utils import nhs_number_mod11_check
 
 
 class PreValidation:
@@ -19,49 +20,36 @@ class PreValidation:
         Apply pre-validation to a string field to ensure it is a non-empty string which meets
         the length requirements and predefined values requirements
         """
+            
         if not isinstance(field_value, str):
             raise TypeError(f"{field_location} must be a string")
 
         if defined_length:
             if len(field_value) != defined_length:
-                raise ValueError(
-                    f"{field_location} must be {defined_length} characters"
-                )
+                raise ValueError(f"{field_location} must be {defined_length} characters")
         else:
             if len(field_value) == 0:
                 raise ValueError(f"{field_location} must be a non-empty string")
 
         if max_length:
             if len(field_value) > max_length:
-                raise ValueError(
-                    f"{field_location} must be {max_length} or fewer characters"
-                )
+                raise ValueError(f"{field_location} must be {max_length} or fewer characters")
 
         if predefined_values:
             if field_value not in predefined_values:
-                raise ValueError(
-                    f"{field_location} must be one of the following: "
-                    + str(", ".join(predefined_values))
-                )
+                raise ValueError(f"{field_location} must be one of the following: " + str(", ".join(predefined_values)))
 
         if is_postal_code:
             # Validate that field_value contains a single space which divides the two parts
             # of the postal code
-            if (
-                field_value.count(" ") != 1
-                or field_value.startswith(" ")
-                or field_value.endswith(" ")
-            ):
+            if field_value.count(" ") != 1 or field_value.startswith(" ") or field_value.endswith(" "):
                 raise ValueError(
-                    f"{field_location} must contain a single space, "
-                    + "which divides the two parts of the postal code"
+                    f"{field_location} must contain a single space, " + "which divides the two parts of the postal code"
                 )
 
             # Validate that max length is 8 (excluding the space)
             if len(field_value.replace(" ", "")) > 8:
-                raise ValueError(
-                    f"{field_location} must be 8 or fewer characters (excluding spaces)"
-                )
+                raise ValueError(f"{field_location} must be 8 or fewer characters (excluding spaces)")
 
         if not spaces_allowed:
             if " " in field_value:
@@ -83,9 +71,7 @@ class PreValidation:
 
         if defined_length:
             if len(field_value) != defined_length:
-                raise ValueError(
-                    f"{field_location} must be an array of length {defined_length}"
-                )
+                raise ValueError(f"{field_location} must be an array of length {defined_length}")
         else:
             if len(field_value) == 0:
                 raise ValueError(f"{field_location} must be a non-empty array")
@@ -95,9 +81,7 @@ class PreValidation:
                 if not isinstance(element, str):
                     raise TypeError(f"{field_location} must be an array of strings")
                 if len(element) == 0:
-                    raise ValueError(
-                        f"{field_location} must be an array of non-empty strings"
-                    )
+                    raise ValueError(f"{field_location} must be an array of non-empty strings")
 
     @staticmethod
     def for_date(field_value: str, field_location: str):
@@ -112,8 +96,7 @@ class PreValidation:
             datetime.strptime(field_value, "%Y-%m-%d").date()
         except ValueError as value_error:
             raise ValueError(
-                f"{field_location} must be a valid date string in the format "
-                + '"YYYY-MM-DD"'
+                f"{field_location} must be a valid date string in the format " + '"YYYY-MM-DD"'
             ) from value_error
 
     @staticmethod
@@ -128,9 +111,7 @@ class PreValidation:
         if not isinstance(field_value, str):
             raise TypeError(f"{field_location} must be a string")
 
-        date_time_pattern_with_timezone = re.compile(
-            r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.[0-9]+)?(\+|-)\d{2}:\d{2}"
-        )
+        date_time_pattern_with_timezone = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.[0-9]+)?(\+|-)\d{2}:\d{2}")
 
         if not date_time_pattern_with_timezone.fullmatch(field_value):
             raise ValueError(
@@ -146,9 +127,7 @@ class PreValidation:
             try:
                 datetime.strptime(field_value, "%Y-%m-%dT%H:%M:%S.%f%z")
             except ValueError as value_error:
-                raise ValueError(
-                    f"{field_location} must be a valid datetime"
-                ) from value_error
+                raise ValueError(f"{field_location} must be a valid datetime") from value_error
 
     @staticmethod
     def for_boolean(field_value: str, field_location: str):
@@ -157,9 +136,7 @@ class PreValidation:
             raise TypeError(f"{field_location} must be a boolean")
 
     @staticmethod
-    def for_positive_integer(
-        field_value: int, field_location: str, max_value: int = None
-    ):
+    def for_positive_integer(field_value: int, field_location: str, max_value: int = None):
         """
         Apply pre-validation to an integer field to ensure that it is a positive integer,
         which does not exceed the maximum allowed value (if applicable)
@@ -172,9 +149,7 @@ class PreValidation:
 
         if max_value:
             if field_value > max_value:
-                raise ValueError(
-                    f"{field_location} must be an integer in the range 1 to {max_value}"
-                )
+                raise ValueError(f"{field_location} must be an integer in the range 1 to {max_value}")
 
     @staticmethod
     def for_integer_or_decimal(
@@ -196,8 +171,7 @@ class PreValidation:
             if isinstance(field_value, Decimal):
                 if abs(field_value.as_tuple().exponent) > max_decimal_places:
                     raise ValueError(
-                        f"{field_location} must be a number with a maximum of {max_decimal_places}"
-                        + " decimal places"
+                        f"{field_location} must be a number with a maximum of {max_decimal_places}" + " decimal places"
                     )
 
     @staticmethod
@@ -214,8 +188,15 @@ class PreValidation:
         for item in list_to_check:
             if item[unique_value_in_list] in found:
                 raise ValueError(
-                    f"{field_location.replace('FIELD_TO_REPLACE', item[unique_value_in_list])}"
-                    + " must be unique"
+                    f"{field_location.replace('FIELD_TO_REPLACE', item[unique_value_in_list])}" + " must be unique"
                 )
 
             found.append(item[unique_value_in_list])
+
+    @staticmethod
+    def for_nhs_number(nhs_number: str, field_location: str):
+        """
+        Apply pre-validation to an NHS number to ensure that it is a valid NHS number
+        """
+        if not nhs_number_mod11_check(nhs_number):
+            raise ValueError(f"{field_location} is not a valid NHS number")

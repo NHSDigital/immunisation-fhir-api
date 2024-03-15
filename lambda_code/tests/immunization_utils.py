@@ -1,7 +1,7 @@
 from fhir.resources.R4B.immunization import Immunization
 from decimal import Decimal
 
-valid_nhs_number = "2374658346"
+valid_nhs_number = "9990548609"
 
 
 def create_an_immunization(imms_id, nhs_number=valid_nhs_number) -> Immunization:
