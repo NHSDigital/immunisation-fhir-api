@@ -89,13 +89,10 @@ class Authorization:
         self._app_restricted(operation, aws_event)
 
     def _nhs_login(self, operation: EndpointOperation, aws_event: dict) -> None:
-        # NHS Login works exactly the same as ApplicationRestricted, we don't seem to be sending a query param 
-        #'-nhsNumber' for the search events, this contradicts the spec
-        # Commented out the validate NHS Number 
-
-        ## validNhsNumber = self._validate_nhs_number(aws_event["headers"], aws_event["pathParameters"])
-        ## if validNhsNumber == False:
-        ##     raise UnauthorizedError()
+        # NHS Login works exactly the same as ApplicationRestricted
+        validNhsNumber = self._validate_nhs_number(aws_event["headers"], aws_event["pathParameters"])
+        if validNhsNumber == False:
+            raise UnauthorizedError()
         self._app_restricted(operation, aws_event)
 
     @staticmethod
