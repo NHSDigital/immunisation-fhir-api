@@ -1,9 +1,9 @@
 steps:
   - bash: |
-      BUILDKIT_PROGRESS=plain docker build --target test -t imms-lambda-build .
+      BUILDKIT_PROGRESS=plain docker build --target test -t imms-lambda-build -f lambda.Dockerfile .
 
     displayName: Test lambda code
-    workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/lambda_code"
+    workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/backend"
   - bash: |
       mkdir -p build
       npm run publish 2> /dev/null
