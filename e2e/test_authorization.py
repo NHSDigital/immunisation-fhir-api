@@ -302,12 +302,14 @@ class TestNHSLoginAuthorization(ImmunizationBaseTest):
     def tearDown(self):
         self.apigee_service.delete_application(self.my_app.name)
 
-    def test_get_imms_authorised(self):
-        """it should get Immunization if app has immunization:read permission"""
-        imms_id = self.create_immunization_resource(self.default_imms_api)
-        self.make_app({Permission.READ})
+    def test_search_imms_authorised(self):
+        """it should search Immunization if app has immunization:search permission"""
+        mmr = create_an_imms_obj(str(uuid.uuid4()), valid_nhs_number1, mmr_code)
+        _ = self.create_immunization_resource(self.default_imms_api, mmr)
+
+        self.make_app({Permission.SEARCH})
         # When
-        response = self.my_imms_api.get_immunization_by_id(imms_id)
+        response = self.my_imms_api.search_immunizations(valid_nhs_number1, "MMR")
         # Then
         self.assertEqual(response.status_code, 200, response.text)
 
