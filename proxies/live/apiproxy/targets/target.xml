@@ -12,6 +12,10 @@
         <Name>VerifyAPIKey.CustomAttributes</Name>
       </Step>
       <Step>
+        <Name>DecodeJWT.DecodeIDToken</Name>
+        <Condition>accesstoken.id_token != null</Condition>
+      </Step>
+      <Step>
         <Name>AssignMessage.AddAuthorizationHeaders</Name>
       </Step>
     </Request>
