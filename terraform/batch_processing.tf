@@ -7,6 +7,10 @@ resource "aws_s3_bucket" "batch_data_source_bucket" {
     bucket        = "${local.prefix}-batch-data-source"
     force_destroy = local.is_temp
 }
+resource "aws_s3_bucket_notification" "source_bucket_notification" {
+    bucket      = aws_s3_bucket.batch_data_source_bucket.bucket
+    eventbridge = true
+}
 
 resource "aws_s3_bucket" "batch_data_destination_bucket" {
     bucket        = "${local.prefix}-batch-data-destination"
@@ -22,34 +26,138 @@ data "aws_iam_policy_document" "batch_processing_policy_document" {
         templatefile("${local.policy_path}/log.json", {} ),
     ]
 }
-
-locals {
-    batch_processing_lambda_name = "batch_processing"
+resource "aws_iam_policy" "batch_processing_policy" {
+    policy = data.aws_iam_policy_document.batch_processing_policy_document.json
 }
+
+resource "aws_cloudwatch_event_rule" "source_bucket_event_rule" {
+    name        = "${local.prefix}-source-bucket-event-rule"
+    description = "This rule detects changes in the source bucket"
+    role_arn    = ""
+
+    event_pattern = jsonencode({
+        source : ["aws.s3"],
+        detail-type : ["Object Created"],
+        detail : {
+            bucket : {
+                name : [aws_s3_bucket.batch_data_source_bucket.bucket]
+            },
+            object : {
+                key : [
+                    { wildcard : "*" },
+                ]
+            }
+        }
+    })
+}
+
+
 module "batch_processing" {
-    source        = "./lambda"
-    prefix        = local.prefix
-    short_prefix  = local.short_prefix
-    function_name = local.batch_processing_lambda_name
-    image_uri     = module.docker_image.image_uri
-    policy_json   = data.aws_iam_policy_document.batch_processing_policy_document.json
-    environments  = {
-        "SERVICE_DOMAIN_NAME" = module.api_gateway.service_domain_name
-    }
+    source          = "./batch_processing"
+    prefix          = local.prefix
+    vpc_id          = data.aws_vpc.default.id
+    task_policy_arn = aws_iam_policy.batch_processing_policy.arn
 }
+resource "aws_cloudwatch_event_target" "serverlessland-s3-event-ecs-event-target" {
+    target_id      = "${local.prefix}-batch-processing-ecs-target"
+    rule           = aws_cloudwatch_event_rule.source_bucket_event_rule.name
+    arn            = module.batch_processing.cluster_arn
+    role_arn       = aws_iam_role.batch-invoke-ecs-role.arn
+    # aws services only send events to the default event bus
+    event_bus_name = "default"
 
-resource "aws_s3_bucket_notification" "batch_processing_source_lambda_trigger" {
-    bucket = aws_s3_bucket.batch_data_source_bucket.id
-    lambda_function {
-        lambda_function_arn = module.batch_processing.lambda_arn
-        events              = ["s3:ObjectCreated:*"]
+    ecs_target {
+        task_count          = 1
+        task_definition_arn = module.batch_processing.batch_task_arn
+        launch_type         = "FARGATE"
+
+        network_configuration {
+            subnets          = data.aws_subnets.default.ids
+            assign_public_ip = true
+        }
     }
-    depends_on = [aws_lambda_permission.allow_terraform_bucket]
+
+    input_transformer {
+        input_paths = {
+            bucket_name = "$.detail.bucket.name",
+            object_key  = "$.detail.object.key",
+        }
+        input_template = <<EOF
+{
+  "containerOverrides": [
+    {
+      "name": "${module.batch_processing.container_name}",
+      "environment" : [
+        {
+          "name" : "DESTINATION_BUCKET_NAME",
+          "value" : "${aws_s3_bucket.batch_data_destination_bucket.bucket}"
+        },
+        {
+          "name" : "SOURCE_BUCKET_NAME",
+          "value" : <bucket_name>
+        },
+        {
+          "name" : "OBJECT_KEY",
+          "value" : <object_key>
+        }
+      ]
+    }
+  ]
 }
-resource "aws_lambda_permission" "allow_terraform_bucket" {
-    statement_id  = "AllowExecutionFromS3Bucket"
-    action        = "lambda:InvokeFunction"
-    function_name = module.batch_processing.lambda_arn
-    principal     = "s3.amazonaws.com"
-    source_arn    = aws_s3_bucket.batch_data_source_bucket.arn
+EOF
+    }
+}
+resource "aws_iam_role" "batch-invoke-ecs-role" {
+    name                = "${local.prefix}-invoke-ecs-role"
+    managed_policy_arns = [aws_iam_policy.batch-invoke-ecs-policy.arn]
+
+    assume_role_policy = jsonencode({
+        Version   = "2012-10-17"
+        Statement = [
+            {
+                Action    = "sts:AssumeRole"
+                Effect    = "Allow"
+                Sid       = ""
+                Principal = {
+                    Service = "events.amazonaws.com"
+                }
+            },
+        ]
+    })
+}
+resource "aws_iam_policy" "batch-invoke-ecs-policy" {
+    name = "${local.prefix}-invoke-ecs-policy"
+
+    policy = jsonencode({
+        "Version" : "2012-10-17",
+        "Statement" : [
+            {
+                "Effect" : "Allow",
+                "Action" : [
+                    "ecs:RunTask"
+                ],
+                "Resource" : [
+                    "${module.batch_processing.batch_task_arn}:*",
+                    module.batch_processing.batch_task_arn
+                ],
+                "Condition" : {
+                    "ArnLike" : {
+                        "ecs:cluster" : module.batch_processing.cluster_arn
+                    }
+                }
+            },
+            {
+                "Effect" : "Allow",
+                "Action" : "iam:PassRole",
+                "Resource" : [
+                    "*"
+                ],
+                "Condition" : {
+                    "StringLike" : {
+                        "iam:PassedToService" : "ecs-tasks.amazonaws.com"
+                    }
+                }
+            }
+        ]
+    })
 }

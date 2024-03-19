@@ -4,7 +4,7 @@
 			"path": "."
 		},
 		{
-			"path": "lambda_code"
+			"path": "backend"
 		}
 	],
 	"settings": {}

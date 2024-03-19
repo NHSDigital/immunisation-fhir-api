@@ -8,7 +8,7 @@ pyenv install -s "$(grep -Eo $PYTHON_VERSION_REGEX .envrc)"
 eval "$(direnv export bash)"
 direnv allow
 
-cd lambda_code
+cd backend
 
 pyenv install -s "$(grep -Eo $PYTHON_VERSION_REGEX .envrc)"
 
