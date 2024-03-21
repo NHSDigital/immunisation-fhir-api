@@ -47,7 +47,7 @@ jobs:
           account_id="$(aws sts get-caller-identity --query Account --output text)"
 
           cd terraform
-          make init
-          terraform workspace select $(WORKSPACE) && make init && terraform destroy -auto-approve -input=false && /
-          terraform workspace select default && terraform workspace delete $(WORKSPACE)
+          terraform workspace select $(WORKSPACE)
+          make init && make destroy aws_account_no=${account_id} environment=$(WORKSPACE)
         displayName: Destroy terraform PR workspace and linked resources
+        retryCountOnTaskFailure: 2
