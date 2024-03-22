@@ -9,7 +9,6 @@ from models.utils.generic_utils import (
 )
 from models.utils.pre_validator_utils import PreValidation
 from models.constants import Constants
-from pydantic import ValidationError
 
 
 class PreValidators:
@@ -20,95 +19,105 @@ class PreValidators:
     """
     def __init__(self, values: dict):
         self.values = values
-
+        self.errors = []
+    
     def validate(self):
         """
         Run all pre-validation checks.
         """
-        try:
-            self.pre_validate_contained(self.values)
-            self.pre_validate_patient_reference(self.values)
-            self.pre_validate_patient_identifier(self.values)
-            self.pre_validate_patient_identifier_value(self.values)
-            self.pre_validate_patient_name(self.values)
-            self.pre_validate_patient_name_given(self.values)
-            self.pre_validate_patient_name_family(self.values)
-            self.pre_validate_patient_birth_date(self.values)
-            self.pre_validate_patient_gender(self.values)
-            self.pre_validate_patient_address(self.values)
-            self.pre_validate_patient_address_postal_code(self.values)
-            self.pre_validate_occurrence_date_time(self.values)
-            self.pre_validate_questionnaire_response_item(self.values)
-            self.pre_validate_questionnaire_answers(self.values)
-            self.pre_validate_performer_actor_type(self.values)
-            self.pre_validate_performer_actor_reference(self.values)
-            self.pre_validate_organization_identifier_value(self.values)
-            self.pre_validate_organization_display(self.values)
-            self.pre_validate_identifier(self.values)
-            self.pre_validate_identifier_value(self.values)
-            self.pre_validate_identifier_system(self.values)
-            self.pre_validate_status(self.values)
-            self.pre_validate_practitioner_name(self.values)
-            self.pre_validate_practitioner_name_given(self.values)
-            self.pre_validate_practitioner_name_family(self.values)
-            self.pre_validate_practitioner_identifier(self.values)
-            self.pre_validate_practitioner_identifier_value(self.values)
-            self.pre_validate_practitioner_identifier_system(self.values)
-            self.pre_validate_performer_sds_job_role(self.values)
-            self.pre_validate_recorded(self.values)
-            self.pre_validate_primary_source(self.values)
-            self.pre_validate_report_origin_text(self.values)
-            self.pre_validate_extension_urls(self.values)
-            self.pre_validate_extension_value_codeable_concept_codings(self.values)
-            self.pre_validate_vaccination_procedure_code(self.values)
-            self.pre_validate_vaccination_procedure_display(self.values)
-            self.pre_validate_vaccination_situation_code(self.values)
-            self.pre_validate_vaccination_situation_display(self.values)
-            self.pre_validate_status_reason_coding(self.values)
-            self.pre_validate_status_reason_coding_code(self.values)
-            self.pre_validate_status_reason_coding_display(self.values)
-            self.pre_validate_protocol_applied(self.values)
-            self.pre_validate_protocol_applied_dose_number_positive_int(self.values)
-            self.pre_validate_vaccine_code_coding(self.values)
-            self.pre_validate_vaccine_code_coding_code(self.values)
-            self.pre_validate_vaccine_code_coding_display(self.values)
-            self.pre_validate_manufacturer_display(self.values)
-            self.pre_validate_lot_number(self.values)
-            self.pre_validate_expiration_date(self.values)
-            self.pre_validate_site_coding(self.values)
-            self.pre_validate_site_coding_code(self.values)
-            self.pre_validate_site_coding_display(self.values)
-            self.pre_validate_route_coding(self.values)
-            self.pre_validate_route_coding_code(self.values)
-            self.pre_validate_route_coding_display(self.values)
-            self.pre_validate_dose_quantity_value(self.values)
-            self.pre_validate_dose_quantity_code(self.values)
-            self.pre_validate_dose_quantity_unit(self.values)
-            self.pre_validate_reason_code_codings(self.values)
-            self.pre_validate_reason_code_coding_codes(self.values)
-            self.pre_validate_reason_code_coding_displays(self.values)
-            self.pre_validate_patient_identifier_extension(self.values)
-            self.pre_validate_nhs_number_verification_status_coding(self.values)
-            self.pre_validate_nhs_number_verification_status_code(self.values)
-            self.pre_validate_nhs_number_verification_status_display(self.values)
-            self.pre_validate_organization_identifier_system(self.values)
-            self.pre_validate_local_patient_value(self.values)
-            self.pre_validate_local_patient_system(self.values)
-            self.pre_validate_consent_code(self.values)
-            self.pre_validate_consent_display(self.values)
-            self.pre_validate_care_setting_code(self.values)
-            self.pre_validate_care_setting_display(self.values)
-            self.pre_validate_ip_address(self.values)
-            self.pre_validate_user_id(self.values)
-            self.pre_validate_user_name(self.values)
-            self.pre_validate_user_email(self.values)
-            self.pre_validate_submitted_time_stamp(self.values)
-            self.pre_validate_location_identifier_value(self.values)
-            self.pre_validate_location_identifier_system(self.values)
-            self.pre_validate_reduce_validation(self.values)
-            self.pre_validate_reduce_validation_reason(self.values)
-        except Exception as error:
-            raise ValueError(error)
+        validation_methods = [
+            self.pre_validate_contained,
+            self.pre_validate_patient_reference,
+            self.pre_validate_patient_identifier,
+            self.pre_validate_patient_identifier_value,
+            self.pre_validate_patient_name,
+            self.pre_validate_patient_name_given,
+            self.pre_validate_patient_name_family,
+            self.pre_validate_patient_birth_date,
+            self.pre_validate_patient_gender,
+            self.pre_validate_patient_address,
+            self.pre_validate_patient_address_postal_code,
+            self.pre_validate_occurrence_date_time,
+            self.pre_validate_questionnaire_response_item,
+            self.pre_validate_questionnaire_answers,
+            self.pre_validate_performer_actor_type,
+            self.pre_validate_performer_actor_reference,
+            self.pre_validate_organization_identifier_value,
+            self.pre_validate_organization_display,
+            self.pre_validate_identifier,
+            self.pre_validate_identifier_value,
+            self.pre_validate_identifier_system,
+            self.pre_validate_status,
+            self.pre_validate_practitioner_name,
+            self.pre_validate_practitioner_name_given,
+            self.pre_validate_practitioner_name_family,
+            self.pre_validate_practitioner_identifier,
+            self.pre_validate_practitioner_identifier_value,
+            self.pre_validate_practitioner_identifier_system,
+            self.pre_validate_performer_sds_job_role,
+            self.pre_validate_recorded,
+            self.pre_validate_primary_source,
+            self.pre_validate_report_origin_text,
+            self.pre_validate_extension_urls,
+            self.pre_validate_extension_value_codeable_concept_codings,
+            self.pre_validate_vaccination_procedure_code,
+            self.pre_validate_vaccination_procedure_display,
+            self.pre_validate_vaccination_situation_code,
+            self.pre_validate_vaccination_situation_display,
+            self.pre_validate_status_reason_coding,
+            self.pre_validate_status_reason_coding_code,
+            self.pre_validate_status_reason_coding_display,
+            self.pre_validate_protocol_applied,
+            self.pre_validate_protocol_applied_dose_number_positive_int,
+            self.pre_validate_vaccine_code_coding,
+            self.pre_validate_vaccine_code_coding_code,
+            self.pre_validate_vaccine_code_coding_display,
+            self.pre_validate_manufacturer_display,
+            self.pre_validate_lot_number,
+            self.pre_validate_expiration_date,
+            self.pre_validate_site_coding,
+            self.pre_validate_site_coding_code,
+            self.pre_validate_site_coding_display,
+            self.pre_validate_route_coding,
+            self.pre_validate_route_coding_code,
+            self.pre_validate_route_coding_display,
+            self.pre_validate_dose_quantity_value,
+            self.pre_validate_dose_quantity_code,
+            self.pre_validate_dose_quantity_unit,
+            self.pre_validate_reason_code_codings,
+            self.pre_validate_reason_code_coding_codes,
+            self.pre_validate_reason_code_coding_displays,
+            self.pre_validate_patient_identifier_extension,
+            self.pre_validate_nhs_number_verification_status_coding,
+            self.pre_validate_nhs_number_verification_status_code,
+            self.pre_validate_nhs_number_verification_status_display,
+            self.pre_validate_organization_identifier_system,
+            self.pre_validate_local_patient_value,
+            self.pre_validate_local_patient_system,
+            self.pre_validate_consent_code,
+            self.pre_validate_consent_display,
+            self.pre_validate_care_setting_code,
+            self.pre_validate_care_setting_display,
+            self.pre_validate_ip_address,
+            self.pre_validate_user_id,
+            self.pre_validate_user_name,
+            self.pre_validate_user_email,
+            self.pre_validate_submitted_time_stamp,
+            self.pre_validate_location_identifier_value,
+            self.pre_validate_location_identifier_system,
+            self.pre_validate_reduce_validation,
+            self.pre_validate_reduce_validation_reason
+        ]
+            
+        for method in validation_methods:
+            try:
+                method(self.values)
+            except (ValueError, TypeError, IndexError, AttributeError) as e:
+                self.errors.append(str(e))
+                
+        if self.errors:
+            all_errors = "; ".join(self.errors)
+            raise ValueError(f"Validation errors: {all_errors}")
 
     def pre_validate_contained(self, values: dict) -> dict:
         """

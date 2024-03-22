@@ -12,8 +12,9 @@ from models.utils.generic_utils import (
 )
 from models.utils.post_validation_utils import (
     PostValidation,
-    MandatoryError,
+    MandatoryError
 )
+from mappings import Mandation, VaccineTypes
 
 check_mandation_requirements_met = PostValidation.check_mandation_requirements_met
 get_generic_field_value = PostValidation.get_generic_field_value
@@ -24,72 +25,87 @@ class PostValidators:
     """FHIR Immunization Post Validators"""
     def __init__(self, immunization):
         self.values = immunization
+        self.errors = []
     
     def validate(self):
         """
         Run all post-validation checks.
         """
+        
+        #Run critical validations that other validations rely on, if they fail then no need to carry on
         try:
             self.validate_and_set_vaccination_procedure_code(self.values)
-            self.set_status(self.values)
-            self.validate_patient_identifier_value(self.values)
-            self.validate_patient_name_given(self.values)
-            self.validate_patient_name_family(self.values)
-            self.validate_patient_birth_date(self.values)
-            self.validate_patient_gender(self.values)
-            self.validate_patient_address_postal_code(self.values)
             self.validate_occurrence_date_time(self.values)
-            self.validate_organization_identifier_value(self.values)
-            self.validate_organization_display(self.values)
-            self.validate_identifier_value(self.values)
-            self.validate_identifier_system(self.values)
-            self.validate_practitioner_name_given(self.values)
-            self.validate_practitioner_name_family(self.values)
-            self.validate_practitioner_identifier_value(self.values)
-            self.validate_practitioner_identifier_system(self.values)
-            self.validate_performer_sds_job_role(self.values)
-            self.validate_recorded(self.values)
-            self.validate_primary_source(self.values)
-            self.validate_report_origin_text(self.values)
-            self.validate_vaccination_procedure_display(self.values)
-            self.validate_vaccination_situation_code(self.values)
-            self.validate_vaccination_situation_display(self.values)
-            self.validate_status_reason_coding_code(self.values)
-            self.validate_status_reason_coding_display(self.values)
-            self.validate_protocol_applied_dose_number_positive_int(self.values)
-            self.validate_vaccine_code_coding_code(self.values)
-            self.validate_vaccine_code_coding_display(self.values)
-            self.validate_manufacturer_display(self.values)
-            self.validate_lot_number(self.values)
-            self.validate_expiration_date(self.values)
-            self.validate_site_coding_code(self.values)
-            self.validate_site_coding_display(self.values)
-            self.validate_route_coding_code(self.values)
-            self.validate_route_coding_display(self.values)
-            self.validate_dose_quantity_value(self.values)
-            self.validate_dose_quantity_code(self.values)
-            self.validate_dose_quantity_unit(self.values)
-            self.validate_reason_code_coding_code(self.values)
-            self.validate_reason_code_coding_display(self.values)
-            self.validate_nhs_number_verification_status_code(self.values)
-            self.validate_nhs_number_verification_status_display(self.values)
-            self.validate_organization_identifier_system(self.values)
-            self.validate_local_patient_value(self.values)
-            self.validate_local_patient_system(self.values)
-            self.validate_consent_code(self.values)
-            self.validate_consent_display(self.values)
-            self.validate_care_setting_code(self.values)
-            self.validate_care_setting_display(self.values)
-            self.validate_ip_address(self.values)
-            self.validate_user_id(self.values)
-            self.validate_user_name(self.values)
-            self.validate_user_email(self.values)
-            self.validate_submitted_time_stamp(self.values)
-            self.validate_location_identifier_value(self.values)
-            self.validate_location_identifier_system(self.values)
-            self.validate_reduce_validation_reason(self.values)
-        except (MandatoryError, ValueError) as error:
-            raise error
+            self.set_status(self.values)
+        except (ValueError, TypeError, IndexError, AttributeError, MandatoryError) as e:
+            raise ValueError(str(e))
+
+        validation_methods = [
+            self.validate_patient_identifier_value,
+            self.validate_patient_name_given,
+            self.validate_patient_name_family,
+            self.validate_patient_birth_date,
+            self.validate_patient_gender,
+            self.validate_patient_address_postal_code,
+            self.validate_organization_identifier_value,
+            self.validate_organization_display,
+            self.validate_identifier_value,
+            self.validate_identifier_system,
+            self.validate_practitioner_name_given,
+            self.validate_practitioner_name_family,
+            self.validate_practitioner_identifier_value,
+            self.validate_practitioner_identifier_system,
+            self.validate_performer_sds_job_role,
+            self.validate_recorded,
+            self.validate_primary_source,
+            self.validate_report_origin_text,
+            self.validate_vaccination_procedure_display,
+            self.validate_vaccination_situation_code,
+            self.validate_vaccination_situation_display,
+            self.validate_status_reason_coding_code,
+            self.validate_status_reason_coding_display,
+            self.validate_protocol_applied_dose_number_positive_int,
+            self.validate_vaccine_code_coding_code,
+            self.validate_vaccine_code_coding_display,
+            self.validate_manufacturer_display,
+            self.validate_lot_number,
+            self.validate_expiration_date,
+            self.validate_site_coding_code,
+            self.validate_site_coding_display,
+            self.validate_route_coding_code,
+            self.validate_route_coding_display,
+            self.validate_dose_quantity_value,
+            self.validate_dose_quantity_code,
+            self.validate_dose_quantity_unit,
+            self.validate_reason_code_coding_code,
+            self.validate_reason_code_coding_display,
+            self.validate_nhs_number_verification_status_code,
+            self.validate_nhs_number_verification_status_display,
+            self.validate_organization_identifier_system,
+            self.validate_local_patient_value,
+            self.validate_local_patient_system,
+            self.validate_consent_code,
+            self.validate_consent_display,
+            self.validate_care_setting_code,
+            self.validate_care_setting_display,
+            self.validate_ip_address,
+            self.validate_user_id,
+            self.validate_user_name,
+            self.validate_user_email,
+            self.validate_submitted_time_stamp,
+            self.validate_location_identifier_value,
+            self.validate_location_identifier_system,
+            self.validate_reduce_validation_reason
+        ]
+        for method in validation_methods:
+            try:
+                method(self.values)
+            except (ValueError, TypeError, IndexError, AttributeError, MandatoryError) as e:
+                self.errors.append(str(e))
+
+        if self.errors:
+            all_errors = "; ".join(self.errors)
+            raise ValueError(all_errors)
 
     def validate_and_set_vaccination_procedure_code(self, values: dict) -> dict:
         "Validate that vaccination_procedure_code is a valid code"
@@ -199,6 +215,7 @@ class PostValidators:
 
     def validate_patient_address_postal_code(self, values: dict) -> dict:
         "Validate that patient_address_postal_code is present or absent, as required"
+
         try:
             patient_address_postal_code = get_contained_resource_from_model(values, "Patient").address[0].postalCode
         except (KeyError, IndexError, AttributeError, MandatoryError, TypeError):

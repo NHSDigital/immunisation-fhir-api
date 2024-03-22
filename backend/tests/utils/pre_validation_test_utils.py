@@ -219,6 +219,7 @@ class ValidatorModelTests:
             if predefined_list_length != 1:  # If is 1 then list_too_short = []
                 invalid_length_lists.append([])
 
+
             # Test invalid list lengths
             for invalid_length_list in invalid_length_lists:
                 test_invalid_values_rejected(
@@ -553,7 +554,9 @@ class ValidatorModelTests:
         with test_instance.assertRaises(ValueError) as error:
             test_instance.validator.validate(invalid_json_data)
 
-        test_instance.assertEqual(expected_error_message, str(error.exception))
+        full_error_message = str(error.exception)
+        actual_error_messages = full_error_message.replace('Validation errors: ', '').split('; ')
+        test_instance.assertIn(expected_error_message, actual_error_messages)
 
     @staticmethod
     def test_valid_combinations_of_contained_and_patient_accepted(
@@ -588,7 +591,9 @@ class ValidatorModelTests:
 
         invalid_json_data = parse("patient").update(invalid_json_data, patient)
 
-        with test_instance.assertRaises(ValueError) as context:
+        with test_instance.assertRaises(ValueError) as error:
             test_instance.validator.validate(invalid_json_data)
 
-        test_instance.assertEqual(expected_error_message, str(context.exception))
+        full_error_message = str(error.exception)
+        actual_error_messages = full_error_message.replace('Validation errors: ', '').split('; ')
+        test_instance.assertIn(expected_error_message, actual_error_messages)
