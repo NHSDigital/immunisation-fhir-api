@@ -8,6 +8,7 @@ from models.fhir_immunization_post_validators import PostValidators
 from models.utils.generic_utils import get_generic_questionnaire_response_value, get_generic_extension_value_from_model
 from mappings import vaccination_procedure_snomed_codes
 from models.utils.generic_utils import get_generic_questionnaire_response_value
+from src.timer import log_times_and_info
 
 
 class ImmunizationValidator:
@@ -77,6 +78,7 @@ class ImmunizationValidator:
         except (KeyError, IndexError, AttributeError, TypeError) as error:
             raise error
 
+    @log_times_and_info
     def validate(self, json_data) -> Immunization:
         """Generate the Immunization model"""
         if isinstance(json_data, str):
