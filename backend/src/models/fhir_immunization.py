@@ -22,7 +22,8 @@ class ImmunizationValidator:
         self.add_post_validators = add_post_validators
         self.pre_validators = None
         self.post_validators = None
-
+        self.errors = []
+        
     def initialize_immunization(self, json_data):
         self.immunization = Immunization.parse_obj(json_data)
 
@@ -95,6 +96,9 @@ class ImmunizationValidator:
 
         if self.add_post_validators and not self.reduce_validation_code:
             self.initialize_post_validators(self.immunization)
-            self.run_post_validators()
+            try:
+                self.run_post_validators()
+            except Exception as e:
+                raise e
 
         return self.immunization

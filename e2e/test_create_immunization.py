@@ -1,5 +1,4 @@
 import uuid
-
 from utils.base_test import ImmunizationBaseTest
 from utils.resource import create_an_imms_obj
 

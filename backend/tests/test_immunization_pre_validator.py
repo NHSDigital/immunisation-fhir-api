@@ -23,6 +23,46 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         """Set up for each test. This runs before every test"""
         self.json_data = load_json_data(filename="sample_covid_immunization_event.json")
         self.validator = ImmunizationValidator(add_post_validators=False)
+        
+    def test_collected_errors(self):
+        """Test that when passed multiple validation errors, it returns a list of all expected errors."""
+        
+        covid_data = self.json_data
+        
+        #remove identifier[0].value from 'contained' resource
+        covid_data['contained'][0]['identifier'][0]['value'] = None
+
+        #remove identifier[0].coding[0].code from 'Patient' resource
+        for resource in covid_data['contained']:
+            if resource['resourceType'] == 'Patient':
+                resource['identifier'][0]['extension'][0]['valueCodeableConcept']['coding'][0]['code'] = None
+        
+        #remove coding.code from 'reasonCode'
+        covid_data['reasonCode'][0]['coding'][0]['code'] = None
+                
+        expected_errors = ['Validation errors: '
+            "contained[?(@.resourceType=='Practitioner')].identifier[0].value must be a "
+            'string',
+            "contained[?(@.resourceType=='Patient')].identifier[?(@.system=='https://fhir.nhs.uk/Id/nhs-number')]." + 
+            "extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-NHSNumberVerificationStatus')]" + 
+            ".valueCodeableConcept.coding[?(@.system=='https://fhir.hl7.org.uk/CodeSystem/UKCore-NHSNumberVerificationStatusEngland')]" +
+            ".code must be a string",
+           'reasonCode[0].coding[0].code must be a string'
+            ]
+        
+        #assert ValueError raised
+        with self.assertRaises(ValueError) as cm:
+            self.validator.validate(covid_data)
+
+        #extract the error messages from the exception
+        actual_errors = str(cm.exception).split('; ')
+        
+        # assert length of errors
+        assert len(actual_errors) == len(expected_errors)
+        
+        #assert the error is in the expected error messages
+        for error in actual_errors:
+            assert error in expected_errors
 
     def test_pre_validate_contained(self):
         """Test pre_validate_contained accepts valid values and rejects invalid values"""
