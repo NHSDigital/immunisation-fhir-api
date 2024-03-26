@@ -2,7 +2,6 @@ import unittest
 import uuid
 from typing import List
 from lib.apigee import ApigeeService, ApigeeApp, ApigeeProduct
-=======
 from lib.authentication import (
     AppRestrictedAuthentication,
     Cis2Authentication,
