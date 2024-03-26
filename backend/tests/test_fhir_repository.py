@@ -112,7 +112,7 @@ class TestCreateImmunizationMainIndex(unittest.TestCase):
 
         self.assertDictEqual(res_imms, imms)
         self.table.put_item.assert_called_once_with(
-            Item={"PK": ANY, "PatientPK": ANY, "PatientSK": ANY, "Resource": json.dumps(imms), "Patient": ANY, "IdentifierPK": ANY})
+            Item={"PK": ANY, "PatientPK": ANY, "PatientSK": ANY, "Resource": json.dumps(imms), "Patient": ANY, "IdentifierPK": ANY, "Operation":"CREATE"})
 
     def test_add_patient(self):
         """it should store patient along the Immunization resource"""
@@ -124,7 +124,7 @@ class TestCreateImmunizationMainIndex(unittest.TestCase):
 
         self.assertDictEqual(res_imms, imms)
         self.table.put_item.assert_called_once_with(
-            Item={"PK": ANY,  "PatientPK": ANY, "PatientSK": ANY, "Resource": ANY, "Patient": self.patient, "IdentifierPK": ANY})
+            Item={"PK": ANY,  "PatientPK": ANY, "PatientSK": ANY, "Resource": ANY, "Patient": self.patient, "IdentifierPK": ANY, "Operation": "CREATE"})
 
     def test_create_immunization_makes_new_id(self):
         """create should create new Logical ID even if one is already provided"""
@@ -258,7 +258,8 @@ class TestUpdateImmunization(unittest.TestCase):
 
         update_exp = (
             "SET UpdatedAt = :timestamp, PatientPK = :patient_pk, "
-            "PatientSK = :patient_sk, #imms_resource = :imms_resource_val, Patient = :patient"
+            "PatientSK = :patient_sk, #imms_resource = :imms_resource_val, Patient = :patient, "
+            "Operation = :operation"
         )
         patient_id = self.patient["identifier"]["value"]
         patient_id = imms["contained"][0]["identifier"][0]["value"]
@@ -280,6 +281,7 @@ class TestUpdateImmunization(unittest.TestCase):
                 ":patient_sk": patient_sk,
                 ":imms_resource_val": json.dumps(imms),
                 ":patient": self.patient,
+                ":operation": "UPDATE"
             },
             ReturnValues=ANY,
             ConditionExpression=ANY,
@@ -351,9 +353,10 @@ class TestDeleteImmunization(unittest.TestCase):
         # Then
         self.table.update_item.assert_called_once_with(
             Key={"PK": _make_immunization_pk(imms_id)},
-            UpdateExpression="SET DeletedAt = :timestamp",
+            UpdateExpression="SET DeletedAt = :timestamp, Operation = :operation",
             ExpressionAttributeValues={
                 ":timestamp": now_epoch,
+                ":operation": "DELETE"
             },
             ReturnValues=ANY,
             ConditionExpression=ANY,
