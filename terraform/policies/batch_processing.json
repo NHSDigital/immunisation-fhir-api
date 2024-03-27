@@ -27,6 +27,11 @@
         "arn:aws:s3:::${batch_processing_destination_bucket}",
         "arn:aws:s3:::${batch_processing_destination_bucket}/*"
       ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": "secretsmanager:GetSecretValue",
+      "Resource": "arn:aws:secretsmanager:eu-west-2:${account_id}:secret:imms/immunization/*/*"
     }
   ]
 }
