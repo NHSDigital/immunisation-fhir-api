@@ -7,6 +7,8 @@ from models.errors import UnauthorizedError
 
 PERMISSIONS_HEADER = "Permissions"
 AUTHENTICATION_HEADER = "AuthenticationType"
+NHS_NUMBER_HEADER = "nhs-number"
+NHS_NUMBER_PARAM = "-nhsNumber"
 
 
 @dataclass
@@ -63,7 +65,8 @@ class Authorization:
             self._app_restricted(operation, aws_event)
         if auth_type == AuthType.CIS2:
             self._cis2(operation, aws_event)
-        # TODO(NhsLogin_AMB-1923) add NHSLogin
+        if auth_type == AuthType.NHS_LOGIN:
+            self._nhs_login(operation, aws_event)
         else:
             UnauthorizedError()
 
@@ -85,6 +88,13 @@ class Authorization:
         # Cis2 works exactly the same as ApplicationRestricted
         self._app_restricted(operation, aws_event)
 
+    def _nhs_login(self, operation: EndpointOperation, aws_event: dict) -> None:
+        # NHS Login works exactly the same as ApplicationRestricted
+        validNhsNumber = self._validate_nhs_number(aws_event["headers"], aws_event["pathParameters"])
+        if validNhsNumber == False:
+            raise UnauthorizedError()
+        self._app_restricted(operation, aws_event)
+
     @staticmethod
     def _parse_permissions(headers) -> Set[Permission]:
         """Given headers return a set of Permissions. Raises UnknownPermission"""
@@ -101,6 +111,20 @@ class Authorization:
                 raise UnknownPermission()
 
         return permissions
+    
+    @staticmethod
+    def _validate_nhs_number(headers, params):
+        """Validate NHS Number in token matches NHS Number in request parameter"""
+
+        header_nhs_number = headers.get(NHS_NUMBER_HEADER, "")
+        param_nhs_number = params.get(NHS_NUMBER_PARAM, "")
+
+        if header_nhs_number == param_nhs_number:
+            isValid = True
+        else:
+            isValid = False
+
+        return isValid
 
     @staticmethod
     def _parse_auth_type(headers) -> AuthType:

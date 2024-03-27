@@ -1,0 +1,4 @@
+<DecodeJWT name="DecodeJWT.DecodeIDToken">
+    <DisplayName>DecodeIDToken</DisplayName>
+    <Source>accesstoken.id_token</Source>
+</DecodeJWT>

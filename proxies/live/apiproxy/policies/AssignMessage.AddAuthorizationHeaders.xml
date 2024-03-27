@@ -5,6 +5,7 @@
     <Headers>
       <Header name="AuthenticationType">{verifyapikey.VerifyAPIKey.CustomAttributes.AuthenticationType}</Header>
       <Header name="Permissions">{verifyapikey.VerifyAPIKey.CustomAttributes.Permissions}</Header>
+      <Header name="nhs-number">{jwt.DecodeJWT.DecodeIDToken.claim.nhs_number}</Header>
     </Headers>
   </Set>
   <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>

@@ -170,14 +170,16 @@ class TestFhirControllerAuthorization(unittest.TestCase):
 
     # EndpointOperation.SEARCH
     def test_search_imms_authorized(self):
-        aws_event = {"pathParameters": {"id": "an-id"}}
+        aws_event = {"pathParameters": {"id": "an-id",
+                                        "-nhsNumber": "9693632109"}}
 
         _ = self.controller.search_immunizations(aws_event)
 
         self.authorizer.authorize.assert_called_once_with(EndpointOperation.SEARCH, aws_event)
 
     def test_search_imms_unauthorized(self):
-        aws_event = {"pathParameters": {"id": "an-id"}}
+        aws_event = {"pathParameters": {"id": "an-id",
+                                        "-nhsNumber": "9693632109"}}
         self.authorizer.authorize.side_effect = UnauthorizedError()
 
         response = self.controller.search_immunizations(aws_event)
@@ -188,7 +190,8 @@ class TestFhirControllerAuthorization(unittest.TestCase):
         self.assertEqual(body["issue"][0]["code"], "forbidden")
 
     def test_search_imms_unknown_permission(self):
-        aws_event = {"pathParameters": {"id": "an-id"}}
+        aws_event = {"pathParameters": {"id": "an-id",
+                                        "-nhsNumber": "9693632109"}}
         self.authorizer.authorize.side_effect = UnknownPermission()
 
         response = self.controller.search_immunizations(aws_event)

@@ -1,0 +1,4 @@
+<OAuthV2 async="false" continueOnError="false" enabled="true" name="OauthV2.VerifyAccessToken">
+  <Operation>VerifyAccessToken</Operation>
+  <Scopes>urn:nhsd:apim:app:level3:immunisation-fhir-api urn:nhsd:apim:user-nhs-cis2:aal3:immunisation-fhir-api urn:nhsd:apim:user-nhs-login:P9:immunisation-fhir-api</Scopes>
+</OAuthV2>
