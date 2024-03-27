@@ -140,7 +140,7 @@ apigee:
         visibility: {{ ENV.portal_visibility | default(true) }}
         specId: {{ NAME }}
 
-#Third product created for CIS2 authenication#
+#Third product created for CIS2 authenication - #
 - name: {{ NAME }}-cis2
         approvalType: auto
         attributes:
