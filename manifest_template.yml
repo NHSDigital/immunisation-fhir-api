@@ -71,8 +71,8 @@ apigee:
                     enabled: false
                   spikeArrest:
                     enabled: false
-          description: "{{ DESCRIPTION }}"
-          displayName: "{{ TITLE }}"
+          description: {{ DESCRIPTION }}
+          displayName: {{ TITLE }}
           environments: [ {{ ENV.name }} ]
           proxies:
             - {{ NAME }}
@@ -88,9 +88,9 @@ apigee:
           api_catalog:
             - edgeAPIProductName: {{ NAME }}
               anonAllowed: true
-              description: "{{ DESCRIPTION }}"
+              description: {{ DESCRIPTION }}
               requireCallbackUrl: false
-              title: "{{ TITLE }}"
+              title: {{ TITLE }}
               visibility: {{ ENV.portal_visibility | default(true) }}
               specId: {{ NAME }}
 
@@ -118,8 +118,8 @@ apigee:
                     enabled: false
                   spikeArrest:
                     enabled: false
-          description: "{{ DESCRIPTION }}"
-          displayName: "{{ TITLE }}"
+          description: {{ DESCRIPTION }}
+          displayName: {{ TITLE }}
           environments: [ {{ ENV.name }} ]
           proxies:
             - {{ NAME }}
@@ -135,9 +135,9 @@ apigee:
           api_catalog:
             - edgeAPIProductName: {{ NAME }}
               anonAllowed: true
-              description: "{{ DESCRIPTION }}"
+              description: {{ DESCRIPTION }}
               requireCallbackUrl: false
-              title: "{{ TITLE }}"
+              title: {{ TITLE }}
               visibility: {{ ENV.portal_visibility | default(true) }}
               specId: {{ NAME }}
 
@@ -165,8 +165,8 @@ apigee:
                     enabled: false
                   spikeArrest:
                     enabled: false
-          description: "{{ DESCRIPTION }}"
-          displayName: "{{ TITLE }}"
+          description: {{ DESCRIPTION }}
+          displayName: {{ TITLE }}
           environments: [ {{ ENV.name }} ]
           proxies:
             - {{ NAME }}
@@ -182,9 +182,9 @@ apigee:
           api_catalog:
             - edgeAPIProductName: {{ NAME }}
               anonAllowed: true
-              description: "{{ DESCRIPTION }}"
+              description: {{ DESCRIPTION }}
               requireCallbackUrl: false
-              title: "{{ TITLE }}"
+              title: {{ TITLE }}
               visibility: {{ ENV.portal_visibility | default(true) }}
               specId: {{ NAME }}
     {% endfor %}
