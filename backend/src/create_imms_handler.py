@@ -5,8 +5,10 @@ import uuid
 from fhir_controller import FhirController, make_controller
 from local_lambda import load_string
 from models.errors import Severity, Code, create_operation_outcome
+from log_structure import function_info
 
 
+@function_info
 def create_imms_handler(event, context):
     return create_immunization(event, make_controller())
 

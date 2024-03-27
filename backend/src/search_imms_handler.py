@@ -4,8 +4,10 @@ import uuid
 
 from fhir_controller import FhirController, make_controller
 from models.errors import Severity, Code, create_operation_outcome
+from log_structure import function_info
 
 
+@function_info
 def search_imms_handler(event, context):
     return search_imms(event, make_controller())
 
