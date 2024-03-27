@@ -43,8 +43,8 @@ the next step will resolve it.
 
 This will set up for both the root and `backend`.
 
-Rename `.env.default` to `.env` or merge it with your existing file.
-Rename `.envrc.default` to `.envrc` or merge it with your existing file.
+Copy `.env.default` to `.env` or merge it with your existing file.
+Copy `.envrc.default` to `.envrc` or merge it with your existing file.
 
 These are kept separate so other tools can use `.env` if wanted.
 

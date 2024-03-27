@@ -1,10 +1,13 @@
+import datetime
 import os
-
 from enum import Enum
 from typing import Optional
 
-from fhir.resources.R4B.bundle import Bundle as FhirBundle, BundleEntry, BundleLink
+from fhir.resources.R4B.bundle import Bundle as FhirBundle, BundleEntry, BundleLink, BundleEntrySearch
 from fhir.resources.R4B.immunization import Immunization
+from pydantic import ValidationError
+
+import parameter_parser
 from fhir_repository import ImmunizationRepository
 from models.errors import (
     InvalidPatientId,
@@ -13,10 +16,9 @@ from models.errors import (
     InconsistentIdError,
 )
 from models.fhir_immunization import ImmunizationValidator
-from models.utils.generic_utils import nhs_number_mod11_check
+from models.utils.generic_utils import nhs_number_mod11_check, get_occurrence_datetime, get_disease_type
 from models.utils.post_validation_utils import MandatoryError, NotApplicableError
 from pds_service import PdsService
-from pydantic import ValidationError
 from s_flag_handler import handle_s_flag
 from timer import timed
 
@@ -110,7 +112,48 @@ class FhirService:
         imms = self.immunization_repo.delete_immunization(imms_id)
         return Immunization.parse_obj(imms)
 
-    def search_immunizations(self, nhs_number: str, disease_type: str, params: str) -> FhirBundle:
+    @staticmethod
+    def has_valid_disease_type(immunization: dict, disease_types: list[str]):
+        return get_disease_type(immunization) in disease_types
+
+    @staticmethod
+    def is_valid_date_from(immunization: dict, date_from: datetime.date):
+        if date_from is None:
+            return True
+
+        occurrence_datetime = get_occurrence_datetime(immunization)
+        if occurrence_datetime is None:
+            # TODO: Log error if no date.
+            return True
+
+        return occurrence_datetime.date() >= date_from
+
+    @staticmethod
+    def is_valid_date_to(immunization: dict, date_to: datetime.date):
+        if date_to is None:
+            return True
+
+        occurrence_datetime = get_occurrence_datetime(immunization)
+        if occurrence_datetime is None:
+            # TODO: Log error if no date.
+            return True
+
+        return occurrence_datetime.date() <= date_to
+
+    @staticmethod
+    def process_patient_for_include(patient: dict):
+        fields_to_keep = ["id", "resourceType", "identifier", "birthDate"]
+        new_patient = {k: v for k, v in patient.items() if k in fields_to_keep}
+        return new_patient
+
+    def search_immunizations(
+        self,
+        nhs_number: str,
+        disease_types: list[str],
+        params: str,
+        date_from: datetime.date = parameter_parser.date_from_default,
+        date_to: datetime.date = parameter_parser.date_to_default
+    ) -> FhirBundle:
         """find all instances of Immunization(s) for a patient and specified disease type.
         Returns Bundle[Immunization]
         """
@@ -118,13 +161,32 @@ class FhirService:
         #  i.e. Should we provide a search option for getting Patient's entire imms history?
         if not nhs_number_mod11_check(nhs_number):
             raise InvalidPatientId(nhs_number=nhs_number)
-        resources = self.immunization_repo.find_immunizations(nhs_number, disease_type)
-        patient = self.pds_service.get_patient_details(nhs_number)
-        entries = [BundleEntry(resource=Immunization.parse_obj(handle_s_flag(imms, patient))) for imms in resources]
+        resources = self.immunization_repo.find_immunizations(nhs_number)
+        resources = [
+            r for r in resources
+            if FhirService.has_valid_disease_type(r, disease_types)
+            and FhirService.is_valid_date_from(r, date_from)
+            and FhirService.is_valid_date_to(r, date_to)
+        ]
+        patient = self.pds_service.get_patient_details(nhs_number) if len(resources) > 0 else None
+        entries = [
+                BundleEntry(
+                    resource=Immunization.parse_obj(handle_s_flag(imms, patient)),
+                    search=BundleEntrySearch(mode="match"),
+                    fullUrl=f"urn:uuid:{imms['id']}"
+                ) for imms in resources
+            ]
+        if patient:
+            entries.append(
+                BundleEntry(
+                    resource=FhirService.process_patient_for_include(patient),
+                    search=BundleEntrySearch(mode="include")
+                )
+            )
         fhir_bundle = FhirBundle(
             resourceType="Bundle",
             type="searchset",
-            entry=entries,
+            entry=entries
         )
         url = f"{get_service_url()}/Immunization?{params}"
         fhir_bundle.link = [BundleLink(relation="self", url=url)]
@@ -151,4 +213,4 @@ class FhirService:
         if patient:
             return patient
 
-        raise InvalidPatientId(nhs_number=nhs_number)
+        raise InvalidPatientId(patient_identifier=nhs_number)

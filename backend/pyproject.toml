@@ -1,5 +1,5 @@
 [tool.poetry]
-name        = "lambda-code"
+name        = "backend"
 version     = "0.1.0"
 description = ""
 authors     = ["Your Name <you@example.com>"]
@@ -7,10 +7,11 @@ readme      = "README.md"
 packages    = [{include = "src"}]
 
 [tool.poetry.dependencies]
-python                  = "~3.9"
+python                  = "~3.10"
 "fhir.resources"        = "~7.0.2"
 boto3                   = "~1.26.90"
 boto3-stubs-lite        = {extras = ["dynamodb"], version = "~1.26.90"}
+aws-lambda-typing       = "~2.18.0"
 moto                    = "~4.2.11"
 requests                = "~2.31.0"
 responses               = "~0.24.1"

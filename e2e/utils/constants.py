@@ -7,3 +7,7 @@ cis2_user = "656005750104"
 flu_code = "mockFLUcode1"
 mmr_code = "mockMMRcode1"
 covid_code = "1324681000000101"
+
+patient_identifier_system = "https://fhir.nhs.uk/Id/nhs-number"
+valid_patient_identifier1 = f"{patient_identifier_system}|{valid_nhs_number1}"
+valid_patient_identifier2 = f"{patient_identifier_system}|{valid_nhs_number2}"

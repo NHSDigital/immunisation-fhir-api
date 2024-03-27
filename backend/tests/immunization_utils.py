@@ -10,7 +10,11 @@ def create_an_immunization(imms_id, nhs_number=valid_nhs_number) -> Immunization
     return Immunization.parse_obj(base_imms)
 
 
-def create_an_immunization_dict(imms_id, nhs_number=valid_nhs_number):
+def create_an_immunization_dict(
+    imms_id,
+    nhs_number=valid_nhs_number,
+    occurrence_date_time="2021-02-07T13:28:17.271+00:00"
+):
     return {
         "resourceType": "Immunization",
         "id": imms_id,
@@ -147,7 +151,7 @@ def create_an_immunization_dict(imms_id, nhs_number=valid_nhs_number):
             ]
         },
         "patient": {"reference": "#Pat1"},
-        "occurrenceDateTime": "2021-02-07T13:28:17.271+00:00",
+        "occurrenceDateTime": occurrence_date_time,
         "recorded": "2021-02-07",
         "primarySource": True,
         "reportOrigin": {"text": "X99999"},

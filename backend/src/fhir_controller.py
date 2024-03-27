@@ -1,15 +1,15 @@
-import base64
 import json
 import os
 import re
 import uuid
 from decimal import Decimal
 from typing import Optional
-from urllib.parse import parse_qs
 
 import boto3
-from authorization import Authorization, EndpointOperation, UnknownPermission
+from aws_lambda_typing.events import APIGatewayProxyEventV1
 from botocore.config import Config
+
+from authorization import Authorization, EndpointOperation, UnknownPermission
 from cache import Cache
 from fhir_repository import ImmunizationRepository, create_table
 from fhir_service import FhirService, UpdateOutcome, get_service_url
@@ -21,9 +21,10 @@ from models.errors import (
     ResourceNotFoundError,
     UnhandledResponseError,
     ValidationError,
-    IdentifierDuplicationError
+    IdentifierDuplicationError, ParameterException
 )
 from pds_service import PdsService, Authenticator
+from parameter_parser import process_params, process_search_params, create_query_string
 
 
 def make_controller(
@@ -136,63 +137,30 @@ class FhirController:
         except UnhandledResponseError as unhandled_error:
             return self.create_response(500, unhandled_error.to_operation_outcome())
 
-    def search_immunizations(self, aws_event) -> dict:
+    def search_immunizations(self, aws_event: APIGatewayProxyEventV1) -> dict:
         if response := self.authorize_request(EndpointOperation.SEARCH, aws_event):
             return response
 
-        http_method = aws_event.get("httpMethod")
-        nhs_number_value = None
-        disease_type_value = None
-        nhs_number_param = "-nhsNumber"
-        disease_type_param = "-diseaseType"
-        if http_method == "POST":
-            content_type = aws_event.get("headers", {}).get("Content-Type")
-            if content_type == "application/x-www-form-urlencoded":
-                body = aws_event.get("body")
-                if body:
-                    decoded_body = base64.b64decode(body).decode("utf-8")
-                    parsed_body = parse_qs(decoded_body)
-                    nhs_number_list = parsed_body.get(nhs_number_param)
-                    if nhs_number_list:
-                        nhs_number_value = nhs_number_list[0]
-                    disease_type_list = parsed_body.get(disease_type_param)
-                    if disease_type_list:
-                        disease_type_value = disease_type_list[0]
-        parsed_query_params = aws_event.get("queryStringParameters")
-        if parsed_query_params:
-            nhs_number_query_param_value = parsed_query_params.get(nhs_number_param)
-            if nhs_number_query_param_value:
-                if nhs_number_value is None:
-                    nhs_number_value = nhs_number_query_param_value
-                else:
-                    if nhs_number_query_param_value != nhs_number_value:
-                        return self._create_bad_request(
-                            f"Search Parameter {nhs_number_param} can have only one value"
-                        )
+        try:
+            search_params = process_search_params(process_params(aws_event))
+        except ParameterException as e:
+            return self._create_bad_request(e.message)
+        if search_params is None:
+            raise Exception("Failed to parse parameters.")
 
-            disease_type_query_param_value = parsed_query_params.get(disease_type_param)
-            if disease_type_query_param_value:
-                if disease_type_value is None:
-                    disease_type_value = disease_type_query_param_value
-                else:
-                    if disease_type_query_param_value != disease_type_value:
-                        return self._create_bad_request(
-                            f"Search Parameter {disease_type_param} can have only one value"
-                        )
-        if not nhs_number_value:
-            return self._create_bad_request(
-                f"Search Parameter {nhs_number_param} is mandatory"
-            )
-        if not disease_type_value:
-            return self._create_bad_request(
-                f"Search Parameter {disease_type_param} is mandatory"
-            )
-
-        search_params = f"{nhs_number_param}={nhs_number_value}&{disease_type_param}={disease_type_value}"
         result = self.fhir_service.search_immunizations(
-            nhs_number_value, disease_type_value, search_params
+            search_params.patient_identifier,
+            search_params.immunization_targets,
+            create_query_string(search_params),
+            search_params.date_from,
+            search_params.date_to,
         )
-        return self.create_response(200, result.json())
+
+        # Workaround for fhir.resources JSON removing the empty "entry" list.
+        result_json_dict: dict = json.loads(result.json())
+        if "entry" not in result_json_dict:
+            result_json_dict["entry"] = []
+        return self.create_response(200, json.dumps(result_json_dict))
 
     def _validate_id(self, _id: str) -> Optional[dict]:
         if not re.match(self.immunization_id_pattern, _id):

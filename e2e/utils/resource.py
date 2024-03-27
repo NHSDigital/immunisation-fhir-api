@@ -16,7 +16,10 @@ def load_example(path: str) -> dict:
         return json.load(f)
 
 
-def create_an_imms_obj(imms_id: str = str(uuid.uuid4()), nhs_number=valid_nhs_number1, disease_code=None) -> dict:
+def create_an_imms_obj(imms_id: str = str(uuid.uuid4()),
+                       nhs_number=valid_nhs_number1,
+                       disease_code=None,
+                       occurrence_date_time: str = None) -> dict:
     imms = copy.deepcopy(load_example("Immunization/POST-Immunization.json"))
     if disease_code:
         imms["extension"][0]["valueCodeableConcept"]["coding"][0]["code"] = disease_code
@@ -27,6 +30,8 @@ def create_an_imms_obj(imms_id: str = str(uuid.uuid4()), nhs_number=valid_nhs_nu
     imms["id"] = imms_id
     imms["identifier"][0]["value"] = str(uuid.uuid4())
     imms["contained"][1]["identifier"][0]["value"] = nhs_number
+    if occurrence_date_time is not None:
+        imms["occurrenceDateTime"] = occurrence_date_time
 
     return imms
 

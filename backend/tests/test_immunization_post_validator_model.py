@@ -1,19 +1,18 @@
 """Test immunization pre validation rules on the model"""
 
-import unittest 
+import unittest
 from copy import deepcopy
 
 from jsonpath_ng.ext import parse
 from mappings import VaccineTypes, Mandation
 from models.fhir_immunization import ImmunizationValidator
-from .utils.generic_utils import (
+from tests.utils.generic_utils import (
     # these have an underscore to avoid pytest collecting them as tests
     test_valid_values_accepted as _test_valid_values_accepted,
     test_invalid_values_rejected as _test_invalid_values_rejected,
     load_json_data,
 )
-from .utils.mandation_test_utils import MandationTests
-from src.models.utils.post_validation_utils import MandatoryError
+from tests.utils.mandation_test_utils import MandationTests
 
 
 class TestImmunizationModelPostValidationRules(unittest.TestCase):
@@ -30,18 +29,18 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
         self.not_done_mmr_json_data = load_json_data("sample_immunization_not_done_mmr_event.json")
         self.reduce_validation_json_data = load_json_data("sample_immunization_reduce_validation_event.json")
         self.validator = ImmunizationValidator()
-        
+
     def test_collected_errors(self):
         """Test that when passed multiple validation errors, it returns a list of all expected errors."""
-        
+
         covid_data = self.covid_json_data
-        
+
         #remove name[0].given for 'Patient'
         for item in covid_data.get('contained', []):
             if item.get('resourceType') == 'Patient':
                 if 'name' in item and item['name'] and 'given' in item['name'][0]:
                     item['name'][0]['given'] = None
-        
+
         #remove actor.identifier.value for 'Organization'
         for performer in covid_data.get('performer', []):
             if performer.get('actor', {}).get('type') == 'Organization':
@@ -49,22 +48,22 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
                     performer['actor']['identifier']['value'] = None
                 if 'display' in performer['actor']:
                     performer['actor']['display'] = None
-                    
+
         #remove postalCode for 'Patient'
         for item in covid_data.get('contained', []):
             if item.get('resourceType') == 'Patient':
                 if 'address' in item and item['address']:
                     item['address'][0]['postalCode'] = None
-        
+
         #remove 'given' for 'Practitioner'
         for item in covid_data.get('contained', []):
             if item.get('resourceType') == 'Practitioner':
                 if 'name' in item and item['name'] and 'given' in item['name'][0]:
                     item['name'][0]['given'] = None
-                    
+
         #remove 'primarySource'
         covid_data['primarySource'] = None
-        
+
         expected_errors = [
             "Validation errors: contained[?(@.resourceType=='Patient')].name[0].given must be an array",
             "performer[?(@.actor.type=='Organization')].actor.identifier.value must be a "
@@ -82,14 +81,14 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
 
         #extract the error messages from the exception
         actual_errors = str(cm.exception).split('; ')
-        
+
         #assert length of errors
         assert len(actual_errors) == len(expected_errors)
-        
+
         #assert the error is in the expected error messages
         for error in actual_errors:
             assert error in expected_errors
-            
+
     def test_sample_data(self):
         """Test that each piece of valid sample data passes post validation"""
         # TODO: vaccinationProcedure item in not-done data extension to be removed
@@ -126,7 +125,7 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
             field_location=field_location,
             valid_values_to_test=["1324681000000101"],
         )
-        
+
         self.assertEqual(VaccineTypes.covid_19, self.validator.vaccine_type)
 
         # Test that an invalid code is rejected
@@ -137,7 +136,7 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
             invalid_value="INVALID_VALUE",
             expected_error_message=f"{field_location}: INVALID_VALUE is not a valid code for this service"
         )
-        
+
         # Test that json data which doesn't contain vaccination_procedure_code is rejected
         MandationTests.test_missing_mandatory_field_rejected(self, field_location)
 
@@ -522,7 +521,7 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
             field_location=field_location,
             valid_json_data=deepcopy(self.not_done_json_data),
         )
-        
+
         # Test that valid values are accepted when status is 'not-done'
         _test_valid_values_accepted(
             self,

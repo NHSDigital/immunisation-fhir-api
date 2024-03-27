@@ -248,6 +248,9 @@ paths:
         - $ref: '#/components/parameters/RequestID'
         - $ref: '#/components/parameters/PatientIdentifier'
         - $ref: '#/components/parameters/ImmunizationTarget'
+        - $ref: '#/components/parameters/DateFrom'
+        - $ref: '#/components/parameters/DateTo'
+        - $ref: '#/components/parameters/Include'
       responses:
         "200":
           description: Search immunisation operation successful
@@ -277,6 +280,9 @@ paths:
         - $ref: '#/components/parameters/RequestID'
         - $ref: '#/components/parameters/PatientIdentifier'
         - $ref: '#/components/parameters/ImmunizationTarget'
+        - $ref: '#/components/parameters/DateFrom'
+        - $ref: '#/components/parameters/DateTo'
+        - $ref: '#/components/parameters/Include'
       requestBody:
         $ref: '#/components/requestBodies/SearchImmunization' 
       responses:
@@ -434,18 +440,35 @@ components:
           schema:
             type: object
             properties:
-              -nhsNumber:
+              patient.identifier:
                 type: string
                 description: |
                   The patient's NHS number.
                   Expressed as `<value>` where`<value>` must be a [valid NHS number](https://www.datadictionary.nhs.uk/attributes/nhs_number.html).
                 example: "9000000009"
-              -diseaseType:
+              -immunization.target:
                 type: string
                 description: |
-                  The vaccine preventable disease the dose is being administered against.
-                  Expressed as `<value>` where`<value>` must be a valid Disease Type (COVID19, FLU, HPV, MMR).
-                example: "COVID19"
+                  Specific procedures, disorders, diseases, infections or organisms.
+                enum:
+                  - "COVID19"
+                  - "FLU"
+                  - "HPV"
+                  - "MMR"
+              -date.from:
+                type: string
+                format: date
+                description: "The earliest date to be included (e.g. 2020-01-01)"
+                default: "1900-01-01"
+              -date.to:
+                type: string
+                format: date
+                description: "The latest date to be included (e.g. 2020-12-31)"
+                default: "9999-12-31"
+              _include:
+                description: "Specifies other resources to be included in the response along with the immunisations.\nMust be `Immunization:patient`, which will include patient demographic details."
+                type: string
+                default: "Immunization:patient"
   parameters:
     Id:
       in: path
@@ -501,24 +524,51 @@ components:
         example: 60E0B220-8136-4CA5-AE46-1D97EF59D068
     PatientIdentifier:
       in: query
-      name: -nhsNumber
+      name: patient.identifier
       description: |
         The patient's NHS number.
-        Expressed as `<value>` where`<value>` must be a [valid NHS number](https://www.datadictionary.nhs.uk/attributes/nhs_number.html).
+        Expressed as `<type>|<value>` where `<type>` must be `https://fhir.nhs.uk/Id/nhs-number` and `<value>` must be a [valid NHS number](https://www.datadictionary.nhs.uk/attributes/nhs_number.html).
       required: true
       schema:
         type: string
-        example: "9000000009"
+        example: "https://fhir.nhs.uk/Id/nhs-number|9000000009"
     ImmunizationTarget:
       in: query
-      name: -diseaseType
+      name: -immunization.target
       description: |
-        The vaccine preventable disease the dose is being administered against.
-        Expressed as `<value>` where`<value>` must be a valid Disease Type (COVID19, FLU, HPV, MMR).
+        Specific procedures, disorders, diseases, infections or organisms.
       required: true
       schema:
         type: string
-        example: "COVID19"
+        enum:
+          - "COVID19"
+          - "FLU"
+          - "HPV"
+          - "MMR"
+    DateFrom:
+      in: query
+      name: -date.from
+      description: "The earliest date to be included (e.g. 2020-01-01)"
+      schema:
+        type: string
+        format: date
+        default: "1900-01-01"
+    DateTo:
+      in: query
+      name: -date.to
+      description: "The latest date to be included (e.g. 2020-12-31)"
+      schema:
+        type: string
+        format: date
+        default: "9999-12-31"
+    Include:
+      in: query
+      name: _include
+      description: "Specifies other resources to be included in the response along with the immunisations.\nMust be `Immunization:patient`, which will include patient demographic details."
+      required: true
+      schema:
+        type: string
+        default: "Immunization:patient"
   schemas:
     Resource:
       type: object

@@ -2,6 +2,7 @@ import argparse
 import pprint
 import uuid
 
+from authorization import Permission
 from fhir_controller import FhirController, make_controller
 from local_lambda import load_string
 from models.errors import Severity, Code, create_operation_outcome
@@ -31,7 +32,12 @@ if __name__ == "__main__":
         "pathParameters": {
             "id": args.id
         },
-        "body": load_string(args.path)
+        "body": load_string(args.path),
+        "headers": {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'AuthenticationType': 'ApplicationRestricted',
+            'Permissions': (','.join([Permission.UPDATE]))
+        }
     }
 
     pprint.pprint(event)

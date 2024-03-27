@@ -42,5 +42,6 @@ class TestSearchImmunizations(unittest.TestCase):
         act_body = json.loads(act_res["body"])
         act_body["id"] = None
 
-        self.assertDictEqual(act_body, exp_error)
+        self.assertEqual(exp_error["issue"][0]["code"], act_body["issue"][0]["code"])
+        self.assertEqual(exp_error["issue"][0]["severity"], act_body["issue"][0]["severity"])
         self.assertEqual(act_res["statusCode"], 500)

@@ -1,11 +1,11 @@
 import re
 import uuid
-from typing import Optional
+from typing import Optional, Literal
 
 import requests
 
 from lib.authentication import BaseAuthentication
-from .resource import create_an_imms_obj
+from .constants import patient_identifier_system
 
 
 def parse_location(location) -> Optional[str]:
@@ -49,9 +49,26 @@ class ImmunisationApi:
     def delete_immunization(self, imms_id):
         return requests.delete(f"{self.url}/Immunization/{imms_id}", headers=self._update_headers())
 
-    def search_immunizations(self, nhs_number, disease_type):
-        return requests.get(f"{self.url}/Immunization?-nhsNumber={nhs_number}&-diseaseType={disease_type}",
-                            headers=self._update_headers())
+    def search_immunizations(self, patient_identifier: str, immunization_target: str):
+        return requests.get(
+            f"{self.url}/Immunization?patient.identifier={patient_identifier_system}|{patient_identifier}"
+            f"&-immunization.target={immunization_target}",
+            headers=self._update_headers())
+
+    def search_immunizations_full(self,
+                                  http_method: Literal["POST", "GET"],
+                                  query_string: Optional[str],
+                                  body: Optional[str]):
+        if http_method == "POST":
+            url = f"{self.url}/Immunization/_search?{query_string}"
+        else:
+            url = f"{self.url}/Immunization?{query_string}"
+        return requests.request(
+            http_method,
+            url,
+            headers=self._update_headers({"Content-Type": "application/x-www-form-urlencoded"}),
+            data=body
+        )
 
     def _update_headers(self, headers=None):
         if headers is None:
@@ -61,14 +78,3 @@ class ImmunisationApi:
             "X-Request-ID": str(uuid.uuid4()),
         }}
         return {**updated, **headers}
-
-
-def create_a_deleted_imms_resource(imms_api: ImmunisationApi) -> str:
-    imms = create_an_imms_obj()
-    response = imms_api.create_immunization(imms)
-    imms_id = parse_location(response.headers["Location"])
-
-    response = imms_api.delete_immunization(imms_id)
-    assert response.status_code == 204, response.text
-
-    return imms_id

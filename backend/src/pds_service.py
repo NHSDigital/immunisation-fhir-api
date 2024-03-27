@@ -71,7 +71,7 @@ class PdsService:
         self.base_url = f"https://{environment}.api.service.nhs.uk/personal-demographics/FHIR/R4/Patient" \
             if environment != "prod" else "https://api.service.nhs.uk/personal-demographics/FHIR/R4/Patient"
 
-    def get_patient_details(self, patient_id):
+    def get_patient_details(self, patient_id) -> dict | None:
         access_token = self.authenticator.get_access_token()
         request_headers = {
             'Authorization': f'Bearer {access_token}',

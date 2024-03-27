@@ -2,6 +2,7 @@ import argparse
 import pprint
 import uuid
 
+from authorization import Permission
 from fhir_controller import FhirController, make_controller
 from local_lambda import load_string
 from models.errors import Severity, Code, create_operation_outcome
@@ -26,7 +27,14 @@ if __name__ == "__main__":
     parser.add_argument("path", help="Path to Immunization JSON file.", type=str)
     args = parser.parse_args()
 
-    event = {"body": load_string(args.path)}
+    event = {
+        "body": load_string(args.path),
+        "headers": {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'AuthenticationType': 'ApplicationRestricted',
+            'Permissions': (','.join([Permission.CREATE]))
+        }
+    }
 
     pprint.pprint(event)
     pprint.pprint(create_imms_handler(event, {}))

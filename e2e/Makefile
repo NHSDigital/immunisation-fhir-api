@@ -28,6 +28,9 @@ run-smoketest:
 run:
 	$(cmd)
 
+run-match-%:
+	$(cmd) -v -c -k $*
+
 file = immunisation-fhir-api-local
 key-pair:
 	openssl genrsa -out .keys/$(file).key 4096

@@ -1,4 +1,5 @@
 import json
+import datetime
 import os
 import unittest
 from copy import deepcopy
@@ -19,7 +20,7 @@ from models.fhir_immunization import ImmunizationValidator
 from pds_service import PdsService
 from pydantic import ValidationError
 from pydantic.error_wrappers import ErrorWrapper
-from .immunization_utils import (
+from tests.immunization_utils import (
     create_an_immunization,
     create_an_immunization_dict,
     valid_nhs_number,
@@ -218,7 +219,7 @@ class TestCreateImmunization(unittest.TestCase):
             self.fhir_service.create_immunization(bad_patient_imms)
 
         # Then
-        self.assertEqual(e.exception.nhs_number, invalid_nhs_number)
+        self.assertEqual(e.exception.patient_identifier, invalid_nhs_number)
         self.imms_repo.create_immunization.assert_not_called()
 
 
@@ -385,7 +386,7 @@ class TestUpdateImmunization(unittest.TestCase):
             self.fhir_service.update_immunization(imms_id, bad_patient_imms)
 
         # Then
-        self.assertEqual(e.exception.nhs_number, invalid_nhs_number)
+        self.assertEqual(e.exception.patient_identifier, invalid_nhs_number)
         self.imms_repo.update_immunization.assert_not_called()
 
 
@@ -420,44 +421,314 @@ class TestSearchImmunizations(unittest.TestCase):
         self.imms_repo = create_autospec(ImmunizationRepository)
         self.pds_service = create_autospec(PdsService)
         self.validator = create_autospec(ImmunizationValidator)
-        self.fhir_service = FhirService(self.imms_repo, self.pds_service, self.validator)
-        self.nhsSearchParam = "-nhsNumber"
-        self.diseaseTypeSearchParam = "-diseaseType"
+        self.fhir_service = FhirService(
+            self.imms_repo, self.pds_service, self.validator
+        )
+        self.nhs_search_param = "patient.identifier"
+        self.disease_type_search_param = "-immunization.target"
 
     def test_map_disease_type_to_disease_code(self):
-        """it should map disease_type to disease_code"""
+        """It should map disease_type to disease_code"""
         # TODO: for this ticket we are assuming code is provided
-        nhs_number = "9990548609"
+        nhs_number = valid_nhs_number
         disease_type = "1324681000000101"
-        params = f"{self.nhsSearchParam}={nhs_number}&{self.diseaseTypeSearchParam}={disease_type}"
+        params = f"{self.nhs_search_param}={nhs_number}&{self.disease_type_search_param}={disease_type}"
 
         disease_code = vaccination_procedure_snomed_codes[disease_type]
         # When
         _ = self.fhir_service.search_immunizations(nhs_number, disease_code, params)
 
         # Then
-        self.imms_repo.find_immunizations.assert_called_once_with(nhs_number, disease_code)
+        self.imms_repo.find_immunizations.assert_called_once_with(nhs_number)
 
     def test_make_fhir_bundle_from_search_result(self):
-        """it should return a FHIR:List[Immunization] resource"""
+        """It should return a FHIR Bundle resource"""
         imms_ids = ["imms-1", "imms-2"]
         imms_list = [create_an_immunization_dict(imms_id) for imms_id in imms_ids]
         self.imms_repo.find_immunizations.return_value = imms_list
         self.pds_service.get_patient_details.return_value = {}
-        nhs_number = "9990548609"
-        disease_type = "a-code"
-        params = f"{self.nhsSearchParam}={nhs_number}&{self.diseaseTypeSearchParam}={disease_type}"
+        nhs_number = valid_nhs_number
+        disease_types = ["COVID19"]
+        params = f"{self.nhs_search_param}={nhs_number}&{self.disease_type_search_param}={disease_types}"
         # When
-        result = self.fhir_service.search_immunizations(nhs_number, disease_type, params)
+        result = self.fhir_service.search_immunizations(
+            nhs_number, disease_types, params
+        )
         # Then
         self.assertIsInstance(result, FhirBundle)
         self.assertEqual(result.type, "searchset")
-        self.assertEqual(len(result.entry), len(imms_ids))
+        self.assertEqual(len(imms_ids), len(result.entry))
         # Assert each entry in the bundle
         for i, entry in enumerate(result.entry):
             self.assertIsInstance(entry, BundleEntry)
             self.assertEqual(entry.resource.resource_type, "Immunization")
             self.assertEqual(entry.resource.id, imms_ids[i])
         # Assert self link
-        self.assertEqual(len(result.link), 1)  # Assert that there is only one link
+        self.assertEqual(len(result.link), 1)
         self.assertEqual(result.link[0].relation, "self")
+
+    def test_date_from_is_used_to_filter(self):
+        """It should return only Immunizations after date_from"""
+        imms = [("imms-1", "2021-02-07T13:28:17.271+00:00"), ("imms-2", "2021-02-08T13:28:17.271+00:00")]
+        imms_list = [create_an_immunization_dict(imms_id, occurrence_date_time=occcurrence_date_time)
+                     for (imms_id, occcurrence_date_time) in imms]
+        imms_ids = [imms[0] for imms in imms]
+        self.imms_repo.find_immunizations.return_value = imms_list
+        self.pds_service.get_patient_details.return_value = {}
+        nhs_number = valid_nhs_number
+        disease_types = ["COVID19"]
+
+        # When
+        # Day before.
+        result = self.fhir_service.search_immunizations(
+            nhs_number, disease_types, "", date_from=datetime.date(2021, 2, 6)
+        )
+        searched_imms = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
+
+        # Then
+        self.assertEqual(2, len(searched_imms))
+        for i, entry in enumerate(searched_imms):
+            self.assertEqual(imms_ids[i], entry.resource.id)
+
+        # When
+        # Day of first, inclusive search.
+        result = self.fhir_service.search_immunizations(
+            nhs_number, disease_types, "", date_from=datetime.date(2021, 2, 7)
+        )
+        searched_imms = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
+
+        # Then
+        self.assertEqual(2, len(searched_imms))
+        for i, entry in enumerate(searched_imms):
+            self.assertEqual(imms_ids[i], entry.resource.id)
+
+        # When
+        # Day of second, inclusive search.
+        result = self.fhir_service.search_immunizations(
+            nhs_number, disease_types, "", date_from=datetime.date(2021, 2, 8)
+        )
+        searched_imms = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
+
+        # Then
+        self.assertEqual(1, len(searched_imms))
+        self.assertEqual(imms_ids[1], searched_imms[0].resource.id)
+
+        # When
+        # Day after.
+        result = self.fhir_service.search_immunizations(
+            nhs_number, disease_types, "", date_from=datetime.date(2021, 2, 9)
+        )
+        searched_imms = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
+
+        # Then
+        self.assertEqual(0, len(searched_imms))
+
+    def test_date_from_is_optional(self):
+        """It should return everything when no date_from is specified"""
+        imms_ids = ["imms-1", "imms-2"]
+        imms_list = [create_an_immunization_dict(imms_id) for imms_id in imms_ids]
+        self.imms_repo.find_immunizations.return_value = imms_list
+        self.pds_service.get_patient_details.return_value = {}
+        nhs_number = valid_nhs_number
+        disease_types = ["COVID19"]
+
+        # When
+        result = self.fhir_service.search_immunizations(
+            nhs_number, disease_types, ""
+        )
+        searched_imms = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
+
+        # Then
+        for i, entry in enumerate(searched_imms):
+            self.assertEqual(entry.resource.id, imms_ids[i])
+
+        # When
+        result = self.fhir_service.search_immunizations(
+            nhs_number, disease_types, "", date_from=datetime.date(2021, 3, 6)
+        )
+        searched_imms = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
+
+        # Then
+        for i, entry in enumerate(searched_imms):
+            self.assertEqual(entry.resource.id, imms_ids[i])
+
+    def test_date_to_is_used_to_filter(self):
+        """It should return only Immunizations before date_to"""
+        imms = [("imms-1", "2021-02-07T13:28:17.271+00:00"), ("imms-2", "2021-02-08T13:28:17.271+00:00")]
+        imms_list = [create_an_immunization_dict(imms_id, occurrence_date_time=occcurrence_date_time)
+                     for (imms_id, occcurrence_date_time) in imms]
+        imms_ids = [imms[0] for imms in imms]
+        self.imms_repo.find_immunizations.return_value = imms_list
+        self.pds_service.get_patient_details.return_value = {}
+        nhs_number = valid_nhs_number
+        disease_types = ["COVID19"]
+
+        # When
+        # Day after.
+        result = self.fhir_service.search_immunizations(
+            nhs_number, disease_types, "", date_to=datetime.date(2021, 2, 9)
+        )
+        searched_imms = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
+
+        # Then
+        self.assertEqual(len(searched_imms), 2)
+        for i, entry in enumerate(searched_imms):
+            self.assertEqual(entry.resource.id, imms_ids[i])
+
+        # When
+        # Day of second, inclusive search.
+        result = self.fhir_service.search_immunizations(
+            nhs_number, disease_types, "", date_to=datetime.date(2021, 2, 8)
+        )
+        searched_imms = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
+
+        # Then
+        self.assertEqual(len(searched_imms), 2)
+        for i, entry in enumerate(searched_imms):
+            self.assertEqual(entry.resource.id, imms_ids[i])
+
+        # When
+        # Day of first, inclusive search.
+        result = self.fhir_service.search_immunizations(
+            nhs_number, disease_types, "", date_to=datetime.date(2021, 2, 7)
+        )
+        searched_imms = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
+
+        # Then
+        self.assertEqual(len(searched_imms), 1)
+        self.assertEqual(searched_imms[0].resource.id, imms_ids[0])
+
+        # When
+        # Day before.
+        result = self.fhir_service.search_immunizations(
+            nhs_number, disease_types, "", date_to=datetime.date(2021, 2, 6)
+        )
+        searched_imms = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
+
+        # Then
+        self.assertEqual(len(searched_imms), 0)
+
+    def test_date_to_is_optional(self):
+        """It should return everything when no date_to is specified"""
+        imms_ids = ["imms-1", "imms-2"]
+        imms_list = [create_an_immunization_dict(imms_id) for imms_id in imms_ids]
+        self.imms_repo.find_immunizations.return_value = imms_list
+        self.pds_service.get_patient_details.return_value = {}
+        nhs_number = valid_nhs_number
+        disease_types = ["COVID19"]
+
+        # When
+        result = self.fhir_service.search_immunizations(
+            nhs_number, disease_types, ""
+        )
+        searched_imms = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
+
+        # Then
+        for i, entry in enumerate(searched_imms):
+            self.assertEqual(entry.resource.id, imms_ids[i])
+
+        # When
+        result = self.fhir_service.search_immunizations(
+            nhs_number, disease_types, "", date_to=datetime.date(2021, 3, 8)
+        )
+        searched_imms = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
+
+        # Then
+        for i, entry in enumerate(searched_imms):
+            self.assertEqual(entry.resource.id, imms_ids[i])
+
+    def test_matches_contain_fullUrl(self):
+        """All matches must have a fullUrl consisting of their id.
+        See http://hl7.org/fhir/R4B/bundle-definitions.html#Bundle.entry.fullUrl.
+        Tested because fhir.resources validation doesn't check this as mandatory."""
+
+        imms_ids = ["imms-1", "imms-2"]
+        imms_list = [create_an_immunization_dict(imms_id) for imms_id in imms_ids]
+        self.imms_repo.find_immunizations.return_value = imms_list
+        self.pds_service.get_patient_details.return_value = {}
+        nhs_number = valid_nhs_number
+        disease_types = ["COVID19"]
+
+        # When
+        result = self.fhir_service.search_immunizations(
+            nhs_number, disease_types, ""
+        )
+        entries = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
+
+        # Then
+        for i, entry in enumerate(entries):
+            self.assertEqual(entry.fullUrl, f"urn:uuid:{imms_ids[i]}")
+
+    @unittest.skip("Patient fullUrl not implemented")
+    def test_patient_contains_fullUrl(self):
+        """Patient must have a fullUrl consisting of its id.
+        See http://hl7.org/fhir/R4B/bundle-definitions.html#Bundle.entry.fullUrl.
+        Tested because fhir.resources validation doesn't check this as mandatory."""
+
+        imms_ids = ["imms-1", "imms-2"]
+        imms_list = [create_an_immunization_dict(imms_id) for imms_id in imms_ids]
+        self.imms_repo.find_immunizations.return_value = imms_list
+        self.pds_service.get_patient_details.return_value = {}
+        nhs_number = valid_nhs_number
+        disease_types = ["COVID19"]
+
+        # When
+        result = self.fhir_service.search_immunizations(
+            nhs_number, disease_types, ""
+        )
+
+        # Then
+        patient_entry = next((entry for entry in result.entry if entry.resource.resource_type == "Patient"), None)
+        self.assertEqual(patient_entry.fullUrl, "???")
+
+    def test_patient_included(self):
+        """Patient is included in the results."""
+
+        imms_ids = ["imms-1", "imms-2"]
+        imms_list = [create_an_immunization_dict(imms_id) for imms_id in imms_ids]
+        patient = next(contained for contained in imms_list[0]["contained"] if contained["resourceType"] == "Patient")
+        self.imms_repo.find_immunizations.return_value = imms_list
+        self.pds_service.get_patient_details.return_value = patient
+        nhs_number = valid_nhs_number
+        disease_types = ["COVID19"]
+
+        # When
+        result = self.fhir_service.search_immunizations(
+            nhs_number, disease_types, ""
+        )
+
+        # Then
+        patient_entry = next((entry for entry in result.entry if entry.resource.resource_type == "Patient"), None)
+        self.assertIsNotNone(patient_entry)
+
+    def test_patient_is_stripped(self):
+        """The included Patient is a subset of the data."""
+
+        imms_ids = ["imms-1", "imms-2"]
+        imms_list = [create_an_immunization_dict(imms_id) for imms_id in imms_ids]
+        patient = next(contained for contained in imms_list[0]["contained"] if contained["resourceType"] == "Patient")
+        self.imms_repo.find_immunizations.return_value = imms_list
+        self.pds_service.get_patient_details.return_value = patient
+        nhs_number = valid_nhs_number
+        disease_types = ["COVID19"]
+
+        # When
+        result = self.fhir_service.search_immunizations(
+            nhs_number, disease_types, ""
+        )
+
+        # Then
+        patient_entry = next((entry for entry in result.entry if entry.resource.resource_type == "Patient"))
+        patient_entry_resource = patient_entry.resource
+        fields_to_keep = ["id", "resource_type", "identifier", "birthDate"]
+        #self.assertListEqual(sorted(vars(patient_entry.resource).keys()), sorted(fields_to_keep))
+        #self.assertGreater(len(patient), len(fields_to_keep))
+        for field in fields_to_keep:
+            self.assertTrue(hasattr(patient_entry_resource, field), f"{field} in Patient")
+            self.assertIsNotNone(getattr(patient_entry_resource, field))
+
+        for k, v in vars(patient_entry_resource).items():
+            if k not in fields_to_keep:
+                self.assertIsNone(v)
+
+

@@ -1,6 +1,6 @@
 """Dictionary of vaccine procedure snomed codes and their mapping to vaccine type"""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass
@@ -11,6 +11,9 @@ class VaccineTypes:
     flu: str = "FLU"
     hpv: str = "HPV"
     mmr: str = "MMR"
+
+    all: list[str] = \
+        field(default_factory=lambda: [VaccineTypes.covid_19, VaccineTypes.flu, VaccineTypes.hpv, VaccineTypes.mmr])
 
 
 @dataclass

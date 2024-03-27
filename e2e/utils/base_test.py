@@ -107,7 +107,7 @@ class ImmunizationBaseTest(unittest.TestCase):
         """creates an Immunization resource and returns the resource url"""
         imms = resource if resource else create_an_imms_obj()
         response = imms_api.create_immunization(imms)
-        assert response.status_code == 201, response.text
+        assert response.status_code == 201, (response.status_code, response.text)
         return parse_location(response.headers["Location"])
 
     @staticmethod

@@ -33,8 +33,8 @@ tflocal apply -target=aws_dynamodb_table.test-dynamodb-table
 
 ### Run endpoint
 
-Rename `.env.default` to `.env` or merge it with your existing file. 
-Rename `.envrc.default` to `.envrc` or merge it with your existing file. `direnv` will use them automatically in the terminal.
+Copy `.env.default` to `.env` or merge it with your existing file.
+Copy `.envrc.default` to `.envrc` or merge it with your existing file. `direnv` will use them automatically in the terminal.
 
 These are kept separate so other tools can use `.env` if wanted.
 

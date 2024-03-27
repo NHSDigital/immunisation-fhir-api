@@ -436,18 +436,15 @@ class TestFindImmunizations(unittest.TestCase):
         self.repository = ImmunizationRepository(table=self.table)
 
     def test_find_immunizations(self):
-        """it should find events with nhsNumber and diseaseCode(like snomed)"""
+        """it should find events with patient_identifier"""
         nhs_number = "a-patient-id"
-        disease_code = "a-snomed-code-for-disease"
         dynamo_response = {"ResponseMetadata": {"HTTPStatusCode": 200}, "Items": []}
         self.table.query = MagicMock(return_value=dynamo_response)
 
         condition = Key("PatientPK").eq(_make_patient_pk(nhs_number))
-        sort_key = f"{disease_code}#"
-        condition &= Key("PatientSK").begins_with(sort_key)
 
         # When
-        _ = self.repository.find_immunizations(nhs_number, disease_code)
+        _ = self.repository.find_immunizations(nhs_number)
 
         # Then
         self.table.query.assert_called_once_with(
@@ -464,7 +461,7 @@ class TestFindImmunizations(unittest.TestCase):
         is_ = Attr("DeletedAt").not_exists()
 
         # When
-        _ = self.repository.find_immunizations("an-id", "a-code")
+        _ = self.repository.find_immunizations("an-id")
 
         # Then
         self.table.query.assert_called_once_with(
@@ -483,7 +480,7 @@ class TestFindImmunizations(unittest.TestCase):
         self.table.query = MagicMock(return_value=dynamo_response)
 
         # When
-        results = self.repository.find_immunizations("an-id", "a-code")
+        results = self.repository.find_immunizations("an-id")
 
         # Then
         self.assertListEqual(results, [imms1, imms2])
@@ -496,7 +493,7 @@ class TestFindImmunizations(unittest.TestCase):
 
         with self.assertRaises(UnhandledResponseError) as e:
             # When
-            self.repository.find_immunizations("an-id", "a-code")
+            self.repository.find_immunizations("an-id")
 
         # Then
         self.assertDictEqual(e.exception.response, response)
