@@ -52,6 +52,14 @@ class TestUpdateImmunization(ImmunizationBaseTest):
         response = self.default_imms_api.update_immunization(imms_id, imms)
 
         self.assertEqual(response.status_code, 201, response.text)
+    
+    def test_update_imms_without_id_returns_500(self):
+        """updating an immunization record will undo the delete"""
+        imms = create_an_imms_obj(None)
+
+        response = self.default_imms_api.update_immunization(None, imms)
+
+        self.assertEqual(response.status_code, 500, response.text)
 
     def test_update_inconsistent_id(self):
         """update should fail if id in the path doesn't match with the id in the message"""
