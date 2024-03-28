@@ -43,9 +43,9 @@ meta:
 
 apigee:
   environments:
-    {% for ENV in APIGEE_ENVIRONMENTS %}
-    {% set TITLE = PRODUCT_DISPLAY_NAME + ' (' + ENV.display_name + ' Environment)' %}
-    {% set NAME = SERVICE_NAME + '-' + ENV.name %}
+{% for ENV in APIGEE_ENVIRONMENTS %}
+{% set TITLE = PRODUCT_DISPLAY_NAME + ' (' + ENV.display_name + ' Environment)' %}
+{% set NAME = SERVICE_NAME + '-' + ENV.name %}
     - name: {{ ENV.name }}
       products:
         - name: {{ NAME }}-app-restricted
@@ -53,8 +53,7 @@ apigee:
           attributes:
             - name: access
               value: public
-            - name: authentication
-              value: app-restricted
+          
             - name: ratelimiting
               value:
                 {{ NAME }}-app-restricted:
@@ -77,9 +76,9 @@ apigee:
           proxies:
             - {{ NAME }}
             - identity-service-{{ ENV.name }}
-            {% if ENV.has_mock_auth | default(false) %}
+{% if ENV.has_mock_auth | default(false) %}
             - identity-service-mock-{{ ENV.name }}
-            {% endif %}
+{% endif %}
           scopes:
             - 'urn:nhsd:apim:app:level3:{{ SERVICE_NAME }}'
           specs:
@@ -100,8 +99,7 @@ apigee:
           attributes:
             - name: access
               value: public
-            - name: authentication
-              value: app-restricted
+          
             - name: ratelimiting
               value:
                 {{ NAME }}-nhs-login:
@@ -124,9 +122,9 @@ apigee:
           proxies:
             - {{ NAME }}
             - identity-service-{{ ENV.name }}
-            {% if ENV.has_mock_auth | default(false) %}
+{% if ENV.has_mock_auth | default(false) %}
             - identity-service-mock-{{ ENV.name }}
-            {% endif %}
+{% endif %}
           scopes:
             - 'urn:nhsd:apim:user-nhs-login:P9:{{ SERVICE_NAME }}'
           specs:
@@ -147,8 +145,7 @@ apigee:
           attributes:
             - name: access
               value: public
-            - name: authentication
-              value: cis2
+
             - name: ratelimiting
               value:
                 {{ NAME }}-cis2:
@@ -171,9 +168,9 @@ apigee:
           proxies:
             - {{ NAME }}
             - identity-service-{{ ENV.name }}
-            {% if ENV.has_mock_auth | default(false) %}
+ {% if ENV.has_mock_auth | default(false) %}
             - identity-service-mock-{{ ENV.name }}
-            {% endif %}
+{% endif %}
           scopes:
             - 'urn:nhsd:apim:user-nhs-cis2:aal3:{{ SERVICE_NAME }}'
           specs:
@@ -187,4 +184,4 @@ apigee:
               title: {{ TITLE }}
               visibility: {{ ENV.portal_visibility | default(true) }}
               specId: {{ NAME }}
-    {% endfor %}
+{% endfor %}
