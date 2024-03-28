@@ -91,49 +91,9 @@ apigee:
         visibility: {{ ENV.portal_visibility | default(true) }}
         specId: {{ NAME }}
 
-{% else %}
+{% endfor %}
 
-SERVICE_NAME: immunisation-fhir-api
-PRODUCT_DISPLAY_NAME: immunisation-fhir-api
-DESCRIPTION: example description
-APIGEE_ENVIRONMENTS:
-  - name: internal-dev
-    display_name: Internal Development
-    has_mock_auth: true
-  - name: internal-qa
-    display_name: Internal QA
-    has_mock_auth: true
-  - name: internal-dev-sandbox
-    display_name: Internal Development Sandbox
-    portal_visibility: false
-  - name: internal-qa-sandbox
-    display_name: Internal QA Sandbox
-    portal_visibility: false
-  - name: ref
-    display_name: Reference
-    has_mock_auth: true
-    ratelimiting:
-        app:
-            quota:
-                enabled: false
-            spikeArrest:
-                enabled: false
-  - name: sandbox
-    display_name: Sandbox
-    portal_visibility: false
-  - name: int
-    display_name: Integration Testing
-    has_mock_auth: true
----
-meta:
-  api:
-    name: immunisation-fhir-api
-    guid: 87a3e100-ceb6-42bd-bf3f-869ee2c1e0c7
-    spec_guids:
-      - e8a8dc7a-3c26-408c-8318-457cd2758790
-  schema_version: 1.3
-apigee:
-  environments:
+
 {% for ENV in APIGEE_ENVIRONMENTS %}
 {% set TITLE = PRODUCT_DISPLAY_NAME + ' (' + ENV.display_name + ' Environment)' %}
 {% set NAME = SERVICE_NAME + '-' + ENV.name %}
@@ -185,49 +145,8 @@ apigee:
         visibility: {{ ENV.portal_visibility | default(true) }}
         specId: {{ NAME }}
 
-{% else %}
+{% endfor %}
 
-SERVICE_NAME: immunisation-fhir-api
-PRODUCT_DISPLAY_NAME: immunisation-fhir-api
-DESCRIPTION: example description
-APIGEE_ENVIRONMENTS:
-  - name: internal-dev
-    display_name: Internal Development
-    has_mock_auth: true
-  - name: internal-qa
-    display_name: Internal QA
-    has_mock_auth: true
-  - name: internal-dev-sandbox
-    display_name: Internal Development Sandbox
-    portal_visibility: false
-  - name: internal-qa-sandbox
-    display_name: Internal QA Sandbox
-    portal_visibility: false
-  - name: ref
-    display_name: Reference
-    has_mock_auth: true
-    ratelimiting:
-        app:
-            quota:
-                enabled: false
-            spikeArrest:
-                enabled: false
-  - name: sandbox
-    display_name: Sandbox
-    portal_visibility: false
-  - name: int
-    display_name: Integration Testing
-    has_mock_auth: true
----
-meta:
-  api:
-    name: immunisation-fhir-api
-    guid: 87a3e100-ceb6-42bd-bf3f-869ee2c1e0c7
-    spec_guids:
-      - e8a8dc7a-3c26-408c-8318-457cd2758790
-  schema_version: 1.3
-apigee:
-  environments:
 {% for ENV in APIGEE_ENVIRONMENTS %}
 {% set TITLE = PRODUCT_DISPLAY_NAME + ' (' + ENV.display_name + ' Environment)' %}
 {% set NAME = SERVICE_NAME + '-' + ENV.name %}
