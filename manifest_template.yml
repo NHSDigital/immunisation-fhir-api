@@ -90,8 +90,6 @@ apigee:
         title: {{ TITLE }}
         visibility: {{ ENV.portal_visibility | default(true) }}
         specId: {{ NAME }}
-{% endfor %}
-
 
 
 SERVICE_NAME: immunisation-fhir-api
@@ -185,7 +183,6 @@ apigee:
         title: {{ TITLE }}
         visibility: {{ ENV.portal_visibility | default(true) }}
         specId: {{ NAME }}
-{% endfor %}
 
 
 
