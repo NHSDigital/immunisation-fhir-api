@@ -91,12 +91,7 @@ apigee:
         visibility: {{ ENV.portal_visibility | default(true) }}
         specId: {{ NAME }}
 
-{% endfor %}
 
-
-{% for ENV in APIGEE_ENVIRONMENTS %}
-{% set TITLE = PRODUCT_DISPLAY_NAME + ' (' + ENV.display_name + ' Environment)' %}
-{% set NAME = SERVICE_NAME + '-' + ENV.name %}
   - name: {{ ENV.name }}
     products:
       - name: {{ NAME }}-cis2
@@ -145,11 +140,7 @@ apigee:
         visibility: {{ ENV.portal_visibility | default(true) }}
         specId: {{ NAME }}
 
-{% endfor %}
 
-{% for ENV in APIGEE_ENVIRONMENTS %}
-{% set TITLE = PRODUCT_DISPLAY_NAME + ' (' + ENV.display_name + ' Environment)' %}
-{% set NAME = SERVICE_NAME + '-' + ENV.name %}
   - name: {{ ENV.name }}
     products:
       - name: {{ NAME }}-nhs-login
