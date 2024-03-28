@@ -54,7 +54,7 @@ resource "aws_cloudwatch_event_rule" "source_bucket_event_rule" {
 
 module "batch_processing" {
     source          = "./batch_processing"
-    prefix          = local.prefix
+    short_prefix = local.short_prefix
     vpc_id          = data.aws_vpc.default.id
     task_policy_arn = aws_iam_policy.batch_processing_policy.arn
 }

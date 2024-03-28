@@ -1,6 +1,6 @@
 variable "vpc_id" {}
-variable "prefix" {}
+variable "short_prefix" {}
 locals {
-    prefix = "${var.prefix}-batch-processing"
+    prefix = "${var.short_prefix}-batch-processing"
 }
 variable "task_policy_arn" {}
