@@ -4,31 +4,31 @@ DESCRIPTION: immunisation-fhir-API
 APIGEE_ENVIRONMENTS:
   - name: internal-dev
     display_name: Internal Development
-      has_mock_auth: true
+    has_mock_auth: true
   - name: internal-qa
     display_name: Internal QA
-     has_mock_auth: true
+    has_mock_auth: true
   - name: internal-dev-sandbox
     display_name: Internal Development Sandbox
-      portal_visibility: false
+    portal_visibility: false
   - name: internal-qa-sandbox
     display_name: Internal QA Sandbox
-     portal_visibility: false
+    portal_visibility: false
   - name: ref
     display_name: Reference
-      has_mock_auth: true
-      ratelimiting:
-          app:
-              quota:
-                  enabled: false
-              spikeArrest:
-                  enabled: false
+    has_mock_auth: true
+    ratelimiting:
+        app:
+            quota:
+                enabled: false
+            spikeArrest:
+                enabled: false
   - name: sandbox
     display_name: Sandbox
-      portal_visibility: false
+    portal_visibility: false
   - name: int
-      display_name: Integration Testing
-      has_mock_auth: true
+    display_name: Integration Testing
+    has_mock_auth: true
       
 ---
 meta:
@@ -90,7 +90,7 @@ apigee:
             title: {{ TITLE }}
             visibility: {{ ENV.portal_visibility | default(true) }}
             specId: {{ NAME }}
-
+{% endfor %}
 
 {% for ENV in APIGEE_ENVIRONMENTS %}
 {% set TITLE = PRODUCT_DISPLAY_NAME + ' (' + ENV.display_name + ' Environment)' %}
@@ -142,7 +142,7 @@ apigee:
             title: {{ TITLE }}
             visibility: {{ ENV.portal_visibility | default(true) }}
             specId: {{ NAME }}
-
+{% endfor %}
 
 {% for ENV in APIGEE_ENVIRONMENTS %}
 {% set TITLE = PRODUCT_DISPLAY_NAME + ' (' + ENV.display_name + ' Environment)' %}
