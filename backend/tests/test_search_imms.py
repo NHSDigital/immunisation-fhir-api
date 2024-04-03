@@ -13,7 +13,8 @@ class TestSearchImmunizations(unittest.TestCase):
 
     def test_search_immunizations(self):
         """it should return a list of Immunizations"""
-        lambda_event = {"pathParameters": {"id": "an-id"}}
+        lambda_event = {"pathParameters": {"id": "an-id",
+                                           "-nhsNumber": "9693632109"}}
         exp_res = {"a-key": "a-value"}
 
         self.controller.search_immunizations.return_value = exp_res
@@ -27,7 +28,8 @@ class TestSearchImmunizations(unittest.TestCase):
 
     def test_handle_exception(self):
         """unhandled exceptions should result in 500"""
-        lambda_event = {"pathParameters": {"id": "an-id"}}
+        lambda_event = {"pathParameters": {"id": "an-id",
+                                           "-nhsNumber": "9693632109"}}
         error_msg = "an unhandled error"
         self.controller.search_immunizations.side_effect = Exception(error_msg)
 
