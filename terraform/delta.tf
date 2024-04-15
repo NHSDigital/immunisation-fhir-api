@@ -3,7 +3,6 @@ locals {
     delta_files = fileset(local.delta_lambda_dir, "**")
     delta_dir_sha = sha1(join("", [for f in local.delta_files : filesha1("${local.delta_lambda_dir}/${f}")]))
     function_name = "delta"
-    account_id = local.environment == "prod" ? 232116723729 : 603871901111
 }
 
 module "delta_docker_image" {
