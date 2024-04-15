@@ -3,6 +3,7 @@ locals {
     delta_files = fileset(local.delta_lambda_dir, "**")
     delta_dir_sha = sha1(join("", [for f in local.delta_files : filesha1("${local.delta_lambda_dir}/${f}")]))
     function_name = "delta"
+    account_id = local.environment == "prod" ? 232116723729 : 603871901111
 }
 
 module "delta_docker_image" {
@@ -107,7 +108,7 @@ data "aws_iam_policy_document" "dynamo_s3_policy_document" {
     ]
 }
 resource "aws_iam_role" "dynamo_s3_access_role" {
- name = "dynamo-s3-access-role"
+ name = "${local.short_prefix}-dynamo-s3-access-role"
  assume_role_policy = <<EOF
 {
  "Version": "2012-10-17",
@@ -115,7 +116,7 @@ resource "aws_iam_role" "dynamo_s3_access_role" {
    {
      "Effect": "Allow",
      "Principal": {
-       "Service": "arn:aws:iam::603871901111:root"
+       "Service": "arn:aws:iam::${account_id}:root"
      },
      "Action": "sts:AssumeRole"
    }
@@ -125,7 +126,7 @@ EOF
 }
 
 resource "aws_iam_role_policy" "dynamo_s3_access_policy" {
-    name   = "${local.prefix}-dynamo_s3_access-policy"
+    name   = "${local.short_prefix}-dynamo_s3_access-policy"
     role   = aws_iam_role.dynamo_s3_access_role.id
     policy = data.aws_iam_policy_document.dynamo_s3_policy_document.json
 }
