@@ -6,8 +6,6 @@
       "Action":  [
         "dynamodb:GetItem",
         "dynamodb:PutItem",
-        "dynamodb:Scan",
-        "dynamodb:DeleteItem",
         "dynamodb:UpdateItem"
       ],
       "Resource": [

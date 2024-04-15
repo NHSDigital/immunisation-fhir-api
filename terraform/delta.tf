@@ -115,7 +115,7 @@ resource "aws_iam_role" "dynamo_s3_access_role" {
    {
      "Effect": "Allow",
      "Principal": {
-       "Service": "lambda.amazonaws.com"
+       "Service": "arn:aws:iam::603871901111:root"
      },
      "Action": "sts:AssumeRole"
    }
