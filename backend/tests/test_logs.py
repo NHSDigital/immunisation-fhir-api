@@ -10,11 +10,15 @@ class TestSplunkLogs(unittest.TestCase):
     def setUp(self):
         self.stream_name = "test-stream"
         self.client = create_autospec(boto3.client("firehose"))
-        self.splunk = SplunkLogger(stream_name=self.stream_name, boto_client=self.client)
+        self.splunk = SplunkLogger(
+            stream_name=self.stream_name, boto_client=self.client
+        )
 
     def test_splunk_logs(self):
         """it should send json logs by put_record to firehose"""
-        self.client.put_record.return_value = {"ResponseMetadata": {"HTTPStatusCode": 200}}
+        self.client.put_record.return_value = {
+            "ResponseMetadata": {"HTTPStatusCode": 200}
+        }
         message = {"a-key": "a-value"}
 
         # When
@@ -22,5 +26,7 @@ class TestSplunkLogs(unittest.TestCase):
 
         # Then
         expected_payload = {"Data": json.dumps(message)}
-        self.client.put_record.assert_called_once_with(DeliveryStreamName=self.stream_name, Record=expected_payload)
+        self.client.put_record.assert_called_once_with(
+            DeliveryStreamName=self.stream_name, Record=expected_payload
+        )
         self.assertEqual(response, self.client.put_record.return_value)

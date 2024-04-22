@@ -27,8 +27,11 @@ def timed(func):
 
 
 class SplunkLogger:
-    def __init__(self, stream_name: str = os.getenv("SPLUNK_FIREHOSE_NAME"),
-                 boto_client=boto3.client("firehose", config=Config(region_name="eu-west-2"))):
+    def __init__(
+        self,
+        stream_name: str = os.getenv("SPLUNK_FIREHOSE_NAME"),
+        boto_client=boto3.client("firehose", config=Config(region_name="eu-west-2")),
+    ):
         self.firehose = boto_client
         self.stream_name = stream_name
 
@@ -37,8 +40,7 @@ class SplunkLogger:
         data = json.dumps(message)
 
         response = self.firehose.put_record(
-            DeliveryStreamName=self.stream_name,
-            Record={'Data': data}
+            DeliveryStreamName=self.stream_name, Record={"Data": data}
         )
         return response
- 0  
+
