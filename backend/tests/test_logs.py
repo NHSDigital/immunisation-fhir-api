@@ -11,7 +11,7 @@ class TestSplunkLogs(unittest.TestCase):
     def setUp(self):
         self.stream_name = "test-stream"
         boto_config = Config(region_name="eu-west-2")
-        self.client = create_autospec(boto3.client("firehose"), config=boto_config)
+        self.client = create_autospec(boto3.client("firehose", config=boto_config))
         self.splunk = SplunkLogger(
             stream_name=self.stream_name, boto_client=self.client
         )
