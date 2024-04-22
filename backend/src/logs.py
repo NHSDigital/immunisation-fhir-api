@@ -12,7 +12,7 @@ logger.setLevel("INFO")
 
 
 def timed(func):
-    """This decorator prints the execution time for the decorated function."""
+    """This decorator prints the execution time for the decorated function"""
 
     @wraps(func)
     def wrapper(*args, **kwargs):
