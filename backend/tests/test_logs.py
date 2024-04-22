@@ -9,7 +9,7 @@ from logs import SplunkLogger
 class TestSplunkLogs(unittest.TestCase):
     def setUp(self):
         self.stream_name = "test-stream"
-        self.client = create_autospec(boto3.client("firehose"))
+        self.client = create_autospec(boto3.client("firehose"),region_name="eu-west-2")
         self.splunk = SplunkLogger(
             stream_name=self.stream_name, boto_client=self.client
         )
