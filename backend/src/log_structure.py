@@ -39,7 +39,7 @@ def function_info(func):
                 "resource_path": resource_path,
                 "status": "completed successfully",
             }
-            SplunkLogger.log(logData)
+            SplunkLogger.log(message = logData)
             logger.info(logData)
 
             return result
@@ -54,7 +54,7 @@ def function_info(func):
                 "resource_path": resource_path,
                 "error": str(e),
             }
-            SplunkLogger.log(logData)
+            SplunkLogger.log(message = logData)
             logger.exception(logData)
             raise
 
