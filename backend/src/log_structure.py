@@ -30,7 +30,7 @@ def function_info(func):
             start = time.time()
             result = func(*args, **kwargs)
             end = time.time()
-            log = {
+            logData = {
                 "function_name": func.__name__,
                 "time_taken": f"{round(end - start, 5)}s",
                 "X-Correlation-ID": correlation_id,
@@ -39,12 +39,13 @@ def function_info(func):
                 "resource_path": resource_path,
                 "status": "completed successfully",
             }
-            logger.info(log)
+            SplunkLogger.log(logData)
+            logger.info(logData)
 
             return result
 
         except Exception as e:
-            log = {
+            logData = {
                 "function_name": func.__name__,
                 "time_taken": f"{round(time.time() - start, 5)}s",
                 "X-Correlation-ID": correlation_id,
@@ -53,7 +54,8 @@ def function_info(func):
                 "resource_path": resource_path,
                 "error": str(e),
             }
-            logger.exception(log)
+            SplunkLogger.log(logData)
+            logger.exception(logData)
             raise
 
     return wrapper
