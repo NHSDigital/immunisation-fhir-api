@@ -4,7 +4,7 @@ import unittest
 from unittest.mock import create_autospec
 from botocore.config import Config
 
-from log_structure import SplunkLogger
+from log_structure import FirehoseLogger
 
 
 class TestSplunkLogs(unittest.TestCase):
@@ -12,7 +12,7 @@ class TestSplunkLogs(unittest.TestCase):
         self.stream_name = "test-stream"
         boto_config = Config(region_name="eu-west-2")
         self.client = create_autospec(boto3.client("firehose", config=boto_config))
-        self.splunk = SplunkLogger(
+        self.splunk = FirehoseLogger(
             stream_name=self.stream_name, boto_client=self.client
         )
 
