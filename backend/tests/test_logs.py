@@ -24,7 +24,7 @@ class TestSplunkLogs(unittest.TestCase):
         message = {"a-key": "a-value"}
 
         # When
-        response = self.splunk.log(message)
+        response = self.splunk.send_log(message)
 
         # Then
         expected_payload = {"Data": json.dumps(message)}
