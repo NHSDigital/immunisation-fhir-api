@@ -4,7 +4,7 @@ import unittest
 from unittest.mock import create_autospec
 from botocore.config import Config
 
-from logs import SplunkLogger
+from log_structure import SplunkLogger
 
 
 class TestSplunkLogs(unittest.TestCase):
