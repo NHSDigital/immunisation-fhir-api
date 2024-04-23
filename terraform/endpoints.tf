@@ -37,6 +37,7 @@ data "aws_iam_policy_document" "imms_policy_document" {
             "dynamodb_table_name" : local.imms_table_name
         } ),
         templatefile("${local.policy_path}/log.json", {} ),
+        templatefile("${local.policy_path}/log_kinesis.json", {} ),
         templatefile("${local.policy_path}/secret_manager.json", {})
     ]
 }
