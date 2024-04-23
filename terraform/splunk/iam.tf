@@ -31,6 +31,7 @@ data "aws_iam_policy_document" "firehose_policy" {
     }
 }
 resource "aws_iam_role_policy" "firehose_policy" {
+    name   = "${local.prefix}-firehose-role-policy"
     policy = data.aws_iam_policy_document.firehose_policy.json
     role   = aws_iam_role.firehose_role.id
 }

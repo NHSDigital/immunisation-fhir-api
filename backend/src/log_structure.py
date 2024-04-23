@@ -21,7 +21,9 @@ class FirehoseLogger:
         self.delivery_stream_name = stream_name
 
     def send_log(self, log_message):
-        encoded_log_data = json.dumps(log_message).encode("utf-8")
+        log_to_splunk = log_message
+        log_to_splunk["sourcetype"] = "App_immunisations_dev"
+        encoded_log_data = json.dumps(log_to_splunk).encode("utf-8")
         try:
             response = self.firehose_client.put_record(
                 DeliveryStreamName=self.delivery_stream_name,
