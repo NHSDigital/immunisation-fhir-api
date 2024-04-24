@@ -38,7 +38,9 @@ data "aws_iam_policy_document" "imms_policy_document" {
         } ),
         templatefile("${local.policy_path}/log.json", {} ),
         templatefile("${local.policy_path}/log_kinesis.json", {} ),
-        templatefile("${local.policy_path}/secret_manager.json", {})
+        templatefile("${local.policy_path}/secret_manager.json", {
+            "account_id": data.aws_caller_identity.current.account_id
+        })
     ]
 }
 

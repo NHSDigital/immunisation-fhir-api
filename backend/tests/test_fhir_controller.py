@@ -4,12 +4,12 @@ import urllib
 import json
 import unittest
 import uuid
-from unittest.mock import create_autospec, ANY, patch, Mock
-from urllib.parse import urlencode
 
-from authorization import Authorization
 from fhir.resources.R4B.bundle import Bundle
 from fhir.resources.R4B.immunization import Immunization
+from unittest.mock import create_autospec, ANY, patch, Mock
+from urllib.parse import urlencode
+from authorization import Authorization
 from fhir_controller import FhirController
 from fhir_service import FhirService, UpdateOutcome
 from models.errors import (
@@ -21,6 +21,7 @@ from models.errors import (
 from tests.immunization_utils import create_an_immunization
 from mappings import VaccineTypes
 from parameter_parser import patient_identifier_system, process_search_params
+
 
 
 class TestFhirController(unittest.TestCase):

@@ -1,10 +1,13 @@
+import base64
+import boto3
 import json
 import os
 import re
 import uuid
+from botocore.config import Config
 from decimal import Decimal
 from typing import Optional
-
+from authentication import AppRestrictedAuth, Service
 import boto3
 from aws_lambda_typing.events import APIGatewayProxyEventV1
 from botocore.config import Config
@@ -24,8 +27,10 @@ from models.errors import (
     IdentifierDuplicationError,
     ParameterException,
 )
-from pds_service import PdsService, Authenticator
+
+from pds_service import PdsService
 from parameter_parser import process_params, process_search_params, create_query_string
+
 
 
 def make_controller(
@@ -36,9 +41,11 @@ def make_controller(
     imms_repo = ImmunizationRepository(create_table(endpoint_url=endpoint_url))
     boto_config = Config(region_name="eu-west-2")
     cache = Cache(directory="/tmp")
-    authenticator = Authenticator(
-        boto3.client("secretsmanager", config=boto_config), pds_env, cache
-    )
+    authenticator = AppRestrictedAuth(
+        service=Service.PDS,
+        secret_manager_client=boto3.client("secretsmanager", config=boto_config),
+        environment=pds_env,
+        cache=cache)
     pds_service = PdsService(authenticator, pds_env)
 
     authorizer = Authorization()
