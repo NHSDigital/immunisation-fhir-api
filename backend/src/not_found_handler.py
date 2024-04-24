@@ -1,8 +1,9 @@
 import json
+from log_structure import function_info
 
 ALLOWED_METHODS = ["GET", "POST", "DELETE", "PUT"]
 
-
+@function_info
 def not_found_handler(event, context):
     return not_found(event, context)
 
