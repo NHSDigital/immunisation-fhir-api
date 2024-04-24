@@ -65,6 +65,7 @@ def function_info(func):
                 "resource_path": resource_path,
                 "status": "completed successfully",
             }
+            logger.info(result)
             firehose_logger.send_log(logData)
             logger.info(logData)
 
