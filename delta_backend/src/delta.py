@@ -83,7 +83,7 @@ def handler(event, context):
             logger.info(log)
         return {
             "statusCode": 200,
-            "body": json.dumps("Records processed successfully and tested"),
+            "body": json.dumps("Records processed successfully"),
         }
 
     except Exception as e:
