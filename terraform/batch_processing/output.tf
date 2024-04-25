@@ -8,3 +8,7 @@ output "batch_task_arn" {
 output "cluster_arn" {
     value = aws_ecs_cluster.batch_processing_cluster.arn
 }
+
+output "cluster_name" {
+    value = aws_ecs_cluster.batch_processing_cluster.name
+}

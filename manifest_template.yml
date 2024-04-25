@@ -1,93 +1,186 @@
-SERVICE_NAME: immunisation-fhir-api
-PRODUCT_DISPLAY_NAME: immunisation-fhir-api
-DESCRIPTION: example description
+# Templating vars - Immunisation fhir API
 APIGEE_ENVIRONMENTS:
   - name: internal-dev
-    display_name: Internal Development
     has_mock_auth: true
-  - name: internal-qa
-    display_name: Internal QA
-    has_mock_auth: true
-  - name: internal-dev-sandbox
-    display_name: Internal Development Sandbox
-    portal_visibility: false
-  - name: internal-qa-sandbox
-    display_name: Internal QA Sandbox
-    portal_visibility: false
-  - name: ref
-    display_name: Reference
-    has_mock_auth: true
+    display_name_suffix: Internal Development
     ratelimiting:
-        app:
-            quota:
-                enabled: false
-            spikeArrest:
-                enabled: false
-  - name: sandbox
-    display_name: Sandbox
-    portal_visibility: false
+      immunisation-fhir-api-dev:
+        quota:
+          enabled: true
+          limit: 300
+          interval: 1
+          timeunit: minute
+        spikeArrest:
+          enabled: true
+          ratelimit: 600pm # 10 requests per second
+      app:
+        quota:
+          enabled: false
+        spikeArrest:
+          enabled: false
+  - name: internal-dev-sandbox
+    display_name_suffix: Internal Development Sandbox
+    # Ratelimiting is currently disabled for all sandbox environments
+    ratelimiting:
+      immunisation-fhir-api-internal-dev-sandbox:
+        quota:
+          enabled: false
+        spikeArrest:
+          enabled: false
+      app:
+        quota:
+          enabled: false
+        spikeArrest:
+          enabled: false
   - name: int
-    display_name: Integration Testing
-    has_mock_auth: true
+    has_mock_auth: false
+    display_name_suffix: Integration Testing
+    ratelimiting:
+      immunisation-fhir-api-ref:
+        quota:
+          enabled: true
+          limit: 300
+          interval: 1
+          timeunit: minute
+        spikeArrest:
+          enabled: true
+          ratelimit: 600pm # 10 requests per second 
+      app:
+        quota:
+          enabled: false
+        spikeArrest:
+          enabled: false
+  - name: sandbox
+    display_name_suffix: Sandbox
+    portal_visibility: false
+    # Ratelimiting is currently disabled for sandbox environments
+    ratelimiting:
+      immunisation-fhir-api-sandbox:
+        quota:
+          enabled: false
+        spikeArrest:
+          enabled: false
+      app:
+        quota:
+          enabled: false
+        spikeArrest:
+          enabled: false
+  - name: ref
+    has_mock_auth: false
+    display_name_suffix: Reference
+    ratelimiting:
+      immunisation-fhir-api-int:
+        quota:
+          enabled: true
+          limit: 300 
+          interval: 1
+          timeunit: minute
+        spikeArrest:
+          enabled: true
+          ratelimit: 600pm # 10 requests per second
+      app:
+        quota:
+          enabled: false
+        spikeArrest:
+          enabled: false
+  # - name: prod
+  #   has_mock_auth: false
+  #   approval_type: manual
+  #   display_name_suffix: Production
+  #   ratelimiting:
+  #     immunisation-fhir-api-prod:
+  #       quota:
+  #         enabled: true
+  #         limit: 300 
+  #         interval: 1
+  #         timeunit: minute
+  #       spikeArrest:
+  #         enabled: true
+  #         ratelimit: 600pm # 10 requests per second
+  #     app:
+  #       quota:
+  #         enabled: false
+  #       #   limit: 300    # 5TPS
+  #       #   interval: 1
+  #       #   timeunit: minute
+  #       spikeArrest:
+  #         enabled: false
+  #       #   ratelimit: 600pm # 10 requests per second
+
+ACCESS_MODES:
+  - name: user-restricted
+    nameSuffix: ''
+    displayName: Authorisation
+    scopes: [
+      'urn:nhsd:apim:user-nhs-id:aal3:immunisation-fhir-api',
+      'urn:nhsd:apim:user-nhs-cis2:aal3:immunisation-fhir-api'
+    ]
+    requireCallbackUrl: true
+    description: User restricted
+
+  - name: application-restricted
+    nameSuffix: -application-restricted
+    displayName: Application-Restricted
+    scopes: ['urn:nhsd:apim:app:level3:immunisation-fhir-api']
+    requireCallbackUrl: false
+    description: Application Restricted
+    
+  # - name: patient-access
+  #   nameSuffix: -patient-access
+  #   displayName: Patient-Access
+  #   scopes: ['urn:nhsd:apim:user-nhs-login:P9:immunisation-fhir-api']
+  #   requireCallbackUrl: false
+  #   description: Patient Access
+
 ---
+
+# Manifest definition
 meta:
+  schema_version: 1
   api:
     name: immunisation-fhir-api
     guid: 87a3e100-ceb6-42bd-bf3f-869ee2c1e0c7
     spec_guids:
       - e8a8dc7a-3c26-408c-8318-457cd2758790
-  schema_version: 1.3
 apigee:
   environments:
-{% for ENV in APIGEE_ENVIRONMENTS %}
-{% set TITLE = PRODUCT_DISPLAY_NAME + ' (' + ENV.display_name + ' Environment)' %}
-{% set NAME = SERVICE_NAME + '-' + ENV.name %}
-  - name: {{ ENV.name }}
-    products:
-      - name: {{ NAME }}
-        approvalType: auto
+{% for env in APIGEE_ENVIRONMENTS %}
+{% set portal_visibility = env.portal_visibility | default('true') %}
+    - name: {{ env.name }}
+      products:
+{% set approval_type = env.approval_type | default('auto') %}
+{% for mode in ACCESS_MODES %}
+      - name: immunisation-fhir-api-{{ env.name }}{{ mode.nameSuffix }}
+        approvalType: {{ approval_type }}
         attributes:
           - name: access
             value: public
-            # For a parameterised example of rate limiting per environment,
-            # see https://github.com/NHSDigital/personal-demographics-service-api/blob/master/manifest_template.yml
           - name: ratelimiting
-            value:
-              {{ NAME }}:
-                quota:
-                  enabled: true
-                  limit: 300
-                  interval: 1
-                  timeunit: minute
-                spikeArrest:
-                  enabled: true
-                  ratelimit: 600pm # 10 requests per second
-              app:
-                quota:
-                  enabled: false
-                spikeArrest:
-                  enabled: false
-        description: {{ DESCRIPTION }}
-        displayName: {{ TITLE }}
-        environments: [ {{ ENV.name }} ]
+            value: {{ env.ratelimiting }}
+        description: {{ mode.description }}
+        displayName: Immunisation Fhir API - {{ mode.displayName }} ({{ env.display_name_suffix }})
+        environments: [ {{ env.name }} ]
         proxies:
-          - {{ NAME }}
-          - identity-service-{{ ENV.name }}
-{% if ENV.has_mock_auth | default(false) %}
-          - identity-service-mock-{{ ENV.name }}
+{% if env.has_mock_auth | default(false) %}
+          - identity-service-mock-{{ env.name }}
+          - immunisation-fhir-api-{{ env.name }}
+{% else %}
+          - identity-service-{{ env.name }}
+          - immunisation-fhir-api-{{ env.name }}
 {% endif %}
-        scopes:
-          - 'urn:nhsd:apim:app:level3:{{ SERVICE_NAME }}'
-          - 'urn:nhsd:apim:user-nhs-cis2:aal3:{{ SERVICE_NAME }}'
-    specs:
-      - name: {{ NAME }}
-        path: {{ SERVICE_NAME }}.json
-    api_catalog:
-      - edgeAPIProductName: {{ NAME }}
+        scopes: {{ mode.scopes }}
+{% endfor %}
+      specs:
+      - name: immunisation-fhir-api-{{ env.name }}
+        path: immunisation-fhir-api.json
+      api_catalog:
+{% for mode in ACCESS_MODES %}
+      - edgeAPIProductName: immunisation-fhir-api-{{ env.name }}{{ mode.nameSuffix }}
         anonAllowed: true
-        description: {{ DESCRIPTION }}
-        requireCallbackUrl: false
-        title: {{ TITLE }}
-        visibility: {{ ENV.portal_visibility | default(true) }}
-        specId: {{ NAME }}
+        description: Immunisation fhir API - {{ mode.displayName|lower  }} access mode - {{ env.display_name_suffix|lower }} environment
+        requireCallbackUrl: {{ mode.requireCallbackUrl }}
+        title: Immunisation fhir Api - {{ mode.displayName }} ({{ env.display_name_suffix }})
+        visibility: {{ portal_visibility }}
+        specId: immunisation-fhir-api-{{ env.name }}
+{% endfor %}
 {% endfor %}

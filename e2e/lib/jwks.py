@@ -64,3 +64,13 @@ def _make_key_pair_n(key_size=4096) -> (str, str, str):
     n_encoded = base64.urlsafe_b64encode(n_bytes).decode('utf-8')
 
     return prv.decode(), pub.decode(), n_encoded
+
+
+if __name__ == '__main__':
+    p = "/Users/jalal/tmp/imms-batch-key"
+    kid = "ecf6452b-96a5-44b9-95cd-6dae700e85a8"
+    pk = f"{p}/imms-batch.key"
+    pp = f"{p}/imms-batch.key.pub"
+    jwks_data = JwksData(kid, private_key_path=pk, public_key_path=pp)
+    print(jwks_data.get_jwk())
+    print(jwks_data.get_jwks_url("https://api.service.nhs.uk/mock-jwks"))
