@@ -56,6 +56,9 @@ def function_info(func):
             start = time.time()
             result = func(*args, **kwargs)
             end = time.time()
+            status = result.get(statusCode)
+            operation_outcome = dict(result.get(body))
+            logger.info(operation_outcome)
             logData = {
                 "function_name": func.__name__,
                 "time_taken": f"{round(end - start, 5)}s",
@@ -63,7 +66,8 @@ def function_info(func):
                 "X-Request-ID": request_id,
                 "actual_path": actual_path,
                 "resource_path": resource_path,
-                "status": "completed successfully",
+                "status": status,
+                "status_code": "Completed successfully",
             }
             logger.info(result)
             firehose_logger.send_log(logData)
