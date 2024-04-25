@@ -55,6 +55,7 @@ def function_info(func):
         try:
             start = time.time()
             result = func(*args, **kwargs)
+            logger.info(result)
             end = time.time()
             outcome = result[0]
             logData = {
@@ -67,7 +68,7 @@ def function_info(func):
                 "status": outcome,
                 "status_code": "Completed successfully",
             }
-            logger.info(result)
+            
             firehose_logger.send_log(logData)
             logger.info(logData)
 
