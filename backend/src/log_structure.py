@@ -57,7 +57,6 @@ def function_info(func):
             result = func(*args, **kwargs)
             logger.info(result)
             end = time.time()
-            outcome = result[0]
             logData = {
                 "function_name": func.__name__,
                 "time_taken": f"{round(end - start, 5)}s",
@@ -65,7 +64,6 @@ def function_info(func):
                 "X-Request-ID": request_id,
                 "actual_path": actual_path,
                 "resource_path": resource_path,
-                "status": outcome,
                 "status_code": "Completed successfully",
             }
             
