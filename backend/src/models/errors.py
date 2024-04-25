@@ -17,13 +17,17 @@ class Code(str, Enum):
     not_supported = "not-supported"
     duplicate = "duplicate"
 
+
 @dataclass
 class UnauthorizedError(RuntimeError):
     @staticmethod
     def to_operation_outcome() -> dict:
         msg = f"Unauthorized request"
         return create_operation_outcome(
-            resource_id=str(uuid.uuid4()), severity=Severity.error, code=Code.forbidden, diagnostics=msg
+            resource_id=str(uuid.uuid4()),
+            severity=Severity.error,
+            code=Code.forbidden,
+            diagnostics=msg,
         )
 
 
@@ -39,7 +43,10 @@ class ResourceNotFoundError(RuntimeError):
 
     def to_operation_outcome(self) -> dict:
         return create_operation_outcome(
-            resource_id=str(uuid.uuid4()), severity=Severity.error, code=Code.not_found, diagnostics=self.__str__()
+            resource_id=str(uuid.uuid4()),
+            severity=Severity.error,
+            code=Code.not_found,
+            diagnostics=self.__str__(),
         )
 
 
@@ -55,7 +62,10 @@ class UnhandledResponseError(RuntimeError):
 
     def to_operation_outcome(self) -> dict:
         return create_operation_outcome(
-            resource_id=str(uuid.uuid4()), severity=Severity.error, code=Code.server_error, diagnostics=self.__str__()
+            resource_id=str(uuid.uuid4()),
+            severity=Severity.error,
+            code=Code.server_error,
+            diagnostics=self.__str__(),
         )
 
 
@@ -75,7 +85,10 @@ class InvalidPatientId(ValidationError):
 
     def to_operation_outcome(self) -> dict:
         return create_operation_outcome(
-            resource_id=str(uuid.uuid4()), severity=Severity.error, code=Code.server_error, diagnostics=self.__str__()
+            resource_id=str(uuid.uuid4()),
+            severity=Severity.error,
+            code=Code.server_error,
+            diagnostics=self.__str__(),
         )
 
 
@@ -91,7 +104,10 @@ class InconsistentIdError(ValidationError):
 
     def to_operation_outcome(self) -> dict:
         return create_operation_outcome(
-            resource_id=str(uuid.uuid4()), severity=Severity.error, code=Code.server_error, diagnostics=self.__str__()
+            resource_id=str(uuid.uuid4()),
+            severity=Severity.error,
+            code=Code.server_error,
+            diagnostics=self.__str__(),
         )
 
 
@@ -106,7 +122,10 @@ class CustomValidationError(ValidationError):
 
     def to_operation_outcome(self) -> dict:
         return create_operation_outcome(
-            resource_id=str(uuid.uuid4()), severity=Severity.error, code=Code.invariant, diagnostics=self.__str__()
+            resource_id=str(uuid.uuid4()),
+            severity=Severity.error,
+            code=Code.invariant,
+            diagnostics=self.__str__(),
         )
 
 
@@ -122,16 +141,40 @@ class IdentifierDuplicationError(RuntimeError):
     def to_operation_outcome(self) -> dict:
         msg = self.__str__()
         return create_operation_outcome(
-            resource_id=str(uuid.uuid4()), severity=Severity.error, code=Code.duplicate, diagnostics=msg
+            resource_id=str(uuid.uuid4()),
+            severity=Severity.error,
+            code=Code.duplicate,
+            diagnostics=msg,
         )
 
 
-def create_operation_outcome(resource_id: str, severity: Severity, code: Code, diagnostics: str) -> dict:
+def create_operation_outcome(
+    resource_id: str, severity: Severity, code: Code, diagnostics: str
+) -> dict:
     """Create an OperationOutcome object. Do not use `fhir.resource` library since it adds unnecessary validations"""
     return {
         "resourceType": "OperationOutcome",
         "id": resource_id,
-        "issue": [{"severity": severity, "code": code, "diagnostics": diagnostics}],
+        "meta": {
+            "profile": [
+                "https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"
+            ]
+        },
+        "issue": [
+            {
+                "severity": severity,
+                "code": code,
+                "details": {
+                    "coding": [
+                        {
+                            "system": "https://fhir.nhs.uk/Codesystem/http-error-codes",
+                            "code": code.upper(),
+                        }
+                    ]
+                },
+                "diagnostics": diagnostics,
+            }
+        ],
     }
 
 
