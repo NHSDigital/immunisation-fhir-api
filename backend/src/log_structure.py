@@ -56,8 +56,9 @@ def function_info(func):
             start = time.time()
             result = func(*args, **kwargs)
             end = time.time()
-            status = result.get(statusCode)
-            operation_outcome = dict(result.get(body))
+            outcome = dict(result)
+            status = outcome.get(statusCode)
+            operation_outcome = dict(outcome.get(body))
             logger.info(operation_outcome)
             logData = {
                 "function_name": func.__name__,
