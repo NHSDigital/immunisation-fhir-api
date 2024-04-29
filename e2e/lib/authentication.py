@@ -175,4 +175,3 @@ class Cis2Authentication(BaseAuthentication):
 
     def get_access_token(self) -> str:
         return self.code_flow.get_access_token("nhs-cis2", self.user)
- 
