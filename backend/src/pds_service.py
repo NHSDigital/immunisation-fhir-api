@@ -20,7 +20,7 @@ class PdsService:
             'X-Correlation-ID': str(uuid.uuid4())
         }
         response = requests.get(f"{self.base_url}/{patient_id}", headers=request_headers, timeout=2)
-
+        print(f"PDS_Response:{response}")
         if response.status_code == 200:
             return response.json()
         elif response.status_code == 404:

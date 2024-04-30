@@ -88,6 +88,7 @@ class FhirController:
 
         try:
             imms = json.loads(aws_event["body"], parse_float=Decimal)
+            print(f"imms :{imms}")
         except json.decoder.JSONDecodeError as e:
             return self._create_bad_request(
                 f"Request's body contains malformed JSON: {e}"
