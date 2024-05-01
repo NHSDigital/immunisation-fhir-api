@@ -16,7 +16,7 @@ def create_imms_handler(event, context):
 
 def create_immunization(event, controller: FhirController):
     try:
-        print(f"event: {event}")
+        print(f"event:{event}")
         return controller.create_immunization(event)
     except Exception as e:
         exp_error = create_operation_outcome(resource_id=str(uuid.uuid4()), severity=Severity.error,
