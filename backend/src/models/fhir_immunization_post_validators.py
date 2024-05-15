@@ -1,5 +1,5 @@
 "FHIR Immunization Post Validators"
-
+import re
 from mappings import Mandation, VaccineTypes, vaccine_type_applicable_validations
 from models.constants import Constants
 from models.utils.generic_utils import (
@@ -255,6 +255,8 @@ class PostValidators:
             except AttributeError:
                 return False
 
+        field_location = "performer[?(@.actor.type=='Organization')].actor.identifier.value"
+    
         try:
             field_value = [x for x in values.performer if util_func(x)][0].actor.identifier.value
         except (KeyError, IndexError, AttributeError):
@@ -266,6 +268,15 @@ class PostValidators:
             vaccine_type=self.vaccine_type,
             mandation_key="organization_identifier_value",
         )
+
+        """Validates that organization_identifier_value is in alpha-numeric-alpha-numeric-alpha 
+        (e.g. "X0X0X")"""
+        
+        ODS_code_format = re.compile(r"^[A-Z]{1}[0-9]{1}[A-Z]{1}[0-9]{1}[A-Z]{1}$")
+        if field_value and not ODS_code_format.fullmatch(field_value):
+                raise ValueError (
+                    f'{field_location} must be in expected format alpha-numeric-alpha-numeric-alpha (e.g X0X0X)'
+                    )
 
         return values
 
