@@ -1,8 +1,8 @@
 "FHIR Immunization Post Validators"
 
-from src.mappings import Mandation, VaccineTypes, vaccine_type_applicable_validations
-from src.models.constants import Constants
-from src.models.utils.generic_utils import (
+from mappings import Mandation, VaccineTypes, vaccine_type_applicable_validations
+from models.constants import Constants
+from models.utils.generic_utils import (
     get_generic_questionnaire_response_value_from_model,
     get_generic_extension_value_from_model,
     generate_field_location_for_questionnaire_response,

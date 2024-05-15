@@ -13,7 +13,7 @@ from botocore.config import Config
 from models.errors import ResourceNotFoundError, UnhandledResponseError, IdentifierDuplicationError
 from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
 
-from src.utils import get_vaccine_type
+from utils import get_vaccine_type
 
 
 class DecimalEncoder(json.JSONEncoder):
