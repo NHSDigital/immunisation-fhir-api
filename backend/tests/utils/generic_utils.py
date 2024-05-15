@@ -6,7 +6,6 @@ import unittest
 from decimal import Decimal
 from typing import Literal, Any
 from jsonpath_ng.ext import parse
-from pydantic import ValidationError
 
 
 def load_json_data(filename: str):
@@ -30,6 +29,14 @@ def generate_field_location_for_questionnaire_response(
 def generate_field_location_for_extension(url: str, system: str, field_type: Literal["code", "display"]) -> str:
     """Generate the field location string for extension items"""
     return f"extension[?(@.url=='{url}')].valueCodeableConcept." + f"coding[?(@.system=='{system}')].{field_type}"
+
+
+def update_target_disease_code(imms: dict, target_disease_code: str):
+    """
+    Update the disease code found at the first index of coding field,
+    within the first index of targetDisease field with a new code
+    """
+    imms["protocolApplied"][0]["targetDisease"][0]["coding"][0]["code"] = target_disease_code
 
 
 def test_valid_values_accepted(
@@ -63,13 +70,12 @@ def test_invalid_values_rejected(
     """
     # Create invalid json data by amending the value of the relevant field
     invalid_json_data = parse(field_location).update(valid_json_data, invalid_value)
-    
+
     # Test that correct error type is raised
     with test_instance.assertRaises(ValueError or TypeError) as error:
         test_instance.validator.validate(invalid_json_data)
 
-        
     full_error_message = str(error.exception)
 
-    actual_error_messages = full_error_message.replace('Validation errors: ', '').split('; ')
+    actual_error_messages = full_error_message.replace("Validation errors: ", "").split("; ")
     test_instance.assertIn(expected_error_message, actual_error_messages)

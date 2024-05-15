@@ -16,7 +16,7 @@ from authorization import (
 from fhir_controller import FhirController
 from fhir_service import FhirService, UpdateOutcome
 from models.errors import UnauthorizedError
-from tests.immunization_utils import create_an_immunization
+from tests.immunization_utils import create_covid_19_immunization
 
 
 def full_access(exclude: Set[Permission] = None) -> Set[Permission]:
@@ -28,20 +28,15 @@ def make_aws_event(auth_type: AuthType, permissions=None) -> dict:
         permissions = full_access()
     header = ",".join(permissions)
 
-    return {
-        "headers": {
-            PERMISSIONS_HEADER: header,
-            AUTHENTICATION_HEADER: str(auth_type)
-        }
-    }
+    return {"headers": {PERMISSIONS_HEADER: header, AUTHENTICATION_HEADER: str(auth_type)}}
 
 
 class TestFhirControllerAuthorization(unittest.TestCase):
     """For each endpoint, we need to test three scenarios.
-        1- Happy path test: make sure authorize() receives correct EndpointOperation, and we pass aws_event
-        2- Unauthorized test: make sure we send a 403 OperationOutcome
-        3- UnknownPermission test: make sure we send a 500 OperationOutcome
-     """
+    1- Happy path test: make sure authorize() receives correct EndpointOperation, and we pass aws_event
+    2- Unauthorized test: make sure we send a 403 OperationOutcome
+    3- UnknownPermission test: make sure we send a 500 OperationOutcome
+    """
 
     def setUp(self):
         self.service = create_autospec(FhirService)
@@ -80,7 +75,7 @@ class TestFhirControllerAuthorization(unittest.TestCase):
 
     # EndpointOperation.CREATE
     def test_create_imms_authorized(self):
-        aws_event = {"body": create_an_immunization(str(uuid.uuid4())).json()}
+        aws_event = {"body": create_covid_19_immunization(str(uuid.uuid4())).json()}
 
         _ = self.controller.create_immunization(aws_event)
 
@@ -109,9 +104,7 @@ class TestFhirControllerAuthorization(unittest.TestCase):
     # EndpointOperation.UPDATE
     def test_update_imms_authorized(self):
         imms_id = str(uuid.uuid4())
-        aws_event = {
-            "pathParameters": {"id": imms_id},
-            "body": create_an_immunization(imms_id).json()}
+        aws_event = {"pathParameters": {"id": imms_id}, "body": create_covid_19_immunization(imms_id).json()}
         self.service.update_immunization.return_value = UpdateOutcome.UPDATE, "value doesn't matter"
 
         _ = self.controller.update_immunization(aws_event)

@@ -77,46 +77,6 @@
               }
             }
           ]
-        },
-        {
-          "linkId": "IpAddress",
-          "answer": [
-            {
-              "valueString": "IP_ADDRESS"
-            }
-          ]
-        },
-        {
-          "linkId": "UserId",
-          "answer": [
-            {
-              "valueString": "USER_ID"
-            }
-          ]
-        },
-        {
-          "linkId": "UserName",
-          "answer": [
-            {
-              "valueString": "USER_NAME"
-            }
-          ]
-        },
-        {
-          "linkId": "SubmittedTimeStamp",
-          "answer": [
-            {
-              "valueDateTime": "2021-01-07T13:44:07+00:00"
-            }
-          ]
-        },
-        {
-          "linkId": "UserEmail",
-          "answer": [
-            {
-              "valueString": "USER_EMAIL"
-            }
-          ]
         }
       ]
     }
@@ -128,8 +88,8 @@
         "coding": [
           {
             "system": "http://snomed.info/sct",
-            "code": "1324681000000101",
-            "display": "Administration of first dose of severe acute respiratory syndrome coronavirus 2 vaccine (procedure)"
+            "code": "822851000000102",
+            "display": "Seasonal influenza vaccination (procedure)"
           }
         ]
       }
@@ -182,6 +142,13 @@
   "reportOrigin": {
     "text": "B0C4P"
   },
+  "location": {
+    "identifier": {
+      "system": "https://fhir.nhs.uk/Id/ods-site-code",
+      "value": "B0C4P"
+    },
+    "display": "Acme Healthcare"
+  },
   "performer": [
     {
       "actor": {
@@ -196,14 +163,18 @@
   ],
   "protocolApplied": [
     {
+      "targetDisease": [
+        {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "6142004",
+              "display": "Influenza"
+            }
+          ]
+        }
+      ],
       "doseNumberPositiveInt": 1
     }
-  ],
-  "location": {
-    "identifier": {
-      "system": "https://fhir.nhs.uk/Id/ods-site-code",
-      "value": "B0C4P"
-    },
-    "display": "Acme Healthcare"
-  }
+  ]
 }

@@ -31,9 +31,9 @@ class TestUpdateImmunizations(unittest.TestCase):
         error_msg = "an unhandled error"
         self.controller.update_immunization.side_effect = Exception(error_msg)
 
-        exp_error = create_operation_outcome(resource_id=None, severity=Severity.error,
-                                             code=Code.server_error,
-                                             diagnostics=error_msg)
+        exp_error = create_operation_outcome(
+            resource_id=None, severity=Severity.error, code=Code.server_error, diagnostics=error_msg
+        )
 
         # When
         act_res = update_imms(lambda_event, self.controller)
@@ -47,6 +47,4 @@ class TestUpdateImmunizations(unittest.TestCase):
 
     def test_update_imms_with_duplicated_identifier_returns_error(self):
         """Should return an IdentifierDuplication error"""
-
-
-
+        # TODO: BUG Implement this test

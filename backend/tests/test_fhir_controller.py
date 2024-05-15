@@ -16,12 +16,12 @@ from models.errors import (
     ResourceNotFoundError,
     UnhandledResponseError,
     InvalidPatientId,
-    CustomValidationError, ParameterException,
+    CustomValidationError,
+    ParameterException,
 )
-from tests.immunization_utils import create_an_immunization
+from tests.immunization_utils import create_covid_19_immunization
 from mappings import VaccineTypes
 from parameter_parser import patient_identifier_system, process_search_params
-
 
 
 class TestFhirController(unittest.TestCase):
@@ -114,7 +114,7 @@ class TestCreateImmunization(unittest.TestCase):
     def test_create_immunization(self):
         """it should create Immunization and return resource's location"""
         imms_id = str(uuid.uuid4())
-        imms = create_an_immunization(imms_id)
+        imms = create_covid_19_immunization(imms_id)
         aws_event = {"body": imms.json()}
         self.service.create_immunization.return_value = imms
 
@@ -151,7 +151,6 @@ class TestCreateImmunization(unittest.TestCase):
         body = json.loads(response["body"])
         self.assertEqual(body["resourceType"], "OperationOutcome")
         self.assertTrue(superseded_number in body["issue"][0]["diagnostics"])
-
 
     def test_invalid_nhs_number(self):
         """it should handle ValidationError when patient doesn't exist"""
@@ -206,7 +205,7 @@ class TestUpdateImmunization(unittest.TestCase):
         aws_event = {"body": req_imms, "pathParameters": {"id": path_id}}
 
         new_id = "newly-created-id"
-        created_imms = create_an_immunization(imms_id=new_id)
+        created_imms = create_covid_19_immunization(imms_id=new_id)
         self.service.update_immunization.return_value = UpdateOutcome.CREATE, created_imms
 
         # When
@@ -230,7 +229,6 @@ class TestUpdateImmunization(unittest.TestCase):
         body = json.loads(response["body"])
         self.assertEqual(body["resourceType"], "OperationOutcome")
 
-
     def test_validation_superseded_number_to_give_bad_request_for_update_immunization(self):
         """it should return 400 if Immunization has superseded nhs number"""
         imms = "{}"
@@ -241,7 +239,7 @@ class TestUpdateImmunization(unittest.TestCase):
 
         self.assertEqual(400, response["statusCode"])
         body = json.loads(response["body"])
-        self.assertEqual(body["resourceType"], "OperationOutcome")    
+        self.assertEqual(body["resourceType"], "OperationOutcome")
 
     def test_malformed_resource(self):
         """it should return 400 if json is malformed"""
@@ -349,21 +347,23 @@ class TestSearchImmunizations(unittest.TestCase):
         search_result = Bundle.construct()
         self.service.search_immunizations.return_value = search_result
 
-        disease_type = VaccineTypes().all[0]
-        params = (f"{self.immunization_target_key}={disease_type}&"
-                  + urllib.parse.urlencode([(f"{self.patient_identifier_key}",
-                                             f"{self.patient_identifier_valid_value}")]))
-        lambda_event = {"multiValueQueryStringParameters": {
-            self.immunization_target_key: [disease_type],
-            self.patient_identifier_key: [self.patient_identifier_valid_value]
-        }}
+        vaccine_type = VaccineTypes().all[0]
+        params = f"{self.immunization_target_key}={vaccine_type}&" + urllib.parse.urlencode(
+            [(f"{self.patient_identifier_key}", f"{self.patient_identifier_valid_value}")]
+        )
+        lambda_event = {
+            "multiValueQueryStringParameters": {
+                self.immunization_target_key: [vaccine_type],
+                self.patient_identifier_key: [self.patient_identifier_valid_value],
+            }
+        }
 
         # When
         response = self.controller.search_immunizations(lambda_event)
 
         # Then
         self.service.search_immunizations.assert_called_once_with(
-            self.nhs_number_valid_value, [disease_type], params, ANY, ANY
+            self.nhs_number_valid_value, [vaccine_type], params, ANY, ANY
         )
         self.assertEqual(response["statusCode"], 200)
         body = json.loads(response["body"])
@@ -374,14 +374,14 @@ class TestSearchImmunizations(unittest.TestCase):
         search_result = Bundle.construct()
         self.service.search_immunizations.return_value = search_result
 
-        disease_type = VaccineTypes().all[0]
-        params = (f"{self.immunization_target_key}={disease_type}&"
-                  + urllib.parse.urlencode([(f"{self.patient_identifier_key}",
-                                             f"{self.patient_identifier_valid_value}")]))
+        vaccine_type = VaccineTypes().all[0]
+        params = f"{self.immunization_target_key}={vaccine_type}&" + urllib.parse.urlencode(
+            [(f"{self.patient_identifier_key}", f"{self.patient_identifier_valid_value}")]
+        )
         # Construct the application/x-www-form-urlencoded body
         body = {
             self.patient_identifier_key: self.patient_identifier_valid_value,
-            self.immunization_target_key: disease_type
+            self.immunization_target_key: vaccine_type,
         }
         encoded_body = urlencode(body)
         # Base64 encode the body
@@ -397,34 +397,40 @@ class TestSearchImmunizations(unittest.TestCase):
         response = self.controller.search_immunizations(lambda_event)
         # Then
         self.service.search_immunizations.assert_called_once_with(
-            self.nhs_number_valid_value, [disease_type], params, ANY, ANY
+            self.nhs_number_valid_value, [vaccine_type], params, ANY, ANY
         )
         self.assertEqual(response["statusCode"], 200)
         body = json.loads(response["body"])
         self.assertEqual(body["resourceType"], "Bundle")
 
-    @patch('fhir_controller.process_search_params', wraps=process_search_params)
+    @patch("fhir_controller.process_search_params", wraps=process_search_params)
     def test_uses_parameter_parser(self, process_search_params: Mock):
-        lambda_event = {"multiValueQueryStringParameters": {
-            self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
-            self.immunization_target_key: ["a-disease-type"],
-        }}
+        lambda_event = {
+            "multiValueQueryStringParameters": {
+                self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
+                self.immunization_target_key: ["a-disease-type"],
+            }
+        }
 
         self.controller.search_immunizations(lambda_event)
 
-        process_search_params.assert_called_once_with({
-            self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
-            self.immunization_target_key: ["a-disease-type"],
-        })
+        process_search_params.assert_called_once_with(
+            {
+                self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
+                self.immunization_target_key: ["a-disease-type"],
+            }
+        )
 
-    @patch('fhir_controller.process_search_params')
+    @patch("fhir_controller.process_search_params")
     def test_search_immunizations_returns_400_on_ParameterException_from_parameter_parser(
         self, process_search_params: Mock
     ):
-        lambda_event = {"multiValueQueryStringParameters": {
-            self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
-            self.immunization_target_key: ["a-disease-type"],
-        }}
+        lambda_event = {
+            "multiValueQueryStringParameters": {
+                self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
+                self.immunization_target_key: ["a-disease-type"],
+            }
+        }
 
         process_search_params.side_effect = ParameterException("Test")
         response = self.controller.search_immunizations(lambda_event)
@@ -434,15 +440,15 @@ class TestSearchImmunizations(unittest.TestCase):
         outcome = json.loads(response["body"])
         self.assertEqual(outcome["resourceType"], "OperationOutcome")
 
-    @patch('fhir_controller.process_search_params')
-    def test_search_immunizations_returns_400_on_passing_superseded_nhs_number(
-        self, process_search_params: Mock
-    ):
+    @patch("fhir_controller.process_search_params")
+    def test_search_immunizations_returns_400_on_passing_superseded_nhs_number(self, process_search_params: Mock):
         "This method should return 400 as input paramter has superseded nhs number"
-        lambda_event = {"multiValueQueryStringParameters": {
-            self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9452372230"],
-            self.immunization_target_key: ["a-disease-type"],
-        }}
+        lambda_event = {
+            "multiValueQueryStringParameters": {
+                self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9452372230"],
+                self.immunization_target_key: ["a-disease-type"],
+            }
+        }
 
         process_search_params.side_effect = ParameterException("Test")
         response = self.controller.search_immunizations(lambda_event)
@@ -450,30 +456,30 @@ class TestSearchImmunizations(unittest.TestCase):
         # Then
         self.assertEqual(response["statusCode"], 400)
         outcome = json.loads(response["body"])
-        self.assertEqual(outcome["resourceType"], "OperationOutcome")    
+        self.assertEqual(outcome["resourceType"], "OperationOutcome")
 
     def test_self_link_excludes_extraneous_params(self):
         search_result = Bundle.construct()
         self.service.search_immunizations.return_value = search_result
-        disease_type = VaccineTypes().all[0]
-        params = (f"{self.immunization_target_key}={disease_type}&"
-                  + urllib.parse.urlencode(
-                    [(f"{self.patient_identifier_key}", f"{self.patient_identifier_valid_value}")]))
+        vaccine_type = VaccineTypes().all[0]
+        params = f"{self.immunization_target_key}={vaccine_type}&" + urllib.parse.urlencode(
+            [(f"{self.patient_identifier_key}", f"{self.patient_identifier_valid_value}")]
+        )
 
         lambda_event = {
             "multiValueQueryStringParameters": {
                 self.patient_identifier_key: [self.patient_identifier_valid_value],
-                self.immunization_target_key: [disease_type],
+                self.immunization_target_key: [vaccine_type],
                 "b": ["b,a"],
                 "a": ["b,a"],
             },
             "body": None,
-            "headers": {'Content-Type': 'application/x-www-form-urlencoded'},
+            "headers": {"Content-Type": "application/x-www-form-urlencoded"},
             "httpMethod": "POST",
         }
 
         self.controller.search_immunizations(lambda_event)
 
         self.service.search_immunizations.assert_called_once_with(
-            self.nhs_number_valid_value, [disease_type], params, ANY, ANY
+            self.nhs_number_valid_value, [vaccine_type], params, ANY, ANY
         )

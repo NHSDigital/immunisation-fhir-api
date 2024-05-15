@@ -7,10 +7,11 @@ import pytest
 from .configuration.config import valid_nhs_number1, valid_nhs_number_with_s_flag
 from .example_loader import load_example
 from .immunisation_api import ImmunisationApi, parse_location
+from e2e.utils.mappings import VaccineTypes
 
 
 def create_an_imms_obj(imms_id: str = str(uuid.uuid4()), nhs_number=valid_nhs_number1) -> dict:
-    imms = copy.deepcopy(load_example("Immunization/POST-Immunization.json"))
+    imms = copy.deepcopy(load_example("Immunization/POST-COVID19-Immunization.json"))
     imms["id"] = imms_id
     imms["identifier"][0]["value"] = str(uuid.uuid4())
     imms["contained"][1]["identifier"][0]["value"] = nhs_number
@@ -382,8 +383,8 @@ def test_get_s_flag_patient(nhsd_apim_proxy_url, nhsd_apim_auth_headers, nhs_num
         assert retrieved_get_imms_result.status_code == 200
     retrieved_get_imms = retrieved_get_imms_result.json()
 
-    sample_disease_code = "COVID19"
-    retrieved_search_imms_result = imms_api.search_immunizations(nhs_number, sample_disease_code)
+    vaccine_type = VaccineTypes.covid_19
+    retrieved_search_imms_result = imms_api.search_immunizations(nhs_number, vaccine_type)
     if retrieved_search_imms_result.status_code != 200:
         pprint.pprint(retrieved_search_imms_result.text)
         assert retrieved_search_imms_result.status_code == 200

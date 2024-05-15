@@ -29,6 +29,8 @@ class InvalidDataTypes:
 class ValidValues:
     """Store valid values for tests"""
 
+    nhs_number = "9990548609"
+
     for_date_times = [
         "2000-01-01T00:00:00+00:00",  # Time and offset all zeroes
         "1933-12-31T11:11:11+12:45",  # Positive offset (with hours and minutes not 0)
@@ -39,62 +41,28 @@ class ValidValues:
     ]
 
     # Not a valid snomed code, but is valid coding format for format testing
-    snomed_coding_element = {
-        "system": "http://snomed.info/sct",
-        "code": "ABC123",
-        "display": "test",
-    }
+    snomed_coding_element = {"system": "http://snomed.info/sct", "code": "ABC123", "display": "test"}
 
-    empty_practitioner_resource_id_Pract1 = {
-        "resourceType": "Practitioner",
-        "id": "Pract1",
-    }
+    empty_practitioner_resource_id_Pract1 = {"resourceType": "Practitioner", "id": "Pract1"}
 
-    empty_patient_resource_id_Pat1 = {
-        "resourceType": "Patient",
-        "id": "Pat1",
-    }
+    empty_patient_resource_id_Pat1 = {"resourceType": "Patient", "id": "Pat1"}
 
-    empty_patient_resource_id_Pat2 = {
-        "resourceType": "Patient",
-        "id": "Pat2",
-    }
+    empty_patient_resource_id_Pat2 = {"resourceType": "Patient", "id": "Pat2"}
 
-    empty_questionnnaire_resource_id_QR1 = {
-        "resourceType": "QuestionnaireResponse",
-        "id": "QR1",
-        "status": "completed",
-    }
+    empty_questionnnaire_resource_id_QR1 = {"resourceType": "QuestionnaireResponse", "id": "QR1", "status": "completed"}
 
-    questionnaire_immunisation = {
-        "linkId": "Immunisation",
-        "answer": [{"valueReference": {"reference": "#"}}],
-    }
+    questionnaire_immunisation = {"linkId": "Immunisation", "answer": [{"valueReference": {"reference": "#"}}]}
 
-    questionnaire_reduce_validation_true = {
-        "linkId": "ReduceValidation",
-        "answer": [{"valueBoolean": True}],
-    }
+    questionnaire_reduce_validation_true = {"linkId": "ReduceValidation", "answer": [{"valueBoolean": True}]}
 
-    questionnaire_reduce_validation_false = {
-        "linkId": "ReduceValidation",
-        "answer": [{"valueBoolean": False}],
-    }
+    questionnaire_reduce_validation_false = {"linkId": "ReduceValidation", "answer": [{"valueBoolean": False}]}
 
-    questionnaire_ip_address = {
-        "linkId": "IpAddress",
-        "answer": [
-            {"valueString": "IP_ADDRESS"},
-        ],
-    }
+    questionnaire_ip_address = {"linkId": "IpAddress", "answer": [{"valueString": "IP_ADDRESS"}]}
 
     performer_actor_organization = {
         "actor": {
             "type": "Organization",
-            "identifier": {
-                "system": "https://fhir.nhs.uk/Id/ods-organization-code",
-                "value": "B0C4P",
-            },
+            "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "B0C4P"},
             "display": "Acme Healthcare",
         }
     }
@@ -103,15 +71,7 @@ class ValidValues:
 
     performer_actor_reference_internal_Pract2 = {"actor": {"reference": "#Pract2"}}
 
-    performer = [
-        {"actor": {"reference": "#Pract1"}},
-        {
-            "actor": {
-                "type": "Organization",
-                "display": "Acme Healthcare",
-            }
-        },
-    ]
+    performer = [{"actor": {"reference": "#Pract1"}}, {"actor": {"type": "Organization", "display": "Acme Healthcare"}}]
 
     vaccination_procedure_coding_with_one_snomed_code = [
         {
@@ -138,11 +98,7 @@ class ValidValues:
     ]
 
     dummy_coding_with_one_snomed_code = [
-        {
-            "system": "http://snomed.info/sct",
-            "code": "DUMMY CODE 1",
-            "display": "DUMMY TERM 1",
-        },
+        {"system": "http://snomed.info/sct", "code": "DUMMY CODE 1", "display": "DUMMY TERM 1"},
     ]
 
     vaccination_procedure_with_one_snomed_code = {
@@ -161,13 +117,13 @@ class ValidValues:
     }
 
     nhs_number_coding_item = {
-        "system": "https://fhir.hl7.org.uk/CodeSystem" + "/UKCore-NHSNumberVerificationStatusEngland",
+        "system": "https://fhir.hl7.org.uk/CodeSystem/UKCore-NHSNumberVerificationStatusEngland",
         "code": "NHS_NUMBER_STATUS_INDICATOR_CODE",
         "display": "NHS_NUMBER_STATUS_INDICATOR_DESCRIPTION",
     }
 
     nhs_number_verification_status = {
-        "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-" + "NHSNumberVerificationStatus",
+        "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-NHSNumberVerificationStatus",
         "valueCodeableConcept": {"coding": [nhs_number_coding_item]},
     }
 
@@ -253,40 +209,18 @@ class InvalidValues:
         "This is a really long string with more than 100 characters to test whether the validator is working well"
     ]
 
-    for_genders = [
-        "0",
-        "1",
-        "2",
-        "9",
-        "Male",
-        "Female",
-        "Unknown",
-        "Other",
-    ]
+    for_genders = ["0", "1", "2", "9", "Male", "Female", "Unknown", "Other"]
 
     performer_with_two_organizations = [
         {"actor": {"reference": "#Pract1", "type": "Organization"}},
-        {
-            "actor": {
-                "type": "Organization",
-                "display": "Acme Healthcare",
-            }
-        },
+        {"actor": {"type": "Organization", "display": "Acme Healthcare"}},
     ]
 
     practitioner_resource_with_no_id = {"resourceType": "Practitioner"}
 
     dummy_coding_with_two_snomed_codes = [
-        {
-            "system": "http://snomed.info/sct",
-            "code": "DUMMY SNOMED CODE 1",
-            "display": "DUMMY SNOMED TERM 1",
-        },
-        {
-            "system": "http://snomed.info/sct",
-            "code": "DUMMY SNOMED CODE 2",
-            "display": "DUMMY SNOMED TERM 2",
-        },
+        {"system": "http://snomed.info/sct", "code": "DUMMY SNOMED CODE 1", "display": "DUMMY SNOMED TERM 1"},
+        {"system": "http://snomed.info/sct", "code": "DUMMY SNOMED CODE 2", "display": "DUMMY SNOMED TERM 2"},
     ]
 
     vaccination_situation_with_two_snomed_codes = {

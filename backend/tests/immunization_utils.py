@@ -1,216 +1,28 @@
-from decimal import Decimal
+"""Immunization utils"""
 
 from fhir.resources.R4B.immunization import Immunization
 
-valid_nhs_number = "9990548609"
+from tests.utils.values_for_tests import ValidValues
+from tests.utils.generic_utils import load_json_data
+
+VALID_NHS_NUMBER = ValidValues.nhs_number
 
 
-def create_an_immunization(imms_id, nhs_number=valid_nhs_number) -> Immunization:
-    base_imms = create_an_immunization_dict(imms_id, nhs_number)
+def create_covid_19_immunization(imms_id, nhs_number=VALID_NHS_NUMBER) -> Immunization:
+    base_imms = create_covid_19_immunization_dict(imms_id, nhs_number)
     return Immunization.parse_obj(base_imms)
 
 
-def create_an_immunization_dict(
-    imms_id,
-    nhs_number=valid_nhs_number,
-    occurrence_date_time="2021-02-07T13:28:17.271+00:00"
+def create_covid_19_immunization_dict(
+    imms_id, nhs_number=VALID_NHS_NUMBER, occurrence_date_time="2021-02-07T13:28:17.271+00:00"
 ):
-    return {
-        "resourceType": "Immunization",
-        "id": imms_id,
-        "contained": [
-            {
-                "resourceType": "Practitioner",
-                "id": "Pract1",
-                "identifier": [
-                    {
-                        "system": "https://fhir.hl7.org.uk/Id/nmc-number",
-                        "value": "99A9999A",
-                    }
-                ],
-                "name": [{"family": "Nightingale", "given": ["Florence"]}],
-            },
-            {
-                "resourceType": "Patient",
-                "id": "Pat1",
-                "identifier": [
-                    {
-                        "extension": [
-                            {
-                                "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-NHSNumberVerificationStatus",
-                                "valueCodeableConcept": {
-                                    "coding": [
-                                        {
-                                            "system": "https://fhir.hl7.org.uk/CodeSystem/UKCore-NHSNumberVerificationStatusEngland",
-                                            "code": "01",
-                                            "display": "Number present and verified",
-                                        }
-                                    ]
-                                },
-                            }
-                        ],
-                        "system": "https://fhir.nhs.uk/Id/nhs-number",
-                        "value": nhs_number,
-                    }
-                ],
-                "name": [{"family": "Taylor", "given": ["Sarah"]}],
-                "gender": "unknown",
-                "birthDate": "1965-02-28",
-                "address": [{"postalCode": "EC1A 1BB"}],
-            },
-            {
-                "resourceType": "QuestionnaireResponse",
-                "id": "QR1",
-                "status": "completed",
-                "item": [
-                    {
-                        "linkId": "Immunisation",
-                        "answer": [{"valueReference": {"reference": "#"}}],
-                    },
-                    {
-                        "linkId": "Consent",
-                        "answer": [
-                            {
-                                "valueCoding": {
-                                    "code": "310375005",
-                                    "system": "http://snomed.info/sct",
-                                    "display": "Immunization consent given (finding)",
-                                }
-                            }
-                        ],
-                    },
-                    {
-                        "linkId": "CareSetting",
-                        "answer": [
-                            {
-                                "valueCoding": {
-                                    "code": "413294000",
-                                    "system": "http://snomed.info/sct",
-                                    "display": "Community health services (qualifier value)",
-                                }
-                            }
-                        ],
-                    },
-                    {"linkId": "ReduceValidation", "answer": [{"valueBoolean": False}]},
-                    {
-                        "linkId": "LocalPatient",
-                        "answer": [
-                            {
-                                "valueReference": {
-                                    "identifier": {
-                                        "system": "https://ACME/identifiers/patient",
-                                        "value": "ACME-patient123456",
-                                    }
-                                }
-                            }
-                        ],
-                    },
-                    {"linkId": "IpAddress", "answer": [{"valueString": "IP_ADDRESS"}]},
-                    {"linkId": "UserId", "answer": [{"valueString": "USER_ID"}]},
-                    {"linkId": "UserName", "answer": [{"valueString": "USER_NAME"}]},
-                    {
-                        "linkId": "SubmittedTimeStamp",
-                        "answer": [{"valueDateTime": "2021-02-07T13:44:07+00:00"}],
-                    },
-                    {"linkId": "UserEmail", "answer": [{"valueString": "USER_EMAIL"}]},
-                    {
-                        "linkId": "PerformerSDSJobRole",
-                        "answer": [{"valueString": "Specialist Nurse Practitioner"}],
-                    },
-                ],
-            },
-        ],
-        "extension": [
-            {
-                "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure",
-                "valueCodeableConcept": {
-                    "coding": [
-                        {
-                            "system": "http://snomed.info/sct",
-                            "code": "1324681000000101",
-                            "display": "Administration of first dose of severe acute respiratory syndrome coronavirus 2 vaccine (procedure)",
-                        }
-                    ]
-                },
-            }
-        ],
-        "identifier": [
-            {
-                "system": "https://supplierABC/identifiers/vacc",
-                "value": "ACME-vacc123456",
-            }
-        ],
-        "status": "completed",
-        "vaccineCode": {
-            "coding": [
-                {
-                    "system": "http://snomed.info/sct",
-                    "code": "39114911000001105",
-                    "display": "COVID-19 Vaccine Vaxzevria (ChAdOx1 S [recombinant]) not less than 2.5x100,000,000 infectious units/0.5ml dose suspension for injection multidose vials (AstraZeneca UK Ltd) (product)",
-                }
-            ]
-        },
-        "patient": {"reference": "#Pat1"},
-        "occurrenceDateTime": occurrence_date_time,
-        "recorded": "2021-02-07",
-        "primarySource": True,
-        "reportOrigin": {"text": "X99999"},
-        "manufacturer": {"display": "AstraZeneca Ltd"},
-        "location": {
-            "identifier": {
-                "value": "X99999",
-                "system": "https://fhir.nhs.uk/Id/ods-organization-code",
-            }
-        },
-        "lotNumber": "4120Z001",
-        "expirationDate": "2021-07-02",
-        "site": {
-            "coding": [
-                {
-                    "system": "http://snomed.info/sct",
-                    "code": "368208006",
-                    "display": "Left upper arm structure (body structure)",
-                }
-            ]
-        },
-        "route": {
-            "coding": [
-                {
-                    "system": "http://snomed.info/sct",
-                    "code": "78421000",
-                    "display": "Intramuscular route (qualifier value)",
-                }
-            ]
-        },
-        "doseQuantity": {
-            "value": Decimal("0.5"),
-            "unit": "milliliter",
-            "system": "http://unitsofmeasure.org",
-            "code": "ml",
-        },
-        "performer": [
-            {"actor": {"reference": "#Pract1"}},
-            {
-                "actor": {
-                    "type": "Organization",
-                    "identifier": {
-                        "system": "https://fhir.nhs.uk/Id/ods-organization-code",
-                        "value": "B0C4P",
-                    },
-                    "display": "Acme Healthcare",
-                }
-            },
-        ],
-        "reasonCode": [
-            {
-                "coding": [
-                    {
-                        "code": "443684005",
-                        "system": "http://snomed.info/sct",
-                        "display": "Disease outbreak (event)",
-                    }
-                ]
-            }
-        ],
-        "protocolApplied": [{"doseNumberPositiveInt": 1}],
-    }
+    immunization_json = load_json_data("completed_covid19_immunization_event.json")
+    immunization_json["id"] = imms_id
+
+    [x for x in immunization_json["contained"] if x.get("resourceType") == "Patient"][0]["identifier"][0][
+        "value"
+    ] = nhs_number
+
+    immunization_json["occurrenceDateTime"] = occurrence_date_time
+
+    return immunization_json

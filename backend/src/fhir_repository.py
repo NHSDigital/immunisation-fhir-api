@@ -10,11 +10,10 @@ import boto3
 import botocore.exceptions
 from boto3.dynamodb.conditions import Attr, Key
 from botocore.config import Config
-from mappings import vaccination_procedure_snomed_codes
 from models.errors import ResourceNotFoundError, UnhandledResponseError, IdentifierDuplicationError
 from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
 
-from models.utils.generic_utils import get_disease_type
+from backend.src.utils import get_vaccine_type
 
 
 class DecimalEncoder(json.JSONEncoder):
@@ -58,7 +57,7 @@ class RecordAttributes:
     patient_sk: str
     resource: dict
     patient: dict
-    disease_type: str
+    vaccine_type: str
     timestamp: int
     identifier: str
 
@@ -76,9 +75,9 @@ class RecordAttributes:
         self.patient = patient
         self.resource = imms
         self.timestamp = int(time.time())
-        self.disease_type = get_disease_type(imms)
+        self.vaccine_type = get_vaccine_type(imms)
 
-        self.patient_sk = f"{self.disease_type}#{imms_id}"
+        self.patient_sk = f"{self.vaccine_type}#{imms_id}"
         self.identifier = imms["identifier"][0]["value"]
 
 
@@ -191,7 +190,7 @@ class ImmunizationRepository:
                 )
 
     def find_immunizations(self, patient_identifier: str):
-        """it should find all patient's Immunization events for a specified disease_code"""
+        """it should find all patient's Immunization events for a specified vaccine_type"""
         condition = Key("PatientPK").eq(_make_patient_pk(patient_identifier))
         is_not_deleted = Attr("DeletedAt").not_exists()
 

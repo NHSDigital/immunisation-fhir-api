@@ -270,6 +270,17 @@
   ],
   "protocolApplied": [
     {
+      "targetDisease": [
+        {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "840539006",
+              "display": "Disease caused by severe acute respiratory syndrome coronavirus 2"
+            }
+          ]
+        }
+      ],
       "doseNumberPositiveInt": 1
     }
   ]
