@@ -3,7 +3,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Union
 
-from models.utils.generic_utils import (
+from .generic_utils import (
     nhs_number_mod11_check,
     generate_field_location_for_questionnaire_response,
     get_generic_questionnaire_response_value,

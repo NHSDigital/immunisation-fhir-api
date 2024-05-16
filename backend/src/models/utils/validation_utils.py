@@ -1,7 +1,7 @@
 """Utils for backend folder"""
 
 from typing import Union
-from src.mappings import vaccine_type_mappings
+from mappings import vaccine_type_mappings
 
 
 def disease_codes_to_vaccine_type(disease_codes: list) -> Union[str, None]:

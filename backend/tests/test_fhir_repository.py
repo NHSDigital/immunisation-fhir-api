@@ -8,8 +8,8 @@ import botocore.exceptions
 from boto3.dynamodb.conditions import Attr, Key
 from src.mappings import DiseaseCodes
 from src.fhir_repository import ImmunizationRepository
-from src.utils import get_vaccine_type
-from models.errors import ResourceNotFoundError, UnhandledResponseError, IdentifierDuplicationError
+from src.models.utils.validation_utils import get_vaccine_type
+from src.models.errors import ResourceNotFoundError, UnhandledResponseError, IdentifierDuplicationError
 from tests.utils.generic_utils import update_target_disease_code
 from tests.immunization_utils import create_covid_19_immunization_dict
 
