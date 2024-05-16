@@ -1,13 +1,13 @@
 "FHIR Immunization Pre Validators"
 
-from src.models.constants import Constants
-from src.models.utils.generic_utils import (
+from models.constants import Constants
+from models.utils.generic_utils import (
     get_generic_questionnaire_response_value,
     get_generic_extension_value,
     generate_field_location_for_questionnaire_response,
     generate_field_location_for_extension,
 )
-from src.models.utils.pre_validator_utils import PreValidation
+from models.utils.pre_validator_utils import PreValidation
 
 
 class PreValidators:

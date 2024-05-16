@@ -2,7 +2,7 @@
 
 import unittest
 
-from src.utils import disease_codes_to_vaccine_type, get_vaccine_type
+from src.models.utils.validation_utils import disease_codes_to_vaccine_type, get_vaccine_type
 from src.mappings import VaccineTypes
 from .utils.generic_utils import load_json_data
 
