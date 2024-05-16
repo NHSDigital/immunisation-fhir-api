@@ -7,7 +7,7 @@
           "firehose:PutRecord",
           "firehose:PutRecordBatch"
         ],
-        "Resource": "*"
+        "Resource": "arn:aws:firehose:*:*:deliverystream/${kinesis_stream_name}"
       }
     ]
   }

@@ -5,8 +5,9 @@ resource "aws_kinesis_firehose_delivery_stream" "splunk_firehose_stream" {
     splunk_configuration {
         hec_endpoint               = var.splunk_endpoint
         hec_token                  = var.hec_token
-        hec_acknowledgment_timeout = 600
-        hec_endpoint_type          = "Raw"
+        hec_acknowledgment_timeout = 180
+        retry_duration             = 300
+        hec_endpoint_type          = "Event"
         s3_backup_mode             = "FailedEventsOnly"
 
         s3_configuration {

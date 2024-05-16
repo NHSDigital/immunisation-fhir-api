@@ -48,8 +48,11 @@ data "aws_iam_policy_document" "delta_policy_document" {
         templatefile("${local.policy_path}/aws_sqs_queue.json", {
             "aws_sqs_queue_name" : aws_sqs_queue.dlq.name
         } ),
-         templatefile("${local.policy_path}/aws_sns_topic.json", {
+        templatefile("${local.policy_path}/aws_sns_topic.json", {
             "aws_sns_topic_name" : aws_sns_topic.delta_sns.name
+        } ),
+        templatefile("${local.policy_path}/log_kinesis.json", {
+            "kinesis_stream_name" : module.splunk.firehose_stream_name
         } ),
         templatefile("${local.policy_path}/log.json", {} ),
     ]
@@ -94,6 +97,7 @@ resource "aws_lambda_function" "delta_sync_lambda" {
       DELTA_TABLE_NAME      = aws_dynamodb_table.delta-dynamodb-table.name
       AWS_SQS_QUEUE_URL     = aws_sqs_queue.dlq.id
       SOURCE = "IEDS"
+      SPLUNK_FIREHOSE_NAME   = module.splunk.firehose_stream_name
     }
   }
    

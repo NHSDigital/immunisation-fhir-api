@@ -37,7 +37,9 @@ data "aws_iam_policy_document" "imms_policy_document" {
             "dynamodb_table_name" : local.imms_table_name
         } ),
         templatefile("${local.policy_path}/log.json", {} ),
-        templatefile("${local.policy_path}/log_kinesis.json", {} ),
+        templatefile("${local.policy_path}/log_kinesis.json", {
+            "kinesis_stream_name" : module.splunk.firehose_stream_name
+        } ),
         templatefile("${local.policy_path}/secret_manager.json", {
             "account_id": data.aws_caller_identity.current.account_id
         })

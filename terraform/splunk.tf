@@ -11,6 +11,6 @@ data "aws_secretsmanager_secret_version" "splunk_token_id" {
 module "splunk" {
     source = "./splunk"
     prefix = local.prefix
-    splunk_endpoint = "https://firehose.inputs.splunk.aws.digital.nhs.uk/services/collector/raw"
+    splunk_endpoint = "https://firehose.inputs.splunk.aws.digital.nhs.uk/services/collector/event"
     hec_token = data.aws_secretsmanager_secret_version.splunk_token_id.secret_string
 }

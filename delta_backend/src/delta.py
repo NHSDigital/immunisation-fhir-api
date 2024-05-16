@@ -1,14 +1,20 @@
 import boto3
 import json
 import os
+import time
 from datetime import datetime, timedelta
 import uuid
 import logging
 from botocore.exceptions import ClientError
+from log_firehose import FirehoseLogger
 
 failure_queue_url = os.environ["AWS_SQS_QUEUE_URL"]
 delta_table_name = os.environ["DELTA_TABLE_NAME"]
 delta_source = os.environ["SOURCE"]
+logging.basicConfig()
+logger = logging.getLogger()
+logger.setLevel("INFO")
+firehose_logger = FirehoseLogger()
 
 
 def send_message(record):
@@ -27,34 +33,42 @@ def send_message(record):
 
 
 def handler(event, context):
+    logger.info("Starting Delta Handler")
+    log_data = dict()
+    firehose_log = dict()
+    operation_outcome = dict()
+    log_data["function_name"] = "delta_sync"
     intrusion_check = True
     try:
         dynamodb = boto3.resource("dynamodb")
         delta_table = dynamodb.Table(delta_table_name)
-        logging.basicConfig()
-        logger = logging.getLogger()
-        logger.setLevel("INFO")
 
         # Converting ApproximateCreationDateTime directly to string will give Unix timestamp
         # I am converting it to isofformat for filtering purpose. This can be changed accordingly
 
         for record in event["Records"]:
+            start = time.time()
+            log_data["date_time"] = str(datetime.now())
             intrusion_check = False
             approximate_creation_time = datetime.utcfromtimestamp(
                 record["dynamodb"]["ApproximateCreationDateTime"]
             )
             expiry_time = approximate_creation_time + timedelta(days=30)
             expiry_time_epoch = int(expiry_time.timestamp())
-            response = ""
-            imms_id = ""
+            response = str()
+            imms_id = str()
+            operation = str()
             if record["eventName"] != "REMOVE":
                 new_image = record["dynamodb"]["NewImage"]
                 imms_id = new_image["PK"]["S"].split("#")[1]
+                operation = new_image["Operation"]["S"]
+                if operation == "CREATE":
+                    operation = "NEW"
                 response = delta_table.put_item(
                     Item={
                         "PK": str(uuid.uuid4()),
                         "ImmsID": imms_id,
-                        "Operation": new_image["Operation"]["S"],
+                        "Operation": operation,
                         "DateTimeStamp": approximate_creation_time.isoformat(),
                         "Source": delta_source,
                         "Imms": new_image["Resource"]["S"],
@@ -62,6 +76,7 @@ def handler(event, context):
                     }
                 )
             else:
+                operation = "REMOVE"
                 new_image = record["dynamodb"]["Keys"]
                 imms_id = new_image["PK"]["S"].split("#")[1]
                 response = delta_table.put_item(
@@ -75,20 +90,37 @@ def handler(event, context):
                         "ExpiresAt": expiry_time_epoch,
                     }
                 )
-
+            end = time.time()
+            log_data["time_taken"] = f"{round(end - start, 5)}s"
+            operation_outcome = {"record": imms_id, "operation_type": operation}
             if response["ResponseMetadata"]["HTTPStatusCode"] == 200:
                 log = f"Record Successfully created for {imms_id}"
+                operation_outcome["status"] = "200"
+                operation_outcome["status_code"] = "Successfully synched into delta"
+                log_data["operation_outcome"] = operation_outcome
+                firehose_log["event"] = log_data
+                firehose_logger.send_log(firehose_log)
             else:
                 log = f"Record NOT created for {imms_id}"
+                operation_outcome["status"] = "500"
+                operation_outcome["status_code"] = "Exception"
+                log_data["operation_outcome"] = operation_outcome
+                firehose_log["event"] = log_data
+                firehose_logger.send_log(firehose_log)
             logger.info(log)
-        return {
-            "statusCode": 200,
-            "body": json.dumps("Records processed successfully"),
-        }
+        return {"statusCode": 200, "body": "Records processed successfully"}
 
     except Exception as e:
+        operation_outcome["status"] = "500"
+        operation_outcome["status_code"] = "Exception"
         if intrusion_check:
-            print("Incorrect invocation of Lambda")
+            operation_outcome["diagnostics"] = "Incorrect invocation of Lambda"
+            logger.exception("Incorrect invocation of Lambda")
         else:
-            send_message(record)  # Send failed record details to DLQ
+            operation_outcome["diagnostics"] = f"Delta Lambda failure: {e}"
+            logger.exception(f"Delta Lambda failure: {e}")
+            send_message(event)  # Send failed records to DLQ
+        log_data["operation_outcome"] = operation_outcome
+        firehose_log["event"] = log_data
+        firehose_logger.send_log(firehose_log)
         raise Exception(f"Delta Lambda failure: {e}")
