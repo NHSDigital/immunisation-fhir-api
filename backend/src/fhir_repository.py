@@ -10,7 +10,7 @@ import boto3
 import botocore.exceptions
 from boto3.dynamodb.conditions import Attr, Key
 from botocore.config import Config
-from models.errors import ResourceNotFoundError, UnhandledResponseError, IdentifierDuplicationError
+from src.models.errors import ResourceNotFoundError, UnhandledResponseError, IdentifierDuplicationError
 from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
 
 from models.utils.validation_utils import get_vaccine_type
