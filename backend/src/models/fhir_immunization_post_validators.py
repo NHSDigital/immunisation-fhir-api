@@ -11,10 +11,10 @@ from src.models.utils.generic_utils import (
     is_organization,
     get_nhs_number_verification_status_code,
     get_target_disease_codes_from_model,
-    disease_codes_to_vaccine_type,
+    
 )
 from models.utils.post_validation_utils import PostValidation, MandatoryError
-
+from src.utils import disease_codes_to_vaccine_type
 
 check_mandation_requirements_met = PostValidation.check_mandation_requirements_met
 get_generic_field_value = PostValidation.get_generic_field_value
