@@ -268,6 +268,7 @@ def test_update_event_by_id_not_found_nhs_login(nhsd_apim_proxy_url, nhsd_apim_a
     assert result.status_code == 404
     assert res_body["resourceType"] == "OperationOutcome"
 
+
 @pytest.mark.nhsd_apim_authorization(
     {
         "access": "healthcare_worker",
