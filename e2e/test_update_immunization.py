@@ -67,5 +67,3 @@ class TestUpdateImmunization(ImmunizationBaseTest):
         self.assertEqual(response.status_code, 201, response.text)
         new_imms_id = parse_location(response.headers["Location"])
         self.assertNotEqual(deleted_id, new_imms_id)
-
-
