@@ -44,14 +44,15 @@ class TestUpdateImmunization(ImmunizationBaseTest):
         # Then
         self.assert_operation_outcome(response, 422)
 
-    def test_update_none_existing_record(self):
-        """update should create a new Immunization if id doesn't exist"""
-        imms_id = str(uuid.uuid4())
-        imms = create_an_imms_obj(imms_id)
 
-        response = self.default_imms_api.update_immunization(imms_id, imms)
+    def test_id_exists_for_update(self):
+        """update should fail if id in path does not exist"""
+        path_id = str(uuid.uuid4())
+        imms = create_an_imms_obj(path_id)
+        
+        response = self.default_imms_api.update_immunization(path_id, imms)
 
-        self.assertEqual(response.status_code, 201, response.text)
+        self.assertEqual(response.status_code, 404, response.text)
 
     def test_update_inconsistent_id(self):
         """update should fail if id in the path doesn't match with the id in the message"""

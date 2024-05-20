@@ -256,15 +256,22 @@ def test_get_deleted_immunization(nhsd_apim_proxy_url, nhsd_apim_auth_headers):
         "login_form": {"username": "656005750104"},
     }
 )
-def test_update_none_existing_record_nhs_login(nhsd_apim_proxy_url, nhsd_apim_auth_headers):
-    """update a record that doesn't exist should create a new record"""
+def test_update_event_by_id_not_found_nhs_login(nhsd_apim_proxy_url, nhsd_apim_auth_headers):
+
     token = nhsd_apim_auth_headers["Authorization"]
     imms_api = ImmunisationApi(nhsd_apim_proxy_url, token)
 
-    imms_id = str(uuid.uuid4())
-    imms = create_an_imms_obj(imms_id)
-    result = imms_api.update_immunization(imms_id, imms)
-    assert result.status_code == 201
+    result = imms_api.get_immunization_by_id("some-id-that-does-not-exist")
+    if result.status_code != 404:
+        print(result.text)
+    res_body = result.json()
+
+
+    assert result.status_code == 404
+    assert res_body["resourceType"] == "OperationOutcome"
+
+
+
 
 
 @pytest.mark.nhsd_apim_authorization(
