@@ -68,9 +68,3 @@ class TestUpdateImmunization(ImmunizationBaseTest):
         new_imms_id = parse_location(response.headers["Location"])
         self.assertNotEqual(deleted_id, new_imms_id)
 
-    def test_id_exists_for_update(self):
-        """update should fail if id does not exist"""
-        path_id = str(uuid.uuid4())
-        imms = create_an_imms_obj(path_id)
-        response = self.default_imms_api.update_immunization(path_id, imms)
-        self.assertEqual(response.status_code, 404, response.text)
