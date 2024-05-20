@@ -265,14 +265,8 @@ def test_update_event_by_id_not_found_nhs_login(nhsd_apim_proxy_url, nhsd_apim_a
     if result.status_code != 404:
         print(result.text)
     res_body = result.json()
-
-
     assert result.status_code == 404
     assert res_body["resourceType"] == "OperationOutcome"
-
-
-
-
 
 @pytest.mark.nhsd_apim_authorization(
     {

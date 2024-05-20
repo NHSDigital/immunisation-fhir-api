@@ -38,12 +38,10 @@ class TestUpdateImmunization(ImmunizationBaseTest):
         # This is why in this test we create a new id but not touching the identifier
         new_imms_id = str(uuid.uuid4())
         imms["id"] = new_imms_id
-
         # When update the same object (it has the same identifier)
         response = self.default_imms_api.update_immunization(new_imms_id, imms)
         # Then
         self.assert_operation_outcome(response, 422)
-
 
     def test_id_exists_for_update(self):
         """update should fail if id in path does not exist"""
