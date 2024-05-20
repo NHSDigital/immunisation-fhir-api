@@ -104,7 +104,9 @@ class FhirService:
             imms = self.immunization_repo.update_immunization(imms_id, immunization, patient)
             return UpdateOutcome.UPDATE, Immunization.parse_obj(imms)
         except ResourceNotFoundError:
-            raise ResourceNotFoundError(message=str(error)) from error
+            imms = self.immunization_repo.create_immunization(immunization, patient)
+
+            return UpdateOutcome.CREATE, Immunization.parse_obj(imms)
 
 
     def delete_immunization(self, imms_id) -> Immunization:
