@@ -270,7 +270,7 @@ class PostValidators:
         )
 
         """Validates that organization_identifier_value is in alpha-numeric-alpha-numeric-alpha 
-        (e.g. "X0X0X")"""
+        (e.g. "X0X0X") """
         
         ODS_code_format = re.compile(r"^[A-Z]{1}[0-9]{1}[A-Z]{1}[0-9]{1}[A-Z]{1}$")
         if field_value and not ODS_code_format.fullmatch(field_value):
