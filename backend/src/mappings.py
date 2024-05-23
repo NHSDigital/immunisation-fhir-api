@@ -28,36 +28,43 @@ class Mandation:
     not_applicable: str = "N/A"
 
 
-# TODO: Update dictionary to use correct codes and mappings once received from Imms team
-# Dictionary of vaccine procedure snomed codes and their mapping to vaccine type. Any new codes
-# should be added here
-vaccination_procedure_snomed_codes = {
-    "1324681000000101": VaccineTypes.covid_19,
-    "1324691000000104": VaccineTypes.covid_19,
-    "1324671000000103": VaccineTypes.covid_19,
-    "1362591000000103": VaccineTypes.covid_19,
-    "1363861000000103": VaccineTypes.covid_19,
-    "1363791000000101": VaccineTypes.covid_19,
-    "1363831000000108": VaccineTypes.covid_19,
-    "822851000000102": VaccineTypes.flu,  # TODO: remove this code if necessary once full list of
-    # accceptable codes is received (note that it has been copied from the sample data, to allow
-    # the sample flu data to pass the validator)
-    "mockFLUcode1": VaccineTypes.flu,
-    "mockFLUcode2": VaccineTypes.flu,
-    "mockHPVcode1": VaccineTypes.hpv,
-    "mockHPVcode2": VaccineTypes.hpv,
-    "mockMMRcode1": VaccineTypes.mmr,
-    "mockMMRcode2": VaccineTypes.mmr,
-    "mockOTHERDISEASEcode1": "OTHER_DISEASE",
-    "mockMENINGITIScode1": "MEN",
-}
+@dataclass
+class DiseaseDisplayTerms:
+    """Disease display terms which correspond to disease codes"""
 
-vaccine_type_to_sample_vaccination_procedure_snomed_code = {
-    VaccineTypes.covid_19: "1324681000000101",
-    VaccineTypes.flu: "mockFLUcode1",
-    VaccineTypes.hpv: "mockHPVcode1",
-    VaccineTypes.mmr: "mockMMRcode1",
-}
+    covid_19: str = "Disease caused by severe acute respiratory syndrome coronavirus 2"
+    flu: str = "Influenza"
+    hpv: str = "Human papillomavirus infection"
+    measles: str = "Measles"
+    mumps: str = "Mumps"
+    rubella: str = "Rubella"
+
+
+@dataclass
+class DiseaseCodes:
+    """Disease Codes"""
+
+    # Disease codes can be found at https://hl7.org/fhir/uv/ips/ValueSet-target-diseases-uv-ips.html
+    covid_19: str = "840539006"
+    flu: str = "6142004"
+    hpv: str = "240532009"
+    measles: str = "14189004"
+    mumps: str = "36989005"
+    rubella: str = "36653000"
+
+
+vaccine_type_mappings = [
+    ([DiseaseCodes.covid_19], VaccineTypes.covid_19),
+    ([DiseaseCodes.flu], VaccineTypes.flu),
+    ([DiseaseCodes.hpv], VaccineTypes.hpv),
+    # FOR VACCINE_TYPES WHICH TARGET MULTIPLE DISEASES ENSURE THAT THE DISEASE CODES ARE SORTED ALPHABETICALLY
+    # This allows order-insensitive comparison with other lists, by alphabetically sorting the list for comparison
+    (sorted([DiseaseCodes.measles, DiseaseCodes.rubella, DiseaseCodes.mumps]), VaccineTypes.mmr),
+]
+
+
+valid_disease_code_combinations = [x[0] for x in vaccine_type_mappings]
+
 
 # Dictionary of vaccine types and their applicable mandations for each field
 vaccine_type_applicable_validations = {
@@ -175,6 +182,12 @@ vaccine_type_applicable_validations = {
         VaccineTypes.hpv: Mandation.conditional_mandatory,
         VaccineTypes.mmr: Mandation.conditional_mandatory,
     },
+    "vaccination_procedure_code": {
+        VaccineTypes.covid_19: Mandation.mandatory,
+        VaccineTypes.flu: Mandation.mandatory,
+        VaccineTypes.hpv: Mandation.mandatory,
+        VaccineTypes.mmr: Mandation.mandatory,
+    },
     "vaccination_procedure_display": {
         VaccineTypes.covid_19: Mandation.required,
         VaccineTypes.flu: Mandation.required,
@@ -210,6 +223,12 @@ vaccine_type_applicable_validations = {
         VaccineTypes.flu: Mandation.conditional_mandatory,
         VaccineTypes.hpv: Mandation.required,
         VaccineTypes.mmr: Mandation.required,
+    },
+    "protocol_applied_dose_number_string": {
+        VaccineTypes.covid_19: Mandation.conditional_mandatory,
+        VaccineTypes.flu: Mandation.conditional_mandatory,
+        VaccineTypes.hpv: Mandation.conditional_mandatory,
+        VaccineTypes.mmr: Mandation.conditional_mandatory,
     },
     "vaccine_code_coding_code": {
         VaccineTypes.covid_19: Mandation.mandatory,

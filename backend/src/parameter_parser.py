@@ -103,11 +103,11 @@ def process_search_params(params: ParamContainer) -> SearchParams:
 
     # immunization.target
     params[immunization_target_key] = list(set(params.get(immunization_target_key, [])))
-    disease_types = [disease_type for disease_type in params[immunization_target_key] if
-                     disease_type is not None]
-    if len(disease_types) < 1:
+    vaccine_types = [vaccine_type for vaccine_type in params[immunization_target_key] if
+                     vaccine_type is not None]
+    if len(vaccine_types) < 1:
         raise ParameterException(f"Search parameter {immunization_target_key} must have one or more values.")
-    if any([x not in VaccineTypes().all for x in disease_types]):
+    if any([x not in VaccineTypes().all for x in vaccine_types]):
         raise ParameterException(
             f"immunization-target must be one or more of the following: {','.join(VaccineTypes().all)}")
 
@@ -142,7 +142,7 @@ def process_search_params(params: ParamContainer) -> SearchParams:
     includes = params.get(include_key, [])
     include = includes[0] if len(includes) > 0 else None
 
-    return SearchParams(patient_identifier, disease_types, date_from, date_to, include)
+    return SearchParams(patient_identifier, vaccine_types, date_from, date_to, include)
 
 
 def create_query_string(search_params: SearchParams) -> str:

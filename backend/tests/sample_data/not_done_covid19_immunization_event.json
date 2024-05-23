@@ -77,6 +77,46 @@
               }
             }
           ]
+        },
+        {
+          "linkId": "IpAddress",
+          "answer": [
+            {
+              "valueString": "IP_ADDRESS"
+            }
+          ]
+        },
+        {
+          "linkId": "UserId",
+          "answer": [
+            {
+              "valueString": "USER_ID"
+            }
+          ]
+        },
+        {
+          "linkId": "UserName",
+          "answer": [
+            {
+              "valueString": "USER_NAME"
+            }
+          ]
+        },
+        {
+          "linkId": "SubmittedTimeStamp",
+          "answer": [
+            {
+              "valueDateTime": "2021-01-07T13:44:07+00:00"
+            }
+          ]
+        },
+        {
+          "linkId": "UserEmail",
+          "answer": [
+            {
+              "valueString": "USER_EMAIL"
+            }
+          ]
         }
       ]
     }
@@ -88,8 +128,8 @@
         "coding": [
           {
             "system": "http://snomed.info/sct",
-            "code": "822851000000102",
-            "display": "Seasonal influenza vaccination (procedure)"
+            "code": "1324681000000101",
+            "display": "Administration of first dose of severe acute respiratory syndrome coronavirus 2 vaccine (procedure)"
           }
         ]
       }
@@ -152,6 +192,45 @@
         },
         "display": "Acme Healthcare"
       }
+    }
+  ],
+  "protocolApplied": [
+    {
+      "targetDisease": [
+        {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "840539006",
+              "display": "Disease caused by severe acute respiratory syndrome coronavirus 2"
+            }
+          ]
+        }
+      ],
+      "doseNumberPositiveInt": 1
+    }
+  ],
+  "location": {
+    "identifier": {
+      "system": "https://fhir.nhs.uk/Id/ods-site-code",
+      "value": "B0C4P"
+    },
+    "display": "Acme Healthcare"
+  },
+  "protocolApplied": [
+    {
+      "targetDisease": [
+        {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "840539006",
+              "display": "Disease caused by severe acute respiratory syndrome coronavirus 2"
+            }
+          ]
+        }
+      ],
+      "doseNumberPositiveInt": 1
     }
   ]
 }

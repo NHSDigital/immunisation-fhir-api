@@ -9,12 +9,6 @@
           "system": "https://fhir.hl7.org.uk/Id/nmc-number",
           "value": "99A9999A"
         }
-      ],
-      "name": [
-        {
-          "family": "Nightingale",
-          "given": ["Florence"]
-        }
       ]
     },
     {
@@ -113,54 +107,6 @@
               }
             }
           ]
-        },
-        {
-          "linkId": "IpAddress",
-          "answer": [
-            {
-              "valueString": "IP_ADDRESS"
-            }
-          ]
-        },
-        {
-          "linkId": "UserId",
-          "answer": [
-            {
-              "valueString": "USER_ID"
-            }
-          ]
-        },
-        {
-          "linkId": "UserName",
-          "answer": [
-            {
-              "valueString": "USER_NAME"
-            }
-          ]
-        },
-        {
-          "linkId": "SubmittedTimeStamp",
-          "answer": [
-            {
-              "valueDateTime": "2021-02-07T13:44:07+00:00"
-            }
-          ]
-        },
-        {
-          "linkId": "UserEmail",
-          "answer": [
-            {
-              "valueString": "USER_EMAIL"
-            }
-          ]
-        },
-        {
-          "linkId": "PerformerSDSJobRole",
-          "answer": [
-            {
-              "valueString": "Specialist Nurse Practitioner"
-            }
-          ]
         }
       ]
     }
@@ -172,8 +118,8 @@
         "coding": [
           {
             "system": "http://snomed.info/sct",
-            "code": "1324681000000101",
-            "display": "Administration of first dose of severe acute respiratory syndrome coronavirus 2 vaccine (procedure)"
+            "code": "mockMMRcode1",
+            "display": "Seasonal influenza vaccination (procedure)"
           }
         ]
       }
@@ -182,7 +128,7 @@
   "identifier": [
     {
       "system": "https://supplierABC/identifiers/vacc",
-      "value": "ACME-vacc123456"
+      "value": "ACME-vacc123flu"
     }
   ],
   "status": "completed",
@@ -190,37 +136,31 @@
     "coding": [
       {
         "system": "http://snomed.info/sct",
-        "code": "39114911000001105",
-        "display": "COVID-19 Vaccine Vaxzevria (ChAdOx1 S [recombinant]) not less than 2.5x100,000,000 infectious units/0.5ml dose suspension for injection multidose vials (AstraZeneca UK Ltd) (product)"
+        "code": "39566211000001103",
+        "display": "Supemtek Quadrivalent vaccine (recombinant) solution for injection 0.5ml pre-filled syringes (Sanofi) (product)"
       }
     ]
   },
   "patient": {
     "reference": "#Pat1"
   },
-  "occurrenceDateTime": "2021-02-07T13:28:17.271+00:00",
-  "recorded": "2021-02-07",
+  "occurrenceDateTime": "2021-02-14T13:28:17.271+00:00",
+  "recorded": "2021-02-14",
   "primarySource": true,
   "reportOrigin": {
-    "text": "X99999"
+    "text": "B0C4P"
   },
   "manufacturer": {
-    "display": "AstraZeneca Ltd"
+    "display": "Sanofi"
   },
-  "location": {
-    "identifier": {
-      "value": "X99999",
-      "system": "https://fhir.nhs.uk/Id/ods-organization-code"
-    }
-  },
-  "lotNumber": "4120Z001",
+  "lotNumber": "41925TJ61",
   "expirationDate": "2021-07-02",
   "site": {
     "coding": [
       {
         "system": "http://snomed.info/sct",
-        "code": "368208006",
-        "display": "Left upper arm structure (body structure)"
+        "code": "368209003",
+        "display": "Right upper arm structure (body structure)"
       }
     ]
   },
@@ -260,15 +200,44 @@
     {
       "coding": [
         {
-          "code": "443684005",
+          "code": "78648007",
           "system": "http://snomed.info/sct",
-          "display": "Disease outbreak (event)"
+          "display": "At increased risk for infection (finding)"
         }
       ]
     }
   ],
   "protocolApplied": [
     {
+      "targetDisease": [
+        {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "14189004",
+              "display": "Measles"
+            }
+          ]
+        },
+        {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "36989005",
+              "display": "Mumps"
+            }
+          ]
+        },
+        {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "36653000",
+              "display": "Rubella"
+            }
+          ]
+        }
+      ],
       "doseNumberPositiveInt": 1
     }
   ]

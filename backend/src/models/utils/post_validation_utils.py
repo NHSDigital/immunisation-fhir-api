@@ -1,10 +1,6 @@
 from typing import Literal, Optional, Any
 
-from mappings import (
-    Mandation,
-    vaccination_procedure_snomed_codes,
-    vaccine_type_applicable_validations,
-)
+from mappings import Mandation, vaccine_type_applicable_validations
 from .generic_utils import (
     get_deep_attr,
     get_generic_questionnaire_response_value_from_model,
@@ -22,17 +18,6 @@ class NotApplicableError(Exception):
 
 
 class PostValidation:
-    @staticmethod
-    def vaccination_procedure_code(vaccination_procedure_code: str, field_location):
-        vaccine_type = vaccination_procedure_snomed_codes.get(vaccination_procedure_code, None)
-
-        if not vaccine_type:
-            raise ValueError(
-                f"{field_location}: {vaccination_procedure_code} " + "is not a valid code for this service"
-            )
-
-        return vaccine_type
-
     @staticmethod
     def check_mandation_requirements_met(
         field_value,
@@ -57,23 +42,21 @@ class PostValidation:
         # Determine and set the mandation and appropriate error messages
         mandation = mandation if mandation else vaccine_type_applicable_validations[mandation_key][vaccine_type]
 
-        mandatory_error_message = (
-            bespoke_mandatory_error_message
-            if bespoke_mandatory_error_message
-            else f"{field_location} is a mandatory field"
-        )
-
-        not_applicable_error_message = (
-            bespoke_not_applicable_error_message
-            if bespoke_not_applicable_error_message
-            else f"{field_location} must not be provided for this vaccine type"
-        )
-
         # Raise error messages where applicable
         if field_value is None and mandation == Mandation.mandatory:
+            mandatory_error_message = (
+                bespoke_mandatory_error_message
+                if bespoke_mandatory_error_message
+                else f"{field_location} is a mandatory field"
+            )
             raise MandatoryError(mandatory_error_message)
 
         if field_value and mandation == Mandation.not_applicable:
+            not_applicable_error_message = (
+                bespoke_not_applicable_error_message
+                if bespoke_not_applicable_error_message
+                else f"{field_location} must not be provided for this vaccine type"
+            )
             raise NotApplicableError(not_applicable_error_message)
 
     @staticmethod

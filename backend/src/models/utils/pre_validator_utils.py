@@ -3,10 +3,29 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Union
 
-from models.utils.generic_utils import nhs_number_mod11_check
+from .generic_utils import (
+    nhs_number_mod11_check,
+    generate_field_location_for_questionnaire_response,
+    get_generic_questionnaire_response_value,
+)
 
 
 class PreValidation:
+    @staticmethod
+    def for_questionnaire_response(values: dict, link_id: str, answer_type: str, field_type: str = None):
+        """Obtains the relevant question response value and pre-validates it (if it exists)"""
+        field_location = generate_field_location_for_questionnaire_response(link_id, answer_type, field_type)
+        try:
+            field_value = get_generic_questionnaire_response_value(values, link_id, answer_type, field_type)
+            if answer_type == "valueDateTime":
+                PreValidation.for_date_time(field_value, field_location)
+            if answer_type == "valueBoolean":
+                PreValidation.for_boolean(field_value, field_location)
+            else:
+                PreValidation.for_string(field_value, field_location)
+        except (KeyError, IndexError):
+            pass
+
     @staticmethod
     def for_string(
         field_value: str,
@@ -21,7 +40,7 @@ class PreValidation:
         Apply pre-validation to a string field to ensure it is a non-empty string which meets
         the length requirements and predefined values requirements
         """
-            
+
         if not isinstance(field_value, str):
             raise TypeError(f"{field_location} must be a string")
 

@@ -1,4 +1,4 @@
-import json
+import simplejson as json
 import time
 import unittest
 import uuid
@@ -6,13 +6,17 @@ from unittest.mock import MagicMock, patch, ANY
 
 import botocore.exceptions
 from boto3.dynamodb.conditions import Attr, Key
-from fhir_repository import ImmunizationRepository
-from mappings import vaccination_procedure_snomed_codes
+from src.mappings import DiseaseCodes
+from src.fhir_repository import ImmunizationRepository
+from src.models.utils.validation_utils import get_vaccine_type
 from models.errors import ResourceNotFoundError, UnhandledResponseError, IdentifierDuplicationError
+from tests.utils.generic_utils import update_target_disease_code
+from tests.immunization_utils import create_covid_19_immunization_dict
 
 
 def _make_immunization_pk(_id):
     return f"Immunization#{_id}"
+
 
 def _make_patient_pk(_id):
     return f"Patient#{_id}"
@@ -26,17 +30,20 @@ class TestGetImmunization(unittest.TestCase):
     def test_get_immunization_by_id(self):
         """it should find an Immunization by id"""
         imms_id = "an-id"
-        resource = {"foo": "bar"}
+        resource = dict()
+        resource['Resource'] = {"foo": "bar"}  
+        resource['Version'] = 1
         self.table.get_item = MagicMock(
-            return_value={"Item": {"Resource": json.dumps(resource)}}
+            return_value={"Item": {
+                'Resource': json.dumps({"foo": "bar"}),
+                'Version': 1
+            }}
         )
-
         imms = self.repository.get_immunization_by_id(imms_id)
 
+        # Validate the results
         self.assertDictEqual(resource, imms)
-        self.table.get_item.assert_called_once_with(
-            Key={"PK": _make_immunization_pk(imms_id)}
-        )
+        self.table.get_item.assert_called_once_with(Key={"PK": _make_immunization_pk(imms_id)})
 
     def test_immunization_not_found(self):
         """it should return None if Immunization doesn't exist"""
@@ -45,48 +52,6 @@ class TestGetImmunization(unittest.TestCase):
 
         imms = self.repository.get_immunization_by_id(imms_id)
         self.assertIsNone(imms)
-
-
-def _make_an_immunization(imms_id="an-id") -> dict:
-    """create the minimum required object. Caller should override relevant fields explicitly"""
-    return {
-        "resourceType": "Immunization",
-        "id": imms_id,
-        "contained": [
-            {
-                "resourceType": "Patient",
-                "id": "Pat1",
-                "identifier": [
-                    {
-                        "system": "https://fhir.nhs.uk/Id/nhs-number",
-                        "value": "9000000009",
-                    }
-                ],
-            },
-        ],
-        "extension": [
-            {
-                "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure",
-                "valueCodeableConcept": {
-                    "coding": [
-                        {
-                            "system": "http://snomed.info/sct",
-                            "code": "1324681000000101",
-                            "display": "Administration of first dose of severe acute respiratory syndrome coronavirus 2 vaccine (procedure)",
-                        }
-                    ]
-                },
-            }
-        ],
-        "doseQuantity": {
-            "value": 0.5
-        },
-        "identifier": [
-            {
-                "value": str(uuid.uuid4())
-            }
-        ]
-    }
 
 
 def _make_a_patient(nhs_number="1234567890") -> dict:
@@ -100,11 +65,12 @@ class TestCreateImmunizationMainIndex(unittest.TestCase):
     def setUp(self):
         self.table = MagicMock()
         self.repository = ImmunizationRepository(table=self.table)
-        self.patient = {'id': 'a-patient-id', 'identifier': {'value': 'an-identifier'}}
+        self.patient = {"id": "a-patient-id", "identifier": {"value": "an-identifier"}}
 
     def test_create_immunization(self):
         """it should create Immunization, and return created object"""
-        imms = _make_an_immunization("an-id")
+        imms = create_covid_19_immunization_dict(imms_id="an-id")
+
         self.table.put_item = MagicMock(return_value={"ResponseMetadata": {"HTTPStatusCode": 200}})
         self.table.query = MagicMock(return_value={})
 
@@ -112,11 +78,21 @@ class TestCreateImmunizationMainIndex(unittest.TestCase):
 
         self.assertDictEqual(res_imms, imms)
         self.table.put_item.assert_called_once_with(
-            Item={"PK": ANY, "PatientPK": ANY, "PatientSK": ANY, "Resource": json.dumps(imms), "Patient": ANY, "IdentifierPK": ANY, "Operation":"CREATE"})
+            Item={
+                "PK": ANY,
+                "PatientPK": ANY,
+                "PatientSK": ANY,
+                "Resource": json.dumps(imms),
+                "Patient": ANY,
+                "IdentifierPK": ANY,
+                "Operation": "CREATE",
+                "Version": 1
+            }
+        )
 
     def test_add_patient(self):
         """it should store patient along the Immunization resource"""
-        imms = _make_an_immunization("an-id")
+        imms = create_covid_19_immunization_dict("an-id")
         self.table.put_item = MagicMock(return_value={"ResponseMetadata": {"HTTPStatusCode": 200}})
         self.table.query = MagicMock(return_value={})
 
@@ -124,12 +100,22 @@ class TestCreateImmunizationMainIndex(unittest.TestCase):
 
         self.assertDictEqual(res_imms, imms)
         self.table.put_item.assert_called_once_with(
-            Item={"PK": ANY,  "PatientPK": ANY, "PatientSK": ANY, "Resource": ANY, "Patient": self.patient, "IdentifierPK": ANY, "Operation": "CREATE"})
+            Item={
+                "PK": ANY,
+                "PatientPK": ANY,
+                "PatientSK": ANY,
+                "Resource": ANY,
+                "Patient": self.patient,
+                "IdentifierPK": ANY,
+                "Operation": "CREATE",
+                "Version": 1
+            }
+        )
 
     def test_create_immunization_makes_new_id(self):
         """create should create new Logical ID even if one is already provided"""
         imms_id = "original-id-from-request"
-        imms = _make_an_immunization(imms_id)
+        imms = create_covid_19_immunization_dict(imms_id)
         self.table.put_item = MagicMock(return_value={"ResponseMetadata": {"HTTPStatusCode": 200}})
         self.table.query = MagicMock(return_value={})
 
@@ -142,7 +128,7 @@ class TestCreateImmunizationMainIndex(unittest.TestCase):
     def test_create_immunization_returns_new_id(self):
         """create should return the persisted object i.e. with new id"""
         imms_id = "original-id-from-request"
-        imms = _make_an_immunization(imms_id)
+        imms = create_covid_19_immunization_dict(imms_id)
         self.table.put_item = MagicMock(return_value={"ResponseMetadata": {"HTTPStatusCode": 200}})
         self.table.query = MagicMock(return_value={})
 
@@ -159,7 +145,7 @@ class TestCreateImmunizationMainIndex(unittest.TestCase):
 
         with self.assertRaises(UnhandledResponseError) as e:
             # When
-            self.repository.create_immunization(_make_an_immunization(), self.patient)
+            self.repository.create_immunization(create_covid_19_immunization_dict("an-id"), self.patient)
 
         # Then
         self.assertDictEqual(e.exception.response, response)
@@ -167,10 +153,10 @@ class TestCreateImmunizationMainIndex(unittest.TestCase):
     def test_create_throws_error_when_identifier_already_in_dynamodb(self):
         """it should throw UnhandledResponse when trying to update an immunization with an identfier that is already stored"""
         imms_id = "an-id"
-        imms = _make_an_immunization(imms_id)
+        imms = create_covid_19_immunization_dict(imms_id)
         imms["patient"] = self.patient
 
-        self.table.query = MagicMock(return_value={"Items":[{"Resource": '{"id": "different-id"}'}], "Count": 1})
+        self.table.query = MagicMock(return_value={"Items": [{"Resource": '{"id": "different-id"}'}], "Count": 1})
 
         with self.assertRaises(IdentifierDuplicationError) as e:
             # When
@@ -189,10 +175,10 @@ class TestCreateImmunizationPatientIndex(unittest.TestCase):
 
     def test_create_patient_gsi(self):
         """create Immunization method should create Patient index with nhs-number as ID and no system"""
-        imms = _make_an_immunization()
+        imms = create_covid_19_immunization_dict("an-id")
 
         nhs_number = "1234567890"
-        imms["contained"][0]["identifier"][0]["value"] = nhs_number
+        imms["contained"][1]["identifier"][0]["value"] = nhs_number
 
         self.table.put_item = MagicMock(return_value={"ResponseMetadata": {"HTTPStatusCode": 200}})
         self.table.query = MagicMock(return_value={})
@@ -204,15 +190,12 @@ class TestCreateImmunizationPatientIndex(unittest.TestCase):
         item = self.table.put_item.call_args.kwargs["Item"]
         self.assertEqual(item["PatientPK"], f"Patient#{nhs_number}")
 
-    def test_create_patient_with_disease_type(self):
-        """Patient record should have a sort-key based on disease-type"""
-        imms = _make_an_immunization()
+    def test_create_patient_with_vaccine_type(self):
+        """Patient record should have a sort-key based on vaccine-type"""
+        imms = create_covid_19_immunization_dict("an-id")
 
-        vaccination_procedure_code = "1324681000000101"
-        imms["extension"][0]["valueCodeableConcept"]["coding"][0][
-            "code"
-        ] = vaccination_procedure_code
-        disease_type = vaccination_procedure_snomed_codes[vaccination_procedure_code]
+        update_target_disease_code(imms, DiseaseCodes.flu)
+        vaccine_type = get_vaccine_type(imms)
 
         self.table.query = MagicMock(return_value={"Count": 0})
         self.table.put_item = MagicMock(return_value={"ResponseMetadata": {"HTTPStatusCode": 200}})
@@ -222,7 +205,7 @@ class TestCreateImmunizationPatientIndex(unittest.TestCase):
 
         # Then
         item = self.table.put_item.call_args.kwargs["Item"]
-        self.assertTrue(item["PatientSK"].startswith(f"{disease_type}#"))
+        self.assertTrue(item["PatientSK"].startswith(f"{vaccine_type}#"))
 
 
 class TestUpdateImmunization(unittest.TestCase):
@@ -234,7 +217,7 @@ class TestUpdateImmunization(unittest.TestCase):
     def test_update(self):
         """it should update record by replacing both Immunization and Patient"""
         imms_id = "an-imms-id"
-        imms = _make_an_immunization(imms_id)
+        imms = create_covid_19_immunization_dict(imms_id)
         imms["patient"] = self.patient
 
         resource = {"foo": "bar"}  # making sure we return updated imms from dynamodb
@@ -249,9 +232,7 @@ class TestUpdateImmunization(unittest.TestCase):
         with patch("time.time") as mock_time:
             mock_time.return_value = now_epoch
             # When
-            act_resource = self.repository.update_immunization(
-                imms_id, imms, self.patient
-            )
+            act_resource = self.repository.update_immunization(imms_id, imms, self.patient)
 
         # Then
         self.assertDictEqual(act_resource, resource)
@@ -262,26 +243,22 @@ class TestUpdateImmunization(unittest.TestCase):
             "Operation = :operation"
         )
         patient_id = self.patient["identifier"]["value"]
-        patient_id = imms["contained"][0]["identifier"][0]["value"]
-        vaccination_procedure_code = imms["extension"][0]["valueCodeableConcept"][
-            "coding"
-        ][0]["code"]
-        disease_type = vaccination_procedure_snomed_codes[vaccination_procedure_code]
-        patient_sk = f"{disease_type}#{imms_id}"
+        patient_id = imms["contained"][1]["identifier"][0]["value"]
+        vaccine_type = get_vaccine_type(imms)
+
+        patient_sk = f"{vaccine_type}#{imms_id}"
 
         self.table.update_item.assert_called_once_with(
             Key={"PK": _make_immunization_pk(imms_id)},
             UpdateExpression=update_exp,
-            ExpressionAttributeNames={
-                "#imms_resource": "Resource",
-            },
+            ExpressionAttributeNames={"#imms_resource": "Resource"},
             ExpressionAttributeValues={
                 ":timestamp": now_epoch,
                 ":patient_pk": _make_patient_pk(patient_id),
                 ":patient_sk": patient_sk,
                 ":imms_resource_val": json.dumps(imms),
                 ":patient": self.patient,
-                ":operation": "UPDATE"
+                ":operation": "UPDATE",
             },
             ReturnValues=ANY,
             ConditionExpression=ANY,
@@ -290,7 +267,7 @@ class TestUpdateImmunization(unittest.TestCase):
     def test_update_throws_error_when_response_can_not_be_handled(self):
         """it should throw UnhandledResponse when the response from dynamodb can't be handled"""
         imms_id = "an-id"
-        imms = _make_an_immunization(imms_id)
+        imms = create_covid_19_immunization_dict(imms_id)
         imms["patient"] = self.patient
 
         bad_request = 400
@@ -308,10 +285,10 @@ class TestUpdateImmunization(unittest.TestCase):
     def test_update_throws_error_when_identifier_already_in_dynamodb(self):
         """it should throw IdentifierDuplicationError when trying to update an immunization with an identfier that is already stored"""
         imms_id = "an-id"
-        imms = _make_an_immunization(imms_id)
+        imms = create_covid_19_immunization_dict(imms_id)
         imms["patient"] = self.patient
 
-        self.table.query = MagicMock(return_value={"Items":[{"Resource": '{"id": "different-id"}'}], "Count": 1})
+        self.table.query = MagicMock(return_value={"Items": [{"Resource": '{"id": "different-id"}'}], "Count": 1})
 
         with self.assertRaises(IdentifierDuplicationError) as e:
             # When
@@ -328,9 +305,7 @@ class TestDeleteImmunization(unittest.TestCase):
     def test_get_deleted_immunization(self):
         """it should return None if Immunization is logically deleted"""
         imms_id = "a-deleted-id"
-        self.table.get_item = MagicMock(
-            return_value={"Item": {"Resource": "{}", "DeletedAt": time.time()}}
-        )
+        self.table.get_item = MagicMock(return_value={"Item": {"Resource": "{}", "DeletedAt": time.time()}})
 
         imms = self.repository.get_immunization_by_id(imms_id)
         self.assertIsNone(imms)
@@ -354,10 +329,7 @@ class TestDeleteImmunization(unittest.TestCase):
         self.table.update_item.assert_called_once_with(
             Key={"PK": _make_immunization_pk(imms_id)},
             UpdateExpression="SET DeletedAt = :timestamp, Operation = :operation",
-            ExpressionAttributeValues={
-                ":timestamp": now_epoch,
-                ":operation": "DELETE"
-            },
+            ExpressionAttributeValues={":timestamp": now_epoch, ":operation": "DELETE"},
             ReturnValues=ANY,
             ConditionExpression=ANY,
         )
@@ -407,8 +379,7 @@ class TestDeleteImmunization(unittest.TestCase):
             UpdateExpression=ANY,
             ExpressionAttributeValues=ANY,
             ReturnValues=ANY,
-            ConditionExpression=Attr("PK").eq(_make_immunization_pk(imms_id))
-            & Attr("DeletedAt").not_exists(),
+            ConditionExpression=Attr("PK").eq(_make_immunization_pk(imms_id)) & Attr("DeletedAt").not_exists(),
         )
 
         self.assertIsInstance(e.exception, ResourceNotFoundError)
@@ -465,9 +436,7 @@ class TestFindImmunizations(unittest.TestCase):
 
         # Then
         self.table.query.assert_called_once_with(
-            IndexName="PatientGSI",
-            KeyConditionExpression=ANY,
-            FilterExpression=is_,
+            IndexName="PatientGSI", KeyConditionExpression=ANY, FilterExpression=is_
         )
 
     def test_map_results_to_immunizations(self):

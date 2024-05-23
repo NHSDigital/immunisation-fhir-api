@@ -3,7 +3,7 @@ from typing import List
 from utils.base_test import ImmunizationBaseTest
 from utils.constants import valid_nhs_number1, valid_nhs_number_with_s_flag
 from utils.immunisation_api import ImmunisationApi
-from utils.resource import get_questionnaire_items, create_an_imms_obj, get_patient_id, get_disease_type
+from utils.resource import get_questionnaire_items, create_an_imms_obj, get_patient_id, get_vaccine_type
 
 
 class SFlagBaseTest(ImmunizationBaseTest):
@@ -101,9 +101,9 @@ class TestSearchSFlagImmunization(SFlagBaseTest):
                 imms1 = self.create_s_flagged_patient(imms_api)
                 imms2 = self.create_s_flagged_patient(imms_api)
                 patient_id = get_patient_id(imms1)
-                disease_type = get_disease_type(imms1)
+                vaccine_type = get_vaccine_type(imms1)
                 # When
-                response = imms_api.search_immunizations(patient_id, disease_type)
+                response = imms_api.search_immunizations(patient_id, vaccine_type)
                 # Then
                 hit_imms = self.filter_my_imms_from_search_result(response.json(), imms1, imms2)
                 self.assert_is_filtered(hit_imms[0])
@@ -115,9 +115,9 @@ class TestSearchSFlagImmunization(SFlagBaseTest):
                 imms1 = self.create_not_s_flagged_patient(imms_api)
                 imms2 = self.create_not_s_flagged_patient(imms_api)
                 patient_id = get_patient_id(imms1)
-                disease_type = get_disease_type(imms1)
+                vaccine_type = get_vaccine_type(imms1)
                 # When
-                response = imms_api.search_immunizations(patient_id, disease_type)
+                response = imms_api.search_immunizations(patient_id, vaccine_type)
                 # Then
                 hit_imms = self.filter_my_imms_from_search_result(response.json(), imms1, imms2)
                 self.assert_is_not_filtered(hit_imms[0])

@@ -1,4 +1,5 @@
 """Generic utilities for models"""
+
 import datetime
 
 from typing import Literal, Union, Optional, Any
@@ -110,9 +111,7 @@ def get_generic_extension_value_from_model(
     """
     Get the value of an extension field, given its url, field_type, and system
     """
-    value_codeable_concept_coding = [x for x in values.extension if x.url == url][
-        0
-    ].valueCodeableConcept.coding
+    value_codeable_concept_coding = [x for x in values.extension if x.url == url][0].valueCodeableConcept.coding
 
     value = getattr(
         [x for x in value_codeable_concept_coding if x.system == system][0],
@@ -209,25 +208,16 @@ def nhs_number_mod11_check(nhs_number: str) -> bool:
 
     return is_mod11
 
-def get_disease_type(immunization: dict):
-    value_codeable_concept_coding = [
-        ext
-        for ext in immunization["extension"]
-        if ext.get("url") == "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure"
-    ][0]["valueCodeableConcept"]["coding"]
 
-    vaccination_procedure_code = [
-        coding
-        for coding in value_codeable_concept_coding
-        if coding.get("system") == "http://snomed.info/sct"
-    ][0]["code"]
-
-    from mappings import vaccination_procedure_snomed_codes
-    disease_type = vaccination_procedure_snomed_codes.get(
-        vaccination_procedure_code, None
-    )
-
-    return disease_type
+def get_target_disease_codes_from_model(immunization: dict):
+    """Take a FHIR immunization resource model and returns a list of target disease codes"""
+    target_diseases = []
+    target_disease_list = immunization.protocolApplied[0].targetDisease
+    for element in target_disease_list:
+        code = [x.code for x in element.coding if x.system == "http://snomed.info/sct"][0]
+        if code is not None:
+            target_diseases.append(code)
+    return target_diseases
 
 
 def get_occurrence_datetime(immunization: dict) -> Optional[datetime.datetime]:
@@ -237,8 +227,8 @@ def get_occurrence_datetime(immunization: dict) -> Optional[datetime.datetime]:
 
     return datetime.datetime.fromisoformat(occurrence_datetime_str)
 
-def create_diagnostics(nhs_number):
-                diagnostics=f"NHS Number: {nhs_number} is invalid or it doesn't exist."
+def create_diagnostics():
+                diagnostics=f"Validation errors: contained[?(@.resourceType=='Patient')].identifier[0].value does not exists."
                 exp_error = {
                              "diagnostics": diagnostics
                             }

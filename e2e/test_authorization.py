@@ -4,13 +4,13 @@ from typing import Set
 from lib.apigee import ApigeeApp
 from lib.authentication import AppRestrictedAuthentication, Cis2Authentication, LoginUser
 from lib.env import get_auth_url, get_proxy_name, get_service_base_path
-from test_search_immunization import mmr_code
 from utils.authorization import Permission, app_full_access
 from utils.base_test import ImmunizationBaseTest
 from utils.constants import valid_nhs_number1, cis2_user
 from utils.factories import make_app_restricted_app, make_cis2_app
 from utils.immunisation_api import ImmunisationApi
 from utils.resource import create_an_imms_obj
+from utils.mappings import VaccineTypes
 
 
 class TestApplicationRestrictedAuthorization(ImmunizationBaseTest):
@@ -127,12 +127,12 @@ class TestApplicationRestrictedAuthorization(ImmunizationBaseTest):
 
     def test_search_imms_authorised(self):
         """it should search Immunization if app has immunization:search permission"""
-        mmr = create_an_imms_obj(str(uuid.uuid4()), valid_nhs_number1, mmr_code)
+        mmr = create_an_imms_obj(str(uuid.uuid4()), valid_nhs_number1, VaccineTypes.mmr)
         _ = self.create_immunization_resource(self.default_imms_api, mmr)
 
         self.make_app({Permission.SEARCH})
         # When
-        response = self.my_imms_api.search_immunizations(valid_nhs_number1, "MMR")
+        response = self.my_imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.mmr)
         # Then
         self.assertEqual(response.status_code, 200, response.text)
 
@@ -141,7 +141,7 @@ class TestApplicationRestrictedAuthorization(ImmunizationBaseTest):
         perms = app_full_access(exclude={Permission.SEARCH})
         self.make_app(perms)
         # When
-        response = self.my_imms_api.search_immunizations(valid_nhs_number1, "MMR")
+        response = self.my_imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.mmr)
         # Then
         self.assertEqual(response.status_code, 403, response.text)
 
@@ -260,12 +260,12 @@ class TestCis2Authorization(ImmunizationBaseTest):
 
     def test_search_imms_authorised(self):
         """it should search Immunization if app has immunization:search permission"""
-        mmr = create_an_imms_obj(str(uuid.uuid4()), valid_nhs_number1, mmr_code)
+        mmr = create_an_imms_obj(str(uuid.uuid4()), valid_nhs_number1, VaccineTypes.mmr)
         _ = self.create_immunization_resource(self.default_imms_api, mmr)
 
         self.make_app({Permission.SEARCH})
         # When
-        response = self.my_imms_api.search_immunizations(valid_nhs_number1, "MMR")
+        response = self.my_imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.mmr)
         # Then
         self.assertEqual(response.status_code, 200, response.text)
 
@@ -274,6 +274,6 @@ class TestCis2Authorization(ImmunizationBaseTest):
         perms = app_full_access(exclude={Permission.SEARCH})
         self.make_app(perms)
         # When
-        response = self.my_imms_api.search_immunizations(valid_nhs_number1, "MMR")
+        response = self.my_imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.mmr)
         # Then
         self.assertEqual(response.status_code, 403, response.text)

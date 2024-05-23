@@ -20,7 +20,8 @@ pyjwt                   = "~2.8.0"
 cryptography            = "~42.0.4"
 cffi                    = "~1.16.0"
 jsonpath-ng             = "^1.6.0"
-structlog = "^24.1.0"
+simplejson              = "^3.19.2"
+structlog               = "^24.1.0"
 
 [build-system]
 requires      = ["poetry-core ~= 1.5.0"]

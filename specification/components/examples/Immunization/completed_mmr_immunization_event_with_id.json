@@ -119,7 +119,7 @@
         "coding": [
           {
             "system": "http://snomed.info/sct",
-            "code": "822851000000102",
+            "code": "mockMMRcode1",
             "display": "Seasonal influenza vaccination (procedure)"
           }
         ]
@@ -153,12 +153,6 @@
   },
   "manufacturer": {
     "display": "Sanofi"
-  },
-  "location": {
-    "identifier": {
-      "value": "X99999",
-      "system": "https://fhir.nhs.uk/Id/ods-organization-code"
-    }
   },
   "lotNumber": "41925TJ61",
   "expirationDate": "2021-07-02",
@@ -216,6 +210,35 @@
   ],
   "protocolApplied": [
     {
+      "targetDisease": [
+        {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "14189004",
+              "display": "Measles"
+            }
+          ]
+        },
+        {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "36989005",
+              "display": "Mumps"
+            }
+          ]
+        },
+        {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "36653000",
+              "display": "Rubella"
+            }
+          ]
+        }
+      ],
       "doseNumberPositiveInt": 1
     }
   ]
