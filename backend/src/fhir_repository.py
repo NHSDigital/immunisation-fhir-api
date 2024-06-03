@@ -367,8 +367,8 @@ class ImmunizationRepository:
                     response=error.response,
                 )
 
-    def find_immunizations(self, patient_identifier: str):
-        """it should find all patient's Immunization events for a specified vaccine_type"""
+    def find_immunizations(self, patient_identifier: str, vaccine_types: list):
+        """it should find all of the specified patient's Immunization events for all of the specified vaccine_types"""
         condition = Key("PatientPK").eq(_make_patient_pk(patient_identifier))
         is_not_deleted = Attr("DeletedAt").not_exists()
 
@@ -377,8 +377,13 @@ class ImmunizationRepository:
             KeyConditionExpression=condition,
             FilterExpression=is_not_deleted,
         )
+
         if "Items" in response:
-            return [json.loads(item["Resource"]) for item in response["Items"]]
+            # Filter the response to contain only the requested vaccine types
+            items = [x for x in response["Items"] if x["PatientSK"].split("#")[0] in vaccine_types]
+
+            # Return a list of the FHIR immunization resource JSON items
+            return [json.loads(item["Resource"]) for item in items]
         else:
             raise UnhandledResponseError(
                 message=f"Unhandled error. Query failed", response=response
