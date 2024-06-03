@@ -405,7 +405,7 @@ def test_get_s_flag_patient(nhsd_apim_proxy_url, nhsd_apim_auth_headers, nhs_num
 
     def assert_is_not_filtered(imms):
         imms_items = get_questionnaire_items(imms)
- #Add postalcode here
+        # Add postalcode here
         for key in ["Consent"]:
             assert key in [item["linkId"] for item in imms_items]
 
