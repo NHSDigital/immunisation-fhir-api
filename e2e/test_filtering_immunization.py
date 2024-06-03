@@ -46,6 +46,7 @@ class SFlagBaseTest(ImmunizationBaseTest):
         self.assertTrue("reportOrigin" in imms)
         self.assertTrue("location" in imms)
 
+
     def assert_is_filtered(self, imms: dict):
         imms_items = get_questionnaire_items(imms)
 
