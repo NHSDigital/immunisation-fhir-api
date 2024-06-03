@@ -44,8 +44,7 @@ class SFlagBaseTest(ImmunizationBaseTest):
             for organization in performer_actor_organizations))
 
         self.assertTrue("reportOrigin" in imms)
-        self.assertTrue("location" in imms)
-        # TO DO -Add in postal code here
+        self.assertTrue("location" in imms) # TO DO -Add in postal code here
 
     def assert_is_filtered(self, imms: dict):
         imms_items = get_questionnaire_items(imms)
@@ -70,8 +69,8 @@ class SFlagBaseTest(ImmunizationBaseTest):
             for organization in performer_actor_organizations))
 
         self.assertTrue("reportOrigin" not in imms)
-        self.assertTrue("location" not in imms) 
-        # TO DO -Add in postal code here
+        self.assertTrue("location" not in imms)  # TO DO -Add in postal code here
+
 
 
 class TestGetSFlagImmunization(SFlagBaseTest):
