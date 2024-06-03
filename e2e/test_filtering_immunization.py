@@ -45,9 +45,8 @@ class SFlagBaseTest(ImmunizationBaseTest):
 
         self.assertTrue("reportOrigin" in imms)
         self.assertTrue("location" in imms)
-        
         # TO DO -Add in postal code here
-        
+
     def assert_is_filtered(self, imms: dict):
         imms_items = get_questionnaire_items(imms)
 
@@ -71,9 +70,9 @@ class SFlagBaseTest(ImmunizationBaseTest):
             for organization in performer_actor_organizations))
 
         self.assertTrue("reportOrigin" not in imms)
-        self.assertTrue("location" not in imms)
-        
+        self.assertTrue("location" not in imms) 
         # TO DO -Add in postal code here
+
 
 class TestGetSFlagImmunization(SFlagBaseTest):
     """An s-flagged patient contains sensitive data that must be filtered out by backend before being returned"""
@@ -92,7 +91,6 @@ class TestGetSFlagImmunization(SFlagBaseTest):
                 imms = self.create_not_s_flagged_patient(imms_api)
                 read_imms = imms_api.get_immunization_by_id(imms["id"])
                 self.assert_is_not_filtered(read_imms.json())
-
 
 class TestSearchSFlagImmunization(SFlagBaseTest):
     """An s-flagged patient contains sensitive data that must be filtered out by backend before being returned"""
