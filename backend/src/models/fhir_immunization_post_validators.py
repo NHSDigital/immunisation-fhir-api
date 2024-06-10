@@ -133,14 +133,12 @@ class PostValidators:
             field_value = next(
                 x for x in contained_patient.identifier if x.system == "https://fhir.nhs.uk/Id/nhs-number"
             ).value
-            # TODO: BUG Fix this. Verification_status_code should not sit inside this try-except block. Also consider
-            # whether logic can be made more consistent with other CM fields (note that NHS_NUMBER is R, not CM)
-            verification_status_code = get_nhs_number_verification_status_code(values)
+            # verification_status_code = get_nhs_number_verification_status_code(values)
         except (KeyError, IndexError, AttributeError, MandatoryError, TypeError):
             field_value = None
 
-        if not field_value and verification_status_code != "04":
-            raise MandatoryError(f"{field_location} is mandatory when verification status is not 04")
+        # if not field_value and verification_status_code != "04":
+        #     raise MandatoryError(f"{field_location} is mandatory when verification status is not 04")
 
         check_mandation_requirements_met(
             field_value, field_location, vaccine_type=self.vaccine_type, mandation_key="patient_identifier_value"
