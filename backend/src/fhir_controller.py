@@ -141,7 +141,7 @@ class FhirController:
         # Validate the body of the request -start
         try:
             imms = json.loads(aws_event["body"], parse_float=Decimal)
-
+            print(f"imms:{imms}")
             # Validate the imms id in the path params and body of request -start
             if imms.get("id", imms_id) != imms_id:
                 exp_error = create_operation_outcome(
@@ -160,6 +160,7 @@ class FhirController:
 
         # Validate if the imms resource does not exists -start
         existing_record = self.fhir_repository.get_immunization_by_id_all(imms_id)
+        print(f"existing_record:{existing_record}")
         if not existing_record:
             exp_error = create_operation_outcome(
                 resource_id=str(uuid.uuid4()),

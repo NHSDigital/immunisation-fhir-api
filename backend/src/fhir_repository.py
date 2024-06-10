@@ -107,7 +107,7 @@ class ImmunizationRepository:
 
     def get_immunization_by_id_all(self, imms_id: str) -> Optional[dict]:
         response = self.table.get_item(Key={"PK": _make_immunization_pk(imms_id)})
-
+        print(f"response:{response}")
         if "Item" in response:
             resp = dict()
             if "DeletedAt" in response["Item"]:
