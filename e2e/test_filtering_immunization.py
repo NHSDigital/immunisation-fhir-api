@@ -3,7 +3,7 @@ from typing import List
 from utils.base_test import ImmunizationBaseTest
 from utils.constants import valid_nhs_number1, valid_nhs_number_with_s_flag
 from utils.immunisation_api import ImmunisationApi
-from utils.resource import get_questionnaire_items, create_an_imms_obj, get_patient_id, get_vaccine_type
+from utils.resource import get_questionnaire_items, create_an_imms_obj, get_patient_id, get_vaccine_type, get_patient_postal_code
 
 
 class SFlagBaseTest(ImmunizationBaseTest):
@@ -26,6 +26,7 @@ class SFlagBaseTest(ImmunizationBaseTest):
 
         for key in ["Consent"]:
             self.assertTrue(key in [item["linkId"] for item in imms_items])
+        
 
         performer_actor_organizations = (
             item
@@ -45,7 +46,10 @@ class SFlagBaseTest(ImmunizationBaseTest):
 
         self.assertTrue("reportOrigin" in imms)
         self.assertTrue("location" in imms)
-
+        postal_code = get_patient_postal_code(imms)
+        self.assertTrue(postal_code !="ZZ99 3CZ")        
+        
+        
     def assert_is_filtered(self, imms: dict):
         imms_items = get_questionnaire_items(imms)
 
@@ -70,6 +74,9 @@ class SFlagBaseTest(ImmunizationBaseTest):
 
         self.assertTrue("reportOrigin" not in imms)
         self.assertTrue("location" not in imms)
+        
+        postal_code = get_patient_postal_code(imms)
+        self.assertTrue(postal_code,"ZZ99 3CZ")
 
 
 class TestGetSFlagImmunization(SFlagBaseTest):
