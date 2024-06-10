@@ -28,6 +28,8 @@ from models.errors import (
     IdentifierDuplicationError,
     ParameterException,
     InconsistentIdError,
+    UnauthorizedVaxError,
+    UnauthorizedVaxOnRecordError
 )
 
 from pds_service import PdsService
@@ -54,8 +56,7 @@ def make_controller(
     service = FhirService(imms_repo=imms_repo, pds_service=pds_service)
 
     return FhirController(
-        authorizer=authorizer, fhir_service=service, fhir_repository=imms_repo
-    )
+        authorizer=authorizer, fhir_service=service)
 
 
 class FhirController:
@@ -65,11 +66,10 @@ class FhirController:
         self,
         authorizer: Authorization,
         fhir_service: FhirService,
-        fhir_repository: ImmunizationRepository,
-    ):
+        ):
         self.fhir_service = fhir_service
         self.authorizer = authorizer
-        self.fhir_repository = fhir_repository
+       
 
     def get_immunization_by_id(self, aws_event) -> dict:
         if response := self.authorize_request(EndpointOperation.READ, aws_event):
@@ -78,39 +78,67 @@ class FhirController:
         imms_id = aws_event["pathParameters"]["id"]
         if id_error := self._validate_id(imms_id):
             return self.create_response(400, id_error)
-
-        if resource := self.fhir_service.get_immunization_by_id(imms_id):
-            version = str()
-            if isinstance(resource, Immunization):
-                resp = resource
+        
+        try:
+            if aws_event.get("headers"):
+                try:
+                    imms_vax_type_perms = aws_event["headers"]["VaccineTypePermissions"]
+                    if len(imms_vax_type_perms) == 0:
+                        raise UnauthorizedVaxError()
+                        
+                except UnauthorizedVaxError as unauthorized:
+                    return self.create_response(403, unauthorized.to_operation_outcome())
             else:
-                resp = resource["Resource"]
-                if resource.get("Version"):
-                    version = resource["Version"]
-            return FhirController.create_response(200, resp.json(), {"E-Tag": version})
-        else:
-            msg = "The requested resource was not found."
-            id_error = create_operation_outcome(
-                resource_id=str(uuid.uuid4()),
-                severity=Severity.error,
-                code=Code.not_found,
-                diagnostics=msg,
-            )
-            return FhirController.create_response(404, id_error)
+                raise UnauthorizedVaxError()
+        except UnauthorizedVaxError as unauthorized:
+            return self.create_response(403, unauthorized.to_operation_outcome())
+        
+        try:
+            if resource := self.fhir_service.get_immunization_by_id(imms_id, imms_vax_type_perms):
+                version = str()
+                if isinstance(resource, Immunization):
+                    resp = resource
+                else:
+                    resp = resource["Resource"]
+                    if resource.get("Version"):
+                        version = resource["Version"]
+                return FhirController.create_response(200, resp.json(), {"E-Tag": version})
+            else:
+                msg = "The requested resource was not found."
+                id_error = create_operation_outcome(
+                    resource_id=str(uuid.uuid4()),
+                    severity=Severity.error,
+                    code=Code.not_found,
+                    diagnostics=msg,
+                )
+                return FhirController.create_response(404, id_error)
+        except UnauthorizedVaxError as unauthorized:
+            return self.create_response(403, unauthorized.to_operation_outcome())
 
     def create_immunization(self, aws_event):
         if response := self.authorize_request(EndpointOperation.CREATE, aws_event):
             return response
 
+        if aws_event.get("headers"):
+            try:
+                imms_vax_type_perms = aws_event["headers"]["VaccineTypePermissions"]
+                if len(imms_vax_type_perms) == 0:
+                    raise UnauthorizedVaxError()
+                    
+            except UnauthorizedVaxError as unauthorized:
+                return self.create_response(403, unauthorized.to_operation_outcome())
+        else:
+            raise UnauthorizedVaxError()
+        
         try:
-            imms = json.loads(aws_event["body"], parse_float=Decimal)
+            imms = json.loads(aws_event["body"], parse_float=Decimal)            
         except json.decoder.JSONDecodeError as e:
             return self._create_bad_request(
                 f"Request's body contains malformed JSON: {e}"
             )
-
+            
         try:
-            resource = self.fhir_service.create_immunization(imms)
+            resource = self.fhir_service.create_immunization(imms,imms_vax_type_perms)
             if "diagnostics" in resource:
                 exp_error = create_operation_outcome(
                     resource_id=str(uuid.uuid4()),
@@ -127,12 +155,27 @@ class FhirController:
             return self.create_response(422, duplicate.to_operation_outcome())
         except UnhandledResponseError as unhandled_error:
             return self.create_response(500, unhandled_error.to_operation_outcome())
+        except UnauthorizedVaxError as unauthorized:
+            return self.create_response(403, unauthorized.to_operation_outcome())
 
     def update_immunization(self, aws_event):
         if response := self.authorize_request(EndpointOperation.UPDATE, aws_event):
             return response
         imms_id = aws_event["pathParameters"]["id"]
-
+        
+        # Check vaxx type permissions- start
+        if aws_event.get("headers"):
+            try:
+                imms_vax_type_perms = aws_event["headers"]["VaccineTypePermissions"]
+                if len(imms_vax_type_perms) == 0:
+                    raise UnauthorizedVaxError()
+                    
+            except UnauthorizedVaxError as unauthorized:
+                return self.create_response(403, unauthorized.to_operation_outcome())
+        else:
+            raise UnauthorizedVaxError()
+        # Check vaxx type permissions- end
+        
         # Validate the imms id -start
         if id_error := self._validate_id(imms_id):
             return FhirController.create_response(400, json.dumps(id_error))
@@ -148,7 +191,7 @@ class FhirController:
                     resource_id=str(uuid.uuid4()),
                     severity=Severity.error,
                     code=Code.invariant,
-                    diagnostics=f"Validation errors: The provided imms id:{imms_id} doesn't match with the content of the request body",
+                    diagnostics=f"Validation errors: The provided immunization id:{imms_id} doesn't match with the content of the request body",
                 )
                 return self.create_response(400, json.dumps(exp_error))
             # Validate the imms id in the path params and body of request -end
@@ -166,17 +209,26 @@ class FhirController:
                 resource_id=str(uuid.uuid4()),
                 severity=Severity.error,
                 code=Code.not_found,
-                diagnostics=f"Validation errors: The requested imms id:{imms_id} resource was not found.",
+                diagnostics=f"Validation errors: The requested immunization resource with id:{imms_id} was not found.",
             )
             return self.create_response(404, json.dumps(exp_error))
         # Validate if the imms resource does not exists -end
-
+        
+        # Check vaxx type permissions on the existing record - start
+        try:
+            vax_type_perms = self._parse_vaccine_permissions(imms_vax_type_perms)
+            vax_type_perm= self._vaccine_permission(existing_record["VaccineType"], "update")
+            self._check_permission(vax_type_perm,vax_type_perms)
+        except UnauthorizedVaxOnRecordError as unauthorized:
+            return self.create_response(403, unauthorized.to_operation_outcome())
+        # Check vaxx type permissions on the existing record - end
+        
         existing_resource_version = int(existing_record["Version"])
         try:
             # Validate if the imms resource to be updated is a logically deleted resource-start
             if existing_record["DeletedAt"] == True:
                 outcome, resource = self.fhir_service.reinstate_immunization(
-                    imms_id, imms, existing_resource_version
+                    imms_id, imms, existing_resource_version, imms_vax_type_perms
                 )
             # Validate if the imms resource to be updated is a logically deleted resource-end
             else:
@@ -185,8 +237,8 @@ class FhirController:
                     exp_error = create_operation_outcome(
                         resource_id=str(uuid.uuid4()),
                         severity=Severity.error,
-                        code=Code.invalid,
-                        diagnostics="Validation errors: Imms resource version not specified in the request headers",
+                        code=Code.invariant,
+                        diagnostics="Validation errors: Immunization resource version not specified in the request headers",
                     )
                     return self.create_response(400, json.dumps(exp_error))
                 # Validate if imms resource version is part of the request -end
@@ -194,13 +246,13 @@ class FhirController:
                 # Validate the imms resource version provided in the request headers is per standard -start
                 try:
                     resource_version_header = int(aws_event["headers"]["E-Tag"])
-                except Exception as e:
+                except (TypeError, ValueError):
                     resource_version = aws_event["headers"]["E-Tag"]
                     exp_error = create_operation_outcome(
                         resource_id=str(uuid.uuid4()),
                         severity=Severity.error,
-                        code=Code.invalid,
-                        diagnostics=f"Validation errors: Imms resource version:{resource_version} in the request headers is invalid.",
+                        code=Code.invariant,
+                        diagnostics=f"Validation errors: Immunization resource version:{resource_version} in the request headers is invalid.",
                     )
                     return self.create_response(400, json.dumps(exp_error))
                 # Validate the imms resource version provided in the request headers is per standard -end
@@ -210,8 +262,8 @@ class FhirController:
                     exp_error = create_operation_outcome(
                         resource_id=str(uuid.uuid4()),
                         severity=Severity.error,
-                        code=Code.invalid,
-                        diagnostics=f"Validation errors: The requested resource {imms_id} has changed since the last retrieve.",
+                        code=Code.invariant,
+                        diagnostics=f"Validation errors: The requested immunization resource {imms_id} has changed since the last retrieve.",
                     )
                     return self.create_response(400, json.dumps(exp_error))
                 
@@ -219,8 +271,8 @@ class FhirController:
                     exp_error = create_operation_outcome(
                         resource_id=str(uuid.uuid4()),
                         severity=Severity.error,
-                        code=Code.invalid,
-                        diagnostics=f"Validation errors: The requested resource {imms_id} version is inconsistent with the existing version.",
+                        code=Code.invariant,
+                        diagnostics=f"Validation errors: The requested immunization resource {imms_id} version is inconsistent with the existing version.",
                     )
                     return self.create_response(400, json.dumps(exp_error))
                 # Validate if resource version has changed since last retrieve -end
@@ -228,11 +280,11 @@ class FhirController:
                 # Check if the record is reinstated record -start
                 if existing_record["Reinstated"] == True:
                     outcome, resource = self.fhir_service.update_reinstated_immunization(
-                    imms_id, imms, existing_resource_version
+                    imms_id, imms, existing_resource_version, imms_vax_type_perms
                     )
                 else:
                     outcome, resource = self.fhir_service.update_immunization(
-                        imms_id, imms, existing_resource_version
+                        imms_id, imms, existing_resource_version, imms_vax_type_perms
                     )
                 # Check if the record is reinstated record -end
 
@@ -251,6 +303,8 @@ class FhirController:
             return self.create_response(400, error.to_operation_outcome())
         except IdentifierDuplicationError as duplicate:
             return self.create_response(422, duplicate.to_operation_outcome())
+        except UnauthorizedVaxError as unauthorized:
+            return self.create_response(403, unauthorized.to_operation_outcome())
 
     def delete_immunization(self, aws_event):
         if response := self.authorize_request(EndpointOperation.DELETE, aws_event):
@@ -260,14 +314,30 @@ class FhirController:
 
         if id_error := self._validate_id(imms_id):
             return FhirController.create_response(400, id_error)
-
+        
         try:
-            self.fhir_service.delete_immunization(imms_id)
+            if aws_event.get("headers"):
+                try:
+                    imms_vax_type_perms = aws_event["headers"]["VaccineTypePermissions"]
+                    if len(imms_vax_type_perms) == 0:
+                        raise UnauthorizedVaxError()
+                        
+                except UnauthorizedVaxError as unauthorized:
+                    return self.create_response(403, unauthorized.to_operation_outcome())
+            else:
+                raise UnauthorizedVaxError()
+        except UnauthorizedVaxError as unauthorized:
+            return self.create_response(403, unauthorized.to_operation_outcome())
+        
+        try:
+            self.fhir_service.delete_immunization(imms_id, imms_vax_type_perms)
             return self.create_response(204)
         except ResourceNotFoundError as not_found:
             return self.create_response(404, not_found.to_operation_outcome())
         except UnhandledResponseError as unhandled_error:
             return self.create_response(500, unhandled_error.to_operation_outcome())
+        except UnauthorizedVaxError as unauthorized:
+            return self.create_response(403, unauthorized.to_operation_outcome())
 
     def search_immunizations(self, aws_event: APIGatewayProxyEventV1) -> dict:
         if response := self.authorize_request(EndpointOperation.SEARCH, aws_event):
@@ -371,3 +441,24 @@ class FhirController:
             "headers": headers if headers else {},
             **({"body": body} if body else {}),
         }
+        
+    @staticmethod
+    def _vaccine_permission( vaccine_type, operation) -> set:
+        vaccine_permission = set()
+        vaccine_permission.add(str.lower(f"{vaccine_type}:{operation}"))
+        return vaccine_permission
+    
+    @staticmethod
+    def _parse_vaccine_permissions(imms_vax_type_perms) -> set:
+        parsed = [str.strip(str.lower(s)) for s in imms_vax_type_perms.split(",")]
+        vaccine_permissions = set()
+        for s in parsed:
+            vaccine_permissions.add(s)
+        return vaccine_permissions
+    
+    @staticmethod
+    def _check_permission( requested: set, allowed: set) -> set:
+        if not requested.issubset(allowed):
+            raise UnauthorizedVaxOnRecordError()
+        else:
+            return None

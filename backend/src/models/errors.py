@@ -30,6 +30,29 @@ class UnauthorizedError(RuntimeError):
             diagnostics=msg,
         )
 
+@dataclass
+class UnauthorizedVaxError(RuntimeError):
+    @staticmethod
+    def to_operation_outcome() -> dict:
+        msg = "Unauthorized request for vaccine type"
+        return create_operation_outcome(
+            resource_id=str(uuid.uuid4()),
+            severity=Severity.error,
+            code=Code.forbidden,
+            diagnostics=msg,
+        )
+        
+@dataclass
+class UnauthorizedVaxOnRecordError(RuntimeError):
+    @staticmethod
+    def to_operation_outcome() -> dict:
+        msg = "Unauthorized request for vaccine type present in the stored immunization resource"
+        return create_operation_outcome(
+            resource_id=str(uuid.uuid4()),
+            severity=Severity.error,
+            code=Code.forbidden,
+            diagnostics=msg,
+        )
 
 @dataclass
 class ResourceNotFoundError(RuntimeError):
