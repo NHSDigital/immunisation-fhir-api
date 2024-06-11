@@ -110,7 +110,8 @@ def make_app_restricted_app(
         else:
             app.add_attribute(
                 "VaccineTypePermissions",
-                "flu:create,covid19:create,mmr:create,hpv:create,covid19:update",
+                "flu:create,covid19:create,mmr:create,hpv:create,covid19:update,flu:read,covid19:read,flu:delete,"
+                "covid19:delete,mmr:delete",
             )
 
         app.add_product(f"identity-service-{get_apigee_env()}")
@@ -151,7 +152,8 @@ def _make_user_restricted_app(
         else:
             app.add_attribute(
                 "VaccineTypePermissions",
-                "flu:create,covid19:create,mmr:create,hpv:create,covid19:update",
+                "flu:create,covid19:create,mmr:create,hpv:create,covid19:update,flu:read,covid19:read,flu:delete,"
+                "covid19:delete,mmr:delete"
             )
         app.add_product(f"identity-service-{get_apigee_env()}")
 

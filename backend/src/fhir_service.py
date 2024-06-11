@@ -64,12 +64,12 @@ class FhirService:
         self.pds_service = pds_service
         self.validator = validator
 
-    def get_immunization_by_id(self, imms_id: str) -> Optional[dict]:
+    def get_immunization_by_id(self, imms_id: str, imms_vax_type_perms: str) -> Optional[dict]:
         """
         Get an Immunization by its ID. Return None if not found. If the patient doesn't have an NHS number,
         return the Immunization without calling PDS or checking S flag.
         """
-        imms_resp = self.immunization_repo.get_immunization_by_id(imms_id)
+        imms_resp = self.immunization_repo.get_immunization_by_id(imms_id, imms_vax_type_perms)
         imms = dict()
         version = str()
         resp = dict()
@@ -186,13 +186,13 @@ class FhirService:
 
         return UpdateOutcome.UPDATE, Immunization.parse_obj(imms)
 
-    def delete_immunization(self, imms_id) -> Immunization:
+    def delete_immunization(self, imms_id, imms_vax_type_perms) -> Immunization:
         """
         Delete an Immunization if it exits and return the ID back if successful.
         Exception will be raised if resource didn't exit. Multiple calls to this method won't change
         the record in the database.
         """
-        imms = self.immunization_repo.delete_immunization(imms_id)
+        imms = self.immunization_repo.delete_immunization(imms_id, imms_vax_type_perms)
         return Immunization.parse_obj(imms)
 
     @staticmethod

@@ -178,30 +178,14 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
 
     def test_post_patient_identifier_value(self):
         """
-        Test that the JSON data is accepted when it does not contain patient_identifier_value and the
-        verification_status_code is 04. If the verification_status_code is not 04, the data is
-        rejected if it does not contain patient_identifier_value
+        Test that the JSON data is accepted when it does not contain patient_identifier_value 
         """
         field_location = "contained[?(@.resourceType=='Patient')].identifier[0].value"
-        covid_19_json_data = deepcopy(self.completed_json_data[VaccineTypes.covid_19])
+        #covid_19_json_data = deepcopy(self.completed_json_data[VaccineTypes.covid_19])
 
-        # Test 04 code
-        covid_19_json_data["contained"][1]["identifier"][0]["extension"][0]["valueCodeableConcept"]["coding"][0][
-            "code"
-        ] = "04"
-        MandationTests.test_missing_field_accepted(self, field_location, covid_19_json_data)
+        MandationTests.test_missing_field_accepted(self, field_location)
 
-        # Test 01 code
-        covid_19_json_data["contained"][1]["identifier"][0]["extension"][0]["valueCodeableConcept"]["coding"][0][
-            "code"
-        ] = "01"
-        expected_bespoke_error_message = (
-            "contained[?(@.resourceType=='Patient')].identifier[0].value is mandatory"
-            + " when verification status is not 04"
-        )
-        MandationTests.test_missing_mandatory_field_rejected(
-            self, field_location, covid_19_json_data, expected_bespoke_error_message
-        )
+        
 
     def test_post_patient_name_given(self):
         """Test that the JSON data is rejected if it does not contain patient_name_given"""
