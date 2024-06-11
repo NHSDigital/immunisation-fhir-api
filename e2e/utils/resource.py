@@ -119,7 +119,7 @@ def get_questionnaire_items(imms: dict):
     return questionnaire["item"]
 
 
-def get_patient_postal_code(self, imms: dict) -> str:
+def get_patient_postal_code(imms: dict):
     patients = [record
                 for record in imms.get("contained", [])
                 if record.get("resourceType") == "Patient"]
