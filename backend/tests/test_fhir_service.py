@@ -104,7 +104,7 @@ class TestGetImmunization(unittest.TestCase):
         expected_output = Immunization.parse_obj(expected_imms)
 
         # When
-        actual_output = self.fhir_service.get_immunization_by_id(imms_id)
+        actual_output = self.fhir_service.get_immunization_by_id(imms_id,"COVID19:read")
 
         # Then
         self.assertEqual(actual_output["Resource"], expected_output)
@@ -121,7 +121,7 @@ class TestGetImmunization(unittest.TestCase):
         # When
         resp_imms = self.fhir_service.get_immunization_by_id(imms_id, "COVID19:read")
         act_res =resp_imms["Resource"]
-        filtered_immunization_res=Immunization.parse_obj(filtered_immunization["Resource"])
+        filtered_immunization_res=Immunization.parse_obj(filtered_immunization)
 
         # Then
         self.assertEqual(act_res, filtered_immunization_res)
