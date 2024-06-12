@@ -3,7 +3,19 @@
   "contained": [
     {
       "resourceType": "Practitioner",
-      "id": "Pract1"
+      "id": "Pract1",
+      "identifier": [
+        {
+          "system": "https://fhir.hl7.org.uk/Id/nmc-number",
+          "value": "99A9999A"
+        }
+      ],
+      "name": [
+        {
+          "family": "Nightingale",
+          "given": ["Florence"]
+        }
+      ]
     },
     {
       "resourceType": "Patient",
@@ -27,7 +39,19 @@
           "system": "https://fhir.nhs.uk/Id/nhs-number",
           "value": "9000000009"
         }
-      ]
+      ],
+      "name": [
+        {
+          "family": "Taylor",
+          "given": ["Sarah"]
+        }
+      ],
+      "gender": "unknown",
+      "birthDate": "1965-02-28",
+      "address": [
+        {
+          "postalCode": "ZZ99 3CZ"
+        }]
     },
     {
       "resourceType": "QuestionnaireResponse",

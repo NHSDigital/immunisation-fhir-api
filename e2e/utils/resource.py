@@ -119,6 +119,15 @@ def get_questionnaire_items(imms: dict):
     return questionnaire["item"]
 
 
+def get_patient_postal_code(imms: dict):
+    patients = [record
+                for record in imms.get("contained", [])
+                if record.get("resourceType") == "Patient"]
+    if patients:
+        return patients[0]["address"][0]["postalCode"]
+    return ""
+
+
 def get_full_row_from_identifier(identifier: str) -> dict:
     """Get the full record from the dynamodb table using the identifier"""
     config = Config(connect_timeout=1, read_timeout=1, retries={"max_attempts": 1})

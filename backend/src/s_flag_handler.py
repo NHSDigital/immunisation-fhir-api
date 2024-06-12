@@ -16,18 +16,40 @@ def handle_s_flag(imms, patient):
     result = copy.deepcopy(imms)
 
     contained_questionnaire = next(
-        (record for record in result["contained"] if record["resourceType"] == "QuestionnaireResponse"), None
+        (
+            record
+            for record in result.get("contained", [])
+            if record["resourceType"] == "QuestionnaireResponse"
+        ),
+        None,
     )
 
-    contained_patient = next((record for record in result["contained"] if record["resourceType"] == "Patient"), None)
+    contained_patient = next(
+        (
+            record
+            for record in result.get("contained", [])
+            if record["resourceType"] == "Patient"
+        ),
+        None,
+    )
 
     contained_practitioner = next(
-        (record for record in result["contained"] if record["resourceType"] == "Practitioner"), None
+        (
+            record
+            for record in result.get("contained", [])
+            if record["resourceType"] == "Practitioner"
+        ),
+        None,
     )
 
     # Handle Questionnaire SiteCode
     performer_actor_organization = next(
-        (item for item in result["performer"] if item.get("actor", {}).get("type") == "Organization"), None
+        (
+            item
+            for item in result["performer"]
+            if item.get("actor", {}).get("type") == "Organization"
+        ),
+        None,
     )
 
     if performer_actor_organization:
@@ -39,28 +61,22 @@ def handle_s_flag(imms, patient):
             del performer_actor_organization["actor"]["display"]
         except KeyError:
             pass
-
+        
+    if contained_patient:
+        try:
+            contained_patient["address"][0]["postalCode"] = "ZZ99 3CZ"
+        except (KeyError, IndexError):
+            pass
+    
+            
     # Handle Questionnaire removals
     questionnaire_items_to_remove = ["Consent"]
-    contained_questionnaire["item"] = [
-        item
-        for item in contained_questionnaire["item"]
-        if "linkId" not in item or item["linkId"] not in questionnaire_items_to_remove
+    if contained_questionnaire and contained_questionnaire.get("item"):
+        contained_questionnaire["item"] = [
+            item
+            for item in contained_questionnaire.get("item", [])
+            if "linkId" not in item or item["linkId"] not in questionnaire_items_to_remove
     ]
-
-    patient_items_to_remove = ["name", "gender", "birthDate", "address"]
-    for item in patient_items_to_remove:
-        try:
-            del contained_patient[item]
-        except KeyError:
-            pass
-
-    practitioner_items_to_remove = ["identifier", "name"]
-    for item in practitioner_items_to_remove:
-        try:
-            del contained_practitioner[item]
-        except KeyError:
-            pass
 
     # Handle reportOrigin
     try:
