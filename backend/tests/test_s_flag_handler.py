@@ -48,4 +48,11 @@ class TestRemovePersonalInfo(unittest.TestCase):
         self.data_for_sflag_tests()
         result = handle_s_flag(self.input_immunization, self.patient)
         self.assertNotIn ("reportOrigin", result)
+        
+    def test_remove_patient_address(self):
+        """Test that patient address is anonymized for s flagged patients"""
+        self.data_for_sflag_tests()
+        result = handle_s_flag(self.input_immunization, self.patient)
+        patient_data = result.get("contained", [])[1]
+        self.assertEqual(patient_data["address"][0]["postalCode"], "ZZ99 3CZ")
 
