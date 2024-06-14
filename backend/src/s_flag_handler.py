@@ -7,6 +7,7 @@ def handle_s_flag(imms, patient):
     """
     try:
         patient_is_restricted = str.lower(patient["meta"]["security"][0]["code"]) == "r"
+        print(f"patient_is_restricted:{patient_is_restricted}")
     except (KeyError, IndexError):
         return imms
 

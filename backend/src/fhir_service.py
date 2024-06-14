@@ -262,6 +262,7 @@ class FhirService:
                 diagnostics_error = create_diagnostics()
                 return diagnostics_error
         patient = patient_details if len(resources) > 0 else None
+        print(f"patient:{patient}")
         entries = [
             BundleEntry(
                 resource=Immunization.parse_obj(handle_s_flag(imms, patient)),
