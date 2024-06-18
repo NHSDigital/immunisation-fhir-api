@@ -21,7 +21,7 @@ from models.errors import (
     ParameterException,
     InconsistentIdError,
     UnauthorizedVaxError,
-    UnauthorizedError
+    UnauthorizedError 
 )
 from tests.immunization_utils import create_covid_19_immunization, create_covid_19_immunization_dict
 from mappings import VaccineTypes
@@ -116,7 +116,7 @@ class TestCreateImmunization(unittest.TestCase):
         self.controller = FhirController(self.authorizer, self.service)
 
     def test_create_immunization(self):
-        """it should create Immunization and return resource's location"""
+        """it should create Immunization and return resource's location """
         imms_id = str(uuid.uuid4())
         imms = create_covid_19_immunization(imms_id)
         aws_event = {"headers":{"VaccineTypePermissions":"COVID19:create","ApplicationId":"TestApp"},"body": imms.json()}
@@ -135,8 +135,10 @@ class TestCreateImmunization(unittest.TestCase):
         imms_id = str(uuid.uuid4())
         imms = create_covid_19_immunization(imms_id)
         aws_event = {"body": imms.json()}
+
         response = self.controller.create_immunization(aws_event)
         self.assertEqual(response["statusCode"], 403)
+
         
     def test_malformed_resource(self):
         """it should return 400 if json is malformed"""
@@ -437,7 +439,7 @@ class TestSearchImmunizations(unittest.TestCase):
             [(f"{self.patient_identifier_key}", f"{self.patient_identifier_valid_value}")]
         )
         lambda_event = {
-            "headers": {"Content-Type": "application/x-www-form-urlencoded", "VaccineTypePermissions":"COVID19:search", "ApplicationId":"TestApp"},
+            "headers": {"Content-Type": "application/x-www-form-urlencoded", "VaccineTypePermissions":"COVID19:search","ApplicationId":"TestApp"},
             "multiValueQueryStringParameters": {
                 self.immunization_target_key: [vaccine_type],
                 self.patient_identifier_key: [self.patient_identifier_valid_value],
@@ -465,7 +467,7 @@ class TestSearchImmunizations(unittest.TestCase):
             [(f"{self.patient_identifier_key}", f"{self.patient_identifier_valid_value}")]
         )
         lambda_event = {
-            "headers": {"Content-Type": "application/x-www-form-urlencoded", "VaccineTypePermissions":"FLU:search", "ApplicationId":"TestApp"},
+            "headers": {"Content-Type": "application/x-www-form-urlencoded", "VaccineTypePermissions":"FLU:search","ApplicationId":"TestApp"},
             "multiValueQueryStringParameters": {
                 self.immunization_target_key: [vaccine_type],
                 self.patient_identifier_key: [self.patient_identifier_valid_value],
@@ -498,7 +500,7 @@ class TestSearchImmunizations(unittest.TestCase):
         # Construct the lambda event
         lambda_event = {
             "httpMethod": "POST",
-            "headers": {"Content-Type": "application/x-www-form-urlencoded", "VaccineTypePermissions":"COVID19:search", "ApplicationId":"TestApp"},
+            "headers": {"Content-Type": "application/x-www-form-urlencoded", "VaccineTypePermissions":"COVID19:search","ApplicationId":"TestApp"},
             "body": base64_encoded_body,
         }
         # When
@@ -555,7 +557,7 @@ class TestSearchImmunizations(unittest.TestCase):
 
         vaccine_type = VaccineTypes().all[0]
         lambda_event = {
-            "headers": {"Content-Type": "application/x-www-form-urlencoded", "VaccineTypePermissions":"COVID19:search", "ApplicationId":"TestApp"},
+            "headers": {"Content-Type": "application/x-www-form-urlencoded", "VaccineTypePermissions":"COVID19:search","ApplicationId":"TestApp"},
             "multiValueQueryStringParameters": {
             self.immunization_target_key: [vaccine_type],
             self.patient_identifier_key: [self.patient_identifier_valid_value]

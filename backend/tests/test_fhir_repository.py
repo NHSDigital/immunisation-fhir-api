@@ -177,12 +177,12 @@ class TestCreateImmunizationMainIndex(unittest.TestCase):
         imms["patient"] = self.patient
 
         self.table.query = MagicMock(return_value={"Items": [{"Resource": '{"id": "different-id"}'}], "Count": 1})
-        identifier = f"{imms['identifier'][0]['system']}#{imms['identifier'][0]['value']}"
+
         with self.assertRaises(IdentifierDuplicationError) as e:
             # When
             self.repository.create_immunization(imms, self.patient, "COVID19:create", "TestApp")
 
-        self.assertEqual(str(e.exception), f"The provided identifier: {identifier} is duplicated")
+        self.assertEqual(str(e.exception), f"The provided identifier: {imms['identifier'][0]['value']} is duplicated")
 
 
 class TestCreateImmunizationPatientIndex(unittest.TestCase):
@@ -315,14 +315,14 @@ class TestUpdateImmunization(unittest.TestCase):
         imms_id = "an-id"
         imms = create_covid_19_immunization_dict(imms_id)
         imms["patient"] = self.patient
-        identifier = f"{imms['identifier'][0]['system']}#{imms['identifier'][0]['value']}"
+
         self.table.query = MagicMock(return_value={"Items": [{"Resource": '{"id": "different-id"}'}], "Count": 1})
 
         with self.assertRaises(IdentifierDuplicationError) as e:
             # When
             self.repository.update_immunization(imms_id, imms, self.patient, 1,"COVID19:update")
 
-        self.assertEqual(str(e.exception), f"The provided identifier: {identifier} is duplicated")
+        self.assertEqual(str(e.exception), f"The provided identifier: {imms['identifier'][0]['value']} is duplicated")
 
 
 class TestDeleteImmunization(unittest.TestCase):
