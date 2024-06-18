@@ -110,7 +110,7 @@ class TestGetImmunization(unittest.TestCase):
         self.assertEqual(actual_output["Resource"], expected_output)
 
     def test_get_immunization_by_id_patient_restricted(self):
-        """it should return a filtered Immunization when patient is restricted"""
+        """it should return a filtered Immunization when patient is restricted """
         imms_id = "restricted_id"
         immunization_data = load_json_data("completed_covid19_immunization_event.json")
         filtered_immunization = load_json_data("completed_covid19_immunization_event_filtered_for_s_flag_and_read.json")
