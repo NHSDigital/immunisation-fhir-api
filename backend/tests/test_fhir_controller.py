@@ -203,7 +203,7 @@ class TestUpdateImmunization(unittest.TestCase):
         """it should update Immunization"""
         imms = "{}"
         imms_id = "valid-id"
-        aws_event = {"headers": {"E-Tag":1,"VaccineTypePermissions":"COVID19:update"}, "body": imms, "pathParameters": {"id": imms_id}}
+        aws_event = {"headers": {"E-Tag":1,"VaccineTypePermissions":"COVID19:update","ApplicationId":"test"}, "body": imms, "pathParameters": {"id": imms_id}}
         self.service.update_immunization.return_value = UpdateOutcome.UPDATE, "value doesn't matter"
         self.service.get_immunization_by_id_all.return_value = {"resource":"new_value","Version":1,"DeletedAt": False, "Reinstated":False, "VaccineType":"COVID19"}
         response = self.controller.update_immunization(aws_event)
@@ -216,7 +216,7 @@ class TestUpdateImmunization(unittest.TestCase):
         """it should not update Immunization"""
         imms = "{}"
         imms_id = "valid-id"
-        aws_event = {"headers": {"E-Tag":"ajjsajj","VaccineTypePermissions":"COVID19:update"}, "body": imms, "pathParameters": {"id": imms_id}}
+        aws_event = {"headers": {"E-Tag":"ajjsajj","VaccineTypePermissions":"COVID19:update","ApplicationId":"test"}, "body": imms, "pathParameters": {"id": imms_id}}
         self.service.get_immunization_by_id_all.return_value = {"resource":"new_value","Version":1,"DeletedAt": False, "Reinstated":False, "VaccineType":"COVID19"}
         response = self.controller.update_immunization(aws_event)
 
@@ -226,7 +226,7 @@ class TestUpdateImmunization(unittest.TestCase):
         """it should reinstate deletedat Immunization"""
         imms = "{}"
         imms_id = "valid-id"
-        aws_event = {"headers": {"E-Tag":1,"VaccineTypePermissions":"COVID19:update"}, "body": imms, "pathParameters": {"id": imms_id}}
+        aws_event = {"headers": {"E-Tag":1,"VaccineTypePermissions":"COVID19:update","ApplicationId":"test"}, "body": imms, "pathParameters": {"id": imms_id}}
         self.service.reinstate_immunization.return_value = UpdateOutcome.UPDATE, "value doesn't matter"
         self.service.get_immunization_by_id_all.return_value = {"resource":"new_value","Version":1,"DeletedAt": True, "Reinstated":False, "VaccineType":"COVID19"}
         response = self.controller.update_immunization(aws_event)
@@ -239,7 +239,7 @@ class TestUpdateImmunization(unittest.TestCase):
         """it should reinstate deletedat Immunization"""
         imms = "{}"
         imms_id = "valid-id"
-        aws_event = {"headers": {"VaccineTypePermissions":"COVID19:update"},"body": imms, "pathParameters": {"id": imms_id}}
+        aws_event = {"headers": {"VaccineTypePermissions":"COVID19:update","ApplicationId":"test"},"body": imms, "pathParameters": {"id": imms_id}}
         self.service.reinstate_immunization.return_value = UpdateOutcome.UPDATE, "value doesn't matter"
         self.service.get_immunization_by_id_all.return_value = {"resource":"new_value","Version":1,"DeletedAt": True, "Reinstated":False, "VaccineType":"COVID19"}
         response = self.controller.update_immunization(aws_event)
@@ -253,7 +253,7 @@ class TestUpdateImmunization(unittest.TestCase):
         # Given
         imms_id = "a-non-existing-id"
         self.service.get_immunization_by_id.return_value = None
-        lambda_event = {"headers": {"E-Tag":1,"VaccineTypePermissions":"COVID19:update"},"pathParameters": {"id": imms_id}}
+        lambda_event = {"headers": {"E-Tag":1,"VaccineTypePermissions":"COVID19:update","ApplicationId":"test"},"pathParameters": {"id": imms_id}}
         
         # When
         response = self.controller.get_immunization_by_id(lambda_event)
@@ -269,7 +269,7 @@ class TestUpdateImmunization(unittest.TestCase):
     def test_validation_error(self):
         """it should return 400 if Immunization is invalid"""
         imms = "{}"
-        aws_event = {"headers": {"E-Tag":1,"VaccineTypePermissions":"COVID19:update"},"body": imms, "pathParameters": {"id": "valid-id"}}
+        aws_event = {"headers": {"E-Tag":1,"VaccineTypePermissions":"COVID19:update","ApplicationId":"test"},"body": imms, "pathParameters": {"id": "valid-id"}}
         self.service.update_immunization.side_effect = CustomValidationError(message="invalid")
         self.service.get_immunization_by_id_all.return_value = {"resource":"new_value","Version":1,"DeletedAt": False, "Reinstated":False, "VaccineType":"COVID19"}
         response = self.controller.update_immunization(aws_event)
@@ -284,7 +284,7 @@ class TestUpdateImmunization(unittest.TestCase):
         self.service.update_immunization.return_value = None,update_result
         req_imms = "{}"
         path_id = "valid-id"
-        aws_event = {"headers": {"E-Tag":1,"VaccineTypePermissions":"COVID19:update"},"body": req_imms, "pathParameters": {"id": path_id}}
+        aws_event = {"headers": {"E-Tag":1,"VaccineTypePermissions":"COVID19:update","ApplicationId":"test"},"body": req_imms, "pathParameters": {"id": path_id}}
         self.service.get_immunization_by_id_all.return_value = {"resource":"new_value","Version":1,"DeletedAt": False, "Reinstated":False, "VaccineType":"COVID19"}
         # When
         response = self.controller.update_immunization(aws_event)
@@ -297,7 +297,7 @@ class TestUpdateImmunization(unittest.TestCase):
         """it should return 400 if Identifier system and value  doesn't match with the stored content.""" 
         req_imms = "{}"
         path_id = "valid-id"
-        aws_event = {"headers": {"E-Tag":1,"VaccineTypePermissions":"COVID19:update"},"body": req_imms, "pathParameters": {"id": path_id}}
+        aws_event = {"headers": {"E-Tag":1,"VaccineTypePermissions":"COVID19:update","ApplicationId":"test"},"body": req_imms, "pathParameters": {"id": path_id}}
         self.service.get_immunization_by_id_all.return_value = {"diagnostics": "Validation errors: identifier[0].system doesn't match with the stored content"}
         # When
         response = self.controller.update_immunization(aws_event)
@@ -312,7 +312,7 @@ class TestUpdateImmunization(unittest.TestCase):
         self.service.update_immunization.return_value = None,update_result
         req_imms = "{}"
         path_id = "valid-id"
-        aws_event = {"headers": {"E-Tag":1,"VaccineTypePermissions":"COVID19:update"},"body": req_imms, "pathParameters": {"id": path_id}}
+        aws_event = {"headers": {"E-Tag":1,"VaccineTypePermissions":"COVID19:update","ApplicationId":"test"},"body": req_imms, "pathParameters": {"id": path_id}}
         self.service.get_immunization_by_id_all.return_value = {"resource":"new_value","Version":2,"DeletedAt": False, "VaccineType":"COVID19"}
         # When
         response = self.controller.update_immunization(aws_event)
@@ -324,14 +324,14 @@ class TestUpdateImmunization(unittest.TestCase):
     def test_consistent_imms_id(self):
         """Immunization[id] should be the same as request"""
         bad_json = '{"id": "a-diff-id"}'
-        aws_event = {"headers": {"E-Tag":1,"VaccineTypePermissions":"COVID19:create"},"body": bad_json, "pathParameters": {"id": "an-id"}}
+        aws_event = {"headers": {"E-Tag":1,"VaccineTypePermissions":"COVID19:create","ApplicationId":"test"},"body": bad_json, "pathParameters": {"id": "an-id"}}
         response =self.controller.update_immunization(aws_event)
         self.assertEqual(response["statusCode"], 400)    
 
     def test_malformed_resource(self):
         """it should return 400 if json is malformed"""
         bad_json = '{foo: "bar"}'
-        aws_event = {"headers": {"E-Tag":1,"VaccineTypePermissions":"COVID19:create"},"body": bad_json, "pathParameters": {"id": "valid-id"}}
+        aws_event = {"headers": {"E-Tag":1,"VaccineTypePermissions":"COVID19:create","ApplicationId":"test"},"body": bad_json, "pathParameters": {"id": "valid-id"}}
 
         response = self.controller.update_immunization(aws_event)
 
@@ -342,7 +342,7 @@ class TestUpdateImmunization(unittest.TestCase):
 
     def test_validate_imms_id(self):
         """it should validate lambda's Immunization id"""
-        aws_event = {"headers": {"E-Tag":1,"VaccineTypePermissions":"COVID19:create"},"pathParameters": {"id": "invalid %$ id"}}
+        aws_event = {"headers": {"E-Tag":1,"VaccineTypePermissions":"COVID19:create","ApplicationId":"test"},"pathParameters": {"id": "invalid %$ id"}}
 
         response = self.controller.update_immunization(aws_event)
 
@@ -373,7 +373,7 @@ class TestDeleteImmunization(unittest.TestCase):
         # Given
         imms_id = "an-id"
         self.service.delete_immunization.return_value = Immunization.construct()
-        lambda_event = {"headers": {"E-Tag":1,"VaccineTypePermissions":"COVID19:delete"},"pathParameters": {"id": imms_id}}
+        lambda_event = {"headers": {"E-Tag":1,"VaccineTypePermissions":"COVID19:delete","ApplicationId":"test"},"pathParameters": {"id": imms_id}}
 
         # When
         response = self.controller.delete_immunization(lambda_event)
@@ -389,7 +389,7 @@ class TestDeleteImmunization(unittest.TestCase):
         # Given
         error = ResourceNotFoundError(resource_type="Immunization", resource_id="an-error-id")
         self.service.delete_immunization.side_effect = error
-        lambda_event = {"headers": {"E-Tag":1,"VaccineTypePermissions":"COVID19:delete"},"pathParameters": {"id": "a-non-existing-id"}}
+        lambda_event = {"headers": {"E-Tag":1,"VaccineTypePermissions":"COVID19:delete","ApplicationId":"test"},"pathParameters": {"id": "a-non-existing-id"}}
 
         # When
         response = self.controller.delete_immunization(lambda_event)
@@ -405,7 +405,7 @@ class TestDeleteImmunization(unittest.TestCase):
         # Given
         error = UnhandledResponseError(message="a message", response={})
         self.service.delete_immunization.side_effect = error
-        lambda_event = {"headers": {"E-Tag":1,"VaccineTypePermissions":"COVID19:delete"},"pathParameters": {"id": "a-non-existing-id"}}
+        lambda_event = {"headers": {"E-Tag":1,"VaccineTypePermissions":"COVID19:delete","ApplicationId":"test"},"pathParameters": {"id": "a-non-existing-id"}}
 
         # When
         response = self.controller.delete_immunization(lambda_event)

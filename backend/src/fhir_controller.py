@@ -29,7 +29,9 @@ from models.errors import (
     ParameterException,
     InconsistentIdError,
     UnauthorizedVaxError,
-    UnauthorizedVaxOnRecordError
+    UnauthorizedVaxOnRecordError,
+    UnauthorizedSystemError
+
 )
 
 from pds_service import PdsService
@@ -167,16 +169,22 @@ class FhirController:
         imms_id = aws_event["pathParameters"]["id"]
         
         # Check vaxx type permissions- start
-        if aws_event.get("headers"):
-            try:
+        try:
+            if aws_event.get("headers"):
                 imms_vax_type_perms = aws_event["headers"]["VaccineTypePermissions"]
+                app_id = aws_event["headers"]["ApplicationId"]
                 if len(imms_vax_type_perms) == 0:
                     raise UnauthorizedVaxError()
-                    
-            except UnauthorizedVaxError as unauthorized:
-                return self.create_response(403, unauthorized.to_operation_outcome())
-        else:
-            raise UnauthorizedVaxError()
+                if len(app_id) == 0:
+                    raise UnauthorizedSystemError()
+            else:
+                raise UnauthorizedError()
+        except UnauthorizedError as unauthorized:
+            return self.create_response(403, unauthorized.to_operation_outcome())
+        except UnauthorizedVaxError as unauthorized:
+            return self.create_response(403, unauthorized.to_operation_outcome())
+        except UnauthorizedSystemError as unauthorized:
+            return self.create_response(403, unauthorized.to_operation_outcome())
         # Check vaxx type permissions- end
         
         # Validate the imms id -start
@@ -203,7 +211,7 @@ class FhirController:
 
         # Validate if the imms resource does not exists -start
         try:
-            existing_record = self.fhir_service.get_immunization_by_id_all(imms_id,imms)
+            existing_record = self.fhir_service.get_immunization_by_id_all(imms_id,imms,app_id)
             if not existing_record:
                 exp_error = create_operation_outcome(
                     resource_id=str(uuid.uuid4()),
@@ -333,16 +341,36 @@ class FhirController:
         
         try:
             if aws_event.get("headers"):
-                try:
-                    imms_vax_type_perms = aws_event["headers"]["VaccineTypePermissions"]
-                    if len(imms_vax_type_perms) == 0:
-                        raise UnauthorizedVaxError()
-                        
-                except UnauthorizedVaxError as unauthorized:
-                    return self.create_response(403, unauthorized.to_operation_outcome())
+                imms_vax_type_perms = aws_event["headers"]["VaccineTypePermissions"]
+                app_id = aws_event["headers"]["ApplicationId"]
+                if len(imms_vax_type_perms) == 0:
+                    raise UnauthorizedVaxError()
+                if len(app_id) == 0:
+                    raise UnauthorizedSystemError()
             else:
-                raise UnauthorizedVaxError()
+                raise UnauthorizedError()
+        except UnauthorizedError as unauthorized:
+            return self.create_response(403, unauthorized.to_operation_outcome())
         except UnauthorizedVaxError as unauthorized:
+            return self.create_response(403, unauthorized.to_operation_outcome())
+        except UnauthorizedSystemError as unauthorized:
+            return self.create_response(403, unauthorized.to_operation_outcome())
+        try:
+            existing_record = self.fhir_service.get_immunization_by_id_all(imms_id,None,app_id)
+            if not existing_record:
+                exp_error = create_operation_outcome(
+                    resource_id=str(uuid.uuid4()),
+                    severity=Severity.error,
+                    code=Code.not_found,
+                    diagnostics=f"Validation errors: The requested immunization resource with id:{imms_id} was not found.",
+                )
+                return self.create_response(404, json.dumps(exp_error))
+            
+            if "error" in existing_record and existing_record is not None:
+                    raise UnauthorizedSystemError
+        except ValidationError as error:
+            return self.create_response(400, error.to_operation_outcome())
+        except UnauthorizedSystemError as unauthorized:
             return self.create_response(403, unauthorized.to_operation_outcome())
         
         try:

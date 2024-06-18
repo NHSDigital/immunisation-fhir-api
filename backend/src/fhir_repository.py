@@ -110,10 +110,10 @@ class ImmunizationRepository:
         else:
             return None
 
-    def get_immunization_by_id_all(self, imms_id: str,imms:dict ) -> Optional[dict]:
+    def get_immunization_by_id_all(self, imms_id: str,imms: Optional[dict],app_id: str ) -> Optional[dict]:
         response = self.table.get_item(Key={"PK": _make_immunization_pk(imms_id)})
         if "Item" in response:
-         diagnostics = check_identifier_system_value(response,imms)
+         diagnostics = check_identifier_system_value(response,imms,app_id)
          if diagnostics:
             return diagnostics
         
