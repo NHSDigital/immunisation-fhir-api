@@ -44,25 +44,34 @@ def has_valid_vaccine_type(immunization: dict):
     except ValueError:
         return False
     
-def check_identifier_system_value(response, imms: dict):
+def check_identifier_system_value(response, imms, app_id):
     """Returns diagnostics if identifier's system and value does not match with the stored content"""
-        
-    identifier_system_request = imms["identifier"][0]["system"]
-    identifier_value_request = imms["identifier"][0]["value"]
-    resource_str = response['Item']['Resource']
-    resource = json.loads(resource_str)
-    identifier_system_response = resource["identifier"][0]["system"]
-    identifier_value_response = resource["identifier"][0]["value"]
+    
+    app_id_response = response['Item'].get('appId', None)
+    if app_id != app_id_response:
+        value = "Unauthorized"
+        diagnostics_error = create_diagnostics_error(value)
+        return diagnostics_error 
 
-    if identifier_system_request != identifier_system_response and identifier_value_request != identifier_value_response:
-        value = "Both"
-        diagnostics_error = create_diagnostics_error(value)
-        return diagnostics_error 
-    if identifier_system_request != identifier_system_response:
-        value = "system"
-        diagnostics_error = create_diagnostics_error(value)
-        return diagnostics_error 
-    if identifier_value_request != identifier_value_response:
-        value = "value"
-        diagnostics_error = create_diagnostics_error(value)
-        return diagnostics_error 
+    if imms is not None:
+        identifier_system_request = imms["identifier"][0]["system"]
+        identifier_value_request = imms["identifier"][0]["value"]
+        resource_str = response['Item']['Resource']
+        resource = json.loads(resource_str)
+        identifier_system_response = resource["identifier"][0]["system"]
+        identifier_value_response = resource["identifier"][0]["value"]
+
+        if identifier_system_request != identifier_system_response and identifier_value_request != identifier_value_response:
+            value = "Both"
+            diagnostics_error = create_diagnostics_error(value)
+            return diagnostics_error 
+        if identifier_system_request != identifier_system_response:
+            value = "system"
+            diagnostics_error = create_diagnostics_error(value)
+            return diagnostics_error 
+        if identifier_value_request != identifier_value_response:
+            value = "value"
+            diagnostics_error = create_diagnostics_error(value)
+            return diagnostics_error 
+    else:
+        None    

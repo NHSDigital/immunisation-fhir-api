@@ -110,10 +110,10 @@ class ImmunizationRepository:
         else:
             return None
 
-    def get_immunization_by_id_all(self, imms_id: str,imms:dict ) -> Optional[dict]:
+    def get_immunization_by_id_all(self, imms_id: str,imms: Optional[dict],app_id: str ) -> Optional[dict]:
         response = self.table.get_item(Key={"PK": _make_immunization_pk(imms_id)})
         if "Item" in response:
-         diagnostics = check_identifier_system_value(response,imms)
+         diagnostics = check_identifier_system_value(response,imms,app_id)
          if diagnostics:
             return diagnostics
         
@@ -143,7 +143,7 @@ class ImmunizationRepository:
         else:
                 return None
 
-    def create_immunization(self, immunization: dict, patient: dict , imms_vax_type_perms) -> dict:
+    def create_immunization(self, immunization: dict, patient: dict , imms_vax_type_perms,app_id) -> dict:
         new_id = str(uuid.uuid4())
         immunization["id"] = new_id
         attr = RecordAttributes(immunization, patient)
@@ -164,6 +164,7 @@ class ImmunizationRepository:
                 "PatientSK": attr.patient_sk,
                 "Resource": json.dumps(attr.resource, cls=DecimalEncoder),
                 "Patient": attr.patient,
+                "AppId": app_id,
                 "IdentifierPK": attr.identifier,
                 "Operation": "CREATE",
                 "Version": 1,

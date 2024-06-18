@@ -235,6 +235,13 @@ def create_diagnostics():
                 return (exp_error)
 
 def create_diagnostics_error(value):
+                if value == "Unauthorized":
+                  diagnostics=f"{value} system" 
+                  exp_error = {
+                             "diagnostics": diagnostics,
+                             "error":{value}
+                            }
+                  return (exp_error)
                 if value == "Both":
                   diagnostics=f"Validation errors: identifier[0].system and identifier[0].value doesn't match with the stored content"  
                 else:
