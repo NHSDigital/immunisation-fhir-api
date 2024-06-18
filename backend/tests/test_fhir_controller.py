@@ -116,7 +116,7 @@ class TestCreateImmunization(unittest.TestCase):
         self.controller = FhirController(self.authorizer, self.service)
 
     def test_create_immunization(self):
-        """it should create Immunization and return resource's location"""
+        """it should create Immunization and return resource's location """
         imms_id = str(uuid.uuid4())
         imms = create_covid_19_immunization(imms_id)
         aws_event = {"headers":{"VaccineTypePermissions":"COVID19:create","AppId":"TestApp"},"body": imms.json()}
