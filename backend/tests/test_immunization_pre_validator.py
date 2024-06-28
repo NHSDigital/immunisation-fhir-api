@@ -627,7 +627,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
             field_location="protocolApplied[0].doseNumberString",
             valid_strings_to_test=["Dose sequence not recorded"],
             valid_json_data=valid_json_data,
-            predefined_values=("Dose sequence not recorded"),
+            defined_length="",
             invalid_strings_to_test=["Invalid"],
         )
 

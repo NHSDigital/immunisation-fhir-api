@@ -760,13 +760,13 @@ class PreValidators:
 
     def pre_validate_dose_number_string(self, values: dict) -> dict:
         """
-        Pre-validate that, if protocolApplied[0].doseNumberString exists, then it is the string
-        "Dose sequence not recorded"
+        Pre-validate that, if protocolApplied[0].doseNumberString exists, then it 
+        is a non-empty string
         """
         field_location = "protocolApplied[0].doseNumberString"
         try:
             field_value = values["protocolApplied"][0]["doseNumberString"]
-            PreValidation.for_string(field_value, field_location, predefined_values="Dose sequence not recorded")
+            PreValidation.for_string(field_value, field_location)
         except (KeyError, IndexError):
             pass
 
@@ -811,7 +811,7 @@ class PreValidators:
                     target_disease_coding = values["protocolApplied"][0]["targetDisease"][i]["coding"]
                     target_disease_coding_code = [x for x in target_disease_coding if x.get("system") == url][0]["code"]
                     PreValidation.for_string(target_disease_coding_code, field_location)
-                except KeyError:
+                except (KeyError, IndexError):
                     pass
         except KeyError:
             pass

@@ -100,7 +100,8 @@ class TestGenericUtils(unittest.TestCase):
         with self.assertRaises(ValueError) as error:
             get_vaccine_type(invalid_covid_19_json_data)
         self.assertEqual(
-            str(error.exception), "['INVALID_CODE'] is not a valid combination of disease codes for this service"
+            str(error.exception), "protocolApplied[0].targetDisease[*].coding[?(@.system=='http://snomed.info/sct')].code"
+            + f" - ['INVALID_CODE'] is not a valid combination of disease codes for this service"
         )
 
         # TEST INVALID DATA FOR MULTIPLE TARGET DISEASES
@@ -114,7 +115,8 @@ class TestGenericUtils(unittest.TestCase):
             get_vaccine_type(invalid_mmr_json_data)
         self.assertEqual(
             str(error.exception),
-            f"['{DiseaseCodes.flu}', '36989005', '36653000'] is not a valid combination of disease codes for this "
+            f"protocolApplied[0].targetDisease[*].coding[?(@.system=='http://snomed.info/sct')].code - "
+            + f"['{DiseaseCodes.flu}', '36989005', '36653000'] is not a valid combination of disease codes for this "
             + "service",
         )
 

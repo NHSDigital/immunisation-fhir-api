@@ -99,7 +99,8 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
             valid_json_data=deepcopy(self.completed_json_data[VaccineTypes.covid_19]),
             field_location=field_location,
             invalid_value="INVALID_VALUE",
-            expected_error_message="['INVALID_VALUE'] is not a valid combination of disease codes for this service",
+            expected_error_message="protocolApplied[0].targetDisease[*].coding[?(@.system=='http://snomed.info/sct')].code"
+            + f" - ['INVALID_VALUE'] is not a valid combination of disease codes for this service",
         )
 
         # Test that an invalid combination of disease codes is rejected
@@ -114,7 +115,8 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
             valid_json_data=deepcopy(self.completed_json_data[VaccineTypes.covid_19]),
             field_location="protocolApplied[0].targetDisease",
             invalid_value=invalid_target_disease,
-            expected_error_message="['14189004', 'INVALID', '36653000'] is not a valid combination"
+            expected_error_message="protocolApplied[0].targetDisease[*].coding[?(@.system=='http://snomed.info/sct')].code - "
+            + "['14189004', 'INVALID', '36653000'] is not a valid combination"
             + " of disease codes for this service",
         )
 
@@ -971,3 +973,27 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
         MandationTests.test_present_field_accepted(
             self, valid_json_data=deepcopy(self.completed_json_data[VaccineTypes.covid_19])
         )
+
+    def test_post_no_snomed_code(self):
+        '''test that only snomed system is accepted'''
+        covid_19_json_data = deepcopy(self.completed_json_data[VaccineTypes.covid_19])
+        for protocol in covid_19_json_data.get("protocolApplied", []):
+            target_diseases = protocol.get("targetDisease", [])
+            for i in range(len(target_diseases)):
+                for coding in target_diseases[i].get("coding", []):
+                    if i == 0:
+                        coding["system"] = "http://othersystem.com/system1"
+                    else:
+                        coding["system"] = "http://Notsnomed.com/system2"
+
+        field_location = f"protocolApplied[0].targetDisease[0].coding[?(@.system=='http://snomed.info/sct')].code"
+
+        expected_error_message = (
+            f"{field_location} is a mandatory field"
+        )
+
+        with self.assertRaises(ValueError) as cm:
+            self.validator.validate(covid_19_json_data)
+
+        actual_error_message = str(cm.exception)
+        self.assertIn(expected_error_message, actual_error_message)

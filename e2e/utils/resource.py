@@ -93,7 +93,8 @@ def disease_codes_to_vaccine_type(disease_codes_input: list) -> Union[str, None]
             if sorted(disease_codes_input) == disease_codes
         )
     except Exception as e:
-        raise ValueError(f"{disease_codes_input} is not a valid combination of disease codes for this service") from e
+        raise ValueError(f"protocolApplied[0].targetDisease[*].coding[?(@.system=='http://snomed.info/sct')].code - "
+                         f"{disease_codes_input} is not a valid combination of disease codes for this service") from e
 
 
 def get_vaccine_type(immunization: dict):

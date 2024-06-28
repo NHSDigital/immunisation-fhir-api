@@ -156,7 +156,7 @@ class TestGetImmunization(unittest.TestCase):
 
         bad_target_disease_imms = deepcopy(valid_imms)
         bad_target_disease_imms["protocolApplied"][0]["targetDisease"][0]["coding"][0]["code"] = "bad-code"
-        bad_target_disease_msg = "['bad-code'] is not a valid combination of disease codes for this service"
+        bad_target_disease_msg = "protocolApplied[0].targetDisease[*].coding[?(@.system=='http://snomed.info/sct')].code - ['bad-code'] is not a valid combination of disease codes for this service"
 
         bad_patient_name_imms = deepcopy(valid_imms)
         del bad_patient_name_imms["contained"][1]["name"][0]["given"]
@@ -250,7 +250,7 @@ class TestCreateImmunization(unittest.TestCase):
 
         bad_target_disease_imms = deepcopy(valid_imms)
         bad_target_disease_imms["protocolApplied"][0]["targetDisease"][0]["coding"][0]["code"] = "bad-code"
-        bad_target_disease_msg = "['bad-code'] is not a valid combination of disease codes for this service"
+        bad_target_disease_msg = "protocolApplied[0].targetDisease[*].coding[?(@.system=='http://snomed.info/sct')].code - ['bad-code'] is not a valid combination of disease codes for this service"
 
         bad_patient_name_imms = deepcopy(valid_imms)
         del bad_patient_name_imms["contained"][1]["name"][0]["given"]
