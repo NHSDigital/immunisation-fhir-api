@@ -32,6 +32,7 @@ from pds_service import PdsService
 from s_flag_handler import handle_s_flag
 from timer import timed
 from filter import Filter
+import urllib.parse
 
 
 def get_service_url(
@@ -264,7 +265,20 @@ class FhirService:
             )
         fhir_bundle = FhirBundle(resourceType="Bundle", type="searchset", entry=entries)
         url = f"{get_service_url()}/Immunization?{params}"
-        fhir_bundle.link = [BundleLink(relation="self", url=url)]
+        # Splitting the URL into base_url and query_string
+        base_url, query_string = url.split('?')
+
+        # Splitting the query_string into key-value pairs
+        parameters = query_string.split('&')
+
+        # Finding and updating the immunization.target parameter
+        for i, param in enumerate(parameters):
+            if param.startswith('-immunization.target='):
+                parameters[i] = f"immunization.target={','.join(vaccine_types)}"
+
+        # Constructing the new URL
+        new_url = base_url + '?' + '&'.join(parameters)
+        fhir_bundle.link = [BundleLink(relation="self", url=new_url)]
         return fhir_bundle
 
     @timed
