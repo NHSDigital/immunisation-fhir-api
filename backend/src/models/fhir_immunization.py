@@ -5,7 +5,6 @@ from models.fhir_immunization_pre_validators import PreValidators
 from models.fhir_immunization_post_validators import PostValidators
 from models.utils.generic_utils import get_generic_questionnaire_response_value
 from models.schema import ImmunizationSchema
-import sys
 
 
 class ImmunizationValidator:
@@ -17,18 +16,20 @@ class ImmunizationValidator:
         self.add_post_validators = add_post_validators
         self.pre_validators: PreValidators
         self.post_validators: PostValidators
-        self.immunization_schema: ImmunizationSchema = ImmunizationSchema()
+        self.immunization_schema: ImmunizationSchema
         self.errors = []
 
     def initialize_immunization_and_run_fhir_validators(self, json_data):
         """Initialize immunization with data after parsing it through the FHIR validator"""
+        print("4")
         self.immunization = Immunization.parse_obj(json_data)
-        
+
     def initialize_pre_validators(self, immunization):
         """Initialize pre validators with data."""
-        schema = ImmunizationSchema(context={'contained': immunization['contained']})
-        errors = schema.validate(immunization)
-        
+        self.immunization_schema= ImmunizationSchema(context={'contained': immunization['contained']})
+        print("5")
+        errors = self.immunization_schema.validate(immunization)
+        print(errors)
         if errors:
             raise ValueError(errors)
 
@@ -36,11 +37,11 @@ class ImmunizationValidator:
         """Initialize post validators with data"""
         self.post_validators = PostValidators(immunization)
 
-    def run_pre_validators(self):
-        """Run custom pre validators to the data"""
-        error = self.pre_validators.validate()
-        if error:
-            raise ValueError(error)
+    # def run_pre_validators(self):
+    #     """Run custom pre validators to the data"""
+    #     error = self.pre_validators.validate()
+    #     if error:
+    #         raise ValueError(error)
 
     def run_post_validators(self):
         """Run custom post validators to the data"""
@@ -67,7 +68,8 @@ class ImmunizationValidator:
 
     def validate(self, json_data) -> Immunization:
         """Generate the Immunization model"""
-
+        
+        print("3")
         # FHIR validations
         self.initialize_immunization_and_run_fhir_validators(json_data)
         

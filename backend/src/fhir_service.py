@@ -122,8 +122,10 @@ class FhirService:
 
     def create_immunization(self, immunization: dict, imms_vax_type_perms, app_id) -> Immunization:
         try:
+            print("2")
             self.validator.validate(immunization)
         except (ValidationError, ValueError, MandatoryError, NotApplicableError) as error:
+            print(f"error:{error}")
             raise CustomValidationError(message=str(error)) from error
         patient = self._validate_patient(immunization)
 
