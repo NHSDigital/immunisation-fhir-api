@@ -1,0 +1,845 @@
+from marshmallow import Schema, fields, validate, validates_schema, ValidationError, validates,pre_load,post_load
+from marshmallow.validate import Regexp
+import re
+from datetime import datetime
+from typing import Union
+from src.mappings import DiseaseCodes
+
+
+class DiseaseCode:
+    """Disease Codes"""
+    covid_19 = DiseaseCodes.covid_19
+    flu = DiseaseCodes.flu
+    hpv = DiseaseCodes.hpv
+    mumps = DiseaseCodes.mumps
+    rubella= DiseaseCodes.rubella
+    measles= DiseaseCodes.measles
+
+
+    all_codes = {covid_19, flu, hpv, mumps,measles,rubella}
+
+
+def validate_resource_type(value):
+     if value != "Immunization":
+        raise ValidationError(f"expects resource type `Immunization`, but got {value}. Make sure resource type name is correct and right ModelClass has been chosen")
+     
+
+class Strictdate(fields.Field):
+    def _deserialize(self, value, attr, data, **kwargs):
+        if len(value) == 0:
+            raise ValidationError("expirationDate must be a valid date string in the format \"YYYY-MM-DD\"")  
+        try:
+            date_obj = datetime.strptime(value, "%Y-%m-%d")
+        except ValueError:
+            raise ValidationError("The date is not valid. Must be in the format 'YYYY-MM-DD'")
+        return date_obj
+    
+class StrictBoolean(fields.Field):
+    def _deserialize(self, value, attr, data, **kwargs):
+        if isinstance(value, bool):
+            return value
+        raise ValidationError("primarySource must be a boolean")    
+
+def valid_name(field_name):
+    def _validate_given(name_list):
+        for name in name_list:
+            if 'given' in name and all(not given_name for given_name in name['given']):
+                raise ValidationError(f'{field_name} must be an array of non-empty strings')
+    return  _validate_given
+
+def valid_family(field_name):
+    def _validate_family(name_list):
+        for name in name_list:
+            if 'family' in name and all(not family for family in name['family']):
+                raise ValidationError(f'{field_name} must be an array of non-empty strings')
+    return  _validate_family
+        
+    
+
+class NameSchema(Schema):
+    family = fields.Str(required=True, error_messages={"required": "contained[?(@.resourceType=='Patient')].name[0].family is a mandatory field"})
+    given = fields.List(fields.Str(), required=True)
+    
+    def __init__(self, *args, **kwargs):
+        self.field_name = kwargs.pop('field_name', None)
+        super().__init__(*args, **kwargs)
+
+    @validates('given')
+    def validate_given_length(self, value):
+        if len(value) != 1:
+            if self.field_name == "Patient":
+                raise ValidationError("contained[?(@.resourceType=='Patient')].name[0].given must be an array of length 1")
+            if self.field_name == 'Practitioner':
+                raise ValidationError("contained[?(@.resourceType=='Practitioner')].name[0].given must be an array of length 1")
+            
+class PracticinerNameSchema(Schema):
+    family = fields.Str(required=False)
+    given = fields.List(fields.Str(), required=False)
+    
+    def __init__(self, *args, **kwargs):
+        self.field_name = kwargs.pop('field_name', None)
+        super().__init__(*args, **kwargs)
+
+    @validates('given')
+    def validate_given_length(self, value):
+        if len(value) != 1:
+            if self.field_name == "Patient":
+                raise ValidationError("contained[?(@.resourceType=='Patient')].name[0].given must be an array of length 1")
+            if self.field_name == 'Practitioner':
+                raise ValidationError("contained[?(@.resourceType=='Practitioner')].name[0].given must be an array of length 1")            
+
+
+class AddressSchema(Schema):
+    postalCode = fields.Str(required=True)
+    @validates('postalCode')
+    def validate_gender_length(self, value):
+        if len(value) == 0:
+            raise ValidationError("contained[?(@.resourceType=='Patient')].address[0].postalCode must be a non-empty string")
+        if value.count(" ") != 1 or value.startswith(" ") or value.endswith(" "):
+                raise ValueError("contained[?(@.resourceType=='Patient')].address[0].postalCode must contain a single space, " + "which divides the two parts of the postal code")
+        if len(value.replace(" ", "")) > 8:
+                raise ValueError("contained[?(@.resourceType=='Patient')].address[0].postalCode must be 8 or fewer characters (excluding spaces)")                          
+        # if value != validate.Regexp(r'"^[a-zA-Z]{1,2}([0-9]{1,2}|[0-9][a-zA-Z])\\s*[0-9][a-zA-Z]{2}$'):
+        # ^([A-Z]{1,2}[0-9]{1,2}[A-Z]?[0-9][A-Z]{2}|GIR 0AA)$
+        #         raise ValueError("contained[?(@.resourceType=='Patient')].address[0].postalCode must be 8 or fewer characters (excluding spaces)")                          
+
+    
+class PractitionerSchema(Schema):
+    resourceType = fields.Str(required=True)
+    id = fields.Str(required=True, error_messages={"required": "The contained Practitioner resource must have an 'id' field"})
+    name = fields.List(fields.Nested(PracticinerNameSchema(field_name = "Practitioner")), required=False, validate=[valid_name("contained[?(@.resourceType=='Practitioner')].name[0].given"),valid_family("contained[?(@.resourceType=='Practitioner')].name[0].family")])
+    
+    def __init__(self, *args, **kwargs):
+        self.field_name = kwargs.pop('field_name', None)
+        super().__init__(*args, **kwargs)
+    
+    @validates('name')
+    def validate_given_length(self, value):
+        if len(value) != 1:
+                raise ValidationError("contained[?(@.resourceType=='Practitioner')].name must be an array of length 1")
+             
+# Define the schema for the identifier
+class IdentifierSchema(Schema):
+    system = fields.Str(required=False)
+    value = fields.Str(required=False)  
+
+    
+    @validates('system')
+    def validate_system_length(self, value):
+        if len(value) == 0:
+           raise ValidationError("contained[?(@.resourceType=='Patient')].identifier[0].system must be an array of non-empty strings")
+        if value != "https://fhir.nhs.uk/Id/nhs-number":
+           raise ValidationError("contained[?(@.resourceType=='Patient')].identifier[0].system does not match")
+        
+    @validates('value')
+    def validate_nhsnumber_length(self, value):
+        is_mod11 = False
+        if len(value) != 10:
+            raise ValidationError("contained[?(@.resourceType=='Patient')].identifier[0].value must be 10 characters")
+        if value.isdigit() and len(value) == 10:
+            # Create a reversed list of weighting factors
+            weighting_factors = list(range(2, 11))[::-1]
+            # Multiply each of the first nine digits by the weighting factor and add the results of each multiplication
+            # together
+            total = sum(int(digit) * weight for digit, weight in zip(value[:-1], weighting_factors))
+            # Divide the total by 11 and establish the remainder and subtract the remainder from 11 to give the check digit.
+            # If the result is 11 then a check digit of 0 is used. If the result is 10 then the NHS NUMBER is invalid and
+            # not used.
+            check_digit = 0 if (total % 11 == 0) else (11 - (total % 11))
+            # Check the remainder matches the check digit. If it does not, the NHS NUMBER is invalid.
+            is_mod11 = check_digit == int(value[-1])
+            if is_mod11 is False:
+                raise ValidationError("contained[?(@.resourceType=='Patient')].identifier[0].value does not exists")
+        else:
+            raise ValidationError("contained[?(@.resourceType=='Patient')].identifier[0].value does not exists")
+    
+
+
+class ContainedPatientSchema(Schema):
+    resourceType = fields.Str(required=True, validate=[validate.Equal("Patient")])
+    id = fields.Str(required=True)
+    identifier = fields.List(fields.Nested(IdentifierSchema), required=False)
+    name = fields.List(fields.Nested(NameSchema(field_name = "Patient")), error_messages={"required": "contained[?(@.resourceType=='Patient')].name[0].family is a mandatory field"}, required=True, validate=[valid_name("contained[?(@.resourceType=='Patient')].name[0].given"), valid_family("contained[?(@.resourceType=='Patient')].name[0].family")])
+    gender = fields.Str(required=True, error_messages={'required':"contained[?(@.resourceType=='Patient')].gender is a mandatory field"})
+    birthDate = fields.Str(required=True,error_messages={'required':"contained[?(@.resourceType=='Patient')].birthDate is a mandatory field"})
+    address = fields.List(fields.Nested(AddressSchema), required=True)
+    def __init__(self, *args, **kwargs):
+        self.field_name = kwargs.pop('field_name', None)
+        super().__init__(*args, **kwargs)
+
+    @validates('gender')
+    def validate_gender_length(self, value):
+        if len(value) == 0:
+            raise ValidationError("contained[?(@.resourceType=='Patient')].gender must be an array of length 1")
+        if value not in ["male", "female", "other", "unknown"]:
+            raise ValidationError("Validation errors: contained[?(@.resourceType=='Patient')].gender must be one of the following: male, female, other, unknown")
+    
+    @validates('birthDate')
+    def validate_birthdate_length(self, value):
+         try:
+            datetime.strptime(value, "%Y-%m-%d")
+         except ValueError:
+            raise ValidationError("contained[?(@.resourceType=='Patient')].birthDate must be a valid date string in the format 'YYYY-MM-DD'")
+
+    @validates('name')
+    def validate_name_length(self, value):
+        if len(value) != 1:
+                raise ValidationError("contained[?(@.resourceType=='Patient')].name must be an array of length 1")  
+
+    @validates('address')
+    def validate_address_length(self, value):
+        if len(value) != 1:
+                raise ValidationError("contained[?(@.resourceType=='Patient')].address must be an array of length 1") 
+
+    @validates('identifier')
+    def validate_identifier_length(self, value):
+        if len(value) != 1 or value == [{}]:
+                raise ValidationError("contained[?(@.resourceType=='Patient')].identifier must be an array of length 1")    
+
+
+class protocolCodingSchema(Schema):
+    system = fields.Str(required=True, error_messages={"required": "protocolApplied[0].targetDisease[*].coding[0].system is a mandatory field"})
+    code = fields.Str(required=True, error_messages={"required": "protocolApplied[0].targetDisease[*].coding[0].code is a mandatory field"})
+    display = fields.Str(required=True, error_messages={"required": "protocolApplied[0].targetDisease[*].coding[0].display is a mandatory field"})
+    
+    @validates('system')
+    def validate_system_length(self, value):
+        if len(value) == 0:
+            raise ValidationError("protocolApplied[0].targetDisease[*].coding[0].system must be a non-empty string")
+        if value != "http://snomed.info/sct":
+            raise ValidationError("protocolApplied[0].targetDisease[*].coding[0].system.coding[0].system must be unique")
+        
+
+    @validates('code')
+    def validate_code_length(self, value):
+        if len(value) == 0:
+            raise ValidationError("protocolApplied[0].targetDisease[*].coding[0].code must be a non-empty string")
+
+    @validates('code')
+    def validate_code(self, value):
+        if value not in DiseaseCode.all_codes and value != "":
+            raise ValidationError(f'[{value}] is not a valid combination of disease codes for this service')    
+        
+ 
+    @validates('display')
+    def validate_display_length(self, value):
+        if len(value) == 0:
+            raise ValidationError("protocolApplied[0].targetDisease[*].coding[0].display must be a non-empty string")                   
+        
+# Define the Coding schema
+class CodingSchema(Schema):
+    system = fields.Str(required=False)
+    code = fields.Str(required=False)
+    display = fields.Str(required=False)
+
+    def __init__(self, *args, **kwargs):
+        self.field_name = kwargs.pop('field_name', None)
+        super().__init__(*args, **kwargs)
+    
+    @validates('system')
+    def validate_system_length(self, value):
+        if len(value) == 0:
+            raise ValidationError(f"{self.field_name}.coding[?(@.system=='http://snomed.info/sct')] must be a non-empty string")
+        if value != "http://snomed.info/sct":
+            raise ValidationError(f"{self.field_name}.coding[?(@.system=='http://snomed.info/sct')] must be unique")
+        
+
+    @validates('code')
+    def validate_code_length(self, value):
+        if len(value) == 0:
+            raise ValidationError(f"{self.field_name}.coding[0].code must be a non-empty string")
+ 
+    @validates('display')
+    def validate_display_length(self, value):
+        if len(value) == 0:
+            raise ValidationError(f"{self.field_name}.coding[0].display must be a non-empty string")
+
+
+class ReasonCodingSchema(Schema):
+    system = fields.Str(required=False)
+    code = fields.Str(required=False)  
+
+    @validates('system')
+    def validate_system_length(self, value):
+        if len(value) == 0:
+            raise ValidationError("reasoncode.coding[0].system must be a non-empty string")
+        if value != "http://snomed.info/sct":
+            raise ValidationError("reasoncode.coding[0].system must be equal to 'http://snomed.info/sct'")
+        
+    @validates('code')
+    def validate_code_length(self, value):
+        if len(value) == 0:
+            raise ValidationError("reasoncode.coding[0].code must be a non-empty string")
+
+# Define the Identifier schema
+class MainIdentifierSchema(Schema):
+    system = fields.Str(required=True, error_messages={"required":" identifier[0].system is a mandatory field"})
+    value = fields.Str(required=True, error_messages={"required":" identifier[0].value is a mandatory field"})
+    
+    @validates('system')
+    def validate_system_length(self, value):
+        if len(value) == 0:
+            raise ValidationError("identifier[0].system must be a non-empty string")
+    
+    @validates('value')
+    def validate_value_length(self, value):
+        if len(value) == 0:
+            raise ValidationError("identifier[0].value must be a non-empty string")
+        
+# Define the CodeableConcept schema
+class vaccineCodeableConceptSchema(Schema):
+    
+    coding = fields.List(fields.Nested(CodingSchema(field_name='vaccineCode')), required=False)
+    
+    def __init__(self, *args, **kwargs):
+        self.field_name = kwargs.pop('field_name', None)
+        super().__init__(*args, **kwargs)
+
+    @validates('coding')
+    def validate_extension_length(self, value):
+        if len(value) != 1 or value == [{}]:
+            raise ValidationError(f"{self.field_name}.coding array must have exactly one item.")        
+        
+
+# Define the CodeableConcept schema
+class siteCodeableConceptSchema(Schema):
+    
+    coding = fields.List(fields.Nested(CodingSchema(field_name='site')), required=False)
+    
+    def __init__(self, *args, **kwargs):
+        self.field_name = kwargs.pop('field_name', None)
+        super().__init__(*args, **kwargs)
+
+    @validates('coding')
+    def validate_extension_length(self, value):
+        if len(value) != 1 or value == [{}]:
+            raise ValidationError(f"{self.field_name}.coding array must have exactly one item.")        
+        
+
+# Define the CodeableConcept schema
+class routeCodeableConceptSchema(Schema):
+    
+    coding = fields.List(fields.Nested(CodingSchema(field_name='route')), required=False)
+    
+    def __init__(self, *args, **kwargs):
+        self.field_name = kwargs.pop('field_name', None)
+        super().__init__(*args, **kwargs)
+
+    @validates('coding')
+    def validate_extension_length(self, value):
+        if len(value) != 1 or value == [{}]:
+            if self.field_name == 'extension':
+                raise ValidationError("extension[0].valueCodeableConcept.coding array must have exactly one item.")
+            if self.field_name == 'protocolApplied':
+                raise ValidationError("protocolApplied[0].targetDisease[*].coding array must have exactly one item.")
+            else:
+                raise ValidationError(f"{self.field_name}.coding array must have exactly one item.")        
+
+
+# Define the CodeableConcept schema
+class ProtocolCodeableConceptSchema(Schema):
+    
+    coding = fields.List(fields.Nested(protocolCodingSchema), required=True,error_messages={"required": "protocolApplied[0].targetDisease[*].coding is a mandatory field"})
+    
+    def __init__(self, *args, **kwargs):
+        self.field_name = kwargs.pop('field_name', None)
+        super().__init__(*args, **kwargs)
+
+    @validates('coding')
+    def validate_extension_length(self, value):
+        if len(value) == 0 or value == [{}]:
+            if self.field_name == 'protocolApplied':
+                raise ValidationError("protocolApplied[0].targetDisease[*].coding must be a non empty array")
+            
+    
+
+# Define the CodeableConcept schema
+class ReasonCodeableConceptSchema(Schema):
+    coding = fields.List(fields.Nested(ReasonCodingSchema), required=False)    
+    @validates('coding')
+    def validate_extension_length(self, value):
+        if len(value) != 1 or value ==[{}]:
+            raise ValidationError("reasonCode.coding array must be an array of length 1")
+
+
+class ProtocolAppliedSchema(Schema):
+    targetDisease = fields.List(fields.Nested(ProtocolCodeableConceptSchema(field_name= 'protocolApplied')), required=True,error_messages={"required": "protocolApplied[0].targetDisease[0].coding[?(@.system=='http://snomed.info/sct')].code is a mandatory field"})
+    doseNumberPositiveInt = fields.Int(required=False, allow_none=True, validate=lambda n: 0 <= n <= 9)
+    doseNumberString = fields.Str(required=False, validate=validate.Length(min=1))
+
+    @validates_schema
+    def validate_dose_number(self, data, **kwargs):
+        if not data.get('doseNumberPositiveInt') and not data.get('doseNumberString'):
+            raise ValidationError('Either doseNumberPositiveInt or doseNumberString must be present.')
+        if data.get('doseNumberPositiveInt') and data.get('doseNumberString'):
+            raise ValidationError('Only one of doseNumberPositiveInt or doseNumberString should be present.')
+    @validates('targetDisease')
+    def validate_target_length(self, value):
+        if len(value) == 0 or value == [{}]:
+            raise ValidationError("Every element of protocolApplied[0].targetDisease must have 'coding' property")
+
+class ExtensionCodingSchema(Schema):
+    system = fields.Str(required=True, error_messages={"required": "extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding[?(@.system=='http://snomed.info/sct')] is a mandatory field"})
+    code = fields.Str(required=True, error_messages={"required": "extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding[?(@.system=='http://snomed.info/sct')].code is a mandatory field"})
+    display = fields.Str(required=False)
+    
+    @validates('system')
+    def validate_extension_length(self, value):
+        if len(value) == 0:
+            raise ValidationError("extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding[?(@.system=='http://snomed.info/sct')] must be a non-empty string")
+        if value != "http://snomed.info/sct":
+            raise ValidationError("extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding[?(@.system=='http://snomed.info/sct')] must be unique")
+
+    @validates('code') 
+    def validate_code_length(self, value):
+        if len(value) == 0:
+                raise ValidationError("extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding[?(@.system=='http://snomed.info/sct')].code must be a non-empty string")
+            
+    @validates('display')
+    def validate_display_length(self, value):
+        if len(value) == 0:
+                raise ValidationError("extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding[?(@.system=='http://snomed.info/sct').display must be a non-empty string")        
+
+class ExtensionCodeableConceptSchema(Schema):
+    coding = fields.List(fields.Nested(ExtensionCodingSchema), required=True,error_messages={"required":"extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding is a mandatory field "})
+    
+    def __init__(self, *args, **kwargs):
+        self.field_name = kwargs.pop('field_name', None)
+        super().__init__(*args, **kwargs)
+
+    @validates('coding')
+    def validate_extension_length(self, value):
+        if len(value) != 1:
+            if self.field_name == 'extension':
+                raise ValidationError("extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding array must have exactly one item.")
+
+class ExtensionSchema(Schema):
+    url = fields.Str(required=True, error_messages={"required": "extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')] is a mandatory field"},)
+    valueCodeableConcept = fields.Nested(ExtensionCodeableConceptSchema(field_name= 'extension'), required=True,error_messages={"required":"extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept is a mandatory field "})
+
+    @validates('url')
+    def validate_extension_length(self, value):
+        if len(value) == 0:
+            raise ValidationError("extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')] must be a non-empty string")
+        if value != "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure":
+            raise ValidationError("extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')] must be unique")
+
+class PatientSchema(Schema):
+    reference = fields.Str(required=True,error_messages={'required': 'patient.reference must be a single reference to a contained Patient resource'}) 
+    @validates('reference')
+    def validate_gender_length(self, value):
+        if len(value) == 0:
+            raise ValidationError("patient.reference must be a single reference to a contained Patient resource")
+
+class ManufacturerSchema(Schema):
+    display = fields.Str(required=False)
+    @validates('display')
+    def validate_gender_length(self, value):
+        if len(value) == 0:
+            raise ValidationError("manufacturer.display must be a non-empty string")
+
+def validate_four_decimal_places(value):
+    if not re.match(r'^\d+(\.\d{1,4})?$', str(value)):
+        raise ValidationError('doseQuantity.value must be a number with a maximum of 4 decimal places')    
+    if isinstance(value, str):
+        raise ValidationError('doseQuantity.value must be a number')    
+
+class DoseQuantitySchema(Schema):
+    value = fields.Float(required=False, error_messages={"invalid": "doseQuantity.value must be a number"})
+    unit = fields.Str(required=False)
+    system = fields.Str(required=False)
+    code = fields.Str(required=False)   
+    
+    @validates('value')
+    def validate_value(self, value):
+        if isinstance(value, str):
+            raise ValidationError("doseQuantity.value must be a number")
+        validate_four_decimal_places(value)
+    
+    @validates('unit')
+    def validate_unit_length(self, value):
+        if len(value) == 0:
+            raise ValidationError("doseQuantity.unit must be a non-empty string") 
+    
+    @validates('code')
+    def validate_code_length(self, value):
+        if len(value) == 0:
+            raise ValidationError("doseQuantity.code must be a non-empty string")       
+
+
+class LocationIdentifierSchema(Schema):
+    value = fields.Str(required=True, error_messages={"required": "location.identifier.value is a mandatory field"})
+    system = fields.Str(required=True, error_messages={"required": "location.identifier.system is a mandatory field"})
+
+
+    @validates('system')
+    def validate_system_length(self, value):
+        if len(value) == 0:
+            raise ValidationError("location.identifier.system must be a non-empty string") 
+        if value not in ["https://fhir.nhs.uk/Id/ods-organization-code", "https://fhir.hl7.org.uk/Id/urn-school-number"]:
+            raise ValidationError("location.identifier.system must be unique'") 
+   
+    @validates('value')
+    def validate_location_length(self, value):
+        if len(value) == 0:
+            raise ValidationError("location.identifier.value must be a non-empty string")
+        
+class LocationSchema(Schema):
+    type = fields.Str(required=True,error_messages={"required": "location.type is a mandatory field"})
+    identifier = fields.Nested(LocationIdentifierSchema, required=True, error_messages={"required": "location.identifier is a mandatory field  ; location.identifier.system is a mandatory field ; location.identifier.value is a mandatory field"})
+    
+    @validates('type')
+    def validate_type_length(self, value):
+        if len(value) == 0:
+            raise ValidationError("location.type must be a non-empty string") 
+        if value != "Location":
+            raise ValidationError("location.type must be equal to 'Location'") 
+
+class ActorWithoutTypeSchema(Schema):
+    reference = fields.Str(required=True,error_messages={"required":"contained Practitioner ID must be referenced by performer.actor.reference"})
+    @validates('reference')
+    def validate_reference_length(self, value):
+        if len(value) == 0:
+            print("1")
+            raise ValidationError("contained Practitioner ID must be referenced by performer.actor.reference")
+    
+class ActorIdentifierSchema(Schema):
+    system = fields.String(required=True,error_messages={"required":"performer[?(@.actor.type=='Organization')].actor.identifier.system is a mandatory field"})
+    value = fields.String(required=True,error_messages={"required":"performer[?(@.actor.type=='Organization')].actor.identifier.value is a mandatory field"})
+    
+    @validates('system')
+    def validate_system_length(self, value):
+        if len(value) == 0:
+            raise ValidationError("performer[?(@.actor.type=='Organization')].actor.identifier.system must be a non-empty string")
+    
+    @validates('value')
+    def validate_value_length(self, value):
+        if len(value) == 0:
+            raise ValidationError("performer[?(@.actor.type=='Organization')].actor.identifier.value must be a non-empty string") 
+           
+class ActorWithTypeSchema(Schema):
+    type = fields.Str(required=True)
+    identifier = fields.Nested(ActorIdentifierSchema, required=True, error_messages={"required":"performer[?(@.actor.type=='Organization')].actor.identifier.value is a mandatory field;performer[?(@.actor.type=='Organization')].actor.identifier.system is a mandatory field"})
+
+    @validates('type')
+    def validate_type_length(self, value):
+        if value != "Organization" or value == 0:
+            raise ValidationError("performer[?(@.actor.type=='Organization')].actor.identifier.value is a mandatory field; performer[?(@.actor.type=='Organization')].actor.identifier.system is a mandatory field")
+
+class PerformerItemSchema(Schema):
+    actor = fields.Nested(ActorWithoutTypeSchema, required=True,error_messages={"required":  "contained Practitioner ID must be referenced by performer.actor.reference"})
+    
+    @validates('actor')
+    def validate_reference_length(self, value):
+        if "reference" not in value:
+            print("1")
+            raise ValidationError("contained Practitioner ID must be referenced by performer.actor.reference")
+
+class PerformerItemWithTypeSchema(Schema):
+    actor = fields.Nested(ActorWithTypeSchema, required=True,error_messages={"required":"performer[?(@.actor.type=='Organization')].actor.identifier.value is a mandatory field; performer[?(@.actor.type=='Organization')].actor.identifier.system is a mandatory field"})
+    
+class ImmunizationSchema(Schema):
+    resourceType = fields.Str(required=True, validate = [validate_resource_type])
+    contained = fields.List(fields.Dict(), required=True)
+    extension = fields.List(fields.Nested(ExtensionSchema), required=True, error_messages={'required': 'extension is a mandatory field'})
+    identifier = fields.List(fields.Nested(MainIdentifierSchema), required=True, error_messages={'required': 'identifier[0].value is a mandatory field; identifier[0].system is a mandatory field'})
+    status = fields.Str(required=True, error_messages={'required': 'status is a mandatory field'})
+    vaccineCode = fields.Nested(vaccineCodeableConceptSchema(field_name='vaccineCode'), required=False)
+    patient = fields.Nested(PatientSchema, required=True,error_messages={'required': 'patient.reference must be a single reference to a contained Patient resource'})
+    occurrenceDateTime = fields.Str(required=True,error_messages={"required": "occurrenceDateTime  is a mandatory field"})
+    recorded = fields.Str(required=True, error_messages = {"required":" recorded is a mandatory field"})
+    primarySource = StrictBoolean(required=True,error_messages={"required":" primarySource is a mandatory field"})
+    manufacturer = fields.Nested(ManufacturerSchema, required=False)
+    location = fields.Nested(LocationSchema, required=True, error_messages={'required': 'location is mandatory field'})
+    lotNumber = fields.Str(required=False)
+    expirationDate = Strictdate(required=False)
+    site = fields.Nested(siteCodeableConceptSchema(field_name='site'), required=False)
+    route = fields.Nested(routeCodeableConceptSchema(field_name='route'), required=False)
+    doseQuantity = fields.Nested(DoseQuantitySchema, required=False)
+    performer = fields.List(fields.Dict(), required=True)
+    reasonCode = fields.List(fields.Nested(ReasonCodeableConceptSchema), required=False)
+    protocolApplied = fields.List(fields.Nested(ProtocolAppliedSchema), required=True)
+    
+    def validate_single_item(self, field_name, value):
+        if len(value) != 1 or value == [{}]:
+            raise ValidationError(f"{field_name} must be an array of length 1")
+
+    @validates('extension')
+    def validate_extension(self, value):
+        self.validate_single_item('extension', value)
+
+    @validates('identifier')
+    def validate_identifier(self, value):
+        self.validate_single_item('identifier', value)
+
+    @validates('protocolApplied')
+    def validate_protocolApplied(self, value):
+        self.validate_single_item('protocolApplied', value) 
+
+    @validates('reasonCode')
+    def validate_reasoncode(self, value):
+        self.validate_single_item('reasonCode', value)  
+
+    @validates('performer')
+    def validate_performer_code(self, value):
+        type_organization_present = any(
+            performer.get("actor", {}).get("type") == "Organization"
+            for performer in value
+        )
+        if len(value) != 2 and type_organization_present is False :
+            raise ValidationError("performer[?(@.actor.type=='Organization')].actor.identifier.value is a mandatory field; performer[?(@.actor.type=='Organization')].actor.identifier.system is a mandatory field")   
+    
+
+    @validates('status')
+    def validate_gender_length(self, value):
+        if len(value) == 0:
+            raise ValidationError("status must be a non-empty string")
+        if value not in ["completed"]:
+            raise ValidationError("status must be equal to completed")    
+    @validates('occurrenceDateTime')
+    def validate_occurance_length(self, value):
+        if len(value) == 0:
+            raise ValidationError("occurrenceDateTime must be a string in the format \"YYYY-MM-DDThh:mm:ss+zz:zz\" or \"YYYY-MM-DDThh:mm:ss-zz:zz\" (i.e date and time, including timezone offset in hours and minutes). Milliseconds are optional after the seconds (e.g. 2021-01-01T00:00:00.000+00:00).")
+        
+        pattern = r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}[\+\-]\d{2}:\d{2}$'
+        is_correct_format = re.match(pattern, value) is not None
+        if not is_correct_format:
+            raise ValidationError("occurrenceDateTime must be a string in the format \"YYYY-MM-DDThh:mm:ss+zz:zz\" or \"YYYY-MM-DDThh:mm:ss-zz:zz\" (i.e date and time, including timezone offset in hours and minutes). Milliseconds are optional after the seconds (e.g. 2021-01-01T00:00:00.000+00:00).")
+        try:
+            datetime_str = value[:-6]  # remove the timezone part
+            datetime.strptime(datetime_str, '%Y-%m-%dT%H:%M:%S.%f') if '.' in datetime_str else datetime.strptime(datetime_str, '%Y-%m-%dT%H:%M:%S')
+        except ValueError:
+            raise ValidationError("occurrenceDateTime must be a valid datetime")
+        
+    @validates('recorded')
+    def validate_recorded_length(self, value):
+        if len(value) == 0:
+            raise ValidationError("recorded must be a valid date string in the format \"YYYY-MM-DD\"")
+        
+        pattern = r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}[\+\-]\d{2}:\d{2}$'
+        is_correct_format = re.match(pattern, value) is not None
+        if not is_correct_format:
+            raise ValidationError("recorded must be a string in the format \"YYYY-MM-DDThh:mm:ss+zz:zz\" or \"YYYY-MM-DDThh:mm:ss-zz:zz\" (i.e date and time, including timezone offset in hours and minutes). Milliseconds are optional after the seconds (e.g. 2021-01-01T00:00:00.000+00:00).")
+        try:
+            datetime_str = value[:-6]  # remove the timezone part
+            datetime.strptime(datetime_str, '%Y-%m-%dT%H:%M:%S.%f') if '.' in datetime_str else datetime.strptime(datetime_str, '%Y-%m-%dT%H:%M:%S')
+        except ValueError:
+            raise ValidationError("recorded must be a valid datetime")
+
+    
+    @validates('primarySource')
+    def validate_primary_resource_length(self, value):
+        if isinstance(value, str):
+            raise ValidationError("primarySource must be a boolean")
+
+    @validates('manufacturer')
+    def validate_manufactturer_length(self, value):
+        if value == {}:
+            raise ValidationError("manufacturer.display should not be empty")   
+        
+    @validates('vaccineCode')
+    def validate_vaccineCode_length(self, value):
+        if value == {}:
+            raise ValidationError("vaccineCode should not be empty")      
+
+    @validates('lotNumber')
+    def validate_lotnumber_length(self, value):
+        if len(value) == 0:
+            raise ValidationError("lotNumber must be a non-empty string")  
+        if len(value) > 100:
+            raise ValidationError("lotNumber must be 100 or fewer characters")  
+        
+    @validates('doseQuantity')
+    def validate_doseQuality_resource_length(self, value):
+        if value == {}:
+            raise ValidationError("doseQuantity should not be empty")      
+    
+    # @validates('expirationDate')
+    # def validate_recorded_length(self, value):
+    #     if len(value) == 0:
+    #         raise ValidationError("expirationDate must be a valid date string in the format \"YYYY-MM-DD\"")  
+    #     try:
+    #         date_obj = datetime.strptime(value, "%Y-%m-%d")
+    #         return date_obj
+    #     except ValueError:
+    #         print("The date is not valid.") 
+        
+    
+
+        
+
+    # @validates('recorded')
+    # def validate_occurance_length(self, value):
+    #     if len(value) == 0 or value != validate.Regexp(r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}\+\d{2}:\d{2}$') or value != validate.Regexp(r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}\-\d{2}:\d{2}$'):
+    #         raise ValidationError("occurrenceDateTime must be a string in the format \"YYYY-MM-DDThh:mm:ss+zz:zz\" or \"YYYY-MM-DDThh:mm:ss-zz:zz\" (i.e date and time, including timezone offset in hours and minutes). Milliseconds are optional after the seconds (e.g. 2021-01-01T00:00:00.000+00:00).")   
+
+    @validates_schema
+    @validates('performer')
+    def validate_contained(self, data, performers, **kwargs):
+        contained_resources = data.get('contained', [])
+        for resource in contained_resources:
+            if resource.get('resourceType') != 'Practitioner':
+                for performer in performers:
+                    actor = performer['actor']
+                    if 'reference' in actor:
+                        ref = actor['reference']
+                        raise ValidationError(f"Reference {ref} does not match any Practitioner's id")
+            elif resource.get('resourceType') == 'Patient':
+                ContainedPatientSchema(field_name="Patient").load(resource)
+            else:
+                raise ValidationError(f"Unsupported resourceType in contained: {resource.get('resourceType')}")     
+
+
+    @validates_schema
+    def validate_contained(self, data, **kwargs):
+        contained_resources = data.get('contained', [])
+        for resource in contained_resources:
+            if resource.get('resourceType') == 'Practitioner':
+                PractitionerSchema().load(resource)
+            elif resource.get('resourceType') == 'Patient':
+                ContainedPatientSchema(field_name="Patient").load(resource)
+            else:
+                raise ValidationError(f"Unsupported resourceType in contained: {resource.get('resourceType')}")   
+            
+              
+
+    
+
+    @validates('patient')
+    def validate_patient_reference(self, value):
+        reference = value['reference']
+        if not reference.startswith('#'):
+            raise ValidationError("Reference must start with '#'")
+        patient_id = reference[1:]
+        contained_resources = self.context.get("contained", [])
+        if not any(res['resourceType'] == 'Patient' for res in contained_resources):
+            raise ValidationError("contained[?(@.resourceType=='Patient')] is mandatory")
+        id_present_in_practitioner = any(item["resourceType"] == "Patient" and "id" in item for item in contained_resources)
+        if id_present_in_practitioner is False:
+            raise ValidationError("The contained Patient resource must have an 'id' field")
+        if not any(res['resourceType'] == 'Patient' and res['id'] == patient_id for res in contained_resources):
+            raise ValidationError(f"The reference {reference} does not exist in the contained Patient resource")
+        
+            
+        
+    # #performer schema validation
+    # @pre_load
+    # def differentiate_actors(self, data, **kwargs):
+    #      contained_resources = self.context.get('contained', [])
+    #      # Check if there are any practitioners without 'id'
+    #      practitioner_present = any(item["resourceType"] == "Practitioner" for item in contained_resources)
+    #      print(practitioner_present)
+    #      for i, item in enumerate(data['performer']):
+    #          if 'type' in item['actor']:
+    #              print("yes")
+    #              data['performer'][i] = PerformerItemWithTypeSchema().load(item)
+    #          if 'identifier' in item['actor'] and 'type' not in item['actor']:
+    #              print("111")
+    #              raise ValidationError("performer[?(@.actor.type=='Organization')].actor.identifier.value is a mandatory field; performer[?(@.actor.type=='Organization')].actor.identifier.system is a mandatory field")
+    #          if 'identifier' not in item['actor'] and 'type' not in item['actor'] and len(data["performer"]) != 2 :
+    #              print("333")
+    #              raise ValidationError("performer[?(@.actor.type=='Organization')].actor.identifier.value is a mandatory field; performer[?(@.actor.type=='Organization')].actor.identifier.system is a mandatory field")
+    #          if practitioner_present is False and "reference" not in item['actor'] and len(contained_resources) != 2:
+    #              continue
+    #          if practitioner_present is True and "reference" not in item['actor'] and len(data["performer"]) != 2:
+    #              print("rrr")
+    #              raise ValidationError('contained Practitioner ID must be referenced by performer.actor.reference')
+    #          else:
+    #             print("212")
+    #             data['performer'][i] = PerformerItemSchema().load(item)
+    #      return data
+
+    # @post_load
+    # def convert_to_correct_schema(self, data, **kwargs):
+    #       data['performer'] = [PerformerItemWithTypeSchema().dump(item) if 'type' in item['actor'] else PerformerItemSchema().dump(item) for item in data['performer']]
+    #       return data 
+    
+    @pre_load
+    def differentiate_actors(self, data, **kwargs):
+        for i, item in enumerate(data['performer']):
+            if 'type' in item['actor']:
+                data['performer'][i] = PerformerItemWithTypeSchema().load(item)
+            else:
+                data['performer'][i] = PerformerItemSchema().load(item)
+        return data
+
+    @post_load
+    def convert_to_correct_schema(self, data, **kwargs):
+        data['performer'] = [PerformerItemWithTypeSchema().dump(item) if 'type' in item['actor'] else PerformerItemSchema().dump(item) for item in data['performer']]
+        return data
+
+
+
+
+    # @validates('performer')
+    # def validate_performer(self, performers, **kwargs):
+    #     contained_resources = self.context.get('contained', [])
+    #     result = ["Practitioner" in item["resourceType"] for item in contained_resources]
+    #     print(result)
+    #     if result == [False, False] or result == [False]:
+    #         for performer in performers:
+    #             actor = performer['actor']
+    #             if 'reference' in actor:
+    #                 ref = actor['reference']
+    #                 raise ValidationError(f"Reference {ref} does not match any Practitioner's id")
+    #     id_present_in_practitioner = any(item["resourceType"] == "Practitioner" and "id" in item for item in contained_resources)
+    #     if id_present_in_practitioner is False:
+    #         raise ValidationError("The contained Practitioner resource must have an 'id' field")
+    #     practitioner = {p['id']: p for p in contained_resources if p['resourceType'] == 'Practitioner'}
+    #     # print(practitioner)
+    #     # # Raise a validation error if no practitioners are found
+    #     # if not practitioner:
+    #     #     raise ValidationError("The contained Practitioner resource must have an 'id' field")
+    #     for performer in performers:
+    #         actor = performer['actor']
+    #         if 'reference' in actor:
+    #             ref = actor['reference']
+    #             if not ref.startswith('#'):
+    #                 raise ValidationError(f"Reference {ref} does not start with '#'")
+    #             ref_id = ref[1:]  # Remove the '#' to get the id
+    #             if ref_id not in practitioner:
+    #                 print("1")
+    #                 raise ValidationError(f"Reference {ref} does not match any Practitioner's id")
+
+    @validates('performer')
+    def validate_performer(self, performers, **kwargs):
+
+
+        contained_resources = self.context.get('contained', [])
+        # Extract practitioners from contained resources
+        practitioners = {item.get('id'): item for item in contained_resources if item["resourceType"] == "Practitioner"}
+        # print(f"practitioners{practitioners}")
+        
+        # Check if there are any practitioners without 'id'
+        practitioner_present = any(item["resourceType"] == "Practitioner" for item in contained_resources)
+        # print(f"practitioner_present{practitioner_present}")
+        practitioners_with_id = any('id' in item for item in contained_resources if item["resourceType"] == "Practitioner")
+        # print(f"practitioners_with_id{practitioners_with_id}")
+        
+        for performer in performers:
+            actor = performer['actor']
+            ref = actor.get('reference')
+            
+            if not practitioner_present:
+                if ref:
+                    raise ValidationError(f"Reference {ref} does not exist in the contained Practitioner resource")
+                else:
+                    # Skip further validation if no practitioners are present and no references are provided
+                    continue
+            if practitioner_present and practitioners_with_id and ref is None and len(contained_resources) != 2 and "identifier" not in actor:
+                raise ValidationError("contained Practitioner ID must be referenced by performer.actor.reference")
+            
+            if ref:
+                if not ref.startswith('#'):
+                    raise ValidationError(f"Reference {ref} does not start with '#'")
+                ref_id = ref[1:]  # Remove the '#' to get the id
+                if not practitioners_with_id:
+                    raise ValidationError("The contained Practitioner resource must have an 'id' field") 
+                if ref_id not in practitioners:
+                    raise ValidationError(f"Reference {ref} does not exist in the contained Practitioner resource")
+            
+        # If practitioners are present, at least one must have an 'id'
+        if practitioner_present and not practitioners_with_id:
+            raise ValidationError("The contained Practitioner resource must have at least one 'id' field")
+                
+          
