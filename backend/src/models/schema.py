@@ -102,8 +102,10 @@ class AddressSchema(Schema):
                 raise ValueError("contained[?(@.resourceType=='Patient')].address[0].postalCode must contain a single space, " + "which divides the two parts of the postal code")
         if len(value.replace(" ", "")) > 8:
                 raise ValueError("contained[?(@.resourceType=='Patient')].address[0].postalCode must be 8 or fewer characters (excluding spaces)")                          
-        if value != validate.Regexp(r'"^[a-zA-Z]{1,2}([0-9]{1,2}|[0-9][a-zA-Z])\\s*[0-9][a-zA-Z]{2}$'):
-                raise ValueError("contained[?(@.resourceType=='Patient')].address[0].postalCode must be 8 or fewer characters (excluding spaces)")                          
+        pattern = r'^[a-zA-Z]{1,2}([0-9]{1,2}|[0-9][a-zA-Z])\s*[0-9][a-zA-Z]{2}$'
+        is_correct_format = re.match(pattern, value) is not None
+        if not is_correct_format:
+            raise ValueError("contained[?(@.resourceType=='Patient')].address[0].postalCode must be 8 or fewer characters (excluding spaces)")
 
     
 class PractitionerSchema(Schema):
