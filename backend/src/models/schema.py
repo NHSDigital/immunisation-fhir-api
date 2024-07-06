@@ -719,7 +719,7 @@ class ImmunizationSchema(Schema):
             if 'type' in item['actor']:
                 data['performer'][i] = PerformerItemWithTypeSchema().load(item)
             else:
-                data['performer'][i] = PerformerItemSchema(unknown=INCLUDE).load(item)
+                data['performer'][i] = PerformerItemSchema().load(item)
         return data
 
     @post_load
