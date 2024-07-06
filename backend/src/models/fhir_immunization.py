@@ -70,7 +70,7 @@ class ImmunizationValidator:
 
     def validate(self, json_data) -> Immunization:
         """Generate the Immunization model"""
-        self.set_reduce_validation_code(json_data)
+        # self.set_reduce_validation_code(json_data)
         
         print("3")
         # FHIR validations
@@ -80,11 +80,11 @@ class ImmunizationValidator:
         self.initialize_pre_validators(json_data)
         
         # Post-FHIR validations
-        if self.add_post_validators and not self.reduce_validation_code:
-            self.initialize_post_validators(self.immunization)
-            try:
-                self.run_post_validators()
-            except Exception as e:
-                raise e
+        # if self.add_post_validators and not self.reduce_validation_code:
+        #     self.initialize_post_validators(self.immunization)
+        #     try:
+        #         self.run_post_validators()
+        #     except Exception as e:
+        #         raise e
 
         return self.immunization
