@@ -3,7 +3,7 @@ from marshmallow.validate import Regexp
 import re
 from datetime import datetime
 from typing import Union
-from src.mappings import DiseaseCodes
+from mappings import DiseaseCodes
 
 
 class DiseaseCode:
@@ -35,7 +35,7 @@ class Strictdate(fields.Field):
         return date_obj
     
 class StrictBoolean(fields.Field):
-    def _deserialize(self, value, attr, data, **kwargs):
+    def _deserializes(self, value, attr, data, **kwargs):
         if isinstance(value, bool):
             return value
         raise ValidationError("primarySource must be a boolean")    
@@ -53,19 +53,22 @@ def valid_family(field_name):
             if 'family' in name and all(not family for family in name['family']):
                 raise ValidationError(f'{field_name} must be an array of non-empty strings')
     return  _validate_family
-        
+def validate_identifier(value):
+    pattern = r"^[A-Z]{1}[0-9]{1}[A-Z]{1}[0-9]{1}[A-Z]{1}$"
+    if not re.match(pattern, value):
+        raise ValidationError("performer[?(@.actor.type=='Organization')].actor.identifier.value must be in expected format" + " alpha-numeric-alpha-numeric-alpha (e.g X0X0X)")             
     
 
 class NameSchema(Schema):
-    family = fields.Str(required=True, error_messages={"required": "contained[?(@.resourceType=='Patient')].name[0].family is a mandatory field"})
-    given = fields.List(fields.Str(), required=True)
+    family = fields.Str(required=True, error_messages={"required": "contained[?(@.resourceType=='Patient')].name[0].family is a mandatory field", "invalid": "contained[?(@.resourceType=='Patient')].name[0].family must be a string"})
+    given = fields.List(fields.Str(), required=True, error_messages={"invalid": "contained[?(@.resourceType=='Patient')].name[0].given must be an array"})
     
     def __init__(self, *args, **kwargs):
         self.field_name = kwargs.pop('field_name', None)
         super().__init__(*args, **kwargs)
 
     @validates('given')
-    def validate_given_length(self, value):
+    def validate_name_given_length(self, value):
         if len(value) != 1:
             if self.field_name == "Patient":
                 raise ValidationError("contained[?(@.resourceType=='Patient')].name[0].given must be an array of length 1")
@@ -73,8 +76,8 @@ class NameSchema(Schema):
                 raise ValidationError("contained[?(@.resourceType=='Practitioner')].name[0].given must be an array of length 1")
             
 class PracticinerNameSchema(Schema):
-    family = fields.Str(required=False)
-    given = fields.List(fields.Str(), required=False)
+    family = fields.Str(required=False, error_messages={"invalid": "contained[?(@.resourceType=='Practitioner')].name[0].family must be a string"})
+    given = fields.List(fields.Str(), required=False, error_messages={"invalid": "contained[?(@.resourceType=='Practitioner')].name[0].given must be an array"})
     
     def __init__(self, *args, **kwargs):
         self.field_name = kwargs.pop('field_name', None)
@@ -90,24 +93,23 @@ class PracticinerNameSchema(Schema):
 
 
 class AddressSchema(Schema):
-    postalCode = fields.Str(required=True)
+    postalCode = fields.Str(required=True, error_messages={"invalid": "contained[?(@.resourceType=='Patient')].address[0].postalCode must be a string"})
     @validates('postalCode')
-    def validate_gender_length(self, value):
+    def validate_postcode_length(self, value):
         if len(value) == 0:
             raise ValidationError("contained[?(@.resourceType=='Patient')].address[0].postalCode must be a non-empty string")
         if value.count(" ") != 1 or value.startswith(" ") or value.endswith(" "):
                 raise ValueError("contained[?(@.resourceType=='Patient')].address[0].postalCode must contain a single space, " + "which divides the two parts of the postal code")
         if len(value.replace(" ", "")) > 8:
                 raise ValueError("contained[?(@.resourceType=='Patient')].address[0].postalCode must be 8 or fewer characters (excluding spaces)")                          
-        # if value != validate.Regexp(r'"^[a-zA-Z]{1,2}([0-9]{1,2}|[0-9][a-zA-Z])\\s*[0-9][a-zA-Z]{2}$'):
-        # ^([A-Z]{1,2}[0-9]{1,2}[A-Z]?[0-9][A-Z]{2}|GIR 0AA)$
-        #         raise ValueError("contained[?(@.resourceType=='Patient')].address[0].postalCode must be 8 or fewer characters (excluding spaces)")                          
+        if value != validate.Regexp(r'"^[a-zA-Z]{1,2}([0-9]{1,2}|[0-9][a-zA-Z])\\s*[0-9][a-zA-Z]{2}$'):
+                raise ValueError("contained[?(@.resourceType=='Patient')].address[0].postalCode must be 8 or fewer characters (excluding spaces)")                          
 
     
 class PractitionerSchema(Schema):
-    resourceType = fields.Str(required=True)
-    id = fields.Str(required=True, error_messages={"required": "The contained Practitioner resource must have an 'id' field"})
-    name = fields.List(fields.Nested(PracticinerNameSchema(field_name = "Practitioner")), required=False, validate=[valid_name("contained[?(@.resourceType=='Practitioner')].name[0].given"),valid_family("contained[?(@.resourceType=='Practitioner')].name[0].family")])
+    resourceType = fields.Str(required=True,error_messages={"invalid": "contained[?(@.resourceType=='Practitioner')].resourceType must be a string"})
+    id = fields.Str(required=True, error_messages={"required": "The contained Practitioner resource must have an 'id' field", "invalid": "contained[?(@.resourceType=='Practitioner')].id must be a string"})
+    name = fields.List(fields.Nested(PracticinerNameSchema(field_name = "Practitioner")), error_messages={"invalid": "contained[?(@.resourceType=='Practitioner')].name must be an array"}, required=False, validate=[valid_name("contained[?(@.resourceType=='Practitioner')].name[0].given"),valid_family("contained[?(@.resourceType=='Practitioner')].name[0].family")])
     
     def __init__(self, *args, **kwargs):
         self.field_name = kwargs.pop('field_name', None)
@@ -120,12 +122,12 @@ class PractitionerSchema(Schema):
              
 # Define the schema for the identifier
 class IdentifierSchema(Schema):
-    system = fields.Str(required=False)
-    value = fields.Str(required=False)  
+    system = fields.Str(required=False, error_messages={"invalid": "contained[?(@.resourceType=='Patient')].identifier[0].system must be a string"})
+    value = fields.Str(required=False, error_messages={"invalid": "contained[?(@.resourceType=='Patient')].identifier[0].value must be a string"})  
 
     
     @validates('system')
-    def validate_system_length(self, value):
+    def validate_identifier_system_length(self, value):
         if len(value) == 0:
            raise ValidationError("contained[?(@.resourceType=='Patient')].identifier[0].system must be an array of non-empty strings")
         if value != "https://fhir.nhs.uk/Id/nhs-number":
@@ -156,13 +158,13 @@ class IdentifierSchema(Schema):
 
 
 class ContainedPatientSchema(Schema):
-    resourceType = fields.Str(required=True, validate=[validate.Equal("Patient")])
-    id = fields.Str(required=True)
-    identifier = fields.List(fields.Nested(IdentifierSchema), required=False)
-    name = fields.List(fields.Nested(NameSchema(field_name = "Patient")), error_messages={"required": "contained[?(@.resourceType=='Patient')].name[0].family is a mandatory field"}, required=True, validate=[valid_name("contained[?(@.resourceType=='Patient')].name[0].given"), valid_family("contained[?(@.resourceType=='Patient')].name[0].family")])
-    gender = fields.Str(required=True, error_messages={'required':"contained[?(@.resourceType=='Patient')].gender is a mandatory field"})
-    birthDate = fields.Str(required=True,error_messages={'required':"contained[?(@.resourceType=='Patient')].birthDate is a mandatory field"})
-    address = fields.List(fields.Nested(AddressSchema), required=True)
+    resourceType = fields.Str(required=True, error_messages={"invalid": "contained[?(@.resourceType=='Patient')].resourceType must be a string"}, validate=[validate.Equal("Patient")])
+    id = fields.Str(required=True, error_messages={"invalid": "contained[?(@.resourceType=='Patient')].id must be a string"})
+    identifier = fields.List(fields.Nested(IdentifierSchema), required=False,error_messages={"invalid": "contained[?(@.resourceType=='Patient')].identifier must be an array"})
+    name = fields.List(fields.Nested(NameSchema(field_name = "Patient")), error_messages={"required": "contained[?(@.resourceType=='Patient')].name[0].family is a mandatory field","invalid": "contained[?(@.resourceType=='Patient')].name be an array"}, required=True, validate=[valid_name("contained[?(@.resourceType=='Patient')].name[0].given"), valid_family("contained[?(@.resourceType=='Patient')].name[0].family")])
+    gender = fields.Str(required=True, error_messages={'required':"contained[?(@.resourceType=='Patient')].gender is a mandatory field", 'invalid':"contained[?(@.resourceType=='Patient')].gender must be a string"})
+    birthDate = fields.Str(required=True,error_messages={'required':"contained[?(@.resourceType=='Patient')].birthDate is a mandatory field", 'invalid': "contained[?(@.resourceType=='Patient')].birthDate must be a string"})
+    address = fields.List(fields.Nested(AddressSchema), required=True,error_messages={"invalid": "contained[?(@.resourceType=='Patient')].address must be an array"})
     def __init__(self, *args, **kwargs):
         self.field_name = kwargs.pop('field_name', None)
         super().__init__(*args, **kwargs)
@@ -198,12 +200,12 @@ class ContainedPatientSchema(Schema):
 
 
 class protocolCodingSchema(Schema):
-    system = fields.Str(required=True, error_messages={"required": "protocolApplied[0].targetDisease[*].coding[0].system is a mandatory field"})
-    code = fields.Str(required=True, error_messages={"required": "protocolApplied[0].targetDisease[*].coding[0].code is a mandatory field"})
-    display = fields.Str(required=True, error_messages={"required": "protocolApplied[0].targetDisease[*].coding[0].display is a mandatory field"})
+    system = fields.Str(required=True, error_messages={"required": "protocolApplied[0].targetDisease[*].coding[0].system is a mandatory field", "invalid": "protocolApplied[0].targetDisease[*].coding[0].system must be a string"})
+    code = fields.Str(required=True, error_messages={"required": "protocolApplied[0].targetDisease[*].coding[0].code is a mandatory field", "invalid": "protocolApplied[0].targetDisease[*].coding[0].code must be a string"})
+    display = fields.Str(required=True, error_messages={"required": "protocolApplied[0].targetDisease[*].coding[0].display is a mandatory field", "invalid": "protocolApplied[0].targetDisease[*].coding[0].display must be a string"})
     
     @validates('system')
-    def validate_system_length(self, value):
+    def validate_protocolCoding_schema_length(self, value):
         if len(value) == 0:
             raise ValidationError("protocolApplied[0].targetDisease[*].coding[0].system must be a non-empty string")
         if value != "http://snomed.info/sct":
@@ -242,29 +244,34 @@ class CodingSchema(Schema):
             raise ValidationError(f"{self.field_name}.coding[?(@.system=='http://snomed.info/sct')] must be a non-empty string")
         if value != "http://snomed.info/sct":
             raise ValidationError(f"{self.field_name}.coding[?(@.system=='http://snomed.info/sct')] must be unique")
-        
+        if not isinstance(value, str):
+            raise ValidationError(f"{self.field_name}.coding[?(@.system=='http://snomed.info/sct')] must be a string")
 
     @validates('code')
     def validate_code_length(self, value):
         if len(value) == 0:
             raise ValidationError(f"{self.field_name}.coding[0].code must be a non-empty string")
+        if not isinstance(value, str):
+            raise ValidationError(f"{self.field_name}.coding[0].code must be a string")
  
     @validates('display')
     def validate_display_length(self, value):
         if len(value) == 0:
             raise ValidationError(f"{self.field_name}.coding[0].display must be a non-empty string")
+        if not isinstance(value, str):
+            raise ValidationError(f"{self.field_name}.coding[0].display must be a string")
 
 
 class ReasonCodingSchema(Schema):
-    system = fields.Str(required=False)
-    code = fields.Str(required=False)  
+    system = fields.Str(required=False, error_messages={"invalid": "reasoncode.coding[0].system must be a string"})
+    code = fields.Str(required=False, error_messages={"invalid": "reasoncode.coding[0].code must be a string"})  
 
     @validates('system')
     def validate_system_length(self, value):
         if len(value) == 0:
             raise ValidationError("reasoncode.coding[0].system must be a non-empty string")
         if value != "http://snomed.info/sct":
-            raise ValidationError("reasoncode.coding[0].system must be equal to 'http://snomed.info/sct'")
+            raise ValidationError("reasoncode.coding[0].system must be unique")
         
     @validates('code')
     def validate_code_length(self, value):
@@ -273,8 +280,8 @@ class ReasonCodingSchema(Schema):
 
 # Define the Identifier schema
 class MainIdentifierSchema(Schema):
-    system = fields.Str(required=True, error_messages={"required":" identifier[0].system is a mandatory field"})
-    value = fields.Str(required=True, error_messages={"required":" identifier[0].value is a mandatory field"})
+    system = fields.Str(required=True, error_messages={"required":" identifier[0].system is a mandatory field","invalid":" identifier[0].system must be a string"})
+    value = fields.Str(required=True, error_messages={"required":" identifier[0].value is a mandatory field", "invalid":"identifier[0].value must be a string"})
     
     @validates('system')
     def validate_system_length(self, value):
@@ -282,7 +289,7 @@ class MainIdentifierSchema(Schema):
             raise ValidationError("identifier[0].system must be a non-empty string")
     
     @validates('value')
-    def validate_value_length(self, value):
+    def validate_identifier_schema_value_length(self, value):
         if len(value) == 0:
             raise ValidationError("identifier[0].value must be a non-empty string")
         
@@ -299,7 +306,8 @@ class vaccineCodeableConceptSchema(Schema):
     def validate_extension_length(self, value):
         if len(value) != 1 or value == [{}]:
             raise ValidationError(f"{self.field_name}.coding array must have exactly one item.")        
-        
+        if not isinstance(value, list):
+            raise ValidationError(f"{self.field_name}.coding must be an array")
 
 # Define the CodeableConcept schema
 class siteCodeableConceptSchema(Schema):
@@ -314,7 +322,8 @@ class siteCodeableConceptSchema(Schema):
     def validate_extension_length(self, value):
         if len(value) != 1 or value == [{}]:
             raise ValidationError(f"{self.field_name}.coding array must have exactly one item.")        
-        
+        if not isinstance(value, list):
+            raise ValidationError(f"{self.field_name}.coding must be an array")
 
 # Define the CodeableConcept schema
 class routeCodeableConceptSchema(Schema):
@@ -328,13 +337,9 @@ class routeCodeableConceptSchema(Schema):
     @validates('coding')
     def validate_extension_length(self, value):
         if len(value) != 1 or value == [{}]:
-            if self.field_name == 'extension':
-                raise ValidationError("extension[0].valueCodeableConcept.coding array must have exactly one item.")
-            if self.field_name == 'protocolApplied':
-                raise ValidationError("protocolApplied[0].targetDisease[*].coding array must have exactly one item.")
-            else:
-                raise ValidationError(f"{self.field_name}.coding array must have exactly one item.")        
-
+            raise ValidationError(f"{self.field_name}.coding array must have exactly one item.")        
+        if not isinstance(value, list):
+            raise ValidationError(f"{self.field_name}.coding must be an array")
 
 # Define the CodeableConcept schema
 class ProtocolCodeableConceptSchema(Schema):
@@ -350,17 +355,19 @@ class ProtocolCodeableConceptSchema(Schema):
         if len(value) == 0 or value == [{}]:
             if self.field_name == 'protocolApplied':
                 raise ValidationError("protocolApplied[0].targetDisease[*].coding must be a non empty array")
-            
+        if not isinstance(value, list):
+            raise ValidationError("protocolApplied[0].targetDisease[*].coding must be an array")   
     
 
 # Define the CodeableConcept schema
 class ReasonCodeableConceptSchema(Schema):
-    coding = fields.List(fields.Nested(ReasonCodingSchema), required=False)    
+    coding = fields.List(fields.Nested(ReasonCodingSchema), required=False, error_messages={'invalid':'reasonCode.coding must be an array'})    
     @validates('coding')
     def validate_extension_length(self, value):
-        if len(value) != 1 or value ==[{}]:
+        if len(value) != 1 or value == [{}]:
             raise ValidationError("reasonCode.coding array must be an array of length 1")
-
+        if not isinstance(value, list):
+            raise ValidationError("reasonCode.coding must be an array")
 
 class ProtocolAppliedSchema(Schema):
     targetDisease = fields.List(fields.Nested(ProtocolCodeableConceptSchema(field_name= 'protocolApplied')), required=True,error_messages={"required": "protocolApplied[0].targetDisease[0].coding[?(@.system=='http://snomed.info/sct')].code is a mandatory field"})
@@ -377,11 +384,13 @@ class ProtocolAppliedSchema(Schema):
     def validate_target_length(self, value):
         if len(value) == 0 or value == [{}]:
             raise ValidationError("Every element of protocolApplied[0].targetDisease must have 'coding' property")
-
+        if not isinstance(value, list):
+            raise ValidationError("protocolApplied[0].targetDiseas must be an array")
+        
 class ExtensionCodingSchema(Schema):
-    system = fields.Str(required=True, error_messages={"required": "extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding[?(@.system=='http://snomed.info/sct')] is a mandatory field"})
-    code = fields.Str(required=True, error_messages={"required": "extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding[?(@.system=='http://snomed.info/sct')].code is a mandatory field"})
-    display = fields.Str(required=False)
+    system = fields.Str(required=True, error_messages={"required": "extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding[?(@.system=='http://snomed.info/sct')] is a mandatory field", "invalid": "extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding[?(@.system=='http://snomed.info/sct')] must be a string"})
+    code = fields.Str(required=True, error_messages={"required": "extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding[?(@.system=='http://snomed.info/sct')].code is a mandatory field", "invalid": "extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding[?(@.system=='http://snomed.info/sct')].code must be a string"})
+    display = fields.Str(required=False, error_messages={"invalid": "extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding[?(@.system=='http://snomed.info/sct')].display must be a string"})
     
     @validates('system')
     def validate_extension_length(self, value):
@@ -401,7 +410,7 @@ class ExtensionCodingSchema(Schema):
                 raise ValidationError("extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding[?(@.system=='http://snomed.info/sct').display must be a non-empty string")        
 
 class ExtensionCodeableConceptSchema(Schema):
-    coding = fields.List(fields.Nested(ExtensionCodingSchema), required=True,error_messages={"required":"extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding is a mandatory field "})
+    coding = fields.List(fields.Nested(ExtensionCodingSchema), required=True, error_messages={"required":"extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding is a mandatory field ", "invalid": "extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding must be an array"})
     
     def __init__(self, *args, **kwargs):
         self.field_name = kwargs.pop('field_name', None)
@@ -414,7 +423,7 @@ class ExtensionCodeableConceptSchema(Schema):
                 raise ValidationError("extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding array must have exactly one item.")
 
 class ExtensionSchema(Schema):
-    url = fields.Str(required=True, error_messages={"required": "extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')] is a mandatory field"},)
+    url = fields.Str(required=True, error_messages={"required": "extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')] is a mandatory field", "invalid": "extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')] must be a string"})
     valueCodeableConcept = fields.Nested(ExtensionCodeableConceptSchema(field_name= 'extension'), required=True,error_messages={"required":"extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept is a mandatory field "})
 
     @validates('url')
@@ -425,16 +434,16 @@ class ExtensionSchema(Schema):
             raise ValidationError("extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')] must be unique")
 
 class PatientSchema(Schema):
-    reference = fields.Str(required=True,error_messages={'required': 'patient.reference must be a single reference to a contained Patient resource'}) 
+    reference = fields.Str(required=True, error_messages={'required': 'patient.reference must be a single reference to a contained Patient resource', 'invalid': 'patient.reference must be a string'}) 
     @validates('reference')
-    def validate_gender_length(self, value):
+    def validate_patient_reference_length(self, value):
         if len(value) == 0:
             raise ValidationError("patient.reference must be a single reference to a contained Patient resource")
 
 class ManufacturerSchema(Schema):
-    display = fields.Str(required=False)
+    display = fields.Str(required=False, error_messages={'invalid': 'manufacturer.display must be an string'})
     @validates('display')
-    def validate_gender_length(self, value):
+    def validate_manufacture_display_length(self, value):
         if len(value) == 0:
             raise ValidationError("manufacturer.display must be a non-empty string")
 
@@ -446,9 +455,9 @@ def validate_four_decimal_places(value):
 
 class DoseQuantitySchema(Schema):
     value = fields.Float(required=False, error_messages={"invalid": "doseQuantity.value must be a number"})
-    unit = fields.Str(required=False)
-    system = fields.Str(required=False)
-    code = fields.Str(required=False)   
+    unit = fields.Str(required=False,error_messages={"invalid": "doseQuantity.unit must be a string"})
+    system = fields.Str(required=False,error_messages={"invalid": "doseQuantity.system must be a string"})
+    code = fields.Str(required=False,error_messages={"invalid": "doseQuantity.code must be a string"})   
     
     @validates('value')
     def validate_value(self, value):
@@ -468,8 +477,8 @@ class DoseQuantitySchema(Schema):
 
 
 class LocationIdentifierSchema(Schema):
-    value = fields.Str(required=True, error_messages={"required": "location.identifier.value is a mandatory field"})
-    system = fields.Str(required=True, error_messages={"required": "location.identifier.system is a mandatory field"})
+    value = fields.Str(required=True, error_messages={"required": "location.identifier.value is a mandatory field", "invalid": "location.identifier.value must be a string"})
+    system = fields.Str(required=True, error_messages={"required": "location.identifier.system is a mandatory field", "invalid": "location.identifier.system must be a string"})
 
 
     @validates('system')
@@ -485,7 +494,7 @@ class LocationIdentifierSchema(Schema):
             raise ValidationError("location.identifier.value must be a non-empty string")
         
 class LocationSchema(Schema):
-    type = fields.Str(required=True,error_messages={"required": "location.type is a mandatory field"})
+    type = fields.Str(required=True,error_messages={"required": "location.type is a mandatory field", "invalid": "location.type must be a string"})
     identifier = fields.Nested(LocationIdentifierSchema, required=True, error_messages={"required": "location.identifier is a mandatory field  ; location.identifier.system is a mandatory field ; location.identifier.value is a mandatory field"})
     
     @validates('type')
@@ -496,29 +505,30 @@ class LocationSchema(Schema):
             raise ValidationError("location.type must be equal to 'Location'") 
 
 class ActorWithoutTypeSchema(Schema):
-    reference = fields.Str(required=True,error_messages={"required":"contained Practitioner ID must be referenced by performer.actor.reference"})
+    reference = fields.Str(required=True,error_messages={"required":"contained Practitioner ID must be referenced by performer.actor.reference", "invalid": "performer.actor.reference must be a string"})
     @validates('reference')
     def validate_reference_length(self, value):
         if len(value) == 0:
-            print("1")
             raise ValidationError("contained Practitioner ID must be referenced by performer.actor.reference")
+
     
 class ActorIdentifierSchema(Schema):
-    system = fields.String(required=True,error_messages={"required":"performer[?(@.actor.type=='Organization')].actor.identifier.system is a mandatory field"})
-    value = fields.String(required=True,error_messages={"required":"performer[?(@.actor.type=='Organization')].actor.identifier.value is a mandatory field"})
+    system = fields.String(required=True, error_messages={"required": "performer[?(@.actor.type=='Organization')].actor.identifier.system is a mandatory field", "invalid": "performer[?(@.actor.type=='Organization')].actor.identifier.system must be a string"})
+    value = fields.String(required=True, validate=validate_identifier,error_messages={"required": "performer[?(@.actor.type=='Organization')].actor.identifier.value is a mandatory field", "invalid": "performer[?(@.actor.type=='Organization')].actor.identifier.value must be string"})
     
+
     @validates('system')
     def validate_system_length(self, value):
         if len(value) == 0:
             raise ValidationError("performer[?(@.actor.type=='Organization')].actor.identifier.system must be a non-empty string")
     
     @validates('value')
-    def validate_value_length(self, value):
+    def validate_actor_value_length(self, value):
         if len(value) == 0:
             raise ValidationError("performer[?(@.actor.type=='Organization')].actor.identifier.value must be a non-empty string") 
            
 class ActorWithTypeSchema(Schema):
-    type = fields.Str(required=True)
+    type = fields.Str(required=True, error_messages= {"invalid": "performer[?(@.actor.type=='Organization')] must be a string"} )
     identifier = fields.Nested(ActorIdentifierSchema, required=True, error_messages={"required":"performer[?(@.actor.type=='Organization')].actor.identifier.value is a mandatory field;performer[?(@.actor.type=='Organization')].actor.identifier.system is a mandatory field"})
 
     @validates('type')
@@ -532,33 +542,32 @@ class PerformerItemSchema(Schema):
     @validates('actor')
     def validate_reference_length(self, value):
         if "reference" not in value:
-            print("1")
             raise ValidationError("contained Practitioner ID must be referenced by performer.actor.reference")
 
 class PerformerItemWithTypeSchema(Schema):
     actor = fields.Nested(ActorWithTypeSchema, required=True,error_messages={"required":"performer[?(@.actor.type=='Organization')].actor.identifier.value is a mandatory field; performer[?(@.actor.type=='Organization')].actor.identifier.system is a mandatory field"})
-    
+  
 class ImmunizationSchema(Schema):
     resourceType = fields.Str(required=True, validate = [validate_resource_type])
     contained = fields.List(fields.Dict(), required=True)
-    extension = fields.List(fields.Nested(ExtensionSchema), required=True, error_messages={'required': 'extension is a mandatory field'})
-    identifier = fields.List(fields.Nested(MainIdentifierSchema), required=True, error_messages={'required': 'identifier[0].value is a mandatory field; identifier[0].system is a mandatory field'})
-    status = fields.Str(required=True, error_messages={'required': 'status is a mandatory field'})
+    extension = fields.List(fields.Nested(ExtensionSchema), required=True, error_messages={'required': 'extension is a mandatory field', "invalid": "extension must be an array"})
+    identifier = fields.List(fields.Nested(MainIdentifierSchema), required=True, error_messages={'required': 'identifier[0].value is a mandatory field; identifier[0].system is a mandatory field','invalid': 'identifier must be an array'})
+    status = fields.Str(required=True, error_messages={'required': 'status is a mandatory field','invalid':'status must be a string'})
     vaccineCode = fields.Nested(vaccineCodeableConceptSchema(field_name='vaccineCode'), required=False)
     patient = fields.Nested(PatientSchema, required=True,error_messages={'required': 'patient.reference must be a single reference to a contained Patient resource'})
-    occurrenceDateTime = fields.Str(required=True,error_messages={"required": "occurrenceDateTime  is a mandatory field"})
-    recorded = fields.Str(required=True, error_messages = {"required":" recorded is a mandatory field"})
+    occurrenceDateTime = fields.Str(required=True,error_messages={"required": "occurrenceDateTime  is a mandatory field", 'invalid': 'occurrenceDateTime must be a string in the format \"YYYY-MM-DDThh:mm:ss+zz:zz\" or \"YYYY-MM-DDThh:mm:ss-zz:zz\" (i.e date and time, including timezone offset in hours and minutes). Milliseconds are optional after the seconds (e.g. 2021-01-01T00:00:00.000+00:00).'})
+    recorded = fields.Str(required=True, error_messages = {"required":" recorded is a mandatory field",'invalid':'recorded must be a string in the format \"YYYY-MM-DDThh:mm:ss+zz:zz\" or \"YYYY-MM-DDThh:mm:ss-zz:zz\" (i.e date and time, including timezone offset in hours and minutes). Milliseconds are optional after the seconds (e.g. 2021-01-01T00:00:00.000+00:00).'})
     primarySource = StrictBoolean(required=True,error_messages={"required":" primarySource is a mandatory field"})
     manufacturer = fields.Nested(ManufacturerSchema, required=False)
     location = fields.Nested(LocationSchema, required=True, error_messages={'required': 'location is mandatory field'})
-    lotNumber = fields.Str(required=False)
-    expirationDate = Strictdate(required=False)
+    lotNumber = fields.Str(required=False,error_messages={'invalid':'lotNumber must be a string'})
+    expirationDate = Strictdate(required=False,error_messages={'invalid':'expirationDate must be a string'})
     site = fields.Nested(siteCodeableConceptSchema(field_name='site'), required=False)
     route = fields.Nested(routeCodeableConceptSchema(field_name='route'), required=False)
     doseQuantity = fields.Nested(DoseQuantitySchema, required=False)
     performer = fields.List(fields.Dict(), required=True)
     reasonCode = fields.List(fields.Nested(ReasonCodeableConceptSchema), required=False)
-    protocolApplied = fields.List(fields.Nested(ProtocolAppliedSchema), required=True)
+    protocolApplied = fields.List(fields.Nested(ProtocolAppliedSchema), required=True,error_messages={'invalid': 'protocolApplied must be an array'})
     
     def validate_single_item(self, field_name, value):
         if len(value) != 1 or value == [{}]:
@@ -569,7 +578,7 @@ class ImmunizationSchema(Schema):
         self.validate_single_item('extension', value)
 
     @validates('identifier')
-    def validate_identifier(self, value):
+    def validate_identifier_check(self, value):
         self.validate_single_item('identifier', value)
 
     @validates('protocolApplied')
@@ -654,24 +663,6 @@ class ImmunizationSchema(Schema):
         if value == {}:
             raise ValidationError("doseQuantity should not be empty")      
     
-    # @validates('expirationDate')
-    # def validate_recorded_length(self, value):
-    #     if len(value) == 0:
-    #         raise ValidationError("expirationDate must be a valid date string in the format \"YYYY-MM-DD\"")  
-    #     try:
-    #         date_obj = datetime.strptime(value, "%Y-%m-%d")
-    #         return date_obj
-    #     except ValueError:
-    #         print("The date is not valid.") 
-        
-    
-
-        
-
-    # @validates('recorded')
-    # def validate_occurance_length(self, value):
-    #     if len(value) == 0 or value != validate.Regexp(r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}\+\d{2}:\d{2}$') or value != validate.Regexp(r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}\-\d{2}:\d{2}$'):
-    #         raise ValidationError("occurrenceDateTime must be a string in the format \"YYYY-MM-DDThh:mm:ss+zz:zz\" or \"YYYY-MM-DDThh:mm:ss-zz:zz\" (i.e date and time, including timezone offset in hours and minutes). Milliseconds are optional after the seconds (e.g. 2021-01-01T00:00:00.000+00:00).")   
 
     @validates_schema
     @validates('performer')
@@ -721,38 +712,6 @@ class ImmunizationSchema(Schema):
             raise ValidationError(f"The reference {reference} does not exist in the contained Patient resource")
         
             
-        
-    # #performer schema validation
-    # @pre_load
-    # def differentiate_actors(self, data, **kwargs):
-    #      contained_resources = self.context.get('contained', [])
-    #      # Check if there are any practitioners without 'id'
-    #      practitioner_present = any(item["resourceType"] == "Practitioner" for item in contained_resources)
-    #      print(practitioner_present)
-    #      for i, item in enumerate(data['performer']):
-    #          if 'type' in item['actor']:
-    #              print("yes")
-    #              data['performer'][i] = PerformerItemWithTypeSchema().load(item)
-    #          if 'identifier' in item['actor'] and 'type' not in item['actor']:
-    #              print("111")
-    #              raise ValidationError("performer[?(@.actor.type=='Organization')].actor.identifier.value is a mandatory field; performer[?(@.actor.type=='Organization')].actor.identifier.system is a mandatory field")
-    #          if 'identifier' not in item['actor'] and 'type' not in item['actor'] and len(data["performer"]) != 2 :
-    #              print("333")
-    #              raise ValidationError("performer[?(@.actor.type=='Organization')].actor.identifier.value is a mandatory field; performer[?(@.actor.type=='Organization')].actor.identifier.system is a mandatory field")
-    #          if practitioner_present is False and "reference" not in item['actor'] and len(contained_resources) != 2:
-    #              continue
-    #          if practitioner_present is True and "reference" not in item['actor'] and len(data["performer"]) != 2:
-    #              print("rrr")
-    #              raise ValidationError('contained Practitioner ID must be referenced by performer.actor.reference')
-    #          else:
-    #             print("212")
-    #             data['performer'][i] = PerformerItemSchema().load(item)
-    #      return data
-
-    # @post_load
-    # def convert_to_correct_schema(self, data, **kwargs):
-    #       data['performer'] = [PerformerItemWithTypeSchema().dump(item) if 'type' in item['actor'] else PerformerItemSchema().dump(item) for item in data['performer']]
-    #       return data 
     
     @pre_load
     def differentiate_actors(self, data, **kwargs):
@@ -760,7 +719,7 @@ class ImmunizationSchema(Schema):
             if 'type' in item['actor']:
                 data['performer'][i] = PerformerItemWithTypeSchema().load(item)
             else:
-                data['performer'][i] = PerformerItemSchema().load(item)
+                data['performer'][i] = PerformerItemSchema(unknown=INCLUDE).load(item)
         return data
 
     @post_load
@@ -770,36 +729,6 @@ class ImmunizationSchema(Schema):
 
 
 
-
-    # @validates('performer')
-    # def validate_performer(self, performers, **kwargs):
-    #     contained_resources = self.context.get('contained', [])
-    #     result = ["Practitioner" in item["resourceType"] for item in contained_resources]
-    #     print(result)
-    #     if result == [False, False] or result == [False]:
-    #         for performer in performers:
-    #             actor = performer['actor']
-    #             if 'reference' in actor:
-    #                 ref = actor['reference']
-    #                 raise ValidationError(f"Reference {ref} does not match any Practitioner's id")
-    #     id_present_in_practitioner = any(item["resourceType"] == "Practitioner" and "id" in item for item in contained_resources)
-    #     if id_present_in_practitioner is False:
-    #         raise ValidationError("The contained Practitioner resource must have an 'id' field")
-    #     practitioner = {p['id']: p for p in contained_resources if p['resourceType'] == 'Practitioner'}
-    #     # print(practitioner)
-    #     # # Raise a validation error if no practitioners are found
-    #     # if not practitioner:
-    #     #     raise ValidationError("The contained Practitioner resource must have an 'id' field")
-    #     for performer in performers:
-    #         actor = performer['actor']
-    #         if 'reference' in actor:
-    #             ref = actor['reference']
-    #             if not ref.startswith('#'):
-    #                 raise ValidationError(f"Reference {ref} does not start with '#'")
-    #             ref_id = ref[1:]  # Remove the '#' to get the id
-    #             if ref_id not in practitioner:
-    #                 print("1")
-    #                 raise ValidationError(f"Reference {ref} does not match any Practitioner's id")
 
     @validates('performer')
     def validate_performer(self, performers, **kwargs):
@@ -841,5 +770,3 @@ class ImmunizationSchema(Schema):
         # If practitioners are present, at least one must have an 'id'
         if practitioner_present and not practitioners_with_id:
             raise ValidationError("The contained Practitioner resource must have at least one 'id' field")
-                
-          
