@@ -68,6 +68,7 @@ class ImmunizationValidator:
 
     def validate(self, json_data) -> Immunization:
         """Generate the Immunization model"""
+        self.set_reduce_validation_code(json_data)
         
         print("3")
         # FHIR validations
