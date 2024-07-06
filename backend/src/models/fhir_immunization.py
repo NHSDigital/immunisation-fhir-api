@@ -22,8 +22,10 @@ class ImmunizationValidator:
     def initialize_immunization_and_run_fhir_validators(self, json_data):
         """Initialize immunization with data after parsing it through the FHIR validator"""
         print("4")
-        self.immunization = Immunization.parse_obj(json_data)
-
+        try:
+            self.immunization = Immunization.parse_obj(json_data)
+        except Exception as e:
+            raise ValueError(e)
     def initialize_pre_validators(self, immunization):
         """Initialize pre validators with data."""
         self.immunization_schema= ImmunizationSchema(context={'contained': immunization['contained']})
