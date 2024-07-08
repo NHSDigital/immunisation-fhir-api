@@ -30,24 +30,9 @@
 
 #         covid_data = deepcopy(self.json_data)
 
-#         # remove identifier[0].value from 'contained' resource
-#         covid_data["contained"][0]["identifier"][0]["value"] = None
-
-#         # remove identifier[0].coding[0].code from 'Patient' resource
-#         for resource in covid_data["contained"]:
-#             if resource["resourceType"] == "Patient":
-#                 resource["identifier"][0]["extension"][0]["valueCodeableConcept"]["coding"][0]["code"] = None
-
-#         # remove coding.code from 'reasonCode'
-#         covid_data["reasonCode"][0]["coding"][0]["code"] = None
-
+#         covid_data["location"]["type"] = ""
 #         expected_errors = [
-#             "Validation errors: contained[?(@.resourceType=='Practitioner')].identifier[0].value must be a string",
-#             "contained[?(@.resourceType=='Patient')].identifier[?(@.system=='https://fhir.nhs.uk/Id/nhs-number')]."
-#             + "extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-NHSNumberVerification"
-#             + "Status')].valueCodeableConcept.coding[?(@.system=="
-#             + "'https://fhir.hl7.org.uk/CodeSystem/UKCore-NHSNumberVerificationStatusEngland')].code must be a string",
-#             "reasonCode[0].coding[0].code must be a string",
+#             "location.type must be a non-empty string"
 #         ]
 
 #         # assert ValueError raised
@@ -67,26 +52,25 @@
 #     def test_pre_validate_contained(self):
 #         """Test pre_validate_contained accepts valid values and rejects invalid values"""
 #         # Test that the contained field is rejected when invalid
-#         valid_list_to_test = [
-#             ValidValues.empty_practitioner_resource_id_Pract1,
-#             ValidValues.empty_patient_resource_id_Pat1,
-#             ValidValues.empty_questionnnaire_resource_id_QR1,
-#         ]
+        
+#         covid_data = deepcopy(self.json_data)
 
-#         invalid_list_to_test = [
-#             ValidValues.empty_practitioner_resource_id_Pract1,
-#             ValidValues.empty_patient_resource_id_Pat1,
-#             ValidValues.empty_questionnnaire_resource_id_QR1,
-#             ValidValues.empty_patient_resource_id_Pat2,
-#         ]
+#         del covid_data["contained"][0]["id"]
+#         expected_errors = "The contained Practitioner resource must have an 'id' field"
 
-#         ValidatorModelTests.test_unique_list(
-#             self,
-#             field_location="contained",
-#             valid_lists_to_test=[valid_list_to_test],
-#             invalid_list_with_duplicates_to_test=invalid_list_to_test,
-#             expected_error_message="contained[?(@.resourceType=='Patient')] must be unique",
-#         )
+#         # assert ValueError raised
+#         with self.assertRaises(ValueError) as cm:
+#             self.validator.validate(covid_data)
+
+#         # extract the error messages from the exception
+#         actual_errors = str(cm.exception)
+
+#         # assert length of errors
+#         assert len(actual_errors) == len(expected_errors)
+
+#         # assert the error is in the expected error messages
+#         for error in actual_errors:
+#             assert error in expected_errors
 
 #     def test_pre_validate_patient_reference(self):
 #         """Test pre_validate_patient_reference accepts valid values and rejects invalid values"""

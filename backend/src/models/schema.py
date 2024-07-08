@@ -45,7 +45,7 @@ def valid_name(field_name):
     def _validate_given(name_list):
         for name in name_list:
             if 'given' in name and all(not given_name for given_name in name['given']):
-                raise ValidationError(f'{field_name} must be an array of non-empty strings')
+                raise ValidationError(f"{field_name} must be an array of non-empty strings")
     return _validate_given
 
 
@@ -53,7 +53,7 @@ def valid_family(field_name):
     def _validate_family(name_list):
         for name in name_list:
             if 'family' in name and all(not family for family in name['family']):
-                raise ValidationError(f'{field_name} must be an array of non-empty strings')
+                raise ValidationError(f"{field_name} must be an array of non-empty strings")
     return _validate_family
 
 
@@ -404,13 +404,13 @@ class ProtocolAppliedSchema(BaseSchema):
             raise ValidationError("protocolApplied[0].targetDiseas must be an array")
         
     @validates('doseNumberPositiveInt')
-    def validate_target_length(self, value):
+    def validate_doseNumberPositiveInt_length(self, value):
         if not (1 <= value <= 9):
             raise ValidationError("protocolApplied[0].doseNumberPositiveInt must be an integer in the range 1 to 9")
         if not isinstance(value,int):
             raise ValidationError("protocolApplied[0].doseNumberPositiveInt must be an integer")
     @validates('doseNumberString')
-    def validate_target_length(self, value):
+    def validate_doseNumberString_length(self, value):
         if len(value) == 0:
             raise ValidationError(" protocolApplied[0].doseNumberString must be a non empty string")
 
@@ -590,24 +590,24 @@ class PerformerItemWithTypeSchema(BaseSchema):
 class ImmunizationSchema(BaseSchema):
     resourceType = fields.Str(required=True, validate=[validate_resource_type])
     contained = fields.List(fields.Dict(), required=True)
-    extension = fields.List(fields.Nested(ExtensionSchema), required=True, error_messages={'required': 'extension is a mandatory field', "invalid": "extension must be an array"})
-    identifier = fields.List(fields.Nested(MainIdentifierSchema), required=True, error_messages={'required': 'identifier[0].value is a mandatory field; identifier[0].system is a mandatory field', 'invalid': 'identifier must be an array'})
-    status = fields.Str(required=True, error_messages={'required': 'status is a mandatory field', 'invalid': 'status must be a string'})
+    extension = fields.List(fields.Nested(ExtensionSchema), required=True, error_messages={"required": "extension is a mandatory field", "invalid": "extension must be an array"})
+    identifier = fields.List(fields.Nested(MainIdentifierSchema), required=True, error_messages={"required": "identifier[0].value is a mandatory field; identifier[0].system is a mandatory field", "invalid": "identifier must be an array"})
+    status = fields.Str(required=True, error_messages={"required": "status is a mandatory field", "invalid": "status must be a string"})
     vaccineCode = fields.Nested(VaccineCodeableConceptSchema(field_name='vaccineCode'), required=False)
-    patient = fields.Nested(PatientSchema, required=True, error_messages={'required': 'patient.reference must be a single reference to a contained Patient resource'})
+    patient = fields.Nested(PatientSchema, required=True, error_messages={"required": "patient.reference must be a single reference to a contained Patient resource"})
     occurrenceDateTime = fields.Str(required=True, error_messages={"required": "occurrenceDateTime is a mandatory field", 'invalid': 'occurrenceDateTime must be a string in the format "YYYY-MM-DDThh:mm:ss+zz:zz" or "YYYY-MM-DDThh:mm:ss-zz:zz" (i.e date and time, including timezone offset in hours and minutes). Milliseconds are optional after the seconds (e.g. 2021-01-01T00:00:00.000+00:00).'})
     recorded = fields.Str(required=True, error_messages={"required": "recorded is a mandatory field", 'invalid': 'recorded must be a string in the format "YYYY-MM-DDThh:mm:ss+zz:zz" or "YYYY-MM-DDThh:mm:ss-zz:zz" (i.e date and time, including timezone offset in hours and minutes). Milliseconds are optional after the seconds (e.g. 2021-01-01T00:00:00.000+00:00).'})
     primarySource = StrictBoolean(required=True, error_messages={"required": "primarySource is a mandatory field"})
     manufacturer = fields.Nested(ManufacturerSchema, required=False)
-    location = fields.Nested(LocationSchema, required=True, error_messages={'required': 'location is mandatory field'})
-    lotNumber = fields.Str(required=False, error_messages={'invalid': 'lotNumber must be a string'})
-    expirationDate = StrictDate(required=False, error_messages={'invalid': 'expirationDate must be a string'})
+    location = fields.Nested(LocationSchema, required=True, error_messages={"required": "location is mandatory field"})
+    lotNumber = fields.Str(required=False, error_messages={"invalid": "lotNumber must be a string"})
+    expirationDate = StrictDate(required=False, error_messages={"invalid": "expirationDate must be a string"})
     site = fields.Nested(SiteCodeableConceptSchema(field_name='site'), required=False)
     route = fields.Nested(RouteCodeableConceptSchema(field_name='route'), required=False)
     doseQuantity = fields.Nested(DoseQuantitySchema, required=False)
     performer = fields.List(fields.Dict(), required=True)
     reasonCode = fields.List(fields.Nested(ReasonCodeableConceptSchema), required=False)
-    protocolApplied = fields.List(fields.Nested(ProtocolAppliedSchema), required=True, error_messages={'invalid': 'protocolApplied must be an array'})
+    protocolApplied = fields.List(fields.Nested(ProtocolAppliedSchema), required=True, error_messages={"invalid": "protocolApplied must be an array"})
 
     def validate_single_item(self, field_name, value):
         if len(value) != 1 or value == [{}]:

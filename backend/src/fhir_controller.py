@@ -161,6 +161,7 @@ class FhirController:
                     code=Code.invariant,
                     diagnostics=resource["diagnostics"],
                 )
+                print(exp_error)
                 return self.create_response(400, json.dumps(exp_error))
             location = f"{get_service_url()}/Immunization/{resource.id}"
             return self.create_response(201, None, {"Location": location})
