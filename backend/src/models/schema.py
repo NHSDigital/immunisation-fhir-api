@@ -20,17 +20,17 @@ class DiseaseCode:
 
 def validate_resource_type(value):
     if value != "Immunization":
-        raise ValueError(f"expects resource type `Immunization`, but got {value}. Make sure resource type name is correct and right ModelClass has been chosen")
+        raise ValidationError(f"expects resource type `Immunization`, but got {value}. Make sure resource type name is correct and right ModelClass has been chosen")
 
 
 class StrictDate(fields.Field):
     def _deserialize(self, value, attr, data, **kwargs):
         if len(value) == 0:
-            raise ValueError("expirationDate must be a valid date string in the format 'YYYY-MM-DD'")
+            raise ValidationError("expirationDate must be a valid date string in the format 'YYYY-MM-DD'")
         try:
             date_obj = datetime.strptime(value, "%Y-%m-%d")
-        except ValueError:
-            raise ValueError("The date is not valid. Must be in the format 'YYYY-MM-DD'")
+        except ValidationError:
+            raise ValidationError("The date is not valid. Must be in the format 'YYYY-MM-DD'")
         return date_obj
 
 
@@ -38,14 +38,14 @@ class StrictBoolean(fields.Field):
     def _deserialize(self, value, attr, data, **kwargs):
         if isinstance(value, bool):
             return value
-        raise ValueError("primarySource must be a boolean")
+        raise ValidationError("primarySource must be a boolean")
 
 
 def valid_name(field_name):
     def _validate_given(name_list):
         for name in name_list:
             if 'given' in name and all(not given_name for given_name in name['given']):
-                raise ValueError(f'{field_name} must be an array of non-empty strings')
+                raise ValidationError(f'{field_name} must be an array of non-empty strings')
     return _validate_given
 
 
@@ -53,14 +53,14 @@ def valid_family(field_name):
     def _validate_family(name_list):
         for name in name_list:
             if 'family' in name and all(not family for family in name['family']):
-                raise ValueError(f'{field_name} must be an array of non-empty strings')
+                raise ValidationError(f'{field_name} must be an array of non-empty strings')
     return _validate_family
 
 
 def validate_identifier(value):
     pattern = r"^[A-Z]{1}[0-9]{1}[A-Z]{1}[0-9]{1}[A-Z]{1}$"
     if not re.match(pattern, value):
-        raise ValueError("performer[?(@.actor.type=='Organization')].actor.identifier.value must be in expected format alpha-numeric-alpha-numeric-alpha (e.g X0X0X)")
+        raise ValidationError("performer[?(@.actor.type=='Organization')].actor.identifier.value must be in expected format alpha-numeric-alpha-numeric-alpha (e.g X0X0X)")
 
 
 class BaseSchema(Schema):
@@ -80,9 +80,9 @@ class NameSchema(BaseSchema):
     def validate_name_given_length(self, value):
         if len(value) != 1:
             if self.field_name == "Patient":
-                raise ValueError("contained[?(@.resourceType=='Patient')].name[0].given must be an array of length 1")
+                raise ValidationError("contained[?(@.resourceType=='Patient')].name[0].given must be an array of length 1")
             if self.field_name == 'Practitioner':
-                raise ValueError("contained[?(@.resourceType=='Practitioner')].name[0].given must be an array of length 1")
+                raise ValidationError("contained[?(@.resourceType=='Practitioner')].name[0].given must be an array of length 1")
 
 
 class PractitionerNameSchema(BaseSchema):
@@ -97,9 +97,9 @@ class PractitionerNameSchema(BaseSchema):
     def validate_given_length(self, value):
         if len(value) != 1:
             if self.field_name == "Patient":
-                raise ValueError("contained[?(@.resourceType=='Patient')].name[0].given must be an array of length 1")
+                raise ValidationError("contained[?(@.resourceType=='Patient')].name[0].given must be an array of length 1")
             if self.field_name == 'Practitioner':
-                raise ValueError("contained[?(@.resourceType=='Practitioner')].name[0].given must be an array of length 1")
+                raise ValidationError("contained[?(@.resourceType=='Practitioner')].name[0].given must be an array of length 1")
 
 
 class AddressSchema(BaseSchema):
@@ -108,15 +108,15 @@ class AddressSchema(BaseSchema):
     @validates('postalCode')
     def validate_postcode_length(self, value):
         if len(value) == 0:
-            raise ValueError("contained[?(@.resourceType=='Patient')].address[0].postalCode must be a non-empty string")
+            raise ValidationError("contained[?(@.resourceType=='Patient')].address[0].postalCode must be a non-empty string")
         if value.count(" ") != 1 or value.startswith(" ") or value.endswith(" "):
-            raise ValueError("contained[?(@.resourceType=='Patient')].address[0].postalCode must contain a single space, which divides the two parts of the postal code")
+            raise ValidationError("contained[?(@.resourceType=='Patient')].address[0].postalCode must contain a single space, which divides the two parts of the postal code")
         if len(value.replace(" ", "")) > 8:
-            raise ValueError("contained[?(@.resourceType=='Patient')].address[0].postalCode must be 8 or fewer characters (excluding spaces)")
+            raise ValidationError("contained[?(@.resourceType=='Patient')].address[0].postalCode must be 8 or fewer characters (excluding spaces)")
         pattern = r'^[a-zA-Z]{1,2}([0-9]{1,2}|[0-9][a-zA-Z])\s*[0-9][a-zA-Z]{2}$'
         is_correct_format = re.match(pattern, value) is not None
         if not is_correct_format:
-            raise ValueError("contained[?(@.resourceType=='Patient')].address[0].postalCode must be 8 or fewer characters (excluding spaces)")
+            raise ValidationError("contained[?(@.resourceType=='Patient')].address[0].postalCode must be 8 or fewer characters (excluding spaces)")
 
 
 class PractitionerSchema(BaseSchema):
@@ -131,7 +131,7 @@ class PractitionerSchema(BaseSchema):
     @validates('name')
     def validate_given_length(self, value):
         if len(value) != 1:
-            raise ValueError("contained[?(@.resourceType=='Practitioner')].name must be an array of length 1")
+            raise ValidationError("contained[?(@.resourceType=='Practitioner')].name must be an array of length 1")
 
 
 # Define the schema for the identifier
@@ -142,15 +142,15 @@ class IdentifierSchema(BaseSchema):
     @validates('system')
     def validate_identifier_system_length(self, value):
         if len(value) == 0:
-            raise ValueError("contained[?(@.resourceType=='Patient')].identifier[0].system must be an array of non-empty strings")
+            raise ValidationError("contained[?(@.resourceType=='Patient')].identifier[0].system must be an array of non-empty strings")
         if value != "https://fhir.nhs.uk/Id/nhs-number":
-            raise ValueError("contained[?(@.resourceType=='Patient')].identifier[0].system does not match")
+            raise ValidationError("contained[?(@.resourceType=='Patient')].identifier[0].system does not match")
 
     @validates('value')
     def validate_nhsnumber_length(self, value):
         is_mod11 = False
         if len(value) != 10:
-            raise ValueError("contained[?(@.resourceType=='Patient')].identifier[0].value must be 10 characters")
+            raise ValidationError("contained[?(@.resourceType=='Patient')].identifier[0].value must be 10 characters")
         if value.isdigit() and len(value) == 10:
             # Create a reversed list of weighting factors
             weighting_factors = list(range(2, 11))[::-1]
@@ -164,9 +164,9 @@ class IdentifierSchema(BaseSchema):
             # Check the remainder matches the check digit. If it does not, the NHS NUMBER is invalid.
             is_mod11 = check_digit == int(value[-1])
             if is_mod11 is False:
-                raise ValueError("contained[?(@.resourceType=='Patient')].identifier[0].value does not exists")
+                raise ValidationError("contained[?(@.resourceType=='Patient')].identifier[0].value does not exists")
         else:
-            raise ValueError("contained[?(@.resourceType=='Patient')].identifier[0].value does not exists")
+            raise ValidationError("contained[?(@.resourceType=='Patient')].identifier[0].value does not exists")
 
 
 class ContainedPatientSchema(BaseSchema):
@@ -185,31 +185,31 @@ class ContainedPatientSchema(BaseSchema):
     @validates('gender')
     def validate_gender_length(self, value):
         if len(value) == 0:
-            raise ValueError("contained[?(@.resourceType=='Patient')].gender must be an array of length 1")
+            raise ValidationError("contained[?(@.resourceType=='Patient')].gender must be an array of length 1")
         if value not in ["male", "female", "other", "unknown"]:
-            raise ValueError("Validation errors: contained[?(@.resourceType=='Patient')].gender must be one of the following: male, female, other, unknown")
+            raise ValidationError("Validation errors: contained[?(@.resourceType=='Patient')].gender must be one of the following: male, female, other, unknown")
 
     @validates('birthDate')
     def validate_birthdate_length(self, value):
         try:
             datetime.strptime(value, "%Y-%m-%d")
-        except ValueError:
-            raise ValueError("contained[?(@.resourceType=='Patient')].birthDate must be a valid date string in the format 'YYYY-MM-DD'")
+        except ValidationError:
+            raise ValidationError("contained[?(@.resourceType=='Patient')].birthDate must be a valid date string in the format 'YYYY-MM-DD'")
 
     @validates('name')
     def validate_name_length(self, value):
         if len(value) != 1:
-            raise ValueError("contained[?(@.resourceType=='Patient')].name must be an array of length 1")
+            raise ValidationError("contained[?(@.resourceType=='Patient')].name must be an array of length 1")
 
     @validates('address')
     def validate_address_length(self, value):
         if len(value) != 1:
-            raise ValueError("contained[?(@.resourceType=='Patient')].address must be an array of length 1")
+            raise ValidationError("contained[?(@.resourceType=='Patient')].address must be an array of length 1")
 
     @validates('identifier')
     def validate_identifier_length(self, value):
         if len(value) != 1 or value == [{}]:
-            raise ValueError("contained[?(@.resourceType=='Patient')].identifier must be an array of length 1")
+            raise ValidationError("contained[?(@.resourceType=='Patient')].identifier must be an array of length 1")
 
 
 class ProtocolCodingSchema(BaseSchema):
@@ -220,24 +220,24 @@ class ProtocolCodingSchema(BaseSchema):
     @validates('system')
     def validate_protocolCoding_schema_length(self, value):
         if len(value) == 0:
-            raise ValueError("protocolApplied[0].targetDisease[*].coding[0].system must be a non-empty string")
+            raise ValidationError("protocolApplied[0].targetDisease[*].coding[0].system must be a non-empty string")
         if value != "http://snomed.info/sct":
-            raise ValueError("protocolApplied[0].targetDisease[*].coding[0].system.coding[0].system must be unique")
+            raise ValidationError("protocolApplied[0].targetDisease[*].coding[0].system.coding[0].system must be unique")
 
     @validates('code')
     def validate_code_length(self, value):
         if len(value) == 0:
-            raise ValueError("protocolApplied[0].targetDisease[*].coding[0].code must be a non-empty string")
+            raise ValidationError("protocolApplied[0].targetDisease[*].coding[0].code must be a non-empty string")
 
     @validates('code')
     def validate_code(self, value):
         if value not in DiseaseCode.all_codes and value != "":
-            raise ValueError(f'[{value}] is not a valid combination of disease codes for this service')
+            raise ValidationError(f'[{value}] is not a valid combination of disease codes for this service')
 
     @validates('display')
     def validate_display_length(self, value):
         if len(value) == 0:
-            raise ValueError("protocolApplied[0].targetDisease[*].coding[0].display must be a non-empty string")
+            raise ValidationError("protocolApplied[0].targetDisease[*].coding[0].display must be a non-empty string")
 
 
 # Define the Coding schema
@@ -253,25 +253,25 @@ class CodingSchema(BaseSchema):
     @validates('system')
     def validate_system_length(self, value):
         if len(value) == 0:
-            raise ValueError(f"{self.field_name}.coding[?(@.system=='http://snomed.info/sct')] must be a non-empty string")
+            raise ValidationError(f"{self.field_name}.coding[?(@.system=='http://snomed.info/sct')] must be a non-empty string")
         if value != "http://snomed.info/sct":
-            raise ValueError(f"{self.field_name}.coding[?(@.system=='http://snomed.info/sct')] must be unique")
+            raise ValidationError(f"{self.field_name}.coding[?(@.system=='http://snomed.info/sct')] must be unique")
         if not isinstance(value, str):
-            raise ValueError(f"{self.field_name}.coding[?(@.system=='http://snomed.info/sct')] must be a string")
+            raise ValidationError(f"{self.field_name}.coding[?(@.system=='http://snomed.info/sct')] must be a string")
 
     @validates('code')
     def validate_code_length(self, value):
         if len(value) == 0:
-            raise ValueError(f"{self.field_name}.coding[0].code must be a non-empty string")
+            raise ValidationError(f"{self.field_name}.coding[0].code must be a non-empty string")
         if not isinstance(value, str):
-            raise ValueError(f"{self.field_name}.coding[0].code must be a string")
+            raise ValidationError(f"{self.field_name}.coding[0].code must be a string")
 
     @validates('display')
     def validate_display_length(self, value):
         if len(value) == 0:
-            raise ValueError(f"{self.field_name}.coding[0].display must be a non-empty string")
+            raise ValidationError(f"{self.field_name}.coding[0].display must be a non-empty string")
         if not isinstance(value, str):
-            raise ValueError(f"{self.field_name}.coding[0].display must be a string")
+            raise ValidationError(f"{self.field_name}.coding[0].display must be a string")
 
 
 class ReasonCodingSchema(BaseSchema):
@@ -281,14 +281,14 @@ class ReasonCodingSchema(BaseSchema):
     @validates('system')
     def validate_system_length(self, value):
         if len(value) == 0:
-            raise ValueError("reasoncode.coding[0].system must be a non-empty string")
+            raise ValidationError("reasoncode.coding[0].system must be a non-empty string")
         if value != "http://snomed.info/sct":
-            raise ValueError("reasoncode.coding[0].system must be unique")
+            raise ValidationError("reasoncode.coding[0].system must be unique")
 
     @validates('code')
     def validate_code_length(self, value):
         if len(value) == 0:
-            raise ValueError("reasoncode.coding[0].code must be a non-empty string")
+            raise ValidationError("reasoncode.coding[0].code must be a non-empty string")
 
 
 # Define the Identifier schema
@@ -299,12 +299,12 @@ class MainIdentifierSchema(BaseSchema):
     @validates('system')
     def validate_system_length(self, value):
         if len(value) == 0:
-            raise ValueError("identifier[0].system must be a non-empty string")
+            raise ValidationError("identifier[0].system must be a non-empty string")
 
     @validates('value')
     def validate_identifier_schema_value_length(self, value):
         if len(value) == 0:
-            raise ValueError("identifier[0].value must be a non-empty string")
+            raise ValidationError("identifier[0].value must be a non-empty string")
 
 
 # Define the CodeableConcept schema
@@ -318,9 +318,9 @@ class VaccineCodeableConceptSchema(BaseSchema):
     @validates('coding')
     def validate_extension_length(self, value):
         if len(value) != 1 or value == [{}]:
-            raise ValueError(f"{self.field_name}.coding array must have exactly one item.")
+            raise ValidationError(f"{self.field_name}.coding array must have exactly one item.")
         if not isinstance(value, list):
-            raise ValueError(f"{self.field_name}.coding must be an array")
+            raise ValidationError(f"{self.field_name}.coding must be an array")
 
 
 # Define the CodeableConcept schema
@@ -334,9 +334,9 @@ class SiteCodeableConceptSchema(BaseSchema):
     @validates('coding')
     def validate_extension_length(self, value):
         if len(value) != 1 or value == [{}]:
-            raise ValueError(f"{self.field_name}.coding array must have exactly one item.")
+            raise ValidationError(f"{self.field_name}.coding array must have exactly one item.")
         if not isinstance(value, list):
-            raise ValueError(f"{self.field_name}.coding must be an array")
+            raise ValidationError(f"{self.field_name}.coding must be an array")
 
 
 # Define the CodeableConcept schema
@@ -350,9 +350,9 @@ class RouteCodeableConceptSchema(BaseSchema):
     @validates('coding')
     def validate_extension_length(self, value):
         if len(value) != 1 or value == [{}]:
-            raise ValueError(f"{self.field_name}.coding array must have exactly one item.")
+            raise ValidationError(f"{self.field_name}.coding array must have exactly one item.")
         if not isinstance(value, list):
-            raise ValueError(f"{self.field_name}.coding must be an array")
+            raise ValidationError(f"{self.field_name}.coding must be an array")
 
 
 # Define the CodeableConcept schema
@@ -367,9 +367,9 @@ class ProtocolCodeableConceptSchema(BaseSchema):
     def validate_extension_length(self, value):
         if len(value) == 0 or value == [{}]:
             if self.field_name == 'protocolApplied':
-                raise ValueError("protocolApplied[0].targetDisease[*].coding must be a non empty array")
+                raise ValidationError("protocolApplied[0].targetDisease[*].coding must be a non empty array")
         if not isinstance(value, list):
-            raise ValueError("protocolApplied[0].targetDiseas must be an array")
+            raise ValidationError("protocolApplied[0].targetDiseas must be an array")
 
 
 # Define the CodeableConcept schema
@@ -379,30 +379,40 @@ class ReasonCodeableConceptSchema(BaseSchema):
     @validates('coding')
     def validate_extension_length(self, value):
         if len(value) != 1 or value == [{}]:
-            raise ValueError("reasonCode.coding array must be an array of length 1")
+            raise ValidationError("reasonCode.coding array must be an array of length 1")
         if not isinstance(value, list):
-            raise ValueError("reasonCode.coding must be an array")
+            raise ValidationError("reasonCode.coding must be an array")
 
 
 class ProtocolAppliedSchema(BaseSchema):
     targetDisease = fields.List(fields.Nested(ProtocolCodeableConceptSchema(field_name='protocolApplied')), required=True, error_messages={"required": "protocolApplied[0].targetDisease[0].coding[?(@.system=='http://snomed.info/sct')].code is a mandatory field"})
-    doseNumberPositiveInt = fields.Int(required=False, allow_none=True, validate=lambda n: 0 <= n <= 9)
-    doseNumberString = fields.Str(required=False, validate=validate.Length(min=1))
+    doseNumberPositiveInt = fields.Int(required=False, allow_none=True,error_messages={'invalid': 'protocolApplied[0].doseNumberPositiveInt must be an integer'})
+    doseNumberString = fields.Str(required=False,error_messages={'invalid': 'protocolApplied[0].doseNumberString must be a string'})
 
     @validates_schema
     def validate_dose_number(self, data, **kwargs):
         if not data.get('doseNumberPositiveInt') and not data.get('doseNumberString'):
-            raise ValueError('Either doseNumberPositiveInt or doseNumberString must be present.')
+            raise ValidationError('Either doseNumberPositiveInt or doseNumberString must be present.')
         if data.get('doseNumberPositiveInt') and data.get('doseNumberString'):
-            raise ValueError('Only one of doseNumberPositiveInt or doseNumberString should be present.')
+            raise ValidationError('Only one of doseNumberPositiveInt or doseNumberString should be present.')
 
     @validates('targetDisease')
     def validate_target_length(self, value):
         if len(value) == 0 or value == [{}]:
-            raise ValueError("Every element of protocolApplied[0].targetDisease must have 'coding' property")
+            raise ValidationError("Every element of protocolApplied[0].targetDisease must have 'coding' property")
         if not isinstance(value, list):
-            raise ValueError("protocolApplied[0].targetDiseas must be an array")
-
+            raise ValidationError("protocolApplied[0].targetDiseas must be an array")
+        
+    @validates('doseNumberPositiveInt')
+    def validate_target_length(self, value):
+        if not (1 <= value <= 9):
+            raise ValidationError("protocolApplied[0].doseNumberPositiveInt must be an integer in the range 1 to 9")
+        if not isinstance(value,int):
+            raise ValidationError("protocolApplied[0].doseNumberPositiveInt must be an integer")
+    @validates('doseNumberString')
+    def validate_target_length(self, value):
+        if len(value) == 0:
+            raise ValidationError(" protocolApplied[0].doseNumberString must be a non empty string")
 
 class ExtensionCodingSchema(BaseSchema):
     system = fields.Str(required=True, error_messages={"required": "extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding[?(@.system=='http://snomed.info/sct')] is a mandatory field", "invalid": "extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding[?(@.system=='http://snomed.info/sct')] must be a string"})
@@ -412,19 +422,19 @@ class ExtensionCodingSchema(BaseSchema):
     @validates('system')
     def validate_extension_length(self, value):
         if len(value) == 0:
-            raise ValueError("extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding[?(@.system=='http://snomed.info/sct')] must be a non-empty string")
+            raise ValidationError("extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding[?(@.system=='http://snomed.info/sct')] must be a non-empty string")
         if value != "http://snomed.info/sct":
-            raise ValueError("extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding[?(@.system=='http://snomed.info/sct')] must be unique")
+            raise ValidationError("extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding[?(@.system=='http://snomed.info/sct')] must be unique")
 
     @validates('code')
     def validate_code_length(self, value):
         if len(value) == 0:
-            raise ValueError("extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding[?(@.system=='http://snomed.info/sct')].code must be a non-empty string")
+            raise ValidationError("extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding[?(@.system=='http://snomed.info/sct')].code must be a non-empty string")
 
     @validates('display')
     def validate_display_length(self, value):
         if len(value) == 0:
-            raise ValueError("extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding[?(@.system=='http://snomed.info/sct')].display must be a non-empty string")
+            raise ValidationError("extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding[?(@.system=='http://snomed.info/sct')].display must be a non-empty string")
 
 
 class ExtensionCodeableConceptSchema(BaseSchema):
@@ -438,7 +448,7 @@ class ExtensionCodeableConceptSchema(BaseSchema):
     def validate_extension_length(self, value):
         if len(value) != 1:
             if self.field_name == 'extension':
-                raise ValueError("extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding array must have exactly one item.")
+                raise ValidationError("extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding array must have exactly one item.")
 
 
 class ExtensionSchema(BaseSchema):
@@ -448,9 +458,9 @@ class ExtensionSchema(BaseSchema):
     @validates('url')
     def validate_extension_length(self, value):
         if len(value) == 0:
-            raise ValueError("extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')] must be a non-empty string")
+            raise ValidationError("extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')] must be a non-empty string")
         if value != "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure":
-            raise ValueError("extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')] must be unique")
+            raise ValidationError("extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')] must be unique")
 
 
 class PatientSchema(BaseSchema):
@@ -459,7 +469,7 @@ class PatientSchema(BaseSchema):
     @validates('reference')
     def validate_patient_reference_length(self, value):
         if len(value) == 0:
-            raise ValueError("patient.reference must be a single reference to a contained Patient resource")
+            raise ValidationError("patient.reference must be a single reference to a contained Patient resource")
 
 
 class ManufacturerSchema(BaseSchema):
@@ -468,14 +478,14 @@ class ManufacturerSchema(BaseSchema):
     @validates('display')
     def validate_manufacturer_display_length(self, value):
         if len(value) == 0:
-            raise ValueError("manufacturer.display must be a non-empty string")
+            raise ValidationError("manufacturer.display must be a non-empty string")
 
 
 def validate_four_decimal_places(value):
     if not re.match(r'^\d+(\.\d{1,4})?$', str(value)):
-        raise ValueError('doseQuantity.value must be a number with a maximum of 4 decimal places')
+        raise ValidationError('doseQuantity.value must be a number with a maximum of 4 decimal places')
     if isinstance(value, str):
-        raise ValueError('doseQuantity.value must be a number')
+        raise ValidationError('doseQuantity.value must be a number')
 
 
 class DoseQuantitySchema(BaseSchema):
@@ -487,18 +497,18 @@ class DoseQuantitySchema(BaseSchema):
     @validates('value')
     def validate_value(self, value):
         if isinstance(value, str):
-            raise ValueError("doseQuantity.value must be a number")
+            raise ValidationError("doseQuantity.value must be a number")
         validate_four_decimal_places(value)
 
     @validates('unit')
     def validate_unit_length(self, value):
         if len(value) == 0:
-            raise ValueError("doseQuantity.unit must be a non-empty string")
+            raise ValidationError("doseQuantity.unit must be a non-empty string")
 
     @validates('code')
     def validate_code_length(self, value):
         if len(value) == 0:
-            raise ValueError("doseQuantity.code must be a non-empty string")
+            raise ValidationError("doseQuantity.code must be a non-empty string")
 
 
 class LocationIdentifierSchema(BaseSchema):
@@ -508,14 +518,14 @@ class LocationIdentifierSchema(BaseSchema):
     @validates('system')
     def validate_system_length(self, value):
         if len(value) == 0:
-            raise ValueError("location.identifier.system must be a non-empty string")
+            raise ValidationError("location.identifier.system must be a non-empty string")
         if value not in ["https://fhir.nhs.uk/Id/ods-organization-code", "https://fhir.hl7.org.uk/Id/urn-school-number"]:
-            raise ValueError("location.identifier.system must be unique'")
+            raise ValidationError("location.identifier.system must be unique'")
 
     @validates('value')
     def validate_location_length(self, value):
         if len(value) == 0:
-            raise ValueError("location.identifier.value must be a non-empty string")
+            raise ValidationError("location.identifier.value must be a non-empty string")
 
 
 class LocationSchema(BaseSchema):
@@ -525,9 +535,9 @@ class LocationSchema(BaseSchema):
     @validates('type')
     def validate_type_length(self, value):
         if len(value) == 0:
-            raise ValueError("location.type must be a non-empty string")
+            raise ValidationError("location.type must be a non-empty string")
         if value != "Location":
-            raise ValueError("location.type must be equal to 'Location'")
+            raise ValidationError("location.type must be equal to 'Location'")
 
 
 class ActorWithoutTypeSchema(BaseSchema):
@@ -536,7 +546,7 @@ class ActorWithoutTypeSchema(BaseSchema):
     @validates('reference')
     def validate_reference_length(self, value):
         if len(value) == 0:
-            raise ValueError("contained Practitioner ID must be referenced by performer.actor.reference")
+            raise ValidationError("contained Practitioner ID must be referenced by performer.actor.reference")
 
 
 class ActorIdentifierSchema(BaseSchema):
@@ -546,12 +556,12 @@ class ActorIdentifierSchema(BaseSchema):
     @validates('system')
     def validate_system_length(self, value):
         if len(value) == 0:
-            raise ValueError("performer[?(@.actor.type=='Organization')].actor.identifier.system must be a non-empty string")
+            raise ValidationError("performer[?(@.actor.type=='Organization')].actor.identifier.system must be a non-empty string")
 
     @validates('value')
     def validate_actor_value_length(self, value):
         if len(value) == 0:
-            raise ValueError("performer[?(@.actor.type=='Organization')].actor.identifier.value must be a non-empty string")
+            raise ValidationError("performer[?(@.actor.type=='Organization')].actor.identifier.value must be a non-empty string")
 
 
 class ActorWithTypeSchema(BaseSchema):
@@ -561,7 +571,7 @@ class ActorWithTypeSchema(BaseSchema):
     @validates('type')
     def validate_type_length(self, value):
         if value != "Organization" or value == 0:
-            raise ValueError("performer[?(@.actor.type=='Organization')].actor.identifier.value is a mandatory field; performer[?(@.actor.type=='Organization')].actor.identifier.system is a mandatory field")
+            raise ValidationError("performer[?(@.actor.type=='Organization')].actor.identifier.value is a mandatory field; performer[?(@.actor.type=='Organization')].actor.identifier.system is a mandatory field")
 
 
 class PerformerItemSchema(BaseSchema):
@@ -570,7 +580,7 @@ class PerformerItemSchema(BaseSchema):
     @validates('actor')
     def validate_reference_length(self, value):
         if "reference" not in value:
-            raise ValueError("contained Practitioner ID must be referenced by performer.actor.reference")
+            raise ValidationError("contained Practitioner ID must be referenced by performer.actor.reference")
 
 
 class PerformerItemWithTypeSchema(BaseSchema):
@@ -601,7 +611,7 @@ class ImmunizationSchema(BaseSchema):
 
     def validate_single_item(self, field_name, value):
         if len(value) != 1 or value == [{}]:
-            raise ValueError(f"{field_name} must be an array of length 1")
+            raise ValidationError(f"{field_name} must be an array of length 1")
 
     @validates('extension')
     def validate_extension(self, value):
@@ -626,71 +636,71 @@ class ImmunizationSchema(BaseSchema):
             for performer in value
         )
         if len(value) != 2 and type_organization_present is False:
-            raise ValueError("performer[?(@.actor.type=='Organization')].actor.identifier.value is a mandatory field; performer[?(@.actor.type=='Organization')].actor.identifier.system is a mandatory field")
+            raise ValidationError("performer[?(@.actor.type=='Organization')].actor.identifier.value is a mandatory field; performer[?(@.actor.type=='Organization')].actor.identifier.system is a mandatory field")
 
     @validates('status')
     def validate_status_length(self, value):
         if len(value) == 0:
-            raise ValueError("status must be a non-empty string")
+            raise ValidationError("status must be a non-empty string")
         if value not in ["completed"]:
-            raise ValueError("status must be equal to completed")
+            raise ValidationError("status must be equal to completed")
 
     @validates('occurrenceDateTime')
     def validate_occurrence_length(self, value):
         if len(value) == 0:
-            raise ValueError("occurrenceDateTime must be a string in the format 'YYYY-MM-DDThh:mm:ss+zz:zz' or 'YYYY-MM-DDThh:mm:ss-zz:zz' (i.e date and time, including timezone offset in hours and minutes). Milliseconds are optional after the seconds (e.g. 2021-01-01T00:00:00.000+00:00).")
+            raise ValidationError("occurrenceDateTime must be a string in the format 'YYYY-MM-DDThh:mm:ss+zz:zz' or 'YYYY-MM-DDThh:mm:ss-zz:zz' (i.e date and time, including timezone offset in hours and minutes). Milliseconds are optional after the seconds (e.g. 2021-01-01T00:00:00.000+00:00).")
 
         pattern = r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}[\+\-]\d{2}:\d{2}$'
         is_correct_format = re.match(pattern, value) is not None
         if not is_correct_format:
-            raise ValueError("occurrenceDateTime must be a string in the format 'YYYY-MM-DDThh:mm:ss+zz:zz' or 'YYYY-MM-DDThh:mm:ss-zz:zz' (i.e date and time, including timezone offset in hours and minutes). Milliseconds are optional after the seconds (e.g. 2021-01-01T00:00:00.000+00:00).")
+            raise ValidationError("occurrenceDateTime must be a string in the format 'YYYY-MM-DDThh:mm:ss+zz:zz' or 'YYYY-MM-DDThh:mm:ss-zz:zz' (i.e date and time, including timezone offset in hours and minutes). Milliseconds are optional after the seconds (e.g. 2021-01-01T00:00:00.000+00:00).")
         try:
             datetime_str = value[:-6]  # remove the timezone part
             datetime.strptime(datetime_str, '%Y-%m-%dT%H:%M:%S.%f') if '.' in datetime_str else datetime.strptime(datetime_str, '%Y-%m-%dT%H:%M:%S')
-        except ValueError:
-            raise ValueError("occurrenceDateTime must be a valid datetime")
+        except ValidationError:
+            raise ValidationError("occurrenceDateTime must be a valid datetime")
 
     @validates('recorded')
     def validate_recorded_length(self, value):
         if len(value) == 0:
-            raise ValueError("recorded must be a valid date string in the format 'YYYY-MM-DD'")
+            raise ValidationError("recorded must be a valid date string in the format 'YYYY-MM-DD'")
 
         pattern = r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}[\+\-]\d{2}:\d{2}$'
         is_correct_format = re.match(pattern, value) is not None
         if not is_correct_format:
-            raise ValueError("recorded must be a string in the format 'YYYY-MM-DDThh:mm:ss+zz:zz' or 'YYYY-MM-DDThh:mm:ss-zz:zz' (i.e date and time, including timezone offset in hours and minutes). Milliseconds are optional after the seconds (e.g. 2021-01-01T00:00:00.000+00:00).")
+            raise ValidationError("recorded must be a string in the format 'YYYY-MM-DDThh:mm:ss+zz:zz' or 'YYYY-MM-DDThh:mm:ss-zz:zz' (i.e date and time, including timezone offset in hours and minutes). Milliseconds are optional after the seconds (e.g. 2021-01-01T00:00:00.000+00:00).")
         try:
             datetime_str = value[:-6]  # remove the timezone part
             datetime.strptime(datetime_str, '%Y-%m-%dT%H:%M:%S.%f') if '.' in datetime_str else datetime.strptime(datetime_str, '%Y-%m-%dT%H:%M:%S')
-        except ValueError:
-            raise ValueError("recorded must be a valid datetime")
+        except ValidationError:
+            raise ValidationError("recorded must be a valid datetime")
 
     @validates('primarySource')
     def validate_primary_resource_length(self, value):
         if isinstance(value, str):
-            raise ValueError("primarySource must be a boolean")
+            raise ValidationError("primarySource must be a boolean")
 
     @validates('manufacturer')
     def validate_manufacturer_length(self, value):
         if value == {}:
-            raise ValueError("manufacturer.display should not be empty")
+            raise ValidationError("manufacturer.display should not be empty")
 
     @validates('vaccineCode')
     def validate_vaccineCode_length(self, value):
         if value == {}:
-            raise ValueError("vaccineCode should not be empty")
+            raise ValidationError("vaccineCode should not be empty")
 
     @validates('lotNumber')
     def validate_lotNumber_length(self, value):
         if len(value) == 0:
-            raise ValueError("lotNumber must be a non-empty string")
+            raise ValidationError("lotNumber must be a non-empty string")
         if len(value) > 100:
-            raise ValueError("lotNumber must be 100 or fewer characters")
+            raise ValidationError("lotNumber must be 100 or fewer characters")
 
     @validates('doseQuantity')
     def validate_doseQuantity_resource_length(self, value):
         if value == {}:
-            raise ValueError("doseQuantity should not be empty")
+            raise ValidationError("doseQuantity should not be empty")
 
     @validates_schema
     @validates('performer')
@@ -702,11 +712,11 @@ class ImmunizationSchema(BaseSchema):
                     actor = performer['actor']
                     if 'reference' in actor:
                         ref = actor['reference']
-                        raise ValueError(f"Reference {ref} does not match any Practitioner's id")
+                        raise ValidationError(f"Reference {ref} does not match any Practitioner's id")
             elif resource.get('resourceType') == 'Patient':
                 ContainedPatientSchema(field_name="Patient").load(resource)
             else:
-                raise ValueError(f"Unsupported resourceType in contained: {resource.get('resourceType')}")     
+                raise ValidationError(f"Unsupported resourceType in contained: {resource.get('resourceType')}")     
 
 
     @validates_schema
@@ -718,22 +728,22 @@ class ImmunizationSchema(BaseSchema):
             elif resource.get('resourceType') == 'Patient':
                 ContainedPatientSchema(field_name="Patient", unknown=INCLUDE).load(resource)
             else:
-                raise ValueError(f"Unsupported resourceType in contained: {resource.get('resourceType')}")
+                raise ValidationError(f"Unsupported resourceType in contained: {resource.get('resourceType')}")
 
     @validates('patient')
     def validate_patient_reference(self, value):
         reference = value['reference']
         if not reference.startswith('#'):
-            raise ValueError("Reference must start with '#'")
+            raise ValidationError("Reference must start with '#'")
         patient_id = reference[1:]
         contained_resources = self.context.get("contained", [])
         if not any(res['resourceType'] == 'Patient' for res in contained_resources):
-            raise ValueError("contained[?(@.resourceType=='Patient')] is mandatory")
+            raise ValidationError("contained[?(@.resourceType=='Patient')] is mandatory")
         id_present_in_practitioner = any(item["resourceType"] == "Patient" and "id" in item for item in contained_resources)
         if not id_present_in_practitioner:
-            raise ValueError("The contained Patient resource must have an 'id' field")
+            raise ValidationError("The contained Patient resource must have an 'id' field")
         if not any(res['resourceType'] == 'Patient' and res['id'] == patient_id for res in contained_resources):
-            raise ValueError(f"The reference {reference} does not exist in the contained Patient resource")
+            raise ValidationError(f"The reference {reference} does not exist in the contained Patient resource")
 
     @pre_load
     def differentiate_actors(self, data, **kwargs):
@@ -765,22 +775,22 @@ class ImmunizationSchema(BaseSchema):
 
             if not practitioner_present:
                 if ref:
-                    raise ValueError(f"Reference {ref} does not exist in the contained Practitioner resource")
+                    raise ValidationError(f"Reference {ref} does not exist in the contained Practitioner resource")
                 else:
                     # Skip further validation if no practitioners are present and no references are provided
                     continue
             if practitioner_present and practitioners_with_id and ref is None and len(contained_resources) != 2 and "identifier" not in actor:
-                raise ValueError("contained Practitioner ID must be referenced by performer.actor.reference")
+                raise ValidationError("contained Practitioner ID must be referenced by performer.actor.reference")
 
             if ref:
                 if not ref.startswith('#'):
-                    raise ValueError(f"Reference {ref} does not start with '#'")
+                    raise ValidationError(f"Reference {ref} does not start with '#'")
                 ref_id = ref[1:]  # Remove the '#' to get the id
                 if not practitioners_with_id:
-                    raise ValueError("The contained Practitioner resource must have an 'id' field")
+                    raise ValidationError("The contained Practitioner resource must have an 'id' field")
                 if ref_id not in practitioners:
-                    raise ValueError(f"Reference {ref} does not exist in the contained Practitioner resource")
+                    raise ValidationError(f"Reference {ref} does not exist in the contained Practitioner resource")
 
         # If practitioners are present, at least one must have an 'id'
         if practitioner_present and not practitioners_with_id:
-            raise ValueError("The contained Practitioner resource must have at least one 'id' field")
+            raise ValidationError("The contained Practitioner resource must have at least one 'id' field")
