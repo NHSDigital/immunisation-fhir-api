@@ -3,8 +3,9 @@
 from fhir.resources.R4B.immunization import Immunization
 from models.fhir_immunization_pre_validators import PreValidators
 from models.fhir_immunization_post_validators import PostValidators
-from models.utils.generic_utils import get_generic_questionnaire_response_value
+from models.utils.generic_utils import get_generic_questionnaire_response_value,extract_value
 from models.schema import ImmunizationSchema
+import json
 
 
 class ImmunizationValidator:
@@ -32,8 +33,26 @@ class ImmunizationValidator:
         print("5")
         errors = self.immunization_schema.validate(immunization)
         print(errors)
-        if errors:
-            raise ValueError(errors)
+        if errors:error_list = []
+        for key, value in errors.items():
+                if isinstance(value, dict):
+                    for sub_key, sub_value in value.items():
+                        error_list.append({key: {sub_key: sub_value}})
+                else:
+                    error_list.append({key: value})
+
+            # Convert each dictionary in the list to a JSON-formatted string
+        error_strings = [json.dumps(error) for error in error_list]
+
+            # Extract content within the first and last square brackets and update the array
+        updated_errors = [extract_value(item) for item in error_strings]
+            # for error_string in error_strings:
+            #     match = re.search(r'\[(.*?)\]', error_string)
+            #     if match:
+            #         updated_errors.append(match.group(1))
+        error_string = '; '.join(updated_errors)
+        raise ValueError(error_string)
+        
 
     def initialize_post_validators(self, immunization):
         """Initialize post validators with data"""

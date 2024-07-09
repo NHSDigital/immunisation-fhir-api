@@ -1,76 +1,77 @@
-# """Test immunization pre validation rules on the model"""
+"""Test immunization pre validation rules on the model"""
 
-# import unittest
-# from copy import deepcopy
-# from decimal import Decimal
-# from jsonpath_ng.ext import parse
+import unittest
+from copy import deepcopy
+from decimal import Decimal
+from jsonpath_ng.ext import parse
 
-# from src.models.fhir_immunization import ImmunizationValidator
-# from src.mappings import DiseaseCodes
-# from .utils.generic_utils import (
-#     # these have an underscore to avoid pytest collecting them as tests
-#     test_valid_values_accepted as _test_valid_values_accepted,
-#     test_invalid_values_rejected as _test_invalid_values_rejected,
-#     load_json_data,
-# )
-# from .utils.pre_validation_test_utils import ValidatorModelTests
-# from .utils.values_for_tests import ValidValues, InvalidValues
+from src.models.fhir_immunization import ImmunizationValidator
+from src.mappings import DiseaseCodes
+from .utils.generic_utils import (
+    # these have an underscore to avoid pytest collecting them as tests
+    test_valid_values_accepted as _test_valid_values_accepted,
+    test_invalid_values_rejected as _test_invalid_values_rejected,
+    load_json_data,
+)
+from .utils.pre_validation_test_utils import ValidatorModelTests
+from .utils.values_for_tests import ValidValues, InvalidValues
 
 
-# class TestImmunizationModelPreValidationRules(unittest.TestCase):
-#     """Test immunization pre validation rules on the FHIR model using the covid sample data"""
+class TestImmunizationModelPreValidationRules(unittest.TestCase):
+    """Test immunization pre validation rules on the FHIR model using the covid sample data"""
 
-#     def setUp(self):
-#         """Set up for each test. This runs before every test"""
-#         self.json_data = load_json_data(filename="completed_covid19_immunization_event.json")
-#         self.validator = ImmunizationValidator(add_post_validators=False)
+    def setUp(self):
+        """Set up for each test. This runs before every test"""
+        self.json_data = load_json_data(filename="completed_covid19_immunization_event.json")
+        self.validator = ImmunizationValidator(add_post_validators=False)
 
-#     def test_collected_errors(self):
-#         """Test that when passed multiple validation errors, it returns a list of all expected errors."""
+    def test_collected_errors(self):
+        """Test that when passed multiple validation errors, it returns a list of all expected errors."""
 
-#         covid_data = deepcopy(self.json_data)
+        covid_data = deepcopy(self.json_data)
 
-#         covid_data["location"]["type"] = ""
-#         expected_errors = [
-#             "location.type must be a non-empty string"
-#         ]
-
-#         # assert ValueError raised
-#         with self.assertRaises(ValueError) as cm:
-#             self.validator.validate(covid_data)
-
-#         # extract the error messages from the exception
-#         actual_errors = str(cm.exception).split("; ")
-
-#         # assert length of errors
-#         assert len(actual_errors) == len(expected_errors)
-
-#         # assert the error is in the expected error messages
-#         for error in actual_errors:
-#             assert error in expected_errors
-
-#     def test_pre_validate_contained(self):
-#         """Test pre_validate_contained accepts valid values and rejects invalid values"""
-#         # Test that the contained field is rejected when invalid
+        covid_data["location"]["type"] = ""
+        covid_data["recorded"] = "2021-07-01"
+        covid_data["status"] = "not-done"
+        expected_errors = ['"location.type must be a non-empty string"', '"recorded must be a string in the format \'YYYY-MM-DDThh:mm:ss+zz:zz\' or \'YYYY-MM-DDThh:mm:ss-zz:zz\' (i.e date and time, including timezone offset in hours and minutes). Milliseconds are optional after the seconds (e.g. 2021-01-01T00:00:00.000+00:00)."', '"status must be equal to completed"']
         
-#         covid_data = deepcopy(self.json_data)
 
-#         del covid_data["contained"][0]["id"]
-#         expected_errors = "The contained Practitioner resource must have an 'id' field"
+        # assert ValueError raised
+        with self.assertRaises(ValueError) as cm:
+            self.validator.validate(covid_data)
 
-#         # assert ValueError raised
-#         with self.assertRaises(ValueError) as cm:
-#             self.validator.validate(covid_data)
+        # extract the error messages from the exception
+        actual_errors = str(cm.exception).split("; ")
 
-#         # extract the error messages from the exception
-#         actual_errors = str(cm.exception)
+        # assert length of errors
+        assert len(actual_errors) == len(expected_errors)
 
-#         # assert length of errors
-#         assert len(actual_errors) == len(expected_errors)
+        # assert the error is in the expected error messages
+        for error in actual_errors:
+            assert error in expected_errors
 
-#         # assert the error is in the expected error messages
-#         for error in actual_errors:
-#             assert error in expected_errors
+    # def test_pre_validate_contained(self):
+    #     """Test pre_validate_contained accepts valid values and rejects invalid values"""
+    #     # Test that the contained field is rejected when invalid
+        
+    #     covid_data = deepcopy(self.json_data)
+
+    #     del covid_data["contained"][0]["id"]
+    #     expected_errors = "The contained Practitioner resource must have an 'id' field"
+
+    #     # assert ValueError raised
+    #     with self.assertRaises(ValueError) as cm:
+    #         self.validator.validate(covid_data)
+
+    #     # extract the error messages from the exception
+    #     actual_errors = str(cm.exception)
+
+    #     # assert length of errors
+    #     assert len(actual_errors) == len(expected_errors)
+
+    #     # assert the error is in the expected error messages
+    #     for error in actual_errors:
+    #         assert error in expected_errors
 
 #     def test_pre_validate_patient_reference(self):
 #         """Test pre_validate_patient_reference accepts valid values and rejects invalid values"""
