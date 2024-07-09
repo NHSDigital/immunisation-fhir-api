@@ -247,9 +247,6 @@
           "doseNumberPositiveInt": 5
         }
       ],
-      "reportOrigin": {
-        "text": "sample"
-      },
       "reasonCode": [
         {
           "coding": [
@@ -260,7 +257,7 @@
           ]
         }
       ],
-      "recorded": "2010-05-06",
+      "recorded": "2020-12-14T10:08:15+00:00",
       "manufacturer": {
         "display": "test"
       },

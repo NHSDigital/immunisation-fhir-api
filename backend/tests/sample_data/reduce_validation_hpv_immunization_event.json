@@ -4,22 +4,7 @@
     {
       "resourceType": "Patient",
       "id": "Pat1",
-      "identifier": [
-        {
-          "extension": [
-            {
-              "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-NHSNumberVerificationStatus",
-              "valueCodeableConcept": {
-                "coding": [
-                  {
-                    "system": "https://fhir.hl7.org.uk/CodeSystem/UKCore-NHSNumberVerificationStatusEngland",
-                    "code": "01",
-                    "display": "Number present and verified"
-                  }
-                ]
-              }
-            }
-          ],
+      "identifier": [{
           "system": "https://fhir.nhs.uk/Id/nhs-number",
           "value": "9000000009"
         }
@@ -35,52 +20,6 @@
       "address": [
         {
           "postalCode": "EC1A 1BB"
-        }
-      ]
-    },
-    {
-      "resourceType": "QuestionnaireResponse",
-      "id": "QR1",
-      "status": "completed",
-      "item": [
-        {
-          "linkId": "Immunisation",
-          "answer": [
-            {
-              "valueReference": {
-                "reference": "#"
-              }
-            }
-          ]
-        },
-        {
-          "linkId": "ReduceValidation",
-          "answer": [
-            {
-              "valueBoolean": true
-            }
-          ]
-        },
-        {
-          "linkId": "ReduceValidationReason",
-          "answer": [
-            {
-              "valueString": "Historical record : CSMS"
-            }
-          ]
-        },
-        {
-          "linkId": "LocalPatient",
-          "answer": [
-            {
-              "valueReference": {
-                "identifier": {
-                  "system": "https://ACME/identifiers/patient",
-                  "value": "ACME-patient123456"
-                }
-              }
-            }
-          ]
         }
       ]
     }
@@ -119,12 +58,10 @@
     "reference": "#Pat1"
   },
   "occurrenceDateTime": "2019-02-14T13:28:17.271+00:00",
-  "recorded": "2021-02-28",
+  "recorded": "2019-02-14T13:28:17.271+00:00",
   "primarySource": false,
-  "reportOrigin": {
-    "text": "CSMS"
-  },
   "location": {
+    "type": "Location",
     "identifier": {
       "value": "X99999",
       "system": "https://fhir.nhs.uk/Id/ods-organization-code"
@@ -137,8 +74,7 @@
         "identifier": {
           "system": "https://fhir.nhs.uk/Id/ods-organization-code",
           "value": "B0C4P"
-        },
-        "display": "Acme Healthcare"
+        }
       }
     }
   ],

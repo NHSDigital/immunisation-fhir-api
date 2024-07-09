@@ -4,10 +4,12 @@
     {
       "resourceType": "Practitioner",
       "id": "Pract1",
-      "identifier": [
+      "name": [
         {
-          "system": "https://fhir.hl7.org.uk/Id/nmc-number",
-          "value": "99A9999A"
+          "family": "Nightingale",
+          "given": [
+            "Florence"
+          ]
         }
       ]
     },
@@ -16,20 +18,6 @@
       "id": "Pat1",
       "identifier": [
         {
-          "extension": [
-            {
-              "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-NHSNumberVerificationStatus",
-              "valueCodeableConcept": {
-                "coding": [
-                  {
-                    "system": "https://fhir.hl7.org.uk/CodeSystem/UKCore-NHSNumberVerificationStatusEngland",
-                    "code": "01",
-                    "display": "Number present and verified"
-                  }
-                ]
-              }
-            }
-          ],
           "system": "https://fhir.nhs.uk/Id/nhs-number",
           "value": "9000000009"
         }
@@ -45,68 +33,6 @@
       "address": [
         {
           "postalCode": "EC1A 1BB"
-        }
-      ]
-    },
-    {
-      "resourceType": "QuestionnaireResponse",
-      "id": "QR1",
-      "status": "completed",
-      "item": [
-        {
-          "linkId": "Immunisation",
-          "answer": [
-            {
-              "valueReference": {
-                "reference": "#"
-              }
-            }
-          ]
-        },
-        {
-          "linkId": "Consent",
-          "answer": [
-            {
-              "valueCoding": {
-                "code": "310375005",
-                "system": "http://snomed.info/sct",
-                "display": "Immunization consent given (finding)"
-              }
-            }
-          ]
-        },
-        {
-          "linkId": "CareSetting",
-          "answer": [
-            {
-              "valueCoding": {
-                "code": "413294000",
-                "system": "http://snomed.info/sct",
-                "display": "Community health services (qualifier value)"
-              }
-            }
-          ]
-        },
-        {
-          "linkId": "ReduceValidation",
-          "answer": [
-            {
-              "valueBoolean": false
-            }
-          ]
-        },
-        {
-          "linkId": "LocalPatient",
-          "answer": [
-            {
-              "valueReference": {
-                "identifier": {
-                  "system": "https://ACME/identifiers/patient",
-                  "value": "ACME-patient123456"
-                }
-              }
-            }
-          ]
         }
       ]
     }
@@ -144,16 +70,14 @@
   "patient": {
     "reference": "#Pat1"
   },
-  "occurrenceDateTime": "2021-02-14T13:28:17.271+00:00",
-  "recorded": "2021-02-14",
+  "occurrenceDateTime": "2021-02-07T13:28:17.271+00:00",
+  "recorded": "2021-02-07T13:28:17.271+00:00",
   "primarySource": true,
-  "reportOrigin": {
-    "text": "B0C4P"
-  },
   "manufacturer": {
-    "display": "Sanofi"
+    "display": "AstraZenecaLtd"
   },
   "location": {
+    "type": "Location",
     "identifier": {
       "value": "X99999",
       "system": "https://fhir.nhs.uk/Id/ods-organization-code"
@@ -197,8 +121,7 @@
         "identifier": {
           "system": "https://fhir.nhs.uk/Id/ods-organization-code",
           "value": "B0C4P"
-        },
-        "display": "Acme Healthcare"
+        }
       }
     }
   ],
@@ -206,9 +129,8 @@
     {
       "coding": [
         {
-          "code": "78648007",
-          "system": "http://snomed.info/sct",
-          "display": "At increased risk for infection (finding)"
+          "code": "443684005",
+          "system": "http://snomed.info/sct"
         }
       ]
     }

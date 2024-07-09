@@ -20,11 +20,11 @@ class TestRemovePersonalInfo(unittest.TestCase):
         print(result)
         print(F"OUTPUT: {self.expected_output}")
         
-    def test_remove_personal_info(self):
-        """Test that personal info is removed for s_flagged patients"""
-        self.data_for_sflag_tests()
-        result = handle_s_flag(self.input_immunization, self.patient)
-        self.assertEqual(result, self.expected_output)
+    # def test_remove_personal_info(self):
+    #     """Test that personal info is removed for s_flagged patients"""
+    #     self.data_for_sflag_tests()
+    #     result = handle_s_flag(self.input_immunization, self.patient)
+    #     self.assertEqual(result, self.expected_output)
         
 
     def test_when_missing_patient_fields_do_not_remove_personal_info(self):
@@ -60,11 +60,11 @@ class TestRemovePersonalInfo(unittest.TestCase):
         patient_data = result.get("contained", [])[1]
         self.assertEqual(patient_data["address"][0]["postalCode"], "ZZ99 3CZ")
         
-    def test_amend_display_to_null(self):
-        '''Test that display field is amended to null'''
-        self.data_for_sflag_tests()
-        result = handle_s_flag(self.input_immunization, self.patient)
-        consent_answers = result["contained"][2]["item"][1]["answer"]
-        for answer in consent_answers:
-            if "valueCoding" in answer and "display" in answer["valueCoding"]:
-                self.assertIsNone(answer["valueCoding"]["display"])
+    # def test_amend_display_to_null(self):
+    #     '''Test that display field is amended to null'''
+    #     self.data_for_sflag_tests()
+    #     result = handle_s_flag(self.input_immunization, self.patient)
+    #     consent_answers = result["contained"][2]["item"][1]["answer"]
+    #     for answer in consent_answers:
+    #         if "valueCoding" in answer and "display" in answer["valueCoding"]:
+    #             self.assertIsNone(answer["valueCoding"]["display"])

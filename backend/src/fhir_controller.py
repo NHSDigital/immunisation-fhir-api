@@ -124,6 +124,7 @@ class FhirController:
 
     def create_immunization(self, aws_event):
         if response := self.authorize_request(EndpointOperation.CREATE, aws_event):
+            print(f"awsevent:{aws_event}")
             return response
         
         try:
@@ -151,7 +152,9 @@ class FhirController:
             )
             
         try:
+            print("1")
             resource = self.fhir_service.create_immunization(imms,imms_vax_type_perms,app_id)
+            print(f"resource:{resource}")
             if "diagnostics" in resource:
                 exp_error = create_operation_outcome(
                     resource_id=str(uuid.uuid4()),
@@ -159,6 +162,7 @@ class FhirController:
                     code=Code.invariant,
                     diagnostics=resource["diagnostics"],
                 )
+                print(exp_error)
                 return self.create_response(400, json.dumps(exp_error))
             location = f"{get_service_url()}/Immunization/{resource.id}"
             return self.create_response(201, None, {"Location": location})

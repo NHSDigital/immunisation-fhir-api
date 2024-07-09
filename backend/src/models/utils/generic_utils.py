@@ -250,3 +250,10 @@ def create_diagnostics_error(value):
                              "diagnostics": diagnostics
                             }
                 return (exp_error)
+
+def extract_value(s):
+    first_bracket = s.find('[')
+    last_bracket = s.rfind(']')
+    if first_bracket != -1 and last_bracket != -1 and first_bracket < last_bracket:
+        return s[first_bracket + 1:last_bracket]
+    return s
