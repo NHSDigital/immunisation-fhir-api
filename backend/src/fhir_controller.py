@@ -72,6 +72,44 @@ class FhirController:
         ):
         self.fhir_service = fhir_service
         self.authorizer = authorizer
+
+    def get_immunization_by_identifier(self, aws_event) -> dict:
+        if response := self.authorize_request(EndpointOperation.READ, aws_event):
+            return response
+
+        identifier_pk = aws_event["pathParameters"]["id"]
+        if id_error := self._validate_identifier(identifier_pk):
+            return self.create_response(400, id_error)
+        
+        try:
+            if aws_event.get("headers"):
+                try:
+                    imms_vax_type_perms = aws_event["headers"]["VaccineTypePermissions"]
+                    if len(imms_vax_type_perms) == 0:
+                        raise UnauthorizedVaxError()
+                        
+                except UnauthorizedVaxError as unauthorized:
+                    return self.create_response(403, unauthorized.to_operation_outcome())
+            else:
+                raise UnauthorizedVaxError()
+        except UnauthorizedVaxError as unauthorized:
+            return self.create_response(403, unauthorized.to_operation_outcome())
+        
+        try:
+            if resource := self.fhir_service.get_immunization_by_identifier(identifier_pk, imms_vax_type_perms):
+                print(f"resource:{resource}")
+                return FhirController.create_response(200, resource.json())
+            else:
+                msg = "The requested resource was not found."
+                id_error = create_operation_outcome(
+                    resource_id=str(uuid.uuid4()),
+                    severity=Severity.error,
+                    code=Code.not_found,
+                    diagnostics=msg,
+                )
+                return FhirController.create_response(404, id_error)
+        except UnauthorizedVaxError as unauthorized:
+            return self.create_response(403, unauthorized.to_operation_outcome())    
        
 
     def get_immunization_by_id(self, aws_event) -> dict:
@@ -413,6 +451,18 @@ class FhirController:
             result_json_dict["total"] = 0
         return self.create_response(200, json.dumps(result_json_dict))
 
+    def _validate_identifier(self, _id: str) -> Optional[dict]:
+        if not _id :
+            msg = "the provided identifier PK is either missing or not in the expected format."
+            return create_operation_outcome(
+                resource_id=str(uuid.uuid4()),
+                severity=Severity.error,
+                code=Code.invalid,
+                diagnostics=msg,
+            )
+        else:
+            return None
+    
     def _validate_id(self, _id: str) -> Optional[dict]:
         if not re.match(self.immunization_id_pattern, _id):
             msg = "the provided event ID is either missing or not in the expected format."
