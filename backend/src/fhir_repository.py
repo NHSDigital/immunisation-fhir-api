@@ -94,7 +94,7 @@ class ImmunizationRepository:
 
 
     def get_immunization_by_identifier(self, identifier_pk: str, imms_vax_type_perms: str) -> Optional[dict]:
-        response = self.table.get_item(Key={"IdentifierPK": _make_immunization_pk(identifier_pk)})
+        response = self.table.get_item(Key={"IdentifierPK": identifier_pk})
         print(f"response:{response}")
         if "Item" in response:
             resp = dict()
