@@ -23,6 +23,7 @@ from pydantic.error_wrappers import ErrorWrapper
 from tests.immunization_utils import (
     create_covid_19_immunization,
     create_covid_19_immunization_dict,
+    create_covid_19_immunization_dict_no_id,
     VALID_NHS_NUMBER,
 )
 from src.mappings import DiseaseCodes
@@ -196,12 +197,12 @@ class TestCreateImmunization(unittest.TestCase):
     def test_create_immunization(self):
         """it should create Immunization and validate it"""
         imms_id = "an-id"
-        self.imms_repo.create_immunization.return_value = create_covid_19_immunization_dict(imms_id)
+        self.imms_repo.create_immunization.return_value = create_covid_19_immunization_dict_no_id()
         pds_patient = {"identifier": [{"system": "https://fhir.nhs.uk/Id/nhs-number", "value": "9990548609"}]}
         self.fhir_service.pds_service.get_patient_details.return_value = pds_patient
 
         nhs_number = VALID_NHS_NUMBER
-        req_imms = create_covid_19_immunization_dict(imms_id, nhs_number)
+        req_imms = create_covid_19_immunization_dict_no_id(nhs_number)
 
         # When
         stored_imms = self.fhir_service.create_immunization(req_imms, "COVID19:create", "TestApp")
@@ -263,7 +264,7 @@ class TestCreateImmunization(unittest.TestCase):
         """it should throw error when PDS can't resolve patient"""
         self.fhir_service.pds_service.get_patient_details.return_value = None
         invalid_nhs_number = "a-bad-patient-id"
-        bad_patient_imms = create_covid_19_immunization_dict("an-id", invalid_nhs_number)
+        bad_patient_imms = create_covid_19_immunization_dict_no_id(invalid_nhs_number)
 
         with self.assertRaises(InvalidPatientId) as e:
             # When
