@@ -95,9 +95,10 @@ class ImmunizationRepository:
 
     def get_immunization_by_identifier(self, identifier_pk: str, imms_vax_type_perms: str) -> Optional[dict]:
         print(f"identifier_pk:{identifier_pk}")
-        response = self.table.scan(
-            FilterExpression=Attr('IdentifierPK').eq(identifier_pk)
-        )
+        # response = self.table.scan(
+        #     FilterExpression=Attr('IdentifierPK').eq(identifier_pk)
+        # )
+        response = self.table.get_item(Key={"IdentifierGSI": identifier_pk})
         print(f"response:{response}")
         if "Items" in response and len(response["Items"]) > 0:
             item = response["Items"][0]
