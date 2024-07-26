@@ -76,8 +76,9 @@ class FhirController:
     def get_immunization_by_identifier(self, aws_event) -> dict:
         if response := self.authorize_request(EndpointOperation.READ, aws_event):
             return response
-
+        identifier = aws_event["headers"]["identifier"]
         identifier_pk = aws_event["pathParameters"]["id"]
+        identifiers = f"{identifier}#{identifier_pk}"
         if id_error := self._validate_identifier(identifier_pk):
             return self.create_response(400, id_error)
         
@@ -96,7 +97,7 @@ class FhirController:
             return self.create_response(403, unauthorized.to_operation_outcome())
         
         try:
-            if resource := self.fhir_service.get_immunization_by_identifier(identifier_pk, imms_vax_type_perms):
+            if resource := self.fhir_service.get_immunization_by_identifier(identifiers, imms_vax_type_perms):
                 print(f"resource:{resource}")
                 return FhirController.create_response(200, resource.json())
             else:

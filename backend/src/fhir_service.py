@@ -82,6 +82,7 @@ class FhirService:
         return the Immunization without calling PDS or checking S flag.
         """
         imms_resp = self.immunization_repo.get_immunization_by_id(imms_id, imms_vax_type_perms)
+        print(f"imms_resp:{imms_resp}")
         imms = dict()
         version = str()
         resp = dict()
@@ -98,7 +99,7 @@ class FhirService:
 
             # Remove fields which are not to be returned for read
             imms_filtered_for_read = Filter.read(imms)
-
+            print(f"imms_filtered_for_read:{imms_filtered_for_read}")
             # Handle s-flag filtering, where applicable
             try:
                 nhs_number = [x for x in imms["contained"] if x["resourceType"] == "Patient"][0]["identifier"][0][

@@ -17,8 +17,8 @@ def get_imms_handler(event, context):
 def get_immunization_by_id(event, controller: FhirController):
     try:
         print(f"event{event}")
-        id = event["pathParameters"]["id"]
-        if '#' in id:
+        identifier = event["headers"]["identifier"]
+        if identifier:
             print("2")
             return controller.get_immunization_by_identifier(event)
         else:
