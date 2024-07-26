@@ -99,7 +99,7 @@ class FhirController:
         try:
             if resource := self.fhir_service.get_immunization_by_identifier(identifiers, imms_vax_type_perms):
                 print(f"resource:{resource}")
-                return FhirController.create_response(200, resource.json())
+                return FhirController.create_response(200, resource)
             else:
                 msg = "The requested resource was not found."
                 id_error = create_operation_outcome(
