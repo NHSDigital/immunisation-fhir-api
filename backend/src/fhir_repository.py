@@ -98,7 +98,8 @@ class ImmunizationRepository:
         # response = self.table.scan(
         #     FilterExpression=Attr('IdentifierPK').eq(identifier_pk)
         # )
-        response = self.table.get_item(Key={"IdentifierGSI": identifier_pk})
+        response = self.table.query(IndexName='IdentifierGSI',
+                                    KeyConditionExpression=Key('IdentifierPK').eq(identifier_pk))
         print(f"response:{response}")
         if "Items" in response and len(response["Items"]) > 0:
             item = response["Items"][0]
