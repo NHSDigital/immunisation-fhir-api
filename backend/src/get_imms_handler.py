@@ -17,7 +17,7 @@ def get_imms_handler(event, context):
 def get_immunization_by_id(event, controller: FhirController):
     try:
         print(f"event{event}")
-        identifier = event["headers"]["identifier"]
+        identifier = "identifier" in event['headers']
         if identifier:
             print("2")
             return controller.get_immunization_by_identifier(event)

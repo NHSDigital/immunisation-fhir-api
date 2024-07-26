@@ -13,7 +13,7 @@ class TestGetImmunisationById(unittest.TestCase):
 
     def test_get_immunization_by_id(self):
         """it should return Immunization by id"""
-        lambda_event = {"pathParameters": {"id": "an-id"}}
+        lambda_event = {'headers': {'ApplicationId': 'test-immunisation-fhir-api-pr-178'},"pathParameters": {"id": "an-id"}}
         exp_res = {"a-key": "a-value"}
 
         self.controller.get_immunization_by_id.return_value = exp_res
@@ -27,7 +27,7 @@ class TestGetImmunisationById(unittest.TestCase):
 
     def test_handle_exception(self):
         """unhandled exceptions should result in 500"""
-        lambda_event = {"pathParameters": {"id": "an-id"}}
+        lambda_event = {'headers': {"id": "an-id"},"pathParameters": {"id": "an-id"}}
         error_msg = "an unhandled error"
         self.controller.get_immunization_by_id.side_effect = Exception(error_msg)
 
