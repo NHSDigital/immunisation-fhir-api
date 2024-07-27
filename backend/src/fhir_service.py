@@ -103,7 +103,7 @@ class FhirService:
             resp["Resource"] = Immunization.parse_obj(imms_filtered_for_read_and_s_flag)
             return resp
 
-    def get_immunization_by_id_all(self, imms_id: str, imms: Optional[dict], app_id: str) -> Optional[dict]:
+    def get_immunization_by_id_all(self, imms_id: str, imms: dict) -> Optional[dict]:
         """
         Get an Immunization by its ID. Return None if not found. If the patient doesn't have an NHS number,
         return the Immunization without calling PDS or checking S flag.
@@ -113,10 +113,10 @@ class FhirService:
             self.validator.validate(imms)
         except (ValidationError, ValueError, MandatoryError) as error:
             raise CustomValidationError(message=str(error)) from error
-        imms_resp = self.immunization_repo.get_immunization_by_id_all(imms_id, imms, app_id)
+        imms_resp = self.immunization_repo.get_immunization_by_id_all(imms_id, imms)
         return imms_resp
 
-    def create_immunization(self, immunization: dict, imms_vax_type_perms, app_id) -> Immunization:
+    def create_immunization(self, immunization: dict, imms_vax_type_perms) -> Immunization:
         try:
             self.validator.validate(immunization)
             # Initialize errors list
@@ -143,7 +143,7 @@ class FhirService:
 
         if "diagnostics" in patient:
             return patient
-        imms = self.immunization_repo.create_immunization(immunization, patient, imms_vax_type_perms, app_id)
+        imms = self.immunization_repo.create_immunization(immunization, patient, imms_vax_type_perms)
 
         return Immunization.parse_obj(imms)
 
@@ -245,13 +245,13 @@ class FhirService:
 
         return UpdateOutcome.UPDATE, Immunization.parse_obj(imms)
 
-    def delete_immunization(self, imms_id, imms_vax_type_perms, app_id) -> Immunization:
+    def delete_immunization(self, imms_id, imms_vax_type_perms) -> Immunization:
         """
         Delete an Immunization if it exits and return the ID back if successful.
         Exception will be raised if resource didn't exit. Multiple calls to this method won't change
         the record in the database.
         """
-        imms = self.immunization_repo.delete_immunization(imms_id, imms_vax_type_perms, app_id)
+        imms = self.immunization_repo.delete_immunization(imms_id, imms_vax_type_perms)
         return Immunization.parse_obj(imms)
 
     @staticmethod
