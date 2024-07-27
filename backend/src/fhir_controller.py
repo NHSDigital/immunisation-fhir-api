@@ -78,12 +78,10 @@ class FhirController:
         if response := self.authorize_request(EndpointOperation.READ, aws_event):
             return response
         identifier = aws_event["headers"]["identifierSystem"]
+        identifier_pk = aws_event["pathParameters"]["id"]
         print("11")
         print(f"identifier:{identifier}")
-        if id_error := self._validate_identifier_system(identifier):
-            return self.create_response(400, id_error)
-        identifier_pk = aws_event["pathParameters"]["id"]
-        if id_error := self._validate_identifier_value(identifier_pk):
+        if id_error := self._validate_identifier_system(identifier,identifier_pk):
             return self.create_response(400, id_error)
         identifiers = f"{identifier}#{identifier_pk}"
         
@@ -502,8 +500,26 @@ class FhirController:
             result_json_dict["total"] = 0
         return self.create_response(200, json.dumps(result_json_dict))
 
-    def _validate_identifier_system(self, _id: str) -> Optional[dict]:
-        if _id == ['']:
+    def _validate_identifier_system(self, _id: str,__value: str) -> Optional[dict]:
+        if _id != '' and __value != ':id':
+            return None
+        elif _id == '' and  __value == ':id':
+            msg = "The provided identifier system and identifier value is either missing or not in the expected format."
+            return create_operation_outcome(
+                resource_id=str(uuid.uuid4()),
+                severity=Severity.error,
+                code=Code.invalid,
+                diagnostics=msg,
+            )
+        elif __value == ':id':
+            msg = "The provided identifier value is either missing or not in the expected format."
+            return create_operation_outcome(
+                resource_id=str(uuid.uuid4()),
+                severity=Severity.error,
+                code=Code.invalid,
+                diagnostics=msg,
+            )
+        elif _id == '':
             msg = "The provided identifier system is either missing or not in the expected format."
             return create_operation_outcome(
                 resource_id=str(uuid.uuid4()),
@@ -511,7 +527,9 @@ class FhirController:
                 code=Code.invalid,
                 diagnostics=msg,
             )
-        return None
+            
+            
+          
     
     def _validate_identifier_value(self, _id: str) -> Optional[dict]:
         if _id == ':id':
