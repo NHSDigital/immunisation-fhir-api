@@ -3,7 +3,8 @@ from typing import List
 from utils.base_test import ImmunizationBaseTest
 from utils.constants import valid_nhs_number1, valid_nhs_number_with_s_flag
 from utils.immunisation_api import ImmunisationApi
-from utils.resource import get_questionnaire_items, create_an_imms_obj, get_patient_id, get_vaccine_type
+from utils.resource import create_an_imms_obj, get_patient_id, get_vaccine_type
+from utils.resource import get_patient_postal_code
 
 
 class SFlagBaseTest(ImmunizationBaseTest):
@@ -22,10 +23,6 @@ class SFlagBaseTest(ImmunizationBaseTest):
         return imms
 
     def assert_is_not_filtered(self, imms):
-        imms_items = get_questionnaire_items(imms)
-
-        for key in ["Consent"]:
-            self.assertTrue(key in [item["linkId"] for item in imms_items])
 
         performer_actor_organizations = (
             item
@@ -36,21 +33,15 @@ class SFlagBaseTest(ImmunizationBaseTest):
             performer.get("actor", {}).get("identifier", {}).get("value") != "N2N9I"
             for performer in imms["performer"]))
         self.assertTrue(all(
-            organization.get("actor", {}).get("display") is not None
-            for organization in performer_actor_organizations))
-        self.assertTrue(all(
             organization.get("actor", {}).get("identifier", {}).get("system")
             != "https://fhir.nhs.uk/Id/ods-organization-code"
             for organization in performer_actor_organizations))
 
-        self.assertTrue("reportOrigin" in imms)
         self.assertTrue("location" in imms)
+        postal_code = get_patient_postal_code(imms)
+        self.assertTrue(postal_code != "ZZ99 3CZ")
 
     def assert_is_filtered(self, imms: dict):
-        imms_items = get_questionnaire_items(imms)
-
-        for key in ["Consent"]:
-            self.assertTrue(key not in [item["linkId"] for item in imms_items])
 
         performer_actor_organizations = (
             item
@@ -61,15 +52,13 @@ class SFlagBaseTest(ImmunizationBaseTest):
             organization.get("actor", {}).get("identifier", {}).get("value") == "N2N9I"
             for organization in performer_actor_organizations))
         self.assertTrue(all(
-            organization.get("actor", {}).get("display") is None
-            for organization in performer_actor_organizations))
-        self.assertTrue(all(
             organization.get("actor", {}).get("identifier", {}).get("system")
             == "https://fhir.nhs.uk/Id/ods-organization-code"
             for organization in performer_actor_organizations))
 
-        self.assertTrue("reportOrigin" not in imms)
         self.assertTrue("location" not in imms)
+        postal_code = get_patient_postal_code(imms)
+        self.assertTrue(postal_code, "ZZ99 3CZ")
 
 
 class TestGetSFlagImmunization(SFlagBaseTest):

@@ -13,6 +13,16 @@ resource "aws_dynamodb_table" "delta-dynamodb-table" {
     attribute {
         name = "Operation"
         type = "S"
+    }
+
+    attribute {
+        name = "VaccineType"
+        type = "S"
+    }
+
+    attribute {
+        name = "SupplierSystem"
+        type = "S"
     }  
 
     ttl {
@@ -24,6 +34,13 @@ resource "aws_dynamodb_table" "delta-dynamodb-table" {
         name               = "SearchIndex"
         hash_key           = "Operation"
         range_key          = "DateTimeStamp"
+        projection_type    = "ALL"
+    }
+
+    global_secondary_index {
+        name               = "SecondarySearchIndex"
+        hash_key           = "SupplierSystem"
+        range_key          = "VaccineType"
         projection_type    = "ALL"
     }
 }

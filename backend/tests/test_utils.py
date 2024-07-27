@@ -3,7 +3,7 @@
 import unittest
 from copy import deepcopy
 
-from src.models.utils.validation_utils import disease_codes_to_vaccine_type, get_vaccine_type
+from src.models.utils.validation_utils import convert_disease_codes_to_vaccine_type, get_vaccine_type
 from src.mappings import VaccineTypes, DiseaseCodes
 from .utils.generic_utils import load_json_data, update_target_disease_code
 
@@ -15,7 +15,7 @@ class TestGenericUtils(unittest.TestCase):
         """Set up for each test. This runs before every test"""
         self.json_data = load_json_data(filename="completed_mmr_immunization_event.json")
 
-    def test_disease_codes_to_vaccine_type(self):
+    def test_convert_disease_codes_to_vaccine_type(self):
         """
         Test that disease_codes_to_vaccine_type returns correct vaccine type for valid combinations,
         of disease codes, or raises a value error otherwise
@@ -31,7 +31,7 @@ class TestGenericUtils(unittest.TestCase):
         ]
 
         for combination, vaccine_type in valid_combinations:
-            self.assertEqual(disease_codes_to_vaccine_type(combination), vaccine_type)
+            self.assertEqual(convert_disease_codes_to_vaccine_type(combination), vaccine_type)
 
         # Invalid combinations raise value error
         invalid_combinations = [
@@ -43,7 +43,7 @@ class TestGenericUtils(unittest.TestCase):
 
         for invalid_combination in invalid_combinations:
             with self.assertRaises(ValueError):
-                disease_codes_to_vaccine_type(invalid_combination)
+                convert_disease_codes_to_vaccine_type(invalid_combination)
 
     def test_get_vaccine_type(self):
         """
@@ -77,7 +77,11 @@ class TestGenericUtils(unittest.TestCase):
         del invalid_covid_19_json_data["protocolApplied"][0]["targetDisease"]
         with self.assertRaises(ValueError) as error:
             get_vaccine_type(invalid_covid_19_json_data)
-        self.assertEqual(str(error.exception), "No target disease codes found")
+        self.assertEqual(
+            str(error.exception),
+            "protocolApplied[0].targetDisease[0].coding[?(@.system=='http://snomed.info/sct')].code"
+            + " is a mandatory field",
+        )
 
         invalid_target_disease_elements = [
             # INVALID DATA, SINGLE TARGET DISEASE: No "coding" field
@@ -85,14 +89,18 @@ class TestGenericUtils(unittest.TestCase):
             # INVALID DATA, SINGLE TARGET DISEASE: Valid code, but no snomed coding system
             {"coding": [{"system": "NOT_THE_SNOMED_URL", "code": f"{DiseaseCodes.flu}", "display": "Influenza"}]},
             # INVALID DATA, SINGLE TARGET DISEASE: coding field doesn't contain a code
-            {"coding": [{"system": "NOT_THE_SNOMED_URL", "display": "Influenza"}]},
+            {"coding": [{"system": "http://snomed.info/sct", "display": "Influenza"}]},
         ]
         for invalid_target_disease in invalid_target_disease_elements:
             invalid_covid_19_json_data = deepcopy(covid_19_json_data)
             invalid_covid_19_json_data["protocolApplied"][0]["targetDisease"][0] = invalid_target_disease
             with self.assertRaises(ValueError) as error:
                 get_vaccine_type(invalid_covid_19_json_data)
-            self.assertEqual(str(error.exception), "No target disease codes found")
+            self.assertEqual(
+                str(error.exception),
+                "protocolApplied[0].targetDisease[0].coding[?(@.system=='http://snomed.info/sct')].code"
+                + " is a mandatory field",
+            )
 
         # INVALID DATA, SINGLE TARGET DISEASE: Invalid code
         invalid_covid_19_json_data = deepcopy(covid_19_json_data)
@@ -100,7 +108,9 @@ class TestGenericUtils(unittest.TestCase):
         with self.assertRaises(ValueError) as error:
             get_vaccine_type(invalid_covid_19_json_data)
         self.assertEqual(
-            str(error.exception), "['INVALID_CODE'] is not a valid combination of disease codes for this service"
+            str(error.exception),
+            "protocolApplied[0].targetDisease[*].coding[?(@.system=='http://snomed.info/sct')].code"
+            + " - ['INVALID_CODE'] is not a valid combination of disease codes for this service",
         )
 
         # TEST INVALID DATA FOR MULTIPLE TARGET DISEASES
@@ -114,7 +124,8 @@ class TestGenericUtils(unittest.TestCase):
             get_vaccine_type(invalid_mmr_json_data)
         self.assertEqual(
             str(error.exception),
-            f"['{DiseaseCodes.flu}', '36989005', '36653000'] is not a valid combination of disease codes for this "
+            "protocolApplied[0].targetDisease[*].coding[?(@.system=='http://snomed.info/sct')].code - "
+            + f"['{DiseaseCodes.flu}', '36989005', '36653000'] is not a valid combination of disease codes for this "
             + "service",
         )
 
@@ -126,11 +137,15 @@ class TestGenericUtils(unittest.TestCase):
             # INVALID DATA, MULTIPLE TARGET DISEASES: Valid code, but no snomed coding system
             {"coding": [{"system": "NOT_THE_SNOMED_URL", "code": f"{DiseaseCodes.mumps}", "display": "Influenza"}]},
             # INVALID DATA, MULTIPLE TARGET DISEASES: coding field doesn't contain a code
-            {"coding": [{"system": "NOT_THE_SNOMED_URL", "display": "Mumps"}]},
+            {"coding": [{"system": "http://snomed.info/sct", "display": "Mumps"}]},
         ]
         for invalid_target_disease in invalid_target_disease_elements:
             invalid_mmr_json_data = deepcopy(mmr_json_data)
             invalid_mmr_json_data["protocolApplied"][0]["targetDisease"][1] = invalid_target_disease
             with self.assertRaises(ValueError) as error:
                 get_vaccine_type(invalid_mmr_json_data)
-            self.assertEqual(str(error.exception), "No target disease codes found")
+            self.assertEqual(
+                str(error.exception),
+                "protocolApplied[0].targetDisease[1].coding[?(@.system=='http://snomed.info/sct')].code"
+                + " is a mandatory field",
+            )

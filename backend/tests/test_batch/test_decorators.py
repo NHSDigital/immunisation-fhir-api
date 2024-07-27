@@ -22,7 +22,7 @@ from batch.decorators import (
 )
 from batch.errors import DecoratorError, TransformerFieldError, TransformerRowError, TransformerUnhandledError
 from tests.test_batch.decorators_constants import AllHeaders, AllHeadersExpectedOutput, ExtensionItems
-from constants import valid_nhs_number
+from constants import VALID_NHS_NUMBER
 
 raw_imms: dict = {"resourceType": "Immunization", "contained": []}
 
@@ -257,8 +257,8 @@ class TestPatientDecorator(unittest.TestCase):
         """Fill this in"""
         # nhs_number non_empty, both extension values empty
         imms = copy.deepcopy(self.imms)
-        _decorate_patient(imms, OrderedDict([("nhs_number", valid_nhs_number)]))
-        expected = [{"system": "https://fhir.nhs.uk/Id/nhs-number", "value": valid_nhs_number}]
+        _decorate_patient(imms, OrderedDict([("nhs_number", VALID_NHS_NUMBER)]))
+        expected = [{"system": "https://fhir.nhs.uk/Id/nhs-number", "value": VALID_NHS_NUMBER}]
         self.assertListEqual(imms["contained"][0]["identifier"], expected)
 
         # nhs_number empty, both extension values non_empty

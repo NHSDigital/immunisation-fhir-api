@@ -279,7 +279,6 @@ class TestSearchImmunization(ImmunizationBaseTest):
         # Given patient has a vaccine with no NHS number
         imms = create_an_imms_obj(str(uuid.uuid4()), "TBC", VaccineTypes.mmr)
         del imms["contained"][1]["identifier"][0]["value"]
-        imms["contained"][1]["identifier"][0]["extension"][0]["valueCodeableConcept"]["coding"][0]["code"] = "04"
         self.store_records(imms)
 
         # When

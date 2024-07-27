@@ -396,18 +396,7 @@ def test_get_s_flag_patient(nhsd_apim_proxy_url, nhsd_apim_auth_headers, nhs_num
     all_retrieved_imms = [retrieved_get_imms, retrieved_search_imms]
     imms_api.delete_immunization(created_imms["id"])
 
-    # Assert
-    def get_questionnaire_items(imms):
-        questionnaire = next(
-            contained for contained in imms["contained"] if contained["resourceType"] == "QuestionnaireResponse"
-        )
-        return questionnaire["item"]
-
     def assert_is_not_filtered(imms):
-        imms_items = get_questionnaire_items(imms)
-
-        for key in ["Consent"]:
-            assert key in [item["linkId"] for item in imms_items]
 
         performer_actor_organizations = (
             item for item in imms["performer"] if item.get("actor", {}).get("type") == "Organization"
@@ -429,11 +418,6 @@ def test_get_s_flag_patient(nhsd_apim_proxy_url, nhsd_apim_auth_headers, nhs_num
         assert "location" in imms
 
     def assert_is_filtered(imms):
-        imms_items = get_questionnaire_items(imms)
-
-        for key in ["Consent"]:
-            assert key not in [item["linkId"] for item in imms_items]
-
         performer_actor_organizations = (
             item for item in imms["performer"] if item.get("actor", {}).get("type") == "Organization"
         )
@@ -443,15 +427,11 @@ def test_get_s_flag_patient(nhsd_apim_proxy_url, nhsd_apim_auth_headers, nhs_num
             for organization in performer_actor_organizations
         )
         assert all(
-            organization.get("actor", {}).get("display") is None for organization in performer_actor_organizations
-        )
-        assert all(
             organization.get("actor", {}).get("identifier", {}).get("system")
             == "https://fhir.nhs.uk/Id/ods-organization-code"
             for organization in performer_actor_organizations
         )
 
-        assert "reportOrigin" not in imms
         assert "location" not in imms
 
     if is_restricted:

@@ -6,7 +6,8 @@
         "Action":  [
           "dynamodb:GetItem",
           "dynamodb:PutItem",
-          "dynamodb:UpdateItem"
+          "dynamodb:UpdateItem",
+          "dynamodb:Query"
         ],
         "Resource": [
           "arn:aws:dynamodb:*:*:table/${dynamodb_table_name}",

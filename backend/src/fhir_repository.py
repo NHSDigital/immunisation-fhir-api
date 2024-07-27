@@ -14,11 +14,12 @@ from models.errors import (
     ResourceNotFoundError,
     UnhandledResponseError,
     IdentifierDuplicationError,
-    UnauthorizedVaxError
+    UnauthorizedVaxError,
+    UnauthorizedSystemError
 )
 from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
 
-from models.utils.validation_utils import get_vaccine_type
+from models.utils.validation_utils import get_vaccine_type,check_identifier_system_value
 
 
 class DecimalEncoder(json.JSONEncoder):
@@ -83,9 +84,10 @@ class RecordAttributes:
         self.resource = imms
         self.timestamp = int(time.time())
         self.vaccine_type = get_vaccine_type(imms)
-
+        self.system_id = imms["identifier"][0]["system"]
+        self.system_value = imms["identifier"][0]["value"]
         self.patient_sk = f"{self.vaccine_type}#{imms_id}"
-        self.identifier = imms["identifier"][0]["value"]
+        self.identifier = f"{self.system_id}#{self.system_value}"
 
 
 class ImmunizationRepository:
@@ -119,10 +121,19 @@ class ImmunizationRepository:
         response = self.table.get_item(Key={"PK": _make_immunization_pk(imms_id)})
         print(f"responsedb:{response}")
         if "Item" in response:
+            resp = dict()
             if "DeletedAt" in response["Item"]:
-                return None
+                if response["Item"]["DeletedAt"] == "reinstated":
+                    vaccine_type = self._vaccine_type(response["Item"]["PatientSK"])
+                    vax_type_perms = self._parse_vaccine_permissions(imms_vax_type_perms)
+                    vax_type_perm= self._vaccine_permission(vaccine_type, "read")
+                    self._check_permission(vax_type_perm,vax_type_perms)
+                    resp["Resource"] = json.loads(response["Item"]["Resource"])
+                    resp["Version"] = response["Item"]["Version"]
+                    return resp
+                else:
+                    return None
             else:
-                resp = dict()
                 vaccine_type = self._vaccine_type(response["Item"]["PatientSK"])
                 vax_type_perms = self._parse_vaccine_permissions(imms_vax_type_perms)
                 vax_type_perm= self._vaccine_permission(vaccine_type, "read")
@@ -133,10 +144,14 @@ class ImmunizationRepository:
         else:
             return None
 
-    def get_immunization_by_id_all(self, imms_id: str) -> Optional[dict]:
+    def get_immunization_by_id_all(self, imms_id: str,imms: Optional[dict],app_id: str ) -> Optional[dict]:
         response = self.table.get_item(Key={"PK": _make_immunization_pk(imms_id)})
-
         if "Item" in response:
+         diagnostics = check_identifier_system_value(response,imms,app_id)
+         if diagnostics:
+            return diagnostics
+        
+         else: 
             resp = dict()
             if "DeletedAt" in response["Item"]:
                 if response["Item"]["DeletedAt"] != "reinstated":
@@ -160,9 +175,9 @@ class ImmunizationRepository:
                 resp["VaccineType"] = self._vaccine_type(response["Item"]["PatientSK"])
                 return resp
         else:
-            return None
+                return None
 
-    def create_immunization(self, immunization: dict, patient: dict , imms_vax_type_perms) -> dict:
+    def create_immunization(self, immunization: dict, patient: dict , imms_vax_type_perms, app_id) -> dict:
         new_id = str(uuid.uuid4())
         immunization["id"] = new_id
         attr = RecordAttributes(immunization, patient)
@@ -182,8 +197,8 @@ class ImmunizationRepository:
                 "PatientPK": attr.patient_pk,
                 "PatientSK": attr.patient_sk,
                 "Resource": json.dumps(attr.resource, cls=DecimalEncoder),
-                "Patient": attr.patient,
                 "IdentifierPK": attr.identifier,
+                "AppId": app_id,
                 "Operation": "CREATE",
                 "Version": 1,
             }
@@ -211,7 +226,7 @@ class ImmunizationRepository:
         # "Resource" is a dynamodb reserved word
         update_exp = (
             "SET UpdatedAt = :timestamp, PatientPK = :patient_pk, "
-            "PatientSK = :patient_sk, #imms_resource = :imms_resource_val, Patient = :patient, "
+            "PatientSK = :patient_sk, #imms_resource = :imms_resource_val, "
             "Operation = :operation, Version = :version "
         )
 
@@ -237,7 +252,6 @@ class ImmunizationRepository:
                     ":patient_pk": attr.patient_pk,
                     ":patient_sk": attr.patient_sk,
                     ":imms_resource_val": json.dumps(attr.resource, cls=DecimalEncoder),
-                    ":patient": attr.patient,
                     ":operation": "UPDATE",
                     ":version": existing_resource_version + 1,
                 },
@@ -274,7 +288,7 @@ class ImmunizationRepository:
         # "Resource" is a dynamodb reserved word
         update_exp = (
             "SET UpdatedAt = :timestamp, PatientPK = :patient_pk, "
-            "PatientSK = :patient_sk, #imms_resource = :imms_resource_val, Patient = :patient, "
+            "PatientSK = :patient_sk, #imms_resource = :imms_resource_val, "
             "Operation = :operation, Version = :version, DeletedAt = :respawn "
         )
 
@@ -300,7 +314,6 @@ class ImmunizationRepository:
                     ":patient_pk": attr.patient_pk,
                     ":patient_sk": attr.patient_sk,
                     ":imms_resource_val": json.dumps(attr.resource, cls=DecimalEncoder),
-                    ":patient": attr.patient,
                     ":operation": "UPDATE",
                     ":version": existing_resource_version + 1,
                     ":respawn": "reinstated",
@@ -337,7 +350,7 @@ class ImmunizationRepository:
         # "Resource" is a dynamodb reserved word
         update_exp = (
             "SET UpdatedAt = :timestamp, PatientPK = :patient_pk, "
-            "PatientSK = :patient_sk, #imms_resource = :imms_resource_val, Patient = :patient, "
+            "PatientSK = :patient_sk, #imms_resource = :imms_resource_val, "
             "Operation = :operation, Version = :version "
         )
 
@@ -363,7 +376,6 @@ class ImmunizationRepository:
                     ":patient_pk": attr.patient_pk,
                     ":patient_sk": attr.patient_sk,
                     ":imms_resource_val": json.dumps(attr.resource, cls=DecimalEncoder),
-                    ":patient": attr.patient,
                     ":operation": "UPDATE",
                     ":version": existing_resource_version + 1,
                 },
@@ -384,7 +396,7 @@ class ImmunizationRepository:
                     response=error.response,
                 )
 
-    def delete_immunization(self, imms_id: str, imms_vax_type_perms: str) -> dict:
+    def delete_immunization(self, imms_id: str, imms_vax_type_perms: str,app_id: str) -> dict:
         now_timestamp = int(time.time())
         try:
             resp = self.table.get_item(Key={"PK": _make_immunization_pk(imms_id)})
@@ -392,6 +404,9 @@ class ImmunizationRepository:
             if "Item" in resp:
                 if not "DeletedAt" in resp["Item"]:
                     vaccine_type = self._vaccine_type(resp["Item"]["PatientSK"])
+                    app_id_response =resp["Item"]["AppId"]
+                    if app_id != app_id_response:
+                        raise UnauthorizedSystemError
                     vax_type_perms = self._parse_vaccine_permissions(imms_vax_type_perms)
                     vax_type_perm= self._vaccine_permission(vaccine_type, "delete")
                     self._check_permission(vax_type_perm,vax_type_perms)

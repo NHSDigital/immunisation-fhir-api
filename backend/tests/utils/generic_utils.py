@@ -50,7 +50,7 @@ def test_valid_values_accepted(
         # Update the value at the relevant field location to the valid value to be tested
         valid_json_data = parse(field_location).update(valid_json_data, valid_item)
         # Test that the valid data is accepted by the model
-        test_instance.assertTrue(test_instance.validator.validate(valid_json_data))
+        test_instance.assertIsNone(test_instance.validator.validate(valid_json_data))
 
 
 def test_invalid_values_rejected(

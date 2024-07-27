@@ -31,6 +31,10 @@ def send_message(record):
     except ClientError as e:
         print(f"Error sending record to DLQ: {e}")
 
+def get_vaccine_type( patientsk ) -> str:
+    parsed = [str.strip(str.lower(s)) for s in patientsk.split("#")]
+    return parsed[0]
+
 
 def handler(event, context):
     logger.info("Starting Delta Handler")
@@ -61,6 +65,8 @@ def handler(event, context):
             if record["eventName"] != "REMOVE":
                 new_image = record["dynamodb"]["NewImage"]
                 imms_id = new_image["PK"]["S"].split("#")[1]
+                vaccine_type = get_vaccine_type(new_image["PatientSK"]["S"])
+                supplier_system = new_image["IdentifierPK"]["S"]
                 operation = new_image["Operation"]["S"]
                 if operation == "CREATE":
                     operation = "NEW"
@@ -69,6 +75,8 @@ def handler(event, context):
                         "PK": str(uuid.uuid4()),
                         "ImmsID": imms_id,
                         "Operation": operation,
+                        "VaccineType": vaccine_type,
+                        "SupplierSystem": supplier_system,
                         "DateTimeStamp": approximate_creation_time.isoformat(),
                         "Source": delta_source,
                         "Imms": new_image["Resource"]["S"],
@@ -78,12 +86,15 @@ def handler(event, context):
             else:
                 operation = "REMOVE"
                 new_image = record["dynamodb"]["Keys"]
+                print(f"Record to delta:{new_image}")
                 imms_id = new_image["PK"]["S"].split("#")[1]
                 response = delta_table.put_item(
                     Item={
                         "PK": str(uuid.uuid4()),
                         "ImmsID": imms_id,
                         "Operation": "REMOVE",
+                        "VaccineType": "default",
+                        "SupplierSystem": "default",
                         "DateTimeStamp": approximate_creation_time.isoformat(),
                         "Source": delta_source,
                         "Imms": "",

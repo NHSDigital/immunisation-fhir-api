@@ -24,16 +24,24 @@ def create_an_imms_obj(
     nhs_number=valid_nhs_number1,
     vaccine_type=VaccineTypes.covid_19,
     occurrence_date_time: str = None,
+    sample_data_file_name: str = "completed_[vaccine_type]_immunization_event_with_id",
 ) -> dict:
     """
     Creates a FHIR Immunization Resource dictionary, which includes an id, using the sample data for the given
     vaccine type as a base, and updates the id, nhs_number and occurrence_date_time as required.
     The unique_identifier is also updated to ensure uniqueness.
     """
-    imms = deepcopy(load_example(f"Immunization/completed_{vaccine_type.lower()}_immunization_event_with_id.json"))
+    # Load the data
+    sample_data_file_name = sample_data_file_name.replace("[vaccine_type]", vaccine_type.lower())
+    imms = deepcopy(load_example(f"Immunization/{sample_data_file_name}.json"))
+
+    # Amend data fields as appropriate
     imms["id"] = imms_id
     imms["identifier"][0]["value"] = str(uuid.uuid4())
-    imms["contained"][1]["identifier"][0]["value"] = nhs_number
+
+    if nhs_number is not None:
+        imms["contained"][1]["identifier"][0]["value"] = nhs_number
+
     if occurrence_date_time is not None:
         imms["occurrenceDateTime"] = occurrence_date_time
 
@@ -93,7 +101,10 @@ def disease_codes_to_vaccine_type(disease_codes_input: list) -> Union[str, None]
             if sorted(disease_codes_input) == disease_codes
         )
     except Exception as e:
-        raise ValueError(f"{disease_codes_input} is not a valid combination of disease codes for this service") from e
+        raise ValueError(
+            f"protocolApplied[0].targetDisease[*].coding[?(@.system=='http://snomed.info/sct')].code - "
+            f"{disease_codes_input} is not a valid combination of disease codes for this service"
+        ) from e
 
 
 def get_vaccine_type(immunization: dict):
@@ -112,11 +123,11 @@ def get_vaccine_type(immunization: dict):
     return disease_codes_to_vaccine_type(target_diseases)
 
 
-def get_questionnaire_items(imms: dict):
-    questionnaire = next(
-        contained for contained in imms["contained"] if contained["resourceType"] == "QuestionnaireResponse"
-    )
-    return questionnaire["item"]
+def get_patient_postal_code(imms: dict):
+    patients = [record for record in imms.get("contained", []) if record.get("resourceType") == "Patient"]
+    if patients:
+        return patients[0]["address"][0]["postalCode"]
+    return ""
 
 
 def get_full_row_from_identifier(identifier: str) -> dict:

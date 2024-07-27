@@ -76,7 +76,7 @@ class TestFhirControllerAuthorization(unittest.TestCase):
 
     # EndpointOperation.CREATE
     def test_create_imms_authorized(self):
-        aws_event = {"headers":{"VaccineTypePermissions":"COVID19:create"},"body": create_covid_19_immunization(str(uuid.uuid4())).json()}
+        aws_event = {"headers":{"VaccineTypePermissions":"COVID19:create","ApplicationId":"TestApp"},"body": create_covid_19_immunization(str(uuid.uuid4())).json()}
 
         _ = self.controller.create_immunization(aws_event)
 
@@ -105,7 +105,7 @@ class TestFhirControllerAuthorization(unittest.TestCase):
     # EndpointOperation.UPDATE
     def test_update_imms_authorized(self):
         imms_id = str(uuid.uuid4())
-        aws_event = {"headers": {"E-Tag":1,"VaccineTypePermissions":"COVID19:update"},"pathParameters": {"id": imms_id}, "body": create_covid_19_immunization(imms_id).json()}
+        aws_event = {"headers": {"E-Tag":1,"VaccineTypePermissions":"COVID19:update","ApplicationId":"TestApp"},"pathParameters": {"id": imms_id}, "body": create_covid_19_immunization(imms_id).json()}
         self.service.get_immunization_by_id_all.return_value = {"resource":"new_value","Version":2,"DeletedAt": False, "VaccineType":"COVID19"}
         self.service.update_immunization.return_value = UpdateOutcome.UPDATE, "value doesn't matter"
 
@@ -115,7 +115,7 @@ class TestFhirControllerAuthorization(unittest.TestCase):
     
     def test_update_imms_unauthorized_vaxx_in_record(self):
         imms_id = str(uuid.uuid4())
-        aws_event = {"headers": {"E-Tag":1,"VaccineTypePermissions":"COVID19:update"},"pathParameters": {"id": imms_id}, "body": create_covid_19_immunization(imms_id).json()}
+        aws_event = {"headers": {"E-Tag":1,"VaccineTypePermissions":"COVID19:update","ApplicationId":"TestApp"},"pathParameters": {"id": imms_id}, "body": create_covid_19_immunization(imms_id).json()}
         self.service.get_immunization_by_id_all.return_value = {"resource":"new_value","Version":1,"DeletedAt": False, "VaccineType":"Flu"}
         
         response = self.controller.update_immunization(aws_event)

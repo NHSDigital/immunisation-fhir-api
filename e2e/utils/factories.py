@@ -104,6 +104,7 @@ def make_app_restricted_app(
             k, v = make_permissions_attribute(permissions)
             app.add_attribute(k, v)
         app.add_attribute("AuthenticationType", AuthType.APP_RESTRICTED.value)
+        app.add_attribute("ApplicationId", "Test_App")
         if vaxx_type_perms:
             k, v = make_vaxx_permissions_attribute(vaxx_type_perms)
             app.add_attribute(k, v)
@@ -146,6 +147,7 @@ def _make_user_restricted_app(
             k, v = make_permissions_attribute(permissions)
             app.add_attribute(k, v)
         app.add_attribute("AuthenticationType", auth_type.value)
+        app.add_attribute("ApplicationId", "Test_App")
         if vaxx_type_perms:
             k, v = make_vaxx_permissions_attribute(vaxx_type_perms)
             app.add_attribute(k, v)

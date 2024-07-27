@@ -24,7 +24,7 @@ class ValidatorModelTests:
         defined_length: int = None,
         max_length: int = None,
         invalid_length_strings_to_test: list = None,
-        predefined_values: tuple = None,
+        predefined_values: list = None,
         invalid_strings_to_test: list = None,
         spaces_allowed: bool = True,
         invalid_strings_with_spaces_to_test: list = None,
@@ -510,7 +510,7 @@ class ValidatorModelTests:
         valid_json_data = parse("contained").update(valid_json_data, contained)
         valid_json_data = parse("performer").update(valid_json_data, performer)
 
-        test_instance.assertTrue(test_instance.validator.validate(valid_json_data))
+        test_instance.assertIsNone(test_instance.validator.validate(valid_json_data))
 
     @staticmethod
     def test_invalid_performer_actor_reference_rejected(
@@ -550,7 +550,7 @@ class ValidatorModelTests:
         valid_json_data = parse("contained").update(valid_json_data, contained)
         valid_json_data = parse("patient").update(valid_json_data, patient)
 
-        test_instance.assertTrue(test_instance.validator.validate(valid_json_data))
+        test_instance.assertIsNone(test_instance.validator.validate(valid_json_data))
 
     @staticmethod
     def test_invalid_patient_reference_rejected(

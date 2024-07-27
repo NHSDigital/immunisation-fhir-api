@@ -3,7 +3,7 @@
 from collections import OrderedDict
 from decimal import Decimal
 
-from constants import valid_nhs_number, address_unknown_postcode
+from constants import VALID_NHS_NUMBER, ADDRESS_UNKNOWN_POSTCODE
 
 
 class ExtensionItems:
@@ -90,8 +90,8 @@ class AllHeaders:
             ("person_forename", "forename"),
             ("person_gender_code", "1"),
             ("person_dob", "20000101"),
-            ("person_postcode", address_unknown_postcode),
-            ("nhs_number", valid_nhs_number),
+            ("person_postcode", ADDRESS_UNKNOWN_POSTCODE),
+            ("nhs_number", VALID_NHS_NUMBER),
             ("nhs_number_status_indicator_code", "an_nhs_status_code"),
             ("nhs_number_status_indicator_description", "an_nhs_status_description"),
         ]
@@ -195,13 +195,13 @@ class AllHeadersExpectedOutput:
                     {
                         "extension": [ExtensionItems.nhs_number_status],
                         "system": "https://fhir.nhs.uk/Id/nhs-number",
-                        "value": valid_nhs_number,
+                        "value": VALID_NHS_NUMBER,
                     }
                 ],
                 "name": [{"family": "surname", "given": ["forename"]}],
                 "gender": "male",
                 "birthDate": "2000-01-01",
-                "address": [{"postalCode": address_unknown_postcode}],
+                "address": [{"postalCode": ADDRESS_UNKNOWN_POSTCODE}],
             },
         ],
         "patient": {"reference": "#Patient1"},

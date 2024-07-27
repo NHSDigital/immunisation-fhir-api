@@ -3,28 +3,10 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Union
 
-from .generic_utils import (
-    nhs_number_mod11_check,
-    generate_field_location_for_questionnaire_response,
-    get_generic_questionnaire_response_value,
-)
+from .generic_utils import nhs_number_mod11_check
 
 
 class PreValidation:
-    @staticmethod
-    def for_questionnaire_response(values: dict, link_id: str, answer_type: str, field_type: str = None):
-        """Obtains the relevant question response value and pre-validates it (if it exists)"""
-        field_location = generate_field_location_for_questionnaire_response(link_id, answer_type, field_type)
-        try:
-            field_value = get_generic_questionnaire_response_value(values, link_id, answer_type, field_type)
-            if answer_type == "valueDateTime":
-                PreValidation.for_date_time(field_value, field_location)
-            if answer_type == "valueBoolean":
-                PreValidation.for_boolean(field_value, field_location)
-            else:
-                PreValidation.for_string(field_value, field_location)
-        except (KeyError, IndexError):
-            pass
 
     @staticmethod
     def for_string(
@@ -32,7 +14,7 @@ class PreValidation:
         field_location: str,
         defined_length: int = None,
         max_length: int = None,
-        predefined_values: tuple = None,
+        predefined_values: list = None,
         is_postal_code: bool = False,
         spaces_allowed: bool = True,
     ):

@@ -26,13 +26,14 @@ from models.utils.generic_utils import (
     get_occurrence_datetime,
     create_diagnostics,
 )
-from models.utils.post_validation_utils import MandatoryError, NotApplicableError
+from models.errors import MandatoryError
 from models.utils.validation_utils import get_vaccine_type
 from models.constants import Constants
 from pds_service import PdsService
 from s_flag_handler import handle_s_flag
 from timer import timed
 from filter import Filter
+import urllib.parse
 
 
 def get_service_url(
@@ -114,16 +115,21 @@ class FhirService:
             resp["Version"] = version
             resp["Resource"] = Immunization.parse_obj(imms_filtered_for_read_and_s_flag)
             return resp
-    
-    def get_immunization_by_id_all(self, imms_id: str) -> Optional[dict]:
+
+    def get_immunization_by_id_all(self, imms_id: str, imms: Optional[dict], app_id: str) -> Optional[dict]:
         """
         Get an Immunization by its ID. Return None if not found. If the patient doesn't have an NHS number,
         return the Immunization without calling PDS or checking S flag.
         """
-        imms_resp = self.immunization_repo.get_immunization_by_id_all(imms_id)
+        imms["id"] = imms_id
+        try:
+            self.validator.validate(imms)
+        except (ValidationError, ValueError, MandatoryError) as error:
+            raise CustomValidationError(message=str(error)) from error
+        imms_resp = self.immunization_repo.get_immunization_by_id_all(imms_id, imms, app_id)
         return imms_resp
 
-    def create_immunization(self, immunization: dict, imms_vax_type_perms) -> Immunization:
+    def create_immunization(self, immunization: dict, imms_vax_type_perms, app_id) -> Immunization:
         try:
             self.validator.validate(immunization)
             # Initialize errors list
@@ -150,7 +156,7 @@ class FhirService:
 
         if "diagnostics" in patient:
             return patient
-        imms = self.immunization_repo.create_immunization(immunization, patient, imms_vax_type_perms)
+        imms = self.immunization_repo.create_immunization(immunization, patient, imms_vax_type_perms, app_id)
 
         return Immunization.parse_obj(imms)
 
@@ -184,9 +190,11 @@ class FhirService:
 
         patient = self._validate_patient(immunization)
 
-        if "diagnostics" in patient: 
-                return (None,patient)
-        imms = self.immunization_repo.update_immunization(imms_id, immunization, patient, existing_resource_version, imms_vax_type_perms)
+        if "diagnostics" in patient:
+            return (None, patient)
+        imms = self.immunization_repo.update_immunization(
+            imms_id, immunization, patient, existing_resource_version, imms_vax_type_perms
+        )
 
         return UpdateOutcome.UPDATE, Immunization.parse_obj(imms)
 
@@ -195,21 +203,13 @@ class FhirService:
     ) -> tuple[UpdateOutcome, Immunization]:
         immunization["id"] = imms_id
 
-        try:
-            self.validator.validate(immunization)
-        except (
-            ValidationError,
-            ValueError,
-            MandatoryError,
-            NotApplicableError,
-        ) as error:
-            raise CustomValidationError(message=str(error)) from error
-
         patient = self._validate_patient(immunization)
 
-        if "diagnostics" in patient: 
-                return (None,patient)
-        imms = self.immunization_repo.reinstate_immunization(imms_id, immunization, patient, existing_resource_version, imms_vax_type_perms)
+        if "diagnostics" in patient:
+            return (None, patient)
+        imms = self.immunization_repo.reinstate_immunization(
+            imms_id, immunization, patient, existing_resource_version, imms_vax_type_perms
+        )
 
         return UpdateOutcome.UPDATE, Immunization.parse_obj(imms)
 
@@ -218,31 +218,23 @@ class FhirService:
     ) -> tuple[UpdateOutcome, Immunization]:
         immunization["id"] = imms_id
 
-        try:
-            self.validator.validate(immunization)
-        except (
-            ValidationError,
-            ValueError,
-            MandatoryError,
-            NotApplicableError,
-        ) as error:
-            raise CustomValidationError(message=str(error)) from error
-
         patient = self._validate_patient(immunization)
 
-        if "diagnostics" in patient: 
-                return (None,patient)
-        imms = self.immunization_repo.update_reinstated_immunization(imms_id, immunization, patient, existing_resource_version, imms_vax_type_perms)
+        if "diagnostics" in patient:
+            return (None, patient)
+        imms = self.immunization_repo.update_reinstated_immunization(
+            imms_id, immunization, patient, existing_resource_version, imms_vax_type_perms
+        )
 
         return UpdateOutcome.UPDATE, Immunization.parse_obj(imms)
 
-    def delete_immunization(self, imms_id, imms_vax_type_perms) -> Immunization:
+    def delete_immunization(self, imms_id, imms_vax_type_perms, app_id) -> Immunization:
         """
         Delete an Immunization if it exits and return the ID back if successful.
         Exception will be raised if resource didn't exit. Multiple calls to this method won't change
         the record in the database.
         """
-        imms = self.immunization_repo.delete_immunization(imms_id, imms_vax_type_perms)
+        imms = self.immunization_repo.delete_immunization(imms_id, imms_vax_type_perms, app_id)
         return Immunization.parse_obj(imms)
 
     @staticmethod
@@ -329,7 +321,20 @@ class FhirService:
             )
         fhir_bundle = FhirBundle(resourceType="Bundle", type="searchset", entry=entries)
         url = f"{get_service_url()}/Immunization?{params}"
-        fhir_bundle.link = [BundleLink(relation="self", url=url)]
+        # Splitting the URL into base_url and query_string
+        base_url, query_string = url.split('?')
+
+        # Splitting the query_string into key-value pairs
+        parameters = query_string.split('&')
+
+        # Finding and updating the immunization.target parameter
+        for i, param in enumerate(parameters):
+            if param.startswith('-immunization.target='):
+                parameters[i] = f"immunization.target={','.join(vaccine_types)}"
+
+        # Constructing the new URL
+        new_url = base_url + '?' + '&'.join(parameters)
+        fhir_bundle.link = [BundleLink(relation="self", url=new_url)]
         return fhir_bundle
 
     @timed
@@ -359,6 +364,7 @@ class FhirService:
             return patient
 
         raise InvalidPatientId(patient_identifier=nhs_number)
+
 
 # Define a function to check for unknown elements
 def check_for_unknown_elements(resource, allowed_keys, resource_type):
