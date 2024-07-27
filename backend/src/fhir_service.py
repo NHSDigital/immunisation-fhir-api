@@ -152,7 +152,7 @@ class FhirService:
     ) -> tuple[UpdateOutcome, Immunization]:
         immunization["id"] = imms_id
 
-        patient = self._validate_patient(immunization)
+        
         # Initialize errors list
         all_errors = []
 
@@ -171,7 +171,7 @@ class FhirService:
         error = "; ".join(all_errors)
         if error:
             raise ValueError(error)
-
+        patient = self._validate_patient(immunization)
         if "diagnostics" in patient:
             return (None, patient)
         imms = self.immunization_repo.update_immunization(
@@ -185,7 +185,7 @@ class FhirService:
     ) -> tuple[UpdateOutcome, Immunization]:
         immunization["id"] = imms_id
 
-        patient = self._validate_patient(immunization)
+        
         # Initialize errors list
         all_errors = []
 
@@ -204,7 +204,7 @@ class FhirService:
         error = "; ".join(all_errors)
         if error:
             raise ValueError(error)
-
+        patient = self._validate_patient(immunization)
         if "diagnostics" in patient:
             return (None, patient)
         imms = self.immunization_repo.reinstate_immunization(
@@ -218,7 +218,6 @@ class FhirService:
     ) -> tuple[UpdateOutcome, Immunization]:
         immunization["id"] = imms_id
 
-        patient = self._validate_patient(immunization)
         # Initialize errors list
         all_errors = []
 
@@ -237,7 +236,7 @@ class FhirService:
         error = "; ".join(all_errors)
         if error:
             raise ValueError(error)
-
+        patient = self._validate_patient(immunization)
         if "diagnostics" in patient:
             return (None, patient)
         imms = self.immunization_repo.update_reinstated_immunization(
