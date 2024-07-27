@@ -501,7 +501,7 @@ class FhirController:
         return self.create_response(200, json.dumps(result_json_dict))
 
     def _validate_identifier_system(self, _id: str) -> Optional[dict]:
-        if None in _id :
+        if _id == [''] :
             msg = "The provided identifier system is either missing or not in the expected format."
             return create_operation_outcome(
                 resource_id=str(uuid.uuid4()),
@@ -512,7 +512,7 @@ class FhirController:
         return None
     
     def _validate_identifier_value(self, _id: str) -> Optional[dict]:
-        if None in _id :
+        if _id == ':id':
             msg = "The provided identifier value is either missing or not in the expected format."
             return create_operation_outcome(
                 resource_id=str(uuid.uuid4()),
