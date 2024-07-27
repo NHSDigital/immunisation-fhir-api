@@ -150,7 +150,7 @@ class FhirService:
             error = "; ".join(all_errors)
             if error:
                 raise ValueError(error)
-        except (ValidationError, ValueError, MandatoryError, NotApplicableError) as error:
+        except (ValidationError, ValueError, MandatoryError) as error:
             raise CustomValidationError(message=str(error)) from error
         patient = self._validate_patient(immunization)
 
