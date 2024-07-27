@@ -78,6 +78,8 @@ class FhirController:
         if response := self.authorize_request(EndpointOperation.READ, aws_event):
             return response
         identifier = aws_event["headers"]["identifierSystem"]
+        print("11")
+        print(identifier)
         if id_error := self._validate_identifier_system(identifier):
             return self.create_response(400, id_error)
         identifier_pk = aws_event["pathParameters"]["id"]
@@ -501,7 +503,7 @@ class FhirController:
         return self.create_response(200, json.dumps(result_json_dict))
 
     def _validate_identifier_system(self, _id: str) -> Optional[dict]:
-        if _id == [''] :
+        if _id == ['']:
             msg = "The provided identifier system is either missing or not in the expected format."
             return create_operation_outcome(
                 resource_id=str(uuid.uuid4()),
