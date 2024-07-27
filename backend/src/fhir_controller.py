@@ -77,11 +77,13 @@ class FhirController:
     def get_immunization_by_identifier(self, aws_event) -> dict:
         if response := self.authorize_request(EndpointOperation.READ, aws_event):
             return response
-        identifier = aws_event["headers"]["identifier"]
-        identifier_pk = aws_event["pathParameters"]["id"]
-        identifiers = f"{identifier}#{identifier_pk}"
-        if id_error := self._validate_identifier(identifier_pk):
+        identifier = aws_event["headers"]["identifierSystem"]
+        if id_error := self._validate_identifier_system(identifier):
             return self.create_response(400, id_error)
+        identifier_pk = aws_event["pathParameters"]["id"]
+        if id_error := self._validate_identifier_value(identifier_pk):
+            return self.create_response(400, id_error)
+        identifiers = f"{identifier}#{identifier_pk}"
         
         try:
             if aws_event.get("headers"):
@@ -498,17 +500,27 @@ class FhirController:
             result_json_dict["total"] = 0
         return self.create_response(200, json.dumps(result_json_dict))
 
-    def _validate_identifier(self, _id: str) -> Optional[dict]:
-        if not _id :
-            msg = "the provided identifier PK is either missing or not in the expected format."
+    def _validate_identifier_system(self, _id: str) -> Optional[dict]:
+        if None in _id :
+            msg = "The provided identifier system is either missing or not in the expected format."
             return create_operation_outcome(
                 resource_id=str(uuid.uuid4()),
                 severity=Severity.error,
                 code=Code.invalid,
                 diagnostics=msg,
             )
-        else:
-            return None
+        return None
+    
+    def _validate_identifier_value(self, _id: str) -> Optional[dict]:
+        if None in _id :
+            msg = "The provided identifier value is either missing or not in the expected format."
+            return create_operation_outcome(
+                resource_id=str(uuid.uuid4()),
+                severity=Severity.error,
+                code=Code.invalid,
+                diagnostics=msg,
+            )
+        return None
     
     def _validate_id(self, _id: str) -> Optional[dict]:
         if not re.match(self.immunization_id_pattern, _id):
