@@ -79,7 +79,7 @@ class FhirController:
             return response
         identifier = aws_event["headers"]["identifierSystem"]
         print("11")
-        print(identifier)
+        print(f"identifier:{identifier}")
         if id_error := self._validate_identifier_system(identifier):
             return self.create_response(400, id_error)
         identifier_pk = aws_event["pathParameters"]["id"]
