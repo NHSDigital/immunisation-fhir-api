@@ -43,6 +43,15 @@ def is_organization(x):
         return False
 
 
+def is_actor_referencing_contained_resource(element, contained_resource_id):
+    """Returns boolean indicating whether the input dictionary is for an actor which references a contained resource"""
+    try:
+        reference = element["actor"]["reference"]
+        return reference == f"#{contained_resource_id}"
+    except KeyError:
+        return False
+
+
 def nhs_number_mod11_check(nhs_number: str) -> bool:
     """
     Parameters:-
@@ -86,10 +95,6 @@ def create_diagnostics():
 
 
 def create_diagnostics_error(value):
-    if value == "Unauthorized":
-        diagnostics = f"{value} system"
-        exp_error = {"diagnostics": diagnostics, "error": {value}}
-        return exp_error
     if value == "Both":
         diagnostics = (
             f"Validation errors: identifier[0].system and identifier[0].value doesn't match with the stored content"

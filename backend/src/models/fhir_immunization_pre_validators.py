@@ -20,7 +20,7 @@ class PreValidators:
     def validate(self):
         """Run all pre-validation checks."""
         validation_methods = [
-            self.pre_validate_contained,
+            self.pre_validate_contained_contents,
             self.pre_validate_patient_reference,
             self.pre_validate_patient_identifier,
             self.pre_validate_patient_identifier_value,
@@ -89,13 +89,37 @@ class PreValidators:
             all_errors = "; ".join(self.errors)
             raise ValueError(f"Validation errors: {all_errors}")
 
-    def pre_validate_contained(self, values: dict) -> dict:
-        """Pre-validate that, if contained exists, then  each resourceType is unique"""
-        try:
-            contained = values["contained"]
-            PreValidation.for_unique_list(contained, "resourceType", "contained[?(@.resourceType=='FIELD_TO_REPLACE')]")
-        except KeyError:
-            pass
+    def pre_validate_contained_contents(self, values: dict) -> dict:
+        """
+        Pre-validate that there is exactly one patient resource in contained, a maximum of one practitioner resource,
+        and no other resources
+        """
+        contained = values["contained"]
+
+        # Contained must be a non-empty list of non-empty dictionaries
+        PreValidation.for_list(contained, "contained", elements_are_dicts=True)
+
+        # Every element of contained must have a resourceType key
+        if [x for x in contained if x.get("resourceType") is None]:
+            raise ValueError("contained resources must have 'resourceType' key")
+
+        # Count number of each resource type in contained
+        patient_count = sum(1 for x in contained if x["resourceType"] == "Patient")
+        practitioner_count = sum(1 for x in contained if x["resourceType"] == "Practitioner")
+        other_resource_count = sum(1 for x in contained if x["resourceType"] not in ("Patient", "Practitioner"))
+
+        # Validate counts
+        errors = []
+        if other_resource_count != 0:
+            errors.append("contained must contain only Patient and Practitioner resources")
+        if patient_count != 1:
+            errors.append("contained must contain exactly one Patient resource")
+        if practitioner_count > 1:
+            errors.append("contained must contain a maximum of one Practitioner resource")
+
+        # Raise errors
+        if errors:
+            raise ValueError("; ".join(errors))
 
     def pre_validate_patient_reference(self, values: dict) -> dict:
         """
@@ -103,37 +127,30 @@ class PreValidators:
         - patient.reference exists and it is a reference
         - patient.reference matches the contained patient resource id
         - contained Patient resource has an id
-        - there is a contained Patient resource
         """
 
-        # Obtain the patient.reference that are internal references (#)
+        # Obtain the patient.reference
         patient_reference = values.get("patient", {}).get("reference")
 
-        # Make sure we have a reference
+        # Make sure we have an internal reference (starts with #)
         if not (isinstance(patient_reference, str) and patient_reference.startswith("#")):
             raise ValueError("patient.reference must be a single reference to a contained Patient resource")
 
         # Obtain the contained patient resource
+        contained_patient = [x for x in values["contained"] if x.get("resourceType") == "Patient"][0]
+
         try:
-            contained_patient = [x for x in values["contained"] if x.get("resourceType") == "Patient"][0]
+            # Try to obtain the contained patient resource id
+            contained_patient_id = contained_patient["id"]
 
-            try:
-                # Try to obtain the contained patient resource id
-                contained_patient_id = contained_patient["id"]
-
-                # If the reference is not equal to the ID then raise an error
-                if ("#" + contained_patient_id) != patient_reference:
-                    raise ValueError(
-                        f"The reference '{patient_reference}' does " + "not exist in the contained Patient resource"
-                    )
-            except KeyError as error:
-                # If the contained Patient resource has no id raise an error
-                raise ValueError("The contained Patient resource must have an 'id' field") from error
-
-        except (IndexError, KeyError) as error:
-            # Entering this exception block implies that there is no contained patient resource
-            # therefore raise an error
-            raise ValueError("contained[?(@.resourceType=='Patient')] is mandatory") from error
+            # If the reference is not equal to the ID then raise an error
+            if ("#" + contained_patient_id) != patient_reference:
+                raise ValueError(
+                    f"The reference '{patient_reference}' does not exist in the contained Patient resource"
+                )
+        except KeyError as error:
+            # If the contained Patient resource has no id raise an error
+            raise ValueError("The contained Patient resource must have an 'id' field") from error
 
     def pre_validate_patient_identifier(self, values: dict) -> dict:
         """

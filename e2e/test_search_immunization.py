@@ -2,10 +2,11 @@ import datetime
 import pprint
 import uuid
 from typing import NamedTuple, Literal, Optional, List
+from decimal import Decimal
 
 from utils.base_test import ImmunizationBaseTest
 from utils.constants import valid_nhs_number1, valid_nhs_number2, valid_patient_identifier2, valid_patient_identifier1
-from utils.resource import create_an_imms_obj
+from utils.resource import create_an_imms_obj, create_a_filtered_imms_obj
 from utils.mappings import VaccineTypes
 
 
@@ -23,13 +24,13 @@ class TestSearchImmunization(ImmunizationBaseTest):
         """it should search records given nhs-number and vaccine type"""
         for imms_api in self.imms_apis:
             with self.subTest(imms_api):
-                # Given two patients each with one mmr
-                mmr_p1 = create_an_imms_obj(str(uuid.uuid4()), valid_nhs_number1, VaccineTypes.mmr)
-                mmr_p2 = create_an_imms_obj(str(uuid.uuid4()), valid_nhs_number2, VaccineTypes.mmr)
-                self.store_records(mmr_p1, mmr_p2)
+                # Given two patients each with one covid_19
+                covid_19_p1 = create_an_imms_obj(str(uuid.uuid4()), valid_nhs_number1, VaccineTypes.covid_19)
+                covid_19_p2 = create_an_imms_obj(str(uuid.uuid4()), valid_nhs_number2, VaccineTypes.covid_19)
+                self.store_records(covid_19_p1, covid_19_p2)
 
                 # When
-                response = imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.mmr)
+                response = imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.covid_19)
 
                 # Then
                 self.assertEqual(response.status_code, 200, response.text)
@@ -37,25 +38,91 @@ class TestSearchImmunization(ImmunizationBaseTest):
                 self.assertEqual(body["resourceType"], "Bundle")
 
                 resource_ids = [entity["resource"]["id"] for entity in body["entry"]]
-                self.assertTrue(mmr_p1["id"] in resource_ids)
-                self.assertTrue(mmr_p2["id"] not in resource_ids)
+                self.assertTrue(covid_19_p1["id"] in resource_ids)
+                self.assertTrue(covid_19_p2["id"] not in resource_ids)
 
     def test_search_patient_multiple_diseases(self):
         # Given patient has two vaccines
-        mmr = create_an_imms_obj(str(uuid.uuid4()), valid_nhs_number1, VaccineTypes.mmr)
+        covid_19 = create_an_imms_obj(str(uuid.uuid4()), valid_nhs_number1, VaccineTypes.covid_19)
         flu = create_an_imms_obj(str(uuid.uuid4()), valid_nhs_number1, VaccineTypes.flu)
-        self.store_records(mmr, flu)
+        self.store_records(covid_19, flu)
 
         # When
-        response = self.default_imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.mmr)
+        response = self.default_imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.covid_19)
 
         # Then
         self.assertEqual(response.status_code, 200, response.text)
         body = response.json()
 
         resource_ids = [entity["resource"]["id"] for entity in body["entry"]]
-        self.assertIn(mmr["id"], resource_ids)
+        self.assertIn(covid_19["id"], resource_ids)
         self.assertNotIn(flu["id"], resource_ids)
+
+    def test_search_backwards_compatible(self):
+        """Test that SEARCH 200 response body is backwards compatible with Immunisation History FHIR API"""
+        for imms_api in self.imms_apis:
+            with self.subTest(imms_api):
+                # Given that the patient has a covid_19 vaccine event stored in the IEDS
+                stored_imms_resource = create_an_imms_obj(str(uuid.uuid4()), valid_nhs_number1, VaccineTypes.covid_19)
+                imms_identifier_value = stored_imms_resource["identifier"][0]["value"]
+                self.store_records(stored_imms_resource)
+                imms_id = stored_imms_resource["id"]
+
+                # Prepare the imms resource expected from the response. Note that id and identifier_value need to be
+                # updated to match those assigned by the create_an_imms_obj and store_records functions.
+                expected_imms_resource = create_a_filtered_imms_obj(
+                    crud_operation_to_filter_for="SEARCH",
+                    imms_id=imms_id,
+                    imms_identifier_value=imms_identifier_value,
+                    nhs_number=valid_nhs_number1,
+                    vaccine_type=VaccineTypes.covid_19,
+                )
+
+                # When
+                response = imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.covid_19)
+
+                # Then
+                self.assertEqual(response.status_code, 200, response.text)
+                body = response.json(parse_float=Decimal)
+                entries = body["entry"]
+                response_imms = [item for item in entries if item["resource"]["resourceType"] == "Immunization"]
+                response_patients = [item for item in entries if item["resource"]["resourceType"] == "Patient"]
+                response_other_entries = [
+                    item for item in entries if item["resource"]["resourceType"] not in ("Patient", "Immunization")
+                ]
+
+                # Check bundle structure apart from entry
+                self.assertEqual(body["resourceType"], "Bundle")
+                self.assertEqual(body["type"], "searchset")
+                self.assertEqual(body["total"], len(response_imms))
+
+                # Check that entry only contains a patient and immunizations
+                self.assertEqual(len(response_other_entries), 0)
+                self.assertEqual(len(response_patients), 1)
+
+                # Check patient structure
+                response_patient = response_patients[0]
+                self.assertEqual(response_patient["search"], {"mode": "include"})
+                self.assertTrue(response_patient["fullUrl"].startswith("urn:uuid:"))
+                self.assertTrue(uuid.UUID(response_patient["fullUrl"].split(":")[2]))
+                expected_patient_resource_keys = ["resourceType", "id", "identifier", "birthDate"]
+                self.assertEqual(sorted(response_patient["resource"].keys()), sorted(expected_patient_resource_keys))
+                self.assertEqual(response_patient["resource"]["id"], valid_nhs_number1)
+                patient_identifier = response_patient["resource"]["identifier"]
+                # NOTE: If PDS response ever changes to send more than one identifier then the below will break
+                self.assertEqual(len(patient_identifier), 1)
+                self.assertEqual(sorted(patient_identifier[0].keys()), sorted(["system", "value"]))
+                self.assertEqual(patient_identifier[0]["system"], "https://fhir.nhs.uk/Id/nhs-number")
+                self.assertEqual(patient_identifier[0]["value"], valid_nhs_number1)
+
+                # Check structure of one of the imms resources
+                expected_imms_resource["patient"]["reference"] = response_patient["fullUrl"]
+                response_imm = next(item for item in entries if item["resource"]["id"] == imms_id)
+                self.assertEqual(
+                    response_imm["fullUrl"], f"https://api.service.nhs.uk/immunisation-fhir-api/Immunization/{imms_id}"
+                )
+                self.assertEqual(response_imm["search"], {"mode": "match"})
+                self.assertEqual(response_imm["resource"], expected_imms_resource)
 
     def test_search_ignore_deleted(self):
         # Given patient has three vaccines and the last one is deleted
@@ -270,10 +337,23 @@ class TestSearchImmunization(ImmunizationBaseTest):
 
         # Matches Immunisation History API in that it doesn't matter if you don't pass "_include".
 
-        # Ignore self link which will always differ.
+        # Ignore link, patient full url and immunisation patient reference as these will always differ.
         result["link"] = []
         result_without_include["link"] = []
-        assert result == result_without_include
+
+        for entry in result["entry"]:
+            if entry["resource"]["resourceType"] == "Immunization":
+                entry["resource"]["patient"]["reference"] = "MOCK VALUE"
+            elif entry["resource"]["resourceType"] == "Patient":
+                entry["fullUrl"] = "MOCK VALUE"
+
+        for entry in result_without_include["entry"]:
+            if entry["resource"]["resourceType"] == "Immunization":
+                entry["resource"]["patient"]["reference"] = "MOCK VALUE"
+            elif entry["resource"]["resourceType"] == "Patient":
+                entry["fullUrl"] = "MOCK VALUE"
+
+        self.assertEqual(result, result_without_include)
 
     def test_search_reject_tbc(self):
         # Given patient has a vaccine with no NHS number

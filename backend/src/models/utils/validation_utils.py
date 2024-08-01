@@ -84,14 +84,8 @@ def get_vaccine_type(immunization: dict):
     return convert_disease_codes_to_vaccine_type(target_diseases)
 
 
-def check_identifier_system_value(response, imms, app_id):
+def check_identifier_system_value(response, imms: dict):
     """Returns diagnostics if identifier's system and value does not match with the stored content"""
-
-    app_id_response = response["Item"].get("AppId", None)
-    if app_id != app_id_response:
-        value = "Unauthorized"
-        diagnostics_error = create_diagnostics_error(value)
-        return diagnostics_error
 
     identifier_system_request = imms["identifier"][0]["system"]
     identifier_value_request = imms["identifier"][0]["value"]

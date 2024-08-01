@@ -63,10 +63,12 @@ class PreValidation:
         field_location: str,
         defined_length: int = None,
         elements_are_strings: bool = False,
+        elements_are_dicts: bool = False,
     ):
         """
         Apply pre-validation to a list field to ensure it is a non-empty list which meets the length
         requirements and requirements, if applicable, for each list element to be a non-empty string
+        or non-empty dictionary
         """
         if not isinstance(field_value, list):
             raise TypeError(f"{field_location} must be an array")
@@ -84,6 +86,13 @@ class PreValidation:
                     raise TypeError(f"{field_location} must be an array of strings")
                 if len(element) == 0:
                     raise ValueError(f"{field_location} must be an array of non-empty strings")
+
+        if elements_are_dicts:
+            for element in field_value:
+                if not isinstance(element, dict):
+                    raise TypeError(f"{field_location} must be an array of objects")
+                if len(element) == 0:
+                    raise ValueError(f"{field_location} must be an array of non-empty objects")
 
     @staticmethod
     def for_date(field_value: str, field_location: str):

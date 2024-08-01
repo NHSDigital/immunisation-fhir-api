@@ -1,21 +1,17 @@
 import json
+import uuid
 import datetime
-import os
 import unittest
 from copy import deepcopy
 from unittest.mock import create_autospec
+from decimal import Decimal
 
 from fhir.resources.R4B.bundle import Bundle as FhirBundle, BundleEntry
 from fhir.resources.R4B.immunization import Immunization
 from fhir_repository import ImmunizationRepository
 from fhir_service import FhirService, UpdateOutcome, get_service_url
 from mappings import VaccineTypes
-from models.errors import (
-    InvalidPatientId,
-    CustomValidationError,
-    ResourceNotFoundError,
-    InconsistentIdError,
-)
+from models.errors import InvalidPatientId, CustomValidationError
 from models.fhir_immunization import ImmunizationValidator
 from pds_service import PdsService
 from pydantic import ValidationError
@@ -26,8 +22,8 @@ from tests.immunization_utils import (
     create_covid_19_immunization_dict_no_id,
     VALID_NHS_NUMBER,
 )
-from src.mappings import DiseaseCodes
 from .utils.generic_utils import load_json_data
+from src.constants import NHS_NUMBER_USED_IN_SAMPLE_DATA
 
 
 class TestServiceUrl(unittest.TestCase):
@@ -53,6 +49,174 @@ class TestServiceUrl(unittest.TestCase):
         url = get_service_url(env, base_path)
         self.assertEqual(url, f"https://internal-dev.api.service.nhs.uk/{base_path}")
 
+class TestGetImmunizationByAll(unittest.TestCase):
+    """Tests for FhirService.get_immunization_by_id"""
+
+    def setUp(self):
+        self.imms_repo = create_autospec(ImmunizationRepository)
+        self.pds_service = create_autospec(PdsService)
+        self.validator = create_autospec(ImmunizationValidator)
+        self.fhir_service = FhirService(self.imms_repo, self.pds_service, self.validator)
+
+    def test_get_immunization_by_id_by_all(self):
+        """it should find an Immunization by id"""
+        imms_id = "an-id"
+        self.imms_repo.get_immunization_by_id_all.return_value = {"Resource": create_covid_19_immunization(imms_id).dict()}
+
+        # When
+        service_resp = self.fhir_service.get_immunization_by_id_all(imms_id,create_covid_19_immunization(imms_id).dict())
+        act_imms = service_resp["Resource"]
+
+        # Then
+        self.imms_repo.get_immunization_by_id_all.assert_called_once_with(imms_id, create_covid_19_immunization(imms_id).dict())
+
+        self.assertEqual(act_imms["id"], imms_id)
+
+    def test_immunization_not_found(self):
+        """it should return None if Immunization doesn't exist"""
+        imms_id = "none-existent-id"
+        self.imms_repo.get_immunization_by_id_all.return_value = None
+
+        # When
+        act_imms = self.fhir_service.get_immunization_by_id_all(imms_id, create_covid_19_immunization(imms_id).dict())
+
+        # Then
+        self.imms_repo.get_immunization_by_id_all.assert_called_once_with(imms_id, create_covid_19_immunization(imms_id).dict())
+        self.assertEqual(act_imms, None)
+
+
+    def test_pre_validation_failed(self):
+        """it should throw exception if Immunization is not valid"""
+        imms_id = "an-id"
+        imms = create_covid_19_immunization_dict(imms_id)
+        imms["patient"] = {"identifier": {"value": VALID_NHS_NUMBER}}
+
+        self.imms_repo.get_immunization_by_id_all.return_value = {}
+
+        validation_error = ValidationError(
+            [
+                ErrorWrapper(TypeError("bad type"), "/type"),
+            ],
+            Immunization,
+        )
+        self.validator.validate.side_effect = validation_error
+        expected_msg = str(validation_error)
+
+        with self.assertRaises(CustomValidationError) as error:
+            # When
+            self.fhir_service.get_immunization_by_id_all("an-id", imms)
+
+        # Then
+        self.assertEqual(error.exception.message, expected_msg)
+        self.imms_repo.update_immunization.assert_not_called()
+
+    def test_post_validation_failed(self):
+        valid_imms = create_covid_19_immunization_dict("an-id", VALID_NHS_NUMBER)
+
+        bad_target_disease_imms = deepcopy(valid_imms)
+        bad_target_disease_imms["protocolApplied"][0]["targetDisease"][0]["coding"][0]["code"] = "bad-code"
+        bad_target_disease_msg = "protocolApplied[0].targetDisease[*].coding[?(@.system=='http://snomed.info/sct')].code - ['bad-code'] is not a valid combination of disease codes for this service"
+
+        bad_patient_name_imms = deepcopy(valid_imms)
+        del bad_patient_name_imms["contained"][1]["name"][0]["given"]
+        bad_patient_name_msg = "contained[?(@.resourceType=='Patient')].name[0].given is a mandatory field"
+
+        fhir_service = FhirService(self.imms_repo, self.pds_service)
+
+        # Invalid target_disease
+        with self.assertRaises(CustomValidationError) as error:
+            fhir_service.get_immunization_by_id_all("an-id", bad_target_disease_imms)
+
+        self.assertEqual(bad_target_disease_msg, error.exception.message)
+        self.imms_repo.get_immunization_by_id_all.assert_not_called()
+
+
+        # Missing patient name (Mandatory field)
+        with self.assertRaises(CustomValidationError) as error:
+            fhir_service.get_immunization_by_id_all("an-id", bad_patient_name_imms)
+
+        self.assertTrue(bad_patient_name_msg in error.exception.message)
+        self.imms_repo.get_immunization_by_id_all.assert_not_called()
+
+    def test_top_level_element_for_with_id(self):
+        """it should throw exception if extra element present in update Immunization is not valid"""
+        imms_id = "an-id"
+        imms = create_covid_19_immunization_dict("an-id", "9990548609")
+        expected_msg = "reportOrigin is not an allowed element of the Immunization resource for this service"
+        imms["reportOrigin"]={}
+        with self.assertRaises(CustomValidationError) as error:
+            # When
+            self.fhir_service.get_immunization_by_id_all(imms_id, imms)
+
+        # Then
+        self.assertTrue(expected_msg in error.exception.message)
+        self.imms_repo.get_immunization_by_id_all.assert_not_called()
+
+    def test_top_level_element_for_with_issubpotent(self):
+        """it should throw exception if extra element present in update Immunization is not valid"""
+        imms_id = "an-id"
+        imms = create_covid_19_immunization_dict("an-id", "9990548609")
+        expected_msg = "isSubpotent is not an allowed element of the Immunization resource for this service"
+        imms["isSubpotent"]=True
+        with self.assertRaises(CustomValidationError) as error:
+            # When
+            self.fhir_service.get_immunization_by_id_all(imms_id, imms)
+
+        # Then
+        self.assertTrue(expected_msg in error.exception.message)
+        self.imms_repo.get_immunization_by_id_all.assert_not_called()
+
+    def test_top_level_element_in_practitioner_with_extra_field(self):
+        """it should throw exception if extra element present in update Immunization of contained.practitioner is not valid"""
+        imms_id = "an-id"
+        imms = create_covid_19_immunization_dict("an-id", "9990548609")
+        expected_msg = "identifier is not an allowed element of the Practitioner resource for this service"
+        imms["contained"][0]["identifier"]=[]
+        with self.assertRaises(CustomValidationError) as error:
+            # When
+            self.fhir_service.get_immunization_by_id_all(imms_id, imms)
+
+        # Then
+        self.assertTrue(expected_msg in error.exception.message)
+        self.imms_repo.get_immunization_by_id_all.assert_not_called()
+
+    def test_top_level_element_in_patient_with_extra_field(self):
+        """it should throw exception if extra element present in update Immunization of contained.patient is not valid"""
+        imms_id = "an-id"
+        imms = create_covid_19_immunization_dict("an-id", "9990548609")
+        expected_msg = "extension is not an allowed element of the Patient resource for this service"
+        imms["contained"][1]["extension"]=[]
+        with self.assertRaises(CustomValidationError) as error:
+            # When
+            self.fhir_service.get_immunization_by_id_all(imms_id, imms)
+
+        # Then
+        self.assertTrue(expected_msg in error.exception.message)
+        self.imms_repo.get_immunization_by_id_all.assert_not_called()
+
+    def test_top_level_element_collected_errors_with_extra_field(self):
+        """it should throw exception if extra element present in update Immunization is not valid"""
+        imms_id = "an-id"
+        imms = create_covid_19_immunization_dict("an-id", "9990548609")
+        expected_msg = (
+            "reportOrigin is not an allowed element of the Immunization resource for this service; "
+            "isSubpotent is not an allowed element of the Immunization resource for this service; "
+            "identifier is not an allowed element of the Practitioner resource for this service; "
+            "extension is not an allowed element of the Patient resource for this service"
+        )
+        imms["reportOrigin"]={}
+        imms["isSubpotent"] = True
+        imms["contained"][0]["identifier"] = []
+        imms["contained"][1]["extension"] = []
+        with self.assertRaises(CustomValidationError) as error:
+            # When
+            self.fhir_service.get_immunization_by_id_all(imms_id, imms)
+
+        # Then
+        self.assertTrue(expected_msg in error.exception.message)
+        self.imms_repo.get_immunization_by_id_all.assert_not_called()    
+
+
 
 class TestGetImmunization(unittest.TestCase):
     """Tests for FhirService.get_immunization_by_id"""
@@ -67,7 +231,7 @@ class TestGetImmunization(unittest.TestCase):
         """it should find an Immunization by id"""
         imms_id = "an-id"
         self.imms_repo.get_immunization_by_id.return_value = {"Resource": create_covid_19_immunization(imms_id).dict()}
-        self.pds_service.get_patient_details.return_value = {}
+        self.pds_service.get_patient_details.return_value = {"meta": {"security": [{"code": "U"}]}}
 
         # When
         service_resp = self.fhir_service.get_immunization_by_id(imms_id, "COVID19:read")
@@ -99,7 +263,7 @@ class TestGetImmunization(unittest.TestCase):
 
         immunization_data = load_json_data("completed_covid19_immunization_event.json")
         self.imms_repo.get_immunization_by_id.return_value = {"Resource": immunization_data}
-        self.fhir_service.pds_service.get_patient_details.return_value = {"meta": {}}
+        self.fhir_service.pds_service.get_patient_details.return_value = {"meta": {"security": [{"code": "U"}]}}
 
         expected_imms = load_json_data("completed_covid19_immunization_event_filtered_for_read.json")
         expected_output = Immunization.parse_obj(expected_imms)
@@ -145,7 +309,7 @@ class TestGetImmunization(unittest.TestCase):
 
         with self.assertRaises(CustomValidationError) as error:
             # When
-            self.fhir_service.get_immunization_by_id_all("an-id", imms, "test")
+            self.fhir_service.get_immunization_by_id_all("an-id", imms)
 
         # Then
         self.assertEqual(error.exception.message, expected_msg)
@@ -157,7 +321,10 @@ class TestGetImmunization(unittest.TestCase):
 
         bad_target_disease_imms = deepcopy(valid_imms)
         bad_target_disease_imms["protocolApplied"][0]["targetDisease"][0]["coding"][0]["code"] = "bad-code"
-        bad_target_disease_msg = "protocolApplied[0].targetDisease[*].coding[?(@.system=='http://snomed.info/sct')].code - ['bad-code'] is not a valid combination of disease codes for this service"
+        bad_target_disease_msg = (
+            "protocolApplied[0].targetDisease[*].coding[?(@.system=='http://snomed.info/sct')].code"
+            + " - ['bad-code'] is not a valid combination of disease codes for this service"
+        )
 
         bad_patient_name_imms = deepcopy(valid_imms)
         del bad_patient_name_imms["contained"][1]["name"][0]["given"]
@@ -167,7 +334,7 @@ class TestGetImmunization(unittest.TestCase):
 
         # Invalid target_disease
         with self.assertRaises(CustomValidationError) as error:
-            fhir_service.get_immunization_by_id_all("an-id", bad_target_disease_imms, "test")
+            fhir_service.get_immunization_by_id_all("an-id", bad_target_disease_imms)
 
         self.assertEqual(bad_target_disease_msg, error.exception.message)
         self.imms_repo.get_immunization_by_id_all.assert_not_called()
@@ -175,7 +342,7 @@ class TestGetImmunization(unittest.TestCase):
 
         # Missing patient name (Mandatory field)
         with self.assertRaises(CustomValidationError) as error:
-            fhir_service.get_immunization_by_id_all("an-id", bad_patient_name_imms, "test")
+            fhir_service.get_immunization_by_id_all("an-id", bad_patient_name_imms)
 
         self.assertTrue(bad_patient_name_msg in error.exception.message)
         self.imms_repo.get_immunization_by_id_all.assert_not_called()
@@ -205,10 +372,10 @@ class TestCreateImmunization(unittest.TestCase):
         req_imms = create_covid_19_immunization_dict_no_id(nhs_number)
 
         # When
-        stored_imms = self.fhir_service.create_immunization(req_imms, "COVID19:create", "TestApp")
+        stored_imms = self.fhir_service.create_immunization(req_imms, "COVID19:create")
 
         # Then
-        self.imms_repo.create_immunization.assert_called_once_with(req_imms, pds_patient, "COVID19:create", "TestApp")
+        self.imms_repo.create_immunization.assert_called_once_with(req_imms, pds_patient, "COVID19:create")
         self.validator.validate.assert_called_once_with(req_imms)
         self.fhir_service.pds_service.get_patient_details.assert_called_once_with(nhs_number)
         self.assertIsInstance(stored_imms, Immunization)
@@ -221,7 +388,7 @@ class TestCreateImmunization(unittest.TestCase):
 
         with self.assertRaises(CustomValidationError) as error:
             # When
-            self.pre_validate_fhir_service.create_immunization(imms, "COVID19:create", "TestApp")
+            self.pre_validate_fhir_service.create_immunization(imms, "COVID19:create")
 
         # Then
         self.assertTrue(expected_msg in error.exception.message)
@@ -246,7 +413,7 @@ class TestCreateImmunization(unittest.TestCase):
         # Create
         # Invalid target_disease
         with self.assertRaises(CustomValidationError) as error:
-            fhir_service.create_immunization(bad_target_disease_imms, "COVID19:create", "TestApp")
+            fhir_service.create_immunization(bad_target_disease_imms, "COVID19:create")
 
         self.assertEqual(bad_target_disease_msg, error.exception.message)
         self.imms_repo.create_immunization.assert_not_called()
@@ -254,11 +421,92 @@ class TestCreateImmunization(unittest.TestCase):
 
         # Missing patient name (Mandatory field)
         with self.assertRaises(CustomValidationError) as error:
-            fhir_service.create_immunization(bad_patient_name_imms, "COVID19:create", "TestApp")
+            fhir_service.create_immunization(bad_patient_name_imms, "COVID19:create")
 
         self.assertTrue(bad_patient_name_msg in error.exception.message)
         self.imms_repo.create_immunization.assert_not_called()
         self.pds_service.get_patient_details.assert_not_called()
+    
+    def test_top_level_element_for_with_id(self):
+        """it should throw exception if id present in create Immunization is not valid"""
+        imms = create_covid_19_immunization_dict("an-id", "9990548609")
+        expected_msg = "id is not an allowed element of the Immunization resource for this service"
+
+        with self.assertRaises(CustomValidationError) as error:
+            # When
+            self.pre_validate_fhir_service.create_immunization(imms, "COVID19:create")
+
+        # Then
+        self.assertTrue(expected_msg in error.exception.message)
+        self.imms_repo.create_immunization.assert_not_called()
+        self.pds_service.get_patient_details.assert_not_called()
+
+    def test_top_level_element_for_with_issubpotent(self):
+        """it should throw exception if extra element present in create Immunization is not valid"""
+        imms = create_covid_19_immunization_dict("an-id", "9990548609")
+        expected_msg = "isSubpotent is not an allowed element of the Immunization resource for this service"
+        del imms["id"]
+        imms["isSubpotent"]=True
+        with self.assertRaises(CustomValidationError) as error:
+            # When
+            self.pre_validate_fhir_service.create_immunization(imms, "COVID19:create")
+
+        # Then
+        self.assertTrue(expected_msg in error.exception.message)
+        self.imms_repo.create_immunization.assert_not_called()
+        self.pds_service.get_patient_details.assert_not_called() 
+
+    def test_top_level_element_in_practitioner_with_extra_field(self):
+        """it should throw exception if extra element present in create Immunization of contained.practitioner is not valid"""
+        imms = create_covid_19_immunization_dict("an-id", "9990548609")
+        expected_msg = "identifier is not an allowed element of the Practitioner resource for this service"
+        del imms["id"]
+        imms["contained"][0]["identifier"]=[]
+        with self.assertRaises(CustomValidationError) as error:
+            # When
+            self.pre_validate_fhir_service.create_immunization(imms, "COVID19:create")
+
+        # Then
+        self.assertTrue(expected_msg in error.exception.message)
+        self.imms_repo.create_immunization.assert_not_called()
+        self.pds_service.get_patient_details.assert_not_called() 
+
+    def test_top_level_element_in_patient_with_extra_field(self):
+        """it should throw exception if extra element present in create Immunization of contained.patient is not valid"""
+        imms = create_covid_19_immunization_dict("an-id", "9990548609")
+        expected_msg = "extension is not an allowed element of the Patient resource for this service"
+        del imms["id"]
+        imms["contained"][1]["extension"]=[]
+        with self.assertRaises(CustomValidationError) as error:
+            # When
+            self.pre_validate_fhir_service.create_immunization(imms, "COVID19:create")
+
+        # Then
+        self.assertTrue(expected_msg in error.exception.message)
+        self.imms_repo.create_immunization.assert_not_called()
+        self.pds_service.get_patient_details.assert_not_called() 
+
+    def test_top_level_element_collected_errors_with_extra_field(self):
+        """it should throw exception if extra element present in create Immunization  is not valid"""
+        imms = create_covid_19_immunization_dict("an-id", "9990548609")
+        expected_msg = (
+            "id is not an allowed element of the Immunization resource for this service; "
+            "isSubpotent is not an allowed element of the Immunization resource for this service; "
+            "identifier is not an allowed element of the Practitioner resource for this service; "
+            "extension is not an allowed element of the Patient resource for this service"
+        )
+        imms["isSubpotent"] = True
+        imms["contained"][0]["identifier"] = []
+        imms["contained"][1]["extension"] = []
+        with self.assertRaises(CustomValidationError) as error:
+            # When
+            self.pre_validate_fhir_service.create_immunization(imms, "COVID19:create")
+
+        # Then
+        self.assertTrue(expected_msg in error.exception.message)
+        self.imms_repo.create_immunization.assert_not_called()
+        self.pds_service.get_patient_details.assert_not_called()                   
+
 
     def test_patient_error(self):
         """it should throw error when PDS can't resolve patient"""
@@ -268,7 +516,7 @@ class TestCreateImmunization(unittest.TestCase):
 
         with self.assertRaises(InvalidPatientId) as e:
             # When
-            self.fhir_service.create_immunization(bad_patient_imms, "COVID19:create", "TestApp")
+            self.fhir_service.create_immunization(bad_patient_imms, "COVID19:create")
 
         # Then
         self.assertEqual(e.exception.patient_identifier, invalid_nhs_number)
@@ -300,8 +548,9 @@ class TestUpdateImmunization(unittest.TestCase):
         # Then
         self.assertEqual(outcome, UpdateOutcome.UPDATE)
         self.imms_repo.update_immunization.assert_called_once_with(imms_id, req_imms, pds_patient, 1, "COVID19:update")
-        self.fhir_service.pds_service.get_patient_details.assert_called_once_with(nhs_number)
-
+        self.fhir_service.pds_service.get_patient_details.assert_called_once_with(nhs_number)   
+    
+    
     def test_id_not_present(self):
         """it should populate id in the message if it is not present"""
         req_imms_id = "an-id"
@@ -352,10 +601,10 @@ class TestDeleteImmunization(unittest.TestCase):
         self.imms_repo.delete_immunization.return_value = imms
 
         # When
-        act_imms = self.fhir_service.delete_immunization(imms_id, "COVID:delete", "test")
+        act_imms = self.fhir_service.delete_immunization(imms_id, "COVID:delete")
 
         # Then
-        self.imms_repo.delete_immunization.assert_called_once_with(imms_id, "COVID:delete", "test")
+        self.imms_repo.delete_immunization.assert_called_once_with(imms_id, "COVID:delete")
         self.assertIsInstance(act_imms, Immunization)
         self.assertEqual(act_imms.id, imms_id)
 
@@ -370,6 +619,7 @@ class TestSearchImmunizations(unittest.TestCase):
         self.fhir_service = FhirService(self.imms_repo, self.pds_service, self.validator)
         self.nhs_search_param = "patient.identifier"
         self.vaccine_type_search_param = "-immunization.target"
+        self.sample_patient_resource = load_json_data("bundle_patient_resource.json")
 
     def test_vaccine_type_search(self):
         """It should search for the correct vaccine type"""
@@ -387,19 +637,23 @@ class TestSearchImmunizations(unittest.TestCase):
         """It should return a FHIR Bundle resource"""
         imms_ids = ["imms-1", "imms-2"]
         imms_list = [create_covid_19_immunization_dict(imms_id) for imms_id in imms_ids]
-        self.imms_repo.find_immunizations.return_value = imms_list
-        self.pds_service.get_patient_details.return_value = {}
-        nhs_number = VALID_NHS_NUMBER
+        self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
+        self.pds_service.get_patient_details.return_value = {
+            **deepcopy(self.sample_patient_resource),
+            "meta": {"security": [{"code": "U"}]},
+        }
+        nhs_number = NHS_NUMBER_USED_IN_SAMPLE_DATA
         vaccine_types = [VaccineTypes.covid_19]
         params = f"{self.nhs_search_param}={nhs_number}&{self.vaccine_type_search_param}={vaccine_types}"
         # When
         result = self.fhir_service.search_immunizations(nhs_number, vaccine_types, params)
+        searched_imms = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
         # Then
         self.assertIsInstance(result, FhirBundle)
         self.assertEqual(result.type, "searchset")
-        self.assertEqual(len(imms_ids), len(result.entry))
+        self.assertEqual(len(imms_ids), len(searched_imms))
         # Assert each entry in the bundle
-        for i, entry in enumerate(result.entry):
+        for i, entry in enumerate(searched_imms):
             self.assertIsInstance(entry, BundleEntry)
             self.assertEqual(entry.resource.resource_type, "Immunization")
             self.assertEqual(entry.resource.id, imms_ids[i])
@@ -409,19 +663,24 @@ class TestSearchImmunizations(unittest.TestCase):
 
     def test_date_from_is_used_to_filter(self):
         """It should return only Immunizations after date_from"""
+        # Arrange
         imms = [("imms-1", "2021-02-07T13:28:17.271+00:00"), ("imms-2", "2021-02-08T13:28:17.271+00:00")]
         imms_list = [
             create_covid_19_immunization_dict(imms_id, occurrence_date_time=occcurrence_date_time)
             for (imms_id, occcurrence_date_time) in imms
         ]
         imms_ids = [imms[0] for imms in imms]
-        self.imms_repo.find_immunizations.return_value = imms_list
-        self.pds_service.get_patient_details.return_value = {}
-        nhs_number = VALID_NHS_NUMBER
+        self.pds_service.get_patient_details.return_value = {
+            **deepcopy(self.sample_patient_resource),
+            "meta": {"security": [{"code": "U"}]},
+        }
+        nhs_number = NHS_NUMBER_USED_IN_SAMPLE_DATA
         vaccine_types = [VaccineTypes.covid_19]
 
+        # CASE: Day before.
+        self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
+
         # When
-        # Day before.
         result = self.fhir_service.search_immunizations(
             nhs_number, vaccine_types, "", date_from=datetime.date(2021, 2, 6)
         )
@@ -432,8 +691,10 @@ class TestSearchImmunizations(unittest.TestCase):
         for i, entry in enumerate(searched_imms):
             self.assertEqual(imms_ids[i], entry.resource.id)
 
+        # CASE:Day of first, inclusive search.
+        self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
+
         # When
-        # Day of first, inclusive search.
         result = self.fhir_service.search_immunizations(
             nhs_number, vaccine_types, "", date_from=datetime.date(2021, 2, 7)
         )
@@ -444,8 +705,10 @@ class TestSearchImmunizations(unittest.TestCase):
         for i, entry in enumerate(searched_imms):
             self.assertEqual(imms_ids[i], entry.resource.id)
 
+        # CASE: Day of second, inclusive search.
+        self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
+
         # When
-        # Day of second, inclusive search.
         result = self.fhir_service.search_immunizations(
             nhs_number, vaccine_types, "", date_from=datetime.date(2021, 2, 8)
         )
@@ -455,8 +718,10 @@ class TestSearchImmunizations(unittest.TestCase):
         self.assertEqual(1, len(searched_imms))
         self.assertEqual(imms_ids[1], searched_imms[0].resource.id)
 
+        # CASE: Day after.
+        self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
+
         # When
-        # Day after.
         result = self.fhir_service.search_immunizations(
             nhs_number, vaccine_types, "", date_from=datetime.date(2021, 2, 9)
         )
@@ -467,12 +732,18 @@ class TestSearchImmunizations(unittest.TestCase):
 
     def test_date_from_is_optional(self):
         """It should return everything when no date_from is specified"""
+        # Arrange
         imms_ids = ["imms-1", "imms-2"]
         imms_list = [create_covid_19_immunization_dict(imms_id) for imms_id in imms_ids]
-        self.imms_repo.find_immunizations.return_value = imms_list
-        self.pds_service.get_patient_details.return_value = {}
-        nhs_number = VALID_NHS_NUMBER
+        self.pds_service.get_patient_details.return_value = {
+            **deepcopy(self.sample_patient_resource),
+            "meta": {"security": [{"code": "U"}]},
+        }
+        nhs_number = NHS_NUMBER_USED_IN_SAMPLE_DATA
         vaccine_types = [VaccineTypes.covid_19]
+
+        # CASE: Without date_from
+        self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
 
         # When
         result = self.fhir_service.search_immunizations(nhs_number, vaccine_types, "")
@@ -481,6 +752,9 @@ class TestSearchImmunizations(unittest.TestCase):
         # Then
         for i, entry in enumerate(searched_imms):
             self.assertEqual(entry.resource.id, imms_ids[i])
+
+        # CASE: With date_from
+        self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
 
         # When
         result = self.fhir_service.search_immunizations(
@@ -494,19 +768,24 @@ class TestSearchImmunizations(unittest.TestCase):
 
     def test_date_to_is_used_to_filter(self):
         """It should return only Immunizations before date_to"""
+        # Arrange
         imms = [("imms-1", "2021-02-07T13:28:17.271+00:00"), ("imms-2", "2021-02-08T13:28:17.271+00:00")]
         imms_list = [
             create_covid_19_immunization_dict(imms_id, occurrence_date_time=occcurrence_date_time)
             for (imms_id, occcurrence_date_time) in imms
         ]
         imms_ids = [imms[0] for imms in imms]
-        self.imms_repo.find_immunizations.return_value = imms_list
-        self.pds_service.get_patient_details.return_value = {}
-        nhs_number = VALID_NHS_NUMBER
+        self.pds_service.get_patient_details.return_value = {
+            **deepcopy(self.sample_patient_resource),
+            "meta": {"security": [{"code": "U"}]},
+        }
+        nhs_number = NHS_NUMBER_USED_IN_SAMPLE_DATA
         vaccine_types = [VaccineTypes.covid_19]
 
+        # CASE: Day after.
+        self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
+
         # When
-        # Day after.
         result = self.fhir_service.search_immunizations(
             nhs_number, vaccine_types, "", date_to=datetime.date(2021, 2, 9)
         )
@@ -517,8 +796,10 @@ class TestSearchImmunizations(unittest.TestCase):
         for i, entry in enumerate(searched_imms):
             self.assertEqual(entry.resource.id, imms_ids[i])
 
+        # CASE: Day of second, inclusive search.
+        self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
+
         # When
-        # Day of second, inclusive search.
         result = self.fhir_service.search_immunizations(
             nhs_number, vaccine_types, "", date_to=datetime.date(2021, 2, 8)
         )
@@ -529,8 +810,10 @@ class TestSearchImmunizations(unittest.TestCase):
         for i, entry in enumerate(searched_imms):
             self.assertEqual(entry.resource.id, imms_ids[i])
 
+        # CASE: Day of first, inclusive search.
+        self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
+
         # When
-        # Day of first, inclusive search.
         result = self.fhir_service.search_immunizations(
             nhs_number, vaccine_types, "", date_to=datetime.date(2021, 2, 7)
         )
@@ -540,8 +823,10 @@ class TestSearchImmunizations(unittest.TestCase):
         self.assertEqual(len(searched_imms), 1)
         self.assertEqual(searched_imms[0].resource.id, imms_ids[0])
 
+        # CASE: Day before.
+        self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
+
         # When
-        # Day before.
         result = self.fhir_service.search_immunizations(
             nhs_number, vaccine_types, "", date_to=datetime.date(2021, 2, 6)
         )
@@ -552,12 +837,18 @@ class TestSearchImmunizations(unittest.TestCase):
 
     def test_date_to_is_optional(self):
         """It should return everything when no date_to is specified"""
+        # Arrange
         imms_ids = ["imms-1", "imms-2"]
         imms_list = [create_covid_19_immunization_dict(imms_id) for imms_id in imms_ids]
-        self.imms_repo.find_immunizations.return_value = imms_list
-        self.pds_service.get_patient_details.return_value = {}
-        nhs_number = VALID_NHS_NUMBER
+        self.pds_service.get_patient_details.return_value = {
+            **deepcopy(self.sample_patient_resource),
+            "meta": {"security": [{"code": "U"}]},
+        }
+        nhs_number = NHS_NUMBER_USED_IN_SAMPLE_DATA
         vaccine_types = [VaccineTypes.covid_19]
+
+        # CASE 1: Without date_to argument
+        self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
 
         # When
         result = self.fhir_service.search_immunizations(nhs_number, vaccine_types, "")
@@ -566,6 +857,9 @@ class TestSearchImmunizations(unittest.TestCase):
         # Then
         for i, entry in enumerate(searched_imms):
             self.assertEqual(entry.resource.id, imms_ids[i])
+
+        # CASE 2: With date_to argument
+        self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
 
         # When
         result = self.fhir_service.search_immunizations(
@@ -577,6 +871,94 @@ class TestSearchImmunizations(unittest.TestCase):
         for i, entry in enumerate(searched_imms):
             self.assertEqual(entry.resource.id, imms_ids[i])
 
+    def test_immunization_resources_are_filtered_for_search(self):
+        """
+        Test that each immunization resource returned is filtered to include only the appropriate fields for a search
+        response when the patient is Unrestricted
+        """
+        # Arrange
+        imms_ids = ["imms-1", "imms-2"]
+        imms_list = [
+            create_covid_19_immunization_dict(imms_id, occurrence_date_time="2021-02-07T13:28:17+00:00")
+            for imms_id in imms_ids
+        ]
+        self.pds_service.get_patient_details.return_value = {
+            **deepcopy(self.sample_patient_resource),
+            "meta": {"security": [{"code": "U"}]},
+        }
+        nhs_number = NHS_NUMBER_USED_IN_SAMPLE_DATA
+        vaccine_types = [VaccineTypes.covid_19]
+        self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
+
+        # When
+        result = self.fhir_service.search_immunizations(nhs_number, vaccine_types, "")
+        searched_imms = [
+            json.loads(entry.json(), parse_float=Decimal)
+            for entry in result.entry
+            if entry.resource.resource_type == "Immunization"
+        ]
+        searched_patient = [
+            json.loads(entry.json()) for entry in result.entry if entry.resource.resource_type == "Patient"
+        ][0]
+
+        # Then
+        expected_output_resource = load_json_data(
+            "completed_covid19_immunization_event_filtered_for_search_using_bundle_patient_resource.json"
+        )
+        expected_output_resource["patient"]["reference"] = searched_patient["fullUrl"]
+
+        for i, entry in enumerate(searched_imms):
+            # Check that entry has correct resource id
+            self.assertEqual(entry["resource"]["id"], imms_ids[i])
+
+            # Check that output is as expected (filtered, with id added)
+            expected_output_resource["id"] = imms_ids[i]
+            self.assertEqual(entry["resource"], expected_output_resource)
+
+    def test_immunization_resources_are_filtered_for_search_and_s_flag(self):
+        """
+        Test that each immunization resource returned is filtered to include only the appropriate fields for a search
+        response when the patient is Restricted
+        """
+        # Arrange
+        imms_ids = ["imms-1", "imms-2"]
+        imms_list = [
+            create_covid_19_immunization_dict(imms_id, occurrence_date_time="2021-02-07T13:28:17+00:00")
+            for imms_id in imms_ids
+        ]
+        self.pds_service.get_patient_details.return_value = {
+            **deepcopy(self.sample_patient_resource),
+            "meta": {"security": [{"code": "R"}]},
+        }
+        nhs_number = NHS_NUMBER_USED_IN_SAMPLE_DATA
+        vaccine_types = [VaccineTypes.covid_19]
+        self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
+
+        # When
+        result = self.fhir_service.search_immunizations(nhs_number, vaccine_types, "")
+        searched_imms = [
+            json.loads(entry.json(), parse_float=Decimal)
+            for entry in result.entry
+            if entry.resource.resource_type == "Immunization"
+        ]
+        searched_patient = [
+            json.loads(entry.json()) for entry in result.entry if entry.resource.resource_type == "Patient"
+        ][0]
+
+        # Then
+        expected_output_resource = load_json_data(
+            "completed_covid19_immunization_event_filtered_for_search_and_s_flag_using_bundle_patient_resource.json"
+        )
+        expected_output_resource["patient"]["reference"] = searched_patient["fullUrl"]
+
+        for i, entry in enumerate(searched_imms):
+            # Check that entry has correct resource id
+            self.assertEqual(entry["resource"]["id"], imms_ids[i])
+
+            # Check that output is as expected (filtered, with id added)
+            expected_output_resource["id"] = imms_ids[i]
+            self.assertEqual(entry["resource"], expected_output_resource)
+
     def test_matches_contain_fullUrl(self):
         """All matches must have a fullUrl consisting of their id.
         See http://hl7.org/fhir/R4B/bundle-definitions.html#Bundle.entry.fullUrl.
@@ -585,8 +967,11 @@ class TestSearchImmunizations(unittest.TestCase):
         imms_ids = ["imms-1", "imms-2"]
         imms_list = [create_covid_19_immunization_dict(imms_id) for imms_id in imms_ids]
         self.imms_repo.find_immunizations.return_value = imms_list
-        self.pds_service.get_patient_details.return_value = {}
-        nhs_number = VALID_NHS_NUMBER
+        self.pds_service.get_patient_details.return_value = {
+            **deepcopy(self.sample_patient_resource),
+            "meta": {"security": [{"code": "U"}]},
+        }
+        nhs_number = NHS_NUMBER_USED_IN_SAMPLE_DATA
         vaccine_types = [VaccineTypes.covid_19]
 
         # When
@@ -595,9 +980,10 @@ class TestSearchImmunizations(unittest.TestCase):
 
         # Then
         for i, entry in enumerate(entries):
-            self.assertEqual(entry.fullUrl, f"urn:uuid:{imms_ids[i]}")
+            self.assertEqual(
+                entry.fullUrl, f"https://api.service.nhs.uk/immunisation-fhir-api/Immunization/{imms_ids[i]}"
+            )
 
-    @unittest.skip("Patient fullUrl not implemented")
     def test_patient_contains_fullUrl(self):
         """Patient must have a fullUrl consisting of its id.
         See http://hl7.org/fhir/R4B/bundle-definitions.html#Bundle.entry.fullUrl.
@@ -606,8 +992,11 @@ class TestSearchImmunizations(unittest.TestCase):
         imms_ids = ["imms-1", "imms-2"]
         imms_list = [create_covid_19_immunization_dict(imms_id) for imms_id in imms_ids]
         self.imms_repo.find_immunizations.return_value = imms_list
-        self.pds_service.get_patient_details.return_value = {}
-        nhs_number = VALID_NHS_NUMBER
+        self.pds_service.get_patient_details.return_value = {
+            **deepcopy(self.sample_patient_resource),
+            "meta": {"security": [{"code": "U"}]},
+        }
+        nhs_number = NHS_NUMBER_USED_IN_SAMPLE_DATA
         vaccine_types = [VaccineTypes.covid_19]
 
         # When
@@ -615,7 +1004,12 @@ class TestSearchImmunizations(unittest.TestCase):
 
         # Then
         patient_entry = next((entry for entry in result.entry if entry.resource.resource_type == "Patient"), None)
-        self.assertEqual(patient_entry.fullUrl, "???")
+        patient_full_url = patient_entry.fullUrl
+        self.assertTrue(patient_full_url.startswith("urn:uuid:"))
+
+        # Check that final part of fullUrl is a uuid
+        patient_full_url_uuid = patient_full_url.split(":")[2]
+        self.assertTrue(uuid.UUID(patient_full_url_uuid))
 
     def test_patient_included(self):
         """Patient is included in the results."""
@@ -624,7 +1018,10 @@ class TestSearchImmunizations(unittest.TestCase):
         imms_list = [create_covid_19_immunization_dict(imms_id) for imms_id in imms_ids]
         patient = next(contained for contained in imms_list[0]["contained"] if contained["resourceType"] == "Patient")
         self.imms_repo.find_immunizations.return_value = imms_list
-        self.pds_service.get_patient_details.return_value = patient
+        self.pds_service.get_patient_details.return_value = {
+            **patient,
+            "meta": {"security": [{"code": "U"}]},
+        }
         nhs_number = VALID_NHS_NUMBER
         vaccine_types = [VaccineTypes.covid_19]
 
@@ -642,7 +1039,10 @@ class TestSearchImmunizations(unittest.TestCase):
         imms_list = [create_covid_19_immunization_dict(imms_id) for imms_id in imms_ids]
         patient = next(contained for contained in imms_list[0]["contained"] if contained["resourceType"] == "Patient")
         self.imms_repo.find_immunizations.return_value = imms_list
-        self.pds_service.get_patient_details.return_value = patient
+        self.pds_service.get_patient_details.return_value = {
+            **patient,
+            "meta": {"security": [{"code": "U"}]},
+        }
         nhs_number = VALID_NHS_NUMBER
         vaccine_types = [VaccineTypes.covid_19]
 

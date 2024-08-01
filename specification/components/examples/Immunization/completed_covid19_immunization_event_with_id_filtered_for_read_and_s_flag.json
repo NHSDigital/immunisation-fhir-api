@@ -1,5 +1,6 @@
 {
   "resourceType": "Immunization",
+  "id": "an-id",
   "contained": [
     {
       "resourceType": "Practitioner",
@@ -17,7 +18,7 @@
       "identifier": [
         {
           "system": "https://fhir.nhs.uk/Id/nhs-number",
-          "value": "9000000009"
+          "value": "9990548609"
         }
       ],
       "name": [
@@ -67,6 +68,12 @@
   "primarySource": true,
   "manufacturer": {
     "display": "AstraZeneca Ltd"
+  },
+  "location": {
+    "identifier": {
+      "system": "urn:iso:std:iso:3166",
+      "value": "GB"
+    }
   },
   "lotNumber": "4120Z001",
   "expirationDate": "2021-07-02",
@@ -120,9 +127,6 @@
       ]
     }
   ],
-  "location": {
-    "identifier": { "system": "urn:iso:std:iso:3166", "value": "GB" }
-  },
   "protocolApplied": [
     {
       "targetDisease": [

@@ -163,6 +163,7 @@ class ValidatorModelTests:
         predefined_list_length: int = None,
         valid_list_element=None,
         is_list_of_strings: bool = False,
+        is_list_of_dicts: bool = False,
     ):
         """
         Test that a FHIR model accepts valid list values and rejects the following invalid values:
@@ -173,6 +174,7 @@ class ValidatorModelTests:
             that the error is being raised due to length, not due to use of an invalid list element)
         * If there is no predfined list length: Empty list
         * If is a list of strings: Lists with non-string or empty string elements
+        * If is a list of dicts: Lists with non-dict or empty dict elements
 
         NOTE: No validation of optional arguments will occur if the method is not given a list of
         values to test. This means that:
@@ -250,6 +252,27 @@ class ValidatorModelTests:
                 field_location=field_location,
                 invalid_value=[""],
                 expected_error_message=f"{field_location} must be an array of non-empty strings",
+            )
+
+        # Tests lists with non-dict or empty dict elements (if applicable)
+        if is_list_of_dicts:
+            # Test lists with non-dict element
+            for invalid_list in InvalidValues.for_lists_of_dicts_of_length_1:
+                test_invalid_values_rejected(
+                    test_instance,
+                    valid_json_data,
+                    field_location=field_location,
+                    invalid_value=invalid_list,
+                    expected_error_message=f"{field_location} must be an array of objects",
+                )
+
+            # Test empty dict in list
+            test_invalid_values_rejected(
+                test_instance,
+                valid_json_data,
+                field_location=field_location,
+                invalid_value=[{}],
+                expected_error_message=f"{field_location} must be an array of non-empty objects",
             )
 
     @staticmethod

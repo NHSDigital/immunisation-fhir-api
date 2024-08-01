@@ -1,40 +1,5 @@
 {
   "resourceType": "Immunization",
-  "contained": [
-    {
-      "resourceType": "Practitioner",
-      "id": "Pract1",
-      "name": [
-        {
-          "family": "Nightingale",
-          "given": ["Florence"]
-        }
-      ]
-    },
-    {
-      "resourceType": "Patient",
-      "id": "Pat1",
-      "identifier": [
-        {
-          "system": "https://fhir.nhs.uk/Id/nhs-number",
-          "value": "9000000009"
-        }
-      ],
-      "name": [
-        {
-          "family": "Taylor",
-          "given": ["Sarah"]
-        }
-      ],
-      "gender": "unknown",
-      "birthDate": "1965-02-28",
-      "address": [
-        {
-          "postalCode": "ZZ99 3CZ"
-        }
-      ]
-    }
-  ],
   "extension": [
     {
       "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure",
@@ -49,6 +14,13 @@
       }
     }
   ],
+  "identifier": [
+    {
+      "use": "official",
+      "system": "https://supplierABC/identifiers/vacc",
+      "value": "ACME-vacc123456"
+    }
+  ],
   "status": "completed",
   "vaccineCode": {
     "coding": [
@@ -60,13 +32,24 @@
     ]
   },
   "patient": {
-    "reference": "#Pat1"
+    "reference": "THIS VALUE SHOULD BE REPLACED WITH PATIENT_UUID_FOR_FULL_URL",
+    "type": "Patient",
+    "identifier": {
+      "system": "https://fhir.nhs.uk/Id/nhs-number",
+      "value": "9000000009"
+    }
   },
   "occurrenceDateTime": "2021-02-07T13:28:17+00:00",
   "recorded": "2021-02-07T13:28:17+00:00",
   "primarySource": true,
   "manufacturer": {
     "display": "AstraZeneca Ltd"
+  },
+  "location": {
+    "identifier": {
+      "value": "GB",
+      "system": "urn:iso:std:iso:3166"
+    }
   },
   "lotNumber": "4120Z001",
   "expirationDate": "2021-07-02",
@@ -97,15 +80,10 @@
   "performer": [
     {
       "actor": {
-        "reference": "#Pract1"
-      }
-    },
-    {
-      "actor": {
         "type": "Organization",
         "identifier": {
           "system": "https://fhir.nhs.uk/Id/ods-organization-code",
-          "value": "N2N9I"
+          "value": "B0C4P"
         }
       }
     }
@@ -120,9 +98,6 @@
       ]
     }
   ],
-  "location": {
-    "identifier": { "system": "urn:iso:std:iso:3166", "value": "GB" }
-  },
   "protocolApplied": [
     {
       "targetDisease": [

@@ -22,9 +22,8 @@ from models.errors import (
     InconsistentIdError,
     UnauthorizedVaxError,
     UnauthorizedError,
-    UnauthorizedSystemError,
 )
-from tests.immunization_utils import create_covid_19_immunization, create_covid_19_immunization_dict
+from tests.immunization_utils import create_covid_19_immunization
 from mappings import VaccineTypes
 from parameter_parser import patient_identifier_system, process_search_params
 from tests.utils.generic_utils import load_json_data
@@ -71,7 +70,7 @@ class TestFhirControllerGetImmunizationById(unittest.TestCase):
         imms_id = "a-id"
         self.service.get_immunization_by_id.return_value = Immunization.construct()
         lambda_event = {
-            "headers": {"VaccineTypePermissions": "COVID19:read", "ApplicationId": "TestApp"},
+            "headers": {"VaccineTypePermissions": "COVID19:read"},
             "pathParameters": {"id": imms_id},
         }
 
@@ -90,7 +89,7 @@ class TestFhirControllerGetImmunizationById(unittest.TestCase):
         imms_id = "a-non-existing-id"
         self.service.get_immunization_by_id.return_value = None
         lambda_event = {
-            "headers": {"VaccineTypePermissions": "COVID19:read", "ApplicationId": "TestApp"},
+            "headers": {"VaccineTypePermissions": "COVID19:read"},
             "pathParameters": {"id": imms_id},
         }
 
@@ -128,7 +127,7 @@ class TestCreateImmunization(unittest.TestCase):
         imms_id = str(uuid.uuid4())
         imms = create_covid_19_immunization(imms_id)
         aws_event = {
-            "headers": {"VaccineTypePermissions": "COVID19:create", "ApplicationId": "TestApp"},
+            "headers": {"VaccineTypePermissions": "COVID19:create"},
             "body": imms.json(),
         }
         self.service.create_immunization.return_value = imms
@@ -136,7 +135,7 @@ class TestCreateImmunization(unittest.TestCase):
         response = self.controller.create_immunization(aws_event)
 
         imms_obj = json.loads(aws_event["body"])
-        self.service.create_immunization.assert_called_once_with(imms_obj, "COVID19:create", "TestApp")
+        self.service.create_immunization.assert_called_once_with(imms_obj, "COVID19:create")
         self.assertEqual(response["statusCode"], 201)
         self.assertTrue("body" not in response)
         self.assertTrue(response["headers"]["Location"].endswith(f"Immunization/{imms_id}"))
@@ -153,7 +152,7 @@ class TestCreateImmunization(unittest.TestCase):
         """it should return 400 if json is malformed"""
         bad_json = '{foo: "bar"}'
         aws_event = {
-            "headers": {"VaccineTypePermissions": "COVID19:create", "ApplicationId": "TestApp"},
+            "headers": {"VaccineTypePermissions": "COVID19:create"},
             "body": bad_json,
         }
 
@@ -173,7 +172,7 @@ class TestCreateImmunization(unittest.TestCase):
         imms_id = str(uuid.uuid4())
         imms = create_covid_19_immunization(imms_id)
         aws_event = {
-            "headers": {"VaccineTypePermissions": "COVID19:create", "ApplicationId": "TestApp"},
+            "headers": {"VaccineTypePermissions": "COVID19:create"},
             "body": imms.json(),
         }
         # When
@@ -187,7 +186,7 @@ class TestCreateImmunization(unittest.TestCase):
         """it should handle ValidationError when patient doesn't exist"""
         imms = Immunization.construct()
         aws_event = {
-            "headers": {"VaccineTypePermissions": "COVID19:create", "ApplicationId": "TestApp"},
+            "headers": {"VaccineTypePermissions": "COVID19:create"},
             "body": imms.json(),
         }
         invalid_nhs_num = "a-bad-id"
@@ -204,7 +203,7 @@ class TestCreateImmunization(unittest.TestCase):
         """it should respond with 500 if PDS returns error"""
         imms = Immunization.construct()
         aws_event = {
-            "headers": {"VaccineTypePermissions": "COVID19:create", "ApplicationId": "TestApp"},
+            "headers": {"VaccineTypePermissions": "COVID19:create"},
             "body": imms.json(),
         }
         self.service.create_immunization.side_effect = UnhandledResponseError(response={}, message="a message")
@@ -227,7 +226,7 @@ class TestUpdateImmunization(unittest.TestCase):
         imms = "{}"
         imms_id = "valid-id"
         aws_event = {
-            "headers": {"E-Tag": 1, "VaccineTypePermissions": "COVID19:update", "ApplicationId": "TestApp"},
+            "headers": {"E-Tag": 1, "VaccineTypePermissions": "COVID19:update"},
             "body": imms,
             "pathParameters": {"id": imms_id},
         }
@@ -250,7 +249,7 @@ class TestUpdateImmunization(unittest.TestCase):
         imms = "{}"
         imms_id = "valid-id"
         aws_event = {
-            "headers": {"E-Tag": "ajjsajj", "VaccineTypePermissions": "COVID19:update", "ApplicationId": "TestApp"},
+            "headers": {"E-Tag": "ajjsajj", "VaccineTypePermissions": "COVID19:update"},
             "body": imms,
             "pathParameters": {"id": imms_id},
         }
@@ -270,7 +269,7 @@ class TestUpdateImmunization(unittest.TestCase):
         imms = "{}"
         imms_id = "valid-id"
         aws_event = {
-            "headers": {"E-Tag": 1, "VaccineTypePermissions": "COVID19:update", "ApplicationId": "TestApp"},
+            "headers": {"E-Tag": 1, "VaccineTypePermissions": "COVID19:update"},
             "body": imms,
             "pathParameters": {"id": imms_id},
         }
@@ -293,7 +292,7 @@ class TestUpdateImmunization(unittest.TestCase):
         imms = "{}"
         imms_id = "valid-id"
         aws_event = {
-            "headers": {"VaccineTypePermissions": "COVID19:update", "ApplicationId": "TestApp"},
+            "headers": {"VaccineTypePermissions": "COVID19:update"},
             "body": imms,
             "pathParameters": {"id": imms_id},
         }
@@ -317,7 +316,7 @@ class TestUpdateImmunization(unittest.TestCase):
         imms_id = "a-non-existing-id"
         self.service.get_immunization_by_id.return_value = None
         lambda_event = {
-            "headers": {"E-Tag": 1, "VaccineTypePermissions": "COVID19:update", "ApplicationId": "TestApp"},
+            "headers": {"E-Tag": 1, "VaccineTypePermissions": "COVID19:update"},
             "pathParameters": {"id": imms_id},
         }
 
@@ -336,7 +335,7 @@ class TestUpdateImmunization(unittest.TestCase):
         """it should return 400 if Immunization is invalid"""
         imms = "{}"
         aws_event = {
-            "headers": {"E-Tag": 1, "VaccineTypePermissions": "COVID19:update", "ApplicationId": "TestApp"},
+            "headers": {"E-Tag": 1, "VaccineTypePermissions": "COVID19:update"},
             "body": imms,
             "pathParameters": {"id": "valid-id"},
         }
@@ -363,7 +362,7 @@ class TestUpdateImmunization(unittest.TestCase):
         req_imms = "{}"
         path_id = "valid-id"
         aws_event = {
-            "headers": {"E-Tag": 1, "VaccineTypePermissions": "COVID19:update", "ApplicationId": "TestApp"},
+            "headers": {"E-Tag": 1, "VaccineTypePermissions": "COVID19:update"},
             "body": req_imms,
             "pathParameters": {"id": path_id},
         }
@@ -381,32 +380,12 @@ class TestUpdateImmunization(unittest.TestCase):
         body = json.loads(response["body"])
         self.assertEqual(body["resourceType"], "OperationOutcome")
 
-    def test_validation_update_for_unauthorized_system(self):
-        """it should return 403 for unauthorized system"""
-        req_imms = "{}"
-        path_id = "valid-id"
-        aws_event = {
-            "headers": {"E-Tag": 1, "VaccineTypePermissions": "COVID19:update", "ApplicationId": "TestApp"},
-            "body": req_imms,
-            "pathParameters": {"id": path_id},
-        }
-        self.service.get_immunization_by_id_all.return_value = {
-            "diagnostics": "Unauthorized system",
-            "error": "Unauthorized",
-        }
-        # When
-        response = self.controller.update_immunization(aws_event)
-
-        self.assertEqual(response["statusCode"], 403)
-        body = json.loads(response["body"])
-        self.assertEqual(body["resourceType"], "OperationOutcome")
-
     def test_validation_identifier_to_give_bad_request_for_update_immunization(self):
         """it should return 400 if Identifier system and value  doesn't match with the stored content."""
         req_imms = "{}"
         path_id = "valid-id"
         aws_event = {
-            "headers": {"E-Tag": 1, "VaccineTypePermissions": "COVID19:update", "ApplicationId": "TestApp"},
+            "headers": {"E-Tag": 1, "VaccineTypePermissions": "COVID19:update"},
             "body": req_imms,
             "pathParameters": {"id": path_id},
         }
@@ -429,7 +408,7 @@ class TestUpdateImmunization(unittest.TestCase):
         req_imms = "{}"
         path_id = "valid-id"
         aws_event = {
-            "headers": {"E-Tag": 1, "VaccineTypePermissions": "COVID19:update", "ApplicationId": "TestApp"},
+            "headers": {"E-Tag": 1, "VaccineTypePermissions": "COVID19:update"},
             "body": req_imms,
             "pathParameters": {"id": path_id},
         }
@@ -450,7 +429,7 @@ class TestUpdateImmunization(unittest.TestCase):
         """Immunization[id] should be the same as request"""
         bad_json = '{"id": "a-diff-id"}'
         aws_event = {
-            "headers": {"E-Tag": 1, "VaccineTypePermissions": "COVID19:create", "ApplicationId": "TestApp"},
+            "headers": {"E-Tag": 1, "VaccineTypePermissions": "COVID19:create"},
             "body": bad_json,
             "pathParameters": {"id": "an-id"},
         }
@@ -461,7 +440,7 @@ class TestUpdateImmunization(unittest.TestCase):
         """it should return 400 if json is malformed"""
         bad_json = '{foo: "bar"}'
         aws_event = {
-            "headers": {"E-Tag": 1, "VaccineTypePermissions": "COVID19:create", "ApplicationId": "TestApp"},
+            "headers": {"E-Tag": 1, "VaccineTypePermissions": "COVID19:create"},
             "body": bad_json,
             "pathParameters": {"id": "valid-id"},
         }
@@ -476,7 +455,7 @@ class TestUpdateImmunization(unittest.TestCase):
     def test_validate_imms_id(self):
         """it should validate lambda's Immunization id"""
         aws_event = {
-            "headers": {"E-Tag": 1, "VaccineTypePermissions": "COVID19:create", "ApplicationId": "TestApp"},
+            "headers": {"E-Tag": 1, "VaccineTypePermissions": "COVID19:create"},
             "pathParameters": {"id": "invalid %$ id"},
         }
 
@@ -510,7 +489,7 @@ class TestDeleteImmunization(unittest.TestCase):
         imms_id = "an-id"
         self.service.delete_immunization.return_value = Immunization.construct()
         lambda_event = {
-            "headers": {"E-Tag": 1, "VaccineTypePermissions": "COVID19:delete", "ApplicationId": "TestApp"},
+            "headers": {"E-Tag": 1, "VaccineTypePermissions": "COVID19:delete"},
             "pathParameters": {"id": imms_id},
         }
 
@@ -518,7 +497,7 @@ class TestDeleteImmunization(unittest.TestCase):
         response = self.controller.delete_immunization(lambda_event)
 
         # Then
-        self.service.delete_immunization.assert_called_once_with(imms_id, "COVID19:delete", "TestApp")
+        self.service.delete_immunization.assert_called_once_with(imms_id, "COVID19:delete")
 
         self.assertEqual(response["statusCode"], 204)
         self.assertTrue("body" not in response)
@@ -529,7 +508,7 @@ class TestDeleteImmunization(unittest.TestCase):
         error = ResourceNotFoundError(resource_type="Immunization", resource_id="an-error-id")
         self.service.delete_immunization.side_effect = error
         lambda_event = {
-            "headers": {"E-Tag": 1, "VaccineTypePermissions": "COVID19:delete", "ApplicationId": "TestApp"},
+            "headers": {"E-Tag": 1, "VaccineTypePermissions": "COVID19:delete"},
             "pathParameters": {"id": "a-non-existing-id"},
         }
 
@@ -542,21 +521,6 @@ class TestDeleteImmunization(unittest.TestCase):
         self.assertEqual(body["resourceType"], "OperationOutcome")
         self.assertEqual(body["issue"][0]["code"], "not-found")
 
-    def test_validation_delete_for_unauthorized_system(self):
-        """it should return 403 for unauthorized system"""
-        error = UnauthorizedSystemError()
-        self.service.delete_immunization.side_effect = error
-        aws_event = {
-            "headers": {"E-Tag": 1, "VaccineTypePermissions": "COVID19:delete", "ApplicationId": "TestApp"},
-            "pathParameters": {"id": "a-non-existing-id"},
-        }
-
-        # When
-        response = self.controller.delete_immunization(aws_event)
-
-        self.assertEqual(response["statusCode"], 403)
-        body = json.loads(response["body"])
-        self.assertEqual(body["resourceType"], "OperationOutcome")
 
     def test_immunization_unhandled_error(self):
         """it should return server-error OperationOutcome if service throws UnhandledResponseError"""
@@ -564,7 +528,7 @@ class TestDeleteImmunization(unittest.TestCase):
         error = UnhandledResponseError(message="a message", response={})
         self.service.delete_immunization.side_effect = error
         lambda_event = {
-            "headers": {"E-Tag": 1, "VaccineTypePermissions": "COVID19:delete", "ApplicationId": "TestApp"},
+            "headers": {"E-Tag": 1, "VaccineTypePermissions": "COVID19:delete"},
             "pathParameters": {"id": "a-non-existing-id"},
         }
 
@@ -602,8 +566,7 @@ class TestSearchImmunizations(unittest.TestCase):
         lambda_event = {
             "headers": {
                 "Content-Type": "application/x-www-form-urlencoded",
-                "VaccineTypePermissions": "COVID19:search",
-                "ApplicationId": "TestApp",
+                "VaccineTypePermissions": "COVID19:search"
             },
             "multiValueQueryStringParameters": {
                 self.immunization_target_key: [vaccine_type],
@@ -634,8 +597,7 @@ class TestSearchImmunizations(unittest.TestCase):
         lambda_event = {
             "headers": {
                 "Content-Type": "application/x-www-form-urlencoded",
-                "VaccineTypePermissions": "flu:search",
-                "ApplicationId": "TestApp",
+                "VaccineTypePermissions": "flu:search"
             },
             "multiValueQueryStringParameters": {
                 self.immunization_target_key: [vaccine_type],
@@ -665,8 +627,7 @@ class TestSearchImmunizations(unittest.TestCase):
         lambda_event = {
             "headers": {
                 "Content-Type": "application/x-www-form-urlencoded",
-                "VaccineTypePermissions": "flu:search",
-                "ApplicationId": "TestApp",
+                "VaccineTypePermissions": "flu:search"
             },
             "multiValueQueryStringParameters": {
                 self.immunization_target_key: [vaccine_type],
@@ -692,8 +653,7 @@ class TestSearchImmunizations(unittest.TestCase):
         lambda_event = {
             "headers": {
                 "Content-Type": "application/x-www-form-urlencoded",
-                "VaccineTypePermissions": "",
-                "ApplicationId": "TestApp",
+                "VaccineTypePermissions": ""
             },
             "multiValueQueryStringParameters": {
                 self.immunization_target_key: [vaccine_type],
@@ -719,8 +679,7 @@ class TestSearchImmunizations(unittest.TestCase):
         lambda_event = {
             "headers": {
                 "Content-Type": "application/x-www-form-urlencoded",
-                "VaccineTypePermissions": "FLU:search",
-                "ApplicationId": "TestApp",
+                "VaccineTypePermissions": "FLU:search"
             },
             "multiValueQueryStringParameters": {
                 self.immunization_target_key: [vaccine_type],
@@ -756,8 +715,7 @@ class TestSearchImmunizations(unittest.TestCase):
             "httpMethod": "POST",
             "headers": {
                 "Content-Type": "application/x-www-form-urlencoded",
-                "VaccineTypePermissions": "COVID19:search",
-                "ApplicationId": "TestApp",
+                "VaccineTypePermissions": "COVID19:search"
             },
             "body": base64_encoded_body,
         }
@@ -793,8 +751,7 @@ class TestSearchImmunizations(unittest.TestCase):
             "httpMethod": "POST",
             "headers": {
                 "Content-Type": "application/x-www-form-urlencoded",
-                "VaccineTypePermissions": "flu:search",
-                "ApplicationId": "TestApp",
+                "VaccineTypePermissions": "flu:search"
             },
             "body": base64_encoded_body,
         }
@@ -831,8 +788,7 @@ class TestSearchImmunizations(unittest.TestCase):
             "httpMethod": "POST",
             "headers": {
                 "Content-Type": "application/x-www-form-urlencoded",
-                "VaccineTypePermissions": "flu:search",
-                "ApplicationId": "TestApp",
+                "VaccineTypePermissions": "flu:search"
             },
             "body": base64_encoded_body,
         }
@@ -865,8 +821,7 @@ class TestSearchImmunizations(unittest.TestCase):
             "httpMethod": "POST",
             "headers": {
                 "Content-Type": "application/x-www-form-urlencoded",
-                "VaccineTypePermissions": "",
-                "ApplicationId": "TestApp",
+                "VaccineTypePermissions": ""
             },
             "body": base64_encoded_body,
         }
@@ -924,8 +879,7 @@ class TestSearchImmunizations(unittest.TestCase):
         lambda_event = {
             "headers": {
                 "Content-Type": "application/x-www-form-urlencoded",
-                "VaccineTypePermissions": "COVID19:search",
-                "ApplicationId": "TestApp",
+                "VaccineTypePermissions": "COVID19:search"
             },
             "multiValueQueryStringParameters": {
                 self.immunization_target_key: [vaccine_type],
@@ -949,8 +903,7 @@ class TestSearchImmunizations(unittest.TestCase):
         lambda_event = {
             "headers": {
                 "Content-Type": "application/x-www-form-urlencoded",
-                "VaccineTypePermissions": "COVID19:search",
-                "ApplicationId": "TestApp",
+                "VaccineTypePermissions": "COVID19:search"
             },
             "multiValueQueryStringParameters": {
                 self.immunization_target_key: [vaccine_type],
@@ -984,8 +937,7 @@ class TestSearchImmunizations(unittest.TestCase):
             "body": None,
             "headers": {
                 "Content-Type": "application/x-www-form-urlencoded",
-                "VaccineTypePermissions": "COVID19:search",
-                "ApplicationId": "TestApp",
+                "VaccineTypePermissions": "COVID19:search"
             },
             "httpMethod": "POST",
         }

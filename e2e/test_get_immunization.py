@@ -14,6 +14,7 @@ class TestGetImmunization(ImmunizationBaseTest):
             with self.subTest(imms_api):
                 # Given
                 imms = create_an_imms_obj()
+                del imms["id"]
                 response = imms_api.create_immunization(imms)
                 assert response.status_code == 201, response.text
                 imms_id = parse_location(response.headers["Location"])

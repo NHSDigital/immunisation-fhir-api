@@ -4,7 +4,7 @@ from models.obtain_field_value import ObtainFieldValue
 from models.field_locations import FieldLocations
 
 
-def obtain_field_value(imms, field_name):
+def obtain_field_value(imms: dict, field_name: str) -> any:
     """Finds and returns the field value from the imms json data. Returns none if field not found."""
 
     # Obtain the function for extracting the field value from the json data
@@ -19,6 +19,6 @@ def obtain_field_value(imms, field_name):
     return field_value
 
 
-def obtain_field_location(field_name):
+def obtain_field_location(field_name: str) -> str:
     """Returns the field location string"""
     return getattr(FieldLocations, field_name)

@@ -18,17 +18,6 @@ class VaccineTypes:
 
 
 @dataclass
-class Mandation:
-    """Mandation types"""
-
-    mandatory: str = "M"
-    conditional_mandatory: str = "CM"
-    required: str = "R"
-    optional: str = "O"
-    not_applicable: str = "N/A"
-
-
-@dataclass
 class DiseaseDisplayTerms:
     """Disease display terms which correspond to disease codes"""
 
@@ -59,7 +48,7 @@ vaccine_type_mappings = [
     ([DiseaseCodes.hpv], VaccineTypes.hpv),
     # IMPORTANT: FOR VACCINE_TYPES WHICH TARGET MULTIPLE DISEASES ENSURE THAT DISEASE CODES ARE SORTED ALPHABETICALLY
     # This allows order-insensitive comparison with other lists, by alphabetically sorting the list for comparison
-    (sorted([DiseaseCodes.measles, DiseaseCodes.rubella, DiseaseCodes.mumps]), VaccineTypes.mmr),
+    (sorted([DiseaseCodes.measles, DiseaseCodes.mumps, DiseaseCodes.rubella]), VaccineTypes.mmr),
 ]
 
 

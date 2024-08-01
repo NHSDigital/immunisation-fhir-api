@@ -52,6 +52,7 @@ def create_a_filtered_imms_obj(
     crud_operation_to_filter_for: Literal["READ", "SEARCH", ""] = "",
     filter_for_s_flag: bool = False,
     imms_id: str = str(uuid.uuid4()),
+    imms_identifier_value: str = None,
     nhs_number=valid_nhs_number1,
     vaccine_type=VaccineTypes.covid_19,
     occurrence_date_time: str = None,
@@ -64,8 +65,8 @@ def create_a_filtered_imms_obj(
     NOTE: The filtered sample data files use the corresponding unfiltered sample data files as a base, and this
     function can therefore be used in combination with the create_an_imms_obj function for testing filtering.
     NOTE: New sample data files can be added by copying the sample data file for the releavant vaccine type and
-    removing or obfuscating the relevant fields as required. The new file name must be consistent with the existing
-    sample data file names.
+    removing, obfuscating or amending the relevant fields as required.
+    The new file name must be consistent with the existing sample data file names.
     """
     # Load the data
     s_flag_string = "_and_s_flag" if filter_for_s_flag else ""
@@ -77,7 +78,15 @@ def create_a_filtered_imms_obj(
 
     # Amend values as required
     imms["id"] = imms_id
-    imms["contained"][1]["identifier"][0]["value"] = nhs_number
+    if imms_identifier_value:
+        imms["identifier"][0]["value"] = imms_identifier_value
+
+    # Note that NHS number is found in a different place on a search return
+    if crud_operation_to_filter_for == "SEARCH":
+        imms["patient"]["identifier"]["value"] = nhs_number
+    else:
+        imms["contained"][1]["identifier"][0]["value"] = nhs_number
+
     if occurrence_date_time is not None:
         imms["occurrenceDateTime"] = occurrence_date_time
 

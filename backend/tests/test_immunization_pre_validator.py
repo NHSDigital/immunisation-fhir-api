@@ -37,7 +37,9 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         covid_data["reasonCode"][0]["coding"][0]["code"] = None
 
         expected_errors = [
-            'Validation errors: recorded must be a string in the format "YYYY-MM-DDThh:mm:ss+zz:zz" or "YYYY-MM-DDThh:mm:ss-zz:zz" (i.e date and time, including timezone offset in hours and minutes). Milliseconds are optional after the seconds (e.g. 2021-01-01T00:00:00.000+00:00).',
+            'Validation errors: recorded must be a string in the format "YYYY-MM-DDThh:mm:ss+zz:zz" or '
+            + '"YYYY-MM-DDThh:mm:ss-zz:zz" (i.e date and time, including timezone offset in hours and minutes). '
+            + "Milliseconds are optional after the seconds (e.g. 2021-01-01T00:00:00.000+00:00).",
             "reasonCode[0].coding[0].code must be a string",
         ]
         # assert ValueError raised
@@ -54,41 +56,96 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         for error in actual_errors:
             assert error in expected_errors
 
-    def test_pre_validate_contained(self):
-        """Test pre_validate_contained accepts valid values and rejects invalid values"""
-        # Test that the contained field is rejected when invalid
-        valid_list_to_test = [
-            ValidValues.empty_practitioner_resource_id_Pract1,
-            ValidValues.empty_patient_resource_id_Pat1,
-        ]
+    def test_pre_validate_contained_contents(self):
+        """Test pre_validate_contained_contents accepts valid values and rejects invalid values"""
+        field_location = "contained"
+        patient_resource_1 = ValidValues.patient_resource_id_Pat1
+        patient_resource_2 = ValidValues.patient_resource_id_Pat2
+        practitioner_resource_1 = ValidValues.practitioner_resource_id_Pract1
+        practitioner_resource_2 = ValidValues.practitioner_resource_id_Pract2
+        non_approved_resource = ValidValues.manufacturer_resource_id_Man1
 
-        invalid_list_to_test = [
-            ValidValues.empty_practitioner_resource_id_Pract1,
-            ValidValues.empty_patient_resource_id_Pat1,
-            ValidValues.empty_patient_resource_id_Pat2,
-        ]
+        valid_lists_to_test = [[patient_resource_1, practitioner_resource_1]]
+        ValidatorModelTests.test_list_value(self, "contained", valid_lists_to_test, is_list_of_dicts=True)
 
-        ValidatorModelTests.test_unique_list(
+        # # ACCEPT: One patient, no practitioner
+        valid_json_data = deepcopy(self.json_data)
+        valid_json_data["performer"].pop(0)  # Remove reference to practitioner
+        valid_values_to_test = [[patient_resource_1]]
+        _test_valid_values_accepted(self, valid_json_data, field_location, valid_values_to_test)
+
+        # ACCEPT: One patient, one practitioner
+        valid_values_to_test = [[patient_resource_1, practitioner_resource_1]]
+        _test_valid_values_accepted(self, deepcopy(self.json_data), field_location, valid_values_to_test)
+
+        # REJECT: One patient, one practitioner, one non-approved
+        invalid_value_to_test = [patient_resource_1, practitioner_resource_1, non_approved_resource]
+        _test_invalid_values_rejected(
             self,
-            field_location="contained",
-            valid_lists_to_test=[valid_list_to_test],
-            invalid_list_with_duplicates_to_test=invalid_list_to_test,
-            expected_error_message="contained[?(@.resourceType=='Patient')] must be unique",
+            valid_json_data=deepcopy(self.json_data),
+            field_location=field_location,
+            invalid_value=invalid_value_to_test,
+            expected_error_message="contained must contain only Patient and Practitioner resources",
         )
+
+        # REJECT: One patient, two practitioners
+        invalid_value_to_test = [patient_resource_1, practitioner_resource_1, practitioner_resource_2]
+        _test_invalid_values_rejected(
+            self,
+            valid_json_data=deepcopy(self.json_data),
+            field_location=field_location,
+            invalid_value=invalid_value_to_test,
+            expected_error_message="contained must contain a maximum of one Practitioner resource",
+        )
+
+        # REJECT: No patient, one practitioner
+        invalid_value_to_test = [practitioner_resource_1]
+        _test_invalid_values_rejected(
+            self,
+            valid_json_data=deepcopy(self.json_data),
+            field_location=field_location,
+            invalid_value=invalid_value_to_test,
+            expected_error_message="contained must contain exactly one Patient resource",
+        )
+
+        # REJECT: Two patients, one practitioner
+        invalid_value_to_test = [patient_resource_1, patient_resource_2, practitioner_resource_1]
+        _test_invalid_values_rejected(
+            self,
+            valid_json_data=deepcopy(self.json_data),
+            field_location=field_location,
+            invalid_value=invalid_value_to_test,
+            expected_error_message="contained must contain exactly one Patient resource",
+        )
+
+        # Reject: No patient, two practitioners, one non-approved
+        invalid_value = [practitioner_resource_1, practitioner_resource_2, non_approved_resource]
+        expected_error_messages = [
+            "contained must contain only Patient and Practitioner resources",
+            "contained must contain exactly one Patient resource",
+            "contained must contain a maximum of one Practitioner resource",
+        ]
+
+        # Create invalid json data by amending the value of the relevant field
+        invalid_json_data = parse(field_location).update(deepcopy(self.json_data), invalid_value)
+
+        with self.assertRaises(ValueError) as error:
+            self.validator.validate(invalid_json_data)
+
+        full_error_message = str(error.exception)
+        actual_error_messages = full_error_message.replace("Validation errors: ", "").split("; ")
+
+        for expected_error_message in expected_error_messages:
+            self.assertIn(expected_error_message, actual_error_messages)
 
     def test_pre_validate_patient_reference(self):
         """Test pre_validate_patient_reference accepts valid values and rejects invalid values"""
-        valid_contained_with_patient = [
-            ValidValues.empty_patient_resource_id_Pat1,
-            ValidValues.empty_practitioner_resource_id_Pract1,
-        ]
+        patient_resource_1 = ValidValues.patient_resource_id_Pat1
+        practitioner_resource_1 = ValidValues.practitioner_resource_id_Pract1
 
-        invalid_contained_with_no_id_in_patient = [
-            {"resourceType": "Patient"},
-            ValidValues.empty_practitioner_resource_id_Pract1,
-        ]
+        valid_contained_with_patient = [patient_resource_1, practitioner_resource_1]
 
-        invalid_contained_with_no_patient = [ValidValues.empty_practitioner_resource_id_Pract1]
+        invalid_contained_with_no_id_in_patient = [{"resourceType": "Patient"}, practitioner_resource_1]
 
         valid_patient_pat1 = {"reference": "#Pat1"}
         valid_patient_pat2 = {"reference": "#Pat2"}
@@ -120,14 +177,6 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
             invalid_contained_with_no_id_in_patient,
             valid_patient_pat1,
             expected_error_message="The contained Patient resource must have an 'id' field",
-        )
-
-        # Test case: no contained patient, patient reference is #Pat1 - reject
-        ValidatorModelTests.test_invalid_patient_reference_rejected(
-            self,
-            invalid_contained_with_no_patient,
-            valid_patient_pat1,
-            expected_error_message="contained[?(@.resourceType=='Patient')] is mandatory",
         )
 
     def test_pre_validate_patient_identifier(self):
@@ -238,16 +287,16 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
     def test_pre_validate_performer_actor_reference(self):
         """Test pre_validate_performer_actor_reference accepts valid values and rejects invalid values"""
 
-        valid_contained_with_no_practitioner = [ValidValues.empty_patient_resource_id_Pat1]
+        valid_contained_with_no_practitioner = [ValidValues.patient_resource_id_Pat1]
 
         valid_contained_with_practitioner = [
-            ValidValues.empty_practitioner_resource_id_Pract1,
-            ValidValues.empty_patient_resource_id_Pat1,
+            ValidValues.practitioner_resource_id_Pract1,
+            ValidValues.patient_resource_id_Pat1,
         ]
 
         invalid_contained_with_no_id_in_practitioner = [
             InvalidValues.practitioner_resource_with_no_id,
-            ValidValues.empty_patient_resource_id_Pat1,
+            ValidValues.patient_resource_id_Pat1,
         ]
 
         valid_performer_with_one_pract1 = [
@@ -295,7 +344,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
             expected_error_message="The reference(s) ['#Pract1'] do not exist in the contained Practitioner resources",
         )
 
-        # Test case: Contained practitioner with no ID, no actor reference in perfomer - reject
+        # Test case: Contained practitioner with no ID, no actor reference in performer - reject
         ValidatorModelTests.test_invalid_performer_actor_reference_rejected(
             self,
             invalid_contained_with_no_id_in_practitioner,

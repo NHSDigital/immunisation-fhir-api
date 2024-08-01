@@ -174,8 +174,6 @@ def test_get_event_by_id_not_found_nhs_login(nhsd_apim_proxy_url, nhsd_apim_auth
 
     # Act
     result = imms_api.get_immunization_by_id("some-id-that-does-not-exist")
-    if result.status_code != 404:
-        print(result.text)
     res_body = result.json()
 
     # Assert

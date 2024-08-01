@@ -43,13 +43,17 @@ class ValidValues:
     # Not a valid snomed code, but is valid coding format for format testing
     snomed_coding_element = {"system": "http://snomed.info/sct", "code": "ABC123", "display": "test"}
 
-    empty_practitioner_resource_id_Pract1 = {"resourceType": "Practitioner", "id": "Pract1"}
+    manufacturer_resource_id_Man1 = {"resourceType": "Manufacturer", "id": "Man1"}
 
-    empty_patient_resource_id_Pat1 = {"resourceType": "Patient", "id": "Pat1"}
+    practitioner_resource_id_Pract1 = {"resourceType": "Practitioner", "id": "Pract1"}
 
-    empty_patient_resource_id_Pat2 = {"resourceType": "Patient", "id": "Pat2"}
+    practitioner_resource_id_Pract2 = {"resourceType": "Practitioner", "id": "Pract2"}
 
-    empty_questionnnaire_resource_id_QR1 = {"resourceType": "QuestionnaireResponse", "id": "QR1", "status": "completed"}
+    patient_resource_id_Pat1 = {"resourceType": "Patient", "id": "Pat1"}
+
+    patient_resource_id_Pat2 = {"resourceType": "Patient", "id": "Pat2"}
+
+    questionnnaire_resource_id_QR1 = {"resourceType": "QuestionnaireResponse", "id": "QR1", "status": "completed"}
 
     questionnaire_immunisation = {"linkId": "Immunisation", "answer": [{"valueReference": {"reference": "#"}}]}
 
@@ -204,6 +208,8 @@ class InvalidValues:
     ]
 
     for_lists_of_strings_of_length_1 = [[1], [False], [["Test1"]]]
+
+    for_lists_of_dicts_of_length_1 = [[1], [False], [["Invalid"]], ["Invalid"]]
 
     for_strings_with_max_100_chars = [
         "This is a really long string with more than 100 characters to test whether the validator is working well"

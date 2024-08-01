@@ -64,6 +64,7 @@ class TestApplicationRestrictedAuthorization(ImmunizationBaseTest):
         self.make_app({Permission.CREATE})
         # When
         imms = create_an_imms_obj()
+        del imms["id"]
         response = self.my_imms_api.create_immunization(imms)
         # Then
         self.assertEqual(response.status_code, 201, response.text)
@@ -73,6 +74,7 @@ class TestApplicationRestrictedAuthorization(ImmunizationBaseTest):
         self.make_app({Permission.CREATE}, {"flu:create"})
         # When
         imms = create_an_imms_obj()
+        del imms["id"]
         response = self.my_imms_api.create_immunization(imms)
         # Then
         self.assertEqual(response.status_code, 403, response.text)
@@ -83,6 +85,7 @@ class TestApplicationRestrictedAuthorization(ImmunizationBaseTest):
         self.make_app(perms)
         # When
         imms = create_an_imms_obj()
+        del imms["id"]
         result = self.my_imms_api.create_immunization(imms)
         # Then
         self.assertEqual(result.status_code, 403, result.text)
@@ -90,6 +93,7 @@ class TestApplicationRestrictedAuthorization(ImmunizationBaseTest):
     def test_update_imms_authorised(self):
         """it should update Immunization if app has immunization:update and immunization:create permission"""
         imms = create_an_imms_obj()
+        del imms["id"]
         imms_id = self.create_immunization_resource(self.default_imms_api, imms)
         imms["id"] = imms_id
 
@@ -111,6 +115,7 @@ class TestApplicationRestrictedAuthorization(ImmunizationBaseTest):
     def test_update_imms_unauthorised_2(self):
         """it should not update Immunization if app doesn't immunization:create permission"""
         imms = create_an_imms_obj()
+        del imms["id"]
         imms_id = self.create_immunization_resource(self.default_imms_api, imms)
         imms["id"] = imms_id
 
@@ -142,6 +147,7 @@ class TestApplicationRestrictedAuthorization(ImmunizationBaseTest):
     def test_search_imms_authorised(self):
         """it should search Immunization if app has immunization:search permission"""
         mmr = create_an_imms_obj(str(uuid.uuid4()), valid_nhs_number1, VaccineTypes.mmr)
+        del mmr["id"]
         _ = self.create_immunization_resource(self.default_imms_api, mmr)
 
         self.make_app({Permission.SEARCH})
@@ -166,6 +172,7 @@ class TestApplicationRestrictedAuthorization(ImmunizationBaseTest):
     def test_search_imms_unauthorised_vax(self):
         """it should not search Immunization if app does not have proper vax permissions"""
         mmr = create_an_imms_obj(str(uuid.uuid4()), valid_nhs_number1, VaccineTypes.mmr)
+        del mmr["id"]
         _ = self.create_immunization_resource(self.default_imms_api, mmr)
 
         self.make_app({Permission.SEARCH}, {"flu:read"})
@@ -235,6 +242,7 @@ class TestCis2Authorization(ImmunizationBaseTest):
         self.make_app({Permission.CREATE})
         # When
         imms = create_an_imms_obj()
+        del imms["id"]
         response = self.my_imms_api.create_immunization(imms)
         # Then
         self.assertEqual(response.status_code, 201, response.text)
@@ -245,6 +253,7 @@ class TestCis2Authorization(ImmunizationBaseTest):
         self.make_app(perms)
         # When
         imms = create_an_imms_obj()
+        del imms["id"]
         result = self.my_imms_api.create_immunization(imms)
         # Then
         self.assertEqual(result.status_code, 403, result.text)
@@ -254,6 +263,7 @@ class TestCis2Authorization(ImmunizationBaseTest):
         self.make_app({Permission.CREATE}, {"flu:create"})
         # When
         imms = create_an_imms_obj()
+        del imms["id"]
         response = self.my_imms_api.create_immunization(imms)
         # Then
         self.assertEqual(response.status_code, 403, response.text)
@@ -261,6 +271,7 @@ class TestCis2Authorization(ImmunizationBaseTest):
     def test_update_imms_authorised(self):
         """it should update Immunization if app has the immunization:update and immunization:create permission"""
         imms = create_an_imms_obj()
+        del imms["id"]
         imms_id = self.create_immunization_resource(self.default_imms_api, imms)
         imms["id"] = imms_id
 
@@ -321,6 +332,7 @@ class TestCis2Authorization(ImmunizationBaseTest):
     def test_search_imms_authorised(self):
         """it should search Immunization if app has immunization:search permission"""
         mmr = create_an_imms_obj(str(uuid.uuid4()), valid_nhs_number1, VaccineTypes.mmr)
+        del mmr["id"]
         _ = self.create_immunization_resource(self.default_imms_api, mmr)
 
         self.make_app({Permission.SEARCH})
