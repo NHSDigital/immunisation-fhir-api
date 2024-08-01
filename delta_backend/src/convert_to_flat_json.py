@@ -37,7 +37,7 @@ def convert_to_flat_json(resource_json, operation):
         "LOCATION_CODE_TYPE_URI": resource_json.get("location", {}).get("identifier", {}).get("system"),
     }
     if isinstance(flat_dict["PERSON_FORENAME"], list):
-        flat_dict["PERSON_FORENAME"] = ' '.join(flat_json["PERSON_FORENAME"])
+        flat_dict["PERSON_FORENAME"] = ' '.join(flat_dict["PERSON_FORENAME"])
 
     # PERFORMING_PROFESSIONAL_FORENAME
     if isinstance(flat_dict["PERFORMING_PROFESSIONAL_FORENAME"], list):
