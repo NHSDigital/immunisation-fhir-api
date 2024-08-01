@@ -7,6 +7,7 @@ import uuid
 import logging
 from botocore.exceptions import ClientError
 from log_firehose import FirehoseLogger
+from convert_to_flat_json import convert_to_flat_json
 
 failure_queue_url = os.environ["AWS_SQS_QUEUE_URL"]
 delta_table_name = os.environ["DELTA_TABLE_NAME"]
@@ -71,6 +72,8 @@ def handler(event, context):
                 operation = new_image["Operation"]["S"]
                 if operation == "CREATE":
                     operation = "NEW"
+                resource_json = json.loads(new_image["Resource"]["S"])    
+                flat_json = convert_to_flat_json(resource_json, operation)
                 response = delta_table.put_item(
                     Item={
                         "PK": str(uuid.uuid4()),
@@ -80,7 +83,7 @@ def handler(event, context):
                         "SupplierSystem": supplier_system,
                         "DateTimeStamp": approximate_creation_time.isoformat(),
                         "Source": delta_source,
-                        "Imms": new_image["Resource"]["S"],
+                        "Imms": flat_json,
                         "ExpiresAt": expiry_time_epoch,
                     }
                 )
