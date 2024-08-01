@@ -8,7 +8,7 @@ os.environ['AWS_SQS_QUEUE_URL'] = 'https://sqs.us-east-1.amazonaws.com/123456789
 os.environ['DELTA_TABLE_NAME'] = 'my_delta_table'
 os.environ['SOURCE'] = 'my_source'
 
-from src.delta import send_message, get_vaccine_type, handler  # Import after setting environment variables
+from src.delta import send_message, handler  # Import after setting environment variables
 import json
 
 class DeltaTestCase(unittest.TestCase):
@@ -127,7 +127,7 @@ class DeltaTestCase(unittest.TestCase):
         
         # Act & Assert
         with self.assertRaises(Exception):
-            handler(event, context)
+            handler(event, context)         
 
 if __name__ == '__main__':
     unittest.main()
