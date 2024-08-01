@@ -41,6 +41,6 @@ def convert_to_flat_json(resource_json, operation):
 
     # PERFORMING_PROFESSIONAL_FORENAME
     if isinstance(flat_dict["PERFORMING_PROFESSIONAL_FORENAME"], list):
-        flat_dict["PERFORMING_PROFESSIONAL_FORENAME"] = ' '.join(flat_json["PERFORMING_PROFESSIONAL_FORENAME"])
+        flat_dict["PERFORMING_PROFESSIONAL_FORENAME"] = ' '.join(flat_dict["PERFORMING_PROFESSIONAL_FORENAME"])
     flat_json = json.dumps(flat_dict)
     return flat_json
