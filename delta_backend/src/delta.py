@@ -64,6 +64,7 @@ def handler(event, context):
             operation = str()
             if record["eventName"] != "REMOVE":
                 new_image = record["dynamodb"]["NewImage"]
+                print(f"new_image:{new_image}")
                 imms_id = new_image["PK"]["S"].split("#")[1]
                 vaccine_type = get_vaccine_type(new_image["PatientSK"]["S"])
                 supplier_system = new_image["IdentifierPK"]["S"]
