@@ -12,7 +12,7 @@ def convert_to_flat_json(resource_json, operation):
                     "SITE_CODE_TYPE_URI": resource_json.get("performer", [None, {}])[1].get("actor", {}).get("identifier", {}).get("system", None),
                     "UNIQUE_ID": resource_json.get("identifier", [{}])[0].get("value", None),
                     "UNIQUE_ID_URI": resource_json.get("identifier", [{}])[0].get("system", None),
-                    "ACTION_FLAG": "new",  # Based on the operation 'CREATE'
+                    "ACTION_FLAG": operation,  # Based on the operation 'CREATE'
                     "PERFORMING_PROFESSIONAL_FORENAME": resource_json.get("contained", [None, {}])[0].get("name", [{}])[0].get("given", None),
                     "PERFORMING_PROFESSIONAL_SURNAME": resource_json.get("contained", [None, {}])[0].get("name", [{}])[0].get("family", None),
                     "RECORDED_DATE": resource_json.get("recorded", None),
