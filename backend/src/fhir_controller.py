@@ -69,6 +69,48 @@ class FhirController:
         self.fhir_service = fhir_service
         self.authorizer = authorizer
 
+    def get_immunization_by_identifier(self, aws_event) -> dict:
+        if response := self.authorize_request(EndpointOperation.READ, aws_event):
+            return response
+        identifier = aws_event["headers"]["identifierSystem"]
+        identifier_pk = aws_event["pathParameters"]["id"]
+        print("11")
+        print(f"identifier:{identifier}")
+        if id_error := self._validate_identifier_system(identifier,identifier_pk):
+            return self.create_response(400, id_error)
+        identifiers = f"{identifier}#{identifier_pk}"
+        
+        try:
+            if aws_event.get("headers"):
+                try:
+                    imms_vax_type_perms = aws_event["headers"]["VaccineTypePermissions"]
+                    if len(imms_vax_type_perms) == 0:
+                        raise UnauthorizedVaxError()
+                        
+                except UnauthorizedVaxError as unauthorized:
+                    return self.create_response(403, unauthorized.to_operation_outcome())
+            else:
+                raise UnauthorizedVaxError()
+        except UnauthorizedVaxError as unauthorized:
+            return self.create_response(403, unauthorized.to_operation_outcome())
+        
+        try:
+            if resource := self.fhir_service.get_immunization_by_identifier(identifiers, imms_vax_type_perms):
+                print(f"resource:{resource}")
+                return FhirController.create_response(200, resource)
+            else:
+                msg = "The requested resource was not found."
+                id_error = create_operation_outcome(
+                    resource_id=str(uuid.uuid4()),
+                    severity=Severity.error,
+                    code=Code.not_found,
+                    diagnostics=msg,
+                )
+                return FhirController.create_response(404, id_error)
+        except UnauthorizedVaxError as unauthorized:
+            return self.create_response(403, unauthorized.to_operation_outcome())    
+       
+
     def get_immunization_by_id(self, aws_event) -> dict:
         if response := self.authorize_request(EndpointOperation.READ, aws_event):
             return response
@@ -420,6 +462,48 @@ class FhirController:
             result_json_dict["total"] = 0
         return self.create_response(200, json.dumps(result_json_dict))
 
+    def _validate_identifier_system(self, _id: str,__value: str) -> Optional[dict]:
+        if _id != '' and __value != ':id':
+            return None
+        elif _id == '' and  __value == ':id':
+            msg = "The provided identifier system and identifier value is either missing or not in the expected format."
+            return create_operation_outcome(
+                resource_id=str(uuid.uuid4()),
+                severity=Severity.error,
+                code=Code.invalid,
+                diagnostics=msg,
+            )
+        elif __value == ':id':
+            msg = "The provided identifier value is either missing or not in the expected format."
+            return create_operation_outcome(
+                resource_id=str(uuid.uuid4()),
+                severity=Severity.error,
+                code=Code.invalid,
+                diagnostics=msg,
+            )
+        elif _id == '':
+            msg = "The provided identifier system is either missing or not in the expected format."
+            return create_operation_outcome(
+                resource_id=str(uuid.uuid4()),
+                severity=Severity.error,
+                code=Code.invalid,
+                diagnostics=msg,
+            )
+            
+            
+          
+    
+    def _validate_identifier_value(self, _id: str) -> Optional[dict]:
+        if _id == ':id':
+            msg = "The provided identifier value is either missing or not in the expected format."
+            return create_operation_outcome(
+                resource_id=str(uuid.uuid4()),
+                severity=Severity.error,
+                code=Code.invalid,
+                diagnostics=msg,
+            )
+        return None
+    
     def _validate_id(self, _id: str) -> Optional[dict]:
         if not re.match(self.immunization_id_pattern, _id):
             msg = "the provided event ID is either missing or not in the expected format."

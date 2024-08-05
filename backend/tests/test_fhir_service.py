@@ -382,7 +382,7 @@ class TestCreateImmunization(unittest.TestCase):
 
     def test_pre_validation_failed(self):
         """it should throw exception if Immunization is not valid"""
-        imms = create_covid_19_immunization_dict("an-id", "9990548609")
+        imms = create_covid_19_immunization_dict_no_id("9990548609")
         imms["lotNumber"] = 1234
         expected_msg = "lotNumber must be a string"
 
