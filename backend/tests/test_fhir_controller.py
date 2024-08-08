@@ -58,6 +58,135 @@ class TestFhirController(unittest.TestCase):
         self.assertTrue("body" not in res)
 
 
+class TestFhirControllerGetImmunizationByIdentifier(unittest.TestCase):
+    def setUp(self):
+        self.service = create_autospec(FhirService)
+        self.authorizer = create_autospec(Authorization)
+        self.controller = FhirController(self.authorizer, self.service)
+
+    def test_get_imms_by_identifer(self):
+        """it should return Immunization Id if it exists"""
+        # Given
+        self.service.get_immunization_by_identifier.return_value = {"id":"test","Version":1}
+        lambda_event = {
+            "headers": {"VaccineTypePermissions": "COVID19:search"},
+            'queryStringParameters': {'immunization.identifier': 'https://supplierABC/identifiers/vacc|f10b59b3-fc73-4616-99c9-9e882ab31184','_element':'id'},
+            'body':None
+
+        }
+        identifier = lambda_event.get('queryStringParameters', {}).get('immunization.identifier')
+        _element = lambda_event.get('queryStringParameters', {}).get('_element')
+
+        identifiers = identifier.replace('|', '#')
+        # When
+        response = self.controller.get_immunization_by_identifier(lambda_event)
+        # Then
+        self.service.get_immunization_by_identifier.assert_called_once_with(identifiers, "COVID19:search", identifier, _element)
+
+        self.assertEqual(response["statusCode"], 200)
+        body = json.loads(response["body"])
+        self.assertEqual(body["id"], "test")
+
+    def test_not_found_for_identifier(self):
+        """it should return not-found OperationOutcome if it doesn't exist"""
+        # Given
+        self.service.get_immunization_by_identifier.return_value = {"resourceType": "Bundle", "type": "searchset","link": [{"relation": "self","url": "https://internal-dev.api.service.nhs.uk/immunisation-fhir-api-pr-224/Immunization?immunization.target=COVID19&patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7C1345678940"}],"entry": [],"total": 0}
+        lambda_event = {
+            "headers": {"VaccineTypePermissions": "COVID19:search"},
+            'queryStringParameters': {'immunization.identifier': 'https://supplierABC/identifiers/vacc|f10b59b3-fc73-4616-99c9-9e882ab31184','_element':'id,meta'},
+            'body':None
+
+        }
+        identifier = lambda_event.get('queryStringParameters', {}).get('immunization.identifier')
+        _element = lambda_event.get('queryStringParameters', {}).get('_element')
+
+        imms = identifier.replace('|', '#')
+        # When
+        response = self.controller.get_immunization_by_identifier(lambda_event)
+
+        # Then
+        self.service.get_immunization_by_identifier.assert_called_once_with(imms, "COVID19:search",identifier,_element)
+
+        self.assertEqual(response["statusCode"], 200)
+        body = json.loads(response["body"])
+        self.assertEqual(body["resourceType"], "Bundle")
+        self.assertEqual(body["entry"], [])
+        self.assertEqual(body["total"], 0)
+
+    def test_validate_immunization_identifier_is_empty(self):
+        """it should return 400 as identifierSystem is missing"""
+        self.service.get_immunization_by_identifier.return_value = {"resourceType":"OperationOutcome","id":"f6857e0e-40d0-4e5e-9e2f-463f87d357c6","meta":{"profile":["https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"]},"issue":[{"severity":"error","code":"invalid","details":{"coding":[{"system":"https://fhir.nhs.uk/Codesystem/http-error-codes","code":"INVALID"}]},"diagnostics":"The provided identifiervalue is either missing or not in the expected format."}]}
+        lambda_event = {
+            "headers": {"VaccineTypePermissions": "COVID19:search"},
+            'queryStringParameters': {'immunization.identifier': '','_element':'id'},
+            'body':None
+
+        }
+        response = self.controller.get_immunization_by_identifier(lambda_event)
+
+        self.assertEqual(self.service.get_immunization_by_identifier.call_count, 0)
+        self.assertEqual(response["statusCode"], 400)
+        outcome = json.loads(response["body"])
+        self.assertEqual(outcome["resourceType"], "OperationOutcome")
+
+    def test_validate_immunization_identifier_in_invalid_format(self):
+        """it should return 400 as identifierSystem is missing"""
+        self.service.get_immunization_by_identifier.return_value = {"resourceType":"OperationOutcome","id":"f6857e0e-40d0-4e5e-9e2f-463f87d357c6","meta":{"profile":["https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"]},"issue":[{"severity":"error","code":"invalid","details":{"coding":[{"system":"https://fhir.nhs.uk/Codesystem/http-error-codes","code":"INVALID"}]},"diagnostics":"immunization.identifier must be in the format of immunization.identifier.system|immunization.identifier.value e.g. http://pinnacle.org/vaccs|2345-gh3s-r53h7-12ny"}]}
+        lambda_event = {
+            "headers": {"VaccineTypePermissions": "COVID19:search"},
+            'queryStringParameters': {'immunization.identifier': 'https://supplierABC/identifiers/vaccf10b59b3-fc73-4616-99c9-9e882ab31184','_element':'id'},
+            'body':None
+
+        }
+        response = self.controller.get_immunization_by_identifier(lambda_event)
+
+        self.assertEqual(self.service.get_immunization_by_identifier.call_count, 0)
+        self.assertEqual(response["statusCode"], 400)
+        outcome = json.loads(response["body"])
+        self.assertEqual(outcome["resourceType"], "OperationOutcome") 
+
+
+    def test_validate_immunization_identifier_having_whitespace(self):
+        """it should return 400 as identifierSystem is missing"""
+        self.service.get_immunization_by_identifier.return_value = {"resourceType":"OperationOutcome","id":"f6857e0e-40d0-4e5e-9e2f-463f87d357c6","meta":{"profile":["https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"]},"issue":[{"severity":"error","code":"invalid","details":{"coding":[{"system":"https://fhir.nhs.uk/Codesystem/http-error-codes","code":"INVALID"}]},"diagnostics":"The provided identifiervalue is either missing or not in the expected format."}]}
+        lambda_event = {
+            "headers": {"VaccineTypePermissions": "COVID19:search"},
+            'queryStringParameters': {'immunization.identifier': 'https://supplierABC/identifiers/vacc  |   f10b59b3-fc73-4616-99c9-9e882ab31184','_element':'id'},
+            'body':None
+        }
+        response = self.controller.get_immunization_by_identifier(lambda_event)
+
+        self.assertEqual(self.service.get_immunization_by_identifier.call_count, 0)
+        self.assertEqual(response["statusCode"], 400)
+        outcome = json.loads(response["body"])
+        self.assertEqual(outcome["resourceType"], "OperationOutcome")       
+
+    def test_validate_imms_id_invalid_vaccinetype(self):
+        """it should validate lambda's Immunization id"""
+        # Given
+        self.service.get_immunization_by_identifier.side_effect = UnauthorizedVaxError()
+        lambda_event = {
+            "headers": {"VaccineTypePermissions": "COVID19:search"},
+            'queryStringParameters': {'immunization.identifier': 'https://supplierABC/identifiers/vacc|f10b59b3-fc73-4616-99c9-9e882ab31184','_element':'id'},
+            'body':None
+        }
+        identifier = lambda_event.get('queryStringParameters', {}).get('immunization.identifier')
+        _element = lambda_event.get('queryStringParameters', {}).get('_element')
+        identifiers = identifier.replace('|', '#')
+        # When
+        response = self.controller.get_immunization_by_identifier(lambda_event)
+
+        # Then
+        self.service.get_immunization_by_identifier.assert_called_once_with(identifiers, "COVID19:search",identifier,_element)
+
+        self.assertEqual(response["statusCode"], 403)
+        body = json.loads(response["body"])
+        self.assertEqual(body["resourceType"], "OperationOutcome")
+        self.assertEqual(body["issue"][0]["code"], "forbidden")    
+
+
+
+
 class TestFhirControllerGetImmunizationById(unittest.TestCase):
     def setUp(self):
         self.service = create_autospec(FhirService)
