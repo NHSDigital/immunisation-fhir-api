@@ -3,6 +3,8 @@
 import datetime
 
 from typing import Literal, Union, Optional
+import urllib.parse
+import base64
 
 
 def get_contained_resource(imms: dict, resource: Literal["Patient", "Practitioner", "QuestionnaireResponse"]):
@@ -103,3 +105,83 @@ def create_diagnostics_error(value):
         diagnostics = f"Validation errors: identifier[0].{value} doesn't match with the stored content"
     exp_error = {"diagnostics": diagnostics}
     return exp_error
+
+def form_json(response, _element, identifier, baseurl):
+    # Elements to include, based on the '_element' parameter
+    if not response:
+        json = {
+        "resourceType": "Bundle",
+        "type": "searchset",
+        "link": [
+            {
+                "relation": "self",
+                "url": f"{baseurl}?immunization.identifier={identifier}&_elements={_element}"
+            }
+        ],
+        "entry": [],
+        "total": 0
+    }
+        return json
+    
+    # Basic structure for the JSON output
+    json = {
+        "resourceType": "Bundle",
+        "type": "searchset",
+        "link": [
+            {
+                "relation": "self",
+                "url": f"{baseurl}?immunization.identifier={identifier}&_elements={_element}"
+            }
+        ],
+        "entry": [
+            {
+                "fullUrl": f"https://api.service.nhs.uk/immunisation-fhir-api/Immunization/{response['id']}",
+                "resource": {
+                    "resourceType": "Immunization"
+                }
+            }
+        ],
+        "total": 1
+    }
+    __elements = _element.lower()
+    element = __elements.split(',')
+    # Add 'id' if specified
+    if 'id' in element:
+        json['entry'][0]['resource']['id'] = response['id']
+    
+    # Add 'meta' if specified
+    if 'meta' in element:
+        json['entry'][0]['resource']['id'] = response['id']
+        json['entry'][0]['resource']['meta'] = {
+            "versionId": response["version"]
+        }
+
+    return json
+
+def check_keys_in_sources(event, not_required_keys):
+    # Decode and parse the body, assuming it is JSON and base64-encoded
+    def decode_and_parse_body(encoded_body):
+        if encoded_body:
+                # Decode the base64 string to bytes, then decode to string, and load as JSON
+                return urllib.parse.parse_qs(base64.b64decode(encoded_body).decode('utf-8'))
+        else:
+            return {}
+    # Extracting queryStringParameters and body content
+    query_params = event.get('queryStringParameters', {})
+    body_content = decode_and_parse_body(event.get('body'))
+
+    # Check for presence of all required keys in queryStringParameters
+    if query_params:
+     keys = query_params.keys()
+     list_keys=list(keys)
+ 
+     query_check = [k for k in list_keys if k in not_required_keys]
+     return query_check
+
+    # Check for presence of all required keys in body content
+    if body_content:
+     keys = body_content.keys()
+     list_keys=list(keys)
+     body_check = [k for k in list_keys if k in not_required_keys]
+     return body_check
+    

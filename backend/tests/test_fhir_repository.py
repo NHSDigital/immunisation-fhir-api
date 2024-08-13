@@ -26,7 +26,53 @@ def _make_immunization_pk(_id):
 def _make_patient_pk(_id):
     return f"Patient#{_id}"
 
+class TestGetImmunizationByIdentifier(unittest.TestCase):
+    def setUp(self):
+        self.table = MagicMock()
+        self.repository = ImmunizationRepository(table=self.table)
 
+    def test_get_immunization_by_identifier(self):
+        """it should find an Immunization by id"""
+        imms_id = "a-id#an-id"
+        resource = dict()
+        resource["Resource"] = {"id": "test","version":1}
+        self.table.query = MagicMock(
+            return_value={
+                "Items": [{"Resource": json.dumps({"foo": "bar","id":"test"}), "Version": 1, "PatientSK": "COVID19#2516525251"}]
+            }
+        )
+        
+        imms = self.repository.get_immunization_by_identifier(imms_id, "COVID19:search")
+
+        # Validate the results
+        self.assertDictEqual(resource["Resource"], imms)
+        # self.table.get_item.assert_called_once_with(Key={"PK": (imms_id)})
+        self.table.query.assert_called_once_with(IndexName='IdentifierGSI',
+                                    KeyConditionExpression=Key('IdentifierPK').eq(imms_id))
+
+    def test_unauthorized_get_immunization_by_identifier(self):
+        """it should not get an Immunization by id if vax perms do not exist"""
+        imms_id = "a-id#an-id"
+        resource = dict()
+        resource["Resource"] = {"foo": "bar"}
+        resource["Version"] = 1
+        self.table.query = MagicMock(
+            return_value={
+                "Items": [{"Resource": json.dumps({"foo": "bar","id":"test"}), "Version": 1, "PatientSK": "COVID19#2516525251"}]
+            }
+        )
+        with self.assertRaises(UnauthorizedVaxError) as e:
+            # When
+            self.repository.get_immunization_by_identifier(imms_id, "FLU:read")
+
+    def test_immunization_not_found(self):
+        """it should return None if Immunization doesn't exist"""
+        imms_id = "non-existent-id"
+        self.table.query = MagicMock(return_value={})
+
+        imms = self.repository.get_immunization_by_identifier(imms_id, "COVID19:read")
+        self.assertIsNone(imms)
+        
 class TestGetImmunization(unittest.TestCase):
     def setUp(self):
         self.table = MagicMock()

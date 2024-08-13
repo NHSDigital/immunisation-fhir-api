@@ -19,7 +19,7 @@ from base_utils.base_utils import obtain_field_value
 from models.field_names import FieldNames
 from models.errors import InvalidPatientId, CustomValidationError, UnhandledResponseError
 from models.fhir_immunization import ImmunizationValidator
-from models.utils.generic_utils import nhs_number_mod11_check, get_occurrence_datetime, create_diagnostics
+from models.utils.generic_utils import nhs_number_mod11_check, get_occurrence_datetime, create_diagnostics, form_json
 from models.constants import Constants
 from models.errors import MandatoryError
 from models.constants import Constants
@@ -59,18 +59,21 @@ class FhirService:
         self.pds_service = pds_service
         self.validator = validator
     
-    def get_immunization_by_identifier(self, identifier_pk: str, imms_vax_type_perms: str) -> Optional[dict]:
+    def get_immunization_by_identifier(self, identifier_pk: str, imms_vax_type_perms: str, identifier: str,element: str) -> Optional[dict]:
         """
         Get an Immunization by its ID. Return None if not found. If the patient doesn't have an NHS number,
         return the Immunization without calling PDS or checking S flag.
         """
         imms_resp = self.immunization_repo.get_immunization_by_identifier(identifier_pk, imms_vax_type_perms)
         if not imms_resp:
-            return None
+            base_url = f"{get_service_url()}/Immunization"
+            response = form_json(imms_resp,None,None,base_url)
+            return response
         else:
-            return imms_resp
+            base_url = f"{get_service_url()}/Immunization"
+            response = form_json(imms_resp,element,identifier,base_url)
+            return response
         
-
     def get_immunization_by_id(self, imms_id: str, imms_vax_type_perms: str) -> Optional[dict]:
         """
         Get an Immunization by its ID. Return None if not found. If the patient doesn't have an NHS number,

@@ -31,9 +31,10 @@ from models.errors import (
     UnauthorizedVaxError,
     UnauthorizedVaxOnRecordError,
 )
-
+from models.utils.generic_utils import  check_keys_in_sources
 from pds_service import PdsService
 from parameter_parser import process_params, process_search_params, create_query_string
+import urllib.parse
 
 
 def make_controller(
@@ -68,6 +69,49 @@ class FhirController:
     ):
         self.fhir_service = fhir_service
         self.authorizer = authorizer
+       
+    def get_immunization_by_identifier(self, aws_event) -> dict:
+        if response := self.authorize_request(EndpointOperation.SEARCH, aws_event):
+            return response
+        query_params = aws_event.get('queryStringParameters', {})
+        body=aws_event["body"]
+        if query_params and body:
+                error = create_operation_outcome(
+                resource_id=str(uuid.uuid4()),
+                severity=Severity.error,
+                code=Code.invalid,
+                diagnostics=(
+                    "Parameters may not be duplicated. Use commas for \"or\"."
+                )
+            )
+                return(self.create_response(400, error))
+        identifier,element,not_required,has_imms_identifier,has_element = self.fetch_identifier_system_and_element(aws_event)
+        if  not_required:
+                return(self.create_response_for_identifier(not_required,has_imms_identifier,has_element)) 
+        # If not found, retrieve from multiValueQueryStringParameters
+        if id_error := self._validate_identifier_system(identifier,element):
+            return self.create_response(400, id_error)
+        identifiers = identifier.replace('|', '#')
+        try:
+            if aws_event.get("headers"):
+                try:
+                    imms_vax_type_perms = aws_event["headers"]["VaccineTypePermissions"]
+                    if len(imms_vax_type_perms) == 0:
+                        raise UnauthorizedVaxError()
+                        
+                except UnauthorizedVaxError as unauthorized:
+                    return self.create_response(403, unauthorized.to_operation_outcome())
+            else:
+                raise UnauthorizedVaxError()
+        except UnauthorizedVaxError as unauthorized:
+            return self.create_response(403, unauthorized.to_operation_outcome())
+        
+        try:
+            if resource := self.fhir_service.get_immunization_by_identifier(identifiers, imms_vax_type_perms, identifier, element):
+                return FhirController.create_response(200, resource)
+        except UnauthorizedVaxError as unauthorized:
+            return self.create_response(403, unauthorized.to_operation_outcome())    
+
 
     def get_immunization_by_identifier(self, aws_event) -> dict:
         if response := self.authorize_request(EndpointOperation.READ, aws_event):
@@ -516,6 +560,49 @@ class FhirController:
         else:
             return None
 
+    def _validate_identifier_system(self, _id: str, _element: str) -> Optional[dict]:
+        
+        if not _id :
+            return create_operation_outcome(
+                resource_id=str(uuid.uuid4()),
+                severity=Severity.error,
+                code=Code.invalid,
+                diagnostics=(
+                    "Search parameter immunization.identifier must have one value and must be in the format of "
+                    "\"immunization.identifier.system|immunization.identifier.value\" "
+                    "e.g. \"http://xyz.org/vaccs|2345-gh3s-r53h7-12ny\""
+                )
+            )
+        if "|" not in _id or ' ' in _id:
+            return create_operation_outcome(
+                resource_id=str(uuid.uuid4()),
+                severity=Severity.error,
+                code=Code.invalid,
+                diagnostics=(
+                    "Search parameter immunization.identifier must be in the format of "
+                    "\"immunization.identifier.system|immunization.identifier.value\" "
+                    "e.g. \"http://xyz.org/vaccs|2345-gh3s-r53h7-12ny\""
+                )
+            )
+        if not _element :
+            return create_operation_outcome(
+                resource_id=str(uuid.uuid4()),
+                severity=Severity.error,
+                code=Code.invalid,
+                diagnostics="_element must be one or more of the following: id,meta"
+            )
+        element_lower = _element.lower()
+        result = element_lower.split(',')
+        is_present = all(key in ['id', 'meta'] for key in result)
+        if not is_present:
+            return create_operation_outcome(
+                resource_id=str(uuid.uuid4()),
+                severity=Severity.error,
+                code=Code.invalid,
+                diagnostics= "_element must be one or more of the following: id,meta" 
+            )
+
+
     def _create_bad_request(self, message):
         error = create_operation_outcome(
             resource_id=str(uuid.uuid4()),
@@ -539,6 +626,66 @@ class FhirController:
                 diagnostics="application includes invalid authorization values",
             )
             return self.create_response(500, id_error)
+        
+    def fetch_identifier_system_and_element(self, event: dict):
+            query_params = event.get('queryStringParameters', {})
+            body = event["body"]
+            not_required_keys = ['-date.from', '-date.to', '-immunization.target', '_include', 'patient.identifier']
+            if query_params and not body:
+                # Check for the presence of 'immunization.identifier' and '_element'
+                query_string_has_immunization_identifier = 'immunization.identifier' in event.get('queryStringParameters', {})
+                query_string_has_element = '_element' in event.get('queryStringParameters', {}) 
+                immunization_identifier = query_params.get('immunization.identifier','')
+                element = query_params.get('_element','')
+                query_check = check_keys_in_sources(event, not_required_keys)
+                
+                return immunization_identifier,element,query_check,query_string_has_immunization_identifier,query_string_has_element
+            if body and not query_params:
+                decoded_body = base64.b64decode(body).decode('utf-8')
+                parsed_body = urllib.parse.parse_qs(decoded_body)
+                # Attempt to extract 'immunization.identifier' and '_element'
+                converted_identifer = ''
+                converted_element =''
+                immunization_identifier = parsed_body.get('immunization.identifier','')
+                if immunization_identifier:
+                 converted_identifer = ''.join(immunization_identifier)
+                _element = parsed_body.get('_element','')
+                if _element:
+                 converted_element = ''.join(_element)
+                body_has_immunization_identifier = 'immunization.identifier' in parsed_body
+                body_has_immunization_element = '_element' in parsed_body
+                body_check = check_keys_in_sources(event, not_required_keys)
+                return converted_identifer,converted_element,body_check,body_has_immunization_identifier,body_has_immunization_element
+
+    def create_response_for_identifier(self, not_required, has_identifier, has_element):
+        if 'patient.identifier' in  not_required and  has_identifier:
+            error = create_operation_outcome(
+                resource_id=str(uuid.uuid4()),
+                severity=Severity.error,
+                code=Code.server_error,
+                diagnostics="Search parameter should have either immunization.identifier or patient.identifier",
+            )
+            return self.create_response(400, error)
+        
+        
+        if 'patient.identifier' not in  not_required and  not_required and has_identifier :
+            error = create_operation_outcome(
+                resource_id=str(uuid.uuid4()),
+                severity=Severity.error,
+                code=Code.server_error,
+                diagnostics="Search parameter immunization.identifier must have the following parameter: _element",
+            )
+            return self.create_response(400, error)
+        
+        if  not_required and  has_element:
+            error = create_operation_outcome(
+                resource_id=str(uuid.uuid4()),
+                severity=Severity.error,
+                code=Code.server_error,
+                diagnostics="Search parameter _element must have  the following parameter: immunization.identifier",
+            )
+            return self.create_response(400, error)
+
 
     @staticmethod
     def create_response(status_code, body=None, headers=None):

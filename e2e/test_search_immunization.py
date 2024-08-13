@@ -49,7 +49,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
 
         # When
         response = self.default_imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.covid_19)
-
+        print(f"response_search:{response}")
         # Then
         self.assertEqual(response.status_code, 200, response.text)
         body = response.json()
