@@ -53,6 +53,8 @@ class TestSearchImmunization(ImmunizationBaseTest):
         # Then
         self.assertEqual(response.status_code, 200, response.text)
         body = response.json()
+        response_text = response.text
+        print(f"response_body_search:{body},,,,,{response_text}")
 
         resource_ids = [entity["resource"]["id"] for entity in body["entry"]]
         self.assertIn(covid_19["id"], resource_ids)
