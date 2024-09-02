@@ -22,6 +22,7 @@ from models.fhir_immunization import ImmunizationValidator
 from models.utils.generic_utils import nhs_number_mod11_check, get_occurrence_datetime, create_diagnostics, form_json
 from models.constants import Constants
 from models.errors import MandatoryError
+from models.constants import Constants
 from pds_service import PdsService
 from s_flag_handler import handle_s_flag
 from timer import timed
@@ -159,6 +160,29 @@ class FhirService:
         self, imms_id: str, immunization: dict, existing_resource_version: int, imms_vax_type_perms: str, supplier_system : str
     ) -> tuple[UpdateOutcome, Immunization]:
         immunization["id"] = imms_id
+
+        try:
+            self.validator.validate(immunization)
+            # Initialize errors list
+            all_errors = []
+
+            # Check the top-level Immunization resource
+            all_errors.extend(check_for_unknown_elements(immunization, Constants.allowed_keys_with_id["Immunization"], "Immunization"))
+
+            # Check each contained resource
+            for contained_resource in immunization.get("contained", []):
+                resource_type = contained_resource.get("resourceType")
+                if resource_type not in Constants.allowed_contained_resources:
+                    all_errors.append(f"resourcetype Practitioner and Patient are only allowed in contained resource for this service")
+                else:
+                    all_errors.extend(check_for_unknown_elements(contained_resource, Constants.allowed_keys[resource_type], resource_type))
+
+            # Concatenate errors into a single string separated by semicolons
+            error = "; ".join(all_errors)
+            if error:
+                raise ValueError(error)
+        except (ValidationError, ValueError, MandatoryError) as error:
+            raise CustomValidationError(message=str(error)) from error
 
         patient = self._validate_patient(immunization)
 
@@ -367,8 +391,9 @@ class FhirService:
             return patient
 
         raise InvalidPatientId(patient_identifier=nhs_number)
-    
-    # Define a function to check for unknown elements
+
+
+# Define a function to check for unknown elements
 def check_for_unknown_elements(resource, allowed_keys, resource_type):
     errors = []
     for key in resource.keys():

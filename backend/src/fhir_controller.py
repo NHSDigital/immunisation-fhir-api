@@ -484,6 +484,48 @@ class FhirController:
             result_json_dict["total"] = 0
         return self.create_response(200, json.dumps(result_json_dict))
 
+    def _validate_identifier_system(self, _id: str,__value: str) -> Optional[dict]:
+        if _id != '' and __value != ':id':
+            return None
+        elif _id == '' and  __value == ':id':
+            msg = "The provided identifier system and identifier value is either missing or not in the expected format."
+            return create_operation_outcome(
+                resource_id=str(uuid.uuid4()),
+                severity=Severity.error,
+                code=Code.invalid,
+                diagnostics=msg,
+            )
+        elif __value == ':id':
+            msg = "The provided identifier value is either missing or not in the expected format."
+            return create_operation_outcome(
+                resource_id=str(uuid.uuid4()),
+                severity=Severity.error,
+                code=Code.invalid,
+                diagnostics=msg,
+            )
+        elif _id == '':
+            msg = "The provided identifier system is either missing or not in the expected format."
+            return create_operation_outcome(
+                resource_id=str(uuid.uuid4()),
+                severity=Severity.error,
+                code=Code.invalid,
+                diagnostics=msg,
+            )
+            
+            
+          
+    
+    def _validate_identifier_value(self, _id: str) -> Optional[dict]:
+        if _id == ':id':
+            msg = "The provided identifier value is either missing or not in the expected format."
+            return create_operation_outcome(
+                resource_id=str(uuid.uuid4()),
+                severity=Severity.error,
+                code=Code.invalid,
+                diagnostics=msg,
+            )
+        return None
+    
     def _validate_id(self, _id: str) -> Optional[dict]:
         if not re.match(self.immunization_id_pattern, _id):
             msg = "the provided event ID is either missing or not in the expected format."
