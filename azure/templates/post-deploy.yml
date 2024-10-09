@@ -29,7 +29,7 @@ steps:
     displayName: Setup pytests
     condition: always()
 
-  - template: "azure/components/aws-assume-role.yml@common"
+  - template: ./aws-assume-role.yml
     parameters:
       role: "auto-ops"
       profile: "apim-dev"

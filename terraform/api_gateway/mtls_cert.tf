@@ -4,7 +4,7 @@ locals {
 }
 
 data "aws_s3_bucket" "cert_storage" {
-  bucket = "immunisation-dev-cert-storage"
+  bucket = "imms-fhir-dev-cert-storage"
 }
 
 data "aws_s3_object" "cert" {

@@ -4,12 +4,7 @@ data "aws_iam_policy_document" "dynamo_s3_policy_document" {
             "dynamodb_table_name" : aws_dynamodb_table.delta-dynamodb-table.name
         } ):  templatefile("${local.policy_path}/dynamodb_delta.json", {
             "dynamodb_table_name" : aws_dynamodb_table.delta-dynamodb-table.name
-        } ),
-        local.environment == "prod" ? templatefile("${local.policy_path}/s3_batch_prod.json", {
-            "bucket-name" : aws_s3_bucket.batch_data_source_bucket.bucket
-        } ):  templatefile("${local.policy_path}/s3_batch.json", {
-            "bucket-name" : aws_s3_bucket.batch_data_source_bucket.bucket
-        } ),
+        } )        
     ]
 }
 resource "aws_iam_role" "dynamo_s3_access_role" {

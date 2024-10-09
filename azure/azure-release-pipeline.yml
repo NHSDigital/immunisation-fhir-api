@@ -33,7 +33,7 @@ extends:
     apigee_deployments:
       - environment: internal-dev
         jinja_templates:
-          DOMAIN_ENDPOINT: https://internal-dev.imms.dev.api.platform.nhs.uk
+          DOMAIN_ENDPOINT: https://internal-dev.imms.dev.api.vds.nhs.uk
         post_deploy:
           - template: ./templates/post-deploy.yml
       - environment: internal-dev-sandbox
@@ -56,14 +56,14 @@ extends:
             - internal_dev_sandbox
             - manual_approval
         jinja_templates:
-            DOMAIN_ENDPOINT: https://ref.imms.dev.api.platform.nhs.uk
+            DOMAIN_ENDPOINT: https://ref.imms.dev.api.vds.nhs.uk
         post_deploy:
             - template: ./templates/post-deploy.yml
       - environment: int
         depends_on:
           - internal_dev
         jinja_templates:
-          DOMAIN_ENDPOINT: https://int.imms.dev.api.platform.nhs.uk
+          DOMAIN_ENDPOINT: https://int.imms.dev.api.vds.nhs.uk
         post_deploy:
            - template: ./templates/post-deploy.yml
            

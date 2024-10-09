@@ -32,7 +32,7 @@ jobs:
           echo "##vso[task.setvariable variable=ACTION_PR_NUMBER]$(ACTION_PR_NUMBER)"
         displayName: Set workspace tag
 
-      - template: "azure/components/aws-assume-role.yml@common"
+      - template: ./templates/aws-assume-role.yml
         parameters:
             role: "auto-ops"
             profile: "apim-dev"

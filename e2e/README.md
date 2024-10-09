@@ -22,7 +22,7 @@ To run all the tests you need to provide a `.env` file. The below table describe
 | SERVICE_BASE_PATH  | immunisation-fhir-api-pr-100                | the base path for the proxy. This value can be found in overview section in the apigee ui     |
 | STATUS_API_KEY     | secret                                      | if you don't have this value then _status endpoint test will fail. You can ignore it          |
 | AWS_PROFILE        | apim-dev                                    | some operation may need to run aws cli. This value is used for aws authentication             |
-| AWS_DOMAIN_NAME    | https://pr-100.imms.dev.api.platform.nhs.uk | this value points to our backend deployment. We use it to test mTLS. Ignore it in local tests |
+| AWS_DOMAIN_NAME    | https://pr-100.imms.dev.api.vds.nhs.uk | this value points to our backend deployment. We use it to test mTLS. Ignore it in local tests |
 
 There are other environment variables that are used, but these are the minimum amount for running tests locally. Apart
 from the first three items, you can ignore the rest of them. This will cause a few test failures, but it's safe to
