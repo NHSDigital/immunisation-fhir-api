@@ -28,7 +28,6 @@ class ValidatorModelTests:
         invalid_strings_to_test: list = None,
         spaces_allowed: bool = True,
         invalid_strings_with_spaces_to_test: list = None,
-        is_postal_code: bool = False,
         is_mandatory_fhir: bool = False,
     ):
         """
@@ -131,29 +130,6 @@ class ValidatorModelTests:
                     invalid_value=invalid_string_with_spaces,
                     expected_error_message=f"{field_location} must not contain spaces",
                 )
-
-        # If is a postal code, then test postal codes which are not separated into the two parts
-        # by a single space or which exceed the maximum length of 8 characters (excluding spaces)
-        if is_postal_code:
-            # Test postal codes which are not separated into the two parts by a single space
-            for invalid_postal_code in InvalidValues.for_postal_codes:
-                test_invalid_values_rejected(
-                    test_instance,
-                    valid_json_data,
-                    field_location=field_location,
-                    invalid_value=invalid_postal_code,
-                    expected_error_message=f"{field_location} must contain a single space, "
-                    + "which divides the two parts of the postal code",
-                )
-
-            # Test invalid postal code length
-            test_invalid_values_rejected(
-                test_instance,
-                valid_json_data,
-                field_location=field_location,
-                invalid_value="AA000 00AA",
-                expected_error_message=f"{field_location} must be 8 or fewer characters " + "(excluding spaces)",
-            )
 
     @staticmethod
     def test_list_value(
@@ -373,6 +349,13 @@ class ValidatorModelTests:
                 expected_error_message=f"{field_location} must be a string",
             )
 
+            expected_error_message = (
+                f"{field_location} must be a valid datetime in the format 'YYYY-MM-DDThh:mm:ss+zz:zz' (where time "
+                "element is optional, timezone must be given if and only if time is given, and milliseconds can be "
+                + "optionally included after the seconds). Note that partial dates are not allowed for "
+                + f"{field_location} for this service."
+            )
+
         # Test invalid date time string formats
         for invalid_occurrence_date_time in InvalidValues.for_date_time_string_formats:
             test_invalid_values_rejected(
@@ -380,11 +363,7 @@ class ValidatorModelTests:
                 valid_json_data,
                 field_location=field_location,
                 invalid_value=invalid_occurrence_date_time,
-                expected_error_message=f"{field_location} must be a string in the format "
-                + '"YYYY-MM-DDThh:mm:ss+zz:zz" or '
-                + '"YYYY-MM-DDThh:mm:ss-zz:zz" (i.e date and time, including timezone offset in '
-                + "hours and minutes). Milliseconds are optional after the seconds "
-                + "(e.g. 2021-01-01T00:00:00.000+00:00).",
+                expected_error_message=expected_error_message,
             )
 
         # Test invalid date times
@@ -394,7 +373,7 @@ class ValidatorModelTests:
                 valid_json_data,
                 field_location=field_location,
                 invalid_value=invalid_occurrence_date_time,
-                expected_error_message=f"{field_location} must be a valid datetime",
+                expected_error_message=expected_error_message,
             )
 
     @staticmethod
@@ -479,7 +458,6 @@ class ValidatorModelTests:
         test_instance: unittest.TestCase,
         field_location: str,
         valid_decimals_and_integers_to_test: list,
-        max_decimal_places: int = None,
     ):
         """
         Test that a FHIR model accepts valid decimal or integer values and rejects the following
@@ -507,17 +485,6 @@ class ValidatorModelTests:
                 invalid_value=invalid_data_type_for_decimals_or_integers,
                 expected_error_message=f"{field_location} must be a number",
             )
-
-        # Test Decimal with more than the maximum number of decimal places
-        decimal_too_many_dp = Decimal("1." + "1" * (max_decimal_places + 1))
-        test_invalid_values_rejected(
-            test_instance,
-            valid_json_data,
-            field_location=field_location,
-            invalid_value=decimal_too_many_dp,
-            expected_error_message=f"{field_location} must be a number with a maximum of "
-            + f"{max_decimal_places} decimal places",
-        )
 
     @staticmethod
     def test_valid_combinations_of_contained_and_performer_accepted(

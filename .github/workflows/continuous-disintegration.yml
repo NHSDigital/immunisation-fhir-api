@@ -12,7 +12,7 @@ jobs:
       - name: Get Access Token
         id: get-access-token
         run: |
-          echo "ACCESS_TOKEN"=$(curl 'https://app.vssps.visualstudio.com/oauth2/token' --data "client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer&client_assertion=${{ secrets.PR_TEARDWN_CLIENT_SECRET }}&grant_type=refresh_token&assertion=${{ secrets.PR_TEARDWN_REFRESH_TOKEN }}&redirect_uri=https://localhost:1337/callback" | jq -r '.access_token') >> $GITHUB_OUTPUT
+          echo "ACCESS_TOKEN"=$(curl -X POST -H "Content-Type: application/x-www-form-urlencoded" -d 'client_id=${{ secrets.PR_TEARDWN_SP_CLIENT_ID }}&scope=https%3A%2F%2Fapp.vssps.visualstudio.com%2F.default&client_secret=${{ secrets.PR_TEARDWN_SP_CLIENT_SECRET }}&grant_type=client_credentials' 'https://login.microsoftonline.com/${{ secrets.PR_TENANT_ID }}/oauth2/v2.0/token' | jq -r '.access_token') >> $GITHUB_OUTPUT
 
       - name: Azure Pipelines Action
         uses: Azure/pipelines@v1.2

@@ -19,6 +19,8 @@ class PostValidators:
         # Note that the majority of fields require standard validation. Exception not included in the below list is
         # reason_code_coding_code, which has its own bespoke validation function.
         # Status is mandatory in FHIR, so there is no post-validation for status as it is handled by the FHIR validator.
+        # NOTE: SOME FIELDS ARE COMMENTED OUT AS THEY ARE REQUIRED ELEMENTS (VALIDATION SHOULD ALWAYS PASS), AND THE
+        # MEANS TO ACCESS THE VALUE HAS NOT BEEN CONFIRMED. DO NOT DELETE THE FIELDS, THEY MAY NEED REINSTATED LATER.
         self.fields_with_standard_validation = [
             FieldNames.patient_identifier_value,
             FieldNames.patient_name_given,
@@ -38,15 +40,15 @@ class PostValidators:
             FieldNames.vaccination_procedure_code,
             FieldNames.vaccination_procedure_display,
             FieldNames.dose_number_positive_int,
-            FieldNames.vaccine_code_coding_code,
-            FieldNames.vaccine_code_coding_display,
+            # FieldNames.vaccine_code_coding_code,
+            # FieldNames.vaccine_code_coding_display,
             FieldNames.manufacturer_display,
             FieldNames.lot_number,
             FieldNames.expiration_date,
-            FieldNames.site_coding_code,
-            FieldNames.site_coding_display,
-            FieldNames.route_coding_code,
-            FieldNames.route_coding_display,
+            # FieldNames.site_coding_code,
+            # FieldNames.site_coding_display,
+            # FieldNames.route_coding_code,
+            # FieldNames.route_coding_display,
             FieldNames.dose_quantity_value,
             FieldNames.dose_quantity_code,
             FieldNames.dose_quantity_unit,
@@ -85,29 +87,31 @@ class PostValidators:
         field_value = obtain_field_value(self.imms, field_name)
         self.run_field_validation(mandation_functions, validation_set, field_name, field_location, field_value)
 
-    def validate_reason_code_coding_code(self, mandation_functions: MandationFunctions, validation_set: dict):
-        """
-        Runs standard validation for each instance of reason_code_coding_code (note that, because reason_code
-        is a list, there may be multiple instances of reason_code_coding_code, hence the need to iterate).
-        """
+    # NOTE: THIS METHOD IS COMMENTED OUT AS IT IS for A REQUIRED ELEMENT (VALIDATION SHOULD ALWAYS PASS),
+    # AND THE MEANS TO ACCESS THE VALUE HAS NOT BEEN CONFIRMED. DO NOT DELETE THE METHOD, IT MAY NEED REINSTATED LATER.
+    # def validate_reason_code_coding_code(self, mandation_functions: MandationFunctions, validation_set: dict):
+    #     """
+    #     Runs standard validation for each instance of reason_code_coding_code (note that, because reason_code
+    #     is a list, there may be multiple instances of reason_code_coding_code, hence the need to iterate).
+    #     """
 
-        # Identify the number of elements of reason_code for validation to inform the number of times to iterate.
-        # If there are no elements then set number of iterations to 1 as validation must be run at least once.
-        number_of_iterations = len(self.imms["reasonCode"]) if self.imms.get("reasonCode") else 1
+    #     # Identify the number of elements of reason_code for validation to inform the number of times to iterate.
+    #     # If there are no elements then set number of iterations to 1 as validation must be run at least once.
+    #     number_of_iterations = len(self.imms["reasonCode"]) if self.imms.get("reasonCode") else 1
 
-        # Validate the field for each element of reason_code
-        for index in range(number_of_iterations):
+    #     # Validate the field for each element of reason_code
+    #     for index in range(number_of_iterations):
 
-            field_name = FieldNames.reason_code_coding_code
-            field_location = f"reasonCode[{index}].coding[0].code"
+    #         field_name = FieldNames.reason_code_coding_code
+    #         field_location = f"reasonCode[{index}].coding[0].code"
 
-            # Obtain the field value from the imms json data, or set it to None if the value can't be found
-            try:
-                field_value = getattr(ObtainFieldValue, field_name)(self.imms, index)
-            except (KeyError, IndexError):
-                field_value = None
+    #         # Obtain the field value from the imms json data, or set it to None if the value can't be found
+    #         try:
+    #             field_value = getattr(ObtainFieldValue, field_name)(self.imms, index)
+    #         except (KeyError, IndexError):
+    #             field_value = None
 
-            self.run_field_validation(mandation_functions, validation_set, field_name, field_location, field_value)
+    #         self.run_field_validation(mandation_functions, validation_set, field_name, field_location, field_value)
 
     def validate(self):
         """Run all post-validation checks."""
@@ -131,7 +135,9 @@ class PostValidators:
 
         # Validate reason_code_coding_code fields. Note that there may be multiple of each of these
         # - all instances of the field will be validated by the validate_reason_code_coding_field validator
-        self.validate_reason_code_coding_code(mandation_functions, validation_set)
+        # NOTE: THIS METHOD IS COMMENTED OUT AS IT IS for A REQUIRED ELEMENT (VALIDATION SHOULD ALWAYS PASS), AND THE
+        # MEANS TO ACCESS THE VALUE HAS NOT BEEN CONFIRMED. DO NOT DELETE THE METHOD, IT MAY NEED REINSTATED LATER.
+        # self.validate_reason_code_coding_code(mandation_functions, validation_set)
 
         # Raise any errors
         if self.errors:

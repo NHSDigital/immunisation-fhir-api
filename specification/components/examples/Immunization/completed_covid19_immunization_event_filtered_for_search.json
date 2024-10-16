@@ -1,35 +1,5 @@
 {
   "resourceType": "Immunization",
-  "id": "an-id",
-  "contained": [
-    {
-      "resourceType": "Practitioner",
-      "id": "Pract1"
-    },
-    {
-      "resourceType": "Patient",
-      "id": "Pat1",
-      "identifier": [
-        {
-          "system": "https://fhir.nhs.uk/Id/nhs-number",
-          "value": "9990548609"
-        }
-      ],
-      "name": [
-        {
-          "family": "Taylor",
-          "given": ["Sarah"]
-        }
-      ],
-      "gender": "unknown",
-      "birthDate": "1965-02-28",
-      "address": [
-        {
-          "postalCode": "EC1A 1BB"
-        }
-      ]
-    }
-  ],
   "extension": [
     {
       "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure",
@@ -37,8 +7,8 @@
         "coding": [
           {
             "system": "http://snomed.info/sct",
-            "code": "mockHPVcode1",
-            "display": "Seasonal influenza vaccination (procedure)"
+            "code": "1324681000000101",
+            "display": "Administration of first dose of severe acute respiratory syndrome coronavirus 2 vaccine (procedure)"
           }
         ]
       }
@@ -46,8 +16,9 @@
   ],
   "identifier": [
     {
+      "use": "official",
       "system": "https://supplierABC/identifiers/vacc",
-      "value": "ACME-vacc123flu"
+      "value": "ACME-vacc123456"
     }
   ],
   "status": "completed",
@@ -55,35 +26,39 @@
     "coding": [
       {
         "system": "http://snomed.info/sct",
-        "code": "39566211000001103",
-        "display": "Supemtek Quadrivalent vaccine (recombinant) solution for injection 0.5ml pre-filled syringes (Sanofi) (product)"
+        "code": "39114911000001105",
+        "display": "COVID-19 Vaccine Vaxzevria (ChAdOx1 S [recombinant]) not less than 2.5x100,000,000 infectious units/0.5ml dose suspension for injection multidose vials (AstraZeneca UK Ltd) (product)"
       }
     ]
   },
   "patient": {
-    "reference": "#Pat1"
-  },
-  "occurrenceDateTime": "2021-02-14T13:28:17.271+00:00",
-  "recorded": "2021-02-14T13:28:17.271+00:00",
-  "primarySource": true,
-  "manufacturer": {
-    "display": "Sanofi"
-  },
-  "location": {
-    "type":"Location",
+    "reference": "THIS VALUE SHOULD BE REPLACED WITH PATIENT_UUID_FOR_FULL_URL",
+    "type": "Patient",
     "identifier": {
-      "value": "X99999",
-      "system": "https://fhir.nhs.uk/Id/ods-organization-code"
+      "system": "https://fhir.nhs.uk/Id/nhs-number",
+      "value": "9000000009"
     }
   },
-  "lotNumber": "41925TJ61",
+  "occurrenceDateTime": "2021-02-07T13:28:17+00:00",
+  "recorded": "2021-02-07T13:28:17+00:00",
+  "primarySource": true,
+  "manufacturer": {
+    "display": "AstraZeneca Ltd"
+  },
+  "location": {
+    "identifier": {
+      "value": "GB",
+      "system": "urn:iso:std:iso:3166"
+    }
+  },
+  "lotNumber": "4120Z001",
   "expirationDate": "2021-07-02",
   "site": {
     "coding": [
       {
         "system": "http://snomed.info/sct",
-        "code": "368209003",
-        "display": "Right upper arm structure (body structure)"
+        "code": "368208006",
+        "display": "Left upper arm structure (body structure)"
       }
     ]
   },
@@ -105,14 +80,9 @@
   "performer": [
     {
       "actor": {
-        "reference": "#Pract1"
-      }
-    },
-    {
-      "actor": {
         "type": "Organization",
         "identifier": {
-          "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+          "system": "https://fhir.hl7.org.uk/Id/urn-school-number",
           "value": "B0C4P"
         }
       }
@@ -122,7 +92,7 @@
     {
       "coding": [
         {
-          "code": "78648007",
+          "code": "443684005",
           "system": "http://snomed.info/sct"
         }
       ]
@@ -135,8 +105,8 @@
           "coding": [
             {
               "system": "http://snomed.info/sct",
-              "code": "240532009",
-              "display": "Human papillomavirus infection"
+              "code": "840539006",
+              "display": "Disease caused by severe acute respiratory syndrome coronavirus 2"
             }
           ]
         }
@@ -145,4 +115,3 @@
     }
   ]
 }
-

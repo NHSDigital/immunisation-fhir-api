@@ -104,7 +104,7 @@ def make_app_restricted_app(
             k, v = make_permissions_attribute(permissions)
             app.add_attribute(k, v)
         app.add_attribute("AuthenticationType", AuthType.APP_RESTRICTED.value)
-        app.add_attribute("ApplicationId", "Test_App")
+        app.add_attribute("SupplierSystem", "Test_App")
         if vaxx_type_perms:
             k, v = make_vaxx_permissions_attribute(vaxx_type_perms)
             app.add_attribute(k, v)
@@ -112,7 +112,8 @@ def make_app_restricted_app(
             app.add_attribute(
                 "VaccineTypePermissions",
                 "flu:create,covid19:create,mmr:create,hpv:create,covid19:update,flu:read,covid19:read,flu:delete,"
-                "covid19:delete,mmr:delete,flu:search,covid19:search,mmr:search"
+                "covid19:delete,mmr:delete,flu:search,covid19:search,mmr:search,rsv:create,rsv:search,rsv:update,"
+                "rsv:read,rsv:delete"
             )
 
         app.add_product(f"identity-service-{get_apigee_env()}")
@@ -147,7 +148,7 @@ def _make_user_restricted_app(
             k, v = make_permissions_attribute(permissions)
             app.add_attribute(k, v)
         app.add_attribute("AuthenticationType", auth_type.value)
-        app.add_attribute("ApplicationId", "Test_App")
+        app.add_attribute("SupplierSystem", "Test_App")
         if vaxx_type_perms:
             k, v = make_vaxx_permissions_attribute(vaxx_type_perms)
             app.add_attribute(k, v)
@@ -155,7 +156,8 @@ def _make_user_restricted_app(
             app.add_attribute(
                 "VaccineTypePermissions",
                 "flu:create,covid19:create,mmr:create,hpv:create,covid19:update,flu:read,covid19:read,flu:delete,"
-                "covid19:delete,mmr:delete,flu:search,covid19:search,mmr:search"
+                "covid19:delete,mmr:delete,flu:search,covid19:search,mmr:search,rsv:create,rsv:search,rsv:update,"
+                "rsv:read,rsv:delete"
             )
         app.add_product(f"identity-service-{get_apigee_env()}")
 

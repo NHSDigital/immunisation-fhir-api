@@ -1,8 +1,14 @@
 "FHIR Immunization Pre Validators"
-
+from typing import Union
 from models.constants import Constants
-from models.utils.generic_utils import get_generic_extension_value, generate_field_location_for_extension
+from models.utils.generic_utils import (
+    get_generic_extension_value,
+    generate_field_location_for_extension,
+    check_for_unknown_elements,
+)
 from models.utils.pre_validator_utils import PreValidation
+from models.errors import MandatoryError
+from constants import Urls
 import re
 
 
@@ -10,7 +16,8 @@ class PreValidators:
     """
     Validators which run prior to the FHIR validators and check that, where values exist, they
     meet the NHS custom requirements. Note that validation of the existence of a value (i.e. it
-    exists if mandatory, or doesn't exist if is not applicable) is done by the post validators.
+    exists if mandatory, or doesn't exist if is not applicable) is done by the post validator except for a few key
+    elements, the existence of which is explicitly checked as part of pre-validation.
     """
 
     def __init__(self, immunization: dict):
@@ -19,9 +26,21 @@ class PreValidators:
 
     def validate(self):
         """Run all pre-validation checks."""
+
+        # Run check on contained contents first and raise any errors found immediately. This is because other validators
+        # rely on the contained contents being as expected.
+        try:
+            self.pre_validate_contained_contents(self.immunization)
+        except (ValueError, TypeError, IndexError, AttributeError) as error:
+            raise ValueError(f"Validation errors: {str(error)}") from error
+
         validation_methods = [
+            self.pre_validate_resource_type,
             self.pre_validate_contained_contents,
+            self.pre_validate_top_level_elements,
             self.pre_validate_patient_reference,
+            self.pre_validate_practitioner_reference,
+            self.pre_validate_patient_identifier_extension,
             self.pre_validate_patient_identifier,
             self.pre_validate_patient_identifier_value,
             self.pre_validate_patient_name,
@@ -32,8 +51,7 @@ class PreValidators:
             self.pre_validate_patient_address,
             self.pre_validate_patient_address_postal_code,
             self.pre_validate_occurrence_date_time,
-            self.pre_validate_performer_actor_type,
-            self.pre_validate_performer_actor_reference,
+            self.pre_validate_performer,
             self.pre_validate_organization_identifier_value,
             self.pre_validate_identifier,
             self.pre_validate_identifier_value,
@@ -44,6 +62,7 @@ class PreValidators:
             self.pre_validate_practitioner_name_family,
             self.pre_validate_recorded,
             self.pre_validate_primary_source,
+            self.pre_validate_extension,
             self.pre_validate_extension_urls,
             self.pre_validate_extension_value_codeable_concept_codings,
             self.pre_validate_vaccination_procedure_code,
@@ -56,9 +75,6 @@ class PreValidators:
             self.pre_validate_target_disease,
             self.pre_validate_target_disease_codings,
             self.pre_validate_disease_type_coding_codes,
-            self.pre_validate_vaccine_code_coding,
-            self.pre_validate_vaccine_code_coding_code,
-            self.pre_validate_vaccine_code_coding_display,
             self.pre_validate_manufacturer_display,
             self.pre_validate_lot_number,
             self.pre_validate_expiration_date,
@@ -76,7 +92,6 @@ class PreValidators:
             self.pre_validate_organization_identifier_system,
             self.pre_validate_location_identifier_value,
             self.pre_validate_location_identifier_system,
-            self.pre_validate_location_type,
         ]
 
         for method in validation_methods:
@@ -89,12 +104,23 @@ class PreValidators:
             all_errors = "; ".join(self.errors)
             raise ValueError(f"Validation errors: {all_errors}")
 
+    def pre_validate_resource_type(self, values: dict) -> dict:
+        """Pre-validate that resourceType is 'Immunization'"""
+        if values.get("resourceType") != "Immunization":
+            raise ValueError(
+                "This service only accepts FHIR Immunization Resources (i.e. resourceType must equal 'Immunization')"
+            )
+
     def pre_validate_contained_contents(self, values: dict) -> dict:
         """
-        Pre-validate that there is exactly one patient resource in contained, a maximum of one practitioner resource,
-        and no other resources
+        Pre-validate that contained exists and there is exactly one patient resource in contained,
+        a maximum of one practitioner resource, and no other resources
         """
-        contained = values["contained"]
+        # Contained must exist
+        try:
+            contained = values["contained"]
+        except KeyError as error:
+            raise MandatoryError("contained is a mandatory field") from error
 
         # Contained must be a non-empty list of non-empty dictionaries
         PreValidation.for_list(contained, "contained", elements_are_dicts=True)
@@ -116,6 +142,36 @@ class PreValidators:
             errors.append("contained must contain exactly one Patient resource")
         if practitioner_count > 1:
             errors.append("contained must contain a maximum of one Practitioner resource")
+
+        # Raise errors (don't check ids if incorrect resources are contained)
+        if errors:
+            raise ValueError("; ".join(errors))
+
+        # Check ids exist and aren't duplicated.
+        if (patient_id := [x.get("id") for x in values["contained"] if x["resourceType"] == "Patient"][0]) is None:
+            errors.append("The contained Patient resource must have an 'id' field")
+        elif practitioner_count == 1:
+            practitioner_id = [x.get("id") for x in values["contained"] if x["resourceType"] == "Practitioner"][0]
+            if practitioner_id is None:
+                errors.append("The contained Practitioner resource must have an 'id' field")
+            elif patient_id == practitioner_id:
+                errors.append("ids must not be duplicated amongst contained resources")
+
+        # Raise id errors
+        if errors:
+            raise ValueError("; ".join(errors))
+
+    def pre_validate_top_level_elements(self, values: dict) -> dict:
+        """Pre-validate that disallowed top level elements are not present"""
+        errors = []
+
+        # Check the top-level Immunization resource
+        errors.extend(check_for_unknown_elements(values, "Immunization"))
+
+        # Check each contained resource
+        for contained_resource in values.get("contained", []):
+            if (resource_type := contained_resource.get("resourceType")) in Constants.ALLOWED_CONTAINED_RESOURCES:
+                errors.extend(check_for_unknown_elements(contained_resource, resource_type))
 
         # Raise errors
         if errors:
@@ -139,18 +195,68 @@ class PreValidators:
         # Obtain the contained patient resource
         contained_patient = [x for x in values["contained"] if x.get("resourceType") == "Patient"][0]
 
-        try:
-            # Try to obtain the contained patient resource id
-            contained_patient_id = contained_patient["id"]
+        # If the reference is not equal to the contained patient id then raise an error
+        if ("#" + contained_patient["id"]) != patient_reference:
+            raise ValueError(
+                f"The reference '{patient_reference}' does not match the id of the contained Patient resource"
+            )
 
-            # If the reference is not equal to the ID then raise an error
-            if ("#" + contained_patient_id) != patient_reference:
+    def pre_validate_practitioner_reference(self, values: dict) -> dict:
+        """
+        Pre-validate that, if there is a contained Practitioner resource, there is exactly one reference to it from
+        the performer, and that the performer does not reference any other internal resources
+        """
+        # Obtain all of the internal references found within performer
+        performer_internal_references = [
+            x.get("actor", {}).get("reference")
+            for x in values.get("performer", [])
+            if x.get("actor", {}).get("reference", "").startswith("#")
+        ]
+
+        # If there is no practitioner then check that there are no internal references within performer
+        if not (practitioner := [x for x in values["contained"] if x.get("resourceType") == "Practitioner"]):
+            if len(performer_internal_references) != 0:
                 raise ValueError(
-                    f"The reference '{patient_reference}' does not exist in the contained Patient resource"
+                    "performer must not contain internal references when there is no contained Practitioner resource"
                 )
-        except KeyError as error:
-            # If the contained Patient resource has no id raise an error
-            raise ValueError("The contained Patient resource must have an 'id' field") from error
+            return None
+
+        practitioner_id = str(practitioner[0]["id"])
+
+        # Ensure that there are no internal references other than to the contained practitioner
+        if sum(1 for x in performer_internal_references if x != "#" + practitioner_id) != 0:
+            raise ValueError(
+                "performer must not contain any internal references other than"
+                + " to the contained Practitioner resource"
+            )
+
+        # Separate out the references to the contained practitioner and ensure that there is exactly one such reference
+        practitioner_references = [x for x in performer_internal_references if x == "#" + practitioner_id]
+
+        if len(practitioner_references) == 0:
+            raise ValueError(
+                f"contained Practitioner resource id '{practitioner_id}' must be referenced from performer"
+            )
+        elif len(practitioner_references) > 1:
+            raise ValueError(
+                f"contained Practitioner resource id '{practitioner_id}' must only be referenced once from performer"
+            )
+
+    def pre_validate_patient_identifier_extension(self, values: dict) -> None:
+        """
+        Pre-validate that if contained[?(@.resourceType=='Patient')].identifier[0] contains
+        an extension field, it raises a validation error.
+        """
+        field_location = "contained[?(@.resourceType=='Patient')].identifier[0].extension"
+
+        try:
+            patient = [x for x in values["contained"] if x.get("resourceType") == "Patient"][0]
+            identifier = patient["identifier"][0]
+
+            if "extension" in identifier:
+                raise ValueError("contained[?(@.resourceType=='Patient')].identifier[0] must not include an extension")
+        except (KeyError, IndexError):
+            pass
 
     def pre_validate_patient_identifier(self, values: dict) -> dict:
         """
@@ -245,21 +351,21 @@ class PreValidators:
         field_location = "contained[?(@.resourceType=='Patient')].address"
         try:
             field_value = [x for x in values["contained"] if x.get("resourceType") == "Patient"][0]["address"]
-            PreValidation.for_list(field_value, field_location, defined_length=1)
+            PreValidation.for_list(field_value, field_location)
         except (KeyError, IndexError):
             pass
 
     def pre_validate_patient_address_postal_code(self, values: dict) -> dict:
         """
         Pre-validate that, if contained[?(@.resourceType=='Patient')].address[0].postalCode (legacy CSV field name:
-        PERSON_POSTCODE) exists, then it is a non-empty string, separated into two parts by a single space
+        PERSON_POSTCODE) exists, then it is a non-empty string
         """
         field_location = "contained[?(@.resourceType=='Patient')].address[0].postalCode"
         try:
             field_value = [x for x in values["contained"] if x.get("resourceType") == "Patient"][0]["address"][0][
                 "postalCode"
             ]
-            PreValidation.for_string(field_value, field_location, is_postal_code=True)
+            PreValidation.for_string(field_value, field_location)
         except (KeyError, IndexError):
             pass
 
@@ -280,108 +386,47 @@ class PreValidators:
         except KeyError:
             pass
 
-    def pre_validate_performer_actor_type(self, values: dict) -> dict:
+    def pre_validate_performer(self, values: dict) -> dict:
         """
-        Pre-validate that, if performer.actor.organisation exists, then there is only one such
-        key with the value of "Organization"
+        Pre-validate that there is exactly one performer instance where actor.type is 'Organization'.
         """
         try:
-            found = []
-            for item in values["performer"]:
-                if item.get("actor").get("type") == "Organization" and item.get("actor").get("type") in found:
-                    raise ValueError("performer.actor[?@.type=='Organization'] must be unique")
+            organization_count = 0
+            for item in values.get("performer", []):
+                actor = item.get("actor", {})
+                if actor.get("type") == "Organization":
+                    organization_count += 1
 
-                found.append(item.get("actor").get("type"))
+            if organization_count != 1:
+                raise ValueError(
+                    "There must be exactly one performer.actor[?@.type=='Organization'] with type 'Organization'"
+                )
 
         except (KeyError, AttributeError):
             pass
-
-    def pre_validate_performer_actor_reference(self, values: dict) -> dict:
-        """
-        Pre-validate that:
-        - if performer.actor.reference exists then it is a single reference
-        - if there is no contained Practitioner resource, then there is no performer.actor.reference
-        - if there is a contained Practitioner resource, then there is a performer.actor.reference
-        - if there is a contained Practitioner resource, then it has an id
-        - If there is a contained Practitioner resource, then the performer.actor.reference is equal
-          to the ID
-        """
-
-        # Obtain the performer.actor.references that are internal references (#)
-        performer_actor_internal_references = []
-        for item in values.get("performer", []):
-            reference = item.get("actor", {}).get("reference")
-            if isinstance(reference, str) and reference.startswith("#"):
-                performer_actor_internal_references.append(reference)
-
-        # Check that we have a maximum of 1 internal reference
-        if len(performer_actor_internal_references) > 1:
-            raise ValueError(
-                "performer.actor.reference must be a single reference to a contained Practitioner resource. "
-                + f"References found: {performer_actor_internal_references}"
-            )
-
-        # Obtain the contained practitioner resource
-        try:
-            contained_practitioner = [x for x in values["contained"] if x.get("resourceType") == "Practitioner"][0]
-
-            try:
-                # Try to obtain the contained practitioner resource id
-                contained_practitioner_id = contained_practitioner["id"]
-
-                # If there is a contained practitioner resource, but no reference raise an error
-                if len(performer_actor_internal_references) == 0:
-                    raise ValueError("contained Practitioner ID must be referenced by performer.actor.reference")
-
-                # If the reference is not equal to the ID then raise an error
-                if ("#" + contained_practitioner_id) != performer_actor_internal_references[0]:
-                    raise ValueError(
-                        f"The reference '{performer_actor_internal_references[0]}' does "
-                        + "not exist in the contained Practitioner resources"
-                    )
-            except KeyError as error:
-                # If the contained practitioner resource has no id raise an error
-                raise ValueError("The contained Practitioner resource must have an 'id' field") from error
-
-        except (IndexError, KeyError) as error:
-            # Entering this exception block implies that there is no contained practitioner resource
-            # therefore if there is a reference then raise an error
-            if len(performer_actor_internal_references) != 0:
-                raise ValueError(
-                    f"The reference(s) {performer_actor_internal_references} do "
-                    + "not exist in the contained Practitioner resources"
-                ) from error
 
     def pre_validate_organization_identifier_value(self, values: dict) -> dict:
         """
         Pre-validate that, if performer[?(@.actor.type=='Organization').identifier.value]
         (legacy CSV field name: SITE_CODE) exists, then it is a non-empty string.
-        Also pre-validate it is in format alpha-numeric-alpha-numeric-alpha (e.g. "B0C4P").
         """
         field_location = "performer[?(@.actor.type=='Organization')].actor.identifier.value"
-        ODS_code_format = re.compile(r"^[A-Z]{1}[0-9]{1}[A-Z]{1}[0-9]{1}[A-Z]{1}$")
         try:
             field_value = [x for x in values["performer"] if x.get("actor").get("type") == "Organization"][0]["actor"][
                 "identifier"
             ]["value"]
             PreValidation.for_string(field_value, field_location)
-
-            # Validates that organization_identifier_value SITE CODE is in alpha-numeric-alpha-numeric-alpha
-            # (e.g. "X0X0X")
-            if not ODS_code_format.match(field_value):
-                raise ValueError(
-                    f"{field_location} must be in expected format" + " alpha-numeric-alpha-numeric-alpha (e.g X0X0X)"
-                )
         except (KeyError, IndexError, AttributeError):
             pass
 
     def pre_validate_identifier(self, values: dict) -> dict:
-        """Pre-validate that, if identifier exists, then it is a list of length 1"""
+        """Pre-validate that identifier exists and is a list of length 1 and are an array of objects"""
         try:
             field_value = values["identifier"]
-            PreValidation.for_list(field_value, "identifier", defined_length=1)
-        except KeyError:
-            pass
+            PreValidation.for_list(field_value, "identifier", defined_length=1, elements_are_dicts=True)
+
+        except KeyError as error:
+            raise MandatoryError("identifier is a mandatory field") from error
 
     def pre_validate_identifier_value(self, values: dict) -> dict:
         """
@@ -480,6 +525,11 @@ class PreValidators:
             PreValidation.for_boolean(primary_source, "primarySource")
         except KeyError:
             pass
+
+    def pre_validate_extension(self, values: dict) -> dict:
+        """Pre-validate that extension exists"""
+        if not "extension" in values:
+            raise MandatoryError("extension is a mandatory field")
 
     def pre_validate_extension_urls(self, values: dict) -> dict:
         """Pre-validate that, if extension exists, then each url is unique"""
@@ -585,7 +635,7 @@ class PreValidators:
         field_location = "protocolApplied[0].doseNumberPositiveInt"
         try:
             field_value = values["protocolApplied"][0]["doseNumberPositiveInt"]
-            PreValidation.for_positive_integer(field_value, field_location, max_value=9)
+            PreValidation.for_positive_integer(field_value, field_location)
         except (KeyError, IndexError):
             pass
 
@@ -603,27 +653,30 @@ class PreValidators:
 
     def pre_validate_target_disease(self, values: dict) -> dict:
         """
-        Pre-validate that, if protocolApplied[0].targetDisease exists, then each of its elements contains a coding field
+        Pre-validate that protocolApplied[0].targetDisease exists, and each of its elements contains a coding field
         """
         try:
             field_value = values["protocolApplied"][0]["targetDisease"]
             for element in field_value:
                 if "coding" not in element:
                     raise ValueError("Every element of protocolApplied[0].targetDisease must have 'coding' property")
-        except (KeyError, IndexError):
-            pass
+        except (KeyError, IndexError) as error:
+            raise ValueError("protocolApplied[0].targetDisease is a mandatory field") from error
 
     def pre_validate_target_disease_codings(self, values: dict) -> dict:
         """
-        Pre-validate that, if they exist, each
-        protocolApplied[0].targetDisease[{index}].valueCodeableConcept.coding.system is unique
+        Pre-validate that, if they exist, each protocolApplied[0].targetDisease[{index}].valueCodeableConcept.coding
+        has exactly one element where the system is the snomed url
         """
         try:
             for i in range(len(values["protocolApplied"][0]["targetDisease"])):
-                field_location = f"protocolApplied[0].targetDisease[{i}].coding[?(@.system=='FIELD_TO_REPLACE')]"
+                field_location = f"protocolApplied[0].targetDisease[{i}].coding"
                 try:
-                    field_value = values["protocolApplied"][0]["targetDisease"][i]["coding"]
-                    PreValidation.for_unique_list(field_value, "system", field_location)
+                    coding = values["protocolApplied"][0]["targetDisease"][i]["coding"]
+                    if sum(1 for x in coding if x.get("system") == Urls.snomed) != 1:
+                        raise ValueError(
+                            f"{field_location} must contain exactly one element with a system of {Urls.snomed}"
+                        )
                 except KeyError:
                     pass
         except KeyError:
@@ -647,41 +700,6 @@ class PreValidators:
         except KeyError:
             pass
 
-    def pre_validate_vaccine_code_coding(self, values: dict) -> dict:
-        """Pre-validate that, if vaccineCode.coding exists, then each code system is unique"""
-        field_location = "vaccineCode.coding[?(@.system=='FIELD_TO_REPLACE')]"
-        try:
-            vaccine_code_coding = values["vaccineCode"]["coding"]
-            PreValidation.for_unique_list(vaccine_code_coding, "system", field_location)
-        except KeyError:
-            pass
-
-    def pre_validate_vaccine_code_coding_code(self, values: dict) -> dict:
-        """
-        Pre-validate that, if vaccineCode.coding[?(@.system=='http://snomed.info/sct')].code (legacy CSV field location:
-        REASON_NOT_GIVEN_CODE) exists, then it is a non-empty string
-        """
-        url = "http://snomed.info/sct"
-        field_location = f"vaccineCode.coding[?(@.system=='{url}')].code"
-        try:
-            field_value = [x for x in values["vaccineCode"]["coding"] if x.get("system") == url][0]["code"]
-            PreValidation.for_string(field_value, field_location)
-        except (KeyError, IndexError):
-            pass
-
-    def pre_validate_vaccine_code_coding_display(self, values: dict) -> dict:
-        """
-        Pre-validate that, if vaccineCode.coding[?(@.system=='http://snomed.info/sct')].display (legacy CSV field name:
-        REASON_NOT_GIVEN_TERM) exists, then it is a non-empty string
-        """
-        url = "http://snomed.info/sct"
-        field_location = "vaccineCode.coding[?(@.system=='http://snomed.info/sct')].display"
-        try:
-            field_value = [x for x in values["vaccineCode"]["coding"] if x.get("system") == url][0]["display"]
-            PreValidation.for_string(field_value, field_location)
-        except (KeyError, IndexError):
-            pass
-
     def pre_validate_manufacturer_display(self, values: dict) -> dict:
         """
         Pre-validate that, if manufacturer.display (legacy CSV field name: VACCINE_MANUFACTURER)
@@ -700,7 +718,7 @@ class PreValidators:
         """
         try:
             field_value = values["lotNumber"]
-            PreValidation.for_string(field_value, "lotNumber", max_length=100)
+            PreValidation.for_string(field_value, "lotNumber")
         except KeyError:
             pass
 
@@ -789,8 +807,7 @@ class PreValidators:
     def pre_validate_dose_quantity_value(self, values: dict) -> dict:
         """
         Pre-validate that, if doseQuantity.value (legacy CSV field name: DOSE_AMOUNT) exists,
-        then it is a number representing an integer or decimal with
-        maximum four decimal places
+        then it is a number representing an integer or decimal
 
         NOTE: This validator will only work if the raw json data is parsed with the
         parse_float argument set to equal Decimal type (Decimal must be imported from decimal).
@@ -799,7 +816,7 @@ class PreValidators:
         """
         try:
             field_value = values["doseQuantity"]["value"]
-            PreValidation.for_integer_or_decimal(field_value, "doseQuantity.value", max_decimal_places=4)
+            PreValidation.for_integer_or_decimal(field_value, "doseQuantity.value")
         except KeyError:
             pass
 
@@ -833,7 +850,7 @@ class PreValidators:
             for index, value in enumerate(values["reasonCode"]):
                 try:
                     field_value = value["coding"]
-                    PreValidation.for_list(field_value, f"reasonCode[{index}].coding", defined_length=1)
+                    PreValidation.for_list(field_value, f"reasonCode[{index}].coding")
                 except KeyError:
                     pass
         except KeyError:
@@ -887,13 +904,5 @@ class PreValidators:
         try:
             field_value = values["location"]["identifier"]["system"]
             PreValidation.for_string(field_value, "location.identifier.system")
-        except KeyError:
-            pass
-
-    def pre_validate_location_type(self, values: dict) -> dict:
-        """Pre-validate that, if location.type exists, then its value is 'Location'"""
-        try:
-            field_value = values["location"]["type"]
-            PreValidation.for_string(field_value, "location.type", predefined_values=["Location"])
         except KeyError:
             pass

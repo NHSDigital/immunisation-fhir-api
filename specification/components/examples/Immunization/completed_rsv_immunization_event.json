@@ -7,9 +7,7 @@
       "name": [
         {
           "family": "Nightingale",
-          "given": [
-            "Florence"
-          ]
+          "given": ["Florence"]
         }
       ]
     },
@@ -19,22 +17,20 @@
       "identifier": [
         {
           "system": "https://fhir.nhs.uk/Id/nhs-number",
-          "value": "9000000009"
+          "value": "9990548609"
         }
       ],
       "name": [
         {
           "family": "Taylor",
-          "given": [
-            "Sarah"
-          ]
+          "given": ["Sarah"]
         }
       ],
       "gender": "unknown",
       "birthDate": "1965-02-28",
       "address": [
         {
-          "postalCode": "ZZ99 3CZ"
+          "postalCode": "EC1A 1BB"
         }
       ]
     }
@@ -79,9 +75,10 @@
     "display": "AstraZeneca Ltd"
   },
   "location": {
+    "type": "Location",
     "identifier": {
-      "system": "urn:iso:std:iso:3166",
-      "value": "GB"
+      "value": "X99999",
+      "system": "https://fhir.nhs.uk/Id/ods-organization-code"
     }
   },
   "lotNumber": "4120Z001",
@@ -120,8 +117,8 @@
       "actor": {
         "type": "Organization",
         "identifier": {
-          "system": "https://fhir.nhs.uk/Id/ods-organization-code",
-          "value": "N2N9I"
+          "system": "https://fhir.hl7.org.uk/Id/urn-school-number",
+          "value": "B0C4P"
         }
       }
     }
@@ -143,8 +140,8 @@
           "coding": [
             {
               "system": "http://snomed.info/sct",
-              "code": "840539006",
-              "display": "Disease caused by severe acute respiratory syndrome coronavirus 2"
+              "code": "55735004",
+              "display": "Respiratory syncytial virus infection (disorder)"
             }
           ]
         }

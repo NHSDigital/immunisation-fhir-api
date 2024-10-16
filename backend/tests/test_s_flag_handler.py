@@ -13,6 +13,10 @@ class TestSFlagHandler(unittest.TestCase):
     def test_s_flag_handler(self):
         """Test that personal info is removed for Restricted patients, and not removed for Unrestricted patients"""
         input_immunization = load_json_data("completed_covid19_immunization_event.json")
+        input_immunization["contained"][1]["address"][0]["city"] = "city"
+        input_immunization["performer"][1]["actor"]["active"] = True
+        input_immunization["performer"][1]["actor"]["identifier"]["text"] = "official"
+        input_immunization["location"]["identifier"]["text"] = "official"
         filtered_output = load_json_data("completed_covid19_immunization_event_filtered_for_s_flag.json")
         restricted_patient = {"meta": {"security": [{"code": "R"}]}}
         unrestricted_patient = {"meta": {"security": [{"code": "U"}]}}

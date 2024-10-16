@@ -1,7 +1,7 @@
 from datetime import datetime
 from utils.base_test import ImmunizationBaseTest
 from utils.immunisation_api import parse_location
-from utils.resource import create_an_imms_obj
+from utils.resource import generate_imms_resource
 from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource
 import time
 import copy
@@ -28,13 +28,9 @@ class TestDeltaImmunization(ImmunizationBaseTest):
         start_timestamp = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
         # Creating two Imms Event, one of them will be updated and second of them will be deleted afterwards
         # It should add 4 rows in Delta Storage table
-        create_update_imms = create_an_imms_obj()
-        create_delete_imms = create_an_imms_obj()
-        del create_update_imms["id"]
-        del create_delete_imms["id"]
-        create_update_response = self.default_imms_api.create_immunization(
-            create_update_imms
-        )
+        create_update_imms = generate_imms_resource()
+        create_delete_imms = generate_imms_resource()
+        create_update_response = self.default_imms_api.create_immunization(create_update_imms)
 
         create_delete_response = self.default_imms_api.create_immunization(create_delete_imms)
         assert create_update_response.status_code == 201

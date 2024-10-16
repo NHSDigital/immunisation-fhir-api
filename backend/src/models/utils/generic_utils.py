@@ -3,6 +3,7 @@
 import datetime
 
 from typing import Literal, Union, Optional
+from models.constants import Constants
 import urllib.parse
 import base64
 
@@ -52,6 +53,18 @@ def is_actor_referencing_contained_resource(element, contained_resource_id):
         return reference == f"#{contained_resource_id}"
     except KeyError:
         return False
+
+
+def check_for_unknown_elements(resource, resource_type) -> Union[None, list]:
+    """
+    Checks each key in the resource to see if it is allowed. If any disallowed keys are found,
+    returns a list containing an error message for each disallowed element
+    """
+    errors = []
+    for key in resource.keys():
+        if key not in Constants.ALLOWED_KEYS[resource_type]:
+            errors.append(f"{key} is not an allowed element of the {resource_type} resource for this service")
+    return errors
 
 
 def nhs_number_mod11_check(nhs_number: str) -> bool:
@@ -106,82 +119,72 @@ def create_diagnostics_error(value):
     exp_error = {"diagnostics": diagnostics}
     return exp_error
 
+
 def form_json(response, _element, identifier, baseurl):
     # Elements to include, based on the '_element' parameter
     if not response:
         json = {
-        "resourceType": "Bundle",
-        "type": "searchset",
-        "link": [
-            {
-                "relation": "self",
-                "url": f"{baseurl}?immunization.identifier={identifier}&_elements={_element}"
-            }
-        ],
-        "entry": [],
-        "total": 0
-    }
+            "resourceType": "Bundle",
+            "type": "searchset",
+            "link": [
+                {"relation": "self", "url": f"{baseurl}?immunization.identifier={identifier}&_elements={_element}"}
+            ],
+            "entry": [],
+            "total": 0,
+        }
         return json
-    
+
     # Basic structure for the JSON output
     json = {
         "resourceType": "Bundle",
         "type": "searchset",
-        "link": [
-            {
-                "relation": "self",
-                "url": f"{baseurl}?immunization.identifier={identifier}&_elements={_element}"
-            }
-        ],
+        "link": [{"relation": "self", "url": f"{baseurl}?immunization.identifier={identifier}&_elements={_element}"}],
         "entry": [
             {
                 "fullUrl": f"https://api.service.nhs.uk/immunisation-fhir-api/Immunization/{response['id']}",
-                "resource": {
-                    "resourceType": "Immunization"
-                }
+                "resource": {"resourceType": "Immunization"},
             }
         ],
-        "total": 1
+        "total": 1,
     }
     __elements = _element.lower()
-    element = __elements.split(',')
+    element = __elements.split(",")
     # Add 'id' if specified
-    if 'id' in element:
-        json['entry'][0]['resource']['id'] = response['id']
-    
+    if "id" in element:
+        json["entry"][0]["resource"]["id"] = response["id"]
+
     # Add 'meta' if specified
-    if 'meta' in element:
-        json['entry'][0]['resource']['id'] = response['id']
-        json['entry'][0]['resource']['meta'] = {
-            "versionId": response["version"]
-        }
+    if "meta" in element:
+        json["entry"][0]["resource"]["id"] = response["id"]
+        json["entry"][0]["resource"]["meta"] = {"versionId": response["version"]}
 
     return json
+
 
 def check_keys_in_sources(event, not_required_keys):
     # Decode and parse the body, assuming it is JSON and base64-encoded
     def decode_and_parse_body(encoded_body):
         if encoded_body:
-                # Decode the base64 string to bytes, then decode to string, and load as JSON
-                return urllib.parse.parse_qs(base64.b64decode(encoded_body).decode('utf-8'))
+            # Decode the base64 string to bytes, then decode to string, and load as JSON
+            return urllib.parse.parse_qs(base64.b64decode(encoded_body).decode("utf-8"))
         else:
             return {}
+
     # Extracting queryStringParameters and body content
-    query_params = event.get('queryStringParameters', {})
-    body_content = decode_and_parse_body(event.get('body'))
+    query_params = event.get("queryStringParameters", {})
+    body_content = decode_and_parse_body(event.get("body"))
 
     # Check for presence of all required keys in queryStringParameters
     if query_params:
-     keys = query_params.keys()
-     list_keys=list(keys)
- 
-     query_check = [k for k in list_keys if k in not_required_keys]
-     return query_check
+        keys = query_params.keys()
+        list_keys = list(keys)
+
+        query_check = [k for k in list_keys if k in not_required_keys]
+        return query_check
 
     # Check for presence of all required keys in body content
     if body_content:
-     keys = body_content.keys()
-     list_keys=list(keys)
-     body_check = [k for k in list_keys if k in not_required_keys]
-     return body_check
-    
+        keys = body_content.keys()
+        list_keys = list(keys)
+        body_check = [k for k in list_keys if k in not_required_keys]
+        return body_check

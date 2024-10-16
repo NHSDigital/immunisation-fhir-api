@@ -21,7 +21,7 @@ class ValidationSets:
     def __init__(self) -> None:
         pass
 
-    vaccine_types_which_use_agnostic_set = [VaccineTypes.covid_19, VaccineTypes.flu, VaccineTypes.hpv, VaccineTypes.mmr]
+    vaccine_types_which_use_agnostic_set = [VaccineTypes.covid_19, VaccineTypes.flu, VaccineTypes.hpv, VaccineTypes.mmr,VaccineTypes.rsv]
 
     vaccine_type_agnostic = {
         "patient_identifier_value": MandationRules.required,

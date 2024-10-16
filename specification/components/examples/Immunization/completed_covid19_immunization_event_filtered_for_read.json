@@ -1,6 +1,5 @@
 {
   "resourceType": "Immunization",
-  "id": "an-id",
   "contained": [
     {
       "resourceType": "Practitioner",
@@ -70,7 +69,7 @@
     "display": "AstraZeneca Ltd"
   },
   "location": {
-    "type":"Location",
+    "type": "Location",
     "identifier": {
       "value": "X99999",
       "system": "https://fhir.nhs.uk/Id/ods-organization-code"

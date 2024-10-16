@@ -9,58 +9,56 @@ info:
 
     ### You can:
      
-    - create and record a patient immunisation
+    - create and record a patient immunisation `yet to be released`
     - search for a patient's immunisation records
     - get the details of an immunisation record
-    - update an immunisation record
-    - identify an immunisation record as entered in error
+    - update an immunisation record `yet to be released`
+    - identify an immunisation record as entered in error `yet to be released`
      
     ### You cannot use this API to:
      
     - retrieve the immunisation record of multiple patients at once
-    - retrieve the immunisation events for vaccinations other than for coronavirus (`COVID19`), influenza (`FLU`), human papillomavirus (`HPV`)
-    - record a patient's demographic details
+    - record or update a patient's demographic details
     > To get demographic details from the [Personal Demographics Service](https://digital.nhs.uk/services/personal-demographics-service), use the Personal Demographics FHIR API.
      
-    You can create, read, update and delete the following data:
+    You can create, read, update and delete:
      
-    - immunisation event details for `COVID19`, `FLU`, `HPV`
+    - Vaccination events for the disease types found in this list {To be confirm}
       
     ### Data availability, timing and quality
  
-    In most cases the record is available within 48 hours of the immunisation event, sometimes sooner.
+    This is a real time service, constrained by the time taken for providers to transfer vaccination events. In most cases the latest a record will be available is within 48 hours of the immunisation event.
  
-    If the NHS number is not present on a record then you will not be able to search for that record and will only be able to retrieve the record by reading it using its unique ID.
+    The API search interaction will only return immunisation records based on a traced NHS number. Other interactions require the immunisation ID assigned by the API to interact with individual records for read, update and delete.
+
+    The vaccination events for all disease types are limited to vaccinations administered on behalf of NHS England.
  
-    The `COVID19` data is limited to vaccinations recorded on behalf of NHS England.
- 
-    The `FLU` data is limited to vaccinations recorded on behalf of NHS England.
- 
-    The `HPV` data is limited to vaccinations recorded on behalf of NHS England.
-     
-    ## Who can use this API
-    This API can only be used where there is a legal basis to do so. Make sure you have a valid use case before you go too far with your development.
+    There is a limited scope of data validation upon receipt of the data. Whilst the data is generally of a good, reliable quality, consumers must be aware data is shared as received and users should consider the risk of potential absences or inaccuracies of the data. 
+
+      
+    ## Who can use this API 
+    This API can only be used where there is a commercial, legal and clinical basis to do so. Make sure you have a valid use case before you go too far with your development.
    
-    You must demonstrate you have a valid use case as part of digital onboarding.
+    You must demonstrate you have a valid use case as part of digital onboarding. As this service is disease type agnostic, there is also a shortened onboarding process for each disease type, to explain the legal, commercial and clinical justifications. 
    
-    You must do this before you can go live (see 'Onboarding' below).
+    You must do this before you can go live refer to the [Onboarding](https://digital.nhs.uk/developer/api-catalogue/immunisation-fhir-api#overview--onboarding).
    
-    ### Who can access immunisation event records
+    ## Who can access immunisation event records
      
     Health and care organisations in England can access immunisation records.
    
     Legitimate direct care examples include NHS organisations delivering healthcare, local authorities delivering care, third sector and private sector health and care organisations, and developers delivering systems to health and care organisations.
    
-    Patients who receive health and social care or make use of NHS services in England.
+    A future capability will be to enable patients who receive health and social care or make use of NHS services in England to access their vaccination records.
    
-    Examples of recognised uses for the immunisation event records include:
+    The immunisation event records captured via the API are used for a number of purposes including (some uses include distribution of the data by means other than this API)
      
     - supporting a patient getting a vaccination
     - supporting patient managing their immunisation health
     - identifying those to be invited to vaccination nationally
     - identifying those to be invited to vaccination locally
     - supporting the booking of a vaccination appointment
-    - supporting the payment reconciliation process on behalf of NHS England/NHS Business Services Authority
+    - supporting the payment reconciliation process on behalf of NHS England / NHS Business Services Authority
     - supporting measuring the overall success of a vaccination campaign to help inform the success of the [NHS Vaccination Strategy](https://www.england.nhs.uk/long-read/nhs-vaccination-strategy/)
   
     ## API status and roadmap
@@ -81,7 +79,7 @@ info:
      
     It conforms to the [FHIR](https://digital.nhs.uk/developer/guides-and-documentation/our-api-technologies#fhir) global standard for health care data exchange, specifically to [FHIR R4 (v4.0.1)](https://hl7.org/fhir/r4/), except that it does not support the [capabilities](http://hl7.org/fhir/R4/http.html#capabilities) interaction.
      
-    It includes some country-specific FHIR extensions, which conform to [FHIR UK Core](https://digital.nhs.uk/services/fhir-uk-core), specifically [fhir.r4.ukcore.stu1 0.5.1](https://simplifier.net/packages/fhir.r4.ukcore.stu1/0.5.1).
+    It includes some country-specific FHIR extensions, which conform to [FHIR UK Core](https://digital.nhs.uk/services/fhir-uk-core), specifically [fhir.r4.ukcore.stu2](https://simplifier.net/packages/fhir.r4.ukcore.stu2).
      
     You do not need to know much about FHIR to use this API - FHIR APIs are just RESTful APIs that follow specific rules.
     In particular:
@@ -98,9 +96,10 @@ info:
      
     ## Security and authorisation
      
-    This API has two access modes:
+    This API has a single access mode:
     - application-restricted access
-    - user-restricted access search only access 
+
+    In the future we intend to offer user-restricted access. 
      
     ### Application-restricted access
      
@@ -109,18 +108,8 @@ info:
     To use this access mode, use the following security pattern:
     - [Application-restricted RESTful API - signed JWT authentication](https://digital.nhs.uk/developer/guides-and-documentation/security-and-authorisation/application-restricted-restful-apis-signed-jwt-authentication)
  
-    Access may be restricted to certain functionallity based on your user need
+    Access may be restricted to certain functionality based on your user need
      
-    ### User-restricted access
-     
-    Use this [user-restricted access mode](https://digital.nhs.uk/developer/guides-and-documentation/security-and-authorisation#user-restricted-apis) if the end user is a patient:
-    * the end user must have their identity verified to 'high' (P9) level
-    * the NHS number in the request must match the NHS number in the NHS login account
-    * the functionallity will be restricted to only allow the end user to search for thier own record
-     
-    To use this access mode, use the following security pattern:
-    * [User-restricted RESTful APIs - NHS login separate authentication and authorisation](https://digital.nhs.uk/developer/guides-and-documentation/security-and-authorisation/user-restricted-restful-apis-nhs-login-separate-authentication-and-authorisation)
-    
     contact:
       
       name: Immunization-fhir-api API Support
@@ -158,7 +147,7 @@ info:
     | ----------------- | --------------------------------------------------------------------- |
     |  Sandbox          | `https://sandbox.api.service.nhs.uk/immunisation-fhir-api`            |
     |  Integration      | `https://int.api.service.nhs.uk/immunisation-fhir-api`                |          
-    |  Production       | `Not yet available`                    |
+    |  Production       | `https://api.service.nhs.uk/immunisation-fhir-api`                    |
 
     ### Sandbox testing
     Our [sandbox environment](https://digital.nhs.uk/developer/guides-and-documentation/testing#sandbox-testing):
@@ -177,7 +166,7 @@ info:
     
     For read-only testing, we will provide an Immunisation records test pack soon.
 
-    To test updating patient details, you must set up your own test data.
+    To test creating, updating and deleting patient vaccination events, you must set up your own test data.
 
     For more details see [integration testing with our RESTful APIs](https://digital.nhs.uk/developer/guides-and-documentation/testing#integration-testing-with-our-restful-apis).
  
@@ -201,25 +190,24 @@ servers:
 paths:
   /Immunization:
     post:
-      summary: Record a vaccination given to a patient
+      summary: Record a vaccination given to a patient - yet to be released
       operationId: createImmunization
       description: |
-        ## Overview
-        Use this endpoint to record the administration of a vaccination.
+         ## Overview
+         Use this interaction to record the administration of a vaccination.  The immunization resource must include a targetDisease(s) matching the 'disease types' enabled in this interaction and represented by the correct SNOMED concept(s) for that 'disease type'. See another page for details and disease types and coding.  
+         You must be authorised for the create interaction and the disease type associated with the vaccination event in order to submit a new record. 
 
-        This endpoint is not available for when you are authenticated using patient access.
+         ## Sandbox testing       
 
-        ## Sandbox testing
-        You can test the following scenarios in our sandbox environment:
-
-        | Scenario                                | Request                                                                                                                                                         | Response                                                                |
-        | ----------------------------------------| ----------------------------------------------------------------------------------------------------------------------------------------------------------------| ------------------------------------------------------------------------|
-        |                                         |                                                                                                                                                                 |                                                                         |
+         | Scenario                                | Request                                                                                                                                                         | Response                                                                |
+         | ----------------------------------------| ----------------------------------------------------------------------------------------------------------------------------------------------------------------| ------------------------------------------------------------------------|
+         |                                         |                                                                                                                                                                 |                                                                         |
 
       parameters:
         - $ref: '#/components/parameters/CorrelationID'
         - $ref: '#/components/parameters/RequestID'
       requestBody:
+        type: object
         $ref: '#/components/requestBodies/Immunization' 
       responses:
         "201":
@@ -230,11 +218,14 @@ paths:
         4XX:
           $ref: '#/components/responses/4XX-imms'
     get:
-      summary: Search for a patient's immunisation records
+      summary: Search (GET) for a patient's immunisation records
       operationId: searchViaGetImmunization
       description: |
         ## Overview
-        Use this endpoint to search for a patient using their NHS number and DiseaseType.
+        Use this interaction to search for a patient's vaccination records using their NHS number and DiseaseType. You can request the patient's vaccination history for one or more specified 'disease types'. You may limit the vaccination records by specifying date criteria, for example if you only need to know about vaccinations administered in the last 12 months. 
+        Vaccination event details may be obfuscated for sensitive information. The response will not include contained resources for patient or practitioner within each immunization resource it returns. A single, separate patient resource will be included in the bundle and referenced by each immunization. 
+        Vaccination events submitted without an NHS Number will not be available for retrieval via this interaction. Also, where a patient has a change of NHS Number some or all records may be unavailable via this interaction for a short period of time whilst records are updated. 
+        You must be authorised for the search interaction and the disease type(s) specified in your search in order to access the records. 
 
         ## Sandbox testing
         You can test the following scenarios in our sandbox environment:
@@ -242,7 +233,9 @@ paths:
         | Scenario                                | Request                                                                                                                                                         | Response                                                                |
         | ----------------------------------------| ----------------------------------------------------------------------------------------------------------------------------------------------------------------| ------------------------------------------------------------------------|
         |                                         |                                                                                                                                                                 |                                                                         |
-
+        |  Immunisation history found             | `patient.identifier`=`https://fhir.nhs.uk/Id/nhs-number\|9000000009`                                                                                            | HTTP Status 200 with immunisation data in response body                 |
+        |  Bad Request                            | Didn't pass Required fields `patient.identifier`  or  `-immunization.target`          | HTTP Status 400 Bad Request               |
+        
       parameters:
         - $ref: '#/components/parameters/CorrelationID'
         - $ref: '#/components/parameters/RequestID'
@@ -251,6 +244,7 @@ paths:
         - $ref: '#/components/parameters/DateFrom'
         - $ref: '#/components/parameters/DateTo'
         - $ref: '#/components/parameters/Include'
+
       responses:
         "200":
           description: Search immunisation operation successful
@@ -258,15 +252,15 @@ paths:
             application/fhir+json:
               schema:
                 $ref: '#/components/schemas/Bundle'
-        4XX:
-          $ref: '#/components/responses/4XX-imms'
+        "400":
+          $ref: '#/components/responses/4XX-imms'             
   /Immunization/_search:
     post:
-      summary: Search for a patient's immunisation records
+      summary: Search (POST) for a patient's immunisation records
       operationId: searchViaPOSTImmunization
       description: |
         ## Overview
-        Use this endpoint to search for a patient using thier NHS number and DiseaseType.
+        You may use this interaction as an alternative to a search with the GET verb. A POST search allows you to supply some or all parameters in the body of the request should you need to do so. It offers the same search functionality, see Search (GET) interaction for details.
         
         ## Sandbox testing
         You can test the following scenarios in our sandbox environment:
@@ -274,7 +268,9 @@ paths:
         | Scenario                                | Request                                                                                                                                                         | Response                                                                |
         | ----------------------------------------| ----------------------------------------------------------------------------------------------------------------------------------------------------------------| ------------------------------------------------------------------------|
         |                                         |                                                                                                                                                                 |                                                                         |
-
+        |  Immunisation history found             | `patient.identifier`=`https://fhir.nhs.uk/Id/nhs-number\|9000000009`                                                                                            | HTTP Status 200 with immunisation data in response body                 |
+        |  Bad Request                            | Didn't pass Required fields `patient.identifier`  or  -immunization.target  or  _include             | HTTP Status 400 Bad Request               |
+        
       parameters:
         - $ref: '#/components/parameters/CorrelationID'
         - $ref: '#/components/parameters/RequestID'
@@ -292,7 +288,7 @@ paths:
             application/fhir+json:
               schema:
                 $ref: '#/components/schemas/Bundle'
-        4XX:
+        "400":
           $ref: '#/components/responses/4XX-imms'
   /Immunization/{id}:
     get:
@@ -300,7 +296,10 @@ paths:
       operationId: readImmunization
       description: |
         ## Overview
-        This endpoint allows you to retrieve the record of a single vaccination by its identifier.
+        This interaction allows you to retrieve the record of a single vaccination by our assigned id. We will return the full immunization resource as submitted, except vaccination event details may be obfuscated for sensitive information. 
+        The response will include an eTag for the version of the record which has been returned. If you intend to update a record, it is recommended that you use this interaction to obtain the latest version (and eTag for the version). 
+        To retrieve a full vaccination history for a patient, see the search interaction. 
+        You must be authorised for the read interaction and the disease type associated with the vaccination event in order to access the record. 
         
         ## Sandbox testing
         You can test the following scenarios in our sandbox environment:
@@ -308,6 +307,8 @@ paths:
         | Scenario                                | Request                                                                                                                                                         | Response                                                                |
         | ----------------------------------------| ----------------------------------------------------------------------------------------------------------------------------------------------------------------| ------------------------------------------------------------------------|
         |                                         |                                                                                                                                                                 |                                                                         |
+        |  Immunisation record found              | `id`=`12a33650-6f94-4e8f-a971-1c5c41da5b22`                                                                                            | HTTP Status 200 with immunisation data in response body                 |
+        |  Bad Request                            | Didn't pass Required fields `id`            | HTTP Status 400 Bad Request               |
 
 
       parameters:
@@ -321,17 +322,30 @@ paths:
             application/fhir+json:
               schema:
                 $ref: '#/components/schemas/Immunization'
-        4XX:
+        "400":
           $ref: '#/components/responses/4XX-imms'
+          example:
+            resourceType: OperationOutcome
+            id: 3d64df5a-b753-49ec-b3df-f45c157941eb
+            issue:
+              - severity: error
+                code: invalid
+                details:
+                  coding:
+                    - system: 'https://fhir.nhs.uk/Codesystem/http-error-codes'
+                      code: INVALID
+                diagnostics: The provided event ID is either missing or not in the expected format.
     put:
-      summary: Update a record of vaccination
+      summary: Update a record of vaccination - `yet to be released`
       operationId: updateImmunization
       description: |
         ## Overview
-        This record allows you to add a new updated record of a vaccination. If no existing record is present then a new record will be recorded.
+        This record allows you to add a new updated record of a vaccination event. Update replaces the full immunization resource, so you must provide all data fields, not just the change (Patch is not currently supported). You may obtain all the current data for the vaccination event using the read interaction, which will also return an eTag for the version. 
+        You may use update to re-instate a deleted record, but our update interaction does not support creating a new vaccination event where one does not currently exist. 
+        You must not change the identifier when updating a vaccination event. The identifier is used as a primary identifier by downstream systems.  
+        You must be authorised for update interaction and the disease type associated with the vaccination event in order to update the record. 
 
-        ## Sandbox testing
-        You can test the following scenarios in our sandbox environment:
+        ## Sandbox testing        
 
         | Scenario                                | Request                                                                                                                                                         | Response                                                                |
         | ----------------------------------------| ----------------------------------------------------------------------------------------------------------------------------------------------------------------| ------------------------------------------------------------------------|
@@ -343,6 +357,7 @@ paths:
         - $ref: '#/components/parameters/RequestID'
         - $ref: '#/components/parameters/Id'
       requestBody:
+        type: object
         $ref: '#/components/requestBodies/Immunization'
       responses:
         "200":
@@ -358,14 +373,15 @@ paths:
         4XX:
           $ref: '#/components/responses/4XX-imms'
     delete:
-      summary: Mark a record of vaccination as being entered in error
+      summary: Mark a record of vaccination as being entered in error - `yet to be released`
       operationId: deleteImmunization
       description: |
         ## Overview
         This endpoint allows you to mark a record that has been entered in error.
+        Deleted records will continue to be stored for a period of time but are not returned in response to read or search requests.
+        A deleted record can be re-instated using the update interaction if it was incorrectly deleted. 
 
         ## Sandbox testing
-        You can test the following scenarios in our sandbox environment:
 
         | Scenario                                | Request                                                                                                                                                         | Response                                                                |
         | ----------------------------------------| ----------------------------------------------------------------------------------------------------------------------------------------------------------------| ------------------------------------------------------------------------|
@@ -394,25 +410,24 @@ components:
         error codes, which could be returned in the event of a fault.
         
         
-        | HTTP status | Error code                 | Description |
+        | HTTP status | Error code                 | Description | Example      |
         
         | ----------- | -------------------------- |
-        --------------------------------------------- |
+        --------------------------------------------- |--------------------------------------------------------------------------------------|
         
         | 400         | INVALID                    | The provided event ID is
-        either missing or not in the expected format. |
+        either missing or not in the expected format. |  {"resourceType": "OperationOutcome", "id": "6f4ca309-19d7-4f61-90b3-acbd1f2eb8f8", "meta": {"profile": ["https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"]}, "issue": [{"severity": "error", "code": "invalid", "details": {"coding": [{"system": "https://fhir.nhs.uk/Codesystem/http-error-codes", "code": "INVALID"}]}, "diagnostics": "the provided event ID is either missing or not in the expected format."}]} |
         
         | 400         | BAD_REQUEST                | Search could not be
-        processed or failed basic FHIR validation rules  |
+        processed or failed basic FHIR validation rules  | {"resourceType": "OperationOutcome", "id": "4ff75db4-6e7d-411d-a490-c55c11f83043", "meta": {"profile": ["https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"]}, "issue": [{"severity": "error", "code": "invalid", "details": {"coding": [{"system": "https://fhir.nhs.uk/Codesystem/http-error-codes", "code": "INVALID"}]}, "diagnostics": "patient.identifier must be in the format of \"https://fhir.nhs.uk/Id/nhs-number|{NHS number}\" e.g. \"https://fhir.nhs.uk/Id/nhs-number|9000000009\""}]}  |
         
         | 401         | UNAUTHORISED               | Authorization is required
-        for the interaction that was attempted  |
-        
-        | 400         | BAD_REQUEST                | The resource could not be
-        parsed or failed basic FHIR validation rules  |
+        for the interaction that was attempted  | {"resourceType":"OperationOutcome","id":"a5abca2a-4eda-41da-b2cc-95d48c6b791d","meta":{"profile":["https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"]},"issue":[{"severity":"error","code":"expired","details":{"coding":[{"system":"https://fhir.nhs.uk/Codesystem/http-error-codes","code":"SEND_UNAUTHORIZED"}]},"diagnostics":"The sender has not provided a token or it has expired or is otherwise invalid."}]} |
+
+        | 403         | UNAUTHORISED               | The sender does not have permissions to access this resource  | {"resourceType":"OperationOutcome","id":"a5abca2a-4eda-41da-b2cc-95d48c6b791d","meta":{"profile":["https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"]},"issue":[{"severity":"error","code":"forbidden","details":{"coding":[{"system":"https://fhir.nhs.uk/Codesystem/http-error-codes","code":"SEND_UNAUTHORIZED"}]},"diagnostics":"The sender does not have permissions to access this resource. Please check your credentials and permissions."}]} |
         
         | 404         | NOT_FOUND                  | The requested resource was
-        not found. |
+        not found. | {"resourceType": "OperationOutcome", "id": "bc2c3c82-4392-4314-9d6b-a7345f82d923", "meta": {"profile": ["https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"]}, "issue": [{"severity": "error", "code": "not-found", "details": {"coding": [{"system": "https://fhir.nhs.uk/Codesystem/http-error-codes", "code": "NOT-FOUND"}]}, "diagnostics": "The requested resource was not found."}]}  |
         
         | 405         | NOT_ALLOWED                | The requested method is not
         allowed  |
@@ -426,7 +441,17 @@ components:
           schema:
             $ref: '#/components/schemas/OperationOutcome'
           example:
-            $ref: 'components/examples/OperationOutcome/400-invalid.json'
+            resourceType: OperationOutcome
+            id: 3d64df5a-b753-49ec-b3df-f45c157941eb
+            issue:
+              - severity: error
+                code: invalid
+                details:
+                  coding:
+                    - system: 'https://fhir.nhs.uk/Codesystem/http-error-codes'
+                      code: INVALID
+                diagnostics: Search parameter patient.identifier/-immunization.target must have one value.
+
   requestBodies:
     Immunization:
       content:
@@ -453,8 +478,7 @@ components:
                 enum:
                   - "COVID19"
                   - "FLU"
-                  - "HPV"
-                  - "MMR"
+                  - "RSV"
               -date.from:
                 type: string
                 format: date
@@ -543,8 +567,7 @@ components:
         enum:
           - "COVID19"
           - "FLU"
-          - "HPV"
-          - "MMR"
+          - "RSV"
     DateFrom:
       in: query
       name: -date.from
@@ -565,7 +588,7 @@ components:
       in: query
       name: _include
       description: "Specifies other resources to be included in the response along with the immunisations.\nMust be `Immunization:patient`, which will include patient demographic details."
-      required: true
+      required: false
       schema:
         type: string
         default: "Immunization:patient"
@@ -748,11 +771,11 @@ components:
       properties:
         text:
           $ref: '#/components/schemas/Narrative'
-          description: A human–readable narrative that contains a summary of the resource and can be used to represent the content of the resource to a human. The narrative need not encode all the structured data, but is required to contain sufficient detail to make it "clinically safe" for a human to just read the narrative. Resource definitions may define what content should be represented in the narrative to ensure clinical safety.
+          description: A human-readable narrative that contains a summary of the resource and can be used to represent the content of the resource to a human. The narrative need not encode all the structured data, but is required to contain sufficient detail to make it "clinically safe" for a human to just read the narrative. Resource definitions may define what content should be represented in the narrative to ensure clinical safety.
         contained:
           type: array
           items:
-            description: These resources do not have an independent existence apart from the resource that contains them – they cannot be identified independently, and nor can they have their own independent transaction scope.
+            description: These resources do not have an independent existence apart from the resource that contains them - they cannot be identified independently, and nor can they have their own independent transaction scope.
             type: object
             discriminator:
               propertyName: resourceType
@@ -947,166 +970,18 @@ components:
       properties:
         text:
           $ref: '#/components/schemas/Narrative'
-          description: A human–readable narrative that contains a summary of the resource and can be used to represent the content of the resource to a human. The narrative need not encode all the structured data, but is required to contain sufficient detail to make it "clinically safe" for a human to just read the narrative. Resource definitions may define what content should be represented in the narrative to ensure clinical safety.
+          description: A human-readable narrative that contains a summary of the resource and can be used to represent the content of the resource to a human. The narrative need not encode all the structured data, but is required to contain sufficient detail to make it "clinically safe" for a human to just read the narrative. Resource definitions may define what content should be represented in the narrative to ensure clinical safety.
         contained:
           type: array
           items:
-            description: These resources do not have an independent existence apart from the resource that contains them – they cannot be identified independently, and nor can they have their own independent transaction scope.
+            description: These resources do not have an independent existence apart from the resource that contains them - they cannot be identified independently, and nor can they have their own independent transaction scope.
             type: object
             discriminator:
               propertyName: resourceType
             properties:
               resourceType:
                 type: string
-                enum:
-                  - Resource
-                  - DomainResource
-                  - Account
-                  - ActivityDefinition
-                  - AdverseEvent
-                  - AllergyIntolerance
-                  - Appointment
-                  - AppointmentResponse
-                  - AuditEvent
-                  - Basic
-                  - Binary
-                  - BiologicallyDerivedProduct
-                  - BodyStructure
-                  - Bundle
-                  - CapabilityStatement
-                  - CarePlan
-                  - CareTeam
-                  - CatalogEntry
-                  - ChargeItem
-                  - ChargeItemDefinition
-                  - Claim
-                  - ClaimResponse
-                  - ClinicalImpression
-                  - CodeSystem
-                  - Communication
-                  - CommunicationRequest
-                  - CompartmentDefinition
-                  - Composition
-                  - ConceptMap
-                  - Condition
-                  - Consent
-                  - Contract
-                  - Coverage
-                  - CoverageEligibilityRequest
-                  - CoverageEligibilityResponse
-                  - DetectedIssue
-                  - Device
-                  - DeviceDefinition
-                  - DeviceMetric
-                  - DeviceRequest
-                  - DeviceUseStatement
-                  - DiagnosticReport
-                  - DocumentManifest
-                  - DocumentReference
-                  - EffectEvidenceSynthesis
-                  - Encounter
-                  - Endpoint
-                  - EnrollmentRequest
-                  - EnrollmentResponse
-                  - EpisodeOfCare
-                  - EventDefinition
-                  - Evidence
-                  - EvidenceVariable
-                  - ExampleScenario
-                  - ExplanationOfBenefit
-                  - FamilyMemberHistory
-                  - Flag
-                  - Goal
-                  - GraphDefinition
-                  - Group
-                  - GuidanceResponse
-                  - HealthcareService
-                  - ImagingStudy
-                  - Immunization
-                  - ImmunizationEvaluation
-                  - ImmunizationRecommendation
-                  - ImplementationGuide
-                  - InsurancePlan
-                  - Invoice
-                  - Library
-                  - Linkage
-                  - List
-                  - Location
-                  - Measure
-                  - MeasureReport
-                  - Media
-                  - Medication
-                  - MedicationAdministration
-                  - MedicationDispense
-                  - MedicationKnowledge
-                  - MedicationRequest
-                  - MedicationStatement
-                  - MedicinalProduct
-                  - MedicinalProductAuthorization
-                  - MedicinalProductContraindication
-                  - MedicinalProductIndication
-                  - MedicinalProductIngredient
-                  - MedicinalProductInteraction
-                  - MedicinalProductManufactured
-                  - MedicinalProductPackaged
-                  - MedicinalProductPharmaceutical
-                  - MedicinalProductUndesirableEffect
-                  - MessageDefinition
-                  - MessageHeader
-                  - MolecularSequence
-                  - NamingSystem
-                  - NutritionOrder
-                  - Observation
-                  - ObservationDefinition
-                  - OperationDefinition
-                  - OperationOutcome
-                  - Organization
-                  - OrganizationAffiliation
-                  - Parameters
-                  - Patient
-                  - PaymentNotice
-                  - PaymentReconciliation
-                  - Person
-                  - PlanDefinition
-                  - Practitioner
-                  - PractitionerRole
-                  - Procedure
-                  - Provenance
-                  - Questionnaire
-                  - QuestionnaireResponse
-                  - RelatedPerson
-                  - RequestGroup
-                  - ResearchDefinition
-                  - ResearchElementDefinition
-                  - ResearchStudy
-                  - ResearchSubject
-                  - RiskAssessment
-                  - RiskEvidenceSynthesis
-                  - Schedule
-                  - SearchParameter
-                  - ServiceRequest
-                  - Slot
-                  - Specimen
-                  - SpecimenDefinition
-                  - StructureDefinition
-                  - StructureMap
-                  - Subscription
-                  - Substance
-                  - SubstanceNucleicAcid
-                  - SubstancePolymer
-                  - SubstanceProtein
-                  - SubstanceReferenceInformation
-                  - SubstanceSourceMaterial
-                  - SubstanceSpecification
-                  - SupplyDelivery
-                  - SupplyRequest
-                  - Task
-                  - TerminologyCapabilities
-                  - TestReport
-                  - TestScript
-                  - ValueSet
-                  - VerificationResult
-                  - VisionPrescription
+                example: Immunization
               id:
                 type: string
                 pattern: '[A-Za-z0-9\-\.]{1,64}'
@@ -1169,7 +1044,7 @@ components:
         recorded:
           type: string
           pattern: ([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)(-(0[1-9]|1[0-2])(-(0[1-9]|[1-2][0-9]|3[0-1])(T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00)))?)?)?
-          description: The date the occurrence of the immunization was first captured in the record – potentially significantly after the occurrence of the event.
+          description: The date the occurrence of the immunization was first captured in the record - potentially significantly after the occurrence of the event.
         primarySource:
           type: boolean
           description: An indication that the content of the record is based on information from the person who administered the vaccine. This reflects the context under which the data was originally recorded.
@@ -1252,519 +1127,110 @@ components:
             description: The protocol (set of recommendations) being followed by the provider who administered the dose.
       example:
         resourceType: Immunization
-        meta:
-          versionId: u0ay9MtPHR
-          lastUpdated: "2021-04-12T14:34:33.963-05:00"
-          source: CLFSX3i8HY
-          profile:
-            - GFWUG9Qpch
-          security:
-            - system: 317NiztyIT
-              version: wj9O8nwqMI
-              code: t6idU_zUVc
-              display: 6zFJ_2Rc_R
-              userSelected: true
-          tag:
-            - system: 3r_su9719i
-              version: oNAj5mzmAC
-              code: 0Y57yuDXNK
-              display: u0W6SuGU6c
-              userSelected: true
-            - code: ibm/complete-mock
-        implicitRules: dbsw6tiViM
-        language: en-US
-        text:
-          status: empty
-          div: <div xmlns="http://www.w3.org/1999/xhtml"></div>
-        identifier:
-          - use: old
-            type:
+        id: 12a33650-6f94-4e8f-a971-1c5c41da5b22
+        contained:
+          - resourceType: Practitioner
+            id: Pract1
+            name:
+              - family: Owl
+                given:
+                  - Barney
+          - resourceType: Patient
+            id: Pat1
+            identifier:
+              - system: 'https://fhir.nhs.uk/Id/nhs-number'
+                value: '9449310475'
+            name:
+              - family: Owler
+                given:
+                  - Ozzie
+            gender: unknown
+            birthDate: '1965-02-28'
+            address:
+              - postalCode: ZZ99 3CZ
+        extension:
+          - url: >-
+              https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure
+            valueCodeableConcept:
               coding:
-                - system: 1a5naYo7U0
-                  version: D6d0kKrEjB
-                  code: 5a2AbENu_m
-                  display: RnhR1nxSq0
-                  userSelected: true
-              text: kqSm3gxp3b
-            system: ifENLtxBfD
-            value: PWuzrmC7d7
-            period:
-              start: "2021-04-12T14:34:33.95-05:00"
-              end: "2021-04-12T14:34:33.95-05:00"
-        status: not-done
-        statusReason:
-          coding:
-            - system: 8a4xYwpTRk
-              version: q1d2y2qY00
-              code: 8MBTeQlSCz
-              display: hi3wKxV8iO
-              userSelected: true
-          text: AzQtDkMeFN
+                - system: 'http://snomed.info/sct'
+                  code: '1303503001'
+                  display: >-
+                    Administration of RSV (respiratory syncytial virus) vaccine
+        status: completed
         vaccineCode:
           coding:
-            - system: knJ85sYef6
-              version: KvwbbjFRNs
-              code: _6VNaXs4jf
-              display: P05CrwAELV
-              userSelected: true
-          text: 5HPN2ZYkYW
+            - system: 'http://snomed.info/sct'
+              code: '42605811000001109'
+              display: >-
+                Abrysvo vaccine powder and solvent for solution for injection 0.5ml vials (Pfizer Ltd)
         patient:
-          reference: Patient/Nl5vm2KDlP
-          type: Patient
-          identifier:
-            use: official
-            type:
-              coding:
-                - system: hw8Tug4c4D
-                  version: JUAklhdI3N
-                  code: h0DrL_3FT_
-                  display: 6hTfb3FTUC
-                  userSelected: true
-              text: 4F_vhmOCLJ
-            system: Nxuvp6fjAK
-            value: prBWQi0ti6
-            period:
-              start: "2021-04-12T14:34:33.949-05:00"
-              end: "2021-04-12T14:34:33.949-05:00"
-          display: VCNIr1Sk7A
-        encounter:
-          reference: Encounter/jYxKniGja5
-          type: Encounter
-          identifier:
-            use: secondary
-            type:
-              coding:
-                - system: 7b3EdLSo9L
-                  version: nf401ccc4C
-                  code: c1o28OFItE
-                  display: 8B7Jc0dyH6
-                  userSelected: true
-              text: ZQ8V1GYSRG
-            system: lvpyJdxkz8
-            value: 87cYXoZXAq
-            period:
-              start: "2021-04-12T14:34:33.96-05:00"
-              end: "2021-04-12T14:34:33.96-05:00"
-          display: Erx8JLsioH
-        occurrenceDateTime: "2021-04-12T14:34:33.951-05:00"
-        recorded: "2021-04-12T14:34:33.949-05:00"
+          reference: '#Pat1'
+        occurrenceDateTime: '2021-02-07T13:28:17.271000+00:00'
+        recorded: '2021-02-07T13:28:17.271000+00:00'
         primarySource: true
-        reportOrigin:
-          coding:
-            - system: Ca9Fwc1E4W
-              version: 5tpEZP6Dsb
-              code: XpzUFHRXRR
-              display: BxBG0gKLGj
-              userSelected: true
-          text: RSMm5R2MFo
         location:
-          reference: Location/1t1bmvRQ32
-          type: Location
           identifier:
-            use: official
-            type:
-              coding:
-                - system: br0dMeknuh
-                  version: PeqhW6yBiU
-                  code: OD4ITg5QEL
-                  display: 0QpFiL9CHq
-                  userSelected: true
-              text: E7q9b7ZmfP
-            system: i9HsuZ3syP
-            value: 3xv_hGQvJx
-            period:
-              start: "2021-04-12T14:34:33.962-05:00"
-              end: "2021-04-12T14:34:33.962-05:00"
-          display: xqTXlnAhSL
+            system: 'urn:iso:std:iso:3166'
+            value: GB
         manufacturer:
-          reference: Organization/Ni0dKHSbtc
-          type: Organization
-          identifier:
-            use: old
-            type:
-              coding:
-                - system: 2lVl2tcWm6
-                  version: ZwGc6rZD8D
-                  code: NJG__gbMbx
-                  display: 6vDO66HjpR
-                  userSelected: true
-              text: a_cAlGXMbi
-            system: Ls8_raTSGz
-            value: J9Z0rPUM14
-            period:
-              start: "2021-04-12T14:34:33.95-05:00"
-              end: "2021-04-12T14:34:33.95-05:00"
-          display: jYiq0DHT1r
-        lotNumber: Jk5ctHnhCr
-        expirationDate: "2021-04-12"
+          display: AstraZeneca Ltd
+        lotNumber: 4120Z001
+        expirationDate: '2021-07-02'
         site:
           coding:
-            - system: 2BP0usJxJj
-              version: ccG3fr2tll
-              code: thvuLMapXX
-              display: H6whlUeQc6
-              userSelected: true
-          text: LzsY3sGuP5
+            - system: 'http://snomed.info/sct'
+              code: '368208006'
+              display: Left upper arm structure (body structure)
         route:
           coding:
-            - system: PW5yKVBkCK
-              version: hCKNa9J8DJ
-              code: MzbRjcN5Eh
-              display: M4Lx5cAf_T
-              userSelected: true
-          text: G5rLK4s_dX
+            - system: 'http://snomed.info/sct'
+              code: '78421000'
+              display: Intramuscular route (qualifier value)
         doseQuantity:
-          value: 336702635843
-          unit: qALuGZ0RJC
-          system: xE50VeI0Ha
-          code: W5y1rkfMEl
+          value: 0.5
+          unit: milliliter
+          system: 'http://unitsofmeasure.org'
+          code: ml
         performer:
-          - function:
-              coding:
-                - system: clnrt0T6Sf
-                  version: vVg4srrozV
-                  code: E0_aePxXOQ
-                  display: Fqb5MhykcP
-                  userSelected: true
-              text: meRI71B9C0
-            actor:
-              reference: Practitioner/5dOF7rayKB
-              type: Practitioner
-              identifier:
-                use: usual
-                type:
-                  coding:
-                    - system: e9yYW_MaJ9
-                      version: 30TuT4xdlJ
-                      code: 5fBMd6M5_H
-                      display: Jewxf79VdV
-                      userSelected: true
-                  text: Fsig3rEpIi
-                system: 4tRWIi9prr
-                value: TZIXkgO8nT
-                period:
-                  start: "2021-04-12T14:34:33.952-05:00"
-                  end: "2021-04-12T14:34:33.952-05:00"
-              display: iAiS54Yn3N
-        note:
-          - authorReference:
-              reference: Practitioner/iVkxLIH6zG
-              type: Practitioner
-              identifier:
-                use: old
-                type:
-                  coding:
-                    - system: KZ8GG6wNgl
-                      version: ADuWpMJIfB
-                      code: ouXLMC9q9E
-                      display: IGvF3AoeN3
-                      userSelected: true
-                  text: zdADT6sNq9
-                system: _2bi3eFRgo
-                value: qXfujUCR2b
-                period:
-                  start: "2021-04-12T14:34:33.953-05:00"
-                  end: "2021-04-12T14:34:33.953-05:00"
-              display: 0trHTAKJsw
-            time: "2021-04-12T14:34:33.954-05:00"
-            text: RzebB0aQ0x
-        reasonCode:
-          - coding:
-              - system: Xubrd0tUTj
-                version: TY4KAzfcrt
-                code: 8oDr4d12Gh
-                display: FzAbwDqr0n
-                userSelected: true
-            text: B6n32Bjkdt
-        reasonReference:
-          - reference: Condition/nJCw4mKy1c
-            type: Condition
-            identifier:
-              use: temp
-              type:
-                coding:
-                  - system: 5825QvUPyZ
-                    version: GTSwBf04tm
-                    code: IToyO3259O
-                    display: 9rqU_QnUEP
-                    userSelected: true
-                text: Cz_fPEw6Tv
-              system: X3j47eP8fl
-              value: XUweyPJ26j
-              period:
-                start: "2021-04-12T14:34:33.948-05:00"
-                end: "2021-04-12T14:34:33.948-05:00"
-            display: aLbbGeSkvv
-        isSubpotent: true
-        subpotentReason:
-          - coding:
-              - system: oquEFZa7qq
-                version: _iQLr9kzrj
-                code: ORKyQSyAR3
-                display: G8SxMfd2VZ
-                userSelected: true
-            text: Yu6tG5z2C7
-        education:
-          - documentType: DCAZsP1Gqp
-            reference: E4MYvXNm5v
-            publicationDate: "2021-04-12T14:34:33.957-05:00"
-            presentationDate: "2021-04-12T14:34:33.957-05:00"
-        programEligibility:
-          - coding:
-              - system: 473mmmtkjk
-                version: 1DxWXvWgC8
-                code: A8m8eTxFF3
-                display: oo4KNB4Fhs
-                userSelected: true
-            text: uLqCbWJwdw
-        fundingSource:
-          coding:
-            - system: shJq7TJ2II
-              version: Tr8OgB8uI4
-              code: KtudcJbouB
-              display: 1kCkczZTTs
-              userSelected: true
-          text: 3ST61qFy2j
-        reaction:
-          - date: "2021-04-12T14:34:33.955-05:00"
-            detail:
-              reference: Observation/GS7tSnD23F
-              type: Observation
-              identifier:
-                use: old
-                type:
-                  coding:
-                    - system: 9xgjgK3iGZ
-                      version: X9Ufv9UyVc
-                      code: cYpcDQUYbB
-                      display: UQeOxm4n6X
-                      userSelected: true
-                  text: boASecvLos
-                system: uPv2ny8_Gt
-                value: VDx3gY06O8
-                period:
-                  start: "2021-04-12T14:34:33.954-05:00"
-                  end: "2021-04-12T14:34:33.955-05:00"
-              display: N9GgAS2uJY
-            reported: true
-        protocolApplied:
-          - series: Zutli7bAs7
-            authority:
-              reference: Organization/mQwjNdBwYd
+          - actor:
+              reference: '#Pract1'
+          - actor:
               type: Organization
               identifier:
-                use: official
-                type:
-                  coding:
-                    - system: xNa_ID74Z9
-                      version: O6AkhB3Dwr
-                      code: f00RxOVuv1
-                      display: E2cSWgtK7x
-                      userSelected: true
-                  text: nahthUzuRh
-                system: TtvVaQBmTY
-                value: B8HNh3PuH6
-                period:
-                  start: "2021-04-12T14:34:33.959-05:00"
-                  end: "2021-04-12T14:34:33.959-05:00"
-              display: Ibcay96YJ1
-            targetDisease:
+                system: 'https://fhir.nhs.uk/Id/ods-organization-code'
+                value: N2N9I
+        reasonCode:
+          - coding:
+              - system: 'http://snomed.info/sct'
+                code: '443684005'
+        protocolApplied:
+          - targetDisease:
               - coding:
-                  - system: 7xpNO7Oj0g
-                    version: j8Pz8izQtp
-                    code: 36NJxLt34k
-                    display: h7ctYUZd8v
-                    userSelected: true
-                text: 9SqdvSQgXl
-            doseNumberPositiveInt: 934588861
-            seriesDosesPositiveInt: 457672628
+                  - system: 'http://snomed.info/sct'
+                    code: '55735004'
+                    display: >-
+                      Respiratory syncytial virus infection (disorder)
+            doseNumberPositiveInt: 1
     Bundle:
+      description: >-
+        FHIR Bundle containing the query results - a list of matching
+        immunisations and associated patients.
       type: object
       required:
         - resourceType
         - type
       properties:
         resourceType:
+          description: FHIR resource type. Always `Bundle`.
           type: string
-          enum:
-            - Resource
-            - DomainResource
-            - Account
-            - ActivityDefinition
-            - AdverseEvent
-            - AllergyIntolerance
-            - Appointment
-            - AppointmentResponse
-            - AuditEvent
-            - Basic
-            - Binary
-            - BiologicallyDerivedProduct
-            - BodyStructure
-            - Bundle
-            - CapabilityStatement
-            - CarePlan
-            - CareTeam
-            - CatalogEntry
-            - ChargeItem
-            - ChargeItemDefinition
-            - Claim
-            - ClaimResponse
-            - ClinicalImpression
-            - CodeSystem
-            - Communication
-            - CommunicationRequest
-            - CompartmentDefinition
-            - Composition
-            - ConceptMap
-            - Condition
-            - Consent
-            - Contract
-            - Coverage
-            - CoverageEligibilityRequest
-            - CoverageEligibilityResponse
-            - DetectedIssue
-            - Device
-            - DeviceDefinition
-            - DeviceMetric
-            - DeviceRequest
-            - DeviceUseStatement
-            - DiagnosticReport
-            - DocumentManifest
-            - DocumentReference
-            - EffectEvidenceSynthesis
-            - Encounter
-            - Endpoint
-            - EnrollmentRequest
-            - EnrollmentResponse
-            - EpisodeOfCare
-            - EventDefinition
-            - Evidence
-            - EvidenceVariable
-            - ExampleScenario
-            - ExplanationOfBenefit
-            - FamilyMemberHistory
-            - Flag
-            - Goal
-            - GraphDefinition
-            - Group
-            - GuidanceResponse
-            - HealthcareService
-            - ImagingStudy
-            - Immunization
-            - ImmunizationEvaluation
-            - ImmunizationRecommendation
-            - ImplementationGuide
-            - InsurancePlan
-            - Invoice
-            - Library
-            - Linkage
-            - List
-            - Location
-            - Measure
-            - MeasureReport
-            - Media
-            - Medication
-            - MedicationAdministration
-            - MedicationDispense
-            - MedicationKnowledge
-            - MedicationRequest
-            - MedicationStatement
-            - MedicinalProduct
-            - MedicinalProductAuthorization
-            - MedicinalProductContraindication
-            - MedicinalProductIndication
-            - MedicinalProductIngredient
-            - MedicinalProductInteraction
-            - MedicinalProductManufactured
-            - MedicinalProductPackaged
-            - MedicinalProductPharmaceutical
-            - MedicinalProductUndesirableEffect
-            - MessageDefinition
-            - MessageHeader
-            - MolecularSequence
-            - NamingSystem
-            - NutritionOrder
-            - Observation
-            - ObservationDefinition
-            - OperationDefinition
-            - OperationOutcome
-            - Organization
-            - OrganizationAffiliation
-            - Parameters
-            - Patient
-            - PaymentNotice
-            - PaymentReconciliation
-            - Person
-            - PlanDefinition
-            - Practitioner
-            - PractitionerRole
-            - Procedure
-            - Provenance
-            - Questionnaire
-            - QuestionnaireResponse
-            - RelatedPerson
-            - RequestGroup
-            - ResearchDefinition
-            - ResearchElementDefinition
-            - ResearchStudy
-            - ResearchSubject
-            - RiskAssessment
-            - RiskEvidenceSynthesis
-            - Schedule
-            - SearchParameter
-            - ServiceRequest
-            - Slot
-            - Specimen
-            - SpecimenDefinition
-            - StructureDefinition
-            - StructureMap
-            - Subscription
-            - Substance
-            - SubstanceNucleicAcid
-            - SubstancePolymer
-            - SubstanceProtein
-            - SubstanceReferenceInformation
-            - SubstanceSourceMaterial
-            - SubstanceSpecification
-            - SupplyDelivery
-            - SupplyRequest
-            - Task
-            - TerminologyCapabilities
-            - TestReport
-            - TestScript
-            - ValueSet
-            - VerificationResult
-            - VisionPrescription
-        id:
-          type: string
-          pattern: '[A-Za-z0-9\-\.]{1,64}'
-          description: The logical id of the resource, as used in the URL for the resource. Once assigned, this value never changes.
-        meta:
-          $ref: '#/components/schemas/Meta'
-          description: The metadata about the resource. This is content that is maintained by the infrastructure. Changes to the content might not always be associated with version changes to the resource.
-        implicitRules:
-          type: string
-          pattern: \S*
-          description: A reference to a set of rules that were followed when the resource was constructed, and which must be understood when processing the content. Often, this is a reference to an implementation guide that defines the special rules along with other profiles etc.
-        language:
-          type: string
-          pattern: '[^\s]+(\s[^\s]+)*'
-          description: The base language in which the resource is written.
-        identifier:
-          $ref: '#/components/schemas/Identifier'
-          description: A persistent identifier for the bundle that won't change as a bundle is copied from server to server.
+          example: Bundle
         type:
+          description: >-
+                      Indicates how the bundle is intended to be used. Always
+                      `searchset`.
           type: string
-          pattern: '[^\s]+(\s[^\s]+)*'
-          description: Indicates the purpose of this bundle – how it is intended to be used.
-        timestamp:
-          type: string
-          pattern: ([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))
-          description: The date/time that the bundle was assembled – i.e. when the resources were placed in the bundle.
-        total:
-          type: integer
-          format: int32
-          description: If a set of search matches, this is the total number of entries of type 'match' across all pages in the search.  It does not include search.mode = 'include' or 'outcome' entries and it does not provide a count of the number of entries in the Bundle.
+          example: searchset
         link:
           type: array
           items:
@@ -1774,288 +1240,136 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Bundle_Entry'
-            description: An entry in a bundle resource – will either contain a resource or information about a resource (transactions and history only).
-        signature:
-          $ref: '#/components/schemas/Signature'
-          description: Digital Signature – base64 encoded. XML–DSig or a JWT.
+            description: An entry in a bundle resource - will either contain a resource or information about a resource (transactions and history only).
+        total:
+          type: integer
+          format: int32
+          description: If a set of search matches, this is the total number of entries of type 'match' across all pages in the search.  It does not include search.mode = 'include' or 'outcome' entries and it does not provide a count of the number of entries in the Bundle.
       example:
-        resourceType: Bundle
-        meta:
-          versionId: VD9dxMjhBQ
-          lastUpdated: "2021-04-12T14:34:37.652-05:00"
-          source: JUp4RZhVMR
-          profile:
-            - Fec0pB4qv3
-          security:
-            - system: dO8eKozGdg
-              version: g2Z1yrpGqL
-              code: AaVP6dRWHJ
-              display: MOdc7BqdCe
-              userSelected: true
-          tag:
-            - system: 9XfImFywbS
-              version: cpOXk_fnfK
-              code: VwBBYWM5YE
-              display: GGrdyf7kSX
-              userSelected: true
-            - code: ibm/complete-mock
-        implicitRules: f9UW4JtFH9
-        language: en-US
-        identifier:
-          use: official
-          type:
-            coding:
-              - system: 25m4g6AC04
-                version: EmPuWoNHGO
-                code: FuuaG1RtIb
-                display: z4dys_Vt0Y
-                userSelected: true
-            text: OX8cTeTDLr
-          system: a5bA7vXyCl
-          value: RUJ35DJz4T
-          period:
-            start: "2021-04-12T14:34:37.641-05:00"
-            end: "2021-04-12T14:34:37.641-05:00"
-        type: transaction-response
-        timestamp: "2021-04-12T14:34:37.645-05:00"
-        total: 1574108328
-        link:
-          - relation: 9gsxK0gdZd
-            url: x5puA71jvk
-        entry:
-          - link:
-              - relation: wJ0wLub8sj
-                url: HFm_mzHn2z
-            fullUrl: sYNHpCvLu6
-            search:
-              mode: outcome
-              score: 8960673372
-            request:
-              method: PATCH
-              url: 8jiWbkD8S7
-              ifNoneMatch: AdZT_le7SH
-              ifModifiedSince: "2021-04-12T14:34:37.647-05:00"
-              ifMatch: PQD4pHngAm
-              ifNoneExist: saa1HX7us2
-            response:
-              status: lT5ZNvdH4r
-              location: o7f0kua08h
-              etag: 4kMlqpFwlq
-              lastModified: "2021-04-12T14:34:37.646-05:00"
-        signature:
-          type:
-            - system: SCaxhhhYHf
-              version: bIsWXgnGWT
-              code: uIuNEKeok2
-              display: 09v4Og5VO1
-              userSelected: true
-          when: "2021-04-12T14:34:37.644-05:00"
-          who:
-            reference: Practitioner/3BxOedQTGQ
-            type: Practitioner
-            identifier:
-              use: official
-              type:
-                coding:
-                  - system: EBWsJFiSee
-                    version: tM3MDDp49w
-                    code: YBhQUC48Io
-                    display: WUQKZlqzSt
-                    userSelected: true
-                text: ChRS8TCGUi
-              system: D4ZGHPnrPM
-              value: DQ1bc4APiL
-              period:
-                start: "2021-04-12T14:34:37.643-05:00"
-                end: "2021-04-12T14:34:37.643-05:00"
-            display: Rw9DdhNaHA
-          onBehalfOf:
-            reference: Practitioner/PDaucuqEoc
-            type: Practitioner
-            identifier:
-              use: secondary
-              type:
-                coding:
-                  - system: CZTG15XRKE
-                    version: l29nYs4v3D
-                    code: hRcCFBqxMk
-                    display: pWv3KBIMIs
-                    userSelected: true
-                text: epk3OT1lD8
-              system: gHBW2H7m4P
-              value: LD4_EQrH3N
-              period:
-                start: "2021-04-12T14:34:37.642-05:00"
-                end: "2021-04-12T14:34:37.642-05:00"
-            display: HOdn3UAvlg
-          targetFormat: NCDfzz08UJ
-          sigFormat: OR9Y23khox
-          data: aHg6D2k=
+        9000000009:
+          resourceType: Bundle
+          type: searchset
+          link:
+            - relation: self
+              url: >-
+                https://sandbox.api.service.nhs.uk/immunisation-fhir-api/Immunization?immunization.target=RSV&_include=Immunization%3Apatient&patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7C9000000009
+          entry:
+            - fullUrl: >-
+                https://sandbox.api.service.nhs.uk/immunisation-fhir-api/Immunization/191f288a-17f3-4cd5-a33c-a52aade6473c
+              resource:
+                resourceType: Immunization
+                id: 191f288a-17f3-4cd5-a33c-a52aade6473c
+                extension:
+                  - url: >-
+                      https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure
+                    valueCodeableConcept:
+                      coding:
+                        - system: 'http://snomed.info/sct'
+                          code: '1303503001'
+                          display: >-
+                            Administration of RSV (respiratory syncytial virus) vaccine
+                identifier:
+                  - use: official
+                    system: 'https://supplierABC/identifiers/vacc'
+                    value: e2154d29-1ead-4830-a513-0d59705078fa
+                status: completed
+                vaccineCode:
+                  coding:
+                    - system: 'http://snomed.info/sct'
+                      code: '42605811000001109'
+                      display: >-
+                        Abrysvo vaccine powder and solvent for solution for injection 0.5ml vials (Pfizer Ltd)
+                patient:
+                  reference: 'urn:uuid:a7a5bc28-5831-4158-8a73-0d3e6e43c1ac'
+                  type: Patient
+                  identifier:
+                    system: 'https://fhir.nhs.uk/Id/nhs-number'
+                    value: '9449306206'
+                occurrenceDateTime: '2021-02-07T13:28:17.271000+00:00'
+                recorded: '2021-02-07T13:28:17.271000+00:00'
+                primarySource: true
+                location:
+                  identifier:
+                    system: 'urn:iso:std:iso:3166'
+                    value: GB
+                manufacturer:
+                  display: AstraZeneca Ltd
+                lotNumber: 4120Z001
+                expirationDate: '2021-07-02'
+                site:
+                  coding:
+                    - system: 'http://snomed.info/sct'
+                      code: '368208006'
+                      display: Left upper arm structure (body structure)
+                route:
+                  coding:
+                    - system: 'http://snomed.info/sct'
+                      code: '78421000'
+                      display: Intramuscular route (qualifier value)
+                doseQuantity:
+                  value: 0.5
+                  unit: milliliter
+                  system: 'http://unitsofmeasure.org'
+                  code: ml
+                performer:
+                  - actor:
+                      type: Organization
+                      identifier:
+                        system: 'https://fhir.nhs.uk/Id/ods-organization-code'
+                        value: B0C4P
+                      display: UNIVERSITY HOSPITAL OF WALES
+                reasonCode:
+                  - coding:
+                      - system: 'http://snomed.info/sct'
+                        code: '443684005'
+                        display: Disease outbreak (event)
+                protocolApplied:
+                  - targetDisease:
+                      - coding:
+                          - system: 'http://snomed.info/sct'
+                            code: '55735004'
+                            display: >-
+                              Respiratory syncytial virus infection (disorder)
+                    doseNumberPositiveInt: 1
+              search:
+                mode: match
+            - fullUrl: 'urn:uuid:a7a5bc28-5831-4158-8a73-0d3e6e43c1ac'
+              resource:
+                resourceType: Patient
+                id: '9449306206'
+                identifier:
+                  - system: 'https://fhir.nhs.uk/Id/nhs-number'
+                    value: '9449306206'
+                birthDate: '2014-03-25'
+              search:
+                mode: include
+          total: 1
+        9000000033:
+          resourceType: Bundle
+          type: searchset
+          link:
+            - relation: self
+              url: >-
+                https://sandbox.api.service.nhs.uk/immunisation-fhir-api/Immunization?-date.from=2020-03-01&-date.to=2024-04-02&immunization.target=RSV&_include=Immunization%3Apatient&patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7C9000000033
+          entry: []
+          total: 0
     OperationOutcome:
       type: object
       properties:
         text:
           $ref: '#/components/schemas/Narrative'
-          description: A human–readable narrative that contains a summary of the resource and can be used to represent the content of the resource to a human. The narrative need not encode all the structured data, but is required to contain sufficient detail to make it "clinically safe" for a human to just read the narrative. Resource definitions may define what content should be represented in the narrative to ensure clinical safety.
+          description: A human-readable narrative that contains a summary of the resource and can be used to represent the content of the resource to a human. The narrative need not encode all the structured data, but is required to contain sufficient detail to make it "clinically safe" for a human to just read the narrative. Resource definitions may define what content should be represented in the narrative to ensure clinical safety.
         contained:
           type: array
           items:
-            description: These resources do not have an independent existence apart from the resource that contains them – they cannot be identified independently, and nor can they have their own independent transaction scope.
+            description: These resources do not have an independent existence apart from the resource that contains them - they cannot be identified independently, and nor can they have their own independent transaction scope.
             type: object
             discriminator:
               propertyName: resourceType
             properties:
               resourceType:
                 type: string
-                enum:
-                  - Resource
-                  - DomainResource
-                  - Account
-                  - ActivityDefinition
-                  - AdverseEvent
-                  - AllergyIntolerance
-                  - Appointment
-                  - AppointmentResponse
-                  - AuditEvent
-                  - Basic
-                  - Binary
-                  - BiologicallyDerivedProduct
-                  - BodyStructure
-                  - Bundle
-                  - CapabilityStatement
-                  - CarePlan
-                  - CareTeam
-                  - CatalogEntry
-                  - ChargeItem
-                  - ChargeItemDefinition
-                  - Claim
-                  - ClaimResponse
-                  - ClinicalImpression
-                  - CodeSystem
-                  - Communication
-                  - CommunicationRequest
-                  - CompartmentDefinition
-                  - Composition
-                  - ConceptMap
-                  - Condition
-                  - Consent
-                  - Contract
-                  - Coverage
-                  - CoverageEligibilityRequest
-                  - CoverageEligibilityResponse
-                  - DetectedIssue
-                  - Device
-                  - DeviceDefinition
-                  - DeviceMetric
-                  - DeviceRequest
-                  - DeviceUseStatement
-                  - DiagnosticReport
-                  - DocumentManifest
-                  - DocumentReference
-                  - EffectEvidenceSynthesis
-                  - Encounter
-                  - Endpoint
-                  - EnrollmentRequest
-                  - EnrollmentResponse
-                  - EpisodeOfCare
-                  - EventDefinition
-                  - Evidence
-                  - EvidenceVariable
-                  - ExampleScenario
-                  - ExplanationOfBenefit
-                  - FamilyMemberHistory
-                  - Flag
-                  - Goal
-                  - GraphDefinition
-                  - Group
-                  - GuidanceResponse
-                  - HealthcareService
-                  - ImagingStudy
-                  - Immunization
-                  - ImmunizationEvaluation
-                  - ImmunizationRecommendation
-                  - ImplementationGuide
-                  - InsurancePlan
-                  - Invoice
-                  - Library
-                  - Linkage
-                  - List
-                  - Location
-                  - Measure
-                  - MeasureReport
-                  - Media
-                  - Medication
-                  - MedicationAdministration
-                  - MedicationDispense
-                  - MedicationKnowledge
-                  - MedicationRequest
-                  - MedicationStatement
-                  - MedicinalProduct
-                  - MedicinalProductAuthorization
-                  - MedicinalProductContraindication
-                  - MedicinalProductIndication
-                  - MedicinalProductIngredient
-                  - MedicinalProductInteraction
-                  - MedicinalProductManufactured
-                  - MedicinalProductPackaged
-                  - MedicinalProductPharmaceutical
-                  - MedicinalProductUndesirableEffect
-                  - MessageDefinition
-                  - MessageHeader
-                  - MolecularSequence
-                  - NamingSystem
-                  - NutritionOrder
-                  - Observation
-                  - ObservationDefinition
-                  - OperationDefinition
-                  - OperationOutcome
-                  - Organization
-                  - OrganizationAffiliation
-                  - Parameters
-                  - Patient
-                  - PaymentNotice
-                  - PaymentReconciliation
-                  - Person
-                  - PlanDefinition
-                  - Practitioner
-                  - PractitionerRole
-                  - Procedure
-                  - Provenance
-                  - Questionnaire
-                  - QuestionnaireResponse
-                  - RelatedPerson
-                  - RequestGroup
-                  - ResearchDefinition
-                  - ResearchElementDefinition
-                  - ResearchStudy
-                  - ResearchSubject
-                  - RiskAssessment
-                  - RiskEvidenceSynthesis
-                  - Schedule
-                  - SearchParameter
-                  - ServiceRequest
-                  - Slot
-                  - Specimen
-                  - SpecimenDefinition
-                  - StructureDefinition
-                  - StructureMap
-                  - Subscription
-                  - Substance
-                  - SubstanceNucleicAcid
-                  - SubstancePolymer
-                  - SubstanceProtein
-                  - SubstanceReferenceInformation
-                  - SubstanceSourceMaterial
-                  - SubstanceSpecification
-                  - SupplyDelivery
-                  - SupplyRequest
-                  - Task
-                  - TerminologyCapabilities
-                  - TestReport
-                  - TestScript
-                  - ValueSet
-                  - VerificationResult
-                  - VisionPrescription
+                example : OperationOutcome
               id:
                 type: string
                 pattern: '[A-Za-z0-9\-\.]{1,64}'
@@ -2063,14 +1377,29 @@ components:
               meta:
                 $ref: '#/components/schemas/Meta'
                 description: The metadata about the resource. This is content that is maintained by the infrastructure. Changes to the content might not always be associated with version changes to the resource.
-              implicitRules:
-                type: string
-                pattern: \S*
-                description: A reference to a set of rules that were followed when the resource was constructed, and which must be understood when processing the content. Often, this is a reference to an implementation guide that defines the special rules along with other profiles etc.
-              language:
-                type: string
-                pattern: '[^\s]+(\s[^\s]+)*'
-                description: The base language in which the resource is written.
+              issue:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    severity:
+                      type: string
+                    code:
+                      type: string
+                    details:
+                      type: object
+                      properties:
+                        coding:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              system:
+                                type: string
+                              code:
+                                type: string
+                    diagnostics:
+                      type: string
             required:
               - resourceType
         extension:
@@ -2149,160 +1478,12 @@ components:
             fullUrl:
               type: string
               pattern: \S*
-              description: "The Absolute URL for the resource.  The fullUrl SHALL NOT disagree with the id in the resource – i.e. if the fullUrl is not a urn:uuid, the URL shall be version–independent URL consistent with the Resource.id. The fullUrl is a version independent reference to the resource. The fullUrl element SHALL have a value except that: \n* fullUrl can be empty on a POST (although it does not need to when specifying a temporary id for reference in the bundle)\n* Results from operations might involve resources that are not identified."
+              description: "The Absolute URL for the resource.  The fullUrl SHALL NOT disagree with the id in the resource - i.e. if the fullUrl is not a urn:uuid, the URL shall be version-independent URL consistent with the Resource.id. The fullUrl is a version independent reference to the resource. The fullUrl element SHALL have a value except that: \n* fullUrl can be empty on a POST (although it does not need to when specifying a temporary id for reference in the bundle)\n* Results from operations might involve resources that are not identified."
             resource:
               description: The Resource for the entry. The purpose/meaning of the resource is determined by the Bundle.type.
             resourceType:
               type: string
-              enum:
-                - Resource
-                - DomainResource
-                - Account
-                - ActivityDefinition
-                - AdverseEvent
-                - AllergyIntolerance
-                - Appointment
-                - AppointmentResponse
-                - AuditEvent
-                - Basic
-                - Binary
-                - BiologicallyDerivedProduct
-                - BodyStructure
-                - Bundle
-                - CapabilityStatement
-                - CarePlan
-                - CareTeam
-                - CatalogEntry
-                - ChargeItem
-                - ChargeItemDefinition
-                - Claim
-                - ClaimResponse
-                - ClinicalImpression
-                - CodeSystem
-                - Communication
-                - CommunicationRequest
-                - CompartmentDefinition
-                - Composition
-                - ConceptMap
-                - Condition
-                - Consent
-                - Contract
-                - Coverage
-                - CoverageEligibilityRequest
-                - CoverageEligibilityResponse
-                - DetectedIssue
-                - Device
-                - DeviceDefinition
-                - DeviceMetric
-                - DeviceRequest
-                - DeviceUseStatement
-                - DiagnosticReport
-                - DocumentManifest
-                - DocumentReference
-                - EffectEvidenceSynthesis
-                - Encounter
-                - Endpoint
-                - EnrollmentRequest
-                - EnrollmentResponse
-                - EpisodeOfCare
-                - EventDefinition
-                - Evidence
-                - EvidenceVariable
-                - ExampleScenario
-                - ExplanationOfBenefit
-                - FamilyMemberHistory
-                - Flag
-                - Goal
-                - GraphDefinition
-                - Group
-                - GuidanceResponse
-                - HealthcareService
-                - ImagingStudy
-                - Immunization
-                - ImmunizationEvaluation
-                - ImmunizationRecommendation
-                - ImplementationGuide
-                - InsurancePlan
-                - Invoice
-                - Library
-                - Linkage
-                - List
-                - Location
-                - Measure
-                - MeasureReport
-                - Media
-                - Medication
-                - MedicationAdministration
-                - MedicationDispense
-                - MedicationKnowledge
-                - MedicationRequest
-                - MedicationStatement
-                - MedicinalProduct
-                - MedicinalProductAuthorization
-                - MedicinalProductContraindication
-                - MedicinalProductIndication
-                - MedicinalProductIngredient
-                - MedicinalProductInteraction
-                - MedicinalProductManufactured
-                - MedicinalProductPackaged
-                - MedicinalProductPharmaceutical
-                - MedicinalProductUndesirableEffect
-                - MessageDefinition
-                - MessageHeader
-                - MolecularSequence
-                - NamingSystem
-                - NutritionOrder
-                - Observation
-                - ObservationDefinition
-                - OperationDefinition
-                - OperationOutcome
-                - Organization
-                - OrganizationAffiliation
-                - Parameters
-                - Patient
-                - PaymentNotice
-                - PaymentReconciliation
-                - Person
-                - PlanDefinition
-                - Practitioner
-                - PractitionerRole
-                - Procedure
-                - Provenance
-                - Questionnaire
-                - QuestionnaireResponse
-                - RelatedPerson
-                - RequestGroup
-                - ResearchDefinition
-                - ResearchElementDefinition
-                - ResearchStudy
-                - ResearchSubject
-                - RiskAssessment
-                - RiskEvidenceSynthesis
-                - Schedule
-                - SearchParameter
-                - ServiceRequest
-                - Slot
-                - Specimen
-                - SpecimenDefinition
-                - StructureDefinition
-                - StructureMap
-                - Subscription
-                - Substance
-                - SubstanceNucleicAcid
-                - SubstancePolymer
-                - SubstanceProtein
-                - SubstanceReferenceInformation
-                - SubstanceSourceMaterial
-                - SubstanceSpecification
-                - SupplyDelivery
-                - SupplyRequest
-                - Task
-                - TerminologyCapabilities
-                - TestReport
-                - TestScript
-                - ValueSet
-                - VerificationResult
-                - VisionPrescription
+              example: Immunization
             id:
               type: string
               pattern: '[A-Za-z0-9\-\.]{1,64}'
@@ -2381,7 +1562,7 @@ components:
             ifNoneExist:
               type: string
               pattern: '[ \r\n\t\S]+'
-              description: Instruct the server not to perform the create if a specified resource already exists. For further information, see the API documentation for ["Conditional Create"](http.html#ccreate). This is just the query portion of the URL – what follows the "?" (not including the "?").
+              description: Instruct the server not to perform the create if a specified resource already exists. For further information, see the API documentation for ["Conditional Create"](http.html#ccreate). This is just the query portion of the URL - what follows the "?" (not including the "?").
           required:
             - method
             - url
@@ -2393,19 +1574,18 @@ components:
             mode:
               type: string
               pattern: '[^\s]+(\s[^\s]+)*'
-              description: Why this entry is in the result set – whether it's included as a match or because of an _include requirement, or to convey information or warning information about the search process.
+              description: Why this entry is in the result set - whether it's included as a match or because of an _include requirement, or to convey information or warning information about the search process.
             score:
               type: number
               description: When searching, the server's search ranking score for the entry.
     Bundle_Link:
       allOf:
-        - $ref: '#/components/schemas/BackboneElement'
         - type: object
           properties:
             relation:
               type: string
               pattern: '[ \r\n\t\S]+'
-              description: A name which details the functional use for this link – see [http://www.iana.org/assignments/link–relations/link–relations.xhtml#link–relations–1](http://www.iana.org/assignments/link–relations/link–relations.xhtml#link–relations–1).
+              description: A name which details the functional use for this link - see [http://www.iana.org/assignments/link-relations/link-relations.xhtml#link-relations-1](http://www.iana.org/assignments/link-relations/link-relations.xhtml#link-relations-1).
             url:
               type: string
               pattern: \S*
@@ -2421,7 +1601,7 @@ components:
             series:
               type: string
               pattern: '[ \r\n\t\S]+'
-              description: One possible path to achieve presumed immunity against a disease – within the context of an authority.
+              description: One possible path to achieve presumed immunity against a disease - within the context of an authority.
             authority:
               $ref: '#/components/schemas/Reference'
               description: Indicates the authority who published the protocol (e.g. ACIP) that is being followed.
@@ -2460,7 +1640,7 @@ components:
               description: Details of the reaction.
             reported:
               type: boolean
-              description: Self–reported indicator.
+              description: Self-reported indicator.
     Immunization_Education:
       allOf:
         - $ref: '#/components/schemas/BackboneElement'
@@ -2577,7 +1757,7 @@ components:
             type:
               type: string
               pattern: '[^\s]+(\s[^\s]+)*'
-              description: Distinguishes between physical addresses (those you can visit) and mailing addresses (e.g. PO Boxes and care–of addresses). Most addresses are both.
+              description: Distinguishes between physical addresses (those you can visit) and mailing addresses (e.g. PO Boxes and care-of addresses). Most addresses are both.
             text:
               type: string
               pattern: '[ \r\n\t\S]+'
@@ -2599,7 +1779,7 @@ components:
             state:
               type: string
               pattern: '[ \r\n\t\S]+'
-              description: Sub–unit of a country with limited sovereignty in a federally organized country. A code may be used if codes are in common use (e.g. US 2 letter state codes).
+              description: Sub-unit of a country with limited sovereignty in a federally organized country. A code may be used if codes are in common use (e.g. US 2 letter state codes).
             postalCode:
               type: string
               pattern: '[ \r\n\t\S]+'
@@ -2607,7 +1787,7 @@ components:
             country:
               type: string
               pattern: '[ \r\n\t\S]+'
-              description: Country – a nation as commonly understood or generally accepted.
+              description: Country - a nation as commonly understood or generally accepted.
             period:
               $ref: '#/components/schemas/Period'
               description: Time period when address was/is in use.
@@ -2654,7 +1834,7 @@ components:
             data:
               type: string
               pattern: (\s*([0-9a-zA-Z\+/=]){4}\s*)+
-              description: The actual data of the attachment – a sequence of bytes, base64 encoded.
+              description: The actual data of the attachment - a sequence of bytes, base64 encoded.
             url:
               type: string
               pattern: \S*
@@ -2666,7 +1846,7 @@ components:
             hash:
               type: string
               pattern: (\s*([0-9a-zA-Z\+/=]){4}\s*)+
-              description: The calculated hash of the data using SHA–1. Represented using base64.
+              description: The calculated hash of the data using SHA-1. Represented using base64.
             title:
               type: string
               pattern: '[ \r\n\t\S]+'
@@ -2715,18 +1895,18 @@ components:
         version:
           type: string
           pattern: '[ \r\n\t\S]+'
-          description: The version of the code system which was used when choosing this code. Note that a well–maintained code system does not need the version reported, because the meaning of codes is consistent across versions. However this cannot consistently be assured, and when the meaning is not guaranteed to be consistent, the version SHOULD be exchanged.
+          description: The version of the code system which was used when choosing this code. Note that a well-maintained code system does not need the version reported, because the meaning of codes is consistent across versions. However this cannot consistently be assured, and when the meaning is not guaranteed to be consistent, the version SHOULD be exchanged.
         code:
           type: string
           pattern: '[^\s]+(\s[^\s]+)*'
-          description: A symbol in syntax defined by the system. The symbol may be a predefined code or an expression in a syntax defined by the coding system (e.g. post–coordination).
+          description: A symbol in syntax defined by the system. The symbol may be a predefined code or an expression in a syntax defined by the coding system (e.g. post-coordination).
         display:
           type: string
           pattern: '[ \r\n\t\S]+'
           description: A representation of the meaning of the code in the system, following the rules of the system.
         userSelected:
           type: boolean
-          description: Indicates that this coding was chosen by a user directly – e.g. off a pick list of available items (codes or displays).
+          description: Indicates that this coding was chosen by a user directly - e.g. off a pick list of available items (codes or displays).
     ContactPoint:
       allOf:
         - $ref: '#/components/schemas/Element'
@@ -2735,7 +1915,7 @@ components:
             system:
               type: string
               pattern: '[^\s]+(\s[^\s]+)*'
-              description: Telecommunications form for contact point – what communications system is required to make use of the contact.
+              description: Telecommunications form for contact point - what communications system is required to make use of the contact.
             value:
               type: string
               pattern: '[ \r\n\t\S]+'
@@ -2826,7 +2006,7 @@ components:
         system:
           type: string
           pattern: \S*
-          description: Establishes the namespace for the value – that is, a URL that describes a set values that are unique.
+          description: Establishes the namespace for the value - that is, a URL that describes a set values that are unique.
         value:
           type: string
           pattern: '[ \r\n\t\S]+'
@@ -2882,11 +2062,11 @@ components:
             comparator:
               type: string
               pattern: '[^\s]+(\s[^\s]+)*'
-              description: How the value should be understood and represented – whether the actual value is greater or less than the stated value due to measurement issues; e.g. if the comparator is "<" , then the real value is < stated value.
+              description: How the value should be understood and represented - whether the actual value is greater or less than the stated value due to measurement issues; e.g. if the comparator is "<" , then the real value is < stated value.
             unit:
               type: string
               pattern: '[ \r\n\t\S]+'
-              description: A human–readable form of the unit.
+              description: A human-readable form of the unit.
             system:
               type: string
               pattern: \S*
@@ -2970,7 +2150,7 @@ components:
             dimensions:
               type: integer
               format: int32
-              description: The number of sample points at each time point. If this value is greater than one, then the dimensions will be interlaced – all the sample points for a point in time will be recorded at once.
+              description: The number of sample points at each time point. If this value is greater than one, then the dimensions will be interlaced - all the sample points for a point in time will be recorded at once.
             data:
               type: string
               pattern: '[ \r\n\t\S]+'
@@ -3001,10 +2181,10 @@ components:
               description: When the digital signature was signed.
             who:
               $ref: '#/components/schemas/Reference'
-              description: A reference to an application–usable description of the identity that signed  (e.g. the signature used their private key).
+              description: A reference to an application-usable description of the identity that signed  (e.g. the signature used their private key).
             onBehalfOf:
               $ref: '#/components/schemas/Reference'
-              description: A reference to an application–usable description of the identity that is represented by the signature.
+              description: A reference to an application-usable description of the identity that is represented by the signature.
             targetFormat:
               type: string
               pattern: '[^\s]+(\s[^\s]+)*'
@@ -3059,13 +2239,13 @@ components:
             countMax:
               type: integer
               format: int32
-              description: If present, indicates that the count is a range – so to perform the action between [count] and [countMax] times.
+              description: If present, indicates that the count is a range - so to perform the action between [count] and [countMax] times.
             duration:
               type: number
               description: How long this thing happens for when it happens. If durationMax is present, this element indicates the lower bound of the allowed range of the duration.
             durationMax:
               type: number
-              description: If present, indicates that the duration is a range – so to perform the action between [duration] and [durationMax] time length.
+              description: If present, indicates that the duration is a range - so to perform the action between [duration] and [durationMax] time length.
             durationUnit:
               type: string
               pattern: '[^\s]+(\s[^\s]+)*'
@@ -3077,13 +2257,13 @@ components:
             frequencyMax:
               type: integer
               format: int32
-              description: If present, indicates that the frequency is a range – so to repeat between [frequency] and [frequencyMax] times within the period or period range.
+              description: If present, indicates that the frequency is a range - so to repeat between [frequency] and [frequencyMax] times within the period or period range.
             period:
               type: number
               description: Indicates the duration of time over which repetitions are to occur; e.g. to express "3 times per day", 3 would be the frequency and "1 day" would be the period. If periodMax is present, this element indicates the lower bound of the allowed range of the period length.
             periodMax:
               type: number
-              description: If present, indicates that the period is a range from [period] to [periodMax], allowing expressing concepts such as "do this once every 3–5 days.
+              description: If present, indicates that the period is a range from [period] to [periodMax], allowing expressing concepts such as "do this once every 3-5 days.
             periodUnit:
               type: string
               pattern: '[^\s]+(\s[^\s]+)*'
@@ -3192,7 +2372,7 @@ components:
             lastUpdated:
               type: string
               pattern: ([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))
-              description: When the resource last changed – e.g. when the version changed.
+              description: When the resource last changed - e.g. when the version changed.
             source:
               type: string
               pattern: \S*
@@ -3202,7 +2382,7 @@ components:
               items:
                 type: string
                 pattern: \S*
-                description: A list of profiles (references to [StructureDefinition](structuredefinition.html#) resources) that this resource claims to conform to. The URL is a reference to [StructureDefinition.url](structuredefinition–definitions.html#StructureDefinition.url).
+                description: A list of profiles (references to [StructureDefinition](structuredefinition.html#) resources) that this resource claims to conform to. The URL is a reference to [StructureDefinition.url](structuredefinition-definitions.html#StructureDefinition.url).
             security:
               type: array
               items:
@@ -3221,7 +2401,7 @@ components:
             status:
               type: string
               pattern: '[^\s]+(\s[^\s]+)*'
-              description: The status of the narrative – whether it's entirely generated (from just the defined data or the extensions too), or whether a human authored it and it may contain additional data.
+              description: The status of the narrative - whether it's entirely generated (from just the defined data or the extensions too), or whether a human authored it and it may contain additional data.
             div:
               type: string
               description: The actual narrative content, a stripped down version of XHTML.
@@ -3243,155 +2423,155 @@ components:
         url:
           type: string
           pattern: \S*
-          description: Source of the definition for the extension code – a logical name or a URL.
+          description: Source of the definition for the extension code - a logical name or a URL.
         valueBase64Binary:
           type: string
           pattern: (\s*([0-9a-zA-Z\+/=]){4}\s*)+
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueBoolean:
           type: boolean
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueCanonical:
           type: string
           pattern: \S*
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueCode:
           type: string
           pattern: '[^\s]+(\s[^\s]+)*'
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueDate:
           type: string
           pattern: ([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)(-(0[1-9]|1[0-2])(-(0[1-9]|[1-2][0-9]|3[0-1]))?)?
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueDateTime:
           type: string
           pattern: ([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)(-(0[1-9]|1[0-2])(-(0[1-9]|[1-2][0-9]|3[0-1])(T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00)))?)?)?
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueDecimal:
           type: number
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueId:
           type: string
           pattern: '[A-Za-z0-9\-\.]{1,64}'
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueInstant:
           type: string
           pattern: ([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueInteger:
           type: integer
           format: int32
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueMarkdown:
           type: string
           pattern: '[ \r\n\t\S]+'
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueOid:
           type: string
           pattern: urn:oid:[0-2](\.(0|[1-9][0-9]*))+
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valuePositiveInt:
           type: integer
           format: int32
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueString:
           type: string
           pattern: '[ \r\n\t\S]+'
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueTime:
           type: string
           pattern: ([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueUnsignedInt:
           type: integer
           format: int32
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueUri:
           type: string
           pattern: \S*
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueUrl:
           type: string
           pattern: \S*
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueUuid:
           type: string
           pattern: urn:uuid:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueAddress:
           $ref: '#/components/schemas/Address'
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueAge:
           $ref: '#/components/schemas/Age'
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueAnnotation:
           $ref: '#/components/schemas/Annotation'
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueAttachment:
           $ref: '#/components/schemas/Attachment'
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueCodeableConcept:
           $ref: '#/components/schemas/CodeableConcept'
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueCoding:
           $ref: '#/components/schemas/Coding'
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueContactPoint:
           $ref: '#/components/schemas/ContactPoint'
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueCount:
           $ref: '#/components/schemas/Count'
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueDistance:
           $ref: '#/components/schemas/Distance'
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueDuration:
           $ref: '#/components/schemas/Duration'
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueHumanName:
           $ref: '#/components/schemas/HumanName'
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueIdentifier:
           $ref: '#/components/schemas/Identifier'
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueMoney:
           $ref: '#/components/schemas/Money'
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valuePeriod:
           $ref: '#/components/schemas/Period'
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueQuantity:
           $ref: '#/components/schemas/Quantity'
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueRange:
           $ref: '#/components/schemas/Range'
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueRatio:
           $ref: '#/components/schemas/Ratio'
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueReference:
           $ref: '#/components/schemas/Reference'
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueSampledData:
           $ref: '#/components/schemas/SampledData'
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueSignature:
           $ref: '#/components/schemas/Signature'
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueTiming:
           $ref: '#/components/schemas/Timing'
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueContactDetail:
           $ref: '#/components/schemas/ContactDetail'
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueRelatedArtifact:
           $ref: '#/components/schemas/RelatedArtifact'
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueUsageContext:
           $ref: '#/components/schemas/UsageContext'
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueMeta:
           $ref: '#/components/schemas/Meta'
-          description: Value of extension – must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
+          description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
       required:
         - url

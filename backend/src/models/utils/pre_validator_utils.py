@@ -15,7 +15,6 @@ class PreValidation:
         defined_length: int = None,
         max_length: int = None,
         predefined_values: list = None,
-        is_postal_code: bool = False,
         spaces_allowed: bool = True,
     ):
         """
@@ -40,18 +39,6 @@ class PreValidation:
         if predefined_values:
             if field_value not in predefined_values:
                 raise ValueError(f"{field_location} must be one of the following: " + str(", ".join(predefined_values)))
-
-        if is_postal_code:
-            # Validate that field_value contains a single space which divides the two parts
-            # of the postal code
-            if field_value.count(" ") != 1 or field_value.startswith(" ") or field_value.endswith(" "):
-                raise ValueError(
-                    f"{field_location} must contain a single space, " + "which divides the two parts of the postal code"
-                )
-
-            # Validate that max length is 8 (excluding the space)
-            if len(field_value.replace(" ", "")) > 8:
-                raise ValueError(f"{field_location} must be 8 or fewer characters (excluding spaces)")
 
         if not spaces_allowed:
             if " " in field_value:
@@ -107,38 +94,58 @@ class PreValidation:
             datetime.strptime(field_value, "%Y-%m-%d").date()
         except ValueError as value_error:
             raise ValueError(
-                f"{field_location} must be a valid date string in the format " + '"YYYY-MM-DD"'
+                f'{field_location} must be a valid date string in the format "YYYY-MM-DD"'
             ) from value_error
 
     @staticmethod
     def for_date_time(field_value: str, field_location: str):
         """
-        Apply pre-validation to a datetime field to ensure that it is a string (JSON dates must be
-        written as strings) containing a valid datetime in the format "YYYY-MM-DDThh:mm:ss+zz:zz" or
-        "YYYY-MM-DDThh:mm:ss-zz:zz" (i.e. date and time, including timezone offset in hours and
-        minutes)
+        Apply pre-validation to a datetime field to ensure that it is a string (JSON dates must be written as strings)
+        containing a valid datetime. Note that partial dates are valid for FHIR, but are not allowed for this API.
+        Valid formats are any of the following:
+        * 'YYYY-MM-DD' - Full date only
+        * 'YYYY-MM-DDT00:00:00+00:00' - Full date, time without milliseconds, timezone
+        * 'YYYY-MM-DDT00:00:00.000+00:00' - Full date, time with milliseconds (any level of precision), timezone
         """
 
         if not isinstance(field_value, str):
             raise TypeError(f"{field_location} must be a string")
 
-        date_time_pattern_with_timezone = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.[0-9]+)?(\+|-)\d{2}:\d{2}")
+        error_message = (
+            f"{field_location} must be a valid datetime in the format 'YYYY-MM-DDThh:mm:ss+zz:zz' (where time element "
+            + "is optional, timezone must be given if and only if time is given, and milliseconds can be optionally "
+            + "included after the seconds). Note that partial dates are not allowed for "
+            + f"{field_location} for this service."
+        )
 
-        if not date_time_pattern_with_timezone.fullmatch(field_value):
-            raise ValueError(
-                f'{field_location} must be a string in the format "YYYY-MM-DDThh:mm:ss+zz:zz" or '
-                + '"YYYY-MM-DDThh:mm:ss-zz:zz" (i.e date and time, including timezone offset in '
-                + "hours and minutes). Milliseconds are optional after the seconds "
-                + "(e.g. 2021-01-01T00:00:00.000+00:00)."
-            )
-
-        try:
-            datetime.strptime(field_value, "%Y-%m-%dT%H:%M:%S%z")
-        except ValueError:
+        # Full date only
+        if "T" not in field_value:
             try:
-                datetime.strptime(field_value, "%Y-%m-%dT%H:%M:%S.%f%z")
-            except ValueError as value_error:
-                raise ValueError(f"{field_location} must be a valid datetime") from value_error
+                datetime.strptime(field_value, "%Y-%m-%d")
+            except ValueError as error:
+                raise ValueError(error_message) from error
+
+        else:
+
+            # Using %z in datetime.strptime function is more permissive than FHIR,
+            # so check that timezone meets FHIR format requirements first
+            timezone_pattern = re.compile(r"(\+|-)\d{2}:\d{2}")
+            if not timezone_pattern.fullmatch(field_value[-6:]):
+                raise ValueError(error_message)
+
+            # Full date, time without milliseconds, timezone
+            if "." not in field_value:
+                try:
+                    datetime.strptime(field_value, "%Y-%m-%dT%H:%M:%S%z")
+                except ValueError as error:
+                    raise ValueError(error_message) from error
+
+            # Full date, time with milliseconds, timezone
+            else:
+                try:
+                    datetime.strptime(field_value, "%Y-%m-%dT%H:%M:%S.%f%z")
+                except ValueError as error:
+                    raise ValueError(error_message) from error
 
     @staticmethod
     def for_boolean(field_value: str, field_location: str):
@@ -163,11 +170,7 @@ class PreValidation:
                 raise ValueError(f"{field_location} must be an integer in the range 1 to {max_value}")
 
     @staticmethod
-    def for_integer_or_decimal(
-        field_value: Union[int, Decimal],
-        field_location: str,
-        max_decimal_places: int = None,
-    ):
+    def for_integer_or_decimal(field_value: Union[int, Decimal], field_location: str):
         """
         Apply pre-validation to a decimal field to ensure that it is an integer or decimal,
         which does not exceed the maximum allowed number of decimal places (if applicable)
@@ -177,13 +180,6 @@ class PreValidation:
             or type(field_value) is Decimal  # pylint: disable=unidiomatic-typecheck
         ):
             raise TypeError(f"{field_location} must be a number")
-
-        if max_decimal_places is not None:
-            if isinstance(field_value, Decimal):
-                if abs(field_value.as_tuple().exponent) > max_decimal_places:
-                    raise ValueError(
-                        f"{field_location} must be a number with a maximum of {max_decimal_places}" + " decimal places"
-                    )
 
     @staticmethod
     def for_unique_list(

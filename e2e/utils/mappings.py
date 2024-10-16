@@ -15,6 +15,7 @@ class VaccineTypes:
     flu: str = "FLU"
     hpv: str = "HPV"
     mmr: str = "MMR"
+    rsv: str = "RSV"
 
 
 vaccine_type_mappings = [
@@ -22,4 +23,5 @@ vaccine_type_mappings = [
     (["6142004"], VaccineTypes.flu),
     (["240532009"], VaccineTypes.hpv),
     (["14189004", "36653000", "36989005"], VaccineTypes.mmr),
+    (["55735004"], VaccineTypes.rsv),
 ]

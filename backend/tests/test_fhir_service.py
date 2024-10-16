@@ -49,6 +49,7 @@ class TestServiceUrl(unittest.TestCase):
         url = get_service_url(env, base_path)
         self.assertEqual(url, f"https://internal-dev.api.service.nhs.uk/{base_path}")
 
+
 class TestGetImmunizationByAll(unittest.TestCase):
     """Tests for FhirService.get_immunization_by_id"""
 
@@ -61,14 +62,20 @@ class TestGetImmunizationByAll(unittest.TestCase):
     def test_get_immunization_by_id_by_all(self):
         """it should find an Immunization by id"""
         imms_id = "an-id"
-        self.imms_repo.get_immunization_by_id_all.return_value = {"Resource": create_covid_19_immunization(imms_id).dict()}
+        self.imms_repo.get_immunization_by_id_all.return_value = {
+            "Resource": create_covid_19_immunization(imms_id).dict()
+        }
 
         # When
-        service_resp = self.fhir_service.get_immunization_by_id_all(imms_id,create_covid_19_immunization(imms_id).dict())
+        service_resp = self.fhir_service.get_immunization_by_id_all(
+            imms_id, create_covid_19_immunization(imms_id).dict()
+        )
         act_imms = service_resp["Resource"]
 
         # Then
-        self.imms_repo.get_immunization_by_id_all.assert_called_once_with(imms_id, create_covid_19_immunization(imms_id).dict())
+        self.imms_repo.get_immunization_by_id_all.assert_called_once_with(
+            imms_id, create_covid_19_immunization(imms_id).dict()
+        )
 
         self.assertEqual(act_imms["id"], imms_id)
 
@@ -81,9 +88,10 @@ class TestGetImmunizationByAll(unittest.TestCase):
         act_imms = self.fhir_service.get_immunization_by_id_all(imms_id, create_covid_19_immunization(imms_id).dict())
 
         # Then
-        self.imms_repo.get_immunization_by_id_all.assert_called_once_with(imms_id, create_covid_19_immunization(imms_id).dict())
+        self.imms_repo.get_immunization_by_id_all.assert_called_once_with(
+            imms_id, create_covid_19_immunization(imms_id).dict()
+        )
         self.assertEqual(act_imms, None)
-
 
     def test_pre_validation_failed(self):
         """it should throw exception if Immunization is not valid"""
@@ -115,7 +123,10 @@ class TestGetImmunizationByAll(unittest.TestCase):
 
         bad_target_disease_imms = deepcopy(valid_imms)
         bad_target_disease_imms["protocolApplied"][0]["targetDisease"][0]["coding"][0]["code"] = "bad-code"
-        bad_target_disease_msg = "protocolApplied[0].targetDisease[*].coding[?(@.system=='http://snomed.info/sct')].code - ['bad-code'] is not a valid combination of disease codes for this service"
+        bad_target_disease_msg = (
+            "protocolApplied[0].targetDisease[*].coding[?(@.system=='http://snomed.info/sct')]"
+            + ".code - ['bad-code'] is not a valid combination of disease codes for this service"
+        )
 
         bad_patient_name_imms = deepcopy(valid_imms)
         del bad_patient_name_imms["contained"][1]["name"][0]["given"]
@@ -130,92 +141,12 @@ class TestGetImmunizationByAll(unittest.TestCase):
         self.assertEqual(bad_target_disease_msg, error.exception.message)
         self.imms_repo.get_immunization_by_id_all.assert_not_called()
 
-
         # Missing patient name (Mandatory field)
         with self.assertRaises(CustomValidationError) as error:
             fhir_service.get_immunization_by_id_all("an-id", bad_patient_name_imms)
 
         self.assertTrue(bad_patient_name_msg in error.exception.message)
         self.imms_repo.get_immunization_by_id_all.assert_not_called()
-
-    def test_top_level_element_for_with_id(self):
-        """it should throw exception if extra element present in update Immunization is not valid"""
-        imms_id = "an-id"
-        imms = create_covid_19_immunization_dict("an-id", "9990548609")
-        expected_msg = "reportOrigin is not an allowed element of the Immunization resource for this service"
-        imms["reportOrigin"]={}
-        with self.assertRaises(CustomValidationError) as error:
-            # When
-            self.fhir_service.get_immunization_by_id_all(imms_id, imms)
-
-        # Then
-        self.assertTrue(expected_msg in error.exception.message)
-        self.imms_repo.get_immunization_by_id_all.assert_not_called()
-
-    def test_top_level_element_for_with_issubpotent(self):
-        """it should throw exception if extra element present in update Immunization is not valid"""
-        imms_id = "an-id"
-        imms = create_covid_19_immunization_dict("an-id", "9990548609")
-        expected_msg = "isSubpotent is not an allowed element of the Immunization resource for this service"
-        imms["isSubpotent"]=True
-        with self.assertRaises(CustomValidationError) as error:
-            # When
-            self.fhir_service.get_immunization_by_id_all(imms_id, imms)
-
-        # Then
-        self.assertTrue(expected_msg in error.exception.message)
-        self.imms_repo.get_immunization_by_id_all.assert_not_called()
-
-    def test_top_level_element_in_practitioner_with_extra_field(self):
-        """it should throw exception if extra element present in update Immunization of contained.practitioner is not valid"""
-        imms_id = "an-id"
-        imms = create_covid_19_immunization_dict("an-id", "9990548609")
-        expected_msg = "identifier is not an allowed element of the Practitioner resource for this service"
-        imms["contained"][0]["identifier"]=[]
-        with self.assertRaises(CustomValidationError) as error:
-            # When
-            self.fhir_service.get_immunization_by_id_all(imms_id, imms)
-
-        # Then
-        self.assertTrue(expected_msg in error.exception.message)
-        self.imms_repo.get_immunization_by_id_all.assert_not_called()
-
-    def test_top_level_element_in_patient_with_extra_field(self):
-        """it should throw exception if extra element present in update Immunization of contained.patient is not valid"""
-        imms_id = "an-id"
-        imms = create_covid_19_immunization_dict("an-id", "9990548609")
-        expected_msg = "extension is not an allowed element of the Patient resource for this service"
-        imms["contained"][1]["extension"]=[]
-        with self.assertRaises(CustomValidationError) as error:
-            # When
-            self.fhir_service.get_immunization_by_id_all(imms_id, imms)
-
-        # Then
-        self.assertTrue(expected_msg in error.exception.message)
-        self.imms_repo.get_immunization_by_id_all.assert_not_called()
-
-    def test_top_level_element_collected_errors_with_extra_field(self):
-        """it should throw exception if extra element present in update Immunization is not valid"""
-        imms_id = "an-id"
-        imms = create_covid_19_immunization_dict("an-id", "9990548609")
-        expected_msg = (
-            "reportOrigin is not an allowed element of the Immunization resource for this service; "
-            "isSubpotent is not an allowed element of the Immunization resource for this service; "
-            "identifier is not an allowed element of the Practitioner resource for this service; "
-            "extension is not an allowed element of the Patient resource for this service"
-        )
-        imms["reportOrigin"]={}
-        imms["isSubpotent"] = True
-        imms["contained"][0]["identifier"] = []
-        imms["contained"][1]["extension"] = []
-        with self.assertRaises(CustomValidationError) as error:
-            # When
-            self.fhir_service.get_immunization_by_id_all(imms_id, imms)
-
-        # Then
-        self.assertTrue(expected_msg in error.exception.message)
-        self.imms_repo.get_immunization_by_id_all.assert_not_called()    
-
 
 
 class TestGetImmunization(unittest.TestCase):
@@ -348,6 +279,7 @@ class TestGetImmunization(unittest.TestCase):
         self.imms_repo.get_immunization_by_id_all.assert_not_called()
         self.pds_service.get_patient_details.assert_not_called()
 
+
 class TestGetImmunizationIdentifier(unittest.TestCase):
     """Tests for FhirService.get_immunization_by_id"""
 
@@ -360,33 +292,33 @@ class TestGetImmunizationIdentifier(unittest.TestCase):
     def test_get_immunization_by_identifier(self):
         """it should find an Immunization by id"""
         imms = "an-id#an-id"
-        identifier ='test'
-        element = 'id,mEta,DDD'
+        identifier = "test"
+        element = "id,mEta,DDD"
         self.imms_repo.get_immunization_by_identifier.return_value = {}
         self.pds_service.get_patient_details.return_value = {}
 
         # When
-        service_resp = self.fhir_service.get_immunization_by_identifier(imms, "COVID19:search",identifier,element)
+        service_resp = self.fhir_service.get_immunization_by_identifier(imms, "COVID19:search", identifier, element)
         act_imms = service_resp
 
         # Then
         self.imms_repo.get_immunization_by_identifier.assert_called_once_with(imms, "COVID19:search")
 
-        self.assertEqual(act_imms['resourceType'], 'Bundle')
+        self.assertEqual(act_imms["resourceType"], "Bundle")
 
     def test_immunization_not_found(self):
         """it should return None if Immunization doesn't exist"""
         imms_id = "none"
-        identifier ='test'
-        element = 'id'
+        identifier = "test"
+        element = "id"
         self.imms_repo.get_immunization_by_identifier.return_value = None
 
         # When
-        act_imms = self.fhir_service.get_immunization_by_identifier(imms_id, "COVID19:search",identifier,element)
+        act_imms = self.fhir_service.get_immunization_by_identifier(imms_id, "COVID19:search", identifier, element)
 
         # Then
         self.imms_repo.get_immunization_by_identifier.assert_called_once_with(imms_id, "COVID19:search")
-        self.assertEqual(act_imms["entry"], [])     
+        self.assertEqual(act_imms["entry"], [])
 
 
 class TestCreateImmunization(unittest.TestCase):
@@ -412,13 +344,27 @@ class TestCreateImmunization(unittest.TestCase):
         req_imms = create_covid_19_immunization_dict_no_id(nhs_number)
 
         # When
-        stored_imms = self.fhir_service.create_immunization(req_imms, "COVID19:create")
+        stored_imms = self.fhir_service.create_immunization(req_imms, "COVID19:create", "Test")
 
         # Then
-        self.imms_repo.create_immunization.assert_called_once_with(req_imms, pds_patient, "COVID19:create")
+        self.imms_repo.create_immunization.assert_called_once_with(req_imms, pds_patient, "COVID19:create", "Test")
         self.validator.validate.assert_called_once_with(req_imms)
         self.fhir_service.pds_service.get_patient_details.assert_called_once_with(nhs_number)
         self.assertIsInstance(stored_imms, Immunization)
+
+    def test_create_immunization_with_id(self):
+        """it should throw exception if id present in create Immunization"""
+        imms = create_covid_19_immunization_dict("an-id", "9990548609")
+        expected_msg = "id field must not be present for CREATE operation"
+
+        with self.assertRaises(CustomValidationError) as error:
+            # When
+            self.pre_validate_fhir_service.create_immunization(imms, "COVID19:create", "Test")
+
+        # Then
+        self.assertTrue(expected_msg in error.exception.message)
+        self.imms_repo.create_immunization.assert_not_called()
+        self.pds_service.get_patient_details.assert_not_called()
 
     def test_pre_validation_failed(self):
         """it should throw exception if Immunization is not valid"""
@@ -428,7 +374,7 @@ class TestCreateImmunization(unittest.TestCase):
 
         with self.assertRaises(CustomValidationError) as error:
             # When
-            self.pre_validate_fhir_service.create_immunization(imms, "COVID19:create")
+            self.pre_validate_fhir_service.create_immunization(imms, "COVID19:create", "Test")
 
         # Then
         self.assertTrue(expected_msg in error.exception.message)
@@ -438,11 +384,14 @@ class TestCreateImmunization(unittest.TestCase):
     def test_post_validation_failed(self):
         """it should throw exception if Immunization is not valid"""
 
-        valid_imms = create_covid_19_immunization_dict("an-id", VALID_NHS_NUMBER)
+        valid_imms = create_covid_19_immunization_dict_no_id(VALID_NHS_NUMBER)
 
         bad_target_disease_imms = deepcopy(valid_imms)
         bad_target_disease_imms["protocolApplied"][0]["targetDisease"][0]["coding"][0]["code"] = "bad-code"
-        bad_target_disease_msg = "protocolApplied[0].targetDisease[*].coding[?(@.system=='http://snomed.info/sct')].code - ['bad-code'] is not a valid combination of disease codes for this service"
+        bad_target_disease_msg = (
+            "protocolApplied[0].targetDisease[*].coding[?(@.system=='http://snomed.info/sct')]"
+            + ".code - ['bad-code'] is not a valid combination of disease codes for this service"
+        )
 
         bad_patient_name_imms = deepcopy(valid_imms)
         del bad_patient_name_imms["contained"][1]["name"][0]["given"]
@@ -453,7 +402,7 @@ class TestCreateImmunization(unittest.TestCase):
         # Create
         # Invalid target_disease
         with self.assertRaises(CustomValidationError) as error:
-            fhir_service.create_immunization(bad_target_disease_imms, "COVID19:create")
+            fhir_service.create_immunization(bad_target_disease_imms, "COVID19:create", "Test")
 
         self.assertEqual(bad_target_disease_msg, error.exception.message)
         self.imms_repo.create_immunization.assert_not_called()
@@ -461,92 +410,11 @@ class TestCreateImmunization(unittest.TestCase):
 
         # Missing patient name (Mandatory field)
         with self.assertRaises(CustomValidationError) as error:
-            fhir_service.create_immunization(bad_patient_name_imms, "COVID19:create")
+            fhir_service.create_immunization(bad_patient_name_imms, "COVID19:create", "Test")
 
         self.assertTrue(bad_patient_name_msg in error.exception.message)
         self.imms_repo.create_immunization.assert_not_called()
         self.pds_service.get_patient_details.assert_not_called()
-    
-    def test_top_level_element_for_with_id(self):
-        """it should throw exception if id present in create Immunization is not valid"""
-        imms = create_covid_19_immunization_dict("an-id", "9990548609")
-        expected_msg = "id is not an allowed element of the Immunization resource for this service"
-
-        with self.assertRaises(CustomValidationError) as error:
-            # When
-            self.pre_validate_fhir_service.create_immunization(imms, "COVID19:create")
-
-        # Then
-        self.assertTrue(expected_msg in error.exception.message)
-        self.imms_repo.create_immunization.assert_not_called()
-        self.pds_service.get_patient_details.assert_not_called()
-
-    def test_top_level_element_for_with_issubpotent(self):
-        """it should throw exception if extra element present in create Immunization is not valid"""
-        imms = create_covid_19_immunization_dict("an-id", "9990548609")
-        expected_msg = "isSubpotent is not an allowed element of the Immunization resource for this service"
-        del imms["id"]
-        imms["isSubpotent"]=True
-        with self.assertRaises(CustomValidationError) as error:
-            # When
-            self.pre_validate_fhir_service.create_immunization(imms, "COVID19:create")
-
-        # Then
-        self.assertTrue(expected_msg in error.exception.message)
-        self.imms_repo.create_immunization.assert_not_called()
-        self.pds_service.get_patient_details.assert_not_called() 
-
-    def test_top_level_element_in_practitioner_with_extra_field(self):
-        """it should throw exception if extra element present in create Immunization of contained.practitioner is not valid"""
-        imms = create_covid_19_immunization_dict("an-id", "9990548609")
-        expected_msg = "identifier is not an allowed element of the Practitioner resource for this service"
-        del imms["id"]
-        imms["contained"][0]["identifier"]=[]
-        with self.assertRaises(CustomValidationError) as error:
-            # When
-            self.pre_validate_fhir_service.create_immunization(imms, "COVID19:create")
-
-        # Then
-        self.assertTrue(expected_msg in error.exception.message)
-        self.imms_repo.create_immunization.assert_not_called()
-        self.pds_service.get_patient_details.assert_not_called() 
-
-    def test_top_level_element_in_patient_with_extra_field(self):
-        """it should throw exception if extra element present in create Immunization of contained.patient is not valid"""
-        imms = create_covid_19_immunization_dict("an-id", "9990548609")
-        expected_msg = "extension is not an allowed element of the Patient resource for this service"
-        del imms["id"]
-        imms["contained"][1]["extension"]=[]
-        with self.assertRaises(CustomValidationError) as error:
-            # When
-            self.pre_validate_fhir_service.create_immunization(imms, "COVID19:create")
-
-        # Then
-        self.assertTrue(expected_msg in error.exception.message)
-        self.imms_repo.create_immunization.assert_not_called()
-        self.pds_service.get_patient_details.assert_not_called() 
-
-    def test_top_level_element_collected_errors_with_extra_field(self):
-        """it should throw exception if extra element present in create Immunization  is not valid"""
-        imms = create_covid_19_immunization_dict("an-id", "9990548609")
-        expected_msg = (
-            "id is not an allowed element of the Immunization resource for this service; "
-            "isSubpotent is not an allowed element of the Immunization resource for this service; "
-            "identifier is not an allowed element of the Practitioner resource for this service; "
-            "extension is not an allowed element of the Patient resource for this service"
-        )
-        imms["isSubpotent"] = True
-        imms["contained"][0]["identifier"] = []
-        imms["contained"][1]["extension"] = []
-        with self.assertRaises(CustomValidationError) as error:
-            # When
-            self.pre_validate_fhir_service.create_immunization(imms, "COVID19:create")
-
-        # Then
-        self.assertTrue(expected_msg in error.exception.message)
-        self.imms_repo.create_immunization.assert_not_called()
-        self.pds_service.get_patient_details.assert_not_called()                   
-
 
     def test_patient_error(self):
         """it should throw error when PDS can't resolve patient"""
@@ -556,7 +424,7 @@ class TestCreateImmunization(unittest.TestCase):
 
         with self.assertRaises(InvalidPatientId) as e:
             # When
-            self.fhir_service.create_immunization(bad_patient_imms, "COVID19:create")
+            self.fhir_service.create_immunization(bad_patient_imms, "COVID19:create", "Test")
 
         # Then
         self.assertEqual(e.exception.patient_identifier, invalid_nhs_number)
@@ -583,14 +451,15 @@ class TestUpdateImmunization(unittest.TestCase):
         req_imms = create_covid_19_immunization_dict(imms_id, nhs_number)
 
         # When
-        outcome, _ = self.fhir_service.update_immunization(imms_id, req_imms, 1, "COVID19:update")
+        outcome, _ = self.fhir_service.update_immunization(imms_id, req_imms, 1, "COVID19:update", "Test")
 
         # Then
         self.assertEqual(outcome, UpdateOutcome.UPDATE)
-        self.imms_repo.update_immunization.assert_called_once_with(imms_id, req_imms, pds_patient, 1, "COVID19:update")
-        self.fhir_service.pds_service.get_patient_details.assert_called_once_with(nhs_number)   
-    
-    
+        self.imms_repo.update_immunization.assert_called_once_with(
+            imms_id, req_imms, pds_patient, 1, "COVID19:update", "Test"
+        )
+        self.fhir_service.pds_service.get_patient_details.assert_called_once_with(nhs_number)
+
     def test_id_not_present(self):
         """it should populate id in the message if it is not present"""
         req_imms_id = "an-id"
@@ -603,7 +472,7 @@ class TestUpdateImmunization(unittest.TestCase):
         del req_imms["id"]
 
         # When
-        self.fhir_service.update_immunization(req_imms_id, req_imms, 1, "COVID19:update")
+        self.fhir_service.update_immunization(req_imms_id, req_imms, 1, "COVID19:update", "Test")
 
         # Then
         passed_imms = self.imms_repo.update_immunization.call_args.args[1]
@@ -618,7 +487,7 @@ class TestUpdateImmunization(unittest.TestCase):
 
         with self.assertRaises(InvalidPatientId) as e:
             # When
-            self.fhir_service.update_immunization(imms_id, bad_patient_imms, 1, "COVID19:update")
+            self.fhir_service.update_immunization(imms_id, bad_patient_imms, 1, "COVID19:update", "Test")
 
         # Then
         self.assertEqual(e.exception.patient_identifier, invalid_nhs_number)
@@ -641,10 +510,10 @@ class TestDeleteImmunization(unittest.TestCase):
         self.imms_repo.delete_immunization.return_value = imms
 
         # When
-        act_imms = self.fhir_service.delete_immunization(imms_id, "COVID:delete")
+        act_imms = self.fhir_service.delete_immunization(imms_id, "COVID:delete", "Test")
 
         # Then
-        self.imms_repo.delete_immunization.assert_called_once_with(imms_id, "COVID:delete")
+        self.imms_repo.delete_immunization.assert_called_once_with(imms_id, "COVID:delete", "Test")
         self.assertIsInstance(act_imms, Immunization)
         self.assertEqual(act_imms.id, imms_id)
 

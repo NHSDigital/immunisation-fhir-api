@@ -1,16 +1,9 @@
 {
   "resourceType": "Immunization",
-  "id": "an-id",
   "contained": [
     {
       "resourceType": "Practitioner",
-      "id": "Pract1",
-      "name": [
-        {
-          "family": "Nightingale",
-          "given": ["Florence"]
-        }
-      ]
+      "id": "Pract1"
     },
     {
       "resourceType": "Patient",
@@ -31,7 +24,7 @@
       "birthDate": "1965-02-28",
       "address": [
         {
-          "postalCode": "ZZ99 3CZ"
+          "postalCode": "EC1A 1BB"
         }
       ]
     }
@@ -43,11 +36,17 @@
         "coding": [
           {
             "system": "http://snomed.info/sct",
-            "code": "1324681000000101",
-            "display": "Administration of first dose of severe acute respiratory syndrome coronavirus 2 vaccine (procedure)"
+            "code": "mockMMRcode1",
+            "display": "Seasonal influenza vaccination (procedure)"
           }
         ]
       }
+    }
+  ],
+  "identifier": [
+    {
+      "system": "https://supplierABC/identifiers/vacc",
+      "value": "ACME-vacc123flu"
     }
   ],
   "status": "completed",
@@ -55,34 +54,35 @@
     "coding": [
       {
         "system": "http://snomed.info/sct",
-        "code": "39114911000001105",
-        "display": "COVID-19 Vaccine Vaxzevria (ChAdOx1 S [recombinant]) not less than 2.5x100,000,000 infectious units/0.5ml dose suspension for injection multidose vials (AstraZeneca UK Ltd) (product)"
+        "code": "39566211000001103",
+        "display": "Supemtek Quadrivalent vaccine (recombinant) solution for injection 0.5ml pre-filled syringes (Sanofi) (product)"
       }
     ]
   },
   "patient": {
     "reference": "#Pat1"
   },
-  "occurrenceDateTime": "2021-02-07T13:28:17+00:00",
-  "recorded": "2021-02-07T13:28:17+00:00",
+  "occurrenceDateTime": "2021-02-14T13:28:17.271+00:00",
+  "recorded": "2021-02-14T13:28:17.271+00:00",
   "primarySource": true,
   "manufacturer": {
-    "display": "AstraZeneca Ltd"
+    "display": "Sanofi"
   },
   "location": {
+    "type": "Location",
     "identifier": {
-      "system": "urn:iso:std:iso:3166",
-      "value": "GB"
+      "value": "X99999",
+      "system": "https://fhir.nhs.uk/Id/ods-organization-code"
     }
   },
-  "lotNumber": "4120Z001",
+  "lotNumber": "41925TJ61",
   "expirationDate": "2021-07-02",
   "site": {
     "coding": [
       {
         "system": "http://snomed.info/sct",
-        "code": "368208006",
-        "display": "Left upper arm structure (body structure)"
+        "code": "368209003",
+        "display": "Right upper arm structure (body structure)"
       }
     ]
   },
@@ -112,7 +112,7 @@
         "type": "Organization",
         "identifier": {
           "system": "https://fhir.nhs.uk/Id/ods-organization-code",
-          "value": "N2N9I"
+          "value": "B0C4P"
         }
       }
     }
@@ -121,7 +121,7 @@
     {
       "coding": [
         {
-          "code": "443684005",
+          "code": "78648007",
           "system": "http://snomed.info/sct"
         }
       ]
@@ -134,8 +134,26 @@
           "coding": [
             {
               "system": "http://snomed.info/sct",
-              "code": "840539006",
-              "display": "Disease caused by severe acute respiratory syndrome coronavirus 2"
+              "code": "14189004",
+              "display": "Measles"
+            }
+          ]
+        },
+        {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "36989005",
+              "display": "Mumps"
+            }
+          ]
+        },
+        {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "36653000",
+              "display": "Rubella"
             }
           ]
         }

@@ -1,6 +1,5 @@
 {
   "resourceType": "Immunization",
-  "id": "an-id",
   "contained": [
     {
       "resourceType": "Practitioner",
@@ -37,7 +36,7 @@
         "coding": [
           {
             "system": "http://snomed.info/sct",
-            "code": "mockMMRcode1",
+            "code": "mockHPVcode1",
             "display": "Seasonal influenza vaccination (procedure)"
           }
         ]
@@ -70,7 +69,7 @@
     "display": "Sanofi"
   },
   "location": {
-    "type":"Location",
+    "type": "Location",
     "identifier": {
       "value": "X99999",
       "system": "https://fhir.nhs.uk/Id/ods-organization-code"
@@ -135,26 +134,8 @@
           "coding": [
             {
               "system": "http://snomed.info/sct",
-              "code": "14189004",
-              "display": "Measles"
-            }
-          ]
-        },
-        {
-          "coding": [
-            {
-              "system": "http://snomed.info/sct",
-              "code": "36989005",
-              "display": "Mumps"
-            }
-          ]
-        },
-        {
-          "coding": [
-            {
-              "system": "http://snomed.info/sct",
-              "code": "36653000",
-              "display": "Rubella"
+              "code": "240532009",
+              "display": "Human papillomavirus infection"
             }
           ]
         }

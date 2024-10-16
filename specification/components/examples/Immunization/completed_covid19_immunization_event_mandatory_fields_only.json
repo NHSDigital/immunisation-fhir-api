@@ -1,6 +1,5 @@
 {
   "resourceType": "Immunization",
-  "id": "an-id",
   "contained": [
     {
       "resourceType": "Patient",

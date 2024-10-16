@@ -28,6 +28,7 @@ class TestGenericUtils(unittest.TestCase):
             (["14189004", "36989005", "36653000"], VaccineTypes.mmr),
             (["36989005", "14189004", "36653000"], VaccineTypes.mmr),
             (["36653000", "14189004", "36989005"], VaccineTypes.mmr),
+            (["55735004"], VaccineTypes.rsv) 
         ]
 
         for combination, vaccine_type in valid_combinations:
@@ -51,7 +52,7 @@ class TestGenericUtils(unittest.TestCase):
         valid combination of target disease code, or raises an appropriate error otherwise
         """
         # TEST VALID DATA
-        vaccine_types = [VaccineTypes.covid_19, VaccineTypes.flu, VaccineTypes.hpv, VaccineTypes.mmr]
+        vaccine_types = [VaccineTypes.covid_19, VaccineTypes.flu, VaccineTypes.hpv, VaccineTypes.mmr, VaccineTypes.rsv]
         for vaccine_type in vaccine_types:
             valid_json_data = load_json_data(filename=f"completed_{vaccine_type.lower()}_immunization_event.json")
             self.assertEqual(get_vaccine_type(valid_json_data), vaccine_type)

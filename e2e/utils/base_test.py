@@ -20,7 +20,7 @@ from utils.factories import (
     make_apigee_product,
 )
 from utils.immunisation_api import ImmunisationApi, parse_location
-from utils.resource import create_an_imms_obj
+from utils.resource import generate_imms_resource
 
 
 class ImmunizationBaseTest(unittest.TestCase):
@@ -53,9 +53,7 @@ class ImmunizationBaseTest(unittest.TestCase):
                 scopes=["urn:nhsd:apim:app:level3:immunisation-fhir-api"],
             )
             cls.product = make_apigee_product(cls.apigee_service, product_data)
-            cls.apigee_service.add_proxy_to_product(
-                product_name=cls.product.name, proxy_name=get_proxy_name()
-            )
+            cls.apigee_service.add_proxy_to_product(product_name=cls.product.name, proxy_name=get_proxy_name())
 
             def make_app_data() -> ApigeeApp:
                 _app = ApigeeApp(name=str(uuid.uuid4()))
@@ -65,9 +63,7 @@ class ImmunizationBaseTest(unittest.TestCase):
 
             # ApplicationRestricted
             app_data = make_app_data()
-            app_res_app, app_res_cfg = make_app_restricted_app(
-                cls.apigee_service, app_data
-            )
+            app_res_app, app_res_cfg = make_app_restricted_app(cls.apigee_service, app_data)
             cls.apps.append(app_res_app)
 
             app_res_auth = AppRestrictedAuthentication(get_auth_url(), app_res_cfg)
@@ -80,9 +76,7 @@ class ImmunizationBaseTest(unittest.TestCase):
             cis2_app, app_res_cfg = make_cis2_app(cls.apigee_service, app_data)
             cls.apps.append(cis2_app)
 
-            cis2_auth = Cis2Authentication(
-                get_auth_url(), app_res_cfg, LoginUser(username=cis2_user)
-            )
+            cis2_auth = Cis2Authentication(get_auth_url(), app_res_cfg, LoginUser(username=cis2_user))
             cis2_imms_api = ImmunisationApi(base_url, cis2_auth)
             cls.imms_apis.append(cis2_imms_api)
 
@@ -101,25 +95,17 @@ class ImmunizationBaseTest(unittest.TestCase):
             cls.apigee_service.delete_product(cls.product.name)
 
     @staticmethod
-    def create_immunization_resource(
-        imms_api: ImmunisationApi, resource: dict = None
-    ) -> str:
+    def create_immunization_resource(imms_api: ImmunisationApi, resource: dict = None) -> str:
         """creates an Immunization resource and returns the resource url"""
-        imms = resource if resource else create_an_imms_obj()
-        if "id" in imms:
-            del imms["id"]
+        imms = resource if resource else generate_imms_resource()
         response = imms_api.create_immunization(imms)
         assert response.status_code == 201, (response.status_code, response.text)
         return parse_location(response.headers["Location"])
 
     @staticmethod
-    def create_a_deleted_immunization_resource(
-        imms_api: ImmunisationApi, resource: dict = None
-    ) -> dict:
+    def create_a_deleted_immunization_resource(imms_api: ImmunisationApi, resource: dict = None) -> dict:
         """it creates a new Immunization and then delete it, it returns the created imms"""
-        imms = resource if resource else create_an_imms_obj()
-        if "id" in imms:
-            del imms["id"]
+        imms = resource if resource else generate_imms_resource()
         response = imms_api.create_immunization(imms)
         assert response.status_code == 201, response.text
         imms_id = parse_location(response.headers["Location"])

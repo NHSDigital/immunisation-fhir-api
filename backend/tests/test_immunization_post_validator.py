@@ -3,7 +3,6 @@
 import unittest
 from copy import deepcopy
 from pydantic import ValidationError
-from fhir.resources.R4B.immunization import Immunization
 
 
 from src.mappings import VaccineTypes
@@ -27,8 +26,9 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
             VaccineTypes.flu: load_json_data("completed_flu_immunization_event.json"),
             VaccineTypes.hpv: load_json_data("completed_hpv_immunization_event.json"),
             VaccineTypes.mmr: load_json_data("completed_mmr_immunization_event.json"),
+            VaccineTypes.rsv: load_json_data("completed_rsv_immunization_event.json"),
         }
-        self.all_vaccine_types = [VaccineTypes.covid_19, VaccineTypes.flu, VaccineTypes.hpv, VaccineTypes.mmr]
+        self.all_vaccine_types = [VaccineTypes.covid_19, VaccineTypes.flu, VaccineTypes.hpv, VaccineTypes.mmr, VaccineTypes.rsv]
 
     def test_collected_errors(self):
         """Test that when passed multiple validation errors, it returns a list of all expected errors"""
@@ -82,7 +82,7 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
         )
 
         # Test that a valid combination of disease codes is accepted
-        for vaccine_type in [VaccineTypes.covid_19, VaccineTypes.flu, VaccineTypes.hpv, VaccineTypes.mmr]:
+        for vaccine_type in [VaccineTypes.covid_19, VaccineTypes.flu, VaccineTypes.hpv, VaccineTypes.mmr, VaccineTypes.rsv]:
             self.assertIsNone(self.validator.validate(self.completed_json_data[vaccine_type]))
 
         # Test that an invalid single disease code is rejected
@@ -258,15 +258,19 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
             valid_json_data["protocolApplied"][0]["doseNumberString"] = "Dose sequence not recorded"
             MandationTests.test_missing_field_accepted(self, dose_number_positive_int_field_location, valid_json_data)
 
-    def test_post_vaccine_code_coding_code(self):
-        """Test that the JSON data is rejected when vaccine_code_coding_code is absent"""
-        field_location = "vaccineCode.coding[?(@.system=='http://snomed.info/sct')].code"
-        MandationTests.test_missing_field_accepted(self, field_location)
+    # NOTE: THIS TEST IS COMMENTED OUT AS IT IS TESTING A REQUIRED ELEMENT (VALIDATION SHOULD ALWAYS PASS),
+    # AND THE MEANS TO ACCESS THE VALUE HAS NOT BEEN CONFIRMED. DO NOT DELETE THE TEST, IT MAY NEED REINSTATED LATER.
+    # def test_post_vaccine_code_coding_code(self):
+    #     """Test that the JSON data is rejected when vaccine_code_coding_code is absent"""
+    #     field_location = "vaccineCode.coding[?(@.system=='http://snomed.info/sct')].code"
+    #     MandationTests.test_missing_field_accepted(self, field_location)
 
-    def test_post_vaccine_code_coding_display(self):
-        """Test that the JSON data is accepted when vaccine_code_coding_display is absent"""
-        field_location = "vaccineCode.coding[?(@.system=='http://snomed.info/sct')].display"
-        MandationTests.test_missing_field_accepted(self, field_location)
+    # NOTE: THIS TEST IS COMMENTED OUT AS IT IS TESTING A REQUIRED ELEMENT (VALIDATION SHOULD ALWAYS PASS),
+    # AND THE MEANS TO ACCESS THE VALUE HAS NOT BEEN CONFIRMED. DO NOT DELETE THE TEST, IT MAY NEED REINSTATED LATER.
+    # def test_post_vaccine_code_coding_display(self):
+    #     """Test that the JSON data is accepted when vaccine_code_coding_display is absent"""
+    #     field_location = "vaccineCode.coding[?(@.system=='http://snomed.info/sct')].display"
+    #     MandationTests.test_missing_field_accepted(self, field_location)
 
     def test_post_manufacturer_display(self):
         """
@@ -292,26 +296,34 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
         for vaccine_type in self.all_vaccine_types:
             MandationTests.test_missing_field_accepted(self, field_location, self.completed_json_data[vaccine_type])
 
-    def test_post_site_coding_code(self):
-        """Test that the JSON data is accepted when site_coding_code is absent"""
-        MandationTests.test_missing_field_accepted(self, "site.coding[?(@.system=='http://snomed.info/sct')].code")
+    # NOTE: THIS TEST IS COMMENTED OUT AS IT IS TESTING A REQUIRED ELEMENT (VALIDATION SHOULD ALWAYS PASS),
+    # AND THE MEANS TO ACCESS THE VALUE HAS NOT BEEN CONFIRMED. DO NOT DELETE THE TEST, IT MAY NEED REINSTATED LATER.
+    # def test_post_site_coding_code(self):
+    #     """Test that the JSON data is accepted when site_coding_code is absent"""
+    #     MandationTests.test_missing_field_accepted(self, "site.coding[?(@.system=='http://snomed.info/sct')].code")
 
-    def test_post_site_coding_display(self):
-        """Test that the JSON data is accepted when site_coding_display is absent"""
-        MandationTests.test_missing_field_accepted(self, "site.coding[?(@.system=='http://snomed.info/sct')].display")
+    # NOTE: THIS TEST IS COMMENTED OUT AS IT IS TESTING A REQUIRED ELEMENT (VALIDATION SHOULD ALWAYS PASS),
+    # AND THE MEANS TO ACCESS THE VALUE HAS NOT BEEN CONFIRMED. DO NOT DELETE THE TEST, IT MAY NEED REINSTATED LATER.
+    # def test_post_site_coding_display(self):
+    #     """Test that the JSON data is accepted when site_coding_display is absent"""
+    #     MandationTests.test_missing_field_accepted(self, "site.coding[?(@.system=='http://snomed.info/sct')].display")
 
-    def test_post_route_coding_code(self):
-        """
-        Test that present or absent route_coding_code is accepted or rejected
-        as appropriate dependent on other fields
-        """
-        field_location = "route.coding[?(@.system=='http://snomed.info/sct')].code"
-        for vaccine_type in self.all_vaccine_types:
-            MandationTests.test_missing_field_accepted(self, field_location, self.completed_json_data[vaccine_type])
+    # NOTE: THIS TEST IS COMMENTED OUT AS IT IS TESTING A REQUIRED ELEMENT (VALIDATION SHOULD ALWAYS PASS),
+    # AND THE MEANS TO ACCESS THE VALUE HAS NOT BEEN CONFIRMED. DO NOT DELETE THE TEST, IT MAY NEED REINSTATED LATER.
+    # def test_post_route_coding_code(self):
+    #     """
+    #     Test that present or absent route_coding_code is accepted or rejected
+    #     as appropriate dependent on other fields
+    #     """
+    #     field_location = "route.coding[?(@.system=='http://snomed.info/sct')].code"
+    #     for vaccine_type in self.all_vaccine_types:
+    #         MandationTests.test_missing_field_accepted(self, field_location, self.completed_json_data[vaccine_type])
 
-    def test_post_route_coding_display(self):
-        """Test that the JSON data is accepted when route_coding_display is absent"""
-        MandationTests.test_missing_field_accepted(self, "route.coding[?(@.system=='http://snomed.info/sct')].display")
+    # NOTE: THIS TEST IS COMMENTED OUT AS IT IS TESTING A REQUIRED ELEMENT (VALIDATION SHOULD ALWAYS PASS),
+    # AND THE MEANS TO ACCESS THE VALUE HAS NOT BEEN CONFIRMED. DO NOT DELETE THE TEST, IT MAY NEED REINSTATED LATER.
+    # def test_post_route_coding_display(self):
+    #     """Test that the JSON data is accepted when route_coding_display is absent"""
+    #     MandationTests.test_missing_field_accepted(self, "route.coding[?(@.system=='http://snomed.info/sct')].display")
 
     def test_post_dose_quantity_value(self):
         """
@@ -333,10 +345,12 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
         """Test that the JSON data is accepted when dose_quantity_unit is absent"""
         MandationTests.test_missing_field_accepted(self, "doseQuantity.unit")
 
-    def test_post_reason_code_coding_code(self):
-        """Test that the JSON data is accepted when reason_code_coding_code is absent"""
-        for index in range(len(self.completed_json_data[VaccineTypes.covid_19]["reasonCode"])):
-            MandationTests.test_missing_field_accepted(self, f"reasonCode[{index}].coding[0].code")
+    # NOTE: THIS TEST IS COMMENTED OUT AS IT IS TESTING A REQUIRED ELEMENT (VALIDATION SHOULD ALWAYS PASS),
+    # AND THE MEANS TO ACCESS THE VALUE HAS NOT BEEN CONFIRMED. DO NOT DELETE THE TEST, IT MAY NEED REINSTATED LATER.
+    # def test_post_reason_code_coding_code(self):
+    #     """Test that the JSON data is accepted when reason_code_coding_code is absent"""
+    #     for index in range(len(self.completed_json_data[VaccineTypes.covid_19]["reasonCode"])):
+    #         MandationTests.test_missing_field_accepted(self, f"reasonCode[{index}].coding[0].code")
 
     def test_post_organization_identifier_system(self):
         """Test that the JSON data is rejected if it does not contain organization_identifier_system"""
@@ -351,7 +365,7 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
         """
         field_location = "location.identifier.value"
         # Test cases for COVID-19, FLU, HPV and MMR where it is mandatory
-        for vaccine_type in (VaccineTypes.covid_19, VaccineTypes.flu, VaccineTypes.hpv, VaccineTypes.mmr):
+        for vaccine_type in (VaccineTypes.covid_19, VaccineTypes.flu, VaccineTypes.hpv, VaccineTypes.mmr, VaccineTypes.rsv):
             valid_json_data = deepcopy(self.completed_json_data[vaccine_type])
             MandationTests.test_missing_mandatory_field_rejected(self, field_location, valid_json_data)
 
@@ -361,25 +375,25 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
         """
         field_location = "location.identifier.system"
         # Test cases for COVID-19, FLU, HPV and MMR where it is mandatory
-        for vaccine_type in (VaccineTypes.covid_19, VaccineTypes.flu, VaccineTypes.hpv, VaccineTypes.mmr):
+        for vaccine_type in (VaccineTypes.covid_19, VaccineTypes.flu, VaccineTypes.hpv, VaccineTypes.mmr, VaccineTypes.rsv):
             valid_json_data = deepcopy(self.completed_json_data[vaccine_type])
             MandationTests.test_missing_mandatory_field_rejected(self, field_location, valid_json_data)
 
     def test_post_no_snomed_code(self):
         """test that only snomed system is accepted"""
         covid_19_json_data = deepcopy(self.completed_json_data[VaccineTypes.covid_19])
-        for protocol in covid_19_json_data.get("protocolApplied", []):
-            target_diseases = protocol.get("targetDisease", [])
-            for i, _ in enumerate(target_diseases):
-                for coding in target_diseases[i].get("coding", []):
-                    if i == 0:
-                        coding["system"] = "http://othersystem.com/system1"
-                    else:
-                        coding["system"] = "http://Notsnomed.com/system2"
 
-        field_location = "protocolApplied[0].targetDisease[0].coding[?(@.system=='http://snomed.info/sct')].code"
+        invalid_target_disease_value = [
+            {"coding": [{"system": "http://snomed.info/sct", "code": "14189004", "display": "Measles"}]},
+            {"coding": [{"system": "http://snomed.info/sct", "display": "Mumps"}]},
+            {"coding": [{"system": "http://snomed.info/sct", "code": "36653000", "display": "Rubella"}]},
+        ]
+        covid_19_json_data["protocolApplied"][0]["targetDisease"] = invalid_target_disease_value
 
-        expected_error_message = f"{field_location} is a mandatory field"
+        expected_error_message = (
+            "protocolApplied[0].targetDisease[1].coding[?(@.system=='http://snomed.info/sct')].code"
+            + " is a mandatory field"
+        )
 
         with self.assertRaises(ValueError) as cm:
             self.validator.validate(covid_19_json_data)

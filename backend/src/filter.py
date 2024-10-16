@@ -44,6 +44,10 @@ def replace_address_postal_codes(imms: dict) -> dict:
             for address in resource.get("address", [{}]):
                 if address.get("postalCode") is not None:
                     address["postalCode"] = "ZZ99 3CZ"
+                # Remove all other keys in the address dictionary
+                keys_to_remove = [key for key in address.keys() if key != "postalCode"]
+                for key in keys_to_remove:
+                    del address[key]    
 
     return imms
 
@@ -55,16 +59,25 @@ def replace_organization_values(imms: dict) -> dict:
     """
     for performer in imms.get("performer", [{}]):
         if performer.get("actor", {}).get("type") == "Organization":
-
-            if performer["actor"].get("identifier", {}).get("value") is not None:
-                performer["actor"]["identifier"]["value"] = "N2N9I"
-                performer["actor"]["identifier"]["system"] = Urls.ods_organization_code
-
-            elif performer["actor"].get("identifier", {}).get("system") is not None:
-                performer["actor"]["identifier"]["system"] = Urls.ods_organization_code
-
-            if performer["actor"].get("display") is not None:
-                del performer["actor"]["display"]
+            
+            # Obfuscate or set the identifier value and system.
+            identifier = performer["actor"].get("identifier", {})
+            if identifier.get("value") is not None:
+                identifier["value"] = "N2N9I"
+                identifier["system"] = Urls.ods_organization_code
+            if identifier.get("system") is not None:
+                identifier["system"] = Urls.ods_organization_code
+            
+            # Ensure only 'system' and 'value' remain in identifier
+            keys = {"system", "value"}
+            keys_to_remove = [key for key in identifier.keys() if key not in keys]
+            for key in keys_to_remove:
+                del identifier[key]
+            
+            # Remove all other fields except 'identifier' in actor
+            keys_to_remove = [key for key in performer["actor"].keys() if key not in ("identifier","type")]
+            for key in keys_to_remove:
+                del performer["actor"][key]
 
     return imms
 

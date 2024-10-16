@@ -22,7 +22,6 @@ from models.fhir_immunization import ImmunizationValidator
 from models.utils.generic_utils import nhs_number_mod11_check, get_occurrence_datetime, create_diagnostics, form_json
 from models.constants import Constants
 from models.errors import MandatoryError
-from models.constants import Constants
 from pds_service import PdsService
 from s_flag_handler import handle_s_flag
 from timer import timed
@@ -58,8 +57,10 @@ class FhirService:
         self.immunization_repo = imms_repo
         self.pds_service = pds_service
         self.validator = validator
-    
-    def get_immunization_by_identifier(self, identifier_pk: str, imms_vax_type_perms: str, identifier: str,element: str) -> Optional[dict]:
+
+    def get_immunization_by_identifier(
+        self, identifier_pk: str, imms_vax_type_perms: str, identifier: str, element: str
+    ) -> Optional[dict]:
         """
         Get an Immunization by its ID. Return None if not found. If the patient doesn't have an NHS number,
         return the Immunization without calling PDS or checking S flag.
@@ -67,13 +68,13 @@ class FhirService:
         imms_resp = self.immunization_repo.get_immunization_by_identifier(identifier_pk, imms_vax_type_perms)
         if not imms_resp:
             base_url = f"{get_service_url()}/Immunization"
-            response = form_json(imms_resp,None,None,base_url)
+            response = form_json(imms_resp, None, None, base_url)
             return response
         else:
             base_url = f"{get_service_url()}/Immunization"
-            response = form_json(imms_resp,element,identifier,base_url)
+            response = form_json(imms_resp, element, identifier, base_url)
             return response
-        
+
     def get_immunization_by_id(self, imms_id: str, imms_vax_type_perms: str) -> Optional[dict]:
         """
         Get an Immunization by its ID. Return None if not found. If the patient doesn't have an NHS number,
@@ -107,95 +108,57 @@ class FhirService:
         imms["id"] = imms_id
         try:
             self.validator.validate(imms)
-            # Initialize errors list
-            all_errors = []
-
-            # Check the top-level Immunization resource
-            all_errors.extend(check_for_unknown_elements(imms, Constants.allowed_keys_with_id["Immunization"], "Immunization"))
-
-            # Check each contained resource
-            for contained_resource in imms.get("contained", []):
-                resource_type = contained_resource.get("resourceType")
-                all_errors.extend(check_for_unknown_elements(contained_resource, Constants.allowed_keys[resource_type], resource_type))
-
-            # Concatenate errors into a single string separated by semicolons
-            error = "; ".join(all_errors)
-            if error:
-                raise ValueError(error)
         except (ValidationError, ValueError, MandatoryError) as error:
             raise CustomValidationError(message=str(error)) from error
         imms_resp = self.immunization_repo.get_immunization_by_id_all(imms_id, imms)
         return imms_resp
 
-    def create_immunization(self, immunization: dict, imms_vax_type_perms) -> Immunization:
+    def create_immunization(self, immunization: dict, imms_vax_type_perms, supplier_system) -> Immunization:
+
+        if immunization.get("id") is not None:
+            raise CustomValidationError("id field must not be present for CREATE operation")
+
         try:
             self.validator.validate(immunization)
-            # Initialize errors list
-            all_errors = []
-
-            # Check the top-level Immunization resource
-            all_errors.extend(check_for_unknown_elements(immunization, Constants.allowed_keys["Immunization"], "Immunization"))
-
-            # Check each contained resource
-            for contained_resource in immunization.get("contained", []):
-                resource_type = contained_resource.get("resourceType")
-                all_errors.extend(check_for_unknown_elements(contained_resource, Constants.allowed_keys[resource_type], resource_type))
-
-            # Concatenate errors into a single string separated by semicolons
-            error = "; ".join(all_errors)
-            if error:
-                raise ValueError(error)
         except (ValidationError, ValueError, MandatoryError) as error:
             raise CustomValidationError(message=str(error)) from error
-        
-        patient = self._validate_patient(immunization)
 
+        patient = self._validate_patient(immunization)
+        print(f"patient:{patient}")
+        print(f"immunization:{immunization}")
         if "diagnostics" in patient:
             return patient
-        imms = self.immunization_repo.create_immunization(immunization, patient, imms_vax_type_perms)
+        imms = self.immunization_repo.create_immunization(immunization, patient, imms_vax_type_perms, supplier_system)
 
         return Immunization.parse_obj(imms)
 
     def update_immunization(
-        self, imms_id: str, immunization: dict, existing_resource_version: int, imms_vax_type_perms: str
+        self,
+        imms_id: str,
+        immunization: dict,
+        existing_resource_version: int,
+        imms_vax_type_perms: str,
+        supplier_system: str,
     ) -> tuple[UpdateOutcome, Immunization]:
         immunization["id"] = imms_id
-
-        try:
-            self.validator.validate(immunization)
-            # Initialize errors list
-            all_errors = []
-
-            # Check the top-level Immunization resource
-            all_errors.extend(check_for_unknown_elements(immunization, Constants.allowed_keys_with_id["Immunization"], "Immunization"))
-
-            # Check each contained resource
-            for contained_resource in immunization.get("contained", []):
-                resource_type = contained_resource.get("resourceType")
-                if resource_type not in Constants.allowed_contained_resources:
-                    all_errors.append(f"resourcetype Practitioner and Patient are only allowed in contained resource for this service")
-                else:
-                    all_errors.extend(check_for_unknown_elements(contained_resource, Constants.allowed_keys[resource_type], resource_type))
-
-            # Concatenate errors into a single string separated by semicolons
-            error = "; ".join(all_errors)
-            if error:
-                raise ValueError(error)
-        except (ValidationError, ValueError, MandatoryError) as error:
-            raise CustomValidationError(message=str(error)) from error
 
         patient = self._validate_patient(immunization)
 
         if "diagnostics" in patient:
             return (None, patient)
         imms = self.immunization_repo.update_immunization(
-            imms_id, immunization, patient, existing_resource_version, imms_vax_type_perms
+            imms_id, immunization, patient, existing_resource_version, imms_vax_type_perms, supplier_system
         )
 
         return UpdateOutcome.UPDATE, Immunization.parse_obj(imms)
 
     def reinstate_immunization(
-        self, imms_id: str, immunization: dict, existing_resource_version: int, imms_vax_type_perms: str
+        self,
+        imms_id: str,
+        immunization: dict,
+        existing_resource_version: int,
+        imms_vax_type_perms: str,
+        supplier_system: str,
     ) -> tuple[UpdateOutcome, Immunization]:
         immunization["id"] = imms_id
 
@@ -204,33 +167,38 @@ class FhirService:
         if "diagnostics" in patient:
             return (None, patient)
         imms = self.immunization_repo.reinstate_immunization(
-            imms_id, immunization, patient, existing_resource_version, imms_vax_type_perms
+            imms_id, immunization, patient, existing_resource_version, imms_vax_type_perms, supplier_system
         )
 
         return UpdateOutcome.UPDATE, Immunization.parse_obj(imms)
 
     def update_reinstated_immunization(
-        self, imms_id: str, immunization: dict, existing_resource_version: int, imms_vax_type_perms: str
+        self,
+        imms_id: str,
+        immunization: dict,
+        existing_resource_version: int,
+        imms_vax_type_perms: str,
+        supplier_system: str,
     ) -> tuple[UpdateOutcome, Immunization]:
         immunization["id"] = imms_id
-        
+
         patient = self._validate_patient(immunization)
 
         if "diagnostics" in patient:
             return (None, patient)
         imms = self.immunization_repo.update_reinstated_immunization(
-            imms_id, immunization, patient, existing_resource_version, imms_vax_type_perms
+            imms_id, immunization, patient, existing_resource_version, imms_vax_type_perms, supplier_system
         )
 
         return UpdateOutcome.UPDATE, Immunization.parse_obj(imms)
 
-    def delete_immunization(self, imms_id, imms_vax_type_perms) -> Immunization:
+    def delete_immunization(self, imms_id, imms_vax_type_perms, supplier_system) -> Immunization:
         """
         Delete an Immunization if it exits and return the ID back if successful.
         Exception will be raised if resource didn't exit. Multiple calls to this method won't change
         the record in the database.
         """
-        imms = self.immunization_repo.delete_immunization(imms_id, imms_vax_type_perms)
+        imms = self.immunization_repo.delete_immunization(imms_id, imms_vax_type_perms, supplier_system)
         return Immunization.parse_obj(imms)
 
     @staticmethod
@@ -391,12 +359,3 @@ class FhirService:
             return patient
 
         raise InvalidPatientId(patient_identifier=nhs_number)
-
-
-# Define a function to check for unknown elements
-def check_for_unknown_elements(resource, allowed_keys, resource_type):
-    errors = []
-    for key in resource.keys():
-        if key not in allowed_keys:
-            errors.append(f"{key} is not an allowed element of the {resource_type} resource for this service")
-    return errors

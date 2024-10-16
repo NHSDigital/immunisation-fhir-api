@@ -6,7 +6,7 @@ from decimal import Decimal
 
 from utils.base_test import ImmunizationBaseTest
 from utils.constants import valid_nhs_number1, valid_nhs_number2, valid_patient_identifier2, valid_patient_identifier1
-from utils.resource import create_an_imms_obj, create_a_filtered_imms_obj
+from utils.resource import generate_imms_resource, generate_filtered_imms_resource
 from utils.mappings import VaccineTypes
 
 
@@ -16,21 +16,27 @@ class TestSearchImmunization(ImmunizationBaseTest):
     # This is to make these tests stateless otherwise; we need to clean up the db after each test
 
     def store_records(self, *resources):
+        ids = []
         for res in resources:
             imms_id = self.create_immunization_resource(self.default_imms_api, res)
-            res["id"] = imms_id
+            ids.append(imms_id)
+        return ids[0] if len(ids) == 1 else tuple(ids)
 
     def test_search_imms(self):
         """it should search records given nhs-number and vaccine type"""
         for imms_api in self.imms_apis:
             with self.subTest(imms_api):
                 # Given two patients each with one covid_19
-                covid_19_p1 = create_an_imms_obj(str(uuid.uuid4()), valid_nhs_number1, VaccineTypes.covid_19)
-                covid_19_p2 = create_an_imms_obj(str(uuid.uuid4()), valid_nhs_number2, VaccineTypes.covid_19)
-                self.store_records(covid_19_p1, covid_19_p2)
+                covid_19_p1 = generate_imms_resource(valid_nhs_number1, VaccineTypes.covid_19)
+                covid_19_p2 = generate_imms_resource(valid_nhs_number2, VaccineTypes.covid_19)
+                rsv_p1 = generate_imms_resource(valid_nhs_number1, VaccineTypes.rsv)
+                rsv_p2 = generate_imms_resource(valid_nhs_number2, VaccineTypes.rsv)
+                covid_19_p1_id, covid_19_p2_id = self.store_records(covid_19_p1, covid_19_p2)
+                rsv_p1_id, rsv_p2_id = self.store_records(rsv_p1, rsv_p2)
 
                 # When
                 response = imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.covid_19)
+                response_rsv = imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.rsv)
 
                 # Then
                 self.assertEqual(response.status_code, 200, response.text)
@@ -38,14 +44,22 @@ class TestSearchImmunization(ImmunizationBaseTest):
                 self.assertEqual(body["resourceType"], "Bundle")
 
                 resource_ids = [entity["resource"]["id"] for entity in body["entry"]]
-                self.assertTrue(covid_19_p1["id"] in resource_ids)
-                self.assertTrue(covid_19_p2["id"] not in resource_ids)
+                self.assertTrue(covid_19_p1_id in resource_ids)
+                self.assertTrue(covid_19_p2_id not in resource_ids)
+
+                self.assertEqual(response_rsv.status_code, 200, response_rsv.text)
+                body_rsv = response_rsv.json()
+                self.assertEqual(body_rsv["resourceType"], "Bundle")
+
+                resource_ids = [entity["resource"]["id"] for entity in body_rsv["entry"]]
+                self.assertTrue(rsv_p1_id in resource_ids)
+                self.assertTrue(rsv_p2_id not in resource_ids)
 
     def test_search_patient_multiple_diseases(self):
         # Given patient has two vaccines
-        covid_19 = create_an_imms_obj(str(uuid.uuid4()), valid_nhs_number1, VaccineTypes.covid_19)
-        flu = create_an_imms_obj(str(uuid.uuid4()), valid_nhs_number1, VaccineTypes.flu)
-        self.store_records(covid_19, flu)
+        covid_19 = generate_imms_resource(valid_nhs_number1, VaccineTypes.covid_19)
+        flu = generate_imms_resource(valid_nhs_number1, VaccineTypes.flu)
+        covid_19_id, flu_id = self.store_records(covid_19, flu)
 
         # When
         response = self.default_imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.covid_19)
@@ -57,28 +71,27 @@ class TestSearchImmunization(ImmunizationBaseTest):
         print(f"response_body_search:{body},,,,,{response_text}")
 
         resource_ids = [entity["resource"]["id"] for entity in body["entry"]]
-        self.assertIn(covid_19["id"], resource_ids)
-        self.assertNotIn(flu["id"], resource_ids)
+        self.assertIn(covid_19_id, resource_ids)
+        self.assertNotIn(flu_id, resource_ids)
 
     def test_search_backwards_compatible(self):
         """Test that SEARCH 200 response body is backwards compatible with Immunisation History FHIR API"""
         for imms_api in self.imms_apis:
             with self.subTest(imms_api):
                 # Given that the patient has a covid_19 vaccine event stored in the IEDS
-                stored_imms_resource = create_an_imms_obj(str(uuid.uuid4()), valid_nhs_number1, VaccineTypes.covid_19)
+                stored_imms_resource = generate_imms_resource(valid_nhs_number1, VaccineTypes.covid_19)
                 imms_identifier_value = stored_imms_resource["identifier"][0]["value"]
-                self.store_records(stored_imms_resource)
-                imms_id = stored_imms_resource["id"]
+                imms_id = self.store_records(stored_imms_resource)
 
                 # Prepare the imms resource expected from the response. Note that id and identifier_value need to be
                 # updated to match those assigned by the create_an_imms_obj and store_records functions.
-                expected_imms_resource = create_a_filtered_imms_obj(
+                expected_imms_resource = generate_filtered_imms_resource(
                     crud_operation_to_filter_for="SEARCH",
-                    imms_id=imms_id,
                     imms_identifier_value=imms_identifier_value,
                     nhs_number=valid_nhs_number1,
                     vaccine_type=VaccineTypes.covid_19,
                 )
+                expected_imms_resource["id"] = imms_id
 
                 # When
                 response = imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.covid_19)
@@ -128,11 +141,11 @@ class TestSearchImmunization(ImmunizationBaseTest):
 
     def test_search_ignore_deleted(self):
         # Given patient has three vaccines and the last one is deleted
-        mmr1 = create_an_imms_obj(str(uuid.uuid4()), valid_nhs_number1, VaccineTypes.mmr)
-        mmr2 = create_an_imms_obj(str(uuid.uuid4()), valid_nhs_number1, VaccineTypes.mmr)
-        self.store_records(mmr1, mmr2)
+        mmr1 = generate_imms_resource(valid_nhs_number1, VaccineTypes.mmr)
+        mmr2 = generate_imms_resource(valid_nhs_number1, VaccineTypes.mmr)
+        mmr1_id, mmr2_id = self.store_records(mmr1, mmr2)
 
-        to_delete_mmr = create_an_imms_obj(str(uuid.uuid4()), valid_nhs_number1, VaccineTypes.mmr)
+        to_delete_mmr = generate_imms_resource(valid_nhs_number1, VaccineTypes.mmr)
         deleted_mmr = self.create_a_deleted_immunization_resource(self.default_imms_api, to_delete_mmr)
 
         # When
@@ -143,25 +156,25 @@ class TestSearchImmunization(ImmunizationBaseTest):
         body = response.json()
 
         resource_ids = [entity["resource"]["id"] for entity in body["entry"]]
-        self.assertTrue(mmr1["id"] in resource_ids)
-        self.assertTrue(mmr2["id"] in resource_ids)
+        self.assertTrue(mmr1_id in resource_ids)
+        self.assertTrue(mmr2_id in resource_ids)
         self.assertTrue(deleted_mmr["id"] not in resource_ids)
 
     def test_search_immunization_parameter_smoke_tests(self):
         time_1 = "2024-01-30T13:28:17.271+00:00"
         time_2 = "2024-02-01T13:28:17.271+00:00"
         stored_records = [
-            create_an_imms_obj(str(uuid.uuid4()), valid_nhs_number1, VaccineTypes.mmr),
-            create_an_imms_obj(str(uuid.uuid4()), valid_nhs_number1, VaccineTypes.flu),
-            create_an_imms_obj(str(uuid.uuid4()), valid_nhs_number1, VaccineTypes.covid_19),
-            create_an_imms_obj(str(uuid.uuid4()), valid_nhs_number1, VaccineTypes.covid_19, time_1),
-            create_an_imms_obj(str(uuid.uuid4()), valid_nhs_number1, VaccineTypes.covid_19, time_2),
-            create_an_imms_obj(str(uuid.uuid4()), valid_nhs_number2, VaccineTypes.flu),
-            create_an_imms_obj(str(uuid.uuid4()), valid_nhs_number2, VaccineTypes.covid_19),
+            generate_imms_resource(valid_nhs_number1, VaccineTypes.mmr),
+            generate_imms_resource(valid_nhs_number1, VaccineTypes.flu),
+            generate_imms_resource(valid_nhs_number1, VaccineTypes.covid_19),
+            generate_imms_resource(valid_nhs_number1, VaccineTypes.covid_19, time_1),
+            generate_imms_resource(valid_nhs_number1, VaccineTypes.covid_19, time_2),
+            generate_imms_resource(valid_nhs_number2, VaccineTypes.flu),
+            generate_imms_resource(valid_nhs_number2, VaccineTypes.covid_19),
         ]
 
-        self.store_records(*stored_records)
-        created_resource_ids = [result["id"] for result in stored_records]
+        created_resource_ids = list(self.store_records(*stored_records))
+        # created_resource_ids = [result["id"] for result in stored_records]
 
         # When
         class SearchTestParams(NamedTuple):
@@ -305,8 +318,8 @@ class TestSearchImmunization(ImmunizationBaseTest):
         """it should accept the _include parameter of "Immunization:patient" and return the patient."""
 
         # Arrange
-        imms_obj = create_an_imms_obj(str(uuid.uuid4()), valid_nhs_number1, VaccineTypes.mmr)
-        self.store_records(imms_obj)
+        imms_obj = generate_imms_resource(valid_nhs_number1, VaccineTypes.mmr)
+        imms_obj_id = self.store_records(imms_obj)
 
         response = self.default_imms_api.search_immunizations_full(
             "POST",
@@ -320,7 +333,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
         entries = result["entry"]
 
         entry_ids = [result["resource"]["id"] for result in result["entry"]]
-        assert imms_obj["id"] in entry_ids
+        assert imms_obj_id in entry_ids
 
         patient_entry = next(entry for entry in entries if entry["resource"]["resourceType"] == "Patient")
         assert patient_entry["search"]["mode"] == "include"
@@ -359,7 +372,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
 
     def test_search_reject_tbc(self):
         # Given patient has a vaccine with no NHS number
-        imms = create_an_imms_obj(str(uuid.uuid4()), "TBC", VaccineTypes.mmr)
+        imms = generate_imms_resource("TBC", VaccineTypes.mmr)
         del imms["contained"][1]["identifier"][0]["value"]
         self.store_records(imms)
 

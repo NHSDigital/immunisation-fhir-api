@@ -23,20 +23,7 @@
           "resourceType": "Patient",
           "id" : "Pat1",
           "identifier": [
-              {"extension":  [
-                  {
-                      "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-NHSNumberVerificationStatus",
-                      "valueCodeableConcept": {
-                          "coding":  [
-                              {
-                                  "system": "https://fhir.hl7.org.uk/CodeSystem/UKCore-NHSNumberVerificationStatusEngland",
-                                  "code": "NHS_NUMBER_STATUS_INDICATOR_CODE",
-                                  "display": "NHS_NUMBER_STATUS_INDICATOR_DESCRIPTION"
-                              }
-                          ]
-                      }
-                  }
-              ],
+              {
                   "system": "https://fhir.nhs.uk/Id/nhs-number",
                   "value": "NHS_NUMBER"
               }

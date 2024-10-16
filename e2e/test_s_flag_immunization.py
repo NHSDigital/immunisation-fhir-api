@@ -4,7 +4,7 @@ from decimal import Decimal
 from utils.base_test import ImmunizationBaseTest
 from utils.constants import valid_nhs_number1, valid_nhs_number_with_s_flag
 from utils.immunisation_api import ImmunisationApi
-from utils.resource import create_an_imms_obj, create_a_filtered_imms_obj
+from utils.resource import generate_imms_resource, generate_filtered_imms_resource
 from utils.mappings import VaccineTypes
 
 
@@ -17,8 +17,7 @@ class SFlagBaseTest(ImmunizationBaseTest):
         valid_nhs_number_1 otherwise
         """
         nhs_number = valid_nhs_number_with_s_flag if patient_is_restricted else valid_nhs_number1
-        imms = create_an_imms_obj(nhs_number=nhs_number, vaccine_type=VaccineTypes.covid_19)
-        del imms["id"]
+        imms = generate_imms_resource(nhs_number=nhs_number, vaccine_type=VaccineTypes.covid_19)
         return self.create_immunization_resource(imms_api, imms)
 
 
@@ -31,12 +30,12 @@ class TestGetSFlagImmunization(SFlagBaseTest):
             with self.subTest(imms_api):
                 imms_id = self.store_imms(imms_api, patient_is_restricted=True)
                 read_imms = imms_api.get_immunization_by_id(imms_id).json(parse_float=Decimal)
-                expected_response = create_a_filtered_imms_obj(
+                expected_response = generate_filtered_imms_resource(
                     crud_operation_to_filter_for="READ",
                     filter_for_s_flag=True,
-                    imms_id=read_imms["id"],
                     nhs_number=valid_nhs_number_with_s_flag,
                 )
+                expected_response["id"] = read_imms["id"]
                 self.assertEqual(read_imms, expected_response)
 
     def test_get_not_s_flagged_imms(self):
@@ -45,12 +44,12 @@ class TestGetSFlagImmunization(SFlagBaseTest):
             with self.subTest(imms_api):
                 imms = self.store_imms(imms_api, patient_is_restricted=False)
                 read_imms = imms_api.get_immunization_by_id(imms).json(parse_float=Decimal)
-                expected_response = create_a_filtered_imms_obj(
+                expected_response = generate_filtered_imms_resource(
                     crud_operation_to_filter_for="READ",
                     filter_for_s_flag=False,
-                    imms_id=read_imms["id"],
                     nhs_number=valid_nhs_number1,
                 )
+                expected_response["id"] = read_imms["id"]
                 self.assertEqual(read_imms, expected_response)
 
 
@@ -70,12 +69,12 @@ class TestSearchSFlagImmunization(SFlagBaseTest):
                 # Then
                 hit_imms = self.filter_my_imms_from_search_result(response, imms1, imms2)
                 for hit_imm in hit_imms:
-                    expected_response = create_a_filtered_imms_obj(
+                    expected_response = generate_filtered_imms_resource(
                         crud_operation_to_filter_for="SEARCH",
                         filter_for_s_flag=True,
-                        imms_id=hit_imm["id"],
                         nhs_number=valid_nhs_number_with_s_flag,
                     )
+                    expected_response["id"] = hit_imm["id"]
                     # Patient reference will have been updated by the API, identifier value is randomly assigned by
                     # create_an_imms_obj, so update the expected response dict accordingly
                     expected_response["patient"]["reference"] = hit_imm["patient"]["reference"]
@@ -95,12 +94,12 @@ class TestSearchSFlagImmunization(SFlagBaseTest):
                 # Then
                 hit_imms = self.filter_my_imms_from_search_result(response, imms_id_1, imms_id_2)
                 for hit_imm in hit_imms:
-                    expected_response = create_a_filtered_imms_obj(
+                    expected_response = generate_filtered_imms_resource(
                         crud_operation_to_filter_for="SEARCH",
                         filter_for_s_flag=False,
-                        imms_id=hit_imm["id"],
                         nhs_number=valid_nhs_number1,
                     )
+                    expected_response["id"] = hit_imm["id"]
                     # Patient reference will have been updated by the API, identifier value is randomly assigned by
                     # create_an_imms_obj, so update the expected response dict accordingly
                     expected_response["patient"]["reference"] = hit_imm["patient"]["reference"]
