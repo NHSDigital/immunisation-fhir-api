@@ -124,7 +124,8 @@ class FhirService:
             raise CustomValidationError(message=str(error)) from error
 
         patient = self._validate_patient(immunization)
-
+        print(f"patient:{patient}")
+        print(f"immunization:{immunization}")
         if "diagnostics" in patient:
             return patient
         imms = self.immunization_repo.create_immunization(immunization, patient, imms_vax_type_perms, supplier_system)

@@ -7,7 +7,7 @@ import uuid
 import logging
 from botocore.exceptions import ClientError
 from log_firehose import FirehoseLogger
-from convert_flat_json import convert_to_flat_json
+from convert_to_flat_json import convert_to_flat_json
 
 failure_queue_url = os.environ["AWS_SQS_QUEUE_URL"]
 delta_table_name = os.environ["DELTA_TABLE_NAME"]

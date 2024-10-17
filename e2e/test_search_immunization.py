@@ -63,10 +63,12 @@ class TestSearchImmunization(ImmunizationBaseTest):
 
         # When
         response = self.default_imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.covid_19)
-
+        print(f"response_search:{response}")
         # Then
         self.assertEqual(response.status_code, 200, response.text)
         body = response.json()
+        response_text = response.text
+        print(f"response_body_search:{body},,,,,{response_text}")
 
         resource_ids = [entity["resource"]["id"] for entity in body["entry"]]
         self.assertIn(covid_19_id, resource_ids)
