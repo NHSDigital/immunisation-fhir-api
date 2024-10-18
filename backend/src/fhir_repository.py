@@ -58,7 +58,7 @@ class RecordAttributes:
     timestamp: int
     identifier: str
 
-    def __init__(self, imms: dict, patient: dict):
+    def __init__(self, imms: dict, patient: any):
         """Create attributes that may be used in dynamodb table"""
         imms_id = imms["id"]
         self.pk = _make_immunization_pk(imms_id)
@@ -66,8 +66,12 @@ class RecordAttributes:
             nhs_number = [
                 x for x in imms["contained"] if x.get("resourceType") == "Patient"
             ][0]["identifier"][0]["value"]
+        elif imms:
+            nhs_number = [
+                x for x in imms["contained"] if x.get("resourceType") == "Patient"
+            ][0]["identifier"][0]["value"]
         else:
-            nhs_number = "TBC"
+            nhs_number = "TBC" 
         self.patient_pk = _make_patient_pk(nhs_number)
         self.patient = patient
         self.resource = imms
@@ -83,16 +87,17 @@ class ImmunizationRepository:
     def __init__(self, table: Table):
         self.table = table
     
-    def get_immunization_by_identifier(self, identifier_pk: str, imms_vax_type_perms: str) -> Optional[dict]:
+    def get_immunization_by_identifier(self, identifier_pk: str, imms_vax_type_perms: str, is_imms_batch_app) -> Optional[dict]:
         response = self.table.query(IndexName='IdentifierGSI',
                                     KeyConditionExpression=Key('IdentifierPK').eq(identifier_pk))
         if "Items" in response and len(response["Items"]) > 0:
             item = response["Items"][0]
             resp = dict()
             vaccine_type = self._vaccine_type(item["PatientSK"])
-            vax_type_perms = self._parse_vaccine_permissions(imms_vax_type_perms)
-            vax_type_perm= self._vaccine_permission(vaccine_type, "search")
-            self._check_permission(vax_type_perm,vax_type_perms)
+            if not is_imms_batch_app:
+                vax_type_perms = self._parse_vaccine_permissions(imms_vax_type_perms)
+                vax_type_perm= self._vaccine_permission(vaccine_type, "search")
+                self._check_permission(vax_type_perm,vax_type_perms)
             resource = json.loads(item["Resource"])
             resp["id"] = resource.get('id')
             resp["version"] = int(response['Items'][0]['Version'])
@@ -160,13 +165,14 @@ class ImmunizationRepository:
         else:
                 return None
 
-    def create_immunization(self, immunization: dict, patient: dict , imms_vax_type_perms, supplier_system) -> dict:
+    def create_immunization(self, immunization: dict, patient: any , imms_vax_type_perms, supplier_system, is_imms_batch_app) -> dict:
         new_id = str(uuid.uuid4())
         immunization["id"] = new_id
         attr = RecordAttributes(immunization, patient)
-        vax_type_perms = self._parse_vaccine_permissions(imms_vax_type_perms)
-        vax_type_perm= self._vaccine_permission(attr.vaccine_type, "create")
-        self._check_permission(vax_type_perm,vax_type_perms)
+        if not is_imms_batch_app:
+            vax_type_perms = self._parse_vaccine_permissions(imms_vax_type_perms)
+            vax_type_perm= self._vaccine_permission(attr.vaccine_type, "create")
+            self._check_permission(vax_type_perm,vax_type_perms)
         query_response = _query_identifier(
             self.table, "IdentifierGSI", "IdentifierPK", attr.identifier
         )
@@ -198,15 +204,17 @@ class ImmunizationRepository:
         self,
         imms_id: str,
         immunization: dict,
-        patient: dict,
+        patient: any,
         existing_resource_version: int,
         imms_vax_type_perms: str,
-        supplier_system : str
+        supplier_system : str,
+        is_imms_batch_app
     ) -> dict:
         attr = RecordAttributes(immunization, patient)
-        vax_type_perms = self._parse_vaccine_permissions(imms_vax_type_perms)
-        vax_type_perm= self._vaccine_permission(attr.vaccine_type, "update")
-        self._check_permission(vax_type_perm,vax_type_perms)
+        if not is_imms_batch_app:
+            vax_type_perms = self._parse_vaccine_permissions(imms_vax_type_perms)
+            vax_type_perm= self._vaccine_permission(attr.vaccine_type, "update")
+            self._check_permission(vax_type_perm,vax_type_perms)
         # "Resource" is a dynamodb reserved word
         update_exp = (
             "SET UpdatedAt = :timestamp, PatientPK = :patient_pk, "
@@ -262,15 +270,17 @@ class ImmunizationRepository:
         self,
         imms_id: str,
         immunization: dict,
-        patient: dict,
+        patient: any,
         existing_resource_version: int,
         imms_vax_type_perms: str,
-        supplier_system : str
+        supplier_system : str,
+        is_imms_batch_app
     ) -> dict:
         attr = RecordAttributes(immunization, patient)
-        vax_type_perms = self._parse_vaccine_permissions(imms_vax_type_perms)
-        vax_type_perm= self._vaccine_permission(attr.vaccine_type, "update")
-        self._check_permission(vax_type_perm,vax_type_perms)
+        if not is_imms_batch_app:
+            vax_type_perms = self._parse_vaccine_permissions(imms_vax_type_perms)
+            vax_type_perm= self._vaccine_permission(attr.vaccine_type, "update")
+            self._check_permission(vax_type_perm,vax_type_perms)
         # "Resource" is a dynamodb reserved word
         update_exp = (
             "SET UpdatedAt = :timestamp, PatientPK = :patient_pk, "
@@ -326,15 +336,17 @@ class ImmunizationRepository:
         self,
         imms_id: str,
         immunization: dict,
-        patient: dict,
+        patient: any,
         existing_resource_version: int,
         imms_vax_type_perms: str,
-        supplier_system : str
+        supplier_system : str,
+        is_imms_batch_app
     ) -> dict:
         attr = RecordAttributes(immunization, patient)
-        vax_type_perms = self._parse_vaccine_permissions(imms_vax_type_perms)
-        vax_type_perm= self._vaccine_permission(attr.vaccine_type, "update")
-        self._check_permission(vax_type_perm,vax_type_perms)
+        if not is_imms_batch_app:
+            vax_type_perms = self._parse_vaccine_permissions(imms_vax_type_perms)
+            vax_type_perm= self._vaccine_permission(attr.vaccine_type, "update")
+            self._check_permission(vax_type_perm,vax_type_perms)
         # "Resource" is a dynamodb reserved word
         update_exp = (
             "SET UpdatedAt = :timestamp, PatientPK = :patient_pk, "
@@ -385,7 +397,7 @@ class ImmunizationRepository:
                     response=error.response,
                 )
 
-    def delete_immunization(self, imms_id: str, imms_vax_type_perms: str, supplier_system : str) -> dict:
+    def delete_immunization(self, imms_id: str, imms_vax_type_perms: str, supplier_system : str, is_imms_batch_app) -> dict:
         now_timestamp = int(time.time())
         try:
             resp = self.table.get_item(Key={"PK": _make_immunization_pk(imms_id)})
@@ -394,14 +406,16 @@ class ImmunizationRepository:
                 if "DeletedAt" in resp["Item"]:
                     if resp["Item"]["DeletedAt"] == "reinstated":
                         vaccine_type = self._vaccine_type(resp["Item"]["PatientSK"])
-                        vax_type_perms = self._parse_vaccine_permissions(imms_vax_type_perms)
-                        vax_type_perm= self._vaccine_permission(vaccine_type, "delete")
-                        self._check_permission(vax_type_perm,vax_type_perms)                      
+                        if not is_imms_batch_app:
+                            vax_type_perms = self._parse_vaccine_permissions(imms_vax_type_perms)
+                            vax_type_perm= self._vaccine_permission(vaccine_type, "delete")
+                            self._check_permission(vax_type_perm,vax_type_perms)                      
                 else:
                     vaccine_type = self._vaccine_type(resp["Item"]["PatientSK"])
-                    vax_type_perms = self._parse_vaccine_permissions(imms_vax_type_perms)
-                    vax_type_perm= self._vaccine_permission(vaccine_type, "delete")
-                    self._check_permission(vax_type_perm,vax_type_perms)
+                    if not is_imms_batch_app:
+                        vax_type_perms = self._parse_vaccine_permissions(imms_vax_type_perms)
+                        vax_type_perm= self._vaccine_permission(vaccine_type, "delete")
+                        self._check_permission(vax_type_perm,vax_type_perms)
                     
             response = self.table.update_item(
                 Key={"PK": _make_immunization_pk(imms_id)},
