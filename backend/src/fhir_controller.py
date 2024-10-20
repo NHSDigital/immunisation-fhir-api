@@ -72,9 +72,14 @@ class FhirController:
         self.authorizer = authorizer
 
     def get_immunization_by_identifier(self, aws_event) -> dict:
-        if response := self.authorize_request(EndpointOperation.SEARCH, aws_event):
-            return response
-        query_params = aws_event.get("queryStringParameters", {})
+        if aws_event.get("headers"):
+            is_imms_batch_app = aws_event["headers"]["SupplierSystem"] == "Imms-Batch-App"
+            if not is_imms_batch_app: 
+                if response := self.authorize_request(EndpointOperation.SEARCH, aws_event):
+                    return response
+            query_params = aws_event.get("queryStringParameters", {})
+        else:
+            raise UnauthorizedError()    
         body = aws_event["body"]
         if query_params and body:
             error = create_operation_outcome(
@@ -94,22 +99,21 @@ class FhirController:
             return self.create_response(400, id_error)
         identifiers = identifier.replace("|", "#")
         try:
-            if aws_event.get("headers"):
                 try:
-                    imms_vax_type_perms = aws_event["headers"]["VaccineTypePermissions"]
-                    if len(imms_vax_type_perms) == 0:
-                        raise UnauthorizedVaxError()
+                    imms_vax_type_perms = None
+                    if not is_imms_batch_app:
+                        imms_vax_type_perms = aws_event["headers"]["VaccineTypePermissions"]
+                        if len(imms_vax_type_perms) == 0:
+                            raise UnauthorizedVaxError()
 
                 except UnauthorizedVaxError as unauthorized:
                     return self.create_response(403, unauthorized.to_operation_outcome())
-            else:
-                raise UnauthorizedVaxError()
         except UnauthorizedVaxError as unauthorized:
             return self.create_response(403, unauthorized.to_operation_outcome())
 
         try:
             if resource := self.fhir_service.get_immunization_by_identifier(
-                identifiers, imms_vax_type_perms, identifier, element
+                identifiers, imms_vax_type_perms, identifier, element, is_imms_batch_app
             ):
                 return FhirController.create_response(200, resource)
         except UnauthorizedVaxError as unauthorized:
@@ -158,25 +162,21 @@ class FhirController:
             return self.create_response(403, unauthorized.to_operation_outcome())
 
     def create_immunization(self, aws_event):
-        if response := self.authorize_request(EndpointOperation.CREATE, aws_event):
-            return response
-
         try:
             if aws_event.get("headers"):
-                imms_vax_type_perms = aws_event["headers"]["VaccineTypePermissions"]
-                supplier_system = self._identify_supplier_system(aws_event)
-                if len(imms_vax_type_perms) == 0:
-                    raise UnauthorizedVaxError()
-                if len(supplier_system) == 0:
-                    raise UnauthorizedSystemError()
+                is_imms_batch_app = aws_event["headers"]["SupplierSystem"] == "Imms-Batch-App"
+                if not is_imms_batch_app:
+                    if response := self.authorize_request(EndpointOperation.CREATE, aws_event):
+                        return response
             else:
                 raise UnauthorizedError()
         except UnauthorizedError as unauthorized:
             return self.create_response(403, unauthorized.to_operation_outcome())
-        except UnauthorizedVaxError as unauthorized:
-            return self.create_response(403, unauthorized.to_operation_outcome())
-        except UnauthorizedSystemError as unauthorized:
-            return self.create_response(403, unauthorized.to_operation_outcome())
+
+        # Call the common method and unpack the results
+        response, imms_vax_type_perms, supplier_system = self.check_vaccine_type_permissions(aws_event, is_imms_batch_app)
+        if response:
+            return response
 
         try:
             imms = json.loads(aws_event["body"], parse_float=Decimal)
@@ -184,7 +184,7 @@ class FhirController:
             return self._create_bad_request(f"Request's body contains malformed JSON: {e}")
 
         try:
-            resource = self.fhir_service.create_immunization(imms, imms_vax_type_perms, supplier_system)
+            resource = self.fhir_service.create_immunization(imms, imms_vax_type_perms, supplier_system, is_imms_batch_app)
             if "diagnostics" in resource:
                 exp_error = create_operation_outcome(
                     resource_id=str(uuid.uuid4()),
@@ -205,41 +205,31 @@ class FhirController:
             return self.create_response(403, unauthorized.to_operation_outcome())
 
     def update_immunization(self, aws_event):
-        if response := self.authorize_request(EndpointOperation.UPDATE, aws_event):
-            return response
-        imms_id = aws_event["pathParameters"]["id"]
-
-        # Check vaxx type permissions- start
         try:
-            if aws_event.get("headers"):
-                imms_vax_type_perms = aws_event["headers"]["VaccineTypePermissions"]
-                supplier_system = self._identify_supplier_system(aws_event)
-                if len(imms_vax_type_perms) == 0:
-                    raise UnauthorizedVaxError()
-                if len(supplier_system) == 0:
-                    raise UnauthorizedSystemError()
+            if aws_event.get("headers"): 
+                is_imms_batch_app = aws_event["headers"]["SupplierSystem"] == "Imms-Batch-App"
+                if not is_imms_batch_app:
+                    if response := self.authorize_request(EndpointOperation.UPDATE, aws_event):
+                        return response
+                imms_id = aws_event["pathParameters"]["id"]
             else:
                 raise UnauthorizedError()
         except UnauthorizedError as unauthorized:
             return self.create_response(403, unauthorized.to_operation_outcome())
-        except UnauthorizedVaxError as unauthorized:
-            return self.create_response(403, unauthorized.to_operation_outcome())
-        except UnauthorizedSystemError as unauthorized:
-            return self.create_response(403, unauthorized.to_operation_outcome())
-        except Exception as e:
-            return self._create_bad_request(f"Request's header is faulty")
+        # Call the common method and unpack the results
+        response, imms_vax_type_perms, supplier_system = self.check_vaccine_type_permissions(aws_event, is_imms_batch_app)
+        if response:
+            return response
 
-        # Check vaxx type permissions- end
-
-        # Validate the imms id -start
+        # Validate the imms id - start
         if id_error := self._validate_id(imms_id):
             return FhirController.create_response(400, json.dumps(id_error))
-        # Validate the imms id -end
+        # Validate the imms id - end
 
-        # Validate the body of the request -start
+        # Validate the body of the request - start
         try:
             imms = json.loads(aws_event["body"], parse_float=Decimal)
-            # Validate the imms id in the path params and body of request -start
+            # Validate the imms id in the path params and body of request - start
             if imms.get("id") != imms_id:
                 exp_error = create_operation_outcome(
                     resource_id=str(uuid.uuid4()),
@@ -248,14 +238,14 @@ class FhirController:
                     diagnostics=f"Validation errors: The provided immunization id:{imms_id} doesn't match with the content of the request body",
                 )
                 return self.create_response(400, json.dumps(exp_error))
-            # Validate the imms id in the path params and body of request -end
+            # Validate the imms id in the path params and body of request - end
         except json.decoder.JSONDecodeError as e:
             return self._create_bad_request(f"Request's body contains malformed JSON: {e}")
         except Exception as e:
             return self._create_bad_request(f"Request's body contains string")
-        # Validate the body of the request -end
+        # Validate the body of the request - end
 
-        # Validate if the imms resource does not exists -start
+        # Validate if the imms resource does not exist - start
         try:
             existing_record = self.fhir_service.get_immunization_by_id_all(imms_id, imms)
             if not existing_record:
@@ -277,30 +267,31 @@ class FhirController:
                 return self.create_response(400, json.dumps(exp_error))
         except ValidationError as error:
             return self.create_response(400, error.to_operation_outcome())
-        # Validate if the imms resource does not exists -end
+        # Validate if the imms resource does not exist - end
 
-        # Check vaxx type permissions on the existing record - start
+        # Check vaccine type permissions on the existing record - start
         try:
-            vax_type_perms = self._parse_vaccine_permissions(imms_vax_type_perms)
-            vax_type_perm = self._vaccine_permission(existing_record["VaccineType"], "update")
-            self._check_permission(vax_type_perm, vax_type_perms)
+            if not is_imms_batch_app:
+                vax_type_perms = self._parse_vaccine_permissions(imms_vax_type_perms)
+                vax_type_perm = self._vaccine_permission(existing_record["VaccineType"], "update")
+                self._check_permission(vax_type_perm, vax_type_perms)
         except UnauthorizedVaxOnRecordError as unauthorized:
             return self.create_response(403, unauthorized.to_operation_outcome())
-        # Check vaxx type permissions on the existing record - end
+        # Check vaccine type permissions on the existing record - end
 
         existing_resource_version = int(existing_record["Version"])
         try:
-            # Validate if the imms resource to be updated is a logically deleted resource-start
+            # Validate if the imms resource to be updated is a logically deleted resource - start
             if existing_record["DeletedAt"] == True:
 
                 outcome, resource = self.fhir_service.reinstate_immunization(
-                    imms_id, imms, existing_resource_version, imms_vax_type_perms, supplier_system
+                    imms_id, imms, existing_resource_version, imms_vax_type_perms, supplier_system , is_imms_batch_app
                 )
 
             # Validate if the imms resource to be updated is a logically deleted resource-end
             else:
-                # Validate if imms resource version is part of the request -start
-                if not "E-Tag" in aws_event["headers"]:
+                # Validate if imms resource version is part of the request - start
+                if "E-Tag" not in aws_event["headers"]:
                     exp_error = create_operation_outcome(
                         resource_id=str(uuid.uuid4()),
                         severity=Severity.error,
@@ -308,9 +299,9 @@ class FhirController:
                         diagnostics="Validation errors: Immunization resource version not specified in the request headers",
                     )
                     return self.create_response(400, json.dumps(exp_error))
-                # Validate if imms resource version is part of the request -end
+                # Validate if imms resource version is part of the request - end
 
-                # Validate the imms resource version provided in the request headers is per standard -start
+                # Validate the imms resource version provided in the request headers - start
                 try:
                     resource_version_header = int(aws_event["headers"]["E-Tag"])
                 except (TypeError, ValueError):
@@ -322,9 +313,9 @@ class FhirController:
                         diagnostics=f"Validation errors: Immunization resource version:{resource_version} in the request headers is invalid.",
                     )
                     return self.create_response(400, json.dumps(exp_error))
-                # Validate the imms resource version provided in the request headers is per standard -end
+                # Validate the imms resource version provided in the request headers - end
 
-                # Validate if resource version has changed since last retrieve -start
+                # Validate if resource version has changed since the last retrieve - start
                 if existing_resource_version > resource_version_header:
                     exp_error = create_operation_outcome(
                         resource_id=str(uuid.uuid4()),
@@ -342,19 +333,19 @@ class FhirController:
                         diagnostics=f"Validation errors: The requested immunization resource {imms_id} version is inconsistent with the existing version.",
                     )
                     return self.create_response(400, json.dumps(exp_error))
-                # Validate if resource version has changed since last retrieve -end
+                # Validate if resource version has changed since the last retrieve - end
 
-                # Check if the record is reinstated record -start
+                # Check if the record is reinstated record - start
                 if existing_record["Reinstated"] == True:
                     outcome, resource = self.fhir_service.update_reinstated_immunization(
-                        imms_id, imms, existing_resource_version, imms_vax_type_perms, supplier_system
+                        imms_id, imms, existing_resource_version, imms_vax_type_perms, supplier_system , is_imms_batch_app
                     )
                 else:
                     outcome, resource = self.fhir_service.update_immunization(
-                        imms_id, imms, existing_resource_version, imms_vax_type_perms, supplier_system
+                        imms_id, imms, existing_resource_version, imms_vax_type_perms, supplier_system, is_imms_batch_app
                     )
 
-                # Check if the record is reinstated record -end
+                # Check if the record is reinstated record - end
 
             # Check for errors returned on update
             if "diagnostics" in resource:
@@ -375,33 +366,30 @@ class FhirController:
             return self.create_response(403, unauthorized.to_operation_outcome())
 
     def delete_immunization(self, aws_event):
-        if response := self.authorize_request(EndpointOperation.DELETE, aws_event):
-            return response
-
-        imms_id = aws_event["pathParameters"]["id"]
-
-        if id_error := self._validate_id(imms_id):
-            return FhirController.create_response(400, id_error)
-
         try:
-            if aws_event.get("headers"):
-                imms_vax_type_perms = aws_event["headers"]["VaccineTypePermissions"]
-                supplier_system = self._identify_supplier_system(aws_event)
-                if len(imms_vax_type_perms) == 0:
-                    raise UnauthorizedVaxError()
-                if len(supplier_system) == 0:
-                    raise UnauthorizedSystemError()
+            if aws_event.get("headers"): 
+                is_imms_batch_app = aws_event["headers"]["SupplierSystem"] == "Imms-Batch-App"
+                if not is_imms_batch_app:
+                    if response := self.authorize_request(EndpointOperation.DELETE, aws_event):
+                        return response
+                imms_id = aws_event["pathParameters"]["id"]
             else:
                 raise UnauthorizedError()
         except UnauthorizedError as unauthorized:
             return self.create_response(403, unauthorized.to_operation_outcome())
-        except UnauthorizedVaxError as unauthorized:
-            return self.create_response(403, unauthorized.to_operation_outcome())
-        except UnauthorizedSystemError as unauthorized:
-            return self.create_response(403, unauthorized.to_operation_outcome())
+
+        # Validate the imms id - start
+        if id_error := self._validate_id(imms_id):
+            return FhirController.create_response(400, json.dumps(id_error))
+        # Validate the imms id - end
+
+        # Call the common method and unpack the results
+        response, imms_vax_type_perms, supplier_system = self.check_vaccine_type_permissions(aws_event, is_imms_batch_app)
+        if response:
+            return response
 
         try:
-            self.fhir_service.delete_immunization(imms_id, imms_vax_type_perms, supplier_system)
+            self.fhir_service.delete_immunization(imms_id, imms_vax_type_perms, supplier_system, is_imms_batch_app)
             return self.create_response(204)
         except ResourceNotFoundError as not_found:
             return self.create_response(404, not_found.to_operation_outcome())
@@ -633,6 +621,31 @@ class FhirController:
                 diagnostics="Search parameter _element must have  the following parameter: immunization.identifier",
             )
             return self.create_response(400, error)
+        
+    
+    def check_vaccine_type_permissions(self, aws_event, is_imms_batch_app):
+        try:
+            imms_vax_type_perms = None
+            if not is_imms_batch_app:
+                imms_vax_type_perms = aws_event["headers"]["VaccineTypePermissions"]
+                if len(imms_vax_type_perms) == 0:
+                    raise UnauthorizedVaxError()
+
+            supplier_system = self._identify_supplier_system(aws_event)
+            if len(supplier_system) == 0:
+                raise UnauthorizedSystemError()
+
+            # Return the values needed for later use
+            return None, imms_vax_type_perms, supplier_system
+
+        except UnauthorizedVaxError as unauthorized:
+            return self.create_response(403, unauthorized.to_operation_outcome()), None, None
+        except UnauthorizedSystemError as unauthorized:
+            return self.create_response(403, unauthorized.to_operation_outcome()), None, None
+        except UnauthorizedError as e:
+            return self._create_bad_request(str(e)), None, None
+
+    
 
     @staticmethod
     def create_response(status_code, body=None, headers=None):

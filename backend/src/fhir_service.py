@@ -59,13 +59,13 @@ class FhirService:
         self.validator = validator
 
     def get_immunization_by_identifier(
-        self, identifier_pk: str, imms_vax_type_perms: str, identifier: str, element: str
-    ) -> Optional[dict]:
+        self, identifier_pk: str, imms_vax_type_perms: str, identifier: str, element: str, is_imms_batch_app
+        ) -> Optional[dict]:
         """
         Get an Immunization by its ID. Return None if not found. If the patient doesn't have an NHS number,
         return the Immunization without calling PDS or checking S flag.
         """
-        imms_resp = self.immunization_repo.get_immunization_by_identifier(identifier_pk, imms_vax_type_perms)
+        imms_resp = self.immunization_repo.get_immunization_by_identifier(identifier_pk, imms_vax_type_perms, is_imms_batch_app)
         if not imms_resp:
             base_url = f"{get_service_url()}/Immunization"
             response = form_json(imms_resp, None, None, base_url)
@@ -113,7 +113,7 @@ class FhirService:
         imms_resp = self.immunization_repo.get_immunization_by_id_all(imms_id, imms)
         return imms_resp
 
-    def create_immunization(self, immunization: dict, imms_vax_type_perms, supplier_system) -> Immunization:
+    def create_immunization(self, immunization: dict, imms_vax_type_perms, supplier_system, is_imms_batch_app) -> Immunization:
 
         if immunization.get("id") is not None:
             raise CustomValidationError("id field must not be present for CREATE operation")
@@ -122,12 +122,15 @@ class FhirService:
             self.validator.validate(immunization)
         except (ValidationError, ValueError, MandatoryError) as error:
             raise CustomValidationError(message=str(error)) from error
-
-        patient = self._validate_patient(immunization)
-
-        if "diagnostics" in patient:
-            return patient
-        imms = self.immunization_repo.create_immunization(immunization, patient, imms_vax_type_perms, supplier_system)
+        patient = None
+        if not is_imms_batch_app:
+            patient = self._validate_patient(immunization)
+            print(f"patient:{patient}")
+            print(f"immunization:{immunization}")
+            if "diagnostics" in patient:
+                return patient
+            
+        imms = self.immunization_repo.create_immunization(immunization, patient, imms_vax_type_perms, supplier_system, is_imms_batch_app)
 
         return Immunization.parse_obj(imms)
 
@@ -138,15 +141,19 @@ class FhirService:
         existing_resource_version: int,
         imms_vax_type_perms: str,
         supplier_system: str,
+        is_imms_batch_app
     ) -> tuple[UpdateOutcome, Immunization]:
         immunization["id"] = imms_id
 
-        patient = self._validate_patient(immunization)
-
-        if "diagnostics" in patient:
-            return (None, patient)
+        patient = None
+        if not is_imms_batch_app:
+            patient = self._validate_patient(immunization)
+            print(f"patient:{patient}")
+            print(f"immunization:{immunization}")
+            if "diagnostics" in patient:
+                return (None, patient)
         imms = self.immunization_repo.update_immunization(
-            imms_id, immunization, patient, existing_resource_version, imms_vax_type_perms, supplier_system
+            imms_id, immunization, patient, existing_resource_version, imms_vax_type_perms, supplier_system, is_imms_batch_app
         )
 
         return UpdateOutcome.UPDATE, Immunization.parse_obj(imms)
@@ -158,15 +165,19 @@ class FhirService:
         existing_resource_version: int,
         imms_vax_type_perms: str,
         supplier_system: str,
+        is_imms_batch_app
     ) -> tuple[UpdateOutcome, Immunization]:
         immunization["id"] = imms_id
 
-        patient = self._validate_patient(immunization)
-
-        if "diagnostics" in patient:
-            return (None, patient)
+        patient = None
+        if not is_imms_batch_app:
+            patient = self._validate_patient(immunization)
+            print(f"patient:{patient}")
+            print(f"immunization:{immunization}")
+            if "diagnostics" in patient:
+                return (None, patient)
         imms = self.immunization_repo.reinstate_immunization(
-            imms_id, immunization, patient, existing_resource_version, imms_vax_type_perms, supplier_system
+            imms_id, immunization, patient, existing_resource_version, imms_vax_type_perms, supplier_system, is_imms_batch_app
         )
 
         return UpdateOutcome.UPDATE, Immunization.parse_obj(imms)
@@ -178,26 +189,30 @@ class FhirService:
         existing_resource_version: int,
         imms_vax_type_perms: str,
         supplier_system: str,
+        is_imms_batch_app
     ) -> tuple[UpdateOutcome, Immunization]:
         immunization["id"] = imms_id
 
-        patient = self._validate_patient(immunization)
-
-        if "diagnostics" in patient:
-            return (None, patient)
+        patient = None
+        if not is_imms_batch_app:
+            patient = self._validate_patient(immunization)
+            print(f"patient:{patient}")
+            print(f"immunization:{immunization}")
+            if "diagnostics" in patient:
+                return (None, patient)
         imms = self.immunization_repo.update_reinstated_immunization(
-            imms_id, immunization, patient, existing_resource_version, imms_vax_type_perms, supplier_system
+            imms_id, immunization, patient, existing_resource_version, imms_vax_type_perms, supplier_system, is_imms_batch_app
         )
 
         return UpdateOutcome.UPDATE, Immunization.parse_obj(imms)
 
-    def delete_immunization(self, imms_id, imms_vax_type_perms, supplier_system) -> Immunization:
+    def delete_immunization(self, imms_id, imms_vax_type_perms, supplier_system, is_imms_batch_app) -> Immunization:
         """
         Delete an Immunization if it exits and return the ID back if successful.
         Exception will be raised if resource didn't exit. Multiple calls to this method won't change
         the record in the database.
         """
-        imms = self.immunization_repo.delete_immunization(imms_id, imms_vax_type_perms, supplier_system)
+        imms = self.immunization_repo.delete_immunization(imms_id, imms_vax_type_perms, supplier_system, is_imms_batch_app)
         return Immunization.parse_obj(imms)
 
     @staticmethod
