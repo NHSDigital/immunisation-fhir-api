@@ -3,7 +3,6 @@ import os
 import time
 import uuid
 from dataclasses import dataclass
-from decimal import Decimal
 from typing import Optional
 
 import boto3
@@ -18,7 +17,7 @@ from models.errors import (
 )
 from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
 
-from models.utils.validation_utils import get_vaccine_type,check_identifier_system_value
+from models.utils.validation_utils import get_vaccine_type, check_identifier_system_value
 
 
 def create_table(table_name=None, endpoint_url=None, region_name="eu-west-2"):
@@ -40,18 +39,17 @@ def _make_patient_pk(_id: str):
 
 
 def _query_identifier(table, index, pk, identifier):
-    queryresponse = table.query(
-        IndexName=index, KeyConditionExpression=Key(pk).eq(identifier), Limit=1
-    )
+    queryresponse = table.query(IndexName=index, KeyConditionExpression=Key(pk).eq(identifier), Limit=1)
     if queryresponse.get("Count", 0) > 0:
         return queryresponse
-      
+
+
 def get_nhs_number(imms):
-        try:
-            nhs_number = [x for x in imms["contained"] if x["resourceType"] == "Patient"][0]["identifier"][0]["value"]
-        except (KeyError, IndexError):
-            nhs_number = "TBC"    
-        return nhs_number    
+    try:
+        nhs_number = [x for x in imms["contained"] if x["resourceType"] == "Patient"][0]["identifier"][0]["value"]
+    except (KeyError, IndexError):
+        nhs_number = "TBC"
+    return nhs_number
 
 
 @dataclass
@@ -81,24 +79,28 @@ class RecordAttributes:
         self.patient_sk = f"{self.vaccine_type}#{imms_id}"
         self.identifier = f"{self.system_id}#{self.system_value}"
 
+
 class ImmunizationRepository:
     def __init__(self, table: Table):
         self.table = table
-    
-    def get_immunization_by_identifier(self, identifier_pk: str, imms_vax_type_perms: str, is_imms_batch_app) -> Optional[dict]:
-        response = self.table.query(IndexName='IdentifierGSI',
-                                    KeyConditionExpression=Key('IdentifierPK').eq(identifier_pk))
+
+    def get_immunization_by_identifier(
+        self, identifier_pk: str, imms_vax_type_perms: str, is_imms_batch_app
+    ) -> Optional[dict]:
+        response = self.table.query(
+            IndexName="IdentifierGSI", KeyConditionExpression=Key("IdentifierPK").eq(identifier_pk)
+        )
         if "Items" in response and len(response["Items"]) > 0:
             item = response["Items"][0]
             resp = dict()
             vaccine_type = self._vaccine_type(item["PatientSK"])
             if not is_imms_batch_app:
                 vax_type_perms = self._parse_vaccine_permissions(imms_vax_type_perms)
-                vax_type_perm= self._vaccine_permission(vaccine_type, "search")
-                self._check_permission(vax_type_perm,vax_type_perms)
+                vax_type_perm = self._vaccine_permission(vaccine_type, "search")
+                self._check_permission(vax_type_perm, vax_type_perms)
             resource = json.loads(item["Resource"])
-            resp["id"] = resource.get('id')
-            resp["version"] = int(response['Items'][0]['Version'])
+            resp["id"] = resource.get("id")
+            resp["version"] = int(response["Items"][0]["Version"])
             return resp
         else:
             return None
@@ -112,8 +114,8 @@ class ImmunizationRepository:
                 if response["Item"]["DeletedAt"] == "reinstated":
                     vaccine_type = self._vaccine_type(response["Item"]["PatientSK"])
                     vax_type_perms = self._parse_vaccine_permissions(imms_vax_type_perms)
-                    vax_type_perm= self._vaccine_permission(vaccine_type, "read")
-                    self._check_permission(vax_type_perm,vax_type_perms)
+                    vax_type_perm = self._vaccine_permission(vaccine_type, "read")
+                    self._check_permission(vax_type_perm, vax_type_perms)
                     resp["Resource"] = json.loads(response["Item"]["Resource"])
                     resp["Version"] = response["Item"]["Version"]
                     return resp
@@ -122,60 +124,60 @@ class ImmunizationRepository:
             else:
                 vaccine_type = self._vaccine_type(response["Item"]["PatientSK"])
                 vax_type_perms = self._parse_vaccine_permissions(imms_vax_type_perms)
-                vax_type_perm= self._vaccine_permission(vaccine_type, "read")
-                self._check_permission(vax_type_perm,vax_type_perms)
+                vax_type_perm = self._vaccine_permission(vaccine_type, "read")
+                self._check_permission(vax_type_perm, vax_type_perms)
                 resp["Resource"] = json.loads(response["Item"]["Resource"])
                 resp["Version"] = response["Item"]["Version"]
                 return resp
         else:
             return None
 
-    def get_immunization_by_id_all(self, imms_id: str,imms: dict) -> Optional[dict]:
+    def get_immunization_by_id_all(self, imms_id: str, imms: dict) -> Optional[dict]:
         response = self.table.get_item(Key={"PK": _make_immunization_pk(imms_id)})
         if "Item" in response:
-         diagnostics = check_identifier_system_value(response,imms)
-         if diagnostics:
-            return diagnostics
-        
-         else: 
-            resp = dict()
-            if "DeletedAt" in response["Item"]:
-                if response["Item"]["DeletedAt"] != "reinstated":
-                    resp["Resource"] = json.loads(response["Item"]["Resource"])
-                    resp["Version"] = response["Item"]["Version"]
-                    resp["DeletedAt"] = True
-                    resp["VaccineType"] = self._vaccine_type(response["Item"]["PatientSK"])
-                    return resp
+            diagnostics = check_identifier_system_value(response, imms)
+            if diagnostics:
+                return diagnostics
+
+            else:
+                resp = dict()
+                if "DeletedAt" in response["Item"]:
+                    if response["Item"]["DeletedAt"] != "reinstated":
+                        resp["Resource"] = json.loads(response["Item"]["Resource"])
+                        resp["Version"] = response["Item"]["Version"]
+                        resp["DeletedAt"] = True
+                        resp["VaccineType"] = self._vaccine_type(response["Item"]["PatientSK"])
+                        return resp
+                    else:
+                        resp["Resource"] = json.loads(response["Item"]["Resource"])
+                        resp["Version"] = response["Item"]["Version"]
+                        resp["DeletedAt"] = False
+                        resp["Reinstated"] = True
+                        resp["VaccineType"] = self._vaccine_type(response["Item"]["PatientSK"])
+                        return resp
                 else:
                     resp["Resource"] = json.loads(response["Item"]["Resource"])
                     resp["Version"] = response["Item"]["Version"]
                     resp["DeletedAt"] = False
-                    resp["Reinstated"] = True
+                    resp["Reinstated"] = False
                     resp["VaccineType"] = self._vaccine_type(response["Item"]["PatientSK"])
                     return resp
-            else:
-                resp["Resource"] = json.loads(response["Item"]["Resource"])
-                resp["Version"] = response["Item"]["Version"]
-                resp["DeletedAt"] = False
-                resp["Reinstated"] = False
-                resp["VaccineType"] = self._vaccine_type(response["Item"]["PatientSK"])
-                return resp
         else:
-                return None
+            return None
 
-    def create_immunization(self, immunization: dict, patient: any , imms_vax_type_perms, supplier_system, is_imms_batch_app) -> dict:
+    def create_immunization(
+        self, immunization: dict, patient: any, imms_vax_type_perms, supplier_system, is_imms_batch_app
+    ) -> dict:
         new_id = str(uuid.uuid4())
         immunization["id"] = new_id
         attr = RecordAttributes(immunization, patient)
         if not is_imms_batch_app:
             vax_type_perms = self._parse_vaccine_permissions(imms_vax_type_perms)
-            vax_type_perm= self._vaccine_permission(attr.vaccine_type, "create")
-            self._check_permission(vax_type_perm,vax_type_perms)
-        query_response = _query_identifier(
-            self.table, "IdentifierGSI", "IdentifierPK", attr.identifier
-        )
+            vax_type_perm = self._vaccine_permission(attr.vaccine_type, "create")
+            self._check_permission(vax_type_perm, vax_type_perms)
+        query_response = _query_identifier(self.table, "IdentifierGSI", "IdentifierPK", attr.identifier)
 
-        if query_response is not None and "DeletedAt" not in query_response["Items"][0]:
+        if query_response is not None:
             raise IdentifierDuplicationError(identifier=attr.identifier)
 
         response = self.table.put_item(
@@ -194,9 +196,7 @@ class ImmunizationRepository:
         if response["ResponseMetadata"]["HTTPStatusCode"] == 200:
             return immunization
         else:
-            raise UnhandledResponseError(
-                message="Non-200 response from dynamodb", response=response
-            )
+            raise UnhandledResponseError(message="Non-200 response from dynamodb", response=response)
 
     def update_immunization(
         self,
@@ -206,16 +206,22 @@ class ImmunizationRepository:
         existing_resource_version: int,
         imms_vax_type_perms: str,
         supplier_system: str,
-        is_imms_batch_app: bool
+        is_imms_batch_app: bool,
     ) -> dict:
         attr = RecordAttributes(immunization, patient)
         self._handle_permissions(is_imms_batch_app, imms_vax_type_perms, attr)
         update_exp = self._build_update_expression(is_reinstate=False)
-        
+
         self._check_duplicate_identifier(attr)
-        
+
         return self._perform_dynamo_update(
-            imms_id, update_exp, attr, existing_resource_version, supplier_system, deleted_at_required=False, update_reinstated=False
+            imms_id,
+            update_exp,
+            attr,
+            existing_resource_version,
+            supplier_system,
+            deleted_at_required=False,
+            update_reinstated=False,
         )
 
     def reinstate_immunization(
@@ -226,17 +232,23 @@ class ImmunizationRepository:
         existing_resource_version: int,
         imms_vax_type_perms: str,
         supplier_system: str,
-        is_imms_batch_app: bool
+        is_imms_batch_app: bool,
     ) -> dict:
         attr = RecordAttributes(immunization, patient)
         self._handle_permissions(is_imms_batch_app, imms_vax_type_perms, attr)
         update_exp = self._build_update_expression(is_reinstate=True)
-        
+
         self._check_duplicate_identifier(attr)
-        
+
         return self._perform_dynamo_update(
-            imms_id, update_exp, attr, existing_resource_version, supplier_system, deleted_at_required=True, update_reinstated=False
-            )
+            imms_id,
+            update_exp,
+            attr,
+            existing_resource_version,
+            supplier_system,
+            deleted_at_required=True,
+            update_reinstated=False,
+        )
 
     def update_reinstated_immunization(
         self,
@@ -246,16 +258,22 @@ class ImmunizationRepository:
         existing_resource_version: int,
         imms_vax_type_perms: str,
         supplier_system: str,
-        is_imms_batch_app: bool
+        is_imms_batch_app: bool,
     ) -> dict:
         attr = RecordAttributes(immunization, patient)
         self._handle_permissions(is_imms_batch_app, imms_vax_type_perms, attr)
         update_exp = self._build_update_expression(is_reinstate=False)
-        
+
         self._check_duplicate_identifier(attr)
-        
+
         return self._perform_dynamo_update(
-        imms_id, update_exp, attr, existing_resource_version, supplier_system, deleted_at_required=True, update_reinstated=True
+            imms_id,
+            update_exp,
+            attr,
+            existing_resource_version,
+            supplier_system,
+            deleted_at_required=True,
+            update_reinstated=True,
         )
 
     def _handle_permissions(self, is_imms_batch_app: bool, imms_vax_type_perms: str, attr: RecordAttributes):
@@ -279,9 +297,7 @@ class ImmunizationRepository:
             )
 
     def _check_duplicate_identifier(self, attr: RecordAttributes) -> dict:
-        queryresponse = _query_identifier(
-            self.table, "IdentifierGSI", "IdentifierPK", attr.identifier
-        )
+        queryresponse = _query_identifier(self.table, "IdentifierGSI", "IdentifierPK", attr.identifier)
         if queryresponse is not None:
             items = queryresponse.get("Items", [])
             resource_dict = json.loads(items[0]["Resource"])
@@ -290,35 +306,43 @@ class ImmunizationRepository:
         return queryresponse
 
     def _perform_dynamo_update(
-        self, imms_id: str, update_exp: str, attr: RecordAttributes, 
-        existing_resource_version: int, supplier_system: str, deleted_at_required: bool, update_reinstated: bool
+        self,
+        imms_id: str,
+        update_exp: str,
+        attr: RecordAttributes,
+        existing_resource_version: int,
+        supplier_system: str,
+        deleted_at_required: bool,
+        update_reinstated: bool,
     ) -> dict:
         try:
-            condition_expression = (
-                Attr("PK").eq(attr.pk) & (Attr("DeletedAt").exists() if deleted_at_required else Attr("PK").eq(attr.pk) & Attr("DeletedAt").not_exists())
+            condition_expression = Attr("PK").eq(attr.pk) & (
+                Attr("DeletedAt").exists()
+                if deleted_at_required
+                else Attr("PK").eq(attr.pk) & Attr("DeletedAt").not_exists()
             )
             if deleted_at_required and update_reinstated == False:
-               ExpressionAttributeValues={
+                ExpressionAttributeValues = {
                     ":timestamp": attr.timestamp,
                     ":patient_pk": attr.patient_pk,
                     ":patient_sk": attr.patient_sk,
                     ":imms_resource_val": json.dumps(attr.resource, use_decimal=True),
                     ":operation": "UPDATE",
                     ":version": existing_resource_version + 1,
-                    ":supplier_system" : supplier_system,
+                    ":supplier_system": supplier_system,
                     ":respawn": "reinstated",
                 }
             else:
-                ExpressionAttributeValues={
+                ExpressionAttributeValues = {
                     ":timestamp": attr.timestamp,
                     ":patient_pk": attr.patient_pk,
                     ":patient_sk": attr.patient_sk,
                     ":imms_resource_val": json.dumps(attr.resource, use_decimal=True),
                     ":operation": "UPDATE",
                     ":version": existing_resource_version + 1,
-                    ":supplier_system" : supplier_system
+                    ":supplier_system": supplier_system,
                 }
-            
+
             response = self.table.update_item(
                 Key={"PK": _make_immunization_pk(imms_id)},
                 UpdateExpression=update_exp,
@@ -333,16 +357,16 @@ class ImmunizationRepository:
         except botocore.exceptions.ClientError as error:
             # Either resource didn't exist or it has already been deleted. See ConditionExpression in the request
             if error.response["Error"]["Code"] == "ConditionalCheckFailedException":
-                raise ResourceNotFoundError(
-                    resource_type="Immunization", resource_id=imms_id
-                )
+                raise ResourceNotFoundError(resource_type="Immunization", resource_id=imms_id)
             else:
                 raise UnhandledResponseError(
                     message=f"Unhandled error from dynamodb: {error.response['Error']['Code']}",
                     response=error.response,
                 )
 
-    def delete_immunization(self, imms_id: str, imms_vax_type_perms: str, supplier_system : str, is_imms_batch_app) -> dict:
+    def delete_immunization(
+        self, imms_id: str, imms_vax_type_perms: str, supplier_system: str, is_imms_batch_app
+    ) -> dict:
         now_timestamp = int(time.time())
         try:
             resp = self.table.get_item(Key={"PK": _make_immunization_pk(imms_id)})
@@ -353,35 +377,33 @@ class ImmunizationRepository:
                         vaccine_type = self._vaccine_type(resp["Item"]["PatientSK"])
                         if not is_imms_batch_app:
                             vax_type_perms = self._parse_vaccine_permissions(imms_vax_type_perms)
-                            vax_type_perm= self._vaccine_permission(vaccine_type, "delete")
-                            self._check_permission(vax_type_perm,vax_type_perms)                      
+                            vax_type_perm = self._vaccine_permission(vaccine_type, "delete")
+                            self._check_permission(vax_type_perm, vax_type_perms)
                 else:
                     vaccine_type = self._vaccine_type(resp["Item"]["PatientSK"])
                     if not is_imms_batch_app:
                         vax_type_perms = self._parse_vaccine_permissions(imms_vax_type_perms)
-                        vax_type_perm= self._vaccine_permission(vaccine_type, "delete")
-                        self._check_permission(vax_type_perm,vax_type_perms)
-                    
+                        vax_type_perm = self._vaccine_permission(vaccine_type, "delete")
+                        self._check_permission(vax_type_perm, vax_type_perms)
+
             response = self.table.update_item(
                 Key={"PK": _make_immunization_pk(imms_id)},
                 UpdateExpression="SET DeletedAt = :timestamp, Operation = :operation, SupplierSystem = :supplier_system",
                 ExpressionAttributeValues={
                     ":timestamp": now_timestamp,
                     ":operation": "DELETE",
-                    ":supplier_system" : supplier_system,
+                    ":supplier_system": supplier_system,
                 },
                 ReturnValues="ALL_NEW",
                 ConditionExpression=Attr("PK").eq(_make_immunization_pk(imms_id))
-                & (Attr("DeletedAt").not_exists() | Attr("DeletedAt").eq("reinstated"))
+                & (Attr("DeletedAt").not_exists() | Attr("DeletedAt").eq("reinstated")),
             )
             return self._handle_dynamo_response(response)
 
         except botocore.exceptions.ClientError as error:
             # Either resource didn't exist or it has already been deleted. See ConditionExpression in the request
             if error.response["Error"]["Code"] == "ConditionalCheckFailedException":
-                raise ResourceNotFoundError(
-                    resource_type="Immunization", resource_id=imms_id
-                )
+                raise ResourceNotFoundError(resource_type="Immunization", resource_id=imms_id)
             else:
                 raise UnhandledResponseError(
                     message=f"Unhandled error from dynamodb: {error.response['Error']['Code']}",
@@ -406,25 +428,21 @@ class ImmunizationRepository:
             # Return a list of the FHIR immunization resource JSON items
             return [json.loads(item["Resource"]) for item in items]
         else:
-            raise UnhandledResponseError(
-                message=f"Unhandled error. Query failed", response=response
-            )
+            raise UnhandledResponseError(message=f"Unhandled error. Query failed", response=response)
 
     @staticmethod
     def _handle_dynamo_response(response):
         if response["ResponseMetadata"]["HTTPStatusCode"] == 200:
             return json.loads(response["Attributes"]["Resource"])
         else:
-            raise UnhandledResponseError(
-                message="Non-200 response from dynamodb", response=response
-            )
-            
+            raise UnhandledResponseError(message="Non-200 response from dynamodb", response=response)
+
     @staticmethod
-    def _vaccine_permission( vaccine_type, operation) -> set:
+    def _vaccine_permission(vaccine_type, operation) -> set:
         vaccine_permission = set()
         vaccine_permission.add(str.lower(f"{vaccine_type}:{operation}"))
         return vaccine_permission
-    
+
     @staticmethod
     def _parse_vaccine_permissions(imms_vax_type_perms) -> set:
         parsed = [str.strip(str.lower(s)) for s in imms_vax_type_perms.split(",")]
@@ -432,15 +450,15 @@ class ImmunizationRepository:
         for s in parsed:
             vaccine_permissions.add(s)
         return vaccine_permissions
-    
+
     @staticmethod
-    def _check_permission( requested: set, allowed: set) -> set:
+    def _check_permission(requested: set, allowed: set) -> set:
         if not requested.issubset(allowed):
             raise UnauthorizedVaxError()
         else:
             return None
-        
+
     @staticmethod
-    def _vaccine_type( patientsk ) -> str:
+    def _vaccine_type(patientsk) -> str:
         parsed = [str.strip(str.lower(s)) for s in patientsk.split("#")]
         return parsed[0]
