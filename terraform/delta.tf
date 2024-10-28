@@ -7,11 +7,18 @@ locals {
     sns_name = "delta-sns"
 }
 
+resource "aws_ecr_repository" "delta_lambda_repository" {
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+  name = "${local.prefix}-delta-lambda-repo"
+}
+
 module "delta_docker_image" {
     source = "terraform-aws-modules/lambda/aws//modules/docker-build"
 
-    create_ecr_repo = true
-    ecr_repo        = "${local.prefix}-delta-repo"
+    create_ecr_repo = false
+    ecr_repo        = "${local.prefix}-delta-lambda-repo"
     ecr_repo_lifecycle_policy = jsonencode({
         "rules" : [
             {
@@ -35,6 +42,36 @@ module "delta_docker_image" {
     triggers = {
         dir_sha = local.delta_dir_sha
     }
+}
+
+# Define the lambdaECRImageRetreival policy
+resource "aws_ecr_repository_policy" "docker_lambda_ECRImageRetreival_policy" {
+  repository = aws_ecr_repository.delta_lambda_repository.name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        "Sid": "LambdaECRImageRetrievalPolicy",
+        "Effect": "Allow",
+        "Principal": {
+          "Service": "lambda.amazonaws.com"
+        },
+        "Action": [
+          "ecr:BatchGetImage",
+          "ecr:DeleteRepositoryPolicy",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:GetRepositoryPolicy",
+          "ecr:SetRepositoryPolicy"
+        ],
+        "Condition": {
+          "StringLike": {
+            "aws:sourceArn": "arn:aws:lambda:eu-west-2:${local.local_account_id}:function:${local.short_prefix}-${local.function_name}"
+          }
+        }
+      }
+  ]
+  })
 }
 
 data "aws_iam_policy_document" "delta_policy_document" {

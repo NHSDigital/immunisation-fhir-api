@@ -34,4 +34,8 @@ resource "aws_dynamodb_table" "events-dynamodb-table" {
         hash_key           = "IdentifierPK"
         projection_type    = "ALL"
     }
+    
+    point_in_time_recovery {
+        enabled = local.environment == "prod" ? true : false
+    }
 }
