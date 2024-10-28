@@ -82,7 +82,7 @@ steps:
         counter=0
         base_path="$SERVICE_BASE_PATH"
 
-        endpoint="https://${APIGEE_ENVIRONMENT}.api.service.nhs.uk/${base_path}/_status"
+        endpoint="https://${APIGEE_ENVIRONMENT}.api.service.nhs.uk/${base_path}/FHIR/R4/_status"
         while [[ $counter -lt 11 ]]; do
           response=$(curl -H "apikey: $(status-endpoint-api-key)" -s "$endpoint")
           response_code=$(jq -r '.checks.healthcheck.responseCode' <<< "$response")
