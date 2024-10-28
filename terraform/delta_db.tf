@@ -43,7 +43,6 @@ resource "aws_dynamodb_table" "delta-dynamodb-table" {
         range_key          = "VaccineType"
         projection_type    = "ALL"
     }
-
     point_in_time_recovery {
         enabled = local.environment == "prod" ? true : false
     }
