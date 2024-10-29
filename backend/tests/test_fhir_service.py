@@ -38,7 +38,7 @@ class TestServiceUrl(unittest.TestCase):
         base_path = "my-base-path"
         url = get_service_url(env, base_path)
         self.assertEqual(url, f"https://internal-dev.api.service.nhs.uk/{base_path}/FHIR/R4")
-        # prod should not have a subdomain.
+        # prod should not have a subdomain
         env = "prod"
         base_path = "my-base-path"
         url = get_service_url(env, base_path)
