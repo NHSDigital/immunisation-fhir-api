@@ -32,22 +32,22 @@ class TestServiceUrl(unittest.TestCase):
         env = "int"
         base_path = "my-base-path"
         url = get_service_url(env, base_path)
-        self.assertEqual(url, f"https://{env}.api.service.nhs.uk/{base_path}")
+        self.assertEqual(url, f"https://{env}.api.service.nhs.uk/{base_path}/FHIR/R4")
         # default should be internal-dev
         env = "it-does-not-exist"
         base_path = "my-base-path"
         url = get_service_url(env, base_path)
-        self.assertEqual(url, f"https://internal-dev.api.service.nhs.uk/{base_path}")
+        self.assertEqual(url, f"https://internal-dev.api.service.nhs.uk/{base_path}/FHIR/R4")
         # prod should not have a subdomain
         env = "prod"
         base_path = "my-base-path"
         url = get_service_url(env, base_path)
-        self.assertEqual(url, f"https://api.service.nhs.uk/{base_path}")
+        self.assertEqual(url, f"https://api.service.nhs.uk/{base_path}/FHIR/R4")
         # any other env should fall back to internal-dev (like pr-xx or per-user)
         env = "pr-42"
         base_path = "my-base-path"
         url = get_service_url(env, base_path)
-        self.assertEqual(url, f"https://internal-dev.api.service.nhs.uk/{base_path}")
+        self.assertEqual(url, f"https://internal-dev.api.service.nhs.uk/{base_path}/FHIR/R4")
 
 
 class TestGetImmunizationByAll(unittest.TestCase):

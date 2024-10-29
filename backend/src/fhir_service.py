@@ -39,7 +39,7 @@ def get_service_url(
         subdomain = ""
     else:
         subdomain = "internal-dev."
-    return f"https://{subdomain}api.service.nhs.uk/{service_base_path}"
+    return f"https://{subdomain}api.service.nhs.uk/{service_base_path}/FHIR/R4"
 
 
 class UpdateOutcome(Enum):
