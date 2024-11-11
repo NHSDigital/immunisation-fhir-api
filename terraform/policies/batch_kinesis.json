@@ -1,0 +1,30 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Action": [
+            "kinesis:GetRecords",
+            "kinesis:GetShardIterator",
+            "kinesis:DescribeStream",
+            "kinesis:DescribeStreamSummary",
+            "kinesis:ListShards",
+            "kinesis:ListStreams"
+          ],
+        "Resource": [
+          "arn:aws:kinesis:eu-west-2:${account_id}:stream/imms-batch-${env}-processingdata-stream"
+        ]
+      },
+      {
+        "Effect": "Allow",
+        "Action": [
+             "kms:Decrypt"
+          ],
+        "Resource": [
+          "${kms_key}"
+        ]
+      }
+
+    ]
+  }
+  

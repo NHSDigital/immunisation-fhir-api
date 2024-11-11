@@ -44,3 +44,11 @@ locals {
 variable "region" {
     default = "eu-west-2"
 }
+
+data "aws_kinesis_stream" "existing_kinesis_stream" {
+     name = "imms-batch-${local.environment}-processingdata-stream" 
+}
+
+data "aws_kms_key" "existing_kinesis_encryption_key" {
+  key_id = "alias/imms-batch-kinesis-stream-encryption"
+}

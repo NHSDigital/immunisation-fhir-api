@@ -8,6 +8,26 @@ locals {
 data "aws_iam_policy_document" "logs_policy_document" {
     source_policy_documents = [templatefile("${local.policy_path}/log.json", {} )]
 }
+
+data "aws_iam_policy_document" "batch_policy_document" {
+    source_policy_documents = [
+        templatefile("${local.policy_path}/dynamodb.json", {
+            "dynamodb_table_name" : local.imms_table_name
+        } ),
+        templatefile("${local.policy_path}/log.json", {} ),
+        templatefile("${local.policy_path}/log_kinesis.json", {
+            "kinesis_stream_name" : module.splunk.firehose_stream_name
+        } ),
+        templatefile("${local.policy_path}/secret_manager.json", {
+            "account_id": data.aws_caller_identity.current.account_id
+        }),
+        templatefile("${local.policy_path}/batch_kinesis.json", {
+            "account_id": local.local_account_id 
+            "env": local.environment
+            "kms_key": data.aws_kms_key.existing_kinesis_encryption_key.arn
+        })
+    ]
+}
 module "get_status" {
     source        = "./lambda"
     prefix        = local.prefix
@@ -15,6 +35,16 @@ module "get_status" {
     function_name = "get_status"
     image_uri     = module.docker_image.image_uri
     policy_json   = data.aws_iam_policy_document.logs_policy_document.json
+}
+
+module "batch_processing" {
+    source        = "./lambda"
+    prefix        = local.prefix
+    short_prefix  = local.short_prefix
+    function_name = "batch_processing"
+    image_uri     = module.docker_image.image_uri
+    policy_json   = data.aws_iam_policy_document.batch_policy_document.json
+    environments  = local.imms_lambda_env_vars
 }
 
 locals {
@@ -111,3 +141,11 @@ resource "aws_lambda_permission" "api_gw" {
     principal     = "apigateway.amazonaws.com"
     source_arn    = "${module.api_gateway.api_execution_arn}/*/*"
 }
+
+resource "aws_lambda_event_source_mapping" "kinesis_event_source_mapping_batch_lambda" {
+    event_source_arn  = data.aws_kinesis_stream.existing_kinesis_stream.arn
+    function_name     = module.batch_processing.function_name
+    starting_position = "LATEST"
+    batch_size        = 10
+    enabled           = true
+ }

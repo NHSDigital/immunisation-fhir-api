@@ -20,3 +20,25 @@ class Urls:
     )
     ods_organization_code = "https://fhir.nhs.uk/Id/ods-organization-code"
     urn_school_number = "https://fhir.hl7.org.uk/Id/urn-school-number"
+
+class Constants:
+    """Constants for recordforwarder"""
+
+    ack_headers = [
+        "MESSAGE_HEADER_ID",
+        "HEADER_RESPONSE_CODE",
+        "ISSUE_SEVERITY",
+        "ISSUE_CODE",
+        "ISSUE_DETAILS_CODE",
+        "RESPONSE_TYPE",
+        "RESPONSE_CODE",
+        "RESPONSE_DISPLAY",
+        "RECEIVED_TIME",
+        "MAILBOX_FROM",
+        "LOCAL_ID",
+        "IMMS_ID",
+        "OPERATION_OUTCOME",
+        "MESSAGE_DELIVERY",
+    ]
+
+    IMMS_BATCH_APP_NAME = "Imms-Batch-App"
