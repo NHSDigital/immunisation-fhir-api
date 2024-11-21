@@ -27,7 +27,7 @@ jobs:
           
       - name: Run unittest with coverage-ack-lambda
         run: |
-          pip install poetry coverage moto==4.2.11
+          pip install poetry coverage moto==4.2.11 freezegun
           poetry run coverage run --source=ack_backend -m unittest discover -s ack_backend
           poetry run coverage xml -o sonarcloud-coverage-ack-lambda.xml        
       
