@@ -34,7 +34,7 @@ def lambda_handler(event, context):
                 imms_id=imms_id,
                 created_at_formatted_string=created_at_formatted_string,
             )
-            # Delete the message from the queue
+
 
     except Exception as e:
         print(f"Error processing SQS message: {e}")
