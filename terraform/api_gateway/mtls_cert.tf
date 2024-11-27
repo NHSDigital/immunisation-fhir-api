@@ -1,6 +1,6 @@
 locals {
   # NHSD cert file
-  truststore_file_name = "server-cert.pem"
+  truststore_file_name = "server-cert-1.pem"
 }
 
 data "aws_s3_bucket" "cert_storage" {
