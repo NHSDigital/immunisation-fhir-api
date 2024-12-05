@@ -39,6 +39,7 @@ def lambda_handler(event, context):
                     created_at_formatted_string, local_id, row_id, successful_api_response, diagnostics, imms_id
                 )
                 array_of_rows.append(row)
+                print(array_of_rows)
         update_ack_file(file_key, created_at_formatted_string=created_at_formatted_string, ack_data_rows=array_of_rows)
         # Delete the message from the queue
 

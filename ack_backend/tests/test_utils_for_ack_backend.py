@@ -1,7 +1,17 @@
+"""Values for use in ack_processor tests"""
+
 from datetime import datetime
 
+SOURCE_BUCKET_NAME = "immunisation-batch-internal-dev-data-sources"
+DESTINATION_BUCKET_NAME = "immunisation-batch-internal-dev-data-destinations"
+CONFIG_BUCKET_NAME = "immunisation-batch-internal-dev-configs"
+STREAM_NAME = "imms-batch-internal-dev-processingdata-stream"
 
-class ValidLogging:
+AWS_REGION = "eu-west-2"
+STATIC_DATETIME = datetime(2021, 11, 20, 12, 0, 0)
+
+
+class ValidValues:
     """Logging instances which are both valid and current"""
 
     fixed_datetime = datetime(2024, 10, 29, 12, 0, 0)
@@ -51,6 +61,11 @@ class ValidLogging:
         "statusCode": 200,
         "diagnostics": "Operation completed successfully",
     }
+
+
+class InvalidValues:
+
+    fixed_datetime = datetime(2024, 10, 29, 12, 0, 0)
 
     Logging_with_no_values = {
         "function_name": "ack_processor_lambda_handler",

@@ -7,7 +7,7 @@ from unittest.mock import patch, MagicMock
 from ack_processor import lambda_handler
 from update_ack_file import obtain_current_ack_content, create_ack_data, update_ack_file
 import boto3
-from tests.utils_ack_processor import DESTINATION_BUCKET_NAME, AWS_REGION
+from tests.test_utils_for_ack_backend import DESTINATION_BUCKET_NAME, AWS_REGION
 from constants import Constants
 from io import BytesIO
 
@@ -395,15 +395,7 @@ class TestAckProcessorE2E(unittest.TestCase):
 
         for case in test_cases:
             with self.subTest(case["description"]):
-                update_ack_file(
-                    case["file_key"],
-                    case["local_id"],
-                    case["row_id"],
-                    case["successful_api_response"],
-                    case["diagnostics"],
-                    case["imms_id"],
-                    case["created_at_formatted_string"],
-                )
+                update_ack_file(case["file_key"], case["created_at_formatted_string"], case["expected_row"])
                 mock_s3_client.upload_fileobj.assert_called_once()
                 uploaded_content = mock_s3_client.upload_fileobj.call_args[0][0].getvalue()
                 print(f"UPLOADED CONTENT {uploaded_content}")

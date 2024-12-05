@@ -55,7 +55,8 @@ def ack_function_info(func):
                             message_id = log_data["message_id"]
                             log_data["local_id"] = item.get("local_id", "unknown")
                             log_data["operation_requested"] = item.get("action_flag", "unknown")
-
+                            statuscode = item.get("statusCode", "unknown")
+                            log_data["status_number"] = statuscode
                             diagnostics = item.get("diagnostics")
                             diagnostics_result = process_diagnostics(diagnostics, file_key, message_id)
                             log_data.update(diagnostics_result)
