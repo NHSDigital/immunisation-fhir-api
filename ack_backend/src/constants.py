@@ -44,7 +44,13 @@ class Constants:
     }
 
     error_code_mapping = {
-        500: ["application includes invalid authorization values", "unhandled", "server error"],
+        500: [
+            "application includes invalid authorization values",
+            "unhandled",
+            "server error",
+            "rate limited",
+            "Downstream service failed",
+        ],
         422: ["duplicate", "duplicated"],
         403: ["unauthorized"],
         404: ["not found", "does not exist"],
