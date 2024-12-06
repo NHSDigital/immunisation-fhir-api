@@ -422,13 +422,13 @@ crt = ["awscrt (==0.16.9)"]
 
 [[package]]
 name = "botocore-stubs"
-version = "1.35.67"
+version = "1.35.72"
 description = "Type annotations and code completion for botocore"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "botocore_stubs-1.35.67-py3-none-any.whl", hash = "sha256:2c10c6c34473e33c5ff1569aef44b8c4ce4afcb0a502a99f7f192dc31006e9f2"},
-    {file = "botocore_stubs-1.35.67.tar.gz", hash = "sha256:21886510f4fd8f5804e4bb83661ba0e005e4c5236b89f70dd428e6cea68b0ee6"},
+    {file = "botocore_stubs-1.35.72-py3-none-any.whl", hash = "sha256:089221dd326344d0a7ceaed851be25709cf1680a5452e41618b3631e31bf1597"},
+    {file = "botocore_stubs-1.35.72.tar.gz", hash = "sha256:6dd2044714fa27824d49b49e8e78cd951f44a3cc3cbdc48114d81a73b7be0d32"},
 ]
 
 [package.dependencies]
@@ -1328,13 +1328,13 @@ typing = ["mypy (>=1.4)", "rich", "twisted"]
 
 [[package]]
 name = "types-awscrt"
-version = "0.23.0"
+version = "0.23.1"
 description = "Type annotations and code completion for awscrt"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "types_awscrt-0.23.0-py3-none-any.whl", hash = "sha256:517d9d06f19cf58d778ca90ad01e52e0489466bf70dcf78c7f47f74fdf151a60"},
-    {file = "types_awscrt-0.23.0.tar.gz", hash = "sha256:3fd1edeac923d1956c0e907c973fb83bda465beae7f054716b371b293f9b5fdc"},
+    {file = "types_awscrt-0.23.1-py3-none-any.whl", hash = "sha256:0d362a5d62d68ca4216f458172f41c1123ec04791d68364de8ee8b61b528b262"},
+    {file = "types_awscrt-0.23.1.tar.gz", hash = "sha256:a20b425dabb258bc3d07a5e7de503fd9558dd1542d72de796e74e402c6d493b2"},
 ]
 
 [[package]]

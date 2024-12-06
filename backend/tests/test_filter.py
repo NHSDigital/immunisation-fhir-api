@@ -16,7 +16,7 @@ from src.filter import (
 )
 from tests.utils.generic_utils import load_json_data
 
-"test"
+
 class TestFilter(unittest.TestCase):
     """Test for Filter class"""
 
