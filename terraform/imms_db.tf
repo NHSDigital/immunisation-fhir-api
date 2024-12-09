@@ -22,6 +22,10 @@ resource "aws_dynamodb_table" "events-dynamodb-table" {
         type = "S"
     }
 
+    tags = {
+    NHSE-Enable-Dynamo-Backup = "True"
+    }
+
     global_secondary_index {
         name               = "PatientGSI"
         hash_key           = "PatientPK"
