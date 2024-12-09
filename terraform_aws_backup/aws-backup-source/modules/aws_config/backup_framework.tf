@@ -1,6 +1,6 @@
 resource "aws_backup_framework" "main" {
   # must be underscores instead of dashes
-  name        = replace("${local.resource_name_prefix}-framework", "-", "_")
+  name        = replace("${local.resource_name_prefix}-s3-framework", "-", "_")
   description = "${var.project_name} Backup Framework"
 
   # Evaluates if recovery points are encrypted.
