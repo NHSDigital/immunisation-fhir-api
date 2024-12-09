@@ -4,7 +4,7 @@ import json
 import copy
 from datetime import datetime
 from src.ack_processor import lambda_handler
-from tests.utils_splunk_logging_tests import ValidLogging
+from tests.test_utils_for_ack_backend import ValidValues, InvalidValues
 from update_ack_file import update_ack_file, obtain_current_ack_content, upload_ack_file
 from log_firehose_splunk import FirehoseLogger
 from log_structure_splunk import logger
@@ -13,15 +13,15 @@ from log_structure_splunk import logger
 class TestSplunkFunctionInfo(unittest.TestCase):
 
     def setUp(self):
-        self.message_body_base = {"Records": [{"body": json.dumps([ValidLogging.DPSFULL_ack_processor_input])}]}
+        self.message_body_base = {"Records": [{"body": json.dumps([ValidValues.DPSFULL_ack_processor_input])}]}
 
         self.message_body_two_base = {
             "Records": [
                 {
                     "body": json.dumps(
                         [
-                            ValidLogging.DPSFULL_ack_processor_input,
-                            ValidLogging.EMIS_ack_processor_input,
+                            ValidValues.DPSFULL_ack_processor_input,
+                            ValidValues.EMIS_ack_processor_input,
                         ]
                     )
                 }
@@ -52,7 +52,7 @@ class TestSplunkFunctionInfo(unittest.TestCase):
         mock_upload_ack_file,
     ):
         """Tests a single object in the body of the event"""
-        mock_datetime.now.return_value = ValidLogging.fixed_datetime
+        mock_datetime.now.return_value = ValidValues.fixed_datetime
         mock_time.side_effect = [100000.0 + i for i in range(0, 9, 1)]
 
         mock_create_ack_data.return_value = None
@@ -80,7 +80,7 @@ class TestSplunkFunctionInfo(unittest.TestCase):
                 self.assertGreater(len(log.output), 0)
 
                 log_json = self.extract_log_json(log.output[0])
-                expected_values = copy.deepcopy(ValidLogging.DPSFULL_expected_log_value)
+                expected_values = copy.deepcopy(ValidValues.DPSFULL_expected_log_value)
                 expected_values["operation_requested"] = op["operation_request"]
                 expected_values["time_taken"] = "1.0s"
 
@@ -108,7 +108,7 @@ class TestSplunkFunctionInfo(unittest.TestCase):
         mock_upload_ack_file,
     ):
         """Tests missing key values in the body of the event"""
-        mock_datetime.now.return_value = ValidLogging.fixed_datetime
+        mock_datetime.now.return_value = ValidValues.fixed_datetime
         mock_time.side_effect = [100000.0 + i for i in range(0, 9, 1)]
 
         mock_create_ack_data.return_value = None
@@ -124,7 +124,7 @@ class TestSplunkFunctionInfo(unittest.TestCase):
             self.assertGreater(len(log.output), 0)
 
             log_json = self.extract_log_json(log.output[0])
-            expected_values = copy.deepcopy(ValidLogging.Logging_with_no_values)
+            expected_values = copy.deepcopy(InvalidValues.Logging_with_no_values)
             expected_values["time_taken"] = "1.0s"
 
             for key, expected in expected_values.items():
@@ -152,7 +152,7 @@ class TestSplunkFunctionInfo(unittest.TestCase):
     ):
         """'Tests the correct codes are returned for diagnostics"""
 
-        mock_datetime.now.return_value = ValidLogging.fixed_datetime
+        mock_datetime.now.return_value = ValidValues.fixed_datetime
         mock_time.side_effect = [100000.0 + i for i in range(0, 18, 1)]
 
         mock_create_ack_data.return_value = None
@@ -182,7 +182,7 @@ class TestSplunkFunctionInfo(unittest.TestCase):
                 self.assertGreater(len(log.output), 0)
 
                 log_json = self.extract_log_json(log.output[0])
-                expected_values = copy.deepcopy(ValidLogging.DPSFULL_expected_log_value)
+                expected_values = copy.deepcopy(ValidValues.DPSFULL_expected_log_value)
                 expected_values["diagnostics"] = op["diagnostic"]
                 expected_values["statusCode"] = op["expected_code"]
                 expected_values["status"] = "fail"
@@ -212,7 +212,7 @@ class TestSplunkFunctionInfo(unittest.TestCase):
         mock_upload_ack_file,
     ):
         """Tests logging for multiple objects in the body of the event"""
-        mock_datetime.now.return_value = ValidLogging.fixed_datetime
+        mock_datetime.now.return_value = ValidValues.fixed_datetime
         mock_time.side_effect = [100000.0 + i for i in range(9)]
 
         mock_create_ack_data.return_value = None
@@ -232,8 +232,8 @@ class TestSplunkFunctionInfo(unittest.TestCase):
             log_entries = [self.extract_log_json(entry) for entry in log.output]
 
             expected_entries = [
-                copy.deepcopy(ValidLogging.DPSFULL_expected_log_value),
-                copy.deepcopy(ValidLogging.EMIS_expected_log_value),
+                copy.deepcopy(ValidValues.DPSFULL_expected_log_value),
+                copy.deepcopy(ValidValues.EMIS_expected_log_value),
             ]
 
             for idx, entry in enumerate(log_entries):
@@ -262,7 +262,7 @@ class TestSplunkFunctionInfo(unittest.TestCase):
     ):
         """Tests logging for multiple objects in the body of the event with diagnostics"""
 
-        mock_datetime.now.return_value = ValidLogging.fixed_datetime
+        mock_datetime.now.return_value = ValidValues.fixed_datetime
         mock_time.side_effect = [100000.0 + i for i in range(27)]
 
         mock_create_ack_data.return_value = None
