@@ -9,6 +9,7 @@ STREAM_NAME = "imms-batch-internal-dev-processingdata-stream"
 CREATED_AT_FORMATTED_STRING = "20241115T13435500"
 IMMS_ID = "Immunization#932796c8-fd20-4d31-a4d7-e9613de70ad6"
 
+
 AWS_REGION = "eu-west-2"
 STATIC_DATETIME = datetime(2021, 11, 20, 12, 0, 0)
 
@@ -18,6 +19,7 @@ class ValidValues:
 
     fixed_datetime = datetime(2024, 10, 29, 12, 0, 0)
     local_id = "111^222"
+    imms_id = "TEST_IMMS_ID"
 
     EMIS_ack_processor_input = {
         "file_key": "RSV_Vaccinations_v5_YGM41_20240905T13005922",
@@ -104,7 +106,7 @@ class ValidValues:
     }
 
     create_ack_data_failure_row = {
-        "MESSAGE_HEADER_ID": "345^2",
+        "MESSAGE_HEADER_ID": "123^1",
         "HEADER_RESPONSE_CODE": "Fatal Error",
         "ISSUE_SEVERITY": "Fatal",
         "ISSUE_CODE": "Fatal Error",
@@ -121,22 +123,25 @@ class ValidValues:
     }
 
     update_ack_file_successful_row_no_immsid = (
-        f"123^1|OK|Information|OK|30001|Business|30001|Success|20241115T13435500|||{local_id}|||True"
+        f"123^1|OK|Information|OK|30001|Business|30001|Success|{CREATED_AT_FORMATTED_STRING}||{local_id}|||True\n"
     )
 
     update_ack_file_failure_row_no_immsid = (
-        "123^2|Fatal Error|Fatal|Fatal Error|30002|Business|30002|"
-        f"Business Level Response Value - Processing Error|20241115T13435500||{local_id}||Error 2|False"
+        "123^1|Fatal Error|Fatal|Fatal Error|30002|Business|30002|"
+        f"Business Level Response Value - Processing Error|{CREATED_AT_FORMATTED_STRING}||{local_id}||Error_value|False\n"
     )
 
     update_ack_file_successful_row_immsid = (
-        f"123^1|OK|Information|OK|30001|Business|30001|Success|20241115T13435500|||{local_id}|imms456||True"
+        "123^1|OK|Information|OK|30001|Business|30001|Success"
+        f"|{CREATED_AT_FORMATTED_STRING}||{local_id}|{imms_id}||True\n"
     )
 
     update_ack_file_failure_row_immsid = (
-        "123^2|Fatal Error|Fatal|Fatal Error|30002|Business|30002|"
-        f"Business Level Response Value - Processing Error|20241115T13435500||{local_id}||Error 2|False"
+        "123^1|Fatal Error|Fatal|Fatal Error|30002|Business|30002|Business Level Response Value - Processing Error"
+        f"|{CREATED_AT_FORMATTED_STRING}||{local_id}|{imms_id}|Error_value|False\n"
     )
+
+    # lambda_handler_event =
 
 
 class InvalidValues:
