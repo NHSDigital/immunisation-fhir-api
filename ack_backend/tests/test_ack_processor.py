@@ -7,7 +7,13 @@ from unittest.mock import patch, MagicMock
 from ack_processor import lambda_handler
 from update_ack_file import obtain_current_ack_content, create_ack_data, update_ack_file
 import boto3
-from tests.test_utils_for_ack_backend import DESTINATION_BUCKET_NAME, AWS_REGION, ValidValues, InvalidValues
+from tests.test_utils_for_ack_backend import (
+    DESTINATION_BUCKET_NAME,
+    AWS_REGION,
+    ValidValues,
+    InvalidValues,
+    CREATED_AT_FORMATTED_STRING,
+)
 from constants import Constants
 from io import BytesIO, StringIO
 from copy import deepcopy
@@ -28,10 +34,17 @@ invalid_action_flag_diagnostics = "Invalid ACTION_FLAG - ACTION_FLAG must be 'NE
 class TestAckProcessorE2E(unittest.TestCase):
 
     def setup_s3(self):
-        """Helper to setup mock S3 buckets and upload test file"""
+        """Creates a mock S3 bucket and uploads an existing file with the given content."""
         s3_client.create_bucket(
             Bucket=DESTINATION_BUCKET_NAME, CreateBucketConfiguration={"LocationConstraint": AWS_REGION}
         )
+
+    def setup_existing_ack_file(self, bucket_name, file_key, file_content):
+        """Creates a mock S3 bucket and uploads an existing file with the given content."""
+        s3_client.create_bucket(
+            Bucket=DESTINATION_BUCKET_NAME, CreateBucketConfiguration={"LocationConstraint": AWS_REGION}
+        )
+        s3_client.put_object(Bucket=bucket_name, Key=file_key, Body=file_content)
 
     def create_event(self, test_data):
         """
@@ -42,7 +55,6 @@ class TestAckProcessorE2E(unittest.TestCase):
             row = self.row_template.copy()
             row.update(test_case_row)
             rows.append(row)
-        print(f"CREATE_EVENT {rows}")
         return {"Records": [{"body": json.dumps(rows)}]}
 
     row_template = {
@@ -54,91 +66,93 @@ class TestAckProcessorE2E(unittest.TestCase):
         "created_at_formatted_string": "20241115T13435500",
     }
 
+    def ack_row_order(self, row_input, uploaded_content):
+        for row in row_input:
+            row_id = row.get("row_id")
+            self.assertIn(f"{row_id}|", uploaded_content)
+
+    def create_expected_ack_content(self, row_input, uploaded_content, expected_ack_file_content):
+        for i, row in enumerate(row_input):
+            diagnostics = row.get("diagnostics", "")
+            imms_id = row.get("imms_id", "")
+            row_id = row.get("row_id")
+            if diagnostics:
+                ack_row = (
+                    f"{row_id}|Fatal Error|Fatal|Fatal Error|30002|Business|30002|Business Level "
+                    f"Response Value - Processing Error|20241115T13435500||111^222|{imms_id}|{diagnostics}|False"
+                )
+            else:
+                ack_row = (
+                    f"{row_id}|OK|Information|OK|30001|Business|30001|Success|20241115T13435500|"
+                    f"|111^222|{imms_id}||True"
+                )
+
+            expected_ack_file_content += ack_row + "\n"
+
+        self.assertEqual(uploaded_content, expected_ack_file_content)
+
+        self.ack_row_order(row_input, uploaded_content)
+
     @patch("log_structure_splunk.firehose_logger")
     @patch("update_ack_file.s3_client")
     def test_lambda_handler(self, mock_s3_client, mock_firehose_logger):
-        """Test lambda handler - No existing Busack file in S3.
-        The diagnostics and values for the ack files are created in the record forwarder.
-        The information is passed from SQS event to lambda_handler to add to acknowledgement file and splunk
-        """
+        """Test lambda handler processes file, maintains row order and outputs correct Busackfile content."""
 
-        # Mock empty s3 bucket
+        # Mock empty S3 bucket
         mock_s3_client.get_object.side_effect = ClientError(
             {"Error": {"Code": "NoSuchKey", "Message": "The specified key does not exist."}}, "GetObject"
         )
-
         mock_s3_client.upload_fileobj = MagicMock()
 
         test_cases = [
             {
                 "description": "10 success rows (No diagnostics)",
-                "rows": [self.row_template.copy() for row in range(10)],
-                "expected_ack_file": [ValidValues.update_ack_file_successful_row_no_immsid for row in range(10)],
+                "rows": [{**self.row_template.copy(), "row_id": f"row_{i+1}"} for i in range(10)],
             },
             {
-                "description": "SQS event with Multiple errors (Multiple diagnostics)",
+                "description": "SQS event with multiple errors",
                 "rows": [
                     {
                         **self.row_template.copy(),
-                        "diagnostics": invalid_action_flag_diagnostics,
-                        "imms_id": "TEST_IMMS_ID",
+                        "row_id": "row_1",
+                        "diagnostics": "UNIQUE_ID or UNIQUE_ID_URI is missing",
                     },
-                    {**self.row_template.copy(), "diagnostics": "UNIQUE_ID or UNIQUE_ID_URI is missing"},
-                    {**self.row_template.copy(), "diagnostics": "Validation_error"},
-                    {**self.row_template.copy(), "diagnostics": "imms_not_found"},
-                ],
-                "expected_ack_file": [
-                    ValidValues.update_ack_file_failure_row_immsid.replace(
-                        "Error_value", invalid_action_flag_diagnostics
-                    ),
-                    ValidValues.update_ack_file_failure_row_no_immsid.replace(
-                        "Error_value", "UNIQUE_ID or UNIQUE_ID_URI is missing"
-                    ),
-                    ValidValues.update_ack_file_failure_row_no_immsid.replace("Error_value", "Validation_error"),
-                    ValidValues.update_ack_file_failure_row_no_immsid.replace("Error_value", "imms_not_found"),
+                    {**self.row_template.copy(), "row_id": "row_2", "diagnostics": "unauthorized"},
+                    {**self.row_template.copy(), "row_id": "row_3", "diagnostics": "not found"},
                 ],
             },
             {
                 "description": "Multiple row processing from SQS event - mixture of success and failure rows",
                 "rows": [
-                    {**self.row_template.copy(), "imms_id": "TEST_IMMS_ID"},
-                    {**self.row_template.copy(), "diagnostics": "UNIQUE_ID or UNIQUE_ID_URI is missing"},
-                    {**self.row_template.copy(), "diagnostics": "Validation_error"},
-                    {**self.row_template.copy()},
-                    {**self.row_template.copy(), "diagnostics": "Validation_error", "imms_id": "TEST_IMMS_ID"},
-                    {**self.row_template.copy(), "diagnostics": "Validation_error"},
-                    {**self.row_template.copy()},
-                    {**self.row_template.copy(), "diagnostics": "Duplicate"},
-                ],
-                "expected_ack_file": [
-                    ValidValues.update_ack_file_successful_row_immsid,
-                    ValidValues.update_ack_file_failure_row_no_immsid.replace(
-                        "Error_value", "UNIQUE_ID or UNIQUE_ID_URI is missing"
-                    ),
-                    ValidValues.update_ack_file_failure_row_no_immsid.replace("Error_value", "Validation_error"),
-                    ValidValues.update_ack_file_successful_row_no_immsid,
-                    ValidValues.update_ack_file_failure_row_immsid.replace("Error_value", "Validation_error"),
-                    ValidValues.update_ack_file_successful_row_no_immsid,
-                    ValidValues.update_ack_file_failure_row_no_immsid.replace("Error_value", "Duplicate"),
-                ],
-            },
-            {
-                "description": "Multi Line diagnostics",  ### Find example for this
-                "rows": [self.row_template.copy()],
-                "expected_ack_file": [
-                    "123^1|OK|Information|OK|30001|Business|30001|Success|20241115T13435500||default_local_id|||True\n"
-                ],
-            },
-            {
-                "description": "Test with updated local_id",
-                "rows": [{**self.row_template.copy(), "local_id": "updated_local_id"}],
-                "expected_ack_file": [
-                    "123^1|OK|Information|OK|30001|Business|30001|Success|20241115T13435500||updated_local_id|||True\n"
+                    {**self.row_template.copy(), "row_id": "row_1", "imms_id": "TEST_IMMS_ID"},
+                    {
+                        **self.row_template.copy(),
+                        "row_id": "row_2",
+                        "diagnostics": "UNIQUE_ID or UNIQUE_ID_URI is missing",
+                    },
+                    {**self.row_template.copy(), "row_id": "row_3", "diagnostics": "Validation_error"},
+                    {
+                        **self.row_template.copy(),
+                        "row_id": "row_4",
+                    },
+                    {
+                        **self.row_template.copy(),
+                        "row_id": "row_5",
+                        "diagnostics": "Validation_error",
+                        "imms_id": "TEST_IMMS_ID",
+                    },
+                    {**self.row_template.copy(), "row_id": "row_6", "diagnostics": "Validation_error"},
+                    {
+                        **self.row_template.copy(),
+                        "row_id": "row_7",
+                    },
+                    {**self.row_template.copy(), "row_id": "row_8", "diagnostics": "Duplicate"},
                 ],
             },
         ]
 
-        # Tests for when there is not an existing Busack file already in S3 bucket
+        expected_header = ValidValues.test_ack_header
+
         for case in test_cases:
             with self.subTest(msg=case["description"]):
 
@@ -149,6 +163,7 @@ class TestAckProcessorE2E(unittest.TestCase):
                 self.assertEqual(response["statusCode"], 200)
                 self.assertEqual(response["body"], '"Lambda function executed successfully!"')
 
+                # Check correct file has been uploaded
                 uploaded_file_key = mock_s3_client.upload_fileobj.call_args[0][2]
 
                 created_formatted = case["rows"][0]["created_at_formatted_string"]
@@ -159,12 +174,16 @@ class TestAckProcessorE2E(unittest.TestCase):
 
                 uploaded_content = mock_s3_client.upload_fileobj.call_args[0][0].getvalue().decode("utf-8")
 
-                for expected_row in case["expected_ack_file"]:
-                    self.assertIn(expected_row, uploaded_content)
+                uploaded_content = mock_s3_client.upload_fileobj.call_args[0][0].getvalue().decode("utf-8")
+                self.assertTrue(uploaded_content.startswith(expected_header))
 
-                mock_firehose_logger.ack_send_log.assert_called()
+            expected_ack_file_content = expected_header
 
-                mock_s3_client.upload_fileobj.reset_mock()
+            self.create_expected_ack_content(case["rows"], uploaded_content, expected_ack_file_content)
+
+            mock_firehose_logger.ack_send_log.assert_called()
+
+            mock_s3_client.upload_fileobj.reset_mock()
 
     @patch("update_ack_file.s3_client")
     def test_update_ack_file(self, mock_s3_client):
@@ -230,22 +249,139 @@ class TestAckProcessorE2E(unittest.TestCase):
                 ack_data_rows_with_id = []
                 for row in deepcopy(case["input_row"]):
                     ack_data_rows_with_id.append(row)
-                    print("UPDATE ACK TEST")
                 update_ack_file(case["file_key"], case["created_at_formatted_string"], ack_data_rows_with_id)
                 created_string = case["created_at_formatted_string"]
                 expected_file_key = f"forwardedFile/{case['file_key'].replace('.csv', f'_BusAck_{created_string}.csv')}"
                 uploaded_file_key = mock_s3_client.upload_fileobj.call_args[0][2]
-                print(uploaded_file_key)
                 self.assertEqual(
                     uploaded_file_key,
                     expected_file_key,
                 )
 
                 uploaded_content = mock_s3_client.upload_fileobj.call_args[0][0].getvalue().decode("utf-8")
+
                 for expected_row in deepcopy(case["expected_row"]):
                     self.assertIn(expected_row, uploaded_content)
 
                 mock_s3_client.upload_fileobj.reset_mock()
+
+    @patch("update_ack_file.s3_client")
+    def test_create_ack_data(self, mock_s3_client):
+        """Test create_ack_data with success and failure cases."""
+
+        test_cases = [
+            {
+                "description": "Success row",
+                "created_at_formatted_string": "20241115T13435500",
+                "local_id": "local123",
+                "row_id": "row456",
+                "successful_api_response": True,
+                "diagnostics": None,
+                "imms_id": "imms789",
+                "expected_base": ValidValues.create_ack_data_successful_row,
+            },
+            {
+                "description": "Failure row",
+                "created_at_formatted_string": "20241115T13435501",
+                "local_id": "local123",
+                "row_id": "row456",
+                "successful_api_response": False,
+                "diagnostics": "Some error occurred",
+                "imms_id": "imms789",
+                "expected_base": ValidValues.create_ack_data_failure_row,
+            },
+        ]
+
+        for case in test_cases:
+            with self.subTest(case["description"]):
+                expected_result = case["expected_base"].copy()
+                expected_result.update(
+                    {
+                        "MESSAGE_HEADER_ID": case["row_id"],
+                        "RECEIVED_TIME": case["created_at_formatted_string"],
+                        "LOCAL_ID": case["local_id"],
+                        "IMMS_ID": case["imms_id"] or "",
+                        "OPERATION_OUTCOME": case["diagnostics"] or "",
+                    }
+                )
+
+                result = create_ack_data(
+                    created_at_formatted_string=case["created_at_formatted_string"],
+                    local_id=case["local_id"],
+                    row_id=case["row_id"],
+                    successful_api_response=case["successful_api_response"],
+                    diagnostics=case["diagnostics"],
+                    imms_id=case["imms_id"],
+                )
+
+                self.assertEqual(result, expected_result)
+
+    @patch("update_ack_file.s3_client")
+    def test_obtain_current_ack_content_file_not_exists(self, mock_s3_client):
+        mock_s3_client.get_object.side_effect = ClientError({"Error": {"Code": "404"}}, "GetObject")
+        ack_bucket_name = "test-bucket"
+
+        result = obtain_current_ack_content(ack_bucket_name, ack_file_key)
+        self.assertEqual(result.getvalue(), ValidValues.test_ack_header)
+        mock_s3_client.get_object.assert_called_once_with(Bucket=ack_bucket_name, Key=ack_file_key)
+        mock_s3_client.upload_fileobj.reset_mock()
+
+    @mock_s3
+    def test_obtain_current_ack_content_file_exists(self):
+        """Test that the existing ack file content is retrieved and new rows can be added."""
+
+        existing_content = ValidValues.existing_ack_file_content
+        self.setup_existing_ack_file(DESTINATION_BUCKET_NAME, ack_file_key, existing_content)
+
+        with patch("update_ack_file.s3_client", s3_client):
+            result = obtain_current_ack_content(DESTINATION_BUCKET_NAME, ack_file_key)
+            self.assertIn(existing_content, result.getvalue())
+            self.assertEqual(result.getvalue(), existing_content)
+
+            retrieved_object = s3_client.get_object(Bucket=DESTINATION_BUCKET_NAME, Key=ack_file_key)
+            retrieved_body = retrieved_object["Body"].read().decode("utf-8")
+            self.assertEqual(retrieved_body, existing_content)
+
+            objects = s3_client.list_objects_v2(Bucket=DESTINATION_BUCKET_NAME)
+            self.assertIn(ack_file_key, [obj["Key"] for obj in objects.get("Contents", [])])
+            print("s3 bucket:", [obj["Key"] for obj in objects.get("Contents", [])])
+
+            s3_client.delete_object(Bucket=DESTINATION_BUCKET_NAME, Key=ack_file_key)
+
+    @patch("update_ack_file.s3_client")
+    @patch("update_ack_file.obtain_current_ack_content")
+    def test_update_ack_file_existing(self, mock_obtain_current_ack_content, mock_s3_client):
+        os.environ["ACK_BUCKET_NAME"] = DESTINATION_BUCKET_NAME
+
+        # Existing file in s3
+        existing_content = ValidValues.existing_ack_file_content
+        self.setup_existing_ack_file(DESTINATION_BUCKET_NAME, ack_file_key, existing_content)
+
+        mock_obtain_current_ack_content.return_value = StringIO(ValidValues.existing_ack_file_content)
+        print(f"EXISTING FILE CONTENT {ValidValues.existing_ack_file_content}")
+        file_key = f"RSV_Vaccinations_v5_TEST_20240905T13005922.csv"
+        ack_data_rows = [
+            ValidValues.create_ack_data_successful_row,
+            ValidValues.create_ack_data_failure_row,
+        ]
+
+        update_ack_file(file_key, CREATED_AT_FORMATTED_STRING, ack_data_rows)
+
+        expected_key = (
+            f"forwardedFile/RSV_Vaccinations_v5_TEST_20240905T13005922_BusAck_{CREATED_AT_FORMATTED_STRING}.csv"
+        )
+
+        mock_obtain_current_ack_content.assert_called_once_with(DESTINATION_BUCKET_NAME, expected_key)
+
+        uploaded_content = mock_s3_client.upload_fileobj.call_args[0][0].getvalue().decode("utf-8")
+        print(f"UPLOADED CONTENT: {uploaded_content}")
+        self.assertIn("123^5|OK|", uploaded_content)
+        self.assertIn("123^1|Fatal Error|", uploaded_content)
+        self.assertIn("123^1|OK|", uploaded_content)
+
+    # Lambda handler sqs error scenario
+    # The created at formatted date doesn't allow to overwrite the same file, as the created at formatted time is different.
+    # test 1 file reuploaded again
 
     def tearDown(self):
         # Clean up mock resources

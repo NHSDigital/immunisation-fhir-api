@@ -128,7 +128,8 @@ class ValidValues:
 
     update_ack_file_failure_row_no_immsid = (
         "123^1|Fatal Error|Fatal|Fatal Error|30002|Business|30002|"
-        f"Business Level Response Value - Processing Error|{CREATED_AT_FORMATTED_STRING}||{local_id}||Error_value|False\n"
+        f"Business Level Response Value - Processing Error|{CREATED_AT_FORMATTED_STRING}|"
+        f"|{local_id}||Error_value|False\n"
     )
 
     update_ack_file_successful_row_immsid = (
@@ -141,7 +142,17 @@ class ValidValues:
         f"|{CREATED_AT_FORMATTED_STRING}||{local_id}|{imms_id}|Error_value|False\n"
     )
 
-    # lambda_handler_event =
+    existing_ack_file_content = (
+        "MESSAGE_HEADER_ID|HEADER_RESPONSE_CODE|ISSUE_SEVERITY|ISSUE_CODE|ISSUE_DETAILS_CODE|RESPONSE_TYPE|"
+        "RESPONSE_CODE|RESPONSE_DISPLAY|RECEIVED_TIME|MAILBOX_FROM|LOCAL_ID|IMMS_ID|OPERATION_OUTCOME"
+        "|MESSAGE_DELIVERY\n123^5|OK|Information|OK|30001|Business|30001|Success|20241115T13435500||999^TEST|||True\n"
+    )
+
+    test_ack_header = (
+        "MESSAGE_HEADER_ID|HEADER_RESPONSE_CODE|ISSUE_SEVERITY|ISSUE_CODE|ISSUE_DETAILS_CODE|RESPONSE_TYPE|"
+        "RESPONSE_CODE|RESPONSE_DISPLAY|RECEIVED_TIME|MAILBOX_FROM|LOCAL_ID|IMMS_ID|OPERATION_OUTCOME"
+        "|MESSAGE_DELIVERY\n"
+    )
 
 
 class InvalidValues:
