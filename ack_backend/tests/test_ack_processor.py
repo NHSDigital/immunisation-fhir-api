@@ -24,6 +24,7 @@ from unittest import TestCase
 s3_client = boto3_client("s3", region_name=AWS_REGION)
 file_name = "COVID19_Vaccinations_v5_YGM41_20240909T13005902.csv"
 ack_file_key = "forwardedFile/COVID19_Vaccinations_v5_YGM41_20240909T13005902_BusAck_20241115T13435500.csv"
+test_ack_file_key = "forwardedFile/COVID19_Vaccinations_v5_YGM41_20240909T13005902_BusAck_20241115T13455555.csv"
 local_id = "111^222"
 os.environ["ACK_BUCKET_NAME"] = DESTINATION_BUCKET_NAME
 invalid_action_flag_diagnostics = "Invalid ACTION_FLAG - ACTION_FLAG must be 'NEW', 'UPDATE' or 'DELETE'"
@@ -71,7 +72,7 @@ class TestAckProcessorE2E(unittest.TestCase):
             row_id = row.get("row_id")
             self.assertIn(f"{row_id}|", uploaded_content)
 
-    def create_expected_ack_content(self, row_input, uploaded_content, expected_ack_file_content):
+    def create_expected_ack_content(self, row_input, actual_ack_file_content, expected_ack_file_content):
         for i, row in enumerate(row_input):
             diagnostics = row.get("diagnostics", "")
             imms_id = row.get("imms_id", "")
@@ -89,9 +90,9 @@ class TestAckProcessorE2E(unittest.TestCase):
 
             expected_ack_file_content += ack_row + "\n"
 
-        self.assertEqual(uploaded_content, expected_ack_file_content)
+        self.assertEqual(actual_ack_file_content, expected_ack_file_content)
 
-        self.ack_row_order(row_input, uploaded_content)
+        self.ack_row_order(row_input, actual_ack_file_content)
 
     @patch("log_structure_splunk.firehose_logger")
     @patch("update_ack_file.s3_client")
@@ -172,18 +173,56 @@ class TestAckProcessorE2E(unittest.TestCase):
                 )
                 self.assertEqual(uploaded_file_key, expected_file_key)
 
-                uploaded_content = mock_s3_client.upload_fileobj.call_args[0][0].getvalue().decode("utf-8")
-
-                uploaded_content = mock_s3_client.upload_fileobj.call_args[0][0].getvalue().decode("utf-8")
-                self.assertTrue(uploaded_content.startswith(expected_header))
+                actual_ack_file_content = mock_s3_client.upload_fileobj.call_args[0][0].getvalue().decode("utf-8")
+                self.assertTrue(actual_ack_file_content.startswith(expected_header))
 
             expected_ack_file_content = expected_header
 
-            self.create_expected_ack_content(case["rows"], uploaded_content, expected_ack_file_content)
+            self.create_expected_ack_content(case["rows"], actual_ack_file_content, expected_ack_file_content)
 
             mock_firehose_logger.ack_send_log.assert_called()
 
             mock_s3_client.upload_fileobj.reset_mock()
+
+    # TO DO - Finish
+    @patch("log_structure_splunk.firehose_logger")
+    @patch("update_ack_file.s3_client")
+    @patch("update_ack_file.obtain_current_ack_content")
+    def test_lambda_handler_existing(self, mock_obtain_current_ack_content, mock_s3_client, mock_firehose_logger):
+        """Test lambda handler when the file already exists in S3 and should pl be updated."""
+
+        existing_file_content = ValidValues.existing_ack_file_content
+
+        mock_s3_client.get_object.return_value = {
+            "Body": MagicMock(read=MagicMock(return_value=existing_file_content.encode("utf-8")))
+        }
+        mock_obtain_current_ack_content.return_value = existing_file_content
+        # Mock the `obtain_current_ack_content` function to return the existing content
+
+        test_cases = [
+            {
+                "description": "SQS event with multiple errors",
+                "rows": [
+                    {
+                        **self.row_template.copy(),
+                        "row_id": "row_1",
+                        "diagnostics": "UNIQUE_ID or UNIQUE_ID_URI is missing",
+                    },
+                    {**self.row_template.copy(), "row_id": "row_2", "diagnostics": "unauthorized"},
+                    {**self.row_template.copy(), "row_id": "row_3", "diagnostics": "not found"},
+                ],
+            },
+        ]
+
+        for case in test_cases:
+            with self.subTest(msg=case["description"]):
+
+                event = self.create_event(case)
+
+                response = lambda_handler(event=event, context={})
+
+                self.assertEqual(response["statusCode"], 200)
+                self.assertEqual(response["body"], '"Lambda function executed successfully!"')
 
     @patch("update_ack_file.s3_client")
     def test_update_ack_file(self, mock_s3_client):
@@ -265,6 +304,44 @@ class TestAckProcessorE2E(unittest.TestCase):
 
                 mock_s3_client.upload_fileobj.reset_mock()
 
+    def test_update_ack_file_existing(self):
+        """Test appending new rows to an existing ack file."""
+
+        os.environ["ACK_BUCKET_NAME"] = DESTINATION_BUCKET_NAME
+
+        # Mock existing content in the ack file
+        existing_content = ValidValues.existing_ack_file_content
+
+        file_key = "RSV_Vaccinations_v5_TEST_20240905T13005922.csv"
+        ack_file_key = f"forwardedFile/RSV_Vaccinations_v5_TEST_20240905T13005922_BusAck_20241115T13435500.csv"
+        ack_data_rows = [
+            ValidValues.create_ack_data_successful_row,
+            ValidValues.create_ack_data_failure_row,
+        ]
+
+        self.setup_existing_ack_file(DESTINATION_BUCKET_NAME, ack_file_key, existing_content)
+        retrieved_object = s3_client.get_object(Bucket=DESTINATION_BUCKET_NAME, Key=ack_file_key)
+        retrieved_body = retrieved_object["Body"].read().decode("utf-8")
+
+        with patch("update_ack_file.s3_client", s3_client):
+            update_ack_file(file_key, CREATED_AT_FORMATTED_STRING, ack_data_rows)
+            retrieved_object = s3_client.get_object(Bucket=DESTINATION_BUCKET_NAME, Key=ack_file_key)
+            retrieved_body = retrieved_object["Body"].read().decode("utf-8")
+
+            self.assertIn(
+                "123^5|OK|Information|OK|30001|Business|30001|Success|20241115T13435500||999^TEST|||True",
+                retrieved_body,
+            )  # Existing content
+
+            # Check new rows added to file
+            self.assertIn("123^1|OK|", retrieved_body)
+            self.assertIn("123^1|Fatal Error|", retrieved_body)
+
+            objects = s3_client.list_objects_v2(Bucket=DESTINATION_BUCKET_NAME)
+            self.assertIn(ack_file_key, [obj["Key"] for obj in objects.get("Contents", [])])
+
+            s3_client.delete_object(Bucket=DESTINATION_BUCKET_NAME, Key=ack_file_key)
+
     @patch("update_ack_file.s3_client")
     def test_create_ack_data(self, mock_s3_client):
         """Test create_ack_data with success and failure cases."""
@@ -344,44 +421,8 @@ class TestAckProcessorE2E(unittest.TestCase):
 
             objects = s3_client.list_objects_v2(Bucket=DESTINATION_BUCKET_NAME)
             self.assertIn(ack_file_key, [obj["Key"] for obj in objects.get("Contents", [])])
-            print("s3 bucket:", [obj["Key"] for obj in objects.get("Contents", [])])
 
             s3_client.delete_object(Bucket=DESTINATION_BUCKET_NAME, Key=ack_file_key)
-
-    @patch("update_ack_file.s3_client")
-    @patch("update_ack_file.obtain_current_ack_content")
-    def test_update_ack_file_existing(self, mock_obtain_current_ack_content, mock_s3_client):
-        os.environ["ACK_BUCKET_NAME"] = DESTINATION_BUCKET_NAME
-
-        # Existing file in s3
-        existing_content = ValidValues.existing_ack_file_content
-        self.setup_existing_ack_file(DESTINATION_BUCKET_NAME, ack_file_key, existing_content)
-
-        mock_obtain_current_ack_content.return_value = StringIO(ValidValues.existing_ack_file_content)
-        print(f"EXISTING FILE CONTENT {ValidValues.existing_ack_file_content}")
-        file_key = f"RSV_Vaccinations_v5_TEST_20240905T13005922.csv"
-        ack_data_rows = [
-            ValidValues.create_ack_data_successful_row,
-            ValidValues.create_ack_data_failure_row,
-        ]
-
-        update_ack_file(file_key, CREATED_AT_FORMATTED_STRING, ack_data_rows)
-
-        expected_key = (
-            f"forwardedFile/RSV_Vaccinations_v5_TEST_20240905T13005922_BusAck_{CREATED_AT_FORMATTED_STRING}.csv"
-        )
-
-        mock_obtain_current_ack_content.assert_called_once_with(DESTINATION_BUCKET_NAME, expected_key)
-
-        uploaded_content = mock_s3_client.upload_fileobj.call_args[0][0].getvalue().decode("utf-8")
-        print(f"UPLOADED CONTENT: {uploaded_content}")
-        self.assertIn("123^5|OK|", uploaded_content)
-        self.assertIn("123^1|Fatal Error|", uploaded_content)
-        self.assertIn("123^1|OK|", uploaded_content)
-
-    # Lambda handler sqs error scenario
-    # The created at formatted date doesn't allow to overwrite the same file, as the created at formatted time is different.
-    # test 1 file reuploaded again
 
     def tearDown(self):
         # Clean up mock resources
