@@ -275,6 +275,7 @@ resource "aws_lambda_function" "file_processor_lambda" {
       REDIS_PORT           = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].port
       SPLUNK_FIREHOSE_NAME = module.splunk.firehose_stream_name
       AUDIT_TABLE_NAME     = "${local.batch_prefix}-audit-table"
+      FILE_NAME_GSI        = "filename_index"
     }
   }
   kms_key_arn = data.aws_kms_key.existing_lambda_encryption_key.arn
