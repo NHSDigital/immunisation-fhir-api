@@ -152,8 +152,8 @@ resource "aws_ecs_task_definition" "ecs_task" {
   family                   = "${local.short_prefix}-processor-task"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  cpu                      = "1024"
-  memory                   = "8192"
+  cpu                      = "8192"
+  memory                   = "24576"
   runtime_platform {
         operating_system_family = "LINUX"
         cpu_architecture        = "X86_64"
@@ -288,13 +288,13 @@ resource "aws_pipes_pipe" "fifo_pipe" {
       }
       overrides {
         container_override {
-          cpu = 1024
+          cpu = 2048
           name = "${local.short_prefix}-process-records-container"
           environment {
             name  = "EVENT_DETAILS"
             value = "$.body"
           }
-          memory = 3072
+          memory = 8192
           memory_reservation = 1024
         }
       }

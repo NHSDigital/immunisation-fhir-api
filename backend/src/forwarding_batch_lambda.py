@@ -16,11 +16,11 @@ logger = logging.getLogger()
 QUEUE_URL = os.getenv("SQS_QUEUE_URL")
 
 
-def forward_request_to_dynamo(message_body: any, table: any, batchcontroller: ImmunizationBatchController):
+def forward_request_to_dynamo(message_body: any, table: any, is_present: bool, batchcontroller: ImmunizationBatchController):
     """Forwards the request to the Imms API (where possible) and updates the ack file with the outcome"""
     row_id = message_body.get("row_id")
     logger.info("FORWARDED MESSAGE: ID %s", row_id)
-    return batchcontroller.send_request_to_dynamo(message_body, table)
+    return batchcontroller.send_request_to_dynamo(message_body, table, is_present)
 
 
 def forward_lambda_handler(event, _):
@@ -35,12 +35,14 @@ def forward_lambda_handler(event, _):
             kinesis_payload = record["kinesis"]["data"]
             decoded_payload = base64.b64decode(kinesis_payload).decode("utf-8")
             message_body = json.loads(decoded_payload, use_decimal=True)
+            is_present = False
             if fhir_json := message_body.get("fhir_json"):
                 system_id = fhir_json["identifier"][0]["system"]
                 system_value = fhir_json["identifier"][0]["value"]
                 identifier = f"{system_id}#{system_value}"
                 if identifier in array_of_identifiers:
-                    delay_milliseconds = 100 # Delay time in milliseconds 
+                    is_present = True
+                    delay_milliseconds = 30 # Delay time in milliseconds 
                     time.sleep(delay_milliseconds / 1000)
                 else:
                     array_of_identifiers.append(identifier)
@@ -50,7 +52,7 @@ def forward_lambda_handler(event, _):
             message_group_id = f"{file_key}_{created_at_formatted_string}"
             response = {}
             response["imms_id"] = forward_request_to_dynamo(
-                message_body, table, controller
+                message_body, table, is_present, controller
             )
             response["file_key"] = file_key
             response["row_id"] = message_body.get("row_id")
