@@ -19,7 +19,7 @@ To run all the tests you need to provide a `.env` file. The below table describe
 | APIGEE_USERNAME    | your-nhs-email@nhs.net                      | this value is needed inorder to authenticate with apigee                                      |
 | APIGEE_ENVIRONMENT | internal-dev                                | apigee environment                                                                            |
 | PROXY_NAME         | immunisation-fhir-api-pr-100                | this the proxy name that you want to target. You can find it in the apigee ui                 |
-| SERVICE_BASE_PATH  | immunisation-fhir-api-pr-100                | the base path for the proxy. This value can be found in overview section in the apigee ui     |
+| SERVICE_BASE_PATH  | immunisation-fhir-api/FHIR/R4-pr-100        | the base path for the proxy. This value can be found in overview section in the apigee ui     |
 | STATUS_API_KEY     | secret                                      | if you don't have this value then _status endpoint test will fail. You can ignore it          |
 | AWS_PROFILE        | apim-dev                                    | some operation may need to run aws cli. This value is used for aws authentication             |
 | AWS_DOMAIN_NAME    | https://pr-100.imms.dev.vds.platform.nhs.uk | this value points to our backend deployment. We use it to test mTLS. Ignore it in local tests |
@@ -40,7 +40,7 @@ Given your `.env` file:
 export APIGEE_USERNAME=<your-apigee-email>
 export APIGEE_ENVIRONMENT=internal-dev
 export PROXY_NAME=immunisation-fhir-api-pr-100
-export SERVICE_BASE_PATH=immunisation-fhir-api-pr-100
+export SERVICE_BASE_PATH=immunisation-fhir-api/FHIR/R4-pr-100
 ```
 
 You can run all tests using:
