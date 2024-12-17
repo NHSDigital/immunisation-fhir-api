@@ -20,6 +20,7 @@ def lambda_handler(event, context):
         imms_id = None
         successful_api_response = True
         array_of_rows = []
+
         for record in event["Records"]:
             body_json = record["body"]
             incoming_message_body = json.loads(body_json)
