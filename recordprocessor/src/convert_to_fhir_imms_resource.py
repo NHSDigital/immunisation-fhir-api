@@ -9,7 +9,7 @@ from constants import Urls
 ImmunizationDecorator = Callable[[Dict, Dict[str, str]], None]
 """
 A decorator function (Callable) takes the current immunization resource and adds appropriate fields to it.
-NOTE: NO VALIDATION should be performed. Validation is left to the Imms API.
+NOTE: NO VALIDATION should be performed. Validation is left to the Imms API validator.
 NOTE: An overarching data rule is that where data is not present the field should not be added to the FHIR Immunization
 resource. Therefore before adding an element it is necessary to check that at least one of its values is non-empty.
 """

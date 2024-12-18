@@ -3,12 +3,12 @@
 from decimal import Decimal
 from src.constants import Urls
 from src.mappings import Vaccine
-from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import TARGET_DISEASE_ELEMENTS
+from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import TargetDiseaseElements
 
 VALID_NHS_NUMBER = "1345678940"
 ADDRESS_UNKNOWN_POSTCODE = "ZZ99 3WZ"
 
-COVID_19_TARGET_DISEASE_ELEMENT = TARGET_DISEASE_ELEMENTS[Vaccine.COVID_19.value]
+RSV_TARGET_DISEASE_ELEMENT = getattr(TargetDiseaseElements, Vaccine.RSV.value)
 
 
 class ExtensionItems:
@@ -92,7 +92,7 @@ class AllHeadersExpectedOutput:
     immunization = {
         "resourceType": "Immunization",
         "status": "completed",
-        "protocolApplied": [{"targetDisease": COVID_19_TARGET_DISEASE_ELEMENT}],
+        "protocolApplied": [{"targetDisease": RSV_TARGET_DISEASE_ELEMENT}],
         "reasonCode": [{"coding": [{"system": Urls.SNOMED, "code": "INDICATION_CODE"}]}],
         "recorded": "2000-01-01",
         "identifier": [{"system": "unique_id_uri", "value": "UNIQUE_ID_123"}],
@@ -101,7 +101,7 @@ class AllHeadersExpectedOutput:
     patient = {
         "resourceType": "Immunization",
         "status": "completed",
-        "protocolApplied": [{"targetDisease": COVID_19_TARGET_DISEASE_ELEMENT}],
+        "protocolApplied": [{"targetDisease": RSV_TARGET_DISEASE_ELEMENT}],
         "contained": [
             {
                 "resourceType": "Patient",
@@ -119,7 +119,7 @@ class AllHeadersExpectedOutput:
     vaccine = {
         "resourceType": "Immunization",
         "status": "completed",
-        "protocolApplied": [{"targetDisease": COVID_19_TARGET_DISEASE_ELEMENT}],
+        "protocolApplied": [{"targetDisease": RSV_TARGET_DISEASE_ELEMENT}],
         "vaccineCode": {"coding": [{"system": Urls.SNOMED, "code": "a_vacc_code", "display": "a_vacc_term"}]},
         "manufacturer": {"display": "a_manufacturer"},
         "lotNumber": "a_batch_number",
@@ -129,7 +129,7 @@ class AllHeadersExpectedOutput:
     vaccination = {
         "resourceType": "Immunization",
         "status": "completed",
-        "protocolApplied": [{"targetDisease": COVID_19_TARGET_DISEASE_ELEMENT, "doseNumberPositiveInt": 1}],
+        "protocolApplied": [{"targetDisease": RSV_TARGET_DISEASE_ELEMENT, "doseNumberPositiveInt": 1}],
         "extension": [ExtensionItems.vaccination_procedure],
         "occurrenceDateTime": "2000-01-01T11:11:11+01:00",
         "primarySource": True,
@@ -146,7 +146,7 @@ class AllHeadersExpectedOutput:
     performer = {
         "resourceType": "Immunization",
         "status": "completed",
-        "protocolApplied": [{"targetDisease": COVID_19_TARGET_DISEASE_ELEMENT}],
+        "protocolApplied": [{"targetDisease": RSV_TARGET_DISEASE_ELEMENT}],
         "contained": [
             {
                 "resourceType": "Practitioner",

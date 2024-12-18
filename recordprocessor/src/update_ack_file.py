@@ -1,13 +1,10 @@
 """Functions for adding a row of data to the ack file"""
 
-import logging
 from io import StringIO, BytesIO
 import os
 from typing import Union
-from s3_clients import s3_client
+from clients import s3_client
 from utils_for_recordprocessor import get_environment
-
-logger = logging.getLogger()
 
 
 def create_ack_data(
