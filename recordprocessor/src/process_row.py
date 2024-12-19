@@ -1,11 +1,9 @@
 """Function to process a single row of a csv file"""
 
-import logging
 from convert_to_fhir_imms_resource import convert_to_fhir_imms_resource
 from constants import Diagnostics
 from mappings import Vaccine
-
-logger = logging.getLogger()
+from clients import logger
 
 
 def process_row(vaccine: Vaccine, allowed_operations: set, row: dict) -> dict:

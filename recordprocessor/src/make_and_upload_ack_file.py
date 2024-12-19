@@ -3,7 +3,7 @@
 from csv import writer
 import os
 from io import StringIO, BytesIO
-from s3_clients import s3_client
+from clients import s3_client
 
 
 def make_ack_data(
