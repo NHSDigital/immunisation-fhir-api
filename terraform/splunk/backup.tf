@@ -1,5 +1,5 @@
 locals {
-    environment         = terraform.workspace
+    environment         = terraform.workspace == "green" ? "prod" : terraform.workspace == "blue" ? "prod" : terraform.workspace
     // Flag so we can force delete s3 buckets with items in for pr and shortcode environments only.
     is_temp = length(regexall("[a-z]{2,4}-?[0-9]+", local.environment)) > 0
 }

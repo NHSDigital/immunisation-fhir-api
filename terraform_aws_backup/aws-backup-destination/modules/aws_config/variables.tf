@@ -51,17 +51,17 @@ variable "vault_lock_type" {
 variable "vault_lock_min_retention_days" {
   description = "The minimum retention period that the vault retains its recovery points"
   type        = number
-  default     = 365
+  default     = 60
 }
 
 variable "vault_lock_max_retention_days" {
   description = "The maximum retention period that the vault retains its recovery points"
   type        = number
-  default     = 365
+  default     = 120
 }
 
 variable "changeable_for_days" {
   description = "How long you want the vault lock to be changeable for, only applies to compliance mode. This value is expressed in days no less than 3 and no greater than 36,500; otherwise, an error will return."
   type        = number
-  default     = 14
+  default     = 36500
 }
