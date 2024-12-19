@@ -28,11 +28,12 @@ locals {
 }
 
 locals {
-    environment         = terraform.workspace
-    prefix              = "${var.project_name}-${var.service}-${local.environment}"
-    short_prefix        = "${var.project_short_name}-${local.environment}"
-    batch_prefix        = "immunisation-batch-${local.environment}"
-    service_domain_name = "${local.environment}.${local.project_domain_name}"
+    environment         = terraform.workspace == "green" ? "prod" : terraform.workspace == "blue" ? "prod" : terraform.workspace
+    env                 = terraform.workspace
+    prefix              = "${var.project_name}-${var.service}-${local.env}"
+    short_prefix        = "${var.project_short_name}-${local.env}"
+    batch_prefix        = "immunisation-batch-${local.env}"
+    service_domain_name = "${local.env}.${local.project_domain_name}"
     config_env = local.environment == "prod" ? "prod" : "dev"
     config_bucket_env = local.environment == "prod" ? "prod" : "internal-dev"
 

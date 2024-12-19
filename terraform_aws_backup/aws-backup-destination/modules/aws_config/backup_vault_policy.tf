@@ -20,27 +20,26 @@ data "aws_iam_policy_document" "vault_policy" {
     resources = ["*"]
   }
 
-  dynamic "statement" {
-    for_each = var.enable_vault_protection ? [1] : []
-    content {
-      sid    = "DenyBackupVaultAccess"
-      effect = "Deny"
+  # dynamic "statement" {
+  #   for_each = var.enable_vault_protection ? [1] : []
+  #   content {
+  #     sid    = "DenyBackupVaultAccess"
+  #     effect = "Deny"
 
-      principals {
-        type        = "AWS"
-        identifiers = ["*"]
-      }
-      actions = [
-        "backup:DeleteRecoveryPoint",
-        "backup:PutBackupVaultAccessPolicy",
-        "backup:UpdateRecoveryPointLifecycle",
-        "backup:DeleteBackupVault",
-        "backup:StartRestoreJob",
-        "backup:DeleteBackupVaultLockConfiguration",
-      ]
-      resources = ["*"]
-    }
-  }
+  #     principals {
+  #       type        = "AWS"
+  #       identifiers = ["*"]
+  #     }
+  #     actions = [
+  #       "backup:DeleteRecoveryPoint",
+  #       "backup:UpdateRecoveryPointLifecycle",
+  #       "backup:DeleteBackupVault",
+  #       "backup:StartRestoreJob",
+  #       "backup:DeleteBackupVaultLockConfiguration",
+  #     ]
+  #     resources = ["*"]
+  #   }
+  # }
 
   dynamic "statement" {
     for_each = var.enable_vault_protection ? [1] : []

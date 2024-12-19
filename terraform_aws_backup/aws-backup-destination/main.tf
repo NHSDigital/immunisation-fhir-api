@@ -42,7 +42,7 @@ module "destination" {
   source_account_id       = data.aws_ssm_parameter.src_acct_id.value
   source_account_name     = data.aws_ssm_parameter.src_acct_name.value
   account_id              = local.destination_account_id
-  enable_vault_protection = false
+  enable_vault_protection = true
 }
 
 locals {

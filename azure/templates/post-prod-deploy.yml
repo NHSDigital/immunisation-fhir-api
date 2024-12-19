@@ -30,15 +30,12 @@ steps:
 
         service_name=$(FULLY_QUALIFIED_SERVICE_NAME)
 
-        pr_no=$(echo $service_name | { grep -oE '[0-9]+$' || true; })
         workspace=${{ parameters.deployment_type }}
 
         echo sandbox with following parameters:
-        echo service_name: $service_name
         echo workspace: $workspace
         echo AWS environment: $APIGEE_ENVIRONMENT
-        echo pr_no: $pr_no
-
+        
           cd terraform
 
         make init
