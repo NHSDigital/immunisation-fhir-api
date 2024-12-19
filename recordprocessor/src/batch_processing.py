@@ -1,11 +1,8 @@
 """Functions for processing the file on a row-by-row basis"""
 
 import json
-
-# from io import StringIO
 import os
 import time
-import logging
 from constants import Constants
 from utils_for_recordprocessor import get_csv_content_dict_reader
 from unique_permission import get_unique_action_flags_from_s3
@@ -13,14 +10,8 @@ from make_and_upload_ack_file import make_and_upload_ack_file
 from get_operation_permissions import get_operation_permissions
 from process_row import process_row
 from mappings import Vaccine
-
-# from update_ack_file import update_ack_file
 from send_to_kinesis import send_to_kinesis
-logging.basicConfig(level="INFO")
-logger = logging.getLogger()
-
-STREAM_NAME = os.getenv("KINESIS_STREAM_NAME")
-STREAM_ARN = os.getenv("KINESIS_STREAM_ARN")
+from clients import logger
 
 
 def process_csv_to_fhir(incoming_message_body: dict) -> None:
@@ -29,7 +20,6 @@ def process_csv_to_fhir(incoming_message_body: dict) -> None:
     and documents the outcome for each row in the ack file.
     """
     logger.info("Event: %s", incoming_message_body)
-
     # Get details needed to process file
     file_id = incoming_message_body.get("message_id")
     vaccine: Vaccine = next(  # Convert vaccine_type to Vaccine enum
@@ -44,8 +34,8 @@ def process_csv_to_fhir(incoming_message_body: dict) -> None:
     # Fetch the data
     bucket_name = os.getenv("SOURCE_BUCKET_NAME")
     csv_reader, csv_data = get_csv_content_dict_reader(bucket_name, file_key)
-
     is_valid_headers = validate_content_headers(csv_reader)
+
     # Validate has permission to perform at least one of the requested actions
     action_flag_check = validate_action_flag_permissions(supplier, vaccine.value, permission, csv_data)
 
@@ -54,8 +44,6 @@ def process_csv_to_fhir(incoming_message_body: dict) -> None:
     else:
         # Initialise the accumulated_ack_file_content with the headers
         make_and_upload_ack_file(file_id, file_key, True, True, created_at_formatted_string)
-        # accumulated_ack_file_content = StringIO()
-        # accumulated_ack_file_content.write("|".join(Constants.ack_headers) + "\n")
 
         row_count = 0  # Initialize a counter for rows
         for row in csv_reader:
@@ -75,7 +63,7 @@ def process_csv_to_fhir(incoming_message_body: dict) -> None:
                 **details_from_processing,
             }
 
-            send_to_kinesis(supplier, outgoing_message_body, STREAM_NAME, STREAM_ARN)
+            send_to_kinesis(supplier, outgoing_message_body)
 
         logger.info("Total rows processed: %s", row_count)
 
@@ -85,32 +73,32 @@ def validate_content_headers(csv_content_reader):
     return csv_content_reader.fieldnames == Constants.expected_csv_headers
 
 
-def validate_action_flag_permissions(supplier: str, vaccine_type: str, permission, csv_data) -> bool:
+def validate_action_flag_permissions(
+    supplier: str, vaccine_type: str, allowed_permissions_list: list, csv_data
+) -> bool:
     """
     Returns True if the supplier has permission to perform ANY of the requested actions for the given vaccine type,
     else False.
     """
-    # Obtain the allowed permissions for the supplier
-    allowed_permissions_set = permission
     # If the supplier has full permissions for the vaccine type, return True
-    if f"{vaccine_type}_FULL" in allowed_permissions_set:
+    if f"{vaccine_type}_FULL" in allowed_permissions_list:
         return True
 
     # Get unique ACTION_FLAG values from the S3 file
     operations_requested = get_unique_action_flags_from_s3(csv_data)
 
     # Convert action flags into the expected operation names
-    operation_requests_set = {
+    requested_permissions_set = {
         f"{vaccine_type}_{'CREATE' if action == 'NEW' else action}" for action in operations_requested
     }
 
     # Check if any of the CSV permissions match the allowed permissions
-    if operation_requests_set.intersection(allowed_permissions_set):
+    if requested_permissions_set.intersection(allowed_permissions_list):
         logger.info(
             "%s permissions %s match one of the requested permissions required to %s",
             supplier,
-            allowed_permissions_set,
-            operation_requests_set,
+            allowed_permissions_list,
+            requested_permissions_set,
         )
         return True
 
@@ -126,7 +114,7 @@ def main(event: str) -> None:
     except Exception as error:  # pylint: disable=broad-exception-caught
         logger.error("Error processing message: %s", error)
     end = time.time()
-    print(f"Total time for completion:{round(end - start, 5)}s")
+    logger.info(f"Total time for completion:{round(end - start, 5)}s")
 
 
 if __name__ == "__main__":
