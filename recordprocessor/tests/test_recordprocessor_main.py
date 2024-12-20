@@ -1,14 +1,18 @@
-"E2e tests for recordprocessor"
+"Tests for main function for RecordProcessor"
 
 import unittest
 import json
 from decimal import Decimal
 from unittest.mock import patch
 from datetime import datetime, timedelta, timezone
-from moto import mock_s3, mock_kinesis
+from moto import mock_s3, mock_kinesis, mock_firehose
 from boto3 import client as boto3_client
 from batch_processing import main
 from constants import Diagnostics
+from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
+    GenericSetUp,
+    GenericTearDown,
+)
 from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
     Kinesis,
     MOCK_ENVIRONMENT_DICT,
@@ -25,6 +29,7 @@ from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests impo
 
 s3_client = boto3_client("s3", region_name=REGION_NAME)
 kinesis_client = boto3_client("kinesis", region_name=REGION_NAME)
+firehose_client = boto3_client("firehose", region_name=REGION_NAME)
 yesterday = datetime.now(timezone.utc) - timedelta(days=1)
 mock_rsv_emis_file = MockFileDetails.rsv_emis
 
@@ -32,30 +37,18 @@ mock_rsv_emis_file = MockFileDetails.rsv_emis
 @patch.dict("os.environ", MOCK_ENVIRONMENT_DICT)
 @mock_s3
 @mock_kinesis
+@mock_firehose
 class TestRecordProcessor(unittest.TestCase):
-    """E2e tests for RecordProcessor"""
+    """Tests for main function for RecordProcessor"""
 
     def setUp(self) -> None:
-        for bucket_name in [BucketNames.SOURCE, BucketNames.DESTINATION]:
-            s3_client.create_bucket(Bucket=bucket_name, CreateBucketConfiguration={"LocationConstraint": REGION_NAME})
-
-        kinesis_client.create_stream(StreamName=Kinesis.STREAM_NAME, ShardCount=1)
+        GenericSetUp(s3_client, firehose_client, kinesis_client)
 
     def tearDown(self) -> None:
-        # Delete all of the buckets (the contents of each bucket must be deleted first)
-        for bucket_name in [BucketNames.SOURCE, BucketNames.DESTINATION]:
-            for obj in s3_client.list_objects_v2(Bucket=bucket_name).get("Contents", []):
-                s3_client.delete_object(Bucket=bucket_name, Key=obj["Key"])
-            s3_client.delete_bucket(Bucket=bucket_name)
-
-        # Delete the kinesis stream
-        try:
-            kinesis_client.delete_stream(StreamName=Kinesis.STREAM_NAME, EnforceConsumerDeletion=True)
-        except kinesis_client.exceptions.ResourceNotFoundException:
-            pass
+        GenericTearDown(s3_client, firehose_client, kinesis_client)
 
     @staticmethod
-    def upload_files(source_file_content):  # pylint: disable=dangerous-default-value
+    def upload_source_files(source_file_content):  # pylint: disable=dangerous-default-value
         """Uploads a test file with the TEST_FILE_KEY (RSV EMIS file) the given file content to the source bucket"""
         s3_client.put_object(Bucket=BucketNames.SOURCE, Key=mock_rsv_emis_file.file_key, Body=source_file_content)
 
@@ -146,7 +139,7 @@ class TestRecordProcessor(unittest.TestCase):
         Tests that file containing CREATE, UPDATE and DELETE is successfully processed when the supplier has
         full permissions.
         """
-        self.upload_files(ValidMockFileContent.with_new_and_update_and_delete)
+        self.upload_source_files(ValidMockFileContent.with_new_and_update_and_delete)
 
         main(mock_rsv_emis_file.event_full_permissions)
 
@@ -180,7 +173,7 @@ class TestRecordProcessor(unittest.TestCase):
         Tests that file containing CREATE, UPDATE and DELETE is successfully processed when the supplier only has CREATE
         permissions.
         """
-        self.upload_files(ValidMockFileContent.with_new_and_update_and_delete)
+        self.upload_source_files(ValidMockFileContent.with_new_and_update_and_delete)
 
         main(mock_rsv_emis_file.event_create_permissions_only)
 
@@ -222,7 +215,7 @@ class TestRecordProcessor(unittest.TestCase):
         Tests that file containing UPDATE and DELETE is successfully processed when the supplier has CREATE permissions
         only.
         """
-        self.upload_files(ValidMockFileContent.with_update_and_delete)
+        self.upload_source_files(ValidMockFileContent.with_update_and_delete)
 
         main(mock_rsv_emis_file.event_create_permissions_only)
 
@@ -233,7 +226,7 @@ class TestRecordProcessor(unittest.TestCase):
     def test_e2e_invalid_action_flags(self):
         """Tests that file is successfully processed when the ACTION_FLAG field is empty or invalid."""
 
-        self.upload_files(
+        self.upload_source_files(
             ValidMockFileContent.with_update_and_delete.replace("update", "").replace("delete", "INVALID")
         )
 
@@ -262,7 +255,7 @@ class TestRecordProcessor(unittest.TestCase):
         mandatory_fields_only_values = "|".join(f'"{v}"' for v in MockFieldDictionaries.mandatory_fields_only.values())
         critical_fields_only_values = "|".join(f'"{v}"' for v in MockFieldDictionaries.critical_fields_only.values())
         file_content = f"{headers}\n{all_fields_values}\n{mandatory_fields_only_values}\n{critical_fields_only_values}"
-        self.upload_files(file_content)
+        self.upload_source_files(file_content)
 
         main(mock_rsv_emis_file.event_full_permissions)
 
@@ -298,14 +291,34 @@ class TestRecordProcessor(unittest.TestCase):
         Tests that, for a file with valid content and supplier with full permissions, when the kinesis send fails, the
         ack file is created and documents an error.
         """
-        self.upload_files(ValidMockFileContent.with_new_and_update)
+        self.upload_source_files(ValidMockFileContent.with_new_and_update)
         # Delete the kinesis stream, to cause kinesis send to fail
         kinesis_client.delete_stream(StreamName=Kinesis.STREAM_NAME, EnforceConsumerDeletion=True)
 
-        main(mock_rsv_emis_file.event_full_permissions)
+        with (  # noqa: E999
+            patch("logging_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
+            patch("logging_decorator.datetime") as mock_datetime,  # noqa: E999
+            patch("logging_decorator.time") as mock_time,  # noqa: E999
+        ):  # noqa: E999
+            mock_time.time.side_effect = [1672531200, 1672531200.123456]
+            mock_datetime.now.return_value = datetime(2024, 1, 1, 12, 0, 0)
+            main(mock_rsv_emis_file.event_full_permissions)
 
+        # Since the failure occured at row level, not file level, the ack file should still be created
+        # and firehose logs should indicate a successful file level validation
         self.make_inf_ack_assertions(file_details=mock_rsv_emis_file, passed_validation=True)
-        # TODO: Make assertions r.e. logs (there is no output as kinesis failed)
+        expected_log_data = {
+            "function_name": "record_processor_file_level_validation",
+            "date_time": "2024-01-01 12:00:00",
+            "file_key": "RSV_Vaccinations_v5_8HK48_20210730T12000000.csv",
+            "message_id": "rsv_emis_test_id",
+            "vaccine_type": "RSV",
+            "supplier": "EMIS",
+            "time_taken": "0.12346s",
+            "statusCode": 200,
+            "message": "Successfully sent for record processing",
+        }
+        mock_send_log_to_firehose.assert_called_with(expected_log_data)
 
 
 if __name__ == "__main__":

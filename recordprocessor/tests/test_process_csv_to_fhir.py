@@ -4,8 +4,12 @@ import unittest
 from unittest.mock import patch
 import boto3
 from copy import deepcopy
-from moto import mock_s3
+from moto import mock_s3, mock_firehose
 from batch_processing import process_csv_to_fhir
+from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
+    GenericSetUp,
+    GenericTearDown,
+)
 from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
     MOCK_ENVIRONMENT_DICT,
     MockFileDetails,
@@ -15,23 +19,21 @@ from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests impo
 )
 
 s3_client = boto3.client("s3", region_name=REGION_NAME)
+firehose_client = boto3.client("firehose", region_name=REGION_NAME)
 test_file = MockFileDetails.rsv_emis
 
 
 @patch.dict("os.environ", MOCK_ENVIRONMENT_DICT)
 @mock_s3
-class TestProcessLambdaFunction(unittest.TestCase):
+@mock_firehose
+class TestProcessCsvToFhir(unittest.TestCase):
     """Tests for process_csv_to_fhir function"""
 
     def setUp(self) -> None:
-        for bucket_name in [BucketNames.SOURCE, BucketNames.DESTINATION]:
-            s3_client.create_bucket(Bucket=bucket_name, CreateBucketConfiguration={"LocationConstraint": REGION_NAME})
+        GenericSetUp(s3_client, firehose_client)
 
     def tearDown(self) -> None:
-        for bucket_name in [BucketNames.SOURCE, BucketNames.DESTINATION]:
-            for obj in s3_client.list_objects_v2(Bucket=bucket_name).get("Contents", []):
-                s3_client.delete_object(Bucket=bucket_name, Key=obj["Key"])
-            s3_client.delete_bucket(Bucket=bucket_name)
+        GenericTearDown(s3_client, firehose_client)
 
     @staticmethod
     def upload_source_file(file_key, file_content):
