@@ -77,10 +77,10 @@ resource "aws_ecr_repository_policy" "delta_lambda_ECRImageRetreival_policy" {
 data "aws_iam_policy_document" "delta_policy_document" {
     source_policy_documents = [
         templatefile("${local.policy_path}/dynamodb.json", {
-            "dynamodb_table_name" : aws_dynamodb_table.delta-dynamodb-table.name
+            "dynamodb_table_name" : data.aws_dynamodb_table.delta-dynamodb-table.name
         } ),
         templatefile("${local.policy_path}/dynamodb_stream.json", {
-            "dynamodb_table_name" : aws_dynamodb_table.events-dynamodb-table.name
+            "dynamodb_table_name" : data.aws_dynamodb_table.events-dynamodb-table.name
         } ),
         templatefile("${local.policy_path}/aws_sqs_queue.json", {
             "aws_sqs_queue_name" : aws_sqs_queue.dlq.name
@@ -131,7 +131,7 @@ resource "aws_lambda_function" "delta_sync_lambda" {
     
   environment {
     variables = {
-      DELTA_TABLE_NAME      = aws_dynamodb_table.delta-dynamodb-table.name
+      DELTA_TABLE_NAME      = data.aws_dynamodb_table.delta-dynamodb-table.name
       AWS_SQS_QUEUE_URL     = aws_sqs_queue.dlq.id
       SOURCE = "IEDS"
       SPLUNK_FIREHOSE_NAME   = module.splunk.firehose_stream_name
@@ -142,7 +142,7 @@ resource "aws_lambda_function" "delta_sync_lambda" {
 
 
 resource "aws_lambda_event_source_mapping" "delta_trigger" {
-    event_source_arn = aws_dynamodb_table.events-dynamodb-table.stream_arn
+    event_source_arn = data.aws_dynamodb_table.events-dynamodb-table.stream_arn
     function_name    = aws_lambda_function.delta_sync_lambda.function_name
     starting_position = "TRIM_HORIZON"
     destination_config {

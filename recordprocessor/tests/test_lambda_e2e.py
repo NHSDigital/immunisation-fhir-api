@@ -5,49 +5,28 @@ import json
 from decimal import Decimal
 from unittest.mock import patch
 from datetime import datetime, timedelta, timezone
-from copy import deepcopy
 from moto import mock_s3, mock_kinesis
 from boto3 import client as boto3_client
-import os
-import sys
-
-maindir = os.path.dirname(__file__)
-srcdir = "../src"
-sys.path.insert(0, os.path.abspath(os.path.join(maindir, srcdir)))
-from batch_processing import main  # noqa: E402
-from constants import Diagnostics  # noqa: E402
-from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (  # noqa: E402
-    SOURCE_BUCKET_NAME,
-    DESTINATION_BUCKET_NAME,
-    CONFIG_BUCKET_NAME,
-    PERMISSIONS_FILE_KEY,
-    AWS_REGION,
-    VALID_FILE_CONTENT_WITH_NEW,
-    VALID_FILE_CONTENT_WITH_NEW_AND_UPDATE,
-    VALID_FILE_CONTENT_WITH_NEW_AND_UPDATE_AND_DELETE,
-    STREAM_NAME,
-    TEST_ACK_FILE_KEY,
-    TEST_EVENT_DUMPED,
-    TEST_FILE_KEY,
-    TEST_SUPPLIER,
-    TEST_FILE_ID,
+from batch_processing import main
+from constants import Diagnostics
+from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
+    Kinesis,
     MOCK_ENVIRONMENT_DICT,
-    MOCK_PERMISSIONS,
-    all_fields,
-    mandatory_fields_only,
-    critical_fields_only,
-    all_fields_fhir_imms_resource,
-    mandatory_fields_only_fhir_imms_resource,
-    critical_fields_only_fhir_imms_resource,
-    TEST_LOCAL_ID_001RSV,
-    TEST_LOCAL_ID_002COVID,
-    TEST_LOCAL_ID_mandatory,
+    MockFileDetails,
+    FileDetails,
+    ValidMockFileContent,
+    BucketNames,
+    MockFhirImmsResources,
+    MockFieldDictionaries,
+    MockLocalIds,
+    InfAckFileRows,
+    REGION_NAME,
 )
 
-s3_client = boto3_client("s3", region_name=AWS_REGION)
-kinesis_client = boto3_client("kinesis", region_name=AWS_REGION)
-
+s3_client = boto3_client("s3", region_name=REGION_NAME)
+kinesis_client = boto3_client("kinesis", region_name=REGION_NAME)
 yesterday = datetime.now(timezone.utc) - timedelta(days=1)
+mock_rsv_emis_file = MockFileDetails.rsv_emis
 
 
 @patch.dict("os.environ", MOCK_ENVIRONMENT_DICT)
@@ -57,40 +36,35 @@ class TestRecordProcessor(unittest.TestCase):
     """E2e tests for RecordProcessor"""
 
     def setUp(self) -> None:
-        # Tests run too quickly for cache to work. The workaround is to set _cached_last_modified to an earlier time
-        # than the tests are run so that the _cached_json_data will always be updated by the test
+        for bucket_name in [BucketNames.SOURCE, BucketNames.DESTINATION]:
+            s3_client.create_bucket(Bucket=bucket_name, CreateBucketConfiguration={"LocationConstraint": REGION_NAME})
 
-        for bucket_name in [SOURCE_BUCKET_NAME, DESTINATION_BUCKET_NAME, CONFIG_BUCKET_NAME]:
-            s3_client.create_bucket(Bucket=bucket_name, CreateBucketConfiguration={"LocationConstraint": AWS_REGION})
-
-        kinesis_client.create_stream(StreamName=STREAM_NAME, ShardCount=1)
+        kinesis_client.create_stream(StreamName=Kinesis.STREAM_NAME, ShardCount=1)
 
     def tearDown(self) -> None:
         # Delete all of the buckets (the contents of each bucket must be deleted first)
-        for bucket_name in [SOURCE_BUCKET_NAME, DESTINATION_BUCKET_NAME]:
+        for bucket_name in [BucketNames.SOURCE, BucketNames.DESTINATION]:
             for obj in s3_client.list_objects_v2(Bucket=bucket_name).get("Contents", []):
                 s3_client.delete_object(Bucket=bucket_name, Key=obj["Key"])
             s3_client.delete_bucket(Bucket=bucket_name)
 
         # Delete the kinesis stream
         try:
-            kinesis_client.delete_stream(StreamName=STREAM_NAME, EnforceConsumerDeletion=True)
+            kinesis_client.delete_stream(StreamName=Kinesis.STREAM_NAME, EnforceConsumerDeletion=True)
         except kinesis_client.exceptions.ResourceNotFoundException:
             pass
 
     @staticmethod
-    def upload_files(sourc_file_content, mock_permissions=MOCK_PERMISSIONS):  # pylint: disable=dangerous-default-value
-        """
-        Uploads a test file with the TEST_FILE_KEY (Flu EMIS file) the given file content to the source bucket
-        """
-        s3_client.put_object(Bucket=SOURCE_BUCKET_NAME, Key=TEST_FILE_KEY, Body=sourc_file_content)
-        s3_client.put_object(Bucket=CONFIG_BUCKET_NAME, Key=PERMISSIONS_FILE_KEY, Body=json.dumps(mock_permissions))
+    def upload_files(source_file_content):  # pylint: disable=dangerous-default-value
+        """Uploads a test file with the TEST_FILE_KEY (RSV EMIS file) the given file content to the source bucket"""
+        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=mock_rsv_emis_file.file_key, Body=source_file_content)
 
     @staticmethod
-    def get_shard_iterator(stream_name=STREAM_NAME):
+    def get_shard_iterator():
         """Obtains and returns a shard iterator"""
         # Obtain the first shard
-        response = kinesis_client.describe_stream(StreamName=stream_name)
+        stream_name = Kinesis.STREAM_NAME
+        response = kinesis_client.describe_stream(StreamName=Kinesis.STREAM_NAME)
         shards = response["StreamDescription"]["Shards"]
         shard_id = shards[0]["ShardId"]
 
@@ -100,12 +74,24 @@ class TestRecordProcessor(unittest.TestCase):
         )["ShardIterator"]
 
     @staticmethod
-    def get_ack_file_content():
+    def get_ack_file_content(file_key: str) -> str:
         """Downloads the ack file, decodes its content and returns the decoded content"""
-        response = s3_client.get_object(Bucket=DESTINATION_BUCKET_NAME, Key=TEST_ACK_FILE_KEY)
+        response = s3_client.get_object(Bucket=BucketNames.DESTINATION, Key=file_key)
         return response["Body"].read().decode("utf-8")
 
-    def make_assertions(self, test_cases):
+    def make_inf_ack_assertions(self, file_details: FileDetails, passed_validation: bool):
+        """Asserts that the InfAck file content is as expected"""
+        actual_content = self.get_ack_file_content(file_details.inf_ack_file_key)
+        actual_rows = actual_content.splitlines()
+
+        expected_row = InfAckFileRows.success_row if passed_validation else InfAckFileRows.failure_row
+        expected_row = expected_row.replace("message_id", file_details.message_id).replace(
+            "created_at_formatted_string", file_details.created_at_formatted_string
+        )
+
+        self.assertEqual(actual_rows, [InfAckFileRows.HEADERS, expected_row])
+
+    def make_kinesis_assertions(self, test_cases):
         """
         The input is a list of test_case tuples where each tuple is structured as
         (test_name, index, expected_kinesis_data_ignoring_fhir_json, expect_success).
@@ -120,13 +106,10 @@ class TestRecordProcessor(unittest.TestCase):
         * Where expected_success is True:
             - "fhir_json" key is found in the Kinesis data
             - Kinesis Data is equal to the expected_kinesis_data when ignoring the "fhir_json"
-            - "{TEST_FILE_ID}^{index+1}|ok" is found in the ack file
         * Where expected_success is False:
             - Kinesis Data is equal to the expected_kinesis_data
-            - "{TEST_FILE_ID}^{index+1}|fatal-error" is found in the ack file
         """
 
-        # ack_file_content = self.get_ack_file_content()
         kinesis_records = kinesis_client.get_records(ShardIterator=self.get_shard_iterator(), Limit=10)["Records"]
         previous_approximate_arrival_time_stamp = yesterday  # Initialise with a time prior to the running of the test
 
@@ -134,7 +117,7 @@ class TestRecordProcessor(unittest.TestCase):
             with self.subTest(test_name):
 
                 kinesis_record = kinesis_records[index]
-                self.assertEqual(kinesis_record["PartitionKey"], TEST_SUPPLIER)
+                self.assertEqual(kinesis_record["PartitionKey"], mock_rsv_emis_file.supplier)
                 self.assertEqual(kinesis_record["SequenceNumber"], f"{index+1}")
 
                 # Ensure that arrival times are sequential
@@ -144,65 +127,79 @@ class TestRecordProcessor(unittest.TestCase):
 
                 kinesis_data = json.loads(kinesis_record["Data"].decode("utf-8"), parse_float=Decimal)
                 expected_kinesis_data = {
-                    "row_id": f"{TEST_FILE_ID}^{index+1}",
-                    "file_key": TEST_FILE_KEY,
-                    "supplier": TEST_SUPPLIER,
-                    "created_at_formatted_string": "2020-01-01",
+                    "row_id": f"{mock_rsv_emis_file.message_id}^{index+1}",
+                    "file_key": mock_rsv_emis_file.file_key,
+                    "supplier": mock_rsv_emis_file.supplier,
+                    "vax_type": mock_rsv_emis_file.vaccine_type,
+                    "created_at_formatted_string": mock_rsv_emis_file.created_at_formatted_string,
                     **expected_kinesis_data,
                 }
-                if expect_success:
+                if expect_success and "fhir_json" not in expected_kinesis_data:
                     # Some tests ignore the fhir_json value, so we only need to check that the key is present.
-                    if "fhir_json" not in expected_kinesis_data:
-                        key_to_ignore = "fhir_json"
-                        self.assertIn(key_to_ignore, kinesis_data)
-                        kinesis_data.pop(key_to_ignore)
-                    self.assertEqual(kinesis_data, expected_kinesis_data)
-                    # self.assertIn(f"{TEST_FILE_ID}^{index+1}|OK", ack_file_content)
-                else:
-                    self.assertEqual(kinesis_data, expected_kinesis_data)
-                    # self.assertIn(f"{TEST_FILE_ID}^{index+1}|Fatal", ack_file_content)
+                    key_to_ignore = "fhir_json"
+                    self.assertIn(key_to_ignore, kinesis_data)
+                    kinesis_data.pop(key_to_ignore)
+                self.assertEqual(kinesis_data, expected_kinesis_data)
 
-    def test_e2e_success(self):
+    def test_e2e_full_permissions(self):
         """
         Tests that file containing CREATE, UPDATE and DELETE is successfully processed when the supplier has
         full permissions.
         """
-        self.upload_files(VALID_FILE_CONTENT_WITH_NEW_AND_UPDATE_AND_DELETE)
+        self.upload_files(ValidMockFileContent.with_new_and_update_and_delete)
 
-        main(TEST_EVENT_DUMPED)
+        main(mock_rsv_emis_file.event_full_permissions)
 
-        # Test case tuples are stuctured as (test_name, index, expected_kinesis_data_ignoring_fhir_json,expect_success)
-        test_cases = [
-            ("CREATE success", 0, {"operation_requested": "CREATE", "local_id": TEST_LOCAL_ID_001RSV}, True),
-            ("UPDATE success", 1, {"operation_requested": "UPDATE", "local_id": TEST_LOCAL_ID_002COVID}, True),
-            ("DELETE success", 2, {"operation_requested": "DELETE", "local_id": TEST_LOCAL_ID_002COVID}, True),
+        # Assertion case tuples are stuctured as
+        # (test_name, index, expected_kinesis_data_ignoring_fhir_json,expect_success)
+        assertion_cases = [
+            (
+                "CREATE success",
+                0,
+                {"operation_requested": "CREATE", "local_id": MockLocalIds.RSV_001_RAVS},
+                True,
+            ),
+            (
+                "UPDATE success",
+                1,
+                {"operation_requested": "UPDATE", "local_id": MockLocalIds.COVID19_001_RAVS},
+                True,
+            ),
+            (
+                "DELETE success",
+                2,
+                {"operation_requested": "DELETE", "local_id": MockLocalIds.COVID19_001_RAVS},
+                True,
+            ),
         ]
-        self.make_assertions(test_cases)
+        self.make_inf_ack_assertions(file_details=mock_rsv_emis_file, passed_validation=True)
+        self.make_kinesis_assertions(assertion_cases)
 
-    def test_e2e_no_permissions(self):
+    def test_e2e_partial_permissions(self):
         """
-        Tests that file containing CREATE, UPDATE and DELETE is successfully processed when the supplier does not have
-        any permissions.
+        Tests that file containing CREATE, UPDATE and DELETE is successfully processed when the supplier only has CREATE
+        permissions.
         """
-        self.upload_files(VALID_FILE_CONTENT_WITH_NEW_AND_UPDATE_AND_DELETE)
-        event = deepcopy(TEST_EVENT_DUMPED)
-        test_event = json.loads(event)
-        test_event["permission"] = ["RSV_CREATE"]
-        test_event = json.dumps(test_event)
+        self.upload_files(ValidMockFileContent.with_new_and_update_and_delete)
 
-        main(test_event)
-        # expected_kinesis_data = {"diagnostics": Diagnostics.NO_PERMISSIONS}
+        main(mock_rsv_emis_file.event_create_permissions_only)
 
-        # Test case tuples are stuctured as (test_name, index, expected_kinesis_data_ignoring_fhir_json,expect_success)
-        test_cases = [
-            ("CREATE success", 0, {"operation_requested": "CREATE", "local_id": TEST_LOCAL_ID_001RSV}, True),
+        # Assertion case tuples are stuctured as
+        # (test_name, index, expected_kinesis_data_ignoring_fhir_json,expect_success)
+        assertion_cases = [
+            (
+                "CREATE success",
+                0,
+                {"operation_requested": "CREATE", "local_id": MockLocalIds.RSV_001_RAVS},
+                True,
+            ),
             (
                 "UPDATE no permissions",
                 1,
                 {
                     "diagnostics": Diagnostics.NO_PERMISSIONS,
                     "operation_requested": "UPDATE",
-                    "local_id": TEST_LOCAL_ID_002COVID,
+                    "local_id": MockLocalIds.COVID19_001_RAVS,
                 },
                 False,
             ),
@@ -212,113 +209,78 @@ class TestRecordProcessor(unittest.TestCase):
                 {
                     "diagnostics": Diagnostics.NO_PERMISSIONS,
                     "operation_requested": "DELETE",
-                    "local_id": TEST_LOCAL_ID_002COVID,
+                    "local_id": MockLocalIds.COVID19_001_RAVS,
                 },
                 False,
             ),
         ]
+        self.make_inf_ack_assertions(file_details=mock_rsv_emis_file, passed_validation=True)
+        self.make_kinesis_assertions(assertion_cases)
 
-        self.make_assertions(test_cases)
-
-    def test_e2e_partial_permissions(self):
+    def test_e2e_no_permissions(self):
         """
-        Tests that file containing CREATE, UPDATE and DELETE is successfully processed when the supplier has partial
-        permissions.
+        Tests that file containing UPDATE and DELETE is successfully processed when the supplier has CREATE permissions
+        only.
         """
-        self.upload_files(VALID_FILE_CONTENT_WITH_NEW_AND_UPDATE_AND_DELETE)
-        event = deepcopy(TEST_EVENT_DUMPED)
-        test_event = json.loads(event)
-        test_event["permission"] = ["RSV_CREATE"]
-        test_event = json.dumps(test_event)
+        self.upload_files(ValidMockFileContent.with_update_and_delete)
 
-        main(test_event)
-        # Test case tuples are stuctured as (test_name, index, expected_kinesis_data_ignoring_fhir_json,expect_success)
-        test_cases = [
-            (
-                "CREATE create permission only",
-                0,
-                {"operation_requested": "CREATE", "local_id": TEST_LOCAL_ID_001RSV},
-                True,
-            ),
-            (
-                "UPDATE create permission only",
-                1,
-                {
-                    "diagnostics": Diagnostics.NO_PERMISSIONS,
-                    "operation_requested": "UPDATE",
-                    "local_id": TEST_LOCAL_ID_002COVID,
-                },
-                False,
-            ),
-            (
-                "DELETE create permission only",
-                2,
-                {
-                    "diagnostics": Diagnostics.NO_PERMISSIONS,
-                    "operation_requested": "DELETE",
-                    "local_id": TEST_LOCAL_ID_002COVID,
-                },
-                False,
-            ),
+        main(mock_rsv_emis_file.event_create_permissions_only)
+
+        kinesis_records = kinesis_client.get_records(ShardIterator=self.get_shard_iterator(), Limit=10)["Records"]
+        self.assertEqual(len(kinesis_records), 0)
+        self.make_inf_ack_assertions(file_details=mock_rsv_emis_file, passed_validation=False)
+
+    def test_e2e_invalid_action_flags(self):
+        """Tests that file is successfully processed when the ACTION_FLAG field is empty or invalid."""
+
+        self.upload_files(
+            ValidMockFileContent.with_update_and_delete.replace("update", "").replace("delete", "INVALID")
+        )
+
+        main(mock_rsv_emis_file.event_full_permissions)
+
+        expected_kinesis_data = {
+            "diagnostics": Diagnostics.INVALID_ACTION_FLAG,
+            "operation_requested": "TO DEFINE",
+            "local_id": MockLocalIds.COVID19_001_RAVS,
+        }
+
+        # Assertion case tuples are stuctured as
+        # (test_name, index, expected_kinesis_data_ignoring_fhir_json,expect_success)
+        assertion_cases = [
+            ("Missing ACTION_FLAG", 0, {**expected_kinesis_data, "operation_requested": ""}, False),
+            ("Invalid ACTION_FLAG", 1, {**expected_kinesis_data, "operation_requested": "INVALID"}, False),
         ]
-
-        self.make_assertions(test_cases)
-
-    def test_e2e_no_action_flag(self):
-        """Tests that file containing CREATE is successfully processed when the UNIQUE_ID field is empty."""
-        self.upload_files(VALID_FILE_CONTENT_WITH_NEW.replace("new", ""))
-
-        main(TEST_EVENT_DUMPED)
-
-        expected_kinesis_data = {
-            "diagnostics": Diagnostics.INVALID_ACTION_FLAG,
-            "operation_requested": "",
-            "local_id": TEST_LOCAL_ID_001RSV,
-        }
-        # Test case tuples are stuctured as (test_name, index, expected_kinesis_data_ignoring_fhir_json,expect_success)
-        self.make_assertions([("CREATE no action_flag", 0, expected_kinesis_data, False)])
-
-    def test_e2e_invalid_action_flag(self):
-        """Tests that file containing CREATE is successfully processed when the UNIQUE_ID field is empty."""
-        self.upload_files(VALID_FILE_CONTENT_WITH_NEW.replace("new", "invalid"))
-
-        main(TEST_EVENT_DUMPED)
-
-        expected_kinesis_data = {
-            "diagnostics": Diagnostics.INVALID_ACTION_FLAG,
-            "operation_requested": "INVALID",
-            "local_id": TEST_LOCAL_ID_001RSV,
-        }
-        # Test case tuples are stuctured as (test_name, index, expected_kinesis_data_ignoring_fhir_json,expect_success)
-        self.make_assertions([("CREATE invalid action_flag", 0, expected_kinesis_data, False)])
+        self.make_inf_ack_assertions(file_details=mock_rsv_emis_file, passed_validation=True)
+        self.make_kinesis_assertions(assertion_cases)
 
     def test_e2e_differing_amounts_of_data(self):
         """Tests that file containing rows with differing amounts of data present is processed as expected"""
         # Create file content with different amounts of data present in each row
-        headers = "|".join(all_fields.keys())
-        all_fields_values = "|".join(f'"{v}"' for v in all_fields.values())
-        mandatory_fields_only_values = "|".join(f'"{v}"' for v in mandatory_fields_only.values())
-        critical_fields_only_values = "|".join(f'"{v}"' for v in critical_fields_only.values())
+        headers = "|".join(MockFieldDictionaries.all_fields.keys())
+        all_fields_values = "|".join(f'"{v}"' for v in MockFieldDictionaries.all_fields.values())
+        mandatory_fields_only_values = "|".join(f'"{v}"' for v in MockFieldDictionaries.mandatory_fields_only.values())
+        critical_fields_only_values = "|".join(f'"{v}"' for v in MockFieldDictionaries.critical_fields_only.values())
         file_content = f"{headers}\n{all_fields_values}\n{mandatory_fields_only_values}\n{critical_fields_only_values}"
         self.upload_files(file_content)
 
-        main(TEST_EVENT_DUMPED)
+        main(mock_rsv_emis_file.event_full_permissions)
 
         all_fields_row_expected_kinesis_data = {
             "operation_requested": "UPDATE",
-            "fhir_json": all_fields_fhir_imms_resource,
-            "local_id": TEST_LOCAL_ID_mandatory,
+            "fhir_json": MockFhirImmsResources.all_fields,
+            "local_id": MockLocalIds.RSV_002_RAVS,
         }
 
         mandatory_fields_only_row_expected_kinesis_data = {
             "operation_requested": "UPDATE",
-            "fhir_json": mandatory_fields_only_fhir_imms_resource,
-            "local_id": TEST_LOCAL_ID_mandatory,
+            "fhir_json": MockFhirImmsResources.mandatory_fields_only,
+            "local_id": MockLocalIds.RSV_002_RAVS,
         }
 
         critical_fields_only_row_expected_kinesis_data = {
             "operation_requested": "CREATE",
-            "fhir_json": critical_fields_only_fhir_imms_resource,
+            "fhir_json": MockFhirImmsResources.critical_fields,
             "local_id": "a_unique_id^a_unique_id_uri",
         }
 
@@ -328,20 +290,22 @@ class TestRecordProcessor(unittest.TestCase):
             ("Mandatory fields only", 1, mandatory_fields_only_row_expected_kinesis_data, True),
             ("Critical fields only", 2, critical_fields_only_row_expected_kinesis_data, True),
         ]
-        self.make_assertions(test_cases)
+        self.make_inf_ack_assertions(file_details=mock_rsv_emis_file, passed_validation=True)
+        self.make_kinesis_assertions(test_cases)
 
     def test_e2e_kinesis_failed(self):
         """
         Tests that, for a file with valid content and supplier with full permissions, when the kinesis send fails, the
         ack file is created and documents an error.
         """
-        self.upload_files(VALID_FILE_CONTENT_WITH_NEW_AND_UPDATE)
+        self.upload_files(ValidMockFileContent.with_new_and_update)
         # Delete the kinesis stream, to cause kinesis send to fail
-        kinesis_client.delete_stream(StreamName=STREAM_NAME, EnforceConsumerDeletion=True)
+        kinesis_client.delete_stream(StreamName=Kinesis.STREAM_NAME, EnforceConsumerDeletion=True)
 
-        main(TEST_EVENT_DUMPED)
+        main(mock_rsv_emis_file.event_full_permissions)
 
-        # self.assertIn("Fatal", self.get_ack_file_content())
+        self.make_inf_ack_assertions(file_details=mock_rsv_emis_file, passed_validation=True)
+        # TODO: Make assertions r.e. logs (there is no output as kinesis failed)
 
 
 if __name__ == "__main__":
