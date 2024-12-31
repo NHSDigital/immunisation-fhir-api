@@ -1,5 +1,5 @@
 resource "aws_backup_plan" "default" {
-  name = "${local.resource_name_prefix}-plan"
+  name = "${local.resource_name_prefix}-s3-plan"
 
   dynamic "rule" {
     for_each = var.backup_plan_config.rules
@@ -61,7 +61,7 @@ resource "aws_backup_plan" "dynamodb" {
 
 resource "aws_backup_selection" "default" {
   iam_role_arn = aws_iam_role.backup.arn
-  name         = "${local.resource_name_prefix}-selection"
+  name         = "${local.resource_name_prefix}-s3-selection"
   plan_id      = aws_backup_plan.default.id
 
   selection_tag {

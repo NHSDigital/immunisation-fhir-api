@@ -168,8 +168,8 @@ resource "aws_iam_policy" "forwarding_lambda_exec_policy" {
           "dynamodb:UpdateItem",
           "dynamodb:Query"
         ]
-        Resource = ["arn:aws:dynamodb:*:*:table/${aws_dynamodb_table.events-dynamodb-table.name}",
-                    "arn:aws:dynamodb:*:*:table/${aws_dynamodb_table.events-dynamodb-table.name}/index/*"]
+        Resource = ["arn:aws:dynamodb:*:*:table/${data.aws_dynamodb_table.events-dynamodb-table.name}",
+                    "arn:aws:dynamodb:*:*:table/${data.aws_dynamodb_table.events-dynamodb-table.name}/index/*"]
       },
       {
         Effect = "Allow"
@@ -205,7 +205,7 @@ resource "aws_lambda_function" "forwarding_lambda" {
     variables = {
       SOURCE_BUCKET_NAME  = "${local.batch_prefix}-data-sources"
       ACK_BUCKET_NAME     = "${local.batch_prefix}-data-destinations"
-      DYNAMODB_TABLE_NAME = aws_dynamodb_table.events-dynamodb-table.name
+      DYNAMODB_TABLE_NAME = data.aws_dynamodb_table.events-dynamodb-table.name
       SQS_QUEUE_URL       = aws_sqs_queue.fifo_queue.url
     }
   }

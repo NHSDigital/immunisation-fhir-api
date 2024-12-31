@@ -8,33 +8,28 @@ NOTE: the public function `decorate` is tested in `TestDecorate` class.
 from decimal import Decimal
 import copy
 import unittest
-import os
-import sys
-maindir = os.path.dirname(__file__)
-srcdir = '../src'
-sys.path.insert(0, os.path.abspath(os.path.join(maindir, srcdir)))
-from convert_to_fhir_imms_resource import (  # noqa: E402
+from convert_to_fhir_imms_resource import (
     _decorate_patient,
     _decorate_vaccination,
     _decorate_vaccine,
     _decorate_performer,
     _decorate_immunization,
 )
-from constants import Urls  # noqa: E402
-from tests.utils_for_recordprocessor_tests.decorator_constants import (  # noqa: E402
+from constants import Urls
+from tests.utils_for_recordprocessor_tests.decorator_constants import (
     AllHeaders,
     AllHeadersExpectedOutput,
     ExtensionItems,
-    COVID_19_TARGET_DISEASE_ELEMENT,
+    RSV_TARGET_DISEASE_ELEMENT,
 )
-from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import all_fields  # noqa: E402
+from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import MockFieldDictionaries
 
-empty_csv_data = {k: "" for k in all_fields}
+empty_csv_data = {k: "" for k in MockFieldDictionaries.all_fields}
 
 raw_imms: dict = {
     "resourceType": "Immunization",
     "status": "completed",
-    "protocolApplied": [{"targetDisease": COVID_19_TARGET_DISEASE_ELEMENT}],
+    "protocolApplied": [{"targetDisease": RSV_TARGET_DISEASE_ELEMENT}],
 }
 
 
@@ -79,7 +74,7 @@ class TestPatientDecorator(unittest.TestCase):
         expected_imms = {
             "resourceType": "Immunization",
             "status": "completed",
-            "protocolApplied": [{"targetDisease": COVID_19_TARGET_DISEASE_ELEMENT}],
+            "protocolApplied": [{"targetDisease": RSV_TARGET_DISEASE_ELEMENT}],
             "contained": [{"resourceType": "Patient", "id": "Patient1", "birthDate": "1993-08-21"}],
             "patient": {"reference": "#Patient1"},
         }
@@ -117,7 +112,7 @@ class TestVaccineDecorator(unittest.TestCase):
             {
                 "resourceType": "Immunization",
                 "status": "completed",
-                "protocolApplied": [{"targetDisease": COVID_19_TARGET_DISEASE_ELEMENT}],
+                "protocolApplied": [{"targetDisease": RSV_TARGET_DISEASE_ELEMENT}],
                 "vaccineCode": {
                     "coding": [{"system": Urls.NULL_FLAVOUR_CODES, "code": "NAVU", "display": "Not available"}]
                 },
@@ -157,7 +152,7 @@ class TestVaccinationDecorator(unittest.TestCase):
             "resourceType": "Immunization",
             "status": "completed",
             "protocolApplied": [
-                {"targetDisease": COVID_19_TARGET_DISEASE_ELEMENT, "doseNumberString": "Dose sequence not recorded"}
+                {"targetDisease": RSV_TARGET_DISEASE_ELEMENT, "doseNumberString": "Dose sequence not recorded"}
             ],
         }
         self.assertDictEqual(self.imms, expected_output)
@@ -262,7 +257,7 @@ class TestPerformerDecorator(unittest.TestCase):
         expected_output = {
             "resourceType": "Immunization",
             "status": "completed",
-            "protocolApplied": [{"targetDisease": COVID_19_TARGET_DISEASE_ELEMENT}],
+            "protocolApplied": [{"targetDisease": RSV_TARGET_DISEASE_ELEMENT}],
             "performer": [{"actor": {"type": "Organization", "identifier": {"value": "a_site_code"}}}],
         }
         self.assertDictEqual(self.imms, expected_output)
@@ -273,7 +268,7 @@ class TestPerformerDecorator(unittest.TestCase):
         expected_output = {
             "resourceType": "Immunization",
             "status": "completed",
-            "protocolApplied": [{"targetDisease": COVID_19_TARGET_DISEASE_ELEMENT}],
+            "protocolApplied": [{"targetDisease": RSV_TARGET_DISEASE_ELEMENT}],
             "contained": [
                 {
                     "resourceType": "Practitioner",

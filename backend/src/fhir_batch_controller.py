@@ -18,7 +18,7 @@ class ImmunizationBatchController:
         self.immunization_repo = immunization_repo
         self.fhir_service = fhir_service
     
-    def send_request_to_dynamo(self, message_body: dict, table: any):
+    def send_request_to_dynamo(self, message_body: dict, table: any, is_present: bool):
         """
         Sends request to the Imms API (unless there was a failure at the recordprocessor level). Returns the imms id.
         If message is not successfully received and accepted by the Imms API raises a MessageNotSuccessful Error.
@@ -35,4 +35,4 @@ class ImmunizationBatchController:
 
         # Send request to Imms FHIR API and return the imms_id
         function_map = {"CREATE": self.fhir_service.create_immunization, "UPDATE": self.fhir_service.update_immunization, "DELETE": self.fhir_service.delete_immunization}
-        return function_map[operation_requested](immunization=fhir_json, supplier_system=supplier, vax_type=vax_type, table=table)
+        return function_map[operation_requested](immunization=fhir_json, supplier_system=supplier, vax_type=vax_type, table=table, is_present=is_present)

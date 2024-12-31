@@ -219,8 +219,8 @@ resource "aws_iam_policy" "filenameprocessor_dynamo_access_policy" {
         ]
         Effect    = "Allow"
         Resource  = [
-          "arn:aws:dynamodb:${var.aws_region}:${local.local_account_id}:table/${local.batch_prefix}-audit-table",
-          "arn:aws:dynamodb:${var.aws_region}:${local.local_account_id}:table/${local.batch_prefix}-audit-table/index/*",
+          "arn:aws:dynamodb:${var.aws_region}:${local.local_account_id}:table/${data.aws_dynamodb_table.audit-table.name}",
+          "arn:aws:dynamodb:${var.aws_region}:${local.local_account_id}:table/${data.aws_dynamodb_table.audit-table.name}/index/*",
         ]
       }
     ]
@@ -274,7 +274,8 @@ resource "aws_lambda_function" "file_processor_lambda" {
       REDIS_HOST           = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].address
       REDIS_PORT           = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].port
       SPLUNK_FIREHOSE_NAME = module.splunk.firehose_stream_name
-      AUDIT_TABLE_NAME     = "${local.batch_prefix}-audit-table"
+      AUDIT_TABLE_NAME     = "${data.aws_dynamodb_table.audit-table.name}"
+      FILE_NAME_GSI        = "filename_index"
     }
   }
   kms_key_arn = data.aws_kms_key.existing_lambda_encryption_key.arn

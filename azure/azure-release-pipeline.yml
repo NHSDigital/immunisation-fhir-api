@@ -77,7 +77,4 @@ extends:
           - ref
         jinja_templates:
           DOMAIN_ENDPOINT: https://prod.imms.prod.vds.platform.nhs.uk
-        post_deploy:
-            - template: ./templates/post-deploy.yml
-              parameters:
-                aws_account_type: 'prod'
+
