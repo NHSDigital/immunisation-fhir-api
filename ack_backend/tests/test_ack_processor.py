@@ -38,7 +38,7 @@ class TestAckProcessor(unittest.TestCase):
 
     def setup_s3(self):
         """Creates a mock S3 bucket contain a single file different to one created during tests
-        to ensure s3 bucket loads correctly"""
+        to ensure s3 bucket loads correctly."""
         ack_bucket_name = "immunisation-batch-internal-testlambda-data-destinations"
         os.environ["ACK_BUCKET_NAME"] = test_bucket_name
         existing_content = ValidValues.test_ack_header
