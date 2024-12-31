@@ -215,7 +215,8 @@ class TestAckProcessor(unittest.TestCase):
 
     @patch("log_structure_splunk.firehose_logger")
     def test_lambda_handler_existing(self, mock_firehose_logger):
-        """Test lambda handler with dynamic ack_file_name and consistent row_template."""
+        """Test lambda handler with dynamic ack_file_name and consistent row_template with an already existing
+        ack file with content."""
 
         os.environ["ACK_BUCKET_NAME"] = DESTINATION_BUCKET_NAME
         existing_content = ValidValues.existing_ack_file_content
@@ -446,7 +447,7 @@ class TestAckProcessor(unittest.TestCase):
 
     @mock_s3
     def test_obtain_current_ack_content_file_no_existing(self):
-        """Test obtain current ack content when there a file does not already exist"""
+        """Test obtain current ack content when there a file does not already exist."""
         os.environ["ACK_BUCKET_NAME"] = test_bucket_name
         ack_bucket_name = "immunisation-batch-internal-testlambda-data-destinations"
         ACK_KEY = "forwardedFile/COVID19_Vaccinations_v5_YGM41_20240909T13005902_BusAck_20241115T13454555.csv"
@@ -458,7 +459,7 @@ class TestAckProcessor(unittest.TestCase):
 
     @mock_s3
     def test_obtain_current_ack_content_file_exists(self):
-        """Test that the existing ack file content is retrieved and new rows can be added."""
+        """Test that the existing ack file content is retrieved and new rows are added."""
 
         existing_content = ValidValues.existing_ack_file_content
         self.setup_existing_ack_file(DESTINATION_BUCKET_NAME, ack_file_key, existing_content)
