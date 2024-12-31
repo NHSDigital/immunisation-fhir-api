@@ -40,12 +40,19 @@ class BucketNames:
 
     SOURCE = "immunisation-batch-internal-dev-data-sources"
     DESTINATION = "immunisation-batch-internal-dev-data-destinations"
+    MOCK_FIREHOSE = "mock-firehose-bucket"
 
 
 class Kinesis:
     """Class containing Kinesis values for use in tests"""
 
     STREAM_NAME = "imms-batch-internal-dev-processingdata-stream"
+
+
+class Firehose:
+    """Class containing Firehose values for use in tests"""
+
+    STREAM_NAME = "immunisation-fhir-api-internal-dev-splunk-firehose"
 
 
 MOCK_ENVIRONMENT_DICT = {
@@ -56,6 +63,7 @@ MOCK_ENVIRONMENT_DICT = {
     "SHORT_QUEUE_PREFIX": "imms-batch-internal-dev",
     "KINESIS_STREAM_NAME": Kinesis.STREAM_NAME,
     "KINESIS_STREAM_ARN": f"arn:aws:kinesis:{REGION_NAME}:123456789012:stream/{Kinesis.STREAM_NAME}",
+    "FIREHOSE_STREAM_NAME": Firehose.STREAM_NAME,
 }
 
 

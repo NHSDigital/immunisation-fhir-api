@@ -1,11 +1,11 @@
-"""Tests for update_ack_file.py"""
+"""Tests for make_and_upload_ack_file functions"""
 
 import unittest
 from make_and_upload_ack_file import make_ack_data
 
 
-class TestUpdateAckFile(unittest.TestCase):
-    "Tests for update_ack_file.py"
+class TestMakeAndUploadAckFile(unittest.TestCase):
+    "Tests for make_and_upload_ack_file functions"
 
     def setUp(self) -> None:
         self.message_id = "test_id"
