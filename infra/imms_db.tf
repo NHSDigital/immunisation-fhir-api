@@ -42,4 +42,8 @@ resource "aws_dynamodb_table" "events-dynamodb-table" {
     point_in_time_recovery {
         enabled = local.environment == "prod" ? true : false
     }
+    server_side_encryption {
+        enabled = true
+        kms_key_arn = data.aws_kms_key.existing_dynamo_encryption_arn.arn
+    }
 }
