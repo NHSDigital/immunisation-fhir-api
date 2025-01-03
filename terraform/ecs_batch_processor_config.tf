@@ -103,8 +103,8 @@ resource "aws_iam_policy" "ecs_task_exec_policy" {
         Resource = [
           "arn:aws:s3:::${local.batch_prefix}-data-sources",
           "arn:aws:s3:::${local.batch_prefix}-data-sources/*",
-          "arn:aws:s3:::${local.batch_prefix}-data-destinations",
-          "arn:aws:s3:::${local.batch_prefix}-data-destinations/*"
+          "${data.aws_s3_bucket.existing_destination_bucket.arn}",       
+          "${data.aws_s3_bucket.existing_destination_bucket.arn}/*" 
         ]
       },
       {
@@ -180,7 +180,7 @@ resource "aws_ecs_task_definition" "ecs_task" {
       },
       {
         name  = "ACK_BUCKET_NAME"
-        value = "${local.batch_prefix}-data-destinations"
+        value = data.aws_s3_bucket.existing_destination_bucket.bucket
       },
       {
         name  = "KINESIS_STREAM_ARN"

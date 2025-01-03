@@ -1,5 +1,5 @@
 resource "aws_dynamodb_table" "events-dynamodb-table" {
-    name         = "imms-${env}-imms-events"
+    name         = "imms-${local.env}-imms-events"
     billing_mode = "PAY_PER_REQUEST"
     hash_key     = "PK"
     stream_enabled = true
