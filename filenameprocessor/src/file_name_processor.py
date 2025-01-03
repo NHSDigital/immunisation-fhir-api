@@ -77,7 +77,7 @@ def handle_record(record) -> dict:
             UnhandledSqsError,
             Exception,
         ) as error:
-            logger.error("Error processing file'%s': %s", file_key, str(error))
+            logger.error("Error processing file '%s': %s", file_key, str(error))
 
             # Create ack file
             # (note that error may have occurred before message_id and created_at_formatted_string were generated)

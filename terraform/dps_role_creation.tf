@@ -1,9 +1,9 @@
 data "aws_iam_policy_document" "dynamo_s3_policy_document" {
     source_policy_documents = [
         local.environment == "prod" ? templatefile("${local.policy_path}/dynamodb_delta_prod.json", {
-            "dynamodb_table_name" : aws_dynamodb_table.delta-dynamodb-table.name
+            "dynamodb_table_name" : data.aws_dynamodb_table.delta-dynamodb-table.name
         } ):  templatefile("${local.policy_path}/dynamodb_delta.json", {
-            "dynamodb_table_name" : aws_dynamodb_table.delta-dynamodb-table.name
+            "dynamodb_table_name" : data.aws_dynamodb_table.delta-dynamodb-table.name
         } )        
     ]
 }

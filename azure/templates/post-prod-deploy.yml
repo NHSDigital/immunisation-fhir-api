@@ -1,0 +1,46 @@
+parameters:
+  - name: aws_dev
+    default: aws --profile=apim-dev
+  - name: is_ptl
+    default: true
+  - name: 'aws_account_type'
+    type: string
+  - name: 'deployment_type'
+    type: string
+
+steps:
+  - template: ./aws-assume-role.yml
+    parameters:
+      role: "auto-ops"
+      profile: "apim-dev"
+      aws_account: ${{ parameters.aws_account_type }}
+
+  - bash: |
+      pwd
+      ls -la
+      cd terraform
+    displayName: 'Check Directory and Navigate to Terraform for AWS Deployment'
+    workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)"
+
+  - bash: |
+      set -e
+      if ! [[ $APIGEE_ENVIRONMENT =~ .*-*sandbox ]]; then
+        export AWS_PROFILE=apim-dev
+        aws_account_no="$(aws sts get-caller-identity --query Account --output text)"
+
+        service_name=$(FULLY_QUALIFIED_SERVICE_NAME)
+
+        workspace=${{ parameters.deployment_type }}
+
+        echo sandbox with following parameters:
+        echo workspace: $workspace
+        echo AWS environment: $APIGEE_ENVIRONMENT
+        
+          cd terraform
+
+        make init
+        make apply aws_account_no=${aws_account_no} environment=$workspace
+      fi
+    displayName: Apply Terraform
+    workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)"
+    retryCountOnTaskFailure: 2

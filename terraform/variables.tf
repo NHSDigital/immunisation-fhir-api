@@ -28,11 +28,12 @@ locals {
 }
 
 locals {
-    environment         = terraform.workspace
-    prefix              = "${var.project_name}-${var.service}-${local.environment}"
-    short_prefix        = "${var.project_short_name}-${local.environment}"
-    batch_prefix        = "immunisation-batch-${local.environment}"
-    service_domain_name = "${local.environment}.${local.project_domain_name}"
+    environment         = terraform.workspace == "green" ? "prod" : terraform.workspace == "blue" ? "prod" : terraform.workspace
+    env                 = terraform.workspace
+    prefix              = "${var.project_name}-${var.service}-${local.env}"
+    short_prefix        = "${var.project_short_name}-${local.env}"
+    batch_prefix        = "immunisation-batch-${local.env}"
+    service_domain_name = "${local.env}.${local.project_domain_name}"
     config_env = local.environment == "prod" ? "prod" : "dev"
     config_bucket_env = local.environment == "prod" ? "prod" : "internal-dev"
 
@@ -76,3 +77,16 @@ data "aws_kms_key" "existing_lambda_encryption_key" {
 data "aws_kms_key" "existing_kinesis_encryption_key" {
   key_id = "alias/imms-batch-kinesis-stream-encryption"
 }
+
+data "aws_dynamodb_table" "events-dynamodb-table" { 
+  name = "imms-${local.local_config}-imms-events" 
+}
+
+data "aws_dynamodb_table" "audit-table" { 
+  name = "immunisation-batch-${local.local_config}-audit-table" 
+}
+
+data "aws_dynamodb_table" "delta-dynamodb-table" { 
+  name = "imms-${local.local_config}-delta" 
+}
+

@@ -1,5 +1,5 @@
 resource "aws_dynamodb_table" "delta-dynamodb-table" {
-    name         = "${local.short_prefix}-delta"
+    name         = "imms-${env}-delta"
     billing_mode = "PAY_PER_REQUEST"
     hash_key     = "PK"
     attribute {

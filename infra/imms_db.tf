@@ -1,5 +1,5 @@
 resource "aws_dynamodb_table" "events-dynamodb-table" {
-    name         = "${local.short_prefix}-imms-events"
+    name         = "imms-${env}-imms-events"
     billing_mode = "PAY_PER_REQUEST"
     hash_key     = "PK"
     stream_enabled = true
@@ -23,7 +23,7 @@ resource "aws_dynamodb_table" "events-dynamodb-table" {
     }
 
     tags = {
-    NHSE-Enable-Dynamo-Backup = "True"
+        NHSE-Enable-Dynamo-Backup = "True"
     }
 
     global_secondary_index {

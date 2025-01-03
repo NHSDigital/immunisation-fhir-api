@@ -28,7 +28,7 @@ def add_to_audit_table(message_id: str, file_key: str, created_at_formatted_str:
             Item={
                 "message_id": {"S": message_id},
                 "filename": {"S": file_key},
-                "status": {"S": "Processed"},
+                "status": {"S": "Not processed - duplicate" if duplicate_exists else "Processed"},
                 "timestamp": {"S": created_at_formatted_str},
             },
             ConditionExpression="attribute_not_exists(message_id)",  # Prevents accidental overwrites

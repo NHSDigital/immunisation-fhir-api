@@ -6,6 +6,6 @@ variable "environment" {}
 variable "oas" {}
 
 locals {
-    environment         = terraform.workspace
+    environment         = terraform.workspace == "green" ? "prod" : terraform.workspace == "blue" ? "prod" : terraform.workspace
     config_env = local.environment == "prod" ? "prod" : "dev"
 }

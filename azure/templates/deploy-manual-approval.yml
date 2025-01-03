@@ -1,0 +1,13 @@
+jobs:  
+- job: waitForValidation
+  displayName: Wait for external validation  
+  pool: server    
+  timeoutInMinutes: 60 # job times out in 60 mins
+  steps:   
+  - task: ManualValidation@0
+    timeoutInMinutes: 10 # task times out in 10 mins
+    inputs:
+      notifyUsers: |
+        VAAL1@hscic.gov.uk
+      instructions: 'Please validate the build configuration and approve'
+      onTimeout: 'approve'
