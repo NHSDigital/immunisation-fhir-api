@@ -124,8 +124,8 @@ resource "aws_iam_policy" "filenameprocessor_lambda_exec_policy" {
           "s3:ListBucket"
         ]
         Resource = [
-          "arn:aws:s3:::${local.batch_prefix}-data-destinations",       
-          "arn:aws:s3:::${local.batch_prefix}-data-destinations/*"        
+          "${data.aws_s3_bucket.existing_destination_bucket.arn}",       
+          "${data.aws_s3_bucket.existing_destination_bucket.arn}/*"         
         ]
       },
       {
@@ -268,7 +268,7 @@ resource "aws_lambda_function" "file_processor_lambda" {
   environment {
     variables = {
       SOURCE_BUCKET_NAME   = "${local.batch_prefix}-data-sources"
-      ACK_BUCKET_NAME      = "${local.batch_prefix}-data-destinations"
+      ACK_BUCKET_NAME      = data.aws_s3_bucket.existing_destination_bucket.bucket
       QUEUE_URL           = aws_sqs_queue.supplier_fifo_queue.url
       CONFIG_BUCKET_NAME   = data.aws_s3_bucket.existing_config_bucket.bucket
       REDIS_HOST           = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].address
