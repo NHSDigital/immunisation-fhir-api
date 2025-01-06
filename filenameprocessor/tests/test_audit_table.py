@@ -80,7 +80,7 @@ class TestAuditTable(TestCase):
         expected_table_item_3 = {
             "message_id": message_id_3,
             "filename": file_key_1,
-            "status": "Processed",
+            "status": "Not processed - duplicate",
             "timestamp": created_at_formatted_string_3,
         }
 
