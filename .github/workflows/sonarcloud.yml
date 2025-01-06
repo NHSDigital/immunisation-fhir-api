@@ -24,11 +24,14 @@ jobs:
         run: |
           aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
           aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
-      
+        
+      -name: Install poetry dependencies
+        run: |
+          poetry install
           
       - name: Run unittest with filenameprocessor-coverage
         run: |
-          pip install poetry moto==4.2.11 coverage redis botocore==1.35.49 simplejson pandas freezegun
+          pip install moto==4.2.11 coverage redis botocore==1.35.49 simplejson pandas freezegun
           poetry run coverage run --source=filenameprocessor -m unittest discover -s filenameprocessor
           poetry run coverage xml -o sonarcloud-coverage-filenameprocessor-coverage.xml
         continue-on-error: true
