@@ -25,6 +25,8 @@ jobs:
           aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
           aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
       
+      -name: Install Poetry
+       run: pip install poetry --upgrade
           
       - name: Run unittest with filenameprocessor-coverage
         run: |
