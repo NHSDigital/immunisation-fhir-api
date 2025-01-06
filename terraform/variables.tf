@@ -70,6 +70,11 @@ data "aws_security_group" "existing_securitygroup" {
 data "aws_s3_bucket" "existing_config_bucket" {
   bucket = "imms-${local.config_bucket_env}-supplier-config"
 }
+
+data "aws_s3_bucket" "existing_destination_bucket" {
+  bucket = "immunisation-batch-${local.local_config}-data-destinations"
+}
+
 data "aws_kms_key" "existing_lambda_encryption_key" {
   key_id = "alias/imms-batch-lambda-env-encryption"
 }

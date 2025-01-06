@@ -162,3 +162,78 @@ resource "aws_vpc_endpoint" "dynamodb" {
 
 
 }
+
+
+resource "aws_vpc_endpoint" "ecr_api" {
+  vpc_id            = data.aws_vpc.default.id
+  service_name      = "com.amazonaws.${var.aws_region}.ecr.api"
+  vpc_endpoint_type = "Interface"
+
+  subnet_ids = data.aws_subnets.default.ids
+  security_group_ids = [aws_security_group.lambda_redis_sg.id]
+  private_dns_enabled = true
+  tags = {
+    Name = "immunisation-ecr-api-endpoint"
+  }
+}
+
+resource "aws_vpc_endpoint" "ecr_dkr" {
+  vpc_id            = data.aws_vpc.default.id
+  service_name      = "com.amazonaws.${var.aws_region}.ecr.dkr"
+  vpc_endpoint_type = "Interface"
+
+  subnet_ids = data.aws_subnets.default.ids
+  security_group_ids = [aws_security_group.lambda_redis_sg.id]
+  private_dns_enabled = true
+  tags = {
+    Name = "immunisation-ecr-dkr-endpoint"
+  }
+}
+
+resource "aws_vpc_endpoint" "cloud_watch" {
+  vpc_id            = data.aws_vpc.default.id
+  service_name      = "com.amazonaws.${var.aws_region}.logs"
+  vpc_endpoint_type = "Interface"
+
+  subnet_ids = data.aws_subnets.default.ids
+  security_group_ids = [aws_security_group.lambda_redis_sg.id]
+  private_dns_enabled = true
+  tags = {
+    Name = "immunisation-cloud-watch-endpoint"
+  }
+}
+
+
+resource "aws_vpc_endpoint" "kinesis_stream_endpoint" {
+  vpc_id            = data.aws_vpc.default.id
+  service_name      = "com.amazonaws.${var.aws_region}.kinesis-streams"
+  vpc_endpoint_type = "Interface"
+
+  subnet_ids          = data.aws_subnets.default.ids
+  security_group_ids  = [aws_security_group.lambda_redis_sg.id]
+  private_dns_enabled = true
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Principal = {
+          "AWS":[
+            "arn:aws:iam::${local.local_account_id}:root"
+        ]
+        },
+        Action = [
+          "kinesis:ListShards",
+          "kinesis:ListStreams",
+          "kinesis:PutRecord",
+          "kinesis:PutRecords"
+        ],
+        Resource = "*"
+      }
+    ]
+  })
+  tags = {
+    Name = "immunisation-kinesis-streams-endpoint"
+  }
+}
