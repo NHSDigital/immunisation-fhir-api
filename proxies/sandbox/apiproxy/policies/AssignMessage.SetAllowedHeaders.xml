@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Javascript async="false" continueOnError="false" enabled="true" name="AssignMessage.SetAllowedHeaders"> 
+    <DisplayName>SetAllowedHeaders</DisplayName>
+    <ResourceURL>jsc://SetAllowedHeaders.js</ResourceURL>
+</Javascript>
+

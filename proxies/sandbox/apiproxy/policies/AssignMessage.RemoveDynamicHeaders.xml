@@ -1,0 +1,8 @@
+<AssignMessage async="false" continueOnError="false" enabled="true" name="AssignMessage.RemoveDynamicHeaders"> 
+    <DisplayName>RemoveDynamicHeaders</DisplayName>
+    <Remove>
+        <Headers>
+            <Header ref="headersToRemove"/>
+        </Headers>
+    </Remove>
+</AssignMessage>

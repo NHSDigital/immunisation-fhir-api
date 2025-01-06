@@ -9,6 +9,23 @@
     </Headers>
     <Version>1.1</Version>
   </Set>
+  
+  <Remove enabled="true" continueOnError="false" name="RemoveHeaders">
+    <Headers>
+      <Header name="Host"/>          
+      <Header name="X-Forwarded-For"/>
+      <Header name="X-Forwarded-Port"/>
+      <Header name="X-Forwarded-Proto"/>
+      <Header name="Authorization"/>
+      <Header name="User-Agent"/>
+      <Header name="Cache-Control"/>
+      <Header name="Accept-Encoding"/>
+      <Header name="Postman-Token"/>
+      <Header name="NHSD-Correlation-ID"/>
+      <Header name="NHSD-Request-ID"/>
+    </Headers>
+  </Remove>
+
   <AssignTo createNew="false" transport="http" type="request"/>
   <IgnoreUnresolvedVariables>false</IgnoreUnresolvedVariables>
 </AssignMessage>
