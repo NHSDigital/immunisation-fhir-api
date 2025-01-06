@@ -1,8 +1,5 @@
 [project]
 name        = "filenameprocessor"
-
-[tool.poetry]
-name        = "filenameprocessor"
 version     = "0.1.0"
 description = ""
 authors     = ["Your Name <you@example.com>"]
