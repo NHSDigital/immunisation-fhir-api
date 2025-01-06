@@ -32,6 +32,11 @@ jobs:
           poetry run coverage run --source=filenameprocessor -m unittest discover -s filenameprocessor
           poetry run coverage xml -o sonarcloud-coverage-filenameprocessor-coverage.xml
       
+      - name: Run unittest with recordprocessor-coverage
+        run: |
+          poetry run coverage run --source=recordprocessor -m unittest discover -s recordprocessor
+          poetry run coverage xml -o sonarcloud-coverage-recordprocessor-coverage.xml 
+      
       - name: Run unittest with recordforwarder-coverage
         run: |
           poetry run coverage run --source=recordforwarder -m unittest discover -s recordforwarder
