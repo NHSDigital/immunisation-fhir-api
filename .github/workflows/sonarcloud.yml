@@ -13,7 +13,6 @@ jobs:
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'dependency') }}
     runs-on: ubuntu-latest
 
-    continue-on-error: true
     
     steps:
       - uses: actions/checkout@v4
@@ -78,13 +77,24 @@ jobs:
           poetry run coverage run --source=backend -m unittest discover -s backend
           poetry run coverage xml -o sonarcloud-coverage.xml
 
-      -name: Determine Test success or failure
+      - name: Check test results
         run: |
-        if["${{ steps.filenameprocessor.outcome}}" != "success"]: then echo "filenameprocessor failed"; exit 1; fi
-        if["${{ steps.recordprocessor.outcome}}" != "success"]: then echo "recordprocessor failed"; exit 1; fi
+          failed=false
+          for test in filenameprocessor recordprocessor recordforwarder acklambda delta fhirapi; do
+            outcome="${{ steps[test].outcome }}"
+            if [ "$outcome" != "success" ]; then
+              echo "Test $test failed"
+              failed=true
+            fi
+          done
+          if [ "$failed" = "true" ]; then
+            echo "One or more tests failed. Exiting."
+            exit 1
+          fi
 
 
       - name: SonarCloud Scan
+        if: success()
         uses: SonarSource/sonarcloud-github-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
