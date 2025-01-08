@@ -94,7 +94,6 @@ jobs:
 
 
       - name: SonarCloud Scan
-        if: ${{ steps.check_tests.outcome == 'success' }}
         uses: SonarSource/sonarcloud-github-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
