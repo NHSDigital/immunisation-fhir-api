@@ -1,18 +1,33 @@
 resource "aws_security_group" "lambda_redis_sg" {
   vpc_id = data.aws_vpc.default.id
   name   = "immunisation-security-group"
+
+  # Inbound rule to allow traffic only from the VPC CIDR block
   ingress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["172.31.0.0/16"]
   }
 
+  # Outbound rules to specific AWS services using prefix lists
   egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    from_port       = 0
+    to_port         = 0
+    protocol        = "-1"
+    prefix_list_ids = [
+      "pl-7ca54015",
+      "pl-93a247fa",
+      "pl-b3a742da"
+    ]
+  }
+
+  # Egress rule to allow communication within the same security group
+  egress {
+    from_port       = 0
+    to_port         = 0
+    protocol        = "-1"
+    self            = true
   }
 }
 

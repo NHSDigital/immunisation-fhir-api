@@ -85,6 +85,9 @@ data "aws_iam_policy_document" "delta_policy_document" {
         templatefile("${local.policy_path}/aws_sqs_queue.json", {
             "aws_sqs_queue_name" : aws_sqs_queue.dlq.name
         } ),
+        templatefile("${local.policy_path}/dynamo_key_access.json", {
+            "dynamo_encryption_key" : data.aws_kms_key.existing_dynamo_encryption_key.arn
+        }),
         templatefile("${local.policy_path}/aws_sns_topic.json", {
             "aws_sns_topic_name" : aws_sns_topic.delta_sns.name
         } ),
