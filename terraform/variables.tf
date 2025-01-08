@@ -52,6 +52,10 @@ data "aws_kms_key" "existing_s3_encryption_key" {
   key_id = "alias/imms-batch-s3-shared-key"
 }
 
+data "aws_kms_key" "existing_dynamo_encryption_key" {
+  key_id = "alias/imms-event-dynamodb-encryption"
+}
+
 variable "aws_region" {
     default = "eu-west-2"
 }

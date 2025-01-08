@@ -42,6 +42,9 @@ data "aws_iam_policy_document" "imms_policy_document" {
             "local_account" : local.local_account_id
             "queue_prefix" : local.short_prefix
         } ),
+        templatefile("${local.policy_path}/dynamo_key_access.json", {
+            "dynamo_encryption_key" : data.aws_kms_key.existing_dynamo_encryption_key.arn
+        } ),
         templatefile("${local.policy_path}/log_kinesis.json", {
             "kinesis_stream_name" : module.splunk.firehose_stream_name
         } ),
