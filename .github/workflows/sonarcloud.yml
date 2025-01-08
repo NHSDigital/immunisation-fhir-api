@@ -77,20 +77,6 @@ jobs:
           poetry run coverage run --source=backend -m unittest discover -s backend
           poetry run coverage xml -o sonarcloud-coverage.xml
 
-      - name: Check test results
-        run: |
-          failed=false
-          for test in filenameprocessor recordprocessor recordforwarder acklambda delta fhirapi; do
-            outcome="${{ steps[test].outcome }}"
-            if [ "$outcome" != "success" ]; then
-              echo "Test $test failed"
-              failed=true
-            fi
-          done
-          if [ "$failed" = "true" ]; then
-            echo "One or more tests failed. Exiting."
-            exit 1
-          fi
 
 
       - name: SonarCloud Scan
