@@ -14,6 +14,64 @@ AWS_REGION = "eu-west-2"
 STATIC_DATETIME = datetime(2021, 11, 20, 12, 0, 0)
 
 
+class DiagnosticsDictionaries:
+    """Example diagnostics dictionaries which may be received from the record forwarder"""
+
+    UNIQUE_ID_MISSING = {
+        "error_type": "MissingUniqueID",
+        "statusCode": 400,
+        "error_message": "UNIQUE_ID or UNIQUE_ID_URI is missing",
+    }
+
+    NO_PERMISSIONS = {
+        "error_type": "NoPermissions",
+        "statusCode": 403,
+        "error_message": "No permissions for requested operation",
+    }
+
+    INVALID_ACTION_FLAG = {
+        "error_type": "InvalidActionFlag",
+        "statusCode": 400,
+        "error_message": "Invalid ACTION_FLAG - ACTION_FLAG must be 'NEW', 'UPDATE' or 'DELETE'",
+    }
+
+    CUSTOM_VALIDATION_ERROR = {
+        "error_type": "CustomValidationError",
+        "statusCode": 400,
+        "error_message": "Custom validation error",
+    }
+
+    IDENTIFIER_DUPLICATION_ERROR = {
+        "error_type": "IdentifierDuplicationError",
+        "statusCode": 422,
+        "error_message": "Identifier duplication error",
+    }
+
+    RESOURCE_NOT_FOUND_ERROR = {
+        "error_type": "ResourceNotFoundError",
+        "statusCode": 404,
+        "error_message": "Resource not found error",
+    }
+
+    RESOURCE_FOUND_ERROR = {
+        "error_type": "ResourceFoundError",
+        "statusCode": 409,
+        "error_message": "Resource found error",
+    }
+
+    MESSAGE_NOT_SUCCESSFUL_ERROR = {
+        "error_type": "MessageNotSuccessfulError",
+        "statusCode": 500,
+        "error_message": "Message not successful error",
+    }
+
+    UNHANDLED_ERROR = {
+        "error_type": "UnhandledResponseError",
+        "statusCode": 500,
+        "error_message": "An unhandled error occurred during batch processing",
+    }
+
+
 class ValidValues:
     """Logging instances which are both valid and current"""
 
@@ -25,37 +83,45 @@ class ValidValues:
         "file_key": "RSV_Vaccinations_v5_YGM41_20240905T13005922",
         "row_id": "456",
         "local_id": "local_456",
-        "action_flag": "create",
+        "operation_requested": "create",
         "imms_id": "4567",
         "created_at_formatted_string": "1223-12-232",
+        "supplier": "EMIS",
+        "vaccine_type": "RSV",
     }
     DPSFULL_ack_processor_input = {
         "file_key": "RSV_Vaccinations_v5_DPSFULL_20240905T13005922",
         "row_id": "123",
         "local_id": "local_123",
-        "action_flag": "create",
+        "operation_requested": "create",
         "imms_id": "1232",
         "created_at_formatted_string": "1223-12-232",
+        "supplier": "DPSFULL",
+        "vaccine_type": "RSV",
     }
 
     EMIS_ack_processor_input_diagnostics = {
         "file_key": "RSV_Vaccinations_v5_YGM41_20240905T13005922",
         "row_id": "456",
         "local_id": "local_456",
-        "action_flag": "create",
+        "operation_requested": "create",
         "imms_id": "4567",
         "created_at_formatted_string": "1223-12-232",
-        "diagnostics": "Immunization resource does not exist",
+        "diagnostics": DiagnosticsDictionaries.RESOURCE_NOT_FOUND_ERROR,
+        "supplier": "EMIS",
+        "vaccine_type": "RSV",
     }
 
     DPSFULL_ack_processor_input_diagnostics = {
         "file_key": "RSV_Vaccinations_v5_DPSFULL_20240905T13005922",
         "row_id": "123",
         "local_id": "local_123",
-        "action_flag": "create",
+        "operation_requested": "create",
         "imms_id": "1232",
         "created_at_formatted_string": "1223-12-232",
-        "diagnostics": "Immunization resource does not exist",
+        "diagnostics": DiagnosticsDictionaries.RESOURCE_NOT_FOUND_ERROR,
+        "supplier": "DPSFULL",
+        "vaccine_type": "RSV",
     }
 
     EMIS_expected_log_value = {
@@ -74,7 +140,7 @@ class ValidValues:
     }
 
     DPSFULL_expected_log_value = {
-        "function_name": "ack_processor_lambda_handler",
+        "function_name": "ack_processor_convert_message_to_ack_row",
         "date_time": fixed_datetime.strftime("%Y-%m-%d %H:%M:%S"),
         "status": "success",
         "supplier": "DPSFULL",
@@ -160,7 +226,7 @@ class InvalidValues:
     fixed_datetime = datetime(2024, 10, 29, 12, 0, 0)
 
     Logging_with_no_values = {
-        "function_name": "ack_processor_lambda_handler",
+        "function_name": "ack_processor_convert_message_to_ack_row",
         "date_time": fixed_datetime.strftime("%Y-%m-%d %H:%M:%S"),
         "status": "fail",
         "supplier": "unknown",
@@ -171,5 +237,5 @@ class InvalidValues:
         "time_taken": "1.0s",
         "local_id": "unknown",
         "statusCode": 500,
-        "diagnostics": "An unhandled error happened during batch processing",
+        "diagnostics": "An unhandled error occurred during batch processing",
     }

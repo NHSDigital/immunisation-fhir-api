@@ -4,6 +4,7 @@ from convert_to_fhir_imms_resource import convert_to_fhir_imms_resource
 from constants import Diagnostics
 from mappings import Vaccine
 from clients import logger
+from utils_for_recordprocessor import create_diagnostics_dictionary
 
 
 def process_row(vaccine: Vaccine, allowed_operations: set, row: dict) -> dict:
@@ -21,7 +22,7 @@ def process_row(vaccine: Vaccine, allowed_operations: set, row: dict) -> dict:
     if action_flag not in ("NEW", "UPDATE", "DELETE"):
         logger.info("Invalid ACTION_FLAG '%s' - ACTION_FLAG MUST BE 'NEW', 'UPDATE' or 'DELETE'", action_flag)
         return {
-            "diagnostics": Diagnostics.INVALID_ACTION_FLAG,
+            "diagnostics": create_diagnostics_dictionary("INVALID_ACTION_FLAG", 400, Diagnostics.INVALID_ACTION_FLAG),
             "operation_requested": action_flag,
             "local_id": local_id,
         }
@@ -34,7 +35,7 @@ def process_row(vaccine: Vaccine, allowed_operations: set, row: dict) -> dict:
     if operation_requested not in allowed_operations:
         logger.info("Skipping row as supplier does not have the permissions for this operation %s", operation_requested)
         return {
-            "diagnostics": Diagnostics.NO_PERMISSIONS,
+            "diagnostics": create_diagnostics_dictionary("NO_PERMISSIONS", 403, Diagnostics.NO_PERMISSIONS),
             "operation_requested": operation_requested,
             "local_id": local_id,
         }
@@ -43,7 +44,7 @@ def process_row(vaccine: Vaccine, allowed_operations: set, row: dict) -> dict:
     if not (row.get("UNIQUE_ID_URI") and row.get("UNIQUE_ID")):
         logger.error("Invalid row format: row is missing either UNIQUE_ID or UNIQUE_ID_URI")
         return {
-            "diagnostics": Diagnostics.MISSING_UNIQUE_ID,
+            "diagnostics": create_diagnostics_dictionary("MISSING_UNIQUE_ID", 400, Diagnostics.MISSING_UNIQUE_ID),
             "operation_requested": operation_requested,
             "local_id": local_id,
         }

@@ -77,8 +77,8 @@ class ResourceNotFoundError(RuntimeError):
             code=Code.not_found,
             diagnostics=self.__str__(),
         )
-        
-        
+
+
 @dataclass
 class ResourceFoundError(RuntimeError):
     """Return this error when the requested FHIR resource does exist"""
@@ -244,7 +244,8 @@ class UnauthorizedSystemError(RuntimeError):
             code=Code.forbidden,
             diagnostics=msg,
         )
-        
+
+
 class MessageNotSuccessfulError(Exception):
     """
     Generic error message for any scenario which either prevents sending to the Imms API, or which results in a
@@ -253,3 +254,14 @@ class MessageNotSuccessfulError(Exception):
 
     def __init__(self, message=None):
         self.message = message
+
+
+class RecordProcessorError(Exception):
+    """
+    Exception for re-raising exceptions which have already occurred in the Record Processor.
+    The diagnostics dictionary received from the Record Processor is passed to the exception as an argument
+    and is stored as an attribute.
+    """
+
+    def __init__(self, diagnostics_dictionary: dict):
+        self.diagnostics_dictionary = diagnostics_dictionary

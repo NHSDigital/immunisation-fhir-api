@@ -3,22 +3,17 @@ from moto import mock_s3, mock_sqs
 import os
 import json
 from boto3 import client as boto3_client
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from ack_processor import lambda_handler
 from update_ack_file import obtain_current_ack_content, create_ack_data, update_ack_file
-import boto3
 from tests.test_utils_for_ack_backend import (
     DESTINATION_BUCKET_NAME,
     AWS_REGION,
     ValidValues,
-    InvalidValues,
     CREATED_AT_FORMATTED_STRING,
+    DiagnosticsDictionaries,
 )
-from constants import Constants
-from io import BytesIO, StringIO
 from copy import deepcopy
-from botocore.exceptions import ClientError
-from unittest import TestCase
 import uuid
 
 
@@ -70,7 +65,7 @@ class TestAckProcessor(unittest.TestCase):
         "file_key": file_name,
         "row_id": "123^1",
         "local_id": ValidValues.local_id,
-        "action_flag": "create",
+        "operation_requested": "create",
         "imms_id": "",
         "created_at_formatted_string": "20241115T13435500",
     }
@@ -101,7 +96,12 @@ class TestAckProcessor(unittest.TestCase):
     def create_expected_ack_content(self, row_input, actual_ack_file_content, expected_ack_file_content):
         """creates test ack rows from using a list containing multiple rows"""
         for i, row in enumerate(row_input):
-            diagnostics = row.get("diagnostics", "")
+            diagnostics_dictionary = row.get("diagnostics", {})
+            diagnostics = (
+                diagnostics_dictionary.get("error_message", "")
+                if isinstance(diagnostics_dictionary, dict)
+                else "Unable to determine diagnostics issue"
+            )
             imms_id = row.get("imms_id", "")
             row_id = row.get("row_id")
             if diagnostics:
@@ -150,8 +150,8 @@ class TestAckProcessor(unittest.TestCase):
 
         s3_client.put_object(Bucket=DESTINATION_BUCKET_NAME, Key=ack_file_name, Body=existing_content)
 
-    @patch("log_structure_splunk.firehose_logger")
-    def test_lambda_handler_main(self, mock_firehose_logger):
+    @patch("logging_decorators.send_log_to_firehose")
+    def test_lambda_handler_main(self, mock_send_log_to_firehose):
         """Test lambda handler with dynamic ack_file_name and consistent row_template."""
         test_bucket_name = "immunisation-batch-internal-testlambda-data-destinations"
         self.setup_s3()
@@ -165,27 +165,35 @@ class TestAckProcessor(unittest.TestCase):
             {
                 "description": "SQS event with multiple errors",
                 "rows": [
-                    {"row_id": "row_1", "diagnostics": "UNIQUE_ID or UNIQUE_ID_URI is NEW"},
-                    {"row_id": "row_2", "diagnostics": "unauthorized"},
-                    {"row_id": "row_3", "diagnostics": "not found"},
+                    {"row_id": "row_1", "diagnostics": DiagnosticsDictionaries.UNIQUE_ID_MISSING},
+                    {"row_id": "row_2", "diagnostics": DiagnosticsDictionaries.NO_PERMISSIONS},
+                    {"row_id": "row_3", "diagnostics": DiagnosticsDictionaries.RESOURCE_NOT_FOUND_ERROR},
                 ],
             },
             {
                 "description": "Multiple row processing from SQS event - mixture of success and failure rows",
                 "rows": [
                     {"row_id": "row_1", "imms_id": "TEST_IMMS_ID"},
-                    {"row_id": "row_2", "diagnostics": "UNIQUE_ID or UNIQUE_ID_URI is NEW"},
-                    {"row_id": "row_3", "diagnostics": "Validation_error"},
+                    {"row_id": "row_2", "diagnostics": DiagnosticsDictionaries.UNIQUE_ID_MISSING},
+                    {"row_id": "row_3", "diagnostics": DiagnosticsDictionaries.CUSTOM_VALIDATION_ERROR},
                     {"row_id": "row_4"},
-                    {"row_id": "row_5", "diagnostics": "Validation_error", "imms_id": "TEST_IMMS_ID"},
-                    {"row_id": "row_6", "diagnostics": "Validation_error"},
+                    {
+                        "row_id": "row_5",
+                        "diagnostics": DiagnosticsDictionaries.CUSTOM_VALIDATION_ERROR,
+                        "imms_id": "TEST_IMMS_ID",
+                    },
+                    {"row_id": "row_6", "diagnostics": DiagnosticsDictionaries.CUSTOM_VALIDATION_ERROR},
                     {"row_id": "row_7"},
-                    {"row_id": "row_8", "diagnostics": "Duplicate"},
+                    {"row_id": "row_8", "diagnostics": DiagnosticsDictionaries.IDENTIFIER_DUPLICATION_ERROR},
                 ],
             },
             {
                 "description": "1 success row (No diagnostics)",
                 "rows": [{"row_id": "row_1"}],
+            },
+            {
+                "description": "1 row with malformed diagnostics info from forwarder",
+                "rows": [{"row_id": "row_1", "diagnostics": "SHOULD BE A DICTIONARY, NOT A STRING"}],
             },
         ]
 
@@ -209,12 +217,12 @@ class TestAckProcessor(unittest.TestCase):
 
                     self.create_expected_ack_content(test_data["rows"], actual_ack_file_content, existing_content)
 
-                    mock_firehose_logger.ack_send_log.assert_called()
+                    mock_send_log_to_firehose.assert_called()
 
                     s3_client.delete_object(Bucket=test_bucket_name, Key=file_info["ack_file_name"])
 
-    @patch("log_structure_splunk.firehose_logger")
-    def test_lambda_handler_existing(self, mock_firehose_logger):
+    @patch("logging_decorators.send_log_to_firehose")
+    def test_lambda_handler_existing(self, mock_send_log_to_firehose):
         """Test lambda handler with dynamic ack_file_name and consistent row_template with an already existing
         ack file with content."""
 
@@ -228,20 +236,20 @@ class TestAckProcessor(unittest.TestCase):
             {
                 "description": "SQS event with multiple errors",
                 "rows": [
-                    {"row_id": "row_1", "diagnostics": "UNIQUE_ID or UNIQUE_ID_URI is missing"},
-                    {"row_id": "row_2", "diagnostics": "unauthorized"},
-                    {"row_id": "row_3", "diagnostics": "not found"},
+                    {"row_id": "row_1", "diagnostics": DiagnosticsDictionaries.UNIQUE_ID_MISSING},
+                    {"row_id": "row_2", "diagnostics": DiagnosticsDictionaries.NO_PERMISSIONS},
+                    {"row_id": "row_3", "diagnostics": DiagnosticsDictionaries.RESOURCE_NOT_FOUND_ERROR},
                 ],
             },
             {
                 "description": "SQS event with mixed success and failure rows",
                 "rows": [
-                    {"row_id": "row_4", "diagnostics": "UNIQUE_ID or UNIQUE_ID_URI is missing"},
+                    {"row_id": "row_4", "diagnostics": DiagnosticsDictionaries.UNIQUE_ID_MISSING},
                     {"row_id": "row_5"},
                     {"row_id": "row_6"},
-                    {"row_id": "row_7", "diagnostics": "UNIQUE_ID or UNIQUE_ID_URI is missing"},
-                    {"row_id": "row_8", "diagnostics": "UNIQUE_ID or UNIQUE_ID_URI is missing"},
-                    {"row_id": "row_9", "diagnostics": "UNIQUE_ID or UNIQUE_ID_URI is missing"},
+                    {"row_id": "row_7", "diagnostics": DiagnosticsDictionaries.UNIQUE_ID_MISSING},
+                    {"row_id": "row_8", "diagnostics": DiagnosticsDictionaries.UNIQUE_ID_MISSING},
+                    {"row_id": "row_9", "diagnostics": DiagnosticsDictionaries.UNIQUE_ID_MISSING},
                 ],
             },
             {
@@ -279,7 +287,7 @@ class TestAckProcessor(unittest.TestCase):
 
                     self.create_expected_ack_content(test_data["rows"], actual_ack_file_content, existing_content)
 
-                    mock_firehose_logger.ack_send_log.assert_called()
+                    mock_send_log_to_firehose.assert_called()
 
                     s3_client.delete_object(Bucket=DESTINATION_BUCKET_NAME, Key=file_info["ack_file_name"])
 
@@ -478,56 +486,41 @@ class TestAckProcessor(unittest.TestCase):
 
             s3_client.delete_object(Bucket=DESTINATION_BUCKET_NAME, Key=ack_file_key)
 
-    @patch("log_firehose_splunk.FirehoseLogger.ack_send_log")
+    @patch("logging_decorators.send_log_to_firehose")
     @patch("update_ack_file.create_ack_data")
     @patch("update_ack_file.update_ack_file")
-    def test_lambda_handler_error_scenarios(self, mock_update_ack_file, mock_create_ack_data, mock_ack_send_log):
+    def test_lambda_handler_error_scenarios(
+        self, mock_update_ack_file, mock_create_ack_data, mock_send_log_to_firehose
+    ):
+
+        with self.subTest("No records in the event"):
+            with self.assertRaises(Exception):
+                lambda_handler(event={}, context={})
+
+            mock_send_log_to_firehose.assert_called()
+            error_log = mock_send_log_to_firehose.call_args[0][0]
+            self.assertIn("No records found in the event", error_log["diagnostics"])
+            mock_send_log_to_firehose.reset_mock()
 
         test_cases = [
             {
                 "description": "Malformed JSON in SQS body",
                 "event": {"Records": [{""}]},
-                "expected_message": "Error processing SQS message:",
-            },
-            {
-                "description": "Invalid value in 'diagnostics' field",
-                "event": {
-                    "Records": [
-                        {
-                            "body": json.dumps(
-                                [
-                                    {
-                                        "file_key": "test_file.csv",
-                                        "row_id": "123",
-                                        "local_id": "111^222",
-                                        "imms_id": "TEST_IMMS_ID",
-                                        "diagnostics": {"unexpected": "object"},
-                                        "created_at_formatted_string": "20241212T13000000",
-                                    }
-                                ]
-                            )
-                        }
-                    ]
-                },
-                "expected_message": "Error processing SQS message:",
-            },
-            {
-                "description": "Empty Records array in the event",
-                "event": {},
-                "expected_message": "Error processing SQS message:",
+                "expected_message": "Could not load incoming message body",
             },
         ]
-        mock_update_ack_file.side_effect = Exception("Simulated create_ack_data error")
+        # TODO: What was below meant to be testing?
+        # mock_update_ack_file.side_effect = Exception("Simulated create_ack_data error")
 
         for scenario in test_cases:
             with self.subTest(msg=scenario["description"]):
-                lambda_handler(event=scenario["event"], context={})
+                with self.assertRaises(Exception):
+                    lambda_handler(event=scenario["event"], context={})
 
-                if scenario["expected_message"]:
-                    mock_ack_send_log.assert_called()
-                    error_log = mock_ack_send_log.call_args[0][0]
-                    self.assertIn(scenario["expected_message"], error_log["event"]["diagnostics"])
-                mock_ack_send_log.reset_mock()
+                mock_send_log_to_firehose.assert_called()
+                error_log = mock_send_log_to_firehose.call_args[0][0]
+                self.assertIn(scenario["expected_message"], error_log["diagnostics"])
+                mock_send_log_to_firehose.reset_mock()
 
     def tearDown(self):
         """'Clear all mock resources"""

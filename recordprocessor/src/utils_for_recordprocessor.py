@@ -18,3 +18,8 @@ def get_csv_content_dict_reader(file_key: str) -> DictReader:
     response = s3_client.get_object(Bucket=os.getenv("SOURCE_BUCKET_NAME"), Key=file_key)
     csv_data = response["Body"].read().decode("utf-8")
     return DictReader(StringIO(csv_data), delimiter="|"), csv_data
+
+
+def create_diagnostics_dictionary(error_type, status_code, error_message) -> dict:
+    """Returns a dictionary containing the error_type, statusCode, and error_message"""
+    return {"error_type": error_type, "statusCode": status_code, "error_message": error_message}

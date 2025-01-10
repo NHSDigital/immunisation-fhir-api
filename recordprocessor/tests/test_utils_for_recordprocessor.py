@@ -6,7 +6,7 @@ from io import StringIO
 import csv
 import boto3
 from moto import mock_s3
-from utils_for_recordprocessor import get_environment, get_csv_content_dict_reader
+from utils_for_recordprocessor import get_environment, get_csv_content_dict_reader, create_diagnostics_dictionary
 from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import GenericSetUp, GenericTearDown
 from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
     MOCK_ENVIRONMENT_DICT,
@@ -47,7 +47,7 @@ class TestUtilsForRecordprocessor(unittest.TestCase):
         self.assertEqual(csv_data, ValidMockFileContent.with_new_and_update)
 
     def test_get_environment(self):
-        "Tests that get_environment returns the correct environment"
+        """Tests that get_environment returns the correct environment"""
         # Each test case tuple has the structure (environment, expected_result)
         test_cases = (
             ("internal-dev", "internal-dev"),
@@ -62,6 +62,17 @@ class TestUtilsForRecordprocessor(unittest.TestCase):
             with self.subTest(f"SubTest for environment: {environment}"):
                 with patch.dict("os.environ", {"ENVIRONMENT": environment}):
                     self.assertEqual(get_environment(), expected_result)
+
+    def test_create_diagnostics_dictionary(self):
+        """Tests that create_diagnostics_dictionary returns the correct diagnostics dictionary"""
+        self.assertEqual(
+            create_diagnostics_dictionary("test error type", 400, "test error message"),
+            {
+                "error_type": "test error type",
+                "statusCode": 400,
+                "error_message": "test error message",
+            },
+        )
 
 
 if __name__ == "__main__":
