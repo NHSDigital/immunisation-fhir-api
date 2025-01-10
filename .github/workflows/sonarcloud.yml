@@ -70,6 +70,14 @@ jobs:
           pip install poetry==1.8.4 mypy-boto3-dynamodb==1.35.54 boto3==1.26.165 coverage botocore==1.29.165 jmespath==1.0.1 python-dateutil==2.9.0 urllib3==1.26.20 s3transfer==0.6.2 typing-extensions==4.12.2
           poetry run coverage run --source=delta_backend -m unittest discover -s delta_backend || echo "delta tests failed" >> failed_tests.txt
           poetry run coverage xml -o sonarcloud-coverage-delta.xml
+      
+      - name: Run unittest with coverage-fhir-api
+        id: fhirapi
+        continue-on-error: true
+        run: |
+          pip install poetry==1.8.4 moto==4.2.11 coverage redis botocore==1.35.49 simplejson responses structlog fhir.resources jsonpath_ng pydantic==1.10.13 requests aws-lambda-typing cffi pyjwt boto3-stubs-lite[dynamodb]~=1.26.90 python-stdnum==1.20
+          poetry run coverage run --source=backend -m unittest discover -s backend || echo "fhir-api tests failed" >> failed_tests.txt
+          poetry run coverage xml -o sonarcloud-coverage.xml
 
 
       - name: SonarCloud Scan
