@@ -7,6 +7,6 @@ import unittest
 
 class Test_forward_lambda_handler(unittest.TestCase):
     def test_name_length(self):
-        """Test that the length of 'recordforwarder' is 14."""
+        """Test that the length of 'recordforwarder' is 15."""
         name = "recordforwarder"
-        self.assertEqual(len(name), 14)  # This test will pass
+        self.assertEqual(len(name), 15)  # This test will pass
