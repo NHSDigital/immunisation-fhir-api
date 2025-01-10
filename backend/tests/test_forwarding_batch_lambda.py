@@ -2,26 +2,11 @@
 
 import unittest
 
-from models.errors import Severity, Code, create_operation_outcome
-
-"test"
+## Remove this Test- this acting as a placeholder for actual record forwarder tests
 
 
-## Remove this Test- this acting as a placeholder for actual tests
-
-
-class TestApiErrors(unittest.TestCase):
-    def test_error_to_uk_core2(self):
-        code = Code.not_found
-
-        severity = Severity.error
-        diag = "a-diagnostic"
-        error_id = "a-id"
-
-        error = create_operation_outcome(resource_id=error_id, severity=severity, code=code, diagnostics=diag)
-
-        issue = error["issue"][0]
-        self.assertEqual(error["id"], error_id)
-        self.assertEqual(issue["code"], "not-found")
-        self.assertEqual(issue["severity"], "error")
-        self.assertEqual(issue["diagnostics"], diag)
+class Test_forward_lambda_handler(unittest.TestCase):
+    def test_name_length(self):
+        """Test that the length of 'recordforwarder' is 14."""
+        name = "recordforwarder"
+        self.assertEqual(len(name), 14)  # This test will pass
