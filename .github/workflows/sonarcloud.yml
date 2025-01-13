@@ -79,13 +79,6 @@ jobs:
           poetry run coverage run --source=backend -m unittest discover -s backend || echo "fhir-api tests failed" >> failed_tests.txt
           poetry run coverage xml -o sonarcloud-coverage.xml
 
-
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
       - name: Run Test Failure Summary
         id: check_failure
         run: |
@@ -97,3 +90,10 @@ jobs:
           else
             echo "All tests passed."
           fi
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
