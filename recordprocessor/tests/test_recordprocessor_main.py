@@ -190,7 +190,11 @@ class TestRecordProcessor(unittest.TestCase):
                 "UPDATE no permissions",
                 1,
                 {
-                    "diagnostics": Diagnostics.NO_PERMISSIONS,
+                    "diagnostics": {
+                        "error_type": "NO_PERMISSIONS",
+                        "statusCode": 403,
+                        "error_message": Diagnostics.NO_PERMISSIONS,
+                    },
                     "operation_requested": "UPDATE",
                     "local_id": MockLocalIds.COVID19_001_RAVS,
                 },
@@ -200,7 +204,11 @@ class TestRecordProcessor(unittest.TestCase):
                 "DELETE no permissions",
                 2,
                 {
-                    "diagnostics": Diagnostics.NO_PERMISSIONS,
+                    "diagnostics": {
+                        "error_type": "NO_PERMISSIONS",
+                        "statusCode": 403,
+                        "error_message": Diagnostics.NO_PERMISSIONS,
+                    },
                     "operation_requested": "DELETE",
                     "local_id": MockLocalIds.COVID19_001_RAVS,
                 },
@@ -233,7 +241,11 @@ class TestRecordProcessor(unittest.TestCase):
         main(mock_rsv_emis_file.event_full_permissions)
 
         expected_kinesis_data = {
-            "diagnostics": Diagnostics.INVALID_ACTION_FLAG,
+            "diagnostics": {
+                "error_type": "INVALID_ACTION_FLAG",
+                "statusCode": 400,
+                "error_message": Diagnostics.INVALID_ACTION_FLAG,
+            },
             "operation_requested": "TO DEFINE",
             "local_id": MockLocalIds.COVID19_001_RAVS,
         }

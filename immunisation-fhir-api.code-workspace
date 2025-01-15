@@ -5,7 +5,20 @@
 		},
 		{
 			"path": "backend"
+		},
+		{
+			"path": "filenameprocessor"
+		},
+		{
+			"path": "recordprocessor"
+		},
+		{
+			"path": "ack_backend"
+		},
+		{
+			"path": "delta_backend"
 		}
 	],
-	"settings": {}
+	"settings": {},
+	
 }
