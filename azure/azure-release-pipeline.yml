@@ -76,5 +76,5 @@ extends:
           - int
           - ref
         jinja_templates:
-          DOMAIN_ENDPOINT: https://prod.imms.prod.vds.platform.nhs.uk
+          DOMAIN_ENDPOINT: https://blue.imms.prod.vds.platform.nhs.uk
 

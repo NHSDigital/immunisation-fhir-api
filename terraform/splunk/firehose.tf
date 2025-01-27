@@ -27,6 +27,7 @@ resource "aws_kinesis_firehose_delivery_stream" "splunk_firehose_stream" {
 
 resource "aws_cloudwatch_log_group" "fire_house_logs" {
     name = "${local.prefix}-firehose-logs"
+    retention_in_days = 30
 }
 
 resource "aws_cloudwatch_log_stream" "splunk_logs_stream" {

@@ -1,5 +1,5 @@
 resource "aws_s3_bucket" "batch_config_bucket" {
-    bucket        = "imms-internal-dev-supplier-config"
+    bucket        = "imms-prod-supplier-config"
 }
 
 resource "aws_s3_bucket_public_access_block" "batch_config_bucket_public_access_block" {

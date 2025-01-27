@@ -1,5 +1,5 @@
 resource "aws_dynamodb_table" "events-dynamodb-table" {
-    name         = "imms-${local.env}-imms-events"
+    name         = "imms-prod-imms-events"
     billing_mode = "PAY_PER_REQUEST"
     hash_key     = "PK"
     stream_enabled = true
@@ -24,6 +24,9 @@ resource "aws_dynamodb_table" "events-dynamodb-table" {
 
     tags = {
         NHSE-Enable-Dynamo-Backup = "True"
+        "Environment" = "prod"
+        "Project"     = "immunisation"
+        "Service"     = "fhir-api"
     }
 
     global_secondary_index {
@@ -40,10 +43,10 @@ resource "aws_dynamodb_table" "events-dynamodb-table" {
     }
     
     point_in_time_recovery {
-        enabled = local.environment == "prod" ? true : false
+        enabled = true
     }
     server_side_encryption {
         enabled = true
-        kms_key_arn = data.aws_kms_key.existing_dynamo_encryption_arn.arn
-    }
+        kms_key_arn = aws_kms_key.dynamodb_encryption.arn
+    }    
 }

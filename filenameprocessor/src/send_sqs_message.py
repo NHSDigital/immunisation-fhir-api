@@ -6,7 +6,7 @@ from clients import sqs_client, logger
 from errors import InvalidSupplierError, UnhandledSqsError
 
 
-def send_to_supplier_queue(message_body: dict) -> None:
+def send_to_supplier_queue(message_body: dict, vaccine_type: str) -> None:
     """Sends a message to the supplier queue. Raises an exception if the message is not successfully sent."""
     # Check the supplier has been identified (this should already have been validated by initial file validation)
     if not (supplier := message_body["supplier"]):
@@ -16,7 +16,8 @@ def send_to_supplier_queue(message_body: dict) -> None:
 
     try:
         queue_url = os.getenv("QUEUE_URL")
-        sqs_client.send_message(QueueUrl=queue_url, MessageBody=json_dumps(message_body), MessageGroupId=supplier)
+        sqs_client.send_message(QueueUrl=queue_url, MessageBody=json_dumps(message_body),
+                                MessageGroupId=f"{supplier}_{vaccine_type}")
         logger.info("Message sent to SQS queue for supplier: %s", supplier)
     except Exception as error:  # pylint: disable=broad-exception-caught
         error_message = f"An unexpected error occurred whilst sending to SQS: {error}"
@@ -37,4 +38,4 @@ def make_and_send_sqs_message(
         "created_at_formatted_string": created_at_formatted_string,
     }
 
-    send_to_supplier_queue(message_body)
+    send_to_supplier_queue(message_body, vaccine_type)

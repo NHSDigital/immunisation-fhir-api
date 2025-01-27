@@ -6,7 +6,7 @@ from botocore.exceptions import ClientError
 from clients import kinesis_client, logger
 
 
-def send_to_kinesis(supplier: str, message_body: dict) -> bool:
+def send_to_kinesis(supplier: str, message_body: dict, vaccine_type: str) -> bool:
     """Send a message to the specified Kinesis stream. Returns a boolean indicating whether the send was successful."""
     stream_name = os.getenv("KINESIS_STREAM_NAME")
     try:
@@ -14,7 +14,7 @@ def send_to_kinesis(supplier: str, message_body: dict) -> bool:
             StreamName=stream_name,
             StreamARN=os.getenv("KINESIS_STREAM_ARN"),
             Data=json.dumps(message_body, ensure_ascii=False),
-            PartitionKey=supplier,
+            PartitionKey=f"{supplier}_{vaccine_type}",
         )
         logger.info("Message sent to Kinesis stream: %s for supplier: %s with resp: %s", stream_name, supplier, resp)
         return True

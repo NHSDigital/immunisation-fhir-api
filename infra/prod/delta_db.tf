@@ -1,5 +1,5 @@
 resource "aws_dynamodb_table" "delta-dynamodb-table" {
-    name         = "imms-${local.env}-delta"
+    name         = "imms-prod-delta"
     billing_mode = "PAY_PER_REQUEST"
     hash_key     = "PK"
     attribute {
@@ -45,10 +45,16 @@ resource "aws_dynamodb_table" "delta-dynamodb-table" {
     }
     
     point_in_time_recovery {
-        enabled = local.environment == "prod" ? true : false
+        enabled = true
     }
     server_side_encryption {
         enabled = true
-        kms_key_arn = data.aws_kms_key.existing_dynamo_encryption_arn.arn
+        kms_key_arn = aws_kms_key.dynamodb_encryption.arn
+    }
+
+    tags = {
+          "Environment" = "prod"
+          "Project"     = "immunisation"
+          "Service"     = "fhir-api"
     }
 }

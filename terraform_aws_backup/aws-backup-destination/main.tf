@@ -30,11 +30,11 @@ data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
 
 data "aws_ssm_parameter" "src_acct_id" { 
-  name = "/imms/awsbackup/dev/sourceacctid" 
+  name = "/imms/awsbackup/sourceacctid" 
 }
 
 data "aws_ssm_parameter" "src_acct_name" { 
-  name = "/imms/awsbackup/dev/sourceacctname" 
+  name = "/imms/awsbackup/sourceacctname" 
 }
 
 module "destination" {
@@ -46,7 +46,7 @@ module "destination" {
 }
 
 locals {
-  environment         = terraform.workspace
+  environment         = "prod"
   destination_account_id = data.aws_caller_identity.current.account_id
 }
 

@@ -1,16 +1,18 @@
 resource "aws_s3_bucket" "batch_data_source_bucket" {
-    bucket        = "${local.batch_prefix}-data-sources"
+    bucket        = "immunisation-batch-prod-data-sources"
     force_destroy = local.is_temp
+    tags = {
+          "Environment" = "prod"
+          "Project"     = "immunisation"
+          "Service"     = "fhir-api"
+    }
 }
 
 data "aws_iam_policy_document" "batch_data_source_bucket_policy" {
     source_policy_documents = [
-        local.environment == "prod" ? templatefile("${local.policy_path}/s3_batch_source_policy_prod.json", {
-            "bucket-name" : aws_s3_bucket.batch_data_source_bucket.bucket
-        } ):  templatefile("${local.policy_path}/s3_batch_source_policy.json", {
+        templatefile("${local.policy_path}/s3_batch_source_policy.json", {
             "bucket-name" : aws_s3_bucket.batch_data_source_bucket.bucket
         } ),
-        
     ]
 }
 
@@ -30,22 +32,15 @@ resource "aws_s3_bucket_policy" "batch_data_source_bucket_policy" {
 #   }
 # }
 
-resource "aws_s3_bucket_versioning" "source_versioning" {
-  bucket = aws_s3_bucket.batch_data_source_bucket.id
-  versioning_configuration {
-    status = "Enabled"
-  }
-}
-
 resource "aws_s3_bucket_lifecycle_configuration" "datasources_lifecycle" {
-  bucket = "${local.batch_prefix}-data-sources"
+  bucket = "immunisation-batch-prod-data-sources"
  
   rule {
-    id     = "DeleteFinalFilesAfter7Days"
+    id     = "DeleteFilesAfter7Days"
     status = "Enabled"
  
     filter {
-      prefix = "archive/"
+      prefix = "*"
     }
  
     expiration {

@@ -5,7 +5,7 @@ module "lambda_function_container_image" {
     lambda_role = aws_iam_role.lambda_role.arn
     function_name = "${var.short_prefix}_${var.function_name}"
     handler       = "${var.function_name}_handler.${var.function_name}_handler"
-
+    cloudwatch_logs_retention_in_days = 30
     create_package = false
     image_uri    = var.image_uri
     package_type = "Image"
@@ -46,3 +46,5 @@ resource "aws_cloudwatch_log_metric_filter" "max_memory_used_metric" {
         value     = "$18"
     }
 }
+
+

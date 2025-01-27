@@ -79,6 +79,10 @@ data "aws_s3_bucket" "existing_destination_bucket" {
   bucket = "immunisation-batch-${local.local_config}-data-destinations"
 }
 
+data "aws_s3_bucket" "existing_source_bucket" {
+  bucket = "immunisation-batch-${local.local_config}-data-sources"
+}
+
 data "aws_kms_key" "existing_lambda_encryption_key" {
   key_id = "alias/imms-batch-lambda-env-encryption"
 }
@@ -97,5 +101,9 @@ data "aws_dynamodb_table" "audit-table" {
 
 data "aws_dynamodb_table" "delta-dynamodb-table" { 
   name = "imms-${local.local_config}-delta" 
+}
+
+data "aws_lambda_function" "existing_file_name_proc_lambda" {
+  function_name = aws_lambda_function.file_processor_lambda.function_name
 }
 

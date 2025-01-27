@@ -110,11 +110,33 @@ resource "aws_iam_policy" "ack_lambda_exec_policy" {
         Action   = [
           "s3:GetObject",
           "s3:PutObject",
-          "s3:ListBucket"
+          "s3:ListBucket",
+          "s3:CopyObject",
+          "s3:DeleteObject"
         ]
         Resource = [
+          "arn:aws:s3:::immunisation-batch-${local.env}-data-sources",       
+          "arn:aws:s3:::immunisation-batch-${local.env}-data-sources/*",
           "${data.aws_s3_bucket.existing_destination_bucket.arn}",       
           "${data.aws_s3_bucket.existing_destination_bucket.arn}/*"         
+        ]
+      },
+      {
+        Effect   = "Allow"
+        Action   = "lambda:InvokeFunction"
+        Resource = [
+          data.aws_lambda_function.existing_file_name_proc_lambda.arn,               
+        ]
+      },
+      {
+        Effect   = "Allow"
+        Action   = [
+          "dynamodb:Query",
+          "dynamodb:UpdateItem"
+        ]
+       Resource  = [
+          "arn:aws:dynamodb:${var.aws_region}:${local.local_account_id}:table/${data.aws_dynamodb_table.audit-table.name}",
+          "arn:aws:dynamodb:${var.aws_region}:${local.local_account_id}:table/${data.aws_dynamodb_table.audit-table.name}/index/*",
         ]
       },
       { 
@@ -137,6 +159,10 @@ resource "aws_iam_policy" "ack_lambda_exec_policy" {
   })
 }
 
+resource "aws_cloudwatch_log_group" "ack_lambda_log_group" {
+  name              = "/aws/lambda/${local.short_prefix}-ack-lambda"
+  retention_in_days = 30
+}
 resource "aws_iam_policy" "ack_s3_kms_access_policy" {
   name        = "${local.short_prefix}-ack-s3-kms-policy"
   description = "Allow Lambda to decrypt environment variables"
@@ -151,7 +177,9 @@ resource "aws_iam_policy" "ack_s3_kms_access_policy" {
           "kms:Decrypt",
           "kms:GenerateDataKey*"
         ]
-        Resource = data.aws_kms_key.existing_s3_encryption_key.arn
+        Resource = [data.aws_kms_key.existing_s3_encryption_key.arn,
+                    data.aws_kms_key.existing_dynamo_encryption_key.arn
+                   ]
       }
     ]
   })
@@ -185,10 +213,16 @@ resource "aws_lambda_function" "ack_processor_lambda" {
     variables = {
       ACK_BUCKET_NAME     = data.aws_s3_bucket.existing_destination_bucket.bucket
       SPLUNK_FIREHOSE_NAME   = module.splunk.firehose_stream_name
+      ENVIRONMENT         = terraform.workspace
+      AUDIT_TABLE_NAME     = "${data.aws_dynamodb_table.audit-table.name}"
+      FILE_NAME_PROC_LAMBDA_NAME = data.aws_lambda_function.existing_file_name_proc_lambda.function_name
     }
   }
 
   reserved_concurrent_executions = 20
+  depends_on = [
+    aws_cloudwatch_log_group.ack_lambda_log_group
+  ]
 }
 
 resource "aws_lambda_event_source_mapping" "sqs_to_lambda"{ 

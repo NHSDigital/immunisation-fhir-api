@@ -1,6 +1,6 @@
 # First, we create an S3 bucket for compliance reports.
 resource "aws_s3_bucket" "backup_reports" {
-  bucket = "${var.project_name}backup-reports"
+  bucket = "${var.project_name}${var.environment_name}-backup-reports"
 }
 
 resource "aws_s3_bucket_public_access_block" "backup_reports" {

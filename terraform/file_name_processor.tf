@@ -109,7 +109,10 @@ resource "aws_iam_policy" "filenameprocessor_lambda_exec_policy" {
         Effect   = "Allow"
         Action   = [
           "s3:GetObject",
-          "s3:ListBucket"
+          "s3:ListBucket",
+          "s3:PutObject",
+          "s3:CopyObject",
+          "s3:DeleteObject"
         ]
         Resource = [
           "arn:aws:s3:::${local.batch_prefix}-data-sources",           
@@ -156,6 +159,13 @@ resource "aws_iam_policy" "filenameprocessor_lambda_exec_policy" {
           "firehose:PutRecordBatch"
         ],
         "Resource": "arn:aws:firehose:*:*:deliverystream/${module.splunk.firehose_stream_name}"
+      },
+      {
+        Effect   = "Allow"
+        Action   = "lambda:InvokeFunction"
+        Resource = [
+          "arn:aws:lambda:${var.aws_region}:${local.local_account_id}:function:imms-${local.env}-filenameproc_lambda",               
+        ]
       }
     ]
   })
@@ -279,10 +289,17 @@ resource "aws_lambda_function" "file_processor_lambda" {
       SPLUNK_FIREHOSE_NAME = module.splunk.firehose_stream_name
       AUDIT_TABLE_NAME     = "${data.aws_dynamodb_table.audit-table.name}"
       FILE_NAME_GSI        = "filename_index"
+      FILE_NAME_PROC_LAMBDA_NAME = "imms-${local.env}-filenameproc_lambda"
+
     }
   }
   kms_key_arn = data.aws_kms_key.existing_lambda_encryption_key.arn
   reserved_concurrent_executions = 20
+  depends_on = [
+    aws_cloudwatch_log_group.file_name_processor_log_group,
+    aws_iam_policy.filenameprocessor_lambda_exec_policy
+  ]
+  
 }
 
 
@@ -302,6 +319,7 @@ resource "aws_s3_bucket_notification" "datasources_lambda_notification" {
   lambda_function {
     lambda_function_arn = aws_lambda_function.file_processor_lambda.arn
     events              = ["s3:ObjectCreated:*"]
+    #filter_prefix      =""
   }
 }
 
@@ -398,4 +416,9 @@ resource "aws_iam_policy" "elasticache_permissions" {
 resource "aws_iam_role_policy_attachment" "elasticache_policy_attachment" {
   role       = aws_iam_role.elasticache_exec_role.name
   policy_arn = aws_iam_policy.elasticache_permissions.arn
+}
+
+resource "aws_cloudwatch_log_group" "file_name_processor_log_group" {
+  name              = "/aws/lambda/${local.short_prefix}-filenameproc_lambda"
+  retention_in_days = 30
 }

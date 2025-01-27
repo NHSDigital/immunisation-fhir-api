@@ -918,6 +918,7 @@ class TestCreateImmunization(unittest.TestCase):
                 "row_id": "123",
                 "created_at_formatted_string": "2020-01-01",
                 "local_id": ValidValues.test_local_id,
+                "operation_requested": "create"
             },
             "body": imms.json(),
         }
@@ -936,6 +937,7 @@ class TestCreateImmunization(unittest.TestCase):
                 "row_id": aws_event["headers"]["row_id"],
                 "created_at_formatted_string": aws_event["headers"]["created_at_formatted_string"],
                 "local_id": aws_event["headers"]["local_id"],
+                "operation_requested": "create"
             }
         )
 
@@ -961,6 +963,7 @@ class TestCreateImmunization(unittest.TestCase):
                 "row_id": "123",
                 "created_at_formatted_string": "2020-01-01",
                 "local_id": ValidValues.test_local_id,
+                "operation_requested": "create"
             },
             "body": imms.json(),
         }
@@ -1067,6 +1070,7 @@ class TestCreateImmunization(unittest.TestCase):
                 "row_id": "123",
                 "created_at_formatted_string": "2020-01-01",
                 "local_id": ValidValues.test_local_id,
+                "operation_requested": "create"
             },
             "body": imms.json(),
         }
@@ -1108,6 +1112,7 @@ class TestCreateImmunization(unittest.TestCase):
                 "row_id": "123",
                 "created_at_formatted_string": "2020-01-01",
                 "local_id": ValidValues.test_local_id,
+                "operation_requested": "create"
             },
             "body": imms.json(),
         }
@@ -1165,6 +1170,7 @@ class TestUpdateImmunization(unittest.TestCase):
                 "row_id": "123",
                 "created_at_formatted_string": "2020-01-01",
                 "local_id": ValidValues.test_local_id,
+                "operation_requested": "update"
             },
             "body": imms,
             "pathParameters": {"id": imms_id},
@@ -1192,6 +1198,7 @@ class TestUpdateImmunization(unittest.TestCase):
                 "row_id": "123",
                 "created_at_formatted_string": "2020-01-01",
                 "local_id": ValidValues.test_local_id,
+                "operation_requested": "update"
             },
             "body": imms,
             "pathParameters": {"id": imms_id},
@@ -1222,6 +1229,7 @@ class TestUpdateImmunization(unittest.TestCase):
                 "row_id": "123",
                 "created_at_formatted_string": "2020-01-01",
                 "local_id": ValidValues.test_local_id,
+                "operation_requested": "update"
             },
             "body": imms,
             "pathParameters": {"id": imms_id},
@@ -1277,6 +1285,7 @@ class TestUpdateImmunization(unittest.TestCase):
                 "row_id": "123",
                 "created_at_formatted_string": "2020-01-01",
                 "local_id": ValidValues.test_local_id,
+                "operation_requested": "update"
             },
             "body": imms,
             "pathParameters": {"id": imms_id},
@@ -1314,6 +1323,7 @@ class TestUpdateImmunization(unittest.TestCase):
                 "row_id": "123",
                 "created_at_formatted_string": "2020-01-01",
                 "local_id": ValidValues.test_local_id,
+                "operation_requested": "update"
             },
             "body": imms,
             "pathParameters": {"id": imms_id},
@@ -1336,6 +1346,7 @@ class TestUpdateImmunization(unittest.TestCase):
                 "row_id": aws_event["headers"]["row_id"],
                 "created_at_formatted_string": aws_event["headers"]["created_at_formatted_string"],
                 "local_id": aws_event["headers"]["local_id"],
+                "operation_requested": "update"
             }
         )
 
@@ -1473,6 +1484,7 @@ class TestUpdateImmunization(unittest.TestCase):
                 "row_id": "123",
                 "created_at_formatted_string": "2020-01-01",
                 "local_id": ValidValues.test_local_id,
+                "operation_requested": "update"
             },
             "body": imms,
             "pathParameters": {"id": "valid-id"},
@@ -1592,6 +1604,7 @@ class TestUpdateImmunization(unittest.TestCase):
                 "row_id": "123",
                 "created_at_formatted_string": "2020-01-01",
                 "local_id": ValidValues.test_local_id,
+                "operation_requested": "update"
             },
             "body": bad_json,
             "pathParameters": {"id": "an-id"},
@@ -1663,6 +1676,7 @@ class TestUpdateImmunization(unittest.TestCase):
                 "row_id": "123",
                 "created_at_formatted_string": "2020-01-01",
                 "local_id": ValidValues.test_local_id,
+                "operation_requested": "update"
             },
             "pathParameters": {"id": "invalid %$ id"},
             "body": valid_json,
@@ -1706,6 +1720,7 @@ class TestDeleteImmunization(unittest.TestCase):
                 "row_id": "123",
                 "created_at_formatted_string": "2020-01-01",
                 "local_id": ValidValues.test_local_id,
+                "operation_requested": "delete"
             },
         }
 
@@ -1765,6 +1780,7 @@ class TestDeleteImmunization(unittest.TestCase):
                 "row_id": "123",
                 "created_at_formatted_string": "2020-01-01",
                 "local_id": ValidValues.test_local_id,
+                "operation_requested": "delete"
             },
             "pathParameters": {"id": imms_id},
         }
@@ -1790,6 +1806,7 @@ class TestDeleteImmunization(unittest.TestCase):
                 "row_id": "123",
                 "created_at_formatted_string": "2020-01-01",
                 "local_id": ValidValues.test_local_id,
+                "operation_requested": "delete"
             },
             "pathParameters": {"id": imms_id},
         }
@@ -1807,6 +1824,7 @@ class TestDeleteImmunization(unittest.TestCase):
                 "row_id": lambda_event["headers"]["row_id"],
                 "created_at_formatted_string": lambda_event["headers"]["created_at_formatted_string"],
                 "local_id": lambda_event["headers"]["local_id"],
+                "operation_requested": "delete"
             }
         )
 
@@ -1850,6 +1868,7 @@ class TestDeleteImmunization(unittest.TestCase):
                 "row_id": "123",
                 "created_at_formatted_string": "2020-01-01",
                 "local_id": ValidValues.test_local_id,
+                "operation_requested": "delete"
             },
             "pathParameters": {"id": "a-non-existing-id"},
         }
@@ -1897,6 +1916,7 @@ class TestDeleteImmunization(unittest.TestCase):
                 "row_id": "123",
                 "created_at_formatted_string": "2020-01-01",
                 "local_id": ValidValues.test_local_id,
+                "operation_requested": "delete"
             },
             "pathParameters": {"id": "a-non-existing-id"},
         }

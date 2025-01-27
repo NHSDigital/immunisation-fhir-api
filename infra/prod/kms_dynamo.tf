@@ -10,7 +10,7 @@
     {
       "Sid": "Allow administration of the key",
       "Effect": "Allow",
-      "Principal": { "AWS": "arn:aws:iam::345594581768:root" },
+      "Principal": { "AWS": "arn:aws:iam::664418956997:root" },
       "Action": [
         "kms:Create*",
         "kms:Describe*",
@@ -33,7 +33,7 @@
     {
       "Sid": "KMS KeyUser access",
       "Effect": "Allow",
-      "Principal": { "AWS": ["arn:aws:iam::345594581768:role/auto-ops"] },
+      "Principal": { "AWS": ["arn:aws:iam::664418956997:role/auto-ops"] },
       "Action": [
         "kms:Encrypt",
         "kms:GenerateDataKey*"
@@ -43,9 +43,22 @@
     {
       "Sid": "KMS KeyUser access for DevOps",
       "Effect": "Allow",
-      "Principal": { "AWS": ["arn:aws:iam::345594581768:role/DevOps"] },
+      "Principal": { "AWS": ["arn:aws:iam::664418956997:role/DevOps"] },
       "Action": [
         "kms:Encrypt",
+        "kms:GenerateDataKey*"
+      ],
+      "Resource": "*"
+    },
+        {
+      "Sid": "AllowAccountA",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::232116723729:root"
+      },
+      "Action": [
+        "kms:Encrypt",
+        "kms:Decrypt",
         "kms:GenerateDataKey*"
       ],
       "Resource": "*"
@@ -58,9 +71,4 @@ POLICY
 resource "aws_kms_alias" "dynamodb_encryption" {
   name          = "alias/imms-event-dynamodb-encryption"
   target_key_id = aws_kms_key.dynamodb_encryption.key_id
-}
-
-data "aws_kms_key" "existing_dynamo_encryption_arn" {
-  key_id = "alias/imms-event-dynamodb-encryption"
-  arn = aws_kms_key.dynamodb_encryption.arn
 }

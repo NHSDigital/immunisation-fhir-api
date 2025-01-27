@@ -1,9 +1,10 @@
 """Utils for filenameprocessor lambda"""
 
 import os
+import json
 from csv import DictReader
 from io import StringIO
-from clients import s3_client
+from clients import s3_client, lambda_client, logger
 
 
 def get_environment() -> str:
@@ -23,3 +24,26 @@ def get_csv_content_dict_reader(file_key: str) -> DictReader:
 def create_diagnostics_dictionary(error_type, status_code, error_message) -> dict:
     """Returns a dictionary containing the error_type, statusCode, and error_message"""
     return {"error_type": error_type, "statusCode": status_code, "error_message": error_message}
+
+
+def invoke_filename_lambda(file_name_processor, source_bucket_name, file_key, message_id):
+    try:
+        lambda_payload = {"Records": [
+            {
+                "s3": {
+                    "bucket": {
+                        "name": source_bucket_name
+                    },
+                    "object": {
+                        "key": file_key
+                    }
+                },
+                "message_id": message_id}
+                ]
+            }
+        lambda_client.invoke(
+            FunctionName=file_name_processor,
+            InvocationType="Event",
+            Payload=json.dumps(lambda_payload))
+    except Exception as error:
+        logger.info("%s error", error)

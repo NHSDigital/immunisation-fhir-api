@@ -16,7 +16,7 @@ resource "aws_ecr_repository" "delta_lambda_repository" {
 
 module "delta_docker_image" {
     source = "terraform-aws-modules/lambda/aws//modules/docker-build"
-
+    
     create_ecr_repo = false
     ecr_repo        = "${local.prefix}-delta-lambda-repo"
     ecr_repo_lifecycle_policy = jsonencode({
@@ -42,6 +42,7 @@ module "delta_docker_image" {
     triggers = {
         dir_sha = local.delta_dir_sha
     }
+    
 }
 
 # Define the lambdaECRImageRetreival policy
@@ -140,6 +141,10 @@ resource "aws_lambda_function" "delta_sync_lambda" {
       SPLUNK_FIREHOSE_NAME   = module.splunk.firehose_stream_name
     }
   }
+
+  depends_on = [
+    aws_cloudwatch_log_group.delta_lambda
+  ]
    
 }
 
@@ -163,4 +168,9 @@ resource "aws_sqs_queue" "dlq" {
 
 resource "aws_sns_topic" "delta_sns" {
     name = "${local.short_prefix}-${local.sns_name}"
+}
+
+resource "aws_cloudwatch_log_group" "delta_lambda" {
+  name              = "/aws/lambda/${local.short_prefix}-${local.function_name}"
+  retention_in_days = 30
 }

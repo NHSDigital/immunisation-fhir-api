@@ -10,25 +10,20 @@ resource "aws_security_group" "lambda_redis_sg" {
     cidr_blocks = ["172.31.0.0/16"]
   }
 
-  # Outbound rules to specific AWS services using prefix lists
-  egress {
-    from_port       = 0
-    to_port         = 0
-    protocol        = "-1"
-    prefix_list_ids = [
-      "pl-7ca54015",
-      "pl-93a247fa",
-      "pl-b3a742da"
-    ]
-  }
-
-  # Egress rule to allow communication within the same security group
-  egress {
-    from_port       = 0
-    to_port         = 0
-    protocol        = "-1"
-    self            = true
-  }
+  egress  {
+              cidr_blocks      = []
+              from_port        = 0
+              ipv6_cidr_blocks = []
+              prefix_list_ids  = [
+                  "pl-b3a742da",
+                  "pl-93a247fa",
+                  "pl-7ca54015",
+                ]
+              protocol         = "-1"
+              security_groups  = []
+              self             = true
+              to_port          = 0
+            }
 }
 
 resource "aws_vpc_endpoint" "sqs_endpoint" {
@@ -46,19 +41,14 @@ resource "aws_vpc_endpoint" "sqs_endpoint" {
       {
         Effect    = "Allow"
         Principal = {
-          "AWS": [
-            "arn:aws:iam::${local.local_account_id}:root"
-          ]
+                AWS ="*"
         },
         Action    = [
           "sqs:SendMessage",
           "sqs:ReceiveMessage",
           "kms:Decrypt"
         ]
-        Resource  = ["arn:aws:sqs:${var.aws_region}:${local.local_account_id}:${var.project_short_name}-int-metadata-queue.fifo",
-          "arn:aws:sqs:${var.aws_region}:${local.local_account_id}:${var.project_short_name}-ref-metadata-queue.fifo",
-          "arn:aws:sqs:${var.aws_region}:${local.local_account_id}:${var.project_short_name}-internal-dev-metadata-queue.fifo",
-          "arn:aws:sqs:${var.aws_region}:${local.local_account_id}:${var.project_short_name}-pr-78-metadata-queue.fifo"]
+        Resource  = "*",
       }
     ]
   })
@@ -81,36 +71,16 @@ resource "aws_vpc_endpoint" "s3_endpoint" {
       {
         Effect    = "Allow"
         Principal = {
-          "AWS": [
-            "arn:aws:iam::${local.local_account_id}:root"
-          ]
+                AWS ="*"
         },
         Action    = [
           "s3:GetObject",
           "s3:PutObject",
-          "s3:ListBucket"
+          "s3:ListBucket",
+          "s3:DeleteObject",
+          "s3:CopyObject"
         ]
-        Resource  = [
-          "arn:aws:s3:::${var.project_name}-pr-78-data-sources",
-          "arn:aws:s3:::${var.project_name}-pr-78-data-sources/*",
-          "arn:aws:s3:::${var.project_name}-int-data-sources",
-          "arn:aws:s3:::${var.project_name}-int-data-sources/*",
-          "arn:aws:s3:::${var.project_name}-ref-data-sources",
-          "arn:aws:s3:::${var.project_name}-ref-data-sources/*",
-          "arn:aws:s3:::${var.project_name}-internal-dev-data-sources",
-          "arn:aws:s3:::${var.project_name}-internal-dev-data-sources/*",
-          "arn:aws:s3:::${var.project_name}-pr-78-data-destinations",
-          "arn:aws:s3:::${var.project_name}-pr-78-data-destinations/*",
-          "arn:aws:s3:::${var.project_name}-int-data-destinations",
-          "arn:aws:s3:::${var.project_name}-int-data-destinations/*",
-          "arn:aws:s3:::${var.project_name}-ref-data-destinations",
-          "arn:aws:s3:::${var.project_name}-ref-data-destinations/*",
-          "arn:aws:s3:::${var.project_name}-internal-dev-data-destinations",
-          "arn:aws:s3:::${var.project_name}-internal-dev-data-destinations/*",
-          "arn:aws:s3:::${aws_s3_bucket.batch_config_bucket.bucket}",
-          "arn:aws:s3:::${aws_s3_bucket.batch_config_bucket.bucket}/*",
-          "arn:aws:s3:::prod-${var.aws_region}-starport-layer-bucket/*"
-        ]
+        Resource  = "*",
       }
     ]
   })
@@ -133,11 +103,7 @@ resource "aws_vpc_endpoint" "kinesis_endpoint" {
     Statement = [
       {
         Effect = "Allow",
-        Principal = {
-          "AWS":[
-            "arn:aws:iam::${local.local_account_id}:root"
-        ]
-        },
+        Principal = "*",
         Action = [
           "firehose:ListDeliveryStreams",
           "firehose:PutRecord",
@@ -234,9 +200,7 @@ resource "aws_vpc_endpoint" "kinesis_stream_endpoint" {
       {
         Effect = "Allow",
         Principal = {
-          "AWS":[
-            "arn:aws:iam::${local.local_account_id}:root"
-        ]
+                AWS ="*"
         },
         Action = [
           "kinesis:ListShards",
@@ -250,5 +214,51 @@ resource "aws_vpc_endpoint" "kinesis_stream_endpoint" {
   })
   tags = {
     Name = "immunisation-kinesis-streams-endpoint"
+  }
+}
+
+resource "aws_vpc_endpoint" "kms_endpoint" {
+  vpc_id            = data.aws_vpc.default.id
+  service_name      = "com.amazonaws.${var.aws_region}.kms"
+  vpc_endpoint_type = "Interface"
+
+  subnet_ids          = data.aws_subnets.default.ids
+  security_group_ids  = [aws_security_group.lambda_redis_sg.id]
+  private_dns_enabled = true
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Principal = "*",
+        Action = [
+          "kms:Decrypt",
+          "kms:Encrypt",
+          "kms:GenerateDataKey*"
+        ],
+        Resource = [
+           "arn:aws:kms:eu-west-2:345594581768:key/648c8c6f-54bf-4b79-ad72-0be6e8d72423",
+           "arn:aws:kms:eu-west-2:345594581768:key/9bbfbfd9-1745-4325-a9b7-33d1f6be89c1"
+        ]
+      }
+    ]
+  })
+  tags = {
+    Name = "immunisation-kms-endpoint"
+  }
+}
+
+
+resource "aws_vpc_endpoint" "lambda_endpoint" {
+  vpc_id            = data.aws_vpc.default.id
+  service_name      = "com.amazonaws.${var.aws_region}.lambda"
+  vpc_endpoint_type = "Interface"
+
+  subnet_ids = data.aws_subnets.default.ids
+  security_group_ids = [aws_security_group.lambda_redis_sg.id]
+  private_dns_enabled = true
+  tags = {
+    Name = "immunisation-lambda-endpoint"
   }
 }

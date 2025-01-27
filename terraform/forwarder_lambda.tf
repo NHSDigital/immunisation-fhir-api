@@ -212,8 +212,10 @@ resource "aws_lambda_function" "forwarding_lambda" {
   }
   kms_key_arn = data.aws_kms_key.existing_lambda_encryption_key.arn
   depends_on = [
-    aws_iam_role_policy_attachment.forwarding_lambda_exec_policy_attachment
+    aws_iam_role_policy_attachment.forwarding_lambda_exec_policy_attachment,
+    aws_cloudwatch_log_group.forwarding_lambda_log_group
   ]
+  
   reserved_concurrent_executions = 20
 }
 
@@ -227,3 +229,7 @@ resource "aws_lambda_function" "forwarding_lambda" {
    depends_on = [aws_lambda_function.forwarding_lambda]
  }
  
+ resource "aws_cloudwatch_log_group" "forwarding_lambda_log_group" {
+  name              = "/aws/lambda/${local.short_prefix}-forwarding_lambda"
+  retention_in_days = 30
+}

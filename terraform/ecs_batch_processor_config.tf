@@ -98,13 +98,26 @@ resource "aws_iam_policy" "ecs_task_exec_policy" {
         Action = [
           "s3:GetObject",
           "s3:ListBucket",
-          "s3:PutObject"
+          "s3:PutObject",
+          "s3:CopyObject",
+          "s3:DeleteObject"
         ],
         Resource = [
           "arn:aws:s3:::${local.batch_prefix}-data-sources",
           "arn:aws:s3:::${local.batch_prefix}-data-sources/*",
           "${data.aws_s3_bucket.existing_destination_bucket.arn}",       
           "${data.aws_s3_bucket.existing_destination_bucket.arn}/*" 
+        ]
+      },
+      {
+        Effect   = "Allow"
+        Action   = [
+          "dynamodb:Query",
+          "dynamodb:UpdateItem"
+        ]
+       Resource  = [
+          "arn:aws:dynamodb:${var.aws_region}:${local.local_account_id}:table/${data.aws_dynamodb_table.audit-table.name}",
+          "arn:aws:dynamodb:${var.aws_region}:${local.local_account_id}:table/${data.aws_dynamodb_table.audit-table.name}/index/*",
         ]
       },
       {
@@ -116,7 +129,8 @@ resource "aws_iam_policy" "ecs_task_exec_policy" {
         ]
         Resource = [
           data.aws_kms_key.existing_s3_encryption_key.arn,
-          data.aws_kms_key.existing_kinesis_encryption_key.arn
+          data.aws_kms_key.existing_kinesis_encryption_key.arn,
+          data.aws_kms_key.existing_dynamo_encryption_key.arn
         ]
       },
       {
@@ -133,6 +147,13 @@ resource "aws_iam_policy" "ecs_task_exec_policy" {
           "ecr:GetAuthorizationToken"
         ],
         Resource = "arn:aws:ecr:${var.aws_region}:${local.local_account_id}:repository/${local.short_prefix}-processing-repo"
+      },
+      {
+        Effect   = "Allow"
+        Action   = "lambda:InvokeFunction"
+        Resource = [
+          "${data.aws_lambda_function.existing_file_name_proc_lambda.arn}"               
+        ]
       },
       {
         "Effect" : "Allow",
@@ -153,6 +174,7 @@ resource "aws_iam_role_policy_attachment" "ecs_task_exec_policy_attachment" {
 
 resource "aws_cloudwatch_log_group" "ecs_task_log_group" {
   name = "/aws/vendedlogs/ecs/${local.short_prefix}-processor-task"
+  retention_in_days =  30
 }
 
 # Create the ECS Task Definition
@@ -193,6 +215,14 @@ resource "aws_ecs_task_definition" "ecs_task" {
       {
         name  = "SPLUNK_FIREHOSE_NAME"
         value = module.splunk.firehose_stream_name
+      },
+      {
+        name  = "AUDIT_TABLE_NAME"
+        value = "${data.aws_dynamodb_table.audit-table.name}"
+      },
+      {
+        name  = "FILE_NAME_PROC_LAMBDA_NAME"
+        value =  "${data.aws_lambda_function.existing_file_name_proc_lambda.function_name}"
       }
     ]
     logConfiguration = {
@@ -326,4 +356,5 @@ resource "aws_pipes_pipe" "fifo_pipe" {
 # Custom Log Group
 resource "aws_cloudwatch_log_group" "pipe_log_group" {
   name = "/aws/vendedlogs/pipes/${local.short_prefix}-pipe-logs"
+  retention_in_days = 30
 }

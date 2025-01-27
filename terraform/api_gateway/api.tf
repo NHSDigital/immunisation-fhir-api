@@ -18,8 +18,8 @@ resource "aws_apigatewayv2_stage" "default" {
 
   default_route_settings {
     logging_level          = "INFO"
-    throttling_burst_limit = 100
-    throttling_rate_limit  = 100
+    throttling_burst_limit = 500
+    throttling_rate_limit  = 500
     detailed_metrics_enabled = true
   }
   access_log_settings {

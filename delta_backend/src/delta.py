@@ -65,7 +65,7 @@ def handler(event, context):
                 imms_id = new_image["PK"]["S"].split("#")[1]
                 vaccine_type = get_vaccine_type(new_image["PatientSK"]["S"])
                 supplier_system = new_image["SupplierSystem"]["S"]
-                if  supplier_system not in ("DPS_FULL", "DPS_REDUCED"):
+                if  supplier_system not in ("DPSFULL", "DPSREDUCED"):
                     operation = new_image["Operation"]["S"]
                     if operation == "CREATE":
                         operation = "NEW"

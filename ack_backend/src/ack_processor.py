@@ -1,10 +1,15 @@
 """Ack lambda handler"""
 
 import json
+from utils_for_ack_lambda import get_environment
 from typing import Union
 from logging_decorators import ack_lambda_handler_logging_decorator, convert_messsage_to_ack_row_logging_decorator
 from update_ack_file import update_ack_file, create_ack_data
+from clients import s3_client
 
+
+ENVIRONMENT = get_environment()
+SOURCE_BUCKET_NAME = f"immunisation-batch-{ENVIRONMENT}-data-sources"
 
 @convert_messsage_to_ack_row_logging_decorator
 def convert_message_to_ack_row(message, created_at_formatted_string):
@@ -50,7 +55,7 @@ def lambda_handler(event, context):
     created_at_formatted_string = None
 
     array_of_rows = []
-
+    
     for i, record in enumerate(event["Records"]):
 
         try:
@@ -66,7 +71,13 @@ def lambda_handler(event, context):
 
         for message in incoming_message_body:
             array_of_rows.append(convert_message_to_ack_row(message, created_at_formatted_string))
-
-    update_ack_file(file_key, created_at_formatted_string=created_at_formatted_string, ack_data_rows=array_of_rows)
-
+    row_count = get_row_count_stream(SOURCE_BUCKET_NAME, f"processing/{file_key}")
+    update_ack_file(file_key, created_at_formatted_string=created_at_formatted_string, ack_data_rows=array_of_rows, row_count=row_count)
     return {"statusCode": 200, "body": json.dumps("Lambda function executed successfully!")}
+
+
+def get_row_count_stream(bucket_name, key):
+    response = s3_client.get_object(Bucket=bucket_name, Key=key)
+    count = sum(1 for line in response['Body'].iter_lines() if line.strip())
+ 
+    return count

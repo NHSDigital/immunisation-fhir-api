@@ -1,7 +1,3 @@
-data "aws_kms_key" "existing_kinesis_encryption_key" {
-  key_id = "alias/imms-batch-kinesis-stream-encryption"
-}
-
 resource "aws_iam_role" "kinesis_role" {
   name = "kinesis-role"
 
@@ -32,7 +28,7 @@ resource "aws_iam_policy" "kinesis_kms_policy" {
         "kms:ReEncrypt*",
         "kms:DescribeKey"
       ]
-      Resource = data.aws_kms_key.existing_kinesis_encryption_key.arn
+      Resource = aws_kms_key.kinesis_stream_encryption.arn
     }]
   })
 }

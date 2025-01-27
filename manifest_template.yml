@@ -91,12 +91,12 @@ APIGEE_ENVIRONMENTS:
       immunisation-fhir-api-prod:
         quota:
           enabled: true
-          limit: 300 
+          limit: 1200 
           interval: 1
           timeunit: minute
         spikeArrest:
           enabled: true
-          ratelimit: 600pm # 10 requests per second
+          ratelimit: 1200pm # 20 requests per second
       app:
         quota:
           enabled: false
