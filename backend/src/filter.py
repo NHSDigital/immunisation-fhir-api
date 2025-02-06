@@ -1,6 +1,10 @@
 """Functions for filtering a FHIR Immunization Resource"""
 
-from models.utils.generic_utils import is_actor_referencing_contained_resource, get_contained_practitioner
+from models.utils.generic_utils import (
+    is_actor_referencing_contained_resource,
+    get_contained_practitioner,
+    get_contained_patient,
+)
 from constants import Urls
 
 
@@ -14,7 +18,9 @@ def remove_reference_to_contained_practitioner(imms: dict) -> dict:
 
     # Remove reference to the contained practitioner from imms[performer]
     imms["performer"] = [
-        x for x in imms["performer"] if not is_actor_referencing_contained_resource(x, contained_practitioner["id"])
+        x
+        for x in imms["performer"]
+        if not is_actor_referencing_contained_resource(x, contained_practitioner["id"])
     ]
 
     return imms
@@ -25,7 +31,9 @@ def create_reference_to_patient_resource(patient_full_url: str, patient: dict) -
     Returns a reference to the given patient which includes the patient nhs number identifier (system and value fields
     only) and a reference to patient full url. "Type" field is set to "Patient".
     """
-    patient_nhs_number_identifier = [x for x in patient["identifier"] if x.get("system") == Urls.nhs_number][0]
+    patient_nhs_number_identifier = [
+        x for x in patient["identifier"] if x.get("system") == Urls.nhs_number
+    ][0]
 
     return {
         "reference": patient_full_url,
@@ -75,7 +83,11 @@ def replace_organization_values(imms: dict) -> dict:
                 del identifier[key]
 
             # Remove all other fields except 'identifier' in actor
-            keys_to_remove = [key for key in performer["actor"].keys() if key not in ("identifier", "type")]
+            keys_to_remove = [
+                key
+                for key in performer["actor"].keys()
+                if key not in ("identifier", "type")
+            ]
             for key in keys_to_remove:
                 del performer["actor"][key]
 
@@ -94,13 +106,17 @@ def add_use_to_identifier(imms: dict) -> dict:
 
 class Filter:
     """Functions for filtering a FHIR Immunization Resource"""
+
     @staticmethod
-    def search(imms: dict, patient_full_url: str, bundle_patient: dict = None) -> dict:
+    def search(imms: dict, patient_full_url: str) -> dict:
         """Apply filtering for an individual FHIR Immunization Resource as part of SEARCH request"""
         imms = remove_reference_to_contained_practitioner(imms)
-        imms.pop("contained")
-        imms["patient"] = create_reference_to_patient_resource(patient_full_url, bundle_patient)
+        imms["patient"] = create_reference_to_patient_resource(
+            patient_full_url, get_contained_patient(imms)
+        )
         imms = add_use_to_identifier(imms)
+        imms.pop("contained")
+
         return imms
 
     @staticmethod
@@ -109,5 +125,7 @@ class Filter:
         imms = replace_address_postal_codes(imms)
         imms = replace_organization_values(imms)
         if imms.get("location"):
-            imms["location"] = {"identifier": {"system": "urn:iso:std:iso:3166", "value": "GB"}}
+            imms["location"] = {
+                "identifier": {"system": "urn:iso:std:iso:3166", "value": "GB"}
+            }
         return imms
