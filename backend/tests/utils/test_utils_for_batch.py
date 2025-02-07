@@ -19,6 +19,22 @@ class ForwarderValues:
         "vaccine_type": "RSV",
     }
 
+    EXPECTED_TABLE_ITEM_REINSTATED = {
+        "PatientPK": "Patient#9732928395",
+        "IdentifierPK": "https://www.ravs.england.nhs.uk/#UPDATE_TEST",
+        "PatientSK": "RSV#4d2ac1eb-080f-4e54-9598-f2d53334687r",
+        "Operation": "UPDATE",
+        "SupplierSystem": "test_supplier",
+        "DeletedAt": "reinstated",
+    }
+    EXPECTED_TABLE_ITEM = {
+        "PatientPK": "Patient#9732928395",
+        "IdentifierPK": "https://www.ravs.england.nhs.uk/#UPDATE_TEST",
+        "PatientSK": "RSV#4d2ac1eb-080f-4e54-9598-f2d53334687r",
+        "Operation": "UPDATE",
+        "SupplierSystem": "test_supplier",
+    }
+
 
 class Urls:
     """Urls which are expected to be used within the FHIR Immunization Resource json data"""
@@ -145,70 +161,6 @@ class MockFhirImmsResources:
                     }
                 ],
                 "doseNumberPositiveInt": 1,
-            }
-        ],
-    }
-
-    mandatory_fields_only = {
-        "resourceType": "Immunization",
-        "contained": [
-            {
-                "resourceType": "Patient",
-                "id": "Patient1",
-                "name": [{"family": "PEEL", "given": ["PHYLIS"]}],
-                "gender": "male",
-                "birthDate": "2008-02-17",
-                "address": [{"postalCode": "WD25 0DZ"}],
-            },
-        ],
-        "extension": [
-            {
-                "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure",
-                "valueCodeableConcept": {
-                    "coding": [
-                        {
-                            "system": Urls.SNOMED,
-                            "code": "956951000000104",
-                        }
-                    ]
-                },
-            }
-        ],
-        "identifier": [
-            {
-                "system": "https://www.ravs.england.nhs.uk/",
-                "value": "RSV_002",
-            }
-        ],
-        "status": "completed",
-        "vaccineCode": {"coding": [{"system": Urls.NULL_FLAVOUR_CODES, "code": "NAVU", "display": "Not available"}]},
-        "patient": {"reference": "#Patient1"},
-        "occurrenceDateTime": "2024-09-04T18:33:25+00:00",
-        "recorded": "2024-09-04",
-        "primarySource": True,
-        "location": {"identifier": {"value": "RJC02", "system": "https://fhir.nhs.uk/Id/ods-organization-code"}},
-        "performer": [
-            {
-                "actor": {
-                    "type": "Organization",
-                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "RVVKC"},
-                }
-            },
-        ],
-        "protocolApplied": [
-            {
-                "targetDisease": [
-                    {
-                        "coding": [
-                            {
-                                "system": "http://snomed.info/sct",
-                                "code": "55735004",
-                                "display": "Respiratory syncytial virus infection (disorder)",
-                            }
-                        ]
-                    }
-                ],
-                "doseNumberString": "Dose sequence not recorded",
             }
         ],
     }
