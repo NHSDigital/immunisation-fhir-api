@@ -130,7 +130,6 @@ class TestForwardLambdaHandler(TestCase):
         """Assert keys are found in SQS messages."""
 
         sqs_messages = [json.loads(call[1]["MessageBody"]) for call in mock_send_message.call_args_list]
-        # print(f"SQS MESSAASGSE: {sqs_messages}")
         # Flatten the list if necessary
         sqs_messages = sqs_messages[0] if len(sqs_messages) == 1 and isinstance(sqs_messages[0], list) else sqs_messages
 
@@ -151,21 +150,20 @@ class TestForwardLambdaHandler(TestCase):
                     else:
                         assert message[key] == value
 
-    def assert_dynamo_item(self, expected_table_item_1):
-
+    def assert_dynamo_item(self, expected_dynamo_item):
+        """Asserts whether expected values are returned in mock_dynamodb"""
         table_items = self.table.scan()["Items"]
 
         match_found = False
 
-        for item in table_items:
-            print(f"ITEMCHECK {item}")
-            print(f"ITEMCHECK {table_items}")
-            print(f"EXPECTEDYYYYY: {expected_table_item_1}")
-            if all(item.get(k) == v for k, v in expected_table_item_1.items()):
-                match_found = True
-                break
+        if expected_dynamo_item is None:
+            self.assertFalse(match_found)
+        else:
+            for item in table_items:
+                if all(item.get(k) == v for k, v in expected_dynamo_item.items()):
+                    match_found = True
 
-        self.assertTrue(match_found, f"Expected item {expected_table_item_1} not found in table items.")
+            self.assertTrue(match_found)
 
     @patch("forwarding_batch_lambda.sqs_client.send_message")
     def test_forward_lambda_handler_single_operations(self, mock_send_message):
@@ -186,26 +184,27 @@ class TestForwardLambdaHandler(TestCase):
         )
 
         test_cases = [
-            # {
-            #     "name": "Single Create Success",
-            #     "input": self.generate_input(
-            #         row_id=1,
-            #         operation_requested="CREATE",
-            #         include_fhir_json=True,
-            #         identifier_value="single_test_create",
-            #     ),
-            #     "expected_keys": ForwarderValues.EXPECTED_KEYS,
-            #     "expected_values": {"row_id": "row-1", "imms_id": "IMMS1111"},
-            #     "expected_table_item_1": {
-            #         "PK":
-            #     },
-            # },
+            {
+                "name": "Single Create Success",
+                "input": self.generate_input(
+                    row_id=1,
+                    operation_requested="CREATE",
+                    include_fhir_json=True,
+                    identifier_value="single_test_create",
+                ),
+                "expected_keys": ForwarderValues.EXPECTED_KEYS,
+                "expected_values": {"row_id": "row-1", **ForwarderValues.EXPECTED_VALUES},
+                "expected_dynamo_item": {
+                    "IdentifierPK": "https://www.ravs.england.nhs.uk/#single_test_create",
+                    "Operation": "CREATE",
+                },
+            },
             {
                 "name": "Single Update Success",
                 "input": self.generate_input(row_id=1, operation_requested="UPDATE", include_fhir_json=True),
                 "expected_keys": ForwarderValues.EXPECTED_KEYS,
                 "expected_values": {"row_id": "row-1", "imms_id": pk_test},
-                "expected_table_item_1": table_item,
+                "expected_dynamo_item": table_item,
             },
             {
                 "name": "Single Delete Success",
@@ -216,7 +215,12 @@ class TestForwardLambdaHandler(TestCase):
                     "imms_id": pk_test,
                     "operation_requested": "DELETE",
                 },
-                "expected_table_item_1": None,
+                "expected_dynamo_item": {
+                    "PK": "Immunization#4d2ac1eb-080f-4e54-9598-f2d53334681c",
+                    "PatientPK": "Patient#9177036360",
+                    "IdentifierPK": "https://www.ravs.england.nhs.uk/#RSV_002",
+                    "Operation": "DELETE",
+                },
             },
         ]
 
@@ -234,9 +238,7 @@ class TestForwardLambdaHandler(TestCase):
                 event = self.generate_event([test_case])
                 forward_lambda_handler(event, {})
                 self.assert_values_in_sqs_messages(mock_send_message, [test_case])
-                self.assert_dynamo_item(test_case["expected_table_item_1"])
-                table_items = self.table.scan()["Items"]
-                print(f"dynamo_items_single_scenario: {table_items}")
+                self.assert_dynamo_item(test_case["expected_dynamo_item"])
 
     @patch("forwarding_batch_lambda.sqs_client.send_message")
     def test_forward_lambda_handler_multiple_scenarios(self, mock_send_message):
@@ -249,6 +251,16 @@ class TestForwardLambdaHandler(TestCase):
         Based on a maximum 10 rows received in event for the same file at a time to the forward_lambda_handler.
         All records are for the same file"""
 
+        table_item = copy.deepcopy(ForwarderValues.EXPECTED_TABLE_ITEM)
+        table_item.update(
+            {
+                "PK": "Immunization#4d2ac1eb-080f-4e54-9598-f2d53334681c",
+                "IdentifierPK": "https://www.ravs.england.nhs.uk/#RSV_002",
+                "PatientSK": "RSV#4d2ac1eb-080f-4e54-9598-f2d53334681c",
+                "Operation": "DELETE",
+            }
+        )
+
         test_cases = [
             {  # TODO
                 "name": "Row 1: Create Success",
@@ -256,7 +268,7 @@ class TestForwardLambdaHandler(TestCase):
                     row_id=1, operation_requested="CREATE", include_fhir_json=True, identifier_value="RSV_CREATE"
                 ),
                 "expected_keys": ForwarderValues.EXPECTED_KEYS,
-                "expected_values": {"row_id": "row-1", "imms_id": "IMMS123"},
+                "expected_values": {"row_id": "row-1", **ForwarderValues.EXPECTED_VALUES},
             },
             {
                 "name": "Row 2: Duplication Error: Create failure ",
@@ -381,6 +393,7 @@ class TestForwardLambdaHandler(TestCase):
 
         forward_lambda_handler(event, {})
 
+        self.assert_dynamo_item(table_item)
         self.assert_values_in_sqs_messages(mock_send_message, test_cases)
 
     @patch("forwarding_batch_lambda.sqs_client.send_message")
@@ -392,16 +405,15 @@ class TestForwardLambdaHandler(TestCase):
             expected_keys (list): expected output dictionary keys,
             expected_values (dict): expected output dictionary values"""
 
+        pk_test_update = "Immunization#4d2ac1eb-080f-4e54-9598-f2d53334687r"
         self.table.put_item(
             Item={
-                "PK": "Immunization#4d2ac1eb-080f-4e54-9598-f2d53334687r",
+                "PK": pk_test_update,
                 "PatientPK": "Patient#9177036360",
                 "IdentifierPK": "https://www.ravs.england.nhs.uk/#UPDATE_TEST",
                 "Version": 1,
             }
         )
-
-        pk_test_update = "Immunization#4d2ac1eb-080f-4e54-9598-f2d53334687r"
 
         test_cases = [
             {
@@ -411,9 +423,13 @@ class TestForwardLambdaHandler(TestCase):
                 ),
                 "expected_keys": ForwarderValues.EXPECTED_KEYS,
                 "expected_values": {"row_id": "row-1", "imms_id": pk_test_update},
-                "expected_table_item_1": {
+                "expected_table_item": {
                     "PK": pk_test_update,
                     "PatientPK": "Patient#9732928395",
+                },
+                "expected_dynamo_item": {
+                    "PK": pk_test_update,
+                    **ForwarderValues.EXPECTED_TABLE_ITEM,
                 },
             },
             {
@@ -423,9 +439,13 @@ class TestForwardLambdaHandler(TestCase):
                 ),
                 "expected_keys": ForwarderValues.EXPECTED_KEYS,
                 "expected_values": {"row_id": "row-2", "imms_id": pk_test_update},
-                "expected_table_item_1": {
+                "expected_table_item": {
                     "PK": pk_test_update,
                     "PatientPK": "Patient#9732928395",
+                },
+                "expected_dynamo_item": {
+                    "PK": pk_test_update,
+                    "Operation": "DELETE",
                 },
             },
             {
@@ -443,7 +463,7 @@ class TestForwardLambdaHandler(TestCase):
                         )
                     ),
                 },
-                "expected_table_item_1": None,
+                "expected_dynamo_item": None,
             },
             {
                 "name": "Row 4a: Reinstated record using Update operation",
@@ -452,7 +472,7 @@ class TestForwardLambdaHandler(TestCase):
                 ),
                 "expected_keys": ForwarderValues.EXPECTED_KEYS,
                 "expected_values": {"row_id": "row-4", "imms_id": pk_test_update},
-                "expected_table_item_1": {
+                "expected_dynamo_item": {
                     "PK": pk_test_update,
                     **ForwarderValues.EXPECTED_TABLE_ITEM_REINSTATED,
                 },
@@ -468,7 +488,7 @@ class TestForwardLambdaHandler(TestCase):
                 ),
                 "expected_keys": ForwarderValues.EXPECTED_KEYS,
                 "expected_values": {"row_id": "row-5", "imms_id": pk_test_update},
-                "expected_table_item_1": {
+                "expected_dynamo_item": {
                     "PK": pk_test_update,
                     **ForwarderValues.EXPECTED_TABLE_ITEM_REINSTATED,
                 },
@@ -481,140 +501,116 @@ class TestForwardLambdaHandler(TestCase):
                 event = self.generate_event([test_case])
                 forward_lambda_handler(event, {})
                 self.assert_values_in_sqs_messages(mock_send_message, [test_case])
-                self.assert_dynamo_item(test_case["expected_table_item_1"])
-                table_items = self.table.scan()["Items"]
-                print(f"dynamo itemss update scenario: {table_items}")
+                self.assert_dynamo_item(test_case["expected_dynamo_item"])
 
-    # def test_create_diagnostics_dictionary(self):
+    def test_create_diagnostics_dictionary(self):
+        """Tests diagnostics dictionary returns the correct output"""
 
-    #     test_cases = [
-    #         {
-    #             "error": RecordProcessorError("Diagnostics from recordprocessor"),
-    #             "expected_output": "Diagnostics from recordprocessor",
-    #         },
-    #         {
-    #             "error": CustomValidationError("Validation failed"),
-    #             "expected_output": {
-    #                 "error_type": "CustomValidationError",
-    #                 "statusCode": 400,
-    #                 "error_message": "Validation failed",
-    #             },
-    #         },
-    #         {
-    #             "error": IdentifierDuplicationError("Duplicate identifier"),
-    #             "expected_output": {
-    #                 "error_type": "IdentifierDuplicationError",
-    #                 "statusCode": 422,
-    #                 "error_message": "The provided identifier: Duplicate identifier is duplicated",
-    #             },
-    #         },
-    #         {
-    #             "error": ResourceNotFoundError(resource_type="Immunization", resource_id=None),
-    #             "expected_output": {
-    #                 "error_type": "ResourceNotFoundError",
-    #                 "statusCode": 404,
-    #                 "error_message": "Immunization resource does not exist. ID: None",
-    #             },
-    #         },
-    #         {
-    #             "error": ResourceFoundError(resource_type="Immunization", resource_id="A-primary-key"),
-    #             "expected_output": {
-    #                 "error_type": "ResourceFoundError",
-    #                 "statusCode": 409,
-    #                 "error_message": "Immunization resource does exist. ID: A-primary-key",
-    #             },
-    #         },
-    #         {
-    #             "error": MessageNotSuccessfulError("Message processing failed"),
-    #             "expected_output": {
-    #                 "error_type": "MessageNotSuccessfulError",
-    #                 "statusCode": 500,
-    #                 "error_message": "Message processing failed",
-    #             },
-    #         },
-    #         {
-    #             "error": Exception("General exception"),
-    #             "expected_output": {
-    #                 "error_type": "Exception",
-    #                 "statusCode": 500,
-    #                 "error_message": "General exception",
-    #             },
-    #         },
-    #     ]
+        test_cases = [
+            {
+                "error": RecordProcessorError("Diagnostics from recordprocessor"),
+                "expected_output": "Diagnostics from recordprocessor",
+            },
+            {
+                "error": CustomValidationError("Validation failed"),
+                "expected_output": {
+                    "error_type": "CustomValidationError",
+                    "statusCode": 400,
+                    "error_message": "Validation failed",
+                },
+            },
+            {
+                "error": IdentifierDuplicationError("Duplicate identifier"),
+                "expected_output": {
+                    "error_type": "IdentifierDuplicationError",
+                    "statusCode": 422,
+                    "error_message": "The provided identifier: Duplicate identifier is duplicated",
+                },
+            },
+            {
+                "error": ResourceNotFoundError(resource_type="Immunization", resource_id=None),
+                "expected_output": {
+                    "error_type": "ResourceNotFoundError",
+                    "statusCode": 404,
+                    "error_message": "Immunization resource does not exist. ID: None",
+                },
+            },
+            {
+                "error": ResourceFoundError(resource_type="Immunization", resource_id="A-primary-key"),
+                "expected_output": {
+                    "error_type": "ResourceFoundError",
+                    "statusCode": 409,
+                    "error_message": "Immunization resource does exist. ID: A-primary-key",
+                },
+            },
+            {
+                "error": MessageNotSuccessfulError("Message processing failed"),
+                "expected_output": {
+                    "error_type": "MessageNotSuccessfulError",
+                    "statusCode": 500,
+                    "error_message": "Message processing failed",
+                },
+            },
+            {
+                "error": Exception("General exception"),
+                "expected_output": {
+                    "error_type": "Exception",
+                    "statusCode": 500,
+                    "error_message": "General exception",
+                },
+            },
+        ]
 
-    #     for case in test_cases:
-    #         with self.subTest(error=case["error"]):
-    #             result = create_diagnostics_dictionary(case["error"])
-    #             self.assertEqual(result, case["expected_output"])
+        for case in test_cases:
+            with self.subTest(error=case["error"]):
+                result = create_diagnostics_dictionary(case["error"])
+                self.assertEqual(result, case["expected_output"])
 
-    # @patch("forwarding_batch_lambda.sqs_client.send_message")
-    # @patch("forwarding_batch_lambda.forward_request_to_dynamo")
-    # @patch("forwarding_batch_lambda.create_table")
-    # @patch("forwarding_batch_lambda.make_batch_controller")
-    # def test_forward_request_to_dyanamo(
-    #     self, mock_make_controller, mock_create_table, mock_forward_request_to_dynamo, mock_send_message
-    # ):
-    #     """Test forward lambda handler with multiple rows in the event with create, update, and delete operations,
-    #     and diagnostics handling.
-    #         name: Description of the test case scenario,
-    #         input: generates the kinesis row data for the event,
-    #         expected_keys (list): expected output dictionary keys,
-    #         expected_values (dict): expected output dictionary values
-    #     """
-    #     mock_create_table.return_value = {}
-    #     mock_make_controller.return_value = mock_controller = MagicMock()
-    #     mock_forward_request_to_dynamo.side_effect = [
-    #         "IMMS123",
-    #         "IMMS456",
-    #         ResourceFoundError(resource_type="Immunization", resource_id="A-primary-key"),
-    #     ]
+    @patch("forwarding_batch_lambda.sqs_client.send_message")
+    @patch("forwarding_batch_lambda.forward_request_to_dynamo")
+    @patch("forwarding_batch_lambda.create_table")
+    @patch("forwarding_batch_lambda.make_batch_controller")
+    def test_forward_request_to_dyanamo(
+        self, mock_make_controller, mock_create_table, mock_forward_request_to_dynamo, mock_send_message
+    ):
+        """Test forward lambda handler to assert dynamo db is called,
+        and diagnostics handling.
+            name: Description of the test case scenario,
+            input: generates the kinesis row data for the event,
+            expected_keys (list): expected output dictionary keys,
+            expected_values (dict): expected output dictionary values
+        """
+        mock_create_table.return_value = {}
+        mock_make_controller.return_value = mock_controller = MagicMock()
+        mock_forward_request_to_dynamo.side_effect = [
+            "IMMS123",
+        ]
 
-    #     test_cases = [
-    #         {
-    #             "name": "Row 1: Create Success",
-    #             "input": self.generate_input(row_id=1, operation_requested="CREATE", include_fhir_json=True),
-    #             "expected_keys": ["file_key", "row_id", "created_at_formatted_string", "local_id", "imms_id"],
-    #             "expected_values": {"row_id": "row-1", "imms_id": "IMMS123"},
-    #         },
-    #         {
-    #             "name": "Row 3: Update success",
-    #             "input": self.generate_input(row_id=3, operation_requested="UPDATE", include_fhir_json=True),
-    #             "expected_keys": ["file_key", "row_id", "created_at_formatted_string", "local_id", "imms_id"],
-    #             "expected_values": {"row_id": "row-3", "imms_id": "IMMS456"},
-    #         },
-    #         {
-    #             "name": "Row 8: Delete Failure",
-    #             "input": self.generate_input(row_id=8, operation_requested="DELETE", include_fhir_json=True),
-    #             "expected_keys": ["file_key", "row_id", "created_at_formatted_string", "local_id", "diagnostics"],
-    #             "expected_values": {
-    #                 "row_id": "row-8",
-    #                 "diagnostics": create_diagnostics_dictionary(
-    #                     ResourceFoundError(resource_type="Immunization", resource_id="A-primary-key")
-    #                 ),
-    #             },
-    #         },
-    #     ]
+        test_case = [
+            {
+                "name": "Row 1: Create Success",
+                "input": self.generate_input(row_id=1, operation_requested="CREATE", include_fhir_json=True),
+                "expected_keys": ForwarderValues.EXPECTED_KEYS,
+                "expected_values": {
+                    "row_id": "row-1",
+                    "file_key": "test_file_key",
+                    "created_at_formatted_string": "2025-01-24T12:00:00Z",
+                    "supplier": "test_supplier",
+                    "vax_type": "RSV",
+                    "local_id": "local-1",
+                    "operation_requested": "CREATE",
+                },
+            },
+        ]
 
-    #     event = self.generate_event(test_cases)
+        event = self.generate_event(test_case)
 
-    #     forward_lambda_handler(event, {})
+        forward_lambda_handler(event, {})
 
-    #     for i, (test_case, call) in enumerate(zip(test_cases, mock_forward_request_to_dynamo.call_args_list)):
-    #         expected_row = test_case["input"]
-    #         call_data = call[0]
-    #         print(f"CALLLL DATA: {call_data}")
-
-    #         with self.subTest(test_case=test_case["name"]):
-
-    #             required_keys = ["row_id", "file_key", "created_at_formatted_string", "local_id", "fhir_json"]
-
-    #             for key in required_keys:
-    #                 assert key in call_data[0]
-    #                 print(f"KEY1: {key}")
-    #                 print(call_data)
-    #                 assert call_data[0][key] == expected_row[key]
-
-    # TODO Teardown and assert item is in the table, last dynamo db test and any other outstanding tests
+        call = mock_forward_request_to_dynamo.call_args_list
+        call_data = call[0][0][0]
+        expected_values = test_case[0]["expected_values"]
+        assert expected_values.items() <= call_data.items()
 
     def clear_test_tables(self):
         """Clear DynamoDB table after each test."""
@@ -623,14 +619,12 @@ class TestForwardLambdaHandler(TestCase):
         while items:
             for item in items:
                 deleted_items = self.table.delete_item(Key={"PK": item["PK"]})
-                print(deleted_items)
             scan = self.table.scan()
             items = scan.get("Items", [])
-        # delete_things = self.table.delete()
-        # self.dynamodb_resource = None
-        # print(f"DELETE RESPONSE: {delete_things}")
-        # response = self.table.scan()
-        # print(f"DYNAMO FINAL ITEMS : {response}")
+
+    def teardown(self):
+        self.table.delete()
+        self.dynamodb_resource = None
 
 
 if __name__ == "__main__":

@@ -8,7 +8,7 @@ class ForwarderValues:
         "ENVIRONMENT": "internal-dev-test",
     }
 
-    EXPECTED_KEYS = ["file_key", "row_id", "created_at_formatted_string", "local_id", "imms_id"]
+    EXPECTED_KEYS = ["file_key", "row_id", "created_at_formatted_string", "local_id", "imms_id", "operation_requested"]
 
     EXPECTED_KEYS_DIAGNOSTICS = ["file_key", "row_id", "created_at_formatted_string", "local_id", "diagnostics"]
 
@@ -17,6 +17,7 @@ class ForwarderValues:
         "created_at_formatted_string": "2025-01-24T12:00:00Z",
         "supplier": "test_supplier",
         "vaccine_type": "RSV",
+        "local_id": "local-1",
     }
 
     EXPECTED_TABLE_ITEM_REINSTATED = {
@@ -42,13 +43,6 @@ class Urls:
     NHS_NUMBER = "https://fhir.nhs.uk/Id/nhs-number"
     vaccination_procedure = "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure"
     SNOMED = "http://snomed.info/sct"
-    nhs_number_verification_status_structure_definition = (
-        "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-NHSNumberVerificationStatus"
-    )
-    nhs_number_verification_status_code_system = (
-        "https://fhir.hl7.org.uk/CodeSystem/UKCore-NHSNumberVerificationStatusEngland"
-    )
-    NULL_FLAVOUR_CODES = "http://terminology.hl7.org/CodeSystem/v3-NullFlavor"
 
 
 GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE = "Unable to process request. Issue may be transient."
