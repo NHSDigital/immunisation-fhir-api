@@ -28,13 +28,12 @@ with patch.dict("os.environ", ForwarderValues.MOCK_ENVIRONMENT_DICT):
 class TestForwardLambdaHandler(TestCase):
 
     def setUp(self):
-        """Set up test values to be used for the tests"""
+        """Set up dynamodb table test values to be used for the tests"""
         self.dynamodb_resource = boto3_resource("dynamodb", "eu-west-2")
         self.table = self.dynamodb_resource.create_table(
             TableName="immunisation-batch-internal-dev-imms-test-table",
             KeySchema=[
                 {"AttributeName": "PK", "KeyType": "HASH"},
-                # {"AttributeName": "placeholder", "KeyType": "RANGE"},
             ],
             AttributeDefinitions=[
                 {"AttributeName": "PK", "AttributeType": "S"},
@@ -118,7 +117,7 @@ class TestForwardLambdaHandler(TestCase):
 
     @staticmethod
     def generate_event(test_cases):
-        """Generates an event from test_cases."""
+        """Generates a kinesis event from test_cases."""
         records = []
         for case in test_cases:
             message_body = case["input"]
@@ -127,10 +126,10 @@ class TestForwardLambdaHandler(TestCase):
         return {"Records": records}
 
     def assert_values_in_sqs_messages(self, mock_send_message, test_cases):
-        """Assert keys are found in SQS messages."""
+        """Assert keys and values are found in SQS messages."""
 
         sqs_messages = [json.loads(call[1]["MessageBody"]) for call in mock_send_message.call_args_list]
-        # Flatten the list if necessary
+
         sqs_messages = sqs_messages[0] if len(sqs_messages) == 1 and isinstance(sqs_messages[0], list) else sqs_messages
 
         for idx, test_case in enumerate(test_cases):
@@ -151,9 +150,8 @@ class TestForwardLambdaHandler(TestCase):
                         assert message[key] == value
 
     def assert_dynamo_item(self, expected_dynamo_item):
-        """Asserts whether expected values are returned in mock_dynamodb"""
+        """Asserts whether expected values are returned in mock_dynamodb table"""
         table_items = self.table.scan()["Items"]
-
         match_found = False
 
         if expected_dynamo_item is None:
@@ -203,7 +201,7 @@ class TestForwardLambdaHandler(TestCase):
                 "name": "Single Update Success",
                 "input": self.generate_input(row_id=1, operation_requested="UPDATE", include_fhir_json=True),
                 "expected_keys": ForwarderValues.EXPECTED_KEYS,
-                "expected_values": {"row_id": "row-1", "imms_id": pk_test},
+                "expected_values": {"row_id": "row-1", "imms_id": pk_test, **ForwarderValues.EXPECTED_VALUES},
                 "expected_dynamo_item": table_item,
             },
             {
@@ -214,6 +212,7 @@ class TestForwardLambdaHandler(TestCase):
                     "row_id": "row-1",
                     "imms_id": pk_test,
                     "operation_requested": "DELETE",
+                    **ForwarderValues.EXPECTED_VALUES,
                 },
                 "expected_dynamo_item": {
                     "PK": "Immunization#4d2ac1eb-080f-4e54-9598-f2d53334681c",
@@ -262,7 +261,7 @@ class TestForwardLambdaHandler(TestCase):
         )
 
         test_cases = [
-            {  # TODO
+            {
                 "name": "Row 1: Create Success",
                 "input": self.generate_input(
                     row_id=1, operation_requested="CREATE", include_fhir_json=True, identifier_value="RSV_CREATE"
@@ -336,7 +335,7 @@ class TestForwardLambdaHandler(TestCase):
                     "diagnostics": create_diagnostics_dictionary(MessageNotSuccessfulError("Unable to reach API")),
                 },
             },
-            {  # TODO
+            {
                 "name": "Row 8: Delete Failure",
                 "input": self.generate_input(row_id=8, operation_requested="DELETE", include_fhir_json=True),
                 "expected_keys": ForwarderValues.EXPECTED_KEYS_DIAGNOSTICS,
@@ -618,11 +617,12 @@ class TestForwardLambdaHandler(TestCase):
         items = scan.get("Items", [])
         while items:
             for item in items:
-                deleted_items = self.table.delete_item(Key={"PK": item["PK"]})
+                self.table.delete_item(Key={"PK": item["PK"]})
             scan = self.table.scan()
             items = scan.get("Items", [])
 
     def teardown(self):
+        """Deletes mock dynamodb resource"""
         self.table.delete()
         self.dynamodb_resource = None
 
