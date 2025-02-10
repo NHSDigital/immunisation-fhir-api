@@ -57,13 +57,11 @@ def upsert_audit_table(
                 Key={AuditTableKeys.MESSAGE_ID: {"S": message_id}},
                 UpdateExpression="SET #status = :status",
                 ExpressionAttributeNames={"#status": "status"},
+                # TODO: Should this be set to file_status? The status may be 'processed' due to an exception occuring
                 ExpressionAttributeValues={":status": {"S": FileStatus.PROCESSING}},
                 ConditionExpression="attribute_exists(message_id)",
             )
-            logger.info(
-                "%s file set for processing, and the status successfully updated in audit table",
-                file_key,
-            )
+            logger.info("%s file set for processing, and the status successfully updated in audit table", file_key)
             return False
 
         # If the file is not already processed, check whether there is a file ahead in the queue already processing
@@ -93,11 +91,7 @@ def upsert_audit_table(
             },
             ConditionExpression="attribute_not_exists(message_id)",  # Prevents accidental overwrites
         )
-        logger.info(
-            "%s file, with message id %s, successfully added to audit table",
-            file_key,
-            message_id,
-        )
+        logger.info("%s file, with message id %s, successfully added to audit table", file_key, message_id)
 
         # Return a bool indicating whether the file status is queued
         return True if file_status == FileStatus.QUEUED else False

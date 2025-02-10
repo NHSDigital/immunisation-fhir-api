@@ -1,10 +1,8 @@
 """Constants for ack lambda"""
 
 import os
-from utils_for_ack_lambda import get_environment
 
-ENVIRONMENT = get_environment()
-SOURCE_BUCKET_NAME = f"immunisation-batch-{ENVIRONMENT}-data-sources"
+SOURCE_BUCKET_NAME = f"immunisation-batch-{os.getenv('ENVIRONMENT')}-data-sources"
 ACK_BUCKET_NAME = os.getenv("ACK_BUCKET_NAME")
 AUDIT_TABLE_NAME = os.getenv("AUDIT_TABLE_NAME")
 AUDIT_TABLE_FILENAME_GSI = "filename_index"

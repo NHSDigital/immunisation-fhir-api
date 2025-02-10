@@ -9,6 +9,7 @@ s3_client = boto3_client("s3", region_name=REGION_NAME)
 firehose_client = boto3_client("firehose", region_name=REGION_NAME)
 lambda_client = boto3_client('lambda', region_name=REGION_NAME)
 dynamodb_client = boto3_client("dynamodb", region_name=REGION_NAME)
+
 dynamodb_resource = boto3_resource("dynamodb", region_name=REGION_NAME)
 
 

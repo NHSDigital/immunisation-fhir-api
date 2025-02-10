@@ -1,3 +1,5 @@
+"""Tests for ack lambda logging decorators"""
+
 import unittest
 from unittest.mock import patch, call
 import json
@@ -6,15 +8,15 @@ from contextlib import ExitStack
 from moto import mock_s3
 from boto3 import client as boto3_client
 
-from tests.test_utils_for_ack_backend import (
+from tests.utils_for_ack_backend_tests.values_for_ack_backend_tests import (
     ValidValues,
     InvalidValues,
     DiagnosticsDictionaries,
-    GenericSetUp,
-    GenericTearDown,
-    MOCK_ENVIRONMENT_DICT,
-    BucketNames,
+    EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS,
 )
+from tests.utils_for_ack_backend_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT, BucketNames
+from tests.utils_for_ack_backend_tests.generic_setup_and_teardown_for_ack_backend import GenericSetUp, GenericTearDown
+from tests.utils_for_ack_backend_tests.utils_for_ack_backend_tests import generate_event
 
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from src.ack_processor import lambda_handler
@@ -24,7 +26,9 @@ s3_client = boto3_client("s3")
 
 @patch.dict("os.environ", MOCK_ENVIRONMENT_DICT)
 @mock_s3
-class TestSplunkFunctionInfo(unittest.TestCase):
+class TestLoggingDecorators(unittest.TestCase):
+    """Tests for the ack lambda logging decorators"""
+
     def setUp(self):
         GenericSetUp(s3_client)
 
@@ -33,7 +37,7 @@ class TestSplunkFunctionInfo(unittest.TestCase):
         mock_source_file_with_100_rows = StringIO("\n".join(f"Row {i}" for i in range(1, 101)))
         s3_client.put_object(
             Bucket=BucketNames.SOURCE,
-            Key=f"processing/{ValidValues.DPSFULL_ack_processor_input.get('file_key')}",
+            Key=f"processing/{ValidValues.mock_message_expected_log_value.get('file_key')}",
             Body=mock_source_file_with_100_rows.getvalue(),
         )
 
@@ -73,34 +77,6 @@ class TestSplunkFunctionInfo(unittest.TestCase):
 
             super().run(result)
 
-    lambda_handler_success_expected_log = {
-        "function_name": "ack_processor_lambda_handler",
-        "date_time": ValidValues.fixed_datetime.strftime("%Y-%m-%d %H:%M:%S"),
-        "status": "success",
-        "statusCode": 200,
-        "message": "Lambda function executed successfully!",
-    }
-
-    lambda_handler_failure_expected_log = {
-        "function_name": "ack_processor_lambda_handler",
-        "date_time": ValidValues.fixed_datetime.strftime("%Y-%m-%d %H:%M:%S"),
-        "status": "fail",
-        "statusCode": 500,
-        "diagnostics": "DIAGNOSTICS MESSAGE",
-    }
-
-    incoming_message_template = ValidValues.DPSFULL_ack_processor_input
-
-    expected_ack_lambda_response_for_success = {
-        "statusCode": 200,
-        "body": json.dumps("Lambda function executed successfully!"),
-    }
-
-    def create_event(self, test_messages):
-        """Dynamically create the event for tests with multiple records."""
-        incoming_message_body = [{**self.incoming_message_template, **message} for message in test_messages]
-        return {"Records": [{"body": json.dumps(incoming_message_body)}]}
-
     def extract_all_call_args_for_logger_info(self, mock_logger):
         """Extracts all arguments for logger.info."""
         return [args[0] for args, _ in mock_logger.info.call_args_list]
@@ -113,7 +89,11 @@ class TestSplunkFunctionInfo(unittest.TestCase):
         """Returns the expected logs for the lambda handler function."""
         # Mocking of timings is such that the time taken is 2 seconds for each row, plus 1 second for the handler
         time_taken = f"{number_of_rows * 2 + 1}.0s"
-        base_log = self.lambda_handler_success_expected_log if success else self.lambda_handler_failure_expected_log
+        base_log = (
+            ValidValues.lambda_handler_success_expected_log
+            if success
+            else ValidValues.lambda_handler_failure_expected_log
+        )
         return {**base_log, "time_taken": time_taken, **({"diagnostics": diagnostics} if diagnostics else {})}
 
     def test_splunk_logging_successful_rows(self):
@@ -124,12 +104,12 @@ class TestSplunkFunctionInfo(unittest.TestCase):
                 patch("logging_decorators.send_log_to_firehose") as mock_send_log_to_firehose,
                 patch("logging_decorators.logger") as mock_logger,
             ):
-                result = lambda_handler(event=self.create_event([{"operation_requested": operation}]), context={})
+                result = lambda_handler(event=generate_event([{"operation_requested": operation}]), context={})
 
             self.assertEqual(result, {"statusCode": 200, "body": json.dumps("Lambda function executed successfully!")})
 
             expected_first_logger_info_data = {
-                **ValidValues.DPSFULL_expected_log_value,
+                **ValidValues.mock_message_expected_log_value,
                 "operation_requested": operation,
             }
 
@@ -191,14 +171,12 @@ class TestSplunkFunctionInfo(unittest.TestCase):
                 patch("logging_decorators.send_log_to_firehose") as mock_send_log_to_firehose,
                 patch("logging_decorators.logger") as mock_logger,
             ):
-                result = lambda_handler(
-                    event=self.create_event([{"diagnostics": test_case["diagnostics"]}]), context={}
-                )
+                result = lambda_handler(event=generate_event([{"diagnostics": test_case["diagnostics"]}]), context={})
 
-            self.assertEqual(result, self.expected_ack_lambda_response_for_success)
+            self.assertEqual(result, EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS)
 
             expected_first_logger_info_data = {
-                **ValidValues.DPSFULL_expected_log_value,
+                **ValidValues.mock_message_expected_log_value,
                 "diagnostics": test_case["diagnostics"].get("error_message"),
                 "statusCode": test_case["expected_code"],
                 "status": "fail",
@@ -224,13 +202,13 @@ class TestSplunkFunctionInfo(unittest.TestCase):
             patch("logging_decorators.send_log_to_firehose") as mock_send_log_to_firehose,
             patch("logging_decorators.logger") as mock_logger,
         ):
-            result = lambda_handler(self.create_event(messages), context={})
+            result = lambda_handler(generate_event(messages), context={})
 
-        self.assertEqual(result, self.expected_ack_lambda_response_for_success)
+        self.assertEqual(result, EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS)
 
-        expected_first_logger_info_data = {**ValidValues.DPSFULL_expected_log_value, "message_id": "test1"}
+        expected_first_logger_info_data = {**ValidValues.mock_message_expected_log_value, "message_id": "test1"}
 
-        expected_second_logger_info_data = {**ValidValues.DPSFULL_expected_log_value, "message_id": "test2"}
+        expected_second_logger_info_data = {**ValidValues.mock_message_expected_log_value, "message_id": "test2"}
 
         expected_third_logger_info_data = self.expected_lambda_handler_logs(success=True, number_of_rows=2)
 
@@ -274,12 +252,12 @@ class TestSplunkFunctionInfo(unittest.TestCase):
             patch("logging_decorators.send_log_to_firehose") as mock_send_log_to_firehose,
             patch("logging_decorators.logger") as mock_logger,
         ):
-            result = lambda_handler(self.create_event(messages), context={})
+            result = lambda_handler(generate_event(messages), context={})
 
-        self.assertEqual(result, self.expected_ack_lambda_response_for_success)
+        self.assertEqual(result, EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS)
 
         expected_first_logger_info_data = {
-            **ValidValues.DPSFULL_expected_log_value,
+            **ValidValues.mock_message_expected_log_value,
             "message_id": "test1",
             "operation_requested": "CREATE",
             "statusCode": DiagnosticsDictionaries.RESOURCE_FOUND_ERROR["statusCode"],
@@ -288,7 +266,7 @@ class TestSplunkFunctionInfo(unittest.TestCase):
         }
 
         expected_second_logger_info_data = {
-            **ValidValues.DPSFULL_expected_log_value,
+            **ValidValues.mock_message_expected_log_value,
             "message_id": "test2",
             "operation_requested": "UPDATE",
             "statusCode": DiagnosticsDictionaries.MESSAGE_NOT_SUCCESSFUL_ERROR["statusCode"],
@@ -297,7 +275,7 @@ class TestSplunkFunctionInfo(unittest.TestCase):
         }
 
         expected_third_logger_info_data = {
-            **ValidValues.DPSFULL_expected_log_value,
+            **ValidValues.mock_message_expected_log_value,
             "message_id": "test3",
             "operation_requested": "DELETE",
             "statusCode": DiagnosticsDictionaries.NO_PERMISSIONS["statusCode"],

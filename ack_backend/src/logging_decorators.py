@@ -64,7 +64,6 @@ def convert_messsage_to_ack_row_logging_decorator(func):
         except Exception as error:
             additional_log_data = {"status": "fail", "statusCode": 500, "diagnostics": str(error)}
             generate_and_send_logs(start_time, base_log_data, additional_log_data, is_error_log=True)
-
             raise
 
     return wrapper
@@ -81,20 +80,14 @@ def ack_lambda_handler_logging_decorator(func):
 
         try:
             result = func(event, context, *args, **kwargs)
-
-            additional_log_data = {
-                "status": "success",
-                "statusCode": 200,
-                "message": "Lambda function executed successfully!",
-            }
+            message_for_logs = "Lambda function executed successfully!"
+            additional_log_data = {"status": "success", "statusCode": 200, "message": message_for_logs}
             generate_and_send_logs(start_time, base_log_data, additional_log_data)
-
             return result
 
         except Exception as error:
             additional_log_data = {"status": "fail", "statusCode": 500, "diagnostics": str(error)}
             generate_and_send_logs(start_time, base_log_data, additional_log_data, is_error_log=True)
-
             raise
 
     return wrapper

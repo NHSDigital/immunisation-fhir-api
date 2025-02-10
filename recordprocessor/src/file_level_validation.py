@@ -121,9 +121,5 @@ def file_level_validation(incoming_message_body: dict) -> None:
         queue_name = f"{supplier}_{vaccine}"
         next_queued_file_details = get_next_queued_file_details(queue_name)
         if next_queued_file_details:
-            invoke_filename_lambda(
-                next_queued_file_details["filename"],
-                next_queued_file_details["message_id"],
-            )
-
+            invoke_filename_lambda(next_queued_file_details["filename"], next_queued_file_details["message_id"])
         raise

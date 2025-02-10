@@ -71,12 +71,7 @@ def handle_record(record) -> dict:
 
             queue_name = f"{supplier}_{vaccine_type}"
             file_status_is_queued = upsert_audit_table(
-                message_id,
-                file_key,
-                created_at_formatted_string,
-                queue_name,
-                FileStatus.PROCESSING,
-                is_existing_file,
+                message_id, file_key, created_at_formatted_string, queue_name, FileStatus.PROCESSING, is_existing_file
             )
 
             if file_status_is_queued:

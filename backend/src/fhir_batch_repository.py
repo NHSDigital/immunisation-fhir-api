@@ -145,11 +145,7 @@ class ImmunizationBatchRepository:
         update_exp = self._build_update_expression(is_reinstate=is_reinstate)
 
         return self._perform_dynamo_update(
-            update_exp,
-            attr,
-            deleted_at_required=deleted_at_required,
-            update_reinstated=update_reinstated,
-            table=table,
+            update_exp, attr, deleted_at_required=deleted_at_required, update_reinstated=update_reinstated, table=table
         )
 
     def delete_immunization(

@@ -46,10 +46,7 @@ def upload_ack_file(file_key: str, ack_data: dict, created_at_formatted_string: 
 
 
 def make_and_upload_the_ack_file(
-    message_id: str,
-    file_key: str,
-    message_delivered: bool,
-    created_at_formatted_string: str,
+    message_id: str, file_key: str, message_delivered: bool, created_at_formatted_string: str
 ) -> None:
     """Creates the ack file and uploads it to the S3 ack bucket"""
     ack_data = make_the_ack_data(message_id, message_delivered, created_at_formatted_string)

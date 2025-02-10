@@ -7,10 +7,7 @@ from constants import ACK_BUCKET_NAME
 
 
 def make_ack_data(
-    message_id: str,
-    validation_passed: bool,
-    message_delivered: bool,
-    created_at_formatted_string,
+    message_id: str, validation_passed: bool, message_delivered: bool, created_at_formatted_string
 ) -> dict:
     """Returns a dictionary of ack data based on the input values. Dictionary keys are the ack file headers,
     dictionary values are the values for the ack file row"""
@@ -49,11 +46,7 @@ def upload_ack_file(file_key: str, ack_data: dict, created_at_formatted_string: 
 
 
 def make_and_upload_ack_file(
-    message_id: str,
-    file_key: str,
-    validation_passed: bool,
-    message_delivered: bool,
-    created_at_formatted_string: str,
+    message_id: str, file_key: str, validation_passed: bool, message_delivered: bool, created_at_formatted_string: str
 ) -> None:
     """Creates the ack file and uploads it to the S3 ack bucket"""
     ack_data = make_ack_data(message_id, validation_passed, message_delivered, created_at_formatted_string)
