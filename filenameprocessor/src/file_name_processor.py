@@ -13,7 +13,7 @@ from send_sqs_message import make_and_send_sqs_message
 from make_and_upload_ack_file import make_and_upload_the_ack_file
 from audit_table import upsert_audit_table, get_next_queued_file_details, ensure_file_is_not_a_duplicate
 from clients import logger
-from elasticcache import upload_to_elasticache
+from elasticache import upload_to_elasticache
 from logging_decorator import logging_decorator
 from supplier_permissions import validate_vaccine_type_permissions
 from errors import (

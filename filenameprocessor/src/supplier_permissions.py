@@ -1,15 +1,8 @@
 """Functions for fetching supplier permissions"""
 
-import json
-from clients import redis_client, logger
+from clients import logger
 from errors import VaccineTypePermissionsError
-
-PERMISSIONS_CONFIG_FILE_KEY = "permissions_config.json"
-
-
-def get_permissions_config_json_from_cache() -> dict:
-    """Gets and returns the permissions config file content from ElastiCache."""
-    return json.loads(redis_client.get(PERMISSIONS_CONFIG_FILE_KEY))
+from elasticache import get_permissions_config_json_from_cache
 
 
 def get_supplier_permissions(supplier: str) -> list:

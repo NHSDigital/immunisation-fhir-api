@@ -2,17 +2,20 @@
 
 from unittest import TestCase
 from unittest.mock import patch
-from boto3 import resource as boto3_resource
+from boto3 import client as boto3_client
 from moto import mock_dynamodb
-from errors import UnhandledAuditTableError
-from clients import REGION_NAME
-from tests.utils_for_tests.values_for_tests import MOCK_ENVIRONMENT_DICT
 
-# Some environment variables are evaluated when  constants and upsert_audit_table are imported,
-# so environment dictionary must be mocked first
+from tests.utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT
+from tests.utils_for_tests.generic_setup_and_teardown import GenericSetUp, GenericTearDown
+
+# Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
-    from constants import AuditTableKeys, AUDIT_TABLE_NAME, AUDIT_TABLE_QUEUE_NAME_GSI, AUDIT_TABLE_FILENAME_GSI
+    from constants import AUDIT_TABLE_NAME
     from audit_table import upsert_audit_table
+    from errors import UnhandledAuditTableError
+    from clients import REGION_NAME
+
+dynamodb_client = boto3_client("dynamodb", region_name=REGION_NAME)
 
 
 @mock_dynamodb
@@ -22,43 +25,16 @@ class TestAuditTable(TestCase):
 
     def setUp(self):
         """Set up test values to be used for the tests"""
-        self.dynamodb_resource = boto3_resource("dynamodb", region_name=REGION_NAME)
-        self.table = self.dynamodb_resource.create_table(
-            TableName=AUDIT_TABLE_NAME,
-            KeySchema=[
-                {"AttributeName": AuditTableKeys.MESSAGE_ID, "KeyType": "HASH"},
-                # {"AttributeName": "placeholder", "KeyType": "RANGE"},
-            ],
-            AttributeDefinitions=[
-                {"AttributeName": AuditTableKeys.MESSAGE_ID, "AttributeType": "S"},
-                {"AttributeName": AuditTableKeys.FILENAME, "AttributeType": "S"},
-                {"AttributeName": AuditTableKeys.QUEUE_NAME, "AttributeType": "S"},
-                {"AttributeName": AuditTableKeys.STATUS, "AttributeType": "S"},
-            ],
-            ProvisionedThroughput={"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
-            GlobalSecondaryIndexes=[
-                {
-                    "IndexName": AUDIT_TABLE_FILENAME_GSI,
-                    "KeySchema": [{"AttributeName": AuditTableKeys.FILENAME, "KeyType": "HASH"}],
-                    "Projection": {"ProjectionType": "KEYS_ONLY"},
-                    "ProvisionedThroughput": {"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
-                },
-                {
-                    "IndexName": AUDIT_TABLE_QUEUE_NAME_GSI,
-                    "KeySchema": [
-                        {"AttributeName": AuditTableKeys.QUEUE_NAME, "KeyType": "HASH"},
-                        {"AttributeName": AuditTableKeys.STATUS, "KeyType": "RANGE"},
-                    ],
-                    "Projection": {"ProjectionType": "ALL"},
-                    "ProvisionedThroughput": {"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
-                },
-            ],
-        )
+        GenericSetUp(dynamodb_client=dynamodb_client)
 
-        assert self.table.table_status == "ACTIVE"
-        assert len(self.table.global_secondary_indexes) == 2
-        assert self.table.global_secondary_indexes[0]["IndexName"] == AUDIT_TABLE_FILENAME_GSI
-        assert self.table.global_secondary_indexes[1]["IndexName"] == AUDIT_TABLE_QUEUE_NAME_GSI
+    def tearDown(self):
+        """Tear down the test values"""
+        GenericTearDown(dynamodb_client=dynamodb_client)
+
+    @staticmethod
+    def get_table_items():
+        """Return all items in the audit table"""
+        return dynamodb_client.scan(TableName=AUDIT_TABLE_NAME).get("Items", [])
 
     def test_upsert_audit_table(self):
         """Test that the upsert_audit_table function works as expected for the following:
@@ -79,42 +55,42 @@ class TestAuditTable(TestCase):
 
         # Test case 1: file_key_1 should be added to the audit table with status set to "Processing"
         expected_table_item_1 = {
-            "message_id": message_id_1,
-            "filename": file_key_1,
-            "queue_name": "test_queue",
-            "status": "Processing",
-            "timestamp": created_at_formatted_string_1,
+            "message_id": {"S": message_id_1},
+            "filename": {"S": file_key_1},
+            "queue_name": {"S": "test_queue"},
+            "status": {"S": "Processing"},
+            "timestamp": {"S": created_at_formatted_string_1},
         }
 
         # Test case 2: file_key_2 should be added to the audit table with status set to "Queued"
         expected_table_item_2 = {
-            "message_id": message_id_2,
-            "filename": file_key_2,
-            "queue_name": "test_queue",
-            "status": "Queued",
-            "timestamp": created_at_formatted_string_2,
+            "message_id": {"S": message_id_2},
+            "filename": {"S": file_key_2},
+            "queue_name": {"S": "test_queue"},
+            "status": {"S": "Queued"},
+            "timestamp": {"S": created_at_formatted_string_2},
         }
 
         # Test case 3: file_key_1 should be added to the audit table again,
         # with status set to "Not processed - duplicate"
         expected_table_item_3 = {
-            "message_id": message_id_3,
-            "filename": file_key_1,
-            "queue_name": "test_queue",
-            "status": "Not processed - duplicate",
-            "timestamp": created_at_formatted_string_3,
+            "message_id": {"S": message_id_3},
+            "filename": {"S": file_key_1},
+            "queue_name": {"S": "test_queue"},
+            "status": {"S": "Not processed - duplicate"},
+            "timestamp": {"S": created_at_formatted_string_3},
         }
 
         # Test case 4: file_key_4 should not be added to the audit table because the message_id is a duplicate.
         # Note that this scenario should never occur as a new unique message_id is generated for each file upload,
         # even if the file name is a duplicate, but this test is included for safety because default behaviour of
         # dynamodb is to overwrite the existing item if the message_id is the same.
-        expected_table_item_4 = {  # This item should not be added to the table
-            "message_id": message_id_3,
-            "filename": file_key_4,
-            "queue_name": "test_queue",
-            "status": "Processed",
-            "timestamp": created_at_formatted_string_4,
+        expected_table_item_4 = {
+            "message_id": {"S": message_id_3},
+            "filename": {"S": file_key_4},
+            "queue_name": {"S": "test_queue"},
+            "status": {"S": "Processed"},
+            "timestamp": {"S": created_at_formatted_string_4},
         }
 
         # Add a file to the audit table
@@ -128,7 +104,7 @@ class TestAuditTable(TestCase):
                 is_existing_file=False,
             )
         )
-        table_items = self.table.scan()["Items"]
+        table_items = self.get_table_items()
         assert len(table_items) == 1
         assert expected_table_item_1 in table_items
 
@@ -143,7 +119,7 @@ class TestAuditTable(TestCase):
                 is_existing_file=False,
             )
         )
-        table_items = self.table.scan()["Items"]
+        table_items = self.get_table_items()
         assert len(table_items) == 2
         assert expected_table_item_1 in table_items
         assert expected_table_item_2 in table_items
@@ -162,7 +138,7 @@ class TestAuditTable(TestCase):
 
         # Check that the file has been added to the audit table again,
         # with the different message_id and created_at_formatted_string
-        table_items = self.table.scan()["Items"]
+        table_items = self.get_table_items()
         assert len(table_items) == 3
         assert expected_table_item_1 in table_items
         assert expected_table_item_2 in table_items
@@ -180,7 +156,7 @@ class TestAuditTable(TestCase):
             )
 
         # Check that the file has not been added to the audit table
-        table_items = self.table.scan()["Items"]
+        table_items = self.get_table_items()
         assert len(table_items) == 3
         assert expected_table_item_1 in table_items
         assert expected_table_item_2 in table_items

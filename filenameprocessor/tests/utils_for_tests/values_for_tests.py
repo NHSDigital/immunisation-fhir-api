@@ -1,41 +1,12 @@
 """File of values which can be used for testing"""
 
+from datetime import datetime
+
+fixed_datetime = datetime(2024, 10, 29, 12, 0, 0)
+
 # Mock_created_at_formatted string is used throughout the test suite, so that the ack file name
 # (which includes the created_at_formatted_string) can be predicted.
 MOCK_CREATED_AT_FORMATTED_STRING = "20211120T12000000"
-
-
-class BucketNames:
-    """Class to hold bucket names for use in tests"""
-
-    CONFIG = "immunisation-batch-internal-dev-data-configs"
-    SOURCE = "immunisation-batch-internal-dev-data-sources"
-    DESTINATION = "immunisation-batch-internal-dev-data-destinations"
-
-
-class Sqs:
-    """Class to hold SQS values for use in tests"""
-
-    ATTRIBUTES = {"FifoQueue": "true", "ContentBasedDeduplication": "true"}
-    QUEUE_NAME = "imms-batch-internal-dev-metadata-queue.fifo"
-
-
-# Dictionary for mocking the os.environ dict
-MOCK_ENVIRONMENT_DICT = {
-    "ENVIRONMENT": "internal-dev",
-    "SHORT_QUEUE_PREFIX": "imms-batch-internal-dev",
-    "LOCAL_ACCOUNT_ID": "123456789012",
-    "PROD_ACCOUNT_ID": "3456789109",
-    "CONFIG_BUCKET_NAME": BucketNames.CONFIG,
-    "SOURCE_BUCKET_NAME": BucketNames.SOURCE,
-    "ACK_BUCKET_NAME": BucketNames.DESTINATION,
-    "QUEUE_URL": "https://sqs.eu-west-2.amazonaws.com/123456789012/imms-batch-internal-dev-metadata-queue.fifo",
-    "REDIS_HOST": "localhost",
-    "REDIS_PORT": "6379",
-    "AUDIT_TABLE_NAME": "immunisation-batch-internal-dev-audit-table",
-    "FILE_NAME_GSI": "filename_index",
-    "FILE_NAME_PROC_LAMBDA_NAME": "imms-batch-internal-dev-filenameproc_lambda",
-}
 
 
 class FileDetails:
@@ -58,6 +29,7 @@ class FileDetails:
         self.ods_code = ods_code
         self.supplier = supplier
         self.message_id = f"{vaccine_type.lower()}_{supplier.lower()}_test_id"
+        self.queue_name = f"{supplier}_{vaccine_type}"
         self.permissions_list = [f"{vaccine_type}_FULL"]
         self.permissions_config = {self.supplier: self.permissions_list}
         # DO NOT CHANGE THE SQS MESSAGE BODY UNLESS THE IMPLEMENTATION OF THE MESSAGE BODY IS CHANGED - IT IS USED
