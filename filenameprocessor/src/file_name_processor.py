@@ -13,7 +13,7 @@ from send_sqs_message import make_and_send_sqs_message
 from make_and_upload_ack_file import make_and_upload_the_ack_file
 from audit_table import upsert_audit_table, get_next_queued_file_details, ensure_file_is_not_a_duplicate
 from clients import logger
-from elasticcache import upload_to_elasticache
+from elasticache import upload_to_elasticache
 from logging_decorator import logging_decorator
 from supplier_permissions import validate_vaccine_type_permissions
 from errors import (
@@ -44,10 +44,14 @@ def handle_record(record) -> dict:
         logger.error("Error obtaining file_key: %s", error)
         return {"statusCode": 500, "message": "Failed to download file key", "error": str(error)}
 
-    # The lambda is unintentionally invoked when a file is moved into a different folder in the source bucket.
-    # Excluding file keys containing a "/" is a workaround to prevent the lambda from processing files that
-    # are not in the root of the source bucket.
-    if "data-sources" in bucket_name and "/" not in file_key:
+    if "data-sources" in bucket_name:
+
+        # The lambda is unintentionally invoked when a file is moved into a different folder in the source bucket.
+        # Excluding file keys containing a "/" is a workaround to prevent the lambda from processing files that
+        # are not in the root of the source bucket.
+        if "/" in file_key:
+            message = "File skipped due to duplicate lambda invoaction"
+            return {"statusCode": 200, "message": message, "file_key": file_key}
 
         # Set default values for file-specific variables
         message_id = "Message id was not created"

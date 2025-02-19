@@ -34,7 +34,7 @@ jobs:
         id: filenameprocessor
         continue-on-error: true
         run: |
-          pip install poetry==1.8.4 moto==4.2.11 coverage redis botocore==1.35.49 simplejson pandas freezegun responses structlog fhir.resources jsonpath_ng pydantic==1.10.13 requests aws-lambda-typing cffi pyjwt boto3-stubs-lite[dynamodb]~=1.26.90 python-stdnum==1.20
+          pip install poetry==1.8.4 moto==4.2.11 coverage redis botocore==1.35.49 simplejson pandas freezegun responses structlog fhir.resources jsonpath_ng pydantic==1.10.13 requests aws-lambda-typing cffi pyjwt boto3-stubs-lite[dynamodb]~=1.26.90 python-stdnum==1.20 fakeredis
           poetry run coverage run --source=filenameprocessor -m unittest discover -s filenameprocessor || echo "filenameprocessor tests failed" >> failed_tests.txt
           poetry run coverage xml -o sonarcloud-coverage-filenameprocessor-coverage.xml
 

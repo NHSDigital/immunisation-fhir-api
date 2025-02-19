@@ -57,8 +57,7 @@ def upsert_audit_table(
                 Key={AuditTableKeys.MESSAGE_ID: {"S": message_id}},
                 UpdateExpression="SET #status = :status",
                 ExpressionAttributeNames={"#status": "status"},
-                # TODO: Should this be set to file_status? The status may be 'processed' due to an exception occuring
-                ExpressionAttributeValues={":status": {"S": FileStatus.PROCESSING}},
+                ExpressionAttributeValues={":status": {"S": file_status}},
                 ConditionExpression="attribute_exists(message_id)",
             )
             logger.info("%s file set for processing, and the status successfully updated in audit table", file_key)
