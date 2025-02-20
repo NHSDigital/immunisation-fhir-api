@@ -4,7 +4,7 @@ and assert the response.
 
 ### Prerequisites
 
-This is a poetry project. Install dependencies using `poetry install`. The project uses Python 3.8 so make sure
+This is a poetry project. Install dependencies using `poetry install`. The project uses Python 3.10 so make sure
 you are using the right version. Depending on what kind of tests you want to run you may need different external
 dependencies. Here is a full list:
 
