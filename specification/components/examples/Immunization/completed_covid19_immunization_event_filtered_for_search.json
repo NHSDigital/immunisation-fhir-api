@@ -46,9 +46,10 @@
     "display": "AstraZeneca Ltd"
   },
   "location": {
+    "type": "Location",
     "identifier": {
-      "value": "GB",
-      "system": "urn:iso:std:iso:3166"
+      "value": "X99999",
+      "system": "https://fhir.nhs.uk/Id/ods-organization-code"
     }
   },
   "lotNumber": "4120Z001",
