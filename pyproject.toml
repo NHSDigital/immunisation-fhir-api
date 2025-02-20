@@ -1,5 +1,5 @@
 [project]
-python = "^3.8"
+python = "^3.10"
 
 [tool.poetry]
 name = "immunisation-fhir-api"
@@ -14,7 +14,7 @@ keywords = ["healthcare", "uk", "nhs"]
 
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.10"
 pytest-nhsd-apim = "^2.0.2"
 
 

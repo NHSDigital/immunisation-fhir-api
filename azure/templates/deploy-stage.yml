@@ -34,7 +34,7 @@ parameters:
     default: true
   - name: python_version
     type: string
-    default: "3.8"
+    default: "3.10"
 
 jobs:
   - job: deploy
