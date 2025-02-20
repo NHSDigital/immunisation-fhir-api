@@ -5,8 +5,14 @@ from unittest.mock import patch
 from datetime import datetime, timezone
 from moto import mock_s3
 from boto3 import client as boto3_client
-from clients import REGION_NAME
-from utils_for_filenameprocessor import get_created_at_formatted_string, get_csv_content_dict_reader, identify_supplier
+
+from tests.utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT, BucketNames
+from tests.utils_for_tests.generic_setup_and_teardown import GenericSetUp, GenericTearDown
+
+# Ensure environment variables are mocked before importing from src files
+with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
+    from clients import REGION_NAME
+    from utils_for_filenameprocessor import get_created_at_formatted_string, identify_supplier
 
 s3_client = boto3_client("s3", region_name=REGION_NAME)
 
@@ -17,10 +23,11 @@ class TestUtilsForFilenameprocessor(TestCase):
 
     def test_get_created_at_formatted_string(self):
         """Test that get_created_at_formatted_string can correctly get the created_at_formatted_string"""
-        bucket_name = "test_bucket"
+        GenericSetUp(s3_client)
+
+        bucket_name = BucketNames.SOURCE
         file_key = "test_file_key"
 
-        s3_client.create_bucket(Bucket=bucket_name, CreateBucketConfiguration={"LocationConstraint": REGION_NAME})
         s3_client.put_object(Bucket=bucket_name, Key=file_key)
 
         mock_last_modified = {"LastModified": datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)}
@@ -31,20 +38,7 @@ class TestUtilsForFilenameprocessor(TestCase):
 
         self.assertEqual(created_at_formatted_string, expected_result)
 
-    def test_get_csv_content_dict_reader(self):
-        """Test that get_csv_content_dict_reader can download and correctly read the data file"""
-        bucket_name = "test_bucket"
-        file_key = "test_file_key"
-        file_content = "HEADER1|HEADER2\nvalue1|value2"
-
-        s3_client.create_bucket(Bucket=bucket_name, CreateBucketConfiguration={"LocationConstraint": REGION_NAME})
-        s3_client.put_object(Bucket=bucket_name, Key=file_key, Body=file_content)
-
-        csv_content_dict_reader = get_csv_content_dict_reader(bucket_name, file_key)
-
-        for row in csv_content_dict_reader:
-            self.assertEqual(row.get("HEADER1"), "value1")
-            self.assertEqual(row.get("HEADER2"), "value2")
+        GenericTearDown(s3_client)
 
     def test_identify_supplier(self):
         """Test that identify_supplier correctly identifies supplier using ods_to_supplier_mappings"""

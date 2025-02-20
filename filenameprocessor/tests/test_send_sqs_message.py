@@ -6,14 +6,20 @@ from json import loads as json_loads
 from copy import deepcopy
 from moto import mock_sqs
 from boto3 import client as boto3_client
-from send_sqs_message import send_to_supplier_queue, make_and_send_sqs_message
-from errors import UnhandledSqsError, InvalidSupplierError
-from clients import REGION_NAME
-from tests.utils_for_tests.values_for_tests import MOCK_ENVIRONMENT_DICT, MockFileDetails, Sqs
+
+from tests.utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT, Sqs
+from tests.utils_for_tests.values_for_tests import MockFileDetails
+
+# Ensure environment variables are mocked before importing from src files
+with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
+    from send_sqs_message import send_to_supplier_queue, make_and_send_sqs_message
+    from errors import UnhandledSqsError, InvalidSupplierError
+    from clients import REGION_NAME
 
 sqs_client = boto3_client("sqs", region_name=REGION_NAME)
 
-FILE_DETAILS = MockFileDetails.flu_emis
+FLU_EMIS_FILE_DETAILS = MockFileDetails.flu_emis
+RSV_RAVS_FILE_DETAILS = MockFileDetails.rsv_ravs
 
 NON_EXISTENT_QUEUE_ERROR_MESSAGE = (
     "An unexpected error occurred whilst sending to SQS: An error occurred (AWS.SimpleQueueService.NonExistent"
@@ -31,25 +37,42 @@ class TestSendSQSMessage(TestCase):
         # Set up the sqs_queue
         queue_url = sqs_client.create_queue(QueueName=Sqs.QUEUE_NAME, Attributes=Sqs.ATTRIBUTES)["QueueUrl"]
 
-        self.assertIsNone(
-            send_to_supplier_queue(
-                message_body=deepcopy(FILE_DETAILS.sqs_message_body),
-                vaccine_type=FILE_DETAILS.vaccine_type,
-                supplier=FILE_DETAILS.supplier,
-            )
-        )
+        # Send three separate messages to the queue to test that they are all received and appropriately
+        # partitioned by supplier and vaccine_type
+        flu_emis_1 = deepcopy(FLU_EMIS_FILE_DETAILS)
+        flu_emis_2 = deepcopy(FLU_EMIS_FILE_DETAILS)
+        flu_emis_2.sqs_message_body["message_id"] = "flu_emis_test_id_2"
+        rsv_ravs_1 = deepcopy(RSV_RAVS_FILE_DETAILS)
 
-        # Assert that correct message has reached the queue
-        messages = sqs_client.receive_message(QueueUrl=queue_url, MaxNumberOfMessages=1)
-        self.assertEqual(json_loads(messages["Messages"][0]["Body"]), FILE_DETAILS.sqs_message_body)
+        for file_details in [flu_emis_1, rsv_ravs_1, flu_emis_2]:
+            self.assertIsNone(
+                send_to_supplier_queue(
+                    message_body=deepcopy(file_details.sqs_message_body),
+                    vaccine_type=file_details.vaccine_type,
+                    supplier=file_details.supplier,
+                )
+            )
+
+        # Check that the FIFO queue contains the expected messages, in correct order, and with correct MessageGroupId
+        received_messages = sqs_client.receive_message(
+            QueueUrl=queue_url, MaxNumberOfMessages=10, AttributeNames=["All"]
+        )["Messages"]
+
+        self.assertEqual(len(received_messages), 3)
+        self.assertEqual(json_loads(received_messages[0]["Body"]), flu_emis_1.sqs_message_body)
+        self.assertEqual(received_messages[0]["Attributes"]["MessageGroupId"], flu_emis_1.queue_name)
+        self.assertEqual(json_loads(received_messages[1]["Body"]), rsv_ravs_1.sqs_message_body)
+        self.assertEqual(received_messages[1]["Attributes"]["MessageGroupId"], rsv_ravs_1.queue_name)
+        self.assertEqual(json_loads(received_messages[2]["Body"]), flu_emis_2.sqs_message_body)
+        self.assertEqual(received_messages[2]["Attributes"]["MessageGroupId"], flu_emis_2.queue_name)
 
     def test_send_to_supplier_queue_failure_due_to_queue_does_not_exist(self):
         """Test send_to_supplier_queue function for a failed message send due to queue not existing"""
         with self.assertRaises(UnhandledSqsError) as context:
             send_to_supplier_queue(
-                message_body=deepcopy(FILE_DETAILS.sqs_message_body),
-                vaccine_type=FILE_DETAILS.vaccine_type,
-                supplier=FILE_DETAILS.supplier,
+                message_body=deepcopy(FLU_EMIS_FILE_DETAILS.sqs_message_body),
+                vaccine_type=FLU_EMIS_FILE_DETAILS.vaccine_type,
+                supplier=FLU_EMIS_FILE_DETAILS.supplier,
             )
         self.assertEqual(NON_EXISTENT_QUEUE_ERROR_MESSAGE, str(context.exception))
 
@@ -67,7 +90,7 @@ class TestSendSQSMessage(TestCase):
                 mock_sqs_client = MagicMock()
                 with patch("send_sqs_message.sqs_client", mock_sqs_client):
                     with self.assertRaises(InvalidSupplierError) as context:
-                        message_body = {**FILE_DETAILS.sqs_message_body, key_to_set_to_empty: ""}
+                        message_body = {**FLU_EMIS_FILE_DETAILS.sqs_message_body, key_to_set_to_empty: ""}
                         vaccine_type = message_body["vaccine_type"]
                         supplier = message_body["supplier"]
                         send_to_supplier_queue(message_body, supplier, vaccine_type)
@@ -82,28 +105,28 @@ class TestSendSQSMessage(TestCase):
         # Call the send_to_supplier_queue function
         self.assertIsNone(
             make_and_send_sqs_message(
-                file_key=FILE_DETAILS.file_key,
-                message_id=FILE_DETAILS.message_id,
-                permission=deepcopy(FILE_DETAILS.permissions_list),
-                vaccine_type=FILE_DETAILS.vaccine_type,
-                supplier=FILE_DETAILS.supplier,
-                created_at_formatted_string=FILE_DETAILS.created_at_formatted_string,
+                file_key=FLU_EMIS_FILE_DETAILS.file_key,
+                message_id=FLU_EMIS_FILE_DETAILS.message_id,
+                permission=deepcopy(FLU_EMIS_FILE_DETAILS.permissions_list),
+                vaccine_type=FLU_EMIS_FILE_DETAILS.vaccine_type,
+                supplier=FLU_EMIS_FILE_DETAILS.supplier,
+                created_at_formatted_string=FLU_EMIS_FILE_DETAILS.created_at_formatted_string,
             )
         )
 
         # Assert that correct message has reached the queue
         messages = sqs_client.receive_message(QueueUrl=queue_url, MaxNumberOfMessages=1)
-        self.assertEqual(json_loads(messages["Messages"][0]["Body"]), deepcopy(FILE_DETAILS.sqs_message_body))
+        self.assertEqual(json_loads(messages["Messages"][0]["Body"]), deepcopy(FLU_EMIS_FILE_DETAILS.sqs_message_body))
 
     def test_make_and_send_sqs_message_failure(self):
         """Test make_and_send_sqs_message function for a failure due to queue not existing"""
         with self.assertRaises(UnhandledSqsError) as context:
             make_and_send_sqs_message(
-                file_key=FILE_DETAILS.file_key,
-                message_id=FILE_DETAILS.message_id,
-                permission=deepcopy(FILE_DETAILS.permissions_list),
-                vaccine_type=FILE_DETAILS.vaccine_type,
-                supplier=FILE_DETAILS.supplier,
-                created_at_formatted_string=FILE_DETAILS.created_at_formatted_string,
+                file_key=FLU_EMIS_FILE_DETAILS.file_key,
+                message_id=FLU_EMIS_FILE_DETAILS.message_id,
+                permission=deepcopy(FLU_EMIS_FILE_DETAILS.permissions_list),
+                vaccine_type=FLU_EMIS_FILE_DETAILS.vaccine_type,
+                supplier=FLU_EMIS_FILE_DETAILS.supplier,
+                created_at_formatted_string=FLU_EMIS_FILE_DETAILS.created_at_formatted_string,
             )
         self.assertIn(NON_EXISTENT_QUEUE_ERROR_MESSAGE, str(context.exception))

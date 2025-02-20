@@ -2,9 +2,14 @@
 
 from unittest import TestCase
 from unittest.mock import patch
-from supplier_permissions import validate_vaccine_type_permissions, get_supplier_permissions
-from errors import VaccineTypePermissionsError
+
 from tests.utils_for_tests.utils_for_filenameprocessor_tests import generate_permissions_config_content
+from tests.utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT
+
+# Ensure environment variables are mocked before importing from src files
+with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
+    from supplier_permissions import validate_vaccine_type_permissions, get_supplier_permissions
+    from errors import VaccineTypePermissionsError
 
 
 class TestSupplierPermissions(TestCase):
@@ -31,9 +36,9 @@ class TestSupplierPermissions(TestCase):
         # Run the subtests
         for supplier, expected_result in test_cases:
             with self.subTest(supplier=supplier):
-                with patch("supplier_permissions.redis_client.get", return_value=permissions_config_content):
+                with patch("elasticache.redis_client.get", return_value=permissions_config_content):
                     actual_permissions = get_supplier_permissions(supplier)
-                    self.assertEqual(actual_permissions, expected_result)
+                self.assertEqual(actual_permissions, expected_result)
 
     def test_validate_vaccine_type_permissions(self):
         """
