@@ -155,15 +155,10 @@ jobs:
         path: "s/${{ parameters.service_name }}"
         submodules: true
 
-      # - task: UsePythonVersion@0
-      #   displayName: "Use Python ${{ parameters.python_version }}"
-      #   inputs:
-      #     versionSpec: ${{ parameters.python_version }}
-      - task: UsePythonVersion@1
-        displayName: "Use Python 3.10"
+      - task: UsePythonVersion@0
+        displayName: "Use Python ${{ parameters.python_version }}"
         inputs:
-          versionSpec: '3.10'
-
+          versionSpec: ${{ parameters.python_version }}
 
       - ${{ each post_init in parameters.post_init }}:
           - ${{ post_init }}
