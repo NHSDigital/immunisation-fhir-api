@@ -150,19 +150,17 @@ jobs:
               echo "##vso[task.setvariable variable=FULLY_QUALIFIED_SERVICE_NAME]${FULLY_QUALIFIED_SERVICE_NAME}"
             fi
           displayName: Override FULLY_QUALIFIED_SERVICE_NAME
+          - bash: |
+            pyenv install -s 3.10.8
+            pyenv global 3.10.8
+
+            # Verify the correct Python version.
+            python --version
+          displayName: Set Python 3.10
         
       - checkout: self
         path: "s/${{ parameters.service_name }}"
         submodules: true
-
-      - bash: |
-          pyenv install -s 3.10.8
-          pyenv global 3.10.8
-
-          # Verify the correct Python version.
-          python --version
-        displayName: Set Python 3.10
-
           
 
       - ${{ each post_init in parameters.post_init }}:
