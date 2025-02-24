@@ -165,7 +165,7 @@ jobs:
             pyenv global 3.10.8
             # Verify the correct Python version
             python --version
-          displayName: Set Python 3.10
+        displayName: Set Python 3.10
 
       - ${{ each post_init in parameters.post_init }}:
           - ${{ post_init }}
