@@ -34,7 +34,7 @@ parameters:
     default: true
   - name: python_version
     type: string
-    default: "3.10"
+    default: "3.8"
 
 jobs:
   - job: deploy
@@ -155,6 +155,10 @@ jobs:
         path: "s/${{ parameters.service_name }}"
         submodules: true
 
+      - task: UsePythonVersion@0
+        displayName: "Use Python ${{ parameters.python_version }}"
+        inputs:
+          versionSpec: ${{ parameters.python_version }}
       - bash: |
             # Install and set Python 3.10
             pyenv install -s 3.10.8
