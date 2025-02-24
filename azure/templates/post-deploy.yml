@@ -24,15 +24,16 @@ steps:
           - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INTROSPECTION_CLIENT_SECRET_INT
           - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INT_CLIENT_ID
           - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INT_CLIENT_SECRET
+  
   - bash: |
-        # Install and set Python 3.10
-        pyenv install -s 3.10.8
-        pyenv global 3.10.8
+      # Install and set Python 3.10
+      pyenv install -s 3.10.8
+      pyenv global 3.10.8
 
-        # Verify the correct Python version
-        python --version
-      displayName: Set Python 3.10
-
+      # Verify the correct Python version
+      python --version
+    displayName: Set Python 3.10
+    
   - bash: |
       make install-python
     workingDirectory: $(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)
@@ -85,7 +86,7 @@ steps:
     displayName: Apply Terraform
     workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)"
     retryCountOnTaskFailure: 2
-
+  
   - bash: |
       set -ex
       if ! [[ $APIGEE_ENVIRONMENT =~ .*-*sandbox ]]; then
@@ -121,7 +122,7 @@ steps:
       fi
     displayName: Waiting for TF resources to be UP
     workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)"
-
+    
   - bash: |
       set -e
       export RELEASE_RELEASEID=$(Build.BuildId)
