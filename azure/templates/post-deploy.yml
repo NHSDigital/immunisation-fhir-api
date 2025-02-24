@@ -124,57 +124,87 @@ steps:
     workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)"
     
   - bash: |
-      set -e
-      export RELEASE_RELEASEID=$(Build.BuildId)
-      export SOURCE_COMMIT_ID=$(Build.SourceVersion)
-      export APIGEE_ENVIRONMENT="$(ENVIRONMENT)"
-      export APIGEE_USERNAME=apm-testing-internal-dev@nhs.net
-      export SERVICE_BASE_PATH="$(SERVICE_BASE_PATH)"
-      export APIGEE_ACCESS_TOKEN="$(secret.AccessToken)"
-      export PROXY_NAME="$(FULLY_QUALIFIED_SERVICE_NAME)"
-      export STATUS_API_KEY="$(status-endpoint-api-key)"
-      export AWS_DOMAIN_NAME="$(AWS_DOMAIN_NAME)"
-      export DYNAMODB_TABLE_NAME="$(DYNAMODB_TABLE_NAME)"
-      export IMMS_DELTA_TABLE_NAME="$(IMMS_DELTA_TABLE_NAME)"
-      export AWS_SQS_QUEUE_NAME="$(AWS_SQS_QUEUE_NAME)"
-      export AWS_SNS_TOPIC_NAME="$(AWS_SNS_TOPIC_NAME)"
-      export APIGEE_APP_ID=973b20ff-6e57-4248-b94f-200a18a03e37
-      echo "api key- $STATUS_API_KEY"
+        # Exit immediately if a command exits with a non-zero status
+        set -e
 
-      #Exporting the same profile with which Terraform got deployed
-      export AWS_PROFILE=apim-dev
-      aws_account_no="$(aws sts get-caller-identity --query Account --output text)"
-      echo aws_account_no: $aws_account_no
+        # Export environment variables
+        export RELEASE_RELEASEID=$(Build.BuildId)
+        export SOURCE_COMMIT_ID=$(Build.SourceVersion)
+        export APIGEE_ENVIRONMENT="$(ENVIRONMENT)"
+        export APIGEE_USERNAME="apm-testing-internal-dev@nhs.net"
+        export SERVICE_BASE_PATH="$(SERVICE_BASE_PATH)"
+        export APIGEE_ACCESS_TOKEN="$(secret.AccessToken)"
+        export PROXY_NAME="$(FULLY_QUALIFIED_SERVICE_NAME)"
+        export STATUS_API_KEY="$(status-endpoint-api-key)"
+        export AWS_DOMAIN_NAME="$(AWS_DOMAIN_NAME)"
+        export DYNAMODB_TABLE_NAME="$(DYNAMODB_TABLE_NAME)"
+        export IMMS_DELTA_TABLE_NAME="$(IMMS_DELTA_TABLE_NAME)"
+        export AWS_SQS_QUEUE_NAME="$(AWS_SQS_QUEUE_NAME)"
+        export AWS_SNS_TOPIC_NAME="$(AWS_SNS_TOPIC_NAME)"
+        export APIGEE_APP_ID="973b20ff-6e57-4248-b94f-200a18a03e37"
 
-      poetry lock --no-update
-      poetry install
+        echo "API Key: $STATUS_API_KEY"
 
-      test_cmd="poetry run python -m unittest"
-      # Run test_deployment before doing anything. This will wait until deployment is ready
-      $test_cmd -c -v -k test_deployment
+        # Export AWS profile used for Terraform deployment
+        export AWS_PROFILE="apim-dev"
+        aws_account_no="$(aws sts get-caller-identity --query Account --output text)"
+        echo "AWS Account No: $aws_account_no"
 
-      if [[ $APIGEE_ENVIRONMENT =~ .*-*sandbox ]]; then
-        echo "Sandbox env tests"
-        echo "running: $test_cmd -c -v -k test_proxy.TestProxyHealthcheck -k test_deployment"
-        $test_cmd -c -v -k test_proxy.TestProxyHealthcheck -k test_deployment
+        # Install dependencies using Poetry
+        poetry lock --no-update
+        poetry install
 
-      elif [[ $APIGEE_ENVIRONMENT == "ref" ]]; then
-        echo "running: $test_cmd -v -c test_deployment.py test_proxy.py"
-        $test_cmd -v -c test_deployment.py test_proxy.py
+        # Define test command
+        test_cmd="poetry run python -m unittest"
 
-      elif [[ $APIGEE_ENVIRONMENT == "int" ]]; then
-        export DEFAULT_CLIENT_ID="$(INT_CLIENT_ID)"
-        export DEFAULT_CLIENT_SECRET="$(INT_CLIENT_SECRET)"
-        echo "running: $test_cmd -v -c test_deployment.py test_proxy.py"
-        $test_cmd -v -c test_deployment.py test_proxy.py
-      
-      elif [[ $APIGEE_ENVIRONMENT == "prod" ]]; then
-        echo "Proxy test completed successfully as part of terraform resource up status check"
+        # Function for retrying tests with exponential backoff
+        retry_with_backoff() {
+          local max_attempts=${MAX_ATTEMPTS:-5}
+          local attempt=1
+          local delay=2
+          local cmd="$@"
 
-      else
-        echo "running: $test_cmd -v -c"
-        $test_cmd -v -c
-      fi
+          while [ $attempt -le $max_attempts ]; do
+            echo "Attempt $attempt/$max_attempts: $cmd"
+            if $cmd; then
+              return 0
+            fi
+            echo "Attempt $attempt failed. Retrying in $delay seconds..."
+            sleep $delay
+            delay=$((delay * 2))
+            attempt=$((attempt + 1))
+          done
+
+          echo "All $max_attempts attempts failed!"
+          return 1
+        }
+
+        # Run test_deployment before proceeding
+        retry_with_backoff $test_cmd -c -v -k test_deployment
+
+        # Run environment-specific tests
+        if [[ $APIGEE_ENVIRONMENT =~ .*-*sandbox ]]; then
+          echo "Sandbox environment tests"
+          retry_with_backoff $test_cmd -c -v -k test_proxy.TestProxyHealthcheck -k test_deployment
+
+        elif [[ $APIGEE_ENVIRONMENT == "ref" ]]; then
+          echo "Reference environment tests"
+          retry_with_backoff $test_cmd -v -c test_deployment.py test_proxy.py
+
+        elif [[ $APIGEE_ENVIRONMENT == "int" ]]; then
+          echo "Integration environment tests"
+          export DEFAULT_CLIENT_ID="$(INT_CLIENT_ID)"
+          export DEFAULT_CLIENT_SECRET="$(INT_CLIENT_SECRET)"
+          retry_with_backoff $test_cmd -v -c test_deployment.py test_proxy.py
+
+        elif [[ $APIGEE_ENVIRONMENT == "prod" ]]; then
+          echo "Proxy test completed successfully as part of Terraform resource status check"
+
+        else
+          echo "Default environment tests"
+          retry_with_backoff $test_cmd -v -c
+        fi
+
 
     workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/e2e"
     displayName: Run full test suite
