@@ -72,7 +72,7 @@ jobs:
 
             # Verify the correct Python version.
             python --version
-          displayName: Set Python 3.10
+        displayName: Set Python 3.10
 
       - ${{ if parameters.notify }}:
         - template: azure/components/aws-assume-role.yml@common
