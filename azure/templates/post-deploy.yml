@@ -77,7 +77,7 @@ steps:
     displayName: Apply Terraform
     workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)"
     retryCountOnTaskFailure: 2
-
+  
   - bash: |
       set -ex
       if ! [[ $APIGEE_ENVIRONMENT =~ .*-*sandbox ]]; then
@@ -114,6 +114,15 @@ steps:
     displayName: Waiting for TF resources to be UP
     workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)"
 
+  - bash: |
+      # Install and set Python 3.10
+      pyenv install -s 3.10.8
+      pyenv global 3.10.8
+
+      # Verify the correct Python version
+      python --version
+    displayName: Set Python 3.10
+    
   - bash: |
       set -e
       export RELEASE_RELEASEID=$(Build.BuildId)
