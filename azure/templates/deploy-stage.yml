@@ -159,8 +159,8 @@ jobs:
         displayName: "Use Python ${{ parameters.python_version }}"
         inputs:
           versionSpec: ${{ parameters.python_version }}
+      
       - bash: |
-            # Install and set Python 3.10
             pyenv install -s 3.10.8
             pyenv global 3.10.8
             # Verify the correct Python version
