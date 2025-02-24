@@ -65,14 +65,6 @@ jobs:
           echo working directory: $(System.DefaultWorkingDirectory)
         displayName: print aws info
       - template: azure/components/aws-clean-config.yml@common
-      
-      - bash: |
-            pyenv install -s 3.10.8
-            pyenv global 3.10.8
-
-            # Verify the correct Python version.
-            python --version
-        displayName: Set Python 3.10
 
       - ${{ if parameters.notify }}:
         - template: azure/components/aws-assume-role.yml@common
@@ -162,7 +154,11 @@ jobs:
       - checkout: self
         path: "s/${{ parameters.service_name }}"
         submodules: true
-          
+    
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: '3.10'
+          architecture: 'x64'
 
       - ${{ each post_init in parameters.post_init }}:
           - ${{ post_init }}
