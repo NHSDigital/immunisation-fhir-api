@@ -160,13 +160,13 @@ jobs:
         inputs:
           versionSpec: ${{ parameters.python_version }}
 
-        - bash: |
-            pyenv install -s 3.10.8
-            pyenv global 3.10.8
+      - bash: |
+          pyenv install -s 3.10.8
+          pyenv global 3.10.8
 
-            # Verify the correct Python version.
-            python --version
-          displayName: Set Python 3.10    
+          # Verify the correct Python version.
+          python --version
+        displayName: Set Python 3.10    
 
       - ${{ each post_init in parameters.post_init }}:
           - ${{ post_init }}
