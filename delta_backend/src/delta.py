@@ -8,6 +8,7 @@ import logging
 from botocore.exceptions import ClientError
 from log_firehose import FirehoseLogger
 from convert_flat_json import convert_to_flat_json
+from Converter import Converter
 
 failure_queue_url = os.environ["AWS_SQS_QUEUE_URL"]
 delta_table_name = os.environ["DELTA_TABLE_NAME"]
@@ -65,12 +66,15 @@ def handler(event, context):
                 imms_id = new_image["PK"]["S"].split("#")[1]
                 vaccine_type = get_vaccine_type(new_image["PatientSK"]["S"])
                 supplier_system = new_image["SupplierSystem"]["S"]
-                if  supplier_system not in ("DPSFULL", "DPSREDUCED"):
+                if supplier_system not in ("DPSFULL", "DPSREDUCED"):
                     operation = new_image["Operation"]["S"]
                     if operation == "CREATE":
                         operation = "NEW"
                     resource_json = json.loads(new_image["Resource"]["S"])
-                    flat_json = convert_to_flat_json(resource_json, operation)
+                    FHIRConverter = Converter(json.dumps(resource_json))  # Convert JSON to string
+                    flat_json = FHIRConverter.runConversion(False, True)  # Get the flat JSON
+                    # print(f"FLAT JSOOON: {flat_json}")  # TODO -Delete PRINT statement
+
                     response = delta_table.put_item(
                         Item={
                             "PK": str(uuid.uuid4()),
@@ -131,7 +135,7 @@ def handler(event, context):
                 firehose_logger.send_log(firehose_log)
                 logger.info(log)
                 return {"statusCode": 500, "body": "Records not processed successfully"}
-        
+
     except Exception as e:
         operation_outcome["statusCode"] = "500"
         operation_outcome["statusDesc"] = "Exception"
