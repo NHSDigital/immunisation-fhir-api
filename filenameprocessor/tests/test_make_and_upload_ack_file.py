@@ -18,7 +18,7 @@ with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
 
 s3_client = boto3_client("s3", region_name=REGION_NAME)
 
-FILE_DETAILS = MockFileDetails.flu_emis
+FILE_DETAILS = MockFileDetails.emis_flu
 
 # NOTE: The expected ack data is the same for all scenarios as the ack file is only created if an error occurs
 # or validation fails

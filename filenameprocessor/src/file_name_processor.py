@@ -44,10 +44,14 @@ def handle_record(record) -> dict:
         logger.error("Error obtaining file_key: %s", error)
         return {"statusCode": 500, "message": "Failed to download file key", "error": str(error)}
 
-    # The lambda is unintentionally invoked when a file is moved into a different folder in the source bucket.
-    # Excluding file keys containing a "/" is a workaround to prevent the lambda from processing files that
-    # are not in the root of the source bucket.
-    if "data-sources" in bucket_name and "/" not in file_key:
+    if "data-sources" in bucket_name:
+
+        # The lambda is unintentionally invoked when a file is moved into a different folder in the source bucket.
+        # Excluding file keys containing a "/" is a workaround to prevent the lambda from processing files that
+        # are not in the root of the source bucket.
+        if "/" in file_key:
+            message = "File skipped due to duplicate lambda invoaction"
+            return {"statusCode": 200, "message": message, "file_key": file_key}
 
         # Set default values for file-specific variables
         message_id = "Message id was not created"
