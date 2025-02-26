@@ -73,6 +73,7 @@ def handler(event, context):
                     resource_json = json.loads(new_image["Resource"]["S"])
                     FHIRConverter = Converter(json.dumps(resource_json))  # Convert JSON to string
                     flat_json = FHIRConverter.runConversion(False, True)  # Get the flat JSON
+                    flat_json[0]["ACTION_FLAG"] = operation
                     # print(f"FLAT JSOOON: {flat_json}")  # TODO -Delete PRINT statement
 
                     response = delta_table.put_item(
