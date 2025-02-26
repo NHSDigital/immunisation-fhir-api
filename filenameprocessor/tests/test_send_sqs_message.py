@@ -18,8 +18,8 @@ with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
 
 sqs_client = boto3_client("sqs", region_name=REGION_NAME)
 
-FLU_EMIS_FILE_DETAILS = MockFileDetails.flu_emis
-RSV_RAVS_FILE_DETAILS = MockFileDetails.rsv_ravs
+FLU_EMIS_FILE_DETAILS = MockFileDetails.emis_flu
+RSV_RAVS_FILE_DETAILS = MockFileDetails.ravs_rsv_1
 
 NON_EXISTENT_QUEUE_ERROR_MESSAGE = (
     "An unexpected error occurred whilst sending to SQS: An error occurred (AWS.SimpleQueueService.NonExistent"

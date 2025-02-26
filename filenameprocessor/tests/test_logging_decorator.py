@@ -25,7 +25,7 @@ sqs_client = boto3_client("sqs", region_name=REGION_NAME)
 firehose_client = boto3_client("firehose", region_name=REGION_NAME)
 dynamodb_client = boto3_client("dynamodb", region_name=REGION_NAME)
 
-FILE_DETAILS = MockFileDetails.flu_emis
+FILE_DETAILS = MockFileDetails.emis_flu
 MOCK_VACCINATION_EVENT = {
     "Records": [{"s3": {"bucket": {"name": BucketNames.SOURCE}, "object": {"key": FILE_DETAILS.file_key}}}]
 }

@@ -37,10 +37,27 @@ class TestElasticache(TestCase):
         Test that upload_to_elasticache successfully uploads the file to elasticache, which is then successfully read
         by get_permissions_config_json_from_cache
         """
-        mock_permissions = {"test_supplier_1": ["RSV_FULL"], "test_supplier_2": ["FLU_CREATE", "FLU_UPDATE"]}
-        mock_permissions_config = generate_permissions_config_content(mock_permissions)
-        s3_client.put_object(Bucket=BucketNames.CONFIG, Key=PERMISSIONS_CONFIG_FILE_KEY, Body=mock_permissions_config)
+        mock_permissions_1 = {"test_supplier_1": ["RSV_FULL"], "test_supplier_2": ["FLU_CREATE", "FLU_UPDATE"]}
+        mock_permissions_config_1 = generate_permissions_config_content(mock_permissions_1)
+
+        mock_permissions_2 = {
+            "test_supplier_1": ["FLU_FULL"],
+            "test_supplier_2": ["RSV_CREATE"],
+            "test_supplier_3": ["RSV_UPDATE"],
+        }
+        mock_permissions_config_2 = generate_permissions_config_content(mock_permissions_2)
 
         with patch("elasticache.redis_client", fakeredis.FakeStrictRedis()):
+            # Test that the permissions config is successfully uploaded to elasticache
+            s3_client.put_object(
+                Bucket=BucketNames.CONFIG, Key=PERMISSIONS_CONFIG_FILE_KEY, Body=mock_permissions_config_1
+            )
             upload_to_elasticache(PERMISSIONS_CONFIG_FILE_KEY, BucketNames.CONFIG)
-            self.assertEqual(get_permissions_config_json_from_cache(), {"all_permissions": mock_permissions})
+            self.assertEqual(get_permissions_config_json_from_cache(), {"all_permissions": mock_permissions_1})
+
+            # Test that the cache is updated with the new permissions config
+            s3_client.put_object(
+                Bucket=BucketNames.CONFIG, Key=PERMISSIONS_CONFIG_FILE_KEY, Body=mock_permissions_config_2
+            )
+            upload_to_elasticache(PERMISSIONS_CONFIG_FILE_KEY, BucketNames.CONFIG)
+            self.assertEqual(get_permissions_config_json_from_cache(), {"all_permissions": mock_permissions_2})
