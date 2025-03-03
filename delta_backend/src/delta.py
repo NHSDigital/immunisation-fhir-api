@@ -7,7 +7,6 @@ import uuid
 import logging
 from botocore.exceptions import ClientError
 from log_firehose import FirehoseLogger
-from convert_flat_json import convert_to_flat_json
 from Converter import Converter
 
 failure_queue_url = os.environ["AWS_SQS_QUEUE_URL"]
@@ -52,6 +51,7 @@ def handler(event, context):
         # I am converting it to isofformat for filtering purpose. This can be changed accordingly
 
         for record in event["Records"]:
+            print(f"RECORD handler:{record}")
             start = time.time()
             log_data["date_time"] = str(datetime.now())
             intrusion_check = False
@@ -74,8 +74,8 @@ def handler(event, context):
                     FHIRConverter = Converter(json.dumps(resource_json))  # Convert JSON to string
                     flat_json = FHIRConverter.runConversion(False, True)  # Get the flat JSON
                     flat_json[0]["ACTION_FLAG"] = operation
-                    # print(f"FLAT JSOOON: {flat_json}")  # TODO -Delete PRINT statement
-
+                    print(f"FLAT JSOOON: {flat_json}")  # TODO -Delete PRINT statement
+                    # print(f"{operation}")
                     response = delta_table.put_item(
                         Item={
                             "PK": str(uuid.uuid4()),
