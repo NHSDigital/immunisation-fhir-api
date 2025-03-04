@@ -1,0 +1,148 @@
+{
+    "id": "f219e05d-f4aa-4b46-a1b3-5e977fd7671c",
+    "resourceType": "Immunization",
+    "contained": [
+      {
+          "resourceType": "Practitioner",
+          "id": "Pract1"
+      },
+      {
+          "resourceType": "Patient",
+          "id" : "Pat1",
+          "identifier": [
+              {
+                  "system": "https://fhir.nhs.uk/Id/nhs-number",
+                  "value": "9000000019"
+              }
+          ],
+          "name": [
+              {
+                  "family": "Taylor",
+                  "given": [
+                      "Jonjo"
+                  ]
+              }
+          ],
+          "gender": "unknown",
+          "birthDate": "1965-02-28",
+          "address": [
+              {
+                  "postalCode": "EC1A 1BB"
+              }
+          ]
+      }
+    ],
+    "extension": [
+      {
+          "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure",
+          "valueCodeableConcept": {
+              "coding": [
+                  {
+                      "system": "http://snomed.info/sct",
+                      "code": "822851000000102",
+                      "display": "Seasonal influenza vaccination (procedure)"
+                  }
+              ]
+          }
+      }
+    ],
+    "identifier": [
+      {
+          "system": "https://supplierABC/identifiers/vacc",
+          "value": "ACME-vacc123flu"
+      }
+    ],
+    "status": "completed",
+    "vaccineCode": {
+      "coding": [
+          {
+              "system": "http://snomed.info/sct",
+              "code": "39566211000001103",
+              "display": "Supemtek Quadrivalent vaccine (recombinant) solution for injection 0.5ml pre-filled syringes (Sanofi) (product)"
+          }
+      ]
+    },
+    "patient": {
+      "reference" : "#Pat1"
+    },
+    "occurrenceDateTime": "2021-02-14T13:28:17.271+00:00",
+    "recorded": "2021-02-14",
+    "primarySource": true,
+    "manufacturer": {
+      "display": "Sanofi"
+    },
+    "location": {
+      "identifier": {
+          "value": "X99999",
+          "system": "https://fhir.nhs.uk/Id/ods-organization-code"
+      }
+    },
+    "lotNumber": "41925TJ61",
+    "expirationDate": "2021-07-02",
+    "site": {
+      "coding": [
+          {
+              "system": "http://snomed.info/sct",
+              "code": "368209003",
+              "display": "Right upper arm structure (body structure)"
+          }
+      ]
+    },
+    "route": {
+      "coding": [
+          {
+              "system": "http://snomed.info/sct",
+              "code": "78421000",
+              "display": "Intramuscular route (qualifier value)"
+          }
+      ]
+    },
+    "doseQuantity": {
+      "value": 0.5,
+      "unit": "milliliter",
+      "system": "http://unitsofmeasure.org",
+      "code": "ml"
+    },
+    "performer": [
+      {
+          "actor": {
+              "reference" : "#Pract1"
+          }
+      },
+      {
+          "actor" : {
+              "type" : "Organization",
+              "identifier": {
+                  "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                  "value": "B0C4P"
+              }
+          }
+      }
+    ],
+    "reasonCode": [
+      {
+          "coding": [
+              {
+                  "code": "171279008",
+                  "system": "http://snomed.info/sct"
+              }
+          ]
+      }
+    ],
+    "protocolApplied": [
+      {
+          "targetDisease": [
+              {
+                  "coding": [
+                      {
+                          "system": "http://snomed.info/sct",
+                          "code": "6142004",
+                          "display": "Influenza (disorder)"
+                      }
+                  ]
+              }
+          ],
+          "doseNumberPositiveInt": 1
+      }
+    ]
+  }
