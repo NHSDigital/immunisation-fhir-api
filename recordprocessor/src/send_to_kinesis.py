@@ -15,6 +15,7 @@ def send_to_kinesis(supplier: str, message_body: dict, vaccine_type: str) -> boo
             Data=json.dumps(message_body, ensure_ascii=False),
             PartitionKey=f"{supplier}_{vaccine_type}",
         )
+        return True
     except ClientError as error:
         logger.error("Error sending message to Kinesis: %s", error)
         raise
