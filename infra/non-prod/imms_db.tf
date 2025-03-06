@@ -22,9 +22,9 @@ resource "aws_dynamodb_table" "events-dynamodb-int-table" {
         type = "S"
     }
 
-    tags = {
+  tags = merge(var.grafana_tags, {
         NHSE-Enable-Dynamo-Backup = "True"
-    }
+    })
 
     global_secondary_index {
         name               = "PatientGSI"
@@ -69,9 +69,9 @@ resource "aws_dynamodb_table" "events-dynamodb-ref-table" {
         type = "S"
     }
 
-    tags = {
+  tags = merge(var.grafana_tags, {
         NHSE-Enable-Dynamo-Backup = "True"
-    }
+    })
 
     global_secondary_index {
         name               = "PatientGSI"
@@ -116,9 +116,8 @@ resource "aws_dynamodb_table" "events-dynamodb-table" {
         type = "S"
     }
 
-    tags = {
-        NHSE-Enable-Dynamo-Backup = "True"
-    }
+   tags = merge(var.grafana_tags, {       NHSE-Enable-Dynamo-Backup = "True"
+    })
 
     global_secondary_index {
         name               = "PatientGSI"
