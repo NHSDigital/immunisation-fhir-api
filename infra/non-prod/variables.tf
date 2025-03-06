@@ -1,6 +1,17 @@
 data "aws_vpc" "default" {
     default = true
 }
+
+data "aws_route_table" "main" {
+  vpc_id = data.aws_vpc.default.id
+
+  filter {
+    name   = "association.main"
+    values = ["true"]
+  }
+}
+
+
 data "aws_subnets" "default" {
     filter {
         name   = "vpc-id"
@@ -27,4 +38,10 @@ locals {
 }
 data "aws_kms_key" "existing_s3_encryption_key" {
   key_id = "alias/imms-batch-s3-shared-key"
+}
+
+variable "public_subnet_ids" {
+  description = "List of public subnet IDs"
+  type        = list(string)
+  default     = ["subnet-0c820f8e69aae7bcb", "subnet-0865f12fc32c8ccf3", "subnet-03727ab465af588cd"]
 }

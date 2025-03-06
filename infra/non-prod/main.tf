@@ -29,3 +29,13 @@ provider "aws" {
 
 data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
+
+// include the ./grafana/AWS/terraform directory
+module "grafana" {
+  source = "./grafana/AWS/terraform"
+  aws_region = var.aws_region
+  cidr_block = data.aws_vpc.default.cidr_block
+  vpc_id = data.aws_vpc.default.id
+  public_subnet_ids = var.public_subnet_ids
+  main_route_table_id = data.aws_route_table.main.id
+}
