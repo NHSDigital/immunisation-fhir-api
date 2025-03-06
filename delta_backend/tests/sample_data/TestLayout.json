@@ -1,0 +1,27 @@
+{
+    "id": "7d78e9a6-d859-45d3-bb05-df9c405acbdb",
+    "schemaName": "JSON Base",
+    "version": 1.0,
+    "releaseDate": "2024-07-17T00:00:00.000Z",
+    "conversions": [
+      {
+        "fieldNameFHIR": "performer.#:Organization.actor.identifier.value",
+        "fieldNameFlat": "SITE_CODE",
+        "expression": {
+          "expressionName": "Not Empty",
+          "expressionType": "NOTEMPTY",
+          "expressionRule": ""
+        }
+      },
+      {
+        "fieldNameFHIR": "performer.#:Organization.actor.identifier.system",
+        "fieldNameFlat": "SITE_CODE_TYPE_URI",
+        "expression": {
+          "expressionName": "Defaults to",
+          "expressionType": "DEFAULT",
+          "expressionRule": "https://fhir.nhs.uk/Id/ods-organization-code"
+        }
+      }
+    ]
+  }
+  
