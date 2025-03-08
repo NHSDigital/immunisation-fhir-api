@@ -55,6 +55,8 @@ variable "fargate_memory" {
 variable "public_subnet_ids" {
   description = "List of public subnet IDs"
   type        = list(string)
+  # @TODO hard coded values to be replaced with dynamic ids extracted from the VPC and subnets that point to GW
+  default     = ["subnet-0c820f8e69aae7bcb", "subnet-0865f12fc32c8ccf3", "subnet-03727ab465af588cd"]
 }
 variable "cidr_block" {
   description = "The CIDR block of the VPC"
