@@ -4,7 +4,11 @@
 data "aws_availability_zones" "available" {}
 
 resource "aws_vpc" "grafana_main" {
-    cidr_block = "172.17.0.0/16"
+    // default cidr 172.31.0.0/16
+    // 172.17.0.0/16
+    // 172.31.0.0/16
+    cidr_block = "172.18.0.0/16"
+
 }
 
 # Create var.az_count private subnets, each in a different AZ

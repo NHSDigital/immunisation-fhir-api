@@ -1,6 +1,7 @@
 resource "aws_security_group" "lambda_redis_sg" {
   vpc_id = data.aws_vpc.default.id
   name   = "immunisation-security-group"
+  tags          = var.grafana_tags
 
   # Inbound rule to allow traffic only from the VPC CIDR block
   ingress {
@@ -52,9 +53,9 @@ resource "aws_vpc_endpoint" "sqs_endpoint" {
       }
     ]
   })
-  tags = {
+  tags = merge(var.grafana_tags, {
     Name = "immunisation-sqs-endpoint"
-  }
+  })
 }
 
 resource "aws_vpc_endpoint" "s3_endpoint" {
@@ -84,15 +85,16 @@ resource "aws_vpc_endpoint" "s3_endpoint" {
       }
     ]
   })
-  tags = {
-    Name = "immunisation-s3-endpoint"
-  }
+  tags = merge(var.grafana_tags, {
+        Name = "immunisation-s3-endpoint"
+  })
 }
 
 resource "aws_vpc_endpoint" "kinesis_endpoint" {
   vpc_id            = data.aws_vpc.default.id
   service_name      = "com.amazonaws.${var.aws_region}.kinesis-firehose"
   vpc_endpoint_type = "Interface"
+
 
   subnet_ids          = data.aws_subnets.default.ids
   security_group_ids  = [aws_security_group.lambda_redis_sg.id]
@@ -113,9 +115,9 @@ resource "aws_vpc_endpoint" "kinesis_endpoint" {
       }
     ]
   })
-  tags = {
+  tags = merge(var.grafana_tags, {
     Name = "immunisation-kinesis-endpoint"
-  }
+  })
 }
 
 resource "aws_vpc_endpoint" "dynamodb" {
@@ -137,9 +139,9 @@ resource "aws_vpc_endpoint" "dynamodb" {
       }
     ]
   })
-  tags = {
+  tags = merge(var.grafana_tags, {
     Name = "immunisation-dynamo-endpoint"
-  }
+  })
 
 
 }
@@ -153,9 +155,9 @@ resource "aws_vpc_endpoint" "ecr_api" {
   subnet_ids = data.aws_subnets.default.ids
   security_group_ids = [aws_security_group.lambda_redis_sg.id]
   private_dns_enabled = true
-  tags = {
+  tags = merge(var.grafana_tags, {
     Name = "immunisation-ecr-api-endpoint"
-  }
+  })
 }
 
 resource "aws_vpc_endpoint" "ecr_dkr" {
@@ -166,9 +168,9 @@ resource "aws_vpc_endpoint" "ecr_dkr" {
   subnet_ids = data.aws_subnets.default.ids
   security_group_ids = [aws_security_group.lambda_redis_sg.id]
   private_dns_enabled = true
-  tags = {
+  tags = merge(var.grafana_tags, {
     Name = "immunisation-ecr-dkr-endpoint"
-  }
+  })
 }
 
 resource "aws_vpc_endpoint" "cloud_watch" {
@@ -179,9 +181,9 @@ resource "aws_vpc_endpoint" "cloud_watch" {
   subnet_ids = data.aws_subnets.default.ids
   security_group_ids = [aws_security_group.lambda_redis_sg.id]
   private_dns_enabled = true
-  tags = {
+  tags = merge(var.grafana_tags, {
     Name = "immunisation-cloud-watch-endpoint"
-  }
+  })
 }
 
 
@@ -212,9 +214,9 @@ resource "aws_vpc_endpoint" "kinesis_stream_endpoint" {
       }
     ]
   })
-  tags = {
+  tags = merge(var.grafana_tags, {
     Name = "immunisation-kinesis-streams-endpoint"
-  }
+  })
 }
 
 resource "aws_vpc_endpoint" "kms_endpoint" {
@@ -244,9 +246,8 @@ resource "aws_vpc_endpoint" "kms_endpoint" {
       }
     ]
   })
-  tags = {
-    Name = "immunisation-kms-endpoint"
-  }
+  tags = merge(var.grafana_tags, {    Name = "immunisation-kms-endpoint"
+  })
 }
 
 
@@ -258,7 +259,8 @@ resource "aws_vpc_endpoint" "lambda_endpoint" {
   subnet_ids = data.aws_subnets.default.ids
   security_group_ids = [aws_security_group.lambda_redis_sg.id]
   private_dns_enabled = true
-  tags = {
+
+  tags = merge(var.grafana_tags, {
     Name = "immunisation-lambda-endpoint"
-  }
+  })
 }

@@ -10,6 +10,7 @@ variable "ecs_auto_scale_role_name" {
 
 variable "az_count" {
     description = "Number of AZs to cover in a given region"
+    default = 2
 }
 
 variable "app_image" {

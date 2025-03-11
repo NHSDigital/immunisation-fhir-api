@@ -1,5 +1,6 @@
 data "aws_vpc" "default" {
     default = true
+    // cidr = 172.31.0.0/16 
 }
 
 data "aws_route_table" "main" {
