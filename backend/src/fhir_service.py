@@ -58,6 +58,7 @@ class FhirService:
         self.pds_service = pds_service
         self.validator = validator
 
+ 
     def get_immunization_by_identifier(
         self, identifier_pk: str, imms_vax_type_perms: str, identifier: str, element: str, is_imms_batch_app
     ) -> Optional[dict]:
@@ -76,6 +77,21 @@ class FhirService:
             base_url = f"{get_service_url()}/Immunization"
             response = form_json(imms_resp, element, identifier, base_url)
             return response
+    
+    # def normalize_nhs_number_response(self, imms):
+    #     """
+    # Normalizes the NHS number in an immunization resource.
+    # This function checks if an NHS number within the given immunization resource (`imms`).
+    # """
+    #     if patient := next((resource for resource in imms.get('contained', []) if resource.get('resourceType') == 'Patient'), None):
+    #         if nhs_number_identifier := next(
+    #             (identifier for identifier in patient.get('identifier', [])
+    #          if identifier.get('system') == 'https://fhir.nhs.uk/Id/nhs-number'), None):
+            
+    #             pass
+
+    #     return imms
+
 
     def get_immunization_by_id(self, imms_id: str, imms_vax_type_perms: str) -> Optional[dict]:
         """
@@ -85,21 +101,21 @@ class FhirService:
         if not (imms_resp := self.immunization_repo.get_immunization_by_id(imms_id, imms_vax_type_perms)):
             return None
 
-        # Remove fields rom the imms resource which are not to be returned for read
-        imms_filtered_for_read = Filter.read(imms_resp.get("Resource", {}))
+        # Returns the Immunisation full resource with no obfuscation or filters code
+        imms_filtered_for_read =  Filter.read(imms_resp.get("Resource", {}))
 
-        # Handle s-flag filtering, where applicable
-        if not (nhs_number := obtain_field_value(imms_filtered_for_read, FieldNames.patient_identifier_value)):
-            imms_filtered_for_read_and_s_flag = imms_filtered_for_read
-        else:
-            if patient := self.pds_service.get_patient_details(nhs_number):
-                imms_filtered_for_read_and_s_flag = handle_s_flag(imms_filtered_for_read, patient)
-            else:
-                raise UnhandledResponseError("unable to validate NHS number with downstream service")
+      
+        
+        
+        # Handle s-flag filtering, where applicable (commented out, obfuscation dropped)
+        # if (nhs_number := obtain_field_value(imms_full_resource, FieldNames.patient_identifier_value)):
+        #     patient = self.pds_service.get_patient_details(nhs_number)
+        #     if not patient:
+        #         raise UnhandledResponseError("unable to validate NHS number with downstream service")
 
         return {
             "Version": imms_resp.get("Version", ""),
-            "Resource": Immunization.parse_obj(imms_filtered_for_read_and_s_flag),
+            "Resource": Immunization.parse_obj(imms_filtered_for_read),
         }
 
     def get_immunization_by_id_all(self, imms_id: str, imms: dict) -> Optional[dict]:

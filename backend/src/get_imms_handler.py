@@ -16,7 +16,9 @@ def get_imms_handler(event, context):
 
 def get_immunization_by_id(event, controller: FhirController):
     try:
-        return controller.get_immunization_by_id(event)
+       return controller.get_immunization_by_id(event)
+      
+       
     except Exception:  # pylint: disable = broad-exception-caught
         exp_error = create_operation_outcome(
             resource_id=str(uuid.uuid4()),

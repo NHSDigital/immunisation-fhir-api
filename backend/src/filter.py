@@ -94,7 +94,6 @@ def add_use_to_identifier(imms: dict) -> dict:
 
 class Filter:
     """Functions for filtering a FHIR Immunization Resource"""
-
     @staticmethod
     def read(imms: dict) -> dict:
         """Apply filtering for READ request"""
