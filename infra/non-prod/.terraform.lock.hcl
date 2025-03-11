@@ -24,6 +24,13 @@ provider "registry.terraform.io/hashicorp/aws" {
   ]
 }
 
+provider "registry.terraform.io/hashicorp/template" {
+  version = "2.2.0"
+  hashes = [
+    "h1:44Le5zVomtfOfKUsH+utlMXOcHwPe4CWyCi+0f8y0XQ=",
+  ]
+}
+
 provider "registry.terraform.io/kreuzwerker/docker" {
   version     = "3.0.2"
   constraints = "3.0.2"

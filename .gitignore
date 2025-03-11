@@ -29,3 +29,4 @@ openapi.json
 !**/.vscode/settings.json.default
 
 devtools/volume/
+infra/non-prod/.terraform.lock.hcl

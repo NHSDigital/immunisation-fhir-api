@@ -2,7 +2,7 @@
 
 resource "aws_alb" "main" {
     name        = "grafana-load-balancer"
-    subnets         = aws_subnet.public.*.id
+    subnets         = aws_subnet.grafana_public.*.id
     security_groups = [aws_security_group.lb.id]
 }
 
@@ -10,7 +10,7 @@ resource "aws_alb_target_group" "app" {
     name        = "grafana-target-group"
     port        = 3000
     protocol    = "HTTP"
-    vpc_id      = aws_vpc.main.id
+    vpc_id      = aws_vpc.grafana_main.id
     target_type = "ip"
 
     health_check {

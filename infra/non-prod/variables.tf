@@ -45,3 +45,4 @@ variable "public_subnet_ids" {
   type        = list(string)
   default     = ["subnet-0c820f8e69aae7bcb", "subnet-0865f12fc32c8ccf3", "subnet-03727ab465af588cd"]
 }
+
