@@ -10,7 +10,7 @@ resource "aws_vpc" "grafana_main" {
     cidr_block = "172.18.0.0/16"
     // name of vpc
     tags = {
-        Name = "imms-fhir-grafana-main"
+        Name = "${var.prefix}-vpc"
     }
 }
 
@@ -20,6 +20,9 @@ resource "aws_subnet" "grafana_private" {
     cidr_block        = cidrsubnet(aws_vpc.grafana_main.cidr_block, 8, count.index)
     availability_zone = data.aws_availability_zones.available.names[count.index]
     vpc_id            = aws_vpc.grafana_main.id
+    tags = merge(var.tags, {
+        Name = "${var.prefix}-private-subnet-${count.index}"
+    })
 }
 
 # Create var.az_count public subnets, each in a different AZ
@@ -29,11 +32,17 @@ resource "aws_subnet" "grafana_public" {
     availability_zone       = data.aws_availability_zones.available.names[count.index]
     vpc_id                  = aws_vpc.grafana_main.id
     map_public_ip_on_launch = true
+    tags = merge(var.tags, {
+        Name = "${var.prefix}-public-subnet-${count.index}"
+    })
 }
 
 # Internet Gateway for the public subnet
 resource "aws_internet_gateway" "gw" {
     vpc_id = aws_vpc.grafana_main.id
+    tags = merge(var.tags, {
+        Name = "${var.prefix}-igw"
+    })
 }
 
 # Route the public subnet traffic through the IGW
@@ -73,6 +82,9 @@ resource "aws_security_group" "vpc_endpoints" {
         protocol    = "-1"
         cidr_blocks = ["0.0.0.0/0"]
     }
+    tags = merge(var.tags, {
+        Name = "${var.prefix}-vpc-endpoints-sg"
+    })
 }
 
 # Create VPC Endpoint for ECR API
@@ -82,6 +94,9 @@ resource "aws_vpc_endpoint" "ecr_api" {
     vpc_endpoint_type = "Interface"
     subnet_ids        = aws_subnet.grafana_private.*.id
     security_group_ids = [aws_security_group.vpc_endpoints.id]
+    tags = merge(var.tags, {
+        Name = "${var.prefix}-vpc-endpoints-sg"
+    })
 }
 
 # Create VPC Endpoint for ECR Docker
@@ -91,6 +106,9 @@ resource "aws_vpc_endpoint" "ecr_docker" {
     vpc_endpoint_type = "Interface"
     subnet_ids        = aws_subnet.grafana_private.*.id
     security_group_ids = [aws_security_group.vpc_endpoints.id]
+    tags = merge(var.tags, {
+        Name = "${var.prefix}-vpc-endpoints-sg-docker"
+    })
 }
 
 # Create VPC Endpoint for CloudWatch Logs
@@ -100,4 +118,7 @@ resource "aws_vpc_endpoint" "cloudwatch_logs" {
     vpc_endpoint_type = "Interface"
     subnet_ids        = aws_subnet.grafana_private.*.id
     security_group_ids = [aws_security_group.vpc_endpoints.id]
+    tags = merge(var.tags, {
+        Name = "${var.prefix}-vpc-endpoints-sg-logs"
+    })
 }

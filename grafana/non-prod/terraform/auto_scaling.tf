@@ -7,6 +7,9 @@ resource "aws_appautoscaling_target" "target" {
   role_arn           = aws_iam_role.ecs_auto_scale_role.arn
   min_capacity       = 1
   max_capacity       = 1
+  tags = merge(var.tags, {
+    Name = "${var.prefix}-aas-tgt"
+  })
 }
 
 # Automatically scale capacity up by one
@@ -28,6 +31,7 @@ resource "aws_appautoscaling_policy" "up" {
   }
 
   depends_on = [aws_appautoscaling_target.target]
+
 }
 
 # Automatically scale capacity down by one
