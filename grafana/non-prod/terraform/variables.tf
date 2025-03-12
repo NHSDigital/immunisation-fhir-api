@@ -49,12 +49,6 @@ variable "cidr_block" {
     description = "CIDR block for the VPC"
 }
 
-variable "tags" {
-  description = "A map of tags to add to all resources"
-  type        = map(string)
-  default     = {}
-}
-
 variable "prefix" {
   description = "Prefix for all resources"
 }
