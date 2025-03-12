@@ -47,7 +47,7 @@ def replace_address_postal_codes(imms: dict) -> dict:
                 # Remove all other keys in the address dictionary
                 keys_to_remove = [key for key in address.keys() if key != "postalCode"]
                 for key in keys_to_remove:
-                    del address[key]    
+                    del address[key]
 
     return imms
 
@@ -59,7 +59,7 @@ def replace_organization_values(imms: dict) -> dict:
     """
     for performer in imms.get("performer", [{}]):
         if performer.get("actor", {}).get("type") == "Organization":
-            
+
             # Obfuscate or set the identifier value and system.
             identifier = performer["actor"].get("identifier", {})
             if identifier.get("value") is not None:
@@ -67,15 +67,15 @@ def replace_organization_values(imms: dict) -> dict:
                 identifier["system"] = Urls.ods_organization_code
             if identifier.get("system") is not None:
                 identifier["system"] = Urls.ods_organization_code
-            
+
             # Ensure only 'system' and 'value' remain in identifier
             keys = {"system", "value"}
             keys_to_remove = [key for key in identifier.keys() if key not in keys]
             for key in keys_to_remove:
                 del identifier[key]
-            
+
             # Remove all other fields except 'identifier' in actor
-            keys_to_remove = [key for key in performer["actor"].keys() if key not in ("identifier","type")]
+            keys_to_remove = [key for key in performer["actor"].keys() if key not in ("identifier", "type")]
             for key in keys_to_remove:
                 del performer["actor"][key]
 
@@ -107,9 +107,6 @@ class Filter:
         imms.pop("contained")
         imms["patient"] = create_reference_to_patient_resource(patient_full_url, bundle_patient)
         imms = add_use_to_identifier(imms)
-        # Location identifier system and value are to be overwritten
-        # (for backwards compatibility with Immunisation History API, as agreed with VDS team)
-        imms["location"] = {"identifier": {"system": "urn:iso:std:iso:3166", "value": "GB"}}
         return imms
 
     @staticmethod

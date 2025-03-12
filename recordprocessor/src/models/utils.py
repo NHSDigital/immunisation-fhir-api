@@ -43,12 +43,14 @@ class UnhandledResponseError(RuntimeError):
 @dataclass
 class ImmunizationApiUnhandledError(RuntimeError):
     """An error that occurs when the ImmunizationApi throws an unhandled error."""
+
     request: dict
 
 
 @dataclass
 class ImmunizationApiError(RuntimeError):
     """An error that occurs when the ImmunizationApi returns a non-200 status code."""
+
     status_code: int
     request: dict
     response: Union[dict, str]

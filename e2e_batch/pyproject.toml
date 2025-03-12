@@ -1,0 +1,12 @@
+[tool.poetry]
+name = "e2e_batch"
+version = "0.1.0"
+description = "End-to-end tests for immunization-batch"
+authors = ["Your Name <you@example.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python                  = "~3.10"
+boto3                   = "~1.26.90"
+pandas                  = "^2.2.3"

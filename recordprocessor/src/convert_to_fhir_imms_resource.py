@@ -1,4 +1,4 @@
-""""Decorators to add the relevant fields to the FHIR immunization resource from the batch stream"""
+""" "Decorators to add the relevant fields to the FHIR immunization resource from the batch stream"""
 
 from typing import List, Callable, Dict
 from utils_for_fhir_conversion import _is_not_empty, Generate, Add, Convert
