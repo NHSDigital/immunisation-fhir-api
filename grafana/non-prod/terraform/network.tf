@@ -49,13 +49,16 @@ resource "aws_internet_gateway" "gw" {
 resource "aws_route" "internet_access" {
     route_table_id         = aws_vpc.grafana_main.main_route_table_id
     destination_cidr_block = "0.0.0.0/0"
-    gateway_id             = aws_internet_gateway.gw.id
+    gateway_id             = aws_internet_gateway.gw.id    
 }
 
 # Create a new route table for the private subnets
 resource "aws_route_table" "private" {
     count  = var.az_count
     vpc_id = aws_vpc.grafana_main.id
+    tags = merge(var.tags, {
+        Name = "${var.prefix}-private-rt-${count.index}"
+    })
 }
 
 # Explicitly associate the newly created route tables to the private subnets (so they don't default to the main route table)
