@@ -2,8 +2,6 @@ resource "aws_kms_key" "kinesis_stream_encryption" {
     description = "KMS key for kinesis stream encryption"
     key_usage = "ENCRYPT_DECRYPT"
     enable_key_rotation = true
-    tags          = var.grafana_tags
-
     policy = <<POLICY
 {
  "Version": "2012-10-17",

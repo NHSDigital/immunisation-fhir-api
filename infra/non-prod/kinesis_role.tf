@@ -1,6 +1,5 @@
 resource "aws_iam_role" "kinesis_role" {
   name = "kinesis-role"
-  tags          = var.grafana_tags
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -17,8 +16,6 @@ resource "aws_iam_role" "kinesis_role" {
 resource "aws_iam_policy" "kinesis_kms_policy" {
   name        = "kinesis-kms-policy"
   description = "Allow Kinesis to use the KMS key"
-  tags          = var.grafana_tags
-
 
   policy = jsonencode({
     Version = "2012-10-17"

@@ -1,5 +1,5 @@
 resource "aws_iam_role" "ecs_task_execution_role" {
-  name = "role-name"
+  name = "${var.prefix}-ecs-task-execution-role"
 
   assume_role_policy = <<EOF
 {
@@ -19,7 +19,7 @@ EOF
 }
 
 resource "aws_iam_role" "ecs_task_role" {
-  name = "role-name-task"
+  name = "${var.prefix}-ecs-task-role"
 
   assume_role_policy = <<EOF
 {
@@ -75,7 +75,7 @@ resource "aws_iam_role_policy_attachment" "ecs_auto_scale_role" {
 
 # Monitoring role
 resource "aws_iam_role" "monitoring_role" {
-  name = "monitoringrole"
+  name = "${var.prefix}-monitoring-role"
 
   assume_role_policy = jsonencode({
     "Version": "2012-10-17",
@@ -92,7 +92,7 @@ resource "aws_iam_role" "monitoring_role" {
 }
 
 resource "aws_iam_role_policy" "monitoring_policy" {
-  name   = "monitoringpolicy"
+  name   = "${var.prefix}-monitoring-policy"
   role   = aws_iam_role.monitoring_role.id
 
   policy = jsonencode({

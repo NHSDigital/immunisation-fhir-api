@@ -19,6 +19,9 @@ resource "aws_security_group" "lb" {
         to_port     = 0
         cidr_blocks = ["0.0.0.0/0"]
     }
+    tags = merge(var.tags, {
+        Name = "${var.prefix}-sg-lb"
+    })
 }
 
 # Traffic to the ECS cluster should only come from the ALB
@@ -40,4 +43,7 @@ resource "aws_security_group" "ecs_tasks" {
         to_port     = 0
         cidr_blocks = ["0.0.0.0/0"]
     }
+    tags = merge(var.tags, {
+        Name = "${var.prefix}-sg-ecs-tasks"
+    })
 }

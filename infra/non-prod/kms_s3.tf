@@ -1,8 +1,6 @@
 resource "aws_kms_key" "s3_shared_key" {
     description = "KMS key for S3 batch bucket"
     enable_key_rotation = true
-    tags          = var.grafana_tags
-
     policy = <<POLICY
 {
  "Version": "2012-10-17",

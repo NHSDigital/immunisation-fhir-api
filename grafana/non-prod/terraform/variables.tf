@@ -1,4 +1,6 @@
-
+variable "aws_region" {
+    description = "Destination AWS region"
+}
 
 variable "ec2_task_execution_role_name" {
     description = "ECS task execution role name"
@@ -10,11 +12,17 @@ variable "ecs_auto_scale_role_name" {
 
 variable "az_count" {
     description = "Number of AZs to cover in a given region"
-    default = 2
+    default     = 2
 }
 
 variable "app_image" {
     description = "Docker image to run in the ECS cluster change to Grafana image in registry"
+}
+
+variable "tags" {
+  description = "A map of tags to add to all resources"
+  type        = map(string)
+  default     = {}
 }
 
 variable "app_port" {
@@ -39,4 +47,8 @@ variable "fargate_memory" {
 
 variable "cidr_block" {
     description = "CIDR block for the VPC"
+}
+
+variable "prefix" {
+  description = "Prefix for all resources"
 }

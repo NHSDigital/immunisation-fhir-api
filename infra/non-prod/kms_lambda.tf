@@ -2,8 +2,6 @@ resource "aws_kms_key" "lambda_env_encryption" {
     description = "KMS key for Lambda environment variable encryption"
     key_usage = "ENCRYPT_DECRYPT"
     enable_key_rotation = true
-    tags          = var.grafana_tags
-
     policy = <<POLICY
 {
  "Version": "2012-10-17",

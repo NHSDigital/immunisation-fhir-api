@@ -24,10 +24,13 @@ resource "aws_ecs_task_definition" "app" {
     cpu                      = var.fargate_cpu
     memory                   = var.fargate_memory
     container_definitions    = data.template_file.grafana_app.rendered
+    tags = merge(var.tags, {
+        Name = "${var.prefix}-ecs-task"
+    })
 }
 
 resource "aws_ecs_service" "main" {
-    name            = "my-first-hello-world-grafana-service"
+    name            = "${var.prefix}-ecs-svc"
     cluster         = aws_ecs_cluster.main.id
     task_definition = aws_ecs_task_definition.app.arn
     desired_count   = var.app_count
