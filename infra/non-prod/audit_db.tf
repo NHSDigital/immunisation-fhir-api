@@ -13,10 +13,27 @@ resource "aws_dynamodb_table" "audit-table-int" {
         type = "S"
     }
 
+    attribute {
+        name = "queue_name"
+        type = "S"
+    }
+
+    attribute {
+        name = "status"
+        type = "S"
+    }
+
     global_secondary_index {
         name            = "filename_index"
         hash_key        = "filename"
-        projection_type = "KEYS_ONLY"
+        projection_type = "ALL"
+    }
+
+    global_secondary_index {
+        name               = "queue_name_index"
+        hash_key           = "queue_name"
+        range_key          = "status"
+        projection_type    = "ALL"
     }
 
     server_side_encryption {
