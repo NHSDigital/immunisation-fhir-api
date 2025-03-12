@@ -8,7 +8,10 @@ resource "aws_vpc" "grafana_main" {
     // 172.17.0.0/16
     // 172.31.0.0/16
     cidr_block = "172.18.0.0/16"
-
+    // name of vpc
+    tags = {
+        Name = "imms-fhir-grafana-main"
+    }
 }
 
 # Create var.az_count private subnets, each in a different AZ

@@ -1,4 +1,3 @@
-
 variable "aws_region" {
     description = "Destination AWS region"
 }
@@ -13,7 +12,7 @@ variable "ecs_auto_scale_role_name" {
 
 variable "az_count" {
     description = "Number of AZs to cover in a given region"
-    default = 2
+    default     = 2
 }
 
 variable "app_image" {
@@ -48,4 +47,14 @@ variable "fargate_memory" {
 
 variable "cidr_block" {
     description = "CIDR block for the VPC"
+}
+
+variable "tags" {
+  description = "A map of tags to add to all resources"
+  type        = map(string)
+  default     = {}
+}
+
+variable "prefix" {
+  description = "Prefix for all resources"
 }
