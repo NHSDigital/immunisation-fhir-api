@@ -2,8 +2,6 @@ resource "aws_dynamodb_table" "delta-dynamodb-int-table" {
     name         = "imms-int-delta"
     billing_mode = "PAY_PER_REQUEST"
     hash_key     = "PK"
-    tags          = var.grafana_tags
-
     attribute {
         name = "PK"
         type = "S"
@@ -56,8 +54,6 @@ resource "aws_dynamodb_table" "delta-dynamodb-ref-table" {
     name         = "imms-ref-delta"
     billing_mode = "PAY_PER_REQUEST"
     hash_key     = "PK"
-    tags          = var.grafana_tags
-
     attribute {
         name = "PK"
         type = "S"
@@ -110,8 +106,6 @@ resource "aws_dynamodb_table" "delta-dynamodb-table" {
     name         = "imms-internal-dev-delta"
     billing_mode = "PAY_PER_REQUEST"
     hash_key     = "PK"
-    tags          = var.grafana_tags
-
     attribute {
         name = "PK"
         type = "S"

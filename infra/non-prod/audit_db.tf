@@ -2,7 +2,6 @@ resource "aws_dynamodb_table" "audit-table-int" {
     name         = "immunisation-batch-int-audit-table"
     billing_mode = "PAY_PER_REQUEST"
     hash_key     = "message_id"
-    tags          = var.grafana_tags
 
     attribute {
         name = "message_id"
@@ -47,8 +46,6 @@ resource "aws_dynamodb_table" "audit-table-ref" {
     name         = "immunisation-batch-ref-audit-table"
     billing_mode = "PAY_PER_REQUEST"
     hash_key     = "message_id"
-    tags          = var.grafana_tags
-
 
     attribute {
         name = "message_id"
@@ -93,8 +90,6 @@ resource "aws_dynamodb_table" "audit-table" {
     name         = "immunisation-batch-internal-dev-audit-table"
     billing_mode = "PAY_PER_REQUEST"
     hash_key     = "message_id"
-    tags          = var.grafana_tags
-
 
     attribute {
         name = "message_id"

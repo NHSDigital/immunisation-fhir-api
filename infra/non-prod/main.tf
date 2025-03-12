@@ -29,28 +29,3 @@ provider "aws" {
 
 data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
-
-variable "grafana_tags" {
-  description = "A map of tags to add to all resources"
-  type        = map(string)
-  default     = {
-    Environment = "non-prod"
-    Project     = "immunisation-fhir-api"
-  }
-}
-
-module "grafana" {
-  source = "./grafana/terraform"
-  aws_region = var.aws_region
-  ec2_task_execution_role_name = var.ec2_task_execution_role_name
-  ecs_auto_scale_role_name = var.ecs_auto_scale_role_name
-  az_count = var.az_count
-  app_image = var.app_image
-  app_port = var.app_port
-  app_count = var.app_count
-  health_check_path = var.health_check_path
-  fargate_cpu = var.fargate_cpu
-  fargate_memory = var.fargate_memory
-  cidr_block = var.cidr_block
-  tags = var.grafana_tags
-}
