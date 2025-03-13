@@ -58,7 +58,6 @@ class FhirService:
         self.pds_service = pds_service
         self.validator = validator
 
- 
     def get_immunization_by_identifier(
         self, identifier_pk: str, imms_vax_type_perms: str, identifier: str, element: str, is_imms_batch_app
     ) -> Optional[dict]:
@@ -78,7 +77,6 @@ class FhirService:
             response = form_json(imms_resp, element, identifier, base_url)
             return response
     
-
     def get_immunization_by_id(self, imms_id: str, imms_vax_type_perms: str) -> Optional[dict]:
         """
         Get an Immunization by its ID. Return None if not found. If the patient doesn't have an NHS number,

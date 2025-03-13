@@ -5,8 +5,6 @@ import unittest
 from copy import deepcopy
 from unittest.mock import create_autospec
 from decimal import Decimal
-
-
 from fhir.resources.R4B.bundle import Bundle as FhirBundle, BundleEntry
 from fhir.resources.R4B.immunization import Immunization
 from fhir_repository import ImmunizationRepository
@@ -187,8 +185,6 @@ class TestGetImmunization(unittest.TestCase):
         self.imms_repo.get_immunization_by_id.assert_called_once_with(imms_id, "COVID19:read")
         self.assertEqual(act_imms, None)
 
-  
-    
      # Testing with expectation to get the full Immunization Resource when patient is not restricted
     def test_get_immunization_by_id_patient_not_restricted(self):
         """
@@ -210,9 +206,6 @@ class TestGetImmunization(unittest.TestCase):
         # Then
         self.assertEqual(actual_output["Resource"], expected_output)
        
-      
-    
-
     def test_pre_validation_failed(self):
         """it should throw exception if Immunization is not valid"""
         imms_id = "an-id"
