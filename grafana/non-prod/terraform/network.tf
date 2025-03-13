@@ -4,11 +4,7 @@
 data "aws_availability_zones" "available" {}
 
 resource "aws_vpc" "grafana_main" {
-    // default cidr 172.31.0.0/16
-    // 172.17.0.0/16
-    // 172.31.0.0/16
     cidr_block = "172.18.0.0/16"
-    // name of vpc
     tags = {
         Name = "${var.prefix}-vpc"
     }
@@ -67,6 +63,8 @@ resource "aws_route_table_association" "private" {
     subnet_id      = element(aws_subnet.grafana_private.*.id, count.index)
     route_table_id = element(aws_route_table.private.*.id, count.index)
 }
+
+# Security group for VPC endpoints
 resource "aws_security_group" "vpc_endpoints" {
     name        = "vpc-endpoints-sg"
     description = "Security group for VPC endpoints"
@@ -98,7 +96,7 @@ resource "aws_vpc_endpoint" "ecr_api" {
     subnet_ids        = aws_subnet.grafana_private.*.id
     security_group_ids = [aws_security_group.vpc_endpoints.id]
     tags = merge(var.tags, {
-        Name = "${var.prefix}-vpc-endpoints-sg"
+        Name = "${var.prefix}-ecr-api-vpce"
     })
 }
 
@@ -110,7 +108,7 @@ resource "aws_vpc_endpoint" "ecr_docker" {
     subnet_ids        = aws_subnet.grafana_private.*.id
     security_group_ids = [aws_security_group.vpc_endpoints.id]
     tags = merge(var.tags, {
-        Name = "${var.prefix}-vpc-endpoints-sg-docker"
+        Name = "${var.prefix}-ecr-dkr-vpce"
     })
 }
 
@@ -122,6 +120,6 @@ resource "aws_vpc_endpoint" "cloudwatch_logs" {
     subnet_ids        = aws_subnet.grafana_private.*.id
     security_group_ids = [aws_security_group.vpc_endpoints.id]
     tags = merge(var.tags, {
-        Name = "${var.prefix}-vpc-endpoints-sg-logs"
+        Name = "${var.prefix}-cloudwatch-logs-vpce"
     })
 }
