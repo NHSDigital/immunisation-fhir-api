@@ -4,6 +4,19 @@ from csv import DictReader
 from io import StringIO
 from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import REGION_NAME
 from tests.utils_for_recordprocessor_tests.mock_environment_variables import BucketNames, Firehose, Kinesis
+from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import MockFileDetails, FileDetails
+from boto3.dynamodb.types import TypeDeserializer
+from boto3 import client as boto3_client
+from unittest.mock import patch
+from tests.utils_for_recordprocessor_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT
+
+# Ensure environment variables are mocked before importing from src files
+with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
+    from clients import REGION_NAME
+    from csv import DictReader
+    from constants import AuditTableKeys, AUDIT_TABLE_NAME, FileStatus
+
+dynamodb_client = boto3_client("dynamodb", region_name=REGION_NAME)
 
 
 def convert_string_to_dict_reader(data_string: str):
@@ -69,3 +82,25 @@ class GenericTearDown:
                 kinesis_client.delete_stream(StreamName=Kinesis.STREAM_NAME, EnforceConsumerDeletion=True)
             except kinesis_client.exceptions.ResourceNotFoundException:
                 pass
+
+
+def add_entry_to_table(file_details: MockFileDetails, file_status: FileStatus) -> None:
+    """Add an entry to the audit table"""
+    audit_table_entry = {**file_details.audit_table_entry, "status": {"S": file_status}}
+    dynamodb_client.put_item(TableName=AUDIT_TABLE_NAME, Item=audit_table_entry)
+
+
+def deserialize_dynamodb_types(dynamodb_table_entry_with_types):
+    """
+    Convert a dynamodb table entry with types to a table entry without types
+    e.g. {'Attr1': {'S': 'val1'}, 'Attr2': {'N': 'val2'}} becomes  {'Attr1': 'val1'}
+    """
+    return {k: TypeDeserializer().deserialize(v) for k, v in dynamodb_table_entry_with_types.items()}
+
+
+def assert_audit_table_entry(file_details: FileDetails, expected_status: FileStatus) -> None:
+    """Assert that the file details are in the audit table"""
+    table_entry = dynamodb_client.get_item(
+        TableName=AUDIT_TABLE_NAME, Key={AuditTableKeys.MESSAGE_ID: {"S": file_details.message_id}}
+    ).get("Item")
+    assert table_entry == {**file_details.audit_table_entry, "status": {"S": expected_status}}
