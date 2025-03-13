@@ -5,6 +5,7 @@ import unittest
 from copy import deepcopy
 from unittest.mock import create_autospec
 from decimal import Decimal
+
 from fhir.resources.R4B.bundle import Bundle as FhirBundle, BundleEntry
 from fhir.resources.R4B.immunization import Immunization
 from fhir_repository import ImmunizationRepository
@@ -157,7 +158,6 @@ class TestGetImmunization(unittest.TestCase):
         self.validator = create_autospec(ImmunizationValidator)
         self.fhir_service = FhirService(self.imms_repo, self.pds_service, self.validator)
     
-
     def test_get_immunization_by_id(self):
         """it should find an Immunization by id"""
         imms_id = "an-id"
@@ -185,7 +185,6 @@ class TestGetImmunization(unittest.TestCase):
         self.imms_repo.get_immunization_by_id.assert_called_once_with(imms_id, "COVID19:read")
         self.assertEqual(act_imms, None)
 
-     # Testing with expectation to get the full Immunization Resource when patient is not restricted
     def test_get_immunization_by_id_patient_not_restricted(self):
         """
         Test that get_immunization_by_id returns a FHIR Immunization Resource which has been filtered for read,
