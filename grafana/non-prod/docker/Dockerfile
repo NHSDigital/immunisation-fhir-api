@@ -25,5 +25,8 @@ USER grafana
 # ENV GF_SERVER_SERVE_FROM_SUB_PATH=true  
 # ENV GF_SERVE_FROM_SUB_PATH=true
 
+# Set the entrypoint script
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+
 # Set the default command
-CMD [ "grafana-server", "--homepath=/usr/share/grafana" ]
+CMD ["grafana-server", "--homepath=/usr/share/grafana"]
