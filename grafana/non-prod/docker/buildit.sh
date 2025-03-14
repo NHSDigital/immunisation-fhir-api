@@ -6,7 +6,7 @@
 AWS_REGION="eu-west-2"
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 REPOSITORY_NAME="imms-fhir-api-grafana"
-IMAGE_TAG="11.0.0-22.04_stable"
+IMAGE_TAG="hello-world"
 DOCKERFILE_DIR="/Users/watess01/Documents/NHS/code/immunisation-fhir-api/grafana/non-prod/docker"
 TAGS="Key=Environment,Value=non-prod Key=Project,Value=immunisation-fhir-api-grafana"
 

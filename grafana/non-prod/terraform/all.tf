@@ -605,3 +605,8 @@ output "load_balancer_dns" {
   description = "The DNS name of the load balancer"
   value       = aws_alb.main.dns_name
 }
+
+// output the url to access the grafana app
+output "grafana_url" {
+  value = "http://${aws_alb.main.dns_name}:${var.app_port}"
+}
