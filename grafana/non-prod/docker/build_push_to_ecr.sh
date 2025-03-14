@@ -35,7 +35,11 @@ aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --
 
 printf "Building Docker image...\n"
 # Build Docker image
-docker build -t $REPOSITORY_NAME:$IMAGE_TAG .
+# docker build -t $REPOSITORY_NAME:$IMAGE_TAG .
+# Build Docker image for linux/amd64 architecture
+docker buildx create --use
+docker buildx build --platform linux/amd64 -t $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$REPOSITORY_NAME:$IMAGE_TAG --push .
+
 
 # Check if the build was successful
 if [ $? -ne 0 ]; then
