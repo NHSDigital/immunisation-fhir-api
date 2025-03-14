@@ -1,23 +1,14 @@
-# Use the official Grafana image
+# @TODO image version, eg latest?
 FROM grafana/grafana
 
-# Add provisioning and dashboards
 ADD ./provisioning /etc/grafana/provisioning
 ADD ./dashboards /var/lib/grafana/dashboards
 
-# Expose Grafana port
 EXPOSE 3000
 
-# Create a non-root user and group
-RUN groupadd -r grafana && useradd -r -g grafana grafana
-
-# Change ownership of the directories to the non-root user
-RUN chown -R grafana:grafana /etc/grafana /var/lib/grafana
-
-# Switch to the non-root user
 USER grafana
 
-# Uncomment and set environment variables for configuration if needed
+# # ENV Variables for cofiguration
 # ENV GF_AUTH_ANONYMOUS_ENABLED=true 
 # ENV GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer 
 # ENV GF_AUTH_BASIC_ENABLED=false 
@@ -27,5 +18,4 @@ USER grafana
 # ENV GF_SERVER_SERVE_FROM_SUB_PATH=true  
 # ENV GF_SERVE_FROM_SUB_PATH=true
 
-# Set the default command
-CMD [ "grafana-server", "--homepath=/usr/share/grafana" ]
+CMD [ "grafana-reporter" ]
