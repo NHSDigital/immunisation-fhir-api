@@ -20,6 +20,25 @@ class SFlagBaseTest(ImmunizationBaseTest):
         imms = generate_imms_resource(nhs_number=nhs_number, vaccine_type=VaccineTypes.covid_19)
         return self.create_immunization_resource(imms_api, imms)
 
+
+class TestGetSFlagImmunization(SFlagBaseTest):
+    """Test that sensitive data is filtered out for a READ if and only if the patient is s-flagged"""
+    
+    def test_get_not_s_flagged_imms(self):
+        """Test that sensitive data is not filtered out for a READ when the patient is not s-flagged"""
+        for imms_api in self.imms_apis:
+            with self.subTest(imms_api):
+                imms = self.store_imms(imms_api, patient_is_restricted=False)
+                read_imms = imms_api.get_immunization_by_id(imms).json(parse_float=Decimal)
+                expected_response = generate_filtered_imms_resource(
+                    crud_operation_to_filter_for="READ",
+                    filter_for_s_flag=False,
+                    nhs_number=valid_nhs_number1,
+                )
+                expected_response["id"] = read_imms["id"]
+                self.assertEqual(read_imms, expected_response)
+
+
 class TestSearchSFlagImmunization(SFlagBaseTest):
     """Test that sensitive data is filtered out for a SEARCH if and only if the patient is s-flagged"""
 
