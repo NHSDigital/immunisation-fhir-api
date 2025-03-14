@@ -9,6 +9,12 @@ RUN apk add --no-cache python3 py3-pip
 COPY ./provisioning /etc/grafana/provisioning
 COPY ./dashboards /var/lib/grafana/dashboards
 
+# Copy the entrypoint script
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+
+# Ensure the entrypoint script is executable
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
 # Expose Grafana port
 EXPOSE 3000
 
