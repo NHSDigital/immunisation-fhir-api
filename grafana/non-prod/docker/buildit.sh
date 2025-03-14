@@ -34,8 +34,9 @@ printf "Building and pushing Docker image to ECR...\n"
 aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
 
 printf "Building Docker image...\n"
-# Build Docker image
-docker build -t $REPOSITORY_NAME:$IMAGE_TAG .
+# Build Docker image for linux/amd64 architecture
+docker buildx create --use
+docker buildx build --platform linux/amd64 -t $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$REPOSITORY_NAME:$IMAGE_TAG --push .
 
 # Check if the build was successful
 if [ $? -ne 0 ]; then
@@ -43,24 +44,9 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-printf "Tagging Docker image...\n"
-# Tag Docker image
-docker tag $REPOSITORY_NAME:$IMAGE_TAG $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$REPOSITORY_NAME:$IMAGE_TAG
-
-# Check if the tag was successful
-if [ $? -ne 0 ]; then
-  echo "Docker tag failed."
-  exit 1
-fi
-
-printf "Pushing Docker image to ECR...\n"
-# Push Docker image to ECR
-docker push $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$REPOSITORY_NAME:$IMAGE_TAG
-
-# Check if the push was successful
-if [ $? -ne 0 ]; then
-  echo "Docker push failed."
-  exit 1
-fi
-
 echo "Docker image built and pushed to ECR successfully."
+
+SERVICE=arn:aws:ecs:eu-west-2:345594581768:service/grafana-cluster/imms-fhir-api-grafana-ecs-svc
+
+export AWS_PAGER=""
+aws ecs update-service --cluster grafana-cluster --service imms-fhir-api-grafana-ecs-svc --force-new-deployment

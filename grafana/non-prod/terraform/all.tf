@@ -154,6 +154,7 @@ data "template_file" "grafana_app" {
         fargate_cpu    = var.fargate_cpu
         fargate_memory = var.fargate_memory
         aws_region     = var.aws_region
+        log_group      = var.log_group
     }
 }
 
@@ -169,6 +170,7 @@ resource "aws_ecs_task_definition" "app" {
         Name = "${var.prefix}-ecs-task"
     })
 }
+
 
 resource "aws_ecs_service" "main" {
     name            = "${var.prefix}-ecs-svc"
@@ -193,6 +195,30 @@ resource "aws_ecs_service" "main" {
 }
 ############################################################################################################
 # iam.tf
+resource "aws_iam_policy" "route53resolver_policy" {
+  name        = "${var.prefix}-route53resolver-policy"
+  description = "Policy to allow Route 53 Resolver DNS Firewall actions"
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "route53resolver:ListFirewallRuleGroupAssociations",
+          "route53resolver:ListFirewallRuleGroups",
+          "route53resolver:ListFirewallRules"
+        ],
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "route53resolver_policy_attachment" {
+  role       = aws_iam_role.ecs_task_execution_role.name
+  policy_arn = aws_iam_policy.route53resolver_policy.arn
+}
+
 resource "aws_iam_role" "ecs_task_execution_role" {
   name = "${var.prefix}-ecs-task-execution-role"
 
@@ -549,7 +575,7 @@ resource "aws_security_group" "ecs_tasks" {
 
 # Set up CloudWatch group and log stream and retain logs for 30 days
 resource "aws_cloudwatch_log_group" "grafana_log_group" {
-  name              = "/ecs/grafana-app"
+  name              = var.log_group
   retention_in_days = 30
 
   tags = merge(var.tags, {
@@ -558,7 +584,7 @@ resource "aws_cloudwatch_log_group" "grafana_log_group" {
 }
 
 resource "aws_cloudwatch_log_stream" "grafana_log_group" {
-  name           = "${var.prefix}-log-stream"
+  name           = "${var.prefix}-log-strea"
   log_group_name = aws_cloudwatch_log_group.grafana_log_group.name
 }
 

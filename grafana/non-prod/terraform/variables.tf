@@ -52,3 +52,7 @@ variable "cidr_block" {
 variable "prefix" {
   description = "Prefix for all resources"
 }
+
+variable "log_group" {
+  description = "CloudWatch log group name"
+}

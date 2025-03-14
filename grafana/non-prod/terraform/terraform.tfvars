@@ -8,8 +8,8 @@ az_count = 2
 
 #app_image = "public.ecr.aws/ubuntu/grafana:11.0.0-22.04_stable"
 #@TODO remove account details and replace with placeholders to be derived from the environment
-#app_image = "345594581768.dkr.ecr.eu-west-2.amazonaws.com/imms-fhir-api-grafana:11.0.0-22.04_stable"
-app_image = "345594581768.dkr.ecr.eu-west-2.amazonaws.com/imms-fhir-api-grafana:hello-world"
+app_image = "345594581768.dkr.ecr.eu-west-2.amazonaws.com/imms-fhir-api-grafana:11.0.0-22.04_stable"
+#app_image = "345594581768.dkr.ecr.eu-west-2.amazonaws.com/imms-fhir-api-grafana:hello-world"
 
 app_port = 3000
 
@@ -29,3 +29,5 @@ tags = {
   Environment = "non-prod"
   Project     = "immunisation-fhir-api"
 }
+
+log_group = "/ecs/imms-fhir-api-grafana"
