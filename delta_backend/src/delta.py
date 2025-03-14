@@ -72,7 +72,7 @@ def handler(event, context):
                         operation = "NEW"
                     resource_json = json.loads(new_image["Resource"]["S"])
                     FHIRConverter = Converter(json.dumps(resource_json))
-                    flat_json = FHIRConverter.runConversion()  # Get the flat JSON
+                    flat_json = FHIRConverter.runConversion(resource_json)  # Get the flat JSON
                     error_records = FHIRConverter.getErrorRecords()
                     flat_json[0]["ACTION_FLAG"] = operation
                     response = delta_table.put_item(
