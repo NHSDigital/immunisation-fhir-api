@@ -1,2 +1,7 @@
 build
 .venv
+.direnv
+.env
+.envrc
+terraform.tfstate
+.python-version
