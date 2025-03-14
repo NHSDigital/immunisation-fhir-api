@@ -1,8 +1,8 @@
-# @TODO image version, eg latest?
-FROM grafana/grafana
+FROM grafana/grafana:latest
 
-ADD ./provisioning /etc/grafana/provisioning
-ADD ./dashboards /var/lib/grafana/dashboards
+# Copy provisioning and dashboards
+COPY ./provisioning /etc/grafana/provisioning
+COPY ./dashboards /var/lib/grafana/dashboards
 
 EXPOSE 3000
 
