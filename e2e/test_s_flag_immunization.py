@@ -23,7 +23,6 @@ class SFlagBaseTest(ImmunizationBaseTest):
 
 class TestGetSFlagImmunization(SFlagBaseTest):
     """Test that sensitive data is filtered out for a READ if and only if the patient is s-flagged"""
-    
     def test_get_not_s_flagged_imms(self):
         """Test that sensitive data is not filtered out for a READ when the patient is not s-flagged"""
         for imms_api in self.imms_apis:
