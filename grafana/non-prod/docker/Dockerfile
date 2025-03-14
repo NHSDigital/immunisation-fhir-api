@@ -1,14 +1,21 @@
+# Use the official Grafana image
 FROM grafana/grafana:latest
+
+# Install Python
+USER root
+RUN apk add --no-cache python3 py3-pip
 
 # Copy provisioning and dashboards
 COPY ./provisioning /etc/grafana/provisioning
 COPY ./dashboards /var/lib/grafana/dashboards
 
+# Expose Grafana port
 EXPOSE 3000
 
+# Switch to the non-root user provided by the base image
 USER grafana
 
-# # ENV Variables for cofiguration
+# Uncomment and set environment variables for configuration if needed
 # ENV GF_AUTH_ANONYMOUS_ENABLED=true 
 # ENV GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer 
 # ENV GF_AUTH_BASIC_ENABLED=false 
@@ -18,4 +25,5 @@ USER grafana
 # ENV GF_SERVER_SERVE_FROM_SUB_PATH=true  
 # ENV GF_SERVE_FROM_SUB_PATH=true
 
-CMD [ "grafana-reporter" ]
+# Set the default command
+CMD [ "grafana-server", "--homepath=/usr/share/grafana" ]
