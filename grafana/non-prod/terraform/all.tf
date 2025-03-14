@@ -212,6 +212,10 @@ resource "aws_iam_role" "ecs_task_execution_role" {
 }
 EOF
 }
+resource "aws_iam_role_policy_attachment" "ecs-task-execution-role-policy-attachment" {
+  role       = aws_iam_role.ecs_task_execution_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
 
 resource "aws_iam_role" "ecs_task_role" {
   name = "${var.prefix}-ecs-task-role"
@@ -231,11 +235,6 @@ resource "aws_iam_role" "ecs_task_role" {
  ]
 }
 EOF
-}
-
-resource "aws_iam_role_policy_attachment" "ecs-task-execution-role-policy-attachment" {
-  role       = aws_iam_role.ecs_task_execution_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
 resource "aws_iam_role_policy_attachment" "task_s3" {
@@ -411,30 +410,6 @@ resource "aws_route_table_association" "private" {
     route_table_id = element(aws_route_table.private.*.id, count.index)
 }
 
-# Security group for VPC endpoints
-resource "aws_security_group" "vpc_endpoints" {
-    name        = "vpc-endpoints-sg"
-    description = "Security group for VPC endpoints"
-    vpc_id      = aws_vpc.grafana_main.id
-
-    ingress {
-        from_port   = 443
-        to_port     = 443
-        protocol    = "tcp"
-        cidr_blocks = ["0.0.0.0/0"]
-    }
-
-    egress {
-        from_port   = 0
-        to_port     = 0
-        protocol    = "-1"
-        cidr_blocks = ["0.0.0.0/0"]
-    }
-    tags = merge(var.tags, {
-        Name = "${var.prefix}-vpc-endpoints-sg"
-    })
-}
-
 # Create VPC Endpoint for ECR API
 resource "aws_vpc_endpoint" "ecr_api" {
     vpc_id            = aws_vpc.grafana_main.id
@@ -470,56 +445,103 @@ resource "aws_vpc_endpoint" "cloudwatch_logs" {
         Name = "${var.prefix}-cloudwatch-logs-vpce"
     })
 }
-############################################################################################################
-# security.tf
-# security.tf
 
-# ALB security Group: Edit to restrict access to the application
-resource "aws_security_group" "lb" {
-    name        = "grafana-load-balancer-security-group"
-    description = "controls access to the ALB"
-    vpc_id      = aws_vpc.grafana_main.id
-
-    ingress {
-        protocol    = "tcp"
-        from_port   = var.app_port
-        to_port     = var.app_port
-        cidr_blocks = ["0.0.0.0/0"]
-    }
-
-    egress {
-        protocol    = "-1"
-        from_port   = 0
-        to_port     = 0
-        cidr_blocks = ["0.0.0.0/0"]
-    }
-    tags = merge(var.tags, {
-        Name = "${var.prefix}-sg-lb"
-    })
+# Create an Elastic IP for the NAT Gateway @TODO Replace NGW with VPCE
+resource "aws_eip" "nat" {
+  domain = "vpc"
 }
 
-# Traffic to the ECS cluster should only come from the ALB
+# Create a NAT Gateway  @TODO Replace NGW with VPCE
+resource "aws_nat_gateway" "nat" {
+  allocation_id = aws_eip.nat.id
+  subnet_id     = element(aws_subnet.grafana_public.*.id, 0) # Assuming the first public subnet
+  tags = merge(var.tags, {
+    Name = "${var.prefix}-nat-gateway"
+  })
+}
+# @TODO Replace NGW with VPCE
+# Update the route table for the private subnets to route traffic through the NAT Gateway
+resource "aws_route" "private_nat_gateway" {
+  count                  = var.az_count
+  route_table_id         = element(aws_route_table.private.*.id, count.index)
+  destination_cidr_block = "0.0.0.0/0"
+  nat_gateway_id         = aws_nat_gateway.nat.id
+}
+
+############################################################################################################
+# security.tf
+
+# Security group for the ALB
+resource "aws_security_group" "lb" {
+  name        = "grafana-load-balancer-security-group" # @TODO ${var.prefix}-alb-sg"
+  description = "controls access to the ALB"
+  vpc_id      = aws_vpc.grafana_main.id
+
+  ingress {
+    protocol    = "tcp"
+    from_port   = var.app_port
+    to_port     = var.app_port
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    protocol    = "-1"
+    from_port   = 0
+    to_port     = 0
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = merge(var.tags, {
+    Name = "${var.prefix}-alb-sg"
+  })
+}
+
+# Security group for VPC endpoints
+resource "aws_security_group" "vpc_endpoints" {
+  name        = "vpc-endpoints-sg"
+  description = "Security group for VPC endpoints"
+  vpc_id      = aws_vpc.grafana_main.id
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  tags = merge(var.tags, {
+    Name = "${var.prefix}-vpc-endpoints-sg"
+  })
+}
+
+# Security group for ECS tasks
 resource "aws_security_group" "ecs_tasks" {
-    name        = "cb-ecs-tasks-security-group"
-    description = "allow inbound access from the ALB only"
-    vpc_id      = aws_vpc.grafana_main.id
+  name        = "cb-ecs-tasks-security-group"
+  description = "allow inbound access from the ALB only"
+  vpc_id      = aws_vpc.grafana_main.id
 
-    ingress {
-        protocol        = "tcp"
-        from_port       = var.app_port
-        to_port         = var.app_port
-        security_groups = [aws_security_group.lb.id]
-    }
+  ingress {
+    protocol        = "tcp"
+    from_port       = var.app_port
+    to_port         = var.app_port
+    security_groups = [aws_security_group.lb.id]
+  }
 
-    egress {
-        protocol    = "-1"
-        from_port   = 0
-        to_port     = 0
-        cidr_blocks = ["0.0.0.0/0"]
-    }
-    tags = merge(var.tags, {
-        Name = "${var.prefix}-sg-ecs-tasks"
-    })
+  egress {
+    protocol    = "-1"
+    from_port   = 0
+    to_port     = 0
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  tags = merge(var.tags, {
+    Name = "${var.prefix}-sg-ecs-tasks"
+  })
 }
 ############################################################################################################
 #logs.tf
