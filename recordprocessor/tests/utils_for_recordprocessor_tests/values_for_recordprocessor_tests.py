@@ -148,7 +148,7 @@ class FileDetails:
         self.vaccine_type = vaccine_type
         self.ods_code = ods_code
         self.supplier = supplier
-        file_date_and_time_string = f"20000101T0000000{file_number}"
+        self.file_date_and_time_string = f"20000101T0000000{file_number}"
         self.message_id = f"{vaccine_type.lower()}_{supplier.lower()}_test_id"
         self.message_id_order = f"{vaccine_type.lower()}_{supplier.lower()}_test_id_{file_number}"
         self.full_permissions_list = [f"{vaccine_type}_FULL"]

@@ -7,23 +7,20 @@ from moto import mock_dynamodb
 
 from tests.utils_for_recordprocessor_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT
 from tests.utils_for_recordprocessor_tests.generic_setup_and_teardown import GenericSetUp, GenericTearDown
-from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import MockFileDetails, FileDetails
+from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import MockFileDetails
 from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
     deserialize_dynamodb_types,
     add_entry_to_table,
-    assert_audit_table_entry,
 )
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from constants import (
         AUDIT_TABLE_NAME,
-        AuditTableKeys,
         FileStatus,
     )
 
     from audit_table import get_next_queued_file_details, change_audit_table_status_to_processed
-    from errors import UnhandledAuditTableError
     from clients import REGION_NAME
 
 dynamodb_client = boto3_client("dynamodb", region_name=REGION_NAME)
@@ -77,35 +74,18 @@ class TestAuditTable(TestCase):
         self.assertEqual(get_next_queued_file_details(queue_to_check), deserialize_dynamodb_types(expected_table_entry))
 
     def test_change_audit_table_status_to_processed(self):
-        # Checks audit table is updated correctly
-        queue_to_check = "RAVS_RSV"
+        """Checks audit table correctly updates a record as processed"""
 
         add_entry_to_table(MockFileDetails.rsv_ravs, file_status=FileStatus.QUEUED)
+        add_entry_to_table(MockFileDetails.flu_emis, file_status=FileStatus.QUEUED)
         table_items = dynamodb_client.scan(TableName=AUDIT_TABLE_NAME).get("Items", [])
-        # print(f"started off queued:{table_items}")
 
         expected_table_entry = {**MockFileDetails.rsv_ravs.audit_table_entry, "status": {"S": FileStatus.PROCESSED}}
+
         file_key = "RSV_Vaccinations_v5_X26_20210730T12000000.csv"
         message_id = "rsv_ravs_test_id_1"
-        # print(f"file_key_checker: {file_key}")
-        # print(f"message_id: {message_id}")
-        result = change_audit_table_status_to_processed(file_key, message_id)
-        print(result)
+
+        change_audit_table_status_to_processed(file_key, message_id)
         table_items = dynamodb_client.scan(TableName=AUDIT_TABLE_NAME).get("Items", [])
-        # print(f"change to processed :{table_items}")
 
-        Actual_result = [
-            {
-                "message_id": {"S": "rsv_ravs_test_id_1"},
-                "filename": {"S": "RSV_Vaccinations_v5_X26_20210730T12000000.csv"},
-                "queue_name": {"S": "RAVS_RSV"},
-                "timestamp": {"S": "20211120T12000000"},
-                "status": {"S": "Processed"},
-            }
-        ]
-        Actual_logger = "The status of RSV_Vaccinations_v5_X26_20210730T12000000.csv file, with message id rsv_ravs_test_id_1, was successfully updated to Processed in the audit table"
-        # self.assertEqual(result, deserialize_dynamodb_types(expected_table_entry))
-
-    # Check items in the dynamo table
-    # table_items = dynamodb_client.scan(TableName=AUDIT_TABLE_NAME).get("Items", [])
-    # print(f"table items 4 :{table_items}")
+        self.assertIn(expected_table_entry, table_items)
