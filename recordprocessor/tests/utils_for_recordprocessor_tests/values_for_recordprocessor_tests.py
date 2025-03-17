@@ -187,15 +187,15 @@ class FileDetails:
 class MockFileDetails:
     """Class containing mock file details for use in tests"""
 
-    ravs_rsv_1 = FileDetails("RAVS", "RSV", "X26", file_number=1)
-    ravs_rsv_2 = FileDetails("RAVS", "RSV", "X26", file_number=2)
-    ravs_rsv_3 = FileDetails("RAVS", "RSV", "X26", file_number=3)
-    ravs_rsv_4 = FileDetails("RAVS", "RSV", "X26", file_number=4)
-    ravs_rsv_5 = FileDetails("RAVS", "RSV", "X26", file_number=5)
+    ravs_rsv_1 = FileDetails("RSV", "RAVS", "X26", file_number=1)
+    ravs_rsv_2 = FileDetails("RSV", "RAVS", "X26", file_number=2)
+    ravs_rsv_3 = FileDetails("RSV", "RAVS", "X26", file_number=3)
+    ravs_rsv_4 = FileDetails("RSV", "RAVS", "X26", file_number=4)
+    ravs_rsv_5 = FileDetails("RSV", "RAVS", "X26", file_number=5)
     rsv_ravs = FileDetails("RSV", "RAVS", "X26")
     rsv_emis = FileDetails("RSV", "EMIS", "8HK48")
     flu_emis = FileDetails("FLU", "EMIS", "YGM41")
-    ravs_flu = FileDetails("RAVS", "FLU", "X26")
+    ravs_flu = FileDetails("FLU", "RSV", "X26")
 
 
 class UnorderedFieldDictionaries:

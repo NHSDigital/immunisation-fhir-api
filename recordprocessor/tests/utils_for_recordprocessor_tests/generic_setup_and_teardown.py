@@ -1,7 +1,6 @@
 """Generic setup and teardown for recordprocessor tests"""
 
 from unittest.mock import patch
-from boto3 import client as boto3_client
 
 from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
     BucketNames,
@@ -13,13 +12,7 @@ from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from clients import REGION_NAME
-    from constants import (
-        AuditTableKeys,
-        AUDIT_TABLE_QUEUE_NAME_GSI,
-        AUDIT_TABLE_FILENAME_GSI,
-        AUDIT_TABLE_NAME,
-        AUDIT_TABLE_NAME,
-    )
+    from constants import AuditTableKeys, AUDIT_TABLE_QUEUE_NAME_GSI, AUDIT_TABLE_FILENAME_GSI, AUDIT_TABLE_NAME
 
 
 class GenericSetUp:
@@ -87,7 +80,6 @@ class GenericSetUp:
                     },
                 ],
             )
-        print(f"set up: {AUDIT_TABLE_NAME}")
 
 
 class GenericTearDown:
@@ -113,5 +105,4 @@ class GenericTearDown:
             sqs_client.delete_queue(QueueUrl=Sqs.TEST_QUEUE_URL)
 
         if dynamodb_client:
-            print(f"TEARTHISDOWN: {AUDIT_TABLE_NAME}")
             dynamodb_client.delete_table(TableName=AUDIT_TABLE_NAME)

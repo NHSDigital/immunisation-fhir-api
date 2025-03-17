@@ -1,8 +1,6 @@
 """Utils for the recordprocessor tests"""
 
-from csv import DictReader
 from io import StringIO
-from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import REGION_NAME
 from tests.utils_for_recordprocessor_tests.mock_environment_variables import BucketNames, Firehose, Kinesis
 from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import MockFileDetails, FileDetails
 from boto3.dynamodb.types import TypeDeserializer
