@@ -40,3 +40,18 @@ output "load_balancer_dns" {
   description = "The DNS name of the load balancer"
   value       = aws_alb.main.dns_name
 }
+
+// output the url to access the grafana app
+output "grafana_url" {
+  value = "http://${aws_alb.main.dns_name}:${var.app_port}"
+}
+
+output "alb_target_group_arn" {
+  description = "The ARN of the ALB target group"
+  value       = aws_alb_target_group.app.arn
+}
+
+output "alb_listener_arn" {
+  description = "The ARN of the ALB listener"
+  value       = aws_alb_listener.front_end.arn
+}

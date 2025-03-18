@@ -1,10 +1,29 @@
-# Use the official Nginx image from the Docker Hub
-FROM nginx:alpine
+# Use the official Grafana image
+FROM grafana/grafana:latest
 
-# Copy the HTML file into the Nginx web root
-COPY index.html /usr/share/nginx/html/index.html
+# Install Python
+USER root
+RUN echo "Installing Python..." \
+    && apk add --no-cache python3 py3-pip \
+    && echo "Python installed successfully."
 
-# Expose port 80 to the outside world
-EXPOSE 80
+# Copy provisioning and dashboards
+RUN echo "Copying provisioning files..."
+COPY ./provisioning /etc/grafana/provisioning
+RUN echo "Provisioning files copied."
 
-# No need to specify CMD as the base image already has the default command to run Nginx
+RUN echo "Copying dashboard files..."
+COPY ./dashboards /var/lib/grafana/dashboards
+RUN echo "Dashboard files copied."
+
+# Create run.sh
+RUN echo '#!/bin/sh\nexec grafana-server' > /run.sh
+RUN chmod +x /run.sh
+
+# Expose Grafana port
+EXPOSE 3000
+
+# Switch to the non-root user provided by the base image
+USER grafana
+
+CMD ["grafana-server", "--homepath=/usr/share/grafana"]
