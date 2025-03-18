@@ -16,8 +16,7 @@ RUN echo "Copying dashboard files..."
 COPY ./dashboards /var/lib/grafana/dashboards
 RUN echo "Dashboard files copied."
 
-# Create run.sh
-RUN echo '#!/bin/sh\nexec grafana-server' > /run.sh
+COPY run.sh /run.sh
 RUN chmod +x /run.sh
 
 # Expose Grafana port
@@ -26,4 +25,5 @@ EXPOSE 3000
 # Switch to the non-root user provided by the base image
 USER grafana
 
-CMD ["grafana-server", "--homepath=/usr/share/grafana"]
+ENTRYPOINT ["/run.sh"]
+# CMD ["grafana-server", "--homepath=/usr/share/grafana"]
