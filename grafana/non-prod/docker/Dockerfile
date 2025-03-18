@@ -7,8 +7,15 @@ RUN echo "Installing Python..." \
     && apk add --no-cache python3 py3-pip \
     && echo "Python installed successfully."
 
+# set timeout for plugin installation
+ENV GF_INSTALL_PLUGINS_TIMEOUT=300
+
+# Install Grafana plugins
+RUN echo "Installing plugins..." \
+    && grafana-cli plugins install grafana-lokiexplore-app
+
 # Copy provisioning and dashboards
-RUN echo "Copying provisioning files..."
+RUN echo "=========\n\n\n\Copying provisioning files..."
 COPY ./provisioning /etc/grafana/provisioning
 RUN echo "Provisioning files copied."
 
