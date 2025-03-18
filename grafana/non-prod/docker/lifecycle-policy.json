@@ -2,11 +2,11 @@
   "rules": [
     {
       "rulePriority": 1,
-      "description": "Retain only the latest image",
+      "description": "Retain only the latest 10 images",
       "selection": {
         "tagStatus": "any",
         "countType": "imageCountMoreThan",
-        "countNumber": 1,
+        "countNumber": 10,
         "tagPrefixList": [""]
       },
       "action": {

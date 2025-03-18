@@ -179,7 +179,7 @@ steps:
 
   - bash: |
       set -e
-      if ! [[ "$APIGEE_ENVIRONMENT" == "ref" || "$APIGEE_ENVIRONMENT" == "prod" || "$APIGEE_ENVIRONMENT" == "int" || "$APIGEE_ENVIRONMENT" == *"sandbox" ]]; then
+      if ! [[ "$APIGEE_ENVIRONMENT" == "prod" || "$APIGEE_ENVIRONMENT" == "int" || "$APIGEE_ENVIRONMENT" == *"sandbox" ]]; then
         echo "Running E2E batch folder test cases"
  
         export AWS_PROFILE="apim-dev"
@@ -201,7 +201,7 @@ steps:
  
         echo "E2E batch folder test cases executed successfully"
       else
-        echo "Skipping E2E batch folder test cases as the environment is ref-prod-int-sandbox"
+        echo "Skipping E2E batch folder test cases as the environment is prod-int-sandbox"
       fi
  
     displayName: Run full batch test suite

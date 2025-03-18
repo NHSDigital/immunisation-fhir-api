@@ -7,7 +7,7 @@ import uuid
 import logging
 from botocore.exceptions import ClientError
 from log_firehose import FirehoseLogger
-from convert_flat_json import convert_to_flat_json
+from Converter import Converter
 
 failure_queue_url = os.environ["AWS_SQS_QUEUE_URL"]
 delta_table_name = os.environ["DELTA_TABLE_NAME"]
@@ -44,7 +44,7 @@ def handler(event, context):
     log_data["function_name"] = "delta_sync"
     intrusion_check = True
     try:
-        dynamodb = boto3.resource("dynamodb")
+        dynamodb = boto3.resource("dynamodb", region_name="eu-west-2")
         delta_table = dynamodb.Table(delta_table_name)
 
         # Converting ApproximateCreationDateTime directly to string will give Unix timestamp
@@ -57,6 +57,7 @@ def handler(event, context):
             approximate_creation_time = datetime.utcfromtimestamp(record["dynamodb"]["ApproximateCreationDateTime"])
             expiry_time = approximate_creation_time + timedelta(days=30)
             expiry_time_epoch = int(expiry_time.timestamp())
+            error_records = []
             response = str()
             imms_id = str()
             operation = str()
@@ -65,12 +66,15 @@ def handler(event, context):
                 imms_id = new_image["PK"]["S"].split("#")[1]
                 vaccine_type = get_vaccine_type(new_image["PatientSK"]["S"])
                 supplier_system = new_image["SupplierSystem"]["S"]
-                if  supplier_system not in ("DPSFULL", "DPSREDUCED"):
+                if supplier_system not in ("DPSFULL", "DPSREDUCED"):
                     operation = new_image["Operation"]["S"]
                     if operation == "CREATE":
                         operation = "NEW"
                     resource_json = json.loads(new_image["Resource"]["S"])
-                    flat_json = convert_to_flat_json(resource_json, operation)
+                    FHIRConverter = Converter(json.dumps(resource_json))
+                    flat_json = FHIRConverter.runConversion(resource_json)  # Get the flat JSON
+                    error_records = FHIRConverter.getErrorRecords()
+                    flat_json[0]["ACTION_FLAG"] = operation
                     response = delta_table.put_item(
                         Item={
                             "PK": str(uuid.uuid4()),
@@ -114,9 +118,16 @@ def handler(event, context):
             log_data["time_taken"] = f"{round(end - start, 5)}s"
             operation_outcome = {"record": imms_id, "operation_type": operation}
             if response["ResponseMetadata"]["HTTPStatusCode"] == 200:
-                log = f"Record Successfully created for {imms_id}"
-                operation_outcome["statusCode"] = "200"
-                operation_outcome["statusDesc"] = "Successfully synched into delta"
+                if error_records:
+                    log = f"Partial success: successfully synced into delta, but issues found within record {imms_id}"
+                    operation_outcome["statusCode"] = "207"
+                    operation_outcome["statusDesc"] = (
+                        f"Partial success: successfully synced into delta, but issues found within record {json.dumps(error_records)}"
+                    )
+                else:
+                    log = f"Record Successfully created for {imms_id}"
+                    operation_outcome["statusCode"] = "200"
+                    operation_outcome["statusDesc"] = "Successfully synched into delta"
                 log_data["operation_outcome"] = operation_outcome
                 firehose_log["event"] = log_data
                 firehose_logger.send_log(firehose_log)
@@ -131,7 +142,7 @@ def handler(event, context):
                 firehose_logger.send_log(firehose_log)
                 logger.info(log)
                 return {"statusCode": 500, "body": "Records not processed successfully"}
-        
+
     except Exception as e:
         operation_outcome["statusCode"] = "500"
         operation_outcome["statusDesc"] = "Exception"
