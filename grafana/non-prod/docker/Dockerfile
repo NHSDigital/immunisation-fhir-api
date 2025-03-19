@@ -38,4 +38,3 @@ EXPOSE 3000
 USER grafana
 
 ENTRYPOINT ["/run.sh"]
-# CMD ["grafana-server", "--homepath=/usr/share/grafana"]
