@@ -56,3 +56,9 @@ variable "prefix" {
 variable "log_group" {
   description = "CloudWatch log group name"
 }
+
+variable "use_natgw" {
+  description = "Boolean to determine whether to use the NAT Gateway module"
+  type        = bool
+  default     = true
+}

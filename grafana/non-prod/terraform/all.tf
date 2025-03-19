@@ -1,45 +1,3 @@
-# main.tf 
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5"
-    }
-    docker = {
-      source  = "kreuzwerker/docker"
-      version = "3.0.2"
-    }
-    template = {
-      source  = "hashicorp/template"
-      version = "~> 2.2.0"
-    }
-  }
-  backend "s3" {
-    region = "eu-west-2"
-    key    = "state"
-  }
-  required_version = ">= 1.5.0"
-}
-
-provider "aws" {
-  region  = var.aws_region
-  profile = "apim-dev"
-  default_tags {
-    tags = var.tags
-  }
-}
-
-provider "aws" {
-  alias   = "acm_provider"
-  region  = var.aws_region
-  profile = "apim-dev"
-}
-
-data "aws_region" "current" {}
-data "aws_caller_identity" "current" {}
-############################################################################################################
-
-
 # alb.tf
 
 resource "aws_alb" "main" {
@@ -496,6 +454,15 @@ resource "aws_route_table" "private" {
     })
 }
 
+# Route the private subnet traffic through the NAT Gateway
+resource "aws_route" "private_nat_gateway" {
+  count          = var.az_count
+  route_table_id = element(aws_route_table.private[*].id, count.index)
+  destination_cidr_block = "0.0.0.0/0"
+  nat_gateway_id         = aws_nat_gateway.nat.id
+}
+
+
 # Explicitly associate the newly created route tables to the private subnets (so they don't default to the main route table)
 resource "aws_route_table_association" "private" {
     count          = var.az_count
@@ -557,81 +524,97 @@ resource "aws_security_group" "ecs_tasks" {
 }
 
 
-# vpce.tf
-# Create VPC Endpoint for ECR API
-resource "aws_vpc_endpoint" "ecr_api" {
-    vpc_id            = aws_vpc.grafana_main.id
-    service_name      = "com.amazonaws.${var.aws_region}.ecr.api"
-    vpc_endpoint_type = "Interface"
-    subnet_ids        = aws_subnet.grafana_private[*].id
-    security_group_ids = [aws_security_group.vpc_endpoints.id]
-    # allow for dns resolution
-    private_dns_enabled = true
-    tags = merge(var.tags, {
-        Name = "${var.prefix}-ecr-api-vpce"
-    })
-}
+# # vpce.tf
+# # Create VPC Endpoint for ECR API
+# resource "aws_vpc_endpoint" "ecr_api" {
+#     vpc_id            = aws_vpc.grafana_main.id
+#     service_name      = "com.amazonaws.${var.aws_region}.ecr.api"
+#     vpc_endpoint_type = "Interface"
+#     subnet_ids        = aws_subnet.grafana_private[*].id
+#     security_group_ids = [aws_security_group.vpc_endpoints.id]
+#     # allow for dns resolution
+#     private_dns_enabled = true
+#     tags = merge(var.tags, {
+#         Name = "${var.prefix}-ecr-api-vpce"
+#     })
+# }
 
-# Create VPC Endpoint for ECR Docker
-resource "aws_vpc_endpoint" "ecr_docker" {
-    vpc_id            = aws_vpc.grafana_main.id
-    service_name      = "com.amazonaws.${var.aws_region}.ecr.dkr"
-    vpc_endpoint_type = "Interface"
-    subnet_ids        = aws_subnet.grafana_private[*].id
-    security_group_ids = [aws_security_group.vpc_endpoints.id]
-    # allow for dns resolution
-    private_dns_enabled = true
-    tags = merge(var.tags, {
-        Name = "${var.prefix}-ecr-dkr-vpce"
-    })
-}
+# # Create VPC Endpoint for ECR Docker
+# resource "aws_vpc_endpoint" "ecr_docker" {
+#     vpc_id            = aws_vpc.grafana_main.id
+#     service_name      = "com.amazonaws.${var.aws_region}.ecr.dkr"
+#     vpc_endpoint_type = "Interface"
+#     subnet_ids        = aws_subnet.grafana_private[*].id
+#     security_group_ids = [aws_security_group.vpc_endpoints.id]
+#     # allow for dns resolution
+#     private_dns_enabled = true
+#     tags = merge(var.tags, {
+#         Name = "${var.prefix}-ecr-dkr-vpce"
+#     })
+# }
 
-# Create VPC Endpoint for CloudWatch Logs
-resource "aws_vpc_endpoint" "cloudwatch_logs" {
-    vpc_id            = aws_vpc.grafana_main.id
-    service_name      = "com.amazonaws.${var.aws_region}.logs"
-    vpc_endpoint_type = "Interface"
-    subnet_ids        = aws_subnet.grafana_private[*].id
-    security_group_ids = [aws_security_group.vpc_endpoints.id]
-    private_dns_enabled = true
-    tags = merge(var.tags, {
-        Name = "${var.prefix}-cloudwatch-logs-vpce"
-    })
-}
+# # Create VPC Endpoint for CloudWatch Logs
+# resource "aws_vpc_endpoint" "cloudwatch_logs" {
+#     vpc_id            = aws_vpc.grafana_main.id
+#     service_name      = "com.amazonaws.${var.aws_region}.logs"
+#     vpc_endpoint_type = "Interface"
+#     subnet_ids        = aws_subnet.grafana_private[*].id
+#     security_group_ids = [aws_security_group.vpc_endpoints.id]
+#     private_dns_enabled = true
+#     tags = merge(var.tags, {
+#         Name = "${var.prefix}-cloudwatch-logs-vpce"
+#     })
+# }
 
-# Create VPC Endpoint for S3 as ECR stores image layers in S3
-resource "aws_vpc_endpoint" "s3" {
-    vpc_id            = aws_vpc.grafana_main.id
-    service_name      = "com.amazonaws.${var.aws_region}.s3"
-    vpc_endpoint_type = "Gateway"
-    route_table_ids   = aws_route_table.private[*].id
-    tags = merge(var.tags, {
-        Name = "${var.prefix}-s3-vpce"
-    })
-}
+# # Create VPC Endpoint for S3 as ECR stores image layers in S3
+# resource "aws_vpc_endpoint" "s3" {
+#     vpc_id            = aws_vpc.grafana_main.id
+#     service_name      = "com.amazonaws.${var.aws_region}.s3"
+#     vpc_endpoint_type = "Gateway"
+#     route_table_ids   = aws_route_table.private[*].id
+#     tags = merge(var.tags, {
+#         Name = "${var.prefix}-s3-vpce"
+#     })
+# }
 
-# Security group for VPC endpoints
-resource "aws_security_group" "vpc_endpoints" {
-  name        = "vpc-endpoints-sg"
-  description = "Security group for VPC endpoints"
-  vpc_id      = aws_vpc.grafana_main.id
+# # Security group for VPC endpoints
+# resource "aws_security_group" "vpc_endpoints" {
+#   name        = "vpc-endpoints-sg"
+#   description = "Security group for VPC endpoints"
+#   vpc_id      = aws_vpc.grafana_main.id
 
-  ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    # cidr_blocks = ["0.0.0.0/0"]
-    # cidr_blocks = [var.cidr_block]
-    security_groups = [aws_security_group.ecs_tasks.id]  # Allow ECS tasks
-  }
+#   ingress {
+#     from_port   = 443
+#     to_port     = 443
+#     protocol    = "tcp"
+#     security_groups = [aws_security_group.ecs_tasks.id] 
+#   }
 
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+#   egress {
+#     from_port   = 0
+#     to_port     = 0
+#     protocol    = "-1"
+#     cidr_blocks = ["0.0.0.0/0"]
+#   }
+#   tags = merge(var.tags, {
+#     Name = "${var.prefix}-vpc-endpoints-sg"
+#   })
+# }
+
+
+# Elastic IP & NAT Gateway for egress traffic
+resource "aws_eip" "nat" {
+  domain = "vpc"
   tags = merge(var.tags, {
-    Name = "${var.prefix}-vpc-endpoints-sg"
+    Name = "${var.prefix}-nat-eip"
+  })
+}
+
+
+resource "aws_nat_gateway" "nat" {
+  allocation_id = aws_eip.nat.id
+  subnet_id     = element(aws_subnet.grafana_public[*].id, 0) 
+  tags = merge(var.tags, {
+    Name = "${var.prefix}-nat-gw"
   })
 }

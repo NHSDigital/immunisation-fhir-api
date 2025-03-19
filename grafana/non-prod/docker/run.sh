@@ -18,7 +18,7 @@ if [ ! -f /etc/grafana/grafana.ini ]; then
     exit 1
 fi
 
-which grafana-server
+GF_UPDATE_CHECK=false
 
 # Start Grafana in the foreground
 echo "Starting Grafana server..."

@@ -28,3 +28,5 @@ tags = {
 }
 
 log_group = "/ecs/imms-fhir-api-grafana"
+
+use_natgw = true

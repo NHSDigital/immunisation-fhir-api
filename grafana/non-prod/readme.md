@@ -23,3 +23,10 @@ to review the docker image
 ```
 docker image inspect imms-fhir-api-grafana:11.0.0-22.04_stable
 ```
+
+### vpce vs nat gateway
+
+By default, grafana image requires access to internet for plugins and updates. 
+1. Disable internet access. The updates can be disabled and plugins can be preloaded. However, this was timeboxed and timed out.
+2. Permit access via VPC Endpoints. This gives access to AWS services. However updates & & info updates require internet access by default. To avoid a natgw, a proxy could be used.
+3. NatGateway - this is the current solutipn. However, it should be reviewed as it is more permissive and has higher costs.

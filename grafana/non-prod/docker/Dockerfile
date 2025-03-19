@@ -8,11 +8,16 @@ RUN echo "Installing Python..." \
     && echo "Python installed successfully."
 
 # set timeout for plugin installation
-ENV GF_INSTALL_PLUGINS_TIMEOUT=300
+ENV GF_INSTALL_PLUGINS_TIMEOUT=6000
+ENV GF_UPDATE_CHECK=false
 
 # Install Grafana plugins
 RUN echo "Installing plugins..." \
-    && grafana-cli plugins install grafana-lokiexplore-app
+    && grafana-cli plugins install grafana-lokiexplore-app \
+    && grafana-cli plugins install grafana-pyroscope-app 
+
+# Copy custom grafana.ini configuration file
+COPY ./grafana.ini /etc/grafana/grafana.ini
 
 # Copy provisioning and dashboards
 RUN echo "=========\n\n\n\Copying provisioning files..."
