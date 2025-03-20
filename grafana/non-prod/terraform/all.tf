@@ -260,6 +260,9 @@ resource "aws_iam_role" "ecs_task_role" {
 EOF
 }
 
+        # Resource = ${aws_iam_role.monitoring_role.arn}
+
+
 resource "aws_iam_policy" "ecs_task_policy" {
   name        = "${var.prefix}-ecs-task-policy"
   description = "Policy for ECS task role to access CloudWatch Logs"
@@ -286,7 +289,6 @@ resource "aws_iam_role_policy_attachment" "task_s3" {
   role       = aws_iam_role.ecs_task_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
 }
-
 data "aws_iam_policy_document" "ecs_auto_scale_role" {
   version = "2012-10-17"
   statement {
@@ -299,13 +301,11 @@ data "aws_iam_policy_document" "ecs_auto_scale_role" {
     }
   }
 }
-
 # ECS auto scale role
 resource "aws_iam_role" "ecs_auto_scale_role" {
   name               = var.ecs_auto_scale_role_name
   assume_role_policy = data.aws_iam_policy_document.ecs_auto_scale_role.json
 }
-
 # ECS auto scale role policy attachment
 resource "aws_iam_role_policy_attachment" "ecs_auto_scale_role" {
   role       = aws_iam_role.ecs_auto_scale_role.name
@@ -314,6 +314,7 @@ resource "aws_iam_role_policy_attachment" "ecs_auto_scale_role" {
 
 # Monitoring role
 resource "aws_iam_role" "monitoring_role" {
+
   name = "${var.prefix}-monitoring-role"
 
   assume_role_policy = jsonencode({
@@ -321,10 +322,17 @@ resource "aws_iam_role" "monitoring_role" {
     "Statement": [
       {
         "Effect": "Allow",
+        "Action": "sts:AssumeRole",
         "Principal": {
           "Service": "ecs-tasks.amazonaws.com"
+        }
+      },
+      {
+        Effect = "Allow",
+        Principal = {
+          AWS = aws_iam_role.ecs_task_role.arn
         },
-        "Action": "sts:AssumeRole"
+        Action = "sts:AssumeRole"
       }
     ]
   })
