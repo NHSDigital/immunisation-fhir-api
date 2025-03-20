@@ -12,6 +12,9 @@ The code may be found in the docker folder.
 
 ## Infrastructure
 
+### Terraform state
+S3 bucket name : immunisation-grafana-terraform-state 
+
 The infrastructure is built using terraform. The code may be found in the terraform folder.
 
 to rebuild the docker image from the ECR to ECS, run

@@ -12,7 +12,7 @@ app_port = 3000
 
 app_count = 1
 
-health_check_path = "/"
+health_check_path = "/api/health"
 
 fargate_cpu = 1024
 

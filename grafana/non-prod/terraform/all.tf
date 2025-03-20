@@ -19,7 +19,7 @@ resource "aws_alb_target_group" "app" {
     protocol            = "HTTP"
     matcher             = "200"
     timeout             = 3
-    path                = var.health_check_path
+    path                =  "/api/health" # Grafana health check endpoint
     unhealthy_threshold = 2
   }
 }
@@ -112,6 +112,7 @@ data "template_file" "grafana_app" {
         fargate_memory = var.fargate_memory
         aws_region     = var.aws_region
         log_group      = var.log_group
+        health_check_path = var.health_check_path
     }
 }
 
@@ -520,5 +521,22 @@ resource "aws_security_group" "ecs_tasks" {
   }
   tags = merge(var.tags, {
     Name = "${var.prefix}-sg-ecs-tasks"
+  })
+}
+
+# Elastic IP & NAT Gateway for egress traffic
+resource "aws_eip" "nat" {
+  domain = "vpc"
+  tags = merge(var.tags, {
+    Name = "${var.prefix}-nat-eip"
+  })
+}
+
+
+resource "aws_nat_gateway" "nat" {
+  allocation_id = aws_eip.nat.id
+  subnet_id     = element(aws_subnet.grafana_public[*].id, 0) 
+  tags = merge(var.tags, {
+    Name = "${var.prefix}-nat-gw"
   })
 }
