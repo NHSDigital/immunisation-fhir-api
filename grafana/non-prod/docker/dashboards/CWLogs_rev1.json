@@ -1,7 +1,7 @@
 {
   "__inputs": [
     {
-      "name": "DS_CLOUDWATCH-WEBFACTORY",
+      "name": "CLOUDWATCH",
       "label": "CloudWatch",
       "description": "",
       "type": "datasource",
