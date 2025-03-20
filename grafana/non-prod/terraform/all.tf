@@ -368,13 +368,14 @@ resource "aws_iam_role_policy" "monitoring_policy" {
         "Sid": "AllowReadingLogsFromCloudWatch",
         "Effect": "Allow",
         "Action": [
-          "logs:*"
-          # "logs:DescribeLogGroups",
-          # "logs:GetLogGroupFields",
-          # "logs:StartQuery",
-          # "logs:StopQuery",
-          # "logs:GetQueryResults",
-          # "logs:GetLogEvents"
+          "logs:DescribeLogGroups",
+          "logs:DescribeLogStreams",
+          "logs:GetLogEvents",
+          "logs:FilterLogEvents",
+          "logs:GetLogGroupFields",
+          "logs:StartQuery",
+          "logs:StopQuery",
+          "logs:GetQueryResults"
         ],
         "Resource": "*"
       },
