@@ -1,6 +1,6 @@
 """Functions for filtering a FHIR Immunization Resource"""
 
-from models.utils.generic_utils import is_actor_referencing_contained_resource, get_contained_practitioner
+from models.utils.generic_utils import is_actor_referencing_contained_resource, get_contained_practitioner, get_contained_patient
 from constants import Urls
 
 
@@ -94,7 +94,7 @@ def add_use_to_identifier(imms: dict) -> dict:
 
 class Filter:
     """Functions for filtering a FHIR Immunization Resource"""
-
+    
     @staticmethod
     def read(imms: dict) -> dict:
         """Apply filtering for READ request"""
@@ -102,12 +102,13 @@ class Filter:
         return imms
 
     @staticmethod
-    def search(imms: dict, patient_full_url: str, bundle_patient: dict = None) -> dict:
+    def search(imms: dict, patient_full_url: str) -> dict:
         """Apply filtering for an individual FHIR Immunization Resource as part of SEARCH request"""
         imms = remove_reference_to_contained_practitioner(imms)
-        imms.pop("contained")
-        imms["patient"] = create_reference_to_patient_resource(patient_full_url, bundle_patient)
+        imms["patient"] = create_reference_to_patient_resource(patient_full_url, get_contained_patient(imms))
         imms = add_use_to_identifier(imms)
+        imms.pop("contained")
+        
         return imms
 
     @staticmethod
