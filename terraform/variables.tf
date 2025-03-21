@@ -107,3 +107,7 @@ data "aws_lambda_function" "existing_file_name_proc_lambda" {
   function_name = aws_lambda_function.file_processor_lambda.function_name
 }
 
+data "aws_kms_key" "mesh_s3_encryption_key" {
+  key_id = "alias/local-immunisation-mesh"
+}
+
