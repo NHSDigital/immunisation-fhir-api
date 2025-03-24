@@ -145,12 +145,6 @@ class TestFilter(unittest.TestCase):
         del expected_output_data["performer"][1]["actor"]["identifier"]
         self.assertEqual(replace_organization_values(input_imms_data), expected_output_data)
 
-    def test_filter_read(self):
-        """Tests to ensure Filter.read appropriately filters a FHIR Immunization Resource"""
-        unfiltered_imms = deepcopy(self.covid_19_immunization_event)
-        expected_output = load_json_data("completed_covid19_immunization_event_filtered_for_read.json")
-        self.assertEqual(Filter.read(unfiltered_imms), expected_output)
-
     def test_filter_search(self):
         """Tests to ensure Filter.search appropriately filters a FHIR Immunization Resource"""
         bundle_patient = deepcopy(self.bundle_patient_resource)

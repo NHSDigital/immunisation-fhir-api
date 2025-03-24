@@ -187,8 +187,8 @@ class TestGetImmunization(unittest.TestCase):
 
     def test_get_immunization_by_id_patient_not_restricted(self):
         """
-        Test that get_immunization_by_id returns a FHIR Immunization Resource which has been filtered for read,
-        but not for s-flag, when patient is not restricted
+        Test that get_immunization_by_id returns a FHIR Immunization Resource which has not been filtered for read,
+        and also dropped obfuscation for s-flag, when patient is not restricted
         """
         imms_id = "non_restricted_id"
 
@@ -196,7 +196,7 @@ class TestGetImmunization(unittest.TestCase):
         self.imms_repo.get_immunization_by_id.return_value = {"Resource": immunization_data}
         self.fhir_service.pds_service.get_patient_details.return_value = {"meta": {"security": [{"code": "U"}]}}
 
-        expected_imms = load_json_data("completed_covid19_immunization_event_filtered_for_read.json")
+        expected_imms = load_json_data("completed_covid19_immunization_event_for_read.json")
         expected_output = Immunization.parse_obj(expected_imms)
 
         # When

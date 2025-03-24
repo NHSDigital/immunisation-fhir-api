@@ -7,7 +7,9 @@
       "name": [
         {
           "family": "Nightingale",
-          "given": ["Florence"]
+          "given": [
+            "Florence"
+          ]
         }
       ]
     },
@@ -23,7 +25,9 @@
       "name": [
         {
           "family": "Taylor",
-          "given": ["Sarah"]
+          "given": [
+            "Sarah"
+          ]
         }
       ],
       "gender": "unknown",
@@ -47,6 +51,12 @@
           }
         ]
       }
+    }
+  ],
+   "identifier": [
+    {
+      "system": "https://supplierABC/identifiers/vacc",
+      "value": "ACME-vacc123456"
     }
   ],
   "status": "completed",

@@ -94,13 +94,6 @@ def add_use_to_identifier(imms: dict) -> dict:
 
 class Filter:
     """Functions for filtering a FHIR Immunization Resource"""
-
-    @staticmethod
-    def read(imms: dict) -> dict:
-        """Apply filtering for READ request"""
-        imms.pop("identifier")
-        return imms
-
     @staticmethod
     def search(imms: dict, patient_full_url: str, bundle_patient: dict = None) -> dict:
         """Apply filtering for an individual FHIR Immunization Resource as part of SEARCH request"""

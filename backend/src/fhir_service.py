@@ -87,12 +87,9 @@ class FhirService:
 
         # Returns the Immunisation full resource with no obfuscation
         resource = imms_resp.get("Resource", {})
-        imms_filtered_for_read = Filter.read(resource) if resource else {}
-
-
         return {
             "Version": imms_resp.get("Version", ""),
-            "Resource": Immunization.parse_obj(imms_filtered_for_read),
+            "Resource": Immunization.parse_obj(resource),
         }
 
     def get_immunization_by_id_all(self, imms_id: str, imms: dict) -> Optional[dict]:
