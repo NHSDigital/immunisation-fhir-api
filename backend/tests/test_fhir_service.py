@@ -207,8 +207,8 @@ class TestGetImmunization(unittest.TestCase):
 
     def test_get_immunization_by_id_patient_not_restricted(self):
         """
-        Test that get_immunization_by_id returns a FHIR Immunization Resource which has not been filtered for read,
-        but also dropped for s-flag, when patient is not restricted
+        Test that get_immunization_by_id returns a FHIR Immunization Resource which has been filtered for read
+        when patient is not restricted
         """
         imms_id = "non_restricted_id"
 

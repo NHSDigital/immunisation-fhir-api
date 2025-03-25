@@ -33,7 +33,6 @@ from models.utils.generic_utils import (
 from models.constants import Constants
 from models.errors import MandatoryError
 from pds_service import PdsService
-from s_flag_handler import handle_s_flag
 from timer import timed
 from filter import Filter
 

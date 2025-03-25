@@ -118,14 +118,3 @@ class Filter:
         imms.pop("contained")
 
         return imms
-
-    @staticmethod
-    def s_flag(imms: dict) -> dict:
-        """Apply filtering for patients with 'RESTRICTED' flag"""
-        imms = replace_address_postal_codes(imms)
-        imms = replace_organization_values(imms)
-        if imms.get("location"):
-            imms["location"] = {
-                "identifier": {"system": "urn:iso:std:iso:3166", "value": "GB"}
-            }
-        return imms

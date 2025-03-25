@@ -15,7 +15,9 @@ current_directory = os.path.dirname(os.path.realpath(__file__))
 
 
 def load_example(path: str) -> dict:
-    with open(f"{current_directory}/../../specification/components/examples/{path}") as f:
+    with open(
+        f"{current_directory}/../../specification/components/examples/{path}"
+    ) as f:
         return json.load(f, parse_float=Decimal)
 
 
@@ -32,7 +34,9 @@ def generate_imms_resource(
     The unique_identifier is also updated to ensure uniqueness...
     """
     # Load the data
-    sample_data_file_name = sample_data_file_name.replace("[vaccine_type]", vaccine_type.lower())
+    sample_data_file_name = sample_data_file_name.replace(
+        "[vaccine_type]", vaccine_type.lower()
+    )
     imms = deepcopy(load_example(f"Immunization/{sample_data_file_name}.json"))
 
     # Apply identifier directly
@@ -49,15 +53,13 @@ def generate_imms_resource(
 
 def generate_filtered_imms_resource(
     crud_operation_to_filter_for: Literal["READ", "SEARCH", ""] = "",
-    filter_for_s_flag: bool = False,
-    nhs_number=valid_nhs_number1,
     imms_identifier_value: str = None,
     vaccine_type=VaccineTypes.covid_19,
     occurrence_date_time: str = None,
 ) -> dict:
     """
     Creates a filtered FHIR Immunization Resource dictionary, which includes an id, using the sample filtered data for
-    the given vaccine type, crud operation (if specified) and s_flag (if required) as a base, and updates the id,
+    the given vaccine type, crud operation (if specified) as a base, and updates the id,
     nhs_number and occurrence_date_time as required.
 
     NOTE: The filtered sample data files use the corresponding unfiltered sample data files as a base, and this
@@ -67,10 +69,9 @@ def generate_filtered_imms_resource(
     The new file name must be consistent with the existing sample data file names.
     """
     # Load the data
-    s_flag_string = "_and_s_flag" if filter_for_s_flag else ""
     file_name = (
         f"Immunization/completed_{vaccine_type.lower()}_immunization_event"
-        + f"_filtered_for_{crud_operation_to_filter_for.lower()}{s_flag_string}"
+        + f"_filtered_for_{crud_operation_to_filter_for.lower()}"
     )
     imms = deepcopy(load_example(f"{file_name}.json"))
     # Apply identifier directly
@@ -89,7 +90,11 @@ def generate_filtered_imms_resource(
 
 
 def get_patient_id(imms: dict) -> str:
-    patients = [resource for resource in imms["contained"] if resource["resourceType"] == "Patient"]
+    patients = [
+        resource
+        for resource in imms["contained"]
+        if resource["resourceType"] == "Patient"
+    ]
     return patients[0]["identifier"][0]["value"]
 
 
@@ -120,7 +125,11 @@ def get_vaccine_type(immunization: dict):
         target_diseases = []
         target_disease_list = immunization["protocolApplied"][0]["targetDisease"]
         for element in target_disease_list:
-            code = [x.get("code") for x in element["coding"] if x.get("system") == "http://snomed.info/sct"][0]
+            code = [
+                x.get("code")
+                for x in element["coding"]
+                if x.get("system") == "http://snomed.info/sct"
+            ][0]
             target_diseases.append(code)
     except (KeyError, IndexError, AttributeError) as error:
         raise ValueError("No target disease codes found") from error
@@ -128,7 +137,11 @@ def get_vaccine_type(immunization: dict):
 
 
 def get_patient_postal_code(imms: dict):
-    patients = [record for record in imms.get("contained", []) if record.get("resourceType") == "Patient"]
+    patients = [
+        record
+        for record in imms.get("contained", [])
+        if record.get("resourceType") == "Patient"
+    ]
     if patients:
         return patients[0]["address"][0]["postalCode"]
     return ""
@@ -137,7 +150,9 @@ def get_patient_postal_code(imms: dict):
 def get_full_row_from_identifier(identifier: str) -> dict:
     """Get the full record from the dynamodb table using the identifier"""
     config = Config(connect_timeout=1, read_timeout=1, retries={"max_attempts": 1})
-    db: DynamoDBServiceResource = boto3.resource("dynamodb", region_name="eu-west-2", config=config)
+    db: DynamoDBServiceResource = boto3.resource(
+        "dynamodb", region_name="eu-west-2", config=config
+    )
     table = db.Table(os.getenv("DYNAMODB_TABLE_NAME"))
 
     return table.get_item(Key={"PK": f"Immunization#{identifier}"}).get("Item")
