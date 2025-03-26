@@ -298,7 +298,8 @@ class TestCis2Authorization(ImmunizationBaseTest):
         self.assertEqual(response.status_code, 403, response.text)
 
     def test_delete_imms__unauthorised_vaxx(self):
-        """it should not delete Immunization if app does not have the correct vaccine permission"""
+        """it should not delete Immunization if app does not have the correct vaccine permission(*)"""
+        print("SW test_delete_imms__unauthorised_vaxx...")
         imms_id = self.create_immunization_resource(self.default_imms_api)
         self.make_app({Permission.READ}, {"flu:create"})
         # When

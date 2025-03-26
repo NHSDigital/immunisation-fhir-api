@@ -1,26 +1,56 @@
+# from unittest.mock import patch
+from contextlib import contextmanager
+import os
+import responses
 from utils.base_test import ImmunizationBaseTest
 from utils.resource import generate_imms_resource, get_full_row_from_identifier
 
 
 class TestCreateImmunization(ImmunizationBaseTest):
+
+    def setUp(self):
+        super().setUp()
+        self.should_mock = os.getenv("IMMUNIZATION_ENV") == "int"
+        self.pds_url = "https://int.api.service.nhs.uk/personal-demographics/FHIR/R4/Patient"
+
+    @contextmanager
+    def mock_pds_url(self):
+        if self.should_mock:
+            responses.add(
+                responses.GET,
+                f"{self.pds_url}/123",
+                json={"meta": {"security": [{"code": "U"}]}},
+                status=200
+            )
+        try:
+            yield  # Allow the test to proceed
+        finally:
+            responses.reset()  # Clean up after the test
+
+        print("mock_get_patient_details...not patching")
+        return None
+
     def test_create_imms(self):
-        """it should create a FHIR Immunization resource"""
-        for imms_api in self.imms_apis:
-            with self.subTest(imms_api):
-                # Given
-                immunizations = [
-                    generate_imms_resource(),
-                    generate_imms_resource(sample_data_file_name="completed_rsv_immunization_event"),
-                ]
+        """it should create a FHIR Immunization resource (*)"""
+        print("test_create_imms...")
 
-                for immunization in immunizations:
-                    # When
-                    response = imms_api.create_immunization(immunization)
+        with self.mock_pds_url():
+            for imms_api in self.imms_apis:
+                with self.subTest(imms_api):
+                    # Given
+                    immunizations = [
+                        generate_imms_resource(),
+                        generate_imms_resource(sample_data_file_name="completed_rsv_immunization_event"),
+                    ]
 
-                    # Then
-                    self.assertEqual(response.status_code, 201, response.text)
-                    self.assertEqual(response.text, "")
-                    self.assertIn("Location", response.headers)
+                    for immunization in immunizations:
+                        # When
+                        response = imms_api.create_immunization(immunization)
+
+                        # Then
+                        self.assertEqual(response.status_code, 201, response.text)
+                        self.assertEqual(response.text, "")
+                        self.assertIn("Location", response.headers)
 
     def test_non_unique_identifier(self):
         """
