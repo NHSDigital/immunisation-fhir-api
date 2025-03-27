@@ -1,4 +1,5 @@
 from decimal import Decimal
+import uuid
 
 from utils.base_test import ImmunizationBaseTest
 from utils.immunisation_api import parse_location
@@ -12,18 +13,26 @@ class TestGetImmunization(ImmunizationBaseTest):
         """it should get a FHIR Immunization resource"""
         for imms_api in self.imms_apis:
             with self.subTest(imms_api):
+                # Create one shared UUID per immunization (covid & rsv)
+                covid_uuid = str(uuid.uuid4())
+                rsv_uuid = str(uuid.uuid4())
                 # Given
                 immunizations = [
                     {
-                        "data": generate_imms_resource(),
-                        "expected": generate_filtered_imms_resource(
-                            crud_operation_to_filter_for=EndpointOperationNames.READ)
-                    },
-                    {
-                        "data": generate_imms_resource(sample_data_file_name="completed_rsv_immunization_event"),
+                        "data": generate_imms_resource(imms_identifier_value=covid_uuid),
                         "expected": generate_filtered_imms_resource(
                             crud_operation_to_filter_for=EndpointOperationNames.READ,
-                            vaccine_type=VaccineTypes.rsv
+                            imms_identifier_value=covid_uuid)
+                    },
+                    {
+                        "data": generate_imms_resource(
+                            sample_data_file_name="completed_rsv_immunization_event",
+                            vaccine_type=VaccineTypes.rsv,
+                            imms_identifier_value=rsv_uuid),
+                        "expected": generate_filtered_imms_resource(
+                            crud_operation_to_filter_for=EndpointOperationNames.READ,
+                            vaccine_type=VaccineTypes.rsv,
+                            imms_identifier_value=rsv_uuid
                         )
                     }
                 ]
@@ -40,7 +49,6 @@ class TestGetImmunization(ImmunizationBaseTest):
                 # When - Retrieve and validate each immunization by ID
                 for immunization in immunizations:
                     response = imms_api.get_immunization_by_id(immunization["id"])
-
                     # Then
                     self.assertEqual(response.status_code, 200)
                     self.assertEqual(response.json()["id"], immunization["id"])

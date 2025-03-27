@@ -187,8 +187,8 @@ class TestGetImmunization(unittest.TestCase):
 
     def test_get_immunization_by_id_patient_not_restricted(self):
         """
-        Test that get_immunization_by_id returns a FHIR Immunization Resource which has been filtered for read,
-        but not for s-flag, when patient is not restricted
+        Test that get_immunization_by_id returns a FHIR Immunization Resource which has not been filtered for read,
+        but also dropped for s-flag, when patient is not restricted
         """
         imms_id = "non_restricted_id"
 
@@ -196,7 +196,7 @@ class TestGetImmunization(unittest.TestCase):
         self.imms_repo.get_immunization_by_id.return_value = {"Resource": immunization_data}
         self.fhir_service.pds_service.get_patient_details.return_value = {"meta": {"security": [{"code": "U"}]}}
 
-        expected_imms = load_json_data("completed_covid19_immunization_event_filtered_for_read.json")
+        expected_imms = load_json_data("completed_covid19_immunization_event_for_read.json")
         expected_output = Immunization.parse_obj(expected_imms)
 
         # When
@@ -204,23 +204,7 @@ class TestGetImmunization(unittest.TestCase):
 
         # Then
         self.assertEqual(actual_output["Resource"], expected_output)
-
-    def test_get_immunization_by_id_patient_restricted(self):
-        """it should return a filtered Immunization when patient is restricted"""
-        imms_id = "restricted_id"
-        immunization_data = load_json_data("completed_covid19_immunization_event.json")
-        filtered_immunization = load_json_data("completed_covid19_immunization_event_filtered_for_s_flag_and_read.json")
-        self.imms_repo.get_immunization_by_id.return_value = {"Resource": immunization_data}
-        patient_data = {"meta": {"security": [{"code": "R"}]}}
-        self.fhir_service.pds_service.get_patient_details.return_value = patient_data
-
-        # When
-        resp_imms = self.fhir_service.get_immunization_by_id(imms_id, "COVID19:read")
-        act_res = resp_imms["Resource"]
-        filtered_immunization_res = Immunization.parse_obj(filtered_immunization)
-        # Then
-        self.assertEqual(act_res, filtered_immunization_res)
-
+   
     def test_pre_validation_failed(self):
         """it should throw exception if Immunization is not valid"""
         imms_id = "an-id"

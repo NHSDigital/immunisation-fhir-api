@@ -79,27 +79,18 @@ class FhirService:
 
     def get_immunization_by_id(self, imms_id: str, imms_vax_type_perms: str) -> Optional[dict]:
         """
-        Get an Immunization by its ID. Return None if not found. If the patient doesn't have an NHS number,
+        Get an Immunization by its ID. Return None if it is not found. If the patient doesn't have an NHS number,
         return the Immunization without calling PDS or checking S flag.
         """
         if not (imms_resp := self.immunization_repo.get_immunization_by_id(imms_id, imms_vax_type_perms)):
             return None
 
-        # Remove fields rom the imms resource which are not to be returned for read
-        imms_filtered_for_read = Filter.read(imms_resp.get("Resource", {}))
-
-        # Handle s-flag filtering, where applicable
-        if not (nhs_number := obtain_field_value(imms_filtered_for_read, FieldNames.patient_identifier_value)):
-            imms_filtered_for_read_and_s_flag = imms_filtered_for_read
-        else:
-            if patient := self.pds_service.get_patient_details(nhs_number):
-                imms_filtered_for_read_and_s_flag = handle_s_flag(imms_filtered_for_read, patient)
-            else:
-                raise UnhandledResponseError("unable to validate NHS number with downstream service")
+        # Returns the Immunisation full resource with no obfuscation
+        resource = imms_resp.get("Resource", {})
 
         return {
             "Version": imms_resp.get("Version", ""),
-            "Resource": Immunization.parse_obj(imms_filtered_for_read_and_s_flag),
+            "Resource": Immunization.parse_obj(resource),
         }
 
     def get_immunization_by_id_all(self, imms_id: str, imms: dict) -> Optional[dict]:

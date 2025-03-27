@@ -94,7 +94,6 @@ class TestFilter(unittest.TestCase):
         input_imms = load_json_data("completed_covid19_immunization_event.json")
         expected_output = deepcopy(input_imms)
         expected_output["contained"][1]["address"][0]["postalCode"] = "ZZ99 3CZ"
-
         self.assertEqual(replace_address_postal_codes(input_imms), expected_output)
 
     def test_replace_organization_values(self):
@@ -144,12 +143,6 @@ class TestFilter(unittest.TestCase):
         expected_output_data = deepcopy(expected_output)
         del expected_output_data["performer"][1]["actor"]["identifier"]
         self.assertEqual(replace_organization_values(input_imms_data), expected_output_data)
-
-    def test_filter_read(self):
-        """Tests to ensure Filter.read appropriately filters a FHIR Immunization Resource"""
-        unfiltered_imms = deepcopy(self.covid_19_immunization_event)
-        expected_output = load_json_data("completed_covid19_immunization_event_filtered_for_read.json")
-        self.assertEqual(Filter.read(unfiltered_imms), expected_output)
 
     def test_filter_search(self):
         """Tests to ensure Filter.search appropriately filters a FHIR Immunization Resource"""

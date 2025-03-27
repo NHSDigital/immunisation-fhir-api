@@ -48,6 +48,11 @@
         ]
       }
     }
+  ],"identifier": [
+    {
+      "system": "https://supplierABC/identifiers/vacc",
+      "value": "ACME-vacc123456"
+    }
   ],
   "status": "completed",
   "vaccineCode": {
