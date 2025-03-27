@@ -31,9 +31,10 @@ class TestCreateImmunization(ImmunizationBaseTest):
             responses.add(
                 responses.GET,
                 f"{self.pds_url}/123",
-                json={"meta": {"security": [{"code": "U"}]}},
-                headers=headers,  # Mock the Location header
-                body=body,
+                body=body if body else None,  # Use body if supplied, otherwise json
+                json=None if body else {"meta": {"security": [{"code": "U"}]}}, 
+                headers=headers,
+                content_type='application/json' if body else None,  # Set content type only if body is used
                 status=200
             )
         try:
