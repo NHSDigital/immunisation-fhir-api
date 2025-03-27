@@ -4,7 +4,12 @@ import os
 from enum import Enum
 from typing import Optional, Union
 
-from fhir.resources.R4B.bundle import (Bundle as FhirBundle, BundleEntry, BundleLink, BundleEntrySearch,)
+from fhir.resources.R4B.bundle import (
+    Bundle as FhirBundle,
+    BundleEntry,
+    BundleLink,
+    BundleEntrySearch,
+)
 from fhir.resources.R4B.immunization import Immunization
 from pydantic import ValidationError
 
