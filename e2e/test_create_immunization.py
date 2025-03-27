@@ -18,7 +18,7 @@ class TestCreateImmunization(ImmunizationBaseTest):
         env = os.getenv("ENVIRONMENT")
         self.should_mock = env == "internal-dev"
         self.pds_url = f"https://{env}.api.service.nhs.uk/personal-demographics/FHIR/R4/Patient"
-        self.logger.info("Should mock: %s", self.should_mock)
+        self.logger.info("Should mock: %s, url: %s", self.should_mock, self.pds_url)
         # self.logger.info("PDS_ENV: %s", os.getenv("PDS_ENV"))
         # self.logger.info("List all env variables:")
         # for key, value in os.environ.items():
