@@ -1,6 +1,7 @@
 # from unittest.mock import patch
 from contextlib import contextmanager
 import os
+import logging
 import responses
 from utils.base_test import ImmunizationBaseTest
 from utils.resource import generate_imms_resource, get_full_row_from_identifier
@@ -10,8 +11,12 @@ class TestCreateImmunization(ImmunizationBaseTest):
 
     def setUp(self):
         super().setUp()
+        self.logger = logging.getLogger("TestCreateImmunization")
+        logging.basicConfig(level=logging.INFO)  # Set logging level to INFO
+        self.logger.info("Setting up the test environment...")
         self.should_mock = os.getenv("IMMUNIZATION_ENV") == "int"
         self.pds_url = "https://int.api.service.nhs.uk/personal-demographics/FHIR/R4/Patient"
+        self.logger.info("Should mock: %s", self.should_mock)
 
     @contextmanager
     def mock_pds_url(self, headers, body):
@@ -29,12 +34,12 @@ class TestCreateImmunization(ImmunizationBaseTest):
         finally:
             responses.reset()  # Clean up after the test
 
-        print("mock_get_patient_details...not patching")
+        self.logger.info("mock_get_patient_details...not patching")
         return None
 
     def test_create_imms(self):
         """it should create a FHIR Immunization resource (*)"""
-        print("test_create_imms...")
+        self.logger.info("test_create_imms...")
 
         with self.mock_pds_url({"Location": "AA"}, ""):
             for imms_api in self.imms_apis:
