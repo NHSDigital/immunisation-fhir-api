@@ -1,4 +1,3 @@
-import pprint
 import uuid
 import copy
 
@@ -7,7 +6,6 @@ import pytest
 from .configuration.config import valid_nhs_number1
 from .example_loader import load_example
 from .immunisation_api import ImmunisationApi, parse_location
-from e2e.utils.mappings import VaccineTypes
 
 
 def create_an_imms_obj(imms_id: str = str(uuid.uuid4()), nhs_number=valid_nhs_number1) -> dict:
