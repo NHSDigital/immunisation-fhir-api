@@ -18,7 +18,7 @@ class TestDeployment(unittest.TestCase):
     expected_commit_id: str
 
     max_retries = 30
-    
+
     def setUp(self):
         super().setUp()
         self.logger = logging.getLogger("TestDeployment")
