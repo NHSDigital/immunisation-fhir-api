@@ -14,12 +14,14 @@ class TestCreateImmunization(ImmunizationBaseTest):
         self.pds_url = "https://int.api.service.nhs.uk/personal-demographics/FHIR/R4/Patient"
 
     @contextmanager
-    def mock_pds_url(self):
+    def mock_pds_url(self, headers, body):
         if self.should_mock:
             responses.add(
                 responses.GET,
                 f"{self.pds_url}/123",
                 json={"meta": {"security": [{"code": "U"}]}},
+                headers=headers,  # Mock the Location header
+                body=body,
                 status=200
             )
         try:
@@ -34,7 +36,7 @@ class TestCreateImmunization(ImmunizationBaseTest):
         """it should create a FHIR Immunization resource (*)"""
         print("test_create_imms...")
 
-        with self.mock_pds_url():
+        with self.mock_pds_url({"Location": "AA"}, ""):
             for imms_api in self.imms_apis:
                 with self.subTest(imms_api):
                     # Given
