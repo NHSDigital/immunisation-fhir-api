@@ -1,3 +1,3 @@
-layout pyenv 3.10.16
+layout pyenv 3.10.12
 
 dotenv
