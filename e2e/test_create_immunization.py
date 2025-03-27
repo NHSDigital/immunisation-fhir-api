@@ -14,11 +14,13 @@ class TestCreateImmunization(ImmunizationBaseTest):
         self.logger = logging.getLogger("TestCreateImmunization")
         logging.basicConfig(level=logging.INFO)  # Set logging level to INFO
         self.logger.info("\nSetting up the test environment...1")
-        env = os.getenv("IMMUNIZATION_ENV")
+        # env = os.getenv("IMMUNIZATION_ENV")
+        env = os.getenv("APIGEE_ENVIRONMENT")
         self.should_mock = env == "int"
-        self.pds_url = "https://int.api.service.nhs.uk/personal-demographics/FHIR/R4/Patient"
+        self.pds_url = f"https://{env}.api.service.nhs.uk/personal-demographics/FHIR/R4/Patient"
         self.logger.info("Should mock: %s", self.should_mock)
-        self.logger.info("IMMUNIZATION_ENV: %s", env)
+        self.logger.info("IMMUNIZATION_ENV: %s", os.getenv("IMMUNIZATION_ENV"))
+        self.logger.info("PDS_ENV: %s", os.getenv("PDS_ENV"))
         self.logger.info("List all env variables:")
         for key, value in os.environ.items():
             self.logger.info(("env %s = %s", key, value))

@@ -1,7 +1,6 @@
 import unittest
 from time import sleep
 
-import logging
 import requests
 
 from lib.env import get_service_base_path, get_status_endpoint_api_key, get_source_commit_id
@@ -18,13 +17,6 @@ class TestDeployment(unittest.TestCase):
     expected_commit_id: str
 
     max_retries = 30
-
-    def setUp(self):
-        super().setUp()
-        self.logger = logging.getLogger("TestDeployment")
-        logging.basicConfig(level=logging.INFO)
-        self.logger.info("\nSet TestDeployment...")
-        self.logger.info("proxy_url:%s", self.proxy_url)
 
     @classmethod
     def setUpClass(cls):
