@@ -4,12 +4,7 @@ import os
 from enum import Enum
 from typing import Optional, Union
 
-from fhir.resources.R4B.bundle import (
-    Bundle as FhirBundle,
-    BundleEntry,
-    BundleLink,
-    BundleEntrySearch,
-)
+from fhir.resources.R4B.bundle import (Bundle as FhirBundle, BundleEntry, BundleLink, BundleEntrySearch,)
 from fhir.resources.R4B.immunization import Immunization
 from pydantic import ValidationError
 
@@ -17,19 +12,9 @@ import parameter_parser
 from fhir_repository import ImmunizationRepository
 from base_utils.base_utils import obtain_field_value
 from models.field_names import FieldNames
-from models.errors import (
-    InvalidPatientId,
-    CustomValidationError,
-    UnhandledResponseError,
-)
+from models.errors import InvalidPatientId, CustomValidationError, UnhandledResponseError
 from models.fhir_immunization import ImmunizationValidator
-from models.utils.generic_utils import (
-    nhs_number_mod11_check,
-    get_occurrence_datetime,
-    create_diagnostics,
-    form_json,
-    get_contained_patient,
-)
+from models.utils.generic_utils import nhs_number_mod11_check, get_occurrence_datetime, create_diagnostics, form_json, get_contained_patient
 from models.constants import Constants
 from models.errors import MandatoryError
 from pds_service import PdsService
@@ -68,12 +53,7 @@ class FhirService:
         self.validator = validator
 
     def get_immunization_by_identifier(
-        self,
-        identifier_pk: str,
-        imms_vax_type_perms: str,
-        identifier: str,
-        element: str,
-        is_imms_batch_app,
+        self, identifier_pk: str, imms_vax_type_perms: str, identifier: str, element: str, is_imms_batch_app
     ) -> Optional[dict]:
         """
         Get an Immunization by its ID. Return None if not found. If the patient doesn't have an NHS number,
@@ -91,18 +71,12 @@ class FhirService:
             response = form_json(imms_resp, element, identifier, base_url)
             return response
 
-    def get_immunization_by_id(
-        self, imms_id: str, imms_vax_type_perms: str
-    ) -> Optional[dict]:
+    def get_immunization_by_id(self, imms_id: str, imms_vax_type_perms: str) -> Optional[dict]:
         """
         Get an Immunization by its ID. Return None if it is not found. If the patient doesn't have an NHS number,
         return the Immunization without calling PDS or checking S flag.
         """
-        if not (
-            imms_resp := self.immunization_repo.get_immunization_by_id(
-                imms_id, imms_vax_type_perms
-            )
-        ):
+        if not (imms_resp := self.immunization_repo.get_immunization_by_id(imms_id, imms_vax_type_perms)):
             return None
 
         # Returns the Immunisation full resource with no obfuscation
@@ -115,7 +89,7 @@ class FhirService:
 
     def get_immunization_by_id_all(self, imms_id: str, imms: dict) -> Optional[dict]:
         """
-        Get an Immunization by its ID. Return None if it is not found. If the patient doesn't have an NHS number,
+        Get an Immunization by its ID. Return None if not found. If the patient doesn't have an NHS number,
         return the Immunization without calling PDS or checking S flag.
         """
         imms["id"] = imms_id
@@ -127,17 +101,11 @@ class FhirService:
         return imms_resp
 
     def create_immunization(
-        self,
-        immunization: dict,
-        imms_vax_type_perms,
-        supplier_system,
-        is_imms_batch_app,
+        self, immunization: dict, imms_vax_type_perms, supplier_system, is_imms_batch_app
     ) -> Immunization:
 
         if immunization.get("id") is not None:
-            raise CustomValidationError(
-                "id field must not be present for CREATE operation"
-            )
+            raise CustomValidationError("id field must not be present for CREATE operation")
 
         try:
             self.validator.validate(immunization)
@@ -150,11 +118,7 @@ class FhirService:
                 return patient
 
         imms = self.immunization_repo.create_immunization(
-            immunization,
-            patient,
-            imms_vax_type_perms,
-            supplier_system,
-            is_imms_batch_app,
+            immunization, patient, imms_vax_type_perms, supplier_system, is_imms_batch_app
         )
 
         return Immunization.parse_obj(imms)
@@ -243,9 +207,7 @@ class FhirService:
 
         return UpdateOutcome.UPDATE, Immunization.parse_obj(imms)
 
-    def delete_immunization(
-        self, imms_id, imms_vax_type_perms, supplier_system, is_imms_batch_app
-    ) -> Immunization:
+    def delete_immunization(self, imms_id, imms_vax_type_perms, supplier_system, is_imms_batch_app) -> Immunization:
         """
         Delete an Immunization if it exits and return the ID back if successful.
         Exception will be raised if resource didn't exit. Multiple calls to this method won't change
@@ -301,9 +263,7 @@ class FhirService:
         new_identifiers = []
         for identifier in new_patient["identifier"]:
             identifier_fields_to_keep = ["system", "value"]
-            new_identifiers.append(
-                {k: v for k, v in identifier.items() if k in identifier_fields_to_keep}
-            )
+            new_identifiers.append({k: v for k, v in identifier.items() if k in identifier_fields_to_keep})
         new_patient["identifier"] = new_identifiers
 
         return new_patient
@@ -319,14 +279,7 @@ class FhirService:
         # Update the immunization.target parameter
         new_immunization_target_param = f"immunization.target={','.join(vaccine_types)}"
         parameters = "&".join(
-            [
-                (
-                    new_immunization_target_param
-                    if x.startswith("-immunization.target=")
-                    else x
-                )
-                for x in params.split("&")
-            ]
+            [new_immunization_target_param if x.startswith("-immunization.target=") else x for x in params.split("&")]
         )
 
         return f"{base_url}?{parameters}"
@@ -351,11 +304,8 @@ class FhirService:
         # Obtain all resources which are for the requested nhs number and vaccine type(s) and within the date range
         resources = [
             r
-            for r in self.immunization_repo.find_immunizations(
-                nhs_number, vaccine_types
-            )
-            if self.is_valid_date_from(r, date_from)
-            and self.is_valid_date_to(r, date_to)
+            for r in self.immunization_repo.find_immunizations(nhs_number, vaccine_types)
+            if self.is_valid_date_from(r, date_from) and self.is_valid_date_to(r, date_to)
         ]
 
         # Create the patient URN for the fullUrl field.
@@ -365,14 +315,10 @@ class FhirService:
         # patient resource. This is as agreed with VDS team for backwards compatibility with Immunisation History API.
         patient_full_url = f"urn:uuid:{str(uuid4())}"
 
-        imms_patient_record = (
-            get_contained_patient(resources[-1]) if resources else None
-        )
+        imms_patient_record = get_contained_patient(resources[-1]) if resources else None
 
         # Filter and amend the immunization resources for the SEARCH response
-        resources_filtered_for_search = [
-            Filter.search(imms, patient_full_url) for imms in resources
-        ]
+        resources_filtered_for_search = [Filter.search(imms, patient_full_url) for imms in resources]
 
         # Add bundle entries for each of the immunization resources
         entries = [
@@ -396,12 +342,7 @@ class FhirService:
 
         # Create the bundle
         fhir_bundle = FhirBundle(resourceType="Bundle", type="searchset", entry=entries)
-        fhir_bundle.link = [
-            BundleLink(
-                relation="self",
-                url=self.create_url_for_bundle_link(params, vaccine_types),
-            )
-        ]
+        fhir_bundle.link = [BundleLink(relation="self", url=self.create_url_for_bundle_link(params, vaccine_types))]
 
         return fhir_bundle
 
@@ -414,9 +355,7 @@ class FhirService:
         If the NHS number exists, get the patient details from PDS and return the patient details.
         """
         try:
-            nhs_number = [
-                x for x in imms["contained"] if x["resourceType"] == "Patient"
-            ][0]["identifier"][0]["value"]
+            nhs_number = [x for x in imms["contained"] if x["resourceType"] == "Patient"][0]["identifier"][0]["value"]
         except (KeyError, IndexError):
             nhs_number = None
 
