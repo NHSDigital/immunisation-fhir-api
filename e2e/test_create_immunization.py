@@ -13,10 +13,12 @@ class TestCreateImmunization(ImmunizationBaseTest):
         super().setUp()
         self.logger = logging.getLogger("TestCreateImmunization")
         logging.basicConfig(level=logging.INFO)  # Set logging level to INFO
-        self.logger.info("Setting up the test environment...")
-        self.should_mock = os.getenv("IMMUNIZATION_ENV") == "int"
+        self.logger.info("\nSetting up the test environment...")
+        env = os.getenv("IMMUNIZATION_ENV")
+        self.should_mock = env == "int"
         self.pds_url = "https://int.api.service.nhs.uk/personal-demographics/FHIR/R4/Patient"
         self.logger.info("Should mock: %s", self.should_mock)
+        self.logger.info("IMMUNIZATION_ENV: %s", env)
 
     @contextmanager
     def mock_pds_url(self, headers, body):
