@@ -19,7 +19,7 @@ class TestCreateImmunization(ImmunizationBaseTest):
         self.should_mock = env == "internal-dev"
         self.pds_url = f"https://{env}.api.service.nhs.uk/personal-demographics/FHIR/R4/Patient"
         self.logger.info("Should mock: %s", self.should_mock)
-        self.logger.info("PDS_ENV: %s", os.getenv("PDS_ENV"))
+        # self.logger.info("PDS_ENV: %s", os.getenv("PDS_ENV"))
         # self.logger.info("List all env variables:")
         # for key, value in os.environ.items():
         #     self.logger.info("env %s = %s", key, value)
@@ -27,6 +27,7 @@ class TestCreateImmunization(ImmunizationBaseTest):
     @contextmanager
     def mock_pds_url(self, headers, body):
         if self.should_mock:
+            self.logger.info("mock_get_patient_details...mock PDS URL")
             responses.add(
                 responses.GET,
                 f"{self.pds_url}/123",
@@ -40,7 +41,7 @@ class TestCreateImmunization(ImmunizationBaseTest):
         finally:
             responses.reset()  # Clean up after the test
 
-        self.logger.info("mock_get_patient_details...not patching")
+
         return None
 
     def test_create_imms(self):
