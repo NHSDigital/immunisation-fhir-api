@@ -261,15 +261,18 @@ class FhirService:
         """
 
         # Remove unwanted top-level fields
-        fields_to_keep = ["id", "resourceType", "identifier"]
+        fields_to_keep = {"resourceType", "identifier"}
         new_patient = {k: v for k, v in patient.items() if k in fields_to_keep}
 
         # Remove unwanted identifier fields
-        new_identifiers = []
-        for identifier in new_patient["identifier"]:
-            identifier_fields_to_keep = ["system", "value"]
-            new_identifiers.append({k: v for k, v in identifier.items() if k in identifier_fields_to_keep})
-        new_patient["identifier"] = new_identifiers
+        identifier_fields_to_keep = {"system", "value"}
+        new_patient["identifier"] = [
+            {k: v for k, v in identifier.items() if k in identifier_fields_to_keep}
+            for identifier in new_patient.get("identifier", [])
+        ]
+
+        if new_patient["identifier"]:
+            new_patient["id"] = new_patient["identifier"][0].get("value")
 
         return new_patient
 

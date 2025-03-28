@@ -118,7 +118,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
                 self.assertEqual(response_patient["search"], {"mode": "include"})
                 self.assertTrue(response_patient["fullUrl"].startswith("urn:uuid:"))
                 self.assertTrue(uuid.UUID(response_patient["fullUrl"].split(":")[2]))
-                expected_patient_resource_keys = ["resourceType", "id", "identifier", "birthDate"]
+                expected_patient_resource_keys = ["resourceType", "id", "identifier"]
                 self.assertEqual(sorted(response_patient["resource"].keys()), sorted(expected_patient_resource_keys))
                 self.assertEqual(response_patient["resource"]["id"], valid_nhs_number1)
                 patient_identifier = response_patient["resource"]["identifier"]
@@ -349,8 +349,6 @@ class TestSearchImmunization(ImmunizationBaseTest):
 
         assert patient_entry["resource"]["identifier"][0]["system"] == "https://fhir.nhs.uk/Id/nhs-number"
         assert patient_entry["resource"]["identifier"][0]["value"] == valid_nhs_number1
-
-        datetime.datetime.strptime(patient_entry["resource"]["birthDate"], "%Y-%m-%d").date()
 
         response_without_include = self.default_imms_api.search_immunizations_full(
             "POST", f"patient.identifier={valid_patient_identifier1}&-immunization.target={VaccineTypes.mmr}", None
