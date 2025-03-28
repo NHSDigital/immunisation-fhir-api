@@ -597,8 +597,8 @@
       {
         "current": {
           "selected": false,
-          "text": "hotel catalog creation started",
-          "value": "hotel catalog creation started"
+          "text": "",
+          "value": ""
         },
         "hide": 0,
         "label": "Search",
@@ -610,7 +610,7 @@
             "value": "task timed out"
           }
         ],
-        "query": "hotel catalog creation started",
+        "query": "",
         "skipUrlSync": false,
         "type": "textbox"
       }

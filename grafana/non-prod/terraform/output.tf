@@ -50,3 +50,20 @@ output "alb_listener_arn" {
   description = "The ARN of the ALB listener"
   value       = aws_alb_listener.front_end.arn
 }
+
+output "prefix" {
+    value = local.prefix
+}
+
+output "app_image" {
+    value = local.app_image
+}
+
+output "app_name" {
+    value = local.app_name
+}
+
+output "Monitoring_Role_Arn" {
+    value = aws_iam_role.monitoring_role.arn
+}
+

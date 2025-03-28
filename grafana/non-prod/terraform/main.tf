@@ -15,8 +15,8 @@ terraform {
     }
   }
   backend "s3" {
+    bucket = "immunisation-grafana-terraform-state"
     region = "eu-west-2"
-    key    = "state"
   }
   required_version = ">= 1.5.0"
 }
@@ -52,26 +52,15 @@ resource "null_resource" "natgw_message" {
   }
 }
 
-
-// add natgw module - only if use_natgw is true
-module "natgw" {
-  source = "./natgw"
-  count  = var.use_natgw ? 1 : 0
-  aws_region = var.aws_region
-  tags = var.tags
-  prefix = var.prefix
-  public_subnet_ids = aws_subnet.grafana_public[*].id
-}
-
-# add vpce module - only if natgw is not used
-module "vpce" {
-  source = "./vpce"
-  count  = var.use_natgw ? 0 : 1
-  aws_region = var.aws_region
-  tags = var.tags
-  prefix = var.prefix
-  private_subnet_ids = aws_subnet.grafana_private[*].id
-  vpc_id = aws_vpc.grafana_main.id
-  ecs_sg_id = aws_security_group.ecs_tasks.id
-  route_table_ids = aws_route_table.private[*].id
-}
+# # add vpce module - only if natgw is not used
+# module "vpce" {
+#   source = "./vpce"
+#   count  = var.use_natgw ? 0 : 1
+#   aws_region = var.aws_region
+#   tags = var.tags
+#   prefix = local.prefix
+#   private_subnet_ids = aws_subnet.grafana_private[*].id
+#   vpc_id = aws_vpc.grafana_main.id
+#   ecs_sg_id = aws_security_group.ecs_tasks.id
+#   route_table_ids = aws_route_table.private[*].id
+# }

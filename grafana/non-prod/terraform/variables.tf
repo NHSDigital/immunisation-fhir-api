@@ -1,9 +1,17 @@
-variable "aws_region" {
-    description = "Destination AWS region"
+variable "project_name" {
+    default = "immunisations"
 }
 
-variable "ecs_auto_scale_role_name" {
-    description = "ECS auto scale role name"
+variable "project_short_name" {
+    default = "imms"
+}
+
+variable "service" {
+    default = "fhir-graf"
+}
+
+variable "aws_region" {
+    description = "Destination AWS region"
 }
 
 variable "az_count" {
@@ -40,22 +48,11 @@ variable "cidr_block" {
     description = "CIDR block for the VPC"
 }
 
-variable "log_group" {
-    description = "CloudWatch log group name"
-}
 
 variable "use_natgw" {
     description = "Boolean to determine whether to use the NAT Gateway module"
     type        = bool
     default     = true
-}
-
-variable "environment" {
-    description = "Environment to deploy to"
-}
-
-variable "prefix" {
-    description = "Prefix for all resources"
 }
 
 variable "tags" {
@@ -65,14 +62,17 @@ variable "tags" {
 }
 
 locals {
-    account_id = data.aws_caller_identity.current.account_id
-    app_image  = "${local.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/${var.prefix}:${var.app_version}"
-    tags = {
-        Environment = var.environment
-        Project     = var.prefix
-    }
-}
+    environment = terraform.workspace == "green" ? "prod" : terraform.workspace == "blue" ? "prod" : terraform.workspace
+    env         = terraform.workspace
+    prefix      = "${var.project_short_name}-${local.env}-${var.service}"
 
-output "app_image" {
-    value = local.app_image
+    account_id = data.aws_caller_identity.current.account_id
+    app_image  = "${local.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/${local.prefix}-app:${var.app_version}"
+    app_name   = "${local.prefix}-app"
+    log_group  = "${local.prefix}-log"
+
+    tags = {
+        Environment = terraform.workspace
+        Project     = local.prefix
+    }
 }
