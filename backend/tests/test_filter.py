@@ -146,7 +146,6 @@ class TestFilter(unittest.TestCase):
 
     def test_filter_search(self):
         """Tests to ensure Filter.search appropriately filters a FHIR Immunization Resource"""
-        bundle_patient = deepcopy(self.bundle_patient_resource)
         patient_full_url = f"urn:uuid:{str(uuid4())}"
         unfiltered_imms = deepcopy(self.covid_19_immunization_event)
         expected_output = load_json_data(
@@ -154,10 +153,4 @@ class TestFilter(unittest.TestCase):
         )
         expected_output["patient"]["reference"] = patient_full_url
 
-        self.assertEqual(Filter.search(unfiltered_imms, patient_full_url, bundle_patient), expected_output)
-
-    def test_filter_s_flag(self):
-        """Tests to ensure Filter.s_flag appropriately filters a FHIR Immunization Resource"""
-        input_imms = deepcopy(self.covid_19_immunization_event)
-        expected_output = load_json_data("completed_covid19_immunization_event_filtered_for_s_flag.json")
-        self.assertEqual(Filter.s_flag(input_imms), expected_output)
+        self.assertEqual(Filter.search(unfiltered_imms, patient_full_url), expected_output)
