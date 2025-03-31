@@ -19,11 +19,10 @@ from base_utils.base_utils import obtain_field_value
 from models.field_names import FieldNames
 from models.errors import InvalidPatientId, CustomValidationError, UnhandledResponseError
 from models.fhir_immunization import ImmunizationValidator
-from models.utils.generic_utils import nhs_number_mod11_check, get_occurrence_datetime, create_diagnostics, form_json
+from models.utils.generic_utils import nhs_number_mod11_check, get_occurrence_datetime, create_diagnostics, form_json, get_contained_patient
 from models.constants import Constants
 from models.errors import MandatoryError
 from pds_service import PdsService
-from s_flag_handler import handle_s_flag
 from timer import timed
 from filter import Filter
 
@@ -262,15 +261,18 @@ class FhirService:
         """
 
         # Remove unwanted top-level fields
-        fields_to_keep = ["id", "resourceType", "identifier", "birthDate"]
+        fields_to_keep = {"resourceType", "identifier"}
         new_patient = {k: v for k, v in patient.items() if k in fields_to_keep}
 
         # Remove unwanted identifier fields
-        new_identifiers = []
-        for identifier in new_patient["identifier"]:
-            identifier_fields_to_keep = ["system", "value"]
-            new_identifiers.append({k: v for k, v in identifier.items() if k in identifier_fields_to_keep})
-        new_patient["identifier"] = new_identifiers
+        identifier_fields_to_keep = {"system", "value"}
+        new_patient["identifier"] = [
+            {k: v for k, v in identifier.items() if k in identifier_fields_to_keep}
+            for identifier in new_patient.get("identifier", [])
+        ]
+
+        if new_patient["identifier"]:
+            new_patient["id"] = new_patient["identifier"][0].get("value")
 
         return new_patient
 
@@ -314,11 +316,6 @@ class FhirService:
             if self.is_valid_date_from(r, date_from) and self.is_valid_date_to(r, date_to)
         ]
 
-        # Check whether the Superseded NHS number present in PDS
-        if pds_patient := self.pds_service.get_patient_details(nhs_number):
-            if pds_patient["identifier"][0]["value"] != nhs_number:
-                return create_diagnostics()
-
         # Create the patient URN for the fullUrl field.
         # NOTE: This UUID is assigned when a SEARCH request is received and used only for referencing the patient
         # resource from immunisation resources within the bundle. The fullUrl value we are using is a urn (hence the
@@ -326,13 +323,15 @@ class FhirService:
         # patient resource. This is as agreed with VDS team for backwards compatibility with Immunisation History API.
         patient_full_url = f"urn:uuid:{str(uuid4())}"
 
+        imms_patient_record = get_contained_patient(resources[-1]) if resources else None
+
         # Filter and amend the immunization resources for the SEARCH response
-        resources_filtered_for_search = [Filter.search(imms, patient_full_url, pds_patient) for imms in resources]
+        resources_filtered_for_search = [Filter.search(imms, patient_full_url) for imms in resources]
 
         # Add bundle entries for each of the immunization resources
         entries = [
             BundleEntry(
-                resource=Immunization.parse_obj(handle_s_flag(imms, pds_patient)),
+                resource=Immunization.parse_obj(imms),
                 search=BundleEntrySearch(mode="match"),
                 fullUrl=f"https://api.service.nhs.uk/immunisation-fhir-api/Immunization/{imms['id']}",
             )
@@ -343,7 +342,7 @@ class FhirService:
         if len(resources) > 0:
             entries.append(
                 BundleEntry(
-                    resource=self.process_patient_for_bundle(pds_patient),
+                    resource=self.process_patient_for_bundle(imms_patient_record),
                     search=BundleEntrySearch(mode="include"),
                     fullUrl=patient_full_url,
                 )

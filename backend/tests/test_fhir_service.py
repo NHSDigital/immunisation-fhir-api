@@ -130,7 +130,7 @@ class TestGetImmunizationByAll(unittest.TestCase):
 
         bad_patient_name_imms = deepcopy(valid_imms)
         del bad_patient_name_imms["contained"][1]["name"][0]["given"]
-        bad_patient_name_msg = "contained[?(@.resourceType=='Patient')].name[0].given is a mandatory field"
+        bad_patient_name_msg = ("contained[?(@.resourceType=='Patient')].name[0].given is a mandatory field")
 
         fhir_service = FhirService(self.imms_repo, self.pds_service)
 
@@ -182,13 +182,15 @@ class TestGetImmunization(unittest.TestCase):
         act_imms = self.fhir_service.get_immunization_by_id(imms_id, "COVID19:read")
 
         # Then
-        self.imms_repo.get_immunization_by_id.assert_called_once_with(imms_id, "COVID19:read")
+        self.imms_repo.get_immunization_by_id.assert_called_once_with(
+            imms_id, "COVID19:read"
+        )
         self.assertEqual(act_imms, None)
 
     def test_get_immunization_by_id_patient_not_restricted(self):
         """
-        Test that get_immunization_by_id returns a FHIR Immunization Resource which has not been filtered for read,
-        but also dropped for s-flag, when patient is not restricted
+        Test that get_immunization_by_id returns a FHIR Immunization Resource which has been filtered for read
+        when patient is not restricted
         """
         imms_id = "non_restricted_id"
 
@@ -204,7 +206,7 @@ class TestGetImmunization(unittest.TestCase):
 
         # Then
         self.assertEqual(actual_output["Resource"], expected_output)
-   
+
     def test_pre_validation_failed(self):
         """it should throw exception if Immunization is not valid"""
         imms_id = "an-id"
@@ -302,6 +304,7 @@ class TestGetImmunizationIdentifier(unittest.TestCase):
 
         # Then
         self.imms_repo.get_immunization_by_identifier.assert_called_once_with(imms_id, "COVID19:search", False)
+        
         self.assertEqual(act_imms["entry"], [])
 
 
@@ -314,14 +317,22 @@ class TestCreateImmunization(unittest.TestCase):
         self.validator = create_autospec(ImmunizationValidator)
         self.fhir_service = FhirService(self.imms_repo, self.pds_service, self.validator)
         self.pre_validate_fhir_service = FhirService(
-            self.imms_repo, self.pds_service, ImmunizationValidator(add_post_validators=False)
+            self.imms_repo,
+            self.pds_service,
+            ImmunizationValidator(add_post_validators=False),
         )
 
     def test_create_immunization(self):
         """it should create Immunization and validate it"""
         imms_id = "an-id"
-        self.imms_repo.create_immunization.return_value = create_covid_19_immunization_dict_no_id()
-        pds_patient = {"identifier": [{"system": "https://fhir.nhs.uk/Id/nhs-number", "value": "9990548609"}]}
+        self.imms_repo.create_immunization.return_value = (
+            create_covid_19_immunization_dict_no_id()
+        )
+        pds_patient = {
+            "identifier": [
+                {"system": "https://fhir.nhs.uk/Id/nhs-number", "value": "9990548609"}
+            ]
+        }
         self.fhir_service.pds_service.get_patient_details.return_value = pds_patient
 
         nhs_number = VALID_NHS_NUMBER
@@ -332,10 +343,13 @@ class TestCreateImmunization(unittest.TestCase):
 
         # Then
         self.imms_repo.create_immunization.assert_called_once_with(req_imms, pds_patient, "COVID19:create", "Test", False)
+        
         self.validator.validate.assert_called_once_with(req_imms)
-        self.fhir_service.pds_service.get_patient_details.assert_called_once_with(nhs_number)
+        self.fhir_service.pds_service.get_patient_details.assert_called_once_with(
+            nhs_number
+        )
         self.assertIsInstance(stored_imms, Immunization)
-    
+
     def test_create_immunization_batch(self):
         """it should create Immunization and validate it"""
         self.imms_repo.create_immunization.return_value = create_covid_19_immunization_dict_no_id()
@@ -350,9 +364,10 @@ class TestCreateImmunization(unittest.TestCase):
 
         # Then
         self.imms_repo.create_immunization.assert_called_once_with(req_imms, None, None, "Test", True)
+        
         self.validator.validate.assert_called_once_with(req_imms)
         self.fhir_service.pds_service.get_patient_details.assert_not_called
-        self.assertIsInstance(stored_imms, Immunization)    
+        self.assertIsInstance(stored_imms, Immunization)
 
     def test_create_immunization_with_id(self):
         """it should throw exception if id present in create Immunization"""
@@ -397,7 +412,9 @@ class TestCreateImmunization(unittest.TestCase):
 
         bad_patient_name_imms = deepcopy(valid_imms)
         del bad_patient_name_imms["contained"][1]["name"][0]["given"]
-        bad_patient_name_msg = "contained[?(@.resourceType=='Patient')].name[0].given is a mandatory field"
+        bad_patient_name_msg = (
+            "contained[?(@.resourceType=='Patient')].name[0].given is a mandatory field"
+        )
 
         fhir_service = FhirService(self.imms_repo, self.pds_service)
 
@@ -445,7 +462,9 @@ class TestUpdateImmunization(unittest.TestCase):
     def test_update_immunization(self):
         """it should update Immunization and validate NHS number"""
         imms_id = "an-id"
-        self.imms_repo.update_immunization.return_value = create_covid_19_immunization_dict(imms_id)
+        self.imms_repo.update_immunization.return_value = (
+            create_covid_19_immunization_dict(imms_id)
+        )
         pds_patient = {"identifier": [{"system": "https://fhir.nhs.uk/Id/nhs-number", "value": "9990548609"}]}
         self.fhir_service.pds_service.get_patient_details.return_value = pds_patient
 
@@ -457,11 +476,9 @@ class TestUpdateImmunization(unittest.TestCase):
 
         # Then
         self.assertEqual(outcome, UpdateOutcome.UPDATE)
-        self.imms_repo.update_immunization.assert_called_once_with(
-            imms_id, req_imms, pds_patient, 1, "COVID19:update", "Test", False
-        )
+        self.imms_repo.update_immunization.assert_called_once_with(imms_id, req_imms, pds_patient, 1, "COVID19:update", "Test", False)
         self.fhir_service.pds_service.get_patient_details.assert_called_once_with(nhs_number)
-        
+
     def test_update_immunization_batch(self):
         """it should update Immunization and validate NHS number"""
         imms_id = "an-id"
@@ -477,18 +494,14 @@ class TestUpdateImmunization(unittest.TestCase):
 
         # Then
         self.assertEqual(outcome, UpdateOutcome.UPDATE)
-        self.imms_repo.update_immunization.assert_called_once_with(
-            imms_id, req_imms, None, 1, None, "Test", True
-        )
-        self.fhir_service.pds_service.get_patient_details.assert_not_called()    
+        self.imms_repo.update_immunization.assert_called_once_with(imms_id, req_imms, None, 1, None, "Test", True)
+        self.fhir_service.pds_service.get_patient_details.assert_not_called()
 
     def test_id_not_present(self):
         """it should populate id in the message if it is not present"""
         req_imms_id = "an-id"
         self.imms_repo.update_immunization.return_value = create_covid_19_immunization_dict(req_imms_id)
-        self.fhir_service.pds_service.get_patient_details.return_value = {
-            "identifier": [{"system": "https://fhir.nhs.uk/Id/nhs-number", "value": "9990548609"}]
-        }
+        self.fhir_service.pds_service.get_patient_details.return_value = {"identifier": [{"system": "https://fhir.nhs.uk/Id/nhs-number", "value": "9990548609"}]}
 
         req_imms = create_covid_19_immunization_dict("we-will-remove-this-id")
         del req_imms["id"]
@@ -523,7 +536,9 @@ class TestDeleteImmunization(unittest.TestCase):
         self.imms_repo = create_autospec(ImmunizationRepository)
         self.pds_service = create_autospec(PdsService)
         self.validator = create_autospec(ImmunizationValidator)
-        self.fhir_service = FhirService(self.imms_repo, self.pds_service, self.validator)
+        self.fhir_service = FhirService(
+            self.imms_repo, self.pds_service, self.validator
+        )
 
     def test_delete_immunization(self):
         """it should delete Immunization record"""
@@ -538,7 +553,7 @@ class TestDeleteImmunization(unittest.TestCase):
         self.imms_repo.delete_immunization.assert_called_once_with(imms_id, "COVID:delete", "Test", False)
         self.assertIsInstance(act_imms, Immunization)
         self.assertEqual(act_imms.id, imms_id)
-    
+
     def test_delete_immunization_for_batch(self):
         """it should delete Immunization record"""
         imms_id = "an-id"
@@ -549,9 +564,11 @@ class TestDeleteImmunization(unittest.TestCase):
         act_imms = self.fhir_service.delete_immunization(imms_id, None, "Test", True)
 
         # Then
-        self.imms_repo.delete_immunization.assert_called_once_with(imms_id, None, "Test", True)
+        self.imms_repo.delete_immunization.assert_called_once_with(
+            imms_id, None, "Test", True
+        )
         self.assertIsInstance(act_imms, Immunization)
-        self.assertEqual(act_imms.id, imms_id)    
+        self.assertEqual(act_imms.id, imms_id)
 
 
 class TestSearchImmunizations(unittest.TestCase):
@@ -609,7 +626,7 @@ class TestSearchImmunizations(unittest.TestCase):
     def test_date_from_is_used_to_filter(self):
         """It should return only Immunizations after date_from"""
         # Arrange
-        imms = [("imms-1", "2021-02-07T13:28:17.271+00:00"), ("imms-2", "2021-02-08T13:28:17.271+00:00")]
+        imms = [("imms-1", "2021-02-07T13:28:17.271+00:00"),("imms-2", "2021-02-08T13:28:17.271+00:00"),]
         imms_list = [
             create_covid_19_immunization_dict(imms_id, occurrence_date_time=occcurrence_date_time)
             for (imms_id, occcurrence_date_time) in imms
@@ -640,9 +657,7 @@ class TestSearchImmunizations(unittest.TestCase):
         self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
 
         # When
-        result = self.fhir_service.search_immunizations(
-            nhs_number, vaccine_types, "", date_from=datetime.date(2021, 2, 7)
-        )
+        result = self.fhir_service.search_immunizations(nhs_number, vaccine_types, "", date_from=datetime.date(2021, 2, 7))
         searched_imms = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
 
         # Then
@@ -714,7 +729,7 @@ class TestSearchImmunizations(unittest.TestCase):
     def test_date_to_is_used_to_filter(self):
         """It should return only Immunizations before date_to"""
         # Arrange
-        imms = [("imms-1", "2021-02-07T13:28:17.271+00:00"), ("imms-2", "2021-02-08T13:28:17.271+00:00")]
+        imms = [("imms-1", "2021-02-07T13:28:17.271+00:00"),("imms-2", "2021-02-08T13:28:17.271+00:00")]
         imms_list = [
             create_covid_19_immunization_dict(imms_id, occurrence_date_time=occcurrence_date_time)
             for (imms_id, occcurrence_date_time) in imms
@@ -824,75 +839,31 @@ class TestSearchImmunizations(unittest.TestCase):
         # Arrange
         imms_ids = ["imms-1", "imms-2"]
         imms_list = [
-            create_covid_19_immunization_dict(imms_id, occurrence_date_time="2021-02-07T13:28:17+00:00")
+            create_covid_19_immunization_dict(imms_id,NHS_NUMBER_USED_IN_SAMPLE_DATA,occurrence_date_time="2021-02-07T13:28:17+00:00")
             for imms_id in imms_ids
         ]
-        self.pds_service.get_patient_details.return_value = {
-            **deepcopy(self.sample_patient_resource),
-            "meta": {"security": [{"code": "U"}]},
-        }
-        nhs_number = NHS_NUMBER_USED_IN_SAMPLE_DATA
+
         vaccine_types = [VaccineTypes.covid_19]
         self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
 
         # When
-        result = self.fhir_service.search_immunizations(nhs_number, vaccine_types, "")
+        result = self.fhir_service.search_immunizations(
+            NHS_NUMBER_USED_IN_SAMPLE_DATA, vaccine_types, ""
+        )
         searched_imms = [
             json.loads(entry.json(), parse_float=Decimal)
             for entry in result.entry
             if entry.resource.resource_type == "Immunization"
         ]
         searched_patient = [
-            json.loads(entry.json()) for entry in result.entry if entry.resource.resource_type == "Patient"
+            json.loads(entry.json())
+            for entry in result.entry
+            if entry.resource.resource_type == "Patient"
         ][0]
 
         # Then
         expected_output_resource = load_json_data(
             "completed_covid19_immunization_event_filtered_for_search_using_bundle_patient_resource.json"
-        )
-        expected_output_resource["patient"]["reference"] = searched_patient["fullUrl"]
-
-        for i, entry in enumerate(searched_imms):
-            # Check that entry has correct resource id
-            self.assertEqual(entry["resource"]["id"], imms_ids[i])
-
-            # Check that output is as expected (filtered, with id added)
-            expected_output_resource["id"] = imms_ids[i]
-            self.assertEqual(entry["resource"], expected_output_resource)
-
-    def test_immunization_resources_are_filtered_for_search_and_s_flag(self):
-        """
-        Test that each immunization resource returned is filtered to include only the appropriate fields for a search
-        response when the patient is Restricted
-        """
-        # Arrange
-        imms_ids = ["imms-1", "imms-2"]
-        imms_list = [
-            create_covid_19_immunization_dict(imms_id, occurrence_date_time="2021-02-07T13:28:17+00:00")
-            for imms_id in imms_ids
-        ]
-        self.pds_service.get_patient_details.return_value = {
-            **deepcopy(self.sample_patient_resource),
-            "meta": {"security": [{"code": "R"}]},
-        }
-        nhs_number = NHS_NUMBER_USED_IN_SAMPLE_DATA
-        vaccine_types = [VaccineTypes.covid_19]
-        self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
-
-        # When
-        result = self.fhir_service.search_immunizations(nhs_number, vaccine_types, "")
-        searched_imms = [
-            json.loads(entry.json(), parse_float=Decimal)
-            for entry in result.entry
-            if entry.resource.resource_type == "Immunization"
-        ]
-        searched_patient = [
-            json.loads(entry.json()) for entry in result.entry if entry.resource.resource_type == "Patient"
-        ][0]
-
-        # Then
-        expected_output_resource = load_json_data(
-            "completed_covid19_immunization_event_filtered_for_search_and_s_flag_using_bundle_patient_resource.json"
         )
         expected_output_resource["patient"]["reference"] = searched_patient["fullUrl"]
 
@@ -926,7 +897,8 @@ class TestSearchImmunizations(unittest.TestCase):
         # Then
         for i, entry in enumerate(entries):
             self.assertEqual(
-                entry.fullUrl, f"https://api.service.nhs.uk/immunisation-fhir-api/Immunization/{imms_ids[i]}"
+                entry.fullUrl,
+                f"https://api.service.nhs.uk/immunisation-fhir-api/Immunization/{imms_ids[i]}",
             )
 
     def test_patient_contains_fullUrl(self):
@@ -974,7 +946,7 @@ class TestSearchImmunizations(unittest.TestCase):
         result = self.fhir_service.search_immunizations(nhs_number, vaccine_types, "")
 
         # Then
-        patient_entry = next((entry for entry in result.entry if entry.resource.resource_type == "Patient"), None)
+        patient_entry = next((entry for entry in result.entry if entry.resource.resource_type == "Patient"))
         self.assertIsNotNone(patient_entry)
 
     def test_patient_is_stripped(self):
@@ -997,7 +969,7 @@ class TestSearchImmunizations(unittest.TestCase):
         # Then
         patient_entry = next((entry for entry in result.entry if entry.resource.resource_type == "Patient"))
         patient_entry_resource = patient_entry.resource
-        fields_to_keep = ["id", "resource_type", "identifier", "birthDate"]
+        fields_to_keep = ["id", "resource_type", "identifier"]
         # self.assertListEqual(sorted(vars(patient_entry.resource).keys()), sorted(fields_to_keep))
         # self.assertGreater(len(patient), len(fields_to_keep))
         for field in fields_to_keep:

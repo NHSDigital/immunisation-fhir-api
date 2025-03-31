@@ -1,6 +1,6 @@
 """Functions for filtering a FHIR Immunization Resource"""
 
-from models.utils.generic_utils import is_actor_referencing_contained_resource, get_contained_practitioner
+from models.utils.generic_utils import is_actor_referencing_contained_resource, get_contained_practitioner, get_contained_patient
 from constants import Urls
 
 
@@ -14,7 +14,7 @@ def remove_reference_to_contained_practitioner(imms: dict) -> dict:
 
     # Remove reference to the contained practitioner from imms[performer]
     imms["performer"] = [
-        x for x in imms["performer"] if not is_actor_referencing_contained_resource(x, contained_practitioner["id"])
+         x for x in imms["performer"] if not is_actor_referencing_contained_resource(x, contained_practitioner["id"])
     ]
 
     return imms
@@ -94,20 +94,13 @@ def add_use_to_identifier(imms: dict) -> dict:
 
 class Filter:
     """Functions for filtering a FHIR Immunization Resource"""
-    @staticmethod
-    def search(imms: dict, patient_full_url: str, bundle_patient: dict = None) -> dict:
-        """Apply filtering for an individual FHIR Immunization Resource as part of SEARCH request"""
-        imms = remove_reference_to_contained_practitioner(imms)
-        imms.pop("contained")
-        imms["patient"] = create_reference_to_patient_resource(patient_full_url, bundle_patient)
-        imms = add_use_to_identifier(imms)
-        return imms
 
     @staticmethod
-    def s_flag(imms: dict) -> dict:
-        """Apply filtering for patients with 'RESTRICTED' flag"""
-        imms = replace_address_postal_codes(imms)
-        imms = replace_organization_values(imms)
-        if imms.get("location"):
-            imms["location"] = {"identifier": {"system": "urn:iso:std:iso:3166", "value": "GB"}}
+    def search(imms: dict, patient_full_url: str) -> dict:
+        """Apply filtering for an individual FHIR Immunization Resource as part of SEARCH request"""
+        imms = remove_reference_to_contained_practitioner(imms)
+        imms["patient"] = create_reference_to_patient_resource(patient_full_url, get_contained_patient(imms))
+        imms = add_use_to_identifier(imms)
+        imms.pop("contained")
+
         return imms

@@ -49,7 +49,6 @@ def generate_imms_resource(
 
 def generate_filtered_imms_resource(
     crud_operation_to_filter_for: Literal["READ", "SEARCH", ""] = "",
-    filter_for_s_flag: bool = False,
     nhs_number=valid_nhs_number1,
     imms_identifier_value: str = None,
     vaccine_type=VaccineTypes.covid_19,
@@ -57,7 +56,7 @@ def generate_filtered_imms_resource(
 ) -> dict:
     """
     Creates a filtered FHIR Immunization Resource dictionary, which includes an id, using the sample filtered data for
-    the given vaccine type, crud operation (if specified) and s_flag (if required) as a base, and updates the id,
+    the given vaccine type, crud operation (if specified) as a base, and updates the id,
     nhs_number and occurrence_date_time as required.
 
     NOTE: The filtered sample data files use the corresponding unfiltered sample data files as a base, and this
@@ -67,10 +66,9 @@ def generate_filtered_imms_resource(
     The new file name must be consistent with the existing sample data file names.
     """
     # Load the data
-    s_flag_string = "_and_s_flag" if filter_for_s_flag else ""
     file_name = (
         f"Immunization/completed_{vaccine_type.lower()}_immunization_event"
-        + f"_filtered_for_{crud_operation_to_filter_for.lower()}{s_flag_string}"
+        + f"_filtered_for_{crud_operation_to_filter_for.lower()}"
     )
     imms = deepcopy(load_example(f"{file_name}.json"))
     # Apply identifier directly
