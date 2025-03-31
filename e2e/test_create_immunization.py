@@ -31,17 +31,18 @@ class TestCreateImmunization(ImmunizationBaseTest):
             responses.add(
                 responses.GET,
                 f"{self.pds_url}/123",
-                body=body if body else None,  # Use body if supplied, otherwise json
-                json=None if body else {"meta": {"security": [{"code": "U"}]}}, 
+                # Use body if supplied, otherwise json
+                body=body if body else None,
+                json=None if body else {"meta": {"security": [{"code": "U"}]}},
                 headers=headers,
-                content_type='application/json' if body else None,  # Set content type only if body is used
+                # Set content type only if body is used
+                content_type='application/json' if body else None,
                 status=200
             )
         try:
             yield  # Allow the test to proceed
         finally:
             responses.reset()  # Clean up after the test
-
 
         return None
 
