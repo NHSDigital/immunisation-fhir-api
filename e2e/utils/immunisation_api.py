@@ -39,9 +39,14 @@ class ImmunisationApi:
     def __str__(self):
         return f"ImmunizationApi: AuthType: {self.auth}"
 
+    # We implemented this function as a wrapper around the calls to APIGEE
+    # in order to prevent build pipelines from failing due to timeouts.
+    # The e2e tests put pressure on both test environments from APIGEE and PDS
+    # so the chances of having rate limiting errors are high especially during
+    # the busy times of the day.
     def _make_request_with_backoff(self, http_method: str, url: str, **kwargs):
         max_retries = 5
-        standard_delay_time = 2
+        standard_delay_time = 1
         for attempt in range(max_retries):
             try:
                 response = requests.request(http_method, url, **kwargs)
@@ -52,8 +57,9 @@ class ImmunisationApi:
             except Exception as e:
                 if attempt == max_retries - 1:
                     raise
-                wait = (2 ** attempt) + random.uniform(0, 0.5) + standard_delay_time
-                print(f"[Retry {attempt + 1}] {e} — retrying in {wait:.2f}s")
+                wait = (2 ** attempt) + random.uniform(0, 0.5)
+                total_wait_time = standard_delay_time + wait
+                print(f"[Retry {attempt + 1}] {e} — retrying in {total_wait_time:.2f}s")
                 time.sleep(wait)
 
     def get_immunization_by_id(self, event_id):
