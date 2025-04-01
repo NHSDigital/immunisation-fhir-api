@@ -84,7 +84,7 @@ class TestUtilsForRecordprocessor(unittest.TestCase):
     def test_extract_content_valid_input(self):
         dat_file_content = (
             "----------------------------1234567890\n"
-            'Content-Disposition: form-data; name="file"; filename="COVID19_Vaccinations_v5_YGM41_20250312T113455981.csv"\n'
+            'Content-Disposition: form-data; name="file"; filename="COVID19_Vaccinations_v5_YGM41_20250312.csv"\n'
             "Content-Type: text/csv\n\n"
             "NHS_NUMBER|PERSON_FORENAME|PERSON_SURNAME|PERSON_DOB|PERSON_GENDER_CODE|PERSON_POSTCODE\n"
             "----------------------------1234567890\n"
