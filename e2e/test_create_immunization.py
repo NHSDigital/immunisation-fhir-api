@@ -139,7 +139,7 @@ class TestCreateImmunization(ImmunizationBaseTest):
         """Test that data containing only the mandatory fields is accepted for create"""
         with self.mock_pds.mock_pds_url({"Location": "AA"}, ""):
             imms = generate_imms_resource(
-                nhs_number=None, 
+                nhs_number=None,
                 sample_data_file_name="completed_covid19_immunization_event_mandatory_fields_only"
             )
 
@@ -156,7 +156,7 @@ class TestCreateImmunization(ImmunizationBaseTest):
         """Test that data  is rejected for create if one of the mandatory fields is missing"""
         with self.mock_pds.mock_pds_url({"Location": "AA"}, ""):
             imms = generate_imms_resource(
-                nhs_number=None, 
+                nhs_number=None,
                 sample_data_file_name="completed_covid19_immunization_event_mandatory_fields_only"
             )
             del imms["primarySource"]
