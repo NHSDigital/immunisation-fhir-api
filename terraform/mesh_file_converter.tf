@@ -1,6 +1,6 @@
 # Define the directory containing the Docker image and calculate its SHA-256 hash for triggering redeployments
 locals {
-  meshfileprocessor_lambda_dir           = abspath("${path.root}/../meshfileprocessor")
+  meshfileprocessor_lambda_dir = abspath("${path.root}/../meshfileprocessor")
   meshfileprocessor_lambda_files         = fileset(local.meshfileprocessor_lambda_dir, "**")
   meshfileprocessor_lambda_dir_sha       = sha1(join("", [for f in local.meshfileprocessor_lambda_files  : filesha1("${local.meshfileprocessor_lambda_dir}/${f}")]))
 }
