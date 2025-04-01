@@ -27,14 +27,14 @@ class MockPds:
         self.logger.info("Should mock: %s, url: %s", self.should_mock, self.pds_url)
 
     @contextmanager
-    def mock_pds_url(self, headers, body, http_method="GET", status=200):
+    def mock_pds_url(self, headers, body, status=200):
         """
         Set up mocking for the PDS URL only if the environment is set to "internal-dev".
         """
         if self.should_mock:
             self.logger.info("mock_get_patient_details...mock PDS URL")
             responses.add(
-                http_method,
+                responses.GET,
                 f"{self.pds_url}/123",
                 # Use body if supplied, otherwise json
                 body=body if body else None,
