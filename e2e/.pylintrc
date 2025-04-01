@@ -1,5 +1,5 @@
 [MAIN]
-
+init-hook='import sys; sys.path.append("/Users/watess01/Documents/NHS/code/immunisation-fhir-api/e2e")'
 # Analyse import fallback blocks. This can be used to support both Python 2 and
 # 3 compatible code, which means that the block might have code that exists
 # only in one or another interpreter, leading to false positives when analysed.
@@ -66,9 +66,6 @@ ignore-patterns=^\.#
 # Unix pattern matching.
 ignored-modules=
 
-# Python code to execute, usually for sys.path manipulation such as
-# pygtk.require().
-#init-hook=
 
 # Use multiple processes to speed up Pylint. Specifying 0 will auto-detect the
 # number of processors available to use, and will cap the count on Windows to

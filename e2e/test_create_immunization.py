@@ -1,11 +1,8 @@
-# from unittest.mock import patch
-from contextlib import contextmanager
 import os
 import logging
-import responses
 from utils.base_test import ImmunizationBaseTest
 from utils.resource import generate_imms_resource, get_full_row_from_identifier
-
+from utils.mock_pds import MockPds
 
 class TestCreateImmunization(ImmunizationBaseTest):
 
@@ -14,37 +11,11 @@ class TestCreateImmunization(ImmunizationBaseTest):
         self.logger = logging.getLogger("TestCreateImmunization")
         logging.basicConfig(level=logging.INFO)  # Set logging level to INFO
         self.logger.info("\nSetting up the test environment...1")
-        # env = os.getenv("IMMUNIZATION_ENV")
         env = os.getenv("ENVIRONMENT")
-        self.should_mock = env == "internal-dev"
+        self.MockPds = MockPds()
         self.pds_url = f"https://{env}.api.service.nhs.uk/personal-demographics/FHIR/R4/Patient"
         self.logger.info("Should mock: %s, url: %s", self.should_mock, self.pds_url)
-        # self.logger.info("PDS_ENV: %s", os.getenv("PDS_ENV"))
-        # self.logger.info("List all env variables:")
-        # for key, value in os.environ.items():
-        #     self.logger.info("env %s = %s", key, value)
 
-    @contextmanager
-    def mock_pds_url(self, headers, body):
-        if self.should_mock:
-            self.logger.info("mock_get_patient_details...mock PDS URL")
-            responses.add(
-                responses.GET,
-                f"{self.pds_url}/123",
-                # Use body if supplied, otherwise json
-                body=body if body else None,
-                json=None if body else {"meta": {"security": [{"code": "U"}]}},
-                headers=headers,
-                # Set content type only if body is used
-                content_type='application/json' if body else None,
-                status=200
-            )
-        try:
-            yield  # Allow the test to proceed
-        finally:
-            responses.reset()  # Clean up after the test
-
-        return None
 
     def test_create_imms(self):
         """it should create a FHIR Immunization resource (*)"""
