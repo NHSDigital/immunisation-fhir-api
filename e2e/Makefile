@@ -1,9 +1,7 @@
 -include .env
-PR=363
-#372
 
 APIGEE_ACCESS_TOKEN ?= $(shell export SSO_LOGIN_URL=https://login.apigee.com && eval get_token -u $(APIGEE_USERNAME))
-AWS_DOMAIN_NAME="https://$(shell make -C ../terraform -s output name=service_domain_name || true)
+AWS_DOMAIN_NAME=https://$(shell make -C ../terraform -s output name=service_domain_name || true)
 DYNAMODB_TABLE_NAME=$(shell make -C ../terraform -s output name=dynamodb_table_name || true)
 IMMS_DELTA_TABLE_NAME=$(shell make -C ../terraform -s output name=imms_delta_table_name || true)
 AWS_SQS_QUEUE_NAME=$(shell make -C ../terraform -s output name=aws_sqs_queue_name || true)
