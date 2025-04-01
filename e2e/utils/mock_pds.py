@@ -1,16 +1,30 @@
 from contextlib import contextmanager
+import os
 import logging
 import responses
 
 
 class MockPds:
-    def __init__(self, pds_url, should_mock):
-        self.logger = logging.getLogger("TestCreateImmunization")
-        self.pds_url = pds_url
-        self.should_mock = should_mock
+    """
+    Mock PDS URL for testing purposes.
+    This class provides a context manager to mock the PDS URL for testing
+    the creation of immunization resources.
+    It uses the `responses` library to intercept HTTP requests and return
+    predefined responses.
+    """
+    def __init__(self):
+        self.logger = logging.getLogger("MockPds")
+        logging.basicConfig(level=logging.INFO)
+        env = os.getenv("ENVIRONMENT")
+        self.should_mock = env == "internal-dev"
+        self.pds_url = f"https://{env}.api.service.nhs.uk/personal-demographics/FHIR/R4/Patient"
+        self.logger.info("Should mock: %s, url: %s", self.should_mock, self.pds_url)
 
     @contextmanager
     def mock_pds_url(self, headers, body):
+        """
+        Set up mocking for the PDS URL only if the environment is set to "internal-dev".
+        """
         if self.should_mock:
             self.logger.info("mock_get_patient_details...mock PDS URL")
             responses.add(
@@ -28,5 +42,3 @@ class MockPds:
             yield  # Allow the test to proceed
         finally:
             responses.reset()  # Clean up after the test
-
-        return None

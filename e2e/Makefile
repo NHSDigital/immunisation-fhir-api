@@ -12,29 +12,29 @@ AWS_SNS_TOPIC_NAME=imms-pr-$(PR)-delta-sync#$(shell make -C ../terraform -s outp
 cmd = APIGEE_ACCESS_TOKEN=$(APIGEE_ACCESS_TOKEN) APIGEE_USERNAME=$(APIGEE_USERNAME) IMMS_DELTA_TABLE_NAME=$(IMMS_DELTA_TABLE_NAME) AWS_DOMAIN_NAME=$(AWS_DOMAIN_NAME) DYNAMODB_TABLE_NAME=$(DYNAMODB_TABLE_NAME) AWS_SQS_QUEUE_NAME=$(AWS_SQS_QUEUE_NAME) AWS_SNS_TOPIC_NAME=$(AWS_SNS_TOPIC_NAME) poetry run python -m debugpy --listen 5678 --wait-for-client -m unittest
 #cmd = APIGEE_ACCESS_TOKEN=$(APIGEE_ACCESS_TOKEN) APIGEE_USERNAME=$(APIGEE_USERNAME) IMMS_DELTA_TABLE_NAME=$(IMMS_DELTA_TABLE_NAME) AWS_DOMAIN_NAME=$(AWS_DOMAIN_NAME) DYNAMODB_TABLE_NAME=$(DYNAMODB_TABLE_NAME) AWS_SQS_QUEUE_NAME=$(AWS_SQS_QUEUE_NAME) AWS_SNS_TOPIC_NAME=$(AWS_SNS_TOPIC_NAME) poetry run python -m unittest
 
-hello:
+run-mocked-tests:
 	$(cmd) discover -v -c -p 'test_create_immunization.py'
 
-run-immunization:
-	$(cmd) discover -v -c -p 'test_*_immunization.py'
-# e2e 
-run-delta-immunization:
-	$(cmd) discover -v -c -p 'test_delta_immunization.py'
+# run-immunization:
+# 	$(cmd) discover -v -c -p 'test_*_immunization.py'
+# # e2e 
+# run-delta-immunization:
+# 	$(cmd) discover -v -c -p 'test_delta_immunization.py'
 
-run-authorization:
-	$(cmd) -v -c test_authorization.py
+# run-authorization:
+# 	$(cmd) -v -c test_authorization.py
 
-run-wait-for-deployment:
-	$(cmd) -v -c test_deployment.py
+# run-wait-for-deployment:
+# 	$(cmd) -v -c test_deployment.py
 
-run-proxy:
-	$(cmd) -v -c test_proxy.py
+# run-proxy:
+# 	$(cmd) -v -c test_proxy.py
 
-run-smoketest:
-	$(cmd) -c -v -k test_proxy.TestProxyHealthcheck -k test_deployment
+# run-smoketest:
+# 	$(cmd) -c -v -k test_proxy.TestProxyHealthcheck -k test_deployment
 
-run:
-	$(cmd)
+# run:
+# 	$(cmd)
 
 run-match-%:
 	$(cmd) -v -c -k $*

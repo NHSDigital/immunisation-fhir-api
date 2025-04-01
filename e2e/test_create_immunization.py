@@ -1,27 +1,26 @@
-import os
 import logging
 from utils.base_test import ImmunizationBaseTest
 from utils.resource import generate_imms_resource, get_full_row_from_identifier
 from utils.mock_pds import MockPds
 
 class TestCreateImmunization(ImmunizationBaseTest):
+    """
+        Tests creation of FHIR Immunization resources.
+    """
 
     def setUp(self):
         super().setUp()
         self.logger = logging.getLogger("TestCreateImmunization")
         logging.basicConfig(level=logging.INFO)  # Set logging level to INFO
         self.logger.info("\nSetting up the test environment...1")
-        env = os.getenv("ENVIRONMENT")
-        self.MockPds = MockPds()
-        self.pds_url = f"https://{env}.api.service.nhs.uk/personal-demographics/FHIR/R4/Patient"
-        self.logger.info("Should mock: %s, url: %s", self.should_mock, self.pds_url)
+        self.mock_pds = MockPds()
 
 
     def test_create_imms(self):
         """it should create a FHIR Immunization resource (*)"""
         self.logger.info("test_create_imms...")
 
-        with self.mock_pds_url({"Location": "AA"}, ""):
+        with self.mock_pds.mock_pds_url({"Location": "AA"}, ""):
             for imms_api in self.imms_apis:
                 with self.subTest(imms_api):
                     # Given
