@@ -3,6 +3,7 @@ from utils.base_test import ImmunizationBaseTest
 from utils.resource import generate_imms_resource, get_full_row_from_identifier
 from utils.mock_pds import MockPds
 
+
 class TestCreateImmunization(ImmunizationBaseTest):
     """
         Tests creation of FHIR Immunization resources.
@@ -14,7 +15,6 @@ class TestCreateImmunization(ImmunizationBaseTest):
         logging.basicConfig(level=logging.INFO)  # Set logging level to INFO
         self.logger.info("\nSetting up the test environment...1")
         self.mock_pds = MockPds()
-
 
     def test_create_imms(self):
         """it should create a FHIR Immunization resource (*)"""
