@@ -19,7 +19,8 @@ class MockPds:
     """
     def __init__(self):
         self.logger = logging.getLogger("MockPds")
-        logging.basicConfig(level=logging.INFO)
+        self.logger.basicConfig(level=logging.INFO)
+        self.logger.info("MockPds...init")
         env = os.getenv("ENVIRONMENT")
         self.should_mock = env == "internal-dev"
         self.pds_url = f"https://{env}.api.service.nhs.uk/personal-demographics/FHIR/R4/Patient"

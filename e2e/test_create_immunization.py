@@ -12,6 +12,7 @@ class TestCreateImmunization(ImmunizationBaseTest):
     def setUp(self):
         super().setUp()
         self.logger = logging.getLogger("TestCreateImmunization")
+        self.logger.info("\nTestCreateImmunization...setUp")
         logging.basicConfig(level=logging.INFO)  # Set logging level to INFO
         self.logger.info("\nSetting up the test environment...1")
         self.mock_pds = MockPds()
