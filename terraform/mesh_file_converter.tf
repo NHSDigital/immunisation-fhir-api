@@ -17,6 +17,7 @@ resource "aws_ecr_repository" "mesh_file_converter_lambda_repository" {
 module "mesh_converter_docker_image" {
   source = "terraform-aws-modules/lambda/aws//modules/docker-build"
 
+  docker_file_path = "Dockerfile"
   create_ecr_repo = false
   ecr_repo        = aws_ecr_repository.mesh_file_converter_lambda_repository.name
   ecr_repo_lifecycle_policy = jsonencode({
