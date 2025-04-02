@@ -19,7 +19,7 @@ class MockPds:
     """
     def __init__(self):
         self.logger = logging.getLogger("MockPds")
-        self.logger.basicConfig(level=logging.INFO)
+        logging.basicConfig(level=logging.INFO)  # Corrected this line
         self.logger.info("MockPds...init")
         env = os.getenv("ENVIRONMENT")
         self.should_mock = env == "internal-dev"
