@@ -35,14 +35,13 @@ class TestCreateImmunization(ImmunizationBaseTest):
                         response = imms_api.create_immunization(immunization)
 
                         # Then
-                        self.assertEqual(response.status_code, 200, response.text)
+                        self.assertEqual(response.status_code, 201, response.text)
                         self.assertEqual(response.text, "")
                         self.assertIn("Location", response.headers)
 
     def test_non_unique_identifier(self):
         """
-        it should give 422 if the identifier is not unique, even if the original imms event has been deleted and/ or
-        reinstated
+        should give 422 if identifier is not unique, even if original imms event is deleted and/or reinstated
         """
         # Set up
         with self.mock_pds.mock_pds_url({"Location": "AA"}, "", 200):
