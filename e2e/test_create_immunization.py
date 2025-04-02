@@ -75,7 +75,7 @@ class TestCreateImmunization(ImmunizationBaseTest):
 
     def test_bad_nhs_number(self):
         """it should reject the request if nhs-number does not exist"""
-        with self.mock_pds.mock_pds_url({"Location": "AA"}, "", "POST", 404):
+        with self.mock_pds.mock_pds_url({"Location": "AA"}, "", 404):
             bad_nhs_number = "7463384756"
             imms = generate_imms_resource(nhs_number=bad_nhs_number)
 
@@ -137,7 +137,7 @@ class TestCreateImmunization(ImmunizationBaseTest):
 
     def test_create_imms_for_mandatory_fields_only(self):
         """Test that data containing only the mandatory fields is accepted for create"""
-        with self.mock_pds.mock_pds_url({"Location": "AA"}, "", "POST", 201):
+        with self.mock_pds.mock_pds_url({"Location": "AA"}, "", 201):
             imms = generate_imms_resource(
                 nhs_number=None,
                 sample_data_file_name="completed_covid19_immunization_event_mandatory_fields_only"
