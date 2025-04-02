@@ -18,8 +18,10 @@ requests = "^2.31.0"
 pyjwt = "^2.8.0"
 cryptography = "^42.0.3"
 lxml = "~4.9.0"
-debugpy = "^1.8.13"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[flake8]
+max-line-length = 120

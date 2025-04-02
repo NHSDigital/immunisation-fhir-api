@@ -17,22 +17,22 @@ class MockPds:
     It uses the `responses` library to intercept HTTP requests and return
     predefined responses.
     """
-    def __init__(self):
-        self.logger = logging.getLogger("MockPds")
+    def __init__(self, test_file):
+        self.logger = logging.getLogger(f"MockPds for {test_file}")
         logging.basicConfig(level=logging.INFO)  # Corrected this line
-        self.logger.info("MockPds...init")
+        self.test_file = test_file
         env = os.getenv("ENVIRONMENT")
         self.should_mock = env == "internal-dev"
         self.pds_url = f"https://{env}.api.service.nhs.uk/personal-demographics/FHIR/R4/Patient"
         self.logger.info("Should mock: %s, url: %s", self.should_mock, self.pds_url)
 
     @contextmanager
-    def mock_pds_url(self, headers, body, status=200):
+    def mock_pds_url(self, mock_by, headers, body, status=200):
         """
         Set up mocking for the PDS URL only if the environment is set to "internal-dev".
         """
         if self.should_mock:
-            self.logger.info("mock_get_patient_details...mock PDS URL")
+            self.logger.info("%s.%s: mock PDS", self.test_file, mock_by)
             responses.add(
                 responses.GET,
                 f"{self.pds_url}/123",
