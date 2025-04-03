@@ -68,7 +68,8 @@ class ImmunisationApi:
                     response.status_code == 200 and
                     not response.json().get("entry")
                 ):
-                    raise Exception("Search request returned 200 but with 0 entries. Check if response from db is paginated.")
+                    raise Exception("Search request returned 200 but with 0 entries."
+                                    "Check if response from db is paginated.")
 
                 # Return successful or client-side responses
                 if response.status_code < 500:
