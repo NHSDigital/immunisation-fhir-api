@@ -411,24 +411,48 @@ class ImmunizationRepository:
                 )
 
     def find_immunizations(self, patient_identifier: str, vaccine_types: list):
-        """it should find all of the specified patient's Immunization events for all of the specified vaccine_types"""
+        """Find all of the specified patient's Immunization events for the given vaccine types, stopping after ~5MB of data."""
         condition = Key("PatientPK").eq(_make_patient_pk(patient_identifier))
         is_not_deleted = Attr("DeletedAt").not_exists() | Attr("DeletedAt").eq("reinstated")
 
-        response = self.table.query(
-            IndexName="PatientGSI",
-            KeyConditionExpression=condition,
-            FilterExpression=is_not_deleted,
-        )
+        all_items = []
+        last_evaluated_key = None
+        MAX_ITEM_ESTIMATE = 2100  # TBC - Assuming 2.8KB per item, 6MB is upper limit
 
-        if "Items" in response:
-            # Filter the response to contain only the requested vaccine types
-            items = [x for x in response["Items"] if x["PatientSK"].split("#")[0] in vaccine_types]
+        while len(all_items) <= MAX_ITEM_ESTIMATE:
+            query_params = {
+                "IndexName": "PatientGSI",
+                "KeyConditionExpression": condition,
+                "FilterExpression": is_not_deleted,
+            }
 
-            # Return a list of the FHIR immunization resource JSON items
-            return [json.loads(item["Resource"]) for item in items]
-        else:
-            raise UnhandledResponseError(message=f"Unhandled error. Query failed", response=response)
+            if last_evaluated_key:
+                query_params["ExclusiveStartKey"] = last_evaluated_key
+
+            response = self.table.query(**query_params)
+
+            if "Items" in response:
+                # Filter for matching vaccine types
+                filtered = [
+                    x for x in response["Items"]
+                    if x["PatientSK"].split("#")[0] in vaccine_types
+                ]
+                all_items.extend(filtered)
+            else:
+                raise UnhandledResponseError(
+                    message="Unhandled error. Query failed",
+                    response=response
+                )
+
+            last_evaluated_key = response.get("LastEvaluatedKey") # Paginating table query results
+            if not last_evaluated_key:
+                break
+
+        if len(all_items) >= MAX_ITEM_ESTIMATE:
+            print(f"Stopped after reaching estimated 6MB limit ({len(all_items)} items).")
+
+        return [json.loads(item["Resource"]) for item in all_items]
+
 
     @staticmethod
     def _handle_dynamo_response(response):

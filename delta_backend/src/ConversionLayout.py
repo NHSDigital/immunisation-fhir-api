@@ -1,6 +1,6 @@
 
-#This is the base layout for converting from FHIR to Flat JSON
-#See the readme for an explanation of how this works
+# This file holds the schema/base layout that maps FHIR fields to flat JSON fields
+# Each entry tells the converter how to extract and transform a specific value
 
 ConvertLayout = {
   "id": "7d78e9a6-d859-45d3-bb05-df9c405acbdb",
@@ -67,8 +67,8 @@ ConvertLayout = {
       "fieldNameFlat": "DATE_AND_TIME",
       "expression": {
         "expressionName": "Date Convert",
-        "expressionType": "DATECONVERT",
-        "expressionRule": "%Y%m%dT%H%M%S"
+        "expressionType": "DATETIME",
+        "expressionRule": "format:csv-utc"
       }
     },
     {
@@ -140,7 +140,7 @@ ConvertLayout = {
       "expression": {
         "expressionName": "Date Convert",
         "expressionType": "DATECONVERT",
-        "expressionRule": "%Y%m%d"
+        "expressionRule": "format:%Y%m%d"
       }
     },
     {
@@ -221,7 +221,7 @@ ConvertLayout = {
       "expression": {
         "expressionName": "Date Convert",
         "expressionType": "DATECONVERT",
-        "expressionRule": "%Y%m%d"
+        "expressionRule": "format:%Y%m%d"
       }
     },
     {

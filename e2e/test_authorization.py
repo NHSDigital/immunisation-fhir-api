@@ -53,7 +53,7 @@ class TestApplicationRestrictedAuthorization(ImmunizationBaseTest):
         perms = app_full_access(exclude={Permission.READ})
         self.make_app(perms)
         # When
-        response = self.my_imms_api.get_immunization_by_id("id-doesn't-matter")
+        response = self.my_imms_api.get_immunization_by_id("id-doesn't-matter", expected_status_code=403)
         # Then
         self.assertEqual(response.status_code, 403, response.text)
 
@@ -71,7 +71,7 @@ class TestApplicationRestrictedAuthorization(ImmunizationBaseTest):
         self.make_app({Permission.CREATE}, {"flu:create"})
         # When
         imms = generate_imms_resource()
-        response = self.my_imms_api.create_immunization(imms)
+        response = self.my_imms_api.create_immunization(imms, expected_status_code=403)
         # Then
         self.assertEqual(response.status_code, 403, response.text)
 
@@ -81,7 +81,7 @@ class TestApplicationRestrictedAuthorization(ImmunizationBaseTest):
         self.make_app(perms)
         # When
         imms = generate_imms_resource()
-        result = self.my_imms_api.create_immunization(imms)
+        result = self.my_imms_api.create_immunization(imms, expected_status_code=403)
         # Then
         self.assertEqual(result.status_code, 403, result.text)
 
@@ -102,7 +102,7 @@ class TestApplicationRestrictedAuthorization(ImmunizationBaseTest):
         perms = app_full_access(exclude={Permission.UPDATE})
         self.make_app(perms)
         # When
-        response = self.my_imms_api.update_immunization("doesn't-matter", {})
+        response = self.my_imms_api.update_immunization("doesn't-matter", {}, expected_status_code=403)
         # Then
         self.assertEqual(response.status_code, 403, response.text)
 
@@ -115,7 +115,7 @@ class TestApplicationRestrictedAuthorization(ImmunizationBaseTest):
         perms = app_full_access(exclude={Permission.CREATE})
         self.make_app(perms)
         # When
-        response = self.my_imms_api.update_immunization(imms_id, imms)
+        response = self.my_imms_api.update_immunization(imms_id, imms, expected_status_code=403)
         # Then
         self.assertEqual(response.status_code, 403, response.text)
 
@@ -133,7 +133,7 @@ class TestApplicationRestrictedAuthorization(ImmunizationBaseTest):
         perms = app_full_access(exclude={Permission.DELETE})
         self.make_app(perms)
         # When
-        response = self.my_imms_api.delete_immunization("doesn't-matter")
+        response = self.my_imms_api.delete_immunization("doesn't-matter", expected_status_code=403)
         # Then
         self.assertEqual(response.status_code, 403, response.text)
 
@@ -153,7 +153,7 @@ class TestApplicationRestrictedAuthorization(ImmunizationBaseTest):
         perms = app_full_access(exclude={Permission.SEARCH})
         self.make_app(perms)
         # When
-        response = self.my_imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.mmr)
+        response = self.my_imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.mmr, expected_status_code=403)
         # Then
         self.assertEqual(response.status_code, 403, response.text)
 
@@ -164,7 +164,7 @@ class TestApplicationRestrictedAuthorization(ImmunizationBaseTest):
 
         self.make_app({Permission.SEARCH}, {"flu:read"})
         # When
-        response = self.my_imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.mmr)
+        response = self.my_imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.mmr, expected_status_code=403)
         # Then
         self.assertEqual(response.status_code, 403, response.text)
 
@@ -205,7 +205,7 @@ class TestCis2Authorization(ImmunizationBaseTest):
         perms = app_full_access(exclude={Permission.READ})
         self.make_app(perms)
         # When
-        response = self.my_imms_api.get_immunization_by_id("id-doesn't-matter")
+        response = self.my_imms_api.get_immunization_by_id("id-doesn't-matter", expected_status_code=403)
         # Then
         self.assertEqual(response.status_code, 403, response.text)
 
@@ -214,7 +214,7 @@ class TestCis2Authorization(ImmunizationBaseTest):
         imms_id = self.create_immunization_resource(self.default_imms_api)
         self.make_app({Permission.READ}, {"flu:create"})
         # When
-        response = self.my_imms_api.get_immunization_by_id(imms_id)
+        response = self.my_imms_api.get_immunization_by_id(imms_id, expected_status_code=403)
         # Then
         self.assertEqual(response.status_code, 403, response.text)
 
@@ -233,7 +233,7 @@ class TestCis2Authorization(ImmunizationBaseTest):
         self.make_app(perms)
         # When
         imms = generate_imms_resource()
-        result = self.my_imms_api.create_immunization(imms)
+        result = self.my_imms_api.create_immunization(imms, expected_status_code=403)
         # Then
         self.assertEqual(result.status_code, 403, result.text)
 
@@ -242,7 +242,7 @@ class TestCis2Authorization(ImmunizationBaseTest):
         self.make_app({Permission.CREATE}, {"flu:create"})
         # When
         imms = generate_imms_resource()
-        response = self.my_imms_api.create_immunization(imms)
+        response = self.my_imms_api.create_immunization(imms, expected_status_code=403)
         # Then
         self.assertEqual(response.status_code, 403, response.text)
 
@@ -263,7 +263,7 @@ class TestCis2Authorization(ImmunizationBaseTest):
         perms = app_full_access(exclude={Permission.UPDATE})
         self.make_app(perms)
         # When
-        response = self.my_imms_api.update_immunization("doesn't-matter", {})
+        response = self.my_imms_api.update_immunization("doesn't-matter", {}, expected_status_code=403)
         # Then
         self.assertEqual(response.status_code, 403, response.text)
 
@@ -275,7 +275,7 @@ class TestCis2Authorization(ImmunizationBaseTest):
 
         self.make_app({Permission.CREATE, Permission.UPDATE}, {"flu:create"})
         # When
-        response = self.my_imms_api.update_immunization(imms_id, imms)
+        response = self.my_imms_api.update_immunization(imms_id, imms, expected_status_code=403)
         # Then
         self.assertEqual(response.status_code, 403, response.text)
 
@@ -293,7 +293,7 @@ class TestCis2Authorization(ImmunizationBaseTest):
         perms = app_full_access(exclude={Permission.DELETE})
         self.make_app(perms)
         # When
-        response = self.my_imms_api.delete_immunization("doesn't-matter")
+        response = self.my_imms_api.delete_immunization("doesn't-matter", expected_status_code=403)
         # Then
         self.assertEqual(response.status_code, 403, response.text)
 
@@ -302,7 +302,7 @@ class TestCis2Authorization(ImmunizationBaseTest):
         imms_id = self.create_immunization_resource(self.default_imms_api)
         self.make_app({Permission.READ}, {"flu:create"})
         # When
-        response = self.my_imms_api.delete_immunization(imms_id)
+        response = self.my_imms_api.delete_immunization(imms_id, expected_status_code=403)
         # Then
         self.assertEqual(response.status_code, 403, response.text)
 
@@ -322,6 +322,6 @@ class TestCis2Authorization(ImmunizationBaseTest):
         perms = app_full_access(exclude={Permission.SEARCH})
         self.make_app(perms)
         # When
-        response = self.my_imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.mmr)
+        response = self.my_imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.mmr, expected_status_code=403)
         # Then
         self.assertEqual(response.status_code, 403, response.text)

@@ -56,18 +56,18 @@ class TestGetImmunization(ImmunizationBaseTest):
 
     def not_found(self):
         """it should return 404 if resource doesn't exist"""
-        response = self.default_imms_api.get_immunization_by_id("some-id-that-does-not-exist")
+        response = self.default_imms_api.get_immunization_by_id("some-id-that-does-not-exist", expected_status_code=404)
         self.assert_operation_outcome(response, 404)
 
     def malformed_id(self):
         """it should return 400 if resource id is invalid"""
-        response = self.default_imms_api.get_immunization_by_id("some_id_that_is_malformed")
+        response = self.default_imms_api.get_immunization_by_id("some_id_that_is_malformed", expected_status_code=400)
         self.assert_operation_outcome(response, 400)
 
     def get_deleted_imms(self):
         """it should return 404 if resource has been deleted"""
         imms = self.create_a_deleted_immunization_resource(self.default_imms_api)
-        response = self.default_imms_api.get_immunization_by_id(imms["id"])
+        response = self.default_imms_api.get_immunization_by_id(imms["id"], expected_status_code=404)
         self.assert_operation_outcome(response, 404)
 
     def test_get_imms_with_tbc_pk(self):
