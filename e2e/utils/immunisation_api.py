@@ -3,6 +3,7 @@ import uuid
 import time
 import random
 from typing import Optional, Literal
+from datetime import datetime
 
 import requests
 
@@ -20,6 +21,9 @@ def parse_location(location) -> Optional[str]:
 
 
 class ImmunisationApi:
+    MAX_RETRIES = 5
+    STANDARD_REQUEST_DELAY_SECONDS = 1
+
     url: str
     headers: dict
     auth: BaseAuthentication
@@ -44,22 +48,46 @@ class ImmunisationApi:
     # The e2e tests put pressure on both test environments from APIGEE and PDS
     # so the chances of having rate limiting errors are high especially during
     # the busy times of the day.
-    def _make_request_with_backoff(self, http_method: str, url: str, **kwargs):
-        max_retries = 5
-        standard_delay_time = 1
-        for attempt in range(max_retries):
+    def _make_request_with_backoff(
+        self,
+        http_method: str,
+        url: str,
+        is_search: bool = False,
+        expecting_entries: bool = False,
+        **kwargs
+    ):
+        for attempt in range(self.MAX_RETRIES):
             try:
                 response = requests.request(http_method, url, **kwargs)
-                time.sleep(standard_delay_time)
+                time.sleep(self.STANDARD_REQUEST_DELAY_SECONDS)
+
+                # Handle empty search result. Might occur due to pagination issue.
+                if (
+                    is_search and
+                    expecting_entries and
+                    response.status_code == 200 and
+                    not response.json().get("entry")
+                ):
+                    raise Exception("Search request returned 200 but with 0 entries. Check if response from db is paginated.")
+
+                # Return successful or client-side responses
                 if response.status_code < 500:
                     return response
+
                 raise Exception(f"Server error: {response.status_code}")
+
             except Exception as e:
-                if attempt == max_retries - 1:
+                if attempt == self.MAX_RETRIES:
                     raise
+
                 wait = (2 ** attempt) + random.uniform(0, 0.5)
-                total_wait_time = standard_delay_time + wait
-                print(f"[Retry {attempt + 1}] {e} — retrying in {total_wait_time:.2f}s")
+                total_wait_time = wait + self.STANDARD_REQUEST_DELAY_SECONDS
+
+                print(
+                    f"[{datetime.now():%Y-%m-%d %H:%M:%S}] "
+                    f"[Retry {attempt + 1}] {http_method} {url} — {e} — retrying in {total_wait_time:.2f}s"
+                )
+
                 time.sleep(wait)
 
     def get_immunization_by_id(self, event_id):
@@ -92,11 +120,13 @@ class ImmunisationApi:
             headers=self._update_headers()
         )
 
-    def search_immunizations(self, patient_identifier: str, immunization_target: str):
+    def search_immunizations(self, patient_identifier: str, immunization_target: str, expecting_entries: bool = True):
         return self._make_request_with_backoff(
             "GET",
             f"{self.url}/Immunization?patient.identifier={patient_identifier_system}|{patient_identifier}"
             f"&-immunization.target={immunization_target}",
+            is_search=True,
+            expecting_entries=expecting_entries,
             headers=self._update_headers()
         )
 
@@ -104,6 +134,7 @@ class ImmunisationApi:
             self,
             http_method: Literal["POST", "GET"],
             query_string: Optional[str],
+            expecting_entries: Optional[bool],
             body: Optional[str]):
 
         if http_method == "POST":
@@ -114,6 +145,8 @@ class ImmunisationApi:
         return self._make_request_with_backoff(
             http_method,
             url,
+            is_search=True,
+            expecting_entries=expecting_entries,
             headers=self._update_headers({"Content-Type": "application/x-www-form-urlencoded"}),
             data=body
         )

@@ -34,8 +34,10 @@ class TestSearchImmunization(ImmunizationBaseTest):
                 rsv_p1_id, rsv_p2_id = self.store_records(rsv_p1, rsv_p2)
 
                 # When
-                response = imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.covid_19)
-                response_rsv = imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.rsv)
+                response = imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.covid_19,
+                                                         expecting_entries=True)
+                response_rsv = imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.rsv,
+                                                             expecting_entries=True)
 
                 # Then
                 self.assertEqual(response.status_code, 200, response.text)
@@ -61,7 +63,8 @@ class TestSearchImmunization(ImmunizationBaseTest):
         covid_19_id, flu_id = self.store_records(covid_19, flu)
 
         # When
-        response = self.default_imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.covid_19)
+        response = self.default_imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.covid_19,
+                                                              expecting_entries=True)
 
         # Then
         self.assertEqual(response.status_code, 200, response.text)
@@ -91,7 +94,8 @@ class TestSearchImmunization(ImmunizationBaseTest):
                 expected_imms_resource["id"] = imms_id
 
                 # When
-                response = imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.covid_19)
+                response = imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.covid_19,
+                                                         expecting_entries=True)
 
                 # Then
                 self.assertEqual(response.status_code, 200, response.text)
@@ -122,7 +126,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
                 self.assertEqual(response_patient["resource"]["id"], valid_nhs_number1)
                 patient_identifier = response_patient["resource"]["identifier"]
                 # NOTE: If PDS response ever changes to send more than one identifier then the below will break
-                self.assertEqual(len(patient_identifier), 1)
+                self.assertEqual(len(patient_identifier), 1, "PDS did not return 1 identifier")
                 self.assertEqual(sorted(patient_identifier[0].keys()), sorted(["system", "value"]))
                 self.assertEqual(patient_identifier[0]["system"], "https://fhir.nhs.uk/Id/nhs-number")
                 self.assertEqual(patient_identifier[0]["value"], valid_nhs_number1)
@@ -146,7 +150,8 @@ class TestSearchImmunization(ImmunizationBaseTest):
         deleted_mmr = self.create_a_deleted_immunization_resource(self.default_imms_api, to_delete_mmr)
 
         # When
-        response = self.default_imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.mmr)
+        response = self.default_imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.mmr,
+                                                              expecting_entries=True)
 
         # Then
         self.assertEqual(response.status_code, 200, response.text)
@@ -298,7 +303,8 @@ class TestSearchImmunization(ImmunizationBaseTest):
 
         for search in searches:
             pprint.pprint(search)
-            response = self.default_imms_api.search_immunizations_full(search.method, search.query_string, search.body)
+            response = self.default_imms_api.search_immunizations_full(search.method, search.query_string,
+                                                                       expecting_entries=True, body=search.body)
 
             # Then
             assert response.ok == search.should_be_success, response.text
@@ -333,7 +339,8 @@ class TestSearchImmunization(ImmunizationBaseTest):
             "POST",
             f"patient.identifier={valid_patient_identifier1}&-immunization.target={VaccineTypes.mmr}"
             + "&_include=Immunization:patient",
-            None,
+            expecting_entries=True,
+            body=None,
         )
 
         assert response.ok
@@ -350,7 +357,10 @@ class TestSearchImmunization(ImmunizationBaseTest):
         assert patient_entry["resource"]["identifier"][0]["value"] == valid_nhs_number1
 
         response_without_include = self.default_imms_api.search_immunizations_full(
-            "POST", f"patient.identifier={valid_patient_identifier1}&-immunization.target={VaccineTypes.mmr}", None
+            "POST",
+            f"patient.identifier={valid_patient_identifier1}&-immunization.target={VaccineTypes.mmr}",
+            expecting_entries=True,
+            body=None
         )
 
         assert response_without_include.ok
@@ -383,7 +393,8 @@ class TestSearchImmunization(ImmunizationBaseTest):
         self.store_records(imms)
 
         # When
-        response = self.default_imms_api.search_immunizations("TBC", f"{VaccineTypes.mmr}")
+        response = self.default_imms_api.search_immunizations("TBC", f"{VaccineTypes.mmr}",
+                                                              expecting_entries=False)
 
         # Then
         self.assert_operation_outcome(response, 400)
