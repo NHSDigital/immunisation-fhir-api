@@ -9,7 +9,10 @@ readme = "README.md"
 python = "~3.10"
 boto3 = "~1.26.90"
 mypy-boto3-dynamodb = "^1.26.164"
+moto = "~4.2.11"
 
+[tool.poetry.group.dev.dependencies]
+coverage = "^7.8.0"
 
 [build-system]
 requires = ["poetry-core"]

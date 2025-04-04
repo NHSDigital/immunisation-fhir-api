@@ -3,6 +3,8 @@ import csv
 import pandas as pd
 import uuid
 import json
+import random
+import io
 import os
 from io import StringIO
 from datetime import datetime, timezone
@@ -19,7 +21,8 @@ from constants import (
     CONFIG_BUCKET,
     create_permissions_json,
     PERMISSIONS_CONFIG_FILE_KEY,
-    INPUT_PREFIX
+    INPUT_PREFIX,
+    HEADER_RESPONSE_CODE_COLUMN,
 )
 
 
@@ -104,12 +107,15 @@ def wait_for_ack_file(ack_prefix, input_file_name, timeout=120):
     """Poll the ACK_BUCKET for an ack file that contains the input_file_name as a substring."""
 
     filename_without_ext = input_file_name[:-4] if input_file_name.endswith(".csv") else input_file_name
-    search_pattern = f"{ACK_PREFIX if ack_prefix else FORWARDEDFILE_PREFIX}{filename_without_ext}"
+    if ack_prefix:
+        search_pattern = f"{ACK_PREFIX}{filename_without_ext}"
+        ack_prefix = ACK_PREFIX
+    else:
+        search_pattern = f"{FORWARDEDFILE_PREFIX}{filename_without_ext}"
+        ack_prefix = FORWARDEDFILE_PREFIX
     start_time = time.time()
     while time.time() - start_time < timeout:
-        response = s3_client.list_objects_v2(
-            Bucket=ACK_BUCKET, Prefix=ACK_PREFIX if ack_prefix else FORWARDEDFILE_PREFIX
-        )
+        response = s3_client.list_objects_v2(Bucket=ACK_BUCKET, Prefix=ack_prefix)
         if "Contents" in response:
             for obj in response["Contents"]:
                 key = obj["Key"]
@@ -348,3 +354,79 @@ def upload_config_file(value):
     input_file = create_permissions_json(value)
     save_json_to_file(input_file)
     upload_file_to_s3(PERMISSIONS_CONFIG_FILE_KEY, CONFIG_BUCKET, INPUT_PREFIX)
+
+
+def generate_csv_with_ordered_100000_rows(file_name=None):
+    """
+    Generate a CSV where:
+    - 100 sets of (NEW → UPDATE → DELETE) are created.
+    - The 100 sets are shuffled but maintain the correct order within each set.
+    - The 300 shuffled sets are then randomly mixed into the 99,700 CREATE rows.
+    - The final dataset ensures all NEW rows come before UPDATE and DELETE in each set.
+    """
+    total_rows = 100000
+    special_row_count = 300
+    unique_ids = [str(uuid.uuid4()) for _ in range(special_row_count // 3)]
+    special_data = []
+
+    # Generate first 300 rows as structured NEW → UPDATE → DELETE sets
+    for i in range(special_row_count // 3):  # 100 sets
+        new_row = create_row(
+            unique_id=unique_ids[i], fore_name="PHYLIS", dose_amount="0.3", action_flag="NEW", header="NHS_NUMBER"
+        )
+        update_row = create_row(
+            unique_id=unique_ids[i], fore_name="PHYLIS", dose_amount="0.4", action_flag="UPDATE", header="NHS_NUMBER"
+        )
+        delete_row = create_row(
+            unique_id=unique_ids[i], fore_name="PHYLIS", dose_amount="0.1", action_flag="DELETE", header="NHS_NUMBER"
+        )
+
+        special_data.append((new_row, update_row, delete_row))  # Keep them as ordered tuples
+
+    # Shuffle the sets (ensuring NEW is always first in each set)
+    random.shuffle(special_data)
+
+    # Flatten while maintaining NEW → UPDATE → DELETE order inside each set
+    ordered_special_data = [row for set_group in special_data for row in set_group]
+
+    # Generate remaining 99,700 rows as CREATE operations
+    create_data = [
+        create_row(
+            unique_id=str(uuid.uuid4()), action_flag="NEW", dose_amount="0.3", fore_name="PHYLIS", header="NHS_NUMBER"
+        )
+        for _ in range(total_rows - special_row_count)
+    ]
+
+    # Combine 300 shuffled sets with 99,700 CREATE rows
+    full_data = create_data + ordered_special_data
+
+    # Shuffle the entire dataset while ensuring "NEW" always comes before "UPDATE" and "DELETE" in each set
+    random.shuffle(full_data)
+
+    # Sort data so that within each unique ID, "NEW" appears before "UPDATE" and "DELETE"
+    full_data.sort(key=lambda x: (x["UNIQUE_ID"], x["ACTION_FLAG"] != "NEW", x["ACTION_FLAG"] == "DELETE"))
+
+    # Convert to DataFrame and save as CSV
+    df = pd.DataFrame(full_data)
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%f")[:-3]
+    file_name = f"RSV_Vaccinations_v5_YGM41_{timestamp}.csv" if not file_name else file_name
+    df.to_csv(file_name, index=False, sep="|", quoting=csv.QUOTE_MINIMAL)
+    return file_name
+
+
+def verify_final_ack_file(file_key):
+    """Verify if the final ack file has 100,000 rows and HEADER_RESPONSE_CODE column has only 'OK' values."""
+    response = s3_client.get_object(Bucket=ACK_BUCKET, Key=file_key)
+    df = pd.read_csv(io.BytesIO(response["Body"].read()), delimiter="|")
+
+    row_count = len(df)
+    # Check if all HEADER_RESPONSE_CODE values are "OK"
+    all_ok = df[HEADER_RESPONSE_CODE_COLUMN].nunique() == 1 and df[HEADER_RESPONSE_CODE_COLUMN].iloc[0] == "OK"
+    if row_count != 100000 or not all_ok:
+        raise AssertionError(
+            f"Final Ack file '{file_key}' failed validation. "
+            f"Row count: {row_count}"
+            f"Unique HEADER_RESPONSE_CODE values: {df[HEADER_RESPONSE_CODE_COLUMN].iloc[0]}"
+            f"All values OK: {all_ok}"
+        )
+    return True

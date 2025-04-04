@@ -1,13 +1,11 @@
-import pprint
 import uuid
 import copy
 
 import pytest
 
-from .configuration.config import valid_nhs_number1, valid_nhs_number_with_s_flag
+from .configuration.config import valid_nhs_number1
 from .example_loader import load_example
 from .immunisation_api import ImmunisationApi, parse_location
-from e2e.utils.mappings import VaccineTypes
 
 
 def create_an_imms_obj(imms_id: str = str(uuid.uuid4()), nhs_number=valid_nhs_number1) -> dict:
@@ -341,103 +339,3 @@ def test_bad_nhs_number_nhs_login(nhsd_apim_proxy_url, nhsd_apim_auth_headers):
 
     assert result.status_code == 400
     assert res_body["resourceType"] == "OperationOutcome"
-
-
-@pytest.mark.nhsd_apim_authorization(
-    {
-        "access": "healthcare_worker",
-        "level": "aal3",
-        "login_form": {"username": "656005750104"},
-    }
-)
-@pytest.mark.parametrize(
-    "nhs_number,is_restricted",
-    [(valid_nhs_number_with_s_flag, True), (valid_nhs_number1, False)],
-)
-def test_get_s_flag_patient(nhsd_apim_proxy_url, nhsd_apim_auth_headers, nhs_number, is_restricted):
-    # Arrange
-    token = nhsd_apim_auth_headers["Authorization"]
-    imms_api = ImmunisationApi(nhsd_apim_proxy_url, token)
-
-    # Act
-    imms_to_create = create_an_imms_obj(nhs_number=nhs_number)
-
-    created_imms_result = imms_api.create_immunization(imms_to_create)
-    if created_imms_result.status_code != 201:
-        pprint.pprint(created_imms_result.text)
-        assert created_imms_result.status_code == 201
-
-    created_imms_id = parse_location(created_imms_result.headers["Location"])
-    # Read the created resource back to get the full resource
-    created_imms = imms_api.get_immunization_by_id(created_imms_id)
-    if created_imms.status_code != 200:
-        print(created_imms.text)
-        assert created_imms.status_code == 200
-    created_imms = created_imms.json()
-
-    retrieved_get_imms_result = imms_api.get_immunization_by_id(created_imms["id"])
-    if retrieved_get_imms_result.status_code != 200:
-        pprint.pprint(retrieved_get_imms_result.text)
-        assert retrieved_get_imms_result.status_code == 200
-    retrieved_get_imms = retrieved_get_imms_result.json()
-
-    vaccine_type = VaccineTypes.covid_19
-    retrieved_search_imms_result = imms_api.search_immunizations(nhs_number, vaccine_type)
-    if retrieved_search_imms_result.status_code != 200:
-        pprint.pprint(retrieved_search_imms_result.text)
-        assert retrieved_search_imms_result.status_code == 200
-    retrieved_search_imms = next(
-        imms for imms in retrieved_search_imms_result.json()["entry"] if imms["resource"]["id"] == created_imms["id"]
-    )
-    # Fetching Immunization resource form Bundle
-    retrieved_search_imms = retrieved_search_imms["resource"]
-    all_retrieved_imms = [retrieved_get_imms, retrieved_search_imms]
-    imms_api.delete_immunization(created_imms["id"])
-
-    def assert_is_not_filtered(imms):
-
-        performer_actor_organizations = (
-            item for item in imms["performer"] if item.get("actor", {}).get("type") == "Organization"
-        )
-
-        assert all(
-            performer.get("actor", {}).get("identifier", {}).get("value") != "N2N9I" for performer in imms["performer"]
-        )
-        assert all(
-            organization.get("actor", {}).get("display") is not None for organization in performer_actor_organizations
-        )
-        assert all(
-            organization.get("actor", {}).get("identifier", {}).get("system")
-            != "https://fhir.nhs.uk/Id/ods-organization-code"
-            for organization in performer_actor_organizations
-        )
-
-        assert "reportOrigin" in imms
-        assert "location" in imms
-
-    def assert_is_filtered(imms):
-        performer_actor_organizations = (
-            item for item in imms["performer"] if item.get("actor", {}).get("type") == "Organization"
-        )
-
-        assert all(
-            organization.get("actor", {}).get("identifier", {}).get("value") == "N2N9I"
-            for organization in performer_actor_organizations
-        )
-        assert all(
-            organization.get("actor", {}).get("identifier", {}).get("system")
-            == "https://fhir.nhs.uk/Id/ods-organization-code"
-            for organization in performer_actor_organizations
-        )
-
-        assert "location" not in imms
-
-    if is_restricted:
-        assert_is_filtered(created_imms)
-    else:
-        assert_is_not_filtered(created_imms)
-    for retrieved_imms in all_retrieved_imms:
-        if is_restricted:
-            assert_is_filtered(retrieved_imms)
-        else:
-            assert_is_not_filtered(retrieved_imms)

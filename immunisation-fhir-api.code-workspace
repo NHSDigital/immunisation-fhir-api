@@ -17,8 +17,10 @@
 		},
 		{
 			"path": "delta_backend"
+		},
+		{
+			"path": "mesh_processor"
 		}
 	],
 	"settings": {},
-	
 }

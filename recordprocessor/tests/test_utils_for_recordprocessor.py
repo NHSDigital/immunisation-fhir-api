@@ -15,8 +15,13 @@ from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests impo
 from tests.utils_for_recordprocessor_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT, BucketNames
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
-    from utils_for_recordprocessor import get_environment, get_csv_content_dict_reader, create_diagnostics_dictionary
-
+    from utils_for_recordprocessor import (
+        get_environment,
+        get_csv_content_dict_reader,
+        create_diagnostics_dictionary,
+        extract_content,
+    )
+    from file_level_validation import move_file
 
 s3_client = boto3.client("s3", region_name=REGION_NAME)
 test_file = MockFileDetails.rsv_emis
@@ -75,6 +80,36 @@ class TestUtilsForRecordprocessor(unittest.TestCase):
                 "error_message": "test error message",
             },
         )
+
+    def test_extract_content_valid_input(self):
+        dat_file_content = (
+            "----------------------------1234567890\n"
+            'Content-Disposition: form-data; name="file";\n'
+            'filename="COVID19_Vaccinations_v5_YGM41_20250312T113455981.csv"\n'
+            "Content-Type: text/csv\n\n"
+            "NHS_NUMBER|PERSON_FORENAME|PERSON_SURNAME|PERSON_DOB|PERSON_GENDER_CODE|PERSON_POSTCODE\n"
+            "----------------------------1234567890\n"
+        )
+        expected_content = "NHS_NUMBER|PERSON_FORENAME|PERSON_SURNAME|PERSON_DOB|PERSON_GENDER_CODE|PERSON_POSTCODE"
+        result = extract_content(dat_file_content)
+        self.assertEqual(result, expected_content)
+
+    def test_move_file(self):
+        """Tests that move_file correctly moves a file from one location to another within a single S3 bucket"""
+        source_file_key = "test_file_key"
+        destination_file_key = "archive/test_file_key"
+        source_file_content = "test_content"
+        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=source_file_key, Body=source_file_content)
+
+        move_file(BucketNames.SOURCE, source_file_key, destination_file_key)
+
+        keys_of_objects_in_bucket = [
+            obj["Key"] for obj in s3_client.list_objects_v2(Bucket=BucketNames.SOURCE).get("Contents")
+        ]
+        self.assertNotIn(source_file_key, keys_of_objects_in_bucket)
+        self.assertIn(destination_file_key, keys_of_objects_in_bucket)
+        destination_file_content = s3_client.get_object(Bucket=BucketNames.SOURCE, Key=destination_file_key)
+        self.assertEqual(destination_file_content["Body"].read().decode("utf-8"), source_file_content)
 
 
 if __name__ == "__main__":
