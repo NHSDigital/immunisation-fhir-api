@@ -1,0 +1,149 @@
+{
+    "variables": {
+        "name": "imms-build-agent",
+        "long_name": "imms-build-agent-packer-build-{{ timestamp }}",
+        "region": "eu-west-2",
+        "instance_type": "t3a.small",
+        "password": "{{ aws_secretsmanager `imms_ops_root_pass` }}"
+    },
+    "builders": [
+        {
+            "type": "amazon-ebs",
+            "profile": "{{ user `aws_profile` }}",
+            "ami_name": "{{ user `long_name` }}",
+            "ami_regions": [
+                "eu-west-2"
+            ],
+            "ami_users": "{{ user `ami_share_account_ids` }}",
+            "kms_key_id": "{{ user `ami_share_kms_key` }}",
+            "instance_type": "{{ user `instance_type` }}",
+            "region": "{{ user `region` }}",
+            "subnet_filter": {
+                "filters": {
+                    "tag:Name": "public-a"
+                },
+                "most_free": true,
+                "random": false
+            },
+            "associate_public_ip_address": "true",
+            "encrypt_boot": "true",
+            "iam_instance_profile": "{{ user `iam_instance_profile` }}",
+            "ssh_username": "ubuntu",
+            "ssh_pty": "false",
+            "ssh_interface": "{{ user `ssh_interface` }}",
+            "temporary_security_group_source_cidrs": "{{ user `temporary_source_cidr` }}",
+            "source_ami_filter": {
+                "filters": {
+                    "virtualization-type": "hvm",
+                    "name": "imms-ecs-agent-*",
+                    "root-device-type": "ebs"
+                },
+                "owners": [
+                    "self"
+                ],
+                "most_recent": true
+            },
+            "launch_block_device_mappings": [
+                {
+                    "device_name": "/dev/sda1",
+                    "volume_size": 10,
+                    "volume_type": "gp2",
+                    "delete_on_termination": true
+                }
+            ],
+            "snapshot_tags": {
+                "Name": "{{ user `long_name` }}",
+                "source": "packer"
+            },
+            "run_tags": {
+                "Name": "{{ user `long_name` }}",
+                "source": "packer"
+            },
+            "tags": {
+                "Name": "{{ user `name` }}",
+                "source": "packer",
+                "tested": "false"
+            },
+            "access_key": "{{ user `access_key` }}",
+            "secret_key": "{{ user `secret_key` }}"
+        }
+    ],
+    "provisioners": [
+        {
+            "type": "shell",
+            "inline": [
+                "while [ ! -f /var/lib/cloud/instance/boot-finished ]; do echo 'Waiting for cloud-init...'; sleep 1; done"
+            ]
+        },
+        {
+            "type": "file",
+            "source": "files",
+            "destination": "/tmp/files"
+        },
+        {
+            "type": "file",
+            "source": "../_shared/files",
+            "destination": "/tmp/files/shared"
+        },
+        {
+            "type": "shell",
+            "inline": [
+                "echo '{{user `password` }}' | sudo -S true",
+                "sudo passwd -dl root",
+                "sudo chown 0:0 /tmp/files/sudoers/imms-users",
+                "sudo mv -f /tmp/files/sudoers/imms-users /etc/sudoers.d/z_imms-users"
+            ]
+        },
+        {
+            "type": "shell",
+            "inline": [
+                "sudo sed -i 's/net.ipv4.ip_forward = 0/net.ipv4.ip_forward = 1/g' /etc/sysctl.conf",
+                "sudo mv -f /tmp/files/docker/daemon.json /etc/docker/daemon.json"
+            ]
+        },
+        {
+            "type": "shell",
+            "inline": [
+                "sudo useradd -m -s /bin/bash agent",
+                "sudo usermod -a -G docker agent",
+                "sudo DEBIAN_FRONTEND=noninteractive apt-get update",
+                "sudo DEBIAN_FRONTEND=noninteractive apt-get upgrade -yq -o Dpkg::Options::=--force-confnew -o Dpkg::Options::=--force-confdef",
+                "sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq -o Dpkg::Options::=--force-confnew -o Dpkg::Options::=--force-confdef --no-install-recommends docker-ce awscli wget jq git iputils-ping netcat vim tini less python-is-python3 python3-distutils python3-venv python3-tk pipenv zip unzip make parallel build-essential libffi-dev zlib1g-dev libssl-dev openssl default-jre default-jdk rsync oathtool gnupg2 libsqlite3-dev shellcheck ruby-full ca-certificates fonts-liberation libappindicator3-1 libasound2 libatk-bridge2.0-0 libatk1.0-0 libc6 libcairo2 libcups2 libdbus-1-3 libexpat1 libfontconfig1 libgbm1 libgcc1 libglib2.0-0 libgtk-3-0 libnspr4 libnss3 libpango-1.0-0 libpangocairo-1.0-0 libstdc++6 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 libxss1 libxtst6 lsb-release wget xdg-utils chromium-browser firefox direnv",
+                "sudo pip install --upgrade virtualenv",
+                "AGENT_VERSION=\"$(curl -sL -H 'Accept: application/json' https://github.com/microsoft/azure-pipelines-agent/releases/latest | jq -r '.tag_name' | tr -d v)\"",
+                "wget -q https://vstsagentpackage.azureedge.net/agent/${AGENT_VERSION}/vsts-agent-linux-x64-${AGENT_VERSION}.tar.gz -O /tmp/agent.tar.gz",
+                "sudo mkdir /agent; sudo chown ubuntu:ubuntu /agent",
+                "cd /agent; tar zxvf /tmp/agent.tar.gz",
+                "sudo cp /tmp/files/az-get-token.py /usr/sbin/az-get-token; sudo chmod a+rx-w /usr/sbin/az-get-token",
+                "sudo cp /tmp/files/vsts-agent.initd.sh /etc/init.d/vsts-agent;sudo chmod +x /etc/init.d/vsts-agent",
+                "sudo cp /tmp/files/start-agent.sh /;sudo chmod +x /start-agent.sh",
+                "sudo cp /tmp/files/fix-agent-work-owner.sh /etc/fix-agent-work-owner.sh;sudo chmod +x /etc/fix-agent-work-owner.sh",
+                "sudo cp /tmp/files/fix-agent-work-owner.service /etc/systemd/system/fix-agent-work-owner.service; sudo systemctl enable fix-agent-work-owner.service; sudo systemctl start fix-agent-work-owner.service"
+            ]
+        },
+        {
+            "type": "shell",
+            "inline": [
+                "sudo mkdir -p /home/agent/.aws",
+                "sudo cp /tmp/files/default.aws.config /home/agent/.aws/config",
+                "sudo chmod 600 /home/agent/.aws/config",
+                "sudo chown -R agent:agent /home/agent",
+                "sudo chown -R agent:agent /agent",
+                "sudo su -c \"/bin/bash /tmp/files/install.sh\" - agent"
+            ]
+        },
+        {
+            "type": "shell",
+            "inline": [
+                "echo '127.0.0.1 keycloak' | sudo tee -a /etc/hosts"
+            ]
+        }
+    ],
+    "post-processors": [
+        {
+            "type": "manifest",
+            "output": "manifest.json",
+            "strip_path": true
+        }
+    ]
+}

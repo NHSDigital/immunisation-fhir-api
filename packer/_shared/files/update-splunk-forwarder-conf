@@ -1,0 +1,120 @@
+#!/usr/bin/env bash
+
+set -e
+
+silent=true
+if test "${1}" = "-v"; then
+    silent=false
+fi
+
+ENV_DNS=$(aws ssm get-parameter --name /core/common/envdns --query 'Parameter.Value' --output text || true)
+ENV=$(aws ssm get-parameter --name /core/common/env --query 'Parameter.Value' --output text || true)
+
+
+FORCE_RELEASE="${RELEASE}"
+export ENV_DNS="${ENV_DNS}"
+export ENV="${ENV}"
+export HOSTNAME="$(hostname)"
+
+${silent} || echo ENV_DNS: ${ENV_DNS}
+${silent} || echo ENV: ${ENV}
+${silent} || echo HOSTNAME: ${HOSTNAME}
+${silent} || echo FORCE_RELEASE: ${FORCE_RELEASE}
+
+
+mkdir -p /tmp/splunk_certs
+aws ssm get-parameter --name /aws/reference/secretsmanager//ca/license.splunk.aws.digital.nhs.uk/crt --with-decryption --query 'Parameter.Value' --output text  > /tmp/splunk_certs/ca.pem
+aws ssm get-parameter --name /aws/reference/secretsmanager//client-certs/license.splunk.aws.digital.nhs.uk/crt --with-decryption --query 'Parameter.Value' --output text > /tmp/splunk_certs/client-crt.pem
+aws ssm get-parameter --name /aws/reference/secretsmanager//client-certs/license.splunk.aws.digital.nhs.uk/key --with-decryption --query 'Parameter.Value' --output text > /tmp/splunk_certs/client-key.pem
+cat /tmp/splunk_certs/client-crt.pem /tmp/splunk_certs/client-key.pem /tmp/splunk_certs/ca.pem > /tmp/splunk_certs/client-combined.pem
+
+sudo mkdir -p /opt/splunkforwarder/etc/auth/splunk_cloud
+
+sudo mv /tmp/splunk_certs/ca.pem /opt/splunkforwarder/etc/auth/splunk_cloud
+sudo mv /tmp/splunk_certs/client-combined.pem /opt/splunkforwarder/etc/auth/splunk_cloud
+
+rm -r /tmp/splunk_certs
+
+sudo chown -R splunk:splunk /opt/splunkforwarder
+
+
+while true; do
+
+    ${silent} || echo query previous tags
+    PREV_SPLUNK_CONF_TAG=$(jq -r '.Tags[] | select(.Key == "splunk-conf") | .Value' /tmp/.instance_tags 2>/dev/null || true)
+    PREV_NAME_TAG=$(jq -r '.Tags[] | select(.Key == "Name") | .Value' /tmp/.instance_tags 2>/dev/null || true)
+    if [[ -z "${FORCE_RELEASE}" ]]; then
+        PREV_RELEASE="$(aws s3 cp --quiet s3://nhsd-api-management-${ENV}-resources/releases/latest -)"
+    else
+        PREV_RELEASE="${FORCE_RELEASE}"
+    fi
+    ${silent} || echo PREV_SPLUNK_CONF_TAG: ${PREV_SPLUNK_CONF_TAG}
+    ${silent} || echo PREV_NAME_TAG: ${PREV_NAME_TAG}
+    ${silent} || echo PREV_RELEASE: ${PREV_RELEASE}
+
+    ${silent} || echo retrieve tags
+    aws ec2 describe-tags --filters "Name=resource-id,Values=`curl -s http://169.254.169.254/latest/meta-data/instance-id`" > /tmp/.instance_tags
+
+    ${silent} || echo query new tags
+    SPLUNK_CONF_TAG=$(jq -r '.Tags[] | select(.Key == "splunk-conf") | .Value' /tmp/.instance_tags 2>/dev/null || true)
+    NAME_TAG=$(jq -r '.Tags[] | select(.Key == "Name") | .Value' /tmp/.instance_tags 2>/dev/null || true)
+
+    if [[ -z "${FORCE_RELEASE}" ]]; then
+        RELEASE="$(aws s3 cp --quiet s3://nhsd-api-management-${ENV}-resources/releases/latest -)"
+    else
+        RELEASE="${FORCE_RELEASE}"
+    fi
+
+    ${silent} || echo SPLUNK_CONF_TAG: ${SPLUNK_CONF_TAG}
+    ${silent} || echo NAME_TAG: ${NAME_TAG}
+    ${silent} || echo RELEASE: ${RELEASE}
+
+    if [[ -z "${NAME_TAG}" ]]; then
+        # new instance .. poll more frequently
+        ${silent} || echo no name ...
+        sleep 15
+        continue
+    fi
+
+    if [[ "${PREV_SPLUNK_CONF_TAG}" == "${SPLUNK_CONF_TAG}" ]] && [[ "${PREV_NAME_TAG}" == "${NAME_TAG}" ]] && [[ "${PREV_RELEASE}" == "${RELEASE}" ]]; then
+        ${silent} || echo tags unchanged ...
+        sleep 60
+        continue
+    fi
+
+    ${silent} || echo tags changed ...
+    mkdir -p /tmp/.splunk_forwarder_conf
+    rm -f /tmp/.splunk_forwarder_conf/* 2>/dev/null || true
+
+    FILES="server.conf inputs.conf outputs.conf limits.conf"
+    SOURCES="${SPLUNK_CONF_TAG} ${NAME_TAG} default"
+    ENV="$(aws ssm get-parameter --name /core/common/env --query 'Parameter.Value' --output text)"
+
+    # try retrieve config files
+    for file in ${FILES}; do
+        for source in ${SOURCES}; do
+            if [[ -f /tmp/.splunk_forwarder_conf/${file} ]]; then
+                ${silent} || echo ${file} exists ...
+                continue
+            fi
+            ${silent} || echo try retrieve "s3://nhsd-api-management-${ENV}-resources/releases/${RELEASE}/splunk-forwarder-conf/${ENV}/${source}/${file}"
+            aws s3 cp --quiet "s3://nhsd-api-management-${ENV}-resources/releases/${RELEASE}/splunk-forwarder-conf/${ENV}/${source}/${file}" /tmp/.splunk_forwarder_conf/${file} || true
+        done
+    done
+
+    ${silent} || echo envsub files ...
+    for file in $(ls /tmp/.splunk_forwarder_conf); do
+        ${silent} || echo envsub ${file} ...
+        envsubst < /tmp/.splunk_forwarder_conf/${file} > /tmp/.splunk_forwarder_conf/${file}.sub
+        mv /tmp/.splunk_forwarder_conf/${file}.sub /tmp/.splunk_forwarder_conf/${file}
+    done
+
+    ${silent} || echo copying files ...
+    sudo cp /tmp/.splunk_forwarder_conf/* /opt/splunkforwarder/etc/system/local
+    sudo chown -R splunk:splunk /opt/splunkforwarder/etc/system/local
+
+    ${silent} || echo restarting splunkd ...
+    sudo systemctl restart splunk
+
+done
+

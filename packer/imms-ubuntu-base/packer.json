@@ -1,0 +1,172 @@
+{
+    "variables": {
+        "name": "imms-ubuntu-base",
+        "long_name": "imms-ubuntu-base-packer-build-{{ timestamp }}",
+        "region": "eu-west-2",
+        "instance_type": "t3a.small"
+    },
+    "builders": [
+        {
+            "type": "amazon-ebs",
+            "profile": "{{ user `aws_profile` }}",
+            "ami_name": "{{ user `long_name` }}",
+            "ami_regions": [
+                "eu-west-2"
+            ],
+            "ami_users": "{{ user `ami_share_account_ids` }}",
+            "kms_key_id": "{{ user `ami_share_kms_key` }}",
+            "instance_type": "{{ user `instance_type` }}",
+            "region": "{{ user `region` }}",
+            "subnet_filter": {
+                "filters": {
+                    "tag:Name": "public-a"
+                },
+                "most_free": true,
+                "random": false
+            },
+            "associate_public_ip_address": "true",
+            "encrypt_boot": "true",
+            "iam_instance_profile": "{{ user `iam_instance_profile` }}",
+            "ssh_username": "ubuntu",
+            "ssh_pty": "false",
+            "ssh_interface": "{{ user `ssh_interface` }}",
+            "temporary_security_group_source_cidrs": "{{ user `temporary_source_cidr` }}",
+            "source_ami_filter": {
+                "filters": {
+                    "virtualization-type": "hvm",
+                    "name": "ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*",
+                    "product-code": "a8jyynf4hjutohctm41o2z18m",
+                    "root-device-type": "ebs"
+                },
+                "owners": [
+                    "{{ user `aws_marketplace_account_id` }}"
+                ],
+                "most_recent": true
+            },
+            "launch_block_device_mappings": [
+                {
+                    "device_name": "/dev/sda1",
+                    "volume_size": 10,
+                    "volume_type": "gp2",
+                    "delete_on_termination": true
+                }
+            ],
+            "snapshot_tags": {
+                "Name": "{{ user `long_name` }}",
+                "source": "packer"
+            },
+            "run_tags": {
+                "Name": "{{ user `long_name` }}",
+                "source": "packer"
+            },
+            "tags": {
+                "Name": "{{ user `name` }}",
+                "source": "packer"
+            },
+            "access_key": "{{ user `access_key` }}",
+            "secret_key": "{{ user `secret_key` }}"
+        }
+    ],
+    "provisioners": [
+        {
+            "type": "shell",
+            "inline": [
+                "while [ ! -f /var/lib/cloud/instance/boot-finished ]; do echo 'Waiting for cloud-init...'; sleep 1; done"
+            ]
+        },
+        {
+            "type": "file",
+            "source": "files",
+            "destination": "/tmp/files"
+        },
+        {
+            "type": "file",
+            "source": "../_shared/files",
+            "destination": "/tmp/files/shared"
+        },
+        {
+            "type": "shell",
+            "inline": [
+                "echo defscrollback 500000 > ~/.screenrc",
+                "bash /tmp/files/shared/shutdown-apt-services.sh",
+                "bash /tmp/files/shared/apt-upgrade.sh",
+                "bash /tmp/files/shared/create-aws-config.sh",
+                "bash /tmp/files/shared/ensure-aws-cli.sh",
+                "bash /tmp/files/shared/setup-chrony.sh",
+                "bash /tmp/files/shared/prometheus/install-node-exporter.sh {{ user `node_exporter_version` }}",
+                "sudo mv /tmp/files/shared/update-motd.sh /usr/sbin/update-motd-env",
+                "cp /tmp/files/shared/.bashrc ~/.bashrc"
+            ]
+        },
+        {
+            "type": "shell",
+            "inline": [
+                "sudo groupadd -g 996 docker",
+                "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -",
+                "sudo add-apt-repository \"deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable\"",
+                "sudo snap refresh",
+                "sudo apt update",
+                "sudo DEBIAN_FRONTEND=noninteractive apt upgrade -yq",
+                "sudo DEBIAN_FRONTEND=noninteractive apt install -yq nfs-common rename moreutils csvkit nano screen httping tzdata make apt-transport-https dnsutils bind9utils build-essential ca-certificates curl git software-properties-common unzip vim jq htop liblz4-tool toilet lolcat update-motd ldap-utils"
+            ]
+        },
+        {
+            "type": "shell",
+            "inline": [
+                "sudo curl -Lo /tmp/AmazonCloudWatchAgent.zip https://s3.amazonaws.com/amazoncloudwatch-agent/linux/amd64/latest/AmazonCloudWatchAgent.zip",
+                "sudo unzip /tmp/AmazonCloudWatchAgent.zip -d /tmp/AmazonCloudWatchAgent",
+                "cd /tmp/AmazonCloudWatchAgent && sudo ./install.sh",
+                "sudo mv /tmp/files/logs/cloudwatch-config.json /opt/aws/amazon-cloudwatch-agent/bin/config.json",
+                "sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/bin/config.json -s"
+            ]
+        },
+        {
+            "type": "shell",
+            "inline": [
+                "sudo mkdir -p /etc/systemd/system/docker.service.d/",
+                "sudo mv /tmp/files/shared/docker/docker.systemd.override.conf /etc/systemd/system/docker.service.d/override.conf",
+                "sudo apt install -y docker-ce",
+                "sudo usermod -aG docker ubuntu",
+                "sudo mv /tmp/files/shared/docker/daemon.json /etc/docker/daemon.json",
+                "sudo systemctl restart docker",
+                "sudo docker run --rm hello-world"
+            ]
+        },
+        {
+            "type": "shell",
+            "inline": [
+                "wget https://releases.hashicorp.com/terraform/{{ user `terraform_version` }}/terraform_{{ user `terraform_version` }}_linux_amd64.zip -P /tmp",
+                "wget https://releases.hashicorp.com/packer/{{ user `packer_version` }}/packer_{{ user `packer_version` }}_linux_amd64.zip -P /tmp",
+                "unzip /tmp/terraform_{{ user `terraform_version` }}_linux_amd64.zip -d /tmp",
+                "unzip /tmp/packer_{{ user `packer_version` }}_linux_amd64.zip -d /tmp",
+                "sudo mv /tmp/terraform /usr/local/bin/",
+                "sudo mv /tmp/packer /usr/local/bin/"
+            ]
+        },
+        {
+            "type": "shell",
+            "inline": [
+                "sudo curl -L https://raw.githubusercontent.com/docker/compose/1.21.2/contrib/completion/bash/docker-compose -o /etc/bash_completion.d/docker-compose",
+                "sudo rm -rf /var/lib/cloud/instances/*",
+                "sudo rm /var/lib/dpkg/lock"
+            ]
+        },
+        {
+            "type": "shell",
+            "inline": [
+                "git clone https://github.com/aws/efs-utils /tmp/efs-utils",
+                "cd /tmp/efs-utils && bash build-deb.sh && cd -",
+                "sudo apt-get -y install /tmp/efs-utils/build/amazon-efs-utils*deb",
+                "sudo rm -r /tmp/efs-utils"
+            ]
+        },
+        {
+            "type": "shell",
+            "inline": [
+                "sudo chmod 000 /etc/shadow",
+                "sudo chmod 000 /etc/shadow-",
+                "sudo mv /tmp/files/sshd/sshd_ubuntu_base.conf /etc/ssh/sshd_config.d"
+            ]
+        }
+    ]
+}
