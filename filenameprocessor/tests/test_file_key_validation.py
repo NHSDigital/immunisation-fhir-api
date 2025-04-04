@@ -93,7 +93,7 @@ class TestFileKeyValidation(TestCase):
             # File key with missing timestamp
             (VALID_FLU_EMIS_FILE_KEY.replace("20000101T00000001", ""), invalid_file_key_error_message),
             # File key with incorrect extension
-            (VALID_FLU_EMIS_FILE_KEY.replace(".csv", ".dat"), invalid_file_key_error_message),
+            (VALID_FLU_EMIS_FILE_KEY.replace(".csv", ".xlsx"), invalid_file_key_error_message),
         ]
 
         for file_key, expected_result in test_cases_for_failure_scenarios:

@@ -1,13 +1,13 @@
 # alb.tf
 
 resource "aws_alb" "main" {
-  name            = "${var.prefix}-alb"
+  name            = "${local.prefix}-alb"
   subnets         = aws_subnet.grafana_public[*].id
   security_groups = [aws_security_group.lb.id]
 }
 
 resource "aws_alb_target_group" "app" {
-  name        = "${var.prefix}-alb-tg"
+  name        = "${local.prefix}-tg"
   port        = 3000
   protocol    = "HTTP"
   vpc_id      = aws_vpc.grafana_main.id
@@ -34,7 +34,7 @@ resource "aws_alb_listener" "front_end" {
     type             = "forward"
   }
   tags = merge(var.tags, {
-    Name = "${var.prefix}-alb-listener"
+    Name = "${local.prefix}-alb-listener"
   })
 }
 ############################################################################################################
@@ -48,7 +48,7 @@ resource "aws_appautoscaling_target" "target" {
   min_capacity       = 1
   max_capacity       = 1
   tags = merge(var.tags, {
-    Name = "${var.prefix}-aas-tgt"
+    Name = "${local.prefix}-aas-tgt"
   })
 }
 
@@ -99,7 +99,7 @@ resource "aws_appautoscaling_policy" "down" {
 # ecs.tf
 
 resource "aws_ecs_cluster" "main" {
-    name = "grafana-cluster"
+    name = "${local.prefix}-cluster"
 }
 
 data "template_file" "grafana_app" {
@@ -107,17 +107,18 @@ data "template_file" "grafana_app" {
 
     vars = {
         app_image      = local.app_image
+        app_name       = local.app_name
         app_port       = var.app_port
         fargate_cpu    = var.fargate_cpu
         fargate_memory = var.fargate_memory
         aws_region     = var.aws_region
-        log_group      = var.log_group
+        log_group      = local.log_group
         health_check_path = var.health_check_path
     }
 }
 
 resource "aws_ecs_task_definition" "app" {
-    family                   = "grafana-app-task"
+    family                   = "${local.prefix}-app"
     execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
     task_role_arn            = aws_iam_role.ecs_task_role.arn    
     network_mode             = "awsvpc"
@@ -126,14 +127,13 @@ resource "aws_ecs_task_definition" "app" {
     memory                   = var.fargate_memory
     container_definitions    = data.template_file.grafana_app.rendered
     tags = merge(var.tags, {
-        Name = "${var.prefix}-ecs-task"
+        Name = "${local.prefix}-task"
     })
 
 }
 
-
 resource "aws_ecs_service" "main" {
-  name            = "${var.prefix}-ecs-svc"
+  name            = "${local.prefix}-ecs-svc"
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.app.arn
   desired_count   = var.app_count
@@ -147,14 +147,14 @@ resource "aws_ecs_service" "main" {
 
   load_balancer {
     target_group_arn = aws_alb_target_group.app.id
-    container_name   = "grafana-app"
+    container_name   = local.app_name
     container_port   = var.app_port
   }
 }
 ############################################################################################################
 # iam.tf
 resource "aws_iam_policy" "route53resolver_policy" {
-  name        = "${var.prefix}-route53resolver-policy"
+  name        = "${local.prefix}-route53resolver-policy"
   description = "Policy to allow Route 53 Resolver DNS Firewall actions"
   policy = jsonencode({
     Version = "2012-10-17",
@@ -182,7 +182,7 @@ resource "aws_iam_role_policy_attachment" "route53resolver_policy_attachment" {
 ## Amazon ECR, and to store and retrieve logs in Amazon CloudWatch.
 ## It grants permissions needed for ECS to start and manage tasks
 resource "aws_iam_role" "ecs_task_execution_role" {
-  name = "${var.prefix}-ecs-task-execution-role"
+  name = "${local.prefix}-ecs-task-execution-role"
 
   assume_role_policy = <<EOF
 {
@@ -202,7 +202,7 @@ EOF
 }
 
 resource "aws_iam_policy" "ecs_task_execution_policy" {
-  name        = "${var.prefix}-ecs-task-execution-policy"
+  name        = "${local.prefix}-ecs-task-execution-policy"
   description = "Policy for ECS task execution role to access ECR and CloudWatch Logs"
   policy = jsonencode({
     Version = "2012-10-17",
@@ -241,7 +241,7 @@ resource "aws_iam_role_policy_attachment" "ecs-task-execution-role-policy-attach
 # needs to interact with other AWS services (e.g., accessing S3, 
 # DynamoDB, etc.).
 resource "aws_iam_role" "ecs_task_role" {
-  name = "${var.prefix}-ecs-task-role"
+  name = "${local.prefix}-ecs-task-role"
 
   assume_role_policy = <<EOF
 {
@@ -264,7 +264,7 @@ EOF
 
 
 resource "aws_iam_policy" "ecs_task_policy" {
-  name        = "${var.prefix}-ecs-task-policy"
+  name        = "${local.prefix}-ecs-task-policy"
   description = "Policy for ECS task role to access CloudWatch Logs"
   policy = jsonencode({
     Version = "2012-10-17",
@@ -303,7 +303,7 @@ data "aws_iam_policy_document" "ecs_auto_scale_role" {
 }
 # ECS auto scale role
 resource "aws_iam_role" "ecs_auto_scale_role" {
-  name               = "${var.prefix}-${var.ecs_auto_scale_role_name}"
+  name = "${local.prefix}-ecs_role"
   assume_role_policy = data.aws_iam_policy_document.ecs_auto_scale_role.json
 }
 # ECS auto scale role policy attachment
@@ -315,7 +315,7 @@ resource "aws_iam_role_policy_attachment" "ecs_auto_scale_role" {
 # Monitoring role
 resource "aws_iam_role" "monitoring_role" {
 
-  name = "${var.prefix}-monitoring-role"
+  name = "${local.prefix}-monitoring-role"
 
   assume_role_policy = jsonencode({
     "Version": "2012-10-17",
@@ -339,7 +339,7 @@ resource "aws_iam_role" "monitoring_role" {
 }
 
 resource "aws_iam_role_policy" "monitoring_policy" {
-  name   = "${var.prefix}-monitoring-policy"
+  name   = "${local.prefix}-monitoring-policy"
   role   = aws_iam_role.monitoring_role.id
 
   policy = jsonencode({
@@ -410,7 +410,7 @@ resource "aws_vpc" "grafana_main" {
     enable_dns_support = true
     enable_dns_hostnames = true
     tags = {
-        Name = "${var.prefix}-vpc"
+        Name = "${local.prefix}-vpc"
     }
 }
 
@@ -422,7 +422,7 @@ resource "aws_subnet" "grafana_private" {
     availability_zone = data.aws_availability_zones.available.names[count.index]
     vpc_id            = aws_vpc.grafana_main.id
     tags = merge(var.tags, {
-        Name = "${var.prefix}-private-subnet-${count.index}"
+        Name = "${local.prefix}-private-subnet-${count.index}"
     })
 }
 
@@ -435,7 +435,7 @@ resource "aws_subnet" "grafana_public" {
     vpc_id                  = aws_vpc.grafana_main.id
     map_public_ip_on_launch = true
     tags = merge(var.tags, {
-        Name = "${var.prefix}-public-subnet-${count.index}"
+        Name = "${local.prefix}-public-subnet-${count.index}"
     })
 }
 
@@ -444,7 +444,7 @@ resource "aws_subnet" "grafana_public" {
 resource "aws_internet_gateway" "gw" {
     vpc_id = aws_vpc.grafana_main.id
     tags = merge(var.tags, {
-        Name = "${var.prefix}-igw"
+        Name = "${local.prefix}-igw"
     })
 }
 
@@ -460,7 +460,7 @@ resource "aws_route_table" "private" {
     count  = var.az_count
     vpc_id = aws_vpc.grafana_main.id
     tags = merge(var.tags, {
-        Name = "${var.prefix}-private-rt-${count.index}"
+        Name = "${local.prefix}-private-rt-${count.index}"
     })
 }
 
@@ -486,7 +486,7 @@ resource "aws_route_table_association" "private" {
 
 # Security group for the ALB
 resource "aws_security_group" "lb" {
-  name        = "grafana-load-balancer-security-group" # @TODO ${var.prefix}-alb-sg"
+  name        = "grafana-load-balancer-security-group" # @TODO ${local.prefix}-alb-sg"
   description = "controls access to the ALB"
   vpc_id      = aws_vpc.grafana_main.id
 
@@ -505,7 +505,7 @@ resource "aws_security_group" "lb" {
   }
 
   tags = merge(var.tags, {
-    Name = "${var.prefix}-alb-sg"
+    Name = "${local.prefix}-alb-sg"
   })
 }
 
@@ -529,7 +529,7 @@ resource "aws_security_group" "ecs_tasks" {
     cidr_blocks = ["0.0.0.0/0"]
   }
   tags = merge(var.tags, {
-    Name = "${var.prefix}-sg-ecs-tasks"
+    Name = "${local.prefix}-sg-ecs-tasks"
   })
 }
 
@@ -537,7 +537,7 @@ resource "aws_security_group" "ecs_tasks" {
 resource "aws_eip" "nat" {
   domain = "vpc"
   tags = merge(var.tags, {
-    Name = "${var.prefix}-nat-eip"
+    Name = "${local.prefix}-nat-eip"
   })
 }
 
@@ -546,6 +546,6 @@ resource "aws_nat_gateway" "nat" {
   allocation_id = aws_eip.nat.id
   subnet_id     = element(aws_subnet.grafana_public[*].id, 0) 
   tags = merge(var.tags, {
-    Name = "${var.prefix}-nat-gw"
+    Name = "${local.prefix}-nat-gw"
   })
 }
