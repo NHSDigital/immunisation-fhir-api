@@ -16,7 +16,7 @@ def get_valid_names(names, occurrence_time):
     valid_names = [n for n in names if is_current_period(n, occurrence_time) and n.get("use") != "old"]
     return valid_names[0] if valid_names else names[0]
 
-
+ 
 @staticmethod
 def extract_person_names(patient, occurrence_time):
     names = patient.get("name", [])

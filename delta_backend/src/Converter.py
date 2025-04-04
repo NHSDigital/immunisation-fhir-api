@@ -29,13 +29,14 @@ class Converter:
         self.FHIRData = fhir_data  # Store JSON data directly
         self.SchemaFile = ConversionLayout.ConvertLayout
 
-    # create a FHIR  parser - uses fhir json data from delta
+    # create a FHIR  parser - uses fhir json data from delta 
+    # (helper methods to extract values from the nested FHIR structure)
     def _getFHIRParser(self, fhir_data):
         fhirParser = FHIRParser()
         fhirParser.parseFHIRData(fhir_data)
         return fhirParser
 
-    # create a schema parser
+    # create a schema parser - parses the schema that defines how FHIR fields should be mapped into flat fields.
     def _getSchemaParser(self, schemafile):
         schemaParser = SchemaParser()
         schemaParser.parseSchema(schemafile)
@@ -120,7 +121,7 @@ class Converter:
             self._cached_values = {}
 
         if not self._cached_values:
-            occurrence_time = datetime.strptime(json_data.get("occurrenceDateTime", ""), "%Y-%m-%dT%H:%M:%S%z")
+            occurrence_time = datetime.fromisoformat(json_data.get("occurrenceDateTime", ""))
             patient = get_patient(json_data)
             if not patient:
                 return None
