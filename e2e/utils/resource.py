@@ -22,20 +22,21 @@ def load_example(path: str) -> dict:
 def generate_imms_resource(
     nhs_number=valid_nhs_number1,
     vaccine_type=VaccineTypes.covid_19,
+    imms_identifier_value: str = None,
     occurrence_date_time: str = None,
     sample_data_file_name: str = "completed_[vaccine_type]_immunization_event",
 ) -> dict:
     """
     Creates a FHIR Immunization Resource dictionary, which includes an id, using the sample data for the given
     vaccine type as a base, and updates the id, nhs_number and occurrence_date_time as required.
-    The unique_identifier is also updated to ensure uniqueness.
+    The unique_identifier is also updated to ensure uniqueness...
     """
     # Load the data
     sample_data_file_name = sample_data_file_name.replace("[vaccine_type]", vaccine_type.lower())
     imms = deepcopy(load_example(f"Immunization/{sample_data_file_name}.json"))
 
-    # Amend data fields as appropriate
-    imms["identifier"][0]["value"] = str(uuid.uuid4())
+    # Apply identifier directly
+    imms["identifier"][0]["value"] = imms_identifier_value or str(uuid.uuid4())
 
     if nhs_number is not None:
         imms["contained"][1]["identifier"][0]["value"] = nhs_number
@@ -48,15 +49,14 @@ def generate_imms_resource(
 
 def generate_filtered_imms_resource(
     crud_operation_to_filter_for: Literal["READ", "SEARCH", ""] = "",
-    filter_for_s_flag: bool = False,
-    imms_identifier_value: str = None,
     nhs_number=valid_nhs_number1,
+    imms_identifier_value: str = None,
     vaccine_type=VaccineTypes.covid_19,
     occurrence_date_time: str = None,
 ) -> dict:
     """
     Creates a filtered FHIR Immunization Resource dictionary, which includes an id, using the sample filtered data for
-    the given vaccine type, crud operation (if specified) and s_flag (if required) as a base, and updates the id,
+    the given vaccine type, crud operation (if specified) as a base, and updates the id,
     nhs_number and occurrence_date_time as required.
 
     NOTE: The filtered sample data files use the corresponding unfiltered sample data files as a base, and this
@@ -66,16 +66,13 @@ def generate_filtered_imms_resource(
     The new file name must be consistent with the existing sample data file names.
     """
     # Load the data
-    s_flag_string = "_and_s_flag" if filter_for_s_flag else ""
     file_name = (
         f"Immunization/completed_{vaccine_type.lower()}_immunization_event"
-        + f"_filtered_for_{crud_operation_to_filter_for.lower()}{s_flag_string}"
+        + f"_filtered_for_{crud_operation_to_filter_for.lower()}"
     )
     imms = deepcopy(load_example(f"{file_name}.json"))
-
-    # Amend values as required
-    if imms_identifier_value:
-        imms["identifier"][0]["value"] = imms_identifier_value
+    # Apply identifier directly
+    imms["identifier"][0]["value"] = imms_identifier_value or str(uuid.uuid4())
 
     # Note that NHS number is found in a different place on a search return
     if crud_operation_to_filter_for == "SEARCH":

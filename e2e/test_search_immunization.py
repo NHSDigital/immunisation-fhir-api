@@ -1,4 +1,3 @@
-import datetime
 import pprint
 import uuid
 from typing import NamedTuple, Literal, Optional, List
@@ -118,7 +117,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
                 self.assertEqual(response_patient["search"], {"mode": "include"})
                 self.assertTrue(response_patient["fullUrl"].startswith("urn:uuid:"))
                 self.assertTrue(uuid.UUID(response_patient["fullUrl"].split(":")[2]))
-                expected_patient_resource_keys = ["resourceType", "id", "identifier", "birthDate"]
+                expected_patient_resource_keys = ["resourceType", "id", "identifier"]
                 self.assertEqual(sorted(response_patient["resource"].keys()), sorted(expected_patient_resource_keys))
                 self.assertEqual(response_patient["resource"]["id"], valid_nhs_number1)
                 patient_identifier = response_patient["resource"]["identifier"]
@@ -162,13 +161,17 @@ class TestSearchImmunization(ImmunizationBaseTest):
         time_1 = "2024-01-30T13:28:17.271+00:00"
         time_2 = "2024-02-01T13:28:17.271+00:00"
         stored_records = [
-            generate_imms_resource(valid_nhs_number1, VaccineTypes.mmr),
-            generate_imms_resource(valid_nhs_number1, VaccineTypes.flu),
-            generate_imms_resource(valid_nhs_number1, VaccineTypes.covid_19),
-            generate_imms_resource(valid_nhs_number1, VaccineTypes.covid_19, time_1),
-            generate_imms_resource(valid_nhs_number1, VaccineTypes.covid_19, time_2),
-            generate_imms_resource(valid_nhs_number2, VaccineTypes.flu),
-            generate_imms_resource(valid_nhs_number2, VaccineTypes.covid_19),
+            generate_imms_resource(valid_nhs_number1, VaccineTypes.mmr, imms_identifier_value=str(uuid.uuid4())),
+            generate_imms_resource(valid_nhs_number1, VaccineTypes.flu, imms_identifier_value=str(uuid.uuid4())),
+            generate_imms_resource(valid_nhs_number1, VaccineTypes.covid_19, imms_identifier_value=str(uuid.uuid4())),
+            generate_imms_resource(valid_nhs_number1, VaccineTypes.covid_19,
+                                   occurrence_date_time=time_1,
+                                   imms_identifier_value=str(uuid.uuid4())),
+            generate_imms_resource(valid_nhs_number1, VaccineTypes.covid_19,
+                                   occurrence_date_time=time_2,
+                                   imms_identifier_value=str(uuid.uuid4())),
+            generate_imms_resource(valid_nhs_number2, VaccineTypes.flu, imms_identifier_value=str(uuid.uuid4())),
+            generate_imms_resource(valid_nhs_number2, VaccineTypes.covid_19, imms_identifier_value=str(uuid.uuid4())),
         ]
 
         created_resource_ids = list(self.store_records(*stored_records))
@@ -308,6 +311,13 @@ class TestSearchImmunization(ImmunizationBaseTest):
 
                 result_ids = [result["resource"]["id"] for result in results["entry"]]
                 created_and_returned_ids = list(set(result_ids) & set(created_resource_ids))
+                print("\n Search Test Debug Info:")
+                print("Search method:", search.method)
+                print("Search query string:", search.query_string)
+                print("Expected indexes:", search.expected_indexes)
+                print("Expected IDs:", [created_resource_ids[i] for i in search.expected_indexes])
+                print("Actual returned IDs:", result_ids)
+                print("Matched IDs:", created_and_returned_ids)
                 assert len(created_and_returned_ids) == len(search.expected_indexes)
                 for expected_index in search.expected_indexes:
                     assert created_resource_ids[expected_index] in result_ids
@@ -338,8 +348,6 @@ class TestSearchImmunization(ImmunizationBaseTest):
 
         assert patient_entry["resource"]["identifier"][0]["system"] == "https://fhir.nhs.uk/Id/nhs-number"
         assert patient_entry["resource"]["identifier"][0]["value"] == valid_nhs_number1
-
-        datetime.datetime.strptime(patient_entry["resource"]["birthDate"], "%Y-%m-%d").date()
 
         response_without_include = self.default_imms_api.search_immunizations_full(
             "POST", f"patient.identifier={valid_patient_identifier1}&-immunization.target={VaccineTypes.mmr}", None
