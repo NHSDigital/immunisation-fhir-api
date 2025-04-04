@@ -122,7 +122,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
                 self.assertEqual(response_patient["resource"]["id"], valid_nhs_number1)
                 patient_identifier = response_patient["resource"]["identifier"]
                 # NOTE: If PDS response ever changes to send more than one identifier then the below will break
-                self.assertEqual(len(patient_identifier), 1)
+                self.assertEqual(len(patient_identifier), 1, "PDS did not return 1 identifier")
                 self.assertEqual(sorted(patient_identifier[0].keys()), sorted(["system", "value"]))
                 self.assertEqual(patient_identifier[0]["system"], "https://fhir.nhs.uk/Id/nhs-number")
                 self.assertEqual(patient_identifier[0]["value"], valid_nhs_number1)
@@ -184,9 +184,17 @@ class TestSearchImmunization(ImmunizationBaseTest):
             body: Optional[str]
             should_be_success: bool
             expected_indexes: List[int]
+            expected_status_code: int = 200
 
         searches = [
-            SearchTestParams("GET", "", None, False, []),
+            SearchTestParams(
+                "GET",
+                "",
+                None,
+                False,
+                [],
+                400
+            ),
             # No results.
             SearchTestParams(
                 "GET",
@@ -194,6 +202,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
                 None,
                 True,
                 [],
+                200
             ),
             # Basic success.
             SearchTestParams(
@@ -202,6 +211,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
                 None,
                 True,
                 [0],
+                200
             ),
             # "Or" params.
             SearchTestParams(
@@ -211,6 +221,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
                 None,
                 True,
                 [0, 1],
+                200
             ),
             # GET does not support body.
             SearchTestParams(
@@ -219,6 +230,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
                 f"patient.identifier={valid_patient_identifier1}",
                 True,
                 [0],
+                200
             ),
             SearchTestParams(
                 "POST",
@@ -226,6 +238,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
                 f"patient.identifier={valid_patient_identifier1}&-immunization.target={VaccineTypes.mmr}",
                 True,
                 [0],
+                200
             ),
             # Duplicated NHS number not allowed, spread across query and content.
             SearchTestParams(
@@ -234,6 +247,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
                 f"patient.identifier={valid_patient_identifier1}",
                 False,
                 [],
+                400
             ),
             SearchTestParams(
                 "GET",
@@ -243,6 +257,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
                 None,
                 False,
                 [],
+                400
             ),
             # "And" params not supported.
             SearchTestParams(
@@ -252,6 +267,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
                 None,
                 False,
                 [],
+                400
             ),
             # Date
             SearchTestParams(
@@ -260,6 +276,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
                 None,
                 True,
                 [2, 3, 4],
+                200
             ),
             SearchTestParams(
                 "GET",
@@ -268,6 +285,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
                 None,
                 True,
                 [3, 4],
+                200
             ),
             SearchTestParams(
                 "GET",
@@ -276,6 +294,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
                 None,
                 True,
                 [2, 3],
+                200
             ),
             SearchTestParams(
                 "GET",
@@ -284,6 +303,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
                 None,
                 True,
                 [3],
+                200
             ),
             # "from" after "to" is an error.
             SearchTestParams(
@@ -293,12 +313,15 @@ class TestSearchImmunization(ImmunizationBaseTest):
                 None,
                 False,
                 [0],
+                400
             ),
         ]
 
         for search in searches:
             pprint.pprint(search)
-            response = self.default_imms_api.search_immunizations_full(search.method, search.query_string, search.body)
+            response = self.default_imms_api.search_immunizations_full(search.method, search.query_string,
+                                                                       body=search.body,
+                                                                       expected_status_code=search.expected_status_code)
 
             # Then
             assert response.ok == search.should_be_success, response.text
@@ -333,7 +356,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
             "POST",
             f"patient.identifier={valid_patient_identifier1}&-immunization.target={VaccineTypes.mmr}"
             + "&_include=Immunization:patient",
-            None,
+            body=None,
         )
 
         assert response.ok
@@ -350,7 +373,9 @@ class TestSearchImmunization(ImmunizationBaseTest):
         assert patient_entry["resource"]["identifier"][0]["value"] == valid_nhs_number1
 
         response_without_include = self.default_imms_api.search_immunizations_full(
-            "POST", f"patient.identifier={valid_patient_identifier1}&-immunization.target={VaccineTypes.mmr}", None
+            "POST",
+            f"patient.identifier={valid_patient_identifier1}&-immunization.target={VaccineTypes.mmr}",
+            body=None
         )
 
         assert response_without_include.ok
@@ -383,7 +408,8 @@ class TestSearchImmunization(ImmunizationBaseTest):
         self.store_records(imms)
 
         # When
-        response = self.default_imms_api.search_immunizations("TBC", f"{VaccineTypes.mmr}")
+        response = self.default_imms_api.search_immunizations("TBC", f"{VaccineTypes.mmr}",
+                                                              expected_status_code=400)
 
         # Then
         self.assert_operation_outcome(response, 400)
