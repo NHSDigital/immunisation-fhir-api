@@ -1,8 +1,11 @@
+import unittest
 from utils.base_test import ImmunizationBaseTest
 from utils.immunisation_api import parse_location
 from utils.resource import generate_imms_resource
+from utils.constants import env_internal_dev
 
 
+@unittest.skipIf(env_internal_dev, "TestDeleteImmunization for internal-dev environment")
 class TestDeleteImmunization(ImmunizationBaseTest):
 
     def test_delete_imms(self):

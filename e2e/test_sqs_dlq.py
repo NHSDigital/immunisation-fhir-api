@@ -4,10 +4,13 @@ import boto3
 import os
 from utils.delete_sqs_messages import read_and_delete_messages
 from utils.get_sqs_url import get_queue_url
+from utils.constants import env_internal_dev
 from botocore.exceptions import ClientError  # Handle potential errors
 
 
+@unittest.skipIf(env_internal_dev, "TestSQS for internal-dev environment")
 class TestSQS(unittest.TestCase):
+
     def setUp(self):
         # Get SQS queue url
         self.queue_name = os.environ["AWS_SQS_QUEUE_NAME"]

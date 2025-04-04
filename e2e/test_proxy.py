@@ -2,13 +2,15 @@ import os
 import subprocess
 import unittest
 import uuid
-
 import requests
 
 from lib.env import get_service_base_path, get_status_endpoint_api_key
+from utils.constants import env_internal_dev
 
 
+@unittest.skipIf(env_internal_dev, "TestProxyHealthcheck for internal-dev environment")
 class TestProxyHealthcheck(unittest.TestCase):
+
     proxy_url: str
     status_api_key: str
 
@@ -31,6 +33,7 @@ class TestProxyHealthcheck(unittest.TestCase):
                          f"service is not healthy: status: {body['status']}")
 
 
+@unittest.skipIf(env_internal_dev, "TestMtls for internal-dev environment")
 class TestMtls(unittest.TestCase):
     """Our backend is secured using mTLS. This test makes sure you can't hit the backend directly"""
 
@@ -68,9 +71,11 @@ class TestMtls(unittest.TestCase):
             raise RuntimeError(f"Failed to run command\n{e}")
 
 
+@unittest.skipIf(env_internal_dev, "TestProxyAuthorization for internal-dev environment")
 class TestProxyAuthorization(unittest.TestCase):
     """Our apigee proxy has its own authorization.
     This class test different authorization access levels/roles authentication types that are supported"""
+
     proxy_url: str
 
     @classmethod

@@ -4,7 +4,12 @@ from datetime import datetime, timezone
 from clients import logger
 
 env_value = os.environ.get("ENV", "internal-dev")
-logger.info(f"Environment : {env_value}")
+environment_value = os.environ.get("ENVIRONMENT", "")
+logger.info("Environment : %s", env_value)
+logger.info("Build Env   : %s", environment_value)
+
+env_internal_dev = environment_value == "internal-dev"
+
 SOURCE_BUCKET = f"immunisation-batch-{env_value}-data-sources"
 INPUT_PREFIX = ""
 ACK_BUCKET = (
