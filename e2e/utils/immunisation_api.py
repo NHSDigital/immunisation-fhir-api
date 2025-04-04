@@ -2,10 +2,9 @@ import re
 import uuid
 import time
 import random
+import requests
 from typing import Optional, Literal
 from datetime import datetime
-
-import requests
 
 from lib.authentication import BaseAuthentication
 from .constants import patient_identifier_system
@@ -52,30 +51,22 @@ class ImmunisationApi:
         self,
         http_method: str,
         url: str,
-        is_search: bool = False,
-        expecting_entries: bool = False,
+        expected_status_code: int,
         **kwargs
     ):
         for attempt in range(self.MAX_RETRIES):
             try:
                 response = requests.request(http_method, url, **kwargs)
-                time.sleep(self.STANDARD_REQUEST_DELAY_SECONDS)
 
-                # Handle empty search result. Might occur due to pagination issue.
-                if (
-                    is_search and
-                    expecting_entries and
-                    response.status_code == 200 and
-                    not response.json().get("entry")
-                ):
-                    raise Exception("Search request returned 200 but with 0 entries."
-                                    "Check if response from db is paginated.")
+                if response.status_code != expected_status_code:
+                    if response.status_code >= 500:
+                        raise RuntimeError(f"Server error: {response.status_code} during "
+                                           f"in {http_method} {url}")
+                    else:
+                        raise ValueError(f"Expected {expected_status_code} but got "
+                                         f"{response.status_code} in {http_method} {url}")
 
-                # Return successful or client-side responses
-                if response.status_code < 500:
-                    return response
-
-                raise Exception(f"Server error: {response.status_code}")
+                return response
 
             except Exception as e:
                 if attempt == self.MAX_RETRIES:
@@ -86,48 +77,51 @@ class ImmunisationApi:
 
                 print(
                     f"[{datetime.now():%Y-%m-%d %H:%M:%S}] "
-                    f"[Retry {attempt + 1}] {http_method} {url} — {e} — retrying in {total_wait_time:.2f}s"
+                    f"[Retry {attempt + 1}] {http_method.upper()} {url} — {e} — retrying in {total_wait_time:.2f}s"
                 )
 
-                time.sleep(wait)
+                time.sleep(total_wait_time)
 
-    def get_immunization_by_id(self, event_id):
+    def get_immunization_by_id(self, event_id, expected_status_code: int = 200):
         return self._make_request_with_backoff(
             "GET",
             f"{self.url}/Immunization/{event_id}",
+            expected_status_code,
             headers=self._update_headers()
         )
 
-    def create_immunization(self, imms):
+    def create_immunization(self, imms, expected_status_code: int = 201):
         return self._make_request_with_backoff(
             "POST",
             f"{self.url}/Immunization",
+            expected_status_code,
             headers=self._update_headers(),
             json=imms
         )
 
-    def update_immunization(self, imms_id, imms):
+    def update_immunization(self, imms_id, imms, expected_status_code: int = 200):
         return self._make_request_with_backoff(
             "PUT",
             f"{self.url}/Immunization/{imms_id}",
+            expected_status_code,
             headers=self._update_headers(),
             json=imms
         )
 
-    def delete_immunization(self, imms_id):
+    def delete_immunization(self, imms_id, expected_status_code: int = 204):
         return self._make_request_with_backoff(
             "DELETE",
             f"{self.url}/Immunization/{imms_id}",
+            expected_status_code,
             headers=self._update_headers()
         )
 
-    def search_immunizations(self, patient_identifier: str, immunization_target: str, expecting_entries: bool = True):
+    def search_immunizations(self, patient_identifier: str, immunization_target: str, expected_status_code: int = 200):
         return self._make_request_with_backoff(
             "GET",
             f"{self.url}/Immunization?patient.identifier={patient_identifier_system}|{patient_identifier}"
             f"&-immunization.target={immunization_target}",
-            is_search=True,
-            expecting_entries=expecting_entries,
+            expected_status_code,
             headers=self._update_headers()
         )
 
@@ -135,8 +129,8 @@ class ImmunisationApi:
             self,
             http_method: Literal["POST", "GET"],
             query_string: Optional[str],
-            expecting_entries: Optional[bool],
-            body: Optional[str]):
+            body: Optional[str],
+            expected_status_code: int = 200):
 
         if http_method == "POST":
             url = f"{self.url}/Immunization/_search?{query_string}"
@@ -146,8 +140,7 @@ class ImmunisationApi:
         return self._make_request_with_backoff(
             http_method,
             url,
-            is_search=True,
-            expecting_entries=expecting_entries,
+            expected_status_code,
             headers=self._update_headers({"Content-Type": "application/x-www-form-urlencoded"}),
             data=body
         )

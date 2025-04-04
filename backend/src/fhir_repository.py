@@ -417,7 +417,7 @@ class ImmunizationRepository:
 
         all_items = []
         last_evaluated_key = None
-        MAX_ITEM_ESTIMATE = 2100  # assuming ~2.8KB per item, 6MB is upper limit
+        MAX_ITEM_ESTIMATE = 2100  # TBC - Assuming 2.8KB per item, 6MB is upper limit
 
         while len(all_items) <= MAX_ITEM_ESTIMATE:
             query_params = {
@@ -444,7 +444,7 @@ class ImmunizationRepository:
                     response=response
                 )
 
-            last_evaluated_key = response.get("LastEvaluatedKey")
+            last_evaluated_key = response.get("LastEvaluatedKey") # Paginating table query results
             if not last_evaluated_key:
                 break
 
