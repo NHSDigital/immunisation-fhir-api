@@ -24,29 +24,29 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "backup_reports" {
 
 resource "aws_s3_bucket_policy" "backup_reports_bucket_policy" {
   bucket = aws_s3_bucket.backup_reports.id
-
   policy = jsonencode({
-    Version = "2012-10-17"
-    Id      = "backup_reports_bucket_policy"
+    Version = "2012-10-17",
     Statement = [
       {
-        Sid       = "HTTPSOnly"
-        Effect    = "Deny"
-        Principal = "*"
-        Action    = "s3:*"
+        Effect = "Allow",
+        Principal = {
+          AWS = "arn:aws:iam::${var.source_account_id}:role/aws-service-role/reports.backup.amazonaws.com/AWSServiceRoleForBackupReports"
+        },
+        Action = "s3:PutObject",
         Resource = [
-          aws_s3_bucket.backup_reports.arn,
-          "${aws_s3_bucket.backup_reports.arn}/*",
+          "${aws_s3_bucket.backup_reports.arn}",
+          "${aws_s3_bucket.backup_reports.arn}/*"
         ]
         Condition = {
-          Bool = {
-            "aws:SecureTransport" = "false"
+          StringEquals = {
+            "s3:x-amz-acl" = "bucket-owner-full-control"
           }
         }
-      },
+      }
     ]
   })
 }
+
 
 
 resource "aws_s3_bucket_ownership_controls" "backup_reports" {

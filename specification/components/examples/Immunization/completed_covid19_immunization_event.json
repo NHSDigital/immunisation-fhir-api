@@ -52,7 +52,7 @@
   "identifier": [
     {
       "system": "https://supplierABC/identifiers/vacc",
-      "value": "ACME-vacc123456"
+      "value": "ACME-vacc123456789"
     }
   ],
   "status": "completed",

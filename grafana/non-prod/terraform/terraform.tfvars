@@ -1,0 +1,13 @@
+project_name = "immunisations"
+project_short_name = "imms"
+service = "grafana"
+aws_region = "eu-west-2"
+az_count = 2
+app_port = 3000
+app_count = 1
+health_check_path = "/api/health"
+fargate_cpu = 1024
+fargate_memory = 2048
+cidr_block = "10.0.0.0/16"
+app_version = "11.0.0-22.04_stable"
+use_natgw = true

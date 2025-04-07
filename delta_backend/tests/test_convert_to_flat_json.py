@@ -31,7 +31,7 @@ with patch.dict("os.environ", MOCK_ENV_VARS):
 @mock_dynamodb
 @mock_sqs
 class TestConvertToFlatJson(unittest.TestCase):
-
+    maxDiff = None
     def setUp(self):
         """Set up mock DynamoDB table."""
         self.dynamodb_resource = boto3_resource("dynamodb", "eu-west-2")
@@ -89,11 +89,11 @@ class TestConvertToFlatJson(unittest.TestCase):
         self.assertGreater(len(filtered_items), 0, f"No matching item found for {operation_flag}")
 
         imms_data = filtered_items[0]["Imms"]
-        self.assertIsInstance(imms_data, list)
+        self.assertIsInstance(imms_data, str)
         self.assertGreater(len(imms_data), 0)
 
         # Check Imms JSON structure matches exactly
-        self.assertEqual(imms_data, expected_imms, "Imms data does not match expected JSON structure")
+        self.assertEqual(imms_data, str(expected_imms), "Imms data does not match expected JSON structure")
 
         for key, expected_value in expected_values.items():
             self.assertIn(key, filtered_items[0], f"{key} is missing")
@@ -327,16 +327,38 @@ class TestConvertToFlatJson(unittest.TestCase):
         checker = ConversionChecker(dataParser, summarise=False, report_unexpected_exception=True)
 
         valid_date = "2022-01-01"
-        result = checker._convertToDate("%Y-%m-%d", "fieldName", valid_date, False, True)
-        self.assertEqual(result, "2022-01-01")
-
+        result = checker._convertToDate("%Y%m%d", "fieldName", valid_date, False, True)
+        self.assertEqual(result, "20220101")
+        
         invalid_date = "invalid_date"
-        result = checker._convertToDate("%Y-%m-%d", "fieldName", invalid_date, False, True)
-        self.assertTrue("Unexpected exception" in result)
+        result = checker._convertToDate("format:%Y%m%d", "fieldName", invalid_date, False, True)
+        self.assertEqual(result, "Unexpected format: invalid_date")
 
         # Test for error case with exception
-        result = checker._convertToDate("%Y-%m-%d", "fieldName", None, False, True)
-        self.assertTrue("Unexpected exception" in result)
+        result = checker._convertToDate("%Y%m%d", "fieldName", None, False, True)
+        self.assertEqual(result, "")
+  
+    @patch("ConversionChecker.LookUpData")
+    def test_convert_to_date_time(self, MockLookUpData):
+        dataParser = Mock()
+
+        checker = ConversionChecker(dataParser, summarise=False, report_unexpected_exception=True)
+
+        valid_date_time = "2022-01-01T12:00:00+00:00"
+        result = checker._convertToDateTime("%Y%m%dT%H%M%S", "fieldName", valid_date_time, False, True)
+        self.assertEqual(result, "20220101T120000")
+
+        valid_csv_utc = "2022-01-01T13:28:17+00:00"
+        result = checker._convertToDateTime("format:csv-utc", "fieldName", valid_csv_utc, False, True)
+        self.assertEqual(result, "20220101T13281700")
+
+        invalid_date_time = "invalid_date_time"
+        result = checker._convertToDateTime("format:%Y%m%dT%H%M%S", "fieldName", invalid_date_time, False, True)
+        self.assertEqual(result, "Unexpected format: invalid_date_time")
+        
+        # Empty input returns blank
+        result = checker._convertToDateTime("format:%Y%m%dT%H%M%S", "fieldName", "", False, True)
+        self.assertEqual(result, "")
 
     def clear_table(self):
         scan = self.table.scan()

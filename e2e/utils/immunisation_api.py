@@ -1,5 +1,7 @@
 import re
 import uuid
+import time
+import random
 from typing import Optional, Literal
 
 import requests
@@ -37,33 +39,79 @@ class ImmunisationApi:
     def __str__(self):
         return f"ImmunizationApi: AuthType: {self.auth}"
 
+    # We implemented this function as a wrapper around the calls to APIGEE
+    # in order to prevent build pipelines from failing due to timeouts.
+    # The e2e tests put pressure on both test environments from APIGEE and PDS
+    # so the chances of having rate limiting errors are high especially during
+    # the busy times of the day.
+    def _make_request_with_backoff(self, http_method: str, url: str, **kwargs):
+        max_retries = 5
+        standard_delay_time = 1
+        for attempt in range(max_retries):
+            try:
+                response = requests.request(http_method, url, **kwargs)
+                time.sleep(standard_delay_time)
+                if response.status_code < 500:
+                    return response
+                raise Exception(f"Server error: {response.status_code}")
+            except Exception as e:
+                if attempt == max_retries - 1:
+                    raise
+                wait = (2 ** attempt) + random.uniform(0, 0.5)
+                total_wait_time = standard_delay_time + wait
+                print(f"[Retry {attempt + 1}] {e} — retrying in {total_wait_time:.2f}s")
+                time.sleep(wait)
+
     def get_immunization_by_id(self, event_id):
-        return requests.get(f"{self.url}/Immunization/{event_id}", headers=self._update_headers())
+        return self._make_request_with_backoff(
+            "GET",
+            f"{self.url}/Immunization/{event_id}",
+            headers=self._update_headers()
+        )
 
     def create_immunization(self, imms):
-        return requests.post(f"{self.url}/Immunization", headers=self._update_headers(), json=imms)
+        return self._make_request_with_backoff(
+            "POST",
+            f"{self.url}/Immunization",
+            headers=self._update_headers(),
+            json=imms
+        )
 
     def update_immunization(self, imms_id, imms):
-        return requests.put(f"{self.url}/Immunization/{imms_id}", headers=self._update_headers(), json=imms)
+        return self._make_request_with_backoff(
+            "PUT",
+            f"{self.url}/Immunization/{imms_id}",
+            headers=self._update_headers(),
+            json=imms
+        )
 
     def delete_immunization(self, imms_id):
-        return requests.delete(f"{self.url}/Immunization/{imms_id}", headers=self._update_headers())
+        return self._make_request_with_backoff(
+            "DELETE",
+            f"{self.url}/Immunization/{imms_id}",
+            headers=self._update_headers()
+        )
 
     def search_immunizations(self, patient_identifier: str, immunization_target: str):
-        return requests.get(
+        return self._make_request_with_backoff(
+            "GET",
             f"{self.url}/Immunization?patient.identifier={patient_identifier_system}|{patient_identifier}"
             f"&-immunization.target={immunization_target}",
-            headers=self._update_headers())
+            headers=self._update_headers()
+        )
 
-    def search_immunizations_full(self,
-                                  http_method: Literal["POST", "GET"],
-                                  query_string: Optional[str],
-                                  body: Optional[str]):
+    def search_immunizations_full(
+            self,
+            http_method: Literal["POST", "GET"],
+            query_string: Optional[str],
+            body: Optional[str]):
+
         if http_method == "POST":
             url = f"{self.url}/Immunization/_search?{query_string}"
         else:
             url = f"{self.url}/Immunization?{query_string}"
-        return requests.request(
+
+        return self._make_request_with_backoff(
             http_method,
             url,
             headers=self._update_headers({"Content-Type": "application/x-www-form-urlencoded"}),
