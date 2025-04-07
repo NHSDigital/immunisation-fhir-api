@@ -37,18 +37,26 @@ def get_vaccine_type(patientsk) -> str:
 
 
 def handler(event, context):
-    logger.info("Starting Delta Handler")
+    logger.info("Starting Delta Handler - SW debugs")
     log_data = dict()
     firehose_log = dict()
     operation_outcome = dict()
     log_data["function_name"] = "delta_sync"
     intrusion_check = True
     try:
+        logger.info("Starting Delta Handler")
         dynamodb = boto3.resource("dynamodb", region_name="eu-west-2")
         delta_table = dynamodb.Table(delta_table_name)
 
         # Converting ApproximateCreationDateTime directly to string will give Unix timestamp
         # I am converting it to isofformat for filtering purpose. This can be changed accordingly
+
+        # log out the event json structure but limit to 80 characters per text field
+
+        contents = json.dumps(event, indent=2, default=lambda x: str(x)[:80])
+        logger.info("Dump of event")
+        logger.info("Event: %s",  contents)
+
 
         for record in event["Records"]:
             start = time.time()
