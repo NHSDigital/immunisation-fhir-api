@@ -1,0 +1,11 @@
+[Unit]
+Description=Update DSP Splunk Forwarder Conf
+
+[Service]
+Type=simple
+ExecStart=/bin/bash /usr/sbin/update-splunk-forwarder-conf -v
+Restart=on-failure
+RestartSec=10s
+
+[Install]
+WantedBy=multi-user.target
