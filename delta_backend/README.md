@@ -10,11 +10,11 @@ This project is designed to convert FHIR-compliant JSON data (e.g., Immunization
 |------------------------|---------------|
 | **`converter.py`**     | 🧠 The main brain — applies the schema, runs conversions, handles errors. |
 | **`FHIRParser.py`**    | 🪜 Knows how to dig into nested FHIR structures and pull out values like dates, IDs, and patient names. |
-| **`SchemaParser.py`**  | 📐 Reads your schema layout and tells the converter which FHIR fields to extract and how to rename/format them. |
-| **`ConversionLayout.py`** | ✍️ A plain Python list that defines which fields you want, and how they should be formatted (e.g. date format, renaming rules). |
+| **`SchemaParser.py`**  | Reads your schema layout and tells the converter which FHIR fields to extract and how to rename/format them. |
+| **`ConversionLayout.py`** | A plain Python list that defines which fields you want, and how they should be formatted (e.g. date format, renaming rules). |
 | **`ConversionChecker.py`** | 🔧 Handles transformation logic — e.g. turning a FHIR datetime into `YYYY-MM-DD`, applying lookups, gender codes, defaults, etc. |
-| **`Extractor.py`**     | 🎣 Specialized logic to pull practitioner names, site codes, addresses, and apply time-aware rules. |
-| **`ExceptionMessages.py`** | 🚨 Holds reusable error messages and codes for clean debugging and validation feedback. |
+| **`Extractor.py`**     | Specialized logic to pull practitioner names, site codes, addresses, and apply time-aware rules. |
+| **`ExceptionMessages.py`** | Holds reusable error messages and codes for clean debugging and validation feedback. |
 
 ---
 
@@ -28,7 +28,7 @@ This project is designed to convert FHIR-compliant JSON data (e.g., Immunization
 
 ---
 
-## 📦 Example Use Case
+## Example Use Case
 
 - Input: FHIR `Immunization` resource (with nested fields)
 - Output: Flat JSON object with 34 standardized key-value pairs
@@ -51,19 +51,19 @@ This script loads sample FHIR data, runs it through the converter, and automatic
 python check_conversion.py
 ```
 
-### 📁 Output Location
+### Output Location
 When the script runs, it will automatically:
 - Save a **flat JSON file** as `output.json`
 - Save a **CSV file** as `output.csv`
 
-These will be located one level up from the `src/` folder:
+These will be located one level up from the `tests/` folder:
 
 ```
 /mnt/c/Users/USER/desktop/shn/immunisation-fhir-api/delta_backend/output.json
 /mnt/c/Users/USER/desktop/shn/immunisation-fhir-api/delta_backend/output.csv
 ```
 
-### 👀 Visualization
+### Visualization
 You can now:
 - Open `output.csv` in Excel or Google Sheets to view cleanly structured records
 - Inspect `output.json` to validate the flat key-value output programmatically

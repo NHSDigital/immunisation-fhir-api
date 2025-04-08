@@ -148,7 +148,7 @@ class ConversionChecker:
 
         return dt_utc.strftime(format_str)
 
-    # Not Empty Validate
+    # Not Empty Validate - Returns exactly what is in the extracted fields no parsing or logic needed
     def _convertToNotEmpty(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
         try:
             if len(str(fieldValue)) > 0:
@@ -186,7 +186,7 @@ class ConversionChecker:
                 message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
                 return message
 
-    # Change to Validate
+    # Code for converting Action Flag
     def _convertToChangeTo(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
         try:
             return expressionRule
