@@ -1,8 +1,12 @@
+import unittest
 from utils.base_test import ImmunizationBaseTest
 from utils.resource import generate_imms_resource, get_full_row_from_identifier
+from utils.constants import env_internal_dev
 
 
+@unittest.skipIf(env_internal_dev, "TestCreateImmunization for internal-dev environment")
 class TestCreateImmunization(ImmunizationBaseTest):
+
     def test_create_imms(self):
         """it should create a FHIR Immunization resource"""
         for imms_api in self.imms_apis:
