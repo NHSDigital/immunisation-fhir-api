@@ -27,6 +27,7 @@ class DynamoTable:
             'Resource': json.dumps(immunization),
             'PatientPK': self._make_patient_pk(patient_id),
             'PatientSK': patient_sk,
+            'Version': 1
         })
 
         if response["ResponseMetadata"]["HTTPStatusCode"] == 200:

@@ -15,6 +15,6 @@ seed: delete-table apply gen_data
 	python seed.py sample_data/$(shell ls -t sample_data | head -n1)
 
 localstack:
-	docker run --rm -it -p 4566:4566 -p 4510-4559:4510-4559 localstack/localstack:latest
+	docker run -d --rm -it -p 4566:4566 -p 4510-4559:4510-4559 localstack/localstack:latest
 
 .PHONY: test test-debug localstack apply init
