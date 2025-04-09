@@ -2,17 +2,6 @@
 
 See `README.specification.md` for details of the API specification's development.
 
-## Directories
-
-```
-backend     - The API code.
-terraform   - Infrastructure.
-tests       - Integration tests.
-devtools    - Helper project for development.
-```
-
-See any readmes in those directories for more details.
-
 ## Spelling
 
 Refer to the FHIR Immunization resource capitalised and with a "z" as FHIR is U.S. English.
@@ -21,58 +10,155 @@ All other uses are as British English i.e. "immunisation".
 
 See https://nhsd-confluence.digital.nhs.uk/display/APM/Glossary.
 
-## Setup for local dev
+## Directories
+**Note:** Each Lambda has its own `README.md` file for detailed documentation. For non-Lambda-specific folders, refer to `README.specification.md`.
 
-`backend` should have its own environment to keep it separate from the infrastructure and integration tests.
+### Lambdas
 
-### Tools
+| Folder              | Description |
+|---------------------|-------------|
+| `backend`           | **Imms API** – Handles CRUD operations for the Immunisation API. |
+| `delta_backend`     | **Imms Sync** – Lambda function that reacts to events in the Immunisation database. |
+| `ack_backend`       | **Imms Batch** – Generates the final Business Acknowledgment (BUSACK) file from processed messages and writes it to the designated S3 location. |
+| `filenameprocessor` | **Imms Batch** – Processes batch file names. |
+| `mesh_processor`    | **Imms Batch** – MESH-specific batch processing functionality. |
+| `recordprocessor`   | **Imms Batch** – Handles batch record processing. |
+---
 
-Install `direnv` and `pyenv`.
-https://direnv.net/docs/installation.html
-https://github.com/pyenv/pyenv?tab=readme-ov-file#installation
+### Pipelines
 
-These tools automate the Python version and environment creation and use, and selects them automatically when entering a
-directory.  
-`pyenv` separates Python versions and `direnv` handles the environment.
-`direnv` uses `pyenv` to select the version and creates an environment under `.direnv/`.
+| Folder  | Description |
+|---------|-------------|
+| `azure` | Pipeline definition and orchestration code. |
 
-At this point you'll get a warning when you enter this directory, telling you to run `direnv allow`. This is fine and
-the next step will resolve it.
+---
 
-### Install Python versions and environments
+### Infrastructure
 
-This will set up for both the root and `backend`.
+| Folder                | Description |
+|------------------------|-------------|
+| `infra`                | Base infrastructure components. |
+| `grafana`              | Terraform configuration for Grafana, built on top of core infra. |
+| `terraform`            | Core Terraform infrastructure code. This is ran in each PR and sets up lambdas associated with the PR.|
+| `terraform_sandbox`    | Sandbox environment for testing infrastructure changes. |
+| `terraform_aws_backup` | Streamlined backup processing with AWS. |
+| `mesh-infra`           | Infrastructure setup for Imms batch MESH integration. |
+| `proxies`              | Apigee API proxy definitions. |
+---
 
-Copy `.env.default` to `.env` or merge it with your existing file.
-Copy `.envrc.default` to `.envrc` or merge it with your existing file.
+### Tests
 
-These are kept separate so other tools can use `.env` if wanted.
+| Folder        | Description |
+|---------------|-------------|
+| `e2e`         | End-to-end tests executed during PR pipelines. |
+| `e2e_batch`   | E2E tests specifically for batch-related functionality, also run in the PR pipeline. |
+| `tests`   | Sample e2e test. |
+---
 
-Edit `.env` with your details.
+### Utilities
 
-```shell
-make setup-python-envs
-poetry install --no-root
+| Folder         | Description |
+|----------------|-------------|
+| `devtools`      | Helper tools and utilities for local development |
+| `scripts`       | Standalone or reusable scripts for development and automation |
+| `specification` | Specification files to document API and related definitions |
+| `sandbox` | Simple sandbox API |
+
+---
+
+## Background: Python Package Management and Virtual Environments
+- `pyenv` manages multiple Python versions at the system level, allowing you to install and switch between different Python versions for different projects.
+- `direnv` automates the loading of environment variables and can auto-activate virtual environments (.venv) when entering a project directory, making workflows smoother.
+- `.venv` (created via python -m venv or poetry) is Python’s built-in tool for isolating dependencies per project, ensuring that packages don’t interfere with global Python packages.
+- `Poetry` is an all-in-one dependency and virtual environment manager that automatically creates a virtual environment (.venv), manages package installations, and locks dependencies (poetry.lock) for reproducibility, making it superior to using pip manually and it is used in all the lambda projects. 
+
+## Project structure 
+To support a modular and maintainable architecture, each Lambda function in this project is structured as a self-contained folder with its own dependencies, configuration, and environment. 
+
+We use Poetry to manage dependencies and virtual environments, with the virtualenvs.in-project setting enabled to ensure each Lambda has an isolated `.venv` created within its folder. 
+
+Additionally, direnv is used alongside `.envrc` and `.env` files to automatically activate the appropriate virtual environment and load environment-specific variables when entering a folder. 
+
+Each Lambda folder includes its own `.env` file for Lambda-specific settings, while the project root contains a separate `.env` and `.venv` for managing shared tooling, scripts, or infrastructure-related configurations. This setup promotes clear separation of concerns, reproducibility across environments, and simplifies local development, testing, and packaging for deployment.
+
+## Environment setup
+These dependencies are required for running and debugging the Lambda functions and end-to-end (E2E) tests.
+
+### Install dependencies 
+Steps: 
+1. Install [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) if running on Windows and install [Docker](https://docs.docker.com/engine/install/).
+2. Install the following tools inside WSL. These will be used by the lambda and infrastructure code:
+- [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
+- [Terraform](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli)
+
+3. Open VS Code and click the bottom-left corner (blue section), then select **"Connect to WSL"** and choose your WSL distro (e.g., `Ubuntu-24.04`).
+Once connected, you should see the path as something similar to: `/mnt/d/Source/immunisation-fhir-api/backend`.
+4. Run the following commands to install dependencies
+
+```
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y make build-essential libssl-dev zlib1g-dev \
+    libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm \
+    libncurses5-dev libncursesw5-dev xz-utils tk-dev libffi-dev \
+    liblzma-dev git libgdbm-dev libgdbm-compat-dev
+pip install --upgrade pip
 ```
 
-### IDEs
+5. Configure pyenv.
+```
+pyenv install --list | grep "3.10"
+pyenv install 3.10.16 #current latest
+```
 
-The `backend` tests are in a separate module so in order for them to see each other we need to let the IDE know
-about the relationship.
+6. Install poetry 
+```
+pip install poetry
+```
 
-#### IntelliJ
+### Setting up a virtual environment with poetry
+The steps below must be performed in each Lambda function folder and e2e folder to ensure the environment is correctly configured.
 
-- Open the root repo directory in IntelliJ.
-- In Project Structure add an existing virtualenv SDK for `.direnv/python-x.x.x/bin/python`.
-- Set the project SDK and the default root module SDK to the one created above.
-    - Add `tests` as sources.
-    - Add `.direnv`, `terraform/.terraform`, and `terraform/build` as exclusions if they're not already.
-- Add another existing virtualenv SDK for `backend/.direnv/python-x.x.x/bin/python`.
-- Import a module pointed at the `backend` directory, set the SDK created above.
-    - Add the `src` and `tests` directories as sources.
-    - Add `.direnv` as an exclusion if it's not already.
+For detailed instructions on running individual Lambdas, refer to the README.md files located inside each respective Lambda folder.
 
-#### VS Code
+Steps: 
+1. Set the python version in the `./backend` folder
+```
+pyenv local 3.10.16 # Set version in backend (this creates a .python-version file)
+```
+
+2. Configure poetry
+```
+### Point poetry virtual enviornment to .venv
+poetry config virtualenvs.in-project true
+poetry env use $(pyenv which python)
+poetry env info
+```
+
+3. Create an .env file and add environment variables
+```
+AWS_PROFILE={your_profile}
+IMMUNIZATION_ENV=local
+```
+
+4. Configure `direnv` by creating a `.envrc` file in the backend folder. This points direnv to the `.venv` created by poetry and loads env variables specified in the `.env` file
+```
+export VIRTUAL_ENV=".venv"
+PATH_add "$VIRTUAL_ENV/bin"
+
+dotenv
+```
+
+5. Restart bash and run `direnv allow`. You should see something similar like: 
+```
+direnv: loading /mnt/d/Source/immunisation-fhir-api/.envrc
+direnv: export +AWS_PROFILE +IMMUNIZATION_ENV +VIRTUAL_ENV ~PATH
+```
+Test if environment variables have been loaded into shell: `echo $IMMUNIZATION_ENV`.
+
+## IDE setup 
+The current team uses VS Code mainly. So this setup is targeted towards VS code. If you use another IDE please add the documentation to set up workspaces here.
+
+### VS Code
 
 The project must be opened as a multi-root workspace for VS Code to know that `backend` has its own environment.
 
@@ -85,7 +171,24 @@ VS Code will automatically use the `backend` environment when you're editing a f
 Depending on your existing setup VS Code might automatically choose the wrong virtualenvs. Change it
 with `Python: Select Interpreter`.
 
-The root (immunisation-fhir-api) should be pointing at `.direnv/python-x.x.x/bin/python.`
+The root (`immunisation-fhir-api`) should point to `/mnt/d/Source/immunisation-fhir-api/.venv/bin/python`.
 
-`backend` should be pointing at `backend/.direnv/python-x.x.x/bin/python.`
+`backend` should be pointing at `/mnt/d/Source/immunisation-fhir-api/backend/.venv/bin/python`
 
+### IntelliJ
+
+- Open the root repo directory in IntelliJ.
+- In Project Structure add an existing virtualenv SDK for `.direnv/python-x.x.x/bin/python`.
+- Set the project SDK and the default root module SDK to the one created above.
+    - Add `tests` as sources.
+    - Add `.direnv`, `terraform/.terraform`, and `terraform/build` as exclusions if they're not already.
+- Add another existing virtualenv SDK for `backend/.direnv/python-x.x.x/bin/python`.
+- Import a module pointed at the `backend` directory, set the SDK created above.
+    - Add the `src` and `tests` directories as sources.
+    - Add `.direnv` as an exclusion if it's not already.
+
+
+## Verified commits
+Please note that this project requires that all commits are verified using a GPG key. 
+To set up a GPG key please follow the instructions specified here:
+https://docs.github.com/en/authentication/managing-commit-signature-verification
