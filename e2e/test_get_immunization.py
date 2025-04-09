@@ -1,15 +1,12 @@
 from decimal import Decimal
 import uuid
-import unittest
 
 from utils.base_test import ImmunizationBaseTest
 from utils.immunisation_api import parse_location
 from utils.resource import generate_imms_resource, generate_filtered_imms_resource
 from utils.mappings import EndpointOperationNames, VaccineTypes
-from utils.constants import env_internal_dev
 
 
-@unittest.skipIf(env_internal_dev, "TestGetImmunization for internal-dev environment")
 class TestGetImmunization(ImmunizationBaseTest):
 
     def test_get_imms(self):

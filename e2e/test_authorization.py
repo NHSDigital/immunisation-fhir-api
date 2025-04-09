@@ -1,5 +1,4 @@
 import uuid
-import unittest
 from typing import Set
 
 from lib.apigee import ApigeeApp
@@ -16,10 +15,8 @@ from utils.factories import make_app_restricted_app, make_cis2_app
 from utils.immunisation_api import ImmunisationApi
 from utils.resource import generate_imms_resource
 from utils.mappings import VaccineTypes
-from utils.constants import env_internal_dev
 
 
-@unittest.skipIf(env_internal_dev, "TestApplicationRestrictedAuthorization for internal-dev environment")
 class TestApplicationRestrictedAuthorization(ImmunizationBaseTest):
 
     my_app: ApigeeApp
@@ -173,7 +170,6 @@ class TestApplicationRestrictedAuthorization(ImmunizationBaseTest):
         self.assertEqual(response.status_code, 403, response.text)
 
 
-@unittest.skipIf(env_internal_dev, "TestCis2Authorization for internal-dev environment")
 class TestCis2Authorization(ImmunizationBaseTest):
     my_app: ApigeeApp
     my_imms_api: ImmunisationApi

@@ -2,17 +2,14 @@ from datetime import datetime
 from utils.base_test import ImmunizationBaseTest
 from utils.immunisation_api import parse_location
 from utils.resource import generate_imms_resource
-from utils.constants import env_internal_dev
 from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource
 import time
 import copy
 import boto3
 from botocore.config import Config
 import os
-import unittest
 
 
-@unittest.skipIf(env_internal_dev, "TestDeltaImmunization for internal-dev environment")
 class TestDeltaImmunization(ImmunizationBaseTest):
 
     CREATE_OPERATION = "CREATE"

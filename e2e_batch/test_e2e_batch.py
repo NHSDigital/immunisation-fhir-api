@@ -19,14 +19,11 @@ from constants import (
     POST_VALIDATION_ERROR,
     DUPLICATE,
     FILE_NAME_VAL_ERROR,
-    env_value,
-    env_internal_dev,
+    env_value
 )
 
 
-@unittest.skipIf(env_internal_dev, "TestE2EBatch for internal-dev environment")
 class TestE2EBatch(unittest.TestCase):
-
     if env_value != "ref":
 
         def test_create_success(self):
