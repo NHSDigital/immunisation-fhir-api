@@ -2,53 +2,51 @@
 This directory contains end-to-end tests. Except for certain files, the majority of the tests hit the proxy (apigee)
 and assert the response. 
 
-### Prerequisites
+## Setting up e2e tests to run locally
 
-This is a poetry project. Install dependencies using `poetry install`. The project uses Python 3.8 so make sure
-you are using the right version. Depending on what kind of tests you want to run you may need different external
-dependencies. Here is a full list:
+1. Follow the instructions in the root level README.md to setup the [dependencies](../README.md#environment-setup) and create a [virtual environment](../README.md#) for this folder (`e2e`).
 
-* Make
-* Terraform
-* AWS CLI v2
+2. Add the following values in the .env file and set the desired PR number. If there is already an .env file make sure that you only have the values specified below.
 
-To run all the tests you need to provide a `.env` file. The below table describes each variable:
+```
+APIGEE_USERNAME={your-apigee-email}
+APIGEE_ENVIRONMENT=internal-dev
+PROXY_NAME=immunisation-fhir-api-pr-100
+SERVICE_BASE_PATH=immunisation-fhir-api/FHIR/R4-pr-100
+```
+
+There are other environment variables that are used, but these are the minimum amount for running tests locally. Apart from the first three items from the table below, you can ignore the rest of them. This will cause a few test failures, but it's safe to
+ignore them (locally)
 
 | Name               | Example                                     | Description                                                                                   |
 |--------------------|---------------------------------------------|-----------------------------------------------------------------------------------------------|
-| APIGEE_USERNAME    | your-nhs-email@nhs.net                      | this value is needed inorder to authenticate with apigee                                      |
-| APIGEE_ENVIRONMENT | internal-dev                                | apigee environment                                                                            |
-| PROXY_NAME         | immunisation-fhir-api-pr-100                | this the proxy name that you want to target. You can find it in the apigee ui                 |
-| SERVICE_BASE_PATH  | immunisation-fhir-api/FHIR/R4-pr-100        | the base path for the proxy. This value can be found in overview section in the apigee ui     |
-| STATUS_API_KEY     | secret                                      | if you don't have this value then _status endpoint test will fail. You can ignore it          |
-| AWS_PROFILE        | apim-dev                                    | some operation may need to run aws cli. This value is used for aws authentication             |
-| AWS_DOMAIN_NAME    | https://pr-100.imms.dev.vds.platform.nhs.uk | this value points to our backend deployment. We use it to test mTLS. Ignore it in local tests |
+| `APIGEE_USERNAME`    | your-nhs-email@nhs.net                      | Your NHS email address, used to authenticate with Apigee.                                     |
+| `APIGEE_ENVIRONMENT` | internal-dev                                | The Apigee environment you are targeting (e.g., `internal-dev`, `prod`, etc.).                |
+| `PROXY_NAME`         | immunisation-fhir-api-pr-100                | The name of the Apigee proxy you want to target. You can find this in the Apigee UI.          |
+| `SERVICE_BASE_PATH`  | immunisation-fhir-api/FHIR/R4-pr-100        | The base path for the proxy. This can be found in the "Overview" section of the Apigee UI.    |
+| `STATUS_API_KEY`     | secret                                      | Used to test the `_status` endpoint. If not set, that specific test will fail (can be ignored locally). |
+| `AWS_PROFILE`        | apim-dev                                    | Some operations require the AWS CLI. This profile is used for AWS authentication.             |
+| `AWS_DOMAIN_NAME`    | https://pr-100.imms.dev.vds.platform.nhs.uk | The domain pointing to the backend deployment, used for testing mTLS. Can be ignored locally. |
 
-There are other environment variables that are used, but these are the minimum amount for running tests locally. Apart
-from the first three items, you can ignore the rest of them. This will cause a few test failures, but it's safe to
-ignore them
 
-### Run
+3. Prepare the `Makefile` if you want to skip terraform initialisation.
 
-There is a `Makefile` in this directory that runs different sets of tests. The most important one for local testing is
-`test-immunization`. They test each Immunization operation such as create, read, delete, etc. Here is how you can run
-all tests.
-
-Given your `.env` file:
-
-```shell
-export APIGEE_USERNAME=<your-apigee-email>
-export APIGEE_ENVIRONMENT=internal-dev
-export PROXY_NAME=immunisation-fhir-api-pr-100
-export SERVICE_BASE_PATH=immunisation-fhir-api/FHIR/R4-pr-100
-```
-
-You can run all tests using:
+Note: In the makefile there are some environment variables that are set when you run the command. The script will get information
+regarding the following: 
 
 ```
-source .env
-poetry run python -m unittest -v -c
+AWS_DOMAIN_NAME=https://$(shell make -C ../terraform -s output name=service_domain_name || true)
+DYNAMODB_TABLE_NAME=$(shell make -C ../terraform -s output name=dynamodb_table_name || true)
+IMMS_DELTA_TABLE_NAME=$(shell make -C ../terraform -s output name=imms_delta_table_name || true)
+AWS_SQS_QUEUE_NAME=$(shell make -C ../terraform -s output name=aws_sqs_queue_name || true)
+AWS_SNS_TOPIC_NAME=$(shell make -C ../terraform -s output name=aws_sns_topic_name || true)
 ```
+
+Locally you can modify the above configuration to point directly to the resource name rather than initialising terraform, just to simplify things.
+
+
+4. There is a `Makefile` in this directory that runs different sets of tests. The most important one for local testing is
+`test-immunization`. They test each Immunization operation such as create, read, delete, etc. You can run all tests using:
 
 ### Tests
 
