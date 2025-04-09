@@ -312,13 +312,21 @@ class TestConvertToFlatJson(unittest.TestCase):
         dataParser = Mock()
 
         checker = ConversionChecker(dataParser, summarise=False, report_unexpected_exception=True)
+        
+         # Test empty NHS number
+        empty_nhs_number = ""
+        result = checker._convertToNHSNumber(None, "fieldName", empty_nhs_number, False, True)
+        self.assertEqual(result, "", "Expected empty string for empty NHS number input")
 
+        # Test valid NHS number
         valid_nhs_number = "6000000000"
-        result = checker._convertToNHSNumber(None, "fieldName", valid_nhs_number, False, True)
-        self.assertTrue("NHS Number does not meet regex " in result)
+        result = checker._convertToNHSNumber("NHSNUMBER", "fieldName", valid_nhs_number, False, True)
+        self.assertEqual(result, "6000000000", "Valid NHS number should be returned as-is")
 
-        invalid_nhs_number = "1234567890"
-        result = checker._convertToNHSNumber(None, "fieldName", invalid_nhs_number, False, True)
+        # Test invalid NHS number
+        invalid_nhs_number = "1234567890243"
+        result = checker._convertToNHSNumber("NHSNUMBER","fieldName", invalid_nhs_number, False, True)
+        self.assertEqual(result, "", "Invalid NHS number should return empty string")
 
     @patch("ConversionChecker.LookUpData")
     def test_convert_to_date(self, MockLookUpData):
@@ -359,6 +367,25 @@ class TestConvertToFlatJson(unittest.TestCase):
         # Empty input returns blank
         result = checker._convertToDateTime("format:%Y%m%dT%H%M%S", "fieldName", "", False, True)
         self.assertEqual(result, "")
+
+    #check for dose sequence
+    @patch("ConversionChecker.LookUpData")
+    def test_convert_to_dose(self, MockLookUpData):
+        dataParser = Mock()
+
+        checker = ConversionChecker(dataParser, summarise=False, report_unexpected_exception=True)
+        # Valid dose
+        for dose in [1, 4, 9]:
+            with self.subTest(dose=dose):
+                result = checker._convertToDose("DOSESEQUENCE", "DOSE_AMOUNT", dose, False, True)
+                self.assertEqual(result, dose)
+        
+        # Invalid dose
+        invalid_doses = [10, 10.1, 100, 9.0001]
+        for dose in invalid_doses:
+            with self.subTest(dose=dose):
+                result = checker._convertToDose("DOSESEQUENCE", "DOSE_AMOUNT", dose, False, True)
+                self.assertEqual(result, "", f"Expected empty string for invalid dose {dose}")
 
     def clear_table(self):
         scan = self.table.scan()
