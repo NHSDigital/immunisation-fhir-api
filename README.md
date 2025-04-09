@@ -94,26 +94,25 @@ Steps:
 3. Open VS Code and click the bottom-left corner (blue section), then select **"Connect to WSL"** and choose your WSL distro (e.g., `Ubuntu-24.04`).
 Once connected, you should see the path as something similar to: `/mnt/d/Source/immunisation-fhir-api/backend`.
 4. Run the following commands to install dependencies
-
-```
-sudo apt update && sudo apt upgrade -y
-sudo apt install -y make build-essential libssl-dev zlib1g-dev \
-    libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm \
-    libncurses5-dev libncursesw5-dev xz-utils tk-dev libffi-dev \
-    liblzma-dev git libgdbm-dev libgdbm-compat-dev
-pip install --upgrade pip
-```
+    ```
+    sudo apt update && sudo apt upgrade -y
+    sudo apt install -y make build-essential libssl-dev zlib1g-dev \
+        libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm \
+        libncurses5-dev libncursesw5-dev xz-utils tk-dev libffi-dev \
+        liblzma-dev git libgdbm-dev libgdbm-compat-dev
+    pip install --upgrade pip
+    ```
 
 5. Configure pyenv.
-```
-pyenv install --list | grep "3.10"
-pyenv install 3.10.16 #current latest
-```
+    ```
+    pyenv install --list | grep "3.10"
+    pyenv install 3.10.16 #current latest
+    ```
 
 6. Install poetry 
-```
-pip install poetry
-```
+    ```
+    pip install poetry
+    ```
 
 ### Setting up a virtual environment with poetry
 The steps below must be performed in each Lambda function folder and e2e folder to ensure the environment is correctly configured.
@@ -122,38 +121,38 @@ For detailed instructions on running individual Lambdas, refer to the README.md 
 
 Steps: 
 1. Set the python version in the `./backend` folder
-```
-pyenv local 3.10.16 # Set version in backend (this creates a .python-version file)
-```
+    ```
+    pyenv local 3.10.16 # Set version in backend (this creates a .python-version file)
+    ```
 
 2. Configure poetry
-```
-### Point poetry virtual environment to .venv
-poetry config virtualenvs.in-project true
-poetry env use $(pyenv which python)
-poetry env info
-```
+    ```
+    ### Point poetry virtual environment to .venv
+    poetry config virtualenvs.in-project true
+    poetry env use $(pyenv which python)
+    poetry env info
+    ```
 
 3. Create an .env file and add environment variables
-```
-AWS_PROFILE={your_profile}
-IMMUNIZATION_ENV=local
-```
+    ```
+    AWS_PROFILE={your_profile}
+    IMMUNIZATION_ENV=local
+    ```
 
 4. Configure `direnv` by creating a `.envrc` file in the backend folder. This points direnv to the `.venv` created by poetry and loads env variables specified in the `.env` file
-```
-export VIRTUAL_ENV=".venv"
-PATH_add "$VIRTUAL_ENV/bin"
+    ```
+    export VIRTUAL_ENV=".venv"
+    PATH_add "$VIRTUAL_ENV/bin"
 
-dotenv
-```
+    dotenv
+    ```
 
 5. Restart bash and run `direnv allow`. You should see something similar like: 
-```
-direnv: loading /mnt/d/Source/immunisation-fhir-api/.envrc
-direnv: export +AWS_PROFILE +IMMUNIZATION_ENV +VIRTUAL_ENV ~PATH
-```
-Test if environment variables have been loaded into shell: `echo $IMMUNIZATION_ENV`.
+    ```
+    direnv: loading /mnt/d/Source/immunisation-fhir-api/.envrc
+    direnv: export +AWS_PROFILE +IMMUNIZATION_ENV +VIRTUAL_ENV ~PATH
+    ```
+    Test if environment variables have been loaded into shell: `echo $IMMUNIZATION_ENV`.
 
 ## IDE setup 
 The current team uses VS Code mainly. So this setup is targeted towards VS code. If you use another IDE please add the documentation to set up workspaces here.
