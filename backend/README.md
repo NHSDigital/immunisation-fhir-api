@@ -16,7 +16,7 @@ Note: Paths are relative to this directory, `backend`.
     SPLUNK_FIREHOSE_NAME=immunisation-fhir-api-{environment}-splunk-firehose
     ```
 
-3. Run `poetry install` to install packages.
+3. Run `poetry install --no-root` to install dependencies.
 
 4. Run `make test` to run unit tests or individual tests by running:
     ```
