@@ -39,7 +39,7 @@ See https://nhsd-confluence.digital.nhs.uk/display/APM/Glossary.
 |------------------------|-------------|
 | `infra`                | Base infrastructure components. |
 | `grafana`              | Terraform configuration for Grafana, built on top of core infra. |
-| `terraform`            | Core Terraform infrastructure code. This is ran in each PR and sets up lambdas associated with the PR.|
+| `terraform`            | Core Terraform infrastructure code. This is run in each PR and sets up lambdas associated with the PR.|
 | `terraform_sandbox`    | Sandbox environment for testing infrastructure changes. |
 | `terraform_aws_backup` | Streamlined backup processing with AWS. |
 | `mesh-infra`           | Infrastructure setup for Imms batch MESH integration. |
@@ -128,7 +128,7 @@ pyenv local 3.10.16 # Set version in backend (this creates a .python-version fil
 
 2. Configure poetry
 ```
-### Point poetry virtual enviornment to .venv
+### Point poetry virtual environment to .venv
 poetry config virtualenvs.in-project true
 poetry env use $(pyenv which python)
 poetry env info

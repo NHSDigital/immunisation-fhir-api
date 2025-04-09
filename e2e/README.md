@@ -1,5 +1,5 @@
 ## End-to-end Tests
-This directory contains end-to-end tests. Except for certain files, the majority of the tests hit the proxy (apigee) and assert the response. 
+This directory contains end-to-end tests. Except for certain files, the majority of the tests hit the proxy (Apigee) and assert the response. 
 
 ## Setting up e2e tests to run locally
 
@@ -48,7 +48,7 @@ This directory contains end-to-end tests. Except for certain files, the majority
 
 Each test follows a certain pattern. Each file contains a closely related feature. Each test class bundles related tests for that specific category. The first test is always the happy-path test. For backend operations, this first test, will be executed for each method of authentication i.e. `ApplicationRestricted`, `Cis2` and `NhsLogin`. The docstring in each test method contains a BDD style short summary.
 
-Sending a request to the proxy involves a few steps. First we need to create an apigee product and then create an apigee
+Sending a request to the proxy involves a few steps. First we need to create an Apigee product and then create an Apigee
 app associated with that product. This app may need certain custom attributes depending on the authentication method.
 All
 the steps are put away in `utils/base_test.py` in a parent class. Unless you want to test certain scenarios, generally
@@ -69,9 +69,9 @@ It doesn't even have the knowledge of the test framework. This is to make it com
 directory to another project without changing a line. If you are thinking of adding new functionality to it then keep it
 that way.
 
-The content of this directory can be break down into three categories:
+The content of this directory can be broken down into three categories:
 
-* **apigee:** Everything you need to set up apigee app, product and authentication
+* **apigee:** Everything you need to set up Apigee app, product and authentication
 * **authentication:** Contains everything you need to perform proxy authentication. It covers all three types of
   authentication
 * **env:** The utilities in the `lib` directory never assumes configurations. You need to pass them directly to create
