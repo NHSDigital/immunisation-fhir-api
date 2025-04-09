@@ -39,6 +39,7 @@ class ConversionChecker:
         self.dataLookUp = LookUpData()  # used for generic look up
         self.summarise = summarise  # instance attribute
         self.report_unexpected_exception = report_unexpected_exception  # instance attribute
+        self.errorRecords = []  # Store all errors here
 
     # Main entry point called by converter.py
     def convertData(self, expressionType, expressionRule, fieldName, fieldValue):
@@ -53,6 +54,10 @@ class ConversionChecker:
                 )
             case "NOTEMPTY":
                 return self._convertToNotEmpty(
+                    expressionRule, fieldName, fieldValue, self.summarise, self.report_unexpected_exception
+                )
+            case "DOSESEQUENCE":
+                return self._convertToDose(
                     expressionRule, fieldName, fieldValue, self.summarise, self.report_unexpected_exception
                 )
             case "GENDER":
@@ -88,18 +93,10 @@ class ConversionChecker:
             return ""
 
         if not isinstance(fieldValue, str):
-            raise RecordError(
-                ExceptionMessages.RECORD_CHECK_FAILED,
-                f"{fieldName} rejected: not a string.",
-                f"Received: {type(fieldValue)}",
-        )
+            return ""
         # Reject partial dates like "2024" or "2024-05"
         if re.match(r"^\d{4}(-\d{2})?$", fieldValue):
-            raise RecordError(
-                ExceptionMessages.RECORD_CHECK_FAILED,
-                f"{fieldName} rejected: partial date not accepted.",
-                f"Invalid partial date: {fieldValue}",
-            )
+            return ""
         try:
             dt = datetime.fromisoformat(fieldValue)
             format_str = expressionRule.replace("format:", "")
@@ -148,7 +145,7 @@ class ConversionChecker:
 
         return dt_utc.strftime(format_str)
 
-    # Not Empty Validate
+    # Not Empty Validate - Returns exactly what is in the extracted fields no parsing or logic needed
     def _convertToNotEmpty(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
         try:
             if len(str(fieldValue)) > 0:
@@ -161,32 +158,58 @@ class ConversionChecker:
 
     # NHSNumber Validate
     def _convertToNHSNumber(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
+        """
+        Validates that the NHS Number is exactly 10 digits.
+        """
+        # If it is outright empty, return back an empty string
+        if not fieldValue:
+            return ""
+        
         try:
-            regexRule = "^6[0-9]{10}$"
-            result = re.search(regexRule, fieldValue)
-            if not result:
-                raise RecordError(
-                    ExceptionMessages.RECORD_CHECK_FAILED,
-                    "NHS Number check failed",
-                    "NHS Number does not meet regex rules, data- " + fieldValue,
-                )
+            regexRule = r"^\d{10}$"
+            if isinstance(fieldValue, str) and re.fullmatch(regexRule, fieldValue):
+                return fieldValue
+            raise ValueError(f"NHS Number must be exactly 10 digits: {fieldValue}")
         except Exception as e:
             if report_unexpected_exception:
                 message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return message
+                self.errorRecords.append({
+                "field": fieldName,
+                "value": fieldValue,
+                "message": message
+            })
+        return ""
 
     # Gender Validate
     def _convertToGender(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
+        """
+        Converts gender string to numeric representation.
+        Mapping:
+            - "male" → "1"
+            - "female" → "2"
+            - "other" → "9"
+            - "unknown" → "0"
+        """
         try:
-            genderlist = {"male": "1", "female": "2", "other": "9", "unknown": "0"}
-            genderNumber = genderlist[fieldValue]
-            return genderNumber
+            gender_map = {
+                "male": "1",
+                "female": "2",
+                "other": "9",
+                "unknown": "0"
+            }
+        
+            # Normalize input
+            normalized_gender = str(fieldValue).lower()
+
+            if normalized_gender not in gender_map:
+                return ""
+            return gender_map[normalized_gender]
+
         except Exception as e:
             if report_unexpected_exception:
-                message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return message
+                return f"Unexpected exception [{e.__class__.__name__}]: {str(e)}"
 
-    # Change to Validate
+    # Code for converting Action Flag
     def _convertToChangeTo(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
         try:
             return expressionRule
@@ -194,6 +217,11 @@ class ConversionChecker:
             if report_unexpected_exception:
                 message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
                 return message
+    # Code for converting Dose Sequence
+    def _convertToDose(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
+        if isinstance(fieldValue, (int, float)) and 1 <= fieldValue <= 9:
+            return fieldValue
+        return "" 
 
     # Change to Lookup
     def _convertToLookUp(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):

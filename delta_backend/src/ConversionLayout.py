@@ -12,8 +12,8 @@ ConvertLayout = {
       "fieldNameFHIR": "contained|#:Patient|identifier|#:https://fhir.nhs.uk/Id/nhs-number|value",
       "fieldNameFlat": "NHS_NUMBER",
       "expression": {
-        "expressionName": "Not Empty",
-        "expressionType": "NOTEMPTY",
+        "expressionName": "NHS NUMBER",
+        "expressionType": "NHSNUMBER",
         "expressionRule": ""
       }
     },
@@ -175,7 +175,7 @@ ConvertLayout = {
       "fieldNameFlat": "DOSE_SEQUENCE",
       "expression": {
         "expressionName": "Not Empty",
-        "expressionType": "NOTEMPTY",
+        "expressionType": "DOSESEQUENCE",
         "expressionRule": ""
       }
     },
