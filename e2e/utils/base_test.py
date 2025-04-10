@@ -38,8 +38,7 @@ class ImmunizationBaseTest(unittest.TestCase):
     generated_imms_records: List[str]
 
     # Called once before any test methods in the class are run.
-    # The purpose of setUpClass is to prepare shared resources that
-    # All tests in the class can use
+    # The purpose of setUpClass is to prepare shared resources that all tests in the class can use
     @classmethod
     def setUpClass(cls):
         cls.apps = []
@@ -91,7 +90,7 @@ class ImmunizationBaseTest(unittest.TestCase):
             cls.tearDownClass()
             raise e
 
-    # Class method that runs once after all test methods in the class have finished. 
+    # Class method that runs once after all test methods in the class have finished.
     # It is used to clean up resources that were shared across multiple tests
     @classmethod
     def tearDownClass(cls):
@@ -100,8 +99,8 @@ class ImmunizationBaseTest(unittest.TestCase):
         if hasattr(cls, "product") and cls:
             cls.apigee_service.delete_product(cls.product.name)
 
-    # Runs after each individual test method in a test class. 
-    # It’s used to clean up resources that were initialized specifically for a single test, 
+    # Runs after each individual test method in a test class.
+    # It’s used to clean up resources that were initialized specifically for a single test,
     # such as temporary files or mock objects.
     def tearDown(cls):
         for api in cls.imms_apis:
