@@ -138,7 +138,7 @@ def get_full_row_from_identifier(identifier: str) -> dict:
 
 
 def get_dynamodb_table() -> Table:
-    config = Config(connect_timeout=2, read_timeout=2, retries={"max_attempts": 1})
+    config = Config(connect_timeout=5, read_timeout=5, retries={"max_attempts": 5})
     db: DynamoDBServiceResource = boto3.resource("dynamodb", region_name="eu-west-2", config=config)
     return db.Table(os.getenv("DYNAMODB_TABLE_NAME"))
 
