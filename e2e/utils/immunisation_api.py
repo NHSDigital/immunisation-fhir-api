@@ -3,7 +3,7 @@ import uuid
 import time
 import random
 import requests
-from typing import Optional, Literal
+from typing import Optional, Literal, List
 from datetime import datetime
 
 from lib.authentication import BaseAuthentication
@@ -26,6 +26,7 @@ class ImmunisationApi:
     url: str
     headers: dict
     auth: BaseAuthentication
+    generated_test_records: List[str]
 
     def __init__(self, url, auth: BaseAuthentication):
         self.url = url
@@ -38,6 +39,7 @@ class ImmunisationApi:
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/fhir+json",
             "Accept": "application/fhir+json"}
+        self.generated_test_records = []
 
     def __str__(self):
         return f"ImmunizationApi: AuthType: {self.auth}"
@@ -69,7 +71,7 @@ class ImmunisationApi:
                 return response
 
             except Exception as e:
-                if attempt == self.MAX_RETRIES:
+                if attempt == self.MAX_RETRIES - 1:
                     raise
 
                 wait = (2 ** attempt) + random.uniform(0, 0.5)
@@ -91,13 +93,25 @@ class ImmunisationApi:
         )
 
     def create_immunization(self, imms, expected_status_code: int = 201):
-        return self._make_request_with_backoff(
+        response = self._make_request_with_backoff(
             "POST",
             f"{self.url}/Immunization",
             expected_status_code,
             headers=self._update_headers(),
             json=imms
         )
+
+        if response.status_code == 201:
+            if "Location" not in response.headers:
+                raise ValueError("Missing 'Location' header in response")
+
+            imms_id = response.headers["Location"].split("Immunization/")[-1]
+            if not self._is_valid_uuid4(imms_id):
+                raise ValueError(f"Invalid UUID4: {imms_id}")
+
+            self.generated_test_records.append(imms_id)
+
+        return response
 
     def update_immunization(self, imms_id, imms, expected_status_code: int = 200):
         return self._make_request_with_backoff(
@@ -154,3 +168,10 @@ class ImmunisationApi:
             "E-Tag": "1"
         }}
         return {**updated, **headers}
+
+    def _is_valid_uuid4(self, imms_id):
+        try:
+            val = uuid.UUID(imms_id, version=4)
+            return str(val) == imms_id
+        except ValueError:
+            return False

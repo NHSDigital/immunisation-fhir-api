@@ -5,10 +5,10 @@ import boto3
 from copy import deepcopy
 from decimal import Decimal
 from typing import Union, Literal
-from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource
+from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
 from botocore.config import Config
 from .mappings import vaccine_type_mappings, VaccineTypes
-
+from functools import lru_cache
 from .constants import valid_nhs_number1
 
 current_directory = os.path.dirname(os.path.realpath(__file__))
@@ -133,9 +133,36 @@ def get_patient_postal_code(imms: dict):
 
 
 def get_full_row_from_identifier(identifier: str) -> dict:
-    """Get the full record from the dynamodb table using the identifier"""
-    config = Config(connect_timeout=1, read_timeout=1, retries={"max_attempts": 1})
-    db: DynamoDBServiceResource = boto3.resource("dynamodb", region_name="eu-west-2", config=config)
-    table = db.Table(os.getenv("DYNAMODB_TABLE_NAME"))
+    table = get_dynamodb_table()
 
     return table.get_item(Key={"PK": f"Immunization#{identifier}"}).get("Item")
+
+
+@lru_cache()
+def get_dynamodb_table() -> Table:
+    config = Config(connect_timeout=2, read_timeout=2, retries={"max_attempts": 1})
+    db: DynamoDBServiceResource = boto3.resource("dynamodb", region_name="eu-west-2", config=config)
+    return db.Table(os.getenv("DYNAMODB_TABLE_NAME"))
+
+
+def delete_imms_records(identifiers: list[str]) -> dict:
+    """Batch delete immunization records from the DynamoDB table."""
+    table = get_dynamodb_table()
+    deleted = []
+    errors = []
+
+    try:
+        with table.batch_writer(overwrite_by_pkeys=["PK"]) as batch:
+            for identifier in identifiers:
+                key = {"PK": f"Immunization#{identifier}"}
+                try:
+                    batch.delete_item(Key=key)
+                    deleted.append(identifier)
+                except Exception as e:
+                    print(f"Failed to delete record with key {key}: {e}")
+                    errors.append({"identifier": identifier, "error": str(e)})
+    except Exception as e:
+        print(f"Batch writer failed: {e}")
+        return {"Error": str(e), "Deleted": deleted, "Failures": errors}
+
+    return {"Deleted": deleted, "Failures": errors}

@@ -20,7 +20,7 @@ from utils.factories import (
     make_apigee_product,
 )
 from utils.immunisation_api import ImmunisationApi, parse_location
-from utils.resource import generate_imms_resource
+from utils.resource import generate_imms_resource, delete_imms_records
 
 
 class ImmunizationBaseTest(unittest.TestCase):
@@ -35,7 +35,11 @@ class ImmunizationBaseTest(unittest.TestCase):
     apps: List[ApigeeApp]
     # an ImmunisationApi with default auth-type: ApplicationRestricted
     default_imms_api: ImmunisationApi
+    generated_imms_records: List[str]
 
+    # Called once before any test methods in the class are run.
+    # The purpose of setUpClass is to prepare shared resources that
+    # All tests in the class can use
     @classmethod
     def setUpClass(cls):
         cls.apps = []
@@ -87,12 +91,24 @@ class ImmunizationBaseTest(unittest.TestCase):
             cls.tearDownClass()
             raise e
 
+    # Class method that runs once after all test methods in the class have finished. 
+    # It is used to clean up resources that were shared across multiple tests
     @classmethod
     def tearDownClass(cls):
         for app in cls.apps:
             cls.apigee_service.delete_application(app.name)
         if hasattr(cls, "product") and cls:
             cls.apigee_service.delete_product(cls.product.name)
+
+    # Runs after each individual test method in a test class. 
+    # It’s used to clean up resources that were initialized specifically for a single test, 
+    # such as temporary files or mock objects.
+    def tearDown(cls):
+        for api in cls.imms_apis:
+            if api.generated_test_records:
+                imms_deleted = delete_imms_records(api.generated_test_records)
+                print(imms_deleted)
+                api.generated_test_records.clear()
 
     @staticmethod
     def create_immunization_resource(imms_api: ImmunisationApi, resource: dict = None) -> str:
