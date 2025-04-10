@@ -103,11 +103,17 @@ class ImmunizationBaseTest(unittest.TestCase):
     # It’s used to clean up resources that were initialized specifically for a single test,
     # such as temporary files or mock objects.
     def tearDown(cls):
-        for api in cls.imms_apis:
-            if api.generated_test_records:
-                imms_deleted = delete_imms_records(api.generated_test_records)
-                print(imms_deleted)
-                api.generated_test_records.clear()
+        for api_client in cls.imms_apis:
+            if api_client.generated_test_records:
+                result = delete_imms_records(api_client.generated_test_records)
+
+                if result.get("failure_count", 0) > 0:
+                    print(
+                        f"[teardown warning] Deleted {result.get('success_count', 0)} records out of "
+                        f"{len(api_client.generated_test_records)}, failed to delete {result['failure_count']}"
+                    )
+
+                api_client.generated_test_records.clear()
 
     @staticmethod
     def create_immunization_resource(imms_api: ImmunisationApi, resource: dict = None) -> str:

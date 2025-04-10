@@ -8,7 +8,6 @@ from typing import Union, Literal
 from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
 from botocore.config import Config
 from .mappings import vaccine_type_mappings, VaccineTypes
-from functools import lru_cache
 from .constants import valid_nhs_number1
 
 current_directory = os.path.dirname(os.path.realpath(__file__))
@@ -138,7 +137,6 @@ def get_full_row_from_identifier(identifier: str) -> dict:
     return table.get_item(Key={"PK": f"Immunization#{identifier}"}).get("Item")
 
 
-@lru_cache()
 def get_dynamodb_table() -> Table:
     config = Config(connect_timeout=2, read_timeout=2, retries={"max_attempts": 1})
     db: DynamoDBServiceResource = boto3.resource("dynamodb", region_name="eu-west-2", config=config)
@@ -146,10 +144,12 @@ def get_dynamodb_table() -> Table:
 
 
 def delete_imms_records(identifiers: list[str]) -> dict:
-    """Batch delete immunization records from the DynamoDB table."""
+    """Batch delete immunization records from the DynamoDB table.
+    Returns counts of successful and failed deletions.
+    """
     table = get_dynamodb_table()
-    deleted = []
-    errors = []
+    success_count = 0
+    failure_count = 0
 
     try:
         with table.batch_writer(overwrite_by_pkeys=["PK"]) as batch:
@@ -157,12 +157,12 @@ def delete_imms_records(identifiers: list[str]) -> dict:
                 key = {"PK": f"Immunization#{identifier}"}
                 try:
                     batch.delete_item(Key=key)
-                    deleted.append(identifier)
+                    success_count += 1
                 except Exception as e:
                     print(f"Failed to delete record with key {key}: {e}")
-                    errors.append({"identifier": identifier, "error": str(e)})
+                    failure_count += 1
     except Exception as e:
         print(f"Batch writer failed: {e}")
-        return {"Error": str(e), "Deleted": deleted, "Failures": errors}
+        return {"success_count": success_count, "failure_count": len(identifiers)}
 
-    return {"Deleted": deleted, "Failures": errors}
+    return {"success_count": success_count, "failure_count": failure_count}
