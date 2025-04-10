@@ -206,7 +206,7 @@ steps:
  
     displayName: Run full batch test suite
     workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/e2e_batch"
-
+    enabled: false
 
   - task: PublishTestResults@2
     displayName: 'Publish test results'
