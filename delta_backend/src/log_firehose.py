@@ -12,11 +12,17 @@ logger.setLevel("INFO")
 class FirehoseLogger:
     def __init__(
         self,
+        # @SW: SPLUNK_FIREHOSE_NAME doesnt seem to be defined in the Sonorcloud environment
         stream_name: str = os.getenv("SPLUNK_FIREHOSE_NAME"),
         boto_client=boto3.client("firehose", config=Config(region_name="eu-west-2")),
     ):
+        logger.info(">>>>>>FirehoseLogger.init")
         self.firehose_client = boto_client
         self.delivery_stream_name = stream_name
+        logger.info(f">>>>>> Firehose stream name: {stream_name}")
+        # for key, value in os.environ.items():
+        #     logger.info(f">>> VAR: {key}: {value}")
+
 
     def send_log(self, log_message):
         log_to_splunk = log_message

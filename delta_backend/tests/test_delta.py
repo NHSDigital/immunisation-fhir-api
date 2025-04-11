@@ -10,8 +10,12 @@ os.environ["DELTA_TABLE_NAME"] = "my_delta_table"
 os.environ["SOURCE"] = "my_source"
 os.environ["SPLUNK_FIREHOSE_NAME"] = "my_firehose"
 
+from src.log_firehose import FirehoseLogger # Import after setting environment variables
 from src.delta import send_message, handler  # Import after setting environment variables
 import json
+
+# instantiate the FirehoseLogger so that it can load the environment variables
+firehose_logger = FirehoseLogger(stream_name="my_firehose")
 
 
 class DeltaTestCase(unittest.TestCase):
@@ -19,6 +23,20 @@ class DeltaTestCase(unittest.TestCase):
     def setUp(self):
         # Common setup if needed
         self.context = {}
+        self.logger_exception_patch = patch("delta.logger.exception")
+        self.mock_logger_exception = self.logger_exception_patch.start()
+        
+        # Mock firehose_client.put_record for all tests
+        self.firehose_client_patch = patch("boto3.client")
+        self.mock_boto_client = self.firehose_client_patch.start()
+        self.mock_firehose_client = self.mock_boto_client.return_value
+        self.mock_firehose_client.put_record.return_value = {"ResponseMetadata": {"HTTPStatusCode": 200}}
+
+
+    def tearDown(self):
+        # Stop the patch after each test
+        self.logger_exception_patch.stop()
+        self.firehose_client_patch.stop()
 
     @staticmethod
     def setup_mock_sqs(mock_boto_client, return_value={"ResponseMetadata": {"HTTPStatusCode": 200}}):
@@ -202,6 +220,7 @@ class DeltaTestCase(unittest.TestCase):
         # Assert
         self.assertEqual(result["statusCode"], 200)
 
+    # @TOD Check this
     @patch("delta.FirehoseLogger.send_log")  # Patch the method directly
     @patch("boto3.resource")
     @patch("boto3.client")
@@ -233,17 +252,23 @@ class DeltaTestCase(unittest.TestCase):
 
     @patch("delta.FirehoseLogger.send_log")
     @patch("boto3.resource")
-    @patch("delta.handler")
-    def test_handler_exception_intrusion_check_false(self, mock_boto_resource, mock_boto_client, mock_send_log):
+    @patch("boto3.client")
+    @patch("delta.boto3.resource")
+    # @SW why has master got @patch("delta.handler")?
+    # what is the purpose of mocking the handler?
+    def test_handler_exception_intrusion_check_false(self, mock_dynamodb, mock_boto_resource, mock_boto_client, mock_send_log):
         # Arrange
-        mock_send_log.return_value = None
         self.setUp_mock_resources(mock_boto_resource, mock_boto_client)
+    
+        # set up the event
         event = self.get_event()
         context = {}
 
         # Act & Assert
         with self.assertRaises(Exception):
             handler(event, context)
+            
+        self.mock_logger_exception.assert_called()
 
     @patch("delta.FirehoseLogger.send_log")  # Patch the method directly
     @patch("boto3.client")
