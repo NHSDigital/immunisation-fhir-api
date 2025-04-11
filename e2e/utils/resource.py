@@ -151,22 +151,23 @@ def delete_imms_records(identifiers: list[str]) -> None:
     failure_count = 0
     total = len(identifiers)
 
-    try:
-        with table.batch_writer(overwrite_by_pkeys=["PK"]) as batch:
-            for identifier in identifiers:
-                key = {"PK": f"Immunization#{identifier}"}
-                try:
-                    batch.delete_item(Key=key)
-                    success_count += 1
-                except Exception as e:
-                    print(f"Failed to delete record with key {key}: {e}")
-                    failure_count += 1
-    except Exception as e:
-        print(f"[teardown error] Batch writer failed: {e}")
-        failure_count = total  # Assume all failed if batch writer fails
+    if total > 0:
+        try:
+            with table.batch_writer(overwrite_by_pkeys=["PK"]) as batch:
+                for identifier in identifiers:
+                    key = {"PK": f"Immunization#{identifier}"}
+                    try:
+                        batch.delete_item(Key=key)
+                        success_count += 1
+                    except Exception as e:
+                        print(f"Failed to delete record with key {key}: {e}")
+                        failure_count += 1
+        except Exception as e:
+            print(f"[teardown error] Batch writer failed: {e}")
+            failure_count = total  # Assume all failed if batch writer fails
 
-    if failure_count > 0:
-        print(
-            f"[teardown warning] Deleted {success_count} records out of {total}, "
-            f"failed to delete {failure_count}"
-        )
+        if failure_count > 0:
+            print(
+                f"[teardown warning] Deleted {success_count} records out of {total}, "
+                f"failed to delete {failure_count}"
+            )

@@ -40,6 +40,7 @@ class TestApplicationRestrictedAuthorization(ImmunizationBaseTest):
     def tearDown(self):
         self.apigee_service.delete_application(self.my_app.name)
         self.my_imms_api.cleanup_test_records()
+        self.default_imms_api.cleanup_test_records()
 
     def test_get_imms_authorised(self):
         """it should get Immunization if app has immunization:read permission"""
@@ -193,6 +194,7 @@ class TestCis2Authorization(ImmunizationBaseTest):
     def tearDown(self):
         self.apigee_service.delete_application(self.my_app.name)
         self.my_imms_api.cleanup_test_records()
+        self.default_imms_api.cleanup_test_records()
 
     def test_get_imms_authorised(self):
         """it should get Immunization if app has immunization:read permission"""
