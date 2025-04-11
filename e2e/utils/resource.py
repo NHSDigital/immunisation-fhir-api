@@ -132,22 +132,21 @@ def get_patient_postal_code(imms: dict):
 
 
 def get_full_row_from_identifier(identifier: str) -> dict:
-    table = get_dynamodb_table()
-
+    table = get_dynamodb_table(os.getenv("DYNAMODB_TABLE_NAME"))
     return table.get_item(Key={"PK": f"Immunization#{identifier}"}).get("Item")
 
 
-def get_dynamodb_table() -> Table:
-    config = Config(connect_timeout=5, read_timeout=5, retries={"max_attempts": 5})
+def get_dynamodb_table(table_name: str) -> Table:
+    config = Config(connect_timeout=60, read_timeout=60, retries={"max_attempts": 3})
     db: DynamoDBServiceResource = boto3.resource("dynamodb", region_name="eu-west-2", config=config)
-    return db.Table(os.getenv("DYNAMODB_TABLE_NAME"))
+    return db.Table(table_name)
 
 
 def delete_imms_records(identifiers: list[str]) -> None:
     """Batch delete immunization records from the DynamoDB table.
     Handles logging internally and does not return anything.
     """
-    table = get_dynamodb_table()
+    table = get_dynamodb_table(os.getenv("DYNAMODB_TABLE_NAME"))
     success_count = 0
     failure_count = 0
     total = len(identifiers)
