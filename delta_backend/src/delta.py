@@ -28,7 +28,7 @@ def send_message(record):
         sqs_client.send_message(QueueUrl=failure_queue_url, MessageBody=json.dumps(message_body))
         logger.info("Record saved successfully to the DLQ")
     except ClientError as e:
-        logger.info(f"Error sending record to DLQ: {e}")
+        logger.error(f"Error sending record to DLQ: {e}")
 
 
 def get_vaccine_type(patientsk) -> str:
@@ -37,7 +37,7 @@ def get_vaccine_type(patientsk) -> str:
 
 
 def handler(event, context):
-
+    firehose_logger.send_log(event) 
     logger.info("Starting Delta Handler")
     log_data = dict()
     firehose_log = dict()
@@ -145,6 +145,7 @@ def handler(event, context):
                 return {"statusCode": 500, "body": "Records not processed successfully"}
 
     except Exception as e:
+
         operation_outcome["statusCode"] = "500"
         operation_outcome["statusDesc"] = "Exception"
         if intrusion_check:
