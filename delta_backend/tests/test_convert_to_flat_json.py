@@ -32,7 +32,6 @@ with patch.dict("os.environ", MOCK_ENV_VARS):
 @mock_sqs
 class TestConvertToFlatJson(unittest.TestCase):
     maxDiff = None
-    maxDiff = None
     def setUp(self):
         """Set up mock DynamoDB table."""
         self.dynamodb_resource = boto3_resource("dynamodb", "eu-west-2")

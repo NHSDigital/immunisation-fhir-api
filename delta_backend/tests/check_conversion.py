@@ -9,6 +9,7 @@ from Converter import Converter
 # Sample FHIR Immunization resource (minimal test data)
 fhir_sample = os.path.join(os.path.dirname(__file__),"sample_data", "fhir_sample.json")
 
+
 with open(fhir_sample, "r", encoding="utf-8") as f:
     json_data = json.load(f)
 
