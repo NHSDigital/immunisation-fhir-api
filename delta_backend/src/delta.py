@@ -156,6 +156,4 @@ def handler(event, context):
         log_data["operation_outcome"] = operation_outcome
         firehose_log["event"] = log_data
         firehose_logger.send_log(firehose_log)
-        # @TODO remove this exception and replace with 500 response
-        # after investigating the impact of this change ``` return {"statusCode": 500, "body": "Internal server error"} ```
         raise Exception(f"Delta Lambda failure: {e}")
