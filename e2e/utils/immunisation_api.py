@@ -3,6 +3,7 @@ import uuid
 import time
 import random
 import requests
+from utils.resource import generate_imms_resource, delete_imms_records
 from typing import Optional, Literal, List
 from datetime import datetime
 
@@ -83,6 +84,25 @@ class ImmunisationApi:
                 )
 
                 time.sleep(total_wait_time)
+
+    def create_immunization_resource(self, resource: dict = None) -> str:
+        """creates an Immunization resource and returns the resource url"""
+        imms = resource if resource else generate_imms_resource()
+        response = self.create_immunization(imms)
+        assert response.status_code == 201, (response.status_code, response.text)
+        return parse_location(response.headers["Location"])
+
+    def create_a_deleted_immunization_resource(self, resource: dict = None) -> dict:
+        """it creates a new Immunization and then delete it, it returns the created imms"""
+        imms = resource if resource else generate_imms_resource()
+        response = self.create_immunization(imms)
+        assert response.status_code == 201, response.text
+        imms_id = parse_location(response.headers["Location"])
+        response = self.delete_immunization(imms_id)
+        assert response.status_code == 204, response.text
+        imms["id"] = str(uuid.uuid4())
+
+        return imms
 
     def get_immunization_by_id(self, event_id, expected_status_code: int = 200):
         return self._make_request_with_backoff(
@@ -175,3 +195,6 @@ class ImmunisationApi:
             return str(val) == imms_id
         except ValueError:
             return False
+
+    def cleanup_test_records(self):
+        delete_imms_records(self.generated_test_records)

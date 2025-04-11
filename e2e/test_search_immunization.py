@@ -17,7 +17,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
     def store_records(self, *resources):
         ids = []
         for res in resources:
-            imms_id = self.create_immunization_resource(self.default_imms_api, res)
+            imms_id = self.default_imms_api.create_immunization_resource(res)
             ids.append(imms_id)
         return ids[0] if len(ids) == 1 else tuple(ids)
 
@@ -143,7 +143,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
         mmr1_id, mmr2_id = self.store_records(mmr1, mmr2)
 
         to_delete_mmr = generate_imms_resource(valid_nhs_number1, VaccineTypes.mmr)
-        deleted_mmr = self.create_a_deleted_immunization_resource(self.default_imms_api, to_delete_mmr)
+        deleted_mmr = self.default_imms_api.create_a_deleted_immunization_resource(to_delete_mmr)
 
         # When
         response = self.default_imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.mmr)

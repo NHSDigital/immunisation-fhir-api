@@ -143,13 +143,14 @@ def get_dynamodb_table() -> Table:
     return db.Table(os.getenv("DYNAMODB_TABLE_NAME"))
 
 
-def delete_imms_records(identifiers: list[str]) -> dict:
+def delete_imms_records(identifiers: list[str]) -> None:
     """Batch delete immunization records from the DynamoDB table.
-    Returns counts of successful and failed deletions.
+    Handles logging internally and does not return anything.
     """
     table = get_dynamodb_table()
     success_count = 0
     failure_count = 0
+    total = len(identifiers)
 
     try:
         with table.batch_writer(overwrite_by_pkeys=["PK"]) as batch:
@@ -162,7 +163,11 @@ def delete_imms_records(identifiers: list[str]) -> dict:
                     print(f"Failed to delete record with key {key}: {e}")
                     failure_count += 1
     except Exception as e:
-        print(f"Batch writer failed: {e}")
-        return {"success_count": success_count, "failure_count": len(identifiers)}
+        print(f"[teardown error] Batch writer failed: {e}")
+        failure_count = total  # Assume all failed if batch writer fails
 
-    return {"success_count": success_count, "failure_count": failure_count}
+    if failure_count > 0:
+        print(
+            f"[teardown warning] Deleted {success_count} records out of {total}, "
+            f"failed to delete {failure_count}"
+        )

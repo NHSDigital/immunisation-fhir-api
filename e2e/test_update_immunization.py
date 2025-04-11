@@ -37,7 +37,7 @@ class TestUpdateImmunization(ImmunizationBaseTest):
     def test_update_non_existent_identifier(self):
         """update a record should fail if identifier is not present"""
         imms = generate_imms_resource()
-        _ = self.create_immunization_resource(self.default_imms_api, imms)
+        _ = self.default_imms_api.create_immunization_resource(imms)
         # NOTE: there is a difference between id and identifier.
         # 422 is expected when identifier is the same across different ids
         # This is why in this test we create a new id but not touching the identifier

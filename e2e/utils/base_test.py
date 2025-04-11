@@ -19,8 +19,7 @@ from utils.factories import (
     make_cis2_app,
     make_apigee_product,
 )
-from utils.immunisation_api import ImmunisationApi, parse_location
-from utils.resource import generate_imms_resource, delete_imms_records
+from utils.immunisation_api import ImmunisationApi
 
 
 class ImmunizationBaseTest(unittest.TestCase):
@@ -35,7 +34,6 @@ class ImmunizationBaseTest(unittest.TestCase):
     apps: List[ApigeeApp]
     # an ImmunisationApi with default auth-type: ApplicationRestricted
     default_imms_api: ImmunisationApi
-    generated_imms_records: List[str]
 
     # Called once before any test methods in the class are run.
     # The purpose of setUpClass is to prepare shared resources that all tests in the class can use
@@ -104,37 +102,7 @@ class ImmunizationBaseTest(unittest.TestCase):
     # such as temporary files or mock objects.
     def tearDown(cls):
         for api_client in cls.imms_apis:
-            if api_client.generated_test_records:
-                result = delete_imms_records(api_client.generated_test_records)
-
-                if result.get("failure_count", 0) > 0:
-                    print(
-                        f"[teardown warning] Deleted {result.get('success_count', 0)} records out of "
-                        f"{len(api_client.generated_test_records)}, failed to delete {result['failure_count']}"
-                    )
-
-                api_client.generated_test_records.clear()
-
-    @staticmethod
-    def create_immunization_resource(imms_api: ImmunisationApi, resource: dict = None) -> str:
-        """creates an Immunization resource and returns the resource url"""
-        imms = resource if resource else generate_imms_resource()
-        response = imms_api.create_immunization(imms)
-        assert response.status_code == 201, (response.status_code, response.text)
-        return parse_location(response.headers["Location"])
-
-    @staticmethod
-    def create_a_deleted_immunization_resource(imms_api: ImmunisationApi, resource: dict = None) -> dict:
-        """it creates a new Immunization and then delete it, it returns the created imms"""
-        imms = resource if resource else generate_imms_resource()
-        response = imms_api.create_immunization(imms)
-        assert response.status_code == 201, response.text
-        imms_id = parse_location(response.headers["Location"])
-        response = imms_api.delete_immunization(imms_id)
-        assert response.status_code == 204, response.text
-        imms["id"] = str(uuid.uuid4())
-
-        return imms
+            api_client.cleanup_test_records()
 
     def assert_operation_outcome(self, response, status_code: int, contains: str = ""):
         body = response.json()

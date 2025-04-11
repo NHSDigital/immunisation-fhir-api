@@ -30,7 +30,7 @@ class TestCreateImmunization(ImmunizationBaseTest):
         """
         # Set up
         imms = generate_imms_resource()
-        imms_id = self.create_immunization_resource(self.default_imms_api, imms)
+        imms_id = self.default_imms_api.create_immunization_resource(imms)
         self.assertEqual(self.default_imms_api.get_immunization_by_id(imms_id).status_code, 200)
 
         # Check that duplicate CREATE request is rejected

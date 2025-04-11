@@ -66,7 +66,7 @@ class TestGetImmunization(ImmunizationBaseTest):
 
     def get_deleted_imms(self):
         """it should return 404 if resource has been deleted"""
-        imms = self.create_a_deleted_immunization_resource(self.default_imms_api)
+        imms = self.default_imms_api.create_a_deleted_immunization_resource()
         response = self.default_imms_api.get_immunization_by_id(imms["id"], expected_status_code=404)
         self.assert_operation_outcome(response, 404)
 
@@ -74,7 +74,7 @@ class TestGetImmunization(ImmunizationBaseTest):
         """it should get a FHIR Immunization resource if the nhs number is TBC"""
         imms = generate_imms_resource()
         del imms["contained"][1]["identifier"][0]["value"]
-        imms_id = self.create_immunization_resource(self.default_imms_api, imms)
+        imms_id = self.default_imms_api.create_immunization_resource(imms)
 
         response = self.default_imms_api.get_immunization_by_id(imms_id)
 

@@ -33,6 +33,6 @@ class TestDeleteImmunization(ImmunizationBaseTest):
 
     def test_delete_immunization_already_deleted(self):
         """it should return 404 when deleting a deleted resource"""
-        imms = self.create_a_deleted_immunization_resource(self.default_imms_api)
+        imms = self.default_imms_api.create_a_deleted_immunization_resource()
         response = self.default_imms_api.delete_immunization(imms["id"], expected_status_code=404)
         self.assert_operation_outcome(response, 404)
