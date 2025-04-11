@@ -98,8 +98,7 @@ class ImmunizationBaseTest(unittest.TestCase):
             cls.apigee_service.delete_product(cls.product.name)
 
     # Runs after each individual test method in a test class.
-    # It’s used to clean up resources that were initialized specifically for a single test,
-    # such as temporary files or mock objects.
+    # It’s used to clean up resources that were initialized specifically for a single test.
     def tearDown(cls):
         for api_client in cls.imms_apis:
             api_client.cleanup_test_records()

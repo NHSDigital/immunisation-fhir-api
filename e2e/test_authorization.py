@@ -37,6 +37,8 @@ class TestApplicationRestrictedAuthorization(ImmunizationBaseTest):
 
         self.my_imms_api = ImmunisationApi(base_url, app_res_auth)
 
+    # Runs after each individual test method in a test class.
+    # It’s used to clean up resources that were initialized specifically for a single test.
     def tearDown(self):
         self.apigee_service.delete_application(self.my_app.name)
         self.my_imms_api.cleanup_test_records()
@@ -191,6 +193,8 @@ class TestCis2Authorization(ImmunizationBaseTest):
 
         self.my_imms_api = ImmunisationApi(base_url, app_res_auth)
 
+    # Runs after each individual test method in a test class.
+    # It’s used to clean up resources that were initialized specifically for a single test.
     def tearDown(self):
         self.apigee_service.delete_application(self.my_app.name)
         self.my_imms_api.cleanup_test_records()
