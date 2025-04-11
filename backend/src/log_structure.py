@@ -11,7 +11,7 @@ logger = logging.getLogger()
 logger.setLevel("INFO")
 
 
-firehose_logger = FirehoseLogger()
+# firehose_logger = None
 
 
 def function_info(func):
@@ -19,6 +19,7 @@ def function_info(func):
 
     @wraps(func)
     def wrapper(*args, **kwargs):
+        firehose_logger = FirehoseLogger()
         event = args[0] if args else {}
         print(f"Event: {event}")
         headers = event.get("headers", {})
