@@ -37,6 +37,7 @@ def get_vaccine_type(patientsk) -> str:
 
 
 def handler(event, context):
+
     logger.info("Starting Delta Handler")
     log_data = dict()
     firehose_log = dict()
