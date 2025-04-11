@@ -1,5 +1,4 @@
 import uuid
-import unittest
 from typing import Set
 
 from lib.apigee import ApigeeApp
@@ -16,10 +15,8 @@ from utils.factories import make_app_restricted_app, make_cis2_app
 from utils.immunisation_api import ImmunisationApi
 from utils.resource import generate_imms_resource
 from utils.mappings import VaccineTypes
-from utils.constants import env_internal_dev
 
 
-@unittest.skipIf(env_internal_dev, "TestApplicationRestrictedAuthorization for internal-dev environment")
 class TestApplicationRestrictedAuthorization(ImmunizationBaseTest):
 
     my_app: ApigeeApp
@@ -40,12 +37,16 @@ class TestApplicationRestrictedAuthorization(ImmunizationBaseTest):
 
         self.my_imms_api = ImmunisationApi(base_url, app_res_auth)
 
+    # Runs after each individual test method in a test class.
+    # It’s used to clean up resources that were initialized specifically for a single test.
     def tearDown(self):
         self.apigee_service.delete_application(self.my_app.name)
+        self.my_imms_api.cleanup_test_records()
+        self.default_imms_api.cleanup_test_records()
 
     def test_get_imms_authorised(self):
         """it should get Immunization if app has immunization:read permission"""
-        imms_id = self.create_immunization_resource(self.default_imms_api)
+        imms_id = self.default_imms_api.create_immunization_resource()
         self.make_app({Permission.READ})
         # When
         response = self.my_imms_api.get_immunization_by_id(imms_id)
@@ -57,7 +58,7 @@ class TestApplicationRestrictedAuthorization(ImmunizationBaseTest):
         perms = app_full_access(exclude={Permission.READ})
         self.make_app(perms)
         # When
-        response = self.my_imms_api.get_immunization_by_id("id-doesn't-matter")
+        response = self.my_imms_api.get_immunization_by_id("id-doesn't-matter", expected_status_code=403)
         # Then
         self.assertEqual(response.status_code, 403, response.text)
 
@@ -75,7 +76,7 @@ class TestApplicationRestrictedAuthorization(ImmunizationBaseTest):
         self.make_app({Permission.CREATE}, {"flu:create"})
         # When
         imms = generate_imms_resource()
-        response = self.my_imms_api.create_immunization(imms)
+        response = self.my_imms_api.create_immunization(imms, expected_status_code=403)
         # Then
         self.assertEqual(response.status_code, 403, response.text)
 
@@ -85,14 +86,14 @@ class TestApplicationRestrictedAuthorization(ImmunizationBaseTest):
         self.make_app(perms)
         # When
         imms = generate_imms_resource()
-        result = self.my_imms_api.create_immunization(imms)
+        result = self.my_imms_api.create_immunization(imms, expected_status_code=403)
         # Then
         self.assertEqual(result.status_code, 403, result.text)
 
     def test_update_imms_authorised(self):
         """it should update Immunization if app has immunization:update and immunization:create permission"""
         imms = generate_imms_resource()
-        imms_id = self.create_immunization_resource(self.default_imms_api, imms)
+        imms_id = self.default_imms_api.create_immunization_resource(imms)
         imms["id"] = imms_id
 
         self.make_app({Permission.CREATE, Permission.UPDATE})
@@ -106,26 +107,26 @@ class TestApplicationRestrictedAuthorization(ImmunizationBaseTest):
         perms = app_full_access(exclude={Permission.UPDATE})
         self.make_app(perms)
         # When
-        response = self.my_imms_api.update_immunization("doesn't-matter", {})
+        response = self.my_imms_api.update_immunization("doesn't-matter", {}, expected_status_code=403)
         # Then
         self.assertEqual(response.status_code, 403, response.text)
 
     def test_update_imms_unauthorised_2(self):
         """it should not update Immunization if app doesn't immunization:create permission"""
         imms = generate_imms_resource()
-        imms_id = self.create_immunization_resource(self.default_imms_api, imms)
+        imms_id = self.default_imms_api.create_immunization_resource(imms)
         imms["id"] = imms_id
 
         perms = app_full_access(exclude={Permission.CREATE})
         self.make_app(perms)
         # When
-        response = self.my_imms_api.update_immunization(imms_id, imms)
+        response = self.my_imms_api.update_immunization(imms_id, imms, expected_status_code=403)
         # Then
         self.assertEqual(response.status_code, 403, response.text)
 
     def test_delete_imms_authorised(self):
         """it should delete Immunization if app has immunization:delete permission"""
-        imms_id = self.create_immunization_resource(self.default_imms_api)
+        imms_id = self.default_imms_api.create_immunization_resource()
         self.make_app({Permission.DELETE})
         # When
         response = self.my_imms_api.delete_immunization(imms_id)
@@ -137,14 +138,14 @@ class TestApplicationRestrictedAuthorization(ImmunizationBaseTest):
         perms = app_full_access(exclude={Permission.DELETE})
         self.make_app(perms)
         # When
-        response = self.my_imms_api.delete_immunization("doesn't-matter")
+        response = self.my_imms_api.delete_immunization("doesn't-matter", expected_status_code=403)
         # Then
         self.assertEqual(response.status_code, 403, response.text)
 
     def test_search_imms_authorised(self):
         """it should search Immunization if app has immunization:search permission"""
         mmr = generate_imms_resource(valid_nhs_number1, VaccineTypes.mmr)
-        _ = self.create_immunization_resource(self.default_imms_api, mmr)
+        _ = self.default_imms_api.create_immunization_resource(mmr)
 
         self.make_app({Permission.SEARCH})
         # When
@@ -157,23 +158,22 @@ class TestApplicationRestrictedAuthorization(ImmunizationBaseTest):
         perms = app_full_access(exclude={Permission.SEARCH})
         self.make_app(perms)
         # When
-        response = self.my_imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.mmr)
+        response = self.my_imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.mmr, expected_status_code=403)
         # Then
         self.assertEqual(response.status_code, 403, response.text)
 
     def test_search_imms_unauthorised_vax(self):
         """it should not search Immunization if app does not have proper vax permissions"""
         mmr = generate_imms_resource(valid_nhs_number1, VaccineTypes.mmr)
-        _ = self.create_immunization_resource(self.default_imms_api, mmr)
+        _ = self.default_imms_api.create_immunization_resource(mmr)
 
         self.make_app({Permission.SEARCH}, {"flu:read"})
         # When
-        response = self.my_imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.mmr)
+        response = self.my_imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.mmr, expected_status_code=403)
         # Then
         self.assertEqual(response.status_code, 403, response.text)
 
 
-@unittest.skipIf(env_internal_dev, "TestCis2Authorization for internal-dev environment")
 class TestCis2Authorization(ImmunizationBaseTest):
     my_app: ApigeeApp
     my_imms_api: ImmunisationApi
@@ -193,12 +193,16 @@ class TestCis2Authorization(ImmunizationBaseTest):
 
         self.my_imms_api = ImmunisationApi(base_url, app_res_auth)
 
+    # Runs after each individual test method in a test class.
+    # It’s used to clean up resources that were initialized specifically for a single test.
     def tearDown(self):
         self.apigee_service.delete_application(self.my_app.name)
+        self.my_imms_api.cleanup_test_records()
+        self.default_imms_api.cleanup_test_records()
 
     def test_get_imms_authorised(self):
         """it should get Immunization if app has immunization:read permission"""
-        imms_id = self.create_immunization_resource(self.default_imms_api)
+        imms_id = self.default_imms_api.create_immunization_resource()
         self.make_app({Permission.READ})
         # When
         response = self.my_imms_api.get_immunization_by_id(imms_id)
@@ -210,16 +214,16 @@ class TestCis2Authorization(ImmunizationBaseTest):
         perms = app_full_access(exclude={Permission.READ})
         self.make_app(perms)
         # When
-        response = self.my_imms_api.get_immunization_by_id("id-doesn't-matter")
+        response = self.my_imms_api.get_immunization_by_id("id-doesn't-matter", expected_status_code=403)
         # Then
         self.assertEqual(response.status_code, 403, response.text)
 
     def test_get_imms__unauthorised_vaxx(self):
         """it should not get Immunization if app does not have the correct vaccine permission"""
-        imms_id = self.create_immunization_resource(self.default_imms_api)
+        imms_id = self.default_imms_api.create_immunization_resource()
         self.make_app({Permission.READ}, {"flu:create"})
         # When
-        response = self.my_imms_api.get_immunization_by_id(imms_id)
+        response = self.my_imms_api.get_immunization_by_id(imms_id, expected_status_code=403)
         # Then
         self.assertEqual(response.status_code, 403, response.text)
 
@@ -238,7 +242,7 @@ class TestCis2Authorization(ImmunizationBaseTest):
         self.make_app(perms)
         # When
         imms = generate_imms_resource()
-        result = self.my_imms_api.create_immunization(imms)
+        result = self.my_imms_api.create_immunization(imms, expected_status_code=403)
         # Then
         self.assertEqual(result.status_code, 403, result.text)
 
@@ -247,14 +251,14 @@ class TestCis2Authorization(ImmunizationBaseTest):
         self.make_app({Permission.CREATE}, {"flu:create"})
         # When
         imms = generate_imms_resource()
-        response = self.my_imms_api.create_immunization(imms)
+        response = self.my_imms_api.create_immunization(imms, expected_status_code=403)
         # Then
         self.assertEqual(response.status_code, 403, response.text)
 
     def test_update_imms_authorised(self):
         """it should update Immunization if app has the immunization:update and immunization:create permission"""
         imms = generate_imms_resource()
-        imms_id = self.create_immunization_resource(self.default_imms_api, imms)
+        imms_id = self.default_imms_api.create_immunization_resource(imms)
         imms["id"] = imms_id
 
         self.make_app({Permission.CREATE, Permission.UPDATE})
@@ -268,25 +272,25 @@ class TestCis2Authorization(ImmunizationBaseTest):
         perms = app_full_access(exclude={Permission.UPDATE})
         self.make_app(perms)
         # When
-        response = self.my_imms_api.update_immunization("doesn't-matter", {})
+        response = self.my_imms_api.update_immunization("doesn't-matter", {}, expected_status_code=403)
         # Then
         self.assertEqual(response.status_code, 403, response.text)
 
     def test_update_imms_unauthorised_vaxx(self):
         """it should not update Immunization if app does not have the correct vaccine permission"""
         imms = generate_imms_resource()
-        imms_id = self.create_immunization_resource(self.default_imms_api, imms)
+        imms_id = self.default_imms_api.create_immunization_resource(imms)
         imms["id"] = imms_id
 
         self.make_app({Permission.CREATE, Permission.UPDATE}, {"flu:create"})
         # When
-        response = self.my_imms_api.update_immunization(imms_id, imms)
+        response = self.my_imms_api.update_immunization(imms_id, imms, expected_status_code=403)
         # Then
         self.assertEqual(response.status_code, 403, response.text)
 
     def test_delete_imms_authorised(self):
         """it should delete Immunization if app has immunization:delete permission"""
-        imms_id = self.create_immunization_resource(self.default_imms_api)
+        imms_id = self.default_imms_api.create_immunization_resource()
         self.make_app({Permission.DELETE})
         # When
         response = self.my_imms_api.delete_immunization(imms_id)
@@ -298,23 +302,23 @@ class TestCis2Authorization(ImmunizationBaseTest):
         perms = app_full_access(exclude={Permission.DELETE})
         self.make_app(perms)
         # When
-        response = self.my_imms_api.delete_immunization("doesn't-matter")
+        response = self.my_imms_api.delete_immunization("doesn't-matter", expected_status_code=403)
         # Then
         self.assertEqual(response.status_code, 403, response.text)
 
     def test_delete_imms__unauthorised_vaxx(self):
         """it should not delete Immunization if app does not have the correct vaccine permission"""
-        imms_id = self.create_immunization_resource(self.default_imms_api)
+        imms_id = self.default_imms_api.create_immunization_resource()
         self.make_app({Permission.READ}, {"flu:create"})
         # When
-        response = self.my_imms_api.delete_immunization(imms_id)
+        response = self.my_imms_api.delete_immunization(imms_id, expected_status_code=403)
         # Then
         self.assertEqual(response.status_code, 403, response.text)
 
     def test_search_imms_authorised(self):
         """it should search Immunization if app has immunization:search permission"""
         mmr = generate_imms_resource(valid_nhs_number1, VaccineTypes.mmr)
-        _ = self.create_immunization_resource(self.default_imms_api, mmr)
+        _ = self.default_imms_api.create_immunization_resource(mmr)
 
         self.make_app({Permission.SEARCH})
         # When
@@ -327,6 +331,6 @@ class TestCis2Authorization(ImmunizationBaseTest):
         perms = app_full_access(exclude={Permission.SEARCH})
         self.make_app(perms)
         # When
-        response = self.my_imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.mmr)
+        response = self.my_imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.mmr, expected_status_code=403)
         # Then
         self.assertEqual(response.status_code, 403, response.text)

@@ -1,13 +1,10 @@
 import copy
 import uuid
-import unittest
 from utils.base_test import ImmunizationBaseTest
 from utils.immunisation_api import parse_location
 from utils.resource import generate_imms_resource
-from utils.constants import env_internal_dev
 
 
-@unittest.skipIf(env_internal_dev, "TestUpdateImmunization for internal-dev environment")
 class TestUpdateImmunization(ImmunizationBaseTest):
 
     def test_update_imms(self):
@@ -40,7 +37,7 @@ class TestUpdateImmunization(ImmunizationBaseTest):
     def test_update_non_existent_identifier(self):
         """update a record should fail if identifier is not present"""
         imms = generate_imms_resource()
-        _ = self.create_immunization_resource(self.default_imms_api, imms)
+        _ = self.default_imms_api.create_immunization_resource(imms)
         # NOTE: there is a difference between id and identifier.
         # 422 is expected when identifier is the same across different ids
         # This is why in this test we create a new id but not touching the identifier
@@ -48,7 +45,7 @@ class TestUpdateImmunization(ImmunizationBaseTest):
         imms["id"] = new_imms_id
 
         # When update the same object (it has the same identifier)
-        response = self.default_imms_api.update_immunization(new_imms_id, imms)
+        response = self.default_imms_api.update_immunization(new_imms_id, imms, expected_status_code=404)
         # Then
         self.assert_operation_outcome(response, 404)
 
@@ -58,7 +55,7 @@ class TestUpdateImmunization(ImmunizationBaseTest):
         imms = generate_imms_resource()
         imms["id"] = msg_id
         path_id = str(uuid.uuid4())
-        response = self.default_imms_api.update_immunization(path_id, imms)
+        response = self.default_imms_api.update_immunization(path_id, imms, expected_status_code=400)
         self.assert_operation_outcome(response, 400, contains=path_id)
 
     # TODO: Uncomment this test if it is needed

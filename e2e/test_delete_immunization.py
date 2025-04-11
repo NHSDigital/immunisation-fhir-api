@@ -1,11 +1,8 @@
-import unittest
 from utils.base_test import ImmunizationBaseTest
 from utils.immunisation_api import parse_location
 from utils.resource import generate_imms_resource
-from utils.constants import env_internal_dev
 
 
-@unittest.skipIf(env_internal_dev, "TestDeleteImmunization for internal-dev environment")
 class TestDeleteImmunization(ImmunizationBaseTest):
 
     def test_delete_imms(self):
@@ -36,6 +33,6 @@ class TestDeleteImmunization(ImmunizationBaseTest):
 
     def test_delete_immunization_already_deleted(self):
         """it should return 404 when deleting a deleted resource"""
-        imms = self.create_a_deleted_immunization_resource(self.default_imms_api)
-        response = self.default_imms_api.delete_immunization(imms["id"])
+        imms = self.default_imms_api.create_a_deleted_immunization_resource()
+        response = self.default_imms_api.delete_immunization(imms["id"], expected_status_code=404)
         self.assert_operation_outcome(response, 404)

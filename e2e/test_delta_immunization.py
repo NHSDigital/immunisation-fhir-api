@@ -1,18 +1,12 @@
 from datetime import datetime
 from utils.base_test import ImmunizationBaseTest
 from utils.immunisation_api import parse_location
-from utils.resource import generate_imms_resource
-from utils.constants import env_internal_dev
-from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource
+from utils.resource import generate_imms_resource, get_dynamodb_table
 import time
 import copy
-import boto3
-from botocore.config import Config
 import os
-import unittest
 
 
-@unittest.skipIf(env_internal_dev, "TestDeltaImmunization for internal-dev environment")
 class TestDeltaImmunization(ImmunizationBaseTest):
 
     CREATE_OPERATION = "CREATE"
@@ -20,14 +14,9 @@ class TestDeltaImmunization(ImmunizationBaseTest):
     DELETE_OPERATION = "DELETE"
     DPS_SOURCE = "DPS"
 
-    def get_delta_table(self):
-        config = Config(connect_timeout=1, read_timeout=1, retries={"max_attempts": 1})
-        db: DynamoDBServiceResource = boto3.resource("dynamodb", region_name="eu-west-2", config=config)
-        return db.Table(os.getenv("IMMS_DELTA_TABLE_NAME"))
-
     def test_create_delta_imms(self):
         """Should create,update,delete FHIR Immunization resource causing those resources to be stored in Delta table"""
-        imms_delta_table = self.get_delta_table()
+        imms_delta_table = get_dynamodb_table(os.getenv("IMMS_DELTA_TABLE_NAME"))
         # Given
         start_timestamp = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
         # Creating two Imms Event, one of them will be updated and second of them will be deleted afterwards
