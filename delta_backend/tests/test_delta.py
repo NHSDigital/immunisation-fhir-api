@@ -181,16 +181,15 @@ class DeltaTestCase(unittest.TestCase):
     #     # Assert
     #     self.assertEqual(result["statusCode"], 500)
 
-    @patch("log_firehose.boto3.client") 
+    @patch("src.delta.firehose_logger")
     @patch("boto3.client") 
     @patch("delta.boto3.resource")
-    def test_handler_success_update(self, mock_boto_resource, mock_boto_client, mock_boto_client2):
+    def test_handler_success_update(self, mock_boto_resource, mock_boto_client, mock_firehose_logger):
         # Arrange
         mock_firehose_client = mock_boto_client
         mock_firehose_client.put_record.return_value = {"ResponseMetadata": {"HTTPStatusCode": 200}}
 
-        mock_firehose_client2 = mock_boto_client2
-        mock_firehose_client2.put_record.return_value = {"ResponseMetadata": {"HTTPStatusCode": 200}}
+        mock_firehose_logger.send_log.return_value = None 
 
         self.setup_mock_dynamodb(mock_boto_resource)
         event = self.get_event(event_name="UPDATE", operation="UPDATE")
