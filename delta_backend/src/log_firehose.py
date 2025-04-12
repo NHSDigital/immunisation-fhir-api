@@ -1,6 +1,5 @@
 import boto3
 import logging
-import json
 import os
 from botocore.config import Config
 
@@ -14,7 +13,7 @@ class FirehoseLogger:
         self,
         # @SW: SPLUNK_FIREHOSE_NAME doesnt seem to be defined in the Sonorcloud environment
         stream_name: str = os.getenv("SPLUNK_FIREHOSE_NAME", "AAA"),
-        boto_client=None,
+        boto_client=boto3.client("firehose", config=Config(region_name="eu-west-2")),
     ):
         logger.info(">>>>>>FirehoseLogger.init!!!")
         if boto_client is None:
@@ -29,13 +28,12 @@ class FirehoseLogger:
     def send_log(self, log_message):
         log_to_splunk = log_message
         logger.info(f"Log sent to Firehose for save: {log_to_splunk}")
-        encoded_log_data = json.dumps(log_to_splunk).encode("utf-8")
         try:
             logger.info(f"Send log to Firehose")
             response = self.firehose_client.put_record(
                 DeliveryStreamName=self.delivery_stream_name,
-                Record={"Data": encoded_log_data},
+                Record={"Data": log_message},
             )
-            logger.info(f"Log sent to Firehose: {response}")
+            logger.info(f"Log sent: {response}")
         except Exception as e:
-            logger.exception(f"Error sending log to Firehose: {e}")
+            logger.exception(f"Error sending log: {e}")
