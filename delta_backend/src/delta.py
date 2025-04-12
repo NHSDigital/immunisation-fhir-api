@@ -37,6 +37,7 @@ def get_vaccine_type(patientsk) -> str:
 
 
 def handler(event, context):
+
     logger.info("Starting Delta Handler")
     log_data = dict()
     firehose_log = dict()
@@ -45,7 +46,9 @@ def handler(event, context):
     intrusion_check = True
     try:
         dynamodb = boto3.resource("dynamodb", region_name="eu-west-2")
+        logger.info("ref table...")
         delta_table = dynamodb.Table(delta_table_name)
+        logger.info("ref table done")
 
         # Converting ApproximateCreationDateTime directly to string will give Unix timestamp
         # I am converting it to isofformat for filtering purpose. This can be changed accordingly
@@ -156,4 +159,5 @@ def handler(event, context):
         log_data["operation_outcome"] = operation_outcome
         firehose_log["event"] = log_data
         firehose_logger.send_log(firehose_log)
+        # @SW this should be replace with a response 500
         raise Exception(f"Delta Lambda failure: {e}")

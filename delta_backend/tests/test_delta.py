@@ -1,15 +1,21 @@
 import unittest
+import os
 from unittest.mock import patch, MagicMock
 from botocore.exceptions import ClientError
-import os
+from sample_data.test_resource_data import get_test_data_resource
 
 # Set environment variables before importing the module
 os.environ["AWS_SQS_QUEUE_URL"] = "https://sqs.us-east-1.amazonaws.com/123456789012/MyQueue"
 os.environ["DELTA_TABLE_NAME"] = "my_delta_table"
 os.environ["SOURCE"] = "my_source"
+os.environ["SPLUNK_FIREHOSE_NAME"] = "my_firehose"
 
+from src.delta import firehose_logger# Import after setting environment variables
 from src.delta import send_message, handler  # Import after setting environment variables
 import json
+
+# instantiate the FirehoseLogger so that it can load the environment variables
+firehose_logger.delivery_stream_name = "my_firehose!!!!"
 
 
 class DeltaTestCase(unittest.TestCase):
@@ -17,6 +23,20 @@ class DeltaTestCase(unittest.TestCase):
     def setUp(self):
         # Common setup if needed
         self.context = {}
+        self.logger_exception_patch = patch("delta.logger.exception")
+        self.mock_logger_exception = self.logger_exception_patch.start()
+        
+        # Mock firehose_client.put_record for all tests
+        self.firehose_client_patch = patch("boto3.client")
+        self.mock_boto_client = self.firehose_client_patch.start()
+        self.mock_firehose_client = self.mock_boto_client.return_value
+        self.mock_firehose_client.put_record.return_value = {"ResponseMetadata": {"HTTPStatusCode": 200}}
+
+
+    def tearDown(self):
+        # Stop the patch after each test
+        self.logger_exception_patch.stop()
+        self.firehose_client_patch.stop()
 
     @staticmethod
     def setup_mock_sqs(mock_boto_client, return_value={"ResponseMetadata": {"HTTPStatusCode": 200}}):
@@ -25,10 +45,33 @@ class DeltaTestCase(unittest.TestCase):
         return mock_sqs
 
     @staticmethod
+    def setup_mock_firehose(mock_boto_client, return_value={"ResponseMetadata": {"HTTPStatusCode": 200}}):
+        mock_firehose = mock_boto_client.return_value
+        mock_firehose.put_record.return_value = return_value
+        return mock_firehose
+
+    @staticmethod
+    def setup_mock_firehose(mock_boto_client, return_value={"ResponseMetadata": {"HTTPStatusCode": 200}}):
+        mock_firehose = mock_boto_client.return_value
+        mock_firehose.put_record.return_value = return_value
+        return mock_firehose
+
+
+    @staticmethod
     def setup_mock_dynamodb(mock_boto_resource, status_code=200):
+        """
+        Sets up a mock for boto3.resource("dynamodb") and its Table method.
+        """
+        # Mock the DynamoDB resource
         mock_dynamodb = mock_boto_resource.return_value
-        mock_table = mock_dynamodb.Table.return_value
+
+        # Mock the Table method
+        mock_table = MagicMock()
+        mock_dynamodb.Table.return_value = mock_table
+
+        # Mock the put_item method of the table
         mock_table.put_item.return_value = {"ResponseMetadata": {"HTTPStatusCode": status_code}}
+
         return mock_table
 
     def setUp_mock_resources(self, mock_boto_resource, mock_boto_client):
@@ -39,47 +82,48 @@ class DeltaTestCase(unittest.TestCase):
         return mock_table
 
     @staticmethod
-    def get_event(event_name="INSERT", operation="CREATE", supplier="EMIS"):
+    def get_event(event_name="INSERT", operation="CREATE", supplier="EMIS", n_records=1):
+        """Create test event for the handler function."""
+        return {
+            "Records": [
+                DeltaTestCase.get_event_record(f"covid#{i+1}2345", event_name, operation, supplier)
+                for i in range(n_records)
+            ]
+        }
+
+    @staticmethod
+    def get_event_record(pk, event_name="INSERT", operation="CREATE", supplier="EMIS"):
         if operation != "DELETE":
-            return {
-                "Records": [
-                    {
-                        "eventName": event_name,
-                        "dynamodb": {
-                            "ApproximateCreationDateTime": 1690896000,
-                            "NewImage": {
-                                "PK": {"S": "covid#12345"},
-                                "PatientSK": {"S": "covid#12345"},
-                                "IdentifierPK": {"S": "system#1"},
-                                "Operation": {"S": operation},
-                                "SupplierSystem": {"S": supplier},
-                                "Resource": {
-                                    "S": '{"resourceType": "Immunization", "contained": [{"resourceType": "Practitioner", "id": "Pract1", "name": [{"family": "O\'Reilly", "given": ["Ellena"]}]}, {"resourceType": "Patient", "id": "Pat1", "identifier": [{"system": "https://fhir.nhs.uk/Id/nhs-number", "value": "9674963871"}], "name": [{"family": "GREIR", "given": ["SABINA"]}], "gender": "female", "birthDate": "2019-01-31", "address": [{"postalCode": "GU14 6TU"}]}], "extension": [{"url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure", "valueCodeableConcept": {"coding": [{"system": "http://snomed.info/sct", "code": "1303503001", "display": "Administration of vaccine product containing only Human orthopneumovirus antigen (procedure)"}]}}], "identifier": [{"system": "https://www.ravs.england.nhs.uk/", "value": "0001_RSV_v5_RUN_2_CDFDPS-742_valid_dose_1"}], "status": "completed", "vaccineCode": {"coding": [{"system": "http://snomed.info/sct", "code": "42605811000001109", "display": "Abrysvo vaccine powder and solvent for solution for injection 0.5ml vials (Pfizer Ltd) (product)"}]}, "patient": {"reference": "#Pat1"}, "occurrenceDateTime": "2024-06-10T18:33:25+00:00", "recorded": "2024-06-10T18:33:25+00:00", "primarySource": true, "manufacturer": {"display": "Pfizer"}, "location": {"type": "Location", "identifier": {"value": "J82067", "system": "https://fhir.nhs.uk/Id/ods-organization-code"}}, "lotNumber": "RSVTEST", "expirationDate": "2024-12-31", "site": {"coding": [{"system": "http://snomed.info/sct", "code": "368208006", "display": "Left upper arm structure (body structure)"}]}, "route": {"coding": [{"system": "http://snomed.info/sct", "code": "78421000", "display": "Intramuscular route (qualifier value)"}]}, "doseQuantity": {"value": 0.5, "unit": "Milliliter (qualifier value)", "system": "http://unitsofmeasure.org", "code": "258773002"}, "performer": [{"actor": {"reference": "#Pract1"}}, {"actor": {"type": "Organization", "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "X0X0X"}}}], "reasonCode": [{"coding": [{"code": "Test", "system": "http://snomed.info/sct"}]}], "protocolApplied": [{"targetDisease": [{"coding": [{"system": "http://snomed.info/sct", "code": "840539006", "display": "Disease caused by severe acute respiratory syndrome coronavirus 2"}]}], "doseNumberPositiveInt": 1}], "id": "ca8ba2c6-2383-4465-b456-c1174c21cf31"}'
-                                },
-                            },
+            return{
+                "eventName": event_name,
+                "dynamodb": {
+                    "ApproximateCreationDateTime": 1690896000,
+                    "NewImage": {
+                        "PK": {"S": pk},
+                        "PatientSK": {"S": pk},
+                        "IdentifierPK": {"S": "system#1"},
+                        "Operation": {"S": operation},
+                        "SupplierSystem": {"S": supplier},
+                        "Resource": {
+                            "S": json.dumps(get_test_data_resource()),
                         },
-                    }
-                ]
+                    },
+                },
             }
         else:
             return {
-                "Records": [
-                    {
-                        "eventName": "REMOVE",
-                        "dynamodb": {
-                            "ApproximateCreationDateTime": 1690896000,
-                            "Keys": {
-                                "PK": {"S": "covid#12345"},
-                                "PatientSK": {"S": "covid#12345"},
-                                "SupplierSystem": {"S": "EMIS"},
-                                "Resource": {
-                                    "S": '{"resourceType": "Immunization", "contained": [{"resourceType": "Practitioner", "id": "Pract1", "name": [{"family": "O\'Reilly", "given": ["Ellena"]}]}, {"resourceType": "Patient", "id": "Pat1", "identifier": [{"system": "https://fhir.nhs.uk/Id/nhs-number", "value": "9674963871"}], "name": [{"family": "GREIR", "given": ["SABINA"]}], "gender": "female", "birthDate": "2019-01-31", "address": [{"postalCode": "GU14 6TU"}]}], "extension": [{"url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure", "valueCodeableConcept": {"coding": [{"system": "http://snomed.info/sct", "code": "1303503001", "display": "Administration of vaccine product containing only Human orthopneumovirus antigen (procedure)"}]}}], "identifier": [{"system": "https://www.ravs.england.nhs.uk/", "value": "0001_RSV_v5_RUN_2_CDFDPS-742_valid_dose_1"}], "status": "completed", "vaccineCode": {"coding": [{"system": "http://snomed.info/sct", "code": "42605811000001109", "display": "Abrysvo vaccine powder and solvent for solution for injection 0.5ml vials (Pfizer Ltd) (product)"}]}, "patient": {"reference": "#Pat1"}, "occurrenceDateTime": "2024-06-10T18:33:25+00:00", "recorded": "2024-06-10T18:33:25+00:00", "primarySource": true, "manufacturer": {"display": "Pfizer"}, "location": {"type": "Location", "identifier": {"value": "J82067", "system": "https://fhir.nhs.uk/Id/ods-organization-code"}}, "lotNumber": "RSVTEST", "expirationDate": "2024-12-31", "site": {"coding": [{"system": "http://snomed.info/sct", "code": "368208006", "display": "Left upper arm structure (body structure)"}]}, "route": {"coding": [{"system": "http://snomed.info/sct", "code": "78421000", "display": "Intramuscular route (qualifier value)"}]}, "doseQuantity": {"value": 0.5, "unit": "Milliliter (qualifier value)", "system": "http://unitsofmeasure.org", "code": "258773002"}, "performer": [{"actor": {"reference": "#Pract1"}}, {"actor": {"type": "Organization", "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "X0X0X"}}}], "reasonCode": [{"coding": [{"code": "Test", "system": "http://snomed.info/sct"}]}], "protocolApplied": [{"targetDisease": [{"coding": [{"system": "http://snomed.info/sct", "code": "840539006", "display": "Disease caused by severe acute respiratory syndrome coronavirus 2"}]}], "doseNumberPositiveInt": 1}], "id": "ca8ba2c6-2383-4465-b456-c1174c21cf31"}'
-                                },
-                                "PatientSK": {"S": "COVID19#ca8ba2c6-2383-4465-b456-c1174c21cf31"},
-                            },
+                "eventName": "REMOVE",
+                "dynamodb": {
+                    "ApproximateCreationDateTime": 1690896000,
+                    "Keys": {
+                        "PK": {"S": pk},
+                        "PatientSK": {"S": pk},
+                        "SupplierSystem": {"S": "EMIS"},
+                        "Resource": {
+                            "S": json.dumps(get_test_data_resource()),
                         },
-                    }
-                ]
+                    },
+                },
             }
 
     @patch("boto3.client")
@@ -116,13 +160,17 @@ class DeltaTestCase(unittest.TestCase):
             f"Error sending record to DLQ: An error occurred (500) when calling the SendMessage operation: Internal Server Error"
         )
 
+    @patch("delta.FirehoseLogger.send_log")
     @patch("boto3.resource")
-    def test_handler_success_insert(self, mock_boto_resource):
+    def test_handler_success_insert(self, mock_boto_resource, mock_send_log):
         # Arrange
+        mock_send_log.return_value = None
         self.setup_mock_dynamodb(mock_boto_resource)
         suppilers = ["DPS", "EMIS"]
         for supplier in suppilers:
             event = self.get_event(supplier=supplier)
+            for record in event["Records"]:
+                record["dynamodb"]["NewImage"]["Resource"]["S"] = json.dumps(get_test_data_resource())
 
             # Act
             result = handler(event, self.context)
@@ -130,9 +178,11 @@ class DeltaTestCase(unittest.TestCase):
             # Assert
             self.assertEqual(result["statusCode"], 200)
 
+    @patch("delta.FirehoseLogger.send_log")
     @patch("boto3.resource")
-    def test_handler_failure(self, mock_boto_resource):
+    def test_handler_failure(self, mock_boto_resource, mock_send_log):
         # Arrange
+        mock_send_log.return_value = None
         self.setup_mock_dynamodb(mock_boto_resource, status_code=500)
         event = self.get_event()
 
@@ -142,9 +192,11 @@ class DeltaTestCase(unittest.TestCase):
         # Assert
         self.assertEqual(result["statusCode"], 500)
 
+    @patch("delta.FirehoseLogger.send_log")
     @patch("boto3.resource")
-    def test_handler_success_update(self, mock_boto_resource):
+    def test_handler_success_update(self, mock_boto_resource, mock_send_log):
         # Arrange
+        mock_send_log.return_value = None
         self.setup_mock_dynamodb(mock_boto_resource)
         event = self.get_event(event_name="UPDATE", operation="UPDATE")
 
@@ -154,9 +206,11 @@ class DeltaTestCase(unittest.TestCase):
         # Assert
         self.assertEqual(result["statusCode"], 200)
 
+    @patch("delta.FirehoseLogger.send_log")
     @patch("boto3.resource")
-    def test_handler_success_remove(self, mock_boto_resource):
+    def test_handler_success_remove(self, mock_boto_resource, mock_send_log):
         # Arrange
+        mock_send_log.return_value = None
         self.setup_mock_dynamodb(mock_boto_resource)
         event = self.get_event(event_name="REMOVE", operation="DELETE")
 
@@ -166,10 +220,13 @@ class DeltaTestCase(unittest.TestCase):
         # Assert
         self.assertEqual(result["statusCode"], 200)
 
+    # @TOD Check this
+    @patch("delta.FirehoseLogger.send_log")  # Patch the method directly
     @patch("boto3.resource")
     @patch("boto3.client")
-    def test_handler_exception_intrusion_check(self, mock_boto_resource, mock_boto_client):
+    def test_handler_exception_intrusion_check(self, mock_boto_resource, mock_boto_client, mock_send_log):
         # Arrange
+        mock_send_log.return_value = None
         self.setup_mock_dynamodb(mock_boto_resource, status_code=500)
         mock_boto_client.return_value = MagicMock()
         event = self.get_event()
@@ -179,11 +236,13 @@ class DeltaTestCase(unittest.TestCase):
         result = handler(event, self.context)
         self.assertEqual(result["statusCode"], 500)
 
+    @patch("delta.FirehoseLogger.send_log")  # Patch the method directly
     @patch("boto3.resource")
     @patch("boto3.client")
-    def test_handler_exception_intrusion(self, mock_boto_resource, mock_boto_client):
+    def test_handler_exception_intrusion(self, mock_boto_resource, mock_boto_client, mock_send_log):
         # Arrange
         self.setUp_mock_resources(mock_boto_resource, mock_boto_client)
+        mock_send_log.return_value = None
         event = self.get_event()
         context = {}
 
@@ -191,39 +250,65 @@ class DeltaTestCase(unittest.TestCase):
         with self.assertRaises(Exception):
             handler(event, context)
 
+    @patch("delta.FirehoseLogger.send_log")
     @patch("boto3.resource")
-    @patch("delta.handler")
-    def test_handler_exception_intrusion_check_false(self, mock_boto_resource, mock_boto_client):
+    @patch("boto3.client")
+    @patch("delta.boto3.resource")
+    # @SW why has master got @patch("delta.handler")?
+    # what is the purpose of mocking the handler?
+    def test_handler_exception_intrusion_check_false(self, mock_dynamodb, mock_boto_resource, mock_boto_client, mock_send_log):
         # Arrange
         self.setUp_mock_resources(mock_boto_resource, mock_boto_client)
+    
+        # set up the event
         event = self.get_event()
         context = {}
 
         # Act & Assert
         with self.assertRaises(Exception):
             handler(event, context)
+            
+        self.mock_logger_exception.assert_called()
 
-    @patch("delta.firehose_logger.send_log")  # Mock Firehose logger
-    @patch("delta.logger.info")  # Mock logging
-    def test_dps_record_skipped(self, mock_logger_info, mock_firehose_send_log):
+    @patch("delta.FirehoseLogger.send_log")  # Patch the method directly
+    @patch("boto3.client")
+    @patch("delta.logger.info")
+    def test_dps_record_skipped(self, mock_logger_info, mock_boto_client, mock_send_log):
+        """
+        Test that DPSFULL records are skipped and Firehose put_record is mocked.
+        """
+        # Arrange
+        mock_firehose_client = self.setup_mock_firehose(mock_boto_client)
+
+        mock_send_log.return_value = None
+
+        # Create a test event with supplier "DPSFULL"
         event = self.get_event(supplier="DPSFULL")
         context = {}
 
+        # Act
         response = handler(event, context)
-        print(f"final response1: {response}")
 
+        # Assert
+        # check send_log was called
+        mock_send_log.assert_called_once()
         self.assertEqual(response["statusCode"], 200)
         self.assertEqual(response["body"], "Record from DPS skipped for 12345")
 
-        # Check logging and Firehose were called
+        # Check logging was called
         mock_logger_info.assert_called_with("Record from DPS skipped for 12345")
 
-    # TODO - amend test once error handling implemented
-    @patch("delta.firehose_logger.send_log")
+        # Ensure Firehose put_record was not called since DPSFULL records are skipped
+        mock_firehose_client.put_record.assert_not_called()
+
+    # # TODO - amend test once error handling implemented
+    @patch("delta.FirehoseLogger.send_log")  # Patch the method directly
     @patch("delta.logger.info")
     @patch("Converter.Converter")
     @patch("delta.boto3.resource")
-    def test_partial_success_with_errors(self, mock_dynamodb, mock_converter, mock_logger_info, mock_firehose_send_log):
+    def test_partial_success_with_errors(self, mock_dynamodb, mock_converter, mock_logger_info, mock_send_log):
+
+        mock_send_log.return_value = None
         mock_converter_instance = MagicMock()
         mock_converter_instance.runConversion.return_value = [{}]
         mock_converter_instance.getErrorRecords.return_value = [{"error": "Invalid field"}]
