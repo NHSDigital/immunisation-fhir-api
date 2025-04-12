@@ -191,6 +191,8 @@ class DeltaTestCase(unittest.TestCase):
 
         mock_firehose_logger.send_log.return_value = None 
 
+        self.setup_mock_firehose(mock_boto_client)
+
         self.setup_mock_dynamodb(mock_boto_resource)
         event = self.get_event(event_name="UPDATE", operation="UPDATE")
 

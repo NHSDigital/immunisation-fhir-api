@@ -37,7 +37,7 @@ def get_vaccine_type(patientsk) -> str:
 
 
 def handler(event, context):
-    global firehose_logger
+    global  firehose_logger
     logger.info("Starting Delta Handler")
     if firehose_logger is None:
         firehose_logger = FirehoseLogger()
