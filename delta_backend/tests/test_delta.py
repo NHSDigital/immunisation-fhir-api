@@ -181,7 +181,7 @@ class DeltaTestCase(unittest.TestCase):
     #     # Assert
     #     self.assertEqual(result["statusCode"], 500)
 
-    @patch("src.delta.firehose_logger")
+    @patch("delta.firehose_logger")
     @patch("boto3.client") 
     @patch("delta.boto3.resource")
     def test_handler_success_update(self, mock_boto_resource, mock_boto_client, mock_firehose_logger):
