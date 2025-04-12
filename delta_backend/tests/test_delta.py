@@ -10,12 +10,12 @@ os.environ["DELTA_TABLE_NAME"] = "my_delta_table"
 os.environ["SOURCE"] = "my_source"
 os.environ["SPLUNK_FIREHOSE_NAME"] = "my_firehose"
 
-from src.log_firehose import FirehoseLogger # Import after setting environment variables
+from src.delta import firehose_logger# Import after setting environment variables
 from src.delta import send_message, handler  # Import after setting environment variables
 import json
 
 # instantiate the FirehoseLogger so that it can load the environment variables
-firehose_logger = FirehoseLogger(stream_name="my_firehose")
+firehose_logger.delivery_stream_name = "my_firehose!!!!"
 
 
 class DeltaTestCase(unittest.TestCase):
