@@ -18,9 +18,12 @@ install: install-node install-python .git/hooks/pre-commit
 
 #Run the npm linting script (specified in package.json). Used to check the syntax and formatting of files.
 lint:
-	pyenv local $(pyenv versions --bare | grep '^3\.10' | sort -rV | head -n 1)
-	npm run lint
-	find . -name '*.py' -not -path '**/.venv/*' -not -path '**/.terraform/*'| xargs poetry run flake8
+	@version=$$(pyenv versions --bare | grep '^3\.10' | sort -rV | head -n 1) && \
+	pyenv local $$version && \
+	npm run lint && \
+	find . -name '*.py' \
+		-not -path '*/.venv/*' \
+		-not -path '*/.terraform/*' | xargs poetry run flake8
 
 #Removes build/ + dist/ directories
 clean:
