@@ -20,6 +20,7 @@ install: install-node install-python .git/hooks/pre-commit
 lint:
 	@version=$$(pyenv versions --bare | grep '^3\.10' | sort -rV | head -n 1) && \
 	pyenv local $$version && \
+	poetry install --no-root && \
 	npm run lint && \
 	find . -name '*.py' \
 		-not -path '*/.venv/*' \
