@@ -133,7 +133,7 @@ Steps:
     poetry env info
     ```
 
-3. Create an .env file and add environment variables
+3. Create an .env file and add environment variables.
     ```
     AWS_PROFILE={your_profile}
     IMMUNIZATION_ENV=local
@@ -153,6 +153,14 @@ Steps:
     direnv: export +AWS_PROFILE +IMMUNIZATION_ENV +VIRTUAL_ENV ~PATH
     ```
     Test if environment variables have been loaded into shell: `echo $IMMUNIZATION_ENV`.
+
+### Setting up the root level environment
+The root-level virtual environment is primarily used for linting, as we create separate virtual environments for each folder that contains Lambda functions.
+Steps: 
+1. Follow instructions above to [install dependencies](#install-dependencies) & [set up a virtual environment](#setting-up-a-virtual-environment-with-poetry).
+2. Run `make lint`. This will:
+    - Check the linting of the API specification yaml.
+    - Run Flake8 on all Python files in the repository, excluding files inside .venv and .terraform directories.
 
 ## IDE setup 
 The current team uses VS Code mainly. So this setup is targeted towards VS code. If you use another IDE please add the documentation to set up workspaces here.
