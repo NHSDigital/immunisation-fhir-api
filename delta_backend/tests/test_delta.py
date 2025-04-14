@@ -10,7 +10,7 @@ logger.setLevel("INFO")
 
 class DeltaTestCase(unittest.TestCase):
 
-    @patch("src.delta.firehose_logger")  # Mock the firehose_logger instance in delta.py
+    @patch("delta.firehose_logger")  # Mock the firehose_logger instance in delta.py
     def test_handler(self, mock_firehose_logger):
         """ it should handle delta event """
         
