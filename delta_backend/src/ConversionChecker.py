@@ -72,8 +72,16 @@ class ConversionChecker:
                 return self._convertToChangeTo(
                     expressionRule, fieldName, fieldValue, self.summarise, self.report_unexpected_exception
                 )
+            case "BOOLEAN":
+                return self._convertToBoolean(
+                    expressionRule, fieldName, fieldValue, self.summarise, self.report_unexpected_exception
+                )
             case "LOOKUP":
                 return self._convertToLookUp(
+                    expressionRule, fieldName, fieldValue, self.summarise, self.report_unexpected_exception
+                )
+            case "SNOMED":
+                return self._convertToSnomed(
                     expressionRule, fieldName, fieldValue, self.summarise, self.report_unexpected_exception
                 )
             case "DEFAULT":
@@ -148,13 +156,16 @@ class ConversionChecker:
     # Not Empty Validate - Returns exactly what is in the extracted fields no parsing or logic needed
     def _convertToNotEmpty(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
         try:
-            if len(str(fieldValue)) > 0:
+            if isinstance(fieldValue, (int, float)):
+                return ""  # Reject plain numbers
+            if isinstance(fieldValue, str) and fieldValue.strip():
                 return fieldValue
             return ""
         except Exception as e:
             if report_unexpected_exception:
                 message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
                 return message
+
 
     # NHSNumber Validate
     def _convertToNHSNumber(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
@@ -266,3 +277,46 @@ class ConversionChecker:
             if report_unexpected_exception:
                 message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
                 return message
+    
+    # Check if Snomed code is numeric and reject other forms
+    def _convertToSnomed(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
+        """
+        Validates that a SNOMED code is a non-empty string containing only digits.
+        """
+        try:
+            if not fieldValue or not isinstance(fieldValue, str) or not fieldValue.isdigit():
+                raise ValueError(f"Invalid SNOMED code: {fieldValue}")
+            return fieldValue
+        except Exception as e:
+            if report_unexpected_exception:
+                message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+                self.errorRecords.append({
+                    "field": fieldName,
+                    "value": fieldValue,
+                    "message": message
+                })
+            return ""
+
+    # Check if Input is boolean or if input is a string with true or false, convert to Boolean
+    def _convertToBoolean(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
+        try:
+            if isinstance(fieldValue, bool):
+                return fieldValue
+
+            if isinstance(fieldValue, str):
+                lowered = fieldValue.strip().lower()
+                if lowered == "true":
+                    return True
+                elif lowered == "false":
+                    return False
+
+            return ""  # Invalid input
+        except Exception as e:
+            if report_unexpected_exception:
+                message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (
+                    e.__class__.__name__, e
+                )
+                return message
+
+
+

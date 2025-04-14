@@ -19,6 +19,10 @@ class FirehoseLogger:
         self.delivery_stream_name = stream_name
 
     def send_log(self, log_message):
+        # if not self.delivery_stream_name:
+        #     logger.warning("No SPLUNK_FIREHOSE_NAME set — skipping Firehose log.")
+        #     return
+        
         log_to_splunk = log_message
         logger.info(f"Log sent to Firehose for save: {log_to_splunk}")
         encoded_log_data = json.dumps(log_to_splunk).encode("utf-8")

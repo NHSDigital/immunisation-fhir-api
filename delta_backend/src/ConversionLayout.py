@@ -148,7 +148,7 @@ ConvertLayout = {
       "fieldNameFlat": "PRIMARY_SOURCE",
       "expression": {
         "expressionName": "Not Empty",
-        "expressionType": "NOTEMPTY",
+        "expressionType": "BOOLEAN",
         "expressionRule": ""
       }
     },
@@ -157,7 +157,7 @@ ConvertLayout = {
       "fieldNameFlat": "VACCINATION_PROCEDURE_CODE",
       "expression": {
         "expressionName": "Not Empty",
-        "expressionType": "NOTEMPTY",
+        "expressionType": "SNOMED",
         "expressionRule": ""
       }
     },
@@ -184,7 +184,7 @@ ConvertLayout = {
       "fieldNameFlat": "VACCINE_PRODUCT_CODE",
       "expression": {
         "expressionName": "Not Empty",
-        "expressionType": "NOTEMPTY",
+        "expressionType": "SNOMED",
         "expressionRule": ""
       }
     },
@@ -229,7 +229,7 @@ ConvertLayout = {
       "fieldNameFlat": "SITE_OF_VACCINATION_CODE",
       "expression": {
         "expressionName": "Not Empty",
-        "expressionType": "NOTEMPTY",
+        "expressionType": "SNOMED",
         "expressionRule": ""
       }
     },
@@ -247,7 +247,7 @@ ConvertLayout = {
       "fieldNameFlat": "ROUTE_OF_VACCINATION_CODE",
       "expression": {
         "expressionName": "Not Empty",
-        "expressionType": "NOTEMPTY",
+        "expressionType": "SNOMED",
         "expressionRule": ""
       }
     },
@@ -292,7 +292,7 @@ ConvertLayout = {
       "fieldNameFlat": "INDICATION_CODE",
       "expression": {
         "expressionName": "Not Empty",
-        "expressionType": "NOTEMPTY",
+        "expressionType": "SNOMED",
         "expressionRule": ""
       }
     },

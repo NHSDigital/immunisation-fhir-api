@@ -203,7 +203,7 @@ class DeltaTestCase(unittest.TestCase):
         with self.assertRaises(Exception):
             handler(event, context)
 
-    @patch("delta.firehose_logger.send_log")  # Mock Firehose logger
+    @patch("delta.firehose_logger.send_log", return_value=None)  # Mock Firehose logger
     @patch("delta.logger.info")  # Mock logging
     def test_dps_record_skipped(self, mock_logger_info, mock_firehose_send_log):
         event = self.get_event(supplier="DPSFULL")
@@ -219,7 +219,7 @@ class DeltaTestCase(unittest.TestCase):
         mock_logger_info.assert_called_with("Record from DPS skipped for 12345")
 
     # TODO - amend test once error handling implemented
-    @patch("delta.firehose_logger.send_log")
+    @patch("delta.firehose_logger.send_log", return_value=None)
     @patch("delta.logger.info")
     @patch("Converter.Converter")
     @patch("delta.boto3.resource")
