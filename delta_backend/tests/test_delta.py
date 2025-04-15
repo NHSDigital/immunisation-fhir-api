@@ -19,16 +19,20 @@ class DeltaTestCase(unittest.TestCase):
     def setUp(self):
         # Common setup if needed
         self.context = {}
+        self.logger_info_patcher = patch("logging.Logger.info")
+        self.mock_logger_info = self.logger_info_patcher.start()
+
         self.logger_exception_patcher = patch("logging.Logger.exception")
         self.mock_logger_exception = self.logger_exception_patcher.start()
 
-        self.firehose_logger_patcher = patch("delta.firehose_logger")
+        self.firehose_logger_patcher = patch("src.delta.firehose_logger")
         self.mock_firehose_logger = self.firehose_logger_patcher.start()
-        self.mock_firehose_logger.send_log = MagicMock()
+        # self.mock_firehose_logger.send_log = MagicMock()
 
 
     def tearDown(self):
         self.logger_exception_patcher.stop()
+        self.logger_info_patcher.stop()
         self.mock_firehose_logger.stop()
 
     @staticmethod
@@ -227,7 +231,6 @@ class DeltaTestCase(unittest.TestCase):
         context = {}
 
         response = handler(event, context)
-        print(f"final response1: {response}")
 
         self.assertEqual(response["statusCode"], 200)
         self.assertEqual(response["body"], "Record from DPS skipped for 12345")
@@ -254,7 +257,6 @@ class DeltaTestCase(unittest.TestCase):
         context = {}
 
         response = handler(event, context)
-        print(f"final response: {response}")
 
         # self.assertEqual(response["statusCode"], 207)
         # self.assertIn("Partial success", response["body"])
