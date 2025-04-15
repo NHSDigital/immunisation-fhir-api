@@ -43,7 +43,8 @@ class TestMtls(unittest.TestCase):
             ImmunisationApi.make_request_with_backoff(
                 http_method="GET",
                 url=backend_health,
-                headers={"X-Request-ID": str(uuid.uuid4())})
+                headers={"X-Request-ID": str(uuid.uuid4())},
+                expected_status_code=200)
             self.assertTrue("RemoteDisconnected" in str(e.exception))
 
     @staticmethod
