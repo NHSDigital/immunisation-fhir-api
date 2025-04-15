@@ -3,7 +3,7 @@ import subprocess
 import unittest
 import uuid
 import requests
-
+from utils.immunisation_api import ImmunisationApi
 from lib.env import get_service_base_path, get_status_endpoint_api_key
 
 
@@ -40,8 +40,11 @@ class TestMtls(unittest.TestCase):
         backend_health = f"https://{backend_url}/status"
 
         with self.assertRaises(requests.exceptions.RequestException) as e:
-            requests.get(backend_health, headers={"X-Request-ID": str(uuid.uuid4())})
-        self.assertTrue("RemoteDisconnected" in str(e.exception))
+            ImmunisationApi.make_request_with_backoff(
+                http_method="GET",
+                url=backend_health,
+                headers={"X-Request-ID": str(uuid.uuid4())})
+            self.assertTrue("RemoteDisconnected" in str(e.exception))
 
     @staticmethod
     def get_backend_url() -> str:

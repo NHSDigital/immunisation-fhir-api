@@ -21,9 +21,6 @@ def parse_location(location) -> Optional[str]:
 
 
 class ImmunisationApi:
-    MAX_RETRIES = 5
-    STANDARD_REQUEST_DELAY_SECONDS = 1
-
     url: str
     headers: dict
     auth: BaseAuthentication
@@ -50,16 +47,19 @@ class ImmunisationApi:
     # The e2e tests put pressure on both test environments from APIGEE and PDS
     # so the chances of having rate limiting errors are high especially during
     # the busy times of the day.
-    def _make_request_with_backoff(
-        self,
+    @staticmethod
+    def make_request_with_backoff(
         http_method: str,
         url: str,
         expected_status_code: int,
+        headers: dict = None,
+        max_retries: int = 5,
+        delay_seconds: float = 1.0,
         **kwargs
     ):
-        for attempt in range(self.MAX_RETRIES):
+        for attempt in range(max_retries):
             try:
-                response = requests.request(http_method, url, **kwargs)
+                response = requests.request(method=http_method, url=url, headers=headers, **kwargs)
 
                 if response.status_code != expected_status_code:
                     if response.status_code >= 500:
@@ -72,11 +72,11 @@ class ImmunisationApi:
                 return response
 
             except Exception as e:
-                if attempt == self.MAX_RETRIES - 1:
+                if attempt == max_retries - 1:
                     raise
 
                 wait = (2 ** attempt) + random.uniform(0, 0.5)
-                total_wait_time = wait + self.STANDARD_REQUEST_DELAY_SECONDS
+                total_wait_time = wait + delay_seconds
 
                 print(
                     f"[{datetime.now():%Y-%m-%d %H:%M:%S}] "
@@ -105,7 +105,7 @@ class ImmunisationApi:
         return imms
 
     def get_immunization_by_id(self, event_id, expected_status_code: int = 200):
-        return self._make_request_with_backoff(
+        return self.make_request_with_backoff(
             "GET",
             f"{self.url}/Immunization/{event_id}",
             expected_status_code,
@@ -113,7 +113,7 @@ class ImmunisationApi:
         )
 
     def create_immunization(self, imms, expected_status_code: int = 201):
-        response = self._make_request_with_backoff(
+        response = self.make_request_with_backoff(
             "POST",
             f"{self.url}/Immunization",
             expected_status_code,
@@ -134,7 +134,7 @@ class ImmunisationApi:
         return response
 
     def update_immunization(self, imms_id, imms, expected_status_code: int = 200):
-        return self._make_request_with_backoff(
+        return self.make_request_with_backoff(
             "PUT",
             f"{self.url}/Immunization/{imms_id}",
             expected_status_code,
@@ -143,7 +143,7 @@ class ImmunisationApi:
         )
 
     def delete_immunization(self, imms_id, expected_status_code: int = 204):
-        return self._make_request_with_backoff(
+        return self.make_request_with_backoff(
             "DELETE",
             f"{self.url}/Immunization/{imms_id}",
             expected_status_code,
@@ -151,7 +151,7 @@ class ImmunisationApi:
         )
 
     def search_immunizations(self, patient_identifier: str, immunization_target: str, expected_status_code: int = 200):
-        return self._make_request_with_backoff(
+        return self.make_request_with_backoff(
             "GET",
             f"{self.url}/Immunization?patient.identifier={patient_identifier_system}|{patient_identifier}"
             f"&-immunization.target={immunization_target}",
@@ -171,7 +171,7 @@ class ImmunisationApi:
         else:
             url = f"{self.url}/Immunization?{query_string}"
 
-        return self._make_request_with_backoff(
+        return self.make_request_with_backoff(
             http_method,
             url,
             expected_status_code,
