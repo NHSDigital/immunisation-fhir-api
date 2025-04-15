@@ -93,17 +93,32 @@ class ConversionChecker:
                     expressionRule, fieldName, fieldValue, self.summarise, self.report_unexpected_exception
                 )
             case _:
-                return "Schema expression not found! Check your expression type : " + expressionType
-
+               return "Schema expression not found! Check your expression type : " + expressionType
+    
+    # Utility function for logging errors
+    def _log_error(self, fieldName, fieldValue, e, code=ExceptionMessages.RECORD_CHECK_FAILED):
+        message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+        self.errorRecords.append({
+            "code":code,
+            "field": fieldName,
+            "value": fieldValue,
+            "message": message
+        })
+    
     # Convert ISO date string to a specific format (e.g. YYYYMMDD)
     def _convertToDate(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
         if not fieldValue:
             return ""
 
         if not isinstance(fieldValue, str):
+            if report_unexpected_exception:
+                self._log_error(fieldName, fieldValue, "Value is not a string")
             return ""
+
         # Reject partial dates like "2024" or "2024-05"
         if re.match(r"^\d{4}(-\d{2})?$", fieldValue):
+            if report_unexpected_exception:
+                self._log_error(fieldName, fieldValue, "Partial date not accepted")
             return ""
         try:
             dt = datetime.fromisoformat(fieldValue)
@@ -307,14 +322,17 @@ class ConversionChecker:
                     return True
                 elif lowered == "false":
                     return False
-
-            return ""  # Invalid input
+            return "" 
         except Exception as e:
             if report_unexpected_exception:
-                message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (
-                    e.__class__.__name__, e
-                )
-                return message
+                 self.log_error(fieldName, fieldValue, e)
+            return ""
+    
+    def get_error_records(self):
+        return self.errorRecords
+               
+
+
 
 
 
