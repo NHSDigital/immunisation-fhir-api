@@ -120,7 +120,7 @@ The steps below must be performed in each Lambda function folder and e2e folder 
 For detailed instructions on running individual Lambdas, refer to the README.md files located inside each respective Lambda folder.
 
 Steps: 
-1. Set the python version in the `./backend` folder
+1. Set the python version in the folder with the code used by lambda for example `./backend` (see [lambdas](#lambdas)) folder.
     ```
     pyenv local 3.10.16 # Set version in backend (this creates a .python-version file)
     ```
