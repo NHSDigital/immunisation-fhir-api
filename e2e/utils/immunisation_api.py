@@ -51,16 +51,27 @@ class ImmunisationApi:
     def make_request_with_backoff(
         http_method: str,
         url: str,
-        expected_status_code: int,
+        expected_status_code: int = 200,
+        expected_connection_failure: bool = False,
         headers: dict = None,
         max_retries: int = 5,
-        delay_seconds: float = 1.0,
+        delay_seconds: float = 2.0,
         **kwargs
     ):
         for attempt in range(max_retries):
             try:
                 response = requests.request(method=http_method, url=url, headers=headers, **kwargs)
 
+                # This property is false by default and only true during the mtls test to simulate a connection failure
+                if expected_connection_failure:
+                    raise RuntimeError(
+                        f"Expected the connection to fail, "
+                        f"but it succeeded instead.\n"
+                        f"Request method: {http_method}\n"
+                        f"URL: {url}"
+                    )
+
+                # Check if the response matches the expected status code to identify potential issues
                 if response.status_code != expected_status_code:
                     if response.status_code >= 500:
                         raise RuntimeError(f"Server error: {response.status_code} during "
@@ -72,9 +83,10 @@ class ImmunisationApi:
                 return response
 
             except Exception as e:
-                if attempt == max_retries - 1:
+                if expected_connection_failure or attempt == max_retries - 1:
                     raise
 
+                # This is will be used in the retry logic of the exponential backoff
                 wait = (2 ** attempt) + random.uniform(0, 0.5)
                 total_wait_time = wait + delay_seconds
 

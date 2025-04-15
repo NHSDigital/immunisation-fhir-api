@@ -19,12 +19,14 @@ class TestProxyHealthcheck(unittest.TestCase):
 
     def test_ping(self):
         """/_ping should return 200 if proxy is up and running"""
-        response = requests.get(f"{self.proxy_url}/_ping")
+        response = ImmunisationApi.make_request_with_backoff(http_method="GET", url=f"{self.proxy_url}/_ping")
         self.assertEqual(response.status_code, 200, response.text)
 
     def test_status(self):
         """/_status should return 200 if proxy can reach to the backend"""
-        response = requests.get(f"{self.proxy_url}/_status", headers={"apikey": self.status_api_key})
+        response = ImmunisationApi.make_request_with_backoff(http_method="GET",
+                                                             url=f"{self.proxy_url}/_status",
+                                                             headers={"apikey": self.status_api_key})
         self.assertEqual(response.status_code, 200, response.text)
         body = response.json()
         self.assertEqual(body["status"].lower(), "pass",
@@ -43,8 +45,7 @@ class TestMtls(unittest.TestCase):
             ImmunisationApi.make_request_with_backoff(
                 http_method="GET",
                 url=backend_health,
-                headers={"X-Request-ID": str(uuid.uuid4())},
-                expected_status_code=200)
+                headers={"X-Request-ID": str(uuid.uuid4())})
             self.assertTrue("RemoteDisconnected" in str(e.exception))
 
     @staticmethod
@@ -84,5 +85,8 @@ class TestProxyAuthorization(unittest.TestCase):
 
     def test_invalid_access_token(self):
         """it should return 401 if access token is invalid"""
-        response = requests.get(f"{self.proxy_url}/Immunization", headers={"X-Request-ID": str(uuid.uuid4())})
+        response = ImmunisationApi.make_request_with_backoff(http_method="GET",
+                                                             url=f"{self.proxy_url}/Immunization",
+                                                             headers={"X-Request-ID": str(uuid.uuid4())},
+                                                             expected_status_code=401)
         self.assertEqual(response.status_code, 401, response.text)

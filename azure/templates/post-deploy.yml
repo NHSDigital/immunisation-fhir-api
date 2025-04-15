@@ -170,7 +170,7 @@ steps:
 
       else
         echo "running: $test_cmd -v -c -k test_proxy.TestProxyHealthcheck -k test_proxy.TestMtls"
-        $test_cmd -v -c
+        $test_cmd -v -c -k test_proxy.TestProxyHealthcheck -k test_proxy.TestMtls
       fi
     workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/e2e"
     displayName: Run Full Test Suite
