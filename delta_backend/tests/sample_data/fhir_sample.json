@@ -27,11 +27,14 @@
           "given": ["Sarah"]
         }
       ],
-      "gender": "unknown",
+      "gender": "other",
       "birthDate": "1965-02-28",
       "address": [
         {
-          "postalCode": "EC1A 1BB"
+          "use": "home",
+          "line": ["123 High Street"],
+          "city": "London",
+          "postalCode": "SW1A 1AA"
         }
       ]
     }
@@ -147,7 +150,7 @@
           ]
         }
       ],
-      "doseNumberPositiveInt": 1
+      "doseNumberPositiveInt": 2
     }
   ]
 }
