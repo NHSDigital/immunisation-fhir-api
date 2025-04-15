@@ -5,10 +5,9 @@ import boto3
 from copy import deepcopy
 from decimal import Decimal
 from typing import Union, Literal
-from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource
+from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
 from botocore.config import Config
 from .mappings import vaccine_type_mappings, VaccineTypes
-
 from .constants import valid_nhs_number1
 
 current_directory = os.path.dirname(os.path.realpath(__file__))
@@ -133,9 +132,42 @@ def get_patient_postal_code(imms: dict):
 
 
 def get_full_row_from_identifier(identifier: str) -> dict:
-    """Get the full record from the dynamodb table using the identifier"""
-    config = Config(connect_timeout=1, read_timeout=1, retries={"max_attempts": 1})
-    db: DynamoDBServiceResource = boto3.resource("dynamodb", region_name="eu-west-2", config=config)
-    table = db.Table(os.getenv("DYNAMODB_TABLE_NAME"))
-
+    table = get_dynamodb_table(os.getenv("DYNAMODB_TABLE_NAME"))
     return table.get_item(Key={"PK": f"Immunization#{identifier}"}).get("Item")
+
+
+def get_dynamodb_table(table_name: str) -> Table:
+    config = Config(connect_timeout=60, read_timeout=60, retries={"max_attempts": 3})
+    db: DynamoDBServiceResource = boto3.resource("dynamodb", region_name="eu-west-2", config=config)
+    return db.Table(table_name)
+
+
+def delete_imms_records(identifiers: list[str]) -> None:
+    """Batch delete immunization records from the DynamoDB table.
+    Handles logging internally and does not return anything.
+    """
+    table = get_dynamodb_table(os.getenv("DYNAMODB_TABLE_NAME"))
+    success_count = 0
+    failure_count = 0
+    total = len(identifiers)
+
+    if total > 0:
+        try:
+            with table.batch_writer(overwrite_by_pkeys=["PK"]) as batch:
+                for identifier in identifiers:
+                    key = {"PK": f"Immunization#{identifier}"}
+                    try:
+                        batch.delete_item(Key=key)
+                        success_count += 1
+                    except Exception as e:
+                        print(f"Failed to delete record with key {key}: {e}")
+                        failure_count += 1
+        except Exception as e:
+            print(f"[teardown error] Batch writer failed: {e}")
+            failure_count = total  # Assume all failed if batch writer fails
+
+        if failure_count > 0:
+            print(
+                f"[teardown warning] Deleted {success_count} records out of {total}, "
+                f"failed to delete {failure_count}"
+            )

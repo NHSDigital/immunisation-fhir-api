@@ -1,10 +1,7 @@
-import unittest
 from utils.base_test import ImmunizationBaseTest
 from utils.resource import generate_imms_resource, get_full_row_from_identifier
-from utils.constants import env_internal_dev
 
 
-@unittest.skipIf(env_internal_dev, "TestCreateImmunization for internal-dev environment")
 class TestCreateImmunization(ImmunizationBaseTest):
 
     def test_create_imms(self):
@@ -33,37 +30,38 @@ class TestCreateImmunization(ImmunizationBaseTest):
         """
         # Set up
         imms = generate_imms_resource()
-        imms_id = self.create_immunization_resource(self.default_imms_api, imms)
+        imms_id = self.default_imms_api.create_immunization_resource(imms)
         self.assertEqual(self.default_imms_api.get_immunization_by_id(imms_id).status_code, 200)
 
         # Check that duplicate CREATE request is rejected
-        self.assert_operation_outcome(self.default_imms_api.create_immunization(imms), 422)
+        self.assert_operation_outcome(self.default_imms_api.create_immunization(imms, expected_status_code=422), 422)
 
         # Check that duplice CREATE request is rejected after the event is updated
         imms["id"] = imms_id  # Imms fhir resource should include the id for update
         self.default_imms_api.update_immunization(imms_id, imms)
         self.assertEqual(self.default_imms_api.get_immunization_by_id(imms_id).status_code, 200)
         del imms["id"]  # Imms fhir resource should not include an id for create
-        self.assert_operation_outcome(self.default_imms_api.create_immunization(imms), 422)
+        self.assert_operation_outcome(self.default_imms_api.create_immunization(imms, expected_status_code=422), 422)
 
         # Check that duplice CREATE request is rejected after the event is updated then deleted
         self.default_imms_api.delete_immunization(imms_id)
-        self.assertEqual(self.default_imms_api.get_immunization_by_id(imms_id).status_code, 404)
-        self.assert_operation_outcome(self.default_imms_api.create_immunization(imms), 422)
+        self.assertEqual(self.default_imms_api.get_immunization_by_id(
+            imms_id, expected_status_code=404).status_code, 404)
+        self.assert_operation_outcome(self.default_imms_api.create_immunization(imms, expected_status_code=422), 422)
 
         # Check that duplice CREATE request is rejected after the event is updated then deleted then reinstated
         imms["id"] = imms_id  # Imms fhir resource should include the id for update
         self.default_imms_api.update_immunization(imms_id, imms)
         self.assertEqual(self.default_imms_api.get_immunization_by_id(imms_id).status_code, 200)
         del imms["id"]  # Imms fhir resource should not include an id for create
-        self.assert_operation_outcome(self.default_imms_api.create_immunization(imms), 422)
+        self.assert_operation_outcome(self.default_imms_api.create_immunization(imms, expected_status_code=422), 422)
 
     def test_bad_nhs_number(self):
         """it should reject the request if nhs-number does not exist"""
         bad_nhs_number = "7463384756"
         imms = generate_imms_resource(nhs_number=bad_nhs_number)
 
-        response = self.default_imms_api.create_immunization(imms)
+        response = self.default_imms_api.create_immunization(imms, expected_status_code=400)
 
         self.assert_operation_outcome(response, 400, bad_nhs_number)
 
@@ -75,7 +73,7 @@ class TestCreateImmunization(ImmunizationBaseTest):
         invalid_datetime = "2020-12-32"
         imms["occurrenceDateTime"] = invalid_datetime
         # When
-        response = self.default_imms_api.create_immunization(imms)
+        response = self.default_imms_api.create_immunization(imms, expected_status_code=400)
 
         # Then
         self.assert_operation_outcome(response, 400, "occurrenceDateTime")
@@ -134,7 +132,7 @@ class TestCreateImmunization(ImmunizationBaseTest):
         del imms["primarySource"]
 
         # When
-        response = self.default_imms_api.create_immunization(imms)
+        response = self.default_imms_api.create_immunization(imms, expected_status_code=400)
 
         # Then
         self.assert_operation_outcome(response, 400, "primarySource is a mandatory field")
