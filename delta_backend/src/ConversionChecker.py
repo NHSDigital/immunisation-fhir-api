@@ -234,17 +234,15 @@ class ConversionChecker:
             return fieldValue
         return "" 
 
-    # Change to Lookup
+    # Change to Lookup (loads expected data as is but if empty use lookup extraction to populate value)
     def _convertToLookUp(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
+        if isinstance(fieldValue, str) and any(char.isalpha() for char in fieldValue) and not fieldValue.isdigit():
+            return fieldValue
         try:
-            if fieldValue != "":
-                return fieldValue
-            try:
                 lookUpValue = self.dataParser.getKeyValue(expressionRule)
                 IdentifiedLookup = self.dataLookUp.findLookUp(lookUpValue[0])
                 return IdentifiedLookup
-            except:
-                return ""
+        
         except Exception as e:
             if report_unexpected_exception:
                 message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
