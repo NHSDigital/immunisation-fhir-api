@@ -44,10 +44,7 @@ class DeltaTestCase(unittest.TestCase):
         return mock_table
 
     @staticmethod
-    def get_event(event_name="INSERT", operation="CREATE", supplier="EMIS", is_empty=False):
-        if is_empty:
-           return {} 
-       
+    def get_event(event_name="INSERT", operation="CREATE", supplier="EMIS"):
         if operation != "DELETE":
             return {
                 "Records": [
@@ -201,7 +198,7 @@ class DeltaTestCase(unittest.TestCase):
                                          mock_firehose_logger, mock_logger_exception):
         # Arrange
         self.setup_mock_dynamodb(mock_boto_resource)
-        event = self.get_event(is_empty=True)
+        event = {}
         context = {}
 
         # Act & Assert
