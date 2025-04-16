@@ -328,45 +328,45 @@ class TestConvertToFlatJson(unittest.TestCase):
 #         result = checker._convertToNHSNumber("NHSNUMBER","fieldName", invalid_nhs_number, False, True)
 #         self.assertEqual(result, "", "Invalid NHS number should return empty string")
 
-#     @patch("ConversionChecker.LookUpData")
-#     def test_convert_to_date(self, MockLookUpData):
-#         dataParser = Mock()
+    @patch("ConversionChecker.LookUpData")
+    def test_convert_to_date(self, MockLookUpData):
+        dataParser = Mock()
 
-#         checker = ConversionChecker(dataParser, summarise=False, report_unexpected_exception=True)
+        checker = ConversionChecker(dataParser, summarise=False, report_unexpected_exception=True)
 
-#         valid_date = "2022-01-01"
-#         result = checker._convertToDate("%Y%m%d", "fieldName", valid_date, False, True)
-#         self.assertEqual(result, "20220101")
+        valid_date = "2022-01-01"
+        result = checker._convertToDate("%Y%m%d", "fieldName", valid_date, False, True)
+        self.assertEqual(result, "20220101")
         
-#         invalid_date = "invalid_date"
-#         result = checker._convertToDate("format:%Y%m%d", "fieldName", invalid_date, False, True)
-#         self.assertEqual(result, "Unexpected format: invalid_date")
+        invalid_date = "invalid_date"
+        result = checker._convertToDate("format:%Y%m%d", "fieldName", invalid_date, False, True)
+        self.assertEqual(result, "Unexpected format: invalid_date")
 
-#         # Test for error case with exception
-#         result = checker._convertToDate("%Y%m%d", "fieldName", None, False, True)
-#         self.assertEqual(result, "")
+        # Test for error case with exception
+        result = checker._convertToDate("%Y%m%d", "fieldName", None, False, True)
+        self.assertEqual(result, "")
   
-#     @patch("ConversionChecker.LookUpData")
-#     def test_convert_to_date_time(self, MockLookUpData):
-#         dataParser = Mock()
+    @patch("ConversionChecker.LookUpData")
+    def test_convert_to_date_time(self, MockLookUpData):
+        dataParser = Mock()
 
-#         checker = ConversionChecker(dataParser, summarise=False, report_unexpected_exception=True)
+        checker = ConversionChecker(dataParser, summarise=False, report_unexpected_exception=True)
 
-#         valid_date_time = "2022-01-01T12:00:00+00:00"
-#         result = checker._convertToDateTime("%Y%m%dT%H%M%S", "fieldName", valid_date_time, False, True)
-#         self.assertEqual(result, "20220101T120000")
+        valid_date_time = "2022-01-01T12:00:00+00:00"
+        result = checker._convertToDateTime("%Y%m%dT%H%M%S", "fieldName", valid_date_time, False, True)
+        self.assertEqual(result, "20220101T120000")
 
-#         valid_csv_utc = "2022-01-01T13:28:17+00:00"
-#         result = checker._convertToDateTime("format:csv-utc", "fieldName", valid_csv_utc, False, True)
-#         self.assertEqual(result, "20220101T13281700")
+        valid_csv_utc = "2022-01-01T13:28:17+00:00"
+        result = checker._convertToDateTime("format:csv-utc", "fieldName", valid_csv_utc, False, True)
+        self.assertEqual(result, "20220101T13281700")
 
-#         invalid_date_time = "invalid_date_time"
-#         result = checker._convertToDateTime("format:%Y%m%dT%H%M%S", "fieldName", invalid_date_time, False, True)
-#         self.assertEqual(result, "Unexpected format: invalid_date_time")
+        invalid_date_time = "invalid_date_time"
+        result = checker._convertToDateTime("format:%Y%m%dT%H%M%S", "fieldName", invalid_date_time, False, True)
+        self.assertEqual(result, "Unexpected format: invalid_date_time")
         
-#         # Empty input returns blank
-#         result = checker._convertToDateTime("format:%Y%m%dT%H%M%S", "fieldName", "", False, True)
-#         self.assertEqual(result, "")
+        # Empty input returns blank
+        result = checker._convertToDateTime("format:%Y%m%dT%H%M%S", "fieldName", "", False, True)
+        self.assertEqual(result, "")
 
     #check for dose sequence
     @patch("ConversionChecker.LookUpData")
