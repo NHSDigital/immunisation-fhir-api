@@ -114,25 +114,37 @@ class ConversionChecker:
             if report_unexpected_exception:
                 self._log_error(fieldName, fieldValue, "Value is not a string")
             return ""
-
-        # Reject partial dates like "2024" or "2024-05"
-        if re.match(r"^\d{4}(-\d{2})?$", fieldValue):
+        
+        # Normalize expression rule
+        format_str = expressionRule.replace("format:", "").strip()
+        
+        # Reject partial ISO dates like "2024" or "2024-05"
+        if format_str == "%Y%m%d" and re.match(r"^\d{4}(-\d{2})?$", fieldValue):
             if report_unexpected_exception:
                 self._log_error(fieldName, fieldValue, "Partial date not accepted")
             return ""
 
-        try:
-            dt = datetime.fromisoformat(fieldValue)
-
-             # Reject future dates if the field is BirthDate
-            if fieldName == "contained|#:Patient|birthDate" and dt.date() > datetime.now(timezone.utc).date():
+        # Pre-process if expecting no delimiters
+        if format_str == "%Y%m%d":
+            fieldValue = fieldValue.replace("-", "").replace("/", "")
+            # Validate expected raw input format if using %Y%m%d
+            if not re.match(r"^\d{8}$", fieldValue):
                 if report_unexpected_exception:
-                    self._log_error(fieldName, fieldValue, "BirthDate cannot be in the future")
+                    self._log_error(fieldName, fieldValue, "Date must be in YYYYMMDD format")
                 return ""
 
-            format_str = expressionRule.replace("format:", "")
-            return dt.strftime(format_str)
 
+        try:
+            dt = datetime.strptime(fieldValue, format_str)
+
+            # Reject future dates if the field is BirthDate
+            if fieldName in ["contained|#:Patient|birthDate", "recorded"]:
+                if dt.date() > datetime.now(timezone.utc).date():
+                    if report_unexpected_exception:
+                        self._log_error(fieldName, fieldValue, "Date cannot be in the future")
+                    return ""
+
+            return dt.strftime(expressionRule)
         except ValueError as e:
             if report_unexpected_exception:
                 self._log_error(fieldName, fieldValue, e)
