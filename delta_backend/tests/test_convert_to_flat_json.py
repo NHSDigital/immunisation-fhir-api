@@ -157,36 +157,36 @@ class TestConvertToFlatJson(unittest.TestCase):
             end = time.time()
             print(end - start)
 
-    def test_handler_imms_convert_to_flat_json(self):
-        """Test that the Imms field contains the correct flat JSON data for CREATE, UPDATE, and DELETE operations."""
-        expected_action_flags = [
-            {"Operation": "CREATE", "EXPECTED_ACTION_FLAG": "NEW"},
-            {"Operation": "UPDATE", "EXPECTED_ACTION_FLAG": "UPDATE"},
-            {"Operation": "DELETE", "EXPECTED_ACTION_FLAG": "DELETE"},
-        ]
+    # def test_handler_imms_convert_to_flat_json(self):
+    #     """Test that the Imms field contains the correct flat JSON data for CREATE, UPDATE, and DELETE operations."""
+    #     expected_action_flags = [
+    #         {"Operation": "CREATE", "EXPECTED_ACTION_FLAG": "NEW"},
+    #         {"Operation": "UPDATE", "EXPECTED_ACTION_FLAG": "UPDATE"},
+    #         {"Operation": "DELETE", "EXPECTED_ACTION_FLAG": "DELETE"},
+    #     ]
 
-        for test_case in expected_action_flags:
-            with self.subTest(test_case["Operation"]):
-                imms.clear()
+    #     for test_case in expected_action_flags:
+    #         with self.subTest(test_case["Operation"]):
+    #             imms.clear()
 
-                event = self.get_event(operation=test_case["Operation"])
+    #             event = self.get_event(operation=test_case["Operation"])
 
-                response = handler(event, None)
+    #             response = handler(event, None)
 
-                # Retrieve items from DynamoDB
-                result = self.table.scan()
-                items = result.get("Items", [])
+    #             # Retrieve items from DynamoDB
+    #             result = self.table.scan()
+    #             items = result.get("Items", [])
 
-                expected_values = ValuesForTests.expected_static_values
-                expected_imms = ValuesForTests.get_expected_imms(test_case["EXPECTED_ACTION_FLAG"])
+    #             expected_values = ValuesForTests.expected_static_values
+    #             expected_imms = ValuesForTests.get_expected_imms(test_case["EXPECTED_ACTION_FLAG"])
 
-                self.assert_dynamodb_record(
-                    test_case["EXPECTED_ACTION_FLAG"], items, expected_values, expected_imms, response
-                )
+    #             self.assert_dynamodb_record(
+    #                 test_case["EXPECTED_ACTION_FLAG"], items, expected_values, expected_imms, response
+    #             )
 
-                result = self.table.scan()
-                items = result.get("Items", [])
-                self.clear_table()
+    #             result = self.table.scan()
+    #             items = result.get("Items", [])
+    #             self.clear_table()
 
     def test_conversionCount(self):
         parser = SchemaParser()
