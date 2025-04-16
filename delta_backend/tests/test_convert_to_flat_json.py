@@ -157,9 +157,15 @@ class TestConvertToFlatJson(unittest.TestCase):
             end = time.time()
             print(end - start)
 
+    @patch("boto3.client")
+    @patch("src.delta.logger.info")
     @patch("src.delta.firehose_logger")
-    def test_handler_imms_convert_to_flat_json(self, mock_logger):
+    def test_handler_imms_convert_to_flat_json(self, mock_logger, mock_logger_info, mock_boto_client):
         """Test that the Imms field contains the correct flat JSON data for CREATE, UPDATE, and DELETE operations."""
+
+        # mock boto_client=boto3.client("firehose", config=Config(region_name="eu-west-2"))
+        mock_boto_client.return_value = Mock()
+        mock_boto_client.return_value.put_record.return_value = {"ResponseMetadata": {"HTTPStatusCode": 200}}
 
         mock_logger.send_log = Mock()
         mock_logger.send_log.return_value = None
