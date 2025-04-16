@@ -247,21 +247,21 @@ class TestConvertToFlatJson(unittest.TestCase):
 #         )
 #         self.assertEqual(converter.getErrorRecords()[0]["code"], 0)
 
-#     @patch("Converter.SchemaParser.getConversions")
-#     def test_get_conversions_exception(self, mock_get_conversions):
-#         # Mock getConversions to raise an exception
-#         mock_get_conversions.side_effect = Exception("Error while getting conversions")
-#         converter = Converter(fhir_data="some_data")
+    @patch("Converter.SchemaParser.getConversions")
+    def test_get_conversions_exception(self, mock_get_conversions):
+        # Mock getConversions to raise an exception
+        mock_get_conversions.side_effect = Exception("Error while getting conversions")
+        converter = Converter(fhir_data="some_data")
 
-#         response = converter.runConversion(ValuesForTests.json_data)
+        response = converter.runConversion(ValuesForTests.json_data)
 
-#         # Check if the error message was added to ErrorRecords
-#         self.assertEqual(len(converter.getErrorRecords()), 3)
-#         self.assertIn(
-#             "FHIR Parser Unexpected exception [JSONDecodeError]: Expecting value: line 1 column 1 (char 0)",
-#             converter.getErrorRecords()[0]["message"],
-#         )
-#         self.assertEqual(converter.getErrorRecords()[0]["code"], 0)
+        # Check if the error message was added to ErrorRecords
+        self.assertEqual(len(converter.getErrorRecords()), 3)
+        self.assertIn(
+            "FHIR Parser Unexpected exception [JSONDecodeError]: Expecting value: line 1 column 1 (char 0)",
+            converter.getErrorRecords()[0]["message"],
+        )
+        self.assertEqual(converter.getErrorRecords()[0]["code"], 0)
 
     @patch("Converter.SchemaParser.getConversions")
     @patch("Converter.FHIRParser.getKeyValue")
