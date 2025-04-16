@@ -368,32 +368,32 @@ class TestConvertToFlatJson(unittest.TestCase):
 #         result = checker._convertToDateTime("format:%Y%m%dT%H%M%S", "fieldName", "", False, True)
 #         self.assertEqual(result, "")
 
-#     #check for dose sequence
-#     @patch("ConversionChecker.LookUpData")
-#     def test_convert_to_dose(self, MockLookUpData):
-#         dataParser = Mock()
+    #check for dose sequence
+    @patch("ConversionChecker.LookUpData")
+    def test_convert_to_dose(self, MockLookUpData):
+        dataParser = Mock()
 
-#         checker = ConversionChecker(dataParser, summarise=False, report_unexpected_exception=True)
-#         # Valid dose
-#         for dose in [1, 4, 9]:
-#             with self.subTest(dose=dose):
-#                 result = checker._convertToDose("DOSESEQUENCE", "DOSE_AMOUNT", dose, False, True)
-#                 self.assertEqual(result, dose)
+        checker = ConversionChecker(dataParser, summarise=False, report_unexpected_exception=True)
+        # Valid dose
+        for dose in [1, 4, 9]:
+            with self.subTest(dose=dose):
+                result = checker._convertToDose("DOSESEQUENCE", "DOSE_AMOUNT", dose, False, True)
+                self.assertEqual(result, dose)
         
-#         # Invalid dose
-#         invalid_doses = [10, 10.1, 100, 9.0001]
-#         for dose in invalid_doses:
-#             with self.subTest(dose=dose):
-#                 result = checker._convertToDose("DOSESEQUENCE", "DOSE_AMOUNT", dose, False, True)
-#                 self.assertEqual(result, "", f"Expected empty string for invalid dose {dose}")
+        # Invalid dose
+        invalid_doses = [10, 10.1, 100, 9.0001]
+        for dose in invalid_doses:
+            with self.subTest(dose=dose):
+                result = checker._convertToDose("DOSESEQUENCE", "DOSE_AMOUNT", dose, False, True)
+                self.assertEqual(result, "", f"Expected empty string for invalid dose {dose}")
 
-#     def clear_table(self):
-#         scan = self.table.scan()
-#         with self.table.batch_writer() as batch:
-#             for item in scan.get("Items", []):
-#                 batch.delete_item(Key={"PK": item["PK"]})
-#         result = self.table.scan()
-#         items = result.get("Items", [])
+    def clear_table(self):
+        scan = self.table.scan()
+        with self.table.batch_writer() as batch:
+            for item in scan.get("Items", []):
+                batch.delete_item(Key={"PK": item["PK"]})
+        result = self.table.scan()
+        items = result.get("Items", [])
 
 
 class TestPersonForeNameToFlatJson(unittest.TestCase):
