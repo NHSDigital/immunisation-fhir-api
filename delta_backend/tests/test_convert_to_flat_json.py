@@ -27,77 +27,77 @@ with patch.dict("os.environ", MOCK_ENV_VARS):
     from Converter import imms, ErrorRecords
 
 
-# @patch.dict("os.environ", MOCK_ENV_VARS, clear=True)
-# @mock_dynamodb
-# @mock_sqs
-# class TestConvertToFlatJson(unittest.TestCase):
-#     maxDiff = None
-#     def setUp(self):
-#         """Set up mock DynamoDB table."""
-#         self.dynamodb_resource = boto3_resource("dynamodb", "eu-west-2")
-#         self.table = self.dynamodb_resource.create_table(
-#             TableName="immunisation-batch-internal-dev-audit-test-table",
-#             KeySchema=[
-#                 {"AttributeName": "PK", "KeyType": "HASH"},
-#             ],
-#             AttributeDefinitions=[
-#                 {"AttributeName": "PK", "AttributeType": "S"},
-#                 {"AttributeName": "Operation", "AttributeType": "S"},
-#                 {"AttributeName": "IdentifierPK", "AttributeType": "S"},
-#                 {"AttributeName": "SupplierSystem", "AttributeType": "S"},
-#             ],
-#             ProvisionedThroughput={"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
-#             GlobalSecondaryIndexes=[
-#                 {
-#                     "IndexName": "IdentifierGSI",
-#                     "KeySchema": [{"AttributeName": "IdentifierPK", "KeyType": "HASH"}],
-#                     "Projection": {"ProjectionType": "ALL"},
-#                     "ProvisionedThroughput": {"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
-#                 },
-#                 {
-#                     "IndexName": "PatientGSI",
-#                     "KeySchema": [
-#                         {"AttributeName": "Operation", "KeyType": "HASH"},
-#                         {"AttributeName": "SupplierSystem", "KeyType": "RANGE"},
-#                     ],
-#                     "Projection": {"ProjectionType": "ALL"},
-#                     "ProvisionedThroughput": {"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
-#                 },
-#             ],
-#         )
+@patch.dict("os.environ", MOCK_ENV_VARS, clear=True)
+@mock_dynamodb
+@mock_sqs
+class TestConvertToFlatJson(unittest.TestCase):
+    maxDiff = None
+    def setUp(self):
+        """Set up mock DynamoDB table."""
+        self.dynamodb_resource = boto3_resource("dynamodb", "eu-west-2")
+        self.table = self.dynamodb_resource.create_table(
+            TableName="immunisation-batch-internal-dev-audit-test-table",
+            KeySchema=[
+                {"AttributeName": "PK", "KeyType": "HASH"},
+            ],
+            AttributeDefinitions=[
+                {"AttributeName": "PK", "AttributeType": "S"},
+                {"AttributeName": "Operation", "AttributeType": "S"},
+                {"AttributeName": "IdentifierPK", "AttributeType": "S"},
+                {"AttributeName": "SupplierSystem", "AttributeType": "S"},
+            ],
+            ProvisionedThroughput={"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
+            GlobalSecondaryIndexes=[
+                {
+                    "IndexName": "IdentifierGSI",
+                    "KeySchema": [{"AttributeName": "IdentifierPK", "KeyType": "HASH"}],
+                    "Projection": {"ProjectionType": "ALL"},
+                    "ProvisionedThroughput": {"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
+                },
+                {
+                    "IndexName": "PatientGSI",
+                    "KeySchema": [
+                        {"AttributeName": "Operation", "KeyType": "HASH"},
+                        {"AttributeName": "SupplierSystem", "KeyType": "RANGE"},
+                    ],
+                    "Projection": {"ProjectionType": "ALL"},
+                    "ProvisionedThroughput": {"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
+                },
+            ],
+        )
 
-#     @staticmethod
-#     def get_event(event_name="INSERT", operation="operation", supplier="EMIS"):
-#         """Returns test event data."""
-#         return ValuesForTests.get_event(event_name, operation, supplier)
+    @staticmethod
+    def get_event(event_name="INSERT", operation="operation", supplier="EMIS"):
+        """Returns test event data."""
+        return ValuesForTests.get_event(event_name, operation, supplier)
 
-#     def assert_dynamodb_record(self, operation_flag, items, expected_values, expected_imms, response):
-#         """
-#         Asserts that a record with the expected structure exists in DynamoDB.
-#         Ignores dynamically generated fields like PK, DateTimeStamp, and ExpiresAt.
-#         Ensures that the 'Imms' field matches exactly.
-#         """
-#         self.assertEqual(response["statusCode"], 200)
-#         self.assertEqual(response["body"], "Records processed successfully")
+    def assert_dynamodb_record(self, operation_flag, items, expected_values, expected_imms, response):
+        """
+        Asserts that a record with the expected structure exists in DynamoDB.
+        Ignores dynamically generated fields like PK, DateTimeStamp, and ExpiresAt.
+        Ensures that the 'Imms' field matches exactly.
+        """
+        self.assertEqual(response["statusCode"], 200)
+        self.assertEqual(response["body"], "Records processed successfully")
 
-#         filtered_items = [
-#             {k: v for k, v in item.items() if k not in ["PK", "DateTimeStamp", "ExpiresAt"]}
-#             for item in items
-#             if item.get("Operation") == operation_flag
-#         ]
+        filtered_items = [
+            {k: v for k, v in item.items() if k not in ["PK", "DateTimeStamp", "ExpiresAt"]}
+            for item in items
+            if item.get("Operation") == operation_flag
+        ]
 
-#         self.assertGreater(len(filtered_items), 0, f"No matching item found for {operation_flag}")
+        self.assertGreater(len(filtered_items), 0, f"No matching item found for {operation_flag}")
 
-#         imms_data = filtered_items[0]["Imms"]
-#         self.assertIsInstance(imms_data, str)
-#         self.assertGreater(len(imms_data), 0)
+        imms_data = filtered_items[0]["Imms"]
+        self.assertIsInstance(imms_data, str)
+        self.assertGreater(len(imms_data), 0)
 
-#         # Check Imms JSON structure matches exactly
-#         self.assertEqual(imms_data, str(expected_imms), "Imms data does not match expected JSON structure")
+        # Check Imms JSON structure matches exactly
+        self.assertEqual(imms_data, str(expected_imms), "Imms data does not match expected JSON structure")
 
-#         for key, expected_value in expected_values.items():
-#             self.assertIn(key, filtered_items[0], f"{key} is missing")
-#             self.assertEqual(filtered_items[0][key], expected_value, f"{key} mismatch")
+        for key, expected_value in expected_values.items():
+            self.assertIn(key, filtered_items[0], f"{key} is missing")
+            self.assertEqual(filtered_items[0][key], expected_value, f"{key} mismatch")
 
 #     def test_fhir_converter_json_direct_data(self):
 #         """it should convert fhir json data to flat json"""
