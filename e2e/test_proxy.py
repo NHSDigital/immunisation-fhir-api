@@ -27,8 +27,11 @@ class TestProxyHealthcheck(unittest.TestCase):
         response = ImmunisationApi.make_request_with_backoff(http_method="GET",
                                                              url=f"{self.proxy_url}/_status",
                                                              headers={"apikey": self.status_api_key})
+        print(f"Calling {self.proxy_url}/_status with api key: {self.status_api_key}")
         self.assertEqual(response.status_code, 200, response.text)
         body = response.json()
+        print(f"Status code {response.status_code}  {body['status']}")
+
         self.assertEqual(body["status"].lower(), "pass",
                          f"service is not healthy: status: {body['status']}")
 
