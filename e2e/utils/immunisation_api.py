@@ -56,6 +56,7 @@ class ImmunisationApi:
         expected_connection_failure: bool = False,
         max_retries: int = 5,
         delay_seconds: float = 2.0,
+        is_status_check: bool = False,
         **kwargs
     ):
         for attempt in range(max_retries):
@@ -70,6 +71,13 @@ class ImmunisationApi:
                         f"Request method: {http_method}\n"
                         f"URL: {url}"
                     )
+
+                # Sometimes it can take time for the new endpoint to activate
+                if is_status_check:
+                    body = response.json()
+                    if body["status"].lower() != "pass":
+                        raise RuntimeError(f"Server status check at {url} returned status code {response.status_code}, "
+                                           f"but status is: {body['status']}")
 
                 # Check if the response matches the expected status code to identify potential issues
                 if response.status_code != expected_status_code:
