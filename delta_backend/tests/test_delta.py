@@ -25,7 +25,7 @@ class DeltaTestCase(unittest.TestCase):
         self.logger_exception_patcher = patch("logging.Logger.exception")
         self.mock_logger_exception = self.logger_exception_patcher.start()
 
-        self.firehose_logger_patcher = patch("delta.firehose_logger")
+        self.firehose_logger_patcher = patch("src.delta.firehose_logger")
         self.mock_firehose_logger = self.firehose_logger_patcher.start()
         # self.mock_firehose_logger.send_log = MagicMock()
 
