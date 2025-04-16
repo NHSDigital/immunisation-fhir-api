@@ -293,40 +293,40 @@ class TestConvertToFlatJson(unittest.TestCase):
 #         )
 #         self.assertEqual(error_records[0]["code"], 0)
 
-#     @patch("ConversionChecker.LookUpData")
-#     def test_convert_to_not_empty(self, MockLookUpData):
+    @patch("ConversionChecker.LookUpData")
+    def test_convert_to_not_empty(self, MockLookUpData):
 
-#         dataParser = Mock()
+        dataParser = Mock()
 
-#         checker = ConversionChecker(dataParser, summarise=False, report_unexpected_exception=True)
+        checker = ConversionChecker(dataParser, summarise=False, report_unexpected_exception=True)
 
-#         result = checker._convertToNotEmpty(None, "fieldName", "Some data", False, True)
-#         self.assertEqual(result, "Some data")
+        result = checker._convertToNotEmpty(None, "fieldName", "Some data", False, True)
+        self.assertEqual(result, "Some data")
 
-#         result = checker._convertToNotEmpty(None, "fieldName", "", False, True)
-#         self.assertEqual(result, "")
+        result = checker._convertToNotEmpty(None, "fieldName", "", False, True)
+        self.assertEqual(result, "")
 
-#     @patch("ConversionChecker.LookUpData")
-#     def test_convert_to_nhs_number(self, MockLookUpData):
+    @patch("ConversionChecker.LookUpData")
+    def test_convert_to_nhs_number(self, MockLookUpData):
 
-#         dataParser = Mock()
+        dataParser = Mock()
 
-#         checker = ConversionChecker(dataParser, summarise=False, report_unexpected_exception=True)
+        checker = ConversionChecker(dataParser, summarise=False, report_unexpected_exception=True)
         
-#          # Test empty NHS number
-#         empty_nhs_number = ""
-#         result = checker._convertToNHSNumber(None, "fieldName", empty_nhs_number, False, True)
-#         self.assertEqual(result, "", "Expected empty string for empty NHS number input")
+         # Test empty NHS number
+        empty_nhs_number = ""
+        result = checker._convertToNHSNumber(None, "fieldName", empty_nhs_number, False, True)
+        self.assertEqual(result, "", "Expected empty string for empty NHS number input")
 
-#         # Test valid NHS number
-#         valid_nhs_number = "6000000000"
-#         result = checker._convertToNHSNumber("NHSNUMBER", "fieldName", valid_nhs_number, False, True)
-#         self.assertEqual(result, "6000000000", "Valid NHS number should be returned as-is")
+        # Test valid NHS number
+        valid_nhs_number = "6000000000"
+        result = checker._convertToNHSNumber("NHSNUMBER", "fieldName", valid_nhs_number, False, True)
+        self.assertEqual(result, "6000000000", "Valid NHS number should be returned as-is")
 
-#         # Test invalid NHS number
-#         invalid_nhs_number = "1234567890243"
-#         result = checker._convertToNHSNumber("NHSNUMBER","fieldName", invalid_nhs_number, False, True)
-#         self.assertEqual(result, "", "Invalid NHS number should return empty string")
+        # Test invalid NHS number
+        invalid_nhs_number = "1234567890243"
+        result = checker._convertToNHSNumber("NHSNUMBER","fieldName", invalid_nhs_number, False, True)
+        self.assertEqual(result, "", "Invalid NHS number should return empty string")
 
     @patch("ConversionChecker.LookUpData")
     def test_convert_to_date(self, MockLookUpData):
