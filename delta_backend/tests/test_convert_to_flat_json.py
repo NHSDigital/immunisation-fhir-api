@@ -15,7 +15,6 @@ from SchemaParser import SchemaParser
 from Converter import Converter
 from ConversionChecker import ConversionChecker
 
-
 MOCK_ENV_VARS = {
     "AWS_SQS_QUEUE_URL": "https://sqs.eu-west-2.amazonaws.com/123456789012/test-queue",
     "DELTA_TABLE_NAME": "immunisation-batch-internal-dev-audit-test-table",
@@ -26,7 +25,11 @@ with patch.dict("os.environ", MOCK_ENV_VARS):
     from delta import handler, Converter
     from Converter import imms, ErrorRecords
 
+firehose_logger_patcher = patch("delta.firehose_logger.send_log")
+mock_firehose_send_log = firehose_logger_patcher.start()
+mock_firehose_send_log.return_value = None
 
+@patch("delta.firehose_logger.send_log")
 @patch.dict("os.environ", MOCK_ENV_VARS, clear=True)
 @mock_dynamodb
 @mock_sqs
