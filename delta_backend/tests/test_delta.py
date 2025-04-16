@@ -25,10 +25,15 @@ class DeltaTestCase(unittest.TestCase):
         return mock_sqs
 
     @staticmethod
-    def setup_mock_dynamodb(mock_boto_resource, status_code=200):
+    def setup_mock_dynamodb(mock_boto_resource, status_code=200, rasie_exception=False):
         mock_dynamodb = mock_boto_resource.return_value
         mock_table = mock_dynamodb.Table.return_value
-        mock_table.put_item.return_value = {"ResponseMetadata": {"HTTPStatusCode": status_code}}
+        
+        if rasie_exception:
+            mock_table.put_item.side_effect = Exception("Simulated DynamoDB failure")
+        else:
+            mock_table.put_item.return_value = {"ResponseMetadata": {"HTTPStatusCode": status_code}}
+            
         return mock_table
 
     def setUp_mock_resources(self, mock_boto_resource, mock_boto_client):
@@ -39,7 +44,10 @@ class DeltaTestCase(unittest.TestCase):
         return mock_table
 
     @staticmethod
-    def get_event(event_name="INSERT", operation="CREATE", supplier="EMIS"):
+    def get_event(event_name="INSERT", operation="CREATE", supplier="EMIS", is_empty=False):
+        if is_empty:
+           return {} 
+       
         if operation != "DELETE":
             return {
                 "Records": [
@@ -116,8 +124,10 @@ class DeltaTestCase(unittest.TestCase):
             f"Error sending record to DLQ: An error occurred (500) when calling the SendMessage operation: Internal Server Error"
         )
 
+
+    @patch("src.delta.firehose_logger.send_log")
     @patch("boto3.resource")
-    def test_handler_success_insert(self, mock_boto_resource):
+    def test_handler_success_insert(self, mock_boto_resource, mock_firehose_logger):
         # Arrange
         self.setup_mock_dynamodb(mock_boto_resource)
         suppilers = ["DPS", "EMIS"]
@@ -130,8 +140,9 @@ class DeltaTestCase(unittest.TestCase):
             # Assert
             self.assertEqual(result["statusCode"], 200)
 
+    @patch("src.delta.firehose_logger.send_log")
     @patch("boto3.resource")
-    def test_handler_failure(self, mock_boto_resource):
+    def test_handler_failure(self, mock_boto_resource, mock_firehose_logger):
         # Arrange
         self.setup_mock_dynamodb(mock_boto_resource, status_code=500)
         event = self.get_event()
@@ -142,8 +153,9 @@ class DeltaTestCase(unittest.TestCase):
         # Assert
         self.assertEqual(result["statusCode"], 500)
 
+    @patch("src.delta.firehose_logger.send_log")
     @patch("boto3.resource")
-    def test_handler_success_update(self, mock_boto_resource):
+    def test_handler_success_update(self, mock_boto_resource, mock_firehose_logger):
         # Arrange
         self.setup_mock_dynamodb(mock_boto_resource)
         event = self.get_event(event_name="UPDATE", operation="UPDATE")
@@ -154,8 +166,9 @@ class DeltaTestCase(unittest.TestCase):
         # Assert
         self.assertEqual(result["statusCode"], 200)
 
+    @patch("src.delta.firehose_logger.send_log")
     @patch("boto3.resource")
-    def test_handler_success_remove(self, mock_boto_resource):
+    def test_handler_success_remove(self, mock_boto_resource, mock_firehose_logger):
         # Arrange
         self.setup_mock_dynamodb(mock_boto_resource)
         event = self.get_event(event_name="REMOVE", operation="DELETE")
@@ -166,9 +179,10 @@ class DeltaTestCase(unittest.TestCase):
         # Assert
         self.assertEqual(result["statusCode"], 200)
 
+    @patch("src.delta.firehose_logger.send_log")
     @patch("boto3.resource")
     @patch("boto3.client")
-    def test_handler_exception_intrusion_check(self, mock_boto_resource, mock_boto_client):
+    def test_handler_exception_intrusion_check(self, mock_boto_resource, mock_boto_client, mock_firehose_logger):
         # Arrange
         self.setup_mock_dynamodb(mock_boto_resource, status_code=500)
         mock_boto_client.return_value = MagicMock()
@@ -179,32 +193,39 @@ class DeltaTestCase(unittest.TestCase):
         result = handler(event, self.context)
         self.assertEqual(result["statusCode"], 500)
 
+    @patch("src.delta.logger.exception")
+    @patch("src.delta.firehose_logger.send_log")
     @patch("boto3.resource")
     @patch("boto3.client")
-    def test_handler_exception_intrusion(self, mock_boto_resource, mock_boto_client):
+    def test_handler_exception_intrusion(self, mock_boto_resource, mock_boto_client, 
+                                         mock_firehose_logger, mock_logger_exception):
         # Arrange
-        self.setUp_mock_resources(mock_boto_resource, mock_boto_client)
-        event = self.get_event()
+        self.setup_mock_dynamodb(mock_boto_resource)
+        event = self.get_event(is_empty=True)
         context = {}
 
         # Act & Assert
-        with self.assertRaises(Exception):
+        with self.assertRaises(Exception) as e:
             handler(event, context)
 
+    @patch("src.delta.logger.exception")
+    @patch("src.delta.send_message")
+    @patch("src.delta.firehose_logger.send_log")
     @patch("boto3.resource")
-    @patch("delta.handler")
-    def test_handler_exception_intrusion_check_false(self, mock_boto_resource, mock_boto_client):
+    def test_handler_exception_intrusion_check_false(self, mock_boto_resource, mock_firehose_send_log, 
+                                                     mock_sqs_send_message, mock_logger_exception):
         # Arrange
-        self.setUp_mock_resources(mock_boto_resource, mock_boto_client)
+        self.setup_mock_dynamodb(mock_boto_resource, rasie_exception=True)
         event = self.get_event()
         context = {}
 
         # Act & Assert
-        with self.assertRaises(Exception):
+        with self.assertRaises(Exception) as e:
             handler(event, context)
+        self.assertTrue("Simulated DynamoDB failure" in str(e.exception))
 
-    @patch("delta.firehose_logger.send_log")  # Mock Firehose logger
-    @patch("delta.logger.info")  # Mock logging
+    @patch("src.delta.firehose_logger.send_log")  # Mock Firehose logger
+    @patch("src.delta.logger.info")  # Mock logging
     def test_dps_record_skipped(self, mock_logger_info, mock_firehose_send_log):
         event = self.get_event(supplier="DPSFULL")
         context = {}
@@ -219,10 +240,10 @@ class DeltaTestCase(unittest.TestCase):
         mock_logger_info.assert_called_with("Record from DPS skipped for 12345")
 
     # TODO - amend test once error handling implemented
-    @patch("delta.firehose_logger.send_log")
-    @patch("delta.logger.info")
+    @patch("src.delta.firehose_logger.send_log")
+    @patch("src.delta.logger.info")
     @patch("Converter.Converter")
-    @patch("delta.boto3.resource")
+    @patch("src.delta.boto3.resource")
     def test_partial_success_with_errors(self, mock_dynamodb, mock_converter, mock_logger_info, mock_firehose_send_log):
         mock_converter_instance = MagicMock()
         mock_converter_instance.runConversion.return_value = [{}]
