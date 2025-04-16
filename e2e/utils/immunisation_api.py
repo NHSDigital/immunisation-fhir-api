@@ -55,7 +55,6 @@ class ImmunisationApi:
         expected_status_code: int = 200,
         expected_connection_failure: bool = False,
         max_retries: int = 5,
-        delay_seconds: float = 2.0,
         is_status_check: bool = False,
         **kwargs
     ):
@@ -95,15 +94,13 @@ class ImmunisationApi:
                     raise
 
                 # This is will be used in the retry logic of the exponential backoff
-                wait = (2 ** attempt) + random.uniform(0, 0.5)
-                total_wait_time = wait + delay_seconds
-
+                delay = (3 ** attempt) + random.uniform(0, 0.5)
                 print(
                     f"[{datetime.now():%Y-%m-%d %H:%M:%S}] "
-                    f"[Retry {attempt + 1}] {http_method.upper()} {url} — {e} — retrying in {total_wait_time:.2f}s"
+                    f"[Retry {attempt + 1}] {http_method.upper()} {url} — {e} — retrying in {delay:.2f}s"
                 )
 
-                time.sleep(total_wait_time)
+                time.sleep(delay)
 
     def create_immunization_resource(self, resource: dict = None) -> str:
         """creates an Immunization resource and returns the resource url"""
