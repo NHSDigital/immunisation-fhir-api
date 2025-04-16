@@ -263,35 +263,35 @@ class TestConvertToFlatJson(unittest.TestCase):
 #         )
 #         self.assertEqual(converter.getErrorRecords()[0]["code"], 0)
 
-#     @patch("Converter.SchemaParser.getConversions")
-#     @patch("Converter.FHIRParser.getKeyValue")
-#     def test_conversion_exceptions(self, mock_get_key_value, mock_get_conversions):
-#         mock_get_conversions.side_effect = Exception("Error while getting conversions")
-#         mock_get_key_value.side_effect = Exception("Key value retrieval failed")
-#         ErrorRecords.clear()
-#         converter = Converter(fhir_data="some_data")
+    @patch("Converter.SchemaParser.getConversions")
+    @patch("Converter.FHIRParser.getKeyValue")
+    def test_conversion_exceptions(self, mock_get_key_value, mock_get_conversions):
+        mock_get_conversions.side_effect = Exception("Error while getting conversions")
+        mock_get_key_value.side_effect = Exception("Key value retrieval failed")
+        ErrorRecords.clear()
+        converter = Converter(fhir_data="some_data")
 
-#         schema = {
-#             "conversions": [
-#                 {
-#                     "fieldNameFHIR": "some_field",
-#                     "fieldNameFlat": "flat_field",
-#                     "expression": {"expressionType": "type", "expressionRule": "rule"},
-#                 }
-#             ]
-#         }
-#         converter.SchemaFile = schema
+        schema = {
+            "conversions": [
+                {
+                    "fieldNameFHIR": "some_field",
+                    "fieldNameFlat": "flat_field",
+                    "expression": {"expressionType": "type", "expressionRule": "rule"},
+                }
+            ]
+        }
+        converter.SchemaFile = schema
 
-#         response = converter.runConversion(ValuesForTests.json_data)
+        response = converter.runConversion(ValuesForTests.json_data)
 
-#         error_records = converter.getErrorRecords()
-#         self.assertEqual(len(error_records), 1)
+        error_records = converter.getErrorRecords()
+        self.assertEqual(len(error_records), 1)
 
-#         self.assertIn(
-#             "FHIR Parser Unexpected exception [JSONDecodeError]: Expecting value: line 1 column 1 (char 0)",
-#             error_records[0]["message"],
-#         )
-#         self.assertEqual(error_records[0]["code"], 0)
+        self.assertIn(
+            "FHIR Parser Unexpected exception [JSONDecodeError]: Expecting value: line 1 column 1 (char 0)",
+            error_records[0]["message"],
+        )
+        self.assertEqual(error_records[0]["code"], 0)
 
     @patch("ConversionChecker.LookUpData")
     def test_convert_to_not_empty(self, MockLookUpData):
