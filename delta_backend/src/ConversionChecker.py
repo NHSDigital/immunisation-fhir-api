@@ -2,7 +2,7 @@
 # Handles the transformation logic for each field based on the schema
 # Root and base type expression checker functions
 import ExceptionMessages
-from datetime import datetime,timedelta
+from datetime import datetime,timezone
 from zoneinfo import ZoneInfo
 import re
 from LookUpData import LookUpData
@@ -104,9 +104,9 @@ class ConversionChecker:
             "value": fieldValue,
             "message": message
         })
-    
-    # Convert ISO date string to a specific format (e.g. YYYYMMDD)
+
     def _convertToDate(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
+        print("FIELD:", fieldName) 
         if not fieldValue:
             return ""
 
@@ -120,13 +120,24 @@ class ConversionChecker:
             if report_unexpected_exception:
                 self._log_error(fieldName, fieldValue, "Partial date not accepted")
             return ""
+
         try:
             dt = datetime.fromisoformat(fieldValue)
+
+             # Reject future dates if the field is BirthDate
+            if fieldName == "contained|#:Patient|birthDate" and dt.date() > datetime.now(timezone.utc).date():
+                if report_unexpected_exception:
+                    self._log_error(fieldName, fieldValue, "BirthDate cannot be in the future")
+                return ""
+
             format_str = expressionRule.replace("format:", "")
             return dt.strftime(format_str)
-        except ValueError:
+
+        except ValueError as e:
             if report_unexpected_exception:
-                return f"Unexpected format: {fieldValue}"
+                self._log_error(fieldName, fieldValue, e)
+            return ""
+
 
     # Convert FHIR datetime into CSV-safe UTC format
     def _convertToDateTime(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
