@@ -188,32 +188,32 @@ class TestConvertToFlatJson(unittest.TestCase):
     #             items = result.get("Items", [])
     #             self.clear_table()
 
-#     def test_conversionCount(self):
-#         parser = SchemaParser()
-#         schema_data = {"conversions": [{"conversion": "type1"}, {"conversion": "type2"}, {"conversion": "type3"}]}
-#         parser.parseSchema(schema_data)
-#         self.assertEqual(parser.conversionCount(), 3)
+    def test_conversionCount(self):
+        parser = SchemaParser()
+        schema_data = {"conversions": [{"conversion": "type1"}, {"conversion": "type2"}, {"conversion": "type3"}]}
+        parser.parseSchema(schema_data)
+        self.assertEqual(parser.conversionCount(), 3)
 
-#     def test_getConversion(self):
-#         parser = SchemaParser()
-#         schema_data = {"conversions": [{"conversion": "type1"}, {"conversion": "type2"}, {"conversion": "type3"}]}
-#         parser.parseSchema(schema_data)
-#         self.assertEqual(parser.getConversion(1), {"conversion": "type2"})
+    def test_getConversion(self):
+        parser = SchemaParser()
+        schema_data = {"conversions": [{"conversion": "type1"}, {"conversion": "type2"}, {"conversion": "type3"}]}
+        parser.parseSchema(schema_data)
+        self.assertEqual(parser.getConversion(1), {"conversion": "type2"})
 
-#     # TODO revisit and amend if necessary
+    # TODO revisit and amend if necessary
 
-#     @patch("Converter.FHIRParser")
-#     def test_fhir_parser_exception(self, mock_fhir_parser):
-#         # Mock FHIRParser to raise an exception
-#         mock_fhir_parser.side_effect = Exception("FHIR Parsing Error")
-#         converter = Converter(fhir_data="some_data")
+    @patch("Converter.FHIRParser")
+    def test_fhir_parser_exception(self, mock_fhir_parser):
+        # Mock FHIRParser to raise an exception
+        mock_fhir_parser.side_effect = Exception("FHIR Parsing Error")
+        converter = Converter(fhir_data="some_data")
 
-#         response = converter.runConversion("somedata")
+        response = converter.runConversion("somedata")
 
-#         # Check if the error message was added to ErrorRecords
-#         self.assertEqual(len(response), 2)
-#         self.assertIn("FHIR Parser Unexpected exception", converter.getErrorRecords()[0]["message"])
-#         self.assertEqual(converter.getErrorRecords()[0]["code"], 0)
+        # Check if the error message was added to ErrorRecords
+        self.assertEqual(len(response), 2)
+        self.assertIn("FHIR Parser Unexpected exception", converter.getErrorRecords()[0]["message"])
+        self.assertEqual(converter.getErrorRecords()[0]["code"], 0)
 
 #     @patch("Converter.SchemaParser")
 #     def test_schema_parser_exception(self, mock_schema_parser):
