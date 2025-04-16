@@ -51,9 +51,9 @@ class ImmunisationApi:
     def make_request_with_backoff(
         http_method: str,
         url: str,
+        headers: dict = None,
         expected_status_code: int = 200,
         expected_connection_failure: bool = False,
-        headers: dict = None,
         max_retries: int = 5,
         delay_seconds: float = 2.0,
         **kwargs
@@ -118,18 +118,18 @@ class ImmunisationApi:
 
     def get_immunization_by_id(self, event_id, expected_status_code: int = 200):
         return self.make_request_with_backoff(
-            "GET",
-            f"{self.url}/Immunization/{event_id}",
-            expected_status_code,
-            headers=self._update_headers()
+            http_method="GET",
+            url=f"{self.url}/Immunization/{event_id}",
+            headers=self._update_headers(),
+            expected_status_code=expected_status_code
         )
 
     def create_immunization(self, imms, expected_status_code: int = 201):
         response = self.make_request_with_backoff(
-            "POST",
-            f"{self.url}/Immunization",
-            expected_status_code,
+            http_method="POST",
+            url=f"{self.url}/Immunization",
             headers=self._update_headers(),
+            expected_status_code=expected_status_code,
             json=imms
         )
 
@@ -147,28 +147,28 @@ class ImmunisationApi:
 
     def update_immunization(self, imms_id, imms, expected_status_code: int = 200):
         return self.make_request_with_backoff(
-            "PUT",
-            f"{self.url}/Immunization/{imms_id}",
-            expected_status_code,
+            http_method="PUT",
+            url=f"{self.url}/Immunization/{imms_id}",
             headers=self._update_headers(),
+            expected_status_code=expected_status_code,
             json=imms
         )
 
     def delete_immunization(self, imms_id, expected_status_code: int = 204):
         return self.make_request_with_backoff(
-            "DELETE",
-            f"{self.url}/Immunization/{imms_id}",
-            expected_status_code,
-            headers=self._update_headers()
+            http_method="DELETE",
+            url=f"{self.url}/Immunization/{imms_id}",
+            headers=self._update_headers(),
+            expected_status_code=expected_status_code,
         )
 
     def search_immunizations(self, patient_identifier: str, immunization_target: str, expected_status_code: int = 200):
         return self.make_request_with_backoff(
-            "GET",
-            f"{self.url}/Immunization?patient.identifier={patient_identifier_system}|{patient_identifier}"
+            http_method="GET",
+            url=f"{self.url}/Immunization?patient.identifier={patient_identifier_system}|{patient_identifier}"
             f"&-immunization.target={immunization_target}",
-            expected_status_code,
-            headers=self._update_headers()
+            headers=self._update_headers(),
+            expected_status_code=expected_status_code
         )
 
     def search_immunizations_full(
@@ -184,10 +184,10 @@ class ImmunisationApi:
             url = f"{self.url}/Immunization?{query_string}"
 
         return self.make_request_with_backoff(
-            http_method,
-            url,
-            expected_status_code,
+            http_method=http_method,
+            url=url,
             headers=self._update_headers({"Content-Type": "application/x-www-form-urlencoded"}),
+            expected_status_code=expected_status_code,
             data=body
         )
 
