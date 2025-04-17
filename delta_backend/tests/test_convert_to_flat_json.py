@@ -231,7 +231,7 @@ class TestConvertToFlatJson(unittest.TestCase):
             converter.getErrorRecords()[0]["message"],
         )
         self.assertEqual(converter.getErrorRecords()[0]["code"], 0)
-    @unittest.skip("Skip all tests in this class")
+ 
     @patch("Converter.ConversionChecker")
     def test_conversion_checker_exception(self, mock_conversion_checker):
         # Mock ConversionChecker to raise an exception
@@ -247,7 +247,7 @@ class TestConvertToFlatJson(unittest.TestCase):
             converter.getErrorRecords()[0]["message"],
         )
         self.assertEqual(converter.getErrorRecords()[0]["code"], 0)
-    @unittest.skip("Skip all tests in this class")
+    
     @patch("Converter.SchemaParser.getConversions")
     def test_get_conversions_exception(self, mock_get_conversions):
         # Mock getConversions to raise an exception
@@ -294,7 +294,7 @@ class TestConvertToFlatJson(unittest.TestCase):
         )
         self.assertEqual(error_records[0]["code"], 0)
 
-    @unittest.skip("Skip all tests in this class")
+    
     @patch("ConversionChecker.LookUpData")
     def test_convert_to_not_empty(self, MockLookUpData):
 
@@ -308,7 +308,7 @@ class TestConvertToFlatJson(unittest.TestCase):
         result = checker._convertToNotEmpty(None, "fieldName", "", False, True)
         self.assertEqual(result, "")
 
-    @unittest.skip("Skip all tests in this class")
+    
     @patch("ConversionChecker.LookUpData")
     def test_convert_to_nhs_number(self, MockLookUpData):
 
@@ -434,7 +434,7 @@ class TestConvertToFlatJson(unittest.TestCase):
         result = self.table.scan()
         items = result.get("Items", [])
 
-@unittest.skip("Skip all tests in this class")
+
 class TestPersonForeNameToFlatJson(unittest.TestCase):
     def test_person_forename_multiple_names_official(self):
         """Test case where multiple name instances exist, and one has use=official with period covering vaccination date"""
@@ -536,7 +536,6 @@ class TestPersonForeNameToFlatJson(unittest.TestCase):
         flat_json = self.converter.runConversion(request_json_data, False, True)
         self.assertEqual(flat_json[0]["PERSON_FORENAME"], expected_forename)
 
-@unittest.skip("Skip all tests in this class")
 class TestPersonSurNameToFlatJson(unittest.TestCase):
 
     def test_person_surname_multiple_names_official(self):
@@ -625,7 +624,6 @@ class TestPersonSurNameToFlatJson(unittest.TestCase):
         flat_json = self.converter.runConversion(request_json_data, False, True)
         self.assertEqual(flat_json[0]["PERSON_SURNAME"], expected_forename)
 
-@unittest.skip("Skip all tests in this class")
 class TestPersonPostalCodeToFlatJson(unittest.TestCase):
     def test_person_postal_code_single_address(self):
         """Test case where only one address instance exists"""
@@ -714,7 +712,6 @@ class TestPersonPostalCodeToFlatJson(unittest.TestCase):
         flat_json = self.converter.runConversion(request_json_data, False, True)
         self.assertEqual(flat_json[0]["PERSON_POSTCODE"], expected_postal_code)
 
-@unittest.skip("Skip all tests in this class")
 class TestPersonSiteCodeToFlatJson(unittest.TestCase):
     def test_site_code_single_performer(self):
         """Test case where only one performer instance exists"""
@@ -833,7 +830,6 @@ class TestPersonSiteCodeToFlatJson(unittest.TestCase):
         flat_json = self.converter.runConversion(request_json_data, False, True)
         self.assertEqual(flat_json[0].get("SITE_CODE"), expected_site_code)
 
-@unittest.skip("Skip all tests in this class")
 class TestPersonSiteUriToFlatJson(unittest.TestCase):
     def test_site_uri_single_performer(self):
         """Test case where only one performer instance exists"""
@@ -924,7 +920,6 @@ class TestPersonSiteUriToFlatJson(unittest.TestCase):
         flat_json = self.converter.runConversion(request_json_data, False, True)
         self.assertEqual(flat_json[0].get("SITE_CODE_TYPE_URI"), expected_site_code)
 
-@unittest.skip("Skip all tests in this class")
 class TestPractitionerForeNameToFlatJson(unittest.TestCase):
     def test_practitioner_forename_multiple_names_official(self):
         """Test case where multiple name instances exist, and one has use=official with period covering vaccination date"""
@@ -1040,7 +1035,6 @@ class TestPractitionerForeNameToFlatJson(unittest.TestCase):
         flat_json = self.converter.runConversion(request_json_data, False, True)
         self.assertEqual(flat_json[0]["PERFORMING_PROFESSIONAL_FORENAME"], expected_forename)
 
-@unittest.skip("Skip all tests in this class")
 class TestPractitionerSurNameToFlatJson(unittest.TestCase):
     def test_practitioner_surname_multiple_names_official(self):
         """Test case where multiple name instances exist, and one has use=official with period covering vaccination date"""
