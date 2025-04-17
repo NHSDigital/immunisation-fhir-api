@@ -183,7 +183,7 @@ class ValuesForTests:
                 "ACTION_FLAG": expected_action_flag,
                 "PERFORMING_PROFESSIONAL_FORENAME": "Florence",
                 "PERFORMING_PROFESSIONAL_SURNAME": "Nightingale",
-                "RECORDED_DATE": "20210207",
+                "RECORDED_DATE": "20210207T13281700",
                 "PRIMARY_SOURCE": True,
                 "VACCINATION_PROCEDURE_CODE": "13246814444444",
                 "VACCINATION_PROCEDURE_TERM": "Administration of first dose of severe acute respiratory syndrome coronavirus 2 vaccine (procedure)",
@@ -203,6 +203,9 @@ class ValuesForTests:
                 "INDICATION_CODE": "443684005",
                 "LOCATION_CODE": "EC1111",
                 "LOCATION_CODE_TYPE_URI": "https://fhir.nhs.uk/Id/ods-organization-code",
+                "CONVERSION_ERRORS": [{"code": 0, "message": "FHIR Parser Unexpected exception [JSONDecodeError]: Expecting value: line 1 column 1 (char 0)"},
+                                       {'code': 0, 'message': 'FHIR Parser Unexpected exception [Exception]: FHIR Parsing Error'},
+             ]
             }
         ]
 
@@ -222,7 +225,7 @@ class ValuesForTests:
             "ACTION_FLAG": "update",
             "PERFORMING_PROFESSIONAL_FORENAME": "Florence",
             "PERFORMING_PROFESSIONAL_SURNAME": "Nightingale",
-            "RECORDED_DATE": "20210207",
+            "RECORDED_DATE": "20210207T13281700",
             "PRIMARY_SOURCE": True,
             "VACCINATION_PROCEDURE_CODE": "13246814444444",
             "VACCINATION_PROCEDURE_TERM": "Administration of first dose of severe acute respiratory syndrome coronavirus 2 vaccine (procedure)",
@@ -242,6 +245,49 @@ class ValuesForTests:
             "INDICATION_CODE": "443684005",
             "LOCATION_CODE": "EC1111",
             "LOCATION_CODE_TYPE_URI": "https://fhir.nhs.uk/Id/ods-organization-code",
+            "CONVERSION_ERRORS": [{"code": 0, "message": "FHIR Parser Unexpected exception [JSONDecodeError]: Expecting value: line 1 column 1 (char 0)"},
+                                  {'code': 0, 'message': 'FHIR Parser Unexpected exception [Exception]: FHIR Parsing Error'}]
+        }
+    ]
+
+    expected_imms2 = [
+        {
+            "NHS_NUMBER": "9000000009",
+            "PERSON_FORENAME": "Sam",
+            "PERSON_SURNAME": "Trailor",
+            "PERSON_DOB": "19650228",
+            "PERSON_GENDER_CODE": "0",
+            "PERSON_POSTCODE": "EC1A 1BB",
+            "DATE_AND_TIME": "20210207T13281700",
+            "SITE_CODE": "B0C4P",
+            "SITE_CODE_TYPE_URI": "https://fhir.nhs.uk/Id/ods-organization-code",
+            "UNIQUE_ID": "ACME-vacc123456",
+            "UNIQUE_ID_URI": "https://supplierABC/identifiers/vacc",
+            "ACTION_FLAG": "update",
+            "PERFORMING_PROFESSIONAL_FORENAME": "Florence",
+            "PERFORMING_PROFESSIONAL_SURNAME": "Nightingale",
+            "RECORDED_DATE": "20210207T13281700",
+            "PRIMARY_SOURCE": True,
+            "VACCINATION_PROCEDURE_CODE": "13246814444444",
+            "VACCINATION_PROCEDURE_TERM": "Administration of first dose of severe acute respiratory syndrome coronavirus 2 vaccine (procedure)",
+            "DOSE_SEQUENCE": 1,
+            "VACCINE_PRODUCT_CODE": "39114911000001105",
+            "VACCINE_PRODUCT_TERM": "COVID-19 Vaccine Vaxzevria (ChAdOx1 S [recombinant]) not less than 2.5x100,000,000 infectious units/0.5ml dose suspension for injection multidose vials (AstraZeneca UK Ltd) (product)",
+            "VACCINE_MANUFACTURER": "AstraZeneca Ltd",
+            "BATCH_NUMBER": "4120Z001",
+            "EXPIRY_DATE": "20210702",
+            "SITE_OF_VACCINATION_CODE": "368208006",
+            "SITE_OF_VACCINATION_TERM": "Left upper arm structure (body structure)",
+            "ROUTE_OF_VACCINATION_CODE": "78421000",
+            "ROUTE_OF_VACCINATION_TERM": "Intramuscular route (qualifier value)",
+            "DOSE_AMOUNT": "0.5",
+            "DOSE_UNIT_CODE": "",
+            "DOSE_UNIT_TERM": "milliliter",
+            "INDICATION_CODE": "443684005",
+            "LOCATION_CODE": "EC1111",
+            "LOCATION_CODE_TYPE_URI": "https://fhir.nhs.uk/Id/ods-organization-code",
+            "CONVERSION_ERRORS": [{"code": 0, "message": "FHIR Parser Unexpected exception [JSONDecodeError]: Expecting value: line 1 column 1 (char 0)"},
+            ]
         }
     ]
 
@@ -375,7 +421,7 @@ class ErrorValuesForTests:
                 "ACTION_FLAG": "UPDATE",
                 "PERFORMING_PROFESSIONAL_FORENAME": "Florence",
                 "PERFORMING_PROFESSIONAL_SURNAME": "Nightingale",
-                "RECORDED_DATE": "20210207",
+                "RECORDED_DATE": "20210207T13281700",
                 "PRIMARY_SOURCE": True,
                 "VACCINATION_PROCEDURE_CODE": "13246814444444",
                 "VACCINATION_PROCEDURE_TERM": "Administration of first dose of severe acute respiratory syndrome coronavirus 2 vaccine (procedure)",
@@ -395,5 +441,7 @@ class ErrorValuesForTests:
                 "INDICATION_CODE": "443684005",
                 "LOCATION_CODE": "E712",
                 "LOCATION_CODE_TYPE_URI": "https://fhir.nhs.uk/Id/ods-organization-code",
+                "CONVERSION_ERRORS": [{"code": 0, "message": "FHIR Parser Unexpected exception [JSONDecodeError]: Expecting value: line 1 column 1 (char 0)"},
+                                      {'code': 0, 'message': 'FHIR Parser Unexpected exception [Exception]: FHIR Parsing Error'}]
             }
         ]

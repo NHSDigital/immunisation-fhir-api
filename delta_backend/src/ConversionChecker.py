@@ -97,7 +97,10 @@ class ConversionChecker:
     
     # Utility function for logging errors
     def _log_error(self, fieldName, fieldValue, e, code=ExceptionMessages.RECORD_CHECK_FAILED):
-        message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+        if isinstance(e, Exception):
+            message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, str(e))
+        else:
+            message = str(e)  # if a simple string message was passed
         self.errorRecords.append({
             "code":code,
             "field": fieldName,
@@ -124,7 +127,58 @@ class ConversionChecker:
                 self._log_error(fieldName, fieldValue, "Partial date not accepted")
             return ""
 
-        # Pre-process if expecting no delimiters
+        # Handle only the recorded field with extended ISO + timezone support
+        if fieldName == "recorded":
+            # Accept "YYYY-MM-DD" and return as is
+            if re.match(r"^\d{4}-\d{2}-\d{2}$", fieldValue):
+                try:
+                    dt = datetime.strptime(fieldValue, "%Y-%m-%d")
+                    if dt.date() > datetime.now(ZoneInfo("UTC")).date():
+                        if report_unexpected_exception:
+                            self._log_error(fieldName, fieldValue, "Date cannot be in the future")
+                        return ""
+                    return fieldValue
+                except ValueError:
+                    if report_unexpected_exception:
+                        self._log_error(fieldName, fieldValue, "Invalid date format")
+                    return ""
+            try: 
+                # Parse ISO format with or without microseconds and TZ
+                dt = datetime.fromisoformat(fieldValue)
+            except ValueError: 
+                if report_unexpected_exception:
+                    self._log_error(fieldName, fieldValue, "Invalid date format")
+                return ""
+
+            # Assign UTC if tzinfo is missing
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=ZoneInfo("UTC"))
+            
+            now_utc = datetime.now(ZoneInfo("UTC"))
+            if dt.astimezone(ZoneInfo("UTC")) > now_utc:
+                if report_unexpected_exception:
+                    self._log_error(fieldName, fieldValue, "Date cannot be in the future")
+                return ""
+
+            # Validate timezone offset
+            offset = dt.utcoffset()
+            allowed_offsets = [
+                ZoneInfo("UTC").utcoffset(dt),
+                ZoneInfo("Europe/London").utcoffset(dt),
+            ]
+
+            if offset not in allowed_offsets:
+                if report_unexpected_exception:
+                    self._log_error(fieldName, fieldValue, f"Unsupported offset: {offset}")
+                return ""
+
+            dt_utc = dt.astimezone(ZoneInfo("UTC")).replace(microsecond=0)
+
+            # Format and return with custom suffix
+            formatted = dt_utc.strftime("%Y%m%dT%H%M%S%z")
+            return formatted.replace("+0000", "00").replace("+0100", "01")
+        
+        # For all other fields, apply standard %Y%m%d processing
         if format_str == "%Y%m%d":
             fieldValue = fieldValue.replace("-", "").replace("/", "")
             # Validate expected raw input format if using %Y%m%d
@@ -133,23 +187,22 @@ class ConversionChecker:
                     self._log_error(fieldName, fieldValue, "Date must be in YYYYMMDD format")
                 return ""
 
-
         try:
             dt = datetime.strptime(fieldValue, format_str)
 
             # Reject future dates if the field is BirthDate
-            if fieldName in ["contained|#:Patient|birthDate", "recorded"]:
-                if dt.date() > datetime.now(timezone.utc).date():
+            if fieldName in "contained|#:Patient|birthDate":
+                today_utc = datetime.now(ZoneInfo("UTC")).date()
+                if dt.date() > today_utc:
                     if report_unexpected_exception:
                         self._log_error(fieldName, fieldValue, "Date cannot be in the future")
                     return ""
 
-            return dt.strftime(expressionRule)
+            return dt.strftime(format_str)
         except ValueError as e:
             if report_unexpected_exception:
                 self._log_error(fieldName, fieldValue, e)
             return ""
-
 
     # Convert FHIR datetime into CSV-safe UTC format
     def _convertToDateTime(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
@@ -320,7 +373,9 @@ class ConversionChecker:
         Validates that a SNOMED code is a non-empty string containing only digits.
         """
         try:
-            if not fieldValue or not isinstance(fieldValue, str) or not fieldValue.isdigit():
+            if not fieldValue:
+                return fieldValue
+            if not isinstance(fieldValue, str) or not fieldValue.isdigit():
                 raise ValueError(f"Invalid SNOMED code: {fieldValue}")
             return fieldValue
         except Exception as e:
