@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch, MagicMock
 from botocore.exceptions import ClientError
 import os
-from tests.sample_data.test_resource_data import get_test_data_resource
+from sample_data.test_resource_data import get_test_data_resource
 
 # Set environment variables before importing the module
 mock_queue = "https://sqs.us-east-1.amazonaws.com/123456789012/MyQueue"
