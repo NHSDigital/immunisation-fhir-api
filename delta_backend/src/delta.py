@@ -158,4 +158,7 @@ def handler(event, context):
         log_data["operation_outcome"] = operation_outcome
         firehose_log["event"] = log_data
         firehose_logger.send_log(firehose_log)
-        raise Exception(f"Delta Lambda failure: {e}")
+        return {
+            "statusCode": 500,
+            "body": "Records not processed ",
+        }
