@@ -8,7 +8,7 @@ from unittest import TestCase
 from unittest.mock import patch, Mock
 from moto import mock_dynamodb, mock_sqs
 from boto3 import resource as boto3_resource, client as boto3_client
-from tests.utils_for_converter_tests import ValuesForTests, ErrorValuesForTests
+from utils_for_converter_tests import ValuesForTests, ErrorValuesForTests
 from botocore.config import Config
 from pathlib import Path
 from SchemaParser import SchemaParser
