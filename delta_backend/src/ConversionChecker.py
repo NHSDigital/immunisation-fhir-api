@@ -408,9 +408,3 @@ class ConversionChecker:
     
     def get_error_records(self):
         return self.errorRecords
-               
-
-
-
-
-
