@@ -65,6 +65,19 @@ class TestConvertToFlatJson(unittest.TestCase):
                 },
             ],
         )
+        self.logger_info_patcher = patch("logging.Logger.info")
+        self.mock_logger_info = self.logger_info_patcher.start()
+
+        self.logger_exception_patcher = patch("logging.Logger.exception")
+        self.mock_logger_exception = self.logger_exception_patcher.start()
+
+    def tearDown(self):
+        """Tear down the mock DynamoDB table."""
+        self.table.delete()
+        self.dynamodb_resource = None
+        # self.firehose_logger_patcher.stop()
+        self.logger_exception_patcher.stop()
+        self.logger_info_patcher.stop()
 
     @staticmethod
     def get_event(event_name="INSERT", operation="operation", supplier="EMIS"):
