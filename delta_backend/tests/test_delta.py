@@ -5,11 +5,12 @@ import os
 from tests.sample_data.test_resource_data import get_test_data_resource
 
 # Set environment variables before importing the module
-os.environ["AWS_SQS_QUEUE_URL"] = "https://sqs.us-east-1.amazonaws.com/123456789012/MyQueue"
+mock_queue = "https://sqs.us-east-1.amazonaws.com/123456789012/MyQueue"
+os.environ["AWS_SQS_QUEUE_URL"] = mock_queue
 os.environ["DELTA_TABLE_NAME"] = "my_delta_table"
 os.environ["SOURCE"] = "my_source"
 
-from src.delta import send_message, handler  # Import after setting environment variables
+from delta import send_message, handler  # Import after setting environment variables
 import json
 
 
@@ -25,7 +26,7 @@ class DeltaTestCase(unittest.TestCase):
         self.logger_exception_patcher = patch("logging.Logger.exception")
         self.mock_logger_exception = self.logger_exception_patcher.start()
 
-        self.firehose_logger_patcher = patch("src.delta.firehose_logger")
+        self.firehose_logger_patcher = patch("delta.firehose_logger")
         self.mock_firehose_logger = self.firehose_logger_patcher.start()
         # self.mock_firehose_logger.send_log = MagicMock()
 
@@ -111,7 +112,7 @@ class DeltaTestCase(unittest.TestCase):
 
         # Assert
         mock_sqs.send_message.assert_called_once_with(
-            QueueUrl=os.environ["AWS_SQS_QUEUE_URL"], MessageBody=json.dumps(record)
+            QueueUrl=mock_queue, MessageBody=json.dumps(record)
         )
 
     @patch("boto3.client")
