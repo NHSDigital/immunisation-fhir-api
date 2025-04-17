@@ -3,18 +3,20 @@ from unittest.mock import patch, MagicMock
 from botocore.exceptions import ClientError
 import os
 from sample_data.test_resource_data import get_test_data_resource
-
-# Set environment variables before importing the module
-mock_queue = "https://sqs.us-east-1.amazonaws.com/123456789012/MyQueue"
-os.environ["AWS_SQS_QUEUE_URL"] = mock_queue
-os.environ["DELTA_TABLE_NAME"] = "my_delta_table"
-os.environ["SOURCE"] = "my_source"
-
-from delta import send_message, handler  # Import after setting environment variables
 import json
 
 
+mock_queue = "https://sqs.us-east-1.amazonaws.com/123456789012/MyQueue"
+MOCK_ENV_VARS = {
+    "AWS_SQS_QUEUE_URL": mock_queue,
+    "DELTA_TABLE_NAME" : "my_delta_table",
+    "SOURCE" : "my_source"
+}
+with patch.dict("os.environ", MOCK_ENV_VARS):
+    from delta import send_message, handler  # Import after setting environment variables
 
+
+@patch.dict("os.environ", MOCK_ENV_VARS, clear=True)
 class DeltaTestCase(unittest.TestCase):
 
     def setUp(self):
