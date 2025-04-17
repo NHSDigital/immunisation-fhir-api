@@ -8,7 +8,7 @@ from unittest import TestCase
 from unittest.mock import patch, Mock
 from moto import mock_dynamodb, mock_sqs
 from boto3 import resource as boto3_resource, client as boto3_client
-from utils_for_converter_tests import ValuesForTests, ErrorValuesForTests
+from tests.utils_for_converter_tests import ValuesForTests, ErrorValuesForTests
 from botocore.config import Config
 from pathlib import Path
 from SchemaParser import SchemaParser
@@ -16,8 +16,9 @@ from Converter import Converter
 from ConversionChecker import ConversionChecker
 
 
+    # "AWS_SQS_QUEUE_URL": "https://sqs.eu-west-2.amazonaws.com/123456789012/test-queue",
+
 MOCK_ENV_VARS = {
-    "AWS_SQS_QUEUE_URL": "https://sqs.eu-west-2.amazonaws.com/123456789012/test-queue",
     "DELTA_TABLE_NAME": "immunisation-batch-internal-dev-audit-test-table",
     "SOURCE": "test-source",
 }
