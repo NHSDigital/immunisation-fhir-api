@@ -19,7 +19,6 @@ class FirehoseLogger:
         self.delivery_stream_name = stream_name
 
     def send_log(self, log_message):
-        print("SW >>>>>> NOT MOCKING send_log!!!")
         log_to_splunk = log_message
         logger.info(f"Log sent to Firehose for save: {log_to_splunk}")
         encoded_log_data = json.dumps(log_to_splunk).encode("utf-8")
