@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch, MagicMock
 import json
-from src.log_firehose import FirehoseLogger
+from log_firehose import FirehoseLogger
 
 
 class TestFirehoseLogger(unittest.TestCase):
