@@ -44,6 +44,9 @@ def handle_record(record) -> dict:
         logger.error("Error obtaining file_key: %s", error)
         return {"statusCode": 500, "message": "Failed to download file key", "error": str(error)}
 
+    vaccine_type = "unknown"
+    supplier = "unknown"
+
     if "data-sources" in bucket_name:
 
         # The lambda is unintentionally invoked when a file is moved into a different folder in the source bucket.
@@ -56,8 +59,6 @@ def handle_record(record) -> dict:
         # Set default values for file-specific variables
         message_id = "Message id was not created"
         created_at_formatted_string = "created_at_time not identified"
-        vaccine_type = "unknown"
-        supplier = "unknown"
 
         try:
             # If the record contains a message_id, then the lambda has been invoked by a file already in the queue
@@ -66,9 +67,10 @@ def handle_record(record) -> dict:
             # Get message_id if the file is not new, else assign one
             message_id = record.get("message_id", str(uuid4()))
 
+            vaccine_type, supplier = validate_file_key(file_key)
+
             created_at_formatted_string = get_created_at_formatted_string(bucket_name, file_key)
 
-            vaccine_type, supplier = validate_file_key(file_key)
             permissions = validate_vaccine_type_permissions(vaccine_type=vaccine_type, supplier=supplier)
             if not is_existing_file:
                 ensure_file_is_not_a_duplicate(file_key, created_at_formatted_string)
@@ -145,12 +147,15 @@ def handle_record(record) -> dict:
         except Exception as error:  # pylint: disable=broad-except
             logger.error("Error uploading to cache for file '%s': %s", file_key, error)
             message = "Failed to upload file content to cache"
-            return {"statusCode": 500, "message": message, "file_key": file_key, "error": str(error)}
+            return {"statusCode": 500, "message": message, "file_key": file_key, "error": str(error),
+                    "vaccine_type": vaccine_type, "supplier": supplier}
 
     else:
         logger.error("Unable to process file %s due to unexpected bucket name %s", file_key, bucket_name)
         message = f"Failed to process file due to unexpected bucket name {bucket_name}"
-        return {"statusCode": 500, "message": message, "file_key": file_key}
+
+        return {"statusCode": 500, "message": message, "file_key": file_key,
+                "vaccine_type": vaccine_type, "supplier": supplier}
 
 
 def lambda_handler(event: dict, context) -> None:  # pylint: disable=unused-argument
@@ -161,3 +166,23 @@ def lambda_handler(event: dict, context) -> None:  # pylint: disable=unused-argu
         handle_record(record)
 
     logger.info("Filename processor lambda task completed")
+
+
+if __name__ == "__main__":
+
+    event = {
+        "Records": [
+            {
+                "s3": {
+                    "bucket": {
+                        "name": "immunisation-batch-internal-dev-data-sources"
+                    },
+                    "object": {
+                        "key": "FLU_Vaccinations_v5_YGM41_20000101T00000001.csv"
+                    }
+                }
+            }
+        ]
+    }
+    print(event)
+    print(lambda_handler(event=event, context={}))
