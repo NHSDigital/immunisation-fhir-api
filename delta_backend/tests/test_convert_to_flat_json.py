@@ -177,20 +177,20 @@ class TestConvertToFlatJson(unittest.TestCase):
             end = time.time()
             print(end - start)
 
-    @patch("src.delta.firehose_logger.send_log")
-    @patch("boto3.client")
-    @patch("src.delta.logger.info")
-    @patch("src.delta.firehose_logger")
-    def test_handler_imms_convert_to_flat_json(self, mock_logger, mock_logger_info, mock_boto_client, mock_send_log):
+    # @patch("src.delta.firehose_logger.send_log")
+    # @patch("boto3.client")
+    # @patch("src.delta.logger.info")
+    # @patch("src.delta.firehose_logger")
+    def test_handler_imms_convert_to_flat_json(self):  #, mock_logger, mock_logger_info, mock_boto_client, mock_send_log):
         """Test that the Imms field contains the correct flat JSON data for CREATE, UPDATE, and DELETE operations."""
 
-        mock_boto_client.return_value = Mock()
-        mock_boto_client.return_value.put_record.return_value = {"ResponseMetadata": {"HTTPStatusCode": 200}}
+        # mock_boto_client.return_value = Mock()
+        # mock_boto_client.return_value.put_record.return_value = {"ResponseMetadata": {"HTTPStatusCode": 200}}
 
-        mock_logger.send_log = Mock()
-        mock_logger.send_log.return_value = None
-        mock_logger_info.return_value = None
-        mock_send_log.return_value = None
+        # mock_logger.send_log = Mock()
+        # mock_logger.send_log.return_value = None
+        # mock_logger_info.return_value = None
+        # mock_send_log.return_value = None
 
         expected_action_flags = [
             {"Operation": "CREATE", "EXPECTED_ACTION_FLAG": "NEW"},
