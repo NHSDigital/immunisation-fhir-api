@@ -17,7 +17,7 @@ from ConversionChecker import ConversionChecker
 
 
 MOCK_ENV_VARS = {
-    "AWS_SQS_QUEUE_URL": "https://sqs.eu-west-2.amazonaws.com/123456789012/test-queue",
+    "AWS_SQS_QUEUE_URL": "https://sqs.us-east-1.amazonaws.com/123456789012/MyQueue",
     "DELTA_TABLE_NAME": "immunisation-batch-internal-dev-audit-test-table",
     "SOURCE": "test-source",
 }
