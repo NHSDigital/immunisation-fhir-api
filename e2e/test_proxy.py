@@ -3,7 +3,7 @@ import subprocess
 import unittest
 import uuid
 import requests
-
+from utils.immunisation_api import ImmunisationApi
 from lib.env import get_service_base_path, get_status_endpoint_api_key
 
 
@@ -19,14 +19,18 @@ class TestProxyHealthcheck(unittest.TestCase):
 
     def test_ping(self):
         """/_ping should return 200 if proxy is up and running"""
-        response = requests.get(f"{self.proxy_url}/_ping")
+        response = ImmunisationApi.make_request_with_backoff(http_method="GET", url=f"{self.proxy_url}/_ping")
         self.assertEqual(response.status_code, 200, response.text)
 
     def test_status(self):
         """/_status should return 200 if proxy can reach to the backend"""
-        response = requests.get(f"{self.proxy_url}/_status", headers={"apikey": self.status_api_key})
+        response = ImmunisationApi.make_request_with_backoff(http_method="GET",
+                                                             url=f"{self.proxy_url}/_status",
+                                                             headers={"apikey": self.status_api_key},
+                                                             is_status_check=True)
         self.assertEqual(response.status_code, 200, response.text)
         body = response.json()
+
         self.assertEqual(body["status"].lower(), "pass",
                          f"service is not healthy: status: {body['status']}")
 
@@ -40,8 +44,11 @@ class TestMtls(unittest.TestCase):
         backend_health = f"https://{backend_url}/status"
 
         with self.assertRaises(requests.exceptions.RequestException) as e:
-            requests.get(backend_health, headers={"X-Request-ID": str(uuid.uuid4())})
-        self.assertTrue("RemoteDisconnected" in str(e.exception))
+            ImmunisationApi.make_request_with_backoff(
+                http_method="GET",
+                url=backend_health,
+                headers={"X-Request-ID": str(uuid.uuid4())})
+            self.assertTrue("RemoteDisconnected" in str(e.exception))
 
     @staticmethod
     def get_backend_url() -> str:
@@ -80,5 +87,8 @@ class TestProxyAuthorization(unittest.TestCase):
 
     def test_invalid_access_token(self):
         """it should return 401 if access token is invalid"""
-        response = requests.get(f"{self.proxy_url}/Immunization", headers={"X-Request-ID": str(uuid.uuid4())})
+        response = ImmunisationApi.make_request_with_backoff(http_method="GET",
+                                                             url=f"{self.proxy_url}/Immunization",
+                                                             headers={"X-Request-ID": str(uuid.uuid4())},
+                                                             expected_status_code=401)
         self.assertEqual(response.status_code, 401, response.text)
