@@ -26,6 +26,7 @@ with patch.dict("os.environ", MOCK_ENV_VARS):
     from delta import handler, Converter
     from Converter import imms, ErrorRecords
 
+print("TestConvertToFlatJson - Test suite started")
 
 @patch.dict("os.environ", MOCK_ENV_VARS, clear=True)
 @mock_dynamodb
