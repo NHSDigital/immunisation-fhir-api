@@ -224,8 +224,8 @@ class DeltaTestCase(unittest.TestCase):
         context = {}
 
         # Act & Assert
-        with self.assertRaises(Exception):
-            handler(event, context)
+        response = handler(event, context)
+        self.assertEqual(response["statusCode"], 500)
 
     @patch("delta.logger.info")  # Mock logging
     def test_dps_record_skipped(self, mock_logger_info):

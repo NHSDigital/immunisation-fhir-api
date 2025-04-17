@@ -160,5 +160,5 @@ def handler(event, context):
         firehose_logger.send_log(firehose_log)
         return {
             "statusCode": 500,
-            "body": "Records not processed ",
+            "body": "Records not processed",
         }
