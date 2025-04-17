@@ -109,6 +109,18 @@ class Converter:
 
         for conversion in conversions:
             rows = self._convertData(ConversionValidate, conversion, dataParser, json_data)
+        
+        # Collect and store any errors from ConversionChecker
+        allErrors = ConversionValidate.get_error_records()
+        ErrorRecords.extend(allErrors)
+
+        # Add CONVERSION_ERRORS as the 35th field
+        error_records = self.getErrorRecords()
+        if error_records:
+            error_summary = error_records
+        else:
+            error_summary = ""
+        Converted["CONVERSION_ERRORS"] = error_summary
 
         imms.append(Converted)
         return imms

@@ -2,7 +2,7 @@
 # Handles the transformation logic for each field based on the schema
 # Root and base type expression checker functions
 import ExceptionMessages
-from datetime import datetime,timedelta
+from datetime import datetime,timezone
 from zoneinfo import ZoneInfo
 import re
 from LookUpData import LookUpData
@@ -72,8 +72,16 @@ class ConversionChecker:
                 return self._convertToChangeTo(
                     expressionRule, fieldName, fieldValue, self.summarise, self.report_unexpected_exception
                 )
+            case "BOOLEAN":
+                return self._convertToBoolean(
+                    expressionRule, fieldName, fieldValue, self.summarise, self.report_unexpected_exception
+                )
             case "LOOKUP":
                 return self._convertToLookUp(
+                    expressionRule, fieldName, fieldValue, self.summarise, self.report_unexpected_exception
+                )
+            case "SNOMED":
+                return self._convertToSnomed(
                     expressionRule, fieldName, fieldValue, self.summarise, self.report_unexpected_exception
                 )
             case "DEFAULT":
@@ -85,25 +93,116 @@ class ConversionChecker:
                     expressionRule, fieldName, fieldValue, self.summarise, self.report_unexpected_exception
                 )
             case _:
-                return "Schema expression not found! Check your expression type : " + expressionType
+               return "Schema expression not found! Check your expression type : " + expressionType
+    
+    # Utility function for logging errors
+    def _log_error(self, fieldName, fieldValue, e, code=ExceptionMessages.RECORD_CHECK_FAILED):
+        if isinstance(e, Exception):
+            message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, str(e))
+        else:
+            message = str(e)  # if a simple string message was passed
+        self.errorRecords.append({
+            "code":code,
+            "field": fieldName,
+            "value": fieldValue,
+            "message": message
+        })
 
-    # Convert ISO date string to a specific format (e.g. YYYYMMDD)
     def _convertToDate(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
+        print("FIELD:", fieldName) 
         if not fieldValue:
             return ""
 
         if not isinstance(fieldValue, str):
-            return ""
-        # Reject partial dates like "2024" or "2024-05"
-        if re.match(r"^\d{4}(-\d{2})?$", fieldValue):
-            return ""
-        try:
-            dt = datetime.fromisoformat(fieldValue)
-            format_str = expressionRule.replace("format:", "")
-            return dt.strftime(format_str)
-        except ValueError:
             if report_unexpected_exception:
-                return f"Unexpected format: {fieldValue}"
+                self._log_error(fieldName, fieldValue, "Value is not a string")
+            return ""
+        
+        # Normalize expression rule
+        format_str = expressionRule.replace("format:", "").strip()
+        
+        # Reject partial ISO dates like "2024" or "2024-05"
+        if format_str == "%Y%m%d" and re.match(r"^\d{4}(-\d{2})?$", fieldValue):
+            if report_unexpected_exception:
+                self._log_error(fieldName, fieldValue, "Partial date not accepted")
+            return ""
+
+        # Handle only the recorded field with extended ISO + timezone support
+        if fieldName == "recorded":
+            # Accept "YYYY-MM-DD" and return as is
+            if re.match(r"^\d{4}-\d{2}-\d{2}$", fieldValue):
+                try:
+                    dt = datetime.strptime(fieldValue, "%Y-%m-%d")
+                    if dt.date() > datetime.now(ZoneInfo("UTC")).date():
+                        if report_unexpected_exception:
+                            self._log_error(fieldName, fieldValue, "Date cannot be in the future")
+                        return ""
+                    return fieldValue
+                except ValueError:
+                    if report_unexpected_exception:
+                        self._log_error(fieldName, fieldValue, "Invalid date format")
+                    return ""
+            try: 
+                # Parse ISO format with or without microseconds and TZ
+                dt = datetime.fromisoformat(fieldValue)
+            except ValueError: 
+                if report_unexpected_exception:
+                    self._log_error(fieldName, fieldValue, "Invalid date format")
+                return ""
+
+            # Assign UTC if tzinfo is missing
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=ZoneInfo("UTC"))
+            
+            now_utc = datetime.now(ZoneInfo("UTC"))
+            if dt.astimezone(ZoneInfo("UTC")) > now_utc:
+                if report_unexpected_exception:
+                    self._log_error(fieldName, fieldValue, "Date cannot be in the future")
+                return ""
+
+            # Validate timezone offset
+            offset = dt.utcoffset()
+            allowed_offsets = [
+                ZoneInfo("UTC").utcoffset(dt),
+                ZoneInfo("Europe/London").utcoffset(dt),
+            ]
+
+            if offset not in allowed_offsets:
+                if report_unexpected_exception:
+                    self._log_error(fieldName, fieldValue, f"Unsupported offset: {offset}")
+                return ""
+
+            dt_utc = dt.astimezone(ZoneInfo("UTC")).replace(microsecond=0)
+
+            # Format and return with custom suffix
+            formatted = dt_utc.strftime("%Y%m%dT%H%M%S%z")
+            return formatted.replace("+0000", "00").replace("+0100", "01")
+        
+        # For all other fields, apply standard %Y%m%d processing
+        if format_str == "%Y%m%d":
+            fieldValue = fieldValue.replace("-", "").replace("/", "")
+            # Validate expected raw input format if using %Y%m%d
+            if not re.match(r"^\d{8}$", fieldValue):
+                if report_unexpected_exception:
+                    self._log_error(fieldName, fieldValue, "Date must be in YYYYMMDD format")
+                return ""
+
+        try:
+            dt = datetime.strptime(fieldValue, format_str)
+
+            # Reject future dates if the field is BirthDate
+            if fieldName in "contained|#:Patient|birthDate":
+                today_utc = datetime.now(ZoneInfo("UTC")).date()
+                if dt.date() > today_utc:
+                    if report_unexpected_exception:
+                        self._log_error(fieldName, fieldValue, "Date cannot be in the future")
+                    return ""
+
+            return dt.strftime(format_str)
+        except ValueError as e:
+            if report_unexpected_exception:
+                self._log_error(fieldName, fieldValue, e)
+            return ""
 
     # Convert FHIR datetime into CSV-safe UTC format
     def _convertToDateTime(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
@@ -148,13 +247,16 @@ class ConversionChecker:
     # Not Empty Validate - Returns exactly what is in the extracted fields no parsing or logic needed
     def _convertToNotEmpty(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
         try:
-            if len(str(fieldValue)) > 0:
+            if isinstance(fieldValue, (int, float)):
+                return ""  # Reject plain numbers
+            if isinstance(fieldValue, str) and fieldValue.strip():
                 return fieldValue
             return ""
         except Exception as e:
             if report_unexpected_exception:
                 message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
                 return message
+
 
     # NHSNumber Validate
     def _convertToNHSNumber(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
@@ -223,17 +325,15 @@ class ConversionChecker:
             return fieldValue
         return "" 
 
-    # Change to Lookup
+    # Change to Lookup (loads expected data as is but if empty use lookup extraction to populate value)
     def _convertToLookUp(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
+        if isinstance(fieldValue, str) and any(char.isalpha() for char in fieldValue) and not fieldValue.isdigit():
+            return fieldValue
         try:
-            if fieldValue != "":
-                return fieldValue
-            try:
                 lookUpValue = self.dataParser.getKeyValue(expressionRule)
                 IdentifiedLookup = self.dataLookUp.findLookUp(lookUpValue[0])
                 return IdentifiedLookup
-            except:
-                return ""
+        
         except Exception as e:
             if report_unexpected_exception:
                 message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
@@ -266,3 +366,45 @@ class ConversionChecker:
             if report_unexpected_exception:
                 message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
                 return message
+    
+    # Check if Snomed code is numeric and reject other forms
+    def _convertToSnomed(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
+        """
+        Validates that a SNOMED code is a non-empty string containing only digits.
+        """
+        try:
+            if not fieldValue:
+                return fieldValue
+            if not isinstance(fieldValue, str) or not fieldValue.isdigit():
+                raise ValueError(f"Invalid SNOMED code: {fieldValue}")
+            return fieldValue
+        except Exception as e:
+            if report_unexpected_exception:
+                message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+                self.errorRecords.append({
+                    "field": fieldName,
+                    "value": fieldValue,
+                    "message": message
+                })
+            return ""
+
+    # Check if Input is boolean or if input is a string with true or false, convert to Boolean
+    def _convertToBoolean(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
+        try:
+            if isinstance(fieldValue, bool):
+                return fieldValue
+
+            if isinstance(fieldValue, str):
+                lowered = fieldValue.strip().lower()
+                if lowered == "true":
+                    return True
+                elif lowered == "false":
+                    return False
+            return "" 
+        except Exception as e:
+            if report_unexpected_exception:
+                 self.log_error(fieldName, fieldValue, e)
+            return ""
+    
+    def get_error_records(self):
+        return self.errorRecords
