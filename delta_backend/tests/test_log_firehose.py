@@ -47,7 +47,7 @@ class TestFirehoseLogger(unittest.TestCase):
         firehose_logger = FirehoseLogger(boto_client=mock_firehose_client, stream_name=stream_name)
         log_message = {"key": "value"}
 
-        with patch("src.log_firehose.logger.exception") as mock_logger_exception:
+        with patch("log_firehose.logger.exception") as mock_logger_exception:
             # Act
             firehose_logger.send_log(log_message)
 
