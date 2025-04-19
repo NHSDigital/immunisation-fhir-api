@@ -2,21 +2,35 @@ import unittest
 from unittest.mock import patch, MagicMock
 from botocore.exceptions import ClientError
 import os
+import json
 
 # Set environment variables before importing the module
-os.environ["AWS_SQS_QUEUE_URL"] = "https://sqs.us-east-1.amazonaws.com/123456789012/MyQueue"
+## @TODO: Due to environment variable non-isolation, This AWS_SQS_QUEUE_URL matches value in test_convert_to_flat_json.py
+os.environ["AWS_SQS_QUEUE_URL"] = "https://sqs.eu-west-2.amazonaws.com/123456789012/test-queue"
 os.environ["DELTA_TABLE_NAME"] = "my_delta_table"
 os.environ["SOURCE"] = "my_source"
 
-from src.delta import send_message, handler  # Import after setting environment variables
-import json
-
+from delta import send_message, handler  # Import after setting environment variables
+from sample_data.test_resource_data import get_test_data_resource
 
 class DeltaTestCase(unittest.TestCase):
 
     def setUp(self):
         # Common setup if needed
         self.context = {}
+        self.logger_info_patcher = patch("logging.Logger.info")
+        self.mock_logger_info = self.logger_info_patcher.start()
+
+        self.logger_exception_patcher = patch("logging.Logger.exception")
+        self.mock_logger_exception = self.logger_exception_patcher.start()
+
+        self.firehose_logger_patcher = patch("delta.firehose_logger")
+        self.mock_firehose_logger = self.firehose_logger_patcher.start()
+
+    def tearDown(self):
+        self.logger_exception_patcher.stop()
+        self.logger_info_patcher.stop()
+        self.mock_firehose_logger.stop()
 
     @staticmethod
     def setup_mock_sqs(mock_boto_client, return_value={"ResponseMetadata": {"HTTPStatusCode": 200}}):
@@ -39,47 +53,48 @@ class DeltaTestCase(unittest.TestCase):
         return mock_table
 
     @staticmethod
-    def get_event(event_name="INSERT", operation="CREATE", supplier="EMIS"):
+    def get_event(event_name="INSERT", operation="CREATE", supplier="EMIS", n_records=1):
+        """Create test event for the handler function."""
+        return {
+            "Records": [
+                DeltaTestCase.get_event_record(f"covid#{i+1}2345", event_name, operation, supplier)
+                for i in range(n_records)
+            ]
+        }
+
+    @staticmethod
+    def get_event_record(pk, event_name="INSERT", operation="CREATE", supplier="EMIS"):
         if operation != "DELETE":
-            return {
-                "Records": [
-                    {
-                        "eventName": event_name,
-                        "dynamodb": {
-                            "ApproximateCreationDateTime": 1690896000,
-                            "NewImage": {
-                                "PK": {"S": "covid#12345"},
-                                "PatientSK": {"S": "covid#12345"},
-                                "IdentifierPK": {"S": "system#1"},
-                                "Operation": {"S": operation},
-                                "SupplierSystem": {"S": supplier},
-                                "Resource": {
-                                    "S": '{"resourceType": "Immunization", "contained": [{"resourceType": "Practitioner", "id": "Pract1", "name": [{"family": "O\'Reilly", "given": ["Ellena"]}]}, {"resourceType": "Patient", "id": "Pat1", "identifier": [{"system": "https://fhir.nhs.uk/Id/nhs-number", "value": "9674963871"}], "name": [{"family": "GREIR", "given": ["SABINA"]}], "gender": "female", "birthDate": "2019-01-31", "address": [{"postalCode": "GU14 6TU"}]}], "extension": [{"url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure", "valueCodeableConcept": {"coding": [{"system": "http://snomed.info/sct", "code": "1303503001", "display": "Administration of vaccine product containing only Human orthopneumovirus antigen (procedure)"}]}}], "identifier": [{"system": "https://www.ravs.england.nhs.uk/", "value": "0001_RSV_v5_RUN_2_CDFDPS-742_valid_dose_1"}], "status": "completed", "vaccineCode": {"coding": [{"system": "http://snomed.info/sct", "code": "42605811000001109", "display": "Abrysvo vaccine powder and solvent for solution for injection 0.5ml vials (Pfizer Ltd) (product)"}]}, "patient": {"reference": "#Pat1"}, "occurrenceDateTime": "2024-06-10T18:33:25+00:00", "recorded": "2024-06-10T18:33:25+00:00", "primarySource": true, "manufacturer": {"display": "Pfizer"}, "location": {"type": "Location", "identifier": {"value": "J82067", "system": "https://fhir.nhs.uk/Id/ods-organization-code"}}, "lotNumber": "RSVTEST", "expirationDate": "2024-12-31", "site": {"coding": [{"system": "http://snomed.info/sct", "code": "368208006", "display": "Left upper arm structure (body structure)"}]}, "route": {"coding": [{"system": "http://snomed.info/sct", "code": "78421000", "display": "Intramuscular route (qualifier value)"}]}, "doseQuantity": {"value": 0.5, "unit": "Milliliter (qualifier value)", "system": "http://unitsofmeasure.org", "code": "258773002"}, "performer": [{"actor": {"reference": "#Pract1"}}, {"actor": {"type": "Organization", "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "X0X0X"}}}], "reasonCode": [{"coding": [{"code": "Test", "system": "http://snomed.info/sct"}]}], "protocolApplied": [{"targetDisease": [{"coding": [{"system": "http://snomed.info/sct", "code": "840539006", "display": "Disease caused by severe acute respiratory syndrome coronavirus 2"}]}], "doseNumberPositiveInt": 1}], "id": "ca8ba2c6-2383-4465-b456-c1174c21cf31"}'
-                                },
-                            },
-                        },
+            return{
+                "eventName": event_name,
+                "dynamodb": {
+                    "ApproximateCreationDateTime": 1690896000,
+                    "NewImage": {
+                        "PK": {"S": pk},
+                        "PatientSK": {"S": pk},
+                        "IdentifierPK": {"S": "system#1"},
+                        "Operation": {"S": operation},
+                        "SupplierSystem": {"S": supplier},
+                        "Resource": {
+                            "S": json.dumps(get_test_data_resource()),
+                        }
                     }
-                ]
+                }
             }
         else:
             return {
-                "Records": [
-                    {
-                        "eventName": "REMOVE",
-                        "dynamodb": {
-                            "ApproximateCreationDateTime": 1690896000,
-                            "Keys": {
-                                "PK": {"S": "covid#12345"},
-                                "PatientSK": {"S": "covid#12345"},
-                                "SupplierSystem": {"S": "EMIS"},
-                                "Resource": {
-                                    "S": '{"resourceType": "Immunization", "contained": [{"resourceType": "Practitioner", "id": "Pract1", "name": [{"family": "O\'Reilly", "given": ["Ellena"]}]}, {"resourceType": "Patient", "id": "Pat1", "identifier": [{"system": "https://fhir.nhs.uk/Id/nhs-number", "value": "9674963871"}], "name": [{"family": "GREIR", "given": ["SABINA"]}], "gender": "female", "birthDate": "2019-01-31", "address": [{"postalCode": "GU14 6TU"}]}], "extension": [{"url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure", "valueCodeableConcept": {"coding": [{"system": "http://snomed.info/sct", "code": "1303503001", "display": "Administration of vaccine product containing only Human orthopneumovirus antigen (procedure)"}]}}], "identifier": [{"system": "https://www.ravs.england.nhs.uk/", "value": "0001_RSV_v5_RUN_2_CDFDPS-742_valid_dose_1"}], "status": "completed", "vaccineCode": {"coding": [{"system": "http://snomed.info/sct", "code": "42605811000001109", "display": "Abrysvo vaccine powder and solvent for solution for injection 0.5ml vials (Pfizer Ltd) (product)"}]}, "patient": {"reference": "#Pat1"}, "occurrenceDateTime": "2024-06-10T18:33:25+00:00", "recorded": "2024-06-10T18:33:25+00:00", "primarySource": true, "manufacturer": {"display": "Pfizer"}, "location": {"type": "Location", "identifier": {"value": "J82067", "system": "https://fhir.nhs.uk/Id/ods-organization-code"}}, "lotNumber": "RSVTEST", "expirationDate": "2024-12-31", "site": {"coding": [{"system": "http://snomed.info/sct", "code": "368208006", "display": "Left upper arm structure (body structure)"}]}, "route": {"coding": [{"system": "http://snomed.info/sct", "code": "78421000", "display": "Intramuscular route (qualifier value)"}]}, "doseQuantity": {"value": 0.5, "unit": "Milliliter (qualifier value)", "system": "http://unitsofmeasure.org", "code": "258773002"}, "performer": [{"actor": {"reference": "#Pract1"}}, {"actor": {"type": "Organization", "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "X0X0X"}}}], "reasonCode": [{"coding": [{"code": "Test", "system": "http://snomed.info/sct"}]}], "protocolApplied": [{"targetDisease": [{"coding": [{"system": "http://snomed.info/sct", "code": "840539006", "display": "Disease caused by severe acute respiratory syndrome coronavirus 2"}]}], "doseNumberPositiveInt": 1}], "id": "ca8ba2c6-2383-4465-b456-c1174c21cf31"}'
-                                },
-                                "PatientSK": {"S": "COVID19#ca8ba2c6-2383-4465-b456-c1174c21cf31"},
-                            },
-                        },
+                "eventName": "REMOVE",
+                "dynamodb": {
+                    "ApproximateCreationDateTime": 1690896000,
+                    "Keys": {
+                        "PK": {"S": pk},
+                        "PatientSK": {"S": pk},
+                        "SupplierSystem": {"S": "EMIS"},
+                        "Resource": {
+                            "S": json.dumps(get_test_data_resource()),
+                        }
                     }
-                ]
+                }
             }
 
     @patch("boto3.client")
@@ -97,8 +112,8 @@ class DeltaTestCase(unittest.TestCase):
         )
 
     @patch("boto3.client")
-    @patch("logging.Logger.info")
-    def test_send_message_client_error(self, mock_logger_info, mock_boto_client):
+    @patch("logging.Logger.error")
+    def test_send_message_client_error(self, mock_logger_error, mock_boto_client):
         # Arrange
         mock_sqs = MagicMock()
         mock_boto_client.return_value = mock_sqs
@@ -112,7 +127,7 @@ class DeltaTestCase(unittest.TestCase):
         send_message(record)
 
         # Assert
-        mock_logger_info.assert_called_once_with(
+        mock_logger_error.assert_called_once_with(
             f"Error sending record to DLQ: An error occurred (500) when calling the SendMessage operation: Internal Server Error"
         )
 
@@ -181,7 +196,7 @@ class DeltaTestCase(unittest.TestCase):
 
     @patch("boto3.resource")
     @patch("boto3.client")
-    def test_handler_exception_intrusion(self, mock_boto_resource, mock_boto_client):
+    def test_handler_exception_intrusion(self, mock_boto_client, mock_boto_resource):
         # Arrange
         self.setUp_mock_resources(mock_boto_resource, mock_boto_client)
         event = self.get_event()
@@ -190,22 +205,24 @@ class DeltaTestCase(unittest.TestCase):
         # Act & Assert
         with self.assertRaises(Exception):
             handler(event, context)
+
+        self.mock_logger_exception.assert_called_once_with("Delta Lambda failure: Test Exception")
 
     @patch("boto3.resource")
     @patch("delta.handler")
-    def test_handler_exception_intrusion_check_false(self, mock_boto_resource, mock_boto_client):
+    def test_handler_exception_intrusion_check_false(self, mocked_intrusion, mock_boto_client):
         # Arrange
-        self.setUp_mock_resources(mock_boto_resource, mock_boto_client)
+        self.setUp_mock_resources(mocked_intrusion, mock_boto_client)
         event = self.get_event()
         context = {}
 
         # Act & Assert
-        with self.assertRaises(Exception):
-            handler(event, context)
+        response = handler(event, context)
 
-    @patch("delta.firehose_logger.send_log")  # Mock Firehose logger
+        self.assertEqual(response["statusCode"], 500)
+
     @patch("delta.logger.info")  # Mock logging
-    def test_dps_record_skipped(self, mock_logger_info, mock_firehose_send_log):
+    def test_dps_record_skipped(self, mock_logger_info):
         event = self.get_event(supplier="DPSFULL")
         context = {}
 
@@ -219,11 +236,10 @@ class DeltaTestCase(unittest.TestCase):
         mock_logger_info.assert_called_with("Record from DPS skipped for 12345")
 
     # TODO - amend test once error handling implemented
-    @patch("delta.firehose_logger.send_log")
     @patch("delta.logger.info")
     @patch("Converter.Converter")
     @patch("delta.boto3.resource")
-    def test_partial_success_with_errors(self, mock_dynamodb, mock_converter, mock_logger_info, mock_firehose_send_log):
+    def test_partial_success_with_errors(self, mock_dynamodb, mock_converter, mock_logger_info):
         mock_converter_instance = MagicMock()
         mock_converter_instance.runConversion.return_value = [{}]
         mock_converter_instance.getErrorRecords.return_value = [{"error": "Invalid field"}]
@@ -238,7 +254,6 @@ class DeltaTestCase(unittest.TestCase):
         context = {}
 
         response = handler(event, context)
-        print(f"final response: {response}")
 
         # self.assertEqual(response["statusCode"], 207)
         # self.assertIn("Partial success", response["body"])

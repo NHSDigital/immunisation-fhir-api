@@ -8,7 +8,7 @@ from unittest import TestCase
 from unittest.mock import patch, Mock
 from moto import mock_dynamodb, mock_sqs
 from boto3 import resource as boto3_resource, client as boto3_client
-from tests.utils_for_converter_tests import ValuesForTests, ErrorValuesForTests
+from utils_for_converter_tests import ValuesForTests, ErrorValuesForTests
 from botocore.config import Config
 from pathlib import Path
 from SchemaParser import SchemaParser
@@ -24,7 +24,7 @@ MOCK_ENV_VARS = {
 request_json_data = ValuesForTests.json_data
 with patch.dict("os.environ", MOCK_ENV_VARS):
     from delta import handler, Converter
-    from Converter import imms, ErrorRecords
+    # from Converter import imms, ErrorRecords
 
 
 @patch.dict("os.environ", MOCK_ENV_VARS, clear=True)
@@ -65,6 +65,16 @@ class TestConvertToFlatJson(unittest.TestCase):
                 },
             ],
         )
+        self.logger_info_patcher = patch("logging.Logger.info")
+        self.mock_logger_info = self.logger_info_patcher.start()
+
+        self.logger_exception_patcher = patch("logging.Logger.exception")
+        self.mock_logger_exception = self.logger_exception_patcher.start()
+
+    def tearDown(self):
+        self.logger_exception_patcher.stop()
+        self.logger_info_patcher.stop()
+
 
     @staticmethod
     def get_event(event_name="INSERT", operation="operation", supplier="EMIS"):
@@ -101,7 +111,7 @@ class TestConvertToFlatJson(unittest.TestCase):
 
     def test_fhir_converter_json_direct_data(self):
         """it should convert fhir json data to flat json"""
-        imms.clear()
+        
         json_data = json.dumps(ValuesForTests.json_data)
 
         start = time.time()
@@ -130,7 +140,7 @@ class TestConvertToFlatJson(unittest.TestCase):
         error_test_cases = [ErrorValuesForTests.missing_json, ErrorValuesForTests.json_dob_error]
 
         for test_case in error_test_cases:
-            imms.clear()
+
             json_data = json.dumps(test_case)
 
             start = time.time()
@@ -167,7 +177,6 @@ class TestConvertToFlatJson(unittest.TestCase):
 
         for test_case in expected_action_flags:
             with self.subTest(test_case["Operation"]):
-                imms.clear()
 
                 event = self.get_event(operation=test_case["Operation"])
 
@@ -256,7 +265,7 @@ class TestConvertToFlatJson(unittest.TestCase):
         response = converter.runConversion(ValuesForTests.json_data)
 
         # Check if the error message was added to ErrorRecords
-        self.assertEqual(len(converter.getErrorRecords()), 3)
+        self.assertEqual(len(converter.getErrorRecords()), 1)
         self.assertIn(
             "FHIR Parser Unexpected exception [JSONDecodeError]: Expecting value: line 1 column 1 (char 0)",
             converter.getErrorRecords()[0]["message"],
@@ -268,7 +277,7 @@ class TestConvertToFlatJson(unittest.TestCase):
     def test_conversion_exceptions(self, mock_get_key_value, mock_get_conversions):
         mock_get_conversions.side_effect = Exception("Error while getting conversions")
         mock_get_key_value.side_effect = Exception("Key value retrieval failed")
-        ErrorRecords.clear()
+
         converter = Converter(fhir_data="some_data")
 
         schema = {
