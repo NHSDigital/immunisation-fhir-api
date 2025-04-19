@@ -5,7 +5,7 @@ import os
 import json
 
 # Set environment variables before importing the module
-## @TODO: Due to environment variable non-isolation, This AWS_SQS_QUEUE_URL matches value in test_convert_to_flat_json.py
+## @TODO: # Note: Environment variables shared across tests, thus aligned
 os.environ["AWS_SQS_QUEUE_URL"] = "https://sqs.eu-west-2.amazonaws.com/123456789012/test-queue"
 os.environ["DELTA_TABLE_NAME"] = "my_delta_table"
 os.environ["SOURCE"] = "my_source"
