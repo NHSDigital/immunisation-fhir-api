@@ -1,110 +1,110 @@
 name: SonarCloud
 
 on:
-  push:
-    branches:
-      - master
-  pull_request:
-    types: [labeled, opened, synchronize, reopened, unlabeled]
+    push:
+        branches:
+            - master
+    pull_request:
+        types: [labeled, opened, synchronize, reopened, unlabeled]
 
 jobs:
-  sonarcloud:
-    name: SonarCloud
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'dependency') }}
-    runs-on: ubuntu-latest
+    sonarcloud:
+        name: SonarCloud
+        if: ${{ !contains(github.event.pull_request.labels.*.name, 'dependency') }}
+        runs-on: ubuntu-latest
 
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
 
-      - name: Set up AWS credentials
-        env:
-          AWS_ACCESS_KEY_ID: "FOOBARKEY"
-          AWS_SECRET_ACCESS_KEY: "FOOBARSECRET"
-        run: |
-          aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
-          aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+            - name: Set up AWS credentials
+              env:
+                  AWS_ACCESS_KEY_ID: "FOOBARKEY"
+                  AWS_SECRET_ACCESS_KEY: "FOOBARSECRET"
+              run: |
+                  aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+                  aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
 
-      - name: Initialize Unit Test Failure Tracker
-        run: echo "false" > test_failed.txt
+            - name: Initialize Unit Test Failure Tracker
+              run: echo "false" > test_failed.txt
 
-      # - name: Run unittest with filenameprocessor-coverage
-      #   id: filenameprocessor
-      #   continue-on-error: true
-      #   run: |
-      #     pip install poetry==1.8.4 moto==4.2.11 coverage redis botocore==1.35.49 simplejson pandas freezegun responses structlog fhir.resources jsonpath_ng pydantic==1.10.13 requests aws-lambda-typing cffi pyjwt boto3-stubs-lite[dynamodb]~=1.26.90 python-stdnum==1.20 fakeredis
-      #     poetry run coverage run --source=filenameprocessor -m unittest discover -s filenameprocessor || echo "filenameprocessor tests failed" >> failed_tests.txt
-      #     poetry run coverage xml -o sonarcloud-coverage-filenameprocessor-coverage.xml
+            # - name: Run unittest with filenameprocessor-coverage
+            #   id: filenameprocessor
+            #   continue-on-error: true
+            #   run: |
+            #     pip install poetry==1.8.4 moto==4.2.11 coverage redis botocore==1.35.49 simplejson pandas freezegun responses structlog fhir.resources jsonpath_ng pydantic==1.10.13 requests aws-lambda-typing cffi pyjwt boto3-stubs-lite[dynamodb]~=1.26.90 python-stdnum==1.20 fakeredis
+            #     poetry run coverage run --source=filenameprocessor -m unittest discover -s filenameprocessor || echo "filenameprocessor tests failed" >> failed_tests.txt
+            #     poetry run coverage xml -o sonarcloud-coverage-filenameprocessor-coverage.xml
 
-      # - name: Run unittest with recordprocessor-coverage
-      #   id: recordprocessor
-      #   continue-on-error: true
-      #   run: |
-      #     poetry run coverage run --source=recordprocessor -m unittest discover -s recordprocessor || echo "recordprocessor tests failed" >> failed_tests.txt
-      #     poetry run coverage xml -o sonarcloud-coverage-recordprocessor-coverage.xml
+            # - name: Run unittest with recordprocessor-coverage
+            #   id: recordprocessor
+            #   continue-on-error: true
+            #   run: |
+            #     poetry run coverage run --source=recordprocessor -m unittest discover -s recordprocessor || echo "recordprocessor tests failed" >> failed_tests.txt
+            #     poetry run coverage xml -o sonarcloud-coverage-recordprocessor-coverage.xml
 
-      # - name: Run unittest with recordforwarder-coverage
-      #   id: recordforwarder
-      #   continue-on-error: true
-      #   run: |
-      #     PYTHONPATH=$(pwd)/backend:$(pwd)/backend/tests poetry run coverage run --source=backend -m unittest discover -s backend/tests -p "*batch*.py" || echo "recordforwarder tests failed" >> failed_tests.txt
-      #     poetry run coverage xml -o sonarcloud-coverage-recordforwarder-coverage.xml
+            # - name: Run unittest with recordforwarder-coverage
+            #   id: recordforwarder
+            #   continue-on-error: true
+            #   run: |
+            #     PYTHONPATH=$(pwd)/backend:$(pwd)/backend/tests poetry run coverage run --source=backend -m unittest discover -s backend/tests -p "*batch*.py" || echo "recordforwarder tests failed" >> failed_tests.txt
+            #     poetry run coverage xml -o sonarcloud-coverage-recordforwarder-coverage.xml
 
-      # - name: Run unittest with coverage-ack-lambda
-      #   id: acklambda
-      #   continue-on-error: true
-      #   run: |
-      #     pip install poetry==1.8.4 coverage moto==4.2.11 freezegun
-      #     poetry run coverage run --source=ack_backend -m unittest discover -s ack_backend || echo "ack-lambda tests failed" >> failed_tests.txt
-      #     poetry run coverage xml -o sonarcloud-coverage-ack-lambda.xml
+            # - name: Run unittest with coverage-ack-lambda
+            #   id: acklambda
+            #   continue-on-error: true
+            #   run: |
+            #     pip install poetry==1.8.4 coverage moto==4.2.11 freezegun
+            #     poetry run coverage run --source=ack_backend -m unittest discover -s ack_backend || echo "ack-lambda tests failed" >> failed_tests.txt
+            #     poetry run coverage xml -o sonarcloud-coverage-ack-lambda.xml
 
-      - name: Run unittest with coverage-delta
-        id: delta
-        env:
-           PYTHONPATH: delta_backend/src:delta_backend/tests:./src:./tests
-        continue-on-error: true
-        run: |
-          echo ">>>>  SAW: use delta.firehose_log:"
-          pip install poetry==1.8.4 moto==4.2.11 mypy-boto3-dynamodb==1.35.54 boto3==1.26.165 coverage botocore==1.29.165 jmespath==1.0.1 python-dateutil==2.9.0 urllib3==1.26.20 s3transfer==0.6.2 typing-extensions==4.12.2
-          export PYTHONPATH=src:tests
-          PYTHONPATH=delta_backend/src:delta_backend/tests:./src:./tests poetry run coverage run --source=delta_backend -m unittest discover -s delta_backend/tests || echo "delta tests failed" >> failed_tests.txt
-          poetry run coverage xml -o sonarcloud-coverage-delta.xml
+            - name: Run unittest with coverage-delta
+              id: delta
+              env:
+                  PYTHONPATH: delta_backend/src:delta_backend/tests
+              continue-on-error: true
+              run: |
+                  echo ">>>>  SAW: use delta.firehose_log:"
+                  pip install poetry==1.8.4 moto==4.2.11 mypy-boto3-dynamodb==1.35.54 boto3==1.26.165 coverage botocore==1.29.165 jmespath==1.0.1 python-dateutil==2.9.0 urllib3==1.26.20 s3transfer==0.6.2 typing-extensions==4.12.2
+                  poetry run coverage run --source=delta_backend -m unittest discover -s delta_backend/tests || echo "delta tests failed" >> failed_tests.txt
+                  poetry run coverage run --source=delta_backend -m unittest discover -s delta_backend/tests || echo "delta tests failed" >> failed_tests.txt
+                  poetry run coverage xml -o sonarcloud-coverage-delta.xml
 
-      # - name: Run unittest with coverage-fhir-api
-      #   id: fhirapi
-      #   continue-on-error: true
-      #   run: |
-      #     pip install poetry==1.8.4 moto==4.2.11 coverage redis botocore==1.35.49 simplejson responses structlog fhir.resources jsonpath_ng pydantic==1.10.13 requests aws-lambda-typing cffi pyjwt boto3-stubs-lite[dynamodb]~=1.26.90 python-stdnum==1.20
-      #     poetry run coverage run --source=backend -m unittest discover -s backend || echo "fhir-api tests failed" >> failed_tests.txt
-      #     poetry run coverage xml -o sonarcloud-coverage.xml
+            # - name: Run unittest with coverage-fhir-api
+            #   id: fhirapi
+            #   continue-on-error: true
+            #   run: |
+            #     pip install poetry==1.8.4 moto==4.2.11 coverage redis botocore==1.35.49 simplejson responses structlog fhir.resources jsonpath_ng pydantic==1.10.13 requests aws-lambda-typing cffi pyjwt boto3-stubs-lite[dynamodb]~=1.26.90 python-stdnum==1.20
+            #     poetry run coverage run --source=backend -m unittest discover -s backend || echo "fhir-api tests failed" >> failed_tests.txt
+            #     poetry run coverage xml -o sonarcloud-coverage.xml
 
-      # - name: Run unittest with coverage-mesh-processor
-      #   id: meshprocessor
-      #   continue-on-error: true
-      #   run: |
-      #     pip install poetry==1.8.4 moto==4.2.11 coverage redis botocore==1.35.49 simplejson responses structlog fhir.resources jsonpath_ng pydantic==1.10.13 requests aws-lambda-typing cffi pyjwt boto3-stubs-lite[dynamodb]~=1.26.90 python-stdnum==1.20
-      #     poetry run coverage run --source=mesh_processor -m unittest discover -s mesh_processor || echo "mesh_processor tests failed" >> failed_tests.txt
-      #     poetry run coverage xml -o sonarcloud-mesh_processor-coverage.xml
+            # - name: Run unittest with coverage-mesh-processor
+            #   id: meshprocessor
+            #   continue-on-error: true
+            #   run: |
+            #     pip install poetry==1.8.4 moto==4.2.11 coverage redis botocore==1.35.49 simplejson responses structlog fhir.resources jsonpath_ng pydantic==1.10.13 requests aws-lambda-typing cffi pyjwt boto3-stubs-lite[dynamodb]~=1.26.90 python-stdnum==1.20
+            #     poetry run coverage run --source=mesh_processor -m unittest discover -s mesh_processor || echo "mesh_processor tests failed" >> failed_tests.txt
+            #     poetry run coverage xml -o sonarcloud-mesh_processor-coverage.xml
 
-      - name: Run Test Failure Summary
-        id: check_failure
-        run: |
-          if [ -s failed_tests.txt ]; then
-            echo "The following tests failed:"
-            cat failed_tests.txt
+            - name: Run Test Failure Summary
+              id: check_failure
+              run: |
+                  if [ -s failed_tests.txt ]; then
+                    echo "The following tests failed:"
+                    cat failed_tests.txt
 
-            while IFS= read -r line; do
-              echo "##[error]Test Failures: $line"
-            done < failed_tests.txt
-            
-            exit 1
-          else
-            echo "All tests passed."
-          fi
+                    while IFS= read -r line; do
+                      echo "##[error]Test Failures: $line"
+                    done < failed_tests.txt
+                    
+                    exit 1
+                  else
+                    echo "All tests passed."
+                  fi
 
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Needed to get PR information, if any
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+            - name: SonarCloud Scan
+              uses: SonarSource/sonarqube-scan-action@master
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Needed to get PR information, if any
+                  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

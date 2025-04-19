@@ -1,24 +1,22 @@
+
 import unittest
 from unittest.mock import patch, MagicMock
 from botocore.exceptions import ClientError
 import os
+
+
+print(f"PYTHONPATH : {os.environ.get('PYTHONPATH')}")
+
 from sample_data.test_resource_data import get_test_data_resource
 import json
+from delta import send_message, handler  # Import after setting environment variables
 
+os.environ["AWS_SQS_QUEUE_URL"] = "https://sqs.us-east-1.amazonaws.com/123456789012/MyQueue"
+os.environ["DELTA_TABLE_NAME"] = "my_delta_table"
+os.environ["SOURCE"] = "my_source"
 
-mock_queue = "https://sqs.us-east-1.amazonaws.com/123456789012/MyQueue"
-MOCK_ENV_VARS = {
-    "AWS_SQS_QUEUE_URL": mock_queue,
-    "DELTA_TABLE_NAME" : "my_delta_table",
-    "SOURCE" : "my_source"
-}
-with patch.dict("os.environ", MOCK_ENV_VARS):
-    from delta import send_message, handler  # Import after setting environment variables
-
-
-@patch.dict("os.environ", MOCK_ENV_VARS, clear=True)
 class DeltaTestCase(unittest.TestCase):
-
+    
     def setUp(self):
         # Common setup if needed
         self.context = {}
@@ -30,7 +28,6 @@ class DeltaTestCase(unittest.TestCase):
 
         self.firehose_logger_patcher = patch("delta.firehose_logger")
         self.mock_firehose_logger = self.firehose_logger_patcher.start()
-        # self.mock_firehose_logger.send_log = MagicMock()
 
 
     def tearDown(self):
@@ -114,7 +111,7 @@ class DeltaTestCase(unittest.TestCase):
 
         # Assert
         mock_sqs.send_message.assert_called_once_with(
-            QueueUrl=mock_queue, MessageBody=json.dumps(record)
+            QueueUrl=os.environ["AWS_SQS_QUEUE_URL"], MessageBody=json.dumps(record)
         )
 
     @patch("boto3.client")
