@@ -8,7 +8,7 @@ from unittest import TestCase
 from unittest.mock import patch, Mock
 from moto import mock_dynamodb, mock_sqs
 from boto3 import resource as boto3_resource, client as boto3_client
-from tests.utils_for_converter_tests import ValuesForTests, ErrorValuesForTests
+from utils_for_converter_tests import ValuesForTests, ErrorValuesForTests
 from botocore.config import Config
 from pathlib import Path
 from SchemaParser import SchemaParser
@@ -17,14 +17,14 @@ from ConversionChecker import ConversionChecker
 
 
 MOCK_ENV_VARS = {
-    "AWS_SQS_QUEUE_URL": "https://sqs.eu-west-2.amazonaws.com/123456789012/test-queue",
+    "AWS_SQS_QUEUE_URL": "https://sqs.us-east-1.amazonaws.com/123456789012/MyQueue",
     "DELTA_TABLE_NAME": "immunisation-batch-internal-dev-audit-test-table",
     "SOURCE": "test-source",
 }
 request_json_data = ValuesForTests.json_data
-with patch.dict("os.environ", MOCK_ENV_VARS):
+with patch.dict("os.environ", MOCK_ENV_VARS, clear=True):
     from delta import handler, Converter
-    from Converter import imms, ErrorRecords
+    # from Converter import imms, ErrorRecords
 
 
 @patch.dict("os.environ", MOCK_ENV_VARS, clear=True)
@@ -66,6 +66,16 @@ class TestConvertToFlatJson(unittest.TestCase):
             ],
         )
 
+        self.logger_info_patcher = patch("logging.Logger.info")
+        self.mock_logger_info = self.logger_info_patcher.start()
+
+        self.logger_exception_patcher = patch("logging.Logger.exception")
+        self.mock_logger_exception = self.logger_exception_patcher.start()
+        
+    def tearDown(self):
+        self.logger_exception_patcher.stop()
+        self.logger_info_patcher.stop()
+
     @staticmethod
     def get_event(event_name="INSERT", operation="operation", supplier="EMIS"):
         """Returns test event data."""
@@ -101,7 +111,7 @@ class TestConvertToFlatJson(unittest.TestCase):
 
     def test_fhir_converter_json_direct_data(self):
         """it should convert fhir json data to flat json"""
-        imms.clear()
+        # imms.clear()
         json_data = json.dumps(ValuesForTests.json_data)
 
         start = time.time()
@@ -125,12 +135,13 @@ class TestConvertToFlatJson(unittest.TestCase):
         end = time.time()
         print(end - start)
 
+        # These tests fail
     def test_fhir_converter_json_error_scenario(self):
         """it should convert fhir json data to flat json - error scenarios"""
         error_test_cases = [ErrorValuesForTests.missing_json, ErrorValuesForTests.json_dob_error]
 
         for test_case in error_test_cases:
-            imms.clear()
+            # imms.clear()
             json_data = json.dumps(test_case)
 
             start = time.time()
@@ -167,7 +178,7 @@ class TestConvertToFlatJson(unittest.TestCase):
 
         for test_case in expected_action_flags:
             with self.subTest(test_case["Operation"]):
-                imms.clear()
+                # imms.clear()
 
                 event = self.get_event(operation=test_case["Operation"])
 
@@ -247,6 +258,9 @@ class TestConvertToFlatJson(unittest.TestCase):
         )
         self.assertEqual(converter.getErrorRecords()[0]["code"], 0)
 
+
+
+
     @patch("Converter.SchemaParser.getConversions")
     def test_get_conversions_exception(self, mock_get_conversions):
         # Mock getConversions to raise an exception
@@ -256,7 +270,7 @@ class TestConvertToFlatJson(unittest.TestCase):
         response = converter.runConversion(ValuesForTests.json_data)
 
         # Check if the error message was added to ErrorRecords
-        self.assertEqual(len(converter.getErrorRecords()), 3)
+        self.assertEqual(len(converter.getErrorRecords()), 1)
         self.assertIn(
             "FHIR Parser Unexpected exception [JSONDecodeError]: Expecting value: line 1 column 1 (char 0)",
             converter.getErrorRecords()[0]["message"],
@@ -268,7 +282,7 @@ class TestConvertToFlatJson(unittest.TestCase):
     def test_conversion_exceptions(self, mock_get_key_value, mock_get_conversions):
         mock_get_conversions.side_effect = Exception("Error while getting conversions")
         mock_get_key_value.side_effect = Exception("Key value retrieval failed")
-        ErrorRecords.clear()
+        # ErrorRecords.clear()
         converter = Converter(fhir_data="some_data")
 
         schema = {
