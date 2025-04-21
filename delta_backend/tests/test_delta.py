@@ -227,7 +227,6 @@ class DeltaTestCase(unittest.TestCase):
         context = {}
 
         response = handler(event, context)
-        print(f"final response1: {response}")
 
         self.assertEqual(response["statusCode"], 200)
         self.assertEqual(response["body"], "Record from DPS skipped for 12345")

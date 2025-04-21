@@ -6,6 +6,15 @@ from log_firehose import FirehoseLogger
 
 class TestFirehoseLogger(unittest.TestCase):
 
+    def setUp(self):
+        # Common setup if needed
+        self.context = {}
+        self.logger_info_patcher = patch("logging.Logger.info")
+        self.mock_logger_info = self.logger_info_patcher.start()
+
+    def tearDown(self):
+        self.logger_info_patcher.stop()
+
     @patch("boto3.client")
     def test_send_log(self, mock_boto_client):
         """it should send log message to Firehose"""
