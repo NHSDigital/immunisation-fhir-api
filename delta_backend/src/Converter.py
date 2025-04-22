@@ -28,6 +28,24 @@ class Converter:
     def __init__(self, fhir_data):
         self.FHIRData = fhir_data  # Store JSON data directly
         self.SchemaFile = ConversionLayout.ConvertLayout
+        # self.ErrorRecords = []
+    
+    # Utility logs tailored to conveter class errors
+    def _log_error(self,e,code=ExceptionMessages.UNEXPECTED_EXCEPTION): 
+        message = str(e)  # if a simple string message was passed 
+    
+        if any(existing.get("message") == message for existing in ErrorRecords): 
+            return
+        
+        error_obj = {
+        "code": code,
+        "message": message
+        }
+
+        # Ensure message-level deduplication
+        # if not any(existing.get("message") == message for existing in self.ErrorRecords):
+        ErrorRecords.append(error_obj)
+        return error_obj
 
     # create a FHIR  parser - uses fhir json data from delta 
     # (helper methods to extract values from the nested FHIR structure)
@@ -74,10 +92,8 @@ class Converter:
             dataParser = self._getFHIRParser(self.FHIRData)
         except Exception as e:
             if report_unexpected_exception:
-                message = "FHIR Parser Unexpected exception [%s]: %s" % (e.__class__.__name__, e)
-                p = {"code": 0, "message": message}
-                ErrorRecords.append(p)
-                return p
+                error = self._log_error("FHIR Parser Unexpected exception [%s]: %s" % (e.__class__.__name__, e),code=0)
+                return error
 
         try:
             schemaParser = self._getSchemaParser(self.SchemaFile)
@@ -87,6 +103,9 @@ class Converter:
                 p = {"code": 0, "message": message}
                 ErrorRecords.append(p)
                 return p
+                # error = self._log_error("FHIR Parser Unexpected exception [%s]: %s" % (e.__class__.__name__, e),code=0)
+                # return error
+
 
         try:
             ConversionValidate = ConversionChecker(dataParser, summarise, report_unexpected_exception)
@@ -127,6 +146,9 @@ class Converter:
 
     def getErrorRecords(self):
         return ErrorRecords
+    
+    # def getErrorRecords(self):
+    #     return self.ErrorRecords
     
     def extract_patient_details(self, json_data, FlatFieldName):
         if not hasattr(self, "_cached_values"):

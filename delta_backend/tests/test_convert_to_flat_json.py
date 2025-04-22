@@ -25,7 +25,7 @@ MOCK_ENV_VARS = {
 request_json_data = ValuesForTests.json_data
 with patch.dict("os.environ", MOCK_ENV_VARS):
     from delta import handler, Converter
-    from Converter import imms, ErrorRecords
+    from Converter import imms
 
 
 @patch.dict("os.environ", MOCK_ENV_VARS, clear=True)
@@ -215,22 +215,27 @@ class TestConvertToFlatJson(unittest.TestCase):
         self.assertEqual(len(response), 2)
         self.assertIn("FHIR Parser Unexpected exception", converter.getErrorRecords()[0]["message"])
         self.assertEqual(converter.getErrorRecords()[0]["code"], 0)
-
+    
+    @patch("Converter.FHIRParser")
     @patch("Converter.SchemaParser")
-    def test_schema_parser_exception(self, mock_schema_parser):
+    def test_schema_parser_exception(self, mock_schema_parser, mock_fhir_parser):
+
+        # Mock FHIRParser to return normally
+        mock_fhir_instance = Mock()
+        mock_fhir_instance.parseFHIRData.return_value = None
+        mock_fhir_parser.return_value = mock_fhir_instance
+
         # Mock SchemaParser to raise an exception
         mock_schema_parser.side_effect = Exception("Schema Parsing Error")
-        converter = Converter(fhir_data="some_data")
+        converter = Converter(fhir_data="{}")
 
-        response = converter.runConversion("some_data")
+        converter.runConversion("some_data")
 
         # Check if the error message was added to ErrorRecords
-        self.assertEqual(len(response), 2)
-        self.assertIn(
-            "FHIR Parser Unexpected exception [JSONDecodeError]: Expecting value: line 1 column 1 (char 0)",
-            converter.getErrorRecords()[0]["message"],
-        )
-        self.assertEqual(converter.getErrorRecords()[0]["code"], 0)
+        errors = converter.getErrorRecords()
+        self.assertEqual(len(errors), 3)
+        self.assertIn("Schema Parser Unexpected exception", errors[2]["message"])
+        self.assertEqual(errors[0]["code"], 0)
  
     @patch("Converter.ConversionChecker")
     def test_conversion_checker_exception(self, mock_conversion_checker):
@@ -257,7 +262,7 @@ class TestConvertToFlatJson(unittest.TestCase):
         response = converter.runConversion(ValuesForTests.json_data)
 
         # Check if the error message was added to ErrorRecords
-        self.assertEqual(len(converter.getErrorRecords()), 3)
+        self.assertEqual(len(converter.getErrorRecords()), 2)
         self.assertIn(
             "FHIR Parser Unexpected exception [JSONDecodeError]: Expecting value: line 1 column 1 (char 0)",
             converter.getErrorRecords()[0]["message"],
@@ -269,7 +274,6 @@ class TestConvertToFlatJson(unittest.TestCase):
     def test_conversion_exceptions(self, mock_get_key_value, mock_get_conversions):
         mock_get_conversions.side_effect = Exception("Error while getting conversions")
         mock_get_key_value.side_effect = Exception("Key value retrieval failed")
-        ErrorRecords.clear()
         converter = Converter(fhir_data="some_data")
 
         schema = {
@@ -383,7 +387,7 @@ class TestConvertToFlatJson(unittest.TestCase):
         self.assertIn("Date cannot be in the future", messages)
 
         # Confirm Total Errors Per conversion
-        self.assertEqual(len(checker.errorRecords), 5)
+        self.assertEqual(len(checker.errorRecords), 4)
   
     @patch("ConversionChecker.LookUpData")
     def test_convert_to_date_time(self, MockLookUpData):
@@ -536,6 +540,7 @@ class TestPersonForeNameToFlatJson(unittest.TestCase):
         flat_json = self.converter.runConversion(request_json_data, False, True)
         self.assertEqual(flat_json[0]["PERSON_FORENAME"], expected_forename)
 
+
 class TestPersonSurNameToFlatJson(unittest.TestCase):
 
     def test_person_surname_multiple_names_official(self):
@@ -624,6 +629,7 @@ class TestPersonSurNameToFlatJson(unittest.TestCase):
         flat_json = self.converter.runConversion(request_json_data, False, True)
         self.assertEqual(flat_json[0]["PERSON_SURNAME"], expected_forename)
 
+
 class TestPersonPostalCodeToFlatJson(unittest.TestCase):
     def test_person_postal_code_single_address(self):
         """Test case where only one address instance exists"""
@@ -711,6 +717,7 @@ class TestPersonPostalCodeToFlatJson(unittest.TestCase):
         self.converter = Converter(json.dumps(request_json_data))
         flat_json = self.converter.runConversion(request_json_data, False, True)
         self.assertEqual(flat_json[0]["PERSON_POSTCODE"], expected_postal_code)
+
 
 class TestPersonSiteCodeToFlatJson(unittest.TestCase):
     def test_site_code_single_performer(self):
@@ -830,6 +837,7 @@ class TestPersonSiteCodeToFlatJson(unittest.TestCase):
         flat_json = self.converter.runConversion(request_json_data, False, True)
         self.assertEqual(flat_json[0].get("SITE_CODE"), expected_site_code)
 
+
 class TestPersonSiteUriToFlatJson(unittest.TestCase):
     def test_site_uri_single_performer(self):
         """Test case where only one performer instance exists"""
@@ -919,6 +927,7 @@ class TestPersonSiteUriToFlatJson(unittest.TestCase):
         self.converter = Converter(json.dumps(request_json_data))
         flat_json = self.converter.runConversion(request_json_data, False, True)
         self.assertEqual(flat_json[0].get("SITE_CODE_TYPE_URI"), expected_site_code)
+
 
 class TestPractitionerForeNameToFlatJson(unittest.TestCase):
     def test_practitioner_forename_multiple_names_official(self):
@@ -1034,6 +1043,7 @@ class TestPractitionerForeNameToFlatJson(unittest.TestCase):
         self.converter = Converter(json.dumps(request_json_data))
         flat_json = self.converter.runConversion(request_json_data, False, True)
         self.assertEqual(flat_json[0]["PERFORMING_PROFESSIONAL_FORENAME"], expected_forename)
+
 
 class TestPractitionerSurNameToFlatJson(unittest.TestCase):
     def test_practitioner_surname_multiple_names_official(self):

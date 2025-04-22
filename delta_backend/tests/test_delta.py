@@ -11,6 +11,7 @@ os.environ["SOURCE"] = "my_source"
 from src.delta import send_message, handler  # Import after setting environment variables
 import json
 
+
 class DeltaTestCase(unittest.TestCase):
 
     def setUp(self):

@@ -100,9 +100,14 @@ class ConversionChecker:
         if isinstance(e, Exception):
             message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, str(e))
         else:
-            message = str(e)  # if a simple string message was passed
+            message = str(e)  # if a simple string message was passed 
+
+        # Ensure message-level deduplication
+        if any(existing.get("message") == message for existing in self.errorRecords):
+            return 
+
         self.errorRecords.append({
-            "code":code,
+            "code": code,
             "field": fieldName,
             "value": fieldValue,
             "message": message
