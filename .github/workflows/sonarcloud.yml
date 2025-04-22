@@ -61,8 +61,8 @@ jobs:
 
       - name: Run unittest with coverage-delta
         id: delta
-        env:
-            PYTHONPATH: delta_backend/src:delta_backend/tests
+        # env:
+        #     PYTHONPATH: delta_backend/src:delta_backend/tests
         continue-on-error: true
         run: |
           pip install poetry==1.8.4 moto==4.2.11 mypy-boto3-dynamodb==1.35.54 boto3==1.26.165 coverage botocore==1.29.165 jmespath==1.0.1 python-dateutil==2.9.0 urllib3==1.26.20 s3transfer==0.6.2 typing-extensions==4.12.2
