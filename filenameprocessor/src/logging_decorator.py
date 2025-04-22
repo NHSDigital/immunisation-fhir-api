@@ -6,8 +6,6 @@ import time
 from datetime import datetime
 from functools import wraps
 from clients import firehose_client, logger
-from file_key_validation import validate_file_key
-
 
 STREAM_NAME = os.getenv("SPLUNK_FIREHOSE_NAME", "immunisation-fhir-api-internal-dev-splunk-firehose")
 
@@ -53,11 +51,7 @@ def logging_decorator(func):
             return result
 
         except Exception as e:
-            file_key = args[0]["s3"]["object"]["key"]
-            vaccine_type, supplier = validate_file_key(file_key)
-
-            additional_log_data = {"statusCode": 500, "error": str(e), "vaccine_type": vaccine_type,
-                                   "supplier": supplier}
+            additional_log_data = {"statusCode": 500, "error": str(e)}
             generate_and_send_logs(start_time, base_log_data, additional_log_data, is_error_log=True)
             raise
 

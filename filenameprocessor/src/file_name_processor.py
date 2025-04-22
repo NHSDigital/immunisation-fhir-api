@@ -6,6 +6,7 @@ NOTE: The expected file format for incoming files from the data sources bucket i
 (ODS code has multiple lengths)
 """
 
+import argparse
 from uuid import uuid4
 from utils_for_filenameprocessor import get_created_at_formatted_string, move_file, invoke_filename_lambda
 from file_key_validation import validate_file_key
@@ -67,10 +68,9 @@ def handle_record(record) -> dict:
             # Get message_id if the file is not new, else assign one
             message_id = record.get("message_id", str(uuid4()))
 
-            vaccine_type, supplier = validate_file_key(file_key)
-
             created_at_formatted_string = get_created_at_formatted_string(bucket_name, file_key)
 
+            vaccine_type, supplier = validate_file_key(file_key)
             permissions = validate_vaccine_type_permissions(vaccine_type=vaccine_type, supplier=supplier)
             if not is_existing_file:
                 ensure_file_is_not_a_duplicate(file_key, created_at_formatted_string)
@@ -136,6 +136,8 @@ def handle_record(record) -> dict:
                 "file_key": file_key,
                 "message_id": message_id,
                 "error": str(error),
+                "vaccine_type": vaccine_type,
+                "supplier": supplier
             }
 
     elif "config" in bucket_name:
@@ -168,21 +170,25 @@ def lambda_handler(event: dict, context) -> None:  # pylint: disable=unused-argu
     logger.info("Filename processor lambda task completed")
 
 
-if __name__ == "__main__":
+def run_local():
+    parser = argparse.ArgumentParser("file_name_processor")
+    parser.add_argument("--bucket", required=True, help="Bucket name.", type=str)
+    parser.add_argument("--key", required=True, help="Object key.", type=str)
+    args = parser.parse_args()
 
     event = {
         "Records": [
             {
                 "s3": {
-                    "bucket": {
-                        "name": "immunisation-batch-internal-dev-data-sources"
-                    },
-                    "object": {
-                        "key": "FLU_Vaccinations_v5_YGM41_20000101T00000001.csv"
-                    }
+                    "bucket": {"name": args.bucket},
+                    "object": {"key": args.key}
                 }
             }
         ]
     }
     print(event)
     print(lambda_handler(event=event, context={}))
+
+
+if __name__ == "__main__":
+    run_local()
