@@ -577,10 +577,11 @@ class TestUnexpectedBucket(TestCase):
 
     def test_unexpected_bucket_name(self):
         """Tests if unkown bucket name is handled in lambda_handler"""
+        ravs_record = MockFileDetails.ravs_rsv_1
         record = {
             "s3": {
                 "bucket": {"name": "unknown-bucket"},
-                "object": {"key": "somefile.csv"}
+                "object": {"key": ravs_record.file_key}
             }
         }
 
@@ -589,14 +590,39 @@ class TestUnexpectedBucket(TestCase):
 
             self.assertEqual(result["statusCode"], 500)
             self.assertIn("unexpected bucket name", result["message"])
-            self.assertEqual(result["file_key"], "somefile.csv")
+            self.assertEqual(result["file_key"], ravs_record.file_key)
+            self.assertEqual(result["vaccine_type"], ravs_record.vaccine_type)
+            self.assertEqual(result["supplier"], ravs_record.supplier)
+
+            mock_logger.error.assert_called_once()
+            args = mock_logger.error.call_args[0]
+            self.assertIn("Unable to process file", args[0])
+            self.assertIn(ravs_record.file_key, args)
+            self.assertIn("unknown-bucket", args)
+
+    def test_unexpected_bucket_name_and_filename_validation_fails(self):
+        """Tests if filename validation error is handled when bucket name is incorrect"""
+        invalid_file_key = "InvalidVaccineType_Vaccinations_v5_YGM41_20240708T12130100.csv"
+        record = {
+            "s3": {
+                "bucket": {"name": "unknown-bucket"},
+                "object": {"key": invalid_file_key}
+            }
+        }
+
+        with patch("file_name_processor.logger") as mock_logger:
+            result = handle_record(record)
+
+            self.assertEqual(result["statusCode"], 500)
+            self.assertIn("unexpected bucket name", result["message"])
+            self.assertEqual(result["file_key"], invalid_file_key)
             self.assertEqual(result["vaccine_type"], "unknown")
             self.assertEqual(result["supplier"], "unknown")
 
             mock_logger.error.assert_called_once()
             args = mock_logger.error.call_args[0]
             self.assertIn("Unable to process file", args[0])
-            self.assertIn("somefile.csv", args)
+            self.assertIn(invalid_file_key, args)
             self.assertIn("unknown-bucket", args)
 
 

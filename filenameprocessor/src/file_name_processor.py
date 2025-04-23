@@ -152,11 +152,21 @@ def handle_record(record) -> dict:
             return {"statusCode": 500, "message": message, "file_key": file_key, "error": str(error)}
 
     else:
-        logger.error("Unable to process file %s due to unexpected bucket name %s", file_key, bucket_name)
-        message = f"Failed to process file due to unexpected bucket name {bucket_name}"
+        try:
+            vaccine_type, supplier = validate_file_key(file_key)
+            logger.error("Unable to process file %s due to unexpected bucket name %s", file_key, bucket_name)
+            message = f"Failed to process file due to unexpected bucket name {bucket_name}"
 
-        return {"statusCode": 500, "message": message, "file_key": file_key,
-                "vaccine_type": vaccine_type, "supplier": supplier}
+            return {"statusCode": 500, "message": message, "file_key": file_key,
+                    "vaccine_type": vaccine_type, "supplier": supplier}
+
+        except Exception as error:
+            logger.error("Unable to process file due to unexpected bucket name %s and file key %s",
+                         bucket_name, file_key)
+            message = f"Failed to process file due to unexpected bucket name {bucket_name} and file key {file_key}"
+
+            return {"statusCode": 500, "message": message, "file_key": file_key,
+                    "vaccine_type": vaccine_type, "supplier": supplier, "error": str(error)}
 
 
 def lambda_handler(event: dict, context) -> None:  # pylint: disable=unused-argument
