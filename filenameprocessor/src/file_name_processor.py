@@ -149,8 +149,7 @@ def handle_record(record) -> dict:
         except Exception as error:  # pylint: disable=broad-except
             logger.error("Error uploading to cache for file '%s': %s", file_key, error)
             message = "Failed to upload file content to cache"
-            return {"statusCode": 500, "message": message, "file_key": file_key, "error": str(error),
-                    "vaccine_type": vaccine_type, "supplier": supplier}
+            return {"statusCode": 500, "message": message, "file_key": file_key, "error": str(error)}
 
     else:
         logger.error("Unable to process file %s due to unexpected bucket name %s", file_key, bucket_name)

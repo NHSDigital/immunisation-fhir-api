@@ -484,8 +484,6 @@ class TestLambdaHandlerConfig(TestCase):
             self.assertEqual(result["message"], "Failed to upload file content to cache")
             self.assertEqual(result["file_key"], "testfile.csv")
             self.assertIn("error", result)
-            self.assertEqual(result["vaccine_type"], "unknown")
-            self.assertEqual(result["supplier"], "unknown")
 
             mock_logger.error.assert_called_once()
             logged_msg = mock_logger.error.call_args[0][0]
