@@ -364,7 +364,6 @@ class TestConvertToFlatJson(unittest.TestCase):
         result = checker._convertToNotEmpty(None, "fieldName", "", False, True)
         self.assertEqual(result, "")
 
-    
     @patch("ConversionChecker.LookUpData")
     def test_convert_to_nhs_number(self, MockLookUpData):
 
@@ -400,12 +399,10 @@ class TestConvertToFlatJson(unittest.TestCase):
         # 2. Partial ISO date (should trigger "Partial date not accepted")
         result = checker._convertToDate("%Y%m%d", "fieldName", "2022-01", False, True)
         self.assertEqual(result, "")
-        
-
+    
         # 3. Invalid string date format (should trigger "Date must be in YYYYMMDD format")
         result = checker._convertToDate("%Y%m%d", "fieldName", "invalid_date", False, True)
         self.assertEqual(result, "")
-       
 
         # 4. None input (should return empty without logging)
         result = checker._convertToDate("%Y%m%d", "fieldName", None, False, True)
@@ -489,7 +486,7 @@ class TestConvertToFlatJson(unittest.TestCase):
             with self.subTest(dose=dose):
                 result = checker._convertToDose("DOSESEQUENCE", "DOSE_AMOUNT", dose, False, True)
                 self.assertEqual(result, dose)
-        
+
         # Invalid dose
         invalid_doses = [10, 10.1, 100, 9.0001]
         for dose in invalid_doses:

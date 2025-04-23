@@ -93,7 +93,7 @@ class ConversionChecker:
                     expressionRule, fieldName, fieldValue, self.summarise, self.report_unexpected_exception
                 )
             case _:
-               return "Schema expression not found! Check your expression type : " + expressionType
+                return "Schema expression not found! Check your expression type : " + expressionType
     
     # Utility function for logging errors
     def _log_error(self, fieldName, fieldValue, e, code=ExceptionMessages.RECORD_CHECK_FAILED):
@@ -114,7 +114,6 @@ class ConversionChecker:
         })
 
     def _convertToDate(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
-        print("FIELD:", fieldName) 
         if not fieldValue:
             return ""
 
