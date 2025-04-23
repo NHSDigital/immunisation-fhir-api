@@ -94,7 +94,7 @@ class TestConvertToFlatJson(unittest.TestCase):
                 },
             ],
         )
-    
+
     @staticmethod
     def get_event(event_name="INSERT", operation="operation", supplier="EMIS"):
         """Returns test event data."""

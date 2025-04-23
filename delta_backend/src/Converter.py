@@ -38,8 +38,8 @@ class Converter:
             return
         
         error_obj = {
-        "code": code,
-        "message": message
+            "code": code,
+            "message": message
         }
 
         # Ensure message-level deduplication

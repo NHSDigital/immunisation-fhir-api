@@ -93,7 +93,7 @@ class ConversionChecker:
                     expressionRule, fieldName, fieldValue, self.summarise, self.report_unexpected_exception
                 )
             case _:
-                return "Schema expression not found! Check your expression type : " + expressionType
+                raise ValueError(f'Schema expression not found! Check your expression type : " + expressionType ') 
     
     # Utility function for logging errors
     def _log_error(self, fieldName, fieldValue, e, code=ExceptionMessages.RECORD_CHECK_FAILED):
@@ -385,11 +385,7 @@ class ConversionChecker:
         except Exception as e:
             if report_unexpected_exception:
                 message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                self.errorRecords.append({
-                    "field": fieldName,
-                    "value": fieldValue,
-                    "message": message
-                })
+                self._log_error(fieldName, fieldValue, message)
             return ""
 
     # Check if Input is boolean or if input is a string with true or false, convert to Boolean
@@ -404,10 +400,11 @@ class ConversionChecker:
                     return True
                 elif lowered == "false":
                     return False
+                raise ValueError(f"Invalid string data: {fieldValue}")
             return "" 
         except Exception as e:
             if report_unexpected_exception:
-                 self.log_error(fieldName, fieldValue, e)
+                 self._log_error(fieldName, fieldValue, e)
             return ""
     
     def get_error_records(self):
