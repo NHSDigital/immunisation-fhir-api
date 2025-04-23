@@ -394,13 +394,12 @@ class ConversionChecker:
             if isinstance(fieldValue, bool):
                 return fieldValue
 
-            if isinstance(fieldValue, str):
-                lowered = fieldValue.strip().lower()
-                if lowered == "true":
-                    return True
-                elif lowered == "false":
-                    return False
-                raise ValueError(f"Invalid string data: {fieldValue}")
+            if str(fieldValue).strip().lower() == "true":
+                return True
+            if str(fieldValue).strip().lower() == "false":
+                return False
+            elif report_unexpected_exception:
+                    self._log_error(fieldName, fieldValue, "Invalid String Data")
             return "" 
         except Exception as e:
             if report_unexpected_exception:

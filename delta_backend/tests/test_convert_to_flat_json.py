@@ -261,8 +261,8 @@ class TestConvertToFlatJson(unittest.TestCase):
 
         # Check if the error message was added to ErrorRecords
         errors = converter.getErrorRecords()
-        self.assertEqual(len(errors), 3)
-        self.assertIn("Schema Parser Unexpected exception", errors[2]["message"])
+        self.assertEqual(len(errors), 1)
+        self.assertIn("Schema Parser Unexpected exception", errors[0]["message"])
         self.assertEqual(errors[0]["code"], 0)
  
     @patch("Converter.ConversionChecker")
@@ -290,7 +290,7 @@ class TestConvertToFlatJson(unittest.TestCase):
         response = converter.runConversion(ValuesForTests.json_data)
 
         # Check if the error message was added to ErrorRecords
-        self.assertEqual(len(converter.getErrorRecords()), 2)
+        self.assertEqual(len(converter.getErrorRecords()), 1)
         self.assertIn(
             "FHIR Parser Unexpected exception [JSONDecodeError]: Expecting value: line 1 column 1 (char 0)",
             converter.getErrorRecords()[0]["message"],

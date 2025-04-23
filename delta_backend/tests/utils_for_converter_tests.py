@@ -203,9 +203,7 @@ class ValuesForTests:
                 "INDICATION_CODE": "443684005",
                 "LOCATION_CODE": "EC1111",
                 "LOCATION_CODE_TYPE_URI": "https://fhir.nhs.uk/Id/ods-organization-code",
-                "CONVERSION_ERRORS": [{"code": 0, "message": "FHIR Parser Unexpected exception [JSONDecodeError]: Expecting value: line 1 column 1 (char 0)"},
-                                       {'code': 0, 'message': 'FHIR Parser Unexpected exception [Exception]: FHIR Parsing Error'},
-             ]
+                "CONVERSION_ERRORS": ''
             }
         ]
 
@@ -245,8 +243,7 @@ class ValuesForTests:
             "INDICATION_CODE": "443684005",
             "LOCATION_CODE": "EC1111",
             "LOCATION_CODE_TYPE_URI": "https://fhir.nhs.uk/Id/ods-organization-code",
-            "CONVERSION_ERRORS": [{"code": 0, "message": "FHIR Parser Unexpected exception [JSONDecodeError]: Expecting value: line 1 column 1 (char 0)"},
-                                  {'code': 0, 'message': 'FHIR Parser Unexpected exception [Exception]: FHIR Parsing Error'}]
+            "CONVERSION_ERRORS": ''
         }
     ]
 
@@ -286,8 +283,7 @@ class ValuesForTests:
             "INDICATION_CODE": "443684005",
             "LOCATION_CODE": "EC1111",
             "LOCATION_CODE_TYPE_URI": "https://fhir.nhs.uk/Id/ods-organization-code",
-            "CONVERSION_ERRORS": [{"code": 0, "message": "FHIR Parser Unexpected exception [JSONDecodeError]: Expecting value: line 1 column 1 (char 0)"},
-            ]
+            "CONVERSION_ERRORS": ''
         }
     ]
 
@@ -340,7 +336,7 @@ class ErrorValuesForTests:
         "patient": {"reference": "#Pat1"},
         "occurrenceDateTime": "2021-02-07T13:28:17+00:00",
         "recorded": "2021-02-07T13:28:17+00:00",
-        "primarySource": "True",
+        "primarySource": True,
         "manufacturer": {"display": "AstraZeneca Ltd"},
         "location": {
             "type": "Location",
@@ -441,7 +437,6 @@ class ErrorValuesForTests:
                 "INDICATION_CODE": "443684005",
                 "LOCATION_CODE": "E712",
                 "LOCATION_CODE_TYPE_URI": "https://fhir.nhs.uk/Id/ods-organization-code",
-                "CONVERSION_ERRORS": [{"code": 0, "message": "FHIR Parser Unexpected exception [JSONDecodeError]: Expecting value: line 1 column 1 (char 0)"},
-                                      {'code': 0, 'message': 'FHIR Parser Unexpected exception [Exception]: FHIR Parsing Error'}]
+                "CONVERSION_ERRORS": ''
             }
         ]

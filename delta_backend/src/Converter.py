@@ -19,7 +19,7 @@ FHIRData = ""
 SchemaFile = {}
 imms = []
 Converted = {}
-ErrorRecords = []
+# ErrorRecords = []
 
 
 # Converter
@@ -28,13 +28,13 @@ class Converter:
     def __init__(self, fhir_data):
         self.FHIRData = fhir_data  # Store JSON data directly
         self.SchemaFile = ConversionLayout.ConvertLayout
-        # self.ErrorRecords = []
+        self.ErrorRecords = []
     
     # Utility logs tailored to conveter class errors
     def _log_error(self,e,code=ExceptionMessages.UNEXPECTED_EXCEPTION): 
         message = str(e)  # if a simple string message was passed 
     
-        if any(existing.get("message") == message for existing in ErrorRecords): 
+        if any(existing.get("message") == message for existing in self.ErrorRecords): 
             return
         
         error_obj = {
@@ -44,7 +44,7 @@ class Converter:
 
         # Ensure message-level deduplication
         # if not any(existing.get("message") == message for existing in self.ErrorRecords):
-        ErrorRecords.append(error_obj)
+        self.ErrorRecords.append(error_obj)
         return error_obj
 
     # create a FHIR  parser - uses fhir json data from delta 
@@ -74,7 +74,7 @@ class Converter:
         except Exception as e:
             message = "Data get value Unexpected exception [%s]: %s" % (e.__class__.__name__, e)
             p = {"code": ExceptionMessages.PARSING_ERROR, "message": message}
-            ErrorRecords.append(p)
+            self.ErrorRecords.append(p)
             return p
 
         for conversionValue in conversionValues:
@@ -101,7 +101,7 @@ class Converter:
             if report_unexpected_exception:
                 message = "Schema Parser Unexpected exception [%s]: %s" % (e.__class__.__name__, e)
                 p = {"code": 0, "message": message}
-                ErrorRecords.append(p)
+                self.ErrorRecords.append(p)
                 return p
                 # error = self._log_error("FHIR Parser Unexpected exception [%s]: %s" % (e.__class__.__name__, e),code=0)
                 # return error
@@ -113,7 +113,7 @@ class Converter:
             if report_unexpected_exception:
                 message = "Expression Checker Unexpected exception [%s]: %s" % (e.__class__.__name__, e)
                 p = {"code": 0, "message": message}
-                ErrorRecords.append(p)
+                self.ErrorRecords.append(p)
                 return p
 
         # get list of expressions
@@ -123,7 +123,7 @@ class Converter:
             if report_unexpected_exception:
                 message = "Expression Getter Unexpected exception [%s]: %s" % (e.__class__.__name__, e)
                 p = {"code": 0, "message": message}
-                ErrorRecords.append(p)
+                self.ErrorRecords.append(p)
                 return p
 
         for conversion in conversions:
@@ -131,7 +131,7 @@ class Converter:
         
         # Collect and store any errors from ConversionChecker
         allErrors = ConversionValidate.get_error_records()
-        ErrorRecords.extend(allErrors)
+        self.ErrorRecords.extend(allErrors)
 
         # Add CONVERSION_ERRORS as the 35th field
         error_records = self.getErrorRecords()
@@ -145,7 +145,7 @@ class Converter:
         return imms
 
     def getErrorRecords(self):
-        return ErrorRecords
+        return self.ErrorRecords
     
     # def getErrorRecords(self):
     #     return self.ErrorRecords
