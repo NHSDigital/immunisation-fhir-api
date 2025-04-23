@@ -411,8 +411,7 @@ class TestConvertToFlatJson(unittest.TestCase):
         # 5. Not a string input (should trigger "Value is not a string")
         result = checker._convertToDate("%Y%m%d", "fieldName", 12345678, False, True)
         self.assertEqual(result, "")
-        
-        
+   
         # 6. Future date for birthDate (should trigger "Date cannot be in the future")
         future_date = (datetime.now() + timedelta(days=365)).strftime("%Y%m%d")
         result = checker._convertToDate("%Y%m%d", "contained|#:Patient|birthDate", future_date, False, True)
@@ -473,6 +472,38 @@ class TestConvertToFlatJson(unittest.TestCase):
         
         # Empty input returns blank
         result = checker._convertToDateTime("format:%Y%m%dT%H%M%S", "fieldName", "", False, True)
+        self.assertEqual(result, "")
+
+    @patch("ConversionChecker.LookUpData")
+    def test_convert_to_boolean(self, MockLookUpData):
+        dataParser = Mock()
+
+        checker = ConversionChecker(dataParser, summarise=False, report_unexpected_exception=True)
+
+        # Arrange
+        dataParser = Mock()
+        checker = ConversionChecker(dataParser, summarise=False, report_unexpected_exception=True)
+
+        # 1. Boolean True passes through
+        result = checker._convertToBoolean(None, "f", True, False, True)
+        self.assertTrue(result)
+
+        # 2. Boolean False passes through
+        result = checker._convertToBoolean(None, "f", False, False, True)
+        self.assertFalse(result)
+
+        # 3. String "true" variants
+        for val in ["true", "TRUE", "  True  ", "\tTrUe\n"]:
+            result = checker._convertToBoolean(None, "f", val, False, False)
+            self.assertTrue(result)
+
+        # 4. String "false" variants
+        for val in ["false", "FALSE", "  False  ", "\nFaLsE\t"]:
+            result = checker._convertToBoolean(None, "f", val, False, False)
+            self.assertFalse(result)
+
+        # 5. Invalid string with report_unexpected_exception=False → no log
+        result = checker._convertToBoolean(None, "f", "notbool", False, False)
         self.assertEqual(result, "")
 
     #check for dose sequence
