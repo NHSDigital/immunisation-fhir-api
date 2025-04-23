@@ -19,7 +19,6 @@ FHIRData = ""
 SchemaFile = {}
 imms = []
 Converted = {}
-# ErrorRecords = []
 
 
 # Converter
@@ -103,9 +102,6 @@ class Converter:
                 p = {"code": 0, "message": message}
                 self.ErrorRecords.append(p)
                 return p
-                # error = self._log_error("FHIR Parser Unexpected exception [%s]: %s" % (e.__class__.__name__, e),code=0)
-                # return error
-
 
         try:
             ConversionValidate = ConversionChecker(dataParser, summarise, report_unexpected_exception)
@@ -130,8 +126,8 @@ class Converter:
             rows = self._convertData(ConversionValidate, conversion, dataParser, json_data)
         
         # Collect and store any errors from ConversionChecker
-        allErrors = ConversionValidate.get_error_records()
-        self.ErrorRecords.extend(allErrors)
+        all_errors = ConversionValidate.get_error_records()
+        self.ErrorRecords.extend(all_errors)
 
         # Add CONVERSION_ERRORS as the 35th field
         error_records = self.getErrorRecords()
@@ -146,10 +142,7 @@ class Converter:
 
     def getErrorRecords(self):
         return self.ErrorRecords
-    
-    # def getErrorRecords(self):
-    #     return self.ErrorRecords
-    
+
     def extract_patient_details(self, json_data, FlatFieldName):
         if not hasattr(self, "_cached_values"):
             self._cached_values = {}

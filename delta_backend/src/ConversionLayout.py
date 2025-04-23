@@ -265,7 +265,7 @@ ConvertLayout = {
       "fieldNameFlat": "DOSE_AMOUNT",
       "expression": {
         "expressionName": "Not Empty",
-        "expressionType": "NOTEMPTY",
+        "expressionType": "DEFAULT",
         "expressionRule": ""
       }
     },

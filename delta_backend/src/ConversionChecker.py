@@ -93,8 +93,8 @@ class ConversionChecker:
                     expressionRule, fieldName, fieldValue, self.summarise, self.report_unexpected_exception
                 )
             case _:
-                raise ValueError(f'Schema expression not found! Check your expression type : " + expressionType ') 
-    
+                raise ValueError("Schema expression not found! Check your expression type : " + expressionType) 
+
     # Utility function for logging errors
     def _log_error(self, fieldName, fieldValue, e, code=ExceptionMessages.RECORD_CHECK_FAILED):
         if isinstance(e, Exception):
@@ -181,7 +181,7 @@ class ConversionChecker:
             # Format and return with custom suffix
             formatted = dt_utc.strftime("%Y%m%dT%H%M%S%z")
             return formatted.replace("+0000", "00").replace("+0100", "01")
-        
+
         # For all other fields, apply standard %Y%m%d processing
         if format_str == "%Y%m%d":
             fieldValue = fieldValue.replace("-", "").replace("/", "")
@@ -199,7 +199,7 @@ class ConversionChecker:
                 today_utc = datetime.now(ZoneInfo("UTC")).date()
                 if dt.date() > today_utc:
                     if report_unexpected_exception:
-                        self._log_error(fieldName, fieldValue, "Date cannot be in the future")
+                        self._log_error(fieldName, fieldValue, "Birthdate cannot be in the future")
                     return ""
 
             return dt.strftime(format_str)
@@ -251,16 +251,15 @@ class ConversionChecker:
     # Not Empty Validate - Returns exactly what is in the extracted fields no parsing or logic needed
     def _convertToNotEmpty(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
         try:
-            if isinstance(fieldValue, (int, float)):
-                return ""  # Reject plain numbers
             if isinstance(fieldValue, str) and fieldValue.strip():
                 return fieldValue
+            self._log_error(fieldName, fieldValue, "Value not a String")
             return ""
         except Exception as e:
             if report_unexpected_exception:
                 message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return message
-
+                self._log_error(fieldName, fieldValue, message)
+            return
 
     # NHSNumber Validate
     def _convertToNHSNumber(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
@@ -370,7 +369,7 @@ class ConversionChecker:
             if report_unexpected_exception:
                 message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
                 return message
-    
+
     # Check if Snomed code is numeric and reject other forms
     def _convertToSnomed(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
         """
@@ -405,6 +404,6 @@ class ConversionChecker:
             if report_unexpected_exception:
                  self._log_error(fieldName, fieldValue, e)
             return ""
-    
+
     def get_error_records(self):
         return self.errorRecords
