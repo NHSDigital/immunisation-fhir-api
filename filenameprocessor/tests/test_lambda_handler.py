@@ -1,5 +1,5 @@
 """Tests for lambda_handler"""
-
+import sys
 from unittest.mock import patch
 from unittest import TestCase
 from json import loads as json_loads
@@ -153,6 +153,14 @@ class TestLambdaHandlerDataSource(TestCase):
     def get_audit_table_items():
         """Return all items in the audit table"""
         return dynamodb_client.scan(TableName=AUDIT_TABLE_NAME).get("Items", [])
+
+    def test_lambda_handler_no_file_key_throws_exception(self):
+        """Tests if exception is thrown when file_key is not provided"""
+
+        broken_record = {"Records": [{"s3": {"bucket": {"name": "test"}}}]}
+        with patch("file_name_processor.logger") as mock_logger:
+            lambda_handler(broken_record, None)
+            mock_logger.error.assert_called_once()
 
     def test_lambda_handler_new_file_success_and_first_in_queue(self):
         """
@@ -458,6 +466,29 @@ class TestLambdaHandlerConfig(TestCase):
     def tearDown(self):
         GenericTearDown(s3_client, firehose_client, sqs_client, dynamodb_client)
 
+    def test_elasticcache_failure_handled(self):
+        "Tests if elastic cache failure is handled when service fails to send message"
+        event = {
+            "s3": {
+                "bucket": {"name": "my-config-bucket"},  # triggers 'config' branch
+                "object": {"key": "testfile.csv"}
+            }
+        }
+
+        with patch("file_name_processor.upload_to_elasticache", side_effect=Exception("Upload failed")), \
+             patch("file_name_processor.logger") as mock_logger:
+
+            result = handle_record(event)
+
+            self.assertEqual(result["statusCode"], 500)
+            self.assertEqual(result["message"], "Failed to upload file content to cache")
+            self.assertEqual(result["file_key"], "testfile.csv")
+            self.assertIn("error", result)
+
+            mock_logger.error.assert_called_once()
+            logged_msg = mock_logger.error.call_args[0][0]
+            self.assertIn("Error uploading to cache", logged_msg)
+
     def test_successful_processing_from_configs(self):
         """Tests that the permissions config file content is uploaded to elasticache successfully"""
         fake_redis = fakeredis.FakeStrictRedis()
@@ -496,7 +527,7 @@ class TestLambdaHandlerConfig(TestCase):
             "file_key": ravs_rsv_file_details_1.file_key,
             "message_id": ravs_rsv_file_details_1.message_id,
             "vaccine_type": ravs_rsv_file_details_1.vaccine_type,
-            "supplier": ravs_rsv_file_details_1.supplier,
+            "supplier": ravs_rsv_file_details_1.supplier
         }
         self.assertEqual(result, expected_result)
 
@@ -524,5 +555,104 @@ class TestLambdaHandlerConfig(TestCase):
             "file_key": ravs_rsv_file_details_2.file_key,
             "message_id": ravs_rsv_file_details_2.message_id,
             "error": "Initial file validation failed: RAVS does not have permissions for RSV",
+            "vaccine_type": ravs_rsv_file_details_2.vaccine_type,
+            "supplier": ravs_rsv_file_details_2.supplier
         }
         self.assertEqual(result, expected_result)
+
+
+@patch.dict("os.environ", MOCK_ENVIRONMENT_DICT)
+@mock_s3
+@mock_dynamodb
+@mock_sqs
+@mock_firehose
+class TestUnexpectedBucket(TestCase):
+    """Tests for lambda_handler when an unexpected bucket name is used"""
+
+    def setUp(self):
+        GenericSetUp(s3_client, firehose_client, sqs_client, dynamodb_client)
+
+    def tearDown(self):
+        GenericTearDown(s3_client, firehose_client, sqs_client, dynamodb_client)
+
+    def test_unexpected_bucket_name(self):
+        """Tests if unkown bucket name is handled in lambda_handler"""
+        ravs_record = MockFileDetails.ravs_rsv_1
+        record = {
+            "s3": {
+                "bucket": {"name": "unknown-bucket"},
+                "object": {"key": ravs_record.file_key}
+            }
+        }
+
+        with patch("file_name_processor.logger") as mock_logger:
+            result = handle_record(record)
+
+            self.assertEqual(result["statusCode"], 500)
+            self.assertIn("unexpected bucket name", result["message"])
+            self.assertEqual(result["file_key"], ravs_record.file_key)
+            self.assertEqual(result["vaccine_type"], ravs_record.vaccine_type)
+            self.assertEqual(result["supplier"], ravs_record.supplier)
+
+            mock_logger.error.assert_called_once()
+            args = mock_logger.error.call_args[0]
+            self.assertIn("Unable to process file", args[0])
+            self.assertIn(ravs_record.file_key, args)
+            self.assertIn("unknown-bucket", args)
+
+    def test_unexpected_bucket_name_and_filename_validation_fails(self):
+        """Tests if filename validation error is handled when bucket name is incorrect"""
+        invalid_file_key = "InvalidVaccineType_Vaccinations_v5_YGM41_20240708T12130100.csv"
+        record = {
+            "s3": {
+                "bucket": {"name": "unknown-bucket"},
+                "object": {"key": invalid_file_key}
+            }
+        }
+
+        with patch("file_name_processor.logger") as mock_logger:
+            result = handle_record(record)
+
+            self.assertEqual(result["statusCode"], 500)
+            self.assertIn("unexpected bucket name", result["message"])
+            self.assertEqual(result["file_key"], invalid_file_key)
+            self.assertEqual(result["vaccine_type"], "unknown")
+            self.assertEqual(result["supplier"], "unknown")
+
+            mock_logger.error.assert_called_once()
+            args = mock_logger.error.call_args[0]
+            self.assertIn("Unable to process file", args[0])
+            self.assertIn(invalid_file_key, args)
+            self.assertIn("unknown-bucket", args)
+
+
+class TestMainEntryPoint(TestCase):
+
+    def test_run_local_constructs_event_and_calls_lambda_handler(self):
+        test_args = [
+            "file_name_processor.py",
+            "--bucket", "test-bucket",
+            "--key", "some/path/file.csv"
+        ]
+
+        expected_event = {
+            "Records": [
+                {
+                    "s3": {
+                        "bucket": {"name": "test-bucket"},
+                        "object": {"key": "some/path/file.csv"}
+                    }
+                }
+            ]
+        }
+
+        with (
+            patch.object(sys, "argv", test_args),
+            patch("file_name_processor.lambda_handler") as mock_lambda_handler,
+            patch("file_name_processor.print") as mock_print
+        ):
+            import file_name_processor
+            file_name_processor.run_local()
+
+            mock_lambda_handler.assert_called_once_with(event=expected_event, context={})
+            mock_print.assert_called()

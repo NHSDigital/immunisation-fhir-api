@@ -6,6 +6,7 @@ import json
 from copy import deepcopy
 from contextlib import ExitStack
 from boto3 import client as boto3_client
+from botocore.exceptions import ClientError
 from moto import mock_s3, mock_firehose, mock_sqs, mock_dynamodb
 
 from tests.utils_for_tests.generic_setup_and_teardown import GenericSetUp, GenericTearDown
@@ -192,12 +193,42 @@ class TestLoggingDecorator(unittest.TestCase):
             "file_key": FILE_DETAILS.file_key,
             "message_id": FILE_DETAILS.message_id,
             "error": "Initial file validation failed: EMIS does not have permissions for FLU",
+            "vaccine_type": "FLU",
+            "supplier": "EMIS"
         }
 
         log_data = json.loads(mock_logger.info.call_args[0][0])
         self.assertEqual(log_data, expected_log_data)
 
         mock_send_log_to_firehose.assert_called_once_with(log_data)
+
+    def test_logging_throws_exception(self):
+        """Tests that exception is caught when failing to send message to Firehose"""
+        permissions_config_content = generate_permissions_config_content({"EMIS": ["COVID19_FULL"]})
+
+        firehose_exception = ClientError(
+            error_response={"Error": {"Code": "ServiceUnavailable", "Message": "Service down"}},
+            operation_name="PutRecord"
+        )
+
+        with (
+            patch("file_name_processor.uuid4", return_value=FILE_DETAILS.message_id),
+            patch("elasticache.redis_client.get", return_value=permissions_config_content),
+            patch("logging_decorator.firehose_client.put_record", side_effect=firehose_exception),
+            patch("logging_decorator.logger") as mock_logger,
+        ):
+            lambda_handler(MOCK_VACCINATION_EVENT, context=None)
+
+        # Assert logger.exception was called once
+        mock_logger.exception.assert_called_once()
+
+        # Extract the call arguments
+        exception_message = mock_logger.exception.call_args[0][0]
+        exception_obj = mock_logger.exception.call_args[0][1]
+
+        # Check that the message format is correct
+        self.assertIn("Error sending log to Firehose", exception_message)
+        self.assertEqual(exception_obj, firehose_exception)
 
     def test_logging_successful_config_upload(self):
         """

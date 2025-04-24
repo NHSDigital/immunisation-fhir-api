@@ -6,6 +6,7 @@ NOTE: The expected file format for incoming files from the data sources bucket i
 (ODS code has multiple lengths)
 """
 
+import argparse
 from uuid import uuid4
 from utils_for_filenameprocessor import get_created_at_formatted_string, move_file, invoke_filename_lambda
 from file_key_validation import validate_file_key
@@ -44,6 +45,9 @@ def handle_record(record) -> dict:
         logger.error("Error obtaining file_key: %s", error)
         return {"statusCode": 500, "message": "Failed to download file key", "error": str(error)}
 
+    vaccine_type = "unknown"
+    supplier = "unknown"
+
     if "data-sources" in bucket_name:
 
         # The lambda is unintentionally invoked when a file is moved into a different folder in the source bucket.
@@ -56,8 +60,6 @@ def handle_record(record) -> dict:
         # Set default values for file-specific variables
         message_id = "Message id was not created"
         created_at_formatted_string = "created_at_time not identified"
-        vaccine_type = "unknown"
-        supplier = "unknown"
 
         try:
             # If the record contains a message_id, then the lambda has been invoked by a file already in the queue
@@ -134,6 +136,8 @@ def handle_record(record) -> dict:
                 "file_key": file_key,
                 "message_id": message_id,
                 "error": str(error),
+                "vaccine_type": vaccine_type,
+                "supplier": supplier
             }
 
     elif "config" in bucket_name:
@@ -148,9 +152,21 @@ def handle_record(record) -> dict:
             return {"statusCode": 500, "message": message, "file_key": file_key, "error": str(error)}
 
     else:
-        logger.error("Unable to process file %s due to unexpected bucket name %s", file_key, bucket_name)
-        message = f"Failed to process file due to unexpected bucket name {bucket_name}"
-        return {"statusCode": 500, "message": message, "file_key": file_key}
+        try:
+            vaccine_type, supplier = validate_file_key(file_key)
+            logger.error("Unable to process file %s due to unexpected bucket name %s", file_key, bucket_name)
+            message = f"Failed to process file due to unexpected bucket name {bucket_name}"
+
+            return {"statusCode": 500, "message": message, "file_key": file_key,
+                    "vaccine_type": vaccine_type, "supplier": supplier}
+
+        except Exception as error:
+            logger.error("Unable to process file due to unexpected bucket name %s and file key %s",
+                         bucket_name, file_key)
+            message = f"Failed to process file due to unexpected bucket name {bucket_name} and file key {file_key}"
+
+            return {"statusCode": 500, "message": message, "file_key": file_key,
+                    "vaccine_type": vaccine_type, "supplier": supplier, "error": str(error)}
 
 
 def lambda_handler(event: dict, context) -> None:  # pylint: disable=unused-argument
@@ -161,3 +177,27 @@ def lambda_handler(event: dict, context) -> None:  # pylint: disable=unused-argu
         handle_record(record)
 
     logger.info("Filename processor lambda task completed")
+
+
+def run_local():
+    parser = argparse.ArgumentParser("file_name_processor")
+    parser.add_argument("--bucket", required=True, help="Bucket name.", type=str)
+    parser.add_argument("--key", required=True, help="Object key.", type=str)
+    args = parser.parse_args()
+
+    event = {
+        "Records": [
+            {
+                "s3": {
+                    "bucket": {"name": args.bucket},
+                    "object": {"key": args.key}
+                }
+            }
+        ]
+    }
+    print(event)
+    print(lambda_handler(event=event, context={}))
+
+
+if __name__ == "__main__":
+    run_local()
