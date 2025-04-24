@@ -2,7 +2,6 @@ SHELL=/usr/bin/env bash -euo pipefail
 
 #Installs dependencies using poetry.
 install-python:
-	poetry lock --no-update
 	poetry install
 
 #Installs dependencies using npm.
