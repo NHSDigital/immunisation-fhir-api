@@ -39,7 +39,8 @@ class ApigeeConfig:
 
 @dataclass
 class ApigeeApp:
-    """ Data object to create an apigee app or decode json response"""
+    """Data object to create an apigee app or decode json response"""
+
     name: str
     appId: str = None
     credentials: List[dict] = field(default_factory=lambda: [])
@@ -60,12 +61,16 @@ class ApigeeApp:
 
     def get_client_id(self) -> str:
         if not self.credentials:
-            raise RuntimeError("You need to first create an app before reading its credentials")
+            raise RuntimeError(
+                "You need to first create an app before reading its credentials"
+            )
         return self.credentials[0]["consumerKey"]
 
     def get_client_secret(self) -> str:
         if not self.credentials:
-            raise RuntimeError("You need to first create an app before reading its credentials")
+            raise RuntimeError(
+                "You need to first create an app before reading its credentials"
+            )
         return self.credentials[0]["consumerSecret"]
 
     def dict(self):
@@ -74,22 +79,24 @@ class ApigeeApp:
     @classmethod
     def from_dict(cls, data):
         # Only consider keys that are in the class definition
-        return cls(**{
-            k: v for k, v in data.items()
-            if k in inspect.signature(cls).parameters
-        })
+        return cls(
+            **{k: v for k, v in data.items() if k in inspect.signature(cls).parameters}
+        )
 
 
 @dataclass
 class ApigeeProduct:
     """Data object to create an apigee product"""
+
     name: str
     apiResources: List[str] = field(default_factory=lambda: [])
     approvalType: str = "auto"
     attributes: List[dict] = field(default_factory=lambda: [])
     description: str = "My API product"
     displayName: str = "My API product"
-    environments: List[str] = field(default_factory=lambda: [ApigeeEnv.INTERNAL_DEV.value])
+    environments: List[str] = field(
+        default_factory=lambda: [ApigeeEnv.INTERNAL_DEV.value]
+    )
     proxies: List[str] = field(default_factory=lambda: [])
     scopes: List[str] = field(default_factory=lambda: [])
 
@@ -103,10 +110,9 @@ class ApigeeProduct:
     @classmethod
     def from_dict(cls, data):
         # Only consider keys that are in the class definition
-        return cls(**{
-            k: v for k, v in data.items()
-            if k in inspect.signature(cls).parameters
-        })
+        return cls(
+            **{k: v for k, v in data.items() if k in inspect.signature(cls).parameters}
+        )
 
 
 class ApigeeService:
@@ -166,7 +172,8 @@ class ApigeeService:
         if resp.status_code != 200:
             raise ApigeeError(
                 f"GET request to {resp.url} failed with status_code: {resp.status_code}, "
-                f"Reason: {resp.reason} and Content: {resp.text}")
+                f"Reason: {resp.reason} and Content: {resp.text}"
+            )
         return resp.json()
 
     def _create(self, path: str, body: dict) -> dict:
@@ -175,7 +182,8 @@ class ApigeeService:
         if resp.status_code != 200 and resp.status_code != 201:
             raise ApigeeError(
                 f"POST request to {resp.url} failed with status_code: {resp.status_code}, "
-                f"Reason: {resp.reason} and Content: {resp.text}")
+                f"Reason: {resp.reason} and Content: {resp.text}"
+            )
         return resp.json()
 
     def _update(self, path: str, body: dict) -> dict:
@@ -184,7 +192,8 @@ class ApigeeService:
         if resp.status_code != 200:
             raise ApigeeError(
                 f"PUT request to {resp.url} failed with status_code: {resp.status_code}, "
-                f"Reason: {resp.reason} and Content: {resp.text}")
+                f"Reason: {resp.reason} and Content: {resp.text}"
+            )
         return resp.json()
 
     def _delete(self, path: str) -> dict:
@@ -194,5 +203,6 @@ class ApigeeService:
         if resp.status_code != 200 and resp.status_code != 404:
             raise ApigeeError(
                 f"DELETE request to {resp.url} failed with status_code: {resp.status_code}, "
-                f"Reason: {resp.reason} and Content: {resp.text}")
+                f"Reason: {resp.reason} and Content: {resp.text}"
+            )
         return resp.json()

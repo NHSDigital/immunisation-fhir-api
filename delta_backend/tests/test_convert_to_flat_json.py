@@ -28,13 +28,10 @@ with patch.dict("os.environ", MOCK_ENV_VARS):
     from delta import handler, Converter
     from Converter import imms
 
+
 class TestRecordError(unittest.TestCase):
     def test_fields_and_str(self):
-        err = RecordError(
-            code=5,
-            message="Test failed",
-            details="Something went wrong"
-        )
+        err = RecordError(code=5, message="Test failed", details="Something went wrong")
 
         # The attributes should round‑trip
         self.assertEqual(err.code, 5)
@@ -43,8 +40,8 @@ class TestRecordError(unittest.TestCase):
 
         # __repr__ and __str__ both produce the tuple repr
         expected = "(5, 'Test failed', 'Something went wrong')"
-        self.assertEqual(str(err),   expected)
-        self.assertEqual(repr(err),  expected)
+        self.assertEqual(str(err), expected)
+        self.assertEqual(repr(err), expected)
 
     def test_default_args(self):
         # If you omit arguments they default to None
@@ -56,11 +53,13 @@ class TestRecordError(unittest.TestCase):
         # repr shows three Nones
         self.assertEqual(str(err), "(None, None, None)")
 
+
 @patch.dict("os.environ", MOCK_ENV_VARS, clear=True)
 @mock_dynamodb
 @mock_sqs
 class TestConvertToFlatJson(unittest.TestCase):
     maxDiff = None
+
     def setUp(self):
         """Set up mock DynamoDB table."""
         self.dynamodb_resource = boto3_resource("dynamodb", "eu-west-2")
@@ -81,7 +80,10 @@ class TestConvertToFlatJson(unittest.TestCase):
                     "IndexName": "IdentifierGSI",
                     "KeySchema": [{"AttributeName": "IdentifierPK", "KeyType": "HASH"}],
                     "Projection": {"ProjectionType": "ALL"},
-                    "ProvisionedThroughput": {"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
+                    "ProvisionedThroughput": {
+                        "ReadCapacityUnits": 5,
+                        "WriteCapacityUnits": 5,
+                    },
                 },
                 {
                     "IndexName": "PatientGSI",
@@ -90,7 +92,10 @@ class TestConvertToFlatJson(unittest.TestCase):
                         {"AttributeName": "SupplierSystem", "KeyType": "RANGE"},
                     ],
                     "Projection": {"ProjectionType": "ALL"},
-                    "ProvisionedThroughput": {"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
+                    "ProvisionedThroughput": {
+                        "ReadCapacityUnits": 5,
+                        "WriteCapacityUnits": 5,
+                    },
                 },
             ],
         )
@@ -100,7 +105,9 @@ class TestConvertToFlatJson(unittest.TestCase):
         """Returns test event data."""
         return ValuesForTests.get_event(event_name, operation, supplier)
 
-    def assert_dynamodb_record(self, operation_flag, items, expected_values, expected_imms, response):
+    def assert_dynamodb_record(
+        self, operation_flag, items, expected_values, expected_imms, response
+    ):
         """
         Asserts that a record with the expected structure exists in DynamoDB.
         Ignores dynamically generated fields like PK, DateTimeStamp, and ExpiresAt.
@@ -110,19 +117,29 @@ class TestConvertToFlatJson(unittest.TestCase):
         self.assertEqual(response["body"], "Records processed successfully")
 
         filtered_items = [
-            {k: v for k, v in item.items() if k not in ["PK", "DateTimeStamp", "ExpiresAt"]}
+            {
+                k: v
+                for k, v in item.items()
+                if k not in ["PK", "DateTimeStamp", "ExpiresAt"]
+            }
             for item in items
             if item.get("Operation") == operation_flag
         ]
 
-        self.assertGreater(len(filtered_items), 0, f"No matching item found for {operation_flag}")
+        self.assertGreater(
+            len(filtered_items), 0, f"No matching item found for {operation_flag}"
+        )
 
         imms_data = filtered_items[0]["Imms"]
         self.assertIsInstance(imms_data, str)
         self.assertGreater(len(imms_data), 0)
 
         # Check Imms JSON structure matches exactly
-        self.assertEqual(imms_data, str(expected_imms), "Imms data does not match expected JSON structure")
+        self.assertEqual(
+            imms_data,
+            str(expected_imms),
+            "Imms data does not match expected JSON structure",
+        )
 
         for key, expected_value in expected_values.items():
             self.assertIn(key, filtered_items[0], f"{key} is missing")
@@ -139,7 +156,9 @@ class TestConvertToFlatJson(unittest.TestCase):
         FlatFile = FHIRConverter.runConversion(ValuesForTests.json_data, False, True)
 
         flatJSON = json.dumps(FlatFile)
-        expected_imms_value = deepcopy(ValuesForTests.expected_imms2)  # UPDATE is currently the default action-flag
+        expected_imms_value = deepcopy(
+            ValuesForTests.expected_imms2
+        )  # UPDATE is currently the default action-flag
         expected_imms = json.dumps(expected_imms_value)
         self.assertEqual(flatJSON, expected_imms)
 
@@ -156,7 +175,10 @@ class TestConvertToFlatJson(unittest.TestCase):
 
     def test_fhir_converter_json_error_scenario(self):
         """it should convert fhir json data to flat json - error scenarios"""
-        error_test_cases = [ErrorValuesForTests.missing_json, ErrorValuesForTests.json_dob_error]
+        error_test_cases = [
+            ErrorValuesForTests.missing_json,
+            ErrorValuesForTests.json_dob_error,
+        ]
 
         for test_case in error_test_cases:
             imms.clear()
@@ -165,7 +187,9 @@ class TestConvertToFlatJson(unittest.TestCase):
             start = time.time()
 
             FHIRConverter = Converter(json_data)
-            FlatFile = FHIRConverter.runConversion(ValuesForTests.json_data, False, True)
+            FlatFile = FHIRConverter.runConversion(
+                ValuesForTests.json_data, False, True
+            )
 
             flatJSON = json.dumps(FlatFile)
 
@@ -207,10 +231,16 @@ class TestConvertToFlatJson(unittest.TestCase):
                 items = result.get("Items", [])
 
                 expected_values = ValuesForTests.expected_static_values
-                expected_imms = ValuesForTests.get_expected_imms(test_case["EXPECTED_ACTION_FLAG"])
+                expected_imms = ValuesForTests.get_expected_imms(
+                    test_case["EXPECTED_ACTION_FLAG"]
+                )
 
                 self.assert_dynamodb_record(
-                    test_case["EXPECTED_ACTION_FLAG"], items, expected_values, expected_imms, response
+                    test_case["EXPECTED_ACTION_FLAG"],
+                    items,
+                    expected_values,
+                    expected_imms,
+                    response,
                 )
 
                 result = self.table.scan()
@@ -219,13 +249,25 @@ class TestConvertToFlatJson(unittest.TestCase):
 
     def test_conversionCount(self):
         parser = SchemaParser()
-        schema_data = {"conversions": [{"conversion": "type1"}, {"conversion": "type2"}, {"conversion": "type3"}]}
+        schema_data = {
+            "conversions": [
+                {"conversion": "type1"},
+                {"conversion": "type2"},
+                {"conversion": "type3"},
+            ]
+        }
         parser.parseSchema(schema_data)
         self.assertEqual(parser.conversionCount(), 3)
 
     def test_getConversion(self):
         parser = SchemaParser()
-        schema_data = {"conversions": [{"conversion": "type1"}, {"conversion": "type2"}, {"conversion": "type3"}]}
+        schema_data = {
+            "conversions": [
+                {"conversion": "type1"},
+                {"conversion": "type2"},
+                {"conversion": "type3"},
+            ]
+        }
         parser.parseSchema(schema_data)
         self.assertEqual(parser.getConversion(1), {"conversion": "type2"})
 
@@ -241,7 +283,10 @@ class TestConvertToFlatJson(unittest.TestCase):
 
         # Check if the error message was added to ErrorRecords
         self.assertEqual(len(response), 2)
-        self.assertIn("FHIR Parser Unexpected exception", converter.getErrorRecords()[0]["message"])
+        self.assertIn(
+            "FHIR Parser Unexpected exception",
+            converter.getErrorRecords()[0]["message"],
+        )
         self.assertEqual(converter.getErrorRecords()[0]["code"], 0)
 
     @patch("Converter.FHIRParser")
@@ -329,8 +374,10 @@ class TestConvertToFlatJson(unittest.TestCase):
     @patch("ConversionChecker.LookUpData")
     def test_log_error(self, MockLookUpData):
         # Instantiate ConversionChecker
-        checker = ConversionChecker(dataParser=None, summarise=False, report_unexpected_exception=True)
-        
+        checker = ConversionChecker(
+            dataParser=None, summarise=False, report_unexpected_exception=True
+        )
+
         # Simulate an exception
         exception = ValueError("Invalid value")
 
@@ -356,7 +403,9 @@ class TestConvertToFlatJson(unittest.TestCase):
 
         dataParser = Mock()
 
-        checker = ConversionChecker(dataParser, summarise=False, report_unexpected_exception=True)
+        checker = ConversionChecker(
+            dataParser, summarise=False, report_unexpected_exception=True
+        )
 
         result = checker._convertToNotEmpty(None, "fieldName", "Some data", False, True)
         self.assertEqual(result, "Some data")
@@ -369,31 +418,45 @@ class TestConvertToFlatJson(unittest.TestCase):
 
         dataParser = Mock()
 
-        checker = ConversionChecker(dataParser, summarise=False, report_unexpected_exception=True)
+        checker = ConversionChecker(
+            dataParser, summarise=False, report_unexpected_exception=True
+        )
 
-         # Test empty NHS number
+        # Test empty NHS number
         empty_nhs_number = ""
-        result = checker._convertToNHSNumber(None, "fieldName", empty_nhs_number, False, True)
+        result = checker._convertToNHSNumber(
+            None, "fieldName", empty_nhs_number, False, True
+        )
         self.assertEqual(result, "", "Expected empty string for empty NHS number input")
 
         # Test valid NHS number
         valid_nhs_number = "6000000000"
-        result = checker._convertToNHSNumber("NHSNUMBER", "fieldName", valid_nhs_number, False, True)
-        self.assertEqual(result, "6000000000", "Valid NHS number should be returned as-is")
+        result = checker._convertToNHSNumber(
+            "NHSNUMBER", "fieldName", valid_nhs_number, False, True
+        )
+        self.assertEqual(
+            result, "6000000000", "Valid NHS number should be returned as-is"
+        )
 
         # Test invalid NHS number
         invalid_nhs_number = "1234567890243"
-        result = checker._convertToNHSNumber("NHSNUMBER","fieldName", invalid_nhs_number, False, True)
+        result = checker._convertToNHSNumber(
+            "NHSNUMBER", "fieldName", invalid_nhs_number, False, True
+        )
         self.assertEqual(result, "", "Invalid NHS number should return empty string")
 
     @patch("ConversionChecker.LookUpData")
     def test_convert_to_date(self, MockLookUpData):
         dataParser = Mock()
 
-        checker = ConversionChecker(dataParser, summarise=False, report_unexpected_exception=True)
+        checker = ConversionChecker(
+            dataParser, summarise=False, report_unexpected_exception=True
+        )
 
-         # 1. Valid full date
-        result = checker._convertToDate("%Y%m%d", "fieldName", "2022-01-01", False, True)
+        # 1. Valid full date
+        result = checker._convertToDate(
+            "%Y%m%d", "fieldName", "2022-01-01", False, True
+        )
         self.assertEqual(result, "20220101")
 
         # 2. Partial ISO date (should trigger "Partial date not accepted")
@@ -401,7 +464,9 @@ class TestConvertToFlatJson(unittest.TestCase):
         self.assertEqual(result, "")
 
         # 3. Invalid string date format (should trigger "Date must be in YYYYMMDD format")
-        result = checker._convertToDate("%Y%m%d", "fieldName", "invalid_date", False, True)
+        result = checker._convertToDate(
+            "%Y%m%d", "fieldName", "invalid_date", False, True
+        )
         self.assertEqual(result, "")
 
         # 4. None input (should return empty without logging)
@@ -414,7 +479,9 @@ class TestConvertToFlatJson(unittest.TestCase):
 
         # 6. Future date for birthDate (should trigger "Date cannot be in the future")
         future_date = "20991231"
-        result = checker._convertToDate("%Y%m%d", "contained|#:Patient|birthDate", future_date, False, True)
+        result = checker._convertToDate(
+            "%Y%m%d", "contained|#:Patient|birthDate", future_date, False, True
+        )
         self.assertEqual(result, "")
 
         # 8. Empty string
@@ -423,33 +490,43 @@ class TestConvertToFlatJson(unittest.TestCase):
 
         # 9. Valid recorded date with timezone
         valid_recorded = "2021-02-07T13:28:17+00:00"
-        result = checker._convertToDate("format:%Y-%m-%d", "recorded", valid_recorded, False, True)
+        result = checker._convertToDate(
+            "format:%Y-%m-%d", "recorded", valid_recorded, False, True
+        )
         self.assertEqual(result, "20210207T13281700")
 
         # 10. Recorded field: unsupported timezone offset (+02:00)
-        result = checker._convertToDate("%Y%m%d", "recorded", "2022-01-01T12:00:00+02:00", False, True)
+        result = checker._convertToDate(
+            "%Y%m%d", "recorded", "2022-01-01T12:00:00+02:00", False, True
+        )
         self.assertEqual(result, "")
 
         # 11. Recorded date with invalid format
-        result = checker._convertToDate("format:%Y-%m-%d", "recorded", "invalid_date", False, True)
+        result = checker._convertToDate(
+            "format:%Y-%m-%d", "recorded", "invalid_date", False, True
+        )
         self.assertEqual(result, "")
 
         # 12. Recorded date with invalid format
-        result = checker._convertToDate("format:%Y-%m-%d", "recorded", "invalid_date", False, True)
+        result = checker._convertToDate(
+            "format:%Y-%m-%d", "recorded", "invalid_date", False, True
+        )
         self.assertEqual(result, "")
 
         #  recorded datetime (no tz) treated as UTC and formatted “YYYYMMDDTHHMMSS00”
         past_date = "2023-04-15T10:30:00"
         format = "format:%Y-%m-%dT%H:%M:%S"
-        result = checker._convertToDate(format,"recorded",past_date,False,True)
+        result = checker._convertToDate(format, "recorded", past_date, False, True)
 
         # 13 expect to parse as UTC, then emit YYYYMMDDTHHMMSS and “00” for +0000
         expected = "20230415T103000"
-        self.assertTrue(result.endswith("00"),f"Expected prefix {expected}, got {result!r}")
+        self.assertTrue(
+            result.endswith("00"), f"Expected prefix {expected}, got {result!r}"
+        )
 
         # 14. Recorded timestamp without tzinfo in the future → rejected
         future_naive = "2099-12-31T23:59:59"
-        result = checker._convertToDate(format,"recorded",future_naive,False,True)
+        result = checker._convertToDate(format, "recorded", future_naive, False, True)
         self.assertEqual(result, "")
 
         # 15 Validate all error logs of various responses
@@ -471,7 +548,9 @@ class TestConvertToFlatJson(unittest.TestCase):
         checker._log_error = Mock()
 
         # invalid date against the given format → ValueError path
-        result = checker._convertToDate("format:%Y-%m-%d", "fieldName", "not-a-date", False, True)
+        result = checker._convertToDate(
+            "format:%Y-%m-%d", "fieldName", "not-a-date", False, True
+        )
         self.assertEqual(result, "")
 
         # ensure we logged exactly that ValueError
@@ -484,33 +563,47 @@ class TestConvertToFlatJson(unittest.TestCase):
     def test_convert_to_date_time(self, MockLookUpData):
         dataParser = Mock()
 
-        checker = ConversionChecker(dataParser, summarise=False, report_unexpected_exception=True)
+        checker = ConversionChecker(
+            dataParser, summarise=False, report_unexpected_exception=True
+        )
 
         valid_date_time = "2022-01-01T12:00:00+00:00"
-        result = checker._convertToDateTime("%Y%m%dT%H%M%S", "fieldName", valid_date_time, False, True)
+        result = checker._convertToDateTime(
+            "%Y%m%dT%H%M%S", "fieldName", valid_date_time, False, True
+        )
         self.assertEqual(result, "20220101T120000")
 
         valid_csv_utc = "2022-01-01T13:28:17+00:00"
-        result = checker._convertToDateTime("format:csv-utc", "fieldName", valid_csv_utc, False, True)
+        result = checker._convertToDateTime(
+            "format:csv-utc", "fieldName", valid_csv_utc, False, True
+        )
         self.assertEqual(result, "20220101T13281700")
 
         invalid_date_time = "invalid_date_time"
-        result = checker._convertToDateTime("format:%Y%m%dT%H%M%S", "fieldName", invalid_date_time, False, True)
+        result = checker._convertToDateTime(
+            "format:%Y%m%dT%H%M%S", "fieldName", invalid_date_time, False, True
+        )
         self.assertEqual(result, "Unexpected format: invalid_date_time")
-        
+
         # Empty input returns blank
-        result = checker._convertToDateTime("format:%Y%m%dT%H%M%S", "fieldName", "", False, True)
+        result = checker._convertToDateTime(
+            "format:%Y%m%dT%H%M%S", "fieldName", "", False, True
+        )
         self.assertEqual(result, "")
 
     @patch("ConversionChecker.LookUpData")
     def test_convert_to_boolean(self, MockLookUpData):
         dataParser = Mock()
 
-        checker = ConversionChecker(dataParser, summarise=False, report_unexpected_exception=True)
+        checker = ConversionChecker(
+            dataParser, summarise=False, report_unexpected_exception=True
+        )
 
         # Arrange
         dataParser = Mock()
-        checker = ConversionChecker(dataParser, summarise=False, report_unexpected_exception=True)
+        checker = ConversionChecker(
+            dataParser, summarise=False, report_unexpected_exception=True
+        )
 
         # 1. Boolean True passes through
         result = checker._convertToBoolean(None, "fieldName", True, False, True)
@@ -545,24 +638,32 @@ class TestConvertToFlatJson(unittest.TestCase):
         # and code should default to UNEXPECTED_EXCEPTION
         self.assertEqual(err["code"], ExceptionMessages.RECORD_CHECK_FAILED)
 
-    #check for dose sequence
+    # check for dose sequence
     @patch("ConversionChecker.LookUpData")
     def test_convert_to_dose(self, MockLookUpData):
         dataParser = Mock()
 
-        checker = ConversionChecker(dataParser, summarise=False, report_unexpected_exception=True)
+        checker = ConversionChecker(
+            dataParser, summarise=False, report_unexpected_exception=True
+        )
         # Valid dose
         for dose in [1, 4, 9]:
             with self.subTest(dose=dose):
-                result = checker._convertToDose("DOSESEQUENCE", "DOSE_AMOUNT", dose, False, True)
+                result = checker._convertToDose(
+                    "DOSESEQUENCE", "DOSE_AMOUNT", dose, False, True
+                )
                 self.assertEqual(result, dose)
 
         # Invalid dose
         invalid_doses = [10, 10.1, 100, 9.0001]
         for dose in invalid_doses:
             with self.subTest(dose=dose):
-                result = checker._convertToDose("DOSESEQUENCE", "DOSE_AMOUNT", dose, False, True)
-                self.assertEqual(result, "", f"Expected empty string for invalid dose {dose}")
+                result = checker._convertToDose(
+                    "DOSESEQUENCE", "DOSE_AMOUNT", dose, False, True
+                )
+                self.assertEqual(
+                    result, "", f"Expected empty string for invalid dose {dose}"
+                )
 
     def clear_table(self):
         scan = self.table.scan()
@@ -571,6 +672,7 @@ class TestConvertToFlatJson(unittest.TestCase):
                 batch.delete_item(Key={"PK": item["PK"]})
         result = self.table.scan()
         items = result.get("Items", [])
+
 
 class TestPersonForeNameToFlatJson(unittest.TestCase):
     def test_person_forename_multiple_names_official(self):
@@ -607,7 +709,11 @@ class TestPersonForeNameToFlatJson(unittest.TestCase):
     def test_person_forename_multiple_names_current(self):
         """Test case where no official name is present, but a name is current at the vaccination date"""
         request_json_data["contained"][1]["name"] = [
-            {"family": "Doe", "given": ["John"], "period": {"start": "2020-01-01", "end": "2023-01-01"}},
+            {
+                "family": "Doe",
+                "given": ["John"],
+                "period": {"start": "2020-01-01", "end": "2023-01-01"},
+            },
             {"family": "Doe", "given": ["Johnny"], "use": "nickname"},
         ]
         expected_forename = "John"
@@ -615,14 +721,21 @@ class TestPersonForeNameToFlatJson(unittest.TestCase):
 
     def test_person_forename_single_name(self):
         """Test case where only one name instance exists"""
-        request_json_data["contained"][1]["name"] = [{"family": "Doe", "given": ["Alex"], "use": "nickname"}]
+        request_json_data["contained"][1]["name"] = [
+            {"family": "Doe", "given": ["Alex"], "use": "nickname"}
+        ]
         expected_forename = "Alex"
         self._run_test(expected_forename)
 
     def test_person_forename_no_official_but_current_not_old(self):
         """Test case where no official name is present, but a current name with use!=old exists at vaccination date"""
         request_json_data["contained"][1]["name"] = [
-            {"family": "Doe", "given": ["John"], "use": "old", "period": {"start": "2018-01-01", "end": "2020-12-31"}},
+            {
+                "family": "Doe",
+                "given": ["John"],
+                "use": "old",
+                "period": {"start": "2018-01-01", "end": "2020-12-31"},
+            },
             {
                 "family": "Doe",
                 "given": ["Chris"],
@@ -637,7 +750,12 @@ class TestPersonForeNameToFlatJson(unittest.TestCase):
         """Test case where no names match the previous conditions, fallback to first available name"""
         request_json_data["contained"][1]["name"] = [
             {"family": "Doe", "given": ["Elliot"], "use": "nickname"},
-            {"family": "Doe", "given": ["John"], "use": "old", "period": {"start": "2018-01-01", "end": "2020-12-31"}},
+            {
+                "family": "Doe",
+                "given": ["John"],
+                "use": "old",
+                "period": {"start": "2018-01-01", "end": "2020-12-31"},
+            },
             {
                 "family": "Doe",
                 "given": ["Chris"],
@@ -672,6 +790,7 @@ class TestPersonForeNameToFlatJson(unittest.TestCase):
         self.converter = Converter(json.dumps(request_json_data))
         flat_json = self.converter.runConversion(request_json_data, False, True)
         self.assertEqual(flat_json[0]["PERSON_FORENAME"], expected_forename)
+
 
 class TestPersonSurNameToFlatJson(unittest.TestCase):
 
@@ -709,7 +828,11 @@ class TestPersonSurNameToFlatJson(unittest.TestCase):
     def test_person_surname_multiple_names_current(self):
         """Test case where no official name is present, but a name is current at the vaccination date"""
         request_json_data["contained"][1]["name"] = [
-            {"family": "Manny", "given": ["John"], "period": {"start": "2020-01-01", "end": "2023-01-01"}},
+            {
+                "family": "Manny",
+                "given": ["John"],
+                "period": {"start": "2020-01-01", "end": "2023-01-01"},
+            },
             {"family": "Doe", "given": ["Johnny"], "use": "nickname"},
         ]
         expected_forename = "Manny"
@@ -717,14 +840,21 @@ class TestPersonSurNameToFlatJson(unittest.TestCase):
 
     def test_person_surname_single_name(self):
         """Test case where only one name instance exists"""
-        request_json_data["contained"][1]["name"] = [{"family": "Doe", "given": ["Alex"], "use": "nickname"}]
+        request_json_data["contained"][1]["name"] = [
+            {"family": "Doe", "given": ["Alex"], "use": "nickname"}
+        ]
         expected_forename = "Doe"
         self._run_test_surname(expected_forename)
 
     def test_person_surname_no_official_but_current_not_old(self):
         """Test case where no official name is present, but a current name with use!=old exists at vaccination date"""
         request_json_data["contained"][1]["name"] = [
-            {"family": "Doe", "given": ["John"], "use": "old", "period": {"start": "2018-01-01", "end": "2020-12-31"}},
+            {
+                "family": "Doe",
+                "given": ["John"],
+                "use": "old",
+                "period": {"start": "2018-01-01", "end": "2020-12-31"},
+            },
             {
                 "family": "Manny",
                 "given": ["Chris"],
@@ -858,7 +988,10 @@ class TestPersonSiteCodeToFlatJson(unittest.TestCase):
             {
                 "actor": {
                     "type": "Organization",
-                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "B0C4P"},
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                        "value": "B0C4P",
+                    },
                 }
             },
             {"actor": {"reference": "#Pract1"}},
@@ -872,19 +1005,28 @@ class TestPersonSiteCodeToFlatJson(unittest.TestCase):
         request_json_data["performer"] = [
             {
                 "actor": {
-                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "code1"},
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                        "value": "code1",
+                    },
                 }
             },
             {
                 "actor": {
                     "type": "Organization",
-                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "code2"},
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                        "value": "code2",
+                    },
                 }
             },
             {
                 "actor": {
                     "type": "Organization",
-                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "code3"},
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                        "value": "code3",
+                    },
                 }
             },
             {"actor": {"reference": "#Pract1"}},
@@ -897,19 +1039,28 @@ class TestPersonSiteCodeToFlatJson(unittest.TestCase):
         request_json_data["performer"] = [
             {
                 "actor": {
-                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organizatdion-code", "value": "code1"},
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/ods-organizatdion-code",
+                        "value": "code1",
+                    },
                 }
             },
             {
                 "actor": {
                     "type": "Organization",
-                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-nhs-code", "value": "code2"},
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/ods-nhs-code",
+                        "value": "code2",
+                    },
                 }
             },
             {
                 "actor": {
                     "type": "Organization",
-                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-nhss-code", "value": "code3"},
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/ods-nhss-code",
+                        "value": "code3",
+                    },
                 }
             },
             {"actor": {"reference": "#Pract1"}},
@@ -922,22 +1073,34 @@ class TestPersonSiteCodeToFlatJson(unittest.TestCase):
         request_json_data["performer"] = [
             {
                 "actor": {
-                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-nhs-code", "value": "code2"},
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/ods-nhs-code",
+                        "value": "code2",
+                    },
                 }
             },
             {
                 "actor": {
-                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "code1"},
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                        "value": "code1",
+                    },
                 }
             },
             {
                 "actor": {
-                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "code4"},
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                        "value": "code4",
+                    },
                 }
             },
             {
                 "actor": {
-                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-nhss-code", "value": "code3"},
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/ods-nhss-code",
+                        "value": "code3",
+                    },
                 }
             },
             {"actor": {"reference": "#Pract1"}},
@@ -950,12 +1113,18 @@ class TestPersonSiteCodeToFlatJson(unittest.TestCase):
         request_json_data["performer"] = [
             {
                 "actor": {
-                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-nhs-code", "value": "code1"},
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/ods-nhs-code",
+                        "value": "code1",
+                    },
                 }
             },
             {
                 "actor": {
-                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-nhss-code", "value": "code2"},
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/ods-nhss-code",
+                        "value": "code2",
+                    },
                 }
             },
             {"actor": {"reference": "#Pract1"}},
@@ -977,7 +1146,10 @@ class TestPersonSiteUriToFlatJson(unittest.TestCase):
             {
                 "actor": {
                     "type": "Organization",
-                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "B0C4P"},
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                        "value": "B0C4P",
+                    },
                 }
             },
             {"actor": {"reference": "#Pract1"}},
@@ -991,19 +1163,28 @@ class TestPersonSiteUriToFlatJson(unittest.TestCase):
         request_json_data["performer"] = [
             {
                 "actor": {
-                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-codes", "value": "code1"},
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/ods-organization-codes",
+                        "value": "code1",
+                    },
                 }
             },
             {
                 "actor": {
                     "type": "Organization",
-                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "code2"},
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                        "value": "code2",
+                    },
                 }
             },
             {
                 "actor": {
                     "type": "Organization",
-                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-nhs-code", "value": "code3"},
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/ods-nhs-code",
+                        "value": "code3",
+                    },
                 }
             },
             {"actor": {"reference": "#Pract1"}},
@@ -1016,19 +1197,28 @@ class TestPersonSiteUriToFlatJson(unittest.TestCase):
         request_json_data["performer"] = [
             {
                 "actor": {
-                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organizatdion-code", "value": "code1"},
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/ods-organizatdion-code",
+                        "value": "code1",
+                    },
                 }
             },
             {
                 "actor": {
                     "type": "Organization",
-                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-nhs-code", "value": "code2"},
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/ods-nhs-code",
+                        "value": "code2",
+                    },
                 }
             },
             {
                 "actor": {
                     "type": "Organization",
-                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-nhss-code", "value": "code3"},
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/ods-nhss-code",
+                        "value": "code3",
+                    },
                 }
             },
             {"actor": {"reference": "#Pract1"}},
@@ -1041,12 +1231,18 @@ class TestPersonSiteUriToFlatJson(unittest.TestCase):
         request_json_data["performer"] = [
             {
                 "actor": {
-                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-nhs-code", "value": "code1"},
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/ods-nhs-code",
+                        "value": "code1",
+                    },
                 }
             },
             {
                 "actor": {
-                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-nhss-code", "value": "code2"},
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/ods-nhss-code",
+                        "value": "code2",
+                    },
                 }
             },
             {"actor": {"reference": "#Pract1"}},
@@ -1096,7 +1292,11 @@ class TestPractitionerForeNameToFlatJson(unittest.TestCase):
     def test_practitioner_forename_multiple_names_current(self):
         """Test case where no official name is present, but a name is current at the vaccination date"""
         request_json_data["contained"][0]["name"] = [
-            {"family": "Doe", "given": ["John"], "period": {"start": "2020-01-01", "end": "2023-01-01"}},
+            {
+                "family": "Doe",
+                "given": ["John"],
+                "period": {"start": "2020-01-01", "end": "2023-01-01"},
+            },
             {"family": "Doe", "given": ["Johnny"], "use": "nickname"},
         ]
         expected_forename = "John"
@@ -1104,14 +1304,21 @@ class TestPractitionerForeNameToFlatJson(unittest.TestCase):
 
     def test_Practitioner_forename_single_name(self):
         """Test case where only one name instance exists"""
-        request_json_data["contained"][0]["name"] = [{"family": "Doe", "given": ["Alex"], "use": "nickname"}]
+        request_json_data["contained"][0]["name"] = [
+            {"family": "Doe", "given": ["Alex"], "use": "nickname"}
+        ]
         expected_forename = "Alex"
         self._run_practitioner_test(expected_forename)
 
     def test_Practitioner_forename_no_official_but_current_not_old(self):
         """Test case where no official name is present, but a current name with use!=old exists at vaccination date"""
         request_json_data["contained"][0]["name"] = [
-            {"family": "Doe", "given": ["John"], "use": "old", "period": {"start": "2018-01-01", "end": "2020-12-31"}},
+            {
+                "family": "Doe",
+                "given": ["John"],
+                "use": "old",
+                "period": {"start": "2018-01-01", "end": "2020-12-31"},
+            },
             {
                 "family": "Doe",
                 "given": ["Chris"],
@@ -1126,7 +1333,12 @@ class TestPractitionerForeNameToFlatJson(unittest.TestCase):
         """Test case where no names match the previous conditions, fallback to first available name"""
         request_json_data["contained"][0]["name"] = [
             {"family": "Doe", "given": ["Elliot"], "use": "nickname"},
-            {"family": "Doe", "given": ["John"], "use": "old", "period": {"start": "2018-01-01", "end": "2020-12-31"}},
+            {
+                "family": "Doe",
+                "given": ["John"],
+                "use": "old",
+                "period": {"start": "2018-01-01", "end": "2020-12-31"},
+            },
             {
                 "family": "Doe",
                 "given": ["Chris"],
@@ -1159,7 +1371,11 @@ class TestPractitionerForeNameToFlatJson(unittest.TestCase):
     def test_Practitioner_forename_given_missing(self):
         """Test case where the selected name has multiple given names"""
         request_json_data["contained"][0]["name"] = [
-            {"family": "Doe", "use": "official", "period": {"start": "2021-01-01", "end": "2022-12-31"}}
+            {
+                "family": "Doe",
+                "use": "official",
+                "period": {"start": "2021-01-01", "end": "2022-12-31"},
+            }
         ]
         expected_forename = ""
         self._run_practitioner_test(expected_forename)
@@ -1174,7 +1390,9 @@ class TestPractitionerForeNameToFlatJson(unittest.TestCase):
         """Helper function to run the test"""
         self.converter = Converter(json.dumps(request_json_data))
         flat_json = self.converter.runConversion(request_json_data, False, True)
-        self.assertEqual(flat_json[0]["PERFORMING_PROFESSIONAL_FORENAME"], expected_forename)
+        self.assertEqual(
+            flat_json[0]["PERFORMING_PROFESSIONAL_FORENAME"], expected_forename
+        )
 
 
 class TestPractitionerSurNameToFlatJson(unittest.TestCase):
@@ -1212,7 +1430,11 @@ class TestPractitionerSurNameToFlatJson(unittest.TestCase):
     def test_practitioner_surname_multiple_names_current(self):
         """Test case where no official name is present, but a name is current at the vaccination date"""
         request_json_data["contained"][0]["name"] = [
-            {"family": "Manny", "given": ["John"], "period": {"start": "2020-01-01", "end": "2023-01-01"}},
+            {
+                "family": "Manny",
+                "given": ["John"],
+                "period": {"start": "2020-01-01", "end": "2023-01-01"},
+            },
             {"family": "Doe", "given": ["Johnny"], "use": "nickname"},
         ]
         expected_forename = "Manny"
@@ -1220,14 +1442,21 @@ class TestPractitionerSurNameToFlatJson(unittest.TestCase):
 
     def test_practitioner_surname_single_name(self):
         """Test case where only one name instance exists"""
-        request_json_data["contained"][0]["name"] = [{"family": "Doe", "given": ["Alex"], "use": "nickname"}]
+        request_json_data["contained"][0]["name"] = [
+            {"family": "Doe", "given": ["Alex"], "use": "nickname"}
+        ]
         expected_forename = "Doe"
         self._run_test_practitioner_surname(expected_forename)
 
     def test_practitioner_surname_no_official_but_current_not_old(self):
         """Test case where no official name is present, but a current name with use!=old exists at vaccination date"""
         request_json_data["contained"][0]["name"] = [
-            {"family": "Doe", "given": ["John"], "use": "old", "period": {"start": "2018-01-01", "end": "2020-12-31"}},
+            {
+                "family": "Doe",
+                "given": ["John"],
+                "use": "old",
+                "period": {"start": "2018-01-01", "end": "2020-12-31"},
+            },
             {
                 "family": "Manny",
                 "given": ["Chris"],
@@ -1288,7 +1517,9 @@ class TestPractitionerSurNameToFlatJson(unittest.TestCase):
         """Helper function to run the test"""
         self.converter = Converter(json.dumps(request_json_data))
         flat_json = self.converter.runConversion(request_json_data, False, True)
-        self.assertEqual(flat_json[0]["PERFORMING_PROFESSIONAL_SURNAME"], expected_forename)
+        self.assertEqual(
+            flat_json[0]["PERFORMING_PROFESSIONAL_SURNAME"], expected_forename
+        )
 
     if __name__ == "__main__":
         unittest.main()

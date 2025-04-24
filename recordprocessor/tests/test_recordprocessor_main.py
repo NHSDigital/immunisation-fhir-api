@@ -22,7 +22,11 @@ from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests impo
     InfAckFileRows,
     REGION_NAME,
 )
-from tests.utils_for_recordprocessor_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT, BucketNames, Kinesis
+from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
+    MOCK_ENVIRONMENT_DICT,
+    BucketNames,
+    Kinesis,
+)
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
     from constants import Diagnostics
@@ -49,9 +53,15 @@ class TestRecordProcessor(unittest.TestCase):
         GenericTearDown(s3_client, firehose_client, kinesis_client)
 
     @staticmethod
-    def upload_source_files(source_file_content):  # pylint: disable=dangerous-default-value
+    def upload_source_files(
+        source_file_content,
+    ):  # pylint: disable=dangerous-default-value
         """Uploads a test file with the TEST_FILE_KEY (RSV EMIS file) the given file content to the source bucket"""
-        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=mock_rsv_emis_file.file_key, Body=source_file_content)
+        s3_client.put_object(
+            Bucket=BucketNames.SOURCE,
+            Key=mock_rsv_emis_file.file_key,
+            Body=source_file_content,
+        )
 
     @staticmethod
     def get_shard_iterator():
@@ -73,13 +83,21 @@ class TestRecordProcessor(unittest.TestCase):
         response = s3_client.get_object(Bucket=BucketNames.DESTINATION, Key=file_key)
         return response["Body"].read().decode("utf-8")
 
-    def make_inf_ack_assertions(self, file_details: FileDetails, passed_validation: bool):
+    def make_inf_ack_assertions(
+        self, file_details: FileDetails, passed_validation: bool
+    ):
         """Asserts that the InfAck file content is as expected"""
         actual_content = self.get_ack_file_content(file_details.inf_ack_file_key)
         actual_rows = actual_content.splitlines()
 
-        expected_row = InfAckFileRows.success_row if passed_validation else InfAckFileRows.failure_row
-        expected_row = expected_row.replace("message_id", file_details.message_id).replace(
+        expected_row = (
+            InfAckFileRows.success_row
+            if passed_validation
+            else InfAckFileRows.failure_row
+        )
+        expected_row = expected_row.replace(
+            "message_id", file_details.message_id
+        ).replace(
             "created_at_formatted_string", file_details.created_at_formatted_string
         )
 
@@ -104,22 +122,35 @@ class TestRecordProcessor(unittest.TestCase):
             - Kinesis Data is equal to the expected_kinesis_data
         """
 
-        kinesis_records = kinesis_client.get_records(ShardIterator=self.get_shard_iterator(), Limit=10)["Records"]
-        previous_approximate_arrival_time_stamp = yesterday  # Initialise with a time prior to the running of the test
+        kinesis_records = kinesis_client.get_records(
+            ShardIterator=self.get_shard_iterator(), Limit=10
+        )["Records"]
+        previous_approximate_arrival_time_stamp = (
+            yesterday  # Initialise with a time prior to the running of the test
+        )
 
         for test_name, index, expected_kinesis_data, expect_success in test_cases:
             with self.subTest(test_name):
 
                 kinesis_record = kinesis_records[index]
-                self.assertEqual(kinesis_record["PartitionKey"], mock_rsv_emis_file.queue_name)
+                self.assertEqual(
+                    kinesis_record["PartitionKey"], mock_rsv_emis_file.queue_name
+                )
                 self.assertEqual(kinesis_record["SequenceNumber"], f"{index+1}")
 
                 # Ensure that arrival times are sequential
-                approximate_arrival_timestamp = kinesis_record["ApproximateArrivalTimestamp"]
-                self.assertGreater(approximate_arrival_timestamp, previous_approximate_arrival_time_stamp)
+                approximate_arrival_timestamp = kinesis_record[
+                    "ApproximateArrivalTimestamp"
+                ]
+                self.assertGreater(
+                    approximate_arrival_timestamp,
+                    previous_approximate_arrival_time_stamp,
+                )
                 previous_approximate_arrival_time_stamp = approximate_arrival_timestamp
 
-                kinesis_data = json.loads(kinesis_record["Data"].decode("utf-8"), parse_float=Decimal)
+                kinesis_data = json.loads(
+                    kinesis_record["Data"].decode("utf-8"), parse_float=Decimal
+                )
                 expected_kinesis_data = {
                     "row_id": f"{mock_rsv_emis_file.message_id}^{index+1}",
                     "file_key": mock_rsv_emis_file.file_key,
@@ -150,23 +181,34 @@ class TestRecordProcessor(unittest.TestCase):
             (
                 "CREATE success",
                 0,
-                {"operation_requested": "CREATE", "local_id": MockLocalIds.RSV_001_RAVS},
+                {
+                    "operation_requested": "CREATE",
+                    "local_id": MockLocalIds.RSV_001_RAVS,
+                },
                 True,
             ),
             (
                 "UPDATE success",
                 1,
-                {"operation_requested": "UPDATE", "local_id": MockLocalIds.COVID19_001_RAVS},
+                {
+                    "operation_requested": "UPDATE",
+                    "local_id": MockLocalIds.COVID19_001_RAVS,
+                },
                 True,
             ),
             (
                 "DELETE success",
                 2,
-                {"operation_requested": "DELETE", "local_id": MockLocalIds.COVID19_001_RAVS},
+                {
+                    "operation_requested": "DELETE",
+                    "local_id": MockLocalIds.COVID19_001_RAVS,
+                },
                 True,
             ),
         ]
-        self.make_inf_ack_assertions(file_details=mock_rsv_emis_file, passed_validation=True)
+        self.make_inf_ack_assertions(
+            file_details=mock_rsv_emis_file, passed_validation=True
+        )
         self.make_kinesis_assertions(assertion_cases)
 
     def test_e2e_partial_permissions(self):
@@ -184,7 +226,10 @@ class TestRecordProcessor(unittest.TestCase):
             (
                 "CREATE success",
                 0,
-                {"operation_requested": "CREATE", "local_id": MockLocalIds.RSV_001_RAVS},
+                {
+                    "operation_requested": "CREATE",
+                    "local_id": MockLocalIds.RSV_001_RAVS,
+                },
                 True,
             ),
             (
@@ -216,7 +261,9 @@ class TestRecordProcessor(unittest.TestCase):
                 False,
             ),
         ]
-        self.make_inf_ack_assertions(file_details=mock_rsv_emis_file, passed_validation=True)
+        self.make_inf_ack_assertions(
+            file_details=mock_rsv_emis_file, passed_validation=True
+        )
         self.make_kinesis_assertions(assertion_cases)
 
     def test_e2e_no_permissions(self):
@@ -228,15 +275,21 @@ class TestRecordProcessor(unittest.TestCase):
 
         main(mock_rsv_emis_file.event_create_permissions_only)
 
-        kinesis_records = kinesis_client.get_records(ShardIterator=self.get_shard_iterator(), Limit=10)["Records"]
+        kinesis_records = kinesis_client.get_records(
+            ShardIterator=self.get_shard_iterator(), Limit=10
+        )["Records"]
         self.assertEqual(len(kinesis_records), 0)
-        self.make_inf_ack_assertions(file_details=mock_rsv_emis_file, passed_validation=False)
+        self.make_inf_ack_assertions(
+            file_details=mock_rsv_emis_file, passed_validation=False
+        )
 
     def test_e2e_invalid_action_flags(self):
         """Tests that file is successfully processed when the ACTION_FLAG field is empty or invalid."""
 
         self.upload_source_files(
-            ValidMockFileContent.with_update_and_delete.replace("update", "").replace("delete", "INVALID")
+            ValidMockFileContent.with_update_and_delete.replace("update", "").replace(
+                "delete", "INVALID"
+            )
         )
 
         main(mock_rsv_emis_file.event_full_permissions)
@@ -254,19 +307,37 @@ class TestRecordProcessor(unittest.TestCase):
         # Assertion case tuples are stuctured as
         # (test_name, index, expected_kinesis_data_ignoring_fhir_json,expect_success)
         assertion_cases = [
-            ("Missing ACTION_FLAG", 0, {**expected_kinesis_data, "operation_requested": ""}, False),
-            ("Invalid ACTION_FLAG", 1, {**expected_kinesis_data, "operation_requested": "INVALID"}, False),
+            (
+                "Missing ACTION_FLAG",
+                0,
+                {**expected_kinesis_data, "operation_requested": ""},
+                False,
+            ),
+            (
+                "Invalid ACTION_FLAG",
+                1,
+                {**expected_kinesis_data, "operation_requested": "INVALID"},
+                False,
+            ),
         ]
-        self.make_inf_ack_assertions(file_details=mock_rsv_emis_file, passed_validation=True)
+        self.make_inf_ack_assertions(
+            file_details=mock_rsv_emis_file, passed_validation=True
+        )
         self.make_kinesis_assertions(assertion_cases)
 
     def test_e2e_differing_amounts_of_data(self):
         """Tests that file containing rows with differing amounts of data present is processed as expected"""
         # Create file content with different amounts of data present in each row
         headers = "|".join(MockFieldDictionaries.all_fields.keys())
-        all_fields_values = "|".join(f'"{v}"' for v in MockFieldDictionaries.all_fields.values())
-        mandatory_fields_only_values = "|".join(f'"{v}"' for v in MockFieldDictionaries.mandatory_fields_only.values())
-        critical_fields_only_values = "|".join(f'"{v}"' for v in MockFieldDictionaries.critical_fields_only.values())
+        all_fields_values = "|".join(
+            f'"{v}"' for v in MockFieldDictionaries.all_fields.values()
+        )
+        mandatory_fields_only_values = "|".join(
+            f'"{v}"' for v in MockFieldDictionaries.mandatory_fields_only.values()
+        )
+        critical_fields_only_values = "|".join(
+            f'"{v}"' for v in MockFieldDictionaries.critical_fields_only.values()
+        )
         file_content = f"{headers}\n{all_fields_values}\n{mandatory_fields_only_values}\n{critical_fields_only_values}"
         self.upload_source_files(file_content)
 
@@ -293,10 +364,22 @@ class TestRecordProcessor(unittest.TestCase):
         # Test case tuples are stuctured as (test_name, index, expected_kinesis_data, expect_success)
         test_cases = [
             ("All fields", 0, all_fields_row_expected_kinesis_data, True),
-            ("Mandatory fields only", 1, mandatory_fields_only_row_expected_kinesis_data, True),
-            ("Critical fields only", 2, critical_fields_only_row_expected_kinesis_data, True),
+            (
+                "Mandatory fields only",
+                1,
+                mandatory_fields_only_row_expected_kinesis_data,
+                True,
+            ),
+            (
+                "Critical fields only",
+                2,
+                critical_fields_only_row_expected_kinesis_data,
+                True,
+            ),
         ]
-        self.make_inf_ack_assertions(file_details=mock_rsv_emis_file, passed_validation=True)
+        self.make_inf_ack_assertions(
+            file_details=mock_rsv_emis_file, passed_validation=True
+        )
         self.make_kinesis_assertions(test_cases)
 
     def test_e2e_kinesis_failed(self):
@@ -306,10 +389,14 @@ class TestRecordProcessor(unittest.TestCase):
         """
         self.upload_source_files(ValidMockFileContent.with_new_and_update)
         # Delete the kinesis stream, to cause kinesis send to fail
-        kinesis_client.delete_stream(StreamName=Kinesis.STREAM_NAME, EnforceConsumerDeletion=True)
+        kinesis_client.delete_stream(
+            StreamName=Kinesis.STREAM_NAME, EnforceConsumerDeletion=True
+        )
 
         with (  # noqa: E999
-            patch("logging_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
+            patch(
+                "logging_decorator.send_log_to_firehose"
+            ) as mock_send_log_to_firehose,  # noqa: E999
             patch("logging_decorator.datetime") as mock_datetime,  # noqa: E999
             patch("logging_decorator.time") as mock_time,  # noqa: E999
         ):  # noqa: E999
@@ -319,7 +406,9 @@ class TestRecordProcessor(unittest.TestCase):
 
         # Since the failure occured at row level, not file level, the ack file should still be created
         # and firehose logs should indicate a successful file level validation
-        self.make_inf_ack_assertions(file_details=mock_rsv_emis_file, passed_validation=True)
+        self.make_inf_ack_assertions(
+            file_details=mock_rsv_emis_file, passed_validation=True
+        )
         expected_log_data = {
             "function_name": "record_processor_file_level_validation",
             "date_time": "2024-01-01 12:00:00",

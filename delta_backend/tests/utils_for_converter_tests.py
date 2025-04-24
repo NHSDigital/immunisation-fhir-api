@@ -20,7 +20,12 @@ class ValuesForTests:
             {
                 "resourceType": "Patient",
                 "id": "Pat1",
-                "identifier": [{"system": "https://fhir.nhs.uk/Id/nhs-number", "value": "9000000009"}],
+                "identifier": [
+                    {
+                        "system": "https://fhir.nhs.uk/Id/nhs-number",
+                        "value": "9000000009",
+                    }
+                ],
                 "name": [{"family": "Trailor", "given": ["Sam"]}],
                 "gender": "unknown",
                 "birthDate": "1965-02-28",
@@ -41,7 +46,12 @@ class ValuesForTests:
                 },
             }
         ],
-        "identifier": [{"system": "https://supplierABC/identifiers/vacc", "value": "ACME-vacc123456"}],
+        "identifier": [
+            {
+                "system": "https://supplierABC/identifiers/vacc",
+                "value": "ACME-vacc123456",
+            }
+        ],
         "status": "completed",
         "vaccineCode": {
             "coding": [
@@ -59,7 +69,10 @@ class ValuesForTests:
         "manufacturer": {"display": "AstraZeneca Ltd"},
         "location": {
             "type": "Location",
-            "identifier": {"value": "EC1111", "system": "https://fhir.nhs.uk/Id/ods-organization-code"},
+            "identifier": {
+                "value": "EC1111",
+                "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+            },
         },
         "lotNumber": "4120Z001",
         "expirationDate": "2021-07-02",
@@ -92,11 +105,16 @@ class ValuesForTests:
             {
                 "actor": {
                     "type": "Organization",
-                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "B0C4P"},
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                        "value": "B0C4P",
+                    },
                 }
             },
         ],
-        "reasonCode": [{"coding": [{"code": "443684005", "system": "http://snomed.info/sct"}]}],
+        "reasonCode": [
+            {"coding": [{"code": "443684005", "system": "http://snomed.info/sct"}]}
+        ],
         "protocolApplied": [
             {
                 "targetDisease": [
@@ -128,7 +146,9 @@ class ValuesForTests:
                             "ApproximateCreationDateTime": 1690896000,
                             "NewImage": {
                                 "PK": {"S": "covid#12345"},
-                                "PatientSK": {"S": "COVID19#ca8ba2c6-2383-4465-b456-c1174c21cf31"},
+                                "PatientSK": {
+                                    "S": "COVID19#ca8ba2c6-2383-4465-b456-c1174c21cf31"
+                                },
                                 "IdentifierPK": {"S": "system#1"},
                                 "Operation": {"S": operation},
                                 "SupplierSystem": {"S": supplier},
@@ -150,7 +170,9 @@ class ValuesForTests:
                                 "PatientSK": {"S": "covid#12345"},
                                 "SupplierSystem": {"S": "EMIS"},
                                 "Resource": {"S": ValuesForTests.json_value_for_test},
-                                "PatientSK": {"S": "COVID19#ca8ba2c6-2383-4465-b456-c1174c21cf31"},
+                                "PatientSK": {
+                                    "S": "COVID19#ca8ba2c6-2383-4465-b456-c1174c21cf31"
+                                },
                             },
                         },
                     }
@@ -203,7 +225,7 @@ class ValuesForTests:
                 "INDICATION_CODE": "443684005",
                 "LOCATION_CODE": "EC1111",
                 "LOCATION_CODE_TYPE_URI": "https://fhir.nhs.uk/Id/ods-organization-code",
-                "CONVERSION_ERRORS": ''
+                "CONVERSION_ERRORS": "",
             }
         ]
 
@@ -243,7 +265,7 @@ class ValuesForTests:
             "INDICATION_CODE": "443684005",
             "LOCATION_CODE": "EC1111",
             "LOCATION_CODE_TYPE_URI": "https://fhir.nhs.uk/Id/ods-organization-code",
-            "CONVERSION_ERRORS": ''
+            "CONVERSION_ERRORS": "",
         }
     ]
 
@@ -283,7 +305,7 @@ class ValuesForTests:
             "INDICATION_CODE": "443684005",
             "LOCATION_CODE": "EC1111",
             "LOCATION_CODE_TYPE_URI": "https://fhir.nhs.uk/Id/ods-organization-code",
-            "CONVERSION_ERRORS": ''
+            "CONVERSION_ERRORS": "",
         }
     ]
 
@@ -301,7 +323,9 @@ class ErrorValuesForTests:
             {
                 "resourceType": "Patient",
                 "id": "Pat1",
-                "identifier": [{"system": "https://fhir.nhs.uk/Id/nhs-number", "value": ""}],
+                "identifier": [
+                    {"system": "https://fhir.nhs.uk/Id/nhs-number", "value": ""}
+                ],
                 "name": [{"family": "Trailor", "given": ["Sam"]}],
                 "gender": "unknown",
                 "birthDate": "196502-28",
@@ -322,7 +346,12 @@ class ErrorValuesForTests:
                 },
             }
         ],
-        "identifier": [{"system": "https://supplierABC/identifiers/vacc", "value": "ACME-vacc123456"}],
+        "identifier": [
+            {
+                "system": "https://supplierABC/identifiers/vacc",
+                "value": "ACME-vacc123456",
+            }
+        ],
         "status": "completed",
         "vaccineCode": {
             "coding": [
@@ -340,7 +369,10 @@ class ErrorValuesForTests:
         "manufacturer": {"display": "AstraZeneca Ltd"},
         "location": {
             "type": "Location",
-            "identifier": {"value": "E712", "system": "https://fhir.nhs.uk/Id/ods-organization-code"},
+            "identifier": {
+                "value": "E712",
+                "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+            },
         },
         "lotNumber": "4120Z001",
         "expirationDate": "2021-07-02",
@@ -373,11 +405,16 @@ class ErrorValuesForTests:
             {
                 "actor": {
                     "type": "Organization",
-                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "B0C4P"},
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                        "value": "B0C4P",
+                    },
                 }
             },
         ],
-        "reasonCode": [{"coding": [{"code": "443684005", "system": "http://snomed.info/sct"}]}],
+        "reasonCode": [
+            {"coding": [{"code": "443684005", "system": "http://snomed.info/sct"}]}
+        ],
         "protocolApplied": [
             {
                 "targetDisease": [
@@ -437,6 +474,6 @@ class ErrorValuesForTests:
                 "INDICATION_CODE": "443684005",
                 "LOCATION_CODE": "E712",
                 "LOCATION_CODE_TYPE_URI": "https://fhir.nhs.uk/Id/ods-organization-code",
-                "CONVERSION_ERRORS": ''
+                "CONVERSION_ERRORS": "",
             }
         ]

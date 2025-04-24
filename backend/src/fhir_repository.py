@@ -17,7 +17,10 @@ from models.errors import (
 )
 from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
 
-from models.utils.validation_utils import get_vaccine_type, check_identifier_system_value
+from models.utils.validation_utils import (
+    get_vaccine_type,
+    check_identifier_system_value,
+)
 
 
 def create_table(table_name=None, endpoint_url=None, region_name="eu-west-2"):
@@ -39,14 +42,18 @@ def _make_patient_pk(_id: str):
 
 
 def _query_identifier(table, index, pk, identifier):
-    queryresponse = table.query(IndexName=index, KeyConditionExpression=Key(pk).eq(identifier), Limit=1)
+    queryresponse = table.query(
+        IndexName=index, KeyConditionExpression=Key(pk).eq(identifier), Limit=1
+    )
     if queryresponse.get("Count", 0) > 0:
         return queryresponse
 
 
 def get_nhs_number(imms):
     try:
-        nhs_number = [x for x in imms["contained"] if x["resourceType"] == "Patient"][0]["identifier"][0]["value"]
+        nhs_number = [x for x in imms["contained"] if x["resourceType"] == "Patient"][
+            0
+        ]["identifier"][0]["value"]
     except (KeyError, IndexError):
         nhs_number = "TBC"
     return nhs_number
@@ -88,7 +95,8 @@ class ImmunizationRepository:
         self, identifier_pk: str, imms_vax_type_perms: str, is_imms_batch_app
     ) -> Optional[dict]:
         response = self.table.query(
-            IndexName="IdentifierGSI", KeyConditionExpression=Key("IdentifierPK").eq(identifier_pk)
+            IndexName="IdentifierGSI",
+            KeyConditionExpression=Key("IdentifierPK").eq(identifier_pk),
         )
         if "Items" in response and len(response["Items"]) > 0:
             item = response["Items"][0]
@@ -105,7 +113,9 @@ class ImmunizationRepository:
         else:
             return None
 
-    def get_immunization_by_id(self, imms_id: str, imms_vax_type_perms: str) -> Optional[dict]:
+    def get_immunization_by_id(
+        self, imms_id: str, imms_vax_type_perms: str
+    ) -> Optional[dict]:
         response = self.table.get_item(Key={"PK": _make_immunization_pk(imms_id)})
 
         if "Item" in response:
@@ -113,7 +123,9 @@ class ImmunizationRepository:
             if "DeletedAt" in response["Item"]:
                 if response["Item"]["DeletedAt"] == "reinstated":
                     vaccine_type = self._vaccine_type(response["Item"]["PatientSK"])
-                    vax_type_perms = self._parse_vaccine_permissions(imms_vax_type_perms)
+                    vax_type_perms = self._parse_vaccine_permissions(
+                        imms_vax_type_perms
+                    )
                     vax_type_perm = self._vaccine_permission(vaccine_type, "read")
                     self._check_permission(vax_type_perm, vax_type_perms)
                     resp["Resource"] = json.loads(response["Item"]["Resource"])
@@ -146,27 +158,38 @@ class ImmunizationRepository:
                         resp["Resource"] = json.loads(response["Item"]["Resource"])
                         resp["Version"] = response["Item"]["Version"]
                         resp["DeletedAt"] = True
-                        resp["VaccineType"] = self._vaccine_type(response["Item"]["PatientSK"])
+                        resp["VaccineType"] = self._vaccine_type(
+                            response["Item"]["PatientSK"]
+                        )
                         return resp
                     else:
                         resp["Resource"] = json.loads(response["Item"]["Resource"])
                         resp["Version"] = response["Item"]["Version"]
                         resp["DeletedAt"] = False
                         resp["Reinstated"] = True
-                        resp["VaccineType"] = self._vaccine_type(response["Item"]["PatientSK"])
+                        resp["VaccineType"] = self._vaccine_type(
+                            response["Item"]["PatientSK"]
+                        )
                         return resp
                 else:
                     resp["Resource"] = json.loads(response["Item"]["Resource"])
                     resp["Version"] = response["Item"]["Version"]
                     resp["DeletedAt"] = False
                     resp["Reinstated"] = False
-                    resp["VaccineType"] = self._vaccine_type(response["Item"]["PatientSK"])
+                    resp["VaccineType"] = self._vaccine_type(
+                        response["Item"]["PatientSK"]
+                    )
                     return resp
         else:
             return None
 
     def create_immunization(
-        self, immunization: dict, patient: any, imms_vax_type_perms, supplier_system, is_imms_batch_app
+        self,
+        immunization: dict,
+        patient: any,
+        imms_vax_type_perms,
+        supplier_system,
+        is_imms_batch_app,
     ) -> dict:
         new_id = str(uuid.uuid4())
         immunization["id"] = new_id
@@ -175,7 +198,9 @@ class ImmunizationRepository:
             vax_type_perms = self._parse_vaccine_permissions(imms_vax_type_perms)
             vax_type_perm = self._vaccine_permission(attr.vaccine_type, "create")
             self._check_permission(vax_type_perm, vax_type_perms)
-        query_response = _query_identifier(self.table, "IdentifierGSI", "IdentifierPK", attr.identifier)
+        query_response = _query_identifier(
+            self.table, "IdentifierGSI", "IdentifierPK", attr.identifier
+        )
 
         if query_response is not None:
             raise IdentifierDuplicationError(identifier=attr.identifier)
@@ -196,7 +221,9 @@ class ImmunizationRepository:
         if response["ResponseMetadata"]["HTTPStatusCode"] == 200:
             return immunization
         else:
-            raise UnhandledResponseError(message="Non-200 response from dynamodb", response=response)
+            raise UnhandledResponseError(
+                message="Non-200 response from dynamodb", response=response
+            )
 
     def update_immunization(
         self,
@@ -276,7 +303,9 @@ class ImmunizationRepository:
             update_reinstated=True,
         )
 
-    def _handle_permissions(self, is_imms_batch_app: bool, imms_vax_type_perms: str, attr: RecordAttributes):
+    def _handle_permissions(
+        self, is_imms_batch_app: bool, imms_vax_type_perms: str, attr: RecordAttributes
+    ):
         if not is_imms_batch_app:
             vax_type_perms = self._parse_vaccine_permissions(imms_vax_type_perms)
             vax_type_perm = self._vaccine_permission(attr.vaccine_type, "update")
@@ -297,7 +326,9 @@ class ImmunizationRepository:
             )
 
     def _check_duplicate_identifier(self, attr: RecordAttributes) -> dict:
-        queryresponse = _query_identifier(self.table, "IdentifierGSI", "IdentifierPK", attr.identifier)
+        queryresponse = _query_identifier(
+            self.table, "IdentifierGSI", "IdentifierPK", attr.identifier
+        )
         if queryresponse is not None:
             items = queryresponse.get("Items", [])
             resource_dict = json.loads(items[0]["Resource"])
@@ -357,7 +388,9 @@ class ImmunizationRepository:
         except botocore.exceptions.ClientError as error:
             # Either resource didn't exist or it has already been deleted. See ConditionExpression in the request
             if error.response["Error"]["Code"] == "ConditionalCheckFailedException":
-                raise ResourceNotFoundError(resource_type="Immunization", resource_id=imms_id)
+                raise ResourceNotFoundError(
+                    resource_type="Immunization", resource_id=imms_id
+                )
             else:
                 raise UnhandledResponseError(
                     message=f"Unhandled error from dynamodb: {error.response['Error']['Code']}",
@@ -365,7 +398,11 @@ class ImmunizationRepository:
                 )
 
     def delete_immunization(
-        self, imms_id: str, imms_vax_type_perms: str, supplier_system: str, is_imms_batch_app
+        self,
+        imms_id: str,
+        imms_vax_type_perms: str,
+        supplier_system: str,
+        is_imms_batch_app,
     ) -> dict:
         now_timestamp = int(time.time())
         try:
@@ -376,13 +413,19 @@ class ImmunizationRepository:
                     if resp["Item"]["DeletedAt"] == "reinstated":
                         vaccine_type = self._vaccine_type(resp["Item"]["PatientSK"])
                         if not is_imms_batch_app:
-                            vax_type_perms = self._parse_vaccine_permissions(imms_vax_type_perms)
-                            vax_type_perm = self._vaccine_permission(vaccine_type, "delete")
+                            vax_type_perms = self._parse_vaccine_permissions(
+                                imms_vax_type_perms
+                            )
+                            vax_type_perm = self._vaccine_permission(
+                                vaccine_type, "delete"
+                            )
                             self._check_permission(vax_type_perm, vax_type_perms)
                 else:
                     vaccine_type = self._vaccine_type(resp["Item"]["PatientSK"])
                     if not is_imms_batch_app:
-                        vax_type_perms = self._parse_vaccine_permissions(imms_vax_type_perms)
+                        vax_type_perms = self._parse_vaccine_permissions(
+                            imms_vax_type_perms
+                        )
                         vax_type_perm = self._vaccine_permission(vaccine_type, "delete")
                         self._check_permission(vax_type_perm, vax_type_perms)
 
@@ -403,7 +446,9 @@ class ImmunizationRepository:
         except botocore.exceptions.ClientError as error:
             # Either resource didn't exist or it has already been deleted. See ConditionExpression in the request
             if error.response["Error"]["Code"] == "ConditionalCheckFailedException":
-                raise ResourceNotFoundError(resource_type="Immunization", resource_id=imms_id)
+                raise ResourceNotFoundError(
+                    resource_type="Immunization", resource_id=imms_id
+                )
             else:
                 raise UnhandledResponseError(
                     message=f"Unhandled error from dynamodb: {error.response['Error']['Code']}",
@@ -413,7 +458,9 @@ class ImmunizationRepository:
     def find_immunizations(self, patient_identifier: str, vaccine_types: list):
         """it should find all of the specified patient's Immunization events for all of the specified vaccine_types"""
         condition = Key("PatientPK").eq(_make_patient_pk(patient_identifier))
-        is_not_deleted = Attr("DeletedAt").not_exists() | Attr("DeletedAt").eq("reinstated")
+        is_not_deleted = Attr("DeletedAt").not_exists() | Attr("DeletedAt").eq(
+            "reinstated"
+        )
 
         response = self.table.query(
             IndexName="PatientGSI",
@@ -423,19 +470,27 @@ class ImmunizationRepository:
 
         if "Items" in response:
             # Filter the response to contain only the requested vaccine types
-            items = [x for x in response["Items"] if x["PatientSK"].split("#")[0] in vaccine_types]
+            items = [
+                x
+                for x in response["Items"]
+                if x["PatientSK"].split("#")[0] in vaccine_types
+            ]
 
             # Return a list of the FHIR immunization resource JSON items
             return [json.loads(item["Resource"]) for item in items]
         else:
-            raise UnhandledResponseError(message=f"Unhandled error. Query failed", response=response)
+            raise UnhandledResponseError(
+                message=f"Unhandled error. Query failed", response=response
+            )
 
     @staticmethod
     def _handle_dynamo_response(response):
         if response["ResponseMetadata"]["HTTPStatusCode"] == 200:
             return json.loads(response["Attributes"]["Resource"])
         else:
-            raise UnhandledResponseError(message="Non-200 response from dynamodb", response=response)
+            raise UnhandledResponseError(
+                message="Non-200 response from dynamodb", response=response
+            )
 
     @staticmethod
     def _vaccine_permission(vaccine_type, operation) -> set:

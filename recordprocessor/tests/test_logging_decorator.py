@@ -9,7 +9,10 @@ from copy import deepcopy
 from boto3 import client as boto3_client
 from moto import mock_s3, mock_firehose
 
-from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import MockFileDetails, ValidMockFileContent
+from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
+    MockFileDetails,
+    ValidMockFileContent,
+)
 from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
     MOCK_ENVIRONMENT_DICT,
     BucketNames,
@@ -23,7 +26,10 @@ with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from file_level_validation import file_level_validation
 
 
-from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import GenericSetUp, GenericTearDown
+from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
+    GenericSetUp,
+    GenericTearDown,
+)
 
 s3_client = boto3_client("s3", region_name=REGION_NAME)
 firehose_client = boto3_client("firehose", region_name=REGION_NAME)
@@ -62,7 +68,9 @@ class TestLoggingDecorator(unittest.TestCase):
         # These patches can be overridden in individual tests.
         common_patches = [
             patch("file_level_validation.change_audit_table_status_to_processed"),
-            patch("file_level_validation.get_next_queued_file_details", return_value=None),
+            patch(
+                "file_level_validation.get_next_queued_file_details", return_value=None
+            ),
         ]
 
         with ExitStack() as stack:
@@ -81,7 +89,9 @@ class TestLoggingDecorator(unittest.TestCase):
         with patch("logging_decorator.firehose_client") as mock_firehose_client:
             send_log_to_firehose(log_data)
 
-        expected_firehose_record = {"Data": json.dumps({"event": log_data}).encode("utf-8")}
+        expected_firehose_record = {
+            "Data": json.dumps({"event": log_data}).encode("utf-8")
+        }
         mock_firehose_client.put_record.assert_called_once_with(
             DeliveryStreamName=Firehose.STREAM_NAME, Record=expected_firehose_record
         )
@@ -98,13 +108,21 @@ class TestLoggingDecorator(unittest.TestCase):
         # CASE: Successful log - is_error_log arg set to False
         with (  # noqa: E999
             patch("logging_decorator.logger") as mock_logger,  # noqa: E999
-            patch("logging_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
+            patch(
+                "logging_decorator.send_log_to_firehose"
+            ) as mock_send_log_to_firehose,  # noqa: E999
             patch("logging_decorator.time") as mock_time,  # noqa: E999
         ):  # noqa: E999
             mock_time.time.return_value = 1672531200.123456  # Mocks the end time to be 0.123456s after the start time
-            generate_and_send_logs(start_time, base_log_data, additional_log_data, is_error_log=False)
+            generate_and_send_logs(
+                start_time, base_log_data, additional_log_data, is_error_log=False
+            )
 
-        expected_log_data = {"base_key": "base_value", "time_taken": "0.12346s", "additional_key": "additional_value"}
+        expected_log_data = {
+            "base_key": "base_value",
+            "time_taken": "0.12346s",
+            "additional_key": "additional_value",
+        }
         log_data = json.loads(mock_logger.info.call_args[0][0])
         self.assertEqual(log_data, expected_log_data)
         mock_send_log_to_firehose.assert_called_once_with(expected_log_data)
@@ -112,13 +130,21 @@ class TestLoggingDecorator(unittest.TestCase):
         # CASE: Error log - is_error_log arg set to True
         with (  # noqa: E999
             patch("logging_decorator.logger") as mock_logger,  # noqa: E999
-            patch("logging_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
+            patch(
+                "logging_decorator.send_log_to_firehose"
+            ) as mock_send_log_to_firehose,  # noqa: E999
             patch("logging_decorator.time") as mock_time,  # noqa: E999
         ):  # noqa: E999
             mock_time.time.return_value = 1672531200.123456  # Mocks the end time to be 0.123456s after the start time
-            generate_and_send_logs(start_time, base_log_data, additional_log_data, is_error_log=True)
+            generate_and_send_logs(
+                start_time, base_log_data, additional_log_data, is_error_log=True
+            )
 
-        expected_log_data = {"base_key": "base_value", "time_taken": "0.12346s", "additional_key": "additional_value"}
+        expected_log_data = {
+            "base_key": "base_value",
+            "time_taken": "0.12346s",
+            "additional_key": "additional_value",
+        }
         log_data = json.loads(mock_logger.error.call_args[0][0])
         self.assertEqual(log_data, expected_log_data)
         mock_send_log_to_firehose.assert_called_once_with(expected_log_data)
@@ -136,20 +162,30 @@ class TestLoggingDecorator(unittest.TestCase):
             patch("logging_decorator.datetime") as mock_datetime,  # noqa: E999
             patch("logging_decorator.time") as mock_time,  # noqa: E999
             patch("logging_decorator.logger") as mock_logger,  # noqa: E999
-            patch("logging_decorator.firehose_client") as mock_firehose_client,  # noqa: E999
+            patch(
+                "logging_decorator.firehose_client"
+            ) as mock_firehose_client,  # noqa: E999
         ):  # noqa: E999
             mock_time.time.side_effect = [1672531200, 1672531200.123456]
             mock_datetime.now.return_value = datetime(2024, 1, 1, 12, 0, 0)
-            file_level_validation(deepcopy(MOCK_FILE_DETAILS.event_full_permissions_dict))
+            file_level_validation(
+                deepcopy(MOCK_FILE_DETAILS.event_full_permissions_dict)
+            )
 
         expected_message = "Successfully sent for record processing"
-        expected_log_data = {**COMMON_LOG_DATA, "statusCode": 200, "message": expected_message}
+        expected_log_data = {
+            **COMMON_LOG_DATA,
+            "statusCode": 200,
+            "message": expected_message,
+        }
 
         # Log data is the first positional argument of the first call to logger.info
         log_data = json.loads(mock_logger.info.call_args_list[0][0][0])
         self.assertEqual(log_data, expected_log_data)
 
-        expected_firehose_record = {"Data": json.dumps({"event": log_data}).encode("utf-8")}
+        expected_firehose_record = {
+            "Data": json.dumps({"event": log_data}).encode("utf-8")
+        }
         mock_firehose_client.put_record.assert_called_once_with(
             DeliveryStreamName=Firehose.STREAM_NAME, Record=expected_firehose_record
         )
@@ -162,7 +198,9 @@ class TestLoggingDecorator(unittest.TestCase):
         test_cases = [
             # CASE: Invalid headers
             (
-                ValidMockFileContent.with_new_and_update_and_delete.replace("NHS_NUMBER", "NHS_NUMBERS"),
+                ValidMockFileContent.with_new_and_update_and_delete.replace(
+                    "NHS_NUMBER", "NHS_NUMBERS"
+                ),
                 MOCK_FILE_DETAILS.event_full_permissions_dict,
                 InvalidHeaders,
                 400,
@@ -187,13 +225,19 @@ class TestLoggingDecorator(unittest.TestCase):
         ) in test_cases:
             with self.subTest(expected_error_message):
 
-                s3_client.put_object(Bucket=BucketNames.SOURCE, Key=MOCK_FILE_DETAILS.file_key, Body=mock_file_content)
+                s3_client.put_object(
+                    Bucket=BucketNames.SOURCE,
+                    Key=MOCK_FILE_DETAILS.file_key,
+                    Body=mock_file_content,
+                )
 
                 with (  # noqa: E999
                     patch("logging_decorator.datetime") as mock_datetime,  # noqa: E999
                     patch("logging_decorator.time") as mock_time,  # noqa: E999
                     patch("logging_decorator.logger") as mock_logger,  # noqa: E999
-                    patch("logging_decorator.firehose_client") as mock_firehose_client,  # noqa: E999
+                    patch(
+                        "logging_decorator.firehose_client"
+                    ) as mock_firehose_client,  # noqa: E999
                 ):  # noqa: E999
                     mock_datetime.now.return_value = datetime(2024, 1, 1, 12, 0, 0)
                     mock_time.time.side_effect = [1672531200, 1672531200.123456]
@@ -211,9 +255,12 @@ class TestLoggingDecorator(unittest.TestCase):
                 log_data = json.loads(mock_logger.error.call_args_list[0][0][0])
                 self.assertEqual(log_data, expected_log_data)
 
-                expected_firehose_record = {"Data": json.dumps({"event": log_data}).encode("utf-8")}
+                expected_firehose_record = {
+                    "Data": json.dumps({"event": log_data}).encode("utf-8")
+                }
                 mock_firehose_client.put_record.assert_called_once_with(
-                    DeliveryStreamName=Firehose.STREAM_NAME, Record=expected_firehose_record
+                    DeliveryStreamName=Firehose.STREAM_NAME,
+                    Record=expected_firehose_record,
                 )
 
     def test_splunk_logger_unhandled_failure(self):
@@ -228,15 +275,20 @@ class TestLoggingDecorator(unittest.TestCase):
             patch("logging_decorator.datetime") as mock_datetime,  # noqa: E999
             patch("logging_decorator.time") as mock_time,  # noqa: E999
             patch("logging_decorator.logger") as mock_logger,  # noqa: E999
-            patch("logging_decorator.firehose_client") as mock_firehose_client,  # noqa: E999
             patch(
-                "file_level_validation.validate_content_headers", side_effect=Exception("Test exception")
+                "logging_decorator.firehose_client"
+            ) as mock_firehose_client,  # noqa: E999
+            patch(
+                "file_level_validation.validate_content_headers",
+                side_effect=Exception("Test exception"),
             ),  # noqa: E999
         ):  # noqa: E999
             mock_time.time.side_effect = [1672531200, 1672531200.123456]
             mock_datetime.now.return_value = datetime(2024, 1, 1, 12, 0, 0)
             with self.assertRaises(Exception):
-                file_level_validation(deepcopy(MOCK_FILE_DETAILS.event_full_permissions_dict))
+                file_level_validation(
+                    deepcopy(MOCK_FILE_DETAILS.event_full_permissions_dict)
+                )
 
         expected_log_data = {
             **COMMON_LOG_DATA,
@@ -249,7 +301,9 @@ class TestLoggingDecorator(unittest.TestCase):
         log_data = json.loads(mock_logger.error.call_args_list[0][0][0])
         self.assertEqual(log_data, expected_log_data)
 
-        expected_firehose_record = {"Data": json.dumps({"event": log_data}).encode("utf-8")}
+        expected_firehose_record = {
+            "Data": json.dumps({"event": log_data}).encode("utf-8")
+        }
         mock_firehose_client.put_record.assert_called_once_with(
             DeliveryStreamName=Firehose.STREAM_NAME, Record=expected_firehose_record
         )

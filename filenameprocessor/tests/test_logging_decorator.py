@@ -9,10 +9,19 @@ from boto3 import client as boto3_client
 from botocore.exceptions import ClientError
 from moto import mock_s3, mock_firehose, mock_sqs, mock_dynamodb
 
-from tests.utils_for_tests.generic_setup_and_teardown import GenericSetUp, GenericTearDown
-from tests.utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT, BucketNames, Firehose
+from tests.utils_for_tests.generic_setup_and_teardown import (
+    GenericSetUp,
+    GenericTearDown,
+)
+from tests.utils_for_tests.mock_environment_variables import (
+    MOCK_ENVIRONMENT_DICT,
+    BucketNames,
+    Firehose,
+)
 from tests.utils_for_tests.values_for_tests import MockFileDetails, fixed_datetime
-from tests.utils_for_tests.utils_for_filenameprocessor_tests import generate_permissions_config_content
+from tests.utils_for_tests.utils_for_filenameprocessor_tests import (
+    generate_permissions_config_content,
+)
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
@@ -28,10 +37,24 @@ dynamodb_client = boto3_client("dynamodb", region_name=REGION_NAME)
 
 FILE_DETAILS = MockFileDetails.emis_flu
 MOCK_VACCINATION_EVENT = {
-    "Records": [{"s3": {"bucket": {"name": BucketNames.SOURCE}, "object": {"key": FILE_DETAILS.file_key}}}]
+    "Records": [
+        {
+            "s3": {
+                "bucket": {"name": BucketNames.SOURCE},
+                "object": {"key": FILE_DETAILS.file_key},
+            }
+        }
+    ]
 }
 MOCK_CONFIG_EVENT = {
-    "Records": [{"s3": {"bucket": {"name": BucketNames.CONFIG}, "object": {"key": PERMISSIONS_CONFIG_FILE_KEY}}}]
+    "Records": [
+        {
+            "s3": {
+                "bucket": {"name": BucketNames.CONFIG},
+                "object": {"key": PERMISSIONS_CONFIG_FILE_KEY},
+            }
+        }
+    ]
 }
 
 
@@ -72,7 +95,9 @@ class TestLoggingDecorator(unittest.TestCase):
             patch("utils_for_filenameprocessor.logger"),
             # Time is incremented by 1.0 for each call to time.time for ease of testing.
             # Range is set to a large number (100) due to many calls being made to time.time for some tests.
-            patch("logging_decorator.time.time", side_effect=[0.0 + i for i in range(100)]),
+            patch(
+                "logging_decorator.time.time", side_effect=[0.0 + i for i in range(100)]
+            ),
         ]
 
         # Set up the ExitStack. Note that patches need to be explicitly started so that they will be applied even when
@@ -100,7 +125,9 @@ class TestLoggingDecorator(unittest.TestCase):
         with patch("logging_decorator.firehose_client") as mock_firehose_client:
             send_log_to_firehose(log_data)
 
-        expected_firehose_record = {"Data": json.dumps({"event": log_data}).encode("utf-8")}
+        expected_firehose_record = {
+            "Data": json.dumps({"event": log_data}).encode("utf-8")
+        }
         mock_firehose_client.put_record.assert_called_once_with(
             DeliveryStreamName=Firehose.STREAM_NAME, Record=expected_firehose_record
         )
@@ -117,13 +144,21 @@ class TestLoggingDecorator(unittest.TestCase):
         # CASE: Successful log - is_error_log arg set to False
         with (  # noqa: E999
             patch("logging_decorator.logger") as mock_logger,  # noqa: E999
-            patch("logging_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
+            patch(
+                "logging_decorator.send_log_to_firehose"
+            ) as mock_send_log_to_firehose,  # noqa: E999
             patch("logging_decorator.time") as mock_time,  # noqa: E999
         ):  # noqa: E999
             mock_time.time.return_value = 1672531200.123456  # Mocks the end time to be 0.123456s after the start time
-            generate_and_send_logs(start_time, base_log_data, additional_log_data, is_error_log=False)
+            generate_and_send_logs(
+                start_time, base_log_data, additional_log_data, is_error_log=False
+            )
 
-        expected_log_data = {"base_key": "base_value", "time_taken": "0.12346s", "additional_key": "additional_value"}
+        expected_log_data = {
+            "base_key": "base_value",
+            "time_taken": "0.12346s",
+            "additional_key": "additional_value",
+        }
         log_data = json.loads(mock_logger.info.call_args[0][0])
         self.assertEqual(log_data, expected_log_data)
         mock_send_log_to_firehose.assert_called_once_with(expected_log_data)
@@ -131,13 +166,21 @@ class TestLoggingDecorator(unittest.TestCase):
         # CASE: Error log - is_error_log arg set to True
         with (  # noqa: E999
             patch("logging_decorator.logger") as mock_logger,  # noqa: E999
-            patch("logging_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
+            patch(
+                "logging_decorator.send_log_to_firehose"
+            ) as mock_send_log_to_firehose,  # noqa: E999
             patch("logging_decorator.time") as mock_time,  # noqa: E999
         ):  # noqa: E999
             mock_time.time.return_value = 1672531200.123456  # Mocks the end time to be 0.123456s after the start time
-            generate_and_send_logs(start_time, base_log_data, additional_log_data, is_error_log=True)
+            generate_and_send_logs(
+                start_time, base_log_data, additional_log_data, is_error_log=True
+            )
 
-        expected_log_data = {"base_key": "base_value", "time_taken": "0.12346s", "additional_key": "additional_value"}
+        expected_log_data = {
+            "base_key": "base_value",
+            "time_taken": "0.12346s",
+            "additional_key": "additional_value",
+        }
         log_data = json.loads(mock_logger.error.call_args[0][0])
         self.assertEqual(log_data, expected_log_data)
         mock_send_log_to_firehose.assert_called_once_with(expected_log_data)
@@ -145,11 +188,19 @@ class TestLoggingDecorator(unittest.TestCase):
     def test_logging_successful_validation(self):
         """Tests that the correct logs are sent to cloudwatch and splunk when file validation is successful"""
         # Mock full permissions so that validation will pass
-        permissions_config_content = generate_permissions_config_content(deepcopy(FILE_DETAILS.permissions_config))
+        permissions_config_content = generate_permissions_config_content(
+            deepcopy(FILE_DETAILS.permissions_config)
+        )
         with (  # noqa: E999
-            patch("file_name_processor.uuid4", return_value=FILE_DETAILS.message_id),  # noqa: E999
-            patch("elasticache.redis_client.get", return_value=permissions_config_content),  # noqa: E999
-            patch("logging_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
+            patch(
+                "file_name_processor.uuid4", return_value=FILE_DETAILS.message_id
+            ),  # noqa: E999
+            patch(
+                "elasticache.redis_client.get", return_value=permissions_config_content
+            ),  # noqa: E999
+            patch(
+                "logging_decorator.send_log_to_firehose"
+            ) as mock_send_log_to_firehose,  # noqa: E999
             patch("logging_decorator.logger") as mock_logger,  # noqa: E999
         ):  # noqa: E999
             lambda_handler(MOCK_VACCINATION_EVENT, context=None)
@@ -174,12 +225,20 @@ class TestLoggingDecorator(unittest.TestCase):
     def test_logging_failed_validation(self):
         """Tests that the correct logs are sent to cloudwatch and splunk when file validation fails"""
         # Set up permissions for COVID19 only (file is for FLU), so that validation will fail
-        permissions_config_content = generate_permissions_config_content({"EMIS": ["COVID19_FULL"]})
+        permissions_config_content = generate_permissions_config_content(
+            {"EMIS": ["COVID19_FULL"]}
+        )
 
         with (  # noqa: E999
-            patch("file_name_processor.uuid4", return_value=FILE_DETAILS.message_id),  # noqa: E999
-            patch("elasticache.redis_client.get", return_value=permissions_config_content),  # noqa: E999
-            patch("logging_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
+            patch(
+                "file_name_processor.uuid4", return_value=FILE_DETAILS.message_id
+            ),  # noqa: E999
+            patch(
+                "elasticache.redis_client.get", return_value=permissions_config_content
+            ),  # noqa: E999
+            patch(
+                "logging_decorator.send_log_to_firehose"
+            ) as mock_send_log_to_firehose,  # noqa: E999
             patch("logging_decorator.logger") as mock_logger,  # noqa: E999
         ):  # noqa: E999
             lambda_handler(MOCK_VACCINATION_EVENT, context=None)
@@ -194,7 +253,7 @@ class TestLoggingDecorator(unittest.TestCase):
             "message_id": FILE_DETAILS.message_id,
             "error": "Initial file validation failed: EMIS does not have permissions for FLU",
             "vaccine_type": "FLU",
-            "supplier": "EMIS"
+            "supplier": "EMIS",
         }
 
         log_data = json.loads(mock_logger.info.call_args[0][0])
@@ -204,17 +263,26 @@ class TestLoggingDecorator(unittest.TestCase):
 
     def test_logging_throws_exception(self):
         """Tests that exception is caught when failing to send message to Firehose"""
-        permissions_config_content = generate_permissions_config_content({"EMIS": ["COVID19_FULL"]})
+        permissions_config_content = generate_permissions_config_content(
+            {"EMIS": ["COVID19_FULL"]}
+        )
 
         firehose_exception = ClientError(
-            error_response={"Error": {"Code": "ServiceUnavailable", "Message": "Service down"}},
-            operation_name="PutRecord"
+            error_response={
+                "Error": {"Code": "ServiceUnavailable", "Message": "Service down"}
+            },
+            operation_name="PutRecord",
         )
 
         with (
             patch("file_name_processor.uuid4", return_value=FILE_DETAILS.message_id),
-            patch("elasticache.redis_client.get", return_value=permissions_config_content),
-            patch("logging_decorator.firehose_client.put_record", side_effect=firehose_exception),
+            patch(
+                "elasticache.redis_client.get", return_value=permissions_config_content
+            ),
+            patch(
+                "logging_decorator.firehose_client.put_record",
+                side_effect=firehose_exception,
+            ),
             patch("logging_decorator.logger") as mock_logger,
         ):
             lambda_handler(MOCK_VACCINATION_EVENT, context=None)
@@ -235,14 +303,20 @@ class TestLoggingDecorator(unittest.TestCase):
         Tests that the correct logs are sent to cloudwatch and splunk when the config cache is successfully updated
         """
         # Create a permissions config file and upload it to the config bucket
-        permissions_config_content = generate_permissions_config_content(deepcopy(FILE_DETAILS.permissions_config))
+        permissions_config_content = generate_permissions_config_content(
+            deepcopy(FILE_DETAILS.permissions_config)
+        )
         s3_client.put_object(
-            Bucket=BucketNames.CONFIG, Key=PERMISSIONS_CONFIG_FILE_KEY, Body=permissions_config_content
+            Bucket=BucketNames.CONFIG,
+            Key=PERMISSIONS_CONFIG_FILE_KEY,
+            Body=permissions_config_content,
         )
 
         with (  # noqa: E999
             patch("elasticache.redis_client.set"),  # noqa: E999
-            patch("logging_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
+            patch(
+                "logging_decorator.send_log_to_firehose"
+            ) as mock_send_log_to_firehose,  # noqa: E999
             patch("logging_decorator.logger") as mock_logger,  # noqa: E999
         ):  # noqa: E999
             lambda_handler(MOCK_CONFIG_EVENT, context=None)

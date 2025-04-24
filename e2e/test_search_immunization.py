@@ -4,7 +4,12 @@ from typing import NamedTuple, Literal, Optional, List
 from decimal import Decimal
 
 from utils.base_test import ImmunizationBaseTest
-from utils.constants import valid_nhs_number1, valid_nhs_number2, valid_patient_identifier2, valid_patient_identifier1
+from utils.constants import (
+    valid_nhs_number1,
+    valid_nhs_number2,
+    valid_patient_identifier2,
+    valid_patient_identifier1,
+)
 from utils.resource import generate_imms_resource, generate_filtered_imms_resource
 from utils.mappings import VaccineTypes
 
@@ -26,16 +31,26 @@ class TestSearchImmunization(ImmunizationBaseTest):
         for imms_api in self.imms_apis:
             with self.subTest(imms_api):
                 # Given two patients each with one covid_19
-                covid_19_p1 = generate_imms_resource(valid_nhs_number1, VaccineTypes.covid_19)
-                covid_19_p2 = generate_imms_resource(valid_nhs_number2, VaccineTypes.covid_19)
+                covid_19_p1 = generate_imms_resource(
+                    valid_nhs_number1, VaccineTypes.covid_19
+                )
+                covid_19_p2 = generate_imms_resource(
+                    valid_nhs_number2, VaccineTypes.covid_19
+                )
                 rsv_p1 = generate_imms_resource(valid_nhs_number1, VaccineTypes.rsv)
                 rsv_p2 = generate_imms_resource(valid_nhs_number2, VaccineTypes.rsv)
-                covid_19_p1_id, covid_19_p2_id = self.store_records(covid_19_p1, covid_19_p2)
+                covid_19_p1_id, covid_19_p2_id = self.store_records(
+                    covid_19_p1, covid_19_p2
+                )
                 rsv_p1_id, rsv_p2_id = self.store_records(rsv_p1, rsv_p2)
 
                 # When
-                response = imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.covid_19)
-                response_rsv = imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.rsv)
+                response = imms_api.search_immunizations(
+                    valid_nhs_number1, VaccineTypes.covid_19
+                )
+                response_rsv = imms_api.search_immunizations(
+                    valid_nhs_number1, VaccineTypes.rsv
+                )
 
                 # Then
                 self.assertEqual(response.status_code, 200, response.text)
@@ -50,7 +65,9 @@ class TestSearchImmunization(ImmunizationBaseTest):
                 body_rsv = response_rsv.json()
                 self.assertEqual(body_rsv["resourceType"], "Bundle")
 
-                resource_ids = [entity["resource"]["id"] for entity in body_rsv["entry"]]
+                resource_ids = [
+                    entity["resource"]["id"] for entity in body_rsv["entry"]
+                ]
                 self.assertTrue(rsv_p1_id in resource_ids)
                 self.assertTrue(rsv_p2_id not in resource_ids)
 
@@ -61,7 +78,9 @@ class TestSearchImmunization(ImmunizationBaseTest):
         covid_19_id, flu_id = self.store_records(covid_19, flu)
 
         # When
-        response = self.default_imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.covid_19)
+        response = self.default_imms_api.search_immunizations(
+            valid_nhs_number1, VaccineTypes.covid_19
+        )
 
         # Then
         self.assertEqual(response.status_code, 200, response.text)
@@ -76,7 +95,9 @@ class TestSearchImmunization(ImmunizationBaseTest):
         for imms_api in self.imms_apis:
             with self.subTest(imms_api):
                 # Given that the patient has a covid_19 vaccine event stored in the IEDS
-                stored_imms_resource = generate_imms_resource(valid_nhs_number1, VaccineTypes.covid_19)
+                stored_imms_resource = generate_imms_resource(
+                    valid_nhs_number1, VaccineTypes.covid_19
+                )
                 imms_identifier_value = stored_imms_resource["identifier"][0]["value"]
                 imms_id = self.store_records(stored_imms_resource)
 
@@ -91,16 +112,29 @@ class TestSearchImmunization(ImmunizationBaseTest):
                 expected_imms_resource["id"] = imms_id
 
                 # When
-                response = imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.covid_19)
+                response = imms_api.search_immunizations(
+                    valid_nhs_number1, VaccineTypes.covid_19
+                )
 
                 # Then
                 self.assertEqual(response.status_code, 200, response.text)
                 body = response.json(parse_float=Decimal)
                 entries = body["entry"]
-                response_imms = [item for item in entries if item["resource"]["resourceType"] == "Immunization"]
-                response_patients = [item for item in entries if item["resource"]["resourceType"] == "Patient"]
+                response_imms = [
+                    item
+                    for item in entries
+                    if item["resource"]["resourceType"] == "Immunization"
+                ]
+                response_patients = [
+                    item
+                    for item in entries
+                    if item["resource"]["resourceType"] == "Patient"
+                ]
                 response_other_entries = [
-                    item for item in entries if item["resource"]["resourceType"] not in ("Patient", "Immunization")
+                    item
+                    for item in entries
+                    if item["resource"]["resourceType"]
+                    not in ("Patient", "Immunization")
                 ]
 
                 # Check bundle structure apart from entry
@@ -118,20 +152,34 @@ class TestSearchImmunization(ImmunizationBaseTest):
                 self.assertTrue(response_patient["fullUrl"].startswith("urn:uuid:"))
                 self.assertTrue(uuid.UUID(response_patient["fullUrl"].split(":")[2]))
                 expected_patient_resource_keys = ["resourceType", "id", "identifier"]
-                self.assertEqual(sorted(response_patient["resource"].keys()), sorted(expected_patient_resource_keys))
+                self.assertEqual(
+                    sorted(response_patient["resource"].keys()),
+                    sorted(expected_patient_resource_keys),
+                )
                 self.assertEqual(response_patient["resource"]["id"], valid_nhs_number1)
                 patient_identifier = response_patient["resource"]["identifier"]
                 # NOTE: If PDS response ever changes to send more than one identifier then the below will break
-                self.assertEqual(len(patient_identifier), 1, "PDS did not return 1 identifier")
-                self.assertEqual(sorted(patient_identifier[0].keys()), sorted(["system", "value"]))
-                self.assertEqual(patient_identifier[0]["system"], "https://fhir.nhs.uk/Id/nhs-number")
+                self.assertEqual(
+                    len(patient_identifier), 1, "PDS did not return 1 identifier"
+                )
+                self.assertEqual(
+                    sorted(patient_identifier[0].keys()), sorted(["system", "value"])
+                )
+                self.assertEqual(
+                    patient_identifier[0]["system"], "https://fhir.nhs.uk/Id/nhs-number"
+                )
                 self.assertEqual(patient_identifier[0]["value"], valid_nhs_number1)
 
                 # Check structure of one of the imms resources
-                expected_imms_resource["patient"]["reference"] = response_patient["fullUrl"]
-                response_imm = next(item for item in entries if item["resource"]["id"] == imms_id)
+                expected_imms_resource["patient"]["reference"] = response_patient[
+                    "fullUrl"
+                ]
+                response_imm = next(
+                    item for item in entries if item["resource"]["id"] == imms_id
+                )
                 self.assertEqual(
-                    response_imm["fullUrl"], f"https://api.service.nhs.uk/immunisation-fhir-api/Immunization/{imms_id}"
+                    response_imm["fullUrl"],
+                    f"https://api.service.nhs.uk/immunisation-fhir-api/Immunization/{imms_id}",
                 )
                 self.assertEqual(response_imm["search"], {"mode": "match"})
                 self.assertEqual(response_imm["resource"], expected_imms_resource)
@@ -143,10 +191,14 @@ class TestSearchImmunization(ImmunizationBaseTest):
         mmr1_id, mmr2_id = self.store_records(mmr1, mmr2)
 
         to_delete_mmr = generate_imms_resource(valid_nhs_number1, VaccineTypes.mmr)
-        deleted_mmr = self.default_imms_api.create_a_deleted_immunization_resource(to_delete_mmr)
+        deleted_mmr = self.default_imms_api.create_a_deleted_immunization_resource(
+            to_delete_mmr
+        )
 
         # When
-        response = self.default_imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.mmr)
+        response = self.default_imms_api.search_immunizations(
+            valid_nhs_number1, VaccineTypes.mmr
+        )
 
         # Then
         self.assertEqual(response.status_code, 200, response.text)
@@ -161,17 +213,43 @@ class TestSearchImmunization(ImmunizationBaseTest):
         time_1 = "2024-01-30T13:28:17.271+00:00"
         time_2 = "2024-02-01T13:28:17.271+00:00"
         stored_records = [
-            generate_imms_resource(valid_nhs_number1, VaccineTypes.mmr, imms_identifier_value=str(uuid.uuid4())),
-            generate_imms_resource(valid_nhs_number1, VaccineTypes.flu, imms_identifier_value=str(uuid.uuid4())),
-            generate_imms_resource(valid_nhs_number1, VaccineTypes.covid_19, imms_identifier_value=str(uuid.uuid4())),
-            generate_imms_resource(valid_nhs_number1, VaccineTypes.covid_19,
-                                   occurrence_date_time=time_1,
-                                   imms_identifier_value=str(uuid.uuid4())),
-            generate_imms_resource(valid_nhs_number1, VaccineTypes.covid_19,
-                                   occurrence_date_time=time_2,
-                                   imms_identifier_value=str(uuid.uuid4())),
-            generate_imms_resource(valid_nhs_number2, VaccineTypes.flu, imms_identifier_value=str(uuid.uuid4())),
-            generate_imms_resource(valid_nhs_number2, VaccineTypes.covid_19, imms_identifier_value=str(uuid.uuid4())),
+            generate_imms_resource(
+                valid_nhs_number1,
+                VaccineTypes.mmr,
+                imms_identifier_value=str(uuid.uuid4()),
+            ),
+            generate_imms_resource(
+                valid_nhs_number1,
+                VaccineTypes.flu,
+                imms_identifier_value=str(uuid.uuid4()),
+            ),
+            generate_imms_resource(
+                valid_nhs_number1,
+                VaccineTypes.covid_19,
+                imms_identifier_value=str(uuid.uuid4()),
+            ),
+            generate_imms_resource(
+                valid_nhs_number1,
+                VaccineTypes.covid_19,
+                occurrence_date_time=time_1,
+                imms_identifier_value=str(uuid.uuid4()),
+            ),
+            generate_imms_resource(
+                valid_nhs_number1,
+                VaccineTypes.covid_19,
+                occurrence_date_time=time_2,
+                imms_identifier_value=str(uuid.uuid4()),
+            ),
+            generate_imms_resource(
+                valid_nhs_number2,
+                VaccineTypes.flu,
+                imms_identifier_value=str(uuid.uuid4()),
+            ),
+            generate_imms_resource(
+                valid_nhs_number2,
+                VaccineTypes.covid_19,
+                imms_identifier_value=str(uuid.uuid4()),
+            ),
         ]
 
         created_resource_ids = list(self.store_records(*stored_records))
@@ -187,14 +265,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
             expected_status_code: int = 200
 
         searches = [
-            SearchTestParams(
-                "GET",
-                "",
-                None,
-                False,
-                [],
-                400
-            ),
+            SearchTestParams("GET", "", None, False, [], 400),
             # No results.
             SearchTestParams(
                 "GET",
@@ -202,7 +273,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
                 None,
                 True,
                 [],
-                200
+                200,
             ),
             # Basic success.
             SearchTestParams(
@@ -211,7 +282,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
                 None,
                 True,
                 [0],
-                200
+                200,
             ),
             # "Or" params.
             SearchTestParams(
@@ -221,7 +292,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
                 None,
                 True,
                 [0, 1],
-                200
+                200,
             ),
             # GET does not support body.
             SearchTestParams(
@@ -230,7 +301,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
                 f"patient.identifier={valid_patient_identifier1}",
                 True,
                 [0],
-                200
+                200,
             ),
             SearchTestParams(
                 "POST",
@@ -238,7 +309,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
                 f"patient.identifier={valid_patient_identifier1}&-immunization.target={VaccineTypes.mmr}",
                 True,
                 [0],
-                200
+                200,
             ),
             # Duplicated NHS number not allowed, spread across query and content.
             SearchTestParams(
@@ -247,7 +318,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
                 f"patient.identifier={valid_patient_identifier1}",
                 False,
                 [],
-                400
+                400,
             ),
             SearchTestParams(
                 "GET",
@@ -257,7 +328,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
                 None,
                 False,
                 [],
-                400
+                400,
             ),
             # "And" params not supported.
             SearchTestParams(
@@ -267,7 +338,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
                 None,
                 False,
                 [],
-                400
+                400,
             ),
             # Date
             SearchTestParams(
@@ -276,7 +347,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
                 None,
                 True,
                 [2, 3, 4],
-                200
+                200,
             ),
             SearchTestParams(
                 "GET",
@@ -285,7 +356,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
                 None,
                 True,
                 [3, 4],
-                200
+                200,
             ),
             SearchTestParams(
                 "GET",
@@ -294,7 +365,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
                 None,
                 True,
                 [2, 3],
-                200
+                200,
             ),
             SearchTestParams(
                 "GET",
@@ -303,7 +374,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
                 None,
                 True,
                 [3],
-                200
+                200,
             ),
             # "from" after "to" is an error.
             SearchTestParams(
@@ -313,15 +384,18 @@ class TestSearchImmunization(ImmunizationBaseTest):
                 None,
                 False,
                 [0],
-                400
+                400,
             ),
         ]
 
         for search in searches:
             pprint.pprint(search)
-            response = self.default_imms_api.search_immunizations_full(search.method, search.query_string,
-                                                                       body=search.body,
-                                                                       expected_status_code=search.expected_status_code)
+            response = self.default_imms_api.search_immunizations_full(
+                search.method,
+                search.query_string,
+                body=search.body,
+                expected_status_code=search.expected_status_code,
+            )
 
             # Then
             assert response.ok == search.should_be_success, response.text
@@ -333,12 +407,17 @@ class TestSearchImmunization(ImmunizationBaseTest):
                 assert results["resourceType"] == "Bundle"
 
                 result_ids = [result["resource"]["id"] for result in results["entry"]]
-                created_and_returned_ids = list(set(result_ids) & set(created_resource_ids))
+                created_and_returned_ids = list(
+                    set(result_ids) & set(created_resource_ids)
+                )
                 print("\n Search Test Debug Info:")
                 print("Search method:", search.method)
                 print("Search query string:", search.query_string)
                 print("Expected indexes:", search.expected_indexes)
-                print("Expected IDs:", [created_resource_ids[i] for i in search.expected_indexes])
+                print(
+                    "Expected IDs:",
+                    [created_resource_ids[i] for i in search.expected_indexes],
+                )
                 print("Actual returned IDs:", result_ids)
                 print("Matched IDs:", created_and_returned_ids)
                 assert len(created_and_returned_ids) == len(search.expected_indexes)
@@ -366,16 +445,21 @@ class TestSearchImmunization(ImmunizationBaseTest):
         entry_ids = [result["resource"]["id"] for result in result["entry"]]
         assert imms_obj_id in entry_ids
 
-        patient_entry = next(entry for entry in entries if entry["resource"]["resourceType"] == "Patient")
+        patient_entry = next(
+            entry for entry in entries if entry["resource"]["resourceType"] == "Patient"
+        )
         assert patient_entry["search"]["mode"] == "include"
 
-        assert patient_entry["resource"]["identifier"][0]["system"] == "https://fhir.nhs.uk/Id/nhs-number"
+        assert (
+            patient_entry["resource"]["identifier"][0]["system"]
+            == "https://fhir.nhs.uk/Id/nhs-number"
+        )
         assert patient_entry["resource"]["identifier"][0]["value"] == valid_nhs_number1
 
         response_without_include = self.default_imms_api.search_immunizations_full(
             "POST",
             f"patient.identifier={valid_patient_identifier1}&-immunization.target={VaccineTypes.mmr}",
-            body=None
+            body=None,
         )
 
         assert response_without_include.ok
@@ -408,8 +492,9 @@ class TestSearchImmunization(ImmunizationBaseTest):
         self.store_records(imms)
 
         # When
-        response = self.default_imms_api.search_immunizations("TBC", f"{VaccineTypes.mmr}",
-                                                              expected_status_code=400)
+        response = self.default_imms_api.search_immunizations(
+            "TBC", f"{VaccineTypes.mmr}", expected_status_code=400
+        )
 
         # Then
         self.assert_operation_outcome(response, 400)

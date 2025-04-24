@@ -47,7 +47,10 @@ def create_diagnostics_dictionary(error: Exception) -> dict:
 
 
 def forward_request_to_dynamo(
-    message_body: any, table: any, is_present: bool, batchcontroller: ImmunizationBatchController
+    message_body: any,
+    table: any,
+    is_present: bool,
+    batchcontroller: ImmunizationBatchController,
 ):
     """Forwards the request to the Imms API (where possible) and updates the ack file with the outcome"""
     row_id = message_body.get("row_id")
@@ -69,7 +72,9 @@ def forward_lambda_handler(event, _):
             incoming_message_body = json.loads(decoded_payload, use_decimal=True)
 
             file_key = incoming_message_body.get("file_key")
-            created_at_formatted_string = incoming_message_body.get("created_at_formatted_string")
+            created_at_formatted_string = incoming_message_body.get(
+                "created_at_formatted_string"
+            )
             base_outgoing_message_body = {
                 "file_key": file_key,
                 "row_id": incoming_message_body.get("row_id"),
@@ -85,7 +90,9 @@ def forward_lambda_handler(event, _):
                 raise RecordProcessorError(incoming_diagnostics)
 
             if not (fhir_json := incoming_message_body.get("fhir_json")):
-                raise MessageNotSuccessfulError("Server error - FHIR JSON not correctly sent to forwarder")
+                raise MessageNotSuccessfulError(
+                    "Server error - FHIR JSON not correctly sent to forwarder"
+                )
 
             # Check if the identifier is already present in the array
             identifier_already_present = False
@@ -95,16 +102,23 @@ def forward_lambda_handler(event, _):
             if identifier in array_of_identifiers:
                 identifier_already_present = True
                 delay_milliseconds = 30  # Delay time in milliseconds
-                time.sleep(delay_milliseconds / 1000)  # TODO: What is the purpose of this delay?
+                time.sleep(
+                    delay_milliseconds / 1000
+                )  # TODO: What is the purpose of this delay?
             else:
                 array_of_identifiers.append(identifier)
 
-            imms_id = forward_request_to_dynamo(incoming_message_body, table, identifier_already_present, controller)
+            imms_id = forward_request_to_dynamo(
+                incoming_message_body, table, identifier_already_present, controller
+            )
             array_of_messages.append({**base_outgoing_message_body, "imms_id": imms_id})
 
         except Exception as error:  # pylint: disable = broad-exception-caught
             array_of_messages.append(
-                {**base_outgoing_message_body, "diagnostics": create_diagnostics_dictionary(error)}
+                {
+                    **base_outgoing_message_body,
+                    "diagnostics": create_diagnostics_dictionary(error),
+                }
             )
             logger.error("Error processing message: %s", error)
 
@@ -114,7 +128,11 @@ def forward_lambda_handler(event, _):
     logger.info(f"total message length:{message_len}")
     message_group_id = f"{file_key}_{created_at_formatted_string}"
     if message_len < 256 * 1024:
-        sqs_client.send_message(QueueUrl=QUEUE_URL, MessageBody=sqs_message_body, MessageGroupId=message_group_id)
+        sqs_client.send_message(
+            QueueUrl=QUEUE_URL,
+            MessageBody=sqs_message_body,
+            MessageGroupId=message_group_id,
+        )
     else:
         logger.info("Message size exceeds 256 KB limit.Sending to sqs failed")
 

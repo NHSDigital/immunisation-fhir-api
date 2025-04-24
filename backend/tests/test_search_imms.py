@@ -47,7 +47,9 @@ class TestSearchImmunizations(unittest.TestCase):
         act_res = search_imms(lambda_event, self.controller)
 
         # Then
-        self.controller.get_immunization_by_identifier.assert_called_once_with(lambda_event)
+        self.controller.get_immunization_by_identifier.assert_called_once_with(
+            lambda_event
+        )
         self.assertDictEqual(exp_res, act_res)
 
     def test_search_immunizations_get_id_from_body(self):
@@ -65,12 +67,18 @@ class TestSearchImmunizations(unittest.TestCase):
         act_res = search_imms(lambda_event, self.controller)
 
         # Then
-        self.controller.get_immunization_by_identifier.assert_called_once_with(lambda_event)
+        self.controller.get_immunization_by_identifier.assert_called_once_with(
+            lambda_event
+        )
         self.assertDictEqual(exp_res, act_res)
 
     def test_search_immunizations_get_id_from_body_passing_none(self):
         """it should enter search_immunizations as both the request params are none"""
-        lambda_event = {"pathParameters": {"id": "an-id"}, "body": None, "queryStringParameters": None}
+        lambda_event = {
+            "pathParameters": {"id": "an-id"},
+            "body": None,
+            "queryStringParameters": None,
+        }
         exp_res = {"a-key": "a-value"}
 
         self.controller.search_immunizations.return_value = exp_res
@@ -97,7 +105,9 @@ class TestSearchImmunizations(unittest.TestCase):
         act_res = search_imms(lambda_event, self.controller)
 
         # Then
-        self.controller.get_immunization_by_identifier.assert_called_once_with(lambda_event)
+        self.controller.get_immunization_by_identifier.assert_called_once_with(
+            lambda_event
+        )
         self.assertDictEqual(exp_res, act_res)
 
     def test_search_immunizations_get_id_from_body_imms_identifer(self):
@@ -115,7 +125,9 @@ class TestSearchImmunizations(unittest.TestCase):
         act_res = search_imms(lambda_event, self.controller)
 
         # Then
-        self.controller.get_immunization_by_identifier.assert_called_once_with(lambda_event)
+        self.controller.get_immunization_by_identifier.assert_called_once_with(
+            lambda_event
+        )
         self.assertDictEqual(exp_res, act_res)
 
     def test_search_immunizations_lambda_size_limit(self):
@@ -156,5 +168,7 @@ class TestSearchImmunizations(unittest.TestCase):
         act_body["id"] = None
 
         self.assertEqual(exp_error["issue"][0]["code"], act_body["issue"][0]["code"])
-        self.assertEqual(exp_error["issue"][0]["severity"], act_body["issue"][0]["severity"])
+        self.assertEqual(
+            exp_error["issue"][0]["severity"], act_body["issue"][0]["severity"]
+        )
         self.assertEqual(act_res["statusCode"], 500)

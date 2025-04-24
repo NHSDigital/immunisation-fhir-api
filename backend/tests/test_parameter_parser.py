@@ -17,6 +17,8 @@ from parameter_parser import (
 )
 
 "test"
+
+
 class TestParameterParser(unittest.TestCase):
     def setUp(self):
         self.service = create_autospec(FhirService)
@@ -31,14 +33,19 @@ class TestParameterParser(unittest.TestCase):
             "multiValueQueryStringParameters": {
                 self.patient_identifier_key: ["a"],
             },
-            "body": base64.b64encode(f"{self.immunization_target_key}=b".encode("utf-8")),
+            "body": base64.b64encode(
+                f"{self.immunization_target_key}=b".encode("utf-8")
+            ),
             "headers": {"Content-Type": "application/x-www-form-urlencoded"},
             "httpMethod": "POST",
         }
 
         processed_params = process_params(lambda_event)
 
-        expected = {self.patient_identifier_key: ["a"], self.immunization_target_key: ["b"]}
+        expected = {
+            self.patient_identifier_key: ["a"],
+            self.immunization_target_key: ["b"],
+        }
 
         self.assertEqual(expected, processed_params)
 
@@ -47,7 +54,9 @@ class TestParameterParser(unittest.TestCase):
             "multiValueQueryStringParameters": {
                 self.patient_identifier_key: ["b,a"],
             },
-            "body": base64.b64encode(f"{self.immunization_target_key}=b,a".encode("utf-8")),
+            "body": base64.b64encode(
+                f"{self.immunization_target_key}=b,a".encode("utf-8")
+            ),
             "headers": {"Content-Type": "application/x-www-form-urlencoded"},
             "httpMethod": "POST",
         }
@@ -62,7 +71,9 @@ class TestParameterParser(unittest.TestCase):
                 self.patient_identifier_key: ["b,a"],
             },
             "body": base64.b64encode(
-                f"{self.immunization_target_key}=b&{self.immunization_target_key}=a".encode("utf-8")
+                f"{self.immunization_target_key}=b&{self.immunization_target_key}=a".encode(
+                    "utf-8"
+                )
             ),
             "headers": {"Content-Type": "application/x-www-form-urlencoded"},
             "httpMethod": "GET",
@@ -85,7 +96,9 @@ class TestParameterParser(unittest.TestCase):
         with self.assertRaises(ParameterException) as e:
             process_params(lambda_event)
 
-        self.assertEqual(str(e.exception), 'Parameters may not be duplicated. Use commas for "or".')
+        self.assertEqual(
+            str(e.exception), 'Parameters may not be duplicated. Use commas for "or".'
+        )
 
     def test_process_search_params_checks_patient_identifier_format(self):
         with self.assertRaises(ParameterException) as e:
@@ -99,7 +112,9 @@ class TestParameterParser(unittest.TestCase):
 
         params = process_search_params(
             {
-                self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
+                self.patient_identifier_key: [
+                    "https://fhir.nhs.uk/Id/nhs-number|9000000009"
+                ],
                 self.immunization_target_key: [VaccineTypes().all[0]],
             }
         )
@@ -109,7 +124,9 @@ class TestParameterParser(unittest.TestCase):
         with self.assertRaises(ParameterException) as e:
             process_search_params(
                 {
-                    self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
+                    self.patient_identifier_key: [
+                        "https://fhir.nhs.uk/Id/nhs-number|9000000009"
+                    ],
                     self.immunization_target_key: ["not-a-code"],
                 }
             )
@@ -120,7 +137,9 @@ class TestParameterParser(unittest.TestCase):
 
         params = process_search_params(
             {
-                self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
+                self.patient_identifier_key: [
+                    "https://fhir.nhs.uk/Id/nhs-number|9000000009"
+                ],
                 self.immunization_target_key: [VaccineTypes().all[0]],
             }
         )
@@ -130,7 +149,9 @@ class TestParameterParser(unittest.TestCase):
     def test_search_params_date_from_must_be_before_date_to(self):
         params = process_search_params(
             {
-                self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
+                self.patient_identifier_key: [
+                    "https://fhir.nhs.uk/Id/nhs-number|9000000009"
+                ],
                 self.immunization_target_key: [VaccineTypes().all[0]],
                 self.date_from_key: ["2021-03-06"],
                 self.date_to_key: ["2021-03-08"],
@@ -141,7 +162,9 @@ class TestParameterParser(unittest.TestCase):
 
         params = process_search_params(
             {
-                self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
+                self.patient_identifier_key: [
+                    "https://fhir.nhs.uk/Id/nhs-number|9000000009"
+                ],
                 self.immunization_target_key: [VaccineTypes().all[0]],
                 self.date_from_key: ["2021-03-07"],
                 self.date_to_key: ["2021-03-07"],
@@ -153,23 +176,33 @@ class TestParameterParser(unittest.TestCase):
         with self.assertRaises(ParameterException) as e:
             _ = process_search_params(
                 {
-                    self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
+                    self.patient_identifier_key: [
+                        "https://fhir.nhs.uk/Id/nhs-number|9000000009"
+                    ],
                     self.immunization_target_key: [VaccineTypes().all[0]],
                     self.date_from_key: ["2021-03-08"],
                     self.date_to_key: ["2021-03-07"],
                 }
             )
 
-        self.assertEqual(str(e.exception), f"Search parameter {date_from_key} must be before {date_to_key}")
+        self.assertEqual(
+            str(e.exception),
+            f"Search parameter {date_from_key} must be before {date_to_key}",
+        )
 
     def test_process_search_params_immunization_target_is_mandatory(self):
         with self.assertRaises(ParameterException) as e:
             _ = process_search_params(
                 {
-                    self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
+                    self.patient_identifier_key: [
+                        "https://fhir.nhs.uk/Id/nhs-number|9000000009"
+                    ],
                 }
             )
-        self.assertEqual(str(e.exception), f"Search parameter -immunization.target must have one or more values.")
+        self.assertEqual(
+            str(e.exception),
+            f"Search parameter -immunization.target must have one or more values.",
+        )
 
     def test_process_search_params_patient_identifier_is_mandatory(self):
         with self.assertRaises(ParameterException) as e:
@@ -178,10 +211,15 @@ class TestParameterParser(unittest.TestCase):
                     self.immunization_target_key: ["a-disease-type"],
                 }
             )
-        self.assertEqual(str(e.exception), f"Search parameter patient.identifier must have one value.")
+        self.assertEqual(
+            str(e.exception),
+            f"Search parameter patient.identifier must have one value.",
+        )
 
     def test_create_query_string_with_all_params(self):
-        search_params = SearchParams("a", ["b"], datetime.date(1, 2, 3), datetime.date(4, 5, 6), "c")
+        search_params = SearchParams(
+            "a", ["b"], datetime.date(1, 2, 3), datetime.date(4, 5, 6), "c"
+        )
         query_string = create_query_string(search_params)
         expected = (
             "-date.from=0001-02-03&-date.to=0004-05-06&-immunization.target=b"
@@ -197,7 +235,9 @@ class TestParameterParser(unittest.TestCase):
 
         self.assertEqual(expected, query_string)
 
-    def test_create_query_string_with_multiple_immunization_targets_comma_separated(self):
+    def test_create_query_string_with_multiple_immunization_targets_comma_separated(
+        self,
+    ):
         search_params = SearchParams("a", ["b", "c"], None, None, None)
         query_string = create_query_string(search_params)
         expected = "-immunization.target=b,c&patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7Ca"

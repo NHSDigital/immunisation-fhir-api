@@ -7,7 +7,9 @@ from fhir_batch_repository import ImmunizationBatchRepository
 def make_batch_controller():
     immunization_repo = ImmunizationBatchRepository()
     fhir_service = ImmunizationBatchService(immunization_repo=immunization_repo)
-    return ImmunizationBatchController(immunization_repo=immunization_repo, fhir_service=fhir_service)
+    return ImmunizationBatchController(
+        immunization_repo=immunization_repo, fhir_service=fhir_service
+    )
 
 
 class ImmunizationBatchController:
@@ -33,5 +35,9 @@ class ImmunizationBatchController:
             "DELETE": self.fhir_service.delete_immunization,
         }
         return function_map[operation_requested](
-            immunization=fhir_json, supplier_system=supplier, vax_type=vax_type, table=table, is_present=is_present
+            immunization=fhir_json,
+            supplier_system=supplier,
+            vax_type=vax_type,
+            table=table,
+            is_present=is_present,
         )

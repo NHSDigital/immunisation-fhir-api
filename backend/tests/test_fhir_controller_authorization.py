@@ -20,6 +20,8 @@ from models.errors import UnauthorizedError, UnauthorizedVaxError
 from tests.utils.immunization_utils import create_covid_19_immunization
 
 "test"
+
+
 def full_access(exclude: Set[Permission] = None) -> Set[Permission]:
     return {*Permission}.difference(exclude)
 
@@ -29,7 +31,9 @@ def make_aws_event(auth_type: AuthType, permissions=None) -> dict:
         permissions = full_access()
     header = ",".join(permissions)
 
-    return {"headers": {PERMISSIONS_HEADER: header, AUTHENTICATION_HEADER: str(auth_type)}}
+    return {
+        "headers": {PERMISSIONS_HEADER: header, AUTHENTICATION_HEADER: str(auth_type)}
+    }
 
 
 class TestFhirControllerAuthorization(unittest.TestCase):
@@ -50,7 +54,9 @@ class TestFhirControllerAuthorization(unittest.TestCase):
 
         _ = self.controller.get_immunization_by_id(aws_event)
 
-        self.authorizer.authorize.assert_called_once_with(EndpointOperation.READ, aws_event)
+        self.authorizer.authorize.assert_called_once_with(
+            EndpointOperation.READ, aws_event
+        )
 
     def test_get_imms_by_id_unauthorized(self):
         aws_event = {"pathParameters": {"id": "an-id"}}
@@ -76,14 +82,28 @@ class TestFhirControllerAuthorization(unittest.TestCase):
 
     # EndpointOperation.CREATE
     def test_create_imms_authorized(self):
-        aws_event = {"headers":{"VaccineTypePermissions":"COVID19:create", "SupplierSystem" : "Test"},"body": create_covid_19_immunization(str(uuid.uuid4())).json()}
+        aws_event = {
+            "headers": {
+                "VaccineTypePermissions": "COVID19:create",
+                "SupplierSystem": "Test",
+            },
+            "body": create_covid_19_immunization(str(uuid.uuid4())).json(),
+        }
 
         _ = self.controller.create_immunization(aws_event)
 
-        self.authorizer.authorize.assert_called_once_with(EndpointOperation.CREATE, aws_event)
+        self.authorizer.authorize.assert_called_once_with(
+            EndpointOperation.CREATE, aws_event
+        )
 
     def test_create_imms_unauthorized(self):
-        aws_event = {"headers":{"VaccineTypePermissions":"COVID19:create", "SupplierSystem" : "Test"},"body": create_covid_19_immunization(str(uuid.uuid4())).json()}
+        aws_event = {
+            "headers": {
+                "VaccineTypePermissions": "COVID19:create",
+                "SupplierSystem": "Test",
+            },
+            "body": create_covid_19_immunization(str(uuid.uuid4())).json(),
+        }
         self.authorizer.authorize.side_effect = UnauthorizedError()
 
         response = self.controller.create_immunization(aws_event)
@@ -94,7 +114,13 @@ class TestFhirControllerAuthorization(unittest.TestCase):
         self.assertEqual(body["issue"][0]["code"], "forbidden")
 
     def test_create_imms_unknown_permission(self):
-        aws_event = {"headers":{"VaccineTypePermissions":"COVID19:create", "SupplierSystem" : "Test"},"body": create_covid_19_immunization(str(uuid.uuid4())).json()}
+        aws_event = {
+            "headers": {
+                "VaccineTypePermissions": "COVID19:create",
+                "SupplierSystem": "Test",
+            },
+            "body": create_covid_19_immunization(str(uuid.uuid4())).json(),
+        }
         self.authorizer.authorize.side_effect = UnknownPermission()
 
         response = self.controller.create_immunization(aws_event)
@@ -107,30 +133,71 @@ class TestFhirControllerAuthorization(unittest.TestCase):
     # EndpointOperation.UPDATE
     def test_update_imms_authorized(self):
         imms_id = str(uuid.uuid4())
-        aws_event = {"headers": {"E-Tag":1,"VaccineTypePermissions":"COVID19:update", "SupplierSystem" : "Test"},"pathParameters": {"id": imms_id}, "body": create_covid_19_immunization(imms_id).json()}
-        self.service.get_immunization_by_id_all.return_value = {"resource":"new_value","Version":2,"DeletedAt": False, "VaccineType":"COVID19"}
-        self.service.update_immunization.return_value = UpdateOutcome.UPDATE, "value doesn't matter"
+        aws_event = {
+            "headers": {
+                "E-Tag": 1,
+                "VaccineTypePermissions": "COVID19:update",
+                "SupplierSystem": "Test",
+            },
+            "pathParameters": {"id": imms_id},
+            "body": create_covid_19_immunization(imms_id).json(),
+        }
+        self.service.get_immunization_by_id_all.return_value = {
+            "resource": "new_value",
+            "Version": 2,
+            "DeletedAt": False,
+            "VaccineType": "COVID19",
+        }
+        self.service.update_immunization.return_value = (
+            UpdateOutcome.UPDATE,
+            "value doesn't matter",
+        )
 
         _ = self.controller.update_immunization(aws_event)
 
-        self.authorizer.authorize.assert_called_once_with(EndpointOperation.UPDATE, aws_event)
-    
+        self.authorizer.authorize.assert_called_once_with(
+            EndpointOperation.UPDATE, aws_event
+        )
+
     def test_update_imms_unauthorized_vaxx_in_record(self):
         imms_id = str(uuid.uuid4())
-        aws_event = {"headers": {"E-Tag":1,"VaccineTypePermissions":"COVID19:update", "SupplierSystem" : "Test"},"pathParameters": {"id": imms_id}, "body": create_covid_19_immunization(imms_id).json()}
-        self.service.get_immunization_by_id_all.return_value = {"resource":"new_value","Version":1,"DeletedAt": False, "VaccineType":"Flu"}
-        
+        aws_event = {
+            "headers": {
+                "E-Tag": 1,
+                "VaccineTypePermissions": "COVID19:update",
+                "SupplierSystem": "Test",
+            },
+            "pathParameters": {"id": imms_id},
+            "body": create_covid_19_immunization(imms_id).json(),
+        }
+        self.service.get_immunization_by_id_all.return_value = {
+            "resource": "new_value",
+            "Version": 1,
+            "DeletedAt": False,
+            "VaccineType": "Flu",
+        }
+
         response = self.controller.update_immunization(aws_event)
         self.assertEqual(response["statusCode"], 403)
         body = json.loads(response["body"])
         self.assertEqual(body["resourceType"], "OperationOutcome")
-        self.assertEqual(body["issue"][0]["code"], "forbidden")            
-            
-        self.authorizer.authorize.assert_called_once_with(EndpointOperation.UPDATE, aws_event)
+        self.assertEqual(body["issue"][0]["code"], "forbidden")
+
+        self.authorizer.authorize.assert_called_once_with(
+            EndpointOperation.UPDATE, aws_event
+        )
 
     def test_update_imms_unauthorized(self):
         imms_id = str(uuid.uuid4())
-        aws_event = {"headers": {"E-Tag":1,"VaccineTypePermissions":"COVID19:update", "SupplierSystem" : "Test"},"pathParameters": {"id": imms_id}, "body": create_covid_19_immunization(imms_id).json()}
+        aws_event = {
+            "headers": {
+                "E-Tag": 1,
+                "VaccineTypePermissions": "COVID19:update",
+                "SupplierSystem": "Test",
+            },
+            "pathParameters": {"id": imms_id},
+            "body": create_covid_19_immunization(imms_id).json(),
+        }
         self.authorizer.authorize.side_effect = UnauthorizedError()
 
         response = self.controller.update_immunization(aws_event)
@@ -142,7 +209,15 @@ class TestFhirControllerAuthorization(unittest.TestCase):
 
     def test_update_imms_unknown_permission(self):
         imms_id = str(uuid.uuid4())
-        aws_event = {"headers": {"E-Tag":1,"VaccineTypePermissions":"COVID19:update", "SupplierSystem" : "Test"},"pathParameters": {"id": imms_id}, "body": create_covid_19_immunization(imms_id).json()}
+        aws_event = {
+            "headers": {
+                "E-Tag": 1,
+                "VaccineTypePermissions": "COVID19:update",
+                "SupplierSystem": "Test",
+            },
+            "pathParameters": {"id": imms_id},
+            "body": create_covid_19_immunization(imms_id).json(),
+        }
         self.authorizer.authorize.side_effect = UnknownPermission()
 
         response = self.controller.update_immunization(aws_event)
@@ -154,14 +229,28 @@ class TestFhirControllerAuthorization(unittest.TestCase):
 
     # EndpointOperation.DELETE
     def test_delete_imms_authorized(self):
-        aws_event = {"pathParameters": {"id": "an-id"},"headers": {"VaccineTypePermissions":"COVID19:delete", "SupplierSystem" : "Test"}}
+        aws_event = {
+            "pathParameters": {"id": "an-id"},
+            "headers": {
+                "VaccineTypePermissions": "COVID19:delete",
+                "SupplierSystem": "Test",
+            },
+        }
 
         _ = self.controller.delete_immunization(aws_event)
 
-        self.authorizer.authorize.assert_called_once_with(EndpointOperation.DELETE, aws_event)
+        self.authorizer.authorize.assert_called_once_with(
+            EndpointOperation.DELETE, aws_event
+        )
 
     def test_delete_imms_unauthorized(self):
-        aws_event = {"pathParameters": {"id": "an-id"},"headers": {"VaccineTypePermissions":"COVID19:delete", "SupplierSystem" : "Test"}}
+        aws_event = {
+            "pathParameters": {"id": "an-id"},
+            "headers": {
+                "VaccineTypePermissions": "COVID19:delete",
+                "SupplierSystem": "Test",
+            },
+        }
         self.authorizer.authorize.side_effect = UnauthorizedError()
 
         response = self.controller.delete_immunization(aws_event)
@@ -172,7 +261,13 @@ class TestFhirControllerAuthorization(unittest.TestCase):
         self.assertEqual(body["issue"][0]["code"], "forbidden")
 
     def test_delete_imms_unknown_permission(self):
-        aws_event = {"pathParameters": {"id": "an-id"},"headers": {"VaccineTypePermissions":"COVID19:delete", "SupplierSystem" : "Test"}}
+        aws_event = {
+            "pathParameters": {"id": "an-id"},
+            "headers": {
+                "VaccineTypePermissions": "COVID19:delete",
+                "SupplierSystem": "Test",
+            },
+        }
         self.authorizer.authorize.side_effect = UnknownPermission()
 
         response = self.controller.delete_immunization(aws_event)
@@ -188,7 +283,9 @@ class TestFhirControllerAuthorization(unittest.TestCase):
 
         _ = self.controller.search_immunizations(aws_event)
 
-        self.authorizer.authorize.assert_called_once_with(EndpointOperation.SEARCH, aws_event)
+        self.authorizer.authorize.assert_called_once_with(
+            EndpointOperation.SEARCH, aws_event
+        )
 
     def test_search_imms_unauthorized(self):
         aws_event = {"pathParameters": {"id": "an-id"}}

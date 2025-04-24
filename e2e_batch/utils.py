@@ -26,7 +26,14 @@ from constants import (
 )
 
 
-def generate_csv(fore_name, dose_amount, action_flag, headers="NHS_NUMBER", same_id=False, file_key=False):
+def generate_csv(
+    fore_name,
+    dose_amount,
+    action_flag,
+    headers="NHS_NUMBER",
+    same_id=False,
+    file_key=False,
+):
     """
     Generate a CSV file with 2 or 3 rows depending on the action_flag.
 
@@ -58,7 +65,9 @@ def generate_csv(fore_name, dose_amount, action_flag, headers="NHS_NUMBER", same
         else:
             unique_ids = [str(uuid.uuid4()), str(uuid.uuid4())]
             for unique_id in unique_ids:
-                data.append(create_row(unique_id, fore_name, dose_amount, "NEW", headers))
+                data.append(
+                    create_row(unique_id, fore_name, dose_amount, "NEW", headers)
+                )
 
     elif action_flag == "UPDATE":
         unique_id = str(uuid.uuid4())
@@ -106,7 +115,9 @@ def upload_file_to_s3(file_name, bucket, prefix):
 def wait_for_ack_file(ack_prefix, input_file_name, timeout=120):
     """Poll the ACK_BUCKET for an ack file that contains the input_file_name as a substring."""
 
-    filename_without_ext = input_file_name[:-4] if input_file_name.endswith(".csv") else input_file_name
+    filename_without_ext = (
+        input_file_name[:-4] if input_file_name.endswith(".csv") else input_file_name
+    )
     if ack_prefix:
         search_pattern = f"{ACK_PREFIX}{filename_without_ext}"
         ack_prefix = ACK_PREFIX
@@ -135,7 +146,9 @@ def get_file_content_from_s3(bucket, key):
     return content
 
 
-def check_ack_file_content(content, response_code, operation_outcome, operation_requested):
+def check_ack_file_content(
+    content, response_code, operation_outcome, operation_requested
+):
     """
     Parse and validate the acknowledgment (ACK) CSV file content.
 
@@ -171,7 +184,9 @@ def check_ack_file_content(content, response_code, operation_outcome, operation_
 
     if operation_outcome and DUPLICATE in operation_outcome:
         # Handle DUPLICATE scenario:
-        assert len(rows) == 2, f"Expected 2 rows for DUPLICATE scenario, got {len(rows)}"
+        assert (
+            len(rows) == 2
+        ), f"Expected 2 rows for DUPLICATE scenario, got {len(rows)}"
 
         first_row = rows[0]
         validate_header_response_code(first_row, 0, "OK")
@@ -203,7 +218,9 @@ def validate_header_response_code(row, index, expected_code):
     """Ensure HEADER_RESPONSE_CODE exists and matches expected response code."""
 
     if "HEADER_RESPONSE_CODE" not in row:
-        raise ValueError(f"Row {index + 1} does not have a 'HEADER_RESPONSE_CODE' column.")
+        raise ValueError(
+            f"Row {index + 1} does not have a 'HEADER_RESPONSE_CODE' column."
+        )
     if row["HEADER_RESPONSE_CODE"].strip() != expected_code:
         raise ValueError(
             f"Row {index + 1}: Expected RESPONSE '{expected_code}', but found '{row['HEADER_RESPONSE_CODE']}'"
@@ -248,13 +265,18 @@ def validate_ok_response(row, index, operation_requested):
     if "LOCAL_ID" not in row:
         raise ValueError(f"Row {index + 1} does not have a 'LOCAL_ID' column.")
     identifier_pk = extract_identifier_pk(row, index)
-    dynamo_pk, operation, is_reinstate = fetch_pk_and_operation_from_dynamodb(identifier_pk)
+    dynamo_pk, operation, is_reinstate = fetch_pk_and_operation_from_dynamodb(
+        identifier_pk
+    )
     if dynamo_pk != row["IMMS_ID"]:
         raise DynamoDBMismatchError(
             f"Row {index + 1}: Mismatch - DynamoDB PK '{dynamo_pk}' does not match ACK file IMMS_ID '{row['IMMS_ID']}'"
         )
 
-    if operation_requested == "reinstated" or operation_requested == "update-reinstated":
+    if (
+        operation_requested == "reinstated"
+        or operation_requested == "update-reinstated"
+    ):
         if operation != "UPDATE":
             raise DynamoDBMismatchError(
                 (
@@ -284,7 +306,9 @@ def extract_identifier_pk(row, index):
         local_id, unique_id_uri = row["LOCAL_ID"].split("^")
         return f"{unique_id_uri}#{local_id}"
     except ValueError:
-        raise AssertionError(f"Row {index + 1}: Invalid LOCAL_ID format - {row['LOCAL_ID']}")
+        raise AssertionError(
+            f"Row {index + 1}: Invalid LOCAL_ID format - {row['LOCAL_ID']}"
+        )
 
 
 def fetch_pk_and_operation_from_dynamodb(identifier_pk):
@@ -312,8 +336,16 @@ def fetch_pk_and_operation_from_dynamodb(identifier_pk):
             KeyConditionExpression="IdentifierPK = :identifier_pk",
             ExpressionAttributeValues={":identifier_pk": identifier_pk},
         )
-        if "Items" in response and response["Items"] and "DeletedAt" in response["Items"][0]:
-            return (response["Items"][0]["PK"], response["Items"][0]["Operation"], response["Items"][0]["DeletedAt"])
+        if (
+            "Items" in response
+            and response["Items"]
+            and "DeletedAt" in response["Items"][0]
+        ):
+            return (
+                response["Items"][0]["PK"],
+                response["Items"][0]["Operation"],
+                response["Items"][0]["DeletedAt"],
+            )
         if "Items" in response and response["Items"]:
             return (response["Items"][0]["PK"], response["Items"][0]["Operation"], None)
         else:
@@ -330,7 +362,9 @@ def validate_row_count(source_file_name, ack_file_name):
     Raises:
         AssertionError: If the row counts do not match.
     """
-    source_file_row_count = fetch_row_count(SOURCE_BUCKET, f"archive/{source_file_name}")
+    source_file_row_count = fetch_row_count(
+        SOURCE_BUCKET, f"archive/{source_file_name}"
+    )
     ack_file_row_count = fetch_row_count(ACK_BUCKET, ack_file_name)
     assert (
         source_file_row_count == ack_file_row_count
@@ -372,16 +406,30 @@ def generate_csv_with_ordered_100000_rows(file_name=None):
     # Generate first 300 rows as structured NEW → UPDATE → DELETE sets
     for i in range(special_row_count // 3):  # 100 sets
         new_row = create_row(
-            unique_id=unique_ids[i], fore_name="PHYLIS", dose_amount="0.3", action_flag="NEW", header="NHS_NUMBER"
+            unique_id=unique_ids[i],
+            fore_name="PHYLIS",
+            dose_amount="0.3",
+            action_flag="NEW",
+            header="NHS_NUMBER",
         )
         update_row = create_row(
-            unique_id=unique_ids[i], fore_name="PHYLIS", dose_amount="0.4", action_flag="UPDATE", header="NHS_NUMBER"
+            unique_id=unique_ids[i],
+            fore_name="PHYLIS",
+            dose_amount="0.4",
+            action_flag="UPDATE",
+            header="NHS_NUMBER",
         )
         delete_row = create_row(
-            unique_id=unique_ids[i], fore_name="PHYLIS", dose_amount="0.1", action_flag="DELETE", header="NHS_NUMBER"
+            unique_id=unique_ids[i],
+            fore_name="PHYLIS",
+            dose_amount="0.1",
+            action_flag="DELETE",
+            header="NHS_NUMBER",
         )
 
-        special_data.append((new_row, update_row, delete_row))  # Keep them as ordered tuples
+        special_data.append(
+            (new_row, update_row, delete_row)
+        )  # Keep them as ordered tuples
 
     # Shuffle the sets (ensuring NEW is always first in each set)
     random.shuffle(special_data)
@@ -392,7 +440,11 @@ def generate_csv_with_ordered_100000_rows(file_name=None):
     # Generate remaining 99,700 rows as CREATE operations
     create_data = [
         create_row(
-            unique_id=str(uuid.uuid4()), action_flag="NEW", dose_amount="0.3", fore_name="PHYLIS", header="NHS_NUMBER"
+            unique_id=str(uuid.uuid4()),
+            action_flag="NEW",
+            dose_amount="0.3",
+            fore_name="PHYLIS",
+            header="NHS_NUMBER",
         )
         for _ in range(total_rows - special_row_count)
     ]
@@ -404,12 +456,20 @@ def generate_csv_with_ordered_100000_rows(file_name=None):
     random.shuffle(full_data)
 
     # Sort data so that within each unique ID, "NEW" appears before "UPDATE" and "DELETE"
-    full_data.sort(key=lambda x: (x["UNIQUE_ID"], x["ACTION_FLAG"] != "NEW", x["ACTION_FLAG"] == "DELETE"))
+    full_data.sort(
+        key=lambda x: (
+            x["UNIQUE_ID"],
+            x["ACTION_FLAG"] != "NEW",
+            x["ACTION_FLAG"] == "DELETE",
+        )
+    )
 
     # Convert to DataFrame and save as CSV
     df = pd.DataFrame(full_data)
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%f")[:-3]
-    file_name = f"RSV_Vaccinations_v5_YGM41_{timestamp}.csv" if not file_name else file_name
+    file_name = (
+        f"RSV_Vaccinations_v5_YGM41_{timestamp}.csv" if not file_name else file_name
+    )
     df.to_csv(file_name, index=False, sep="|", quoting=csv.QUOTE_MINIMAL)
     return file_name
 
@@ -421,7 +481,10 @@ def verify_final_ack_file(file_key):
 
     row_count = len(df)
     # Check if all HEADER_RESPONSE_CODE values are "OK"
-    all_ok = df[HEADER_RESPONSE_CODE_COLUMN].nunique() == 1 and df[HEADER_RESPONSE_CODE_COLUMN].iloc[0] == "OK"
+    all_ok = (
+        df[HEADER_RESPONSE_CODE_COLUMN].nunique() == 1
+        and df[HEADER_RESPONSE_CODE_COLUMN].iloc[0] == "OK"
+    )
     if row_count != 100000 or not all_ok:
         raise AssertionError(
             f"Final Ack file '{file_key}' failed validation. "

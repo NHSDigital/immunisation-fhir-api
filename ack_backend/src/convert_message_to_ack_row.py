@@ -16,7 +16,9 @@ def get_error_message_for_ack_file(message_diagnostics) -> Union[None, str]:
     if message_diagnostics.get("statusCode") in (None, 500):
         return "An unhandled error occurred during batch processing"
 
-    return message_diagnostics.get("error_message", "Unable to determine diagnostics issue")
+    return message_diagnostics.get(
+        "error_message", "Unable to determine diagnostics issue"
+    )
 
 
 @convert_messsage_to_ack_row_logging_decorator
@@ -31,7 +33,8 @@ def convert_message_to_ack_row(message, created_at_formatted_string):
         created_at_formatted_string=created_at_formatted_string,
         local_id=message.get("local_id"),
         row_id=message.get("row_id"),
-        successful_api_response=diagnostics is None,  # Response is successful if and only if there are no diagnostics
+        successful_api_response=diagnostics
+        is None,  # Response is successful if and only if there are no diagnostics
         diagnostics=get_error_message_for_ack_file(diagnostics),
         imms_id=message.get("imms_id"),
     )

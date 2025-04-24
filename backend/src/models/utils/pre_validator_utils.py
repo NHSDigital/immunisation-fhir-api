@@ -27,18 +27,25 @@ class PreValidation:
 
         if defined_length:
             if len(field_value) != defined_length:
-                raise ValueError(f"{field_location} must be {defined_length} characters")
+                raise ValueError(
+                    f"{field_location} must be {defined_length} characters"
+                )
         else:
             if len(field_value) == 0:
                 raise ValueError(f"{field_location} must be a non-empty string")
 
         if max_length:
             if len(field_value) > max_length:
-                raise ValueError(f"{field_location} must be {max_length} or fewer characters")
+                raise ValueError(
+                    f"{field_location} must be {max_length} or fewer characters"
+                )
 
         if predefined_values:
             if field_value not in predefined_values:
-                raise ValueError(f"{field_location} must be one of the following: " + str(", ".join(predefined_values)))
+                raise ValueError(
+                    f"{field_location} must be one of the following: "
+                    + str(", ".join(predefined_values))
+                )
 
         if not spaces_allowed:
             if " " in field_value:
@@ -62,7 +69,9 @@ class PreValidation:
 
         if defined_length:
             if len(field_value) != defined_length:
-                raise ValueError(f"{field_location} must be an array of length {defined_length}")
+                raise ValueError(
+                    f"{field_location} must be an array of length {defined_length}"
+                )
         else:
             if len(field_value) == 0:
                 raise ValueError(f"{field_location} must be a non-empty array")
@@ -72,14 +81,18 @@ class PreValidation:
                 if not isinstance(element, str):
                     raise TypeError(f"{field_location} must be an array of strings")
                 if len(element) == 0:
-                    raise ValueError(f"{field_location} must be an array of non-empty strings")
+                    raise ValueError(
+                        f"{field_location} must be an array of non-empty strings"
+                    )
 
         if elements_are_dicts:
             for element in field_value:
                 if not isinstance(element, dict):
                     raise TypeError(f"{field_location} must be an array of objects")
                 if len(element) == 0:
-                    raise ValueError(f"{field_location} must be an array of non-empty objects")
+                    raise ValueError(
+                        f"{field_location} must be an array of non-empty objects"
+                    )
 
     @staticmethod
     def for_date(field_value: str, field_location: str):
@@ -146,24 +159,21 @@ class PreValidation:
                     datetime.strptime(field_value, "%Y-%m-%dT%H:%M:%S.%f%z")
                 except ValueError as error:
                     raise ValueError(error_message) from error
-                    
+
     @staticmethod
     def for_snomed_code(field_value: str, field_location: str):
         """
         Apply prevalidation to snomed code to ensure that its a valid one.
         """
 
-        error_message = (
-            f"{field_location} is not a valid snomed code"
-        )
-        
+        error_message = f"{field_location} is not a valid snomed code"
+
         try:
-            is_valid = is_valid_simple_snomed(field_value)  
+            is_valid = is_valid_simple_snomed(field_value)
         except Exception:
             raise ValueError(error_message)
         if not is_valid:
             raise ValueError(error_message)
-
 
     @staticmethod
     def for_boolean(field_value: str, field_location: str):
@@ -172,7 +182,9 @@ class PreValidation:
             raise TypeError(f"{field_location} must be a boolean")
 
     @staticmethod
-    def for_positive_integer(field_value: int, field_location: str, max_value: int = None):
+    def for_positive_integer(
+        field_value: int, field_location: str, max_value: int = None
+    ):
         """
         Apply pre-validation to an integer field to ensure that it is a positive integer,
         which does not exceed the maximum allowed value (if applicable)
@@ -185,7 +197,9 @@ class PreValidation:
 
         if max_value:
             if field_value > max_value:
-                raise ValueError(f"{field_location} must be an integer in the range 1 to {max_value}")
+                raise ValueError(
+                    f"{field_location} must be an integer in the range 1 to {max_value}"
+                )
 
     @staticmethod
     def for_integer_or_decimal(field_value: Union[int, Decimal], field_location: str):
@@ -213,7 +227,8 @@ class PreValidation:
         for item in list_to_check:
             if item[unique_value_in_list] in found:
                 raise ValueError(
-                    f"{field_location.replace('FIELD_TO_REPLACE', item[unique_value_in_list])}" + " must be unique"
+                    f"{field_location.replace('FIELD_TO_REPLACE', item[unique_value_in_list])}"
+                    + " must be unique"
                 )
 
             found.append(item[unique_value_in_list])

@@ -1,10 +1,7 @@
-''' Immunization Data Model based on Fhir Revision 4 spec '''
+"""Immunization Data Model based on Fhir Revision 4 spec"""
 
 from typing import Optional, Literal, Any
-from pydantic import (
-    BaseModel,
-    PositiveInt
-)
+from pydantic import BaseModel, PositiveInt
 import datetime
 
 import fhir_api.models.fhir_r4.code_types as code_types
@@ -33,20 +30,23 @@ class ProtocolApplied(BaseModel):
 
 
 class Author(BaseModel):
-    ''' Author Model '''
+    """Author Model"""
+
     authorRefernce: Optional[Reference]
     authorString: Optional[str] = FhirR4Fields.string
 
 
 class Annotation(BaseModel):
-    ''' Annotation Model '''
+    """Annotation Model"""
+
     author: Optional[Author]
     time: Optional[datetime.datetime] = FhirR4Fields.dateTime
     text: Optional[str] = FhirR4Fields.markdown
 
 
 class Immunization(BaseModel):
-    ''' Immunization Record for Reading '''
+    """Immunization Record for Reading"""
+
     resourceType: Literal["Immunization"]
     identifier: Optional[list[Identifier]]
     status: code_types.status_codes
@@ -77,7 +77,7 @@ class Immunization(BaseModel):
 
     def dict(self, *args, **kwargs) -> dict[str, Any]:
         """
-            Override the default dict method to exclude None values in the response
+        Override the default dict method to exclude None values in the response
         """
-        kwargs.pop('exclude_none', None)
+        kwargs.pop("exclude_none", None)
         return super().dict(*args, exclude_none=True, **kwargs)

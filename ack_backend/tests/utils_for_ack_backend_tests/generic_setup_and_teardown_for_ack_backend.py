@@ -1,6 +1,10 @@
 """Generic setup and teardown for ACK backend tests"""
 
-from tests.utils_for_ack_backend_tests.mock_environment_variables import BucketNames, Firehose, REGION_NAME
+from tests.utils_for_ack_backend_tests.mock_environment_variables import (
+    BucketNames,
+    Firehose,
+    REGION_NAME,
+)
 
 
 class GenericSetUp:
@@ -14,9 +18,14 @@ class GenericSetUp:
     def __init__(self, s3_client=None, firehose_client=None):
 
         if s3_client:
-            for bucket_name in [BucketNames.SOURCE, BucketNames.DESTINATION, BucketNames.MOCK_FIREHOSE]:
+            for bucket_name in [
+                BucketNames.SOURCE,
+                BucketNames.DESTINATION,
+                BucketNames.MOCK_FIREHOSE,
+            ]:
                 s3_client.create_bucket(
-                    Bucket=bucket_name, CreateBucketConfiguration={"LocationConstraint": REGION_NAME}
+                    Bucket=bucket_name,
+                    CreateBucketConfiguration={"LocationConstraint": REGION_NAME},
                 )
 
         if firehose_client:
@@ -37,10 +46,18 @@ class GenericTearDown:
     def __init__(self, s3_client=None, firehose_client=None):
 
         if s3_client:
-            for bucket_name in [BucketNames.SOURCE, BucketNames.DESTINATION, BucketNames.MOCK_FIREHOSE]:
-                for obj in s3_client.list_objects_v2(Bucket=bucket_name).get("Contents", []):
+            for bucket_name in [
+                BucketNames.SOURCE,
+                BucketNames.DESTINATION,
+                BucketNames.MOCK_FIREHOSE,
+            ]:
+                for obj in s3_client.list_objects_v2(Bucket=bucket_name).get(
+                    "Contents", []
+                ):
                     s3_client.delete_object(Bucket=bucket_name, Key=obj["Key"])
                 s3_client.delete_bucket(Bucket=bucket_name)
 
         if firehose_client:
-            firehose_client.delete_delivery_stream(DeliveryStreamName=Firehose.STREAM_NAME)
+            firehose_client.delete_delivery_stream(
+                DeliveryStreamName=Firehose.STREAM_NAME
+            )

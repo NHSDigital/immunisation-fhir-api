@@ -26,7 +26,9 @@ class FileDetails:
     vaccine type.
     """
 
-    def __init__(self, supplier: str, vaccine_type: str, ods_code: str, file_number: int = 1):
+    def __init__(
+        self, supplier: str, vaccine_type: str, ods_code: str, file_number: int = 1
+    ):
         self.vaccine_type = vaccine_type.upper()
         self.ods_code = ods_code.upper()
         self.supplier = supplier.upper()
@@ -37,8 +39,12 @@ class FileDetails:
         self.name = f"{self.vaccine_type}/ {self.supplier} file"
 
         file_date_and_time_string = f"20000101T0000000{file_number}"
-        self.file_key = f"{vaccine_type}_Vaccinations_v5_{ods_code}_{file_date_and_time_string}.csv"
-        self.ack_file_key = f"ack/{self.file_key[:-4]}_InfAck_{self.created_at_formatted_string}.csv"
+        self.file_key = (
+            f"{vaccine_type}_Vaccinations_v5_{ods_code}_{file_date_and_time_string}.csv"
+        )
+        self.ack_file_key = (
+            f"ack/{self.file_key[:-4]}_InfAck_{self.created_at_formatted_string}.csv"
+        )
 
         self.permissions_list = [f"{self.vaccine_type}_FULL"]
         self.permissions_config = {self.supplier: self.permissions_list}

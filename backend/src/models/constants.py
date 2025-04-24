@@ -6,7 +6,9 @@ class Constants:
 
     STATUSES = ["completed"]
     GENDERS = ["male", "female", "other", "unknown"]
-    EXTENSION_URL = ["https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure"]
+    EXTENSION_URL = [
+        "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure"
+    ]
     NOT_DONE_VACCINE_CODES = ["NAVU", "UNC", "UNK", "NA"]
     ALLOWED_KEYS = {
         "Immunization": {
@@ -35,7 +37,15 @@ class Constants:
             "protocolApplied",
         },
         "Practitioner": {"resourceType", "id", "name"},
-        "Patient": {"resourceType", "id", "identifier", "name", "gender", "birthDate", "address"},
+        "Patient": {
+            "resourceType",
+            "id",
+            "identifier",
+            "name",
+            "gender",
+            "birthDate",
+            "address",
+        },
     }
 
     ALLOWED_CONTAINED_RESOURCES = {"Practitioner", "Patient"}

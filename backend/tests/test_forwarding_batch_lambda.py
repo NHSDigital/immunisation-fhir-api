@@ -20,7 +20,11 @@ from tests.utils.test_utils_for_batch import ForwarderValues, MockFhirImmsResour
 
 
 with patch.dict("os.environ", ForwarderValues.MOCK_ENVIRONMENT_DICT):
-    from forwarding_batch_lambda import forward_lambda_handler, create_diagnostics_dictionary, forward_request_to_dynamo
+    from forwarding_batch_lambda import (
+        forward_lambda_handler,
+        create_diagnostics_dictionary,
+        forward_request_to_dynamo,
+    )
 
 
 @mock_dynamodb
@@ -46,7 +50,10 @@ class TestForwardLambdaHandler(TestCase):
                     "IndexName": "IdentifierGSI",
                     "KeySchema": [{"AttributeName": "IdentifierPK", "KeyType": "HASH"}],
                     "Projection": {"ProjectionType": "ALL"},
-                    "ProvisionedThroughput": {"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
+                    "ProvisionedThroughput": {
+                        "ReadCapacityUnits": 5,
+                        "WriteCapacityUnits": 5,
+                    },
                 },
                 {
                     "IndexName": "PatientGSI",
@@ -54,7 +61,10 @@ class TestForwardLambdaHandler(TestCase):
                         {"AttributeName": "PatientPK", "KeyType": "HASH"},
                     ],
                     "Projection": {"ProjectionType": "ALL"},
-                    "ProvisionedThroughput": {"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
+                    "ProvisionedThroughput": {
+                        "ReadCapacityUnits": 5,
+                        "WriteCapacityUnits": 5,
+                    },
                 },
             ],
         )
@@ -75,7 +85,10 @@ class TestForwardLambdaHandler(TestCase):
 
     @staticmethod
     def generate_details_from_processing(
-        include_fhir_json=True, operation_requested="CREATE", local_id="local-1", identifier_value=None
+        include_fhir_json=True,
+        operation_requested="CREATE",
+        local_id="local-1",
+        identifier_value=None,
     ):
         """Helper to generate details_from_processing for row data."""
         details = {
@@ -83,7 +96,9 @@ class TestForwardLambdaHandler(TestCase):
             "local_id": local_id,
         }
         if include_fhir_json:
-            details["fhir_json"] = TestForwardLambdaHandler.generate_fhir_json(include_fhir_json, identifier_value)
+            details["fhir_json"] = TestForwardLambdaHandler.generate_fhir_json(
+                include_fhir_json, identifier_value
+            )
         return details
 
     @staticmethod
@@ -97,11 +112,13 @@ class TestForwardLambdaHandler(TestCase):
         diagnostics=None,
     ):
         """Generates input rows for test_cases."""
-        details_from_processing = TestForwardLambdaHandler.generate_details_from_processing(
-            include_fhir_json=include_fhir_json,
-            operation_requested=operation_requested,
-            local_id=f"local-{row_id}",
-            identifier_value=identifier_value,
+        details_from_processing = (
+            TestForwardLambdaHandler.generate_details_from_processing(
+                include_fhir_json=include_fhir_json,
+                operation_requested=operation_requested,
+                local_id=f"local-{row_id}",
+                identifier_value=identifier_value,
+            )
         )
         row = {
             "row_id": f"row-{row_id}",
@@ -121,16 +138,25 @@ class TestForwardLambdaHandler(TestCase):
         records = []
         for case in test_cases:
             message_body = case["input"]
-            encoded_body = base64.b64encode(json.dumps(message_body).encode("utf-8")).decode("utf-8")
+            encoded_body = base64.b64encode(
+                json.dumps(message_body).encode("utf-8")
+            ).decode("utf-8")
             records.append({"kinesis": {"data": encoded_body}})
         return {"Records": records}
 
     def assert_values_in_sqs_messages(self, mock_send_message, test_cases):
         """Assert keys and values are found in SQS messages."""
 
-        sqs_messages = [json.loads(call[1]["MessageBody"]) for call in mock_send_message.call_args_list]
+        sqs_messages = [
+            json.loads(call[1]["MessageBody"])
+            for call in mock_send_message.call_args_list
+        ]
 
-        sqs_messages = sqs_messages[0] if len(sqs_messages) == 1 and isinstance(sqs_messages[0], list) else sqs_messages
+        sqs_messages = (
+            sqs_messages[0]
+            if len(sqs_messages) == 1 and isinstance(sqs_messages[0], list)
+            else sqs_messages
+        )
 
         for idx, test_case in enumerate(test_cases):
             expected_keys = test_case["expected_keys"]
@@ -191,7 +217,10 @@ class TestForwardLambdaHandler(TestCase):
                     identifier_value="single_test_create",
                 ),
                 "expected_keys": ForwarderValues.EXPECTED_KEYS,
-                "expected_values": {"row_id": "row-1", **ForwarderValues.EXPECTED_VALUES},
+                "expected_values": {
+                    "row_id": "row-1",
+                    **ForwarderValues.EXPECTED_VALUES,
+                },
                 "expected_dynamo_item": {
                     "IdentifierPK": "https://www.ravs.england.nhs.uk/#single_test_create",
                     "Operation": "CREATE",
@@ -199,14 +228,22 @@ class TestForwardLambdaHandler(TestCase):
             },
             {
                 "name": "Single Update Success",
-                "input": self.generate_input(row_id=1, operation_requested="UPDATE", include_fhir_json=True),
+                "input": self.generate_input(
+                    row_id=1, operation_requested="UPDATE", include_fhir_json=True
+                ),
                 "expected_keys": ForwarderValues.EXPECTED_KEYS,
-                "expected_values": {"row_id": "row-1", "imms_id": pk_test, **ForwarderValues.EXPECTED_VALUES},
+                "expected_values": {
+                    "row_id": "row-1",
+                    "imms_id": pk_test,
+                    **ForwarderValues.EXPECTED_VALUES,
+                },
                 "expected_dynamo_item": table_item,
             },
             {
                 "name": "Single Delete Success",
-                "input": self.generate_input(row_id=1, operation_requested="DELETE", include_fhir_json=True),
+                "input": self.generate_input(
+                    row_id=1, operation_requested="DELETE", include_fhir_json=True
+                ),
                 "expected_keys": ForwarderValues.EXPECTED_KEYS,
                 "expected_values": {
                     "row_id": "row-1",
@@ -264,52 +301,78 @@ class TestForwardLambdaHandler(TestCase):
             {
                 "name": "Row 1: Create Success",
                 "input": self.generate_input(
-                    row_id=1, operation_requested="CREATE", include_fhir_json=True, identifier_value="RSV_CREATE"
+                    row_id=1,
+                    operation_requested="CREATE",
+                    include_fhir_json=True,
+                    identifier_value="RSV_CREATE",
                 ),
                 "expected_keys": ForwarderValues.EXPECTED_KEYS,
-                "expected_values": {"row_id": "row-1", **ForwarderValues.EXPECTED_VALUES},
+                "expected_values": {
+                    "row_id": "row-1",
+                    **ForwarderValues.EXPECTED_VALUES,
+                },
             },
             {
                 "name": "Row 2: Duplication Error: Create failure ",
-                "input": self.generate_input(row_id=2, operation_requested="CREATE", include_fhir_json=True),
+                "input": self.generate_input(
+                    row_id=2, operation_requested="CREATE", include_fhir_json=True
+                ),
                 "expected_keys": ForwarderValues.EXPECTED_KEYS_DIAGNOSTICS,
                 "expected_values": {
                     "row_id": "row-2",
                     "diagnostics": create_diagnostics_dictionary(
-                        IdentifierDuplicationError("https://www.ravs.england.nhs.uk/#RSV_002")
+                        IdentifierDuplicationError(
+                            "https://www.ravs.england.nhs.uk/#RSV_002"
+                        )
                     ),
                 },
             },
             {
                 "name": "Row 3: Update success",
-                "input": self.generate_input(row_id=3, operation_requested="UPDATE", include_fhir_json=True),
+                "input": self.generate_input(
+                    row_id=3, operation_requested="UPDATE", include_fhir_json=True
+                ),
                 "expected_keys": ForwarderValues.EXPECTED_KEYS,
-                "expected_values": {"row_id": "row-3", "imms_id": "Immunization#4d2ac1eb-080f-4e54-9598-f2d53334681c"},
+                "expected_values": {
+                    "row_id": "row-3",
+                    "imms_id": "Immunization#4d2ac1eb-080f-4e54-9598-f2d53334681c",
+                },
             },
             {
                 "name": "Row 4: Update failure",
                 "input": self.generate_input(
-                    row_id=4, operation_requested="UPDATE", include_fhir_json=True, identifier_value="RSV_UPDATE"
+                    row_id=4,
+                    operation_requested="UPDATE",
+                    include_fhir_json=True,
+                    identifier_value="RSV_UPDATE",
                 ),
                 "expected_keys": ForwarderValues.EXPECTED_KEYS_DIAGNOSTICS,
                 "expected_values": {
                     "row_id": "row-4",
                     "diagnostics": create_diagnostics_dictionary(
                         ResourceNotFoundError(
-                            resource_type="Immunization", resource_id="https://www.ravs.england.nhs.uk/#RSV_UPDATE"
+                            resource_type="Immunization",
+                            resource_id="https://www.ravs.england.nhs.uk/#RSV_UPDATE",
                         )
                     ),
                 },
             },
             {
                 "name": "Row 5: Delete Success",
-                "input": self.generate_input(row_id=5, operation_requested="DELETE", include_fhir_json=True),
+                "input": self.generate_input(
+                    row_id=5, operation_requested="DELETE", include_fhir_json=True
+                ),
                 "expected_keys": ForwarderValues.EXPECTED_KEYS,
-                "expected_values": {"row_id": "row-5", "imms_id": "Immunization#4d2ac1eb-080f-4e54-9598-f2d53334681c"},
+                "expected_values": {
+                    "row_id": "row-5",
+                    "imms_id": "Immunization#4d2ac1eb-080f-4e54-9598-f2d53334681c",
+                },
             },
             {
                 "name": "Row 6: Delete Failure",
-                "input": self.generate_input(row_id=6, operation_requested="DELETE", include_fhir_json=True),
+                "input": self.generate_input(
+                    row_id=6, operation_requested="DELETE", include_fhir_json=True
+                ),
                 "expected_keys": ForwarderValues.EXPECTED_KEYS_DIAGNOSTICS,
                 "expected_values": {
                     "row_id": "row-6",
@@ -327,17 +390,23 @@ class TestForwardLambdaHandler(TestCase):
                     row_id=7,
                     operation_requested="CREATE",
                     include_fhir_json=True,
-                    diagnostics=create_diagnostics_dictionary(MessageNotSuccessfulError("Unable to reach API")),
+                    diagnostics=create_diagnostics_dictionary(
+                        MessageNotSuccessfulError("Unable to reach API")
+                    ),
                 ),
                 "expected_keys": ForwarderValues.EXPECTED_KEYS_DIAGNOSTICS,
                 "expected_values": {
                     "row_id": "row-7",
-                    "diagnostics": create_diagnostics_dictionary(MessageNotSuccessfulError("Unable to reach API")),
+                    "diagnostics": create_diagnostics_dictionary(
+                        MessageNotSuccessfulError("Unable to reach API")
+                    ),
                 },
             },
             {
                 "name": "Row 8: Delete Failure",
-                "input": self.generate_input(row_id=8, operation_requested="DELETE", include_fhir_json=True),
+                "input": self.generate_input(
+                    row_id=8, operation_requested="DELETE", include_fhir_json=True
+                ),
                 "expected_keys": ForwarderValues.EXPECTED_KEYS_DIAGNOSTICS,
                 "expected_values": {
                     "row_id": "row-8",
@@ -351,12 +420,16 @@ class TestForwardLambdaHandler(TestCase):
             },
             {
                 "name": "Row 9: FHIR_JSON does not exist",
-                "input": self.generate_input(row_id=9, operation_requested="UPDATE", include_fhir_json=False),
+                "input": self.generate_input(
+                    row_id=9, operation_requested="UPDATE", include_fhir_json=False
+                ),
                 "expected_keys": ForwarderValues.EXPECTED_KEYS_DIAGNOSTICS,
                 "expected_values": {
                     "row_id": "row-9",
                     "diagnostics": create_diagnostics_dictionary(
-                        MessageNotSuccessfulError("Server error - FHIR JSON not correctly sent to forwarder")
+                        MessageNotSuccessfulError(
+                            "Server error - FHIR JSON not correctly sent to forwarder"
+                        )
                     ),
                 },
             },
@@ -418,7 +491,10 @@ class TestForwardLambdaHandler(TestCase):
             {
                 "name": "Row 1a: Update existing record",
                 "input": self.generate_input(
-                    row_id=1, operation_requested="UPDATE", include_fhir_json=True, identifier_value="UPDATE_TEST"
+                    row_id=1,
+                    operation_requested="UPDATE",
+                    include_fhir_json=True,
+                    identifier_value="UPDATE_TEST",
                 ),
                 "expected_keys": ForwarderValues.EXPECTED_KEYS,
                 "expected_values": {"row_id": "row-1", "imms_id": pk_test_update},
@@ -434,7 +510,10 @@ class TestForwardLambdaHandler(TestCase):
             {
                 "name": "Row 2a: Delete the updated record",
                 "input": self.generate_input(
-                    row_id=2, operation_requested="DELETE", include_fhir_json=True, identifier_value="UPDATE_TEST"
+                    row_id=2,
+                    operation_requested="DELETE",
+                    include_fhir_json=True,
+                    identifier_value="UPDATE_TEST",
                 ),
                 "expected_keys": ForwarderValues.EXPECTED_KEYS,
                 "expected_values": {"row_id": "row-2", "imms_id": pk_test_update},
@@ -450,7 +529,10 @@ class TestForwardLambdaHandler(TestCase):
             {
                 "name": "Row 3a: Delete Error to Confirm record does not exist anymore",
                 "input": self.generate_input(
-                    row_id=3, operation_requested="DELETE", include_fhir_json=True, identifier_value="UPDATE_TEST"
+                    row_id=3,
+                    operation_requested="DELETE",
+                    include_fhir_json=True,
+                    identifier_value="UPDATE_TEST",
                 ),
                 "expected_keys": ForwarderValues.EXPECTED_KEYS_DIAGNOSTICS,
                 "expected_values": {
@@ -467,7 +549,10 @@ class TestForwardLambdaHandler(TestCase):
             {
                 "name": "Row 4a: Reinstated record using Update operation",
                 "input": self.generate_input(
-                    row_id=4, operation_requested="UPDATE", include_fhir_json=True, identifier_value="UPDATE_TEST"
+                    row_id=4,
+                    operation_requested="UPDATE",
+                    include_fhir_json=True,
+                    identifier_value="UPDATE_TEST",
                 ),
                 "expected_keys": ForwarderValues.EXPECTED_KEYS,
                 "expected_values": {"row_id": "row-4", "imms_id": pk_test_update},
@@ -527,7 +612,9 @@ class TestForwardLambdaHandler(TestCase):
                 },
             },
             {
-                "error": ResourceNotFoundError(resource_type="Immunization", resource_id=None),
+                "error": ResourceNotFoundError(
+                    resource_type="Immunization", resource_id=None
+                ),
                 "expected_output": {
                     "error_type": "ResourceNotFoundError",
                     "statusCode": 404,
@@ -535,7 +622,9 @@ class TestForwardLambdaHandler(TestCase):
                 },
             },
             {
-                "error": ResourceFoundError(resource_type="Immunization", resource_id="A-primary-key"),
+                "error": ResourceFoundError(
+                    resource_type="Immunization", resource_id="A-primary-key"
+                ),
                 "expected_output": {
                     "error_type": "ResourceFoundError",
                     "statusCode": 409,
@@ -570,7 +659,11 @@ class TestForwardLambdaHandler(TestCase):
     @patch("forwarding_batch_lambda.create_table")
     @patch("forwarding_batch_lambda.make_batch_controller")
     def test_forward_request_to_dyanamo(
-        self, mock_make_controller, mock_create_table, mock_forward_request_to_dynamo, mock_send_message
+        self,
+        mock_make_controller,
+        mock_create_table,
+        mock_forward_request_to_dynamo,
+        mock_send_message,
     ):
         """Test forward lambda handler to assert dynamo db is called,
         and diagnostics handling.
@@ -588,7 +681,9 @@ class TestForwardLambdaHandler(TestCase):
         test_case = [
             {
                 "name": "Row 1: Create Success",
-                "input": self.generate_input(row_id=1, operation_requested="CREATE", include_fhir_json=True),
+                "input": self.generate_input(
+                    row_id=1, operation_requested="CREATE", include_fhir_json=True
+                ),
                 "expected_keys": ForwarderValues.EXPECTED_KEYS,
                 "expected_values": {
                     "row_id": "row-1",

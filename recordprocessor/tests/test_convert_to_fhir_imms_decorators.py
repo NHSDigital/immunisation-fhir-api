@@ -16,8 +16,12 @@ from tests.utils_for_recordprocessor_tests.decorator_constants import (
     ExtensionItems,
     RSV_TARGET_DISEASE_ELEMENT,
 )
-from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import MockFieldDictionaries
-from tests.utils_for_recordprocessor_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT
+from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
+    MockFieldDictionaries,
+)
+from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
+    MOCK_ENVIRONMENT_DICT,
+)
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
     from constants import Urls
@@ -80,7 +84,9 @@ class TestPatientDecorator(unittest.TestCase):
             "resourceType": "Immunization",
             "status": "completed",
             "protocolApplied": [{"targetDisease": RSV_TARGET_DISEASE_ELEMENT}],
-            "contained": [{"resourceType": "Patient", "id": "Patient1", "birthDate": "1993-08-21"}],
+            "contained": [
+                {"resourceType": "Patient", "id": "Patient1", "birthDate": "1993-08-21"}
+            ],
             "patient": {"reference": "#Patient1"},
         }
         self.assertDictEqual(self.imms, expected_imms)
@@ -119,7 +125,13 @@ class TestVaccineDecorator(unittest.TestCase):
                 "status": "completed",
                 "protocolApplied": [{"targetDisease": RSV_TARGET_DISEASE_ELEMENT}],
                 "vaccineCode": {
-                    "coding": [{"system": Urls.NULL_FLAVOUR_CODES, "code": "NAVU", "display": "Not available"}]
+                    "coding": [
+                        {
+                            "system": Urls.NULL_FLAVOUR_CODES,
+                            "code": "NAVU",
+                            "display": "Not available",
+                        }
+                    ]
                 },
             },
         )
@@ -157,7 +169,10 @@ class TestVaccinationDecorator(unittest.TestCase):
             "resourceType": "Immunization",
             "status": "completed",
             "protocolApplied": [
-                {"targetDisease": RSV_TARGET_DISEASE_ELEMENT, "doseNumberString": "Dose sequence not recorded"}
+                {
+                    "targetDisease": RSV_TARGET_DISEASE_ELEMENT,
+                    "doseNumberString": "Dose sequence not recorded",
+                }
             ],
         }
         self.assertDictEqual(self.imms, expected_output)
@@ -165,13 +180,17 @@ class TestVaccinationDecorator(unittest.TestCase):
     def test_vaccination_procedure(self):
         """Test that only non-empty vaccination_procedure values are added"""
         # vaccination_procedure: _code empty, _term non-empty
-        _decorate_vaccination(self.imms, {"VACCINATION_PROCEDURE_TERM": "a_vaccination_procedure_term"})
+        _decorate_vaccination(
+            self.imms, {"VACCINATION_PROCEDURE_TERM": "a_vaccination_procedure_term"}
+        )
         expected_extension_item = copy.deepcopy(ExtensionItems.vaccination_procedure)
         expected_extension_item["valueCodeableConcept"]["coding"][0].pop("code")
         self.assertListEqual(self.imms["extension"], [expected_extension_item])
 
         # vaccination_procedure: _code empty, _term non-empty
-        _decorate_vaccination(self.imms, {"VACCINATION_PROCEDURE_CODE": "a_vaccination_procedure_code"})
+        _decorate_vaccination(
+            self.imms, {"VACCINATION_PROCEDURE_CODE": "a_vaccination_procedure_code"}
+        )
         expected_extension_item = copy.deepcopy(ExtensionItems.vaccination_procedure)
         expected_extension_item["valueCodeableConcept"]["coding"][0].pop("display")
         self.assertListEqual(self.imms["extension"], [expected_extension_item])
@@ -179,32 +198,49 @@ class TestVaccinationDecorator(unittest.TestCase):
     def test_site_of_vaccination(self):
         """Test that only non-empty site_of_vaccination values are added"""
         # site_of_vaccination: _code non-empty, _display empty
-        _decorate_vaccination(self.imms, {"SITE_OF_VACCINATION_CODE": "a_vacc_site_code"})
+        _decorate_vaccination(
+            self.imms, {"SITE_OF_VACCINATION_CODE": "a_vacc_site_code"}
+        )
         expected = {"coding": [{"system": Urls.SNOMED, "code": "a_vacc_site_code"}]}
         self.assertDictEqual(self.imms["site"], expected)
 
         # site_of_vaccination: _code empty, _display non-empty
-        _decorate_vaccination(self.imms, {"SITE_OF_VACCINATION_TERM": "a_vacc_site_term"})
+        _decorate_vaccination(
+            self.imms, {"SITE_OF_VACCINATION_TERM": "a_vacc_site_term"}
+        )
         expected = {"coding": [{"system": Urls.SNOMED, "display": "a_vacc_site_term"}]}
         self.assertDictEqual(self.imms["site"], expected)
 
     def test_route_of_vaccination(self):
         """Test that only non-empty route_of_vaccination values are added"""
         # route_of_vaccination: _code non-empty, _display empty
-        _decorate_vaccination(self.imms, {"ROUTE_OF_VACCINATION_CODE": "a_vacc_route_code"})
+        _decorate_vaccination(
+            self.imms, {"ROUTE_OF_VACCINATION_CODE": "a_vacc_route_code"}
+        )
         expected = {"coding": [{"system": Urls.SNOMED, "code": "a_vacc_route_code"}]}
         self.assertDictEqual(self.imms["route"], expected)
 
         # route_of_vaccination: _code empty, _display non-empty
-        _decorate_vaccination(self.imms, {"ROUTE_OF_VACCINATION_TERM": "a_vacc_route_term"})
+        _decorate_vaccination(
+            self.imms, {"ROUTE_OF_VACCINATION_TERM": "a_vacc_route_term"}
+        )
         expected = {"coding": [{"system": Urls.SNOMED, "display": "a_vacc_route_term"}]}
         self.assertDictEqual(self.imms["route"], expected)
 
     def test_dose_quantity(self):
         """Test that only non-empty dose_quantity values (dose_amount, dose_unit_term and dose_unit_code) are added"""
-        dose_quantity = {"system": Urls.SNOMED, "value": Decimal("0.5"), "unit": "t", "code": "code"}
+        dose_quantity = {
+            "system": Urls.SNOMED,
+            "value": Decimal("0.5"),
+            "unit": "t",
+            "code": "code",
+        }
         # dose: _amount non-empty, _unit_term non-empty, _unit_code empty
-        headers = {"DOSE_AMOUNT": "0.5", "DOSE_UNIT_TERM": "a_dose_unit_term", "DOSE_UNIT_CODE": ""}
+        headers = {
+            "DOSE_AMOUNT": "0.5",
+            "DOSE_UNIT_TERM": "a_dose_unit_term",
+            "DOSE_UNIT_CODE": "",
+        }
         _decorate_vaccination(self.imms, headers)
         dose_quantity = {"value": Decimal("0.5"), "unit": "a_dose_unit_term"}
         self.assertDictEqual(self.imms["doseQuantity"], dose_quantity)
@@ -212,13 +248,24 @@ class TestVaccinationDecorator(unittest.TestCase):
         # dose: _amount non-empty, _unit_term empty, _unit_code non-empty
         headers = {"DOSE_AMOUNT": "0.5", "DOSE_UNIT_CODE": "a_dose_unit_code"}
         _decorate_vaccination(self.imms, headers)
-        dose_quantity = {"system": Urls.SNOMED, "value": Decimal("0.5"), "code": "a_dose_unit_code"}
+        dose_quantity = {
+            "system": Urls.SNOMED,
+            "value": Decimal("0.5"),
+            "code": "a_dose_unit_code",
+        }
         self.assertDictEqual(self.imms["doseQuantity"], dose_quantity)
 
         # dose: _amount empty, _unit_term non-empty, _unit_code non-empty
-        headers = {"DOSE_UNIT_TERM": "a_dose_unit_term", "DOSE_UNIT_CODE": "a_dose_unit_code"}
+        headers = {
+            "DOSE_UNIT_TERM": "a_dose_unit_term",
+            "DOSE_UNIT_CODE": "a_dose_unit_code",
+        }
         _decorate_vaccination(self.imms, headers)
-        dose_quantity = {"system": Urls.SNOMED, "code": "a_dose_unit_code", "unit": "a_dose_unit_term"}
+        dose_quantity = {
+            "system": Urls.SNOMED,
+            "code": "a_dose_unit_code",
+            "unit": "a_dose_unit_term",
+        }
         self.assertDictEqual(self.imms["doseQuantity"], dose_quantity)
 
         # dose: _amount non-empty, _unit_term empty, _unit_code empty
@@ -263,13 +310,22 @@ class TestPerformerDecorator(unittest.TestCase):
             "resourceType": "Immunization",
             "status": "completed",
             "protocolApplied": [{"targetDisease": RSV_TARGET_DISEASE_ELEMENT}],
-            "performer": [{"actor": {"type": "Organization", "identifier": {"value": "a_site_code"}}}],
+            "performer": [
+                {
+                    "actor": {
+                        "type": "Organization",
+                        "identifier": {"value": "a_site_code"},
+                    }
+                }
+            ],
         }
         self.assertDictEqual(self.imms, expected_output)
 
     def test_one_practitioner_header(self):
         """Test that the relevant fields are added when one practitioner field contains non-empty data"""
-        _decorate_performer(self.imms, {"PERFORMING_PROFESSIONAL_FORENAME": "a_prof_forename"})
+        _decorate_performer(
+            self.imms, {"PERFORMING_PROFESSIONAL_FORENAME": "a_prof_forename"}
+        )
         expected_output = {
             "resourceType": "Immunization",
             "status": "completed",
@@ -290,25 +346,37 @@ class TestPerformerDecorator(unittest.TestCase):
         # performing_professional: surname non-empty, _forename empty
         imms = copy.deepcopy(self.imms)
         _decorate_performer(imms, {"PERFORMING_PROFESSIONAL_SURNAME": "a_prof_surname"})
-        self.assertListEqual(imms["contained"][0]["name"], [{"family": "a_prof_surname"}])
+        self.assertListEqual(
+            imms["contained"][0]["name"], [{"family": "a_prof_surname"}]
+        )
 
         # performing_professional: surname empty, _forename non-empty
         imms = copy.deepcopy(self.imms)
         headers = {"PERFORMING_PROFESSIONAL_FORENAME": "a_prof_forename"}
         _decorate_performer(imms, headers)
-        self.assertListEqual(imms["contained"][0]["name"], [{"given": ["a_prof_forename"]}])
+        self.assertListEqual(
+            imms["contained"][0]["name"], [{"given": ["a_prof_forename"]}]
+        )
 
     def test_site_code(self):
         """Test that only non-empty site_code values are added"""
         # site_code non-empty, site_code_type_uri empty
         imms = copy.deepcopy(self.imms)
-        _decorate_performer(imms, {"SITE_CODE": "a_site_code", "SITE_CODE_TYPE_URI": ""})
-        self.assertDictEqual(imms["performer"][0]["actor"]["identifier"], {"value": "a_site_code"})
+        _decorate_performer(
+            imms, {"SITE_CODE": "a_site_code", "SITE_CODE_TYPE_URI": ""}
+        )
+        self.assertDictEqual(
+            imms["performer"][0]["actor"]["identifier"], {"value": "a_site_code"}
+        )
 
         # site_code empty, site_code_type_uri non-empty
         imms = copy.deepcopy(self.imms)
-        _decorate_performer(imms, {"SITE_CODE": "", "SITE_CODE_TYPE_URI": "a_site_code_uri"})
-        self.assertDictEqual(imms["performer"][0]["actor"]["identifier"], {"system": "a_site_code_uri"})
+        _decorate_performer(
+            imms, {"SITE_CODE": "", "SITE_CODE_TYPE_URI": "a_site_code_uri"}
+        )
+        self.assertDictEqual(
+            imms["performer"][0]["actor"]["identifier"], {"system": "a_site_code_uri"}
+        )
 
     def test_location(self):
         """Test that only non-empty location values are added"""
@@ -316,10 +384,14 @@ class TestPerformerDecorator(unittest.TestCase):
         imms = copy.deepcopy(self.imms)
         headers = {"LOCATION_CODE": "a_location_code", "LOCATION_CODE_TYPE_URI": ""}
         _decorate_performer(imms, headers)
-        self.assertDictEqual(imms["location"], {"identifier": {"value": "a_location_code"}})
+        self.assertDictEqual(
+            imms["location"], {"identifier": {"value": "a_location_code"}}
+        )
 
         # location_code empty, location_code_type_uri non-empty
         imms = copy.deepcopy(self.imms)
         headers = {"LOCATION_CODE": "", "LOCATION_CODE_TYPE_URI": "a_location_code_uri"}
         _decorate_performer(imms, headers)
-        self.assertDictEqual(imms["location"], {"identifier": {"system": "a_location_code_uri"}})
+        self.assertDictEqual(
+            imms["location"], {"identifier": {"system": "a_location_code_uri"}}
+        )

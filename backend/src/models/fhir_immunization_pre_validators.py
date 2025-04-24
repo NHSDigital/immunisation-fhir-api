@@ -1,4 +1,5 @@
 "FHIR Immunization Pre Validators"
+
 from typing import Union
 from models.constants import Constants
 from models.utils.generic_utils import (
@@ -122,7 +123,9 @@ class PreValidators:
         try:
             contained = values["contained"]
         except KeyError as error:
-            raise MandatoryError("Validation errors: contained is a mandatory field") from error
+            raise MandatoryError(
+                "Validation errors: contained is a mandatory field"
+            ) from error
 
         # Contained must be a non-empty list of non-empty dictionaries
         PreValidation.for_list(contained, "contained", elements_are_dicts=True)
@@ -133,29 +136,49 @@ class PreValidators:
 
         # Count number of each resource type in contained
         patient_count = sum(1 for x in contained if x["resourceType"] == "Patient")
-        practitioner_count = sum(1 for x in contained if x["resourceType"] == "Practitioner")
-        other_resource_count = sum(1 for x in contained if x["resourceType"] not in ("Patient", "Practitioner"))
+        practitioner_count = sum(
+            1 for x in contained if x["resourceType"] == "Practitioner"
+        )
+        other_resource_count = sum(
+            1 for x in contained if x["resourceType"] not in ("Patient", "Practitioner")
+        )
 
         # Validate counts
         errors = []
         if other_resource_count != 0:
-            errors.append("contained must contain only Patient and Practitioner resources")
+            errors.append(
+                "contained must contain only Patient and Practitioner resources"
+            )
         if patient_count != 1:
             errors.append("contained must contain exactly one Patient resource")
         if practitioner_count > 1:
-            errors.append("contained must contain a maximum of one Practitioner resource")
+            errors.append(
+                "contained must contain a maximum of one Practitioner resource"
+            )
 
         # Raise errors (don't check ids if incorrect resources are contained)
         if errors:
             raise ValueError("; ".join(errors))
 
         # Check ids exist and aren't duplicated.
-        if (patient_id := [x.get("id") for x in values["contained"] if x["resourceType"] == "Patient"][0]) is None:
+        if (
+            patient_id := [
+                x.get("id")
+                for x in values["contained"]
+                if x["resourceType"] == "Patient"
+            ][0]
+        ) is None:
             errors.append("The contained Patient resource must have an 'id' field")
         elif practitioner_count == 1:
-            practitioner_id = [x.get("id") for x in values["contained"] if x["resourceType"] == "Practitioner"][0]
+            practitioner_id = [
+                x.get("id")
+                for x in values["contained"]
+                if x["resourceType"] == "Practitioner"
+            ][0]
             if practitioner_id is None:
-                errors.append("The contained Practitioner resource must have an 'id' field")
+                errors.append(
+                    "The contained Practitioner resource must have an 'id' field"
+                )
             elif patient_id == practitioner_id:
                 errors.append("ids must not be duplicated amongst contained resources")
 
@@ -172,8 +195,12 @@ class PreValidators:
 
         # Check each contained resource
         for contained_resource in values.get("contained", []):
-            if (resource_type := contained_resource.get("resourceType")) in Constants.ALLOWED_CONTAINED_RESOURCES:
-                errors.extend(check_for_unknown_elements(contained_resource, resource_type))
+            if (
+                resource_type := contained_resource.get("resourceType")
+            ) in Constants.ALLOWED_CONTAINED_RESOURCES:
+                errors.extend(
+                    check_for_unknown_elements(contained_resource, resource_type)
+                )
 
         # Raise errors
         if errors:
@@ -191,11 +218,17 @@ class PreValidators:
         patient_reference = values.get("patient", {}).get("reference")
 
         # Make sure we have an internal reference (starts with #)
-        if not (isinstance(patient_reference, str) and patient_reference.startswith("#")):
-            raise ValueError("patient.reference must be a single reference to a contained Patient resource")
+        if not (
+            isinstance(patient_reference, str) and patient_reference.startswith("#")
+        ):
+            raise ValueError(
+                "patient.reference must be a single reference to a contained Patient resource"
+            )
 
         # Obtain the contained patient resource
-        contained_patient = [x for x in values["contained"] if x.get("resourceType") == "Patient"][0]
+        contained_patient = [
+            x for x in values["contained"] if x.get("resourceType") == "Patient"
+        ][0]
 
         # If the reference is not equal to the contained patient id then raise an error
         if ("#" + contained_patient["id"]) != patient_reference:
@@ -216,7 +249,13 @@ class PreValidators:
         ]
 
         # If there is no practitioner then check that there are no internal references within performer
-        if not (practitioner := [x for x in values["contained"] if x.get("resourceType") == "Practitioner"]):
+        if not (
+            practitioner := [
+                x
+                for x in values["contained"]
+                if x.get("resourceType") == "Practitioner"
+            ]
+        ):
             if len(performer_internal_references) != 0:
                 raise ValueError(
                     "performer must not contain internal references when there is no contained Practitioner resource"
@@ -226,14 +265,19 @@ class PreValidators:
         practitioner_id = str(practitioner[0]["id"])
 
         # Ensure that there are no internal references other than to the contained practitioner
-        if sum(1 for x in performer_internal_references if x != "#" + practitioner_id) != 0:
+        if (
+            sum(1 for x in performer_internal_references if x != "#" + practitioner_id)
+            != 0
+        ):
             raise ValueError(
                 "performer must not contain any internal references other than"
                 + " to the contained Practitioner resource"
             )
 
         # Separate out the references to the contained practitioner and ensure that there is exactly one such reference
-        practitioner_references = [x for x in performer_internal_references if x == "#" + practitioner_id]
+        practitioner_references = [
+            x for x in performer_internal_references if x == "#" + practitioner_id
+        ]
 
         if len(practitioner_references) == 0:
             raise ValueError(
@@ -249,14 +293,20 @@ class PreValidators:
         Pre-validate that if contained[?(@.resourceType=='Patient')].identifier[0] contains
         an extension field, it raises a validation error.
         """
-        field_location = "contained[?(@.resourceType=='Patient')].identifier[0].extension"
+        field_location = (
+            "contained[?(@.resourceType=='Patient')].identifier[0].extension"
+        )
 
         try:
-            patient = [x for x in values["contained"] if x.get("resourceType") == "Patient"][0]
+            patient = [
+                x for x in values["contained"] if x.get("resourceType") == "Patient"
+            ][0]
             identifier = patient["identifier"][0]
 
             if "extension" in identifier:
-                raise ValueError("contained[?(@.resourceType=='Patient')].identifier[0] must not include an extension")
+                raise ValueError(
+                    "contained[?(@.resourceType=='Patient')].identifier[0] must not include an extension"
+                )
         except (KeyError, IndexError):
             pass
 
@@ -266,7 +316,9 @@ class PreValidators:
         """
         field_location = "contained[?(@.resourceType=='Patient')].identifier"
         try:
-            field_value = [x for x in values["contained"] if x.get("resourceType") == "Patient"][0]["identifier"]
+            field_value = [
+                x for x in values["contained"] if x.get("resourceType") == "Patient"
+            ][0]["identifier"]
             PreValidation.for_list(field_value, field_location, defined_length=1)
         except (KeyError, IndexError):
             pass
@@ -279,10 +331,12 @@ class PreValidators:
         """
         field_location = "contained[?(@.resourceType=='Patient')].identifier[0].value"
         try:
-            field_value = [x for x in values["contained"] if x.get("resourceType") == "Patient"][0]["identifier"][0][
-                "value"
-            ]
-            PreValidation.for_string(field_value, field_location, defined_length=10, spaces_allowed=False)
+            field_value = [
+                x for x in values["contained"] if x.get("resourceType") == "Patient"
+            ][0]["identifier"][0]["value"]
+            PreValidation.for_string(
+                field_value, field_location, defined_length=10, spaces_allowed=False
+            )
             PreValidation.for_nhs_number(field_value, field_location)
         except (KeyError, IndexError):
             pass
@@ -293,7 +347,9 @@ class PreValidators:
         """
         field_location = "contained[?(@.resourceType=='Patient')].name"
         try:
-            field_value = [x for x in values["contained"] if x.get("resourceType") == "Patient"][0]["name"]
+            field_value = [
+                x for x in values["contained"] if x.get("resourceType") == "Patient"
+            ][0]["name"]
             PreValidation.for_list(field_value, field_location, elements_are_dicts=True)
         except (KeyError, IndexError):
             pass
@@ -306,8 +362,12 @@ class PreValidators:
         field_location = patient_name_given_field_location(values)
 
         try:
-            field_value, _ = patient_and_practitioner_value_and_index(values, "given", "Patient")
-            PreValidation.for_list(field_value, field_location, elements_are_strings=True)
+            field_value, _ = patient_and_practitioner_value_and_index(
+                values, "given", "Patient"
+            )
+            PreValidation.for_list(
+                field_value, field_location, elements_are_strings=True
+            )
         except (KeyError, IndexError, AttributeError):
             pass
 
@@ -318,7 +378,9 @@ class PreValidators:
         """
         field_location = patient_name_family_field_location(values)
         try:
-            field_value, _ = patient_and_practitioner_value_and_index(values, "family", "Patient")
+            field_value, _ = patient_and_practitioner_value_and_index(
+                values, "family", "Patient"
+            )
             PreValidation.for_string(field_value, field_location)
         except (KeyError, IndexError, AttributeError):
             pass
@@ -330,7 +392,9 @@ class PreValidators:
         """
         field_location = "contained[?(@.resourceType=='Patient')].birthDate"
         try:
-            field_value = [x for x in values["contained"] if x.get("resourceType") == "Patient"][0]["birthDate"]
+            field_value = [
+                x for x in values["contained"] if x.get("resourceType") == "Patient"
+            ][0]["birthDate"]
             PreValidation.for_date(field_value, field_location)
         except (KeyError, IndexError):
             pass
@@ -342,8 +406,12 @@ class PreValidators:
         """
         field_location = "contained[?(@.resourceType=='Patient')].gender"
         try:
-            field_value = [x for x in values["contained"] if x.get("resourceType") == "Patient"][0]["gender"]
-            PreValidation.for_string(field_value, field_location, predefined_values=Constants.GENDERS)
+            field_value = [
+                x for x in values["contained"] if x.get("resourceType") == "Patient"
+            ][0]["gender"]
+            PreValidation.for_string(
+                field_value, field_location, predefined_values=Constants.GENDERS
+            )
         except (KeyError, IndexError):
             pass
 
@@ -353,7 +421,9 @@ class PreValidators:
         """
         field_location = "contained[?(@.resourceType=='Patient')].address"
         try:
-            field_value = [x for x in values["contained"] if x.get("resourceType") == "Patient"][0]["address"]
+            field_value = [
+                x for x in values["contained"] if x.get("resourceType") == "Patient"
+            ][0]["address"]
             PreValidation.for_list(field_value, field_location)
         except (KeyError, IndexError):
             pass
@@ -365,7 +435,9 @@ class PreValidators:
         """
         field_location = "contained[?(@.resourceType=='Patient')].address[0].postalCode"
         try:
-            patient = [x for x in values["contained"] if x.get("resourceType") == "Patient"][0]
+            patient = [
+                x for x in values["contained"] if x.get("resourceType") == "Patient"
+            ][0]
             postal_codes = []
             for address in patient["address"]:
                 if "postalCode" in address:
@@ -419,11 +491,15 @@ class PreValidators:
         Pre-validate that, if performer[?(@.actor.type=='Organization').identifier.value]
         (legacy CSV field name: SITE_CODE) exists, then it is a non-empty string.
         """
-        field_location = "performer[?(@.actor.type=='Organization')].actor.identifier.value"
+        field_location = (
+            "performer[?(@.actor.type=='Organization')].actor.identifier.value"
+        )
         try:
-            field_value = [x for x in values["performer"] if x.get("actor").get("type") == "Organization"][0]["actor"][
-                "identifier"
-            ]["value"]
+            field_value = [
+                x
+                for x in values["performer"]
+                if x.get("actor").get("type") == "Organization"
+            ][0]["actor"]["identifier"]["value"]
             PreValidation.for_string(field_value, field_location)
         except (KeyError, IndexError, AttributeError):
             pass
@@ -432,10 +508,14 @@ class PreValidators:
         """Pre-validate that identifier exists and is a list of length 1 and are an array of objects"""
         try:
             field_value = values["identifier"]
-            PreValidation.for_list(field_value, "identifier", defined_length=1, elements_are_dicts=True)
+            PreValidation.for_list(
+                field_value, "identifier", defined_length=1, elements_are_dicts=True
+            )
 
         except KeyError as error:
-            raise MandatoryError("Validation errors: identifier is a mandatory field") from error
+            raise MandatoryError(
+                "Validation errors: identifier is a mandatory field"
+            ) from error
 
     def pre_validate_identifier_value(self, values: dict) -> dict:
         """
@@ -468,7 +548,9 @@ class PreValidators:
         """
         try:
             field_value = values["status"]
-            PreValidation.for_string(field_value, "status", predefined_values=Constants.STATUSES)
+            PreValidation.for_string(
+                field_value, "status", predefined_values=Constants.STATUSES
+            )
         except KeyError:
             pass
 
@@ -479,8 +561,14 @@ class PreValidators:
         """
         field_location = "contained[?(@.resourceType=='Practitioner')].name"
         try:
-            field_values = [x for x in values["contained"] if x.get("resourceType") == "Practitioner"][0]["name"]
-            PreValidation.for_list(field_values, field_location, elements_are_dicts=True)
+            field_values = [
+                x
+                for x in values["contained"]
+                if x.get("resourceType") == "Practitioner"
+            ][0]["name"]
+            PreValidation.for_list(
+                field_values, field_location, elements_are_dicts=True
+            )
         except (KeyError, IndexError, AttributeError):
             pass
 
@@ -492,8 +580,12 @@ class PreValidators:
         """
         field_location = practitioner_name_given_field_location(values)
         try:
-            field_value, _ = patient_and_practitioner_value_and_index(values, "given", "Practitioner")
-            PreValidation.for_list(field_value, field_location, elements_are_strings=True)
+            field_value, _ = patient_and_practitioner_value_and_index(
+                values, "given", "Practitioner"
+            )
+            PreValidation.for_list(
+                field_value, field_location, elements_are_strings=True
+            )
         except (KeyError, IndexError, AttributeError):
             pass
 
@@ -505,7 +597,9 @@ class PreValidators:
         """
         field_location = practitioner_name_family_field_location(values)
         try:
-            field_name, _ = patient_and_practitioner_value_and_index(values, "family", "Practitioner")
+            field_name, _ = patient_and_practitioner_value_and_index(
+                values, "family", "Practitioner"
+            )
             PreValidation.for_string(field_name, field_location)
         except (KeyError, IndexError):
             pass
@@ -532,40 +626,46 @@ class PreValidators:
             PreValidation.for_boolean(primary_source, "primarySource")
         except KeyError:
             pass
-    
-
 
     def pre_validate_value_codeable_concept(self, values: dict) -> dict:
         """Pre-validate that valueCodeableConcept with coding exists within extension"""
         if "extension" not in values:
             raise MandatoryError("Validation errors: extension is a mandatory field")
-        
+
         # Iterate over each extension and check for valueCodeableConcept and coding
         for extension in values["extension"]:
             if "valueCodeableConcept" not in extension:
-                raise MandatoryError("Validation errors: extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept is a mandatory field")
-            
+                raise MandatoryError(
+                    "Validation errors: extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept is a mandatory field"
+                )
+
             # Check that coding exists within valueCodeableConcept
             if "coding" not in extension["valueCodeableConcept"]:
-                raise MandatoryError("Validation errors: extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding is a mandatory field")    
-    
+                raise MandatoryError(
+                    "Validation errors: extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding is a mandatory field"
+                )
+
     def pre_validate_extension_length(self, values: dict) -> dict:
-            """Pre-validate that, if extension exists, then the length of the list should be 1"""
-            try:
-                field_value = values["extension"]
-                PreValidation.for_list(field_value, "extension", defined_length=1)
-                # Call the second validation method if the first validation passes
-                self.pre_validate_extension_url(values)
-            except KeyError:
-                pass 
+        """Pre-validate that, if extension exists, then the length of the list should be 1"""
+        try:
+            field_value = values["extension"]
+            PreValidation.for_list(field_value, "extension", defined_length=1)
+            # Call the second validation method if the first validation passes
+            self.pre_validate_extension_url(values)
+        except KeyError:
+            pass
 
     def pre_validate_extension_url(self, values: dict) -> dict:
-            """Pre-validate that, if extension exists, then its url should be a valid one"""
-            try:
-                field_value = values["extension"][0]["url"]
-                PreValidation.for_string(field_value, "extension[0].url", predefined_values=Constants.EXTENSION_URL)
-            except KeyError:
-                pass
+        """Pre-validate that, if extension exists, then its url should be a valid one"""
+        try:
+            field_value = values["extension"][0]["url"]
+            PreValidation.for_string(
+                field_value,
+                "extension[0].url",
+                predefined_values=Constants.EXTENSION_URL,
+            )
+        except KeyError:
+            pass
 
     def pre_validate_vaccination_procedure_code(self, values: dict) -> dict:
         """
@@ -573,7 +673,10 @@ class PreValidators:
         VaccinationProcedure')].valueCodeableConcept.coding[?(@.system=='http://snomed.info/sct')].code
         (legacy CSV field name: VACCINATION_PROCEDURE_CODE) exists, then it is a non-empty string
         """
-        url = "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-" + "VaccinationProcedure"
+        url = (
+            "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-"
+            + "VaccinationProcedure"
+        )
         system = "http://snomed.info/sct"
         field_type = "code"
         field_location = generate_field_location_for_extension(url, system, field_type)
@@ -656,9 +759,13 @@ class PreValidators:
             field_value = values["protocolApplied"][0]["targetDisease"]
             for element in field_value:
                 if "coding" not in element:
-                    raise ValueError("Every element of protocolApplied[0].targetDisease must have 'coding' property")
+                    raise ValueError(
+                        "Every element of protocolApplied[0].targetDisease must have 'coding' property"
+                    )
         except (KeyError, IndexError) as error:
-            raise ValueError("protocolApplied[0].targetDisease is a mandatory field") from error
+            raise ValueError(
+                "protocolApplied[0].targetDisease is a mandatory field"
+            ) from error
 
     def pre_validate_target_disease_codings(self, values: dict) -> dict:
         """
@@ -689,8 +796,12 @@ class PreValidators:
             for i in range(len(values["protocolApplied"][0]["targetDisease"])):
                 field_location = f"protocolApplied[0].targetDisease[{i}].coding[?(@.system=='{url}')].code"
                 try:
-                    target_disease_coding = values["protocolApplied"][0]["targetDisease"][i]["coding"]
-                    target_disease_coding_code = [x for x in target_disease_coding if x.get("system") == url][0]["code"]
+                    target_disease_coding = values["protocolApplied"][0][
+                        "targetDisease"
+                    ][i]["coding"]
+                    target_disease_coding_code = [
+                        x for x in target_disease_coding if x.get("system") == url
+                    ][0]["code"]
                     PreValidation.for_string(target_disease_coding_code, field_location)
                 except (KeyError, IndexError):
                     pass
@@ -734,7 +845,9 @@ class PreValidators:
         """Pre-validate that, if site.coding exists, then each code system is unique"""
         try:
             field_value = values["site"]["coding"]
-            PreValidation.for_unique_list(field_value, "system", "site.coding[?(@.system=='FIELD_TO_REPLACE')]")
+            PreValidation.for_unique_list(
+                field_value, "system", "site.coding[?(@.system=='FIELD_TO_REPLACE')]"
+            )
         except KeyError:
             pass
 
@@ -746,7 +859,9 @@ class PreValidators:
         url = "http://snomed.info/sct"
         field_location = f"site.coding[?(@.system=='{url}')].code"
         try:
-            site_coding_code = [x for x in values["site"]["coding"] if x.get("system") == url][0]["code"]
+            site_coding_code = [
+                x for x in values["site"]["coding"] if x.get("system") == url
+            ][0]["code"]
             PreValidation.for_string(site_coding_code, field_location)
         except (KeyError, IndexError):
             pass
@@ -759,7 +874,9 @@ class PreValidators:
         url = "http://snomed.info/sct"
         field_location = f"site.coding[?(@.system=='{url}')].display"
         try:
-            field_value = [x for x in values["site"]["coding"] if x.get("system") == url][0]["display"]
+            field_value = [
+                x for x in values["site"]["coding"] if x.get("system") == url
+            ][0]["display"]
             PreValidation.for_string(field_value, field_location)
         except (KeyError, IndexError):
             pass
@@ -768,7 +885,9 @@ class PreValidators:
         """Pre-validate that, if route.coding exists, then each code system is unique"""
         try:
             field_value = values["route"]["coding"]
-            PreValidation.for_unique_list(field_value, "system", "route.coding[?(@.system=='FIELD_TO_REPLACE')]")
+            PreValidation.for_unique_list(
+                field_value, "system", "route.coding[?(@.system=='FIELD_TO_REPLACE')]"
+            )
         except KeyError:
             pass
 
@@ -780,7 +899,9 @@ class PreValidators:
         url = "http://snomed.info/sct"
         field_location = f"route.coding[?(@.system=='{url}')].code"
         try:
-            field_value = [x for x in values["route"]["coding"] if x.get("system") == url][0]["code"]
+            field_value = [
+                x for x in values["route"]["coding"] if x.get("system") == url
+            ][0]["code"]
             PreValidation.for_string(field_value, field_location)
         except (KeyError, IndexError):
             pass
@@ -793,7 +914,9 @@ class PreValidators:
         url = "http://snomed.info/sct"
         field_location = f"route.coding[?(@.system=='{url}')].display"
         try:
-            field_value = [x for x in values["route"]["coding"] if x.get("system") == url][0]["display"]
+            field_value = [
+                x for x in values["route"]["coding"] if x.get("system") == url
+            ][0]["display"]
             PreValidation.for_string(field_value, field_location)
         except (KeyError, IndexError):
             pass
@@ -862,7 +985,9 @@ class PreValidators:
             for index, value in enumerate(values["reasonCode"]):
                 try:
                     field_value = value["coding"][0]["code"]
-                    PreValidation.for_string(field_value, f"reasonCode[{index}].coding[0].code")
+                    PreValidation.for_string(
+                        field_value, f"reasonCode[{index}].coding[0].code"
+                    )
                 except KeyError:
                     pass
         except KeyError:
@@ -873,11 +998,15 @@ class PreValidators:
         Pre-validate that, if performer[?(@.actor.type=='Organization').identifier.system]
         (legacy CSV field name: SITE_CODE_TYPE_URI) exists, then it is a non-empty string
         """
-        field_location = "performer[?(@.actor.type=='Organization')].actor.identifier.system"
+        field_location = (
+            "performer[?(@.actor.type=='Organization')].actor.identifier.system"
+        )
         try:
-            field_value = [x for x in values["performer"] if x.get("actor").get("type") == "Organization"][0]["actor"][
-                "identifier"
-            ]["system"]
+            field_value = [
+                x
+                for x in values["performer"]
+                if x.get("actor").get("type") == "Organization"
+            ][0]["actor"]["identifier"]["system"]
             PreValidation.for_string(field_value, field_location)
         except (KeyError, IndexError, AttributeError):
             pass

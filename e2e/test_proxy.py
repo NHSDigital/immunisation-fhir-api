@@ -19,20 +19,27 @@ class TestProxyHealthcheck(unittest.TestCase):
 
     def test_ping(self):
         """/_ping should return 200 if proxy is up and running"""
-        response = ImmunisationApi.make_request_with_backoff(http_method="GET", url=f"{self.proxy_url}/_ping")
+        response = ImmunisationApi.make_request_with_backoff(
+            http_method="GET", url=f"{self.proxy_url}/_ping"
+        )
         self.assertEqual(response.status_code, 200, response.text)
 
     def test_status(self):
         """/_status should return 200 if proxy can reach to the backend"""
-        response = ImmunisationApi.make_request_with_backoff(http_method="GET",
-                                                             url=f"{self.proxy_url}/_status",
-                                                             headers={"apikey": self.status_api_key},
-                                                             is_status_check=True)
+        response = ImmunisationApi.make_request_with_backoff(
+            http_method="GET",
+            url=f"{self.proxy_url}/_status",
+            headers={"apikey": self.status_api_key},
+            is_status_check=True,
+        )
         self.assertEqual(response.status_code, 200, response.text)
         body = response.json()
 
-        self.assertEqual(body["status"].lower(), "pass",
-                         f"service is not healthy: status: {body['status']}")
+        self.assertEqual(
+            body["status"].lower(),
+            "pass",
+            f"service is not healthy: status: {body['status']}",
+        )
 
 
 class TestMtls(unittest.TestCase):
@@ -47,13 +54,15 @@ class TestMtls(unittest.TestCase):
             ImmunisationApi.make_request_with_backoff(
                 http_method="GET",
                 url=backend_health,
-                headers={"X-Request-ID": str(uuid.uuid4())})
+                headers={"X-Request-ID": str(uuid.uuid4())},
+            )
             self.assertTrue("RemoteDisconnected" in str(e.exception))
 
     @staticmethod
     def get_backend_url() -> str:
         """The output is the backend url that terraform has deployed.
-        This command runs a make target in the terraform directory only if it's not in env var"""
+        This command runs a make target in the terraform directory only if it's not in env var
+        """
         if url := os.getenv("AWS_DOMAIN_NAME"):
             return url
 
@@ -66,18 +75,22 @@ class TestMtls(unittest.TestCase):
                 cmd_str = " ".join(cmd)
                 raise RuntimeError(
                     f"Failed to run command: '{cmd_str}'\nDiagnostic: Try to run the same command in the "
-                    f"same terminal. Make sure you are authenticated\n{res.stdout}")
+                    f"same terminal. Make sure you are authenticated\n{res.stdout}"
+                )
             return res.stdout
         except FileNotFoundError:
-            raise RuntimeError("Make sure you install terraform. This test can only be run if you have access to the"
-                               "backend deployment")
+            raise RuntimeError(
+                "Make sure you install terraform. This test can only be run if you have access to the"
+                "backend deployment"
+            )
         except RuntimeError as e:
             raise RuntimeError(f"Failed to run command\n{e}")
 
 
 class TestProxyAuthorization(unittest.TestCase):
     """Our apigee proxy has its own authorization.
-    This class test different authorization access levels/roles authentication types that are supported"""
+    This class test different authorization access levels/roles authentication types that are supported
+    """
 
     proxy_url: str
 
@@ -87,8 +100,10 @@ class TestProxyAuthorization(unittest.TestCase):
 
     def test_invalid_access_token(self):
         """it should return 401 if access token is invalid"""
-        response = ImmunisationApi.make_request_with_backoff(http_method="GET",
-                                                             url=f"{self.proxy_url}/Immunization",
-                                                             headers={"X-Request-ID": str(uuid.uuid4())},
-                                                             expected_status_code=401)
+        response = ImmunisationApi.make_request_with_backoff(
+            http_method="GET",
+            url=f"{self.proxy_url}/Immunization",
+            headers={"X-Request-ID": str(uuid.uuid4())},
+            expected_status_code=401,
+        )
         self.assertEqual(response.status_code, 401, response.text)

@@ -20,9 +20,14 @@ def process_row(vaccine: Vaccine, allowed_operations: set, row: dict) -> dict:
 
     # Handle invalid action_flag
     if action_flag not in ("NEW", "UPDATE", "DELETE"):
-        logger.info("Invalid ACTION_FLAG '%s' - ACTION_FLAG MUST BE 'NEW', 'UPDATE' or 'DELETE'", action_flag)
+        logger.info(
+            "Invalid ACTION_FLAG '%s' - ACTION_FLAG MUST BE 'NEW', 'UPDATE' or 'DELETE'",
+            action_flag,
+        )
         return {
-            "diagnostics": create_diagnostics_dictionary("INVALID_ACTION_FLAG", 400, Diagnostics.INVALID_ACTION_FLAG),
+            "diagnostics": create_diagnostics_dictionary(
+                "INVALID_ACTION_FLAG", 400, Diagnostics.INVALID_ACTION_FLAG
+            ),
             "operation_requested": action_flag,
             "local_id": local_id,
         }
@@ -33,18 +38,27 @@ def process_row(vaccine: Vaccine, allowed_operations: set, row: dict) -> dict:
 
     # Handle no permissions
     if operation_requested not in allowed_operations:
-        logger.info("Skipping row as supplier does not have the permissions for this operation %s", operation_requested)
+        logger.info(
+            "Skipping row as supplier does not have the permissions for this operation %s",
+            operation_requested,
+        )
         return {
-            "diagnostics": create_diagnostics_dictionary("NO_PERMISSIONS", 403, Diagnostics.NO_PERMISSIONS),
+            "diagnostics": create_diagnostics_dictionary(
+                "NO_PERMISSIONS", 403, Diagnostics.NO_PERMISSIONS
+            ),
             "operation_requested": operation_requested,
             "local_id": local_id,
         }
 
     # Handle missing UNIQUE_ID or UNIQUE_ID_URI
     if not (row.get("UNIQUE_ID_URI") and row.get("UNIQUE_ID")):
-        logger.error("Invalid row format: row is missing either UNIQUE_ID or UNIQUE_ID_URI")
+        logger.error(
+            "Invalid row format: row is missing either UNIQUE_ID or UNIQUE_ID_URI"
+        )
         return {
-            "diagnostics": create_diagnostics_dictionary("MISSING_UNIQUE_ID", 400, Diagnostics.MISSING_UNIQUE_ID),
+            "diagnostics": create_diagnostics_dictionary(
+                "MISSING_UNIQUE_ID", 400, Diagnostics.MISSING_UNIQUE_ID
+            ),
             "operation_requested": operation_requested,
             "local_id": local_id,
         }

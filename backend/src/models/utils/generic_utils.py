@@ -9,7 +9,9 @@ import base64
 from stdnum.verhoeff import validate
 
 
-def get_contained_resource(imms: dict, resource: Literal["Patient", "Practitioner", "QuestionnaireResponse"]):
+def get_contained_resource(
+    imms: dict, resource: Literal["Patient", "Practitioner", "QuestionnaireResponse"]
+):
     """Extract and return the requested contained resource from the FHIR Immunization Resource JSON data"""
     return [x for x in imms.get("contained") if x.get("resourceType") == resource][0]
 
@@ -28,13 +30,19 @@ def get_generic_extension_value(
     json_data: dict, url: str, system: str, field_type: Literal["code", "display"]
 ) -> Union[str, None]:
     """Get the value of an extension field, given its url, field_type, and system"""
-    value_codeable_concept = [x for x in json_data["extension"] if x.get("url") == url][0]["valueCodeableConcept"]
+    value_codeable_concept = [x for x in json_data["extension"] if x.get("url") == url][
+        0
+    ]["valueCodeableConcept"]
     value_codeable_concept_coding = value_codeable_concept["coding"]
-    value = [x for x in value_codeable_concept_coding if x.get("system") == system][0][field_type]
+    value = [x for x in value_codeable_concept_coding if x.get("system") == system][0][
+        field_type
+    ]
     return value
 
 
-def generate_field_location_for_extension(url: str, system: str, field_type: Literal["code", "display"]) -> str:
+def generate_field_location_for_extension(
+    url: str, system: str, field_type: Literal["code", "display"]
+) -> str:
     """Generate the field location string for extension items"""
     return f"extension[?(@.url=='{url}')].valueCodeableConcept.coding[?(@.system=='{system}')].{field_type}"
 
@@ -64,7 +72,9 @@ def check_for_unknown_elements(resource, resource_type) -> Union[None, list]:
     errors = []
     for key in resource.keys():
         if key not in Constants.ALLOWED_KEYS[resource_type]:
-            errors.append(f"{key} is not an allowed element of the {resource_type} resource for this service")
+            errors.append(
+                f"{key} is not an allowed element of the {resource_type} resource for this service"
+            )
     return errors
 
 
@@ -98,7 +108,10 @@ def nhs_number_mod11_check(nhs_number: str) -> bool:
         weighting_factors = list(range(2, 11))[::-1]
         # Multiply each of the first nine digits by the weighting factor and add the results of each multiplication
         # together
-        total = sum(int(digit) * weight for digit, weight in zip(nhs_number[:-1], weighting_factors))
+        total = sum(
+            int(digit) * weight
+            for digit, weight in zip(nhs_number[:-1], weighting_factors)
+        )
         # Divide the total by 11 and establish the remainder and subtract the remainder from 11 to give the check digit.
         # If the result is 11 then a check digit of 0 is used. If the result is 10 then the NHS NUMBER is invalid and
         # not used.
@@ -110,7 +123,9 @@ def nhs_number_mod11_check(nhs_number: str) -> bool:
 
 
 def get_occurrence_datetime(immunization: dict) -> Optional[datetime.datetime]:
-    occurrence_datetime_str: Optional[str] = immunization.get("occurrenceDateTime", None)
+    occurrence_datetime_str: Optional[str] = immunization.get(
+        "occurrenceDateTime", None
+    )
     if occurrence_datetime_str is None:
         return None
 
@@ -125,9 +140,7 @@ def create_diagnostics():
 
 def create_diagnostics_error(value):
     if value == "Both":
-        diagnostics = (
-            f"Validation errors: identifier[0].system and identifier[0].value doesn't match with the stored content"
-        )
+        diagnostics = f"Validation errors: identifier[0].system and identifier[0].value doesn't match with the stored content"
     else:
         diagnostics = f"Validation errors: identifier[0].{value} doesn't match with the stored content"
     exp_error = {"diagnostics": diagnostics}
@@ -141,7 +154,10 @@ def form_json(response, _element, identifier, baseurl):
             "resourceType": "Bundle",
             "type": "searchset",
             "link": [
-                {"relation": "self", "url": f"{baseurl}?immunization.identifier={identifier}&_elements={_element}"}
+                {
+                    "relation": "self",
+                    "url": f"{baseurl}?immunization.identifier={identifier}&_elements={_element}",
+                }
             ],
             "entry": [],
             "total": 0,
@@ -152,7 +168,12 @@ def form_json(response, _element, identifier, baseurl):
     json = {
         "resourceType": "Bundle",
         "type": "searchset",
-        "link": [{"relation": "self", "url": f"{baseurl}?immunization.identifier={identifier}&_elements={_element}"}],
+        "link": [
+            {
+                "relation": "self",
+                "url": f"{baseurl}?immunization.identifier={identifier}&_elements={_element}",
+            }
+        ],
         "entry": [
             {
                 "fullUrl": f"https://api.service.nhs.uk/immunisation-fhir-api/Immunization/{response['id']}",
@@ -204,7 +225,9 @@ def check_keys_in_sources(event, not_required_keys):
         return body_check
 
 
-def generate_field_location_for_name(index: str, name_value: str, resource_type: str) -> str:
+def generate_field_location_for_name(
+    index: str, name_value: str, resource_type: str
+) -> str:
     """Generate the field location string for name items"""
     return f"contained[?(@.resourceType=='{resource_type}')].name[{index}].{name_value}"
 
@@ -256,18 +279,24 @@ def get_current_name_instance(names: list, occurrence_date: datetime) -> dict:
         try:
             # Check for 'period' and occurrence date
             if isinstance(name, dict):
-                if "period" not in name or obtain_current_name_period(name.get("period", {}), occurrence_date):
+                if "period" not in name or obtain_current_name_period(
+                    name.get("period", {}), occurrence_date
+                ):
                     current_names.append((index, name))
         except (KeyError, ValueError):
             continue
 
     # Select the first current name with 'use'="official"
-    official_names = [(index, name) for index, name in current_names if name.get("use") == "official"]
+    official_names = [
+        (index, name) for index, name in current_names if name.get("use") == "official"
+    ]
     if official_names:
         return official_names[0]
 
     # Select the first current name with 'use' not equal to "old"
-    non_old_names = [(index, name) for index, name in current_names if name.get("use") != "old"]
+    non_old_names = [
+        (index, name) for index, name in current_names if name.get("use") != "old"
+    ]
     if non_old_names:
         return non_old_names[0]
 
@@ -279,7 +308,9 @@ def get_current_name_instance(names: list, occurrence_date: datetime) -> dict:
     return 0, names[0]
 
 
-def patient_and_practitioner_value_and_index(imms: dict, name_value: str, resource_type: str):
+def patient_and_practitioner_value_and_index(
+    imms: dict, name_value: str, resource_type: str
+):
     """Obtains patient_name_given, patient_name_family, practitioner_name_given or practitioner_name_family
     value and index, dependent on the resource_type and name_value"""
     resource = get_contained_resource(imms, resource_type)
@@ -300,7 +331,9 @@ def patient_and_practitioner_value_and_index(imms: dict, name_value: str, resour
 def obtain_name_field_location(imms, resource_type, name_value):
     """Obtains the field location of the name value for the given resource type based on the relevant logic."""
     try:
-        _, index = patient_and_practitioner_value_and_index(imms, name_value, resource_type)
+        _, index = patient_and_practitioner_value_and_index(
+            imms, name_value, resource_type
+        )
     except (KeyError, IndexError, AttributeError):
         index = 0
     return generate_field_location_for_name(index, name_value, resource_type)

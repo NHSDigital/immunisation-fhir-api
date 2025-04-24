@@ -92,7 +92,9 @@ class PostValidators:
 
         field_location = obtain_field_location(field_name, field_locations)
         field_value = obtain_field_value(self.imms, field_name)
-        self.run_field_validation(mandation_functions, validation_set, field_name, field_location, field_value)
+        self.run_field_validation(
+            mandation_functions, validation_set, field_name, field_location, field_value
+        )
 
     # NOTE: THIS METHOD IS COMMENTED OUT AS IT IS for A REQUIRED ELEMENT (VALIDATION SHOULD ALWAYS PASS),
     # AND THE MEANS TO ACCESS THE VALUE HAS NOT BEEN CONFIRMED. DO NOT DELETE THE METHOD, IT MAY NEED REINSTATED LATER.
@@ -142,7 +144,9 @@ class PostValidators:
 
         # Validate all fields which have standard validation
         for field_name in self.fields_with_standard_validation:
-            self.validate_field(mandation_functions, validation_set, field_name, field_locations)
+            self.validate_field(
+                mandation_functions, validation_set, field_name, field_locations
+            )
 
         # Validate reason_code_coding_code fields. Note that there may be multiple of each of these
         # - all instances of the field will be validated by the validate_reason_code_coding_field validator

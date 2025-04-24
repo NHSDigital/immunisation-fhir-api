@@ -6,13 +6,19 @@ from io import StringIO
 import csv
 import boto3
 from moto import mock_s3
-from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import GenericSetUp, GenericTearDown
+from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
+    GenericSetUp,
+    GenericTearDown,
+)
 from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
     MockFileDetails,
     ValidMockFileContent,
     REGION_NAME,
 )
-from tests.utils_for_recordprocessor_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT, BucketNames
+from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
+    MOCK_ENVIRONMENT_DICT,
+    BucketNames,
+)
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
     from utils_for_recordprocessor import (
@@ -47,8 +53,12 @@ class TestUtilsForRecordprocessor(unittest.TestCase):
 
     def test_get_csv_content_dict_reader(self):
         """Tests that get_csv_content_dict_reader returns the correct csv data"""
-        self.upload_source_file(test_file.file_key, ValidMockFileContent.with_new_and_update)
-        expected_output = csv.DictReader(StringIO(ValidMockFileContent.with_new_and_update), delimiter="|")
+        self.upload_source_file(
+            test_file.file_key, ValidMockFileContent.with_new_and_update
+        )
+        expected_output = csv.DictReader(
+            StringIO(ValidMockFileContent.with_new_and_update), delimiter="|"
+        )
         result, csv_data = get_csv_content_dict_reader(test_file.file_key)
         self.assertEqual(list(result), list(expected_output))
         self.assertEqual(csv_data, ValidMockFileContent.with_new_and_update)
@@ -99,17 +109,26 @@ class TestUtilsForRecordprocessor(unittest.TestCase):
         source_file_key = "test_file_key"
         destination_file_key = "archive/test_file_key"
         source_file_content = "test_content"
-        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=source_file_key, Body=source_file_content)
+        s3_client.put_object(
+            Bucket=BucketNames.SOURCE, Key=source_file_key, Body=source_file_content
+        )
 
         move_file(BucketNames.SOURCE, source_file_key, destination_file_key)
 
         keys_of_objects_in_bucket = [
-            obj["Key"] for obj in s3_client.list_objects_v2(Bucket=BucketNames.SOURCE).get("Contents")
+            obj["Key"]
+            for obj in s3_client.list_objects_v2(Bucket=BucketNames.SOURCE).get(
+                "Contents"
+            )
         ]
         self.assertNotIn(source_file_key, keys_of_objects_in_bucket)
         self.assertIn(destination_file_key, keys_of_objects_in_bucket)
-        destination_file_content = s3_client.get_object(Bucket=BucketNames.SOURCE, Key=destination_file_key)
-        self.assertEqual(destination_file_content["Body"].read().decode("utf-8"), source_file_content)
+        destination_file_content = s3_client.get_object(
+            Bucket=BucketNames.SOURCE, Key=destination_file_key
+        )
+        self.assertEqual(
+            destination_file_content["Body"].read().decode("utf-8"), source_file_content
+        )
 
 
 if __name__ == "__main__":

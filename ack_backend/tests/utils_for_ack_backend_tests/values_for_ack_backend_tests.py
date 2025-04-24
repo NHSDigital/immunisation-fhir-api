@@ -91,14 +91,14 @@ class MessageDetails:
         imms_id: str = DefaultValues.imms_id,
         created_at_formatted_string: str = DefaultValues.created_at_formatted_string,
     ):
-        self.name = f"{vaccine_type.upper()}/ {supplier.upper()} {operation_requested} message"
-        self.file_key = f"{vaccine_type}_Vaccinations_v5_{ods_code}_20210730T12000000.csv"
-        self.temp_ack_file_key = (
-            f"TempAck/{vaccine_type}_Vaccinations_v5_{ods_code}_20210730T12000000_BusAck_20211120T12000000.csv"
+        self.name = (
+            f"{vaccine_type.upper()}/ {supplier.upper()} {operation_requested} message"
         )
-        self.archive_ack_file_key = (
-            f"forwardedFile/{vaccine_type}_Vaccinations_v5_{ods_code}_20210730T12000000_BusAck_20211120T12000000.csv"
+        self.file_key = (
+            f"{vaccine_type}_Vaccinations_v5_{ods_code}_20210730T12000000.csv"
         )
+        self.temp_ack_file_key = f"TempAck/{vaccine_type}_Vaccinations_v5_{ods_code}_20210730T12000000_BusAck_20211120T12000000.csv"
+        self.archive_ack_file_key = f"forwardedFile/{vaccine_type}_Vaccinations_v5_{ods_code}_20210730T12000000_BusAck_20211120T12000000.csv"
         self.vaccine_type = vaccine_type
         self.ods_code = ods_code
         self.supplier = supplier
@@ -123,7 +123,10 @@ class MessageDetails:
 
         self.success_message = {**self.base_message, "imms_id": imms_id}
 
-        self.failure_message = {**self.base_message, "diagnostics": DiagnosticsDictionaries.NO_PERMISSIONS}
+        self.failure_message = {
+            **self.base_message,
+            "diagnostics": DiagnosticsDictionaries.NO_PERMISSIONS,
+        }
 
 
 class MockMessageDetails:

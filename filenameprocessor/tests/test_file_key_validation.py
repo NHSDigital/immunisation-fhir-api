@@ -24,7 +24,10 @@ class TestFileKeyValidation(TestCase):
         test_cases = [
             ("20200101T12345600", True),  # Valid datetime string with timezone
             ("20200101T123456", True),  # Valid datetime string without timezone
-            ("20200101T123456extracharacters", True),  # Valid datetime string with additional characters
+            (
+                "20200101T123456extracharacters",
+                True,
+            ),  # Valid datetime string with additional characters
             ("20201301T12345600", False),  # Invalid month
             ("20200100T12345600", False),  # Invalid day
             ("20200230T12345600", False),  # Invalid combination of month and day
@@ -57,15 +60,25 @@ class TestFileKeyValidation(TestCase):
             with self.subTest(f"SubTest for file key: {file_key}"):
                 self.assertEqual(validate_file_key(file_key), expected_result)
 
-        key_format_error_message = "Initial file validation failed: invalid file key format"
-        invalid_file_key_error_message = "Initial file validation failed: invalid file key"
+        key_format_error_message = (
+            "Initial file validation failed: invalid file key format"
+        )
+        invalid_file_key_error_message = (
+            "Initial file validation failed: invalid file key"
+        )
         test_cases_for_failure_scenarios = [
             # File key with no '.'
             (VALID_FLU_EMIS_FILE_KEY.replace(".", ""), key_format_error_message),
             # File key with additional '.'
-            (VALID_FLU_EMIS_FILE_KEY[:2] + "." + VALID_FLU_EMIS_FILE_KEY[2:], key_format_error_message),
+            (
+                VALID_FLU_EMIS_FILE_KEY[:2] + "." + VALID_FLU_EMIS_FILE_KEY[2:],
+                key_format_error_message,
+            ),
             # File key with additional '_'
-            (VALID_FLU_EMIS_FILE_KEY[:2] + "_" + VALID_FLU_EMIS_FILE_KEY[2:], key_format_error_message),
+            (
+                VALID_FLU_EMIS_FILE_KEY[:2] + "_" + VALID_FLU_EMIS_FILE_KEY[2:],
+                key_format_error_message,
+            ),
             # File key with missing '_'
             (VALID_FLU_EMIS_FILE_KEY.replace("_", "", 1), key_format_error_message),
             # File key with missing '_'
@@ -73,27 +86,59 @@ class TestFileKeyValidation(TestCase):
             # File key with missing extension
             (VALID_FLU_EMIS_FILE_KEY.replace(".csv", ""), key_format_error_message),
             # File key with invalid vaccine type
-            (VALID_FLU_EMIS_FILE_KEY.replace("FLU", "Flue"), invalid_file_key_error_message),
+            (
+                VALID_FLU_EMIS_FILE_KEY.replace("FLU", "Flue"),
+                invalid_file_key_error_message,
+            ),
             # File key with missing vaccine type
-            (VALID_FLU_EMIS_FILE_KEY.replace("FLU", ""), invalid_file_key_error_message),
+            (
+                VALID_FLU_EMIS_FILE_KEY.replace("FLU", ""),
+                invalid_file_key_error_message,
+            ),
             # File key with invalid vaccinations element
-            (VALID_FLU_EMIS_FILE_KEY.replace("Vaccinations", "Vaccination"), invalid_file_key_error_message),
+            (
+                VALID_FLU_EMIS_FILE_KEY.replace("Vaccinations", "Vaccination"),
+                invalid_file_key_error_message,
+            ),
             # File key with missing vaccinations element
-            (VALID_FLU_EMIS_FILE_KEY.replace("Vaccinations", ""), invalid_file_key_error_message),
+            (
+                VALID_FLU_EMIS_FILE_KEY.replace("Vaccinations", ""),
+                invalid_file_key_error_message,
+            ),
             # File key with invalid version
-            (VALID_FLU_EMIS_FILE_KEY.replace("v5", "v4"), invalid_file_key_error_message),
+            (
+                VALID_FLU_EMIS_FILE_KEY.replace("v5", "v4"),
+                invalid_file_key_error_message,
+            ),
             # File key with missing version
             (VALID_FLU_EMIS_FILE_KEY.replace("v5", ""), invalid_file_key_error_message),
             # File key with invalid ODS code
-            (VALID_FLU_EMIS_FILE_KEY.replace("YGM41", "YGAM"), invalid_file_key_error_message),
+            (
+                VALID_FLU_EMIS_FILE_KEY.replace("YGM41", "YGAM"),
+                invalid_file_key_error_message,
+            ),
             # File key with missing ODS code
-            (VALID_FLU_EMIS_FILE_KEY.replace("YGM41", ""), invalid_file_key_error_message),
+            (
+                VALID_FLU_EMIS_FILE_KEY.replace("YGM41", ""),
+                invalid_file_key_error_message,
+            ),
             # File key with invalid timestamp
-            (VALID_FLU_EMIS_FILE_KEY.replace("20000101T00000001", "20200132T12345600"), invalid_file_key_error_message),
+            (
+                VALID_FLU_EMIS_FILE_KEY.replace(
+                    "20000101T00000001", "20200132T12345600"
+                ),
+                invalid_file_key_error_message,
+            ),
             # File key with missing timestamp
-            (VALID_FLU_EMIS_FILE_KEY.replace("20000101T00000001", ""), invalid_file_key_error_message),
+            (
+                VALID_FLU_EMIS_FILE_KEY.replace("20000101T00000001", ""),
+                invalid_file_key_error_message,
+            ),
             # File key with incorrect extension
-            (VALID_FLU_EMIS_FILE_KEY.replace(".csv", ".xlsx"), invalid_file_key_error_message),
+            (
+                VALID_FLU_EMIS_FILE_KEY.replace(".csv", ".xlsx"),
+                invalid_file_key_error_message,
+            ),
         ]
 
         for file_key, expected_result in test_cases_for_failure_scenarios:

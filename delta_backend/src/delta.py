@@ -25,7 +25,9 @@ def send_message(record):
     sqs_client = boto3.client("sqs")
     try:
         # Send the record to the queue
-        sqs_client.send_message(QueueUrl=failure_queue_url, MessageBody=json.dumps(message_body))
+        sqs_client.send_message(
+            QueueUrl=failure_queue_url, MessageBody=json.dumps(message_body)
+        )
         logger.info("Record saved successfully to the DLQ")
     except ClientError as e:
         logger.info(f"Error sending record to DLQ: {e}")
@@ -54,7 +56,9 @@ def handler(event, context):
             start = time.time()
             log_data["date_time"] = str(datetime.now())
             intrusion_check = False
-            approximate_creation_time = datetime.utcfromtimestamp(record["dynamodb"]["ApproximateCreationDateTime"])
+            approximate_creation_time = datetime.utcfromtimestamp(
+                record["dynamodb"]["ApproximateCreationDateTime"]
+            )
             expiry_time = approximate_creation_time + timedelta(days=30)
             expiry_time_epoch = int(expiry_time.timestamp())
             error_records = []
@@ -72,7 +76,9 @@ def handler(event, context):
                         operation = "NEW"
                     resource_json = json.loads(new_image["Resource"]["S"])
                     FHIRConverter = Converter(json.dumps(resource_json))
-                    flat_json = FHIRConverter.runConversion(resource_json)  # Get the flat JSON
+                    flat_json = FHIRConverter.runConversion(
+                        resource_json
+                    )  # Get the flat JSON
                     error_records = FHIRConverter.getErrorRecords()
                     flat_json[0]["ACTION_FLAG"] = operation
                     response = delta_table.put_item(
@@ -95,7 +101,10 @@ def handler(event, context):
                     firehose_log["event"] = log_data
                     firehose_logger.send_log(firehose_log)
                     logger.info(f"Record from DPS skipped for {imms_id}")
-                    return {"statusCode": 200, "body": f"Record from DPS skipped for {imms_id}"}
+                    return {
+                        "statusCode": 200,
+                        "body": f"Record from DPS skipped for {imms_id}",
+                    }
             else:
                 operation = "REMOVE"
                 new_image = record["dynamodb"]["Keys"]

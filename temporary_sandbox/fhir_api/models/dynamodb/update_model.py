@@ -1,4 +1,4 @@
-''' Update Model for Immunization Records '''
+"""Update Model for Immunization Records"""
 
 import datetime
 
@@ -13,16 +13,13 @@ from fhir_api.models.fhir_r4.common import (
     Quantity,
 )
 
-from fhir_api.models.fhir_r4.immunization import (
-    Performer,
-    ProtocolApplied,
-    Annotation
-)
+from fhir_api.models.fhir_r4.immunization import Performer, ProtocolApplied, Annotation
 
 
 class UpdateImmunizationRecord(BaseModel):
-    '''Update Immunization Record '''
-    resourceType: Literal["Immunization"] = Field(default='Immunization')
+    """Update Immunization Record"""
+
+    resourceType: Literal["Immunization"] = Field(default="Immunization")
     status: Optional[code_types.status_codes]
     statusReason: Optional[CodeableConceptType]
     vaccineCode: Optional[CodeableConceptType]
@@ -50,7 +47,7 @@ class UpdateImmunizationRecord(BaseModel):
 
     def dict(self, *args, **kwargs) -> dict[str, Any]:
         """
-            Override the default dict method to exclude None values in the response
+        Override the default dict method to exclude None values in the response
         """
-        kwargs.pop('exclude_none', None)
+        kwargs.pop("exclude_none", None)
         return super().dict(*args, exclude_none=True, **kwargs)

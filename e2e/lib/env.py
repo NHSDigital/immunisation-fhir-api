@@ -20,10 +20,14 @@ def get_apigee_env() -> ApigeeEnv:
         try:
             return ApigeeEnv(env)
         except ValueError:
-            logging.error(f'the environment variable "APIGEE_ENVIRONMENT: {env}" is invalid')
+            logging.error(
+                f'the environment variable "APIGEE_ENVIRONMENT: {env}" is invalid'
+            )
     else:
-        logging.warning('the environment variable "APIGEE_ENVIRONMENT" is empty, '
-                        'falling back to the default value: "internal-dev"')
+        logging.warning(
+            'the environment variable "APIGEE_ENVIRONMENT" is empty, '
+            'falling back to the default value: "internal-dev"'
+        )
         return ApigeeEnv.INTERNAL_DEV
 
 
@@ -35,11 +39,18 @@ def get_apigee_access_token(username: str = None):
         env = os.environ.copy()
         env["SSO_LOGIN_URL"] = env.get("SSO_LOGIN_URL", "https://login.apigee.com")
         try:
-            res = subprocess.run(["get_token", "-u", username], env=env, stdout=subprocess.PIPE, text=True)
+            res = subprocess.run(
+                ["get_token", "-u", username],
+                env=env,
+                stdout=subprocess.PIPE,
+                text=True,
+            )
             return res.stdout.strip()
         except FileNotFoundError:
-            raise RuntimeError("Make sure you install apigee's get_token utility and make sure it's in your PATH. "
-                               "Follow: https://docs.apigee.com/api-platform/system-administration/using-gettoken")
+            raise RuntimeError(
+                "Make sure you install apigee's get_token utility and make sure it's in your PATH. "
+                "Follow: https://docs.apigee.com/api-platform/system-administration/using-gettoken"
+            )
 
 
 def get_default_app_restricted_credentials() -> AppRestrictedCredentials:
@@ -49,7 +60,9 @@ def get_default_app_restricted_credentials() -> AppRestrictedCredentials:
         raise RuntimeError('Both "DEFAULT_CLIENT_ID" and "DEFAULT_APP_ID" are required')
     private_key = get_private_key()
 
-    return AppRestrictedCredentials(client_id=client_id, kid=kid, private_key_content=private_key)
+    return AppRestrictedCredentials(
+        client_id=client_id, kid=kid, private_key_content=private_key
+    )
 
 
 def get_private_key_path() -> str:
@@ -92,7 +105,7 @@ def get_service_base_path(apigee_env: ApigeeEnv = None) -> str:
     apigee_env = apigee_env if apigee_env else get_apigee_env()
 
     base_path = os.getenv("SERVICE_BASE_PATH")
-    if apigee_env.value == 'prod':
+    if apigee_env.value == "prod":
         return f"https://api.service.nhs.uk/{base_path}"
 
     return f"https://{apigee_env.value}.api.service.nhs.uk/{base_path}"

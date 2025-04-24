@@ -54,7 +54,9 @@ def validate_file_key(file_key: str) -> tuple[str, str]:
         and version in Constants.VALID_VERSIONS
         and supplier  # Note that if supplier could be identified, this also implies that ODS code is valid
         and is_valid_datetime(timestamp)
-        and ((extension == "CSV") or (extension == "DAT"))  # The DAT extension has been added for MESH file processing
+        and (
+            (extension == "CSV") or (extension == "DAT")
+        )  # The DAT extension has been added for MESH file processing
     ):
         raise InvalidFileKeyError("Initial file validation failed: invalid file key")
 

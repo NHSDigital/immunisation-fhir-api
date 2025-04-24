@@ -7,8 +7,6 @@ from fastapi.responses import PlainTextResponse
 router = APIRouter()
 
 
-@router.get('/')
+@router.get("/")
 def root():
-    return PlainTextResponse(
-        os.getenv('FASTAPI_TITLE', 'FHIR API')
-        )
+    return PlainTextResponse(os.getenv("FASTAPI_TITLE", "FHIR API"))

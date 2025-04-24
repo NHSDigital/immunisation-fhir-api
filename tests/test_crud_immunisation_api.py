@@ -8,7 +8,9 @@ from .example_loader import load_example
 from .immunisation_api import ImmunisationApi, parse_location
 
 
-def create_an_imms_obj(imms_id: str = str(uuid.uuid4()), nhs_number=valid_nhs_number1) -> dict:
+def create_an_imms_obj(
+    imms_id: str = str(uuid.uuid4()), nhs_number=valid_nhs_number1
+) -> dict:
     imms = copy.deepcopy(load_example("Immunization/POST-COVID19-Immunization.json"))
     imms["id"] = imms_id
     imms["identifier"][0]["value"] = str(uuid.uuid4())
@@ -82,7 +84,9 @@ def test_crud_immunization_nhs_login(nhsd_apim_proxy_url, nhsd_apim_auth_headers
         "login_form": {"username": "656005750104"},
     }
 )
-def test_create_immunization_with_stored_identifier_returns_error(nhsd_apim_proxy_url, nhsd_apim_auth_headers):
+def test_create_immunization_with_stored_identifier_returns_error(
+    nhsd_apim_proxy_url, nhsd_apim_auth_headers
+):
     """create should fail if the identifier in the record is not unique"""
     token = nhsd_apim_auth_headers["Authorization"]
     imms_api = ImmunisationApi(nhsd_apim_proxy_url, token)
@@ -103,7 +107,10 @@ def test_create_immunization_with_stored_identifier_returns_error(nhsd_apim_prox
     assert failed_create_response.status_code == 422
     assert failed_create_res_body["resourceType"] == "OperationOutcome"
     # ASSERT RESPONSE BODY HAS GENERIC ERROR MESSSAGE
-    assert failed_create_res_body["issue"][0]["diagnostics"] == "Submitted resource is not valid."
+    assert (
+        failed_create_res_body["issue"][0]["diagnostics"]
+        == "Submitted resource is not valid."
+    )
 
     # READ
     imms_id = parse_location(create_response.headers["Location"])
@@ -120,7 +127,9 @@ def test_create_immunization_with_stored_identifier_returns_error(nhsd_apim_prox
         "login_form": {"username": "656005750104"},
     }
 )
-def test_update_immunization_with_stored_identifier_returns_error(nhsd_apim_proxy_url, nhsd_apim_auth_headers):
+def test_update_immunization_with_stored_identifier_returns_error(
+    nhsd_apim_proxy_url, nhsd_apim_auth_headers
+):
     """update should fail if the identifier in the record is not unique"""
     token = nhsd_apim_auth_headers["Authorization"]
     imms_api = ImmunisationApi(nhsd_apim_proxy_url, token)
@@ -152,9 +161,13 @@ def test_update_immunization_with_stored_identifier_returns_error(nhsd_apim_prox
     assert res_body["resourceType"] == "OperationOutcome"
 
     # DELETE BOTH IMMUNIZATIONS
-    delete_imms_response = imms_api.delete_immunization(parse_location(imms_response.headers["Location"]))
+    delete_imms_response = imms_api.delete_immunization(
+        parse_location(imms_response.headers["Location"])
+    )
     assert delete_imms_response.status_code == 204
-    delete_imms_2_response = imms_api.delete_immunization(parse_location(imms_2_response.headers["Location"]))
+    delete_imms_2_response = imms_api.delete_immunization(
+        parse_location(imms_2_response.headers["Location"])
+    )
     assert delete_imms_2_response.status_code == 204
 
 
@@ -165,7 +178,9 @@ def test_update_immunization_with_stored_identifier_returns_error(nhsd_apim_prox
         "login_form": {"username": "656005750104"},
     }
 )
-def test_get_event_by_id_not_found_nhs_login(nhsd_apim_proxy_url, nhsd_apim_auth_headers):
+def test_get_event_by_id_not_found_nhs_login(
+    nhsd_apim_proxy_url, nhsd_apim_auth_headers
+):
     # Arrange
     token = nhsd_apim_auth_headers["Authorization"]
     imms_api = ImmunisationApi(nhsd_apim_proxy_url, token)
@@ -207,7 +222,9 @@ def test_get_event_by_id_invalid_nhs_login(nhsd_apim_proxy_url, nhsd_apim_auth_h
         "login_form": {"username": "656005750104"},
     }
 )
-def test_delete_immunization_already_deleted(nhsd_apim_proxy_url, nhsd_apim_auth_headers):
+def test_delete_immunization_already_deleted(
+    nhsd_apim_proxy_url, nhsd_apim_auth_headers
+):
     # Arrange
     token = nhsd_apim_auth_headers["Authorization"]
     imms_api = ImmunisationApi(nhsd_apim_proxy_url, token)
@@ -253,7 +270,9 @@ def test_get_deleted_immunization(nhsd_apim_proxy_url, nhsd_apim_auth_headers):
         "login_form": {"username": "656005750104"},
     }
 )
-def test_update_none_existing_record_nhs_login(nhsd_apim_proxy_url, nhsd_apim_auth_headers):
+def test_update_none_existing_record_nhs_login(
+    nhsd_apim_proxy_url, nhsd_apim_auth_headers
+):
     """update a record that doesn't exist should create a new record"""
     token = nhsd_apim_auth_headers["Authorization"]
     imms_api = ImmunisationApi(nhsd_apim_proxy_url, token)

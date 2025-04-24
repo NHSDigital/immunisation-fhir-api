@@ -2,12 +2,15 @@ import json
 import csv
 import os
 import sys
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
+
+sys.path.insert(
+    0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src"))
+)
 from Converter import Converter
 
 
 # Sample FHIR Immunization resource (minimal test data)
-fhir_sample = os.path.join(os.path.dirname(__file__),"sample_data", "fhir_sample.json")
+fhir_sample = os.path.join(os.path.dirname(__file__), "sample_data", "fhir_sample.json")
 
 
 with open(fhir_sample, "r", encoding="utf-8") as f:

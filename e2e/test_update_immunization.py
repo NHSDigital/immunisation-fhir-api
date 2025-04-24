@@ -14,7 +14,9 @@ class TestUpdateImmunization(ImmunizationBaseTest):
                 # Given
                 immunization_resources = [
                     generate_imms_resource(),
-                    generate_imms_resource(sample_data_file_name="completed_rsv_immunization_event")
+                    generate_imms_resource(
+                        sample_data_file_name="completed_rsv_immunization_event"
+                    ),
                 ]
 
                 for imms in immunization_resources:
@@ -45,7 +47,9 @@ class TestUpdateImmunization(ImmunizationBaseTest):
         imms["id"] = new_imms_id
 
         # When update the same object (it has the same identifier)
-        response = self.default_imms_api.update_immunization(new_imms_id, imms, expected_status_code=404)
+        response = self.default_imms_api.update_immunization(
+            new_imms_id, imms, expected_status_code=404
+        )
         # Then
         self.assert_operation_outcome(response, 404)
 
@@ -55,7 +59,9 @@ class TestUpdateImmunization(ImmunizationBaseTest):
         imms = generate_imms_resource()
         imms["id"] = msg_id
         path_id = str(uuid.uuid4())
-        response = self.default_imms_api.update_immunization(path_id, imms, expected_status_code=400)
+        response = self.default_imms_api.update_immunization(
+            path_id, imms, expected_status_code=400
+        )
         self.assert_operation_outcome(response, 400, contains=path_id)
 
     # TODO: Uncomment this test if it is needed

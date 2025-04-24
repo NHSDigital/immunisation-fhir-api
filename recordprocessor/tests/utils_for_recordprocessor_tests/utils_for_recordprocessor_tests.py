@@ -1,12 +1,21 @@
 """Utils for the recordprocessor tests"""
 
 from io import StringIO
-from tests.utils_for_recordprocessor_tests.mock_environment_variables import BucketNames, Firehose, Kinesis
-from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import MockFileDetails, FileDetails
+from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
+    BucketNames,
+    Firehose,
+    Kinesis,
+)
+from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
+    MockFileDetails,
+    FileDetails,
+)
 from boto3.dynamodb.types import TypeDeserializer
 from boto3 import client as boto3_client
 from unittest.mock import patch
-from tests.utils_for_recordprocessor_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT
+from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
+    MOCK_ENVIRONMENT_DICT,
+)
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
@@ -41,9 +50,14 @@ class GenericSetUp:
     def __init__(self, s3_client=None, firehose_client=None, kinesis_client=None):
 
         if s3_client:
-            for bucket_name in [BucketNames.SOURCE, BucketNames.DESTINATION, BucketNames.MOCK_FIREHOSE]:
+            for bucket_name in [
+                BucketNames.SOURCE,
+                BucketNames.DESTINATION,
+                BucketNames.MOCK_FIREHOSE,
+            ]:
                 s3_client.create_bucket(
-                    Bucket=bucket_name, CreateBucketConfiguration={"LocationConstraint": REGION_NAME}
+                    Bucket=bucket_name,
+                    CreateBucketConfiguration={"LocationConstraint": REGION_NAME},
                 )
 
         if firehose_client:
@@ -68,16 +82,22 @@ class GenericTearDown:
 
         if s3_client:
             for bucket_name in [BucketNames.SOURCE, BucketNames.DESTINATION]:
-                for obj in s3_client.list_objects_v2(Bucket=bucket_name).get("Contents", []):
+                for obj in s3_client.list_objects_v2(Bucket=bucket_name).get(
+                    "Contents", []
+                ):
                     s3_client.delete_object(Bucket=bucket_name, Key=obj["Key"])
                 s3_client.delete_bucket(Bucket=bucket_name)
 
         if firehose_client:
-            firehose_client.delete_delivery_stream(DeliveryStreamName=Firehose.STREAM_NAME)
+            firehose_client.delete_delivery_stream(
+                DeliveryStreamName=Firehose.STREAM_NAME
+            )
 
         if kinesis_client:
             try:
-                kinesis_client.delete_stream(StreamName=Kinesis.STREAM_NAME, EnforceConsumerDeletion=True)
+                kinesis_client.delete_stream(
+                    StreamName=Kinesis.STREAM_NAME, EnforceConsumerDeletion=True
+                )
             except kinesis_client.exceptions.ResourceNotFoundException:
                 pass
 
@@ -93,12 +113,21 @@ def deserialize_dynamodb_types(dynamodb_table_entry_with_types):
     Convert a dynamodb table entry with types to a table entry without types
     e.g. {'Attr1': {'S': 'val1'}, 'Attr2': {'N': 'val2'}} becomes  {'Attr1': 'val1'}
     """
-    return {k: TypeDeserializer().deserialize(v) for k, v in dynamodb_table_entry_with_types.items()}
+    return {
+        k: TypeDeserializer().deserialize(v)
+        for k, v in dynamodb_table_entry_with_types.items()
+    }
 
 
-def assert_audit_table_entry(file_details: FileDetails, expected_status: FileStatus) -> None:
+def assert_audit_table_entry(
+    file_details: FileDetails, expected_status: FileStatus
+) -> None:
     """Assert that the file details are in the audit table"""
     table_entry = dynamodb_client.get_item(
-        TableName=AUDIT_TABLE_NAME, Key={AuditTableKeys.MESSAGE_ID: {"S": file_details.message_id}}
+        TableName=AUDIT_TABLE_NAME,
+        Key={AuditTableKeys.MESSAGE_ID: {"S": file_details.message_id}},
     ).get("Item")
-    assert table_entry == {**file_details.audit_table_entry, "status": {"S": expected_status}}
+    assert table_entry == {
+        **file_details.audit_table_entry,
+        "status": {"S": expected_status},
+    }

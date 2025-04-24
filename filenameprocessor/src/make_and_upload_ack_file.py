@@ -6,7 +6,9 @@ from io import StringIO, BytesIO
 from clients import s3_client
 
 
-def make_the_ack_data(message_id: str, message_delivered: bool, created_at_formatted_string: str) -> dict:
+def make_the_ack_data(
+    message_id: str, message_delivered: bool, created_at_formatted_string: str
+) -> dict:
     """
     Returns a dictionary of ack data based on the input values.
     Dictionary keys are the ack file headers, dictionary values are the values for the ack file row
@@ -28,9 +30,13 @@ def make_the_ack_data(message_id: str, message_delivered: bool, created_at_forma
     }
 
 
-def upload_ack_file(file_key: str, ack_data: dict, created_at_formatted_string: str) -> None:
+def upload_ack_file(
+    file_key: str, ack_data: dict, created_at_formatted_string: str
+) -> None:
     """Formats the ack data into a csv file and uploads it to the ack bucket"""
-    ack_filename = "ack/" + file_key.replace(".csv", f"_InfAck_{created_at_formatted_string}.csv")
+    ack_filename = "ack/" + file_key.replace(
+        ".csv", f"_InfAck_{created_at_formatted_string}.csv"
+    )
 
     # Create CSV file with | delimiter, filetype .csv
     csv_buffer = StringIO()
@@ -46,8 +52,13 @@ def upload_ack_file(file_key: str, ack_data: dict, created_at_formatted_string: 
 
 
 def make_and_upload_the_ack_file(
-    message_id: str, file_key: str, message_delivered: bool, created_at_formatted_string: str
+    message_id: str,
+    file_key: str,
+    message_delivered: bool,
+    created_at_formatted_string: str,
 ) -> None:
     """Creates the ack file and uploads it to the S3 ack bucket"""
-    ack_data = make_the_ack_data(message_id, message_delivered, created_at_formatted_string)
+    ack_data = make_the_ack_data(
+        message_id, message_delivered, created_at_formatted_string
+    )
     upload_ack_file(file_key, ack_data, created_at_formatted_string)

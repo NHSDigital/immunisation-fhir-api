@@ -4,6 +4,8 @@ import unittest
 from models.utils.generic_utils import nhs_number_mod11_check
 
 "test"
+
+
 class UtilsTests(unittest.TestCase):
     """Tests for models.utils.generic_utils module"""
 

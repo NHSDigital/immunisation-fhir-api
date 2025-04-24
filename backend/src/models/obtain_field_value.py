@@ -35,7 +35,9 @@ class ObtainFieldValue:
         """Obtains patient_identifier_value value"""
         contained_patient = get_contained_patient(imms)
         contained_patient_identifier = [
-            x for x in contained_patient.get("identifier") if x.get("system") == Urls.nhs_number
+            x
+            for x in contained_patient.get("identifier")
+            if x.get("system") == Urls.nhs_number
         ][0]
         return contained_patient_identifier["value"]
 
@@ -43,7 +45,9 @@ class ObtainFieldValue:
     def patient_name_given(imms: dict):
         """Obtains patient_name field location based on logic"""
         try:
-            given_name, _ = patient_and_practitioner_value_and_index(imms, "given", "Patient")
+            given_name, _ = patient_and_practitioner_value_and_index(
+                imms, "given", "Patient"
+            )
         except (KeyError, IndexError, AttributeError):
             given_name = None
         return given_name
@@ -52,7 +56,9 @@ class ObtainFieldValue:
     def patient_name_family(imms: dict):
         """Obtains patient_name_family value"""
         try:
-            family_name, _ = patient_and_practitioner_value_and_index(imms, "family", "Patient")
+            family_name, _ = patient_and_practitioner_value_and_index(
+                imms, "family", "Patient"
+            )
         except (KeyError, IndexError, AttributeError):
             family_name = None
         return family_name
@@ -72,19 +78,23 @@ class ObtainFieldValue:
         """Obtains patient_address_postal_code value"""
         patient = get_contained_patient(imms)
         contained_patient_postalCode = [
-                    x for x in patient.get("address") if len(x.get("postalCode", "")) >= 1
-                ][0]["postalCode"]        
+            x for x in patient.get("address") if len(x.get("postalCode", "")) >= 1
+        ][0]["postalCode"]
         return contained_patient_postalCode
 
     @staticmethod
     def organization_identifier_value(imms: dict):
         """Obtains organization_identifier_value value"""
-        return [x for x in imms.get("performer") if is_organization(x)][0]["actor"]["identifier"]["value"]
+        return [x for x in imms.get("performer") if is_organization(x)][0]["actor"][
+            "identifier"
+        ]["value"]
 
     @staticmethod
     def organization_display(imms: dict):
         """Obtains organization_display value"""
-        return [x for x in imms.get("performer") if is_organization(x)][0]["actor"]["display"]
+        return [x for x in imms.get("performer") if is_organization(x)][0]["actor"][
+            "display"
+        ]
 
     @staticmethod
     def identifier_value(imms: dict):
@@ -100,7 +110,9 @@ class ObtainFieldValue:
     def practitioner_name_given(imms: dict):
         """Obtains practitioner_name_given value"""
         try:
-            given_name, _ = patient_and_practitioner_value_and_index(imms, "given", "Practitioner")
+            given_name, _ = patient_and_practitioner_value_and_index(
+                imms, "given", "Practitioner"
+            )
         except (KeyError, IndexError, AttributeError):
             given_name = None
         return given_name
@@ -109,7 +121,9 @@ class ObtainFieldValue:
     def practitioner_name_family(imms: dict):
         """Obtains practitioner_name_family value"""
         try:
-            family_name, _ = patient_and_practitioner_value_and_index(imms, "family", "Practitioner")
+            family_name, _ = patient_and_practitioner_value_and_index(
+                imms, "family", "Practitioner"
+            )
         except (KeyError, IndexError, AttributeError):
             family_name = None
         return family_name
@@ -142,7 +156,9 @@ class ObtainFieldValue:
     @staticmethod
     def vaccination_procedure_code(imms: dict):
         """Obtains vaccination_procedure_code value"""
-        return get_generic_extension_value(imms, Urls.vaccination_procedure, Urls.snomed, "code")
+        return get_generic_extension_value(
+            imms, Urls.vaccination_procedure, Urls.snomed, "code"
+        )
 
     # @staticmethod
     # def vaccination_procedure_display(imms: dict):
@@ -229,7 +245,9 @@ class ObtainFieldValue:
     @staticmethod
     def organization_identifier_system(imms: dict):
         """Obtains organization_identifier_system value"""
-        return [x for x in imms.get("performer") if is_organization(x)][0]["actor"]["identifier"]["system"]
+        return [x for x in imms.get("performer") if is_organization(x)][0]["actor"][
+            "identifier"
+        ]["system"]
 
     @staticmethod
     def location_identifier_value(imms: dict):

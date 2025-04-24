@@ -11,7 +11,9 @@ class TestCreateImmunization(ImmunizationBaseTest):
                 # Given
                 immunizations = [
                     generate_imms_resource(),
-                    generate_imms_resource(sample_data_file_name="completed_rsv_immunization_event"),
+                    generate_imms_resource(
+                        sample_data_file_name="completed_rsv_immunization_event"
+                    ),
                 ]
 
                 for immunization in immunizations:
@@ -31,37 +33,61 @@ class TestCreateImmunization(ImmunizationBaseTest):
         # Set up
         imms = generate_imms_resource()
         imms_id = self.default_imms_api.create_immunization_resource(imms)
-        self.assertEqual(self.default_imms_api.get_immunization_by_id(imms_id).status_code, 200)
+        self.assertEqual(
+            self.default_imms_api.get_immunization_by_id(imms_id).status_code, 200
+        )
 
         # Check that duplicate CREATE request is rejected
-        self.assert_operation_outcome(self.default_imms_api.create_immunization(imms, expected_status_code=422), 422)
+        self.assert_operation_outcome(
+            self.default_imms_api.create_immunization(imms, expected_status_code=422),
+            422,
+        )
 
         # Check that duplice CREATE request is rejected after the event is updated
         imms["id"] = imms_id  # Imms fhir resource should include the id for update
         self.default_imms_api.update_immunization(imms_id, imms)
-        self.assertEqual(self.default_imms_api.get_immunization_by_id(imms_id).status_code, 200)
+        self.assertEqual(
+            self.default_imms_api.get_immunization_by_id(imms_id).status_code, 200
+        )
         del imms["id"]  # Imms fhir resource should not include an id for create
-        self.assert_operation_outcome(self.default_imms_api.create_immunization(imms, expected_status_code=422), 422)
+        self.assert_operation_outcome(
+            self.default_imms_api.create_immunization(imms, expected_status_code=422),
+            422,
+        )
 
         # Check that duplice CREATE request is rejected after the event is updated then deleted
         self.default_imms_api.delete_immunization(imms_id)
-        self.assertEqual(self.default_imms_api.get_immunization_by_id(
-            imms_id, expected_status_code=404).status_code, 404)
-        self.assert_operation_outcome(self.default_imms_api.create_immunization(imms, expected_status_code=422), 422)
+        self.assertEqual(
+            self.default_imms_api.get_immunization_by_id(
+                imms_id, expected_status_code=404
+            ).status_code,
+            404,
+        )
+        self.assert_operation_outcome(
+            self.default_imms_api.create_immunization(imms, expected_status_code=422),
+            422,
+        )
 
         # Check that duplice CREATE request is rejected after the event is updated then deleted then reinstated
         imms["id"] = imms_id  # Imms fhir resource should include the id for update
         self.default_imms_api.update_immunization(imms_id, imms)
-        self.assertEqual(self.default_imms_api.get_immunization_by_id(imms_id).status_code, 200)
+        self.assertEqual(
+            self.default_imms_api.get_immunization_by_id(imms_id).status_code, 200
+        )
         del imms["id"]  # Imms fhir resource should not include an id for create
-        self.assert_operation_outcome(self.default_imms_api.create_immunization(imms, expected_status_code=422), 422)
+        self.assert_operation_outcome(
+            self.default_imms_api.create_immunization(imms, expected_status_code=422),
+            422,
+        )
 
     def test_bad_nhs_number(self):
         """it should reject the request if nhs-number does not exist"""
         bad_nhs_number = "7463384756"
         imms = generate_imms_resource(nhs_number=bad_nhs_number)
 
-        response = self.default_imms_api.create_immunization(imms, expected_status_code=400)
+        response = self.default_imms_api.create_immunization(
+            imms, expected_status_code=400
+        )
 
         self.assert_operation_outcome(response, 400, bad_nhs_number)
 
@@ -73,7 +99,9 @@ class TestCreateImmunization(ImmunizationBaseTest):
         invalid_datetime = "2020-12-32"
         imms["occurrenceDateTime"] = invalid_datetime
         # When
-        response = self.default_imms_api.create_immunization(imms, expected_status_code=400)
+        response = self.default_imms_api.create_immunization(
+            imms, expected_status_code=400
+        )
 
         # Then
         self.assert_operation_outcome(response, 400, "occurrenceDateTime")
@@ -113,7 +141,8 @@ class TestCreateImmunization(ImmunizationBaseTest):
     def test_create_imms_for_mandatory_fields_only(self):
         """Test that data containing only the mandatory fields is accepted for create"""
         imms = generate_imms_resource(
-            nhs_number=None, sample_data_file_name="completed_covid19_immunization_event_mandatory_fields_only"
+            nhs_number=None,
+            sample_data_file_name="completed_covid19_immunization_event_mandatory_fields_only",
         )
 
         # When
@@ -127,12 +156,17 @@ class TestCreateImmunization(ImmunizationBaseTest):
     def test_create_imms_with_missing_mandatory_field(self):
         """Test that data  is rejected for create if one of the mandatory fields is missing"""
         imms = generate_imms_resource(
-            nhs_number=None, sample_data_file_name="completed_covid19_immunization_event_mandatory_fields_only"
+            nhs_number=None,
+            sample_data_file_name="completed_covid19_immunization_event_mandatory_fields_only",
         )
         del imms["primarySource"]
 
         # When
-        response = self.default_imms_api.create_immunization(imms, expected_status_code=400)
+        response = self.default_imms_api.create_immunization(
+            imms, expected_status_code=400
+        )
 
         # Then
-        self.assert_operation_outcome(response, 400, "primarySource is a mandatory field")
+        self.assert_operation_outcome(
+            response, 400, "primarySource is a mandatory field"
+        )

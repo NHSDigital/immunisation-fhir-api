@@ -62,7 +62,9 @@ class FHIRParser:
         try:
             for field in fieldList:
                 if field.startswith("#"):
-                    rootfield = self._locateListId(rootfield, field)  # check here for default index??
+                    rootfield = self._locateListId(
+                        rootfield, field
+                    )  # check here for default index??
                 else:
                     rootfield = self._getNode(rootfield, field)
         except:

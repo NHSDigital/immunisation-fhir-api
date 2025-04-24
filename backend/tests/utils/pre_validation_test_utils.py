@@ -56,15 +56,23 @@ class ValidatorModelTests:
             invalid_strings_with_spaces_test must also be given
         """
 
-        valid_json_data = deepcopy(test_instance.json_data) if valid_json_data is None else valid_json_data
+        valid_json_data = (
+            deepcopy(test_instance.json_data)
+            if valid_json_data is None
+            else valid_json_data
+        )
 
         # Test that valid data is accepted
-        test_valid_values_accepted(test_instance, valid_json_data, field_location, valid_strings_to_test)
+        test_valid_values_accepted(
+            test_instance, valid_json_data, field_location, valid_strings_to_test
+        )
 
         # Set list of invalid data types to test
         invalid_data_types_for_strings = InvalidDataTypes.for_strings
         if is_mandatory_fhir:
-            invalid_data_types_for_strings = filter(None, invalid_data_types_for_strings)
+            invalid_data_types_for_strings = filter(
+                None, invalid_data_types_for_strings
+            )
 
         # Test invalid data types
         for invalid_data_type_for_string in invalid_data_types_for_strings:
@@ -104,7 +112,8 @@ class ValidatorModelTests:
                     valid_json_data,
                     field_location=field_location,
                     invalid_value=invalid_length_string,
-                    expected_error_message=f"{field_location} must be {max_length} " + "or fewer characters",
+                    expected_error_message=f"{field_location} must be {max_length} "
+                    + "or fewer characters",
                 )
 
         # If there are predefined values, then test strings which are
@@ -161,7 +170,9 @@ class ValidatorModelTests:
         valid_json_data = deepcopy(test_instance.json_data)
 
         # Test that valid data is accepted
-        test_valid_values_accepted(test_instance, valid_json_data, field_location, valid_lists_to_test)
+        test_valid_values_accepted(
+            test_instance, valid_json_data, field_location, valid_lists_to_test
+        )
 
         # Test invalid data types
         for invalid_data_type_for_list in InvalidDataTypes.for_lists:
@@ -268,7 +279,9 @@ class ValidatorModelTests:
         valid_json_data = deepcopy(test_instance.json_data)
 
         # Test that valid data is accepted
-        test_valid_values_accepted(test_instance, valid_json_data, field_location, valid_lists_to_test)
+        test_valid_values_accepted(
+            test_instance, valid_json_data, field_location, valid_lists_to_test
+        )
         # Test lists with duplicate values
         test_invalid_values_rejected(
             test_instance,
@@ -293,7 +306,9 @@ class ValidatorModelTests:
         valid_json_data = deepcopy(test_instance.json_data)
 
         # Test that valid data is accepted
-        test_valid_values_accepted(test_instance, valid_json_data, field_location, ["2000-01-01", "1933-12-31"])
+        test_valid_values_accepted(
+            test_instance, valid_json_data, field_location, ["2000-01-01", "1933-12-31"]
+        )
 
         # Test invalid data types
         for invalid_data_type_for_string in InvalidDataTypes.for_strings:
@@ -312,7 +327,8 @@ class ValidatorModelTests:
                 valid_json_data,
                 field_location=field_location,
                 invalid_value=invalid_date_format,
-                expected_error_message=f"{field_location} must be a valid date string in the " + 'format "YYYY-MM-DD"',
+                expected_error_message=f"{field_location} must be a valid date string in the "
+                + 'format "YYYY-MM-DD"',
             )
 
     @staticmethod
@@ -332,12 +348,16 @@ class ValidatorModelTests:
         valid_json_data = deepcopy(test_instance.json_data)
 
         # Test that valid data is accepted
-        test_valid_values_accepted(test_instance, valid_json_data, field_location, ValidValues.for_date_times)
+        test_valid_values_accepted(
+            test_instance, valid_json_data, field_location, ValidValues.for_date_times
+        )
 
         # Set list of invalid data types to test
         invalid_data_types_for_strings = InvalidDataTypes.for_strings
         if is_occurrence_date_time:
-            invalid_data_types_for_strings = filter(None, invalid_data_types_for_strings)
+            invalid_data_types_for_strings = filter(
+                None, invalid_data_types_for_strings
+            )
 
         # Test invalid data types
         for invalid_data_type_for_string in invalid_data_types_for_strings:
@@ -386,7 +406,9 @@ class ValidatorModelTests:
         valid_json_data = deepcopy(test_instance.json_data)
 
         # Test that valid data is accepted
-        test_valid_values_accepted(test_instance, valid_json_data, field_location, [True, False])
+        test_valid_values_accepted(
+            test_instance, valid_json_data, field_location, [True, False]
+        )
 
         # Test invalid data types
         for invalid_data_type_for_boolean in InvalidDataTypes.for_booleans:
@@ -450,7 +472,8 @@ class ValidatorModelTests:
                 valid_json_data,
                 field_location=field_location,
                 invalid_value=max_value + 1,
-                expected_error_message=f"{field_location} must be an integer in the range 1 to " + f"{str(max_value)}",
+                expected_error_message=f"{field_location} must be an integer in the range 1 to "
+                + f"{str(max_value)}",
             )
 
     @staticmethod
@@ -477,7 +500,9 @@ class ValidatorModelTests:
         )
 
         # Test invalid data types
-        for invalid_data_type_for_decimals_or_integers in InvalidDataTypes.for_decimals_or_integers:
+        for (
+            invalid_data_type_for_decimals_or_integers
+        ) in InvalidDataTypes.for_decimals_or_integers:
             test_invalid_values_rejected(
                 test_instance,
                 valid_json_data,
@@ -523,7 +548,9 @@ class ValidatorModelTests:
             test_instance.validator.validate(invalid_json_data)
 
         full_error_message = str(error.exception)
-        actual_error_messages = full_error_message.replace("Validation errors: ", "").split("; ")
+        actual_error_messages = full_error_message.replace(
+            "Validation errors: ", ""
+        ).split("; ")
         test_instance.assertIn(expected_error_message, actual_error_messages)
 
     @staticmethod
@@ -563,5 +590,7 @@ class ValidatorModelTests:
             test_instance.validator.validate(invalid_json_data)
 
         full_error_message = str(error.exception)
-        actual_error_messages = full_error_message.replace("Validation errors: ", "").split("; ")
+        actual_error_messages = full_error_message.replace(
+            "Validation errors: ", ""
+        ).split("; ")
         test_instance.assertIn(expected_error_message, actual_error_messages)

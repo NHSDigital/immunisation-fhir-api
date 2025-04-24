@@ -12,9 +12,7 @@ class Urls:
     nhs_number = "https://fhir.nhs.uk/Id/nhs-number"
     vaccination_procedure = "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure"
     snomed = "http://snomed.info/sct"
-    nhs_number_verification_status_structure_definition = (
-        "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-NHSNumberVerificationStatus"
-    )
+    nhs_number_verification_status_structure_definition = "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-NHSNumberVerificationStatus"
     nhs_number_verification_status_code_system = (
         "https://fhir.hl7.org.uk/CodeSystem/UKCore-NHSNumberVerificationStatusEngland"
     )
@@ -22,4 +20,6 @@ class Urls:
     urn_school_number = "https://fhir.hl7.org.uk/Id/urn-school-number"
 
 
-GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE = "Unable to process request. Issue may be transient."
+GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE = (
+    "Unable to process request. Issue may be transient."
+)

@@ -9,17 +9,17 @@ from authorization import (
     AUTHENTICATION_HEADER,
     authorize,
     Permission,
-    AuthType)
+    AuthType,
+)
 from models.errors import UnauthorizedError
 
 "test"
+
+
 def _make_aws_event(auth_type: AuthType, permissions: Set[str]):
     header = ",".join(permissions)
     return {
-        "headers": {
-            PERMISSIONS_HEADER: header,
-            AUTHENTICATION_HEADER: auth_type.value
-        }
+        "headers": {PERMISSIONS_HEADER: header, AUTHENTICATION_HEADER: auth_type.value}
     }
 
 
@@ -45,7 +45,9 @@ class TestAuthorizeDecorator(unittest.TestCase):
         is_called = controller.read_endpoint(aws_event)
         self.assertTrue(is_called)
 
-        aws_event = _make_aws_event(AuthType.APP_RESTRICTED, _full_access(exclude={Permission.READ}))
+        aws_event = _make_aws_event(
+            AuthType.APP_RESTRICTED, _full_access(exclude={Permission.READ})
+        )
         with self.assertRaises(UnauthorizedError):
             # When unauthorized
             is_called = controller.read_endpoint(aws_event)
@@ -64,7 +66,7 @@ class TestAuthorization(unittest.TestCase):
         aws_event = {
             "headers": {
                 PERMISSIONS_HEADER: str(Permission.READ),
-                AUTHENTICATION_HEADER: "unknown auth type"
+                AUTHENTICATION_HEADER: "unknown auth type",
             }
         }
 
@@ -79,8 +81,14 @@ class TestApplicationRestrictedAuthorization(unittest.TestCase):
     def test_parse_permissions_header(self):
         """it should parse the content of permissions header"""
         # test for case-insensitive, trim and duplicated
-        permissions = {"immunization:read", "immunization:read", "immunization:create\n", "\timmunization:UPDATE ",
-                       "immunization:delete", "immunization:search"}
+        permissions = {
+            "immunization:read",
+            "immunization:read",
+            "immunization:create\n",
+            "\timmunization:UPDATE ",
+            "immunization:delete",
+            "immunization:search",
+        }
         aws_event = _make_aws_event(AuthType.APP_RESTRICTED, permissions)
 
         # Try each operation. It's a pass if we don't get any exceptions
@@ -134,8 +142,14 @@ class TestCis2Authorization(unittest.TestCase):
     def test_parse_permissions_header(self):
         """it should parse the content of the permissions header"""
         # test for case-insensitive, trim and duplicated
-        permissions = {"immunization:read", "immunization:read", "immunization:create\n", "\timmunization:UPDATE ",
-                       "immunization:delete", "immunization:search"}
+        permissions = {
+            "immunization:read",
+            "immunization:read",
+            "immunization:create\n",
+            "\timmunization:UPDATE ",
+            "immunization:delete",
+            "immunization:search",
+        }
         aws_event = _make_aws_event(AuthType.CIS2, permissions)
 
         # Try each operation. It's a pass if we don't get any exceptions

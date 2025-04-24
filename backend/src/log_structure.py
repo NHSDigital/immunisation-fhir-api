@@ -26,7 +26,9 @@ def function_info(func):
         request_id = headers.get("X-Request-ID", "X-Request-ID not passed")
         actual_path = event.get("path", "Unknown")
         resource_path = event.get("requestContext", {}).get("resourcePath", "Unknown")
-        logger.info(f"Starting {func.__name__} with X-Correlation-ID: {correlation_id} and X-Request-ID: {request_id}")
+        logger.info(
+            f"Starting {func.__name__} with X-Correlation-ID: {correlation_id} and X-Request-ID: {request_id}"
+        )
         log_data = {
             "function_name": func.__name__,
             "date_time": str(datetime.now()),

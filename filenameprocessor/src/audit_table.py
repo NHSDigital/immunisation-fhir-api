@@ -4,7 +4,13 @@ from typing import Union
 from boto3.dynamodb.conditions import Key
 from clients import dynamodb_client, dynamodb_resource, logger
 from errors import DuplicateFileError, UnhandledAuditTableError
-from constants import AUDIT_TABLE_NAME, AUDIT_TABLE_QUEUE_NAME_GSI, AUDIT_TABLE_FILENAME_GSI, AuditTableKeys, FileStatus
+from constants import (
+    AUDIT_TABLE_NAME,
+    AUDIT_TABLE_QUEUE_NAME_GSI,
+    AUDIT_TABLE_FILENAME_GSI,
+    AuditTableKeys,
+    FileStatus,
+)
 
 
 def get_next_queued_file_details(queue_name: str) -> Union[dict, None]:
@@ -12,7 +18,9 @@ def get_next_queued_file_details(queue_name: str) -> Union[dict, None]:
     Checks for queued files.
     Returns a dictionary containing the details of the oldest queued file, or returns None if no queued files are found.
     """
-    queued_files_found_in_audit_table: dict = dynamodb_resource.Table(AUDIT_TABLE_NAME).query(
+    queued_files_found_in_audit_table: dict = dynamodb_resource.Table(
+        AUDIT_TABLE_NAME
+    ).query(
         IndexName=AUDIT_TABLE_QUEUE_NAME_GSI,
         KeyConditionExpression=Key(AuditTableKeys.QUEUE_NAME).eq(queue_name)
         & Key(AuditTableKeys.STATUS).eq(FileStatus.QUEUED),
@@ -21,19 +29,34 @@ def get_next_queued_file_details(queue_name: str) -> Union[dict, None]:
     queued_files_details: list = queued_files_found_in_audit_table["Items"]
 
     # Return the oldest queued file
-    return sorted(queued_files_details, key=lambda x: x["timestamp"])[0] if queued_files_details else None
+    return (
+        sorted(queued_files_details, key=lambda x: x["timestamp"])[0]
+        if queued_files_details
+        else None
+    )
 
 
-def ensure_file_is_not_a_duplicate(file_key: str, created_at_formatted_string: str) -> None:
+def ensure_file_is_not_a_duplicate(
+    file_key: str, created_at_formatted_string: str
+) -> None:
     """Raises an error if the file is a duplicate."""
     files_already_in_audit_table = (
         dynamodb_resource.Table(AUDIT_TABLE_NAME)
-        .query(IndexName=AUDIT_TABLE_FILENAME_GSI, KeyConditionExpression=Key(AuditTableKeys.FILENAME).eq(file_key))
+        .query(
+            IndexName=AUDIT_TABLE_FILENAME_GSI,
+            KeyConditionExpression=Key(AuditTableKeys.FILENAME).eq(file_key),
+        )
         .get("Items")
     )
     if files_already_in_audit_table:
-        logger.error("%s file duplicate added to s3 at the following time: %s", file_key, created_at_formatted_string)
-        raise DuplicateFileError(f"Duplicate file: {file_key} added at {created_at_formatted_string}")
+        logger.error(
+            "%s file duplicate added to s3 at the following time: %s",
+            file_key,
+            created_at_formatted_string,
+        )
+        raise DuplicateFileError(
+            f"Duplicate file: {file_key} added at {created_at_formatted_string}"
+        )
 
 
 def upsert_audit_table(
@@ -60,7 +83,10 @@ def upsert_audit_table(
                 ExpressionAttributeValues={":status": {"S": file_status}},
                 ConditionExpression="attribute_exists(message_id)",
             )
-            logger.info("%s file set for processing, and the status successfully updated in audit table", file_key)
+            logger.info(
+                "%s file set for processing, and the status successfully updated in audit table",
+                file_key,
+            )
             return False
 
         # If the file is not already processed, check whether there is a file ahead in the queue already processing
@@ -90,7 +116,11 @@ def upsert_audit_table(
             },
             ConditionExpression="attribute_not_exists(message_id)",  # Prevents accidental overwrites
         )
-        logger.info("%s file, with message id %s, successfully added to audit table", file_key, message_id)
+        logger.info(
+            "%s file, with message id %s, successfully added to audit table",
+            file_key,
+            message_id,
+        )
 
         # Return a bool indicating whether the file status is queued
         return True if file_status == FileStatus.QUEUED else False

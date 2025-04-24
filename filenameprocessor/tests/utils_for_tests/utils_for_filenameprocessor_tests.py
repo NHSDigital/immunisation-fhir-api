@@ -35,7 +35,10 @@ def deserialize_dynamodb_types(dynamodb_table_entry_with_types):
     Convert a dynamodb table entry with types to a table entry without types
     e.g. {'Attr1': {'S': 'val1'}, 'Attr2': {'N': 'val2'}} becomes  {'Attr1': 'val1'}
     """
-    return {k: TypeDeserializer().deserialize(v) for k, v in dynamodb_table_entry_with_types.items()}
+    return {
+        k: TypeDeserializer().deserialize(v)
+        for k, v in dynamodb_table_entry_with_types.items()
+    }
 
 
 def add_entry_to_table(file_details: MockFileDetails, file_status: FileStatus) -> None:
@@ -44,17 +47,25 @@ def add_entry_to_table(file_details: MockFileDetails, file_status: FileStatus) -
     dynamodb_client.put_item(TableName=AUDIT_TABLE_NAME, Item=audit_table_entry)
 
 
-def assert_audit_table_entry(file_details: FileDetails, expected_status: FileStatus) -> None:
+def assert_audit_table_entry(
+    file_details: FileDetails, expected_status: FileStatus
+) -> None:
     """Assert that the file details are in the audit table"""
     table_entry = dynamodb_client.get_item(
-        TableName=AUDIT_TABLE_NAME, Key={AuditTableKeys.MESSAGE_ID: {"S": file_details.message_id}}
+        TableName=AUDIT_TABLE_NAME,
+        Key={AuditTableKeys.MESSAGE_ID: {"S": file_details.message_id}},
     ).get("Item")
-    assert table_entry == {**file_details.audit_table_entry, "status": {"S": expected_status}}
+    assert table_entry == {
+        **file_details.audit_table_entry,
+        "status": {"S": expected_status},
+    }
 
 
 def generate_dict_full_permissions_all_suppliers_and_vaccine_types(
     suppliers: list[str], vaccine_types: list[str]
 ) -> dict:
     """Generate a dictionary of full permissions for all suppliers for all vaccine types"""
-    all_vaccine_types = [f"{vaccine_type.upper()}_FULL" for vaccine_type in vaccine_types]
+    all_vaccine_types = [
+        f"{vaccine_type.upper()}_FULL" for vaccine_type in vaccine_types
+    ]
     return {supplier.upper(): all_vaccine_types for supplier in suppliers}
