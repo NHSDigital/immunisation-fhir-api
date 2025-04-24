@@ -179,9 +179,7 @@ class TestConvertToFlatJson(unittest.TestCase):
             start = time.time()
 
             FHIRConverter = Converter(json_data)
-            FHIRConverter.runConversion(
-                ValuesForTests.json_data, False, True
-            )
+            FHIRConverter.runConversion(ValuesForTests.json_data, False, True)
 
             # flatJSON = json.dumps(FlatFile)
             # if len(flatJSON) > 0:

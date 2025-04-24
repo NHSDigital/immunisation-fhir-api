@@ -144,9 +144,7 @@ class Converter:
                 return error
 
         for conversion in conversions:
-            self._convertData(
-                ConversionValidate, conversion, dataParser, json_data
-            )
+            self._convertData(ConversionValidate, conversion, dataParser, json_data)
 
         # Collect and store any errors from ConversionChecker
         all_errors = ConversionValidate.get_error_records()

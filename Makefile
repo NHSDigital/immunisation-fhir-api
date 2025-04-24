@@ -19,7 +19,8 @@ install: install-node install-python .git/hooks/pre-commit
 #Run the npm linting script (specified in package.json). Used to check the syntax and formatting of files.
 lint:
 	npm run lint
-	find . -name '*.py' -not -path '**/.venv/*' -not -path '**/.terraform/*'| xargs poetry run flake8
+	poetry run flake8
+	poetry run black --check .
 
 #Removes build/ + dist/ directories
 clean:

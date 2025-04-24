@@ -6,7 +6,7 @@ import sys
 sys.path.insert(
     0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src"))
 )
-from Converter import Converter
+from Converter import Converter  # noqa: E402
 
 
 # Sample FHIR Immunization resource (minimal test data)

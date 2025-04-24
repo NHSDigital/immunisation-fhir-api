@@ -513,9 +513,7 @@ class TestDeleteImmunization(unittest.TestCase):
         with patch("time.time") as mock_time:
             mock_time.return_value = now_epoch
             # When
-            self.repository.delete_immunization(
-                imms_id, "COVID:delete", "Test", False
-            )
+            self.repository.delete_immunization(imms_id, "COVID:delete", "Test", False)
 
         # Then
         self.table.update_item.assert_called_once_with(

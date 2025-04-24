@@ -10,11 +10,11 @@ os.environ["AWS_SQS_QUEUE_URL"] = (
 os.environ["DELTA_TABLE_NAME"] = "my_delta_table"
 os.environ["SOURCE"] = "my_source"
 
-from src.delta import (
+from src.delta import (  # noqa: E402
     send_message,
     handler,
 )  # Import after setting environment variables
-import json
+import json  # noqa: E402
 
 
 class DeltaTestCase(unittest.TestCase):
