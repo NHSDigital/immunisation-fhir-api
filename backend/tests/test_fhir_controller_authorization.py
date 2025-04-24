@@ -14,9 +14,8 @@ from authorization import (
     PERMISSIONS_HEADER,
 )
 from fhir_controller import FhirController
-from fhir_repository import ImmunizationRepository
 from fhir_service import FhirService, UpdateOutcome
-from models.errors import UnauthorizedError, UnauthorizedVaxError
+from models.errors import UnauthorizedError
 from tests.utils.immunization_utils import create_covid_19_immunization
 
 "test"

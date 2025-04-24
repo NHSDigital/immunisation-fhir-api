@@ -305,7 +305,7 @@ class TestUpdateImmunization(TestImmunizationBatchRepository):
                 {"Error": {"Code": "ConditionalCheckFailedException"}}, "UpdateItem"
             ),
         ):
-            with self.assertRaises(ResourceNotFoundError) as e:
+            with self.assertRaises(ResourceNotFoundError):
                 self.table.query = MagicMock(
                     return_value={
                         "Count": 1,
@@ -428,7 +428,7 @@ class TestDeleteImmunization(TestImmunizationBatchRepository):
                 {"Error": {"Code": "ConditionalCheckFailedException"}}, "UpdateItem"
             ),
         ):
-            with self.assertRaises(ResourceNotFoundError) as e:
+            with self.assertRaises(ResourceNotFoundError):
                 self.table.query = MagicMock(
                     return_value={
                         "Count": 1,

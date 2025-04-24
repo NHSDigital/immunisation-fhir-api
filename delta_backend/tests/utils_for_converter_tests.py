@@ -167,7 +167,6 @@ class ValuesForTests:
                             "ApproximateCreationDateTime": 1690896000,
                             "Keys": {
                                 "PK": {"S": "covid#12345"},
-                                "PatientSK": {"S": "covid#12345"},
                                 "SupplierSystem": {"S": "EMIS"},
                                 "Resource": {"S": ValuesForTests.json_value_for_test},
                                 "PatientSK": {

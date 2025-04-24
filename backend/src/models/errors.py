@@ -25,7 +25,7 @@ class Code(str, Enum):
 class UnauthorizedError(RuntimeError):
     @staticmethod
     def to_operation_outcome() -> dict:
-        msg = f"Unauthorized request"
+        msg = "Unauthorized request"
         return create_operation_outcome(
             resource_id=str(uuid.uuid4()),
             severity=Severity.error,
@@ -243,7 +243,7 @@ class ParameterException(RuntimeError):
 class UnauthorizedSystemError(RuntimeError):
     @staticmethod
     def to_operation_outcome() -> dict:
-        msg = f"Unauthorized system"
+        msg = "Unauthorized system"
         return create_operation_outcome(
             resource_id=str(uuid.uuid4()),
             severity=Severity.error,

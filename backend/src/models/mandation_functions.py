@@ -3,9 +3,6 @@
 from dataclasses import dataclass
 
 from models.errors import MandatoryError
-from models.field_locations import FieldLocations
-from models.field_names import FieldNames
-from base_utils.base_utils import obtain_field_value
 
 
 @dataclass

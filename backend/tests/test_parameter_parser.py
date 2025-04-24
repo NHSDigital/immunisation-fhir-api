@@ -201,7 +201,7 @@ class TestParameterParser(unittest.TestCase):
             )
         self.assertEqual(
             str(e.exception),
-            f"Search parameter -immunization.target must have one or more values.",
+            "Search parameter -immunization.target must have one or more values.",
         )
 
     def test_process_search_params_patient_identifier_is_mandatory(self):
@@ -213,7 +213,7 @@ class TestParameterParser(unittest.TestCase):
             )
         self.assertEqual(
             str(e.exception),
-            f"Search parameter patient.identifier must have one value.",
+            "Search parameter patient.identifier must have one value.",
         )
 
     def test_create_query_string_with_all_params(self):

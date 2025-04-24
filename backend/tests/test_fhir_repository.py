@@ -80,7 +80,7 @@ class TestGetImmunizationByIdentifier(unittest.TestCase):
                 ]
             }
         )
-        with self.assertRaises(UnauthorizedVaxError) as e:
+        with self.assertRaises(UnauthorizedVaxError):
             # When
             self.repository.get_immunization_by_identifier(imms_id, "FLU:read", False)
 
@@ -138,7 +138,7 @@ class TestGetImmunization(unittest.TestCase):
                 }
             }
         )
-        with self.assertRaises(UnauthorizedVaxError) as e:
+        with self.assertRaises(UnauthorizedVaxError):
             # When
             self.repository.get_immunization_by_id(imms_id, "FLU:read")
 
@@ -374,7 +374,7 @@ class TestCreateImmunizationPatientIndex(unittest.TestCase):
         imms = create_covid_19_immunization_dict("an-id")
 
         update_target_disease_code(imms, DiseaseCodes.flu)
-        with self.assertRaises(UnauthorizedVaxError) as e:
+        with self.assertRaises(UnauthorizedVaxError):
             # When
             self.repository.create_immunization(
                 imms, self.patient, "COVID:create", "Test", False
@@ -513,7 +513,7 @@ class TestDeleteImmunization(unittest.TestCase):
         with patch("time.time") as mock_time:
             mock_time.return_value = now_epoch
             # When
-            _id = self.repository.delete_immunization(
+            self.repository.delete_immunization(
                 imms_id, "COVID:delete", "Test", False
             )
 
@@ -582,7 +582,7 @@ class TestDeleteImmunization(unittest.TestCase):
             }
         )
 
-        with self.assertRaises(UnauthorizedVaxError) as e:
+        with self.assertRaises(UnauthorizedVaxError):
             self.repository.delete_immunization(
                 imms_id, "COVID19:delete", "Test", False
             )

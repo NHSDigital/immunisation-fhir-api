@@ -1,16 +1,7 @@
 import unittest
-from unittest.mock import MagicMock
 from copy import deepcopy
-from base_utils.base_utils import obtain_field_location
-from models.field_locations import FieldLocations
 from src.models.fhir_immunization import ImmunizationValidator
-from .utils.generic_utils import (
-    # these have an underscore to avoid pytest collecting them as tests
-    test_valid_values_accepted as _test_valid_values_accepted,
-    test_invalid_values_rejected as _test_invalid_values_rejected,
-    load_json_data,
-)
-from src.mappings import VaccineTypes
+from .utils.generic_utils import load_json_data
 from .utils.values_for_tests import ValidValues, InvalidValues, NameInstances
 from models.utils.generic_utils import (
     get_current_name_instance,
@@ -19,7 +10,6 @@ from models.utils.generic_utils import (
     obtain_name_field_location,
 )
 from jsonpath_ng.ext import parse
-from datetime import datetime
 from models.obtain_field_value import ObtainFieldValue
 
 

@@ -21,9 +21,7 @@ from models.errors import (
     InvalidPatientId,
     CustomValidationError,
     ParameterException,
-    InconsistentIdError,
     UnauthorizedVaxError,
-    UnauthorizedError,
     IdentifierDuplicationError,
 )
 from tests.utils.immunization_utils import create_covid_19_immunization
@@ -2472,17 +2470,6 @@ class TestSearchImmunizations(unittest.TestCase):
         self.service.search_immunizations.return_value = search_result
 
         vaccine_type = VaccineTypes().all[0]
-        params = (
-            f"{self.immunization_target_key}={vaccine_type}&"
-            + urllib.parse.urlencode(
-                [
-                    (
-                        f"{self.patient_identifier_key}",
-                        f"{self.patient_identifier_valid_value}",
-                    )
-                ]
-            )
-        )
         lambda_event = {
             "headers": {
                 "Content-Type": "application/x-www-form-urlencoded",

@@ -1,6 +1,5 @@
-"FHIR Immunization Pre Validators"
+"""FHIR Immunization Pre Validators"""
 
-from typing import Union
 from models.constants import Constants
 from models.utils.generic_utils import (
     get_generic_extension_value,
@@ -293,10 +292,6 @@ class PreValidators:
         Pre-validate that if contained[?(@.resourceType=='Patient')].identifier[0] contains
         an extension field, it raises a validation error.
         """
-        field_location = (
-            "contained[?(@.resourceType=='Patient')].identifier[0].extension"
-        )
-
         try:
             patient = [
                 x for x in values["contained"] if x.get("resourceType") == "Patient"

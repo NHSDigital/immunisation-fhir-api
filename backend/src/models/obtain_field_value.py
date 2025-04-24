@@ -1,15 +1,10 @@
 """Functions for obtaining a field value from the FHIR immunization resource json data"""
 
-from datetime import datetime
 from models.utils.generic_utils import (
     get_contained_patient,
     get_contained_practitioner,
     is_organization,
     get_generic_extension_value,
-    generate_field_location_for_name,
-    get_occurrence_datetime,
-    obtain_current_name_period,
-    get_current_name_instance,
     patient_and_practitioner_value_and_index,
 )
 from constants import Urls

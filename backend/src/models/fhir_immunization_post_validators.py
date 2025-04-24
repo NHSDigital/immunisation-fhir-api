@@ -1,7 +1,6 @@
 "FHIR Immunization Post Validators"
 
 from models.errors import MandatoryError
-from models.obtain_field_value import ObtainFieldValue
 from models.validation_sets import ValidationSets
 from models.mandation_functions import MandationFunctions
 from models.field_names import FieldNames

@@ -366,7 +366,6 @@ class TestCreateImmunization(unittest.TestCase):
 
     def test_create_immunization(self):
         """it should create Immunization and validate it"""
-        imms_id = "an-id"
         self.imms_repo.create_immunization.return_value = (
             create_covid_19_immunization_dict_no_id()
         )

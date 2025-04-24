@@ -17,7 +17,7 @@ class FHIRParser:
                 if parent[key] == matchValue:
                     return True
             return False
-        except:
+        except Exception:
             return False
 
     # locate an index for an item in a list
@@ -36,7 +36,7 @@ class FHIRParser:
                             nodeId = index
                             break
                 index += 1
-        except:
+        except Exception:
             return ""
         return parent[nodeId]
 
@@ -45,11 +45,11 @@ class FHIRParser:
         # check for indices
         try:
             result = parent[child]
-        except:
+        except Exception:
             try:
                 child = int(child)
                 result = parent[child]
-            except:
+            except Exception:
                 result = ""
         return result
 
@@ -67,7 +67,7 @@ class FHIRParser:
                     )  # check here for default index??
                 else:
                     rootfield = self._getNode(rootfield, field)
-        except:
+        except Exception:
             rootfield = ""
         return rootfield
 
@@ -76,7 +76,7 @@ class FHIRParser:
         value = []
         try:
             responseValue = self._scanForValue(fieldName)
-        except:
+        except Exception:
             responseValue = ""
 
         value.append(responseValue)

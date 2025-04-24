@@ -133,14 +133,14 @@ def get_occurrence_datetime(immunization: dict) -> Optional[datetime.datetime]:
 
 
 def create_diagnostics():
-    diagnostics = f"Validation errors: contained[?(@.resourceType=='Patient')].identifier[0].value does not exists."
+    diagnostics = "Validation errors: contained[?(@.resourceType=='Patient')].identifier[0].value does not exists."
     exp_error = {"diagnostics": diagnostics}
     return exp_error
 
 
 def create_diagnostics_error(value):
     if value == "Both":
-        diagnostics = f"Validation errors: identifier[0].system and identifier[0].value doesn't match with the stored content"
+        diagnostics = "Validation errors: identifier[0].system and identifier[0].value doesn't match with the stored content"
     else:
         diagnostics = f"Validation errors: identifier[0].{value} doesn't match with the stored content"
     exp_error = {"diagnostics": diagnostics}

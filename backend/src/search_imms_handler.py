@@ -1,7 +1,6 @@
 import argparse
 import json
 import pprint
-import traceback
 import uuid
 
 from aws_lambda_typing import context as context_, events
@@ -28,7 +27,7 @@ def search_imms(event: events.APIGatewayProxyEventV1, controller: FhirController
         query_string_has_immunization_identifier = False
         query_string_has_element = False
         body_has_immunization_element = False
-        if not (query_params == None and body == None):
+        if not (query_params is None and body is None):
             if query_params:
                 query_string_has_immunization_identifier = (
                     "immunization.identifier" in event.get("queryStringParameters", {})

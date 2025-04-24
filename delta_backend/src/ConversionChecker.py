@@ -1,7 +1,7 @@
 # Handles the transformation logic for each field based on the schema
 # Root and base type expression checker functions
 import ExceptionMessages
-from datetime import datetime, timezone
+from datetime import datetime
 from zoneinfo import ZoneInfo
 import re
 from LookUpData import LookUpData

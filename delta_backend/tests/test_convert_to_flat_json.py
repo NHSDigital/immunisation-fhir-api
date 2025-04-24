@@ -1,20 +1,12 @@
 import json
 import unittest
-import os
 import time
-from datetime import datetime, timedelta
-from decimal import Decimal
 from copy import deepcopy
-from unittest import TestCase
 from unittest.mock import patch, Mock
 from moto import mock_dynamodb, mock_sqs
-from boto3 import resource as boto3_resource, client as boto3_client
+from boto3 import resource as boto3_resource
 from tests.utils_for_converter_tests import ValuesForTests, ErrorValuesForTests
-from botocore.config import Config
-from pathlib import Path
-from zoneinfo import ZoneInfo
 from SchemaParser import SchemaParser
-from Converter import Converter
 from ConversionChecker import ConversionChecker, RecordError
 import ExceptionMessages
 
@@ -187,12 +179,11 @@ class TestConvertToFlatJson(unittest.TestCase):
             start = time.time()
 
             FHIRConverter = Converter(json_data)
-            FlatFile = FHIRConverter.runConversion(
+            FHIRConverter.runConversion(
                 ValuesForTests.json_data, False, True
             )
 
-            flatJSON = json.dumps(FlatFile)
-
+            # flatJSON = json.dumps(FlatFile)
             # if len(flatJSON) > 0:
             #     print(flatJSON)
             # Fix error handling
@@ -316,7 +307,7 @@ class TestConvertToFlatJson(unittest.TestCase):
         mock_conversion_checker.side_effect = Exception("Conversion Checking Error")
         converter = Converter(fhir_data="some_data")
 
-        response = converter.runConversion(ValuesForTests.json_data)
+        converter.runConversion(ValuesForTests.json_data)
 
         # Check if the error message was added to ErrorRecords
         self.assertEqual(len(converter.getErrorRecords()), 1)
@@ -332,7 +323,7 @@ class TestConvertToFlatJson(unittest.TestCase):
         mock_get_conversions.side_effect = Exception("Error while getting conversions")
         converter = Converter(fhir_data="some_data")
 
-        response = converter.runConversion(ValuesForTests.json_data)
+        converter.runConversion(ValuesForTests.json_data)
 
         # Check if the error message was added to ErrorRecords
         self.assertEqual(len(converter.getErrorRecords()), 1)
@@ -360,7 +351,7 @@ class TestConvertToFlatJson(unittest.TestCase):
         }
         converter.SchemaFile = schema
 
-        response = converter.runConversion(ValuesForTests.json_data)
+        converter.runConversion(ValuesForTests.json_data)
 
         error_records = converter.getErrorRecords()
         self.assertEqual(len(error_records), 1)
@@ -670,8 +661,6 @@ class TestConvertToFlatJson(unittest.TestCase):
         with self.table.batch_writer() as batch:
             for item in scan.get("Items", []):
                 batch.delete_item(Key={"PK": item["PK"]})
-        result = self.table.scan()
-        items = result.get("Items", [])
 
 
 class TestPersonForeNameToFlatJson(unittest.TestCase):

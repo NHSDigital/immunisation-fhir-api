@@ -2,7 +2,6 @@
 
 import unittest
 from copy import deepcopy
-from decimal import Decimal
 
 from jsonpath_ng.ext import parse
 from .generic_utils import (

@@ -8,9 +8,7 @@ from botocore.config import Config
 from decimal import Decimal
 from typing import Optional
 from authentication import AppRestrictedAuth, Service
-import boto3
 from aws_lambda_typing.events import APIGatewayProxyEventV1
-from botocore.config import Config
 from fhir.resources.R4B.immunization import Immunization
 from boto3 import client as boto3_client
 
@@ -28,7 +26,6 @@ from models.errors import (
     ValidationError,
     IdentifierDuplicationError,
     ParameterException,
-    InconsistentIdError,
     UnauthorizedVaxError,
     UnauthorizedVaxOnRecordError,
     UnauthorizedSystemError,
@@ -467,7 +464,7 @@ class FhirController:
         existing_resource_version = int(existing_record["Version"])
         try:
             # Validate if the imms resource to be updated is a logically deleted resource - start
-            if existing_record["DeletedAt"] == True:
+            if existing_record["DeletedAt"] is True:
 
                 outcome, resource = self.fhir_service.reinstate_immunization(
                     imms_id,
@@ -566,7 +563,7 @@ class FhirController:
                 # Validate if resource version has changed since the last retrieve - end
 
                 # Check if the record is reinstated record - start
-                if existing_record["Reinstated"] == True:
+                if existing_record["Reinstated"] is True:
                     outcome, resource = (
                         self.fhir_service.update_reinstated_immunization(
                             imms_id,

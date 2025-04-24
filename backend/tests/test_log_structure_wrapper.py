@@ -1,6 +1,6 @@
 import unittest
 import json
-from unittest.mock import patch, MagicMock, ANY
+from unittest.mock import patch
 from src.log_structure import function_info
 
 "test"

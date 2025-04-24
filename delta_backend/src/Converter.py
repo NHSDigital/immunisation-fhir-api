@@ -144,7 +144,7 @@ class Converter:
                 return error
 
         for conversion in conversions:
-            rows = self._convertData(
+            self._convertData(
                 ConversionValidate, conversion, dataParser, json_data
             )
 

@@ -2,7 +2,6 @@ import unittest
 import os
 from unittest import TestCase
 from unittest.mock import patch, MagicMock
-import boto3
 from boto3 import resource as boto3_resource
 from moto import mock_dynamodb
 from models.errors import (
@@ -23,7 +22,6 @@ with patch.dict("os.environ", ForwarderValues.MOCK_ENVIRONMENT_DICT):
     from forwarding_batch_lambda import (
         forward_lambda_handler,
         create_diagnostics_dictionary,
-        forward_request_to_dynamo,
     )
 
 
@@ -673,7 +671,7 @@ class TestForwardLambdaHandler(TestCase):
             expected_values (dict): expected output dictionary values
         """
         mock_create_table.return_value = {}
-        mock_make_controller.return_value = mock_controller = MagicMock()
+        mock_make_controller.return_value = MagicMock()
         mock_forward_request_to_dynamo.side_effect = [
             "IMMS123",
         ]

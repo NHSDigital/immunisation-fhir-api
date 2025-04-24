@@ -22,7 +22,6 @@ from src.models.utils.generic_utils import (
 )
 from .utils.pre_validation_test_utils import ValidatorModelTests
 from .utils.values_for_tests import ValidValues, InvalidValues
-from models.obtain_field_value import ObtainFieldValue
 
 
 class TestImmunizationModelPreValidationRules(unittest.TestCase):

@@ -300,7 +300,7 @@ class ImmunizationBatchRepository:
                 if deleted_at_required
                 else Attr("PK").eq(attr.pk) & Attr("DeletedAt").not_exists()
             )
-            if deleted_at_required and update_reinstated == False:
+            if deleted_at_required and update_reinstated is False:
                 ExpressionAttributeValues = {
                     ":timestamp": attr.timestamp,
                     ":patient_pk": attr.patient_pk,

@@ -15,12 +15,9 @@ from pydantic import ValidationError
 
 import parameter_parser
 from fhir_repository import ImmunizationRepository
-from base_utils.base_utils import obtain_field_value
-from models.field_names import FieldNames
 from models.errors import (
     InvalidPatientId,
     CustomValidationError,
-    UnhandledResponseError,
 )
 from models.fhir_immunization import ImmunizationValidator
 from models.utils.generic_utils import (
@@ -30,7 +27,6 @@ from models.utils.generic_utils import (
     form_json,
     get_contained_patient,
 )
-from models.constants import Constants
 from models.errors import MandatoryError
 from pds_service import PdsService
 from timer import timed
