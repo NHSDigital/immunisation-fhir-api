@@ -99,7 +99,7 @@ class TestConvertToFlatJson(unittest.TestCase):
     def get_event(event_name="INSERT", operation="operation", supplier="EMIS"):
         """Returns test event data."""
         return ValuesForTests.get_event(event_name, operation, supplier)
-    
+
     def assert_dynamodb_record(self, operation_flag, items, expected_values, expected_imms, response):
         """
         Asserts that a record with the expected structure exists in DynamoDB.
