@@ -102,10 +102,6 @@ class ConversionChecker:
         else:
             message = str(e)  # if a simple string message was passed 
 
-        # Ensure message-level deduplication
-        if any(existing.get("message") == message for existing in self.errorRecords):
-            return 
-
         self.errorRecords.append({
             "code": code,
             "field": fieldName,
@@ -121,7 +117,7 @@ class ConversionChecker:
             if report_unexpected_exception:
                 self._log_error(fieldName, fieldValue, "Value is not a string")
             return ""
-        
+
         # Normalize expression rule
         format_str = expressionRule.replace("format:", "").strip()
         
@@ -269,7 +265,7 @@ class ConversionChecker:
         # If it is outright empty, return back an empty string
         if not fieldValue:
             return ""
-        
+
         try:
             regexRule = r"^\d{10}$"
             if isinstance(fieldValue, str) and re.fullmatch(regexRule, fieldValue):
@@ -302,7 +298,7 @@ class ConversionChecker:
                 "other": "9",
                 "unknown": "0"
             }
-        
+
             # Normalize input
             normalized_gender = str(fieldValue).lower()
 
@@ -336,7 +332,7 @@ class ConversionChecker:
                 lookUpValue = self.dataParser.getKeyValue(expressionRule)
                 IdentifiedLookup = self.dataLookUp.findLookUp(lookUpValue[0])
                 return IdentifiedLookup
-        
+
         except Exception as e:
             if report_unexpected_exception:
                 message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)

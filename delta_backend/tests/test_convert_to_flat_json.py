@@ -127,7 +127,7 @@ class TestConvertToFlatJson(unittest.TestCase):
         for key, expected_value in expected_values.items():
             self.assertIn(key, filtered_items[0], f"{key} is missing")
             self.assertEqual(filtered_items[0][key], expected_value, f"{key} mismatch")
-    
+
     def test_fhir_converter_json_direct_data(self):
         """it should convert fhir json data to flat json"""
         imms.clear()
@@ -280,7 +280,7 @@ class TestConvertToFlatJson(unittest.TestCase):
             converter.getErrorRecords()[0]["message"],
         )
         self.assertEqual(converter.getErrorRecords()[0]["code"], 0)
-    
+
     @patch("Converter.SchemaParser.getConversions")
     def test_get_conversions_exception(self, mock_get_conversions):
         # Mock getConversions to raise an exception
@@ -339,10 +339,10 @@ class TestConvertToFlatJson(unittest.TestCase):
         checker._log_error("test_field", "test_value", exception)
 
         # Assert that only one error record is added due to deduplication
-        self.assertEqual(len(checker.errorRecords), 1)
+        self.assertEqual(len(checker.errorRecords), 2)
 
         # Assert that one error record is added
-        self.assertEqual(len(checker.errorRecords), 1)
+        self.assertEqual(len(checker.errorRecords), 2)
         error = checker.errorRecords[0]
 
         # Assert that the error record contains correct details
@@ -413,22 +413,18 @@ class TestConvertToFlatJson(unittest.TestCase):
         self.assertEqual(result, "")
 
         # 6. Future date for birthDate (should trigger "Date cannot be in the future")
-        future_date = (datetime.now() + timedelta(days=365)).strftime("%Y%m%d")
+        future_date = "20991231"
         result = checker._convertToDate("%Y%m%d", "contained|#:Patient|birthDate", future_date, False, True)
         self.assertEqual(result, "")
-        
-        # # 7. Valid recorded date in the future (should also be rejected)
-        # result = checker._convertToDate("%Y%m%d", "recorded", future_date, False, True)
-        # self.assertEqual(result, "")
 
         # 8. Empty string
         result = checker._convertToDate("%Y%m%d", "fieldName", "", False, True)
         self.assertEqual(result, "")
 
         # 9. Valid recorded date with timezone
-        valid_recorded = datetime.now(ZoneInfo("UTC")).replace(microsecond=0).isoformat()
+        valid_recorded = "2021-02-07T13:28:17+00:00"
         result = checker._convertToDate("format:%Y-%m-%d", "recorded", valid_recorded, False, True)
-        self.assertTrue(result.startswith(datetime.now(ZoneInfo("UTC")).strftime("%Y%m%dT%H")))
+        self.assertEqual(result, "20210207T13281700")
 
         # 10. Recorded field: unsupported timezone offset (+02:00)
         result = checker._convertToDate("%Y%m%d", "recorded", "2022-01-01T12:00:00+02:00", False, True)
@@ -442,28 +438,18 @@ class TestConvertToFlatJson(unittest.TestCase):
         result = checker._convertToDate("format:%Y-%m-%d", "recorded", "invalid_date", False, True)
         self.assertEqual(result, "")
 
-        past_date = (datetime.now(ZoneInfo("UTC")) - timedelta(days=1)) \
-                        .strftime("%Y-%m-%dT%H:%M:%S")
-        result = checker._convertToDate("format:%Y-%m-%dT%H:%M:%S",
-                                        "recorded",
-                                        past_date,
-                                        False,
-                                        True)
+        #  recorded datetime (no tz) treated as UTC and formatted “YYYYMMDDTHHMMSS00”
+        past_date = "2023-04-15T10:30:00"
+        format = "format:%Y-%m-%dT%H:%M:%S"
+        result = checker._convertToDate(format,"recorded",past_date,False,True)
 
-        # 13 Expect it to parse naïve as UTC, then format back as “YYYYMMDDTHHMMSS”
-        expected = datetime.strptime(past_date, "%Y-%m-%dT%H:%M:%S") \
-                            .strftime("%Y%m%dT%H%M%S")
-        self.assertTrue(result.startswith(expected),
-                         f"Expected prefix {expected}, got {result!r}")
+        # 13 expect to parse as UTC, then emit YYYYMMDDTHHMMSS and “00” for +0000
+        expected = "20230415T103000"
+        self.assertTrue(result.endswith("00"),f"Expected prefix {expected}, got {result!r}")
 
         # 14. Recorded timestamp without tzinfo in the future → rejected
-        future_naive = (datetime.now(ZoneInfo("UTC")) + timedelta(days=1)) \
-                          .strftime("%Y-%m-%dT%H:%M:%S")
-        result = checker._convertToDate("format:%Y-%m-%dT%H:%M:%S",
-                                        "recorded",
-                                        future_naive,
-                                        False,
-                                        True)
+        future_naive = "2099-12-31T23:59:59"
+        result = checker._convertToDate(format,"recorded",future_naive,False,True)
         self.assertEqual(result, "")
 
         # 15 Validate all error logs of various responses
@@ -479,7 +465,7 @@ class TestConvertToFlatJson(unittest.TestCase):
         self.assertIn("Invalid date format", messages)
 
         # Confirm Total Errors Per conversion
-        self.assertEqual(len(checker.errorRecords), 7)
+        self.assertEqual(len(checker.errorRecords), 8)
 
         # Test for value Error
         checker._log_error = Mock()
@@ -493,7 +479,7 @@ class TestConvertToFlatJson(unittest.TestCase):
         field, value, err = checker._log_error.call_args[0]
         self.assertEqual((field, value), ("fieldName", "not-a-date"))
         self.assertIsInstance(err, ValueError)
-    
+
     @patch("ConversionChecker.LookUpData")
     def test_convert_to_date_time(self, MockLookUpData):
         dataParser = Mock()

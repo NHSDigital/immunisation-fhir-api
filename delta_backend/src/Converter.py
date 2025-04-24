@@ -32,16 +32,12 @@ class Converter:
     # Utility logs tailored to conveter class errors
     def _log_error(self,e,code=ExceptionMessages.UNEXPECTED_EXCEPTION): 
         message = str(e)  # if a simple string message was passed 
-    
-        if any(existing.get("message") == message for existing in self.ErrorRecords): 
-            return
-        
+
         error_obj = {
             "code": code,
             "message": message
         }
 
-        # Ensure message-level deduplication
         # if not any(existing.get("message") == message for existing in self.ErrorRecords):
         self.ErrorRecords.append(error_obj)
         return error_obj
@@ -72,9 +68,8 @@ class Converter:
             conversionValues = dataParser.getKeyValue(FHIRFieldName)
         except Exception as e:
             message = "Data get value Unexpected exception [%s]: %s" % (e.__class__.__name__, e)
-            p = {"code": ExceptionMessages.PARSING_ERROR, "message": message}
-            self.ErrorRecords.append(p)
-            return p
+            error = self._log_error(message, code=ExceptionMessages.PARSING_ERROR)
+            return error
 
         for conversionValue in conversionValues:
             convertedData = ConversionValidate.convertData(
@@ -99,18 +94,16 @@ class Converter:
         except Exception as e:
             if report_unexpected_exception:
                 message = "Schema Parser Unexpected exception [%s]: %s" % (e.__class__.__name__, e)
-                p = {"code": 0, "message": message}
-                self.ErrorRecords.append(p)
-                return p
+                error = self._log_error(message, code=ExceptionMessages.UNEXPECTED_EXCEPTION)
+                return error
 
         try:
             ConversionValidate = ConversionChecker(dataParser, summarise, report_unexpected_exception)
         except Exception as e:
             if report_unexpected_exception:
                 message = "Expression Checker Unexpected exception [%s]: %s" % (e.__class__.__name__, e)
-                p = {"code": 0, "message": message}
-                self.ErrorRecords.append(p)
-                return p
+                error = self._log_error(message, code=ExceptionMessages.UNEXPECTED_EXCEPTION)
+                return error
 
         # get list of expressions
         try:
@@ -118,9 +111,8 @@ class Converter:
         except Exception as e:
             if report_unexpected_exception:
                 message = "Expression Getter Unexpected exception [%s]: %s" % (e.__class__.__name__, e)
-                p = {"code": 0, "message": message}
-                self.ErrorRecords.append(p)
-                return p
+                error = self._log_error(message, code=ExceptionMessages.UNEXPECTED_EXCEPTION)
+                return error
 
         for conversion in conversions:
             rows = self._convertData(ConversionValidate, conversion, dataParser, json_data)
