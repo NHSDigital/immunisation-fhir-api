@@ -86,7 +86,8 @@ class Converter:
             dataParser = self._getFHIRParser(self.FHIRData)
         except Exception as e:
             if report_unexpected_exception:
-                error = self._log_error("FHIR Parser Unexpected exception [%s]: %s" % (e.__class__.__name__, e),code=0)
+                message = "FHIR Parser Unexpected exception [%s]: %s" % (e.__class__.__name__, e)
+                error = self._log_error(message,code=ExceptionMessages.UNEXPECTED_EXCEPTION)
                 return error
 
         try:

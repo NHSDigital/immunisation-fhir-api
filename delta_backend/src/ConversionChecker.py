@@ -336,7 +336,8 @@ class ConversionChecker:
         except Exception as e:
             if report_unexpected_exception:
                 message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return message
+                self._log_error(fieldName, fieldValue, message)
+            return ""
 
     # Default to Validate
     def _convertToDefaultTo(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
