@@ -76,10 +76,6 @@ class ConversionChecker:
                 return self._convertToBoolean(
                     expressionRule, fieldName, fieldValue, self.summarise, self.report_unexpected_exception
                 )
-            case "RECORDCONVERT":
-                return self._convertToRecord(
-                    expressionRule, fieldName, fieldValue, self.summarise, self.report_unexpected_exception
-                )
             case "LOOKUP":
                 return self._convertToLookUp(
                     expressionRule, fieldName, fieldValue, self.summarise, self.report_unexpected_exception
@@ -115,127 +111,34 @@ class ConversionChecker:
 
     def _convertToDate(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
             """
-        Convert a date string according to the given rule, rejecting invalid,
-        partial, for Expiry Date and birthDate(future date Inclusive).
-        """
-            # 1. If it is outright empty, return back an empty string
+            Convert a date string according to match YYYYMMDD format. 
+            """
             if not fieldValue:
                 return ""
 
-            # 2. Data type must be a string
+            # 1. Data type must be a string
             if not isinstance(fieldValue, str):
                 if report_unexpected_exception:
                     self._log_error(fieldName, fieldValue, "Value is not a string")
                 return ""
 
-            # 3. Use Expression Rule Format to parse the date, remove dashes and slashes
+            # 2. Use Expression Rule Format to parse the date, remove dashes and slashes
             if expressionRule == "%Y%m%d":
+                fieldValue = fieldValue.split("T")[0]
                 fieldValue = fieldValue.replace("-", "").replace("/", "")
                 if not re.match(r"^\d{8}$", fieldValue):
                     if report_unexpected_exception:
                         self._log_error(fieldName, fieldValue, "Date must be in YYYYMMDD format")
                     return ""
-
             try:
                 # Converts raw fieldvalue without delimiters to a date-time object
                 dt = datetime.strptime(fieldValue, expressionRule)
-
-                # 4. BirthDate should not be in the future
-                if fieldName == "contained|#:Patient|birthDate":
-                    today_utc = datetime.now(ZoneInfo("UTC")).date()
-                    if dt.date() > today_utc:
-                        if report_unexpected_exception:
-                            self._log_error(fieldName, fieldValue, "Birthdate cannot be in the future")
-                        return ""
-
-                # Format back into a string and return
                 return dt.strftime(expressionRule)
-
             except ValueError as e:
                 # 5. Unexpected parsing errors
                 if report_unexpected_exception:
                     self._log_error(fieldName, fieldValue, e)
                 return ""
-
-    def _convertToRecord(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
-        """
-        Converts a field value into YYYYMMDD or YYYYMMDDTHMSZ. Rejects Partials, futures and bad offsets.
-        """
-        if not fieldValue:
-            return ""
-
-        # 1 Data type must be a string
-        if not isinstance(fieldValue, str):
-            if report_unexpected_exception:
-                self._log_error(fieldName, fieldValue, "Value is not a string")
-            return ""
-
-         # 2 Reject partial ISO dates like "2024" or "2024-05"
-        if expressionRule == "%Y%m%d" and re.match(r"^\d{4}(-\d{2})?$", fieldValue):
-            if report_unexpected_exception:
-                self._log_error(fieldName, fieldValue, "Partial date not accepted")
-            return ""
-
-        # 3 If formart is "YYYY-MM-DD", run validation
-        if re.match(r"^\d{4}-\d{2}-\d{2}$", fieldValue):
-            fieldValue = fieldValue.replace("-", "").replace("/", "")
-            if not re.match(r"^\d{8}$", fieldValue):
-                if report_unexpected_exception:
-                    self._log_error(fieldName, fieldValue, "Date must be in YYYYMMDD format")
-                return ""
-            try:
-                dt = datetime.strptime(fieldValue, "%Y%m%d")
-                if dt.date() > datetime.now(ZoneInfo("UTC")).date():
-                    if report_unexpected_exception:
-                        self._log_error(fieldName, fieldValue, "Date cannot be in the future")
-                    return ""
-                return fieldValue
-            except ValueError:
-                if report_unexpected_exception:
-                    self._log_error(fieldName, fieldValue, "Invalid date format")
-                return ""
-
-        # 4 Otherwise Parse if full ISO date format
-        try: 
-            # Parse ISO format with or without TZ and remove milliseconds
-            fieldValue = re.sub(r"\.\d+(?=[+-]\d{2}:\d{2}$)", "", fieldValue)
-            dt = datetime.fromisoformat(fieldValue)
-        except ValueError: 
-            if report_unexpected_exception:
-                self._log_error(fieldName, fieldValue, "Invalid date format")
-            return ""
-
-        # 5 Assign deafult UTC timezone if tzinfo is missing
-        if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=ZoneInfo("UTC"))
-
-        # normalize to UTC, strip microseconds
-        dt_utc = dt.astimezone(ZoneInfo("UTC")).replace(microsecond=0)
-        now_utc = datetime.now(ZoneInfo("UTC"))
-
-        # 6 Check if date is in the future
-        if dt_utc > now_utc:
-            if report_unexpected_exception:
-                self._log_error(fieldName, fieldValue, "Date cannot be in the future")
-            return ""
-
-        # 7 Validate timezone offset
-        offset = dt.utcoffset()
-        allowed_offsets = [
-            ZoneInfo("UTC").utcoffset(dt),
-            ZoneInfo("Europe/London").utcoffset(dt),
-        ]
-
-        if offset not in allowed_offsets:
-            if report_unexpected_exception:
-                self._log_error(fieldName, fieldValue, f"Unsupported offset: {offset}")
-            return ""
-
-        dt_utc = dt.astimezone(ZoneInfo("UTC")).replace(microsecond=0)
-
-        # 8 Format and return with custom suffix
-        formatted = dt_utc.strftime("%Y%m%dT%H%M%S%z")
-        return formatted.replace("+0000", "00").replace("+0100", "01")
 
     # Convert FHIR datetime into CSV-safe UTC format
     def _convertToDateTime(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
