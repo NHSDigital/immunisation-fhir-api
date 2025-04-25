@@ -42,61 +42,57 @@ class ConversionChecker:
         self.errorRecords = []  # Store all errors here
 
     # Main entry point called by converter.py
-    def convertData(self, expressionType, expressionRule, fieldName, fieldValue):
+    def convertData(self, expressionType,expression_rule, field_name, field_value):
         match expressionType:
             case "DATECONVERT":
                 return self._convertToDate(
-                    expressionRule, fieldName, fieldValue, self.summarise, self.report_unexpected_exception
+                   expression_rule, field_name, field_value, self.summarise, self.report_unexpected_exception
                 )
             case "DATETIME":
                 return self._convertToDateTime(
-                    expressionRule, fieldName, fieldValue, self.summarise, self.report_unexpected_exception
+                   expression_rule, field_name, field_value, self.summarise, self.report_unexpected_exception
                 )
             case "NOTEMPTY":
                 return self._convertToNotEmpty(
-                    expressionRule, fieldName, fieldValue, self.summarise, self.report_unexpected_exception
+                   expression_rule, field_name, field_value, self.summarise, self.report_unexpected_exception
                 )
             case "DOSESEQUENCE":
                 return self._convertToDose(
-                    expressionRule, fieldName, fieldValue, self.summarise, self.report_unexpected_exception
+                   expression_rule, field_name, field_value, self.summarise, self.report_unexpected_exception
                 )
             case "GENDER":
                 return self._convertToGender(
-                    expressionRule, fieldName, fieldValue, self.summarise, self.report_unexpected_exception
+                   expression_rule, field_name, field_value, self.summarise, self.report_unexpected_exception
                 )
             case "NHSNUMBER":
                 return self._convertToNHSNumber(
-                    expressionRule, fieldName, fieldValue, self.summarise, self.report_unexpected_exception
+                   expression_rule, field_name, field_value, self.summarise, self.report_unexpected_exception
                 )
             case "CHANGETO":
                 return self._convertToChangeTo(
-                    expressionRule, fieldName, fieldValue, self.summarise, self.report_unexpected_exception
+                   expression_rule, field_name, field_value, self.summarise, self.report_unexpected_exception
                 )
             case "BOOLEAN":
                 return self._convertToBoolean(
-                    expressionRule, fieldName, fieldValue, self.summarise, self.report_unexpected_exception
+                   expression_rule, field_name, field_value, self.summarise, self.report_unexpected_exception
                 )
             case "LOOKUP":
                 return self._convertToLookUp(
-                    expressionRule, fieldName, fieldValue, self.summarise, self.report_unexpected_exception
-                )
-            case "SNOMED":
-                return self._convertToSnomed(
-                    expressionRule, fieldName, fieldValue, self.summarise, self.report_unexpected_exception
+                   expression_rule, field_name, field_value, self.summarise, self.report_unexpected_exception
                 )
             case "DEFAULT":
                 return self._convertToDefaultTo(
-                    expressionRule, fieldName, fieldValue, self.summarise, self.report_unexpected_exception
+                   expression_rule, field_name, field_value, self.summarise, self.report_unexpected_exception
                 )
             case "ONLYIF":
                 return self._convertToOnlyIfTo(
-                    expressionRule, fieldName, fieldValue, self.summarise, self.report_unexpected_exception
+                   expression_rule, field_name, field_value, self.summarise, self.report_unexpected_exception
                 )
             case _:
                 raise ValueError("Schema expression not found! Check your expression type : " + expressionType) 
 
     # Utility function for logging errors
-    def _log_error(self, fieldName, fieldValue, e, code=ExceptionMessages.RECORD_CHECK_FAILED):
+    def _log_error(self, field_name, field_value, e, code=ExceptionMessages.RECORD_CHECK_FAILED):
         if isinstance(e, Exception):
             message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, str(e))
         else:
@@ -104,59 +100,59 @@ class ConversionChecker:
 
         self.errorRecords.append({
             "code": code,
-            "field": fieldName,
-            "value": fieldValue,
+            "field": field_name,
+            "value": field_value,
             "message": message
         })
 
-    def _convertToDate(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
+    def _convertToDate(self,expression_rule, field_name, field_value, summarise, report_unexpected_exception):
             """
             Convert a date string according to match YYYYMMDD format. 
             """
-            if not fieldValue:
+            if not field_value:
                 return ""
 
             # 1. Data type must be a string
-            if not isinstance(fieldValue, str):
+            if not isinstance(field_value, str):
                 if report_unexpected_exception:
-                    self._log_error(fieldName, fieldValue, "Value is not a string")
+                    self._log_error(field_name, field_value, "Value is not a string")
                 return ""
 
             # 2. Use Expression Rule Format to parse the date, remove dashes and slashes
-            if expressionRule == "%Y%m%d":
-                fieldValue = fieldValue.split("T")[0]
-                fieldValue = fieldValue.replace("-", "").replace("/", "")
-                if not re.match(r"^\d{8}$", fieldValue):
+            if expression_rule == "%Y%m%d":
+                field_value = field_value.split("T")[0]
+                field_value = field_value.replace("-", "").replace("/", "")
+                if not re.match(r"^\d{8}$", field_value):
                     if report_unexpected_exception:
-                        self._log_error(fieldName, fieldValue, "Date must be in YYYYMMDD format")
+                        self._log_error(field_name, field_value, "Date must be in YYYYMMDD format")
                     return ""
             try:
                 # Converts raw fieldvalue without delimiters to a date-time object
-                dt = datetime.strptime(fieldValue, expressionRule)
-                return dt.strftime(expressionRule)
+                dt = datetime.strptime(field_value,expression_rule)
+                return dt.strftime(expression_rule)
             except ValueError as e:
                 # 5. Unexpected parsing errors
                 if report_unexpected_exception:
-                    self._log_error(fieldName, fieldValue, e)
+                    self._log_error(field_name, field_value, e)
                 return ""
 
     # Convert FHIR datetime into CSV-safe UTC format
-    def _convertToDateTime(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
-        if not fieldValue:
+    def _convertToDateTime(self,expression_rule, field_name, field_value, summarise, report_unexpected_exception):
+        if not field_value:
             return ""
 
         # Reject partial dates like "2024" or "2024-05"
-        if re.match(r"^\d{4}(-\d{2})?$", fieldValue):
+        if re.match(r"^\d{4}(-\d{2})?$", field_value):
             raise RecordError(
                 ExceptionMessages.RECORD_CHECK_FAILED,
-                f"{fieldName} rejected: partial datetime not accepted.",
-                f"Invalid partial datetime: {fieldValue}",
+                f"{field_name} rejected: partial datetime not accepted.",
+                f"Invalid partial datetime: {field_value}",
             )
         try:
-            dt = datetime.fromisoformat(fieldValue)
+            dt = datetime.fromisoformat(field_value)
         except ValueError:
             if report_unexpected_exception:
-                return f"Unexpected format: {fieldValue}"
+                return f"Unexpected format: {field_value}"
 
         # Allow only +00:00 or +01:00 offsets (UTC and BST) and reject unsupported timezones
         offset = dt.utcoffset()
@@ -165,14 +161,14 @@ class ConversionChecker:
         if offset not in allowed_offsets:
             raise RecordError(
                 ExceptionMessages.RECORD_CHECK_FAILED,
-                f"{fieldName} rejected: unsupported timezone.",
+                f"{field_name} rejected: unsupported timezone.",
                 f"Unsupported offset: {offset}",
             )
 
         # Convert to UTC
         dt_utc = dt.astimezone(ZoneInfo("UTC")).replace(microsecond=0)
 
-        format_str = expressionRule.replace("format:", "")
+        format_str =expression_rule.replace("format:", "")
 
         if format_str == "csv-utc":
             formatted = dt_utc.strftime("%Y%m%dT%H%M%S%z")
@@ -181,44 +177,44 @@ class ConversionChecker:
         return dt_utc.strftime(format_str)
 
     # Not Empty Validate - Returns exactly what is in the extracted fields no parsing or logic needed
-    def _convertToNotEmpty(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
+    def _convertToNotEmpty(self,expression_rule, field_name, field_value, summarise, report_unexpected_exception):
         try:
-            if isinstance(fieldValue, str) and fieldValue.strip():
-                return fieldValue
-            self._log_error(fieldName, fieldValue, "Value not a String")
+            if isinstance(field_value, str) and field_value.strip():
+                return field_value
+            self._log_error(field_name, field_value, "Value not a String")
             return ""
         except Exception as e:
             if report_unexpected_exception:
                 message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                self._log_error(fieldName, fieldValue, message)
+                self._log_error(field_name, field_value, message)
             return
 
     # NHSNumber Validate
-    def _convertToNHSNumber(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
+    def _convertToNHSNumber(self,expression_rule, field_name, field_value, summarise, report_unexpected_exception):
         """
         Validates that the NHS Number is exactly 10 digits.
         """
         # If it is outright empty, return back an empty string
-        if not fieldValue:
+        if not field_value:
             return ""
 
         try:
             regexRule = r"^\d{10}$"
-            if isinstance(fieldValue, str) and re.fullmatch(regexRule, fieldValue):
-                return fieldValue
-            raise ValueError(f"NHS Number must be exactly 10 digits: {fieldValue}")
+            if isinstance(field_value, str) and re.fullmatch(regexRule, field_value):
+                return field_value
+            raise ValueError(f"NHS Number must be exactly 10 digits: {field_value}")
         except Exception as e:
             if report_unexpected_exception:
                 message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
                 self.errorRecords.append({
-                "field": fieldName,
-                "value": fieldValue,
+                "field": field_name,
+                "value": field_value,
                 "message": message
             })
         return ""
 
     # Gender Validate
-    def _convertToGender(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
+    def _convertToGender(self,expression_rule, field_name, field_value, summarise, report_unexpected_exception):
         """
         Converts gender string to numeric representation.
         Mapping:
@@ -236,7 +232,7 @@ class ConversionChecker:
             }
 
             # Normalize input
-            normalized_gender = str(fieldValue).lower()
+            normalized_gender = str(field_value).lower()
 
             if normalized_gender not in gender_map:
                 return ""
@@ -247,49 +243,49 @@ class ConversionChecker:
                 return f"Unexpected exception [{e.__class__.__name__}]: {str(e)}"
 
     # Code for converting Action Flag
-    def _convertToChangeTo(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
+    def _convertToChangeTo(self,expression_rule, field_name, field_value, summarise, report_unexpected_exception):
         try:
-            return expressionRule
+            return expression_rule
         except Exception as e:
             if report_unexpected_exception:
                 message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
                 return message
     # Code for converting Dose Sequence
-    def _convertToDose(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
-        if isinstance(fieldValue, (int, float)) and 1 <= fieldValue <= 9:
-            return fieldValue
+    def _convertToDose(self,expression_rule, field_name, field_value, summarise, report_unexpected_exception):
+        if isinstance(field_value, (int, float)) and 1 <= field_value <= 9:
+            return field_value
         return "" 
 
     # Change to Lookup (loads expected data as is but if empty use lookup extraction to populate value)
-    def _convertToLookUp(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
-        if isinstance(fieldValue, str) and any(char.isalpha() for char in fieldValue) and not fieldValue.isdigit():
-            return fieldValue
+    def _convertToLookUp(self,expression_rule, field_name, field_value, summarise, report_unexpected_exception):
+        if isinstance(field_value, str) and any(char.isalpha() for char in field_value) and not field_value.isdigit():
+            return field_value
         try:
-                lookUpValue = self.dataParser.getKeyValue(expressionRule)
+                lookUpValue = self.dataParser.getKeyValue(expression_rule)
                 IdentifiedLookup = self.dataLookUp.findLookUp(lookUpValue[0])
                 return IdentifiedLookup
 
         except Exception as e:
             if report_unexpected_exception:
                 message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                self._log_error(fieldName, fieldValue, message)
+                self._log_error(field_name, field_value, message)
             return ""
 
     # Default to Validate
-    def _convertToDefaultTo(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
+    def _convertToDefaultTo(self,expression_rule, field_name, field_value, summarise, report_unexpected_exception):
         try:
-            if fieldValue == "":
-                return expressionRule
-            return fieldValue
+            if field_value == "":
+                return expression_rule
+            return field_value
         except Exception as e:
             if report_unexpected_exception:
                 message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
                 return message
 
     # Default to Validate
-    def _convertToOnlyIfTo(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
+    def _convertToOnlyIfTo(self,expression_rule, field_name, field_value, summarise, report_unexpected_exception):
         try:
-            conversionList = expressionRule.split("|")
+            conversionList =expression_rule.split("|")
             location = conversionList[0]
             valueCheck = conversionList[1]
             dataValue = self.dataParser.getKeyValue(location)
@@ -297,45 +293,45 @@ class ConversionChecker:
             if dataValue[0] != valueCheck:
                 return ""
 
-            return fieldValue
+            return field_value
         except Exception as e:
             if report_unexpected_exception:
                 message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
                 return message
 
     # Check if Snomed code is numeric and reject other forms
-    def _convertToSnomed(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
+    def _convertToSnomed(self,expression_rule, field_name, field_value, summarise, report_unexpected_exception):
         """
         Validates that a SNOMED code is a non-empty string containing only digits.
         """
         try:
-            if not fieldValue:
-                return fieldValue
-            if not isinstance(fieldValue, str) or not fieldValue.isdigit():
-                raise ValueError(f"Invalid SNOMED code: {fieldValue}")
-            return fieldValue
+            if not field_value:
+                return field_value
+            if not isinstance(field_value, str) or not field_value.isdigit():
+                raise ValueError(f"Invalid SNOMED code: {field_value}")
+            return field_value
         except Exception as e:
             if report_unexpected_exception:
                 message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                self._log_error(fieldName, fieldValue, message)
+                self._log_error(field_name, field_value, message)
             return ""
 
     # Check if Input is boolean or if input is a string with true or false, convert to Boolean
-    def _convertToBoolean(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
+    def _convertToBoolean(self,expression_rule, field_name, field_value, summarise, report_unexpected_exception):
         try:
-            if isinstance(fieldValue, bool):
-                return fieldValue
+            if isinstance(field_value, bool):
+                return field_value
 
-            if str(fieldValue).strip().lower() == "true":
+            if str(field_value).strip().lower() == "true":
                 return True
-            if str(fieldValue).strip().lower() == "false":
+            if str(field_value).strip().lower() == "false":
                 return False
             elif report_unexpected_exception:
-                    self._log_error(fieldName, fieldValue, "Invalid String Data")
+                    self._log_error(field_name, field_value, "Invalid String Data")
             return "" 
         except Exception as e:
             if report_unexpected_exception:
-                 self._log_error(fieldName, fieldValue, e)
+                 self._log_error(field_name, field_value, e)
             return ""
 
     def get_error_records(self):
