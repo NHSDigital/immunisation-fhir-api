@@ -168,8 +168,6 @@ class TestConvertToFlatJson(unittest.TestCase):
 
             errorRecords = FHIRConverter.getErrorRecords()
 
-            # Check if bad data creates error records
-            print(f"Error Test Case, {len(errorRecords)}")
             self.assertTrue(len(errorRecords) > 0)
 
     def test_handler_imms_convert_to_flat_json(self):
@@ -439,7 +437,6 @@ class TestConvertToFlatJson(unittest.TestCase):
 
         # 15 Validate all error logs of various responses
         messages = [err["message"] for err in checker.errorRecords]
-        print(f"Error Test Case, {messages}")
 
         self.assertIn("Date must be in YYYYMMDD format", messages)
         self.assertIn("Value is not a string", messages)
