@@ -139,7 +139,7 @@ ConvertLayout = {
       "fieldNameFlat": "RECORDED_DATE",
       "expression": {
         "expressionName": "Date Convert",
-        "expressionType": "DATECONVERT",
+        "expressionType": "RECORDCONVERT",
         "expressionRule": "%Y%m%d"
       }
     },

@@ -417,40 +417,10 @@ class TestConvertToFlatJson(unittest.TestCase):
         result = checker._convertToDate("%Y%m%d", "contained|#:Patient|birthDate", future_date, False, True)
         self.assertEqual(result, "")
 
-        # 8. Empty string
+        # 7. Empty string
         result = checker._convertToDate("%Y%m%d", "fieldName", "", False, True)
         self.assertEqual(result, "")
 
-        # 9. Valid recorded date with timezone
-        valid_recorded = "2021-02-07T13:28:17+00:00"
-        result = checker._convertToDate("format:%Y-%m-%d", "recorded", valid_recorded, False, True)
-        self.assertEqual(result, "20210207T13281700")
-
-        # 10. Recorded field: unsupported timezone offset (+02:00)
-        result = checker._convertToDate("%Y%m%d", "recorded", "2022-01-01T12:00:00+02:00", False, True)
-        self.assertEqual(result, "")
-
-        # 11. Recorded date with invalid format
-        result = checker._convertToDate("format:%Y-%m-%d", "recorded", "invalid_date", False, True)
-        self.assertEqual(result, "")
-
-        # 12. Recorded date with invalid format
-        result = checker._convertToDate("format:%Y-%m-%d", "recorded", "invalid_date", False, True)
-        self.assertEqual(result, "")
-
-        #  recorded datetime (no tz) treated as UTC and formatted “YYYYMMDDTHHMMSS00”
-        past_date = "2023-04-15T10:30:00"
-        format = "format:%Y-%m-%dT%H:%M:%S"
-        result = checker._convertToDate(format,"recorded",past_date,False,True)
-
-        # 13 expect to parse as UTC, then emit YYYYMMDDTHHMMSS and “00” for +0000
-        expected = "20230415T103000"
-        self.assertTrue(result.endswith("00"),f"Expected prefix {expected}, got {result!r}")
-
-        # 14. Recorded timestamp without tzinfo in the future → rejected
-        future_naive = "2099-12-31T23:59:59"
-        result = checker._convertToDate(format,"recorded",future_naive,False,True)
-        self.assertEqual(result, "")
 
         # 15 Validate all error logs of various responses
         messages = [err["message"] for err in checker.errorRecords]
@@ -458,14 +428,11 @@ class TestConvertToFlatJson(unittest.TestCase):
 
         self.assertIn("Date must be in YYYYMMDD format", messages)
         self.assertIn("Value is not a string", messages)
-        self.assertIn("Partial date not accepted", messages)
-        self.assertIn("Date cannot be in the future", messages)
         self.assertIn("Birthdate cannot be in the future", messages)
-        self.assertTrue(any(m.startswith("Unsupported offset") for m in messages))
-        self.assertIn("Invalid date format", messages)
+        
 
         # Confirm Total Errors Per conversion
-        self.assertEqual(len(checker.errorRecords), 8)
+        self.assertEqual(len(checker.errorRecords), 4)
 
         # Test for value Error
         checker._log_error = Mock()
@@ -479,6 +446,86 @@ class TestConvertToFlatJson(unittest.TestCase):
         field, value, err = checker._log_error.call_args[0]
         self.assertEqual((field, value), ("fieldName", "not-a-date"))
         self.assertIsInstance(err, ValueError)
+
+    @patch("ConversionChecker.LookUpData")
+    def test_convert_to_record(self, MockLookUpData):
+        dataParser = Mock()
+
+        checker = ConversionChecker(dataParser, summarise=False, report_unexpected_exception=True)
+
+         # 1. Valid full date
+        result = checker._convertToRecord("%Y%m%d", "fieldName", "2022-01-01", False, True)
+        self.assertEqual(result, "20220101")
+
+        # 2. Check Partial date
+        result = checker._convertToRecord("%Y%m%d", "fieldName", "2022-01", False, True)
+        self.assertEqual(result, "")
+
+        # 3. Valid recorded date with timezone
+        valid_recorded = "2021-02-07T13:28:17+00:00"
+        result = checker._convertToRecord("%Y-%m-%d", "fieldName", valid_recorded, False, True)
+        self.assertEqual(result, "20210207T13281700")
+
+        # 4. Ensures Microseconds are not included
+        valid_recorded = "2021-02-07T13:28:17.12345+00:00"
+        result = checker._convertToRecord("%Y-%m-%d", "fieldName", valid_recorded, False, True)
+        self.assertEqual(result, "20210207T13281700")
+
+        # 5. Recorded field: unsupported timezone offset (+02:00)
+        result = checker._convertToRecord("%Y%m%d", "fieldName", "2022-01-01T12:00:00+02:00", False, True)
+        self.assertEqual(result, "")
+
+        # 6. Recorded date with invalid format
+        result = checker._convertToRecord("%Y-%m-%d", "fieldName", "invalid_date", False, True)
+        self.assertEqual(result, "")
+
+        # 7. Not a string input (should trigger "Value is not a string")
+        result = checker._convertToRecord("%Y%m%d", "fieldName", 12345678, False, True)
+        self.assertEqual(result, "")
+
+        # 8. Recorded date with invalid format
+        result = checker._convertToRecord("%Y-%m-%d", "fieldName", "2022-01-", False, True)
+        self.assertEqual(result, "")
+
+        # 9 Recorded datetime (no tz) treated as UTC and formatted “YYYYMMDDTHHMMSS00”
+        past_date = "2023-04-15T10:30:00"
+        format = "format:%Y-%m-%dT%H:%M:%S"
+        result = checker._convertToRecord(format,"recorded",past_date,False,True)
+
+        # 10 expect to parse as UTC, then emit YYYYMMDDTHHMMSS and “00” for +0000
+        expected = "20230415T103000"
+        self.assertTrue(result.endswith("00"),f"Expected prefix {expected}, got {result!r}")
+
+        # 11 Recorded timestamp without tzinfo in the future → rejected
+        future_naive = "2099-12-31T23:59:59"
+        result = checker._convertToRecord(format,"recorded",future_naive,False,True)
+        self.assertEqual(result, "")
+
+        # 12 Validate all error logs of various responses
+        messages = [err["message"] for err in checker.errorRecords]
+        print(f"Error Test Case, {messages}")
+
+        self.assertIn("Value is not a string", messages)
+        self.assertIn("Partial date not accepted", messages)
+        self.assertIn("Date cannot be in the future", messages)
+        self.assertTrue(any(m.startswith("Unsupported offset") for m in messages))
+        self.assertIn("Invalid date format", messages)
+
+        # Confirm Total Errors Per conversion
+        self.assertEqual(len(checker.errorRecords), 6)
+
+        # Test for value Error
+        checker._log_error = Mock()
+
+        # invalid date against the given format → ValueError path
+        result = checker._convertToRecord("format:%Y-%m-%d", "fieldName", "not-a-date", False, True)
+        self.assertEqual(result, "")
+
+        # ensure we logged exactly that ValueError
+        checker._log_error.assert_called_once()
+        field, value, err = checker._log_error.call_args[0]
+        self.assertEqual((field, value), ("fieldName", "not-a-date"))
+        self.assertEqual(err, "Invalid date format")
 
     @patch("ConversionChecker.LookUpData")
     def test_convert_to_date_time(self, MockLookUpData):
