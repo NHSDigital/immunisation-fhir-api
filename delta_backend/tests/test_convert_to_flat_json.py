@@ -178,7 +178,7 @@ class TestConvertToFlatJson(unittest.TestCase):
             errorRecords = FHIRConverter.getErrorRecords()
 
             if len(errorRecords) > 0:
-                print("Converted With Errors")
+                print("Converted With Errors - CHECK ERROR RECORDS")
                 print(f"Error records -error scenario {errorRecords}")
             else:
                 print("Converted Successfully")
