@@ -182,6 +182,8 @@ class ConversionChecker:
 
     # Not Empty Validate - Returns exactly what is in the extracted fields no parsing or logic needed
     def _convertToNotEmpty(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
+        if not fieldValue:
+            return ""
         try:
             if isinstance(fieldValue, str) and fieldValue.strip():
                 return fieldValue
