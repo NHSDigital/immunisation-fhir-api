@@ -304,7 +304,7 @@ class ErrorValuesForTests:
                 "identifier": [{"system": "https://fhir.nhs.uk/Id/nhs-number", "value": ""}],
                 "name": [{"family": "Trailor", "given": ["Sam"]}],
                 "gender": "unknown",
-                "birthDate": "196502-28",
+                "birthDate": "196513-28",
                 "address": [{"postalCode": "EC1A 1BB"}],
             },
         ],

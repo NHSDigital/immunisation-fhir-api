@@ -8,8 +8,8 @@ class SchemaParser:
     Conversions = {}
 
     def parseSchema(self, schemaFile):  # changed to accept JSON better for cache
-        self.SchemaFile = schemaFile
-        self.Conversions = self.SchemaFile["conversions"]
+        self.schema_file = schemaFile
+        self.Conversions = self.schema_file["conversions"]
 
     def conversionCount(self):
         count = 0

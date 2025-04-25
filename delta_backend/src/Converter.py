@@ -14,21 +14,17 @@ from Extractor import (
     get_valid_address,
 )
 
-# Converter variables
-FHIRData = ""
-SchemaFile = {}
-imms = []
-Converted = {}
-
 
 # Converter
 class Converter:
 
     def __init__(self, fhir_data):
-        self.FHIRData = fhir_data  # Store JSON data directly
-        self.SchemaFile = ConversionLayout.ConvertLayout
-        self.ErrorRecords = []
-    
+        self.imms = []
+        self.converted = {}
+        self.error_records = []
+        self.fhir_data = fhir_data  # Store JSON data directly
+        self.schema_file = ConversionLayout.ConvertLayout
+
     # Utility logs tailored to conveter class errors
     def _log_error(self,e,code=ExceptionMessages.UNEXPECTED_EXCEPTION): 
         message = str(e)  # if a simple string message was passed 
@@ -38,8 +34,8 @@ class Converter:
             "message": message
         }
 
-        # if not any(existing.get("message") == message for existing in self.ErrorRecords):
-        self.ErrorRecords.append(error_obj)
+        # if not any(existing.get("message") == message for existing in self.error_records):
+        self.error_records.append(error_obj)
         return error_obj
 
     # create a FHIR  parser - uses fhir json data from delta 
@@ -78,12 +74,12 @@ class Converter:
             if "address" in FHIRFieldName or "performer" in FHIRFieldName or "name" in FHIRFieldName:
                 convertedData = self.extract_patient_details(json_data, FlatFieldName)
             if convertedData is not None:
-                Converted[FlatFieldName] = convertedData
+                self.converted[FlatFieldName] = convertedData
 
     # run the conversion against the data
     def runConversion(self, json_data, summarise=False, report_unexpected_exception=True):
         try:
-            dataParser = self._getFHIRParser(self.FHIRData)
+            dataParser = self._getFHIRParser(self.fhir_data)
         except Exception as e:
             if report_unexpected_exception:
                 message = "FHIR Parser Unexpected exception [%s]: %s" % (e.__class__.__name__, e)
@@ -91,7 +87,7 @@ class Converter:
                 return error
 
         try:
-            schemaParser = self._getSchemaParser(self.SchemaFile)
+            schemaParser = self._getSchemaParser(self.schema_file)
         except Exception as e:
             if report_unexpected_exception:
                 message = "Schema Parser Unexpected exception [%s]: %s" % (e.__class__.__name__, e)
@@ -120,7 +116,7 @@ class Converter:
         
         # Collect and store any errors from ConversionChecker
         all_errors = ConversionValidate.get_error_records()
-        self.ErrorRecords.extend(all_errors)
+        self.error_records.extend(all_errors)
 
         # Add CONVERSION_ERRORS as the 35th field
         error_records = self.getErrorRecords()
@@ -128,13 +124,13 @@ class Converter:
             error_summary = error_records
         else:
             error_summary = ""
-        Converted["CONVERSION_ERRORS"] = error_summary
+        self.converted["CONVERSION_ERRORS"] = error_summary
 
-        imms.append(Converted)
-        return imms
+        self.imms.append(self.converted)
+        return self.imms
 
     def getErrorRecords(self):
-        return self.ErrorRecords
+        return self.error_records
 
     def extract_patient_details(self, json_data, FlatFieldName):
         if not hasattr(self, "_cached_values"):
