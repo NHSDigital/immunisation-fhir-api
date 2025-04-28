@@ -121,18 +121,8 @@ class ConversionChecker:
                 if report_unexpected_exception:
                     self._log_error(fieldName, fieldValue, "Value is not a string")
                 return ""
-
-            # 2. Use Expression Rule Format to parse the date, remove dashes and slashes
-            if expressionRule == "%Y%m%d":
-                fieldValue = fieldValue.split("T")[0]
-                fieldValue = fieldValue.replace("-", "").replace("/", "")
-                if not re.match(r"^\d{8}$", fieldValue):
-                    if report_unexpected_exception:
-                        self._log_error(fieldName, fieldValue, "Date must be in YYYYMMDD format")
-                    return ""
             try:
-                # Converts raw fieldvalue without delimiters to a date-time object
-                dt = datetime.strptime(fieldValue, expressionRule)
+                dt = datetime.fromisoformat(fieldValue)
                 return dt.strftime(expressionRule)
             except ValueError as e:
                 # 5. Unexpected parsing errors
@@ -182,8 +172,6 @@ class ConversionChecker:
 
     # Not Empty Validate - Returns exactly what is in the extracted fields no parsing or logic needed
     def _convertToNotEmpty(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
-        if not fieldValue:
-            return ""
         try:
             if isinstance(fieldValue, str) and fieldValue.strip():
                 return fieldValue
@@ -193,7 +181,7 @@ class ConversionChecker:
             if report_unexpected_exception:
                 message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
                 self._log_error(fieldName, fieldValue, message)
-            return
+            return ""
 
     # NHSNumber Validate
     def _convertToNHSNumber(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):

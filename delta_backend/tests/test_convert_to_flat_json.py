@@ -382,7 +382,7 @@ class TestConvertToFlatJson(unittest.TestCase):
         self.assertEqual(result, "20220101")
 
         # 2.Full ISO date should be transformed to YYYYMMDD
-        result = checker._convertToDate("%Y%m%d", "fieldName", "2022-01-01T12:00:00+00:0", False, True)
+        result = checker._convertToDate("%Y%m%d", "fieldName", "2022-01-01T12:00:00+00:00", False, True)
         self.assertEqual(result, "20220101")
 
         # 3. Invalid string date format (should trigger "Date must be in YYYYMMDD format")
@@ -405,7 +405,6 @@ class TestConvertToFlatJson(unittest.TestCase):
         messages = [err["message"] for err in checker.errorRecords]
         print(f"Error Test Case, {messages}")
 
-        self.assertIn("Date must be in YYYYMMDD format", messages)
         self.assertIn("Value is not a string", messages)
 
         # Confirm Total Errors Per conversion
