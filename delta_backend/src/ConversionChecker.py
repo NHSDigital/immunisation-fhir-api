@@ -122,6 +122,7 @@ class ConversionChecker:
                     self._log_error(fieldName, fieldValue, "Value is not a string")
                 return ""
             try:
+                fieldValue = re.sub(r"\.\d+(?=[+-]\d{2}:\d{2}$)", "", fieldValue)  # Remove milliseconds
                 dt = datetime.fromisoformat(fieldValue)
                 return dt.strftime(expressionRule)
             except ValueError as e:
