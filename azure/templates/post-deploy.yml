@@ -206,7 +206,7 @@ steps:
  
     displayName: Run full batch test suite
     workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/e2e_batch"
-    # condition: eq(1, 2) # Disable task but make this step visible in the pipeline
+    condition: eq(1, 2) # Disable task but make this step visible in the pipeline
 
   - task: PublishTestResults@2
     displayName: 'Publish test results'

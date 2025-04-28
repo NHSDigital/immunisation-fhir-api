@@ -349,6 +349,38 @@ class TestConvertToFlatJson(unittest.TestCase):
         result = checker._convertToNotEmpty(None, "fieldName", "", False, True)
         self.assertEqual(result, "")
 
+        # Test for value that is not a string
+        checker._log_error = Mock()
+        result = checker._convertToNotEmpty(None, "fieldName", 12345, False, True)
+        self.assertEqual(result, "")
+
+        checker._log_error.assert_called_once()
+
+        field, value, err = checker._log_error.call_args[0]
+        self.assertEqual((field, value), ("fieldName",12345))
+        self.assertIsInstance(err, str)
+        self.assertIn("Value not a String", err)
+
+        checker._log_error.reset_mock()
+
+        # Simulate a fieldValue whose .strip() crashes to test exception handling
+        checker._log_error = Mock()
+
+        class BadString(str):
+            def strip(self):
+                raise RuntimeError("Simulated crash during strip")
+
+        bad_value = BadString("some bad string")
+
+        # Make the .strip() method crash
+        result = checker._convertToNotEmpty(None, "fieldName", bad_value, False, True)
+        self.assertEqual(result, "")  # Should return empty string on exception
+        checker._log_error.assert_called_once()
+        field, value, message = checker._log_error.call_args[0]
+        self.assertEqual((field, value), ("fieldName", bad_value))
+        self.assertIsInstance(message, str)
+        self.assertIn("RuntimeError", message)
+
     @patch("ConversionChecker.LookUpData")
     def test_convert_to_nhs_number(self, MockLookUpData):
 
