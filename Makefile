@@ -85,3 +85,11 @@ test-prod:
 
 setup-python-envs:
 	scripts/setup-python-envs.sh
+
+unit-test-all:
+	make -C ack_backend test
+	make -C backend test
+	make -C delta_backend test
+	make -C filenameprocessor test
+	make -C mesh_processor test
+	make -C recordprocessor test

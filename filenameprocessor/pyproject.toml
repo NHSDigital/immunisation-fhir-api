@@ -1,9 +1,12 @@
-[tool.poetry]
+[project]
 name = "filenameprocessor"
 version = "0.1.0"
 description = ""
 readme = "README.md"
-authors = ["Your Name <you@example.com>"]
+authors = [{ name = "Your Name", email = "<you@example.com>" }]
+
+[tool.poetry]
+package-mode = false
 packages = [{ include = "src" }]
 
 [tool.poetry.dependencies]
@@ -25,7 +28,7 @@ structlog = "^24.1.0"
 redis = "^5.1.1"
 coverage = "7.6.1"
 freezegun = "^1.5.1"
-fakeredis = "^2.0.0" 
+fakeredis = "^2.0.0"
 
 [build-system]
 requires = ["poetry-core >= 1.5.0"]

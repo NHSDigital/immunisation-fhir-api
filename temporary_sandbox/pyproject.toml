@@ -1,9 +1,12 @@
-[tool.poetry]
+[project]
 name = "immunization-fhir-api"
 version = "0.1.0"
 description = ""
-authors = ["Jim Alcock <james.alcock1@nhs.net>"]
+authors = [{ name = "Jim Alcock", email = "<james.alcock1@nhs.net>" }]
 readme = "README.md"
+
+[tool.poetry]
+package-mode = false
 packages = []
 
 [tool.poetry.dependencies]
@@ -11,7 +14,6 @@ python = "^3.9"
 fastapi = "^0.93.0"
 uvicorn = "^0.20.0"
 boto3 = "^1.26.88"
-
 
 [tool.poetry.group.dev.dependencies]
 pylint = "^2.17.0"

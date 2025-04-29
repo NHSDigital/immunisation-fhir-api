@@ -1,9 +1,12 @@
-[tool.poetry]
+[project]
 name = "ack-code"
 version = "0.1.0"
 description = ""
-authors = ["Your Name <you@example.com>"]
+authors = [{ name = "Your Name", email = "<you@example.com>" }]
 readme = "README.md"
+
+[tool.poetry]
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "~3.10"
@@ -11,7 +14,6 @@ boto3 = "~1.26.90"
 mypy-boto3-dynamodb = "^1.26.164"
 freezegun      = "^1.5.1"
 moto           = "~4.2.11"
-
 
 [build-system]
 requires = ["poetry-core"]

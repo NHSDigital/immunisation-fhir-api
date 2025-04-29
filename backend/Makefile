@@ -6,6 +6,6 @@ package: build
 	docker run --rm -v $(shell pwd)/build:/build imms-lambda-build
 
 test:
-	python -m unittest
+	poetry run python -m unittest
 
 .PHONY: build package test
