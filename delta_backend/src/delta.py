@@ -8,6 +8,7 @@ import logging
 from botocore.exceptions import ClientError
 from log_firehose import FirehoseLogger
 from Converter import Converter
+from helpers.delta_data import DeltaData
 
 failure_queue_url = os.environ["AWS_SQS_QUEUE_URL"]
 delta_table_name = os.environ["DELTA_TABLE_NAME"]
@@ -16,6 +17,7 @@ logging.basicConfig()
 logger = logging.getLogger()
 logger.setLevel("INFO")
 firehose_logger = FirehoseLogger()
+delta_data = DeltaData(delta_table_name, delta_source)
 
 
 def send_message(record):
@@ -29,11 +31,6 @@ def send_message(record):
         logger.info("Record saved successfully to the DLQ")
     except ClientError as e:
         logger.error(f"Error sending record to DLQ: {e}")
-
-
-def get_vaccine_type(patientsk) -> str:
-    parsed = [str.strip(str.lower(s)) for s in patientsk.split("#")]
-    return parsed[0]
 
 
 def handler(event, context):
@@ -64,30 +61,9 @@ def handler(event, context):
             if record["eventName"] != "REMOVE":
                 new_image = record["dynamodb"]["NewImage"]
                 imms_id = new_image["PK"]["S"].split("#")[1]
-                vaccine_type = get_vaccine_type(new_image["PatientSK"]["S"])
                 supplier_system = new_image["SupplierSystem"]["S"]
                 if supplier_system not in ("DPSFULL", "DPSREDUCED"):
-                    operation = new_image["Operation"]["S"]
-                    if operation == "CREATE":
-                        operation = "NEW"
-                    resource_json = json.loads(new_image["Resource"]["S"])
-                    FHIRConverter = Converter(json.dumps(resource_json))
-                    flat_json = FHIRConverter.runConversion(resource_json)  # Get the flat JSON
-                    error_records = FHIRConverter.getErrorRecords()
-                    flat_json[0]["ACTION_FLAG"] = operation
-                    response = delta_table.put_item(
-                        Item={
-                            "PK": str(uuid.uuid4()),
-                            "ImmsID": imms_id,
-                            "Operation": operation,
-                            "VaccineType": vaccine_type,
-                            "SupplierSystem": supplier_system,
-                            "DateTimeStamp": approximate_creation_time.isoformat(),
-                            "Source": delta_source,
-                            "Imms": str(flat_json),
-                            "ExpiresAt": expiry_time_epoch,
-                        }
-                    )
+                    response, error_records = delta_data.write_to_db(new_image, imms_id, approximate_creation_time, expiry_time_epoch)
                 else:
                     operation_outcome["statusCode"] = "200"
                     operation_outcome["statusDesc"] = "Record from DPS skipped"

@@ -131,10 +131,13 @@ class DeltaTestCase(unittest.TestCase):
             f"Error sending record to DLQ: An error occurred (500) when calling the SendMessage operation: Internal Server Error"
         )
 
+    @patch("delta.delta_data.write_to_db")
     @patch("boto3.resource")
-    def test_handler_success_insert(self, mock_boto_resource):
+    def test_handler_success_insert(self, mock_boto_resource, mock_write_to_db):
         # Arrange
         self.setup_mock_dynamodb(mock_boto_resource)
+        mock_response = {"ResponseMetadata": {"HTTPStatusCode": 200}}
+        mock_write_to_db.return_value = (mock_response, [])
         suppilers = ["DPS", "EMIS"]
         for supplier in suppilers:
             event = self.get_event(supplier=supplier)
@@ -157,10 +160,15 @@ class DeltaTestCase(unittest.TestCase):
         # Assert
         self.assertEqual(result["statusCode"], 500)
 
+    @patch("delta.delta_data.write_to_db")
     @patch("boto3.resource")
-    def test_handler_success_update(self, mock_boto_resource):
+    def test_handler_success_update(self, mock_boto_resource, mock_write_to_db):
         # Arrange
         self.setup_mock_dynamodb(mock_boto_resource)
+        
+        mock_response = {"ResponseMetadata": {"HTTPStatusCode": 200}}
+        
+        mock_write_to_db.return_value = (mock_response, [])
         event = self.get_event(event_name="UPDATE", operation="UPDATE")
 
         # Act
@@ -168,6 +176,8 @@ class DeltaTestCase(unittest.TestCase):
 
         # Assert
         self.assertEqual(result["statusCode"], 200)
+        # check 1 record is written to db
+        mock_write_to_db.assert_called_once()
 
     @patch("boto3.resource")
     def test_handler_success_remove(self, mock_boto_resource):
@@ -197,16 +207,17 @@ class DeltaTestCase(unittest.TestCase):
     @patch("boto3.resource")
     @patch("boto3.client")
     def test_handler_exception_intrusion(self, mock_boto_client, mock_boto_resource):
-        # Arrange
-        self.setUp_mock_resources(mock_boto_resource, mock_boto_client)
+        # Arrange - swap client and resource to simulate intrusion
+        self.setUp_mock_resources(mock_boto_client, mock_boto_resource)
         event = self.get_event()
         context = {}
 
         # Act & Assert
-        with self.assertRaises(Exception):
-            handler(event, context)
+        response = handler(event, context)
 
-        self.mock_logger_exception.assert_called_once_with("Delta Lambda failure: Test Exception")
+        self.mock_logger_exception.assert_called_once_with("Incorrect invocation of Lambda")
+        self.assertEqual(response["statusCode"], 500)
+
 
     @patch("boto3.resource")
     @patch("delta.handler")
