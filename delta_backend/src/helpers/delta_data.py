@@ -8,7 +8,7 @@ import logging
 from botocore.exceptions import ClientError
 from log_firehose import FirehoseLogger
 from Converter import Converter
-
+from helpers.mappings import OperationName, EventName
 
 
 class DeltaData:
@@ -31,7 +31,7 @@ class DeltaData:
             supplier_system = new_image["SupplierSystem"]["S"]
             if supplier_system not in ("DPSFULL", "DPSREDUCED"):
                 operation = new_image["Operation"]["S"]
-                if operation == "CREATE":
+                if operation == OperationName.CREATE:
                     operation = "NEW"
                 resource_json = json.loads(new_image["Resource"]["S"])
                 FHIRConverter = Converter(json.dumps(resource_json))

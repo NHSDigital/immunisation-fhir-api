@@ -1,6 +1,6 @@
 from decimal import Decimal
 import json
-from helpers.mappings import EndpointOperationNames
+from helpers.mappings import OperationName, EventName
 
 class ValuesForTests:
 
@@ -119,7 +119,7 @@ class ValuesForTests:
 
     @staticmethod
     def get_event(event_name="INSERT", operation="CREATE", supplier="EMIS"):
-        if operation != EndpointOperationNames.DELETE:
+        if operation != OperationName.DELETE:
             return {
                 "Records": [
                     {
@@ -142,7 +142,7 @@ class ValuesForTests:
             return {
                 "Records": [
                     {
-                        "eventName": "REMOVE",
+                        "eventName": EventName.REMOVE,
                         "dynamodb": {
                             "ApproximateCreationDateTime": 1690896000,
                             "Keys": {

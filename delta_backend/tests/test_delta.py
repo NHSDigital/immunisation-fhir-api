@@ -3,7 +3,7 @@ from unittest.mock import patch, MagicMock
 from botocore.exceptions import ClientError
 import os
 import json
-from helpers.mappings import EndpointOperationNames
+from helpers.mappings import OperationName, EventName
 
 # Set environment variables before importing the module
 ## @TODO: # Note: Environment variables shared across tests, thus aligned
@@ -54,7 +54,7 @@ class DeltaTestCase(unittest.TestCase):
         return mock_table
 
     @staticmethod
-    def get_event(event_name="INSERT", operation="CREATE", supplier="EMIS", n_records=1):
+    def get_event(event_name=EventName.INSERT, operation=OperationName.CREATE, supplier="EMIS", n_records=1):
         """Create test event for the handler function."""
         return {
             "Records": [
@@ -64,8 +64,8 @@ class DeltaTestCase(unittest.TestCase):
         }
 
     @staticmethod
-    def get_event_record(pk, event_name="INSERT", operation="CREATE", supplier="EMIS"):
-        if operation != EndpointOperationNames.DELETE:
+    def get_event_record(pk, event_name=EventName.INSERT, operation=OperationName.CREATE, supplier="EMIS"):
+        if operation != OperationName.DELETE:
             return{
                 "eventName": event_name,
                 "dynamodb": {
@@ -84,7 +84,7 @@ class DeltaTestCase(unittest.TestCase):
             }
         else:
             return {
-                "eventName": "REMOVE",
+                "eventName": EventName.REMOVE,
                 "dynamodb": {
                     "ApproximateCreationDateTime": 1690896000,
                     "Keys": {
@@ -105,7 +105,6 @@ class DeltaTestCase(unittest.TestCase):
         record = {"key": "value"}
 
         # Act
-        print(f"test_send_message_success.Sending record to DLQ: {record}")
         send_message(record)
 
         # Assert
@@ -171,7 +170,7 @@ class DeltaTestCase(unittest.TestCase):
         mock_response = {"ResponseMetadata": {"HTTPStatusCode": 200}}
         
         mock_write_to_db.return_value = (mock_response, [])
-        event = self.get_event(event_name="UPDATE", operation="UPDATE")
+        event = self.get_event(event_name=EventName.UPDATE, operation=OperationName.UPDATE)
 
         # Act
         result = handler(event, self.context)
@@ -185,7 +184,7 @@ class DeltaTestCase(unittest.TestCase):
     def test_handler_success_remove(self, mock_boto_resource):
         # Arrange
         self.setup_mock_dynamodb(mock_boto_resource)
-        event = self.get_event(event_name="DELETE", operation=EndpointOperationNames.DELETE)
+        event = self.get_event(event_name=EventName.REMOVE, operation=OperationName.DELETE)
 
         # Act
         result = handler(event, self.context)
@@ -195,16 +194,19 @@ class DeltaTestCase(unittest.TestCase):
 
     @patch("boto3.resource")
     @patch("boto3.client")
-    def test_handler_exception_intrusion_check(self, mock_boto_resource, mock_boto_client):
-        # Arrange
-        self.setup_mock_dynamodb(mock_boto_resource, status_code=500)
-        mock_boto_client.return_value = MagicMock()
+    def test_handler_exception_intrusion(self, mock_boto_client, mock_boto_resource):
+        # Arrange - swap client and resource to simulate intrusion
+        mock_boto_client.return_value.Table.side_effect = Exception("Intrusion detected: boto3.client used instead of boto3.resource")
+        mock_boto_resource.return_value = MagicMock()  # Ensure resource mock is still valid
         event = self.get_event()
+        context = {}
 
-        # Act & Assert
+        # Act
+        response = handler(event, context)
 
-        result = handler(event, self.context)
-        self.assertEqual(result["statusCode"], 500)
+        # Assert
+        self.mock_logger_exception.assert_called_once_with("Incorrect invocation of Lambda")
+        self.assertEqual(response["statusCode"], 500)
 
     @patch("boto3.resource")
     @patch("boto3.client")
