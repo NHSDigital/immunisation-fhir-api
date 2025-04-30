@@ -74,6 +74,7 @@
   },
   "occurrenceDateTime": "2021-05-07T12:24:37.67867+01:00",
   "recorded": "2025-01-01T00:00:00.00",
+
   "primarySource": "True",
   "manufacturer": {
     "display": "AstraZeneca Ltd"
@@ -87,6 +88,7 @@
   },
   "lotNumber": "4120Z001",
   "expirationDate": "2024-10-05",
+
   "site": {
     "coding": [
       {
