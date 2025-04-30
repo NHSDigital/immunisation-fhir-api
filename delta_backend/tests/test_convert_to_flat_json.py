@@ -183,8 +183,8 @@ class TestConvertToFlatJson(unittest.TestCase):
         """Test that the Imms field contains the correct flat JSON data for CREATE, UPDATE, and DELETE operations."""
         expected_action_flags = [
             {"Operation": OperationName.CREATE, "EXPECTED_ACTION_FLAG": ActionFlag.CREATE},
-            # {"Operation": OperationName.UPDATE, "EXPECTED_ACTION_FLAG": ActionFlag.UPDATE},
-            # {"Operation": OperationName.DELETE, "EXPECTED_ACTION_FLAG": ActionFlag..DELETE},
+            {"Operation": OperationName.UPDATE, "EXPECTED_ACTION_FLAG": ActionFlag.UPDATE},
+            {"Operation": OperationName.DELETE_PHYSICAL, "EXPECTED_ACTION_FLAG": ActionFlag.DELETE_PHYSICAL},
         ]
 
         for test_case in expected_action_flags:

@@ -75,7 +75,7 @@ def handler(event, context):
                     logger.info(f"Record from DPS skipped for {imms_id}")
                     return {"statusCode": 200, "body": f"Record from DPS skipped for {imms_id}"}
             else:
-                operation = OperationName.DELETE
+                operation = OperationName.DELETE_PHYSICAL
                 new_image = record["dynamodb"]["Keys"]
                 logger.info(f"Record to delta:{new_image}")
                 imms_id = new_image["PK"]["S"].split("#")[1]
@@ -83,7 +83,7 @@ def handler(event, context):
                     Item={
                         "PK": str(uuid.uuid4()),
                         "ImmsID": imms_id,
-                        "Operation": OperationName.DELETE,
+                        "Operation": OperationName.DELETE_PHYSICAL,
                         "VaccineType": "default",
                         "SupplierSystem": "default",
                         "DateTimeStamp": approximate_creation_time.isoformat(),
