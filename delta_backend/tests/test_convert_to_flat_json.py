@@ -462,19 +462,19 @@ class TestConvertToFlatJson(unittest.TestCase):
         checker = ConversionChecker(dataParser, summarise=False, report_unexpected_exception=True)
 
         valid_date_time = "2022-01-01T12:00:00+00:00"
-        result = checker._convertToDateTime("%Y%m%dT%H%M%S", "fieldName", valid_date_time, False, True)
-        self.assertEqual(result, "20220101T120000")
+        result = checker._convertToDateTime("csv-utc", "fieldName", valid_date_time, False, True)
+        self.assertEqual(result, "20220101T12000000")
 
         valid_csv_utc = "2022-01-01T13:28:17+00:00"
-        result = checker._convertToDateTime("format:csv-utc", "fieldName", valid_csv_utc, False, True)
+        result = checker._convertToDateTime("csv-utc", "fieldName", valid_csv_utc, False, True)
         self.assertEqual(result, "20220101T13281700")
 
         invalid_date_time = "invalid_date_time"
-        result = checker._convertToDateTime("format:%Y%m%dT%H%M%S", "fieldName", invalid_date_time, False, True)
-        self.assertEqual(result, "Unexpected format: invalid_date_time")
+        result = checker._convertToDateTime("csv-utc", "fieldName", invalid_date_time, False, True)
+        self.assertEqual(result, "")
         
         # Empty input returns blank
-        result = checker._convertToDateTime("format:%Y%m%dT%H%M%S", "fieldName", "", False, True)
+        result = checker._convertToDateTime("csv-utc", "fieldName", "", False, True)
         self.assertEqual(result, "")
 
     @patch("ConversionChecker.LookUpData")

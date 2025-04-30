@@ -137,7 +137,12 @@ class Converter:
             self._cached_values = {}
 
         if not self._cached_values:
-            occurrence_time = datetime.fromisoformat(json_data.get("occurrenceDateTime", ""))
+            try:
+                occurrence_time = datetime.fromisoformat(json_data.get("occurrenceDateTime", ""))
+            except Exception as e:
+                    message = "DateTime conversion error [%s]: %s" % (e.__class__.__name__, e)
+                    error = self._log_error(message, code=ExceptionMessages.UNEXPECTED_EXCEPTION)
+                    return error
             patient = get_patient(json_data)
             if not patient:
                 return None

@@ -72,8 +72,8 @@
   "patient": {
     "reference": "#Pat1"
   },
-  "occurrenceDateTime": "2021-02-07T13:28:17+00:00",
-  "recorded": "2025-02-07",
+  "occurrenceDateTime": "2021-05-07T12:24:37.67867+01:00",
+  "recorded": "2025-01-01T00:00:00.00",
   "primarySource": "True",
   "manufacturer": {
     "display": "AstraZeneca Ltd"
@@ -86,7 +86,7 @@
     }
   },
   "lotNumber": "4120Z001",
-  "expirationDate": "2024-10-12",
+  "expirationDate": "2024-10-05",
   "site": {
     "coding": [
       {
