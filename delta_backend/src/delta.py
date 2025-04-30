@@ -60,7 +60,7 @@ def handler(event, context):
             response = str()
             imms_id = str()
             operation = str()
-            if record["eventName"] != EventName.REMOVE:
+            if record["eventName"] != EventName.DELETE_PHYSICAL:
                 new_image = record["dynamodb"]["NewImage"]
                 imms_id = new_image["PK"]["S"].split("#")[1]
                 supplier_system = new_image["SupplierSystem"]["S"]

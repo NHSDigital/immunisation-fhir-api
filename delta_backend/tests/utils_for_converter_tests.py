@@ -119,7 +119,7 @@ class ValuesForTests:
 
     @staticmethod
     def get_event(event_name="INSERT", operation="CREATE", supplier="EMIS"):
-        if operation != OperationName.DELETE:
+        if operation != OperationName.DELETE_PHYSICAL:
             return {
                 "Records": [
                     {
@@ -142,7 +142,7 @@ class ValuesForTests:
             return {
                 "Records": [
                     {
-                        "eventName": EventName.REMOVE,
+                        "eventName": EventName.DELETE_PHYSICAL,
                         "dynamodb": {
                             "ApproximateCreationDateTime": 1690896000,
                             "Keys": {

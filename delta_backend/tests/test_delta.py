@@ -40,10 +40,12 @@ class DeltaTestCase(unittest.TestCase):
         return mock_sqs
 
     @staticmethod
-    def setup_mock_dynamodb(mock_boto_resource, status_code=200):
+    def setup_mock_dynamodb(mock_boto_resource, mock_write_to_db, status_code=200, error_records = []):
         mock_dynamodb = mock_boto_resource.return_value
         mock_table = mock_dynamodb.Table.return_value
-        mock_table.put_item.return_value = {"ResponseMetadata": {"HTTPStatusCode": status_code}}
+        mock_response = {"ResponseMetadata": {"HTTPStatusCode": status_code}}
+        mock_table.put_item.return_value = mock_response
+        mock_write_to_db.return_value = (mock_response, error_records)
         return mock_table
 
     def setUp_mock_resources(self, mock_boto_resource, mock_boto_client):
@@ -54,7 +56,7 @@ class DeltaTestCase(unittest.TestCase):
         return mock_table
 
     @staticmethod
-    def get_event(event_name=EventName.INSERT, operation=OperationName.CREATE, supplier="EMIS", n_records=1):
+    def get_event(event_name=EventName.CREATE, operation=OperationName.CREATE, supplier="EMIS", n_records=1):
         """Create test event for the handler function."""
         return {
             "Records": [
@@ -65,7 +67,7 @@ class DeltaTestCase(unittest.TestCase):
 
     @staticmethod
     def get_event_record(pk, event_name=EventName.CREATE, operation=OperationName.CREATE, supplier="EMIS"):
-        if operation != OperationName.DELETE:
+        if operation != OperationName.DELETE_PHYSICAL:
             return{
                 "eventName": event_name,
                 "dynamodb": {
@@ -136,11 +138,10 @@ class DeltaTestCase(unittest.TestCase):
     @patch("boto3.resource")
     def test_handler_success_insert(self, mock_boto_resource, mock_write_to_db):
         # Arrange
-        self.setup_mock_dynamodb(mock_boto_resource)
-        mock_response = {"ResponseMetadata": {"HTTPStatusCode": 200}}
-        mock_write_to_db.return_value = (mock_response, [])
-        suppilers = ["DPS", "EMIS"]
-        for supplier in suppilers:
+        self.setup_mock_dynamodb(mock_boto_resource, mock_write_to_db, status_code=200)
+
+        supliers = ["DPS", "EMIS"]
+        for supplier in supliers:
             event = self.get_event(supplier=supplier)
 
             # Act
@@ -149,10 +150,12 @@ class DeltaTestCase(unittest.TestCase):
             # Assert
             self.assertEqual(result["statusCode"], 200)
 
+    @patch("delta.delta_data.write_to_db")
     @patch("boto3.resource")
-    def test_handler_failure(self, mock_boto_resource):
+    def test_handler_failure(self, mock_boto_resource, mock_write_to_db):
         # Arrange
-        self.setup_mock_dynamodb(mock_boto_resource, status_code=500)
+        self.setup_mock_dynamodb(mock_boto_resource, mock_write_to_db, status_code=500)
+
         event = self.get_event()
 
         # Act
@@ -165,7 +168,7 @@ class DeltaTestCase(unittest.TestCase):
     @patch("boto3.resource")
     def test_handler_success_update(self, mock_boto_resource, mock_write_to_db):
         # Arrange
-        self.setup_mock_dynamodb(mock_boto_resource)
+        self.setup_mock_dynamodb(mock_boto_resource, mock_write_to_db)
         
         mock_response = {"ResponseMetadata": {"HTTPStatusCode": 200}}
         
@@ -180,11 +183,12 @@ class DeltaTestCase(unittest.TestCase):
         # check 1 record is written to db
         mock_write_to_db.assert_called_once()
 
+    @patch("delta.delta_data.write_to_db")
     @patch("boto3.resource")
-    def test_handler_success_remove(self, mock_boto_resource):
+    def test_handler_success_remove(self, mock_boto_resource, mock_write_to_db):
         # Arrange
-        self.setup_mock_dynamodb(mock_boto_resource)
-        event = self.get_event(event_name=EventName.REMOVE, operation=OperationName.DELETE)
+        self.setup_mock_dynamodb(mock_boto_resource, mock_write_to_db)
+        event = self.get_event(event_name=EventName.DELETE_PHYSICAL, operation=OperationName.DELETE_PHYSICAL)
 
         # Act
         result = handler(event, self.context)

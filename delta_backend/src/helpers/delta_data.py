@@ -51,7 +51,7 @@ class DeltaData:
                         "ExpiresAt": expiry_time_epoch,
                     }
                 )
-            return response, error_records
+            return response, operation, error_records
         except Exception as e:
             print(f"Error writing to DB: {e}")
             return None
