@@ -64,7 +64,7 @@ class DeltaTestCase(unittest.TestCase):
         }
 
     @staticmethod
-    def get_event_record(pk, event_name=EventName.INSERT, operation=OperationName.CREATE, supplier="EMIS"):
+    def get_event_record(pk, event_name=EventName.CREATE, operation=OperationName.CREATE, supplier="EMIS"):
         if operation != OperationName.DELETE:
             return{
                 "eventName": event_name,
@@ -84,7 +84,7 @@ class DeltaTestCase(unittest.TestCase):
             }
         else:
             return {
-                "eventName": EventName.REMOVE,
+                "eventName": EventName.DELETE_PHYSICAL,
                 "dynamodb": {
                     "ApproximateCreationDateTime": 1690896000,
                     "Keys": {

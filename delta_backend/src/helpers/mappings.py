@@ -1,29 +1,22 @@
-# This class is copied from the e2e project
-# @TODO: replace with a solution for shared code
-class OperationName:
-    """String enums for the name of each endpoint operation"""
-
-    CREATE = "CREATE"
-    READ = "READ"
-    UPDATE = "UPDATE"
-    DELETE = "DELETE"
-    SEARCH = "SEARCH"
-
 class EventName:
-    """String enums for the name of each endpoint operation"""
+    CREATE = "INSERT"
+    UPDATE = "MODIFY"
+    DELETE_LOGICAL = "MODIFY"
+    DELETE_PHYSICAL = "REMOVE"
 
-    REMOVE = "REMOVE"
-    INSERT = "INSERT"
+
+class EndpointOperationName:
+    CREATE = "CREATE"
     UPDATE = "UPDATE"
-
-class ActionFlag:
-    NEW = "NEW"
     DELETE = "DELETE"
-    UPDATE = "UPDATE"
-
     
+class OperationName:
+    CREATE = "NEW"
+    UPDATE = "UPDATE"
+    DELETE_LOGICAL = "DELETE"
+    DELETE_PHYSICAL = "REMOVE"
 
-
+ActionFlag = OperationName
 
 class VaccineTypes:
     """Vaccine types"""
