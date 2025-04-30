@@ -72,9 +72,8 @@
   "patient": {
     "reference": "#Pat1"
   },
-  "occurrenceDateTime": "2021-05-07T12:24:37.67867+01:00",
-  "recorded": "2025-01-01T00:00:00.00",
-
+  "occurrenceDateTime": "2021-05-07T12:24:37+00:00",
+  "recorded": "2025-01-01T00:00:00.000000",
   "primarySource": "True",
   "manufacturer": {
     "display": "AstraZeneca Ltd"

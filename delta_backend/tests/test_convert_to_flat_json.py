@@ -153,7 +153,7 @@ class TestConvertToFlatJson(unittest.TestCase):
         self.assertEqual(flatJSON, expected_imms)
 
         errorRecords = FHIRConverter.getErrorRecords()
-        
+
         self.assertEqual(len(errorRecords), 0)
 
     def test_fhir_converter_json_error_scenario(self):
@@ -461,21 +461,51 @@ class TestConvertToFlatJson(unittest.TestCase):
 
         checker = ConversionChecker(dataParser, summarise=False, report_unexpected_exception=True)
 
-        valid_date_time = "2022-01-01T12:00:00+00:00"
-        result = checker._convertToDateTime("csv-utc", "fieldName", valid_date_time, False, True)
-        self.assertEqual(result, "20220101T12000000")
+        valid_date_time = "2025-01-01T12:00:00+00:00"
+        result = checker._convertToDateTime("fhir-date", "fieldName", valid_date_time, False, True)
+        self.assertEqual(result, "20250101T12000000")
 
-        valid_csv_utc = "2022-01-01T13:28:17+00:00"
-        result = checker._convertToDateTime("csv-utc", "fieldName", valid_csv_utc, False, True)
-        self.assertEqual(result, "20220101T13281700")
+        valid_fhir_date = "2025-01-01T13:28:17+00:00"
+        result = checker._convertToDateTime("fhir-date", "fieldName", valid_fhir_date, False, True)
+        self.assertEqual(result, "20250101T13281700")
+
+        valid_fhir_date = "2022-01-01"
+        result = checker._convertToDateTime("", "fieldName", valid_fhir_date, False, True)
+        self.assertEqual(result, "20220101T00000000")
+
+        valid_fhir_date = "2025-05-01T13:28:17+01:00"
+        result = checker._convertToDateTime("fhir-date", "fieldName", valid_fhir_date, False, True)
+        self.assertEqual(result, "20250501T13281701")
 
         invalid_date_time = "invalid_date_time"
-        result = checker._convertToDateTime("csv-utc", "fieldName", invalid_date_time, False, True)
+        result = checker._convertToDateTime("fhir-date", "fieldName", invalid_date_time, False, True)
         self.assertEqual(result, "")
+
+        valid_date_time = "2025-01-01T12:00:00+03:00"
+        result = checker._convertToDateTime("fhir-date", "fieldName", valid_date_time, False, True)
+        self.assertEqual(result, "")
+
+        messages = [err["message"] for err in checker.errorRecords]
+        print(f"Error Test Case, {messages}")
+
+        self.assertIn("Unexpected exception [ValueError]", messages[0])
+        self.assertIn("Unsupported Format or offset", messages[1])
+
+        # Confirm Total Errors Per conversion
+        self.assertEqual(len(checker.errorRecords), 2)
         
-        # Empty input returns blank
-        result = checker._convertToDateTime("csv-utc", "fieldName", "", False, True)
+        # Test for value Error
+        checker._log_error = Mock()
+
+        valid_fhir_date = "2022-01"
+        result = checker._convertToDateTime("fhir-date", "fieldName", valid_fhir_date, False, True)
         self.assertEqual(result, "")
+
+        # ensure we logged exactly that ValueError
+        checker._log_error.assert_called_once()
+        field, value, err = checker._log_error.call_args[0]
+        self.assertEqual((field, value), ("fieldName", valid_fhir_date))
+        self.assertIsInstance(err, ValueError)
 
     @patch("ConversionChecker.LookUpData")
     def test_convert_to_boolean(self, MockLookUpData):

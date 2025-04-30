@@ -1,6 +1,7 @@
 import unittest
 from unittest.mock import patch, MagicMock
 from Converter import Converter
+import ExceptionMessages
 
 
 class TestConverter(unittest.TestCase):
@@ -109,6 +110,21 @@ class TestConverter(unittest.TestCase):
         result = converter.extract_patient_details(json_data, "PERFORMING_PROFESSIONAL_SURNAME")
         self.assertEqual(result, "Smith")
 
+        # Pass a malformed datetime to trigger the exception
+        json_data = {"occurrenceDateTime": "invalid-date-time"}
+   
+        with patch.object(Converter, '_log_error', return_value="mocked-error") as mock_log_error:
+            converter = Converter({})
+            result = converter.extract_patient_details(json_data, "PERSON_SURNAME")
+
+            mock_log_error.assert_called_once()
+            error_message = mock_log_error.call_args[0][0]
+            error_code = mock_log_error.call_args[1]["code"]
+
+            self.assertIn("DateTime conversion error", error_message)
+            self.assertIn("ValueError", error_message)
+            self.assertEqual(error_code, ExceptionMessages.UNEXPECTED_EXCEPTION)
+            self.assertEqual(result, "mocked-error")
 
 if __name__ == "__main__":
     unittest.main()

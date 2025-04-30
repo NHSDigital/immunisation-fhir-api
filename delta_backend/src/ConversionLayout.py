@@ -68,7 +68,7 @@ ConvertLayout = {
       "expression": {
         "expressionName": "Date Convert",
         "expressionType": "DATETIME",
-        "expressionRule": "csv-utc"
+        "expressionRule": "fhir-date"
       }
     },
     {

@@ -122,7 +122,6 @@ class ConversionChecker:
                     self._log_error(fieldName, fieldValue, "Value is not a string")
                 return ""
             try:
-                fieldValue = re.sub(r"\.\d+(?=[+-]\d{2}:\d{2}$)", "", fieldValue)  # Remove milliseconds
                 dt = datetime.fromisoformat(fieldValue)
                 return dt.strftime(expressionRule)
             except ValueError as e:
@@ -137,14 +136,9 @@ class ConversionChecker:
             return ""
 
         try:
-            if not expressionRule:
-                # Handle YYYYMMDD format to 
-                dt = datetime.strptime(fieldValue, "%Y%m%d")
-                dt = dt.replace(hour=0, minute=0, second=0) 
-            else:
-                dt = datetime.fromisoformat(fieldValue)
-                if dt.tzinfo is None:
-                    dt = dt.replace(tzinfo=timezone.utc)
+            dt = datetime.fromisoformat(fieldValue)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
         except Exception as e:
             if report_unexpected_exception:
                 self._log_error(fieldName, fieldValue, e)
@@ -156,16 +150,14 @@ class ConversionChecker:
         if offset is not None and offset not in allowed_offsets:
             if report_unexpected_exception:
                 self._log_error(fieldName, fieldValue, "Unsupported Format or offset")
-            return "" 
+            return ""
 
-        # Convert to UTC
-        dt_utc = dt.replace(microsecond=0)
+        # remove microseconds
+        dt_format = dt.replace(microsecond=0)
 
-        if expressionRule == "csv-utc":
-            formatted = dt_utc.strftime("%Y%m%dT%H%M%S%z")
-            return formatted.replace("+0000", "00").replace("+0100", "01")
-
-        return dt_utc.strftime("%Y%m%dT%H%M%S%z")
+        formatted = dt_format.strftime("%Y%m%dT%H%M%S%z")
+        return formatted.replace("+0000", "00").replace("+0100", "01")
+    
 
     # Not Empty Validate - Returns exactly what is in the extracted fields no parsing or logic needed
     def _convertToNotEmpty(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
