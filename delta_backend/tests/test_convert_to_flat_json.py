@@ -17,6 +17,7 @@ from SchemaParser import SchemaParser
 from Converter import Converter
 from ConversionChecker import ConversionChecker, RecordError
 import ExceptionMessages
+from helpers.mappings import EndpointOperationNames
 
 MOCK_ENV_VARS = {
     "AWS_SQS_QUEUE_URL": "https://sqs.eu-west-2.amazonaws.com/123456789012/test-queue",
@@ -181,9 +182,9 @@ class TestConvertToFlatJson(unittest.TestCase):
     def test_handler_imms_convert_to_flat_json(self):
         """Test that the Imms field contains the correct flat JSON data for CREATE, UPDATE, and DELETE operations."""
         expected_action_flags = [
-            # {"Operation": "CREATE", "EXPECTED_ACTION_FLAG": "NEW"},
-            # {"Operation": "UPDATE", "EXPECTED_ACTION_FLAG": "UPDATE"},
-            {"Operation": "DELETE", "EXPECTED_ACTION_FLAG": "DELETE"},
+            # {"Operation": EndpointOperationNames.CREATE, "EXPECTED_ACTION_FLAG": "NEW"},
+            # {"Operation": EndpointOperationNames.UPDATE, "EXPECTED_ACTION_FLAG": "UPDATE"},
+            {"Operation": EndpointOperationNames.DELETE, "EXPECTED_ACTION_FLAG": "DELETE"},
         ]
 
         for test_case in expected_action_flags:

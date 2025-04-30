@@ -1,6 +1,6 @@
 from decimal import Decimal
 import json
-
+from helpers.mappings import EndpointOperationNames
 
 class ValuesForTests:
 
@@ -119,7 +119,7 @@ class ValuesForTests:
 
     @staticmethod
     def get_event(event_name="INSERT", operation="CREATE", supplier="EMIS"):
-        if operation != "REMOVE":
+        if operation != EndpointOperationNames.DELETE:
             return {
                 "Records": [
                     {

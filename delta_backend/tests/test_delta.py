@@ -3,6 +3,7 @@ from unittest.mock import patch, MagicMock
 from botocore.exceptions import ClientError
 import os
 import json
+from helpers.mappings import EndpointOperationNames
 
 # Set environment variables before importing the module
 ## @TODO: # Note: Environment variables shared across tests, thus aligned
@@ -64,7 +65,7 @@ class DeltaTestCase(unittest.TestCase):
 
     @staticmethod
     def get_event_record(pk, event_name="INSERT", operation="CREATE", supplier="EMIS"):
-        if operation != "DELETE":
+        if operation != EndpointOperationNames.DELETE:
             return{
                 "eventName": event_name,
                 "dynamodb": {
@@ -183,7 +184,7 @@ class DeltaTestCase(unittest.TestCase):
     def test_handler_success_remove(self, mock_boto_resource):
         # Arrange
         self.setup_mock_dynamodb(mock_boto_resource)
-        event = self.get_event(event_name="REMOVE", operation="DELETE")
+        event = self.get_event(event_name="REMOVE", operation=EndpointOperationNames.DELETE)
 
         # Act
         result = handler(event, self.context)
