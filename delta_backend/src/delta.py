@@ -27,6 +27,7 @@ def send_message(record):
     sqs_client = boto3.client("sqs")
     try:
         # Send the record to the queue
+        print(f"Sending record to DLQ: {message_body}")
         sqs_client.send_message(QueueUrl=failure_queue_url, MessageBody=json.dumps(message_body))
         logger.info("Record saved successfully to the DLQ")
     except ClientError as e:
@@ -58,7 +59,7 @@ def handler(event, context):
             response = str()
             imms_id = str()
             operation = str()
-            if record["eventName"] != "REMOVE":
+            if record["eventName"] != "DELETE":
                 new_image = record["dynamodb"]["NewImage"]
                 imms_id = new_image["PK"]["S"].split("#")[1]
                 supplier_system = new_image["SupplierSystem"]["S"]
@@ -73,7 +74,7 @@ def handler(event, context):
                     logger.info(f"Record from DPS skipped for {imms_id}")
                     return {"statusCode": 200, "body": f"Record from DPS skipped for {imms_id}"}
             else:
-                operation = "REMOVE"
+                operation = "DELETE"
                 new_image = record["dynamodb"]["Keys"]
                 logger.info(f"Record to delta:{new_image}")
                 imms_id = new_image["PK"]["S"].split("#")[1]
@@ -81,7 +82,7 @@ def handler(event, context):
                     Item={
                         "PK": str(uuid.uuid4()),
                         "ImmsID": imms_id,
-                        "Operation": "REMOVE",
+                        "Operation": "DELETE",
                         "VaccineType": "default",
                         "SupplierSystem": "default",
                         "DateTimeStamp": approximate_creation_time.isoformat(),

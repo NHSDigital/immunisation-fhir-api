@@ -105,6 +105,7 @@ class DeltaTestCase(unittest.TestCase):
         record = {"key": "value"}
 
         # Act
+        print(f"test_send_message_success.Sending record to DLQ: {record}")
         send_message(record)
 
         # Assert
@@ -184,7 +185,7 @@ class DeltaTestCase(unittest.TestCase):
     def test_handler_success_remove(self, mock_boto_resource):
         # Arrange
         self.setup_mock_dynamodb(mock_boto_resource)
-        event = self.get_event(event_name="REMOVE", operation=EndpointOperationNames.DELETE)
+        event = self.get_event(event_name="DELETE", operation=EndpointOperationNames.DELETE)
 
         # Act
         result = handler(event, self.context)

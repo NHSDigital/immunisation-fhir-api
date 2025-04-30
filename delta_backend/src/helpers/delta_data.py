@@ -20,7 +20,7 @@ class DeltaData:
         return self.data
 
 
-    def get_vaccine_type(patientsk) -> str:
+    def get_vaccine_type(self, patientsk) -> str:
         parsed = [str.strip(str.lower(s)) for s in patientsk.split("#")]
         return parsed[0]
         
