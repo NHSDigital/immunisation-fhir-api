@@ -28,7 +28,7 @@
         }
       ],
       "gender": "other",
-      "birthDate": "2023-03-01",
+      "birthDate": "2026-03-10",
       "address": [
         {
           "use": "home",
@@ -73,7 +73,7 @@
     "reference": "#Pat1"
   },
   "occurrenceDateTime": "2021-02-07T13:28:17+00:00",
-  "recorded": "2029-04-09",
+  "recorded": "2025-02-07",
   "primarySource": "True",
   "manufacturer": {
     "display": "AstraZeneca Ltd"
@@ -86,7 +86,7 @@
     }
   },
   "lotNumber": "4120Z001",
-  "expirationDate": "2026-07-02",
+  "expirationDate": "2024-10-12",
   "site": {
     "coding": [
       {

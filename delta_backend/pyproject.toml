@@ -4,6 +4,9 @@ version = "0.1.0"
 description = ""
 authors = [{ name = "Your Name", email = "<you@example.com>" }]
 readme = "README.md"
+packages = [
+    {include = "src"}
+]
 
 [tool.poetry]
 package-mode = false
