@@ -16,8 +16,14 @@ def process_csv_to_fhir(incoming_message_body: dict) -> None:
     and documents the outcome for each row in the ack file.
     """
     try:
-        interim_message_body = file_level_validation(incoming_message_body=incoming_message_body)
-    except (InvalidHeaders, NoOperationPermissions, Exception):  # pylint: disable=broad-exception-caught
+        interim_message_body = file_level_validation(
+            incoming_message_body=incoming_message_body
+        )
+    except (
+        InvalidHeaders,
+        NoOperationPermissions,
+        Exception,
+    ):  # pylint: disable=broad-exception-caught
         # If the file is invalid, processing should cease immediately
         return None
 
@@ -26,7 +32,9 @@ def process_csv_to_fhir(incoming_message_body: dict) -> None:
     supplier = interim_message_body.get("supplier")
     file_key = interim_message_body.get("file_key")
     allowed_operations = interim_message_body.get("allowed_operations")
-    created_at_formatted_string = interim_message_body.get("created_at_formatted_string")
+    created_at_formatted_string = interim_message_body.get(
+        "created_at_formatted_string"
+    )
     csv_reader = interim_message_body.get("csv_dict_reader")
 
     row_count = 0  # Initialize a counter for rows

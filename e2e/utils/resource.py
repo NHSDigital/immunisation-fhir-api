@@ -14,7 +14,9 @@ current_directory = os.path.dirname(os.path.realpath(__file__))
 
 
 def load_example(path: str) -> dict:
-    with open(f"{current_directory}/../../specification/components/examples/{path}") as f:
+    with open(
+        f"{current_directory}/../../specification/components/examples/{path}"
+    ) as f:
         return json.load(f, parse_float=Decimal)
 
 
@@ -31,7 +33,9 @@ def generate_imms_resource(
     The unique_identifier is also updated to ensure uniqueness...
     """
     # Load the data
-    sample_data_file_name = sample_data_file_name.replace("[vaccine_type]", vaccine_type.lower())
+    sample_data_file_name = sample_data_file_name.replace(
+        "[vaccine_type]", vaccine_type.lower()
+    )
     imms = deepcopy(load_example(f"Immunization/{sample_data_file_name}.json"))
 
     # Apply identifier directly
@@ -86,7 +90,11 @@ def generate_filtered_imms_resource(
 
 
 def get_patient_id(imms: dict) -> str:
-    patients = [resource for resource in imms["contained"] if resource["resourceType"] == "Patient"]
+    patients = [
+        resource
+        for resource in imms["contained"]
+        if resource["resourceType"] == "Patient"
+    ]
     return patients[0]["identifier"][0]["value"]
 
 
@@ -117,7 +125,11 @@ def get_vaccine_type(immunization: dict):
         target_diseases = []
         target_disease_list = immunization["protocolApplied"][0]["targetDisease"]
         for element in target_disease_list:
-            code = [x.get("code") for x in element["coding"] if x.get("system") == "http://snomed.info/sct"][0]
+            code = [
+                x.get("code")
+                for x in element["coding"]
+                if x.get("system") == "http://snomed.info/sct"
+            ][0]
             target_diseases.append(code)
     except (KeyError, IndexError, AttributeError) as error:
         raise ValueError("No target disease codes found") from error
@@ -125,7 +137,11 @@ def get_vaccine_type(immunization: dict):
 
 
 def get_patient_postal_code(imms: dict):
-    patients = [record for record in imms.get("contained", []) if record.get("resourceType") == "Patient"]
+    patients = [
+        record
+        for record in imms.get("contained", [])
+        if record.get("resourceType") == "Patient"
+    ]
     if patients:
         return patients[0]["address"][0]["postalCode"]
     return ""
@@ -138,7 +154,9 @@ def get_full_row_from_identifier(identifier: str) -> dict:
 
 def get_dynamodb_table(table_name: str) -> Table:
     config = Config(connect_timeout=60, read_timeout=60, retries={"max_attempts": 3})
-    db: DynamoDBServiceResource = boto3.resource("dynamodb", region_name="eu-west-2", config=config)
+    db: DynamoDBServiceResource = boto3.resource(
+        "dynamodb", region_name="eu-west-2", config=config
+    )
     return db.Table(table_name)
 
 

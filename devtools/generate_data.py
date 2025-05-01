@@ -20,15 +20,27 @@ patient_pool = [
     {"nhs_number": "1212233445"},
 ]
 suppliers = [
-    "https://supplierABC/ODSCode145", "https://supplierSDF/ODSCode123", "https://supplierXYZ/ODSCode735"
+    "https://supplierABC/ODSCode145",
+    "https://supplierSDF/ODSCode123",
+    "https://supplierXYZ/ODSCode735",
 ]
 disease_type = ["covid", "flu", "mmr", "hpv", "polio"]
-vaccine_code = ["covidCode1", "covidCode2", "fluCode1",
-                "fluCode2", "fluCode3",
-                "mmrCode1", "mmrCode2",
-                "hpvCode1",
-                "polioCode1"]
-vaccine_procedure = ["vac_procedure-oral", "vac_procedure-injection", "vac_procedure-123"]
+vaccine_code = [
+    "covidCode1",
+    "covidCode2",
+    "fluCode1",
+    "fluCode2",
+    "fluCode3",
+    "mmrCode1",
+    "mmrCode2",
+    "hpvCode1",
+    "polioCode1",
+]
+vaccine_procedure = [
+    "vac_procedure-oral",
+    "vac_procedure-injection",
+    "vac_procedure-123",
+]
 local_patient_pool = [
     {"code": "ACME-Patient12345", "system": "https://supplierABC/identifiers/patient"},
     {"code": "ACME-Patient23455", "system": "https://supplierCSB/identifiers/patient"},
@@ -57,7 +69,9 @@ def generate_immunization(num):
         patient = pick_rand(patient_pool)
         _imms["patient"]["identifier"]["value"] = patient["nhs_number"]
         # Vaccination
-        _imms["protocolApplied"][0]["targetDisease"][0]["coding"][0]["code"] = pick_rand(vaccine_code)
+        _imms["protocolApplied"][0]["targetDisease"][0]["coding"][0]["code"] = (
+            pick_rand(vaccine_code)
+        )
         _imms["vaccineCode"]["coding"][0]["code"] = pick_rand(vaccine_code)
 
         all_imms.append(_imms)
@@ -76,6 +90,6 @@ def write(_data, resource_type):
         sample_file.write(json_events)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     imms = generate_immunization(30)
     write(imms, resource_type="immunization")

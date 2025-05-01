@@ -21,7 +21,9 @@ class TestFilter(unittest.TestCase):
     """Test for Filter class"""
 
     def setUp(self):
-        self.covid_19_immunization_event = load_json_data("completed_covid19_immunization_event.json")
+        self.covid_19_immunization_event = load_json_data(
+            "completed_covid19_immunization_event.json"
+        )
         self.bundle_patient_resource = load_json_data("bundle_patient_resource.json")
 
     def test_remove_reference_to_contained_practitioner(self):
@@ -53,7 +55,9 @@ class TestFilter(unittest.TestCase):
             ],
         }
 
-        self.assertEqual(remove_reference_to_contained_practitioner(input_data), expected_output)
+        self.assertEqual(
+            remove_reference_to_contained_practitioner(input_data), expected_output
+        )
 
         # TEST CASE: contained practitioner does not exist
         input_data = {
@@ -67,7 +71,9 @@ class TestFilter(unittest.TestCase):
 
         expected_output = deepcopy(input_data)
 
-        self.assertEqual(remove_reference_to_contained_practitioner(input_data), expected_output)
+        self.assertEqual(
+            remove_reference_to_contained_practitioner(input_data), expected_output
+        )
 
     def test_create_reference_to_patient_resource(self):
         """Test that create_reference_to_patient_resource creates an appropriate patient reference"""
@@ -76,10 +82,16 @@ class TestFilter(unittest.TestCase):
         expected_output = {
             "reference": patient_uuid,
             "type": "Patient",
-            "identifier": {"system": "https://fhir.nhs.uk/Id/nhs-number", "value": "9000000009"},
+            "identifier": {
+                "system": "https://fhir.nhs.uk/Id/nhs-number",
+                "value": "9000000009",
+            },
         }
 
-        self.assertEqual(create_reference_to_patient_resource(patient_uuid, input_data), expected_output)
+        self.assertEqual(
+            create_reference_to_patient_resource(patient_uuid, input_data),
+            expected_output,
+        )
 
     def test_add_use_to_identifier(self):
         """Test that a use of "offical" is added to identifier[0] is no use already given"""
@@ -104,7 +116,9 @@ class TestFilter(unittest.TestCase):
         # Prepare the input data
         input_imms = load_json_data("completed_covid19_immunization_event.json")
         # Change the input data's organization_identifier_system to be something other than the ods url
-        input_imms["performer"][1]["actor"]["identifier"]["system"] = Urls.urn_school_number
+        input_imms["performer"][1]["actor"]["identifier"][
+            "system"
+        ] = Urls.urn_school_number
         # Add organization_display to the input data (note that whilst this field is not one of the expected fields,
         # the validator does not prevent it from being included on a create or update, so the possiblity of it
         # existing must be handled)
@@ -117,32 +131,54 @@ class TestFilter(unittest.TestCase):
         # TEST CASE: Input data has organization identifier value and system
         input_imms_data = deepcopy(input_imms)
         expected_output_data = deepcopy(expected_output)
-        expected_organization_identifier = {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "N2N9I"}
-        expected_output_data["performer"][1]["actor"]["identifier"] = expected_organization_identifier
-        self.assertEqual(replace_organization_values(deepcopy(input_imms)), expected_output_data)
+        expected_organization_identifier = {
+            "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+            "value": "N2N9I",
+        }
+        expected_output_data["performer"][1]["actor"][
+            "identifier"
+        ] = expected_organization_identifier
+        self.assertEqual(
+            replace_organization_values(deepcopy(input_imms)), expected_output_data
+        )
 
         # TEST CASE: Input data has organization identifier value, does not have organization identifier system
         input_imms_data = deepcopy(input_imms)
         del input_imms_data["performer"][1]["actor"]["identifier"]["system"]
         expected_output_data = deepcopy(expected_output)
-        expected_organization_identifier = {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "N2N9I"}
-        expected_output_data["performer"][1]["actor"]["identifier"] = expected_organization_identifier
-        self.assertEqual(replace_organization_values(input_imms_data), expected_output_data)
+        expected_organization_identifier = {
+            "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+            "value": "N2N9I",
+        }
+        expected_output_data["performer"][1]["actor"][
+            "identifier"
+        ] = expected_organization_identifier
+        self.assertEqual(
+            replace_organization_values(input_imms_data), expected_output_data
+        )
 
         # TEST CASE: Input data does not have organization identifier system, does have organization identifier value
         input_imms_data = deepcopy(input_imms)
         del input_imms_data["performer"][1]["actor"]["identifier"]["value"]
         expected_output_data = deepcopy(expected_output)
-        expected_organization_identifier = {"system": "https://fhir.nhs.uk/Id/ods-organization-code"}
-        expected_output_data["performer"][1]["actor"]["identifier"] = expected_organization_identifier
-        self.assertEqual(replace_organization_values(input_imms_data), expected_output_data)
+        expected_organization_identifier = {
+            "system": "https://fhir.nhs.uk/Id/ods-organization-code"
+        }
+        expected_output_data["performer"][1]["actor"][
+            "identifier"
+        ] = expected_organization_identifier
+        self.assertEqual(
+            replace_organization_values(input_imms_data), expected_output_data
+        )
 
         # TEST CASE: Input data does not have organization identifier system or value
         input_imms_data = deepcopy(input_imms)
         del input_imms_data["performer"][1]["actor"]["identifier"]
         expected_output_data = deepcopy(expected_output)
         del expected_output_data["performer"][1]["actor"]["identifier"]
-        self.assertEqual(replace_organization_values(input_imms_data), expected_output_data)
+        self.assertEqual(
+            replace_organization_values(input_imms_data), expected_output_data
+        )
 
     def test_filter_search(self):
         """Tests to ensure Filter.search appropriately filters a FHIR Immunization Resource"""
@@ -153,4 +189,6 @@ class TestFilter(unittest.TestCase):
         )
         expected_output["patient"]["reference"] = patient_full_url
 
-        self.assertEqual(Filter.search(unfiltered_imms, patient_full_url), expected_output)
+        self.assertEqual(
+            Filter.search(unfiltered_imms, patient_full_url), expected_output
+        )

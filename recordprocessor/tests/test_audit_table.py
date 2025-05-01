@@ -6,9 +6,17 @@ from boto3 import client as boto3_client
 from moto import mock_dynamodb
 from errors import UnhandledAuditTableError
 
-from tests.utils_for_recordprocessor_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT
-from tests.utils_for_recordprocessor_tests.generic_setup_and_teardown import GenericSetUp, GenericTearDown
-from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import MockFileDetails, FileDetails
+from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
+    MOCK_ENVIRONMENT_DICT,
+)
+from tests.utils_for_recordprocessor_tests.generic_setup_and_teardown import (
+    GenericSetUp,
+    GenericTearDown,
+)
+from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
+    MockFileDetails,
+    FileDetails,
+)
 from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
     deserialize_dynamodb_types,
     add_entry_to_table,
@@ -21,7 +29,10 @@ with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
         FileStatus,
     )
 
-    from audit_table import get_next_queued_file_details, change_audit_table_status_to_processed
+    from audit_table import (
+        get_next_queued_file_details,
+        change_audit_table_status_to_processed,
+    )
     from clients import REGION_NAME
 
 
@@ -58,22 +69,39 @@ class TestAuditTable(TestCase):
         self.assertIsNone(get_next_queued_file_details(queue_to_check))
 
         # Test case 2: files in audit table, but none of the files are in the RAVS_RSV queue
-        add_entry_to_table(MockFileDetails.flu_emis, file_status=FileStatus.QUEUED)  # different queue
-        add_entry_to_table(MockFileDetails.rsv_emis, file_status=FileStatus.QUEUED)  # different queue
-        add_entry_to_table(MockFileDetails.ravs_flu, file_status=FileStatus.QUEUED)  # different queue
-        add_entry_to_table(MockFileDetails.ravs_rsv_1, FileStatus.PROCESSED)  # same queue but already processed
+        add_entry_to_table(
+            MockFileDetails.flu_emis, file_status=FileStatus.QUEUED
+        )  # different queue
+        add_entry_to_table(
+            MockFileDetails.rsv_emis, file_status=FileStatus.QUEUED
+        )  # different queue
+        add_entry_to_table(
+            MockFileDetails.ravs_flu, file_status=FileStatus.QUEUED
+        )  # different queue
+        add_entry_to_table(
+            MockFileDetails.ravs_rsv_1, FileStatus.PROCESSED
+        )  # same queue but already processed
         self.assertIsNone(get_next_queued_file_details(queue_to_check))
 
         # Test case 3: one queued file in the ravs_rsv queue
         add_entry_to_table(MockFileDetails.ravs_rsv_2, file_status=FileStatus.QUEUED)
-        expected_table_entry = {**MockFileDetails.ravs_rsv_2.audit_table_entry, "status": {"S": FileStatus.QUEUED}}
-        self.assertEqual(get_next_queued_file_details(queue_to_check), deserialize_dynamodb_types(expected_table_entry))
+        expected_table_entry = {
+            **MockFileDetails.ravs_rsv_2.audit_table_entry,
+            "status": {"S": FileStatus.QUEUED},
+        }
+        self.assertEqual(
+            get_next_queued_file_details(queue_to_check),
+            deserialize_dynamodb_types(expected_table_entry),
+        )
 
         # # Test case 4: multiple queued files in the RAVS_RSV queue
         # Note that ravs_rsv files 3 and 4 have later timestamps than file 2, so file 2 remains the first in the queue
         add_entry_to_table(MockFileDetails.ravs_rsv_3, file_status=FileStatus.QUEUED)
         add_entry_to_table(MockFileDetails.ravs_rsv_4, file_status=FileStatus.QUEUED)
-        self.assertEqual(get_next_queued_file_details(queue_to_check), deserialize_dynamodb_types(expected_table_entry))
+        self.assertEqual(
+            get_next_queued_file_details(queue_to_check),
+            deserialize_dynamodb_types(expected_table_entry),
+        )
 
     def test_change_audit_table_status_to_processed(self):
         """Checks audit table correctly updates a record as processed"""
@@ -83,7 +111,10 @@ class TestAuditTable(TestCase):
         add_entry_to_table(MockFileDetails.flu_emis, file_status=FileStatus.QUEUED)
         table_items = dynamodb_client.scan(TableName=AUDIT_TABLE_NAME).get("Items", [])
 
-        expected_table_entry = {**MockFileDetails.rsv_ravs.audit_table_entry, "status": {"S": FileStatus.PROCESSED}}
+        expected_table_entry = {
+            **MockFileDetails.rsv_ravs.audit_table_entry,
+            "status": {"S": FileStatus.PROCESSED},
+        }
         ravs_rsv_test_file = FileDetails("RSV", "RAVS", "X26")
         file_key = ravs_rsv_test_file.file_key
         message_id = ravs_rsv_test_file.message_id_order

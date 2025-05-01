@@ -25,7 +25,7 @@ class Code(str, Enum):
 class UnauthorizedError(RuntimeError):
     @staticmethod
     def to_operation_outcome() -> dict:
-        msg = f"Unauthorized request"
+        msg = "Unauthorized request"
         return create_operation_outcome(
             resource_id=str(uuid.uuid4()),
             severity=Severity.error,
@@ -201,12 +201,18 @@ class IdentifierDuplicationError(RuntimeError):
         )
 
 
-def create_operation_outcome(resource_id: str, severity: Severity, code: Code, diagnostics: str) -> dict:
+def create_operation_outcome(
+    resource_id: str, severity: Severity, code: Code, diagnostics: str
+) -> dict:
     """Create an OperationOutcome object. Do not use `fhir.resource` library since it adds unnecessary validations"""
     return {
         "resourceType": "OperationOutcome",
         "id": resource_id,
-        "meta": {"profile": ["https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"]},
+        "meta": {
+            "profile": [
+                "https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"
+            ]
+        },
         "issue": [
             {
                 "severity": severity,
@@ -237,7 +243,7 @@ class ParameterException(RuntimeError):
 class UnauthorizedSystemError(RuntimeError):
     @staticmethod
     def to_operation_outcome() -> dict:
-        msg = f"Unauthorized system"
+        msg = "Unauthorized system"
         return create_operation_outcome(
             resource_id=str(uuid.uuid4()),
             severity=Severity.error,

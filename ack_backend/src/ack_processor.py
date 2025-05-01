@@ -15,7 +15,9 @@ def lambda_handler(event, context):
     """
 
     if not event.get("Records"):
-        raise ValueError("Error in ack_processor_lambda_handler: No records found in the event")
+        raise ValueError(
+            "Error in ack_processor_lambda_handler: No records found in the event"
+        )
 
     file_key = None
     created_at_formatted_string = None
@@ -29,7 +31,9 @@ def lambda_handler(event, context):
         try:
             incoming_message_body = json.loads(record["body"])
         except Exception as body_json_error:
-            raise ValueError("Could not load incoming message body") from body_json_error
+            raise ValueError(
+                "Could not load incoming message body"
+            ) from body_json_error
 
         if i == 0:
             # IMPORTANT NOTE: An assumption is made here that the file_key and created_at_formatted_string are the same
@@ -41,11 +45,20 @@ def lambda_handler(event, context):
             vaccine_type = incoming_message_body[0].get("vaccine_type")
             supplier = incoming_message_body[0].get("supplier")
             supplier_queue = f"{supplier}_{vaccine_type}"
-            created_at_formatted_string = incoming_message_body[0].get("created_at_formatted_string")
+            created_at_formatted_string = incoming_message_body[0].get(
+                "created_at_formatted_string"
+            )
 
         for message in incoming_message_body:
-            ack_data_rows.append(convert_message_to_ack_row(message, created_at_formatted_string))
+            ack_data_rows.append(
+                convert_message_to_ack_row(message, created_at_formatted_string)
+            )
 
-    update_ack_file(file_key, message_id, supplier_queue, created_at_formatted_string, ack_data_rows)
+    update_ack_file(
+        file_key, message_id, supplier_queue, created_at_formatted_string, ack_data_rows
+    )
 
-    return {"statusCode": 200, "body": json.dumps("Lambda function executed successfully!")}
+    return {
+        "statusCode": 200,
+        "body": json.dumps("Lambda function executed successfully!"),
+    }

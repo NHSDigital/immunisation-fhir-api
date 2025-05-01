@@ -1,4 +1,4 @@
-''' Patient Data Model based on Fhir Revision 4 spec '''
+"""Patient Data Model based on Fhir Revision 4 spec"""
 
 from datetime import datetime
 from typing import Optional, Literal
@@ -21,7 +21,8 @@ from fhir_api.models.fhir_r4.common import (
 
 
 class Contact(BaseModel):
-    ''' Contact Model '''
+    """Contact Model"""
+
     relationship: Optional[list[CodeableConceptType]]
     name: Optional[HumanName]
     telecom: Optional[list[ContactPoint]]
@@ -32,19 +33,22 @@ class Contact(BaseModel):
 
 
 class Communication(BaseModel):
-    ''' Communication Model '''
+    """Communication Model"""
+
     language: CodeableConceptType
     preferred: Optional[bool] = FhirR4Fields.boolean
 
 
 class Link(BaseModel):
-    ''' Link Model '''
+    """Link Model"""
+
     other: Reference
     type: code_types.link_code
 
 
 class Patient(BaseModel):
-    ''' Patient Base Model '''
+    """Patient Base Model"""
+
     resourceType: Literal["Patient"]
     identifier: Optional[list[Identifier]]
     active: bool = FhirR4Fields.boolean

@@ -35,7 +35,9 @@ class TestSendSQSMessage(TestCase):
     def test_send_to_supplier_queue_success(self):
         """Test send_to_supplier_queue function for a successful message send"""
         # Set up the sqs_queue
-        queue_url = sqs_client.create_queue(QueueName=Sqs.QUEUE_NAME, Attributes=Sqs.ATTRIBUTES)["QueueUrl"]
+        queue_url = sqs_client.create_queue(
+            QueueName=Sqs.QUEUE_NAME, Attributes=Sqs.ATTRIBUTES
+        )["QueueUrl"]
 
         # Send three separate messages to the queue to test that they are all received and appropriately
         # partitioned by supplier and vaccine_type
@@ -59,12 +61,24 @@ class TestSendSQSMessage(TestCase):
         )["Messages"]
 
         self.assertEqual(len(received_messages), 3)
-        self.assertEqual(json_loads(received_messages[0]["Body"]), flu_emis_1.sqs_message_body)
-        self.assertEqual(received_messages[0]["Attributes"]["MessageGroupId"], flu_emis_1.queue_name)
-        self.assertEqual(json_loads(received_messages[1]["Body"]), rsv_ravs_1.sqs_message_body)
-        self.assertEqual(received_messages[1]["Attributes"]["MessageGroupId"], rsv_ravs_1.queue_name)
-        self.assertEqual(json_loads(received_messages[2]["Body"]), flu_emis_2.sqs_message_body)
-        self.assertEqual(received_messages[2]["Attributes"]["MessageGroupId"], flu_emis_2.queue_name)
+        self.assertEqual(
+            json_loads(received_messages[0]["Body"]), flu_emis_1.sqs_message_body
+        )
+        self.assertEqual(
+            received_messages[0]["Attributes"]["MessageGroupId"], flu_emis_1.queue_name
+        )
+        self.assertEqual(
+            json_loads(received_messages[1]["Body"]), rsv_ravs_1.sqs_message_body
+        )
+        self.assertEqual(
+            received_messages[1]["Attributes"]["MessageGroupId"], rsv_ravs_1.queue_name
+        )
+        self.assertEqual(
+            json_loads(received_messages[2]["Body"]), flu_emis_2.sqs_message_body
+        )
+        self.assertEqual(
+            received_messages[2]["Attributes"]["MessageGroupId"], flu_emis_2.queue_name
+        )
 
     def test_send_to_supplier_queue_failure_due_to_queue_does_not_exist(self):
         """Test send_to_supplier_queue function for a failed message send due to queue not existing"""
@@ -76,13 +90,13 @@ class TestSendSQSMessage(TestCase):
             )
         self.assertEqual(NON_EXISTENT_QUEUE_ERROR_MESSAGE, str(context.exception))
 
-    def test_send_to_supplier_queue_failure_due_to_absent_supplier_or_vaccine_type(self):
+    def test_send_to_supplier_queue_failure_due_to_absent_supplier_or_vaccine_type(
+        self,
+    ):
         """Test send_to_supplier_queue function for a failed message send"""
         # Set up the sqs_queue
         sqs_client.create_queue(QueueName=Sqs.QUEUE_NAME, Attributes=Sqs.ATTRIBUTES)
-        expected_error_message = (
-            "Message not sent to supplier queue as unable to identify supplier and/ or vaccine type"
-        )
+        expected_error_message = "Message not sent to supplier queue as unable to identify supplier and/ or vaccine type"
 
         keys_to_set_to_empty = ["supplier", "vaccine_type"]
         for key_to_set_to_empty in keys_to_set_to_empty:
@@ -90,7 +104,10 @@ class TestSendSQSMessage(TestCase):
                 mock_sqs_client = MagicMock()
                 with patch("send_sqs_message.sqs_client", mock_sqs_client):
                     with self.assertRaises(InvalidSupplierError) as context:
-                        message_body = {**FLU_EMIS_FILE_DETAILS.sqs_message_body, key_to_set_to_empty: ""}
+                        message_body = {
+                            **FLU_EMIS_FILE_DETAILS.sqs_message_body,
+                            key_to_set_to_empty: "",
+                        }
                         vaccine_type = message_body["vaccine_type"]
                         supplier = message_body["supplier"]
                         send_to_supplier_queue(message_body, supplier, vaccine_type)
@@ -100,7 +117,9 @@ class TestSendSQSMessage(TestCase):
     def test_make_and_send_sqs_message_success(self):
         """Test make_and_send_sqs_message function for a successful message send"""
         # Create a mock SQS queue
-        queue_url = sqs_client.create_queue(QueueName=Sqs.QUEUE_NAME, Attributes=Sqs.ATTRIBUTES)["QueueUrl"]
+        queue_url = sqs_client.create_queue(
+            QueueName=Sqs.QUEUE_NAME, Attributes=Sqs.ATTRIBUTES
+        )["QueueUrl"]
 
         # Call the send_to_supplier_queue function
         self.assertIsNone(
@@ -116,7 +135,10 @@ class TestSendSQSMessage(TestCase):
 
         # Assert that correct message has reached the queue
         messages = sqs_client.receive_message(QueueUrl=queue_url, MaxNumberOfMessages=1)
-        self.assertEqual(json_loads(messages["Messages"][0]["Body"]), deepcopy(FLU_EMIS_FILE_DETAILS.sqs_message_body))
+        self.assertEqual(
+            json_loads(messages["Messages"][0]["Body"]),
+            deepcopy(FLU_EMIS_FILE_DETAILS.sqs_message_body),
+        )
 
     def test_make_and_send_sqs_message_failure(self):
         """Test make_and_send_sqs_message function for a failure due to queue not existing"""

@@ -14,7 +14,13 @@ class VaccineTypes:
     rsv: str = "RSV"
 
     all: list[str] = field(
-        default_factory=lambda: [VaccineTypes.covid_19, VaccineTypes.flu, VaccineTypes.hpv, VaccineTypes.mmr,VaccineTypes.rsv]
+        default_factory=lambda: [
+            VaccineTypes.covid_19,
+            VaccineTypes.flu,
+            VaccineTypes.hpv,
+            VaccineTypes.mmr,
+            VaccineTypes.rsv,
+        ]
     )
 
 
@@ -29,6 +35,7 @@ class DiseaseDisplayTerms:
     mumps: str = "Mumps"
     rubella: str = "Rubella"
     rsv: str = "Respiratory syncytial virus infection (disorder)"
+
 
 @dataclass
 class DiseaseCodes:
@@ -50,7 +57,10 @@ vaccine_type_mappings = [
     ([DiseaseCodes.hpv], VaccineTypes.hpv),
     # IMPORTANT: FOR VACCINE_TYPES WHICH TARGET MULTIPLE DISEASES ENSURE THAT DISEASE CODES ARE SORTED ALPHABETICALLY
     # This allows order-insensitive comparison with other lists, by alphabetically sorting the list for comparison
-    (sorted([DiseaseCodes.measles, DiseaseCodes.mumps, DiseaseCodes.rubella]), VaccineTypes.mmr),
+    (
+        sorted([DiseaseCodes.measles, DiseaseCodes.mumps, DiseaseCodes.rubella]),
+        VaccineTypes.mmr,
+    ),
     ([DiseaseCodes.rsv], VaccineTypes.rsv),
 ]
 

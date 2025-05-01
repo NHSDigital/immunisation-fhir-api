@@ -8,7 +8,9 @@ from functools import wraps
 from clients import firehose_client, logger
 
 
-STREAM_NAME = os.getenv("SPLUNK_FIREHOSE_NAME", "immunisation-fhir-api-internal-dev-splunk-firehose")
+STREAM_NAME = os.getenv(
+    "SPLUNK_FIREHOSE_NAME", "immunisation-fhir-api-internal-dev-splunk-firehose"
+)
 
 
 def send_log_to_firehose(log_data: dict) -> None:
@@ -22,11 +24,18 @@ def send_log_to_firehose(log_data: dict) -> None:
 
 
 def generate_and_send_logs(
-    start_time, base_log_data: dict, additional_log_data: dict, is_error_log: bool = False
+    start_time,
+    base_log_data: dict,
+    additional_log_data: dict,
+    is_error_log: bool = False,
 ) -> None:
     """Generates log data which includes the base_log_data, additional_log_data, and time taken (calculated using the
     current time and given start_time) and sends them to Cloudwatch and Firehose."""
-    log_data = {**base_log_data, "time_taken": f"{round(time.time() - start_time, 5)}s", **additional_log_data}
+    log_data = {
+        **base_log_data,
+        "time_taken": f"{round(time.time() - start_time, 5)}s",
+        **additional_log_data,
+    }
     log_function = logger.error if is_error_log else logger.info
     log_function(json.dumps(log_data))
     send_log_to_firehose(log_data)
@@ -38,7 +47,10 @@ def convert_messsage_to_ack_row_logging_decorator(func):
     @wraps(func)
     def wrapper(message, created_at_formatted_string):
 
-        base_log_data = {"function_name": f"ack_processor_{func.__name__}", "date_time": str(datetime.now())}
+        base_log_data = {
+            "function_name": f"ack_processor_{func.__name__}",
+            "date_time": str(datetime.now()),
+        }
         start_time = time.time()
 
         try:
@@ -62,8 +74,14 @@ def convert_messsage_to_ack_row_logging_decorator(func):
             return result
 
         except Exception as error:
-            additional_log_data = {"status": "fail", "statusCode": 500, "diagnostics": str(error)}
-            generate_and_send_logs(start_time, base_log_data, additional_log_data, is_error_log=True)
+            additional_log_data = {
+                "status": "fail",
+                "statusCode": 500,
+                "diagnostics": str(error),
+            }
+            generate_and_send_logs(
+                start_time, base_log_data, additional_log_data, is_error_log=True
+            )
             raise
 
     return wrapper
@@ -75,19 +93,32 @@ def ack_lambda_handler_logging_decorator(func):
     @wraps(func)
     def wrapper(event, context, *args, **kwargs):
 
-        base_log_data = {"function_name": f"ack_processor_{func.__name__}", "date_time": str(datetime.now())}
+        base_log_data = {
+            "function_name": f"ack_processor_{func.__name__}",
+            "date_time": str(datetime.now()),
+        }
         start_time = time.time()
 
         try:
             result = func(event, context, *args, **kwargs)
             message_for_logs = "Lambda function executed successfully!"
-            additional_log_data = {"status": "success", "statusCode": 200, "message": message_for_logs}
+            additional_log_data = {
+                "status": "success",
+                "statusCode": 200,
+                "message": message_for_logs,
+            }
             generate_and_send_logs(start_time, base_log_data, additional_log_data)
             return result
 
         except Exception as error:
-            additional_log_data = {"status": "fail", "statusCode": 500, "diagnostics": str(error)}
-            generate_and_send_logs(start_time, base_log_data, additional_log_data, is_error_log=True)
+            additional_log_data = {
+                "status": "fail",
+                "statusCode": 500,
+                "diagnostics": str(error),
+            }
+            generate_and_send_logs(
+                start_time, base_log_data, additional_log_data, is_error_log=True
+            )
             raise
 
     return wrapper
@@ -98,7 +129,9 @@ def process_diagnostics(diagnostics, file_key, message_id):
     if diagnostics is not None:
         return {
             "status": "fail",
-            "statusCode": diagnostics.get("statusCode") if isinstance(diagnostics, dict) else 500,
+            "statusCode": (
+                diagnostics.get("statusCode") if isinstance(diagnostics, dict) else 500
+            ),
             "diagnostics": (
                 diagnostics.get("error_message")
                 if isinstance(diagnostics, dict)
@@ -110,4 +143,8 @@ def process_diagnostics(diagnostics, file_key, message_id):
         diagnostics = "An unhandled error occurred during batch processing"
         return {"status": "fail", "statusCode": 500, "diagnostics": diagnostics}
 
-    return {"status": "success", "statusCode": 200, "diagnostics": "Operation completed successfully"}
+    return {
+        "status": "success",
+        "statusCode": 200,
+        "diagnostics": "Operation completed successfully",
+    }

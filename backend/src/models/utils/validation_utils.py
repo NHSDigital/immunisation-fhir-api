@@ -30,7 +30,9 @@ def get_target_disease_codes(immunization: dict):
     for i, element in enumerate(target_disease):
 
         try:
-            code = [x["code"] for x in element["coding"] if x.get("system") == Urls.snomed][0]
+            code = [
+                x["code"] for x in element["coding"] if x.get("system") == Urls.snomed
+            ][0]
         except (KeyError, IndexError) as error:
             raise MandatoryError(
                 f"protocolApplied[0].targetDisease[{i}].coding[?(@.system=='http://snomed.info/sct')].code"
@@ -47,7 +49,9 @@ def get_target_disease_codes(immunization: dict):
     return target_disease_codes
 
 
-def convert_disease_codes_to_vaccine_type(disease_codes_input: list) -> Union[str, None]:
+def convert_disease_codes_to_vaccine_type(
+    disease_codes_input: list,
+) -> Union[str, None]:
     """
     Takes a list of disease codes and returns the corresponding vaccine type if found,
     otherwise raises a value error
@@ -78,7 +82,9 @@ def get_vaccine_type(immunization: dict):
     except MandatoryError as error:
         raise ValueError(str(error)) from error
     except ValueError as error:
-        raise ValueError(f"{obtain_field_location(FieldNames.target_disease_codes)} is a mandatory field") from error
+        raise ValueError(
+            f"{obtain_field_location(FieldNames.target_disease_codes)} is a mandatory field"
+        ) from error
 
     # Convert list of target diseases to vaccine type
     return convert_disease_codes_to_vaccine_type(target_diseases)

@@ -6,7 +6,10 @@ from boto3 import client as boto3_client
 from moto import mock_dynamodb
 
 from tests.utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT
-from tests.utils_for_tests.generic_setup_and_teardown import GenericSetUp, GenericTearDown
+from tests.utils_for_tests.generic_setup_and_teardown import (
+    GenericSetUp,
+    GenericTearDown,
+)
 from tests.utils_for_tests.values_for_tests import MockFileDetails, FileDetails
 from tests.utils_for_tests.utils_for_filenameprocessor_tests import (
     deserialize_dynamodb_types,
@@ -17,7 +20,11 @@ from tests.utils_for_tests.utils_for_filenameprocessor_tests import (
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from constants import AUDIT_TABLE_NAME, AuditTableKeys, FileStatus
-    from audit_table import upsert_audit_table, ensure_file_is_not_a_duplicate, get_next_queued_file_details
+    from audit_table import (
+        upsert_audit_table,
+        ensure_file_is_not_a_duplicate,
+        get_next_queued_file_details,
+    )
     from errors import UnhandledAuditTableError, DuplicateFileError
     from clients import REGION_NAME
 
@@ -53,22 +60,39 @@ class TestAuditTable(TestCase):
         self.assertIsNone(get_next_queued_file_details(queue_to_check))
 
         # Test case 2: files in audit table, but none of the files are in the RAVS_RSV queue
-        add_entry_to_table(MockFileDetails.emis_flu, file_status=FileStatus.QUEUED)  # different queue
-        add_entry_to_table(MockFileDetails.emis_rsv, file_status=FileStatus.QUEUED)  # different queue
-        add_entry_to_table(MockFileDetails.ravs_flu, file_status=FileStatus.QUEUED)  # different queue
-        add_entry_to_table(MockFileDetails.ravs_rsv_1, FileStatus.PROCESSED)  # same queue but already processed
+        add_entry_to_table(
+            MockFileDetails.emis_flu, file_status=FileStatus.QUEUED
+        )  # different queue
+        add_entry_to_table(
+            MockFileDetails.emis_rsv, file_status=FileStatus.QUEUED
+        )  # different queue
+        add_entry_to_table(
+            MockFileDetails.ravs_flu, file_status=FileStatus.QUEUED
+        )  # different queue
+        add_entry_to_table(
+            MockFileDetails.ravs_rsv_1, FileStatus.PROCESSED
+        )  # same queue but already processed
         self.assertIsNone(get_next_queued_file_details(queue_to_check))
 
         # Test case 3: one queued file in the ravs_rsv queue
         add_entry_to_table(MockFileDetails.ravs_rsv_2, file_status=FileStatus.QUEUED)
-        expected_table_entry = {**MockFileDetails.ravs_rsv_2.audit_table_entry, "status": {"S": FileStatus.QUEUED}}
-        self.assertEqual(get_next_queued_file_details(queue_to_check), deserialize_dynamodb_types(expected_table_entry))
+        expected_table_entry = {
+            **MockFileDetails.ravs_rsv_2.audit_table_entry,
+            "status": {"S": FileStatus.QUEUED},
+        }
+        self.assertEqual(
+            get_next_queued_file_details(queue_to_check),
+            deserialize_dynamodb_types(expected_table_entry),
+        )
 
         # Test case 4: multiple queued files in the RAVS_RSV queue
         # Note that ravs_rsv files 3 and 4 have later timestamps than file 2, so file 2 remains the first in the queue
         add_entry_to_table(MockFileDetails.ravs_rsv_3, file_status=FileStatus.QUEUED)
         add_entry_to_table(MockFileDetails.ravs_rsv_4, file_status=FileStatus.QUEUED)
-        self.assertEqual(get_next_queued_file_details(queue_to_check), deserialize_dynamodb_types(expected_table_entry))
+        self.assertEqual(
+            get_next_queued_file_details(queue_to_check),
+            deserialize_dynamodb_types(expected_table_entry),
+        )
 
     def test_ensure_file_is_not_a_duplicate(self):
         """
@@ -77,7 +101,9 @@ class TestAuditTable(TestCase):
         """
         # Test case 1: file is not a duplicate (and so is not currently in the audit table)
         self.assertIsNone(
-            ensure_file_is_not_a_duplicate(FILE_DETAILS.file_key, FILE_DETAILS.created_at_formatted_string)
+            ensure_file_is_not_a_duplicate(
+                FILE_DETAILS.file_key, FILE_DETAILS.created_at_formatted_string
+            )
         )
 
         # Add the file to the audit table
@@ -86,14 +112,17 @@ class TestAuditTable(TestCase):
             Item={
                 AuditTableKeys.MESSAGE_ID: {"S": FILE_DETAILS.message_id},
                 AuditTableKeys.FILENAME: {"S": FILE_DETAILS.file_key},
-                AuditTableKeys.TIMESTAMP: {"S": FILE_DETAILS.created_at_formatted_string},
+                AuditTableKeys.TIMESTAMP: {
+                    "S": FILE_DETAILS.created_at_formatted_string
+                },
             },
         )
 
         # Test case 2: file is a duplicate (duplicate file_key, unique creation time)
         with self.assertRaises(DuplicateFileError):
             ensure_file_is_not_a_duplicate(
-                FILE_DETAILS.file_key, FILE_DETAILS.created_at_formatted_string.replace("2024", "2025")
+                FILE_DETAILS.file_key,
+                FILE_DETAILS.created_at_formatted_string.replace("2024", "2025"),
             )
 
     def test_upsert_audit_table(self):
@@ -108,9 +137,15 @@ class TestAuditTable(TestCase):
         7. New file but with duplicated message_id.
         """
         # Populate the table with some entries which are not in the same queue
-        add_entry_to_table(MockFileDetails.emis_flu, file_status=FileStatus.QUEUED)  # different queue
-        add_entry_to_table(MockFileDetails.emis_rsv, file_status=FileStatus.QUEUED)  # different queue
-        add_entry_to_table(MockFileDetails.ravs_flu, file_status=FileStatus.QUEUED)  # different queue
+        add_entry_to_table(
+            MockFileDetails.emis_flu, file_status=FileStatus.QUEUED
+        )  # different queue
+        add_entry_to_table(
+            MockFileDetails.emis_rsv, file_status=FileStatus.QUEUED
+        )  # different queue
+        add_entry_to_table(
+            MockFileDetails.ravs_flu, file_status=FileStatus.QUEUED
+        )  # different queue
 
         # Test case 1: new file with status of 'Processed'.
         # File should be added to the audit table, with status 'Processed'. Return value should be False.
@@ -132,7 +167,9 @@ class TestAuditTable(TestCase):
         # Audit table status should be updated to 'Duplicate'. Return value should be False.
         ravs_rsv_test_file_2 = FileDetails("RAVS", "RSV", "YGM41", file_number=2)
         ravs_rsv_test_file_2.file_key = ravs_rsv_test_file_1.file_key
-        ravs_rsv_test_file_2.audit_table_entry[AuditTableKeys.FILENAME] = {"S": ravs_rsv_test_file_2.file_key}
+        ravs_rsv_test_file_2.audit_table_entry[AuditTableKeys.FILENAME] = {
+            "S": ravs_rsv_test_file_2.file_key
+        }
 
         result = upsert_audit_table(
             message_id=ravs_rsv_test_file_2.message_id,
@@ -210,7 +247,9 @@ class TestAuditTable(TestCase):
         # Audit table status should not be updated. Error should be raised.
         test_file_5 = MockFileDetails.ravs_rsv_5
         test_file_5.message_id = rsv_ravs_test_file_4.message_id
-        test_file_5.audit_table_entry[AuditTableKeys.MESSAGE_ID] = test_file_5.message_id
+        test_file_5.audit_table_entry[AuditTableKeys.MESSAGE_ID] = (
+            test_file_5.message_id
+        )
 
         with self.assertRaises(UnhandledAuditTableError):
             upsert_audit_table(

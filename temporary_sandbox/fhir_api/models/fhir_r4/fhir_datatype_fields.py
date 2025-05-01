@@ -1,4 +1,4 @@
-''' Generic Fields for FHIR Revision 4 '''
+"""Generic Fields for FHIR Revision 4"""
 
 import datetime
 
@@ -13,11 +13,9 @@ from pydantic import (
 
 
 class FhirR4Fields:
-    """ Generic Fields, descriptions and examples"""
-    _pk: str = Field(
-        description="Partition Key for DynamoDB",
-        example="P#1000"
-    )
+    """Generic Fields, descriptions and examples"""
+
+    _pk: str = Field(description="Partition Key for DynamoDB", example="P#1000")
 
     _sk: str = Field(
         description="Sorting Key for DynamoDB",
@@ -49,7 +47,7 @@ class FhirR4Fields:
     uri: str = Field(
         description="A Uniform Resource Identifier Reference",
         example="urn:uuid:53fefa32-fcbb-4ff8-8a92-55ee120877b7",
-        regex=r"\S*"
+        regex=r"\S*",
     )
 
     url: AnyUrl = Field(
@@ -66,7 +64,7 @@ class FhirR4Fields:
     base64Binary: str = Field(
         description="A stream of bytes, base64 encoded",
         example="eyJmbGF2b3IiOiAiZnJlbmNoIHZhbmlsbGEiLCAic2l6ZSI6ICIyNCBveiJ9",
-        regex=r"(\s*([0-9a-zA-Z\+\=]){4}\s*)+"
+        regex=r"(\s*([0-9a-zA-Z\+\=]){4}\s*)+",
     )
 
     instant: datetime.datetime = Field(
@@ -77,10 +75,10 @@ class FhirR4Fields:
     date: Union[
         datetime.date,
         partial(datetime.date, day=1),
-        partial(datetime.date, month=1, day=1)
+        partial(datetime.date, month=1, day=1),
     ] = Field(
         description="A date, or partial date (e.g. just year or year + month) as used in human communication",
-        example="1905-08-23"
+        example="1905-08-23",
     )
 
     dateTime: str = Field(
@@ -90,26 +88,26 @@ class FhirR4Fields:
 
     time: datetime.time = Field(
         description="A time during the day, in the format hh:mm:ss. There is no date specified.",
-        example="01:00:01"
+        example="01:00:01",
     )
 
     code: str = Field(
         description="Indicates that the value is taken from a set of controlled strings defined elsewhere",
         example="home",
-        regex=r"[^\s]+(\s[^\s]+)*"
+        regex=r"[^\s]+(\s[^\s]+)*",
     )
 
     oid: str = Field(
         description="An OID represented as a URI",
         example="urn:oid:1.2.3.4.5",
-        regex=r"urn:oid:[0-2](\.(0|[1-9][0-9]*))+"
+        regex=r"urn:oid:[0-2](\.(0|[1-9][0-9]*))+",
     )
 
     id: str = Field(
         description="Any combination of upper- or lower-case ASCII letters",
         example="53fefa32-fcbb-4ff8-8a92-55ee120877b7",
         regex=r"[A-Za-z0-9\-\.]{1,64}",
-        max_length=64
+        max_length=64,
     )
 
     markdown: str = Field(
@@ -129,5 +127,5 @@ class FhirR4Fields:
 
     uuid: str = Field(
         description="A UUID (aka GUID) represented as a URI",
-        example="urn:uuid:c757873d-ec9a-4326-a141-556f43239520"
+        example="urn:uuid:c757873d-ec9a-4326-a141-556f43239520",
     )

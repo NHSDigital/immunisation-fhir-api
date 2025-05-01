@@ -8,4 +8,5 @@ variables:
     value: immunisation-fhir-api/FHIR/R4
   - name: pr_number
     value: ${{ split(variables['Build.SourceBranch'], '/')[2] }}
-    
+  - name: python_version
+    value: 3.10

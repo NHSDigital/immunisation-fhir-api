@@ -54,7 +54,9 @@ class ImmunizationBaseTest(unittest.TestCase):
                 scopes=["urn:nhsd:apim:app:level3:immunisation-fhir-api"],
             )
             cls.product = make_apigee_product(cls.apigee_service, product_data)
-            cls.apigee_service.add_proxy_to_product(product_name=cls.product.name, proxy_name=get_proxy_name())
+            cls.apigee_service.add_proxy_to_product(
+                product_name=cls.product.name, proxy_name=get_proxy_name()
+            )
 
             def make_app_data() -> ApigeeApp:
                 _app = ApigeeApp(name=str(uuid.uuid4()))
@@ -64,7 +66,9 @@ class ImmunizationBaseTest(unittest.TestCase):
 
             # ApplicationRestricted
             app_data = make_app_data()
-            app_res_app, app_res_cfg = make_app_restricted_app(cls.apigee_service, app_data)
+            app_res_app, app_res_cfg = make_app_restricted_app(
+                cls.apigee_service, app_data
+            )
             cls.apps.append(app_res_app)
 
             app_res_auth = AppRestrictedAuthentication(get_auth_url(), app_res_cfg)
@@ -77,7 +81,9 @@ class ImmunizationBaseTest(unittest.TestCase):
             cis2_app, app_res_cfg = make_cis2_app(cls.apigee_service, app_data)
             cls.apps.append(cis2_app)
 
-            cis2_auth = Cis2Authentication(get_auth_url(), app_res_cfg, LoginUser(username=cis2_user))
+            cis2_auth = Cis2Authentication(
+                get_auth_url(), app_res_cfg, LoginUser(username=cis2_user)
+            )
             cis2_imms_api = ImmunisationApi(base_url, cis2_auth)
             cls.imms_apis.append(cis2_imms_api)
 

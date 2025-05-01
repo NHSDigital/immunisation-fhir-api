@@ -5,13 +5,17 @@ import os
 import json
 
 # Set environment variables before importing the module
-## @TODO: # Note: Environment variables shared across tests, thus aligned
-os.environ["AWS_SQS_QUEUE_URL"] = "https://sqs.eu-west-2.amazonaws.com/123456789012/test-queue"
+# @TODO: # Note: Environment variables shared across tests, thus aligned
+os.environ["AWS_SQS_QUEUE_URL"] = (
+    "https://sqs.eu-west-2.amazonaws.com/123456789012/test-queue"
+)
 os.environ["DELTA_TABLE_NAME"] = "my_delta_table"
 os.environ["SOURCE"] = "my_source"
 
-from delta import send_message, handler  # Import after setting environment variables
-from sample_data.test_resource_data import get_test_data_resource
+# Import after setting environment variables
+from delta import send_message, handler  # noqa E402
+from .sample_data.test_resource_data import get_test_data_resource  # noqa E402
+
 
 class DeltaTestCase(unittest.TestCase):
 
@@ -33,7 +37,9 @@ class DeltaTestCase(unittest.TestCase):
         self.mock_firehose_logger.stop()
 
     @staticmethod
-    def setup_mock_sqs(mock_boto_client, return_value={"ResponseMetadata": {"HTTPStatusCode": 200}}):
+    def setup_mock_sqs(
+        mock_boto_client, return_value={"ResponseMetadata": {"HTTPStatusCode": 200}}
+    ):
         mock_sqs = mock_boto_client.return_value
         mock_sqs.send_message.return_value = return_value
         return mock_sqs
@@ -42,7 +48,9 @@ class DeltaTestCase(unittest.TestCase):
     def setup_mock_dynamodb(mock_boto_resource, status_code=200):
         mock_dynamodb = mock_boto_resource.return_value
         mock_table = mock_dynamodb.Table.return_value
-        mock_table.put_item.return_value = {"ResponseMetadata": {"HTTPStatusCode": status_code}}
+        mock_table.put_item.return_value = {
+            "ResponseMetadata": {"HTTPStatusCode": status_code}
+        }
         return mock_table
 
     def setUp_mock_resources(self, mock_boto_resource, mock_boto_client):
@@ -53,11 +61,15 @@ class DeltaTestCase(unittest.TestCase):
         return mock_table
 
     @staticmethod
-    def get_event(event_name="INSERT", operation="CREATE", supplier="EMIS", n_records=1):
+    def get_event(
+        event_name="INSERT", operation="CREATE", supplier="EMIS", n_records=1
+    ):
         """Create test event for the handler function."""
         return {
             "Records": [
-                DeltaTestCase.get_event_record(f"covid#{i+1}2345", event_name, operation, supplier)
+                DeltaTestCase.get_event_record(
+                    f"covid#{i+1}2345", event_name, operation, supplier
+                )
                 for i in range(n_records)
             ]
         }
@@ -65,7 +77,7 @@ class DeltaTestCase(unittest.TestCase):
     @staticmethod
     def get_event_record(pk, event_name="INSERT", operation="CREATE", supplier="EMIS"):
         if operation != "DELETE":
-            return{
+            return {
                 "eventName": event_name,
                 "dynamodb": {
                     "ApproximateCreationDateTime": 1690896000,
@@ -77,9 +89,9 @@ class DeltaTestCase(unittest.TestCase):
                         "SupplierSystem": {"S": supplier},
                         "Resource": {
                             "S": json.dumps(get_test_data_resource()),
-                        }
-                    }
-                }
+                        },
+                    },
+                },
             }
         else:
             return {
@@ -92,9 +104,9 @@ class DeltaTestCase(unittest.TestCase):
                         "SupplierSystem": {"S": "EMIS"},
                         "Resource": {
                             "S": json.dumps(get_test_data_resource()),
-                        }
-                    }
-                }
+                        },
+                    },
+                },
             }
 
     @patch("boto3.client")
@@ -128,7 +140,7 @@ class DeltaTestCase(unittest.TestCase):
 
         # Assert
         mock_logger_error.assert_called_once_with(
-            f"Error sending record to DLQ: An error occurred (500) when calling the SendMessage operation: Internal Server Error"
+            "Error sending record to DLQ: An error occurred (500) when calling the SendMessage operation: Internal Server Error"
         )
 
     @patch("boto3.resource")
@@ -183,7 +195,9 @@ class DeltaTestCase(unittest.TestCase):
 
     @patch("boto3.resource")
     @patch("boto3.client")
-    def test_handler_exception_intrusion_check(self, mock_boto_resource, mock_boto_client):
+    def test_handler_exception_intrusion_check(
+        self, mock_boto_resource, mock_boto_client
+    ):
         # Arrange
         self.setup_mock_dynamodb(mock_boto_resource, status_code=500)
         mock_boto_client.return_value = MagicMock()
@@ -206,11 +220,15 @@ class DeltaTestCase(unittest.TestCase):
         with self.assertRaises(Exception):
             handler(event, context)
 
-        self.mock_logger_exception.assert_called_once_with("Delta Lambda failure: Test Exception")
+        self.mock_logger_exception.assert_called_once_with(
+            "Delta Lambda failure: Test Exception"
+        )
 
     @patch("boto3.resource")
     @patch("delta.handler")
-    def test_handler_exception_intrusion_check_false(self, mocked_intrusion, mock_boto_client):
+    def test_handler_exception_intrusion_check_false(
+        self, mocked_intrusion, mock_boto_client
+    ):
         # Arrange
         self.setUp_mock_resources(mocked_intrusion, mock_boto_client)
         event = self.get_event()
@@ -238,10 +256,14 @@ class DeltaTestCase(unittest.TestCase):
     @patch("delta.logger.info")
     @patch("Converter.Converter")
     @patch("delta.boto3.resource")
-    def test_partial_success_with_errors(self, mock_dynamodb, mock_converter, mock_logger_info):
+    def test_partial_success_with_errors(
+        self, mock_dynamodb, mock_converter, mock_logger_info
+    ):
         mock_converter_instance = MagicMock()
         mock_converter_instance.runConversion.return_value = [{}]
-        mock_converter_instance.getErrorRecords.return_value = [{"error": "Invalid field"}]
+        mock_converter_instance.getErrorRecords.return_value = [
+            {"error": "Invalid field"}
+        ]
         mock_converter.return_value = mock_converter_instance
 
         # Mock DynamoDB put_item success
@@ -252,7 +274,7 @@ class DeltaTestCase(unittest.TestCase):
         event = self.get_event()
         context = {}
 
-        response = handler(event, context)
+        handler(event, context)
 
         # self.assertEqual(response["statusCode"], 207)
         # self.assertIn("Partial success", response["body"])

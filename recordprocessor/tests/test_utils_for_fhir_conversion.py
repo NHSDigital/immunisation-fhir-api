@@ -3,7 +3,9 @@
 import unittest
 from unittest.mock import patch
 from decimal import Decimal
-from tests.utils_for_recordprocessor_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT
+from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
+    MOCK_ENVIRONMENT_DICT,
+)
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
     from constants import Urls
@@ -60,7 +62,14 @@ class TestBatchUtilsConvert(unittest.TestCase):
         self.assertEqual(Convert.date("19821115"), "1982-11-15")
 
         # Invalid_dates
-        for value in ["2000-01-01", 20000101, "20000230", "2000011", "990101", "20000101T00:00"]:
+        for value in [
+            "2000-01-01",
+            20000101,
+            "20000230",
+            "2000011",
+            "990101",
+            "20000101T00:00",
+        ]:
             self.assertEqual(Convert.date(value), value)
 
     def test_convert_gender_code(self):
@@ -69,7 +78,12 @@ class TestBatchUtilsConvert(unittest.TestCase):
         the original value if this is not possible
         """
         # Valid gender codes
-        for code, expected in [("1", "male"), ("2", "female"), ("9", "other"), ("0", "unknown")]:
+        for code, expected in [
+            ("1", "male"),
+            ("2", "female"),
+            ("9", "other"),
+            ("0", "unknown"),
+        ]:
             self.assertEqual(Convert.gender_code(code), expected)
 
         # Invalid gender codes
@@ -161,7 +175,11 @@ class TestBatchUtilsCreate(unittest.TestCase):
         actual = Generate.extension_item("testUrl", "testSystem", "ABC", "testDisplay")
         expected = {
             "url": "testUrl",
-            "valueCodeableConcept": {"coding": [{"system": "testSystem", "code": "ABC", "display": "testDisplay"}]},
+            "valueCodeableConcept": {
+                "coding": [
+                    {"system": "testSystem", "code": "ABC", "display": "testDisplay"}
+                ]
+            },
         }
         self.assertEqual(expected, actual)
 
@@ -169,7 +187,9 @@ class TestBatchUtilsCreate(unittest.TestCase):
         actual = Generate.extension_item("testUrl", "testSystem", None, "testDisplay")
         expected = {
             "url": "testUrl",
-            "valueCodeableConcept": {"coding": [{"system": "testSystem", "display": "testDisplay"}]},
+            "valueCodeableConcept": {
+                "coding": [{"system": "testSystem", "display": "testDisplay"}]
+            },
         }
         self.assertEqual(expected, actual)
 
@@ -177,7 +197,9 @@ class TestBatchUtilsCreate(unittest.TestCase):
         actual = Generate.extension_item("testUrl", "testSystem", "ABC", "")
         expected = {
             "url": "testUrl",
-            "valueCodeableConcept": {"coding": [{"system": "testSystem", "code": "ABC"}]},
+            "valueCodeableConcept": {
+                "coding": [{"system": "testSystem", "code": "ABC"}]
+            },
         }
         self.assertEqual(expected, actual)
 
@@ -186,7 +208,12 @@ class TestBatchUtilsAdd(unittest.TestCase):
     """Tests for the batch utils Add functions"""
 
     def setUp(self):
-        self.test_dict_some_empty = {"key1": "value1", "key2": None, "key3": False, "key4": ""}
+        self.test_dict_some_empty = {
+            "key1": "value1",
+            "key2": None,
+            "key3": False,
+            "key4": "",
+        }
         self.test_dict_none_empty = {"key1": "value1", "key3": False}
         self.test_dict_empty = {"key5": "", "key6": None, "key7": []}
 
@@ -244,7 +271,9 @@ class TestBatchUtilsAdd(unittest.TestCase):
         test_dict = {}
 
         # Test list with some empty items
-        Add.custom_item(test_dict, "test1", ["", "test1", None], [{"test1": ["testValue"]}])
+        Add.custom_item(
+            test_dict, "test1", ["", "test1", None], [{"test1": ["testValue"]}]
+        )
         self.assertEqual(test_dict, {"test1": [{"test1": ["testValue"]}]})
 
         # Test list with all empty items
@@ -259,13 +288,21 @@ class TestBatchUtilsAdd(unittest.TestCase):
         # Code and display non-empty
         test_dict = {}
         Add.snomed(test_dict, "test1", "ABC", "testDisplay")
-        expected = {"test1": {"coding": [{"system": Urls.SNOMED, "code": "ABC", "display": "testDisplay"}]}}
+        expected = {
+            "test1": {
+                "coding": [
+                    {"system": Urls.SNOMED, "code": "ABC", "display": "testDisplay"}
+                ]
+            }
+        }
         self.assertEqual(test_dict, expected)
 
         # Code empty and display non-empty
         test_dict = {}
         Add.snomed(test_dict, "test2", "", "testDisplay")
-        expected = {"test2": {"coding": [{"system": Urls.SNOMED, "display": "testDisplay"}]}}
+        expected = {
+            "test2": {"coding": [{"system": Urls.SNOMED, "display": "testDisplay"}]}
+        }
         self.assertEqual(test_dict, expected)
 
         # Code non-empty and display empty

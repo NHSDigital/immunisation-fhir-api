@@ -1,10 +1,13 @@
-[tool.poetry]
+[project]
 name = "e2e"
 version = "0.1.0"
 description = "End-to-end tests for immunization-fhir-api"
-authors = ["Your Name <you@example.com>"]
+authors = [{ name = "Your Name", email = "<you@example.com>" }]
 license = "MIT"
 readme = "README.md"
+
+[tool.poetry]
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "~3.10"

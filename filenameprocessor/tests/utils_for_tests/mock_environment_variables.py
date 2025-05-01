@@ -27,7 +27,9 @@ class Sqs:
 
     ATTRIBUTES = {"FifoQueue": "true", "ContentBasedDeduplication": "true"}
     QUEUE_NAME = "imms-batch-internal-dev-metadata-queue.fifo"
-    TEST_QUEUE_URL = f"https://sqs.{REGION_NAME}.amazonaws.com/{MOCK_ACCOUNT_ID}/{QUEUE_NAME}"
+    TEST_QUEUE_URL = (
+        f"https://sqs.{REGION_NAME}.amazonaws.com/{MOCK_ACCOUNT_ID}/{QUEUE_NAME}"
+    )
 
 
 # Dictionary for mocking the os.environ dict

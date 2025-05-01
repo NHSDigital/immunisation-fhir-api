@@ -2,9 +2,10 @@ import unittest
 from not_found_handler import not_found  # Replace with your Lambda file path
 
 "test"
+
+
 class TestLambdaHandler(unittest.TestCase):
     def test_unsupported_method(self):
-
         """Tests the function with an unsupported method (PATCH)."""
 
         event = {"httpMethod": "PATCH"}

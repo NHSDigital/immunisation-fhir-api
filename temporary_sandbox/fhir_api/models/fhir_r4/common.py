@@ -1,14 +1,10 @@
-''' Common FHIR Data Models '''
+"""Common FHIR Data Models"""
 
 from typing import (
     Optional,
 )
 
-from pydantic import (
-    BaseModel,
-    validator,
-    PositiveInt
-    )
+from pydantic import BaseModel, validator, PositiveInt
 
 from datetime import datetime
 
@@ -17,7 +13,8 @@ from fhir_api.models.fhir_r4.fhir_datatype_fields import FhirR4Fields
 
 
 class CodingType(BaseModel):
-    ''' Code Data Model '''
+    """Code Data Model"""
+
     system: Optional[str] = FhirR4Fields.string
     version: Optional[str] = FhirR4Fields.string
     code: Optional[str] = FhirR4Fields.string
@@ -26,21 +23,24 @@ class CodingType(BaseModel):
 
 
 class CodeableConceptType(BaseModel):
-    ''' Codeable Concept Data Model '''
+    """Codeable Concept Data Model"""
+
     coding: Optional[list[CodingType]]
     text: Optional[str] = FhirR4Fields.string
 
 
 class Period(BaseModel):
-    '''  A time period defined by a start and end date/time. '''
+    """A time period defined by a start and end date/time."""
+
     start: datetime = FhirR4Fields.dateTime
     end: datetime = FhirR4Fields.dateTime
 
 
 class HumanName(BaseModel):
-    '''
+    """
     A name of a human with text, parts and usage information.
-    '''
+    """
+
     use: Optional[code_types.human_name_use]
     text: Optional[str] = FhirR4Fields.string
     family: Optional[str] = FhirR4Fields.string
@@ -51,7 +51,8 @@ class HumanName(BaseModel):
 
 
 class Quantity(BaseModel):
-    ''' Quantity Type '''
+    """Quantity Type"""
+
     value: Optional[float] = FhirR4Fields.decimal
     comparator: Optional[str] = FhirR4Fields.code
     unit: Optional[str] = FhirR4Fields.string
@@ -60,31 +61,33 @@ class Quantity(BaseModel):
 
 
 class ContactPoint(BaseModel):
-    '''
+    """
     Details for all kinds of technology-mediated contact points
     for a person or organization, including telephone, email, etc.
-    '''
+    """
+
     system: code_types.contact_point_system_types = None  # Required
     value: Optional[str] = FhirR4Fields.string
     use: Optional[code_types.contact_point_use_types]
     rank: Optional[PositiveInt] = FhirR4Fields.positiveInt
     period: Optional[Period]
 
-    @validator('system')
+    @validator("system")
     def value_validator(cls, _v):
-        ''' cpt-2: A system is required is a value is provided '''
+        """cpt-2: A system is required is a value is provided"""
         if cls.value:
             assert _v is None, "System must be populated if a value exists"
             return _v
 
 
 class Address(BaseModel):
-    '''
+    """
     An address expressed using postal conventions (as opposed to GPS or other location definition formats).
     This data type may be used to convey addresses for use in delivering mail as well as for visiting
     locations which might not be valid for mail delivery.
     There are a variety of postal address formats defined around the world.
-    '''
+    """
+
     use: Optional[code_types.address_use_type]
     type: Optional[code_types.address_type_type]
     text: Optional[str] = FhirR4Fields.string
@@ -98,7 +101,8 @@ class Address(BaseModel):
 
 
 class Reference(BaseModel):
-    ''' Reference data Model '''
+    """Reference data Model"""
+
     reference: Optional[str] = FhirR4Fields.string
     type: Optional[str] = FhirR4Fields.string
     identifier: Optional["Identifier"]
@@ -106,13 +110,15 @@ class Reference(BaseModel):
 
 
 class CodeableReference(BaseModel):
-    ''' Codeable Reference '''
+    """Codeable Reference"""
+
     concept: Optional[CodeableConceptType]
     reference: Optional[Reference]
 
 
 class Identifier(BaseModel):
-    ''' Identifier Data Model '''
+    """Identifier Data Model"""
+
     use_type: Optional[str] = FhirR4Fields.string
     type: Optional[CodeableConceptType]
     system: Optional[str] = FhirR4Fields.string
@@ -122,7 +128,8 @@ class Identifier(BaseModel):
 
 
 class Attachment(BaseModel):
-    ''' Attachment Model '''
+    """Attachment Model"""
+
     contentType: Optional[str] = FhirR4Fields.string
     language: Optional[str] = FhirR4Fields.string
     data: Optional[str] = FhirR4Fields.base64Binary

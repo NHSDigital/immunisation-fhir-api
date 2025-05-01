@@ -1,9 +1,12 @@
-[tool.poetry]
+[project]
 name        = "processor"
 version     = "0.1.0"
 description = ""
-authors     = ["Your Name <you@example.com>"]
+authors     = [{ name = "Your Name", email = "<you@example.com>" }]
 readme      = "README.md"
+
+[tool.poetry]
+package-mode = false
 packages    = [{include = "src"}]
 
 [tool.poetry.dependencies]

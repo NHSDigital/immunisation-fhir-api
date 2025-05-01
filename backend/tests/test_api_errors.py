@@ -1,7 +1,9 @@
 import unittest
 
 from models.errors import Severity, Code, create_operation_outcome
+
 "test"
+
 
 class TestApiErrors(unittest.TestCase):
     def test_error_to_uk_core2(self):
@@ -11,7 +13,9 @@ class TestApiErrors(unittest.TestCase):
         diag = "a-diagnostic"
         error_id = "a-id"
 
-        error = create_operation_outcome(resource_id=error_id, severity=severity, code=code, diagnostics=diag)
+        error = create_operation_outcome(
+            resource_id=error_id, severity=severity, code=code, diagnostics=diag
+        )
 
         issue = error["issue"][0]
         self.assertEqual(error["id"], error_id)

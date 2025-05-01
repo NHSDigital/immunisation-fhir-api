@@ -1,4 +1,4 @@
-''' Models for interacting with tables '''
+"""Models for interacting with tables"""
 
 from pydantic import (
     BaseModel,
@@ -7,13 +7,19 @@ from pydantic import (
 
 
 class KeySchema(BaseModel):
-    AttributeName: str = Field(description="Attribute Name for Key Schema", example="year")
+    AttributeName: str = Field(
+        description="Attribute Name for Key Schema", example="year"
+    )
     KeyType: str = Field(description="Key Type for Key Schema", example="HASH")
 
 
 class AttributeDefinitions(BaseModel):
-    AttributeName: str = Field(description="Attribute Name for Attribute Definition", example="year")
-    AttributeType: str = Field(description="Attribute Type for Attribute Definition", example="N")
+    AttributeName: str = Field(
+        description="Attribute Name for Attribute Definition", example="year"
+    )
+    AttributeType: str = Field(
+        description="Attribute Type for Attribute Definition", example="N"
+    )
 
 
 class ProvisionedThroughput(BaseModel):

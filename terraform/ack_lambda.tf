@@ -115,17 +115,17 @@ resource "aws_iam_policy" "ack_lambda_exec_policy" {
           "s3:DeleteObject"
         ]
         Resource = [
-          "arn:aws:s3:::immunisation-batch-${local.env}-data-sources",       
+          "arn:aws:s3:::immunisation-batch-${local.env}-data-sources",
           "arn:aws:s3:::immunisation-batch-${local.env}-data-sources/*",
-          "${data.aws_s3_bucket.existing_destination_bucket.arn}",       
-          "${data.aws_s3_bucket.existing_destination_bucket.arn}/*"         
+          "${data.aws_s3_bucket.existing_destination_bucket.arn}",
+          "${data.aws_s3_bucket.existing_destination_bucket.arn}/*"
         ]
       },
       {
         Effect   = "Allow"
         Action   = "lambda:InvokeFunction"
         Resource = [
-          data.aws_lambda_function.existing_file_name_proc_lambda.arn,               
+          data.aws_lambda_function.existing_file_name_proc_lambda.arn,
         ]
       },
       {
@@ -139,13 +139,13 @@ resource "aws_iam_policy" "ack_lambda_exec_policy" {
           "arn:aws:dynamodb:${var.aws_region}:${local.local_account_id}:table/${data.aws_dynamodb_table.audit-table.name}/index/*",
         ]
       },
-      { 
-        Effect = "Allow", 
-        Action = [ 
-                  "sqs:ReceiveMessage", 
-                  "sqs:DeleteMessage", 
-                  "sqs:GetQueueAttributes" 
-                  ], 
+      {
+        Effect = "Allow",
+        Action = [
+                  "sqs:ReceiveMessage",
+                  "sqs:DeleteMessage",
+                  "sqs:GetQueueAttributes"
+                  ],
         Resource = "arn:aws:sqs:eu-west-2:${local.local_account_id}:${local.short_prefix}-ack-metadata-queue.fifo" },
       {
         "Effect": "Allow",
@@ -205,10 +205,10 @@ resource "aws_lambda_function" "ack_processor_lambda" {
   architectures   = ["x86_64"]
   timeout         = 900
   memory_size    = 2048
-  ephemeral_storage { 
-      size = 2048  
+  ephemeral_storage {
+      size = 2048
   }
-  
+
   environment {
     variables = {
       ACK_BUCKET_NAME     = data.aws_s3_bucket.existing_destination_bucket.bucket
@@ -219,15 +219,15 @@ resource "aws_lambda_function" "ack_processor_lambda" {
     }
   }
 
-  reserved_concurrent_executions = 20
+  reserved_concurrent_executions = startswith(local.environment, "pr-") ? -1 : 20
   depends_on = [
     aws_cloudwatch_log_group.ack_lambda_log_group
   ]
 }
 
-resource "aws_lambda_event_source_mapping" "sqs_to_lambda"{ 
-  event_source_arn = aws_sqs_queue.fifo_queue.arn 
-  function_name = aws_lambda_function.ack_processor_lambda.arn 
+resource "aws_lambda_event_source_mapping" "sqs_to_lambda"{
+  event_source_arn = aws_sqs_queue.fifo_queue.arn
+  function_name = aws_lambda_function.ack_processor_lambda.arn
   batch_size = 10
-  enabled = true 
+  enabled = true
 }

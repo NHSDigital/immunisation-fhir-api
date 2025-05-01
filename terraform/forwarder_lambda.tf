@@ -116,8 +116,8 @@ resource "aws_iam_policy" "forwarding_lambda_exec_policy" {
           "s3:ListBucket"
         ]
         Resource = [
-          "arn:aws:s3:::${local.batch_prefix}-data-sources",           
-          "arn:aws:s3:::${local.batch_prefix}-data-sources/*"        
+          "arn:aws:s3:::${local.batch_prefix}-data-sources",
+          "arn:aws:s3:::${local.batch_prefix}-data-sources/*"
         ]
       },
       {
@@ -128,8 +128,8 @@ resource "aws_iam_policy" "forwarding_lambda_exec_policy" {
           "s3:ListBucket"
         ]
         Resource = [
-          "${data.aws_s3_bucket.existing_destination_bucket.arn}",       
-          "${data.aws_s3_bucket.existing_destination_bucket.arn}/*"        
+          "${data.aws_s3_bucket.existing_destination_bucket.arn}",
+          "${data.aws_s3_bucket.existing_destination_bucket.arn}/*"
         ]
       },
       {
@@ -198,8 +198,8 @@ resource "aws_lambda_function" "forwarding_lambda" {
   image_uri      = module.forwarding_docker_image.image_uri
   timeout        = 900
   memory_size    = 2048
-  ephemeral_storage { 
-      size = 1024  
+  ephemeral_storage {
+      size = 1024
   }
 
   environment {
@@ -215,8 +215,8 @@ resource "aws_lambda_function" "forwarding_lambda" {
     aws_iam_role_policy_attachment.forwarding_lambda_exec_policy_attachment,
     aws_cloudwatch_log_group.forwarding_lambda_log_group
   ]
-  
-  reserved_concurrent_executions = 20
+
+  reserved_concurrent_executions = startswith(local.environment, "pr-") ? -1 : 20
 }
 
  resource "aws_lambda_event_source_mapping" "kinesis_event_source_mapping_forwarder_lambda" {
@@ -228,7 +228,7 @@ resource "aws_lambda_function" "forwarding_lambda" {
 
    depends_on = [aws_lambda_function.forwarding_lambda]
  }
- 
+
  resource "aws_cloudwatch_log_group" "forwarding_lambda_log_group" {
   name              = "/aws/lambda/${local.short_prefix}-forwarding_lambda"
   retention_in_days = 30

@@ -40,13 +40,19 @@ class Convert:
 
         try:
             if is_date_time_utc:
-                return datetime.strptime(date_time, "%Y%m%dT%H%M%S00").strftime("%Y-%m-%dT%H:%M:%S+00:00")
+                return datetime.strptime(date_time, "%Y%m%dT%H%M%S00").strftime(
+                    "%Y-%m-%dT%H:%M:%S+00:00"
+                )
 
             if is_date_time_bst:
-                return datetime.strptime(date_time, "%Y%m%dT%H%M%S01").strftime("%Y-%m-%dT%H:%M:%S+01:00")
+                return datetime.strptime(date_time, "%Y%m%dT%H%M%S01").strftime(
+                    "%Y-%m-%dT%H:%M:%S+01:00"
+                )
 
             if is_date_time_without_timezone:
-                return datetime.strptime(date_time, "%Y%m%dT%H%M%S").strftime("%Y-%m-%dT%H:%M:%S+00:00")
+                return datetime.strptime(date_time, "%Y%m%dT%H%M%S").strftime(
+                    "%Y-%m-%dT%H:%M:%S+00:00"
+                )
         except ValueError:
             return date_time
 
@@ -133,7 +139,9 @@ class Generate:
         extension_item = {"url": url, "valueCodeableConcept": {}}
 
         Add.list_of_dict(
-            extension_item["valueCodeableConcept"], "coding", {"system": system, "code": code, "display": display}
+            extension_item["valueCodeableConcept"],
+            "coding",
+            {"system": system, "code": code, "display": display},
         )
 
         return extension_item
@@ -189,5 +197,9 @@ class Add:
         """
         if any(_is_not_empty(value) for value in [code, display]):
             dictionary[key] = {
-                "coding": [Generate.dictionary({"system": Urls.SNOMED, "code": code, "display": display})]
+                "coding": [
+                    Generate.dictionary(
+                        {"system": Urls.SNOMED, "code": code, "display": display}
+                    )
+                ]
             }

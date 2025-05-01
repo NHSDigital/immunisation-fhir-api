@@ -69,26 +69,32 @@ class AppRestrictedAuthentication(BaseAuthentication):
             "aud": self.token_url,
             "iat": now,
             "exp": now + self.expiry,
-            "jti": str(uuid.uuid4())
+            "jti": str(uuid.uuid4()),
         }
-        _jwt = jwt.encode(claims, self.private_key, algorithm='RS512', headers={"kid": self.kid})
+        _jwt = jwt.encode(
+            claims, self.private_key, algorithm="RS512", headers={"kid": self.kid}
+        )
 
-        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+        headers = {"Content-Type": "application/x-www-form-urlencoded"}
         data = {
-            'grant_type': 'client_credentials',
-            'client_assertion_type': 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
-            'client_assertion': _jwt
+            "grant_type": "client_credentials",
+            "client_assertion_type": "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
+            "client_assertion": _jwt,
         }
         token_response = requests.post(self.token_url, data=data, headers=headers)
 
         if token_response.status_code != 200:
-            raise AuthenticationError(f"ApplicationRestricted token POST request failed\n{token_response.text}")
+            raise AuthenticationError(
+                f"ApplicationRestricted token POST request failed\n{token_response.text}"
+            )
 
-        return token_response.json().get('access_token')
+        return token_response.json().get("access_token")
 
 
 class AuthCodeFlow:
-    def __init__(self, base_auth_url, app_credentials: UserRestrictedCredentials) -> None:
+    def __init__(
+        self, base_auth_url, app_credentials: UserRestrictedCredentials
+    ) -> None:
         self.app_creds = app_credentials
         self.auth_url = f"{base_auth_url}/authorize"
         self.token_url = f"{base_auth_url}/token"
@@ -163,7 +169,9 @@ class NhsLoginAuthentication(BaseAuthentication):
 
 
 class Cis2Authentication(BaseAuthentication):
-    def __init__(self, auth_url: str, config: UserRestrictedCredentials, default_user: LoginUser):
+    def __init__(
+        self, auth_url: str, config: UserRestrictedCredentials, default_user: LoginUser
+    ):
         self.code_flow = AuthCodeFlow(auth_url, config)
         self.user = default_user
 

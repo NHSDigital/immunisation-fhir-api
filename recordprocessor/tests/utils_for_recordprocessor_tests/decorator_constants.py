@@ -2,8 +2,12 @@
 
 from unittest.mock import patch
 from decimal import Decimal
-from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import TargetDiseaseElements
-from tests.utils_for_recordprocessor_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT
+from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
+    TargetDiseaseElements,
+)
+from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
+    MOCK_ENVIRONMENT_DICT,
+)
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
     from constants import Urls
@@ -98,7 +102,9 @@ class AllHeadersExpectedOutput:
         "resourceType": "Immunization",
         "status": "completed",
         "protocolApplied": [{"targetDisease": RSV_TARGET_DISEASE_ELEMENT}],
-        "reasonCode": [{"coding": [{"system": Urls.SNOMED, "code": "INDICATION_CODE"}]}],
+        "reasonCode": [
+            {"coding": [{"system": Urls.SNOMED, "code": "INDICATION_CODE"}]}
+        ],
         "recorded": "2000-01-01",
         "identifier": [{"system": "unique_id_uri", "value": "UNIQUE_ID_123"}],
     }
@@ -125,7 +131,11 @@ class AllHeadersExpectedOutput:
         "resourceType": "Immunization",
         "status": "completed",
         "protocolApplied": [{"targetDisease": RSV_TARGET_DISEASE_ELEMENT}],
-        "vaccineCode": {"coding": [{"system": Urls.SNOMED, "code": "a_vacc_code", "display": "a_vacc_term"}]},
+        "vaccineCode": {
+            "coding": [
+                {"system": Urls.SNOMED, "code": "a_vacc_code", "display": "a_vacc_term"}
+            ]
+        },
         "manufacturer": {"display": "a_manufacturer"},
         "lotNumber": "a_batch_number",
         "expirationDate": "2000-01-01",
@@ -134,12 +144,30 @@ class AllHeadersExpectedOutput:
     vaccination = {
         "resourceType": "Immunization",
         "status": "completed",
-        "protocolApplied": [{"targetDisease": RSV_TARGET_DISEASE_ELEMENT, "doseNumberPositiveInt": 1}],
+        "protocolApplied": [
+            {"targetDisease": RSV_TARGET_DISEASE_ELEMENT, "doseNumberPositiveInt": 1}
+        ],
         "extension": [ExtensionItems.vaccination_procedure],
         "occurrenceDateTime": "2000-01-01T11:11:11+01:00",
         "primarySource": True,
-        "site": {"coding": [{"system": Urls.SNOMED, "code": "a_vacc_site_code", "display": "a_vacc_site_term"}]},
-        "route": {"coding": [{"system": Urls.SNOMED, "code": "a_vacc_route_code", "display": "a_vacc_route_term"}]},
+        "site": {
+            "coding": [
+                {
+                    "system": Urls.SNOMED,
+                    "code": "a_vacc_site_code",
+                    "display": "a_vacc_site_term",
+                }
+            ]
+        },
+        "route": {
+            "coding": [
+                {
+                    "system": Urls.SNOMED,
+                    "code": "a_vacc_route_code",
+                    "display": "a_vacc_route_term",
+                }
+            ]
+        },
         "doseQuantity": {
             "value": Decimal(0.5),
             "unit": "a_dose_unit_term",
@@ -163,10 +191,15 @@ class AllHeadersExpectedOutput:
             {
                 "actor": {
                     "type": "Organization",
-                    "identifier": {"system": "a_site_code_type_uri", "value": "a_site_code"},
+                    "identifier": {
+                        "system": "a_site_code_type_uri",
+                        "value": "a_site_code",
+                    },
                 }
             },
             {"actor": {"reference": "#Practitioner1"}},
         ],
-        "location": {"identifier": {"value": "a_location_code", "system": "a_location_code_uri"}},
+        "location": {
+            "identifier": {"value": "a_location_code", "system": "a_location_code_uri"}
+        },
     }

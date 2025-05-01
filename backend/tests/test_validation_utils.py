@@ -1,16 +1,7 @@
 import unittest
-from unittest.mock import MagicMock
 from copy import deepcopy
-from base_utils.base_utils import obtain_field_location
-from models.field_locations import FieldLocations
 from src.models.fhir_immunization import ImmunizationValidator
-from .utils.generic_utils import (
-    # these have an underscore to avoid pytest collecting them as tests
-    test_valid_values_accepted as _test_valid_values_accepted,
-    test_invalid_values_rejected as _test_invalid_values_rejected,
-    load_json_data,
-)
-from src.mappings import VaccineTypes
+from .utils.generic_utils import load_json_data
 from .utils.values_for_tests import ValidValues, InvalidValues, NameInstances
 from models.utils.generic_utils import (
     get_current_name_instance,
@@ -19,7 +10,6 @@ from models.utils.generic_utils import (
     obtain_name_field_location,
 )
 from jsonpath_ng.ext import parse
-from datetime import datetime
 from models.obtain_field_value import ObtainFieldValue
 
 
@@ -28,13 +18,18 @@ class TestValidatorUtils(unittest.TestCase):
 
     def setUp(self):
         """Set up for each test. This runs before every test"""
-        self.json_data = load_json_data(filename="completed_rsv_immunization_event.json")
-        self.validator = ImmunizationValidator(add_post_validators=False)
-        self.updated_json_data = parse("contained[?(@.resourceType=='Patient')].name").update(
-            deepcopy(self.json_data), ValidValues.valid_name_4_instances
+        self.json_data = load_json_data(
+            filename="completed_rsv_immunization_event.json"
         )
-        self.updated_PatientandPractitioner_json = parse("contained[?(@.resourceType=='Practitioner')].name").update(
-            deepcopy(self.updated_json_data), ValidValues.valid_name_4_instances_practitioner
+        self.validator = ImmunizationValidator(add_post_validators=False)
+        self.updated_json_data = parse(
+            "contained[?(@.resourceType=='Patient')].name"
+        ).update(deepcopy(self.json_data), ValidValues.valid_name_4_instances)
+        self.updated_PatientandPractitioner_json = parse(
+            "contained[?(@.resourceType=='Practitioner')].name"
+        ).update(
+            deepcopy(self.updated_json_data),
+            ValidValues.valid_name_4_instances_practitioner,
         )
 
     def test_get_current_name_instance_multiple_names(self):
@@ -57,7 +52,10 @@ class TestValidatorUtils(unittest.TestCase):
             ),
             # Two name instances with no "use" or period, returns first name instance index 0
             (
-                [NameInstances.ValidCurrent.given_and_family_only, NameInstances.ValidCurrent.given_and_family_only],
+                [
+                    NameInstances.ValidCurrent.given_and_family_only,
+                    NameInstances.ValidCurrent.given_and_family_only,
+                ],
                 ValidValues.occurrenceDateTime,
                 0,
                 NameInstances.ValidCurrent.given_and_family_only,
@@ -76,7 +74,10 @@ class TestValidatorUtils(unittest.TestCase):
             ),
             # Four invalid name instances, name instance containing family and given returned index 0
             (
-                [InvalidValues.name_with_missing_values[0], InvalidValues.name_with_missing_values[1]],
+                [
+                    InvalidValues.name_with_missing_values[0],
+                    InvalidValues.name_with_missing_values[1],
+                ],
                 ValidValues.occurrenceDateTime,
                 0,
                 InvalidValues.name_with_missing_values[0],
@@ -95,12 +96,16 @@ class TestValidatorUtils(unittest.TestCase):
             """
             # Single "current" name instance with vaccine date between period start and end date returns True
             valid_name = name_instances[1]
-            current_period = obtain_current_name_period(valid_name["period"], ValidValues.occurrenceDateTime)
+            current_period = obtain_current_name_period(
+                valid_name["period"], ValidValues.occurrenceDateTime
+            )
             self.assertTrue(current_period)
 
             # Single name instance with expired period end date before vaccine date returns False
             invalid_name = name_instances[0]
-            current_period = obtain_current_name_period(invalid_name["period"], ValidValues.occurrenceDateTime)
+            current_period = obtain_current_name_period(
+                invalid_name["period"], ValidValues.occurrenceDateTime
+            )
             self.assertFalse(current_period)
 
             # Two name instances, name instance with period start date before vaccinedate is selected
@@ -139,7 +144,9 @@ class TestValidatorUtils(unittest.TestCase):
         invalid_json_data = deepcopy(self.json_data)
 
         # Amend test data to move valid data in another index position for test purposes
-        updated_practitioner_names = deepcopy(ValidValues.valid_name_4_instances_practitioner)
+        updated_practitioner_names = deepcopy(
+            ValidValues.valid_name_4_instances_practitioner
+        )
         updated_patient_names = deepcopy(ValidValues.valid_name_4_instances)
 
         updated_practitioner_names[0], updated_practitioner_names[2] = (
@@ -155,8 +162,12 @@ class TestValidatorUtils(unittest.TestCase):
         updated_valid_json_data["contained"][1]["name"] = updated_patient_names
 
         # Set up invalid data
-        invalid_json_data["contained"][0]["name"] = InvalidValues.name_with_missing_values_practitioner
-        invalid_json_data["contained"][1]["name"] = InvalidValues.name_with_missing_values
+        invalid_json_data["contained"][0][
+            "name"
+        ] = InvalidValues.name_with_missing_values_practitioner
+        invalid_json_data["contained"][1][
+            "name"
+        ] = InvalidValues.name_with_missing_values
 
         test_cases = [
             # Test single patient and practitioner names returns family and given names
@@ -177,8 +188,16 @@ class TestValidatorUtils(unittest.TestCase):
             (invalid_json_data, "family", "Practitioner", "Nightingale", 3),
         ]
 
-        for imms, name_value, resource_type, expected_name, expected_index in test_cases:
-            name_field, index = patient_and_practitioner_value_and_index(imms, name_value, resource_type)
+        for (
+            imms,
+            name_value,
+            resource_type,
+            expected_name,
+            expected_index,
+        ) in test_cases:
+            name_field, index = patient_and_practitioner_value_and_index(
+                imms, name_value, resource_type
+            )
             self.assertEqual(name_field, expected_name)
             self.assertEqual(index, expected_index)
 
@@ -193,8 +212,12 @@ class TestValidatorUtils(unittest.TestCase):
 
         result_patient_given = ObtainFieldValue.patient_name_given(valid_json_data)
         result_patient_family = ObtainFieldValue.patient_name_family(valid_json_data)
-        result_practitioner_given = ObtainFieldValue.practitioner_name_given(valid_json_data)
-        result_practitioner_family = ObtainFieldValue.practitioner_name_family(valid_json_data)
+        result_practitioner_given = ObtainFieldValue.practitioner_name_given(
+            valid_json_data
+        )
+        result_practitioner_family = ObtainFieldValue.practitioner_name_family(
+            valid_json_data
+        )
 
         test_cases = [
             (result_patient_given),
@@ -214,13 +237,43 @@ class TestValidatorUtils(unittest.TestCase):
 
         test_cases = [
             # Four patient and practitioner name instances, name instance containing the "current" name index 1 returned
-            (valid_json_data, "given", "Patient", "contained[?(@.resourceType=='Patient')].name[1].given"),
-            (valid_json_data, "family", "Patient", "contained[?(@.resourceType=='Patient')].name[1].family"),
-            (valid_json_data, "given", "Practitioner", "contained[?(@.resourceType=='Practitioner')].name[1].given"),
-            (valid_json_data, "family", "Practitioner", "contained[?(@.resourceType=='Practitioner')].name[1].family"),
+            (
+                valid_json_data,
+                "given",
+                "Patient",
+                "contained[?(@.resourceType=='Patient')].name[1].given",
+            ),
+            (
+                valid_json_data,
+                "family",
+                "Patient",
+                "contained[?(@.resourceType=='Patient')].name[1].family",
+            ),
+            (
+                valid_json_data,
+                "given",
+                "Practitioner",
+                "contained[?(@.resourceType=='Practitioner')].name[1].given",
+            ),
+            (
+                valid_json_data,
+                "family",
+                "Practitioner",
+                "contained[?(@.resourceType=='Practitioner')].name[1].family",
+            ),
             # One name instance, first name instance index 0 returned
-            (valid_json_data_single, "given", "Patient", "contained[?(@.resourceType=='Patient')].name[0].given"),
-            (valid_json_data_single, "family", "Patient", "contained[?(@.resourceType=='Patient')].name[0].family"),
+            (
+                valid_json_data_single,
+                "given",
+                "Patient",
+                "contained[?(@.resourceType=='Patient')].name[0].given",
+            ),
+            (
+                valid_json_data_single,
+                "family",
+                "Patient",
+                "contained[?(@.resourceType=='Patient')].name[0].family",
+            ),
             (
                 valid_json_data_single,
                 "given",

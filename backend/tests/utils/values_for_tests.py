@@ -41,12 +41,14 @@ class ValidValues:
         "1933-12-31T11:11:11.111111+12:45",  # DateTime with milliseconds to 6 decimal places
     ]
 
-    for_strings_with_any_length_chars = (
-        "This is a really long string with more than 100 characters to test whether the validator is working well!! "
-    )
+    for_strings_with_any_length_chars = "This is a really long string with more than 100 characters to test whether the validator is working well!! "
 
     # Not a valid snomed code, but is valid coding format for format testing
-    snomed_coding_element = {"system": "http://snomed.info/sct", "code": "ABC123", "display": "test"}
+    snomed_coding_element = {
+        "system": "http://snomed.info/sct",
+        "code": "ABC123",
+        "display": "test",
+    }
 
     manufacturer_resource_id_Man1 = {"resourceType": "Manufacturer", "id": "Man1"}
 
@@ -58,20 +60,39 @@ class ValidValues:
 
     patient_resource_id_Pat2 = {"resourceType": "Patient", "id": "Pat2"}
 
-    questionnnaire_resource_id_QR1 = {"resourceType": "QuestionnaireResponse", "id": "QR1", "status": "completed"}
+    questionnnaire_resource_id_QR1 = {
+        "resourceType": "QuestionnaireResponse",
+        "id": "QR1",
+        "status": "completed",
+    }
 
-    questionnaire_immunisation = {"linkId": "Immunisation", "answer": [{"valueReference": {"reference": "#"}}]}
+    questionnaire_immunisation = {
+        "linkId": "Immunisation",
+        "answer": [{"valueReference": {"reference": "#"}}],
+    }
 
-    questionnaire_reduce_validation_true = {"linkId": "ReduceValidation", "answer": [{"valueBoolean": True}]}
+    questionnaire_reduce_validation_true = {
+        "linkId": "ReduceValidation",
+        "answer": [{"valueBoolean": True}],
+    }
 
-    questionnaire_reduce_validation_false = {"linkId": "ReduceValidation", "answer": [{"valueBoolean": False}]}
+    questionnaire_reduce_validation_false = {
+        "linkId": "ReduceValidation",
+        "answer": [{"valueBoolean": False}],
+    }
 
-    questionnaire_ip_address = {"linkId": "IpAddress", "answer": [{"valueString": "IP_ADDRESS"}]}
+    questionnaire_ip_address = {
+        "linkId": "IpAddress",
+        "answer": [{"valueString": "IP_ADDRESS"}],
+    }
 
     performer_actor_organization = {
         "actor": {
             "type": "Organization",
-            "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "B0C4P"},
+            "identifier": {
+                "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                "value": "B0C4P",
+            },
             "display": "Acme Healthcare",
         }
     }
@@ -80,7 +101,10 @@ class ValidValues:
 
     performer_actor_reference_internal_Pract2 = {"actor": {"reference": "#Pract2"}}
 
-    performer = [{"actor": {"reference": "#Pract1"}}, {"actor": {"type": "Organization", "display": "Acme Healthcare"}}]
+    performer = [
+        {"actor": {"reference": "#Pract1"}},
+        {"actor": {"type": "Organization", "display": "Acme Healthcare"}},
+    ]
 
     vaccination_procedure_coding_with_one_snomed_code = [
         {
@@ -107,17 +131,25 @@ class ValidValues:
     ]
 
     dummy_coding_with_one_snomed_code = [
-        {"system": "http://snomed.info/sct", "code": "DUMMY CODE 1", "display": "DUMMY TERM 1"},
+        {
+            "system": "http://snomed.info/sct",
+            "code": "DUMMY CODE 1",
+            "display": "DUMMY TERM 1",
+        },
     ]
 
     vaccination_procedure_with_one_snomed_code = {
         "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure",
-        "valueCodeableConcept": {"coding": vaccination_procedure_coding_with_one_snomed_code},
+        "valueCodeableConcept": {
+            "coding": vaccination_procedure_coding_with_one_snomed_code
+        },
     }
 
     vaccination_procedure_with_snomed_and_dmd_codes = {
         "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure",
-        "valueCodeableConcept": {"coding": vaccination_procedure_coding_with_snomed_and_dmd_codes},
+        "valueCodeableConcept": {
+            "coding": vaccination_procedure_coding_with_snomed_and_dmd_codes
+        },
     }
 
     vaccination_situation_with_one_snomed_code = {
@@ -156,7 +188,10 @@ class ValidValues:
             "use": "official",
             "family": "Taylor",
             "given": ["Sarah"],
-            "period": {"start": date_before_occurenceDateTime, "end": date_after_occurenceDateatetime},
+            "period": {
+                "start": date_before_occurenceDateTime,
+                "end": date_after_occurenceDateatetime,
+            },
         },
         {"family": "Taylor", "given": ["Sar"]},
         {"use": "old", "family": "Tray", "given": ["Sarah"]},
@@ -173,7 +208,10 @@ class ValidValues:
             "use": "official",
             "family": "Night",
             "given": ["Florence"],
-            "period": {"start": date_before_occurenceDateTime, "end": date_after_occurenceDateatetime},
+            "period": {
+                "start": date_before_occurenceDateTime,
+                "end": date_after_occurenceDateatetime,
+            },
         },
         {"family": "Night", "given": ["Florence"]},
         {"use": "old", "family": "Tray", "given": ["Florence"]},
@@ -188,7 +226,11 @@ class NameInstances:
 
         given_and_family_only = {"given": ["a_given_name"], "family": "a_family_name"}
 
-        with_use_official = {"given": ["a_given_name"], "family": "a_family_name", "use": "official"}
+        with_use_official = {
+            "given": ["a_given_name"],
+            "family": "a_family_name",
+            "use": "official",
+        }
 
         with_period_start = {
             "given": ["a_given_name"],
@@ -217,7 +259,11 @@ class NameInstances:
     class ValidNonCurrent:
         """Name instances which are valid but not current"""
 
-        before_period_start = {"given": ["a_given_name"], "family": "a_family_name", "period": {"start": "2100-01-01"}}
+        before_period_start = {
+            "given": ["a_given_name"],
+            "family": "a_family_name",
+            "period": {"start": "2100-01-01"},
+        }
 
         after_period_end = {
             "given": ["a_given_name"],
@@ -232,7 +278,10 @@ class NameInstances:
 
         given_name_only = {"given": ["a_given_name"]}
 
-        family_name_only_with_use_official = {"family": "a_family_name", "use": "official"}
+        family_name_only_with_use_official = {
+            "family": "a_family_name",
+            "use": "official",
+        }
 
         family_name_only_with_use_official_and_period_start_and_end = {
             "family": "a_family_name",
@@ -341,8 +390,16 @@ class InvalidValues:
     practitioner_resource_with_no_id = {"resourceType": "Practitioner"}
 
     dummy_coding_with_two_snomed_codes = [
-        {"system": "http://snomed.info/sct", "code": "DUMMY SNOMED CODE 1", "display": "DUMMY SNOMED TERM 1"},
-        {"system": "http://snomed.info/sct", "code": "DUMMY SNOMED CODE 2", "display": "DUMMY SNOMED TERM 2"},
+        {
+            "system": "http://snomed.info/sct",
+            "code": "DUMMY SNOMED CODE 1",
+            "display": "DUMMY SNOMED TERM 1",
+        },
+        {
+            "system": "http://snomed.info/sct",
+            "code": "DUMMY SNOMED CODE 2",
+            "display": "DUMMY SNOMED TERM 2",
+        },
     ]
 
     vaccination_situation_with_two_snomed_codes = {

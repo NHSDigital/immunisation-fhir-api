@@ -14,7 +14,10 @@ from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests impo
     ValidMockFileContent,
     REGION_NAME,
 )
-from tests.utils_for_recordprocessor_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT, BucketNames
+from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
+    MOCK_ENVIRONMENT_DICT,
+    BucketNames,
+)
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
     from batch_processing import process_csv_to_fhir
@@ -50,7 +53,8 @@ class TestProcessCsvToFhir(unittest.TestCase):
         permissions
         """
         self.upload_source_file(
-            file_key=test_file.file_key, file_content=ValidMockFileContent.with_new_and_update_and_delete
+            file_key=test_file.file_key,
+            file_content=ValidMockFileContent.with_new_and_update_and_delete,
         )
 
         with patch("batch_processing.send_to_kinesis") as mock_send_to_kinesis:
@@ -64,7 +68,8 @@ class TestProcessCsvToFhir(unittest.TestCase):
         partial permissions
         """
         self.upload_source_file(
-            file_key=test_file.file_key, file_content=ValidMockFileContent.with_new_and_update_and_delete
+            file_key=test_file.file_key,
+            file_content=ValidMockFileContent.with_new_and_update_and_delete,
         )
 
         with patch("batch_processing.send_to_kinesis") as mock_send_to_kinesis:
@@ -74,7 +79,10 @@ class TestProcessCsvToFhir(unittest.TestCase):
 
     def test_process_csv_to_fhir_no_permissions(self):
         """Tests that process_csv_to_fhir does not send a message to kinesis when the supplier has no permissions"""
-        self.upload_source_file(file_key=test_file.file_key, file_content=ValidMockFileContent.with_update_and_delete)
+        self.upload_source_file(
+            file_key=test_file.file_key,
+            file_content=ValidMockFileContent.with_update_and_delete,
+        )
 
         with patch("batch_processing.send_to_kinesis") as mock_send_to_kinesis:
             process_csv_to_fhir(deepcopy(test_file.event_create_permissions_only_dict))
@@ -85,7 +93,9 @@ class TestProcessCsvToFhir(unittest.TestCase):
         """Tests that process_csv_to_fhir does not send a message to kinesis when the csv has invalid headers"""
         self.upload_source_file(
             file_key=test_file.file_key,
-            file_content=ValidMockFileContent.with_new_and_update.replace("NHS_NUMBER", "NHS_NUMBERS"),
+            file_content=ValidMockFileContent.with_new_and_update.replace(
+                "NHS_NUMBER", "NHS_NUMBERS"
+            ),
         )
 
         with patch("batch_processing.send_to_kinesis") as mock_send_to_kinesis:

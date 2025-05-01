@@ -16,7 +16,7 @@ parameters:
     default: ''
   - name: proxy_path
     type: string
-    default: 'internal-dev'    
+    default: 'internal-dev'
   - name: secret_file_ids
     type: object
     default: []
@@ -34,7 +34,7 @@ parameters:
     default: true
   - name: python_version
     type: string
-    default: "3.8"
+    default: "3.10"
 
 jobs:
   - job: deploy
@@ -150,7 +150,7 @@ jobs:
               echo "##vso[task.setvariable variable=FULLY_QUALIFIED_SERVICE_NAME]${FULLY_QUALIFIED_SERVICE_NAME}"
             fi
           displayName: Override FULLY_QUALIFIED_SERVICE_NAME
-        
+
       - checkout: self
         path: "s/${{ parameters.service_name }}"
         submodules: true

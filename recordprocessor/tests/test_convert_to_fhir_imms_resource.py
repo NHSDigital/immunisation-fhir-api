@@ -7,7 +7,9 @@ from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests impo
     MockFhirImmsResources,
     MockFieldDictionaries,
 )
-from tests.utils_for_recordprocessor_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT
+from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
+    MOCK_ENVIRONMENT_DICT,
+)
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
     # Do not attempt 'from src.mappings import Vaccine' as this imports a different instance of Vaccine
@@ -26,7 +28,11 @@ class TestConvertToFhirImmsResource(unittest.TestCase):
         """
         # Test cases tuples are structure as (test_name, input_values, expected_output)
         cases = [
-            ("All fields", MockFieldDictionaries.all_fields, MockFhirImmsResources.all_fields),
+            (
+                "All fields",
+                MockFieldDictionaries.all_fields,
+                MockFhirImmsResources.all_fields,
+            ),
             (
                 "Mandatory fields only",
                 MockFieldDictionaries.mandatory_fields_only,
@@ -41,4 +47,7 @@ class TestConvertToFhirImmsResource(unittest.TestCase):
 
         for test_name, input_values, expected_output in cases:
             with self.subTest(test_name):
-                self.assertEqual(convert_to_fhir_imms_resource(input_values, Vaccine.RSV), expected_output)
+                self.assertEqual(
+                    convert_to_fhir_imms_resource(input_values, Vaccine.RSV),
+                    expected_output,
+                )

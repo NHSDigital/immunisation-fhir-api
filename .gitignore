@@ -15,6 +15,7 @@ __pycache__/
 .venv/
 .env
 .envrc
+test-report.xml
 smoketest-report.xml
 lambda_typescript/**/*.js
 terraform/zips

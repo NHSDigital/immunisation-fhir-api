@@ -103,6 +103,6 @@ class LookUpData:
     def findLookUp(self, fieldValue):
         try:
             lookUpValue = self.allData[fieldValue]
-        except:
+        except Exception:
             lookUpValue = ""
         return lookUpValue

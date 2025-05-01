@@ -19,21 +19,24 @@ class EndpointOperation(Enum):
     This maps one-to-one to each endpoint. Authorization class decides whether there are sufficient permissions or not.
     The caller is responsible for passing the correct operation.
     """
-    READ = 0,
-    CREATE = 1,
-    UPDATE = 2,
-    DELETE = 3,
-    SEARCH = 4,
+
+    READ = (0,)
+    CREATE = (1,)
+    UPDATE = (2,)
+    DELETE = (3,)
+    SEARCH = (4,)
 
 
 class AuthType(str, Enum):
     """This backend supports all three types of authentication.
     An Apigee App should specify AuthenticationType in its custom attribute.
     Each Apigee app can only have one type of authentication which is enforced by onboarding process.
-    See: https://digital.nhs.uk/developer/guides-and-documentation/security-and-authorisation"""
-    APP_RESTRICTED = "ApplicationRestricted",
-    NHS_LOGIN = "NnsLogin",
-    CIS2 = "Cis2",
+    See: https://digital.nhs.uk/developer/guides-and-documentation/security-and-authorisation
+    """
+
+    APP_RESTRICTED = ("ApplicationRestricted",)
+    NHS_LOGIN = ("NnsLogin",)
+    CIS2 = ("Cis2",)
 
 
 class Permission(str, Enum):
@@ -41,6 +44,7 @@ class Permission(str, Enum):
     An Apigee App should specify a set of these as a comma-separated custom attribute.
     Permission works the same way as 'scope' but, in this case, they're called permission to distinguish them from
     OAuth2 scopes"""
+
     READ = "immunization:read"
     CREATE = "immunization:create"
     UPDATE = "immunization:update"
@@ -49,7 +53,7 @@ class Permission(str, Enum):
 
 
 class Authorization:
-    """ Authorize the call based on the endpoint and the authentication type.
+    """Authorize the call based on the endpoint and the authentication type.
     This class uses the passed headers from Apigee to decide the type of authentication (Application Restricted,
     NHS Login or CIS2). Then, based on the requested operation, it authorizes the call. Unauthorized call will raise
     Unauthorized exception. It raises UnknownPermission if there is a parse error from Apigee app. That means raising

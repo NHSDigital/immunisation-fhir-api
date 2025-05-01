@@ -19,7 +19,7 @@ from constants import (
     POST_VALIDATION_ERROR,
     DUPLICATE,
     FILE_NAME_VAL_ERROR,
-    env_value
+    env_value,
 )
 
 
@@ -37,7 +37,9 @@ class TestE2EBatch(unittest.TestCase):
 
         def test_duplicate_create(self):
             """Test DUPLICATE scenario."""
-            input_file = generate_csv("PHYLIS", "0.3", action_flag="CREATE", same_id=True)
+            input_file = generate_csv(
+                "PHYLIS", "0.3", action_flag="CREATE", same_id=True
+            )
             upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
             ack_key = wait_for_ack_file(None, input_file)
             validate_row_count(input_file, ack_key)
@@ -87,7 +89,9 @@ class TestE2EBatch(unittest.TestCase):
             ack_key = wait_for_ack_file(None, input_file)
             validate_row_count(input_file, ack_key)
             ack_content = get_file_content_from_s3(ACK_BUCKET, ack_key)
-            check_ack_file_content(ack_content, "Fatal Error", PRE_VALIDATION_ERROR, None)
+            check_ack_file_content(
+                ack_content, "Fatal Error", PRE_VALIDATION_ERROR, None
+            )
 
         def test_post_validation_error(self):
             """Test POST-VALIDATION error scenario."""
@@ -95,11 +99,15 @@ class TestE2EBatch(unittest.TestCase):
             upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
             ack_key = wait_for_ack_file(None, input_file)
             ack_content = get_file_content_from_s3(ACK_BUCKET, ack_key)
-            check_ack_file_content(ack_content, "Fatal Error", POST_VALIDATION_ERROR, None)
+            check_ack_file_content(
+                ack_content, "Fatal Error", POST_VALIDATION_ERROR, None
+            )
 
         def test_file_name_validation_error(self):
             """Test FILE-NAME-VALIDATION error scenario."""
-            input_file = generate_csv("PHYLIS", "0.3", action_flag="CREATE", file_key=True)
+            input_file = generate_csv(
+                "PHYLIS", "0.3", action_flag="CREATE", file_key=True
+            )
             upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
             ack_key = wait_for_ack_file(True, input_file)
             ack_content = get_file_content_from_s3(ACK_BUCKET, ack_key)
@@ -107,7 +115,9 @@ class TestE2EBatch(unittest.TestCase):
 
         def test_header_name_validation_error(self):
             """Test HEADER-NAME-VALIDATION error scenario."""
-            input_file = generate_csv("PHYLIS", "0.3", action_flag="CREATE", headers="NH_NUMBER")
+            input_file = generate_csv(
+                "PHYLIS", "0.3", action_flag="CREATE", headers="NH_NUMBER"
+            )
             upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
             ack_key = wait_for_ack_file(True, input_file)
             ack_content = get_file_content_from_s3(ACK_BUCKET, ack_key)

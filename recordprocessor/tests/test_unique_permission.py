@@ -3,7 +3,9 @@
 import unittest
 
 from src.unique_permission import get_unique_action_flags_from_s3
-from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import ValidMockFileContent
+from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
+    ValidMockFileContent,
+)
 
 
 class TestGetUniqueFlagsFromS3(unittest.TestCase):

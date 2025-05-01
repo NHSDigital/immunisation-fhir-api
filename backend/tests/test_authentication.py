@@ -10,6 +10,8 @@ from authentication import AppRestrictedAuth, Service
 from models.errors import UnhandledResponseError
 
 "test"
+
+
 class TestAuthenticator(unittest.TestCase):
     def setUp(self):
         self.kid = "a_kid"
@@ -18,7 +20,11 @@ class TestAuthenticator(unittest.TestCase):
         # The private key must be stored as base64 encoded in secret-manager
         b64_private_key = base64.b64encode(self.private_key.encode()).decode()
 
-        pds_secret = {"private_key_b64": b64_private_key, "kid": self.kid, "api_key": self.api_key}
+        pds_secret = {
+            "private_key_b64": b64_private_key,
+            "kid": self.kid,
+            "api_key": self.api_key,
+        }
         secret_response = {"SecretString": json.dumps(pds_secret)}
 
         self.secret_manager_client = MagicMock()
@@ -28,7 +34,9 @@ class TestAuthenticator(unittest.TestCase):
         self.cache.get.return_value = None
 
         env = "an-env"
-        self.authenticator = AppRestrictedAuth(Service.PDS, self.secret_manager_client, env, self.cache)
+        self.authenticator = AppRestrictedAuth(
+            Service.PDS, self.secret_manager_client, env, self.cache
+        )
         self.url = f"https://{env}.api.service.nhs.uk/oauth2/token"
 
     @responses.activate
@@ -36,13 +44,18 @@ class TestAuthenticator(unittest.TestCase):
         """it should send a POST request to oauth2 service"""
         _jwt = "a-jwt"
         request_data = {
-            'grant_type': 'client_credentials',
-            'client_assertion_type': 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
-            'client_assertion': _jwt
+            "grant_type": "client_credentials",
+            "client_assertion_type": "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
+            "client_assertion": _jwt,
         }
         access_token = "an-access-token"
-        responses.add(responses.POST, self.url, status=200, json={"access_token": access_token},
-                      match=[matchers.urlencoded_params_matcher(request_data)])
+        responses.add(
+            responses.POST,
+            self.url,
+            status=200,
+            json={"access_token": access_token},
+            match=[matchers.urlencoded_params_matcher(request_data)],
+        )
 
         with patch("jwt.encode") as mock_jwt:
             mock_jwt.return_value = _jwt
@@ -61,20 +74,23 @@ class TestAuthenticator(unittest.TestCase):
             "aud": self.url,
             "iat": ANY,
             "exp": ANY,
-            "jti": ANY
+            "jti": ANY,
         }
         _jwt = "a-jwt"
         access_token = "an-access-token"
 
-        responses.add(responses.POST, self.url, status=200, json={"access_token": access_token})
+        responses.add(
+            responses.POST, self.url, status=200, json={"access_token": access_token}
+        )
 
         with patch("jwt.encode") as mock_jwt:
             mock_jwt.return_value = _jwt
             # When
             self.authenticator.get_access_token()
             # Then
-            mock_jwt.assert_called_once_with(claims, self.private_key,
-                                             algorithm="RS512", headers={"kid": self.kid})
+            mock_jwt.assert_called_once_with(
+                claims, self.private_key, algorithm="RS512", headers={"kid": self.kid}
+            )
 
     def test_env_mapping(self):
         """it should target int environment for none-prod environment, otherwise int"""
@@ -92,7 +108,7 @@ class TestAuthenticator(unittest.TestCase):
         """it should return cached token"""
         cached_token = {
             "token": "a-cached-access-token",
-            "expires_at": int(time.time()) + 99999  # make sure it's not expired
+            "expires_at": int(time.time()) + 99999,  # make sure it's not expired
         }
         self.cache.get.return_value = cached_token
 
@@ -108,11 +124,10 @@ class TestAuthenticator(unittest.TestCase):
         """it should update cached token"""
         self.cache.get.return_value = None
         token = "a-new-access-token"
-        cached_token = {
-            "token": token,
-            "expires_at": ANY
-        }
-        responses.add(responses.POST, self.url, status=200, json={"access_token": token})
+        cached_token = {"token": token, "expires_at": ANY}
+        responses.add(
+            responses.POST, self.url, status=200, json={"access_token": token}
+        )
 
         with patch("jwt.encode") as mock_jwt:
             mock_jwt.return_value = "a-jwt"
@@ -120,7 +135,9 @@ class TestAuthenticator(unittest.TestCase):
             self.authenticator.get_access_token()
 
         # Then
-        self.cache.put.assert_called_once_with(f"{Service.PDS.value}_access_token", cached_token)
+        self.cache.put.assert_called_once_with(
+            f"{Service.PDS.value}_access_token", cached_token
+        )
 
     @responses.activate
     def test_expired_token_in_cache(self):
@@ -134,7 +151,9 @@ class TestAuthenticator(unittest.TestCase):
         self.cache.get.return_value = cached_token
 
         new_token = "a-new-token"
-        responses.add(responses.POST, self.url, status=200, json={"access_token": new_token})
+        responses.add(
+            responses.POST, self.url, status=200, json={"access_token": new_token}
+        )
 
         new_now = expires_at  # this is to trigger expiry and also the mocked now-time when storing the new token
         with patch("jwt.encode") as mock_jwt:
@@ -147,7 +166,7 @@ class TestAuthenticator(unittest.TestCase):
         # Then
         exp_cached_token = {
             "token": new_token,
-            "expires_at": new_now + self.authenticator.expiry
+            "expires_at": new_now + self.authenticator.expiry,
         }
         self.cache.put.assert_called_once_with(ANY, exp_cached_token)
 
@@ -156,7 +175,9 @@ class TestAuthenticator(unittest.TestCase):
         """it should use the cache for the `Service` auth call"""
 
         token = "a-new-access-token"
-        token_call = responses.add(responses.POST, self.url, status=200, json={"access_token": token})
+        token_call = responses.add(
+            responses.POST, self.url, status=200, json={"access_token": token}
+        )
         values = {}
 
         def get_side_effect(key):

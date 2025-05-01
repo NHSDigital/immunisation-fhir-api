@@ -12,27 +12,55 @@ class MandationTests:
     """Test for presence of fields with different mandation levels"""
 
     @staticmethod
-    def prepare_json_data(test_instance: unittest.TestCase, json_data: dict = None) -> dict:
+    def prepare_json_data(
+        test_instance: unittest.TestCase, json_data: dict = None
+    ) -> dict:
         """Returns json_data if given json_data, otherwise returns the complete covid19 json data as a default"""
-        return json_data if json_data else test_instance.completed_json_data[VaccineTypes.covid_19]
+        return (
+            json_data
+            if json_data
+            else test_instance.completed_json_data[VaccineTypes.covid_19]
+        )
 
     @staticmethod
-    def update_target_disease(test_instance: unittest.TestCase, vaccine_type: VaccineTypes, json_data: dict = None):
+    def update_target_disease(
+        test_instance: unittest.TestCase,
+        vaccine_type: VaccineTypes,
+        json_data: dict = None,
+    ):
         """Update the target_disease in the data to match the vaccine type"""
         json_data = MandationTests.prepare_json_data(test_instance, json_data)
 
         # Set the target disease field value based on vaccine type
-        target_disease_codes = next(x[0] for x in vaccine_type_mappings if x[1] == vaccine_type)
+        target_disease_codes = next(
+            x[0] for x in vaccine_type_mappings if x[1] == vaccine_type
+        )
         target_disease = []
         for code in target_disease_codes:
-            target_disease.append({"coding": [{"system": "http://snomed.info/sct", "code": code, "display": "Dummy"}]})
+            target_disease.append(
+                {
+                    "coding": [
+                        {
+                            "system": "http://snomed.info/sct",
+                            "code": code,
+                            "display": "Dummy",
+                        }
+                    ]
+                }
+            )
 
-        return parse("protocolApplied[0].targetDisease").update(deepcopy(json_data), target_disease)
+        return parse("protocolApplied[0].targetDisease").update(
+            deepcopy(json_data), target_disease
+        )
 
     @staticmethod
-    def test_present_field_accepted(test_instance: unittest.TestCase, valid_json_data: dict = None):
+    def test_present_field_accepted(
+        test_instance: unittest.TestCase, valid_json_data: dict = None
+    ):
         """Test that JSON data is accepted when a field is present"""
-        valid_json_data = MandationTests.prepare_json_data(test_instance, valid_json_data)
+        valid_json_data = MandationTests.prepare_json_data(
+            test_instance, valid_json_data
+        )
         test_instance.assertIsNone(test_instance.validator.validate(valid_json_data))
 
     @staticmethod
@@ -43,7 +71,9 @@ class MandationTests:
     ):
         """Test that JSON data which is missing a required,optional or not applicable field is accepted"""
         # Prepare the data
-        valid_json_data = MandationTests.prepare_json_data(test_instance, valid_json_data)
+        valid_json_data = MandationTests.prepare_json_data(
+            test_instance, valid_json_data
+        )
         valid_json_data = parse(field_location).filter(lambda d: True, valid_json_data)
 
         # Test that the valid data is accepted by the model
@@ -70,12 +100,18 @@ class MandationTests:
         value_error. This is why the test checks for the type of error in the error message.
         """
         # Prepare the json data
-        valid_json_data = MandationTests.prepare_json_data(test_instance, valid_json_data)
-        invalid_json_data = parse(field_location).filter(lambda d: True, valid_json_data)
+        valid_json_data = MandationTests.prepare_json_data(
+            test_instance, valid_json_data
+        )
+        invalid_json_data = parse(field_location).filter(
+            lambda d: True, valid_json_data
+        )
 
         # Set the expected error message
         expected_error_message = (
-            expected_error_message if expected_error_message else f"Validation errors: {field_location} is a mandatory field"
+            expected_error_message
+            if expected_error_message
+            else f"Validation errors: {field_location} is a mandatory field"
         )
 
         if is_mandatory_fhir:
@@ -83,7 +119,8 @@ class MandationTests:
             with test_instance.assertRaises(ValidationError) as error:
                 test_instance.validator.validate(invalid_json_data)
             test_instance.assertTrue(
-                (expected_error_message + f" (type={expected_error_type})") in str(error.exception)
+                (expected_error_message + f" (type={expected_error_type})")
+                in str(error.exception)
             )
 
         else:

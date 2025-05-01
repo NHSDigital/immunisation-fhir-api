@@ -56,12 +56,18 @@ class ImmunizationApiError(RuntimeError):
     response: Union[dict, str]
 
 
-def create_operation_outcome(resource_id: str, severity: Severity, code: Code, diagnostics: str) -> dict:
+def create_operation_outcome(
+    resource_id: str, severity: Severity, code: Code, diagnostics: str
+) -> dict:
     """Create an OperationOutcome object. Do not use `fhir.resource` library since it adds unnecessary validations"""
     return {
         "resourceType": "OperationOutcome",
         "id": resource_id,
-        "meta": {"profile": ["https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"]},
+        "meta": {
+            "profile": [
+                "https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"
+            ]
+        },
         "issue": [
             {
                 "severity": severity,

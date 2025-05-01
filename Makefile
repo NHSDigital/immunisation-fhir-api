@@ -2,7 +2,6 @@ SHELL=/usr/bin/env bash -euo pipefail
 
 #Installs dependencies using poetry.
 install-python:
-	poetry lock --no-update
 	poetry install
 
 #Installs dependencies using npm.
@@ -19,7 +18,8 @@ install: install-node install-python .git/hooks/pre-commit
 #Run the npm linting script (specified in package.json). Used to check the syntax and formatting of files.
 lint:
 	npm run lint
-	find . -name '*.py' -not -path '**/.venv/*' -not -path '**/.terraform/*'| xargs poetry run flake8
+	poetry run flake8
+	poetry run black --check .
 
 #Removes build/ + dist/ directories
 clean:
@@ -85,3 +85,11 @@ test-prod:
 
 setup-python-envs:
 	scripts/setup-python-envs.sh
+
+unit-test-all:
+	make -C ack_backend test
+	make -C backend test
+	make -C delta_backend test
+	make -C filenameprocessor test
+	make -C mesh_processor test
+	make -C recordprocessor test

@@ -2,8 +2,14 @@
 
 import json
 from boto3 import client as boto3_client
-from tests.utils_for_ack_backend_tests.values_for_ack_backend_tests import ValidValues, MOCK_MESSAGE_DETAILS
-from tests.utils_for_ack_backend_tests.mock_environment_variables import REGION_NAME, BucketNames
+from tests.utils_for_ack_backend_tests.values_for_ack_backend_tests import (
+    ValidValues,
+    MOCK_MESSAGE_DETAILS,
+)
+from tests.utils_for_ack_backend_tests.mock_environment_variables import (
+    REGION_NAME,
+    BucketNames,
+)
 
 s3_client = boto3_client("s3", region_name=REGION_NAME)
 firehose_client = boto3_client("firehose", region_name=REGION_NAME)
@@ -27,12 +33,18 @@ def generate_event(test_messages: list[dict]) -> dict:
 
 def setup_existing_ack_file(file_key, file_content):
     """Uploads an existing file with the given content."""
-    s3_client.put_object(Bucket=BucketNames.DESTINATION, Key=file_key, Body=file_content)
+    s3_client.put_object(
+        Bucket=BucketNames.DESTINATION, Key=file_key, Body=file_content
+    )
 
 
-def obtain_current_ack_file_content(temp_ack_file_key: str = MOCK_MESSAGE_DETAILS.temp_ack_file_key) -> str:
+def obtain_current_ack_file_content(
+    temp_ack_file_key: str = MOCK_MESSAGE_DETAILS.temp_ack_file_key,
+) -> str:
     """Obtains the ack file content from the destination bucket."""
-    retrieved_object = s3_client.get_object(Bucket=BucketNames.DESTINATION, Key=temp_ack_file_key)
+    retrieved_object = s3_client.get_object(
+        Bucket=BucketNames.DESTINATION, Key=temp_ack_file_key
+    )
     return retrieved_object["Body"].read().decode("utf-8")
 
 
@@ -80,10 +92,15 @@ def generate_expected_ack_content(
             success=diagnostics == "",
             row_id=message.get("row_id", MOCK_MESSAGE_DETAILS.row_id),
             created_at_formatted_string=message.get(
-                "created_at_formatted_string", MOCK_MESSAGE_DETAILS.created_at_formatted_string
+                "created_at_formatted_string",
+                MOCK_MESSAGE_DETAILS.created_at_formatted_string,
             ),
             local_id=message.get("local_id", MOCK_MESSAGE_DETAILS.local_id),
-            imms_id="" if diagnostics else message.get("imms_id", MOCK_MESSAGE_DETAILS.imms_id),
+            imms_id=(
+                ""
+                if diagnostics
+                else message.get("imms_id", MOCK_MESSAGE_DETAILS.imms_id)
+            ),
             diagnostics=diagnostics,
         )
 
@@ -100,5 +117,7 @@ def validate_ack_file_content(
     on the incoming messages).
     """
     actual_ack_file_content = obtain_current_ack_file_content()
-    expected_ack_file_content = generate_expected_ack_content(incoming_messages, existing_file_content)
+    expected_ack_file_content = generate_expected_ack_content(
+        incoming_messages, existing_file_content
+    )
     assert expected_ack_file_content == actual_ack_file_content

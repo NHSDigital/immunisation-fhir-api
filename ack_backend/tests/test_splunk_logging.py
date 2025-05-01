@@ -14,8 +14,14 @@ from tests.utils_for_ack_backend_tests.values_for_ack_backend_tests import (
     DiagnosticsDictionaries,
     EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS,
 )
-from tests.utils_for_ack_backend_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT, BucketNames
-from tests.utils_for_ack_backend_tests.generic_setup_and_teardown_for_ack_backend import GenericSetUp, GenericTearDown
+from tests.utils_for_ack_backend_tests.mock_environment_variables import (
+    MOCK_ENVIRONMENT_DICT,
+    BucketNames,
+)
+from tests.utils_for_ack_backend_tests.generic_setup_and_teardown_for_ack_backend import (
+    GenericSetUp,
+    GenericTearDown,
+)
 from tests.utils_for_ack_backend_tests.utils_for_ack_backend_tests import generate_event
 
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
@@ -34,7 +40,9 @@ class TestLoggingDecorators(unittest.TestCase):
 
         # MOCK SOURCE FILE WITH 100 ROWS TO SIMULATE THE SCENARIO WHERE THE ACK FILE IS NO FULL.
         # TODO: Test all other scenarios.
-        mock_source_file_with_100_rows = StringIO("\n".join(f"Row {i}" for i in range(1, 101)))
+        mock_source_file_with_100_rows = StringIO(
+            "\n".join(f"Row {i}" for i in range(1, 101))
+        )
         s3_client.put_object(
             Bucket=BucketNames.SOURCE,
             Key=f"processing/{ValidValues.mock_message_expected_log_value.get('file_key')}",
@@ -60,7 +68,10 @@ class TestLoggingDecorators(unittest.TestCase):
             patch("update_ack_file.logger"),
             # Time is incremented by 1.0 for each call to time.time for ease of testing.
             # Range is set to a large number (100) due to many calls being made to time.time for some tests.
-            patch("logging_decorators.time.time", side_effect=[0.0 + i for i in range(100)]),
+            patch(
+                "logging_decorators.time.time",
+                side_effect=[0.0 + i for i in range(100)],
+            ),
         ]
 
         # Set up the ExitStack. Note that patches need to be explicitly started so that they will be applied even when
@@ -85,7 +96,9 @@ class TestLoggingDecorators(unittest.TestCase):
         """Extracts all arguments for logger.error."""
         return [args[0] for args, _ in mock_logger.error.call_args_list]
 
-    def expected_lambda_handler_logs(self, success: bool, number_of_rows, diagnostics=None):
+    def expected_lambda_handler_logs(
+        self, success: bool, number_of_rows, diagnostics=None
+    ):
         """Returns the expected logs for the lambda handler function."""
         # Mocking of timings is such that the time taken is 2 seconds for each row, plus 1 second for the handler
         time_taken = f"{number_of_rows * 2 + 1}.0s"
@@ -94,61 +107,104 @@ class TestLoggingDecorators(unittest.TestCase):
             if success
             else ValidValues.lambda_handler_failure_expected_log
         )
-        return {**base_log, "time_taken": time_taken, **({"diagnostics": diagnostics} if diagnostics else {})}
+        return {
+            **base_log,
+            "time_taken": time_taken,
+            **({"diagnostics": diagnostics} if diagnostics else {}),
+        }
 
     def test_splunk_logging_successful_rows(self):
         """Tests a single object in the body of the event"""
 
         for operation in ["CREATE", "UPDATE", "DELETE"]:
             with (
-                patch("logging_decorators.send_log_to_firehose") as mock_send_log_to_firehose,
+                patch(
+                    "logging_decorators.send_log_to_firehose"
+                ) as mock_send_log_to_firehose,
                 patch("logging_decorators.logger") as mock_logger,
             ):
-                result = lambda_handler(event=generate_event([{"operation_requested": operation}]), context={})
+                result = lambda_handler(
+                    event=generate_event([{"operation_requested": operation}]),
+                    context={},
+                )
 
-            self.assertEqual(result, {"statusCode": 200, "body": json.dumps("Lambda function executed successfully!")})
+            self.assertEqual(
+                result,
+                {
+                    "statusCode": 200,
+                    "body": json.dumps("Lambda function executed successfully!"),
+                },
+            )
 
             expected_first_logger_info_data = {
                 **ValidValues.mock_message_expected_log_value,
                 "operation_requested": operation,
             }
 
-            expected_second_logger_info_data = self.expected_lambda_handler_logs(success=True, number_of_rows=1)
+            expected_second_logger_info_data = self.expected_lambda_handler_logs(
+                success=True, number_of_rows=1
+            )
 
-            all_logger_info_call_args = self.extract_all_call_args_for_logger_info(mock_logger)
+            all_logger_info_call_args = self.extract_all_call_args_for_logger_info(
+                mock_logger
+            )
             first_logger_info_call_args = json.loads(all_logger_info_call_args[0])
             second_logger_info_call_args = json.loads(all_logger_info_call_args[1])
-            self.assertEqual(first_logger_info_call_args, expected_first_logger_info_data)
-            self.assertEqual(second_logger_info_call_args, expected_second_logger_info_data)
+            self.assertEqual(
+                first_logger_info_call_args, expected_first_logger_info_data
+            )
+            self.assertEqual(
+                second_logger_info_call_args, expected_second_logger_info_data
+            )
 
             mock_send_log_to_firehose.assert_has_calls(
-                [call(expected_first_logger_info_data), call(expected_second_logger_info_data)]
+                [
+                    call(expected_first_logger_info_data),
+                    call(expected_second_logger_info_data),
+                ]
             )
 
     def test_splunk_logging_missing_data(self):
         """Tests missing key values in the body of the event"""
 
         with (
-            patch("logging_decorators.send_log_to_firehose") as mock_send_log_to_firehose,
+            patch(
+                "logging_decorators.send_log_to_firehose"
+            ) as mock_send_log_to_firehose,
             patch("logging_decorators.logger") as mock_logger,
         ):
             with self.assertRaises(Exception):
-                lambda_handler(event={"Records": [{"body": json.dumps([{"": "456"}])}]}, context={})
+                lambda_handler(
+                    event={"Records": [{"body": json.dumps([{"": "456"}])}]}, context={}
+                )
 
             expected_first_logger_info_data = {**InvalidValues.Logging_with_no_values}
 
             expected_first_logger_error_data = self.expected_lambda_handler_logs(
-                success=False, number_of_rows=1, diagnostics="'NoneType' object has no attribute 'replace'"
+                success=False,
+                number_of_rows=1,
+                diagnostics="'NoneType' object has no attribute 'replace'",
             )
 
-            first_logger_info_call_args = json.loads(self.extract_all_call_args_for_logger_info(mock_logger)[0])
-            first_logger_error_call_args = json.loads(self.extract_all_call_args_for_logger_error(mock_logger)[0])
-            self.assertEqual(first_logger_info_call_args, expected_first_logger_info_data)
-            self.assertEqual(first_logger_error_call_args, expected_first_logger_error_data)
+            first_logger_info_call_args = json.loads(
+                self.extract_all_call_args_for_logger_info(mock_logger)[0]
+            )
+            first_logger_error_call_args = json.loads(
+                self.extract_all_call_args_for_logger_error(mock_logger)[0]
+            )
+            self.assertEqual(
+                first_logger_info_call_args, expected_first_logger_info_data
+            )
+            self.assertEqual(
+                first_logger_error_call_args, expected_first_logger_error_data
+            )
 
             self.assertEqual(
                 mock_send_log_to_firehose.call_args_list,
-                [call(expected_first_logger_info_data), call(expected_first_logger_error_data)],
+                [
+                    call(expected_first_logger_info_data),
+                    call(expected_first_logger_error_data),
+                ],
             )
 
     @patch("logging_decorators.send_log_to_firehose")
@@ -158,20 +214,43 @@ class TestLoggingDecorators(unittest.TestCase):
     ):
         """'Tests the correct codes are returned for diagnostics"""
         test_cases = [
-            {"diagnostics": DiagnosticsDictionaries.RESOURCE_FOUND_ERROR, "expected_code": 409},
-            {"diagnostics": DiagnosticsDictionaries.RESOURCE_NOT_FOUND_ERROR, "expected_code": 404},
-            {"diagnostics": DiagnosticsDictionaries.MESSAGE_NOT_SUCCESSFUL_ERROR, "expected_code": 500},
-            {"diagnostics": DiagnosticsDictionaries.NO_PERMISSIONS, "expected_code": 403},
-            {"diagnostics": DiagnosticsDictionaries.IDENTIFIER_DUPLICATION_ERROR, "expected_code": 422},
-            {"diagnostics": DiagnosticsDictionaries.UNHANDLED_ERROR, "expected_code": 500},
+            {
+                "diagnostics": DiagnosticsDictionaries.RESOURCE_FOUND_ERROR,
+                "expected_code": 409,
+            },
+            {
+                "diagnostics": DiagnosticsDictionaries.RESOURCE_NOT_FOUND_ERROR,
+                "expected_code": 404,
+            },
+            {
+                "diagnostics": DiagnosticsDictionaries.MESSAGE_NOT_SUCCESSFUL_ERROR,
+                "expected_code": 500,
+            },
+            {
+                "diagnostics": DiagnosticsDictionaries.NO_PERMISSIONS,
+                "expected_code": 403,
+            },
+            {
+                "diagnostics": DiagnosticsDictionaries.IDENTIFIER_DUPLICATION_ERROR,
+                "expected_code": 422,
+            },
+            {
+                "diagnostics": DiagnosticsDictionaries.UNHANDLED_ERROR,
+                "expected_code": 500,
+            },
         ]
 
         for test_case in test_cases:
             with (
-                patch("logging_decorators.send_log_to_firehose") as mock_send_log_to_firehose,
+                patch(
+                    "logging_decorators.send_log_to_firehose"
+                ) as mock_send_log_to_firehose,
                 patch("logging_decorators.logger") as mock_logger,
             ):
-                result = lambda_handler(event=generate_event([{"diagnostics": test_case["diagnostics"]}]), context={})
+                result = lambda_handler(
+                    event=generate_event([{"diagnostics": test_case["diagnostics"]}]),
+                    context={},
+                )
 
             self.assertEqual(result, EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS)
 
@@ -182,16 +261,27 @@ class TestLoggingDecorators(unittest.TestCase):
                 "status": "fail",
             }
 
-            expected_second_logger_info_data = self.expected_lambda_handler_logs(success=True, number_of_rows=1)
+            expected_second_logger_info_data = self.expected_lambda_handler_logs(
+                success=True, number_of_rows=1
+            )
 
-            all_logger_info_call_args = self.extract_all_call_args_for_logger_info(mock_logger)
+            all_logger_info_call_args = self.extract_all_call_args_for_logger_info(
+                mock_logger
+            )
             first_logger_info_call_args = json.loads(all_logger_info_call_args[0])
             second_logger_info_call_args = json.loads(all_logger_info_call_args[1])
-            self.assertEqual(first_logger_info_call_args, expected_first_logger_info_data)
-            self.assertEqual(second_logger_info_call_args, expected_second_logger_info_data)
+            self.assertEqual(
+                first_logger_info_call_args, expected_first_logger_info_data
+            )
+            self.assertEqual(
+                second_logger_info_call_args, expected_second_logger_info_data
+            )
 
             mock_send_log_to_firehose.assert_has_calls(
-                [call(expected_first_logger_info_data), call(expected_second_logger_info_data)]
+                [
+                    call(expected_first_logger_info_data),
+                    call(expected_second_logger_info_data),
+                ]
             )
 
     def test_splunk_logging_multiple_rows(self):
@@ -199,20 +289,32 @@ class TestLoggingDecorators(unittest.TestCase):
         messages = [{"row_id": "test1"}, {"row_id": "test2"}]
 
         with (
-            patch("logging_decorators.send_log_to_firehose") as mock_send_log_to_firehose,
+            patch(
+                "logging_decorators.send_log_to_firehose"
+            ) as mock_send_log_to_firehose,
             patch("logging_decorators.logger") as mock_logger,
         ):
             result = lambda_handler(generate_event(messages), context={})
 
         self.assertEqual(result, EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS)
 
-        expected_first_logger_info_data = {**ValidValues.mock_message_expected_log_value, "message_id": "test1"}
+        expected_first_logger_info_data = {
+            **ValidValues.mock_message_expected_log_value,
+            "message_id": "test1",
+        }
 
-        expected_second_logger_info_data = {**ValidValues.mock_message_expected_log_value, "message_id": "test2"}
+        expected_second_logger_info_data = {
+            **ValidValues.mock_message_expected_log_value,
+            "message_id": "test2",
+        }
 
-        expected_third_logger_info_data = self.expected_lambda_handler_logs(success=True, number_of_rows=2)
+        expected_third_logger_info_data = self.expected_lambda_handler_logs(
+            success=True, number_of_rows=2
+        )
 
-        all_logger_info_call_args = self.extract_all_call_args_for_logger_info(mock_logger)
+        all_logger_info_call_args = self.extract_all_call_args_for_logger_info(
+            mock_logger
+        )
         first_logger_info_call_args = json.loads(all_logger_info_call_args[0])
         second_logger_info_call_args = json.loads(all_logger_info_call_args[1])
         third_logger_info_call_args = json.loads(all_logger_info_call_args[2])
@@ -245,11 +347,17 @@ class TestLoggingDecorators(unittest.TestCase):
                 "operation_requested": "UPDATE",
                 "diagnostics": DiagnosticsDictionaries.MESSAGE_NOT_SUCCESSFUL_ERROR,
             },
-            {"row_id": "test3", "operation_requested": "DELETE", "diagnostics": DiagnosticsDictionaries.NO_PERMISSIONS},
+            {
+                "row_id": "test3",
+                "operation_requested": "DELETE",
+                "diagnostics": DiagnosticsDictionaries.NO_PERMISSIONS,
+            },
         ]
 
         with (
-            patch("logging_decorators.send_log_to_firehose") as mock_send_log_to_firehose,
+            patch(
+                "logging_decorators.send_log_to_firehose"
+            ) as mock_send_log_to_firehose,
             patch("logging_decorators.logger") as mock_logger,
         ):
             result = lambda_handler(generate_event(messages), context={})
@@ -262,16 +370,22 @@ class TestLoggingDecorators(unittest.TestCase):
             "operation_requested": "CREATE",
             "statusCode": DiagnosticsDictionaries.RESOURCE_FOUND_ERROR["statusCode"],
             "status": "fail",
-            "diagnostics": DiagnosticsDictionaries.RESOURCE_FOUND_ERROR["error_message"],
+            "diagnostics": DiagnosticsDictionaries.RESOURCE_FOUND_ERROR[
+                "error_message"
+            ],
         }
 
         expected_second_logger_info_data = {
             **ValidValues.mock_message_expected_log_value,
             "message_id": "test2",
             "operation_requested": "UPDATE",
-            "statusCode": DiagnosticsDictionaries.MESSAGE_NOT_SUCCESSFUL_ERROR["statusCode"],
+            "statusCode": DiagnosticsDictionaries.MESSAGE_NOT_SUCCESSFUL_ERROR[
+                "statusCode"
+            ],
             "status": "fail",
-            "diagnostics": DiagnosticsDictionaries.MESSAGE_NOT_SUCCESSFUL_ERROR["error_message"],
+            "diagnostics": DiagnosticsDictionaries.MESSAGE_NOT_SUCCESSFUL_ERROR[
+                "error_message"
+            ],
         }
 
         expected_third_logger_info_data = {
@@ -283,9 +397,13 @@ class TestLoggingDecorators(unittest.TestCase):
             "diagnostics": DiagnosticsDictionaries.NO_PERMISSIONS["error_message"],
         }
 
-        expected_fourth_logger_info_data = self.expected_lambda_handler_logs(success=True, number_of_rows=3)
+        expected_fourth_logger_info_data = self.expected_lambda_handler_logs(
+            success=True, number_of_rows=3
+        )
 
-        all_logger_info_call_args = self.extract_all_call_args_for_logger_info(mock_logger)
+        all_logger_info_call_args = self.extract_all_call_args_for_logger_info(
+            mock_logger
+        )
         first_logger_info_call_args = json.loads(all_logger_info_call_args[0])
         second_logger_info_call_args = json.loads(all_logger_info_call_args[1])
         third_logger_info_call_args = json.loads(all_logger_info_call_args[2])
