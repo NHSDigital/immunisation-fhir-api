@@ -115,8 +115,8 @@ resource "aws_iam_policy" "filenameprocessor_lambda_exec_policy" {
           "s3:DeleteObject"
         ]
         Resource = [
-          "arn:aws:s3:::${local.batch_prefix}-data-sources",           
-          "arn:aws:s3:::${local.batch_prefix}-data-sources/*"        
+          "arn:aws:s3:::${local.batch_prefix}-data-sources",
+          "arn:aws:s3:::${local.batch_prefix}-data-sources/*"
         ]
       },
       {
@@ -127,8 +127,8 @@ resource "aws_iam_policy" "filenameprocessor_lambda_exec_policy" {
           "s3:ListBucket"
         ]
         Resource = [
-          "${data.aws_s3_bucket.existing_destination_bucket.arn}",       
-          "${data.aws_s3_bucket.existing_destination_bucket.arn}/*"         
+          "${data.aws_s3_bucket.existing_destination_bucket.arn}",
+          "${data.aws_s3_bucket.existing_destination_bucket.arn}/*"
         ]
       },
       {
@@ -148,8 +148,8 @@ resource "aws_iam_policy" "filenameprocessor_lambda_exec_policy" {
           "s3:ListBucket"
         ]
         Resource = [
-          "arn:aws:s3:::${data.aws_s3_bucket.existing_config_bucket.bucket}",           
-          "arn:aws:s3:::${data.aws_s3_bucket.existing_config_bucket.bucket}/*"        
+          "arn:aws:s3:::${data.aws_s3_bucket.existing_config_bucket.bucket}",
+          "arn:aws:s3:::${data.aws_s3_bucket.existing_config_bucket.bucket}/*"
         ]
       },
       {
@@ -164,7 +164,7 @@ resource "aws_iam_policy" "filenameprocessor_lambda_exec_policy" {
         Effect   = "Allow"
         Action   = "lambda:InvokeFunction"
         Resource = [
-          "arn:aws:lambda:${var.aws_region}:${local.local_account_id}:function:imms-${local.env}-filenameproc_lambda",               
+          "arn:aws:lambda:${var.aws_region}:${local.local_account_id}:function:imms-${local.env}-filenameproc_lambda",
         ]
       }
     ]
@@ -294,12 +294,12 @@ resource "aws_lambda_function" "file_processor_lambda" {
     }
   }
   kms_key_arn = data.aws_kms_key.existing_lambda_encryption_key.arn
-  reserved_concurrent_executions = 20
+  reserved_concurrent_executions = startswith(local.environment, "pr-") ? -1 : 20
   depends_on = [
     aws_cloudwatch_log_group.file_name_processor_log_group,
     aws_iam_policy.filenameprocessor_lambda_exec_policy
   ]
-  
+
 }
 
 
