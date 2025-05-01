@@ -26,7 +26,7 @@ MOCK_ENV_VARS = {
 }
 request_json_data = ValuesForTests.json_data
 with patch.dict("os.environ", MOCK_ENV_VARS):
-    from delta import handler, Converter
+    from delta import handler
 
 class TestRecordError(unittest.TestCase):
     def test_fields_and_str(self):

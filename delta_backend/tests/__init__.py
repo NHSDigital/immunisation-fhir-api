@@ -1,4 +1,1 @@
-import os
-import sys
-
-sys.path.append(f"{os.path.dirname(os.path.abspath(__file__))}/../src")
+# This file is intentionally left blank to mark the directory as a package.

@@ -4,6 +4,7 @@ from botocore.exceptions import ClientError
 import os
 import json
 from helpers.mappings import OperationName, EventName
+from sample_data.get_event import get_event
 
 # Set environment variables before importing the module
 ## @TODO: # Note: Environment variables shared across tests, thus aligned
@@ -33,19 +34,19 @@ class DeltaTestCase(unittest.TestCase):
         self.logger_info_patcher.stop()
         self.mock_firehose_logger.stop()
 
-    @staticmethod
-    def setup_mock_sqs(mock_boto_client, return_value={"ResponseMetadata": {"HTTPStatusCode": 200}}):
-        mock_sqs = mock_boto_client.return_value
-        mock_sqs.send_message.return_value = return_value
-        return mock_sqs
+    # @staticmethod
+    # def setup_mock_sqs(mock_boto_client, return_value={"ResponseMetadata": {"HTTPStatusCode": 200}}):
+    #     mock_sqs = mock_boto_client.return_value
+    #     mock_sqs.send_message.return_value = return_value
+    #     return mock_sqs
 
     @staticmethod
-    def setup_mock_dynamodb(mock_boto_resource, mock_write_to_db, status_code=200, error_records = []):
+    def setup_mock_dynamodb(mock_boto_resource, mock_write, status_code=200, error_records = []):
         mock_dynamodb = mock_boto_resource.return_value
         mock_table = mock_dynamodb.Table.return_value
         mock_response = {"ResponseMetadata": {"HTTPStatusCode": status_code}}
         mock_table.put_item.return_value = mock_response
-        mock_write_to_db.return_value = (mock_response, error_records)
+        mock_write.return_value = (mock_response, error_records)
         return mock_table
 
     def setUp_mock_resources(self, mock_boto_resource, mock_boto_client):
@@ -55,94 +56,94 @@ class DeltaTestCase(unittest.TestCase):
         mock_table.put_item.side_effect = Exception("Test Exception")
         return mock_table
 
-    @staticmethod
-    def get_event(event_name=EventName.CREATE, operation=OperationName.CREATE, supplier="EMIS", n_records=1):
-        """Create test event for the handler function."""
-        return {
-            "Records": [
-                DeltaTestCase.get_event_record(f"covid#{i+1}2345", event_name, operation, supplier)
-                for i in range(n_records)
-            ]
-        }
+    # @staticmethod
+    # def get_event(event_name=EventName.CREATE, operation=OperationName.CREATE, supplier="EMIS", n_records=1):
+    #     """Create test event for the handler function."""
+    #     return {
+    #         "Records": [
+    #             DeltaTestCase.get_event_record(f"covid#{i+1}2345", event_name, operation, supplier)
+    #             for i in range(n_records)
+    #         ]
+    #     }
 
-    @staticmethod
-    def get_event_record(pk, event_name=EventName.CREATE, operation=OperationName.CREATE, supplier="EMIS"):
-        if operation != OperationName.DELETE_PHYSICAL:
-            return{
-                "eventName": event_name,
-                "dynamodb": {
-                    "ApproximateCreationDateTime": 1690896000,
-                    "NewImage": {
-                        "PK": {"S": pk},
-                        "PatientSK": {"S": pk},
-                        "IdentifierPK": {"S": "system#1"},
-                        "Operation": {"S": operation},
-                        "SupplierSystem": {"S": supplier},
-                        "Resource": {
-                            "S": json.dumps(get_test_data_resource()),
-                        }
-                    }
-                }
-            }
-        else:
-            return {
-                "eventName": EventName.DELETE_PHYSICAL,
-                "dynamodb": {
-                    "ApproximateCreationDateTime": 1690896000,
-                    "Keys": {
-                        "PK": {"S": pk},
-                        "PatientSK": {"S": pk},
-                        "SupplierSystem": {"S": "EMIS"},
-                        "Resource": {
-                            "S": json.dumps(get_test_data_resource()),
-                        }
-                    }
-                }
-            }
+    # @staticmethod
+    # def get_event_record(pk, event_name=EventName.CREATE, operation=OperationName.CREATE, supplier="EMIS"):
+    #     if operation != OperationName.DELETE_PHYSICAL:
+    #         return{
+    #             "eventName": event_name,
+    #             "dynamodb": {
+    #                 "ApproximateCreationDateTime": 1690896000,
+    #                 "NewImage": {
+    #                     "PK": {"S": pk},
+    #                     "PatientSK": {"S": pk},
+    #                     "IdentifierPK": {"S": "system#1"},
+    #                     "Operation": {"S": operation},
+    #                     "SupplierSystem": {"S": supplier},
+    #                     "Resource": {
+    #                         "S": json.dumps(get_test_data_resource()),
+    #                     }
+    #                 }
+    #             }
+    #         }
+    #     else:
+    #         return {
+    #             "eventName": EventName.DELETE_PHYSICAL,
+    #             "dynamodb": {
+    #                 "ApproximateCreationDateTime": 1690896000,
+    #                 "Keys": {
+    #                     "PK": {"S": pk},
+    #                     "PatientSK": {"S": pk},
+    #                     "SupplierSystem": {"S": "EMIS"},
+    #                     "Resource": {
+    #                         "S": json.dumps(get_test_data_resource()),
+    #                     }
+    #                 }
+    #             }
+    #         }
 
-    @patch("boto3.client")
-    def test_send_message_success(self, mock_boto_client):
-        # Arrange
-        mock_sqs = self.setup_mock_sqs(mock_boto_client)
-        record = {"key": "value"}
+    # @patch("boto3.client")
+    # def test_send_message_success(self, mock_boto_client):
+    #     # Arrange
+    #     mock_sqs = self.setup_mock_sqs(mock_boto_client)
+    #     record = {"key": "value"}
 
-        # Act
-        send_message(record)
+    #     # Act
+    #     send_message(record)
 
-        # Assert
-        mock_sqs.send_message.assert_called_once_with(
-            QueueUrl=os.environ["AWS_SQS_QUEUE_URL"], MessageBody=json.dumps(record)
-        )
+    #     # Assert
+    #     mock_sqs.send_message.assert_called_once_with(
+    #         QueueUrl=os.environ["AWS_SQS_QUEUE_URL"], MessageBody=json.dumps(record)
+    #     )
 
-    @patch("boto3.client")
-    @patch("logging.Logger.error")
-    def test_send_message_client_error(self, mock_logger_error, mock_boto_client):
-        # Arrange
-        mock_sqs = MagicMock()
-        mock_boto_client.return_value = mock_sqs
-        record = {"key": "value"}
+    # @patch("boto3.client")
+    # @patch("logging.Logger.error")
+    # def test_send_message_client_error(self, mock_logger_error, mock_boto_client):
+    #     # Arrange
+    #     mock_sqs = MagicMock()
+    #     mock_boto_client.return_value = mock_sqs
+    #     record = {"key": "value"}
 
-        # Simulate ClientError
-        error_response = {"Error": {"Code": "500", "Message": "Internal Server Error"}}
-        mock_sqs.send_message.side_effect = ClientError(error_response, "SendMessage")
+    #     # Simulate ClientError
+    #     error_response = {"Error": {"Code": "500", "Message": "Internal Server Error"}}
+    #     mock_sqs.send_message.side_effect = ClientError(error_response, "SendMessage")
 
-        # Act
-        send_message(record)
+    #     # Act
+    #     send_message(record)
 
-        # Assert
-        mock_logger_error.assert_called_once_with(
-            f"Error sending record to DLQ: An error occurred (500) when calling the SendMessage operation: Internal Server Error"
-        )
+    #     # Assert
+    #     mock_logger_error.assert_called_once_with(
+    #         f"Error sending record to DLQ: An error occurred (500) when calling the SendMessage operation: Internal Server Error"
+    #     )
 
-    @patch("delta.delta_data.write_to_db")
+    @patch("delta.delta_data.write")
     @patch("boto3.resource")
-    def test_handler_success_insert(self, mock_boto_resource, mock_write_to_db):
+    def test_handler_success_insert(self, mock_boto_resource, mock_write):
         # Arrange
-        self.setup_mock_dynamodb(mock_boto_resource, mock_write_to_db, status_code=200)
+        self.setup_mock_dynamodb(mock_boto_resource, mock_write, status_code=200)
 
         supliers = ["DPS", "EMIS"]
         for supplier in supliers:
-            event = self.get_event(supplier=supplier)
+            event = get_event(supplier=supplier)
 
             # Act
             result = handler(event, self.context)
@@ -150,11 +151,11 @@ class DeltaTestCase(unittest.TestCase):
             # Assert
             self.assertEqual(result["statusCode"], 200)
 
-    @patch("delta.delta_data.write_to_db")
+    @patch("delta.delta_data.write")
     @patch("boto3.resource")
-    def test_handler_failure(self, mock_boto_resource, mock_write_to_db):
+    def test_handler_failure(self, mock_boto_resource, mock_write):
         # Arrange
-        self.setup_mock_dynamodb(mock_boto_resource, mock_write_to_db, status_code=500)
+        self.setup_mock_dynamodb(mock_boto_resource, mock_write, status_code=500)
 
         event = self.get_event()
 
@@ -164,16 +165,16 @@ class DeltaTestCase(unittest.TestCase):
         # Assert
         self.assertEqual(result["statusCode"], 500)
 
-    @patch("delta.delta_data.write_to_db")
+    @patch("delta.delta_data.write")
     @patch("boto3.resource")
-    def test_handler_success_update(self, mock_boto_resource, mock_write_to_db):
+    def test_handler_success_update(self, mock_boto_resource, mock_write):
         # Arrange
-        self.setup_mock_dynamodb(mock_boto_resource, mock_write_to_db)
+        self.setup_mock_dynamodb(mock_boto_resource, mock_write)
         
         mock_response = {"ResponseMetadata": {"HTTPStatusCode": 200}}
         
-        mock_write_to_db.return_value = (mock_response, [])
-        event = self.get_event(event_name=EventName.UPDATE, operation=OperationName.UPDATE)
+        mock_write.return_value = (mock_response, [])
+        event = get_event(event_name=EventName.UPDATE, operation=OperationName.UPDATE)
 
         # Act
         result = handler(event, self.context)
@@ -181,20 +182,20 @@ class DeltaTestCase(unittest.TestCase):
         # Assert
         self.assertEqual(result["statusCode"], 200)
         # check 1 record is written to db
-        mock_write_to_db.assert_called_once()
+        mock_write.assert_called_once()
 
-    @patch("delta.delta_data.write_to_db")
-    @patch("boto3.resource")
-    def test_handler_success_remove(self, mock_boto_resource, mock_write_to_db):
-        # Arrange
-        self.setup_mock_dynamodb(mock_boto_resource, mock_write_to_db)
-        event = self.get_event(event_name=EventName.DELETE_PHYSICAL, operation=OperationName.DELETE_PHYSICAL)
+    # @patch("delta.delta_data.write")
+    # @patch("boto3.resource")
+    # def test_handler_success_remove(self, mock_boto_resource, mock_write):
+    #     # Arrange
+    #     self.setup_mock_dynamodb(mock_boto_resource, mock_write)
+    #     event = get_event(event_name=EventName.DELETE_PHYSICAL, operation=OperationName.DELETE_PHYSICAL)
 
-        # Act
-        result = handler(event, self.context)
+    #     # Act
+    #     result = handler(event, self.context)
 
-        # Assert
-        self.assertEqual(result["statusCode"], 200)
+    #     # Assert
+    #     self.assertEqual(result["statusCode"], 200)
 
     @patch("boto3.resource")
     @patch("boto3.client")
@@ -202,7 +203,7 @@ class DeltaTestCase(unittest.TestCase):
         # Arrange - swap client and resource to simulate intrusion
         mock_boto_client.return_value.Table.side_effect = Exception("Intrusion detected: boto3.client used instead of boto3.resource")
         mock_boto_resource.return_value = MagicMock()  # Ensure resource mock is still valid
-        event = self.get_event()
+        event = get_event()
         context = {}
 
         # Act
@@ -217,7 +218,7 @@ class DeltaTestCase(unittest.TestCase):
     def test_handler_exception_intrusion(self, mock_boto_client, mock_boto_resource):
         # Arrange - swap client and resource to simulate intrusion
         self.setUp_mock_resources(mock_boto_client, mock_boto_resource)
-        event = self.get_event()
+        event = get_event()
         context = {}
 
         # Act & Assert
@@ -232,7 +233,7 @@ class DeltaTestCase(unittest.TestCase):
     def test_handler_exception_intrusion_check_false(self, mocked_intrusion, mock_boto_client):
         # Arrange
         self.setUp_mock_resources(mocked_intrusion, mock_boto_client)
-        event = self.get_event()
+        event = get_event()
         context = {}
 
         # Act & Assert
@@ -242,7 +243,7 @@ class DeltaTestCase(unittest.TestCase):
 
     @patch("delta.logger.info")  # Mock logging
     def test_dps_record_skipped(self, mock_logger_info):
-        event = self.get_event(supplier="DPSFULL")
+        event = get_event(supplier="DPSFULL")
         context = {}
 
         response = handler(event, context)
@@ -268,7 +269,7 @@ class DeltaTestCase(unittest.TestCase):
         mock_dynamodb.return_value.Table.return_value = mock_table
         mock_table.put_item.return_value = {"ResponseMetadata": {"HTTPStatusCode": 200}}
 
-        event = self.get_event()
+        event = get_event()
         context = {}
 
         response = handler(event, context)

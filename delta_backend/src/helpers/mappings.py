@@ -16,7 +16,11 @@ class OperationName:
     DELETE_LOGICAL = "DELETE"
     DELETE_PHYSICAL = "REMOVE"
 
-ActionFlag = OperationName
+class ActionFlag:
+    CREATE = "CREATE"
+    UPDATE = "UPDATE"
+    DELETE_LOGICAL = "DELETE"
+    DELETE_PHYSICAL = "REMOVE"
 
 class VaccineTypes:
     """Vaccine types"""
