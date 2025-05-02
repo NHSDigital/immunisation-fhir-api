@@ -19,7 +19,6 @@ from Extractor import (
 class Converter:
 
     def __init__(self, fhir_data):
-        self.imms = []
         self.converted = {}
         self.error_records = []
         self.fhir_data = fhir_data  # Store JSON data directly
@@ -85,6 +84,7 @@ class Converter:
                 message = "FHIR Parser Unexpected exception [%s]: %s" % (e.__class__.__name__, e)
                 error = self._log_error(message,code=ExceptionMessages.UNEXPECTED_EXCEPTION)
                 return error
+                
 
         try:
             schemaParser = self._getSchemaParser(self.schema_file)
@@ -126,8 +126,7 @@ class Converter:
             error_summary = ""
         self.converted["CONVERSION_ERRORS"] = error_summary
 
-        self.imms.append(self.converted)
-        return self.imms
+        return self.converted
 
     def getErrorRecords(self):
         return self.error_records
