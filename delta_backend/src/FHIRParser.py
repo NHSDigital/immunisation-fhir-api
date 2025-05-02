@@ -10,7 +10,21 @@ class FHIRParser:
     def parseFHIRData(self, fhirData):
         self.FHIRFile = json.loads(fhirData) if isinstance(fhirData, str) else fhirData
 
+
     def _validate_expression_rule(self, expression_type, expression_rule, key_value_pair):
+        """
+        Applies expression rules for filtering key-value pairs during searches.
+
+        This method provides a flexible foundation for implementing various filtering 
+        or validation rules, enabling more dynamic and configurable search behavior. 
+        While it currently supports only SNOMED code validation, the structure opens 
+        the door to applying a wide range of expression rules in the future.
+
+        For example, when processing a list of items, this method helps determine 
+        which item(s) satisfy specific criteria based on the logic defined by the 
+        expression type and rule.
+        """
+        
         if not expression_rule:
             return True
         

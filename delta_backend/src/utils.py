@@ -2,7 +2,10 @@
 from stdnum.verhoeff import validate
 
 def is_valid_simple_snomed(simple_snomed: str) -> bool:
-    "check the snomed code valid or not."
+    """
+    This utility is designed for reuse and should be packaged as part of a 
+    shared validation module or service.
+    """
     min_snomed_length = 6
     max_snomed_length = 18
     try: 
