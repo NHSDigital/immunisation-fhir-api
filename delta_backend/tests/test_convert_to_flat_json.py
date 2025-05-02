@@ -103,14 +103,14 @@ class TestConvertToFlatJson(unittest.TestCase):
         self.firehose_logger_patcher = patch("delta.firehose_logger")
         self.mock_firehose_logger = self.firehose_logger_patcher.start()
 
-        self.write_to_db_patcher = patch("helpers.delta_data.DeltaData.write_to_db")
+        self.write_to_db_patcher = patch("helpers.db_processor.DbProcessor.write")
         self.mock_write_to_db = self.write_to_db_patcher.start()
         self.mock_write_to_db.return_value = (
             {"ResponseMetadata": {"HTTPStatusCode": 200}},  # Mock response
             []  # Mock error records
         )
         
-        self.write_to_db_patcher2 = patch("delta.delta_data.write_to_db")
+        self.write_to_db_patcher2 = patch("helpers.db_processor.write")
         self.mock_write_to_db2 = self.write_to_db_patcher2.start()
         self.mock_write_to_db2.return_value = (
             {"ResponseMetadata": {"HTTPStatusCode": 200}},  # Mock response
@@ -187,15 +187,15 @@ class TestConvertToFlatJson(unittest.TestCase):
 
             self.assertTrue(len(errorRecords) > 0)
 
-    @patch("delta.delta_data.write_to_db")
-    def test_handler_imms_convert_to_flat_json(self, mock_write_to_db):
+    @patch("helpers.db_processor.DbProcessor.write")
+    def test_handler_imms_convert_to_flat_json(self, mock_write):
         """Test that the Imms field contains the correct flat JSON data for CREATE, UPDATE, and DELETE operations."""
         expected_action_flags = [
             {"Operation": OperationName.CREATE, "EXPECTED_ACTION_FLAG": ActionFlag.CREATE},
             # {"Operation": OperationName.UPDATE, "EXPECTED_ACTION_FLAG": ActionFlag.UPDATE},
             # {"Operation": OperationName.DELETE_PHYSICAL, "EXPECTED_ACTION_FLAG": ActionFlag.DELETE_PHYSICAL},
         ]
-        mock_write_to_db.return_value = ({"ResponseMetadata": {"HTTPStatusCode": 200}}, [])
+        mock_write.return_value = ({"ResponseMetadata": {"HTTPStatusCode": 200}}, [])
 
         for test_case in expected_action_flags:
             with self.subTest(test_case["Operation"]):

@@ -29,10 +29,15 @@ class DeltaTestCase(unittest.TestCase):
         self.firehose_logger_patcher = patch("delta.firehose_logger")
         self.mock_firehose_logger = self.firehose_logger_patcher.start()
 
+        self.db_processor_patcher = patch("helpers.db_processor.DbProcessor")
+        self.mock_db_processor_class = self.db_processor_patcher.start()
+        self.mock_db_processor = self.mock_db_processor_class.return_value
+
     def tearDown(self):
         self.logger_exception_patcher.stop()
         self.logger_info_patcher.stop()
         self.mock_firehose_logger.stop()
+        self.db_processor_patcher.stop()
 
     # @staticmethod
     # def setup_mock_sqs(mock_boto_client, return_value={"ResponseMetadata": {"HTTPStatusCode": 200}}):
@@ -41,12 +46,11 @@ class DeltaTestCase(unittest.TestCase):
     #     return mock_sqs
 
     @staticmethod
-    def setup_mock_dynamodb(mock_boto_resource, mock_write, status_code=200, error_records = []):
+    def setup_mock_dynamodb(mock_boto_resource, status_code=200, error_records = []):
         mock_dynamodb = mock_boto_resource.return_value
         mock_table = mock_dynamodb.Table.return_value
         mock_response = {"ResponseMetadata": {"HTTPStatusCode": status_code}}
         mock_table.put_item.return_value = mock_response
-        mock_write.return_value = (mock_response, error_records)
         return mock_table
 
     def setUp_mock_resources(self, mock_boto_resource, mock_boto_client):
@@ -135,11 +139,12 @@ class DeltaTestCase(unittest.TestCase):
     #         f"Error sending record to DLQ: An error occurred (500) when calling the SendMessage operation: Internal Server Error"
     #     )
 
-    @patch("delta.delta_data.write")
     @patch("boto3.resource")
-    def test_handler_success_insert(self, mock_boto_resource, mock_write):
-        # Arrange
-        self.setup_mock_dynamodb(mock_boto_resource, mock_write, status_code=200)
+    def test_handler_success_insert(self, mock_boto_resource):
+        # Arrangeself.mock_db_processor
+        self.setup_mock_dynamodb(mock_boto_resource, status_code=200)
+        self.mock_db_processor.write.return_value = ({"ResponseMetadata": {"HTTPStatusCode": 200}}, [])
+
 
         supliers = ["DPS", "EMIS"]
         for supplier in supliers:
@@ -151,7 +156,7 @@ class DeltaTestCase(unittest.TestCase):
             # Assert
             self.assertEqual(result["statusCode"], 200)
 
-    @patch("delta.delta_data.write")
+    @patch("delta.db_processor.write")
     @patch("boto3.resource")
     def test_handler_failure(self, mock_boto_resource, mock_write):
         # Arrange
@@ -165,15 +170,17 @@ class DeltaTestCase(unittest.TestCase):
         # Assert
         self.assertEqual(result["statusCode"], 500)
 
-    @patch("delta.delta_data.write")
+    @patch("delta.DbProcessor")
     @patch("boto3.resource")
-    def test_handler_success_update(self, mock_boto_resource, mock_write):
+    def test_handler_success_update(self, mock_boto_resource, mock_db_processor_class):
         # Arrange
-        self.setup_mock_dynamodb(mock_boto_resource, mock_write)
+        self.setup_mock_dynamodb(mock_boto_resource)
         
         mock_response = {"ResponseMetadata": {"HTTPStatusCode": 200}}
-        
-        mock_write.return_value = (mock_response, [])
+
+        mock_db_processor = mock_db_processor_class.return_value
+        mock_db_processor.write.return_value = (mock_response, [])
+
         event = get_event(event_name=EventName.UPDATE, operation=OperationName.UPDATE)
 
         # Act
