@@ -157,7 +157,7 @@ ConvertLayout = {
       "fieldNameFlat": "VACCINATION_PROCEDURE_CODE",
       "expression": {
         "expressionName": "Not Empty",
-        "expressionType": "NOTEMPTY",
+        "expressionType": "SNOMED",
         "expressionRule": ""
       }
     },
