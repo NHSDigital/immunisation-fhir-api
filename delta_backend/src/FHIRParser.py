@@ -24,15 +24,11 @@ class FHIRParser:
         which item(s) satisfy specific criteria based on the logic defined by the 
         expression type and rule.
         """
-        
-        if not expression_rule:
-            return True
-        
-        elif expression_type == "SNOMED" and expression_rule == "validate-code":
+        if expression_type == "SNOMED" and expression_rule == "validate-code":
             if key_value_pair.get("code"):
                 return is_valid_simple_snomed(key_value_pair["code"])
         
-        return False
+        return True
         
     # scan for a key name or a value
     def _scanValuesForMatch(self, parent, matchValue):
@@ -97,7 +93,7 @@ class FHIRParser:
         return rootfield
 
     # get the value for a key
-    def getKeyValue(self, fieldName, expression_type, expression_rule: str = ""):
+    def getKeyValue(self, fieldName, expression_type: str = "", expression_rule: str = ""):
         value = []
         try:
             responseValue = self._scanForValue(fieldName, expression_type, expression_rule)

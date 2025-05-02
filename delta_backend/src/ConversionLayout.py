@@ -184,8 +184,8 @@ ConvertLayout = {
       "fieldNameFlat": "VACCINE_PRODUCT_CODE",
       "expression": {
         "expressionName": "Not Empty",
-        "expressionType": "SNOMED",
-        "expressionRule": "validate-code"
+        "expressionType": "NOTEMPTY",
+        "expressionRule": ""
       }
     },
     {
