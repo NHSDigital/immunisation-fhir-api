@@ -153,7 +153,7 @@ ConvertLayout = {
       }
     },
     {
-      "fieldNameFHIR": "extension|0|valueCodeableConcept|coding|0|code",
+      "fieldNameFHIR": "extension|#:https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure|valueCodeableConcept|coding|#:http://snomed.info/sct|code",
       "fieldNameFlat": "VACCINATION_PROCEDURE_CODE",
       "expression": {
         "expressionName": "Not Empty",
@@ -184,8 +184,8 @@ ConvertLayout = {
       "fieldNameFlat": "VACCINE_PRODUCT_CODE",
       "expression": {
         "expressionName": "Not Empty",
-        "expressionType": "NOTEMPTY",
-        "expressionRule": ""
+        "expressionType": "SNOMED",
+        "expressionRule": "validate-code"
       }
     },
     {

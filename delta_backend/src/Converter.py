@@ -52,7 +52,7 @@ class Converter:
         return schemaParser
 
     # Convert data against converter schema
-    def _convertData(self, ConversionValidate, expression, dataParser, json_data):
+    def _convertData(self, ConversionValidate: ConversionChecker, expression, dataParser: FHIRParser, json_data):
 
         FHIRFieldName = expression["fieldNameFHIR"]
         FlatFieldName = expression["fieldNameFlat"]
@@ -61,7 +61,7 @@ class Converter:
         expressionRule = expression["expression"]["expressionRule"]
 
         try:
-            conversionValues = dataParser.getKeyValue(FHIRFieldName)
+            conversionValues = dataParser.getKeyValue(FHIRFieldName, expressionType, expressionRule)
         except Exception as e:
             message = "Data get value Unexpected exception [%s]: %s" % (e.__class__.__name__, e)
             error = self._log_error(message, code=ExceptionMessages.PARSING_ERROR)
