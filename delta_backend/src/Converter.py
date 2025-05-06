@@ -5,7 +5,7 @@ from FHIRParser import FHIRParser
 from SchemaParser import SchemaParser
 from ConversionChecker import ConversionChecker
 import ConversionLayout
-from datetime import datetime
+from datetime import datetime, timezone
 from Extractor import (
     extract_person_names,
     extract_practitioner_names,
@@ -139,6 +139,8 @@ class Converter:
         if not self._cached_values:
             try:
                 occurrence_time = datetime.fromisoformat(json_data.get("occurrenceDateTime", ""))
+                if start and start.tzinfo is None:
+                    start = start.replace(tzinfo=timezone.utc)
             except Exception as e:
                     message = "DateTime conversion error [%s]: %s" % (e.__class__.__name__, e)
                     error = self._log_error(message, code=ExceptionMessages.UNEXPECTED_EXCEPTION)
