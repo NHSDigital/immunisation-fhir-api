@@ -289,7 +289,7 @@ class ConversionChecker:
         """
         try:
             if not fieldValue:
-                return fieldValue
+                return "null"
             if not isinstance(fieldValue, str) or not fieldValue.isdigit():
                 raise ValueError(f"Invalid SNOMED code: {fieldValue}")
             return fieldValue
