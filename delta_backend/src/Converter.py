@@ -139,8 +139,8 @@ class Converter:
         if not self._cached_values:
             try:
                 occurrence_time = datetime.fromisoformat(json_data.get("occurrenceDateTime", ""))
-                if start and start.tzinfo is None:
-                    start = start.replace(tzinfo=timezone.utc)
+                if occurrence_time and occurrence_time.tzinfo is None:
+                    occurrence_time = occurrence_time.replace(tzinfo=timezone.utc)
             except Exception as e:
                     message = "DateTime conversion error [%s]: %s" % (e.__class__.__name__, e)
                     error = self._log_error(message, code=ExceptionMessages.UNEXPECTED_EXCEPTION)
