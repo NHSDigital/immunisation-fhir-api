@@ -1,0 +1,8 @@
+[Unit]
+Description=Fix agent work directory owner
+
+[Service]
+ExecStart=/etc/fix-agent-work-owner.sh
+
+[Install]
+WantedBy=multi-user.target
