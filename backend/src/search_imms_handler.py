@@ -13,11 +13,17 @@ from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
 from log_structure import function_info
 import base64
 import urllib.parse
+import logging
 
+logging.basicConfig()
+logger = logging.getLogger()
+logger.setLevel("INFO")
+logger.info("create_imms_handler.py")
 
 @function_info
 def search_imms_handler(event: events.APIGatewayProxyEventV1, context: context_):
-    return search_imms(event, make_controller())
+    print("search_imms_handler...SW...")
+    return search_imms(event, make_controller(logger=logger))
 
 
 def search_imms(event: events.APIGatewayProxyEventV1, controller: FhirController):

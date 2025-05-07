@@ -19,6 +19,7 @@ firehose_logger = FirehoseLogger()
 
 
 def send_message(record):
+    logger.info("Sending message to DLQ")
     # Create a message
     message_body = record
     # Use boto3 to interact with SQS
@@ -32,8 +33,11 @@ def send_message(record):
 
 
 def get_vaccine_type(patientsk) -> str:
+    
     parsed = [str.strip(str.lower(s)) for s in patientsk.split("#")]
-    return parsed[0]
+    ret = parsed[0]
+    logger.info(f"get_vaccine_type type: {ret}")
+    return ret
 
 
 def handler(event, context):
@@ -50,7 +54,12 @@ def handler(event, context):
         # Converting ApproximateCreationDateTime directly to string will give Unix timestamp
         # I am converting it to isofformat for filtering purpose. This can be changed accordingly
 
+        n_records = len(event["Records"])
+        logger.info(f"Number of records: {n_records}")
+        record_n = 0
         for record in event["Records"]:
+            logger.info(f"Process Record {record_n + 1} of {n_records}")
+            firehose_log["event"] = record
             start = time.time()
             log_data["date_time"] = str(datetime.now())
             intrusion_check = False
@@ -61,13 +70,21 @@ def handler(event, context):
             response = str()
             imms_id = str()
             operation = str()
+
+            logger.info(f"eventName: {record['eventName']}")
+
             # TODO Check correct event value for Deletion
             if not record["eventName"] in ["REMOVE", "DELETE"]:
+
+                logger.info(f"Not a deletion event")
+
                 new_image = record["dynamodb"]["NewImage"]
                 imms_id = new_image["PK"]["S"].split("#")[1]
+                logger.info(f"IMMS ID: {imms_id}")
                 vaccine_type = get_vaccine_type(new_image["PatientSK"]["S"])
                 supplier_system = new_image["SupplierSystem"]["S"]
                 if supplier_system not in ("DPSFULL", "DPSREDUCED"):
+                    logger.info("Not a DPSFULL or DPSREDUCED event")
                     operation = new_image["Operation"]["S"]
                     if operation == "CREATE":
                         operation = "NEW"
@@ -76,6 +93,11 @@ def handler(event, context):
                     flat_json = FHIRConverter.runConversion(resource_json)  # Get the flat JSON
                     error_records = FHIRConverter.getErrorRecords()
                     flat_json["ACTION_FLAG"] = operation
+                    logger.info("put item to delta")
+                    # log imms 
+                    imms = json.dumps(flat_json)
+                    logger.info(f"IMMS: {imms}")
+                    logger.info(f"Put record in delta. Operation: {operation}")  
                     response = delta_table.put_item(
                         Item={
                             "PK": str(uuid.uuid4()),
@@ -90,18 +112,23 @@ def handler(event, context):
                         }
                     )
                 else:
+                    logger.info("DPSFULL or DPSREDUCED event")
                     operation_outcome["statusCode"] = "200"
                     operation_outcome["statusDesc"] = "Record from DPS skipped"
                     log_data["operation_outcome"] = operation_outcome
                     firehose_log["event"] = log_data
                     firehose_logger.send_log(firehose_log)
                     logger.info(f"Record from DPS skipped for {imms_id}")
+                    logger.info("returning 200")
                     return {"statusCode": 200, "body": f"Record from DPS skipped for {imms_id}"}
             else:
+                logger.info(f"Deletion event")
                 operation = "REMOVE"
                 new_image = record["dynamodb"]["Keys"]
                 logger.info(f"Record to delta:{new_image}")
                 imms_id = new_image["PK"]["S"].split("#")[1]
+                logger.info(f"IMMS ID: {imms_id}")
+                logger.info(f"Put record in delta. Operation: {operation}")  
                 response = delta_table.put_item(
                     Item={
                         "PK": str(uuid.uuid4()),
@@ -133,6 +160,7 @@ def handler(event, context):
                 firehose_log["event"] = log_data
                 firehose_logger.send_log(firehose_log)
                 logger.info(log)
+                logger.info("Return 200")
                 return {"statusCode": 200, "body": "Records processed successfully"}
             else:
                 log = f"Record NOT created for {imms_id}"
@@ -142,6 +170,7 @@ def handler(event, context):
                 firehose_log["event"] = log_data
                 firehose_logger.send_log(firehose_log)
                 logger.info(log)
+                logger.info("Return 500")
                 return {"statusCode": 500, "body": "Records not processed successfully"}
 
     except Exception as e:
@@ -157,6 +186,7 @@ def handler(event, context):
         log_data["operation_outcome"] = operation_outcome
         firehose_log["event"] = log_data
         firehose_logger.send_log(firehose_log)
+        logger.info("Return 500 - Records not processed")
         return {
             "statusCode": 500,
             "body": "Records not processed",

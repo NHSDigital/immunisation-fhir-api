@@ -7,11 +7,16 @@ from fhir_controller import FhirController, make_controller
 from models.errors import Severity, Code, create_operation_outcome
 from log_structure import function_info
 from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
+import logging
 
+logging.basicConfig()
+logger = logging.getLogger()
+logger.setLevel("INFO")
+logger.info("create_imms_handler.py")
 
 @function_info
 def get_imms_handler(event, context):
-    return get_immunization_by_id(event, make_controller())
+    return get_immunization_by_id(event, make_controller(logger=logger))
 
 
 def get_immunization_by_id(event, controller: FhirController):

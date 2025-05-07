@@ -65,3 +65,20 @@ class TestUpdateImmunizations(unittest.TestCase):
         self.controller.update_immunization.assert_called_once_with(lambda_event)
         self.assertEqual(act_res["statusCode"], 422)
         self.assertDictEqual(act_res, error_msg)
+
+    def test_create_followed_by_update(self):
+        """Should return a 200 OK response"""
+        lambda_event = {"pathParameters": {"id": "an-id"}}
+        error_msg = {
+            "statusCode": 200,
+            "headers": {"Content-Type": "application/fhir+json"},
+            "body": '{"resourceType": "OperationOutcome", "id": "5c132d8a-a928-4e0e-8792-0c6456e625c2", "meta": {"profile": ["https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"]}, "issue": [{"severity": "error", "code": "exception", "details": {"coding": [{"system": "https://fhir.nhs.uk/Codesystem/http-error-codes","code": "DUPLICATE"}]}, "diagnostics": "The provided identifier: id-id is duplicated"}]}',
+        }
+        self.controller.update_immunization.return_value = error_msg
+
+        act_res = update_imms(lambda_event, self.controller)
+
+        # Then
+        self.controller.update_immunization.assert_called_once_with(lambda_event)
+        self.assertEqual(act_res["statusCode"], 200)
+        self.assertDictEqual(act_res, error_msg)

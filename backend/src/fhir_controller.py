@@ -45,6 +45,7 @@ queue_url = os.getenv("SQS_QUEUE_URL", "Queue_url")
 def make_controller(
     pds_env: str = os.getenv("PDS_ENV", "int"),
     immunization_env: str = os.getenv("IMMUNIZATION_ENV"),
+    logger=None,
 ):
     endpoint_url = "http://localhost:4566" if immunization_env == "local" else None
     imms_repo = ImmunizationRepository(create_table(endpoint_url=endpoint_url))
@@ -61,7 +62,7 @@ def make_controller(
     authorizer = Authorization()
     service = FhirService(imms_repo=imms_repo, pds_service=pds_service)
 
-    return FhirController(authorizer=authorizer, fhir_service=service)
+    return FhirController(authorizer=authorizer, fhir_service=service, logger=logger)
 
 
 class FhirController:
@@ -71,12 +72,16 @@ class FhirController:
         self,
         authorizer: Authorization,
         fhir_service: FhirService,
+        logger=None,
     ):
         self.fhir_service = fhir_service
         self.authorizer = authorizer
+        self.logger = logger
+        self.logger.info("FhirController initialized")
 
     def get_immunization_by_identifier(self, aws_event) -> dict:
         try:
+            self.logger.info("get_immunization_by_identifier...")
             if aws_event.get("headers"):
                 is_imms_batch_app = aws_event["headers"]["SupplierSystem"] == "Imms-Batch-App"
                 if not is_imms_batch_app:
@@ -123,6 +128,7 @@ class FhirController:
             return self.create_response(403, unauthorized.to_operation_outcome())
 
     def get_immunization_by_id(self, aws_event) -> dict:
+        self.logger.info("get_immunization_by_id...")
         if response := self.authorize_request(EndpointOperation.READ, aws_event):
             return response
 
@@ -166,6 +172,7 @@ class FhirController:
 
     def create_immunization(self, aws_event):
         try:
+            self.logger.info("create_immunization...")
             file_name = ""
             message_id = ""
             if aws_event.get("headers"):
@@ -254,6 +261,7 @@ class FhirController:
 
     def update_immunization(self, aws_event):
         try:
+            self.logger.info("update_immunization...")
             file_name = ""
             message_id = ""
             if aws_event.get("headers"):
@@ -531,6 +539,7 @@ class FhirController:
 
     def delete_immunization(self, aws_event):
         try:
+            self.logger.info("delete_immunization...")
             file_name = ""
             message_id = ""
             if aws_event.get("headers"):
@@ -599,6 +608,7 @@ class FhirController:
             return final_resp
 
     def search_immunizations(self, aws_event: APIGatewayProxyEventV1) -> dict:
+        self.logger.info("search_immunizations...")
         if response := self.authorize_request(EndpointOperation.SEARCH, aws_event):
             return response
 
@@ -673,6 +683,7 @@ class FhirController:
         return self.create_response(200, json.dumps(result_json_dict))
 
     def _validate_id(self, _id: str) -> Optional[dict]:
+        self.logger.info("_validate_id...")
         if not re.match(self.immunization_id_pattern, _id):
             msg = "Validation errors: the provided event ID is either missing or not in the expected format."
             return create_operation_outcome(
@@ -685,7 +696,7 @@ class FhirController:
             return None
 
     def _validate_identifier_system(self, _id: str, _element: str) -> Optional[dict]:
-
+        self.logger.info("_validate_identifier_system...")
         if not _id:
             return create_operation_outcome(
                 resource_id=str(uuid.uuid4()),
@@ -727,6 +738,7 @@ class FhirController:
             )
 
     def _create_bad_request(self, message):
+        self.logger.info("_create_bad_request...")
         error = create_operation_outcome(
             resource_id=str(uuid.uuid4()),
             severity=Severity.error,
@@ -737,6 +749,7 @@ class FhirController:
 
     def authorize_request(self, operation: EndpointOperation, aws_event: dict) -> Optional[dict]:
         try:
+            self.logger.info("authorize_request...")
             self.authorizer.authorize(operation, aws_event)
         except UnauthorizedError as e:
             return self.create_response(403, e.to_operation_outcome())
@@ -751,6 +764,7 @@ class FhirController:
             return self.create_response(500, id_error)
 
     def fetch_identifier_system_and_element(self, event: dict):
+        self.logger.info("fetch_identifier_system_and_element...")
         query_params = event.get("queryStringParameters", {})
         body = event["body"]
         not_required_keys = ["-date.from", "-date.to", "-immunization.target", "_include", "patient.identifier"]
@@ -795,6 +809,7 @@ class FhirController:
             )
 
     def create_response_for_identifier(self, not_required, has_identifier, has_element):
+        self.logger.info("create_response_for_identifier...")
         if "patient.identifier" in not_required and has_identifier:
             error = create_operation_outcome(
                 resource_id=str(uuid.uuid4()),
@@ -824,6 +839,7 @@ class FhirController:
 
     def check_vaccine_type_permissions(self, aws_event, is_imms_batch_app):
         try:
+            self.logger.info("check_vaccine_type_permissions...")
             imms_vax_type_perms = None
             if not is_imms_batch_app:
                 imms_vax_type_perms = aws_event["headers"]["VaccineTypePermissions"]
@@ -844,8 +860,9 @@ class FhirController:
         except UnauthorizedError as e:
             return self._create_bad_request(str(e)), None, None
 
-    @staticmethod
-    def create_response(status_code, body=None, headers=None):
+    # @staticmethod
+    def create_response(self, status_code, body=None, headers=None):
+        self.logger.info("create_response...")
         if body:
             if isinstance(body, dict):
                 body = json.dumps(body)
@@ -860,8 +877,9 @@ class FhirController:
             **({"body": body} if body else {}),
         }
 
-    @staticmethod
-    def _sendack(payload, file_name, message_id, created_at_formatted_string, local_id, operation_requested):
+    # @staticmethod
+    def _sendack(self, payload, file_name, message_id, created_at_formatted_string, local_id, operation_requested):
+        self.logger.info("_sendack...")
         payload["file_key"] = file_name
         payload["row_id"] = message_id
         payload["created_at_formatted_string"] = created_at_formatted_string
@@ -869,8 +887,9 @@ class FhirController:
         payload["operation_requested"] = operation_requested
         sqs_client.send_message(QueueUrl=queue_url, MessageBody=json.dumps(payload), MessageGroupId=file_name)
 
-    @staticmethod
-    def _vaccine_permission(vaccine_type, operation) -> set:
+    # @staticmethod
+    def _vaccine_permission(self, vaccine_type, operation) -> set:
+        self.logger.info("_vaccine_permission...")
         vaccine_permission = set()
         if isinstance(vaccine_type, list):
             for x in vaccine_type:
@@ -880,23 +899,26 @@ class FhirController:
             vaccine_permission.add(str.lower(f"{vaccine_type}:{operation}"))
             return vaccine_permission
 
-    @staticmethod
-    def _parse_vaccine_permissions_controller(imms_vax_type_perms) -> set:
+    # @staticmethod
+    def _parse_vaccine_permissions_controller(self, imms_vax_type_perms) -> set:
+        self.logger.info("_parse_vaccine_permissions_controller...")
         parsed = [str.strip(str.lower(s)) for s in imms_vax_type_perms.split(",")]
         vaccine_permissions = set()
         for s in parsed:
             vaccine_permissions.add(s)
         return vaccine_permissions
 
-    @staticmethod
-    def _check_permission(requested: set, allowed: set) -> set:
+    # @staticmethod
+    def _check_permission(self, requested: set, allowed: set) -> set:
+        self.logger.info("_check_permission...")
         if not requested.issubset(allowed):
             raise UnauthorizedVaxOnRecordError()
         else:
             return None
 
-    @staticmethod
-    def _new_vaccine_request(vaccine_type, operation, vaccine_type_permissions: None) -> Optional[list]:
+    # @staticmethod
+    def _new_vaccine_request(self, vaccine_type, operation, vaccine_type_permissions: None) -> Optional[list]:
+        self.logger.info("_new_vaccine_request...")
         vaccine_permission = list()
         if isinstance(vaccine_type, list):
             for x in vaccine_type:
@@ -908,8 +930,9 @@ class FhirController:
         else:
             return vaccine_permission
 
-    @staticmethod
-    def _identify_supplier_system(aws_event):
+    # @staticmethod
+    def _identify_supplier_system(self, aws_event):
+        self.logger.info("_identify_supplier_system...")
         supplier_system = aws_event["headers"]["SupplierSystem"]
         # supplier_system is obtained from the app. For batch app, need to look for the BatchSupplierSystem
         if "Imms-Batch-App" in supplier_system:

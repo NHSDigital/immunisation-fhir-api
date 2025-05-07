@@ -8,11 +8,17 @@ from local_lambda import load_string
 from models.errors import Severity, Code, create_operation_outcome
 from log_structure import function_info
 from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
+import logging
+
+logging.basicConfig()
+logger = logging.getLogger()
+logger.setLevel("INFO")
+logger.info("create_imms_handler.py")
 
 
 @function_info
 def update_imms_handler(event, context):
-    return update_imms(event, make_controller())
+    return update_imms(event, make_controller(logger=logger))
 
 
 def update_imms(event, controller: FhirController):

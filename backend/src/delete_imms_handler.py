@@ -8,10 +8,16 @@ from models.errors import Severity, Code, create_operation_outcome
 from log_structure import function_info
 from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
 
+import logging
+
+logging.basicConfig()
+logger = logging.getLogger()
+logger.setLevel("INFO")
+logger.info("create_imms_handler.py")
 
 @function_info
 def delete_imms_handler(event, context):
-    return delete_immunization(event, make_controller())
+    return delete_immunization(event, make_controller(logger=logger))
 
 
 def delete_immunization(event, controller: FhirController):
