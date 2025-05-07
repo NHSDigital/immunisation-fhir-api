@@ -1,0 +1,121 @@
+{
+    "Table": {
+        "AttributeDefinitions": [
+            {
+                "AttributeName": "DateTimeStamp",
+                "AttributeType": "S"
+            },
+            {
+                "AttributeName": "Operation",
+                "AttributeType": "S"
+            },
+            {
+                "AttributeName": "PK",
+                "AttributeType": "S"
+            },
+            {
+                "AttributeName": "SupplierSystem",
+                "AttributeType": "S"
+            },
+            {
+                "AttributeName": "VaccineType",
+                "AttributeType": "S"
+            }
+        ],
+        "TableName": "imms-internal-dev-delta",
+        "KeySchema": [
+            {
+                "AttributeName": "PK",
+                "KeyType": "HASH"
+            }
+        ],
+        "TableStatus": "ACTIVE",
+        "CreationDateTime": "2025-03-13T15:28:09.006000+00:00",
+        "ProvisionedThroughput": {
+            "NumberOfDecreasesToday": 0,
+            "ReadCapacityUnits": 0,
+            "WriteCapacityUnits": 0
+        },
+        "TableSizeBytes": 562691,
+        "ItemCount": 51,
+        "TableArn": "arn:aws:dynamodb:eu-west-2:345594581768:table/imms-internal-dev-delta",
+        "TableId": "688b0e3e-2df8-4ffd-94dc-c27e14ded5d9",
+        "BillingModeSummary": {
+            "BillingMode": "PAY_PER_REQUEST",
+            "LastUpdateToPayPerRequestDateTime": "2025-03-13T15:28:09.006000+00:00"
+        },
+        "GlobalSecondaryIndexes": [
+            {
+                "IndexName": "SearchIndex",
+                "KeySchema": [
+                    {
+                        "AttributeName": "Operation",
+                        "KeyType": "HASH"
+                    },
+                    {
+                        "AttributeName": "DateTimeStamp",
+                        "KeyType": "RANGE"
+                    }
+                ],
+                "Projection": {
+                    "ProjectionType": "ALL"
+                },
+                "IndexStatus": "ACTIVE",
+                "ProvisionedThroughput": {
+                    "NumberOfDecreasesToday": 0,
+                    "ReadCapacityUnits": 0,
+                    "WriteCapacityUnits": 0
+                },
+                "IndexSizeBytes": 562691,
+                "ItemCount": 51,
+                "IndexArn": "arn:aws:dynamodb:eu-west-2:345594581768:table/imms-internal-dev-delta/index/SearchIndex",
+                "WarmThroughput": {
+                    "ReadUnitsPerSecond": 12000,
+                    "WriteUnitsPerSecond": 4000,
+                    "Status": "ACTIVE"
+                }
+            },
+            {
+                "IndexName": "SecondarySearchIndex",
+                "KeySchema": [
+                    {
+                        "AttributeName": "SupplierSystem",
+                        "KeyType": "HASH"
+                    },
+                    {
+                        "AttributeName": "VaccineType",
+                        "KeyType": "RANGE"
+                    }
+                ],
+                "Projection": {
+                    "ProjectionType": "ALL"
+                },
+                "IndexStatus": "ACTIVE",
+                "ProvisionedThroughput": {
+                    "NumberOfDecreasesToday": 0,
+                    "ReadCapacityUnits": 0,
+                    "WriteCapacityUnits": 0
+                },
+                "IndexSizeBytes": 562691,
+                "ItemCount": 51,
+                "IndexArn": "arn:aws:dynamodb:eu-west-2:345594581768:table/imms-internal-dev-delta/index/SecondarySearchIndex",
+                "WarmThroughput": {
+                    "ReadUnitsPerSecond": 12000,
+                    "WriteUnitsPerSecond": 4000,
+                    "Status": "ACTIVE"
+                }
+            }
+        ],
+        "SSEDescription": {
+            "Status": "ENABLED",
+            "SSEType": "KMS",
+            "KMSMasterKeyArn": "arn:aws:kms:eu-west-2:345594581768:key/c36ee85e-0b98-4490-83ec-1c1a63cf7ab4"
+        },
+        "DeletionProtectionEnabled": false,
+        "WarmThroughput": {
+            "ReadUnitsPerSecond": 12000,
+            "WriteUnitsPerSecond": 4000,
+            "Status": "ACTIVE"
+        }
+    }
+}
