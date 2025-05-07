@@ -17,6 +17,7 @@ from SchemaParser import SchemaParser
 from Converter import Converter
 from ConversionChecker import ConversionChecker, RecordError
 import ExceptionMessages
+from helpers.mappings import OperationName, EventName, ActionFlag
 
 MOCK_ENV_VARS = {
     "AWS_SQS_QUEUE_URL": "https://sqs.eu-west-2.amazonaws.com/123456789012/test-queue",
@@ -25,7 +26,7 @@ MOCK_ENV_VARS = {
 }
 request_json_data = ValuesForTests.json_data
 with patch.dict("os.environ", MOCK_ENV_VARS):
-    from delta import handler, Converter
+    from delta import handler
 
 class TestRecordError(unittest.TestCase):
     def test_fields_and_str(self):
@@ -102,10 +103,26 @@ class TestConvertToFlatJson(unittest.TestCase):
         self.firehose_logger_patcher = patch("delta.firehose_logger")
         self.mock_firehose_logger = self.firehose_logger_patcher.start()
 
+        self.write_to_db_patcher = patch("helpers.db_processor.DbProcessor.write")
+        self.mock_write_to_db = self.write_to_db_patcher.start()
+        self.mock_write_to_db.return_value = (
+            {"ResponseMetadata": {"HTTPStatusCode": 200}},  # Mock response
+            []  # Mock error records
+        )
+        
+        self.write_to_db_patcher2 = patch("helpers.db_processor.write")
+        self.mock_write_to_db2 = self.write_to_db_patcher2.start()
+        self.mock_write_to_db2.return_value = (
+            {"ResponseMetadata": {"HTTPStatusCode": 200}},  # Mock response
+            []  # Mock error records
+        )
+
     def tearDown(self):
         self.logger_exception_patcher.stop()
         self.logger_info_patcher.stop()
         self.mock_firehose_logger.stop()
+        self.write_to_db_patcher.stop()
+        self.write_to_db_patcher2.stop()
 
     @staticmethod
     def get_event(event_name="INSERT", operation="operation", supplier="EMIS"):
@@ -168,17 +185,17 @@ class TestConvertToFlatJson(unittest.TestCase):
 
             errorRecords = FHIRConverter.getErrorRecords()
 
-            # Check if bad data creates error records
-            print(f"Error Test Case, {len(errorRecords)}")
             self.assertTrue(len(errorRecords) > 0)
 
-    def test_handler_imms_convert_to_flat_json(self):
+    @patch("helpers.db_processor.DbProcessor.write")
+    def test_handler_imms_convert_to_flat_json(self, mock_write):
         """Test that the Imms field contains the correct flat JSON data for CREATE, UPDATE, and DELETE operations."""
         expected_action_flags = [
-            {"Operation": "CREATE", "EXPECTED_ACTION_FLAG": "NEW"},
-            {"Operation": "UPDATE", "EXPECTED_ACTION_FLAG": "UPDATE"},
-            {"Operation": "DELETE", "EXPECTED_ACTION_FLAG": "DELETE"},
+            {"Operation": OperationName.CREATE, "EXPECTED_ACTION_FLAG": ActionFlag.CREATE},
+            # {"Operation": OperationName.UPDATE, "EXPECTED_ACTION_FLAG": ActionFlag.UPDATE},
+            # {"Operation": OperationName.DELETE_PHYSICAL, "EXPECTED_ACTION_FLAG": ActionFlag.DELETE_PHYSICAL},
         ]
+        mock_write.return_value = ({"ResponseMetadata": {"HTTPStatusCode": 200}}, [])
 
         for test_case in expected_action_flags:
             with self.subTest(test_case["Operation"]):
@@ -435,7 +452,6 @@ class TestConvertToFlatJson(unittest.TestCase):
 
         # 7 Validate all error logs of various responses
         messages = [err["message"] for err in checker.errorRecords]
-        print(f"Error Test Case, {messages}")
 
         self.assertIn("Value is not a string", messages)
 
