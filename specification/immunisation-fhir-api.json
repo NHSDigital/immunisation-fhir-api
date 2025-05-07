@@ -1111,6 +1111,13 @@
                             }
                         }
                     ],
+                    "identifier": [
+                        {
+                            "use": "official",
+                            "system": "https://supplierABC/identifiers/vacc",
+                            "value": "e2154d29-1ead-4830-a513-0d59705078fa"
+                        }
+                    ],
                     "status": "completed",
                     "vaccineCode": {
                         "coding": [
