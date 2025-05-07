@@ -19,7 +19,6 @@ from Extractor import (
 class Converter:
 
     def __init__(self, fhir_data):
-        self.imms = []
         self.converted = {}
         self.error_records = []
         self.fhir_data = fhir_data  # Store JSON data directly
@@ -123,11 +122,10 @@ class Converter:
         if error_records:
             error_summary = error_records
         else:
-            error_summary = ""
+            error_summary = []
         self.converted["CONVERSION_ERRORS"] = error_summary
 
-        self.imms.append(self.converted)
-        return self.imms
+        return self.converted
 
     def getErrorRecords(self):
         return self.error_records

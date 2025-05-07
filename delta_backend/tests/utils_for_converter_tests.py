@@ -167,8 +167,7 @@ class ValuesForTests:
     @staticmethod
     def get_expected_imms(expected_action_flag):
         """Returns expected Imms JSON data with the given action flag."""
-        return [
-            {
+        return {
                 "NHS_NUMBER": "9000000009",
                 "PERSON_FORENAME": "Sam",
                 "PERSON_SURNAME": "Trailor",
@@ -203,12 +202,10 @@ class ValuesForTests:
                 "INDICATION_CODE": "443684005",
                 "LOCATION_CODE": "EC1111",
                 "LOCATION_CODE_TYPE_URI": "https://fhir.nhs.uk/Id/ods-organization-code",
-                "CONVERSION_ERRORS": ''
+                "CONVERSION_ERRORS": []
             }
-        ]
 
-    expected_imms = [
-        {
+    expected_imms = {
             "NHS_NUMBER": "9000000009",
             "PERSON_FORENAME": "Sam",
             "PERSON_SURNAME": "Trailor",
@@ -243,12 +240,10 @@ class ValuesForTests:
             "INDICATION_CODE": "443684005",
             "LOCATION_CODE": "EC1111",
             "LOCATION_CODE_TYPE_URI": "https://fhir.nhs.uk/Id/ods-organization-code",
-            "CONVERSION_ERRORS": ''
+            "CONVERSION_ERRORS": []
         }
-    ]
 
-    expected_imms2 = [
-        {
+    expected_imms2 = {
             "NHS_NUMBER": "9000000009",
             "PERSON_FORENAME": "Sam",
             "PERSON_SURNAME": "Trailor",
@@ -283,9 +278,8 @@ class ValuesForTests:
             "INDICATION_CODE": "443684005",
             "LOCATION_CODE": "EC1111",
             "LOCATION_CODE_TYPE_URI": "https://fhir.nhs.uk/Id/ods-organization-code",
-            "CONVERSION_ERRORS": ''
+            "CONVERSION_ERRORS": []
         }
-    ]
 
 
 class ErrorValuesForTests:
@@ -437,6 +431,6 @@ class ErrorValuesForTests:
                 "INDICATION_CODE": "443684005",
                 "LOCATION_CODE": "E712",
                 "LOCATION_CODE_TYPE_URI": "https://fhir.nhs.uk/Id/ods-organization-code",
-                "CONVERSION_ERRORS": ''
+                "CONVERSION_ERRORS": []
             }
         ]
