@@ -34,11 +34,11 @@ with open(json_path, "w") as f:
 
 # Convert JSON list of dicts to CSV
 if result:
-    keys = result[0].keys()
+    keys = result.keys()
     with open(csv_path, "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=keys)
         writer.writeheader()
-        writer.writerows(result)
+        writer.writerow(result)
 
 print("CSV saved to:", csv_path)
 print("JSON saved to:", json_path)
