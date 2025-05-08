@@ -223,7 +223,7 @@ paths:
       description: |
         ## Overview
         Use this interaction to search for a patient's vaccination records using their NHS number and DiseaseType. You can request the patient's vaccination history for one or more specified 'disease types'. You may limit the vaccination records by specifying date criteria, for example if you only need to know about vaccinations administered in the last 12 months. 
-        Vaccination event details may be obfuscated for sensitive information. The response will not include contained resources for patient or practitioner within each immunization resource it returns. A single, separate patient resource will be included in the bundle and referenced by each immunization. 
+        Location related data items are included. Patient location sensitivity indicators (such as flags for sensitive patient records) should be obtained by connecting systems from the [Personal Demographics Service (PDS)](https://digital.nhs.uk/services/personal-demographics-service) and used to apply data filtering as appropriate. The response will not include contained resources for patient or practitioner within each immunization resource it returns. A single, separate patient resource will be included in the bundle and referenced by each immunization. 
         Vaccination events submitted without an NHS Number will not be available for retrieval via this interaction. Also, where a patient has a change of NHS Number some or all records may be unavailable via this interaction for a short period of time whilst records are updated. 
         You must be authorised for the search interaction and the disease type(s) specified in your search in order to access the records. 
 
@@ -296,7 +296,7 @@ paths:
       operationId: readImmunization
       description: |
         ## Overview
-        This interaction allows you to retrieve the record of a single vaccination by our assigned id. We will return the full immunization resource as submitted, except vaccination event details may be obfuscated for sensitive information. 
+        This interaction allows you to retrieve the record of a single vaccination by our assigned id. We will return the full immunization resource as submitted. 
         The response will include an eTag for the version of the record which has been returned. If you intend to update a record, it is recommended that you use this interaction to obtain the latest version (and eTag for the version). 
         To retrieve a full vaccination history for a patient, see the search interaction. 
         You must be authorised for the read interaction and the disease type associated with the vaccination event in order to access the record. 
@@ -1149,9 +1149,8 @@ components:
                 given:
                   - Ozzie
             gender: unknown
-            birthDate: '1965-02-28'
             address:
-              - postalCode: ZZ99 3CZ
+              - postalCode: NH99 LCZ
         extension:
           - url: >-
               https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure
@@ -1161,6 +1160,10 @@ components:
                   code: '1303503001'
                   display: >-
                     Administration of RSV (respiratory syncytial virus) vaccine
+        identifier:
+          - use: official
+            system: 'https://supplierABC/identifiers/vacc'
+            value: e2154d29-1ead-4830-a513-0d59705078fa
         status: completed
         vaccineCode:
           coding:
@@ -1343,7 +1346,6 @@ components:
               identifier:
                 - system: 'https://fhir.nhs.uk/Id/nhs-number'
                   value: '9449306206'
-              birthDate: '2014-03-25'
             search:
               mode: include
         total: 1
