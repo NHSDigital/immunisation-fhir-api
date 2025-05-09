@@ -3,6 +3,7 @@ from unittest.mock import patch, MagicMock
 from botocore.exceptions import ClientError
 import os
 import json
+from helpers.mappings import EventName, Operation, ActionFlag
 
 # Set environment variables before importing the module
 ## @TODO: # Note: Environment variables shared across tests, thus aligned
@@ -53,7 +54,7 @@ class DeltaTestCase(unittest.TestCase):
         return mock_table
 
     @staticmethod
-    def get_event(event_name="INSERT", operation="CREATE", supplier="EMIS", n_records=1):
+    def get_event(event_name=EventName.CREATE, operation=Operation.CREATE, supplier="EMIS", n_records=1):
         """Create test event for the handler function."""
         return {
             "Records": [
@@ -63,8 +64,8 @@ class DeltaTestCase(unittest.TestCase):
         }
 
     @staticmethod
-    def get_event_record(pk, event_name="INSERT", operation="CREATE", supplier="EMIS"):
-        if operation != "DELETE":
+    def get_event_record(pk, event_name, operation, supplier="EMIS"):
+        if operation != Operation.DELETE_LOGICAL:
             return{
                 "eventName": event_name,
                 "dynamodb": {
@@ -143,7 +144,7 @@ class DeltaTestCase(unittest.TestCase):
             result = handler(event, self.context)
 
             # Assert
-            self.assertEqual(result["statusCode"], 200)
+            self.assertTrue(result)
 
     @patch("boto3.resource")
     def test_handler_failure(self, mock_boto_resource):
@@ -155,7 +156,7 @@ class DeltaTestCase(unittest.TestCase):
         result = handler(event, self.context)
 
         # Assert
-        self.assertEqual(result["statusCode"], 500)
+        self.assertFalse(result)
 
     @patch("boto3.resource")
     def test_handler_success_update(self, mock_boto_resource):
@@ -167,7 +168,7 @@ class DeltaTestCase(unittest.TestCase):
         result = handler(event, self.context)
 
         # Assert
-        self.assertEqual(result["statusCode"], 200)
+        self.assertTrue(result)
 
     @patch("boto3.resource")
     def test_handler_success_remove(self, mock_boto_resource):
@@ -179,7 +180,7 @@ class DeltaTestCase(unittest.TestCase):
         result = handler(event, self.context)
 
         # Assert
-        self.assertEqual(result["statusCode"], 200)
+        self.assertTrue(result)
 
     @patch("boto3.resource")
     @patch("boto3.client")
@@ -192,7 +193,7 @@ class DeltaTestCase(unittest.TestCase):
         # Act & Assert
 
         result = handler(event, self.context)
-        self.assertEqual(result["statusCode"], 500)
+        self.assertFalse(result)
 
     @patch("boto3.resource")
     @patch("boto3.client")
@@ -219,7 +220,7 @@ class DeltaTestCase(unittest.TestCase):
         # Act & Assert
         response = handler(event, context)
 
-        self.assertEqual(response["statusCode"], 500)
+        self.assertFalse(response)
 
     @patch("delta.logger.info")  # Mock logging
     def test_dps_record_skipped(self, mock_logger_info):
@@ -228,8 +229,7 @@ class DeltaTestCase(unittest.TestCase):
 
         response = handler(event, context)
 
-        self.assertEqual(response["statusCode"], 200)
-        self.assertEqual(response["body"], "Record from DPS skipped for 12345")
+        self.assertTrue(response)
 
         # Check logging and Firehose were called
         mock_logger_info.assert_called_with("Record from DPS skipped for 12345")

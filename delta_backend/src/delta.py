@@ -8,6 +8,8 @@ import logging
 from botocore.exceptions import ClientError
 from log_firehose import FirehoseLogger
 from Converter import Converter
+from helpers.mappings import ActionFlag, Operation, EventName
+from enum import Enum
 
 failure_queue_url = os.environ["AWS_SQS_QUEUE_URL"]
 delta_table_name = os.environ["DELTA_TABLE_NAME"]
@@ -16,7 +18,6 @@ logging.basicConfig()
 logger = logging.getLogger()
 logger.setLevel("INFO")
 firehose_logger = FirehoseLogger()
-
 
 def send_message(record):
     # Create a message
@@ -35,8 +36,8 @@ def get_vaccine_type(patientsk) -> str:
     parsed = [str.strip(str.lower(s)) for s in patientsk.split("#")]
     return parsed[0]
 
-
 def handler(event, context):
+    ret = True
     logger.info("Starting Delta Handler")
     log_data = dict()
     firehose_log = dict()
@@ -61,14 +62,14 @@ def handler(event, context):
             response = str()
             imms_id = str()
             operation = str()
-            if record["eventName"] != "REMOVE":
+            if record["eventName"] != EventName.DELETE_PHYSICAL:
                 new_image = record["dynamodb"]["NewImage"]
                 imms_id = new_image["PK"]["S"].split("#")[1]
                 vaccine_type = get_vaccine_type(new_image["PatientSK"]["S"])
                 supplier_system = new_image["SupplierSystem"]["S"]
                 if supplier_system not in ("DPSFULL", "DPSREDUCED"):
                     operation = new_image["Operation"]["S"]
-                    action_flag = "NEW" if operation == "CREATE" else operation
+                    action_flag = ActionFlag.CREATE if operation == Operation.CREATE else operation
                     resource_json = json.loads(new_image["Resource"]["S"])
                     FHIRConverter = Converter(json.dumps(resource_json))
                     flat_json = FHIRConverter.runConversion(resource_json)  # Get the flat JSON
@@ -94,9 +95,9 @@ def handler(event, context):
                     firehose_log["event"] = log_data
                     firehose_logger.send_log(firehose_log)
                     logger.info(f"Record from DPS skipped for {imms_id}")
-                    return {"statusCode": 200, "body": f"Record from DPS skipped for {imms_id}"}
+                    continue
             else:
-                operation = "REMOVE"
+                operation = Operation.DELETE_PHYSICAL
                 new_image = record["dynamodb"]["Keys"]
                 logger.info(f"Record to delta:{new_image}")
                 imms_id = new_image["PK"]["S"].split("#")[1]
@@ -104,7 +105,7 @@ def handler(event, context):
                     Item={
                         "PK": str(uuid.uuid4()),
                         "ImmsID": imms_id,
-                        "Operation": "REMOVE",
+                        "Operation": Operation.DELETE_PHYSICAL,
                         "VaccineType": "default",
                         "SupplierSystem": "default",
                         "DateTimeStamp": approximate_creation_time.isoformat(),
@@ -128,10 +129,10 @@ def handler(event, context):
                     operation_outcome["statusCode"] = "200"
                     operation_outcome["statusDesc"] = "Successfully synched into delta"
                 log_data["operation_outcome"] = operation_outcome
+
                 firehose_log["event"] = log_data
                 firehose_logger.send_log(firehose_log)
                 logger.info(log)
-                return {"statusCode": 200, "body": "Records processed successfully"}
             else:
                 log = f"Record NOT created for {imms_id}"
                 operation_outcome["statusCode"] = "500"
@@ -140,8 +141,7 @@ def handler(event, context):
                 firehose_log["event"] = log_data
                 firehose_logger.send_log(firehose_log)
                 logger.info(log)
-                return {"statusCode": 500, "body": "Records not processed successfully"}
-
+                ret = False
     except Exception as e:
         operation_outcome["statusCode"] = "500"
         operation_outcome["statusDesc"] = "Exception"
@@ -155,7 +155,5 @@ def handler(event, context):
         log_data["operation_outcome"] = operation_outcome
         firehose_log["event"] = log_data
         firehose_logger.send_log(firehose_log)
-        return {
-            "statusCode": 500,
-            "body": "Records not processed",
-        }
+        ret = False
+    return ret
