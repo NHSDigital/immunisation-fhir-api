@@ -1090,6 +1090,7 @@
                                 }
                             ],
                             "gender": "unknown",
+                            "birthDate": "1965-02-28",
                             "address": [
                                 {
                                     "postalCode": "NH99 LCZ"
