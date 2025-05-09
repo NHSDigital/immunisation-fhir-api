@@ -68,13 +68,12 @@ def handler(event, context):
                 supplier_system = new_image["SupplierSystem"]["S"]
                 if supplier_system not in ("DPSFULL", "DPSREDUCED"):
                     operation = new_image["Operation"]["S"]
-                    if operation == "CREATE":
-                        operation = "NEW"
+                    action_flag = "NEW" if operation == "CREATE" else operation
                     resource_json = json.loads(new_image["Resource"]["S"])
                     FHIRConverter = Converter(json.dumps(resource_json))
                     flat_json = FHIRConverter.runConversion(resource_json)  # Get the flat JSON
                     error_records = FHIRConverter.getErrorRecords()
-                    flat_json[0]["ACTION_FLAG"] = operation
+                    flat_json["ACTION_FLAG"] = action_flag
                     response = delta_table.put_item(
                         Item={
                             "PK": str(uuid.uuid4()),
@@ -84,7 +83,7 @@ def handler(event, context):
                             "SupplierSystem": supplier_system,
                             "DateTimeStamp": approximate_creation_time.isoformat(),
                             "Source": delta_source,
-                            "Imms": str(flat_json),
+                            "Imms": flat_json,
                             "ExpiresAt": expiry_time_epoch,
                         }
                     )
