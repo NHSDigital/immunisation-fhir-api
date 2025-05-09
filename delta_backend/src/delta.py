@@ -8,6 +8,7 @@ import logging
 from botocore.exceptions import ClientError
 from log_firehose import FirehoseLogger
 from Converter import Converter
+from helpers.mappings import ActionFlag, Operation, EventName
 
 failure_queue_url = os.environ["AWS_SQS_QUEUE_URL"]
 delta_table_name = os.environ["DELTA_TABLE_NAME"]
@@ -61,14 +62,14 @@ def handler(event, context):
             response = str()
             imms_id = str()
             operation = str()
-            if record["eventName"] != "REMOVE":
+            if record["eventName"] != EventName.DELETE_PHYSICAL:
                 new_image = record["dynamodb"]["NewImage"]
                 imms_id = new_image["PK"]["S"].split("#")[1]
                 vaccine_type = get_vaccine_type(new_image["PatientSK"]["S"])
                 supplier_system = new_image["SupplierSystem"]["S"]
                 if supplier_system not in ("DPSFULL", "DPSREDUCED"):
                     operation = new_image["Operation"]["S"]
-                    action_flag = "NEW" if operation == "CREATE" else operation
+                    action_flag = ActionFlag.CREATE if operation == Operation.CREATE else operation
                     resource_json = json.loads(new_image["Resource"]["S"])
                     FHIRConverter = Converter(json.dumps(resource_json))
                     flat_json = FHIRConverter.runConversion(resource_json)  # Get the flat JSON
@@ -96,7 +97,7 @@ def handler(event, context):
                     logger.info(f"Record from DPS skipped for {imms_id}")
                     return {"statusCode": 200, "body": f"Record from DPS skipped for {imms_id}"}
             else:
-                operation = "REMOVE"
+                operation = Operation.DELETE_PHYSICAL
                 new_image = record["dynamodb"]["Keys"]
                 logger.info(f"Record to delta:{new_image}")
                 imms_id = new_image["PK"]["S"].split("#")[1]
@@ -104,7 +105,7 @@ def handler(event, context):
                     Item={
                         "PK": str(uuid.uuid4()),
                         "ImmsID": imms_id,
-                        "Operation": "REMOVE",
+                        "Operation": Operation.DELETE_PHYSICAL,
                         "VaccineType": "default",
                         "SupplierSystem": "default",
                         "DateTimeStamp": approximate_creation_time.isoformat(),
