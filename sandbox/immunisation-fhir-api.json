@@ -2908,8 +2908,8 @@
                                   "description": "male | female | other | unknown"
                                 },
                                 "birthDate": {
-                                "type": "string",
-                                "description": "The date of birth for the individual"
+                                  "type": "string",
+                                  "description": "The date of birth for the individual"
                                 },
                                 "address": {
                                   "type": "array",
