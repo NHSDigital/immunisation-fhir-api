@@ -11,7 +11,7 @@ os.environ["DELTA_TABLE_NAME"] = "my_delta_table"
 os.environ["SOURCE"] = "my_source"
 
 from delta import send_message, handler  # Import after setting environment variables
-from sample_data.test_resource_data import get_test_data_resource
+from tests.utils_for_converter_tests import ValuesForTests
 
 class DeltaTestCase(unittest.TestCase):
 
@@ -76,7 +76,7 @@ class DeltaTestCase(unittest.TestCase):
                         "Operation": {"S": operation},
                         "SupplierSystem": {"S": supplier},
                         "Resource": {
-                            "S": json.dumps(get_test_data_resource()),
+                            "S": json.dumps(ValuesForTests.get_test_data_resource()),
                         }
                     }
                 }
@@ -91,7 +91,7 @@ class DeltaTestCase(unittest.TestCase):
                         "PatientSK": {"S": pk},
                         "SupplierSystem": {"S": "EMIS"},
                         "Resource": {
-                            "S": json.dumps(get_test_data_resource()),
+                            "S": json.dumps(ValuesForTests.get_test_data_resource()),
                         }
                     }
                 }

@@ -43,15 +43,25 @@
     {
       "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure",
       "valueCodeableConcept": {
-        "coding": [
-          {
-            "system": "http://snomed.info/sct",
-            "code": "13246810000001",
-            "display": "Administration of first dose of severe acute respiratory syndrome coronavirus 2 vaccine (procedure)"
-          }
-        ]
+          "coding": [
+              {
+                  "code": "956951000000105",
+                  "display": "Seasonal influenza vaccination (procedure)",
+                  "system": "http://snomed.info/test"
+              },
+              {
+                  "code": "956951000000104",
+                  "display": "Seasonal influenza vaccination (procedure)",
+                  "system": "http://snomed.info/sct"
+              },
+              {
+                  "code": "NEG",
+                  "display": "Seasonal influenza vaccination (procedure)",
+                  "system": "https://acme.lab/resultcodes"
+              }
+          ]
+        }
       }
-    }
   ],
   "identifier": [
     {
@@ -62,6 +72,11 @@
   "status": "completed",
   "vaccineCode": {
     "coding": [
+      {
+        "system": "http://snomed.info/sct",
+        "code": "39114911000001104",
+        "display": "COVID-19 Vaccine Vaxzevria (ChAdOx1 S [recombinant]) not less than 2.5x100,000,000 infectious units/0.5ml dose suspension for injection multidose vials (AstraZeneca UK Ltd) (product)"
+      },
       {
         "system": "http://snomed.info/sct",
         "code": "39114911000001105",
