@@ -2907,6 +2907,10 @@
                                   "type": "string",
                                   "description": "male | female | other | unknown"
                                 },
+                                "birthDate": {
+                                "type": "string",
+                                "description": "The date of birth for the individual"
+                                },
                                 "address": {
                                   "type": "array",
                                   "description": "An address for the individual",
