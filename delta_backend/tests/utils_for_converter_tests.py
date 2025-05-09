@@ -280,7 +280,6 @@ class ValuesForTests:
             "LOCATION_CODE_TYPE_URI": "https://fhir.nhs.uk/Id/ods-organization-code",
             "CONVERSION_ERRORS": []
         }
-    ]
     
     @staticmethod
     def get_test_data_resource():
