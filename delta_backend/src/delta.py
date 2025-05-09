@@ -37,7 +37,50 @@ def get_vaccine_type(patientsk) -> str:
     return parsed[0]
 
 
+class ReturnCode:
+    SUCCESS = 0
+    FAILURE = 1
+    PARTIAL_SUCCESS = 2
+
 def handler(event, context):
+    logger.info("Starting Delta Handler")
+    log_data = dict()
+    firehose_log = dict()
+    operation_outcome = dict()
+    log_data["function_name"] = "delta_sync"
+    intrusion_check = True
+    results = []
+
+    try:
+        dynamodb = boto3.resource("dynamodb", region_name="eu-west-2")
+        delta_table = dynamodb.Table(delta_table_name)
+
+        for record in event["Records"]:
+            start = time.time()
+            log_data["date_time"] = str(datetime.now())
+            intrusion_check = False
+            approximate_creation_time = datetime.utcfromtimestamp(record["dynamodb"]["ApproximateCreationDateTime"])
+            expiry_time = approximate_creation_time + timedelta(days=30)
+            expiry_time_epoch = int(expiry_time.timestamp())
+
+            # Process the record
+            outcome = process_record(record, delta_table, approximate_creation_time, expiry_time_epoch)
+            results.append(outcome)
+
+            end = time.time()
+            log_data["time_taken"] = f"{round(end - start, 5)}s"
+            firehose_log["event"] = log_data
+            firehose_logger.send_log(firehose_log)
+
+        return {"statusCode": 200, "body": results}
+
+    except Exception as e:
+        logger.exception(f"Delta Lambda failure: {e}")
+        send_message(event)  # Send failed records to DLQ
+        return {
+            "statusCode": 500,
+            "body": "Records not processed",
+        }
     logger.info("Starting Delta Handler")
     log_data = dict()
     firehose_log = dict()
@@ -159,4 +202,101 @@ def handler(event, context):
         return {
             "statusCode": 500,
             "body": "Records not processed",
+        }
+
+def process_record(record, delta_table, approximate_creation_time, expiry_time_epoch):
+    """
+    Processes a single record from the event.
+
+    Args:
+        record (dict): The DynamoDB stream record to process.
+        delta_table (boto3.Table): The DynamoDB table resource.
+        approximate_creation_time (datetime): The approximate creation time of the record.
+        expiry_time_epoch (int): The expiry time in epoch format.
+
+    Returns:
+        dict: A dictionary containing the operation outcome.
+    """
+    try:
+        imms_id = ""
+        operation_outcome = {}
+        if record["eventName"] != EventName.DELETE_PHYSICAL:
+            new_image = record["dynamodb"]["NewImage"]
+            imms_id = new_image["PK"]["S"].split("#")[1]
+            vaccine_type = get_vaccine_type(new_image["PatientSK"]["S"])
+            supplier_system = new_image["SupplierSystem"]["S"]
+
+            if supplier_system not in ("DPSFULL", "DPSREDUCED"):
+                operation = new_image["Operation"]["S"]
+                action_flag = ActionFlag.CREATE if operation == Operation.CREATE else operation
+                resource_json = json.loads(new_image["Resource"]["S"])
+                FHIRConverter = Converter(json.dumps(resource_json))
+                flat_json = FHIRConverter.runConversion(resource_json)  # Get the flat JSON
+                error_records = FHIRConverter.getErrorRecords()
+                flat_json["ACTION_FLAG"] = action_flag
+
+                response = delta_table.put_item(
+                    Item={
+                        "PK": str(uuid.uuid4()),
+                        "ImmsID": imms_id,
+                        "Operation": operation,
+                        "VaccineType": vaccine_type,
+                        "SupplierSystem": supplier_system,
+                        "DateTimeStamp": approximate_creation_time.isoformat(),
+                        "Source": delta_source,
+                        "Imms": flat_json,
+                        "ExpiresAt": expiry_time_epoch,
+                    }
+                )
+
+                if response["ResponseMetadata"]["HTTPStatusCode"] == 200:
+                    if error_records:
+                        operation_outcome["statusCode"] = "207"
+                        operation_outcome["statusDesc"] = (
+                            f"Partial success: successfully synced into delta, but issues found within record {json.dumps(error_records)}"
+                        )
+                    else:
+                        operation_outcome["statusCode"] = "200"
+                        operation_outcome["statusDesc"] = "Successfully synced into delta"
+                else:
+                    operation_outcome["statusCode"] = "500"
+                    operation_outcome["statusDesc"] = "Failed to write to DynamoDB"
+            else:
+                operation_outcome["statusCode"] = "200"
+                operation_outcome["statusDesc"] = f"Record from DPS skipped for {imms_id}"
+        else:
+            operation = Operation.DELETE_PHYSICAL
+            new_image = record["dynamodb"]["Keys"]
+            imms_id = new_image["PK"]["S"].split("#")[1]
+
+            response = delta_table.put_item(
+                Item={
+                    "PK": str(uuid.uuid4()),
+                    "ImmsID": imms_id,
+                    "Operation": Operation.DELETE_PHYSICAL,
+                    "VaccineType": "default",
+                    "SupplierSystem": "default",
+                    "DateTimeStamp": approximate_creation_time.isoformat(),
+                    "Source": delta_source,
+                    "Imms": "",
+                    "ExpiresAt": expiry_time_epoch,
+                }
+            )
+
+            if response["ResponseMetadata"]["HTTPStatusCode"] == 200:
+                operation_outcome["statusCode"] = "200"
+                operation_outcome["statusDesc"] = "Successfully synced into delta"
+            else:
+                operation_outcome["statusCode"] = "500"
+                operation_outcome["statusDesc"] = "Failed to write to DynamoDB"
+
+        operation_outcome["record"] = imms_id
+        return operation_outcome
+
+    except Exception as e:
+        logger.exception(f"Error processing record: {e}")
+        return {
+            "statusCode": "500",
+            "statusDesc": f"Exception: {e}",
+            "record": record.get("dynamodb", {}).get("Keys", {}).get("PK", {}).get("S", "Unknown"),
         }
