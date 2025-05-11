@@ -246,6 +246,7 @@ resource "aws_vpc_endpoint" "kms_endpoint" {
           "kms:GenerateDataKey*"
         ],
         Resource = [
+          # TODO - this doesn't match up in non-prod
           aws_kms_key.lambda_env_encryption.arn,
           aws_kms_key.s3_shared_key.arn
         ]
