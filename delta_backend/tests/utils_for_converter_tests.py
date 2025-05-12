@@ -84,7 +84,7 @@ class ValuesForTests:
         "doseQuantity": {
             "value": str(Decimal(0.5)),
             "unit": "milliliter",
-            "system": "http://unitsofmeasure.org",
+            "system": "http://snomed.info/sct",
             "code": "ml",
         },
         "performer": [

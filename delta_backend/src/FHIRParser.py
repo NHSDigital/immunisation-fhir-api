@@ -1,5 +1,6 @@
 # FHIR JSON importer and data access
 import json
+import jq
 from utils import is_valid_simple_snomed
 
 class FHIRParser:
@@ -96,9 +97,21 @@ class FHIRParser:
     def getKeyValue(self, fieldName, expression_type: str = "", expression_rule: str = ""):
         value = []
         try:
-            responseValue = self._scanForValue(fieldName, expression_type, expression_rule)
+            if expression_type == "JQExpression":
+                responseValue = self._extract_with_jq(fieldName, expression_rule)
+            else:
+                responseValue = self._scanForValue(fieldName, expression_type, expression_rule)
         except:
             responseValue = ""
 
         value.append(responseValue)
+        
         return value
+    
+    def _extract_with_jq(self, jq_expr_str, expression_rule):
+        try:
+            result = jq.compile(jq_expr_str).input(self.FHIRFile).first()
+            return result if result is not None else ""
+        except Exception as e:
+            # Optional: log or handle error
+            return ""

@@ -1,6 +1,8 @@
 
 # This file holds the schema/base layout that maps FHIR fields to flat JSON fields
 # Each entry tells the converter how to extract and transform a specific value
+snomed_system_code = "http://snomed.info/sct"
+dose_unit_code_expr = f'if .doseQuantity.system == "{snomed_system_code}" then .doseQuantity.code else "" end'
 
 ConvertLayout = {
   "id": "7d78e9a6-d859-45d3-bb05-df9c405acbdb",
@@ -270,12 +272,12 @@ ConvertLayout = {
       }
     },
     {
-      "fieldNameFHIR": "doseQuantity|code",
+      "fieldNameFHIR": dose_unit_code_expr,
       "fieldNameFlat": "DOSE_UNIT_CODE",
       "expression": {
-        "expressionName": "Only If",
-        "expressionType": "ONLYIF",
-        "expressionRule": "doseQuantity|system|http://snomed.info/sct"
+        "expressionName": "JQ",
+        "expressionType": "JQExpression",
+        "expressionRule": ""
       }
     },
     {
