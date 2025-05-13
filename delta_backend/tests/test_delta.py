@@ -4,7 +4,6 @@ from botocore.exceptions import ClientError
 import os
 import json
 from helpers.mappings import EventName, Operation, ActionFlag
-from sample_data.test_data import get_test_event, get_multi_record_event, RecordConfig
 
 # Set environment variables before importing the module
 ## @TODO: # Note: Environment variables shared across tests, thus aligned
@@ -13,6 +12,7 @@ os.environ["DELTA_TABLE_NAME"] = "my_delta_table"
 os.environ["SOURCE"] = "my_source"
 
 from delta import send_message, handler  # Import after setting environment variables
+from tests.utils_for_converter_tests import ValuesForTests, RecordConfig
 
 class DeltaTestCase(unittest.TestCase):
 
@@ -93,9 +93,8 @@ class DeltaTestCase(unittest.TestCase):
         mock_table = self.setup_mock_dynamodb(mock_boto_resource)
         suppilers = ["DPS", "EMIS"]
         for supplier in suppilers:
-            event = get_test_event(supplier=supplier)
             imms_id = f"test-insert-imms-{supplier}-id"
-            event = get_test_event(event_name=EventName.CREATE, operation=Operation.CREATE, imms_id=imms_id, supplier=supplier)
+            event = ValuesForTests.get_event(event_name=EventName.CREATE, operation=Operation.CREATE, imms_id=imms_id, supplier=supplier)
 
             # Act
             result = handler(event, self.context)
@@ -115,7 +114,7 @@ class DeltaTestCase(unittest.TestCase):
     def test_handler_failure(self, mock_boto_resource):
         # Arrange
         self.setup_mock_dynamodb(mock_boto_resource, status_code=500)
-        event = get_test_event()
+        event = ValuesForTests.get_event()
 
         # Act
         result = handler(event, self.context)
@@ -129,7 +128,7 @@ class DeltaTestCase(unittest.TestCase):
         # Arrange
         mock_table = self.setup_mock_dynamodb(mock_boto_resource)
         imms_id = "test-update-imms-id"
-        event = get_test_event(event_name=EventName.UPDATE, operation=Operation.UPDATE, imms_id=imms_id)
+        event = ValuesForTests.get_event(event_name=EventName.UPDATE, operation=Operation.UPDATE, imms_id=imms_id)
 
         # Act
         result = handler(event, self.context)
@@ -150,7 +149,7 @@ class DeltaTestCase(unittest.TestCase):
         # Arrange
         mock_table = self.setup_mock_dynamodb(mock_boto_resource)
         imms_id = "test-remove-imms-id"
-        event = get_test_event(event_name=EventName.DELETE_LOGICAL, operation=Operation.DELETE_LOGICAL, imms_id=imms_id)
+        event = ValuesForTests.get_event(event_name=EventName.DELETE_LOGICAL, operation=Operation.DELETE_LOGICAL, imms_id=imms_id)
 
         # Act
         result = handler(event, self.context)
@@ -173,7 +172,7 @@ class DeltaTestCase(unittest.TestCase):
         # Arrange
         self.setup_mock_dynamodb(mock_boto_resource, status_code=500)
         mock_boto_client.return_value = MagicMock()
-        event = get_test_event()
+        event = ValuesForTests.get_event()
 
         # Act & Assert
 
@@ -185,7 +184,7 @@ class DeltaTestCase(unittest.TestCase):
     def test_handler_exception_intrusion(self, mock_boto_client, mock_boto_resource):
         # Arrange
         self.setUp_mock_resources(mock_boto_resource, mock_boto_client)
-        event = get_test_event()
+        event = ValuesForTests.get_event()
         context = {}
 
         # Act & Assert
@@ -199,7 +198,7 @@ class DeltaTestCase(unittest.TestCase):
     def test_handler_exception_intrusion_check_false(self, mocked_intrusion, mock_boto_client):
         # Arrange
         self.setUp_mock_resources(mocked_intrusion, mock_boto_client)
-        event = get_test_event()
+        event = ValuesForTests.get_event()
         context = {}
 
         # Act & Assert
@@ -209,7 +208,7 @@ class DeltaTestCase(unittest.TestCase):
 
     @patch("delta.logger.info")  # Mock logging
     def test_dps_record_skipped(self, mock_logger_info):
-        event = get_test_event(supplier="DPSFULL")
+        event = ValuesForTests.get_event(supplier="DPSFULL")
         context = {}
 
         response = handler(event, context)
@@ -234,7 +233,7 @@ class DeltaTestCase(unittest.TestCase):
         mock_dynamodb.return_value.Table.return_value = mock_table
         mock_table.put_item.return_value = {"ResponseMetadata": {"HTTPStatusCode": 200}}
 
-        event = get_test_event()
+        event = ValuesForTests.get_event()
         context = {}
 
         response = handler(event, context)
@@ -257,8 +256,8 @@ class DeltaTestCase(unittest.TestCase):
             RecordConfig(EventName.DELETE_LOGICAL, Operation.DELETE_LOGICAL, "id3", ActionFlag.DELETE_LOGICAL),
             RecordConfig(EventName.DELETE_PHYSICAL, Operation.DELETE_PHYSICAL, "id4"),
         ]
-        # Generate the event using get_multi_record_event
-        event = get_multi_record_event(records_config)
+        # Generate the event using ValuesForTests.get_multi_record_event
+        event = ValuesForTests.get_multi_record_event(records_config)
 
         # Act
         result = handler(event, self.context)
@@ -278,8 +277,8 @@ class DeltaTestCase(unittest.TestCase):
             RecordConfig(EventName.CREATE, Operation.CREATE, "create-id2", ActionFlag.CREATE),
             RecordConfig(EventName.CREATE, Operation.CREATE, "create-id3", ActionFlag.CREATE)
         ]
-        # Generate the event using get_multi_record_event
-        event = get_multi_record_event(records_config)
+        # Generate the event using ValuesForTests.get_multi_record_event
+        event = ValuesForTests.get_multi_record_event(records_config)
 
         # Act
         result = handler(event, self.context)
@@ -300,8 +299,8 @@ class DeltaTestCase(unittest.TestCase):
             RecordConfig(EventName.UPDATE, Operation.UPDATE, "update-id2", ActionFlag.UPDATE),
             RecordConfig(EventName.UPDATE, Operation.UPDATE, "update-id3", ActionFlag.UPDATE)
         ]
-        # Generate the event using get_multi_record_event
-        event = get_multi_record_event(records_config)
+        # Generate the event using ValuesForTests.get_multi_record_event
+        event = ValuesForTests.get_multi_record_event(records_config)
 
         # Act
         result = handler(event, self.context)
@@ -321,8 +320,8 @@ class DeltaTestCase(unittest.TestCase):
             RecordConfig(EventName.DELETE_LOGICAL, Operation.DELETE_LOGICAL, "update-id2", ActionFlag.DELETE_LOGICAL),
             RecordConfig(EventName.DELETE_LOGICAL, Operation.DELETE_LOGICAL, "update-id3", ActionFlag.DELETE_LOGICAL)
         ]
-        # Generate the event using get_multi_record_event
-        event = get_multi_record_event(records_config)
+        # Generate the event using ValuesForTests.get_multi_record_event
+        event = ValuesForTests.get_multi_record_event(records_config)
 
         # Act
         result = handler(event, self.context)
@@ -342,8 +341,8 @@ class DeltaTestCase(unittest.TestCase):
             RecordConfig(EventName.DELETE_PHYSICAL, Operation.DELETE_PHYSICAL, "update-id2"),
             RecordConfig(EventName.DELETE_PHYSICAL, Operation.DELETE_PHYSICAL, "update-id3")
         ]
-        # Generate the event using get_multi_record_event
-        event = get_multi_record_event(records_config)
+        # Generate the event using ValuesForTests.get_multi_record_event
+        event = ValuesForTests.get_multi_record_event(records_config)
 
         # Act
         result = handler(event, self.context)
