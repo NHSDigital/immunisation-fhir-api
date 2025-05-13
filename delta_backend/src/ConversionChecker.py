@@ -92,16 +92,17 @@ class ConversionChecker:
                     expressionRule, fieldName, fieldValue, self.summarise, self.report_unexpected_exception
                 )
             case "NORMAL":
-                return fieldValue
+                # TODO - check expression_rule is callable
+                return expressionRule(fieldValue)
             case _:
-                raise ValueError("Schema expression not found! Check your expression type : " + expressionType) 
+                raise ValueError("Schema expression not found! Check your expression type : " + expressionType)
 
     # Utility function for logging errors
     def _log_error(self, fieldName, fieldValue, e, code=ExceptionMessages.RECORD_CHECK_FAILED):
         if isinstance(e, Exception):
             message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, str(e))
         else:
-            message = str(e)  # if a simple string message was passed 
+            message = str(e)  # if a simple string message was passed
 
         self.errorRecords.append({
             "code": code,
@@ -112,7 +113,7 @@ class ConversionChecker:
 
     def _convertToDate(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
             """
-            Convert a date string according to match YYYYMMDD format. 
+            Convert a date string according to match YYYYMMDD format.
             """
             if not fieldValue:
                 return ""
@@ -158,7 +159,7 @@ class ConversionChecker:
 
         formatted = dt_format.strftime("%Y%m%dT%H%M%S%z")
         return formatted.replace("+0000", "00").replace("+0100", "01")
-    
+
 
     # Not Empty Validate - Returns exactly what is in the extracted fields no parsing or logic needed
     def _convertToNotEmpty(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
@@ -238,7 +239,7 @@ class ConversionChecker:
     def _convertToDose(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
         if isinstance(fieldValue, (int, float)) and 1 <= fieldValue <= 9:
             return fieldValue
-        return "" 
+        return ""
 
     # Change to Lookup (loads expected data as is but if empty use lookup extraction to populate value)
     def _convertToLookUp(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
@@ -312,7 +313,7 @@ class ConversionChecker:
                 return False
             elif report_unexpected_exception:
                     self._log_error(fieldName, fieldValue, "Invalid String Data")
-            return "" 
+            return ""
         except Exception as e:
             if report_unexpected_exception:
                  self._log_error(fieldName, fieldValue, e)

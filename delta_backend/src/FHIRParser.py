@@ -98,8 +98,7 @@ class FHIRParser:
         try:
             # extract
             if expression_type == "NORMAL":
-                # TODO - check expression_rule is callable
-                responseValue = expression_rule(self.FHIRFile)
+                responseValue = self.FHIRFile
             else:
                 responseValue = self._scanForValue(fieldName, expression_type, expression_rule)
         except:
