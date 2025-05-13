@@ -1,6 +1,6 @@
 # FHIR JSON importer and data access
 import json
-
+from utils import is_valid_simple_snomed
 
 class FHIRParser:
     # parser variables
@@ -10,6 +10,26 @@ class FHIRParser:
     def parseFHIRData(self, fhirData):
         self.FHIRFile = json.loads(fhirData) if isinstance(fhirData, str) else fhirData
 
+
+    def _validate_expression_rule(self, expression_type, expression_rule, key_value_pair):
+        """
+        Applies expression rules for filtering key-value pairs during searches.
+
+        This method provides a flexible foundation for implementing various filtering 
+        or validation rules, enabling more dynamic and configurable search behavior. 
+        While it currently supports only SNOMED code validation, the structure opens 
+        the door to applying a wide range of expression rules in the future.
+
+        For example, when processing a list of items, this method helps determine 
+        which item(s) satisfy specific criteria based on the logic defined by the 
+        expression type and rule.
+        """
+        if expression_type == "SNOMED" and expression_rule == "validate-code":
+            if key_value_pair.get("code"):
+                return is_valid_simple_snomed(key_value_pair["code"])
+        
+        return True
+        
     # scan for a key name or a value
     def _scanValuesForMatch(self, parent, matchValue):
         try:
@@ -21,18 +41,21 @@ class FHIRParser:
             return False
 
     # locate an index for an item in a list
-    def _locateListId(self, parent, locator):
-        fieldList = locator.split(":")
+    def _locateListId(self, parent, locator, expression_type, expression_rule: str = ""):
+        fieldList = locator.split(":", 1)
         nodeId = 0
         index = 0
         try:
             while index < len(parent):
-                for key in parent[index]:
-                    if (parent[index][key] == fieldList[1]) or (key == fieldList[1]):
+                for key, value in parent[index].items():
+                    if (
+                        (value == fieldList[1] or key == fieldList[1])
+                        and self._validate_expression_rule(expression_type, expression_rule, parent[index])
+                    ):
                         nodeId = index
                         break
                     else:
-                        if self._scanValuesForMatch(parent[index][key], fieldList[1]):
+                        if self._scanValuesForMatch(value, fieldList[1]):
                             nodeId = index
                             break
                 index += 1
@@ -54,7 +77,7 @@ class FHIRParser:
         return result
 
     # locate a value for a key
-    def _scanForValue(self, FHIRFields):
+    def _scanForValue(self, FHIRFields, expression_type, expression_rule: str = ""):
         fieldList = FHIRFields.split("|")
         # get root field before we iterate
         rootfield = self.FHIRFile[fieldList[0]]
@@ -62,7 +85,7 @@ class FHIRParser:
         try:
             for field in fieldList:
                 if field.startswith("#"):
-                    rootfield = self._locateListId(rootfield, field)  # check here for default index??
+                    rootfield = self._locateListId(rootfield, field, expression_type, expression_rule)  # check here for default index??
                 else:
                     rootfield = self._getNode(rootfield, field)
         except:
@@ -70,10 +93,10 @@ class FHIRParser:
         return rootfield
 
     # get the value for a key
-    def getKeyValue(self, fieldName):
+    def getKeyValue(self, fieldName, expression_type: str = "", expression_rule: str = ""):
         value = []
         try:
-            responseValue = self._scanForValue(fieldName)
+            responseValue = self._scanForValue(fieldName, expression_type, expression_rule)
         except:
             responseValue = ""
 
