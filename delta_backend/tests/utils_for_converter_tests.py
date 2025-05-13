@@ -273,7 +273,7 @@ class ValuesForTests:
             "ROUTE_OF_VACCINATION_CODE": "78421000",
             "ROUTE_OF_VACCINATION_TERM": "Intramuscular route (qualifier value)",
             "DOSE_AMOUNT": "0.5",
-            "DOSE_UNIT_CODE": "",
+            "DOSE_UNIT_CODE": "ml",
             "DOSE_UNIT_TERM": "milliliter",
             "INDICATION_CODE": "443684005",
             "LOCATION_CODE": "EC1111",
