@@ -2,7 +2,7 @@
 # Handles the transformation logic for each field based on the schema
 # Root and base type expression checker functions
 import ExceptionMessages
-from datetime import datetime, timezone
+from datetime import datetime,timedelta, timezone
 from zoneinfo import ZoneInfo
 import re
 from LookUpData import LookUpData
@@ -143,23 +143,26 @@ class ConversionChecker:
             if report_unexpected_exception:
                 self._log_error(fieldName, fieldValue, e)
             return ""
-        
-         # Convert to GMT (UTC)
-        dt_utc = dt.astimezone(timezone.utc).replace(microsecond=0)
 
-        # Determine if the original datetime is in DST in UK (Europe/London)
+     
         try:
-            dt_in_london = dt.astimezone(ZoneInfo("Europe/London"))
-            is_dst = bool(dt_in_london.dst())
+            # Only allow offsets of +00:00 or +01:00; else reset to UTC
+            offset = dt.utcoffset()
+            allowed_offsets = [timedelta(hours=0), timedelta(hours=1)]
+            if offset not in allowed_offsets:
+                dt = dt.astimezone(timezone.utc).replace(microsecond=0)
+
+            dt_in_uk = dt.astimezone(ZoneInfo("Europe/London"))
+            is_dst = bool(dt_in_uk.dst())
         except Exception as e:
             if report_unexpected_exception:
-                self._log_error(fieldName, fieldValue, "DST evaluation failed")
+                self._log_error(fieldName, fieldValue, "Unsupported Format")
             return ""
 
         # Assign suffix
         suffix = "01" if is_dst else "00"
 
-        return dt_utc.strftime("%Y%m%dT%H%M%S") + suffix
+        return dt_in_uk.strftime("%Y%m%dT%H%M%S") + suffix
     
 
     # Not Empty Validate - Returns exactly what is in the extracted fields no parsing or logic needed

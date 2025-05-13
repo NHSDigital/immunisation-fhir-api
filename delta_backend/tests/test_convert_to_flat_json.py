@@ -2,6 +2,8 @@ import json
 import unittest
 from copy import deepcopy
 from unittest.mock import patch, Mock
+from unittest.mock import patch
+from zoneinfo import ZoneInfoNotFoundError
 from moto import mock_dynamodb, mock_sqs
 from boto3 import resource as boto3_resource
 from tests.utils_for_converter_tests import ValuesForTests, ErrorValuesForTests
@@ -457,46 +459,43 @@ class TestConvertToFlatJson(unittest.TestCase):
 
         checker = ConversionChecker(dataParser, summarise=False, report_unexpected_exception=True)
 
-        valid_date_time = "2025-01-01T12:00:00+00:00"
+        valid_date_time = "2025-01-01T13:28:17.234365+00:00"
         result = checker._convertToDateTime("fhir-date", "fieldName", valid_date_time, False, True)
-        self.assertEqual(result, "20250101T12000000")
+        self.assertEqual(result, "20250101T13281700")
 
-        valid_fhir_date = "2025-01-01T13:28:17234+01:00"
+        valid_fhir_date = "2025-01-01T13:28:17.234365+01:00"
+        result = checker._convertToDateTime("fhir-date", "fieldName", valid_fhir_date, False, True)
+        self.assertEqual(result, "20250101T12281700")
+
+        valid_fhir_date = "2025-04-06T13:28:17+01:00"
+        result = checker._convertToDateTime("fhir-date", "fieldName", valid_fhir_date, False, True)
+        self.assertEqual(result, "20250406T13281701")
+
+        valid_fhir_date = "2025-04-06T13:28:17"
+        result = checker._convertToDateTime("fhir-date", "fieldName", valid_fhir_date, False, True)
+        self.assertEqual(result, "20250406T14281701")
+
+        valid_fhir_date = "2025-01-01T13:28:17"
         result = checker._convertToDateTime("fhir-date", "fieldName", valid_fhir_date, False, True)
         self.assertEqual(result, "20250101T13281700")
 
-        valid_fhir_date = "2022-01-01"
-        result = checker._convertToDateTime("", "fieldName", valid_fhir_date, False, True)
-        self.assertEqual(result, "20220101T00000000")
-
-        valid_fhir_date = "2022-05-02"
-        result = checker._convertToDateTime("", "fieldName", valid_fhir_date, False, True)
-        self.assertEqual(result, "20220101T00000001")
-
-        valid_fhir_date = "2025-05-01T13:28:17+01:00"
+        valid_fhir_date = "2025-04-06T13:28:17+00:00"
         result = checker._convertToDateTime("fhir-date", "fieldName", valid_fhir_date, False, True)
-        self.assertEqual(result, "20250501T13281701")
-
-        valid_fhir_date = "2025-05-01T13:28:17+00:00"
-        result = checker._convertToDateTime("fhir-date", "fieldName", valid_fhir_date, False, True)
-        self.assertEqual(result, "20250501T13281701")
+        self.assertEqual(result, "20250406T14281701")
 
         invalid_fhir_date = "invalid_fhir_date"
         result = checker._convertToDateTime("fhir-date", "fieldName", invalid_fhir_date, False, True)
         self.assertEqual(result, "")
 
-        valid_fhir_date = "2025-01-01T12:00:00+03:00"
-        result = checker._convertToDateTime("fhir-date", "fieldName", valid_fhir_date, False, True)
-        self.assertEqual(result, "20250101T12000000")
-
-        valid_fhir_date = "2025-05-02T12:00:00+03:00"
-        result = checker._convertToDateTime("fhir-date", "fieldName", valid_fhir_date, False, True)
-        self.assertEqual(result, "20250101T12000001")
+        invalid_fhir_date = "2025-04-06T13:28:17+00:00"
+        with patch("ConversionChecker.ZoneInfo", side_effect=ZoneInfoNotFoundError("Simulated failure")):
+                result = checker._convertToDateTime("rule", "field", invalid_fhir_date, False, True)
+                self.assertEqual(result, "")
 
         messages = [err["message"] for err in checker.errorRecords]
 
         self.assertIn("Unexpected exception [ValueError]", messages[0])
-        self.assertIn("Unsupported Format or offset", messages[1])
+        self.assertIn("Unsupported Format", messages[1])
 
         # Confirm Total Errors Per conversion
         self.assertEqual(len(checker.errorRecords), 2)
