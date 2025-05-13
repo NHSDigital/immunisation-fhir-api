@@ -2,6 +2,61 @@
 # This file holds the schema/base layout that maps FHIR fields to flat JSON fields
 # Each entry tells the converter how to extract and transform a specific value
 
+EXTENSION_URL_VACCINATION_PRODEDURE = "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure"
+EXTENSION_URL_SCT_DESC_DISPLAY = "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-CodingSCTDescDisplay"
+
+CODING_SYSTEM_URL_SNOMED = "http://snomed.info/sct"
+
+
+def _extract_vaccination_procedure_code(immunization) -> str:
+    extensions = immunization.get("extension", [])
+    for ext in extensions:
+        if ext.get("url") == EXTENSION_URL_VACCINATION_PRODEDURE:
+            value_cc = ext.get("valueCodeableConcept", {})
+            return _get_first_snomed_code(value_cc)
+    return ""
+
+
+def _extract_vaccine_product_code(immunization) -> str:
+    vaccine_code = immunization.get("vaccineCode", {})
+    return _get_first_snomed_code(vaccine_code)
+
+
+# Could be merged with smt
+def _extract_site_of_vaccination_code(immunization) -> str:
+    site = immunization.get("site", {})
+    return _get_first_snomed_code(site)
+
+
+def _extract_route_of_vaccination_code(immunization) -> str:
+    route = immunization.get("route", {})
+    return _get_first_snomed_code(route)
+
+
+def _extract_indication_code(immunization) -> str:
+    for reason in immunization.get("reasonCode", []):
+        codings = reason.get("coding", [])
+        for coding in codings:
+            if coding.get("system") == CODING_SYSTEM_URL_SNOMED:
+                return coding.get("code", "")
+    return ""
+
+
+def _extract_dose_unit_code(immunization) -> str:
+    dose_quantity = immunization.get("doseQuantity", {})
+    if dose_quantity.get("system") == CODING_SYSTEM_URL_SNOMED and dose_quantity.get("code"):
+        return dose_quantity.get("code")
+    return ""
+
+
+def _get_first_snomed_code(coding_container: dict) -> str:
+    codings = coding_container.get("coding", [])
+    for coding in codings:
+        if coding.get("system") == CODING_SYSTEM_URL_SNOMED:
+            return coding.get("code", "")
+    return ""
+
+
 ConvertLayout = {
   "id": "7d78e9a6-d859-45d3-bb05-df9c405acbdb",
   "schemaName": "JSON Base",
@@ -158,7 +213,7 @@ ConvertLayout = {
       "expression": {
         "expressionName": "Not Empty",
         "expressionType": "NORMAL",
-        "expressionRule": ""
+        "expressionRule": _extract_vaccination_procedure_code
       }
     },
     {
@@ -185,7 +240,7 @@ ConvertLayout = {
       "expression": {
         "expressionName": "Not Empty",
         "expressionType": "NORMAL",
-        "expressionRule": ""
+        "expressionRule": _extract_vaccine_product_code
       }
     },
     {
@@ -230,7 +285,7 @@ ConvertLayout = {
       "expression": {
         "expressionName": "Not Empty",
         "expressionType": "NORMAL",
-        "expressionRule": ""
+        "expressionRule": _extract_site_of_vaccination_code
       }
     },
     {
@@ -248,7 +303,7 @@ ConvertLayout = {
       "expression": {
         "expressionName": "Not Empty",
         "expressionType": "NORMAL",
-        "expressionRule": ""
+        "expressionRule": _extract_route_of_vaccination_code
       }
     },
     {
@@ -275,7 +330,7 @@ ConvertLayout = {
       "expression": {
         "expressionName": "Only If",
         "expressionType": "NORMAL",
-        "expressionRule": "doseQuantity|system|http://snomed.info/sct"
+        "expressionRule": _extract_dose_unit_code
       }
     },
     {
@@ -293,7 +348,7 @@ ConvertLayout = {
       "expression": {
         "expressionName": "Not Empty",
         "expressionType": "NORMAL",
-        "expressionRule": ""
+        "expressionRule": _extract_indication_code
       }
     },
     {
