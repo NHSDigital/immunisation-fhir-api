@@ -94,10 +94,10 @@ class FHIRParser:
         return rootfield
 
     # get the value for a key
-    def getKeyValue(self, fieldName, expression_type: str = "", expression_rule: str = ""):
+    def getKeyValue(self, fieldName, flatFieldName: str = "", expression_type: str = "", expression_rule: str = ""):
         value = []
         try:
-            if expression_type == "JQExpression":
+            if expression_type == "JQ":
                 responseValue = self._extract_with_jq(fieldName, expression_rule)
             else:
                 responseValue = self._scanForValue(fieldName, expression_type, expression_rule)

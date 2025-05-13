@@ -46,20 +46,22 @@
           "coding": [
               {
                   "code": "956951000000105",
-                  "display": "Seasonal influenza vaccination (procedure)",
+                  "display": "Item 1",
                   "system": "http://snomed.info/test"
               },
               {
                   "code": "956951000000104",
-                  "display": "Seasonal influenza vaccination (procedure)",
-                  "system": "http://snomed.info/sct"
-              },
-              {
-                  "code": "NEG",
-                  "display": "Seasonal influenza vaccination (procedure)",
-                  "system": "https://acme.lab/resultcodes"
+                  "display": "Item 2",
+                  "system": "http://snomed.info/sct",
+                  "extension": [
+                    {
+                        "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-CodingSCTDescDisplay",
+                        "valueString": "Administration of first dose of SARS-CoV-2 (severe acute respiratory syndrome coronavirus 2) vaccine"
+                    }
+                  ]
               }
-          ]
+          ],
+          "text": "condition 1"
         }
       }
   ],

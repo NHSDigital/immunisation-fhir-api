@@ -1,8 +1,7 @@
 
 # This file holds the schema/base layout that maps FHIR fields to flat JSON fields
 # Each entry tells the converter how to extract and transform a specific value
-snomed_system_code = "http://snomed.info/sct"
-dose_unit_code_expr = f'if .doseQuantity.system == "{snomed_system_code}" then .doseQuantity.code else "" end'
+import jq_repository 
 
 ConvertLayout = {
   "id": "7d78e9a6-d859-45d3-bb05-df9c405acbdb",
@@ -164,11 +163,11 @@ ConvertLayout = {
       }
     },
     {
-      "fieldNameFHIR": "extension|0|valueCodeableConcept|coding|0|display",
+      "fieldNameFHIR": jq_repository.VACCINATION_PROCEDURE_TERM_QUERY,
       "fieldNameFlat": "VACCINATION_PROCEDURE_TERM",
       "expression": {
         "expressionName": "Not Empty",
-        "expressionType": "NOTEMPTY",
+        "expressionType": "JQ",
         "expressionRule": ""
       }
     },
@@ -191,11 +190,11 @@ ConvertLayout = {
       }
     },
     {
-      "fieldNameFHIR": "vaccineCode|coding|#:http://snomed.info/sct|display",
+      "fieldNameFHIR": jq_repository.VACCINATION_PRODUCT_TERM_QUERY,
       "fieldNameFlat": "VACCINE_PRODUCT_TERM",
       "expression": {
         "expressionName": "Not Empty",
-        "expressionType": "NOTEMPTY",
+        "expressionType": "JQ",
         "expressionRule": ""
       }
     },
@@ -236,11 +235,11 @@ ConvertLayout = {
       }
     },
     {
-      "fieldNameFHIR": "site|coding|#:http://snomed.info/sct|display",
+      "fieldNameFHIR": jq_repository.SITE_OF_VACCINATION_TERM_QUERY,
       "fieldNameFlat": "SITE_OF_VACCINATION_TERM",
       "expression": {
         "expressionName": "Look Up",
-        "expressionType": "LOOKUP",
+        "expressionType": "JQ",
         "expressionRule": "site|coding|#:http://snomed.info/sct|code"
       }
     },
@@ -254,11 +253,11 @@ ConvertLayout = {
       }
     },
     {
-      "fieldNameFHIR": "route|coding|#:http://snomed.info/sct|display",
+      "fieldNameFHIR": jq_repository.ROUTE_OF_VACCINATION_TERM_QUERY,
       "fieldNameFlat": "ROUTE_OF_VACCINATION_TERM",
       "expression": {
         "expressionName": "Look Up",
-        "expressionType": "LOOKUP",
+        "expressionType": "JQ",
         "expressionRule": "route|coding|#:http://snomed.info/sct|code"
       }
     },
@@ -272,20 +271,20 @@ ConvertLayout = {
       }
     },
     {
-      "fieldNameFHIR": dose_unit_code_expr,
+      "fieldNameFHIR": jq_repository.DOSE_UNIT_CODE_QUERY,
       "fieldNameFlat": "DOSE_UNIT_CODE",
       "expression": {
         "expressionName": "JQ",
-        "expressionType": "JQExpression",
+        "expressionType": "JQ",
         "expressionRule": ""
       }
     },
     {
-      "fieldNameFHIR": "doseQuantity|unit",
+      "fieldNameFHIR": jq_repository.DOSE_UNIT_TERM_QUERY,
       "fieldNameFlat": "DOSE_UNIT_TERM",
       "expression": {
         "expressionName": "Not Empty",
-        "expressionType": "NOTEMPTY",
+        "expressionType": "JQ",
         "expressionRule": ""
       }
     },

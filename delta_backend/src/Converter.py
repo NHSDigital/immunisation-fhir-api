@@ -60,7 +60,7 @@ class Converter:
         expressionRule = expression["expression"]["expressionRule"]
 
         try:
-            conversionValues = dataParser.getKeyValue(FHIRFieldName, expressionType, expressionRule)
+            conversionValues = dataParser.getKeyValue(FHIRFieldName, FlatFieldName, expressionType, expressionRule)
         except Exception as e:
             message = "Data get value Unexpected exception [%s]: %s" % (e.__class__.__name__, e)
             error = self._log_error(message, code=ExceptionMessages.PARSING_ERROR)
