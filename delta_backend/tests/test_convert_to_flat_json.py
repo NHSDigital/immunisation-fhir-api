@@ -461,7 +461,7 @@ class TestConvertToFlatJson(unittest.TestCase):
         result = checker._convertToDateTime("fhir-date", "fieldName", valid_date_time, False, True)
         self.assertEqual(result, "20250101T12000000")
 
-        valid_fhir_date = "2025-01-01T13:28:17+00:00"
+        valid_fhir_date = "2025-01-01T13:28:17234+01:00"
         result = checker._convertToDateTime("fhir-date", "fieldName", valid_fhir_date, False, True)
         self.assertEqual(result, "20250101T13281700")
 
@@ -469,17 +469,29 @@ class TestConvertToFlatJson(unittest.TestCase):
         result = checker._convertToDateTime("", "fieldName", valid_fhir_date, False, True)
         self.assertEqual(result, "20220101T00000000")
 
+        valid_fhir_date = "2022-05-02"
+        result = checker._convertToDateTime("", "fieldName", valid_fhir_date, False, True)
+        self.assertEqual(result, "20220101T00000001")
+
         valid_fhir_date = "2025-05-01T13:28:17+01:00"
         result = checker._convertToDateTime("fhir-date", "fieldName", valid_fhir_date, False, True)
         self.assertEqual(result, "20250501T13281701")
 
-        invalid_date_time = "invalid_date_time"
-        result = checker._convertToDateTime("fhir-date", "fieldName", invalid_date_time, False, True)
+        valid_fhir_date = "2025-05-01T13:28:17+00:00"
+        result = checker._convertToDateTime("fhir-date", "fieldName", valid_fhir_date, False, True)
+        self.assertEqual(result, "20250501T13281701")
+
+        invalid_fhir_date = "invalid_fhir_date"
+        result = checker._convertToDateTime("fhir-date", "fieldName", invalid_fhir_date, False, True)
         self.assertEqual(result, "")
 
-        valid_date_time = "2025-01-01T12:00:00+03:00"
-        result = checker._convertToDateTime("fhir-date", "fieldName", valid_date_time, False, True)
-        self.assertEqual(result, "")
+        valid_fhir_date = "2025-01-01T12:00:00+03:00"
+        result = checker._convertToDateTime("fhir-date", "fieldName", valid_fhir_date, False, True)
+        self.assertEqual(result, "20250101T12000000")
+
+        valid_fhir_date = "2025-05-02T12:00:00+03:00"
+        result = checker._convertToDateTime("fhir-date", "fieldName", valid_fhir_date, False, True)
+        self.assertEqual(result, "20250101T12000001")
 
         messages = [err["message"] for err in checker.errorRecords]
 
