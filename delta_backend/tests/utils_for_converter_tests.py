@@ -129,6 +129,15 @@ class ValuesForTests:
     json_value_for_test = json.dumps(json_data)
 
     @staticmethod
+    def get_event(event_name=EventName.CREATE, operation=Operation.CREATE, supplier="EMIS", imms_id="12345"):
+        """Create test event for the handler function."""
+        return {
+            "Records": [
+                ValuesForTests.get_event_record(imms_id, event_name, operation, supplier)
+            ]
+        }
+
+    @staticmethod
     def get_multi_record_event(records_config: List[RecordConfig]):
         records = []
         for config in records_config:
@@ -148,15 +157,6 @@ class ValuesForTests:
                 )
             )
         return {"Records": records}
-
-    @staticmethod
-    def get_event(event_name=EventName.CREATE, operation=Operation.CREATE, supplier="EMIS", imms_id="12345"):
-        """Create test event for the handler function."""
-        return {
-            "Records": [
-                ValuesForTests.get_event_record(imms_id, event_name, operation, supplier)
-            ]
-        }
 
     @staticmethod
     def get_event_record(imms_id, event_name, operation, supplier="EMIS"):
