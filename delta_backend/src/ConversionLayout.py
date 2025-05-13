@@ -48,13 +48,51 @@ def _extract_dose_unit_code(immunization) -> str:
         return dose_quantity.get("code")
     return ""
 
-
+def _extract_dose_unit_term(immunization) -> str:
+    dose_quantity = immunization.get("doseQuantity", {})
+    return dose_quantity.get("unit", "")
+  
 def _get_first_snomed_code(coding_container: dict) -> str:
     codings = coding_container.get("coding", [])
     for coding in codings:
         if coding.get("system") == CODING_SYSTEM_URL_SNOMED:
             return coding.get("code", "")
     return ""
+
+def _get_term_from_codeable_concept(concept: dict) -> str:
+    if concept.get("text"):
+        return concept["text"]
+
+    codings = concept.get("coding", [])
+    for coding in codings:
+        if coding.get("system") == CODING_SYSTEM_URL_SNOMED:
+            # Try SCTDescDisplay extension first
+            for ext in coding.get("extension", []):
+                if ext.get("url") == EXTENSION_URL_SCT_DESC_DISPLAY:
+                    value_string = ext.get("valueString")
+                    if value_string:
+                        return value_string
+
+            # Fallback to display
+            return coding.get("display", "")
+
+    return ""
+  
+def _extract_vaccination_procedure_term(immunization) -> str:
+    extensions = immunization.get("extension", [])
+    for ext in extensions:
+        if ext.get("url") == EXTENSION_URL_VACCINATION_PRODEDURE:
+            return _get_term_from_codeable_concept(ext.get("valueCodeableConcept", {}))
+    return ""
+
+def _extract_vaccine_product_term(immunization) -> str:
+    return _get_term_from_codeable_concept(immunization.get("vaccineCode", {}))
+
+def _extract_site_of_vaccination_term(immunization) -> str:
+    return _get_term_from_codeable_concept(immunization.get("site", {}))
+
+def _extract_route_of_vaccination_term(immunization) -> str:
+    return _get_term_from_codeable_concept(immunization.get("route", {}))
 
 
 ConvertLayout = {
@@ -221,8 +259,8 @@ ConvertLayout = {
       "fieldNameFlat": "VACCINATION_PROCEDURE_TERM",
       "expression": {
         "expressionName": "Not Empty",
-        "expressionType": "NOTEMPTY",
-        "expressionRule": ""
+        "expressionType": "NORMAL",
+        "expressionRule": _extract_vaccination_procedure_term
       }
     },
     {
@@ -248,8 +286,8 @@ ConvertLayout = {
       "fieldNameFlat": "VACCINE_PRODUCT_TERM",
       "expression": {
         "expressionName": "Not Empty",
-        "expressionType": "NOTEMPTY",
-        "expressionRule": ""
+        "expressionType": "NORMAL",
+        "expressionRule": _extract_vaccine_product_term
       }
     },
     {
@@ -293,8 +331,8 @@ ConvertLayout = {
       "fieldNameFlat": "SITE_OF_VACCINATION_TERM",
       "expression": {
         "expressionName": "Look Up",
-        "expressionType": "LOOKUP",
-        "expressionRule": "site|coding|#:http://snomed.info/sct|code"
+        "expressionType": "NORMAL",
+        "expressionRule": _extract_site_of_vaccination_term
       }
     },
     {
@@ -311,8 +349,8 @@ ConvertLayout = {
       "fieldNameFlat": "ROUTE_OF_VACCINATION_TERM",
       "expression": {
         "expressionName": "Look Up",
-        "expressionType": "LOOKUP",
-        "expressionRule": "route|coding|#:http://snomed.info/sct|code"
+        "expressionType": "NORMAL",
+        "expressionRule": _extract_route_of_vaccination_term
       }
     },
     {
@@ -338,8 +376,8 @@ ConvertLayout = {
       "fieldNameFlat": "DOSE_UNIT_TERM",
       "expression": {
         "expressionName": "Not Empty",
-        "expressionType": "NOTEMPTY",
-        "expressionRule": ""
+        "expressionType": "NORMAL",
+        "expressionRule": _extract_dose_unit_term
       }
     },
     {
