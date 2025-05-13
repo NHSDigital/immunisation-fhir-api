@@ -28,6 +28,7 @@ VACCINATION_PROCEDURE_TERM_QUERY = f"""
 end
 """
 
+# Could be reused (Term search)
 VACCINATION_PRODUCT_TERM_QUERY = f'''
 if .vaccineCode? and .vaccineCode.text? then
   .vaccineCode.text
@@ -46,6 +47,7 @@ else (
 end
 '''
 
+# Could be reused (Term search)
 SITE_OF_VACCINATION_TERM_QUERY = f'''
 if .site? and .site.text? then
   .site.text
@@ -64,6 +66,7 @@ else (
 end
 '''
 
+# Could be reused (Term search)
 ROUTE_OF_VACCINATION_TERM_QUERY = f'''
 if .route? and .route.text? then
   .route.text
