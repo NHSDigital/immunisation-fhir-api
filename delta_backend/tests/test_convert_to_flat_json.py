@@ -165,7 +165,7 @@ class TestConvertToFlatJson(unittest.TestCase):
             self.assertTrue(len(errorRecords) > 0)
 
     def test_handler_imms_convert_to_flat_json(self):
-        """Test that the Imms field contains the correct flat JSON data for CREATE, UPDATE, and DELETE operations."""
+        """ Test that the Imms field contains the correct flat JSON data for CREATE, UPDATE, and DELETE operations."""
         expected_action_flags = [
             {"Operation": Operation.CREATE, "EXPECTED_ACTION_FLAG": ActionFlag.CREATE},
             {"Operation": Operation.UPDATE, "EXPECTED_ACTION_FLAG": ActionFlag.UPDATE},
