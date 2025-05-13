@@ -9,7 +9,6 @@ from botocore.exceptions import ClientError
 from log_firehose import FirehoseLogger
 from Converter import Converter
 from helpers.mappings import ActionFlag, Operation, EventName
-from enum import Enum
 
 failure_queue_url = os.environ["AWS_SQS_QUEUE_URL"]
 delta_table_name = os.environ["DELTA_TABLE_NAME"]
@@ -18,6 +17,7 @@ logging.basicConfig()
 logger = logging.getLogger()
 logger.setLevel("INFO")
 firehose_logger = FirehoseLogger()
+
 
 def send_message(record):
     # Create a message
@@ -35,6 +35,7 @@ def send_message(record):
 def get_vaccine_type(patientsk) -> str:
     parsed = [str.strip(str.lower(s)) for s in patientsk.split("#")]
     return parsed[0]
+
 
 def handler(event, context):
     ret = True
@@ -129,7 +130,6 @@ def handler(event, context):
                     operation_outcome["statusCode"] = "200"
                     operation_outcome["statusDesc"] = "Successfully synched into delta"
                 log_data["operation_outcome"] = operation_outcome
-
                 firehose_log["event"] = log_data
                 firehose_logger.send_log(firehose_log)
                 logger.info(log)
@@ -142,6 +142,7 @@ def handler(event, context):
                 firehose_logger.send_log(firehose_log)
                 logger.info(log)
                 ret = False
+
     except Exception as e:
         operation_outcome["statusCode"] = "500"
         operation_outcome["statusDesc"] = "Exception"
