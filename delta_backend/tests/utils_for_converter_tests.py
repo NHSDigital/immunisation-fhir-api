@@ -84,7 +84,7 @@ class ValuesForTests:
         "doseQuantity": {
             "value": str(Decimal(0.5)),
             "unit": "milliliter",
-            "system": "http://unitsofmeasure.org",
+            "system": "http://snomed.info/sct",
             "code": "ml",
         },
         "performer": [
@@ -273,7 +273,7 @@ class ValuesForTests:
             "ROUTE_OF_VACCINATION_CODE": "78421000",
             "ROUTE_OF_VACCINATION_TERM": "Intramuscular route (qualifier value)",
             "DOSE_AMOUNT": "0.5",
-            "DOSE_UNIT_CODE": "",
+            "DOSE_UNIT_CODE": "ml",
             "DOSE_UNIT_TERM": "milliliter",
             "INDICATION_CODE": "443684005",
             "LOCATION_CODE": "EC1111",

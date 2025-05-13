@@ -157,7 +157,7 @@ ConvertLayout = {
       "fieldNameFlat": "VACCINATION_PROCEDURE_CODE",
       "expression": {
         "expressionName": "Not Empty",
-        "expressionType": "SNOMED",
+        "expressionType": "NORMAL",
         "expressionRule": ""
       }
     },
@@ -184,7 +184,7 @@ ConvertLayout = {
       "fieldNameFlat": "VACCINE_PRODUCT_CODE",
       "expression": {
         "expressionName": "Not Empty",
-        "expressionType": "SNOMED",
+        "expressionType": "NORMAL",
         "expressionRule": ""
       }
     },
@@ -229,7 +229,7 @@ ConvertLayout = {
       "fieldNameFlat": "SITE_OF_VACCINATION_CODE",
       "expression": {
         "expressionName": "Not Empty",
-        "expressionType": "SNOMED",
+        "expressionType": "NORMAL",
         "expressionRule": ""
       }
     },
@@ -247,7 +247,7 @@ ConvertLayout = {
       "fieldNameFlat": "ROUTE_OF_VACCINATION_CODE",
       "expression": {
         "expressionName": "Not Empty",
-        "expressionType": "SNOMED",
+        "expressionType": "NORMAL",
         "expressionRule": ""
       }
     },
@@ -274,7 +274,7 @@ ConvertLayout = {
       "fieldNameFlat": "DOSE_UNIT_CODE",
       "expression": {
         "expressionName": "Only If",
-        "expressionType": "ONLYIF",
+        "expressionType": "NORMAL",
         "expressionRule": "doseQuantity|system|http://snomed.info/sct"
       }
     },
@@ -292,7 +292,7 @@ ConvertLayout = {
       "fieldNameFlat": "INDICATION_CODE",
       "expression": {
         "expressionName": "Not Empty",
-        "expressionType": "SNOMED",
+        "expressionType": "NORMAL",
         "expressionRule": ""
       }
     },

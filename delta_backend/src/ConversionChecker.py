@@ -91,6 +91,8 @@ class ConversionChecker:
                 return self._convertToOnlyIfTo(
                     expressionRule, fieldName, fieldValue, self.summarise, self.report_unexpected_exception
                 )
+            case "NORMAL":
+                return fieldValue
             case _:
                 raise ValueError("Schema expression not found! Check your expression type : " + expressionType) 
 
