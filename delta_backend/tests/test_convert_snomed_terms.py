@@ -52,7 +52,7 @@ class TestPersonSNOMEDTermsToFlatJson(unittest.TestCase):
     def test_vaccination_procedure_term_from_extension_value_string(self):
         """Test fallback to extension.valueString when text is missing."""
         self.request_json_data["extension"][0]["valueCodeableConcept"].pop("text", None)  # Remove text
-        self._run_snomed_test("VACCINATION_PROCEDURE_TERM", "1 - Test Value string 123456 COVID19 vaccination")
+        self._run_snomed_test("VACCINATION_PROCEDURE_TERM", "Test Value string 123456 COVID19 vaccination")
 
     def test_vaccination_procedure_term_from_display_fallback(self):
         """Test fallback to display when no extension valueString is present."""
@@ -80,7 +80,7 @@ class TestPersonSNOMEDTermsToFlatJson(unittest.TestCase):
             "code": "IGNORE",
             "display": "Ignore this"
         })
-        self._run_snomed_test("VACCINATION_PROCEDURE_TERM", "1 - Test Value string 123456 COVID19 vaccination")
+        self._run_snomed_test("VACCINATION_PROCEDURE_TERM", "Test Value string 123456 COVID19 vaccination")
         
     def test_vaccine_product_term_from_text(self):
         """Test when vaccineCode.text is present — it takes priority."""

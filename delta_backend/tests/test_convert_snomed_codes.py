@@ -42,7 +42,7 @@ class TestPersonSNOMEDToFlatJson(unittest.TestCase):
             }
         ]
         self._run_snomed_test("VACCINATION_PROCEDURE_CODE", "")
-
+    
     def test_vaccination_procedure_code_empty_coding_returns_empty(self):
         self._set_snomed_codings("extension", [])
         self._run_snomed_test("VACCINATION_PROCEDURE_CODE", "")
