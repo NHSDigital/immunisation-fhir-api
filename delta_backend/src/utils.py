@@ -1,5 +1,6 @@
 
 from stdnum.verhoeff import validate
+from decimal import Decimal
 
 def is_valid_simple_snomed(simple_snomed: str) -> bool:
     """
@@ -17,4 +18,13 @@ def is_valid_simple_snomed(simple_snomed: str) -> bool:
             and (simple_snomed[-3:-1] in ("00", "10"))
         )
     except:
+        return False
+
+def is_integer_like(val):
+    if isinstance(val, Decimal):
+        return val == int(val)
+    try:
+        int(val)
+        return True
+    except (ValueError, TypeError):
         return False
