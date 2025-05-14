@@ -1,4 +1,4 @@
-FROM public.ecr.aws/lambda/python:3.10 as base
+FROM public.ecr.aws/lambda/python:3.11 as base
 
 # Create a non-root user with a specific UID and GID
 RUN mkdir -p /home/appuser && \
