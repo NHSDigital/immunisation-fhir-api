@@ -5,7 +5,7 @@ from FHIRParser import FHIRParser
 from SchemaParser import SchemaParser
 from ConversionChecker import ConversionChecker
 import ConversionLayout
-from datetime import datetime
+from datetime import datetime, timezone
 from Extractor import (
     extract_person_names,
     extract_practitioner_names,
@@ -19,7 +19,6 @@ from Extractor import (
 class Converter:
 
     def __init__(self, fhir_data):
-        self.imms = []
         self.converted = {}
         self.error_records = []
         self.fhir_data = fhir_data  # Store JSON data directly
@@ -52,7 +51,7 @@ class Converter:
         return schemaParser
 
     # Convert data against converter schema
-    def _convertData(self, ConversionValidate, expression, dataParser, json_data):
+    def _convertData(self, ConversionValidate: ConversionChecker, expression, dataParser: FHIRParser, json_data):
 
         FHIRFieldName = expression["fieldNameFHIR"]
         FlatFieldName = expression["fieldNameFlat"]
@@ -61,7 +60,7 @@ class Converter:
         expressionRule = expression["expression"]["expressionRule"]
 
         try:
-            conversionValues = dataParser.getKeyValue(FHIRFieldName)
+            conversionValues = dataParser.getKeyValue(FHIRFieldName, expressionType, expressionRule)
         except Exception as e:
             message = "Data get value Unexpected exception [%s]: %s" % (e.__class__.__name__, e)
             error = self._log_error(message, code=ExceptionMessages.PARSING_ERROR)
@@ -123,11 +122,10 @@ class Converter:
         if error_records:
             error_summary = error_records
         else:
-            error_summary = ""
+            error_summary = []
         self.converted["CONVERSION_ERRORS"] = error_summary
 
-        self.imms.append(self.converted)
-        return self.imms
+        return self.converted
 
     def getErrorRecords(self):
         return self.error_records
@@ -139,6 +137,8 @@ class Converter:
         if not self._cached_values:
             try:
                 occurrence_time = datetime.fromisoformat(json_data.get("occurrenceDateTime", ""))
+                if occurrence_time and occurrence_time.tzinfo is None:
+                    occurrence_time = occurrence_time.replace(tzinfo=timezone.utc)
             except Exception as e:
                     message = "DateTime conversion error [%s]: %s" % (e.__class__.__name__, e)
                     error = self._log_error(message, code=ExceptionMessages.UNEXPECTED_EXCEPTION)

@@ -1,18 +1,10 @@
 import json
 import unittest
-import os
-import time
-from datetime import datetime, timedelta
-from decimal import Decimal
 from copy import deepcopy
-from unittest import TestCase
 from unittest.mock import patch, Mock
 from moto import mock_dynamodb, mock_sqs
-from boto3 import resource as boto3_resource, client as boto3_client
+from boto3 import resource as boto3_resource
 from tests.utils_for_converter_tests import ValuesForTests, ErrorValuesForTests
-from botocore.config import Config
-from pathlib import Path
-from zoneinfo import ZoneInfo
 from SchemaParser import SchemaParser
 from Converter import Converter
 from ConversionChecker import ConversionChecker, RecordError
@@ -112,7 +104,7 @@ class TestConvertToFlatJson(unittest.TestCase):
         """Returns test event data."""
         return ValuesForTests.get_event(event_name, operation, supplier)
 
-    def assert_dynamodb_record(self, operation_flag, items, expected_values, expected_imms, response):
+    def assert_dynamodb_record(self, operation_flag, action_flag, items, expected_values, expected_imms, response):
         """
         Asserts that a record with the expected structure exists in DynamoDB.
         Ignores dynamically generated fields like PK, DateTimeStamp, and ExpiresAt.
@@ -125,16 +117,17 @@ class TestConvertToFlatJson(unittest.TestCase):
             {k: v for k, v in item.items() if k not in ["PK", "DateTimeStamp", "ExpiresAt"]}
             for item in items
             if item.get("Operation") == operation_flag
+            and item.get("Imms", {}).get("ACTION_FLAG") == action_flag
         ]
 
         self.assertGreater(len(filtered_items), 0, f"No matching item found for {operation_flag}")
 
         imms_data = filtered_items[0]["Imms"]
-        self.assertIsInstance(imms_data, str)
+        self.assertIsInstance(imms_data, dict)
         self.assertGreater(len(imms_data), 0)
 
         # Check Imms JSON structure matches exactly
-        self.assertEqual(imms_data, str(expected_imms), "Imms data does not match expected JSON structure")
+        self.assertEqual(imms_data, expected_imms, "Imms data does not match expected JSON structure")
 
         for key, expected_value in expected_values.items():
             self.assertIn(key, filtered_items[0], f"{key} is missing")
@@ -169,7 +162,6 @@ class TestConvertToFlatJson(unittest.TestCase):
             errorRecords = FHIRConverter.getErrorRecords()
 
             # Check if bad data creates error records
-            print(f"Error Test Case, {len(errorRecords)}")
             self.assertTrue(len(errorRecords) > 0)
 
     def test_handler_imms_convert_to_flat_json(self):
@@ -195,7 +187,12 @@ class TestConvertToFlatJson(unittest.TestCase):
                 expected_imms = ValuesForTests.get_expected_imms(test_case["EXPECTED_ACTION_FLAG"])
 
                 self.assert_dynamodb_record(
-                    test_case["EXPECTED_ACTION_FLAG"], items, expected_values, expected_imms, response
+                    test_case["Operation"],
+                    test_case["EXPECTED_ACTION_FLAG"],
+                    items,
+                    expected_values,
+                    expected_imms,
+                    response
                 )
 
                 result = self.table.scan()
@@ -435,7 +432,6 @@ class TestConvertToFlatJson(unittest.TestCase):
 
         # 7 Validate all error logs of various responses
         messages = [err["message"] for err in checker.errorRecords]
-        print(f"Error Test Case, {messages}")
 
         self.assertIn("Value is not a string", messages)
 
@@ -486,7 +482,6 @@ class TestConvertToFlatJson(unittest.TestCase):
         self.assertEqual(result, "")
 
         messages = [err["message"] for err in checker.errorRecords]
-        print(f"Error Test Case, {messages}")
 
         self.assertIn("Unexpected exception [ValueError]", messages[0])
         self.assertIn("Unsupported Format or offset", messages[1])
@@ -676,7 +671,7 @@ class TestPersonForeNameToFlatJson(unittest.TestCase):
         """Helper function to run the test"""
         self.converter = Converter(json.dumps(request_json_data))
         flat_json = self.converter.runConversion(request_json_data, False, True)
-        self.assertEqual(flat_json[0]["PERSON_FORENAME"], expected_forename)
+        self.assertEqual(flat_json["PERSON_FORENAME"], expected_forename)
 
 class TestPersonSurNameToFlatJson(unittest.TestCase):
 
@@ -764,7 +759,7 @@ class TestPersonSurNameToFlatJson(unittest.TestCase):
         """Helper function to run the test"""
         self.converter = Converter(json.dumps(request_json_data))
         flat_json = self.converter.runConversion(request_json_data, False, True)
-        self.assertEqual(flat_json[0]["PERSON_SURNAME"], expected_forename)
+        self.assertEqual(flat_json["PERSON_SURNAME"], expected_forename)
 
 
 class TestPersonPostalCodeToFlatJson(unittest.TestCase):
@@ -853,7 +848,7 @@ class TestPersonPostalCodeToFlatJson(unittest.TestCase):
         """Helper function to run the test"""
         self.converter = Converter(json.dumps(request_json_data))
         flat_json = self.converter.runConversion(request_json_data, False, True)
-        self.assertEqual(flat_json[0]["PERSON_POSTCODE"], expected_postal_code)
+        self.assertEqual(flat_json["PERSON_POSTCODE"], expected_postal_code)
 
 
 class TestPersonSiteCodeToFlatJson(unittest.TestCase):
@@ -972,7 +967,7 @@ class TestPersonSiteCodeToFlatJson(unittest.TestCase):
         """Helper function to run the test"""
         self.converter = Converter(json.dumps(request_json_data))
         flat_json = self.converter.runConversion(request_json_data, False, True)
-        self.assertEqual(flat_json[0].get("SITE_CODE"), expected_site_code)
+        self.assertEqual(flat_json.get("SITE_CODE"), expected_site_code)
 
 
 class TestPersonSiteUriToFlatJson(unittest.TestCase):
@@ -1063,7 +1058,7 @@ class TestPersonSiteUriToFlatJson(unittest.TestCase):
         """Helper function to run the test"""
         self.converter = Converter(json.dumps(request_json_data))
         flat_json = self.converter.runConversion(request_json_data, False, True)
-        self.assertEqual(flat_json[0].get("SITE_CODE_TYPE_URI"), expected_site_code)
+        self.assertEqual(flat_json.get("SITE_CODE_TYPE_URI"), expected_site_code)
 
 
 class TestPractitionerForeNameToFlatJson(unittest.TestCase):
@@ -1179,7 +1174,7 @@ class TestPractitionerForeNameToFlatJson(unittest.TestCase):
         """Helper function to run the test"""
         self.converter = Converter(json.dumps(request_json_data))
         flat_json = self.converter.runConversion(request_json_data, False, True)
-        self.assertEqual(flat_json[0]["PERFORMING_PROFESSIONAL_FORENAME"], expected_forename)
+        self.assertEqual(flat_json["PERFORMING_PROFESSIONAL_FORENAME"], expected_forename)
 
 
 class TestPractitionerSurNameToFlatJson(unittest.TestCase):
@@ -1293,7 +1288,7 @@ class TestPractitionerSurNameToFlatJson(unittest.TestCase):
         """Helper function to run the test"""
         self.converter = Converter(json.dumps(request_json_data))
         flat_json = self.converter.runConversion(request_json_data, False, True)
-        self.assertEqual(flat_json[0]["PERFORMING_PROFESSIONAL_SURNAME"], expected_forename)
+        self.assertEqual(flat_json["PERFORMING_PROFESSIONAL_SURNAME"], expected_forename)
 
     if __name__ == "__main__":
         unittest.main()

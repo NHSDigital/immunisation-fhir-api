@@ -78,9 +78,9 @@ class TestConverter(unittest.TestCase):
 
         result = converter.runConversion(json_data={"occurrenceDateTime": "2023-01-01T12:00:00"})
 
-        self.assertEqual(len(result), 1)
-        self.assertIn("someFlatField", result[0])
-        self.assertEqual(result[0]["someFlatField"], "converted_value")
+        self.assertEqual(len(result), 2)
+        self.assertIn("someFlatField", result)
+        self.assertEqual(result["someFlatField"], "converted_value")
 
     @patch('Converter.extract_person_names', return_value=("John", "Doe"))
     @patch('Converter.get_valid_address', return_value="12345")

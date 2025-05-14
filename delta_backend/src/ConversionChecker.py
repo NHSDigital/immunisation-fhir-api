@@ -3,7 +3,6 @@
 # Root and base type expression checker functions
 import ExceptionMessages
 from datetime import datetime,timedelta, timezone
-from zoneinfo import ZoneInfo
 import re
 from LookUpData import LookUpData
 
@@ -259,7 +258,7 @@ class ConversionChecker:
         try:
             if fieldValue == "":
                 return expressionRule
-            return fieldValue
+            return str(fieldValue)
         except Exception as e:
             if report_unexpected_exception:
                 message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
