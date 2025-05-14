@@ -76,7 +76,7 @@ class TestPersonSiteCodeToFlatJson(unittest.TestCase):
         self._run_site_code_test(expected_site_code)
 
     def test_site_code_performer_type_without_oraganisation(self):
-        """Test case where performer has type=organization but no NHS system"""
+        """Test case where performer has no type=organization key value pair"""
         self.request_json_data["performer"] = [
             {
                 "actor": {

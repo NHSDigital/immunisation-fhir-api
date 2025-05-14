@@ -50,13 +50,13 @@ class TestPractitionerForeNameToFlatJson(unittest.TestCase):
         expected_forename = "John"
         self._run_practitioner_test(expected_forename)
 
-    def test_Practitioner_forename_single_name(self):
+    def test_practitioner_forename_single_name(self):
         """Test case where only one name instance exists"""
         self.request_json_data["contained"][0]["name"] = [{"family": "Doe", "given": ["Alex"], "use": "nickname"}]
         expected_forename = "Alex"
         self._run_practitioner_test(expected_forename)
 
-    def test_Practitioner_forename_no_official_but_current_not_old(self):
+    def test_practitioner_forename_no_official_but_current_not_old(self):
         """Test case where no official name is present, but a current name with use!=old exists at vaccination date"""
         self.request_json_data["contained"][0]["name"] = [
             {"family": "Doe", "given": ["John"], "use": "old", "period": {"start": "2018-01-01", "end": "2020-12-31"}},
@@ -70,7 +70,7 @@ class TestPractitionerForeNameToFlatJson(unittest.TestCase):
         expected_forename = "Chris"
         self._run_practitioner_test(expected_forename)
 
-    def test_Practitioner_forename_fallback_to_first_name(self):
+    def test_practitioner_forename_fallback_to_first_name(self):
         """Test case where no names match the previous conditions, fallback to first available name"""
         self.request_json_data["contained"][0]["name"] = [
             {"family": "Doe", "given": ["Elliot"], "use": "nickname"},
@@ -85,7 +85,7 @@ class TestPractitionerForeNameToFlatJson(unittest.TestCase):
         expected_forename = "Elliot"
         self._run_practitioner_test(expected_forename)
 
-    def test_Practitioner_forename_multiple_given_names_concatenation(self):
+    def test_practitioner_forename_multiple_given_names_concatenation(self):
         """Test case where the selected name has multiple given names"""
         self.request_json_data["contained"][0]["name"] = [
             {
@@ -104,7 +104,7 @@ class TestPractitionerForeNameToFlatJson(unittest.TestCase):
         expected_forename = "Alice Marie"
         self._run_practitioner_test(expected_forename)
 
-    def test_Practitioner_forename_given_missing(self):
+    def test_practitioner_forename_given_missing(self):
         """Test case where the selected name has multiple given names"""
         self.request_json_data["contained"][0]["name"] = [
             {"family": "Doe", "use": "official", "period": {"start": "2021-01-01", "end": "2022-12-31"}}
@@ -112,7 +112,7 @@ class TestPractitionerForeNameToFlatJson(unittest.TestCase):
         expected_forename = ""
         self._run_practitioner_test(expected_forename)
 
-    def test_Practitioner_forename_empty(self):
+    def test_practitioner_forename_empty(self):
         """Test case where the selected name has multiple given names"""
         self.request_json_data["contained"][0]["name"] = []
         expected_forename = ""
