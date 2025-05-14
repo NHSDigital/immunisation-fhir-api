@@ -36,6 +36,16 @@ class ValuesForTests:
                             "system": "http://snomed.info/sct",
                             "code": "13246814444444",
                             "display": "Administration of first dose of severe acute respiratory syndrome coronavirus 2 vaccine (procedure)",
+                            "extension": [
+                                {
+                                    "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-CodingSCTDescDisplay",
+                                    "valueString": "1 - Test Value string 123456 COVID19 vaccination"
+                                },
+                                {
+                                    "url": "http://hl7.org/fhir/StructureDefinition/coding-sctdescid",
+                                    "valueId": "1 - 5306706018"
+                                }
+                            ],
                         }
                     ]
                 },

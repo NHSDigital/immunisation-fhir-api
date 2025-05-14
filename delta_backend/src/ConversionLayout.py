@@ -52,8 +52,7 @@ def _extract_dose_unit_code(immunization) -> str:
 def _extract_dose_unit_term(immunization) -> str:
     dose_quantity = immunization.get("doseQuantity", {})
     return dose_quantity.get("unit", "")
-
-    
+  
 def _get_first_snomed_code(coding_container: dict) -> str:
     codings = coding_container.get("coding", [])
     for coding in codings:
@@ -281,7 +280,7 @@ ConvertLayout = {
       "expression": {
         "expressionName": "Not Empty",
         "expressionType": "DOSESEQUENCE",
-        "expressionRule": ""
+        "expressionRule": _extract_dose_sequence
       }
     },
     {
