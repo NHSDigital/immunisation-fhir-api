@@ -1,6 +1,16 @@
 from decimal import Decimal
 import json
+from common.mappings import EventName, Operation
+from typing import List
 
+
+class RecordConfig:
+    def __init__(self, event_name, operation, imms_id, expected_action_flag=None, supplier="EMIS"):
+        self.event_name = event_name
+        self.operation = operation
+        self.supplier = supplier
+        self.imms_id = imms_id
+        self.expected_action_flag = expected_action_flag
 
 class ValuesForTests:
 
@@ -118,43 +128,65 @@ class ValuesForTests:
     json_value_for_test = json.dumps(json_data)
 
     @staticmethod
-    def get_event(event_name="INSERT", operation="CREATE", supplier="EMIS"):
-        if operation != "REMOVE":
-            return {
-                "Records": [
-                    {
-                        "eventName": event_name,
-                        "dynamodb": {
-                            "ApproximateCreationDateTime": 1690896000,
-                            "NewImage": {
-                                "PK": {"S": "covid#12345"},
-                                "PatientSK": {"S": "COVID19#ca8ba2c6-2383-4465-b456-c1174c21cf31"},
-                                "IdentifierPK": {"S": "system#1"},
-                                "Operation": {"S": operation},
-                                "SupplierSystem": {"S": supplier},
-                                "Resource": {"S": ValuesForTests.json_value_for_test},
-                            },
-                        },
+    def get_event(event_name=EventName.CREATE, operation=Operation.CREATE, supplier="EMIS", imms_id="12345"):
+        """Create test event for the handler function."""
+        return {
+            "Records": [
+                ValuesForTests.get_event_record(imms_id, event_name, operation, supplier)
+            ]
+        }
+
+    @staticmethod
+    def get_multi_record_event(records_config: List[RecordConfig]):
+        records = []
+        for config in records_config:
+            # Extract values from the config dictionary
+            imms_id = config.imms_id
+            event_name = config.event_name
+            operation = config.operation
+            supplier = config.supplier
+
+            # Generate record using the provided configuration
+            records.append(
+                ValuesForTests.get_event_record(
+                    imms_id=imms_id,
+                    event_name=event_name,
+                    operation=operation,
+                    supplier=supplier,
+                )
+            )
+        return {"Records": records}
+
+    @staticmethod
+    def get_event_record(imms_id, event_name, operation, supplier="EMIS"):
+        pk = f"covid#{imms_id}"
+        if operation != Operation.DELETE_PHYSICAL:
+            return{
+                "eventName": event_name,
+                "dynamodb": {
+                    "ApproximateCreationDateTime": 1690896000,
+                    "NewImage": {
+                        "PK": {"S": pk},
+                        "PatientSK": {"S": "COVID19#ca8ba2c6-2383-4465-b456-c1174c21cf31"},
+                        "IdentifierPK": {"S": "system#1"},
+                        "Operation": {"S": operation},
+                        "SupplierSystem": {"S": supplier},
+                        "Resource": {"S": ValuesForTests.json_value_for_test},
                     }
-                ]
+                }
             }
         else:
             return {
-                "Records": [
-                    {
-                        "eventName": "REMOVE",
-                        "dynamodb": {
-                            "ApproximateCreationDateTime": 1690896000,
-                            "Keys": {
-                                "PK": {"S": "covid#12345"},
-                                "PatientSK": {"S": "covid#12345"},
-                                "SupplierSystem": {"S": "EMIS"},
-                                "Resource": {"S": ValuesForTests.json_value_for_test},
-                                "PatientSK": {"S": "COVID19#ca8ba2c6-2383-4465-b456-c1174c21cf31"},
-                            },
-                        },
+                "eventName": event_name,
+                "dynamodb": {
+                    "ApproximateCreationDateTime": 1690896000,
+                    "Keys": {
+                        "PK": {"S": pk},
+                        "PatientSK": {"S": "COVID19#ca8ba2c6-2383-4465-b456-c1174c21cf31"},
+                        "SupplierSystem": {"S": supplier},
+                        "Resource": {"S": ValuesForTests.json_value_for_test},
                     }
-                ]
+                }
             }
 
     expected_static_values = {
@@ -279,168 +311,6 @@ class ValuesForTests:
             "LOCATION_CODE": "EC1111",
             "LOCATION_CODE_TYPE_URI": "https://fhir.nhs.uk/Id/ods-organization-code",
             "CONVERSION_ERRORS": []
-        }
-    
-    @staticmethod
-    def get_test_data_resource():
-        """
-        The returned resource includes details about the practitioner, patient,
-        vaccine code, location, and other relevant fields.
-        """
-        return {
-            "resourceType": "Immunization",
-            "contained": [
-                {
-                    "resourceType": "Practitioner",
-                    "id": "Pract1",
-                    "name": [
-                        {
-                            "family": "O'Reilly",
-                            "given": ["Ellena"]
-                        }
-                    ]
-                },
-                {
-                    "resourceType": "Patient",
-                    "id": "Pat1",
-                    "identifier": [
-                        {
-                            "system": "https://fhir.nhs.uk/Id/nhs-number",
-                            "value": "9674963871"
-                        }
-                    ],
-                    "name": [
-                        {
-                            "family": "GREIR",
-                            "given": ["SABINA"]
-                        }
-                    ],
-                    "gender": "female",
-                    "birthDate": "2019-01-31",
-                    "address": [
-                        {
-                            "postalCode": "GU14 6TU"
-                        }
-                    ]
-                }
-            ],
-            "extension": [
-                {
-                    "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure",
-                    "valueCodeableConcept": {
-                        "coding": [
-                            {
-                                "system": "http://snomed.info/sct",
-                                "code": "1303503001",
-                                "display":
-                                "Administration of vaccine product containing only Human orthopneumovirus antigen (procedure)"
-                            }
-                        ]
-                    }
-                }
-            ],
-            "identifier": [
-                {
-                    "system": "https://www.ravs.england.nhs.uk/",
-                    "value": "0001_RSV_v5_RUN_2_CDFDPS-742_valid_dose_1"
-                }
-            ],
-            "status": "completed",
-            "vaccineCode": {
-                "coding": [
-                    {
-                        "system": "http://snomed.info/sct",
-                        "code": "42605811000001109",
-                        "display":
-                        "Abrysvo vaccine powder and solvent for solution for injection 0.5ml vials (Pfizer Ltd) (product)"
-                    }
-                ]
-            },
-            "patient": {
-                "reference": "#Pat1"
-            },
-            "occurrenceDateTime": "2024-06-10T18:33:25+00:00",
-            "recorded": "2024-06-10T18:33:25+00:00",
-            "primarySource": True,
-            "manufacturer": {
-                "display": "Pfizer"
-            },
-            "location": {
-                "type": "Location",
-                "identifier": {
-                    "value": "J82067",
-                    "system": "https://fhir.nhs.uk/Id/ods-organization-code"
-                }
-            },
-            "lotNumber": "RSVTEST",
-            "expirationDate": "2024-12-31",
-            "site": {
-                "coding": [
-                    {
-                        "system": "http://snomed.info/sct",
-                        "code": "368208006",
-                        "display": "Left upper arm structure (body structure)"
-                    }
-                ]
-            },
-            "route": {
-                "coding": [
-                    {
-                        "system": "http://snomed.info/sct",
-                        "code": "78421000",
-                        "display": "Intramuscular route (qualifier value)"
-                    }
-                ]
-            },
-            "doseQuantity": {
-                "value": 0.5,
-                "unit": "Milliliter (qualifier value)",
-                "system": "http://unitsofmeasure.org",
-                "code": "258773002"
-            },
-            "performer": [
-                {
-                    "actor": {
-                        "reference": "#Pract1"
-                    }
-                },
-                {
-                    "actor": {
-                        "type": "Organization",
-                        "identifier": {
-                            "system": "https://fhir.nhs.uk/Id/ods-organization-code",
-                            "value": "X0X0X"
-                        }
-                    }
-                }
-            ],
-            "reasonCode": [
-                {
-                    "coding": [
-                        {
-                            "code": "Test",
-                            "system": "http://snomed.info/sct"
-                        }
-                    ]
-                }
-            ],
-            "protocolApplied": [
-                {
-                    "targetDisease": [
-                        {
-                            "coding": [
-                                {
-                                    "system": "http://snomed.info/sct",
-                                    "code": "840539006",
-                                    "display": "Disease caused by severe acute respiratory syndrome coronavirus 2"
-                                }
-                            ]
-                        }
-                    ],
-                    "doseNumberPositiveInt": 1
-                }
-            ],
-            "id": "ca8ba2c6-2383-4465-b456-c1174c21cf31"
         }
 
 

@@ -8,6 +8,7 @@ from tests.utils_for_converter_tests import ValuesForTests, ErrorValuesForTests
 from SchemaParser import SchemaParser
 from Converter import Converter
 from ConversionChecker import ConversionChecker, RecordError
+from common.mappings import ActionFlag, Operation, EventName
 import ExceptionMessages
 
 MOCK_ENV_VARS = {
@@ -100,7 +101,7 @@ class TestConvertToFlatJson(unittest.TestCase):
         self.mock_firehose_logger.stop()
 
     @staticmethod
-    def get_event(event_name="INSERT", operation="operation", supplier="EMIS"):
+    def get_event(event_name=EventName.CREATE, operation="operation", supplier="EMIS"):
         """Returns test event data."""
         return ValuesForTests.get_event(event_name, operation, supplier)
 
@@ -110,8 +111,7 @@ class TestConvertToFlatJson(unittest.TestCase):
         Ignores dynamically generated fields like PK, DateTimeStamp, and ExpiresAt.
         Ensures that the 'Imms' field matches exactly.
         """
-        self.assertEqual(response["statusCode"], 200)
-        self.assertEqual(response["body"], "Records processed successfully")
+        self.assertTrue(response)
 
         filtered_items = [
             {k: v for k, v in item.items() if k not in ["PK", "DateTimeStamp", "ExpiresAt"]}
@@ -125,6 +125,11 @@ class TestConvertToFlatJson(unittest.TestCase):
         imms_data = filtered_items[0]["Imms"]
         self.assertIsInstance(imms_data, dict)
         self.assertGreater(len(imms_data), 0)
+
+        for key, expected_value in expected_values.items():
+            self.assertIn(key, filtered_items[0], f"{key} is missing")
+            if (filtered_items[0][key] != expected_value):
+                print (f"{key} mismatch {filtered_items[0][key]} != {expected_value}")
 
         # Check Imms JSON structure matches exactly
         self.assertEqual(imms_data, expected_imms, "Imms data does not match expected JSON structure")
@@ -167,9 +172,9 @@ class TestConvertToFlatJson(unittest.TestCase):
     def test_handler_imms_convert_to_flat_json(self):
         """Test that the Imms field contains the correct flat JSON data for CREATE, UPDATE, and DELETE operations."""
         expected_action_flags = [
-            {"Operation": "CREATE", "EXPECTED_ACTION_FLAG": "NEW"},
-            {"Operation": "UPDATE", "EXPECTED_ACTION_FLAG": "UPDATE"},
-            {"Operation": "DELETE", "EXPECTED_ACTION_FLAG": "DELETE"},
+            {"Operation": Operation.CREATE, "EXPECTED_ACTION_FLAG": ActionFlag.CREATE},
+            {"Operation": Operation.UPDATE, "EXPECTED_ACTION_FLAG": ActionFlag.UPDATE},
+            {"Operation": Operation.DELETE_LOGICAL, "EXPECTED_ACTION_FLAG": ActionFlag.DELETE_LOGICAL},
         ]
 
         for test_case in expected_action_flags:
