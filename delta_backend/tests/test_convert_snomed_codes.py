@@ -4,6 +4,7 @@ import unittest
 from tests.utils_for_converter_tests import ValuesForTests
 from Converter import Converter
 
+
 class TestPersonSNOMEDToFlatJson(unittest.TestCase):
 
     def setUp(self):
@@ -29,169 +30,255 @@ class TestPersonSNOMEDToFlatJson(unittest.TestCase):
         flat_json = self.converter.runConversion(self.request_json_data, False, True)
         self.assertEqual(flat_json.get(flat_field_name), expected_snomed_code)
     
-    def test_vaccination_procedure_code(self):
-        test_cases = [
-            ("no_matching_extension_url", [
-                {
-                    "url": "https://wrong.url",
-                    "valueCodeableConcept": {
-                        "coding": [{"code": "123", "system": "http://snomed.info/sct"}]
-                    }
+    def test_vaccination_procedure_code_no_matching_extension_url_returns_empty(self):
+        self.request_json_data["extension"] = [
+            {
+                "url": "https://wrong.url",
+                "valueCodeableConcept": {
+                    "coding": [
+                        {"code": "123", "system": "http://snomed.info/sct"}
+                    ]
                 }
-            ], "VACCINATION_PROCEDURE_CODE", ""),
-            ("empty_coding", [], "VACCINATION_PROCEDURE_CODE", ""),
-            ("no_snomed_system", [{"code": "999", "system": "http://example.com/other"}], "VACCINATION_PROCEDURE_CODE", ""),
-            ("missing_code_field", [{"system": "http://snomed.info/sct", "display": "No code"}], "VACCINATION_PROCEDURE_CODE", ""),
-            ("correct_extension_url_matched", [
-                {
-                    "url": "https://wrong.url",
-                    "valueCodeableConcept": {
-                        "coding": [{"code": "1324681000000101", "system": "http://snomed.info/sct"}]
-                    }
-                },
-                {
-                    "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure",
-                    "valueCodeableConcept": {
-                        "coding": [{"code": "1324681000000102", "system": "http://snomed.info/sct"}]
-                    }
-                }
-            ], "VACCINATION_PROCEDURE_CODE", "1324681000000102"),
-            ("single_coding", [{"code": "1324681000000101", "system": "http://snomed.info/sct"}], "VACCINATION_PROCEDURE_CODE", "1324681000000101"),
-            ("invalid_then_valid", [
-                {"code": "1324681000000101", "system": "http://snomed.info/invalid"},
-                {"code": "1324681000000102", "system": "http://snomed.info/sct"}
-            ], "VACCINATION_PROCEDURE_CODE", "1324681000000102"),
-            ("double_valid", [
-                {"code": "1324681000000101", "system": "http://snomed.info/sct"},
-                {"code": "1324681000000102", "system": "http://snomed.info/sct"}
-            ], "VACCINATION_PROCEDURE_CODE", "1324681000000101"),
+            }
         ]
+        self._run_snomed_test("VACCINATION_PROCEDURE_CODE", "")
 
-        for name, codings_or_ext, field, expected in test_cases:
-            with self.subTest(name=name):
-                if name == "no_matching_extension_url" or name == "correct_extension_url_matched":
-                    self.request_json_data["extension"] = codings_or_ext
-                else:
-                    self._set_snomed_codings("extension", codings_or_ext)
-                self._run_snomed_test(field, expected)
-                
-    def test_vaccine_product_code(self):
-        test_cases = [
-            ("missing_field", None, ""),
-            ("no_snomed_system", [{"code": "999999", "system": "http://snomed.info/invalid"}], ""),
-            ("empty_coding", [], ""),
-            ("single_valid", [{"code": "39114911000001101", "system": "http://snomed.info/sct"}], "39114911000001101"),
-            ("double_valid", [
-                {"code": "39114911000001101", "system": "http://snomed.info/sct"},
-                {"code": "39114911000001102", "system": "http://snomed.info/sct"}
-            ], "39114911000001101"),
-            ("invalid_then_valid", [
-                {"code": "39114911000001101", "system": "http://snomed.info/invalid"},
-                {"code": "39114911000001102", "system": "http://snomed.info/sct"}
-            ], "39114911000001102"),
-        ]
-
-        for name, codings, expected in test_cases:
-            with self.subTest(name=name):
-                if codings is None:
-                    self.request_json_data.pop("vaccineCode", None)
-                else:
-                    self._set_snomed_codings("vaccineCode", codings)
-                self._run_snomed_test("VACCINE_PRODUCT_CODE", expected)
+    def test_vaccination_procedure_code_empty_coding_returns_empty(self):
+        self._set_snomed_codings("extension", [])
+        self._run_snomed_test("VACCINATION_PROCEDURE_CODE", "")
     
-    def test_site_of_vaccination_code(self):
-        test_cases = [
-            ("no_snomed", [{"code": "xyz", "system": "http://example.com/other"}], ""),
-            ("empty_coding", [], ""),
-            ("missing_field", None, ""),
-            ("single_valid", [{"code": "39114911000001101", "system": "http://snomed.info/sct"}], "39114911000001101"),
-            ("double_valid", [
-                {"code": "39114911000001101", "system": "http://snomed.info/sct"},
-                {"code": "39114911000001102", "system": "http://snomed.info/sct"}
-            ], "39114911000001101"),
-            ("invalid_then_valid", [
-                {"code": "39114911000001101", "system": "http://snomed.info/invalid"},
-                {"code": "39114911000001102", "system": "http://snomed.info/sct"}
-            ], "39114911000001102"),
+    def test_vaccination_procedure_code_no_snomed_system_returns_empty(self):
+        self._set_snomed_codings("extension", [
+            {"code": "999", "system": "http://example.com/other"}
+        ])
+        self._run_snomed_test("VACCINATION_PROCEDURE_CODE", "")
+    
+    def test_vaccination_procedure_code_missing_code_field_returns_empty(self):
+        self._set_snomed_codings("extension", [
+            {"system": "http://snomed.info/sct", "display": "No code"}
+        ])
+        self._run_snomed_test("VACCINATION_PROCEDURE_CODE", "")
+    
+    def test_vaccination_procedure_code_correct_extension_url_matched(self):
+        self.request_json_data["extension"] = [
+            {
+                "url": "https://wrong.url",
+                "valueCodeableConcept": {
+                    "coding": [
+                        {"code": "1324681000000101", "system": "http://snomed.info/sct", "display": "..."}
+                    ]
+                }
+            },
+            {
+                "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure",
+                "valueCodeableConcept": {
+                    "coding": [
+                        {"code": "1324681000000102", "system": "http://snomed.info/sct", "display": "..."}
+                    ]
+                }
+            }
         ]
+        self._run_snomed_test("VACCINATION_PROCEDURE_CODE", "1324681000000102")
+    
+    def test_vaccination_procedure_code_single_coding_returns_first_code(self):
+        self._set_snomed_codings("extension", [
+            {"code": "1324681000000101", "system": "http://snomed.info/sct", "display": "..."}
+        ])
+        self._run_snomed_test("VACCINATION_PROCEDURE_CODE", "1324681000000101")
 
-        for name, codings, expected in test_cases:
-            with self.subTest(name=name):
-                if codings is None:
-                    self.request_json_data.pop("site", None)
-                else:
-                    self._set_snomed_codings("site", codings)
-                self._run_snomed_test("SITE_OF_VACCINATION_CODE", expected)
-                
-    def test_route_of_vaccination_code(self):
-        test_cases = [
-            ("no_snomed", [
-                {"code": "xyz", "system": "http://example.org"},
-                {"code": "abc", "system": "http://example.net"}
-            ], ""),
-            ("empty_coding", [], ""),
-            ("missing_field", None, ""),
-            ("single_valid", [{"code": "39114911000001101", "system": "http://snomed.info/sct"}], "39114911000001101"),
-            ("double_valid", [
-                {"code": "39114911000001101", "system": "http://snomed.info/sct"},
-                {"code": "39114911000001102", "system": "http://snomed.info/sct"}
-            ], "39114911000001101"),
-            ("invalid_then_valid", [
-                {"code": "39114911000001101", "system": "http://snomed.info/invalid"},
-                {"code": "39114911000001102", "system": "http://snomed.info/sct"}
-            ], "39114911000001102"),
+    def test_vaccination_procedure_code_double_coding_and_incorrect_system_returns_correct_code(self):
+        self._set_snomed_codings("extension", [
+            {"code": "1324681000000101", "system": "http://snomed.info/invalid", "display": "..."},
+            {"code": "1324681000000102", "system": "http://snomed.info/sct", "display": "..."}
+        ])
+        self._run_snomed_test("VACCINATION_PROCEDURE_CODE", "1324681000000102")
+
+    def test_vaccination_procedure_code_double_coding_returns_first_code(self):
+        self._set_snomed_codings("extension", [
+            {"code": "1324681000000101", "system": "http://snomed.info/sct", "display": "..."},
+            {"code": "1324681000000102", "system": "http://snomed.info/sct", "display": "..."}
+        ])
+        self._run_snomed_test("VACCINATION_PROCEDURE_CODE", "1324681000000101")
+
+    def test_vaccine_product_code_missing_field_returns_empty(self):
+        self.request_json_data.pop("vaccineCode", None)
+        self._run_snomed_test("VACCINE_PRODUCT_CODE", "")
+    
+    def test_vaccine_product_code_no_snomed_returns_empty(self):
+        self._set_snomed_codings("vaccineCode", [
+            {"code": "999999", "system": "http://snomed.info/invalid", "display": "..."}
+        ])
+        self._run_snomed_test("VACCINE_PRODUCT_CODE", "")
+    
+    def test_vaccine_product_code_empty_coding_returns_empty(self):
+        self._set_snomed_codings("vaccineCode", [])
+        self._run_snomed_test("VACCINE_PRODUCT_CODE", "")
+         
+    def test_vaccine_product_code_single_coding_returns_first_code(self):
+        self._set_snomed_codings("vaccineCode", [
+            {"code": "39114911000001101", "system": "http://snomed.info/sct", "display": "..."}
+        ])
+        self._run_snomed_test("VACCINE_PRODUCT_CODE", "39114911000001101")
+
+    def test_vaccine_product_term_uses_first_snomed_value_string(self):
+        self._set_snomed_codings("vaccineCode", [
+            {
+                "code": "123",
+                "system": "http://snomed.info/sct",
+                "extension": [
+                    {
+                        "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-CodingSCTDescDisplay",
+                        "valueString": "Preferred display string"
+                    }
+                ]
+            }
+        ])
+        self._run_snomed_test("VACCINE_PRODUCT_TERM", "Preferred display string")
+    
+    def test_vaccine_product_code_double_coding_returns_first_code(self):
+        self._set_snomed_codings("vaccineCode", [
+            {"code": "39114911000001101", "system": "http://snomed.info/sct", "display": "..."},
+            {"code": "39114911000001102", "system": "http://snomed.info/sct", "display": "..."}
+        ])
+        self._run_snomed_test("VACCINE_PRODUCT_CODE", "39114911000001101")
+
+    def test_vaccine_product_code_double_coding_and_incorrect_system_returns_correct_code(self):
+        self._set_snomed_codings("vaccineCode", [
+            {"code": "39114911000001101", "system": "http://snomed.info/invalid", "display": "..."},
+            {"code": "39114911000001102", "system": "http://snomed.info/sct", "display": "..."}
+        ])
+        self._run_snomed_test("VACCINE_PRODUCT_CODE", "39114911000001102")
+    
+    def test_site_vaccination_code_no_snomed_returns_empty(self):
+        self._set_snomed_codings("site", [
+            {"code": "xyz", "system": "http://example.com/other"}
+        ])
+        self._run_snomed_test("SITE_OF_VACCINATION_CODE", "")  
+        
+    def test_site_vaccination_code_empty_coding_returns_empty(self):
+        self._set_snomed_codings("site", [])
+        self._run_snomed_test("SITE_OF_VACCINATION_CODE", "")
+        
+    def test_site_field_missing_returns_empty(self):
+        self.request_json_data.pop("site", None)
+        self._run_snomed_test("SITE_OF_VACCINATION_CODE", "")
+        
+    def test_site_vaccination_code_single_coding_returns_first_code(self):
+        self._set_snomed_codings("site", [
+            {"code": "39114911000001101", "system": "http://snomed.info/sct", "display": "..."}
+        ])
+        self._run_snomed_test("SITE_OF_VACCINATION_CODE", "39114911000001101")
+
+    def test_site_vaccination_code_double_coding_returns_first_code(self):
+        self._set_snomed_codings("site", [
+            {"code": "39114911000001101", "system": "http://snomed.info/sct", "display": "..."},
+            {"code": "39114911000001102", "system": "http://snomed.info/sct", "display": "..."}
+        ])
+        self._run_snomed_test("SITE_OF_VACCINATION_CODE", "39114911000001101")
+
+    def test_site_vaccination_code_double_coding_and_incorrect_system_returns_correct_code(self):
+        self._set_snomed_codings("site", [
+            {"code": "39114911000001101", "system": "http://snomed.info/invalid", "display": "..."},
+            {"code": "39114911000001102", "system": "http://snomed.info/sct", "display": "..."}
+        ])
+        self._run_snomed_test("SITE_OF_VACCINATION_CODE", "39114911000001102")
+    
+    def test_route_vaccination_code_no_snomed_returns_empty(self):
+        self._set_snomed_codings("route", [
+            {"code": "xyz", "system": "http://example.org"},
+            {"code": "abc", "system": "http://example.net"}
+        ])
+        self._run_snomed_test("ROUTE_OF_VACCINATION_CODE", "")
+    
+    def test_route_vaccination_code_empty_coding_returns_empty(self):
+        self._set_snomed_codings("route", [])
+        self._run_snomed_test("ROUTE_OF_VACCINATION_CODE", "")
+    
+    def test_route_field_missing_returns_empty(self):
+        self.request_json_data.pop("route", None)
+        self._run_snomed_test("ROUTE_OF_VACCINATION_CODE", "")
+    
+    def test_route_vaccination_code_single_coding_returns_first_code(self):
+        self._set_snomed_codings("route", [
+            {"code": "39114911000001101", "system": "http://snomed.info/sct", "display": "..."}
+        ])
+        self._run_snomed_test("ROUTE_OF_VACCINATION_CODE", "39114911000001101")
+
+    def test_route_vaccination_code_double_coding_returns_first_code(self):
+        self._set_snomed_codings("route", [
+            {"code": "39114911000001101", "system": "http://snomed.info/sct", "display": "..."},
+            {"code": "39114911000001102", "system": "http://snomed.info/sct", "display": "..."}
+        ])
+        self._run_snomed_test("ROUTE_OF_VACCINATION_CODE", "39114911000001101")
+
+    def test_route_vaccination_code_double_coding_and_incorrect_system_returns_correct_code(self):
+        self._set_snomed_codings("route", [
+            {"code": "39114911000001101", "system": "http://snomed.info/invalid", "display": "..."},
+            {"code": "39114911000001102", "system": "http://snomed.info/sct", "display": "..."}
+        ])
+        self._run_snomed_test("ROUTE_OF_VACCINATION_CODE", "39114911000001102")
+        
+    def test_dose_unit_code_valid_snomed_returns_code(self):
+        self.request_json_data["doseQuantity"] = {
+            "code": "258684004",
+            "system": "http://snomed.info/sct"
+        }
+        self._run_snomed_test("DOSE_UNIT_CODE", "258684004")
+
+    def test_dose_unit_code_wrong_system_returns_empty(self):
+        self.request_json_data["doseQuantity"] = {
+            "code": "258684004",
+            "system": "http://unitsofmeasure.org"
+        }
+        self._run_snomed_test("DOSE_UNIT_CODE", "")
+
+    def test_dose_unit_code_missing_system_returns_empty(self):
+        self.request_json_data["doseQuantity"] = {
+            "code": "258684004"
+        }
+        self._run_snomed_test("DOSE_UNIT_CODE", "")
+
+    def test_dose_unit_code_missing_code_returns_empty(self):
+        self.request_json_data["doseQuantity"] = {
+            "system": "http://snomed.info/sct"
+        }
+        self._run_snomed_test("DOSE_UNIT_CODE", "")
+
+    def test_dose_unit_code_missing_field_returns_empty(self):
+        self.request_json_data.pop("doseQuantity", None)
+        self._run_snomed_test("DOSE_UNIT_CODE", "")
+        
+    def test_indication_code_single_reasoncode_with_valid_snomed(self):
+        self._set_snomed_codings("reasonCode", [
+            {"system": "http://snomed.info/sct", "code": "123456"}
+        ])
+        self._run_snomed_test("INDICATION_CODE", "123456")
+
+    def test_indication_code_multiple_reasoncodes_first_with_valid_snomed(self):
+        self.request_json_data["reasonCode"] = [
+            {"coding": [{"system": "http://snomed.info/sct", "code": "111111"}]},
+            {"coding": [{"system": "http://snomed.info/sct", "code": "222222"}]}
         ]
+        self._run_snomed_test("INDICATION_CODE", "111111")
 
-        for name, codings, expected in test_cases:
-            with self.subTest(name=name):
-                if codings is None:
-                    self.request_json_data.pop("route", None)
-                else:
-                    self._set_snomed_codings("route", codings)
-                self._run_snomed_test("ROUTE_OF_VACCINATION_CODE", expected)
-
-    def test_dose_unit_code(self):
-        test_cases = [
-            ("valid_snomed", {"code": "258684004", "system": "http://snomed.info/sct"}, "258684004"),
-            ("wrong_system", {"code": "258684004", "system": "http://unitsofmeasure.org"}, ""),
-            ("missing_system", {"code": "258684004"}, ""),
-            ("missing_code", {"system": "http://snomed.info/sct"}, ""),
-            ("missing_field", None, "")
+    def test_indication_code_skips_invalid_system_and_selects_valid_next(self):
+        self.request_json_data["reasonCode"] = [
+            {"coding": [{"system": "http://example.org", "code": "invalid"}]},
+            {"coding": [{"system": "http://snomed.info/sct", "code": "999999"}]}
         ]
+        self._run_snomed_test("INDICATION_CODE", "999999")
 
-        for name, dose_quantity, expected in test_cases:
-            with self.subTest(name=name):
-                if dose_quantity is None:
-                    self.request_json_data.pop("doseQuantity", None)
-                else:
-                    self.request_json_data["doseQuantity"] = dose_quantity
-                self._run_snomed_test("DOSE_UNIT_CODE", expected)
-                
-    def test_indication_code(self):
-        test_cases = [
-            ("single_valid", [{"system": "http://snomed.info/sct", "code": "123456"}], "123456"),
-            ("multiple_reasoncodes_first_valid", [
-                {"coding": [{"system": "http://snomed.info/sct", "code": "111111"}]},
-                {"coding": [{"system": "http://snomed.info/sct", "code": "222222"}]}
-            ], "111111"),
-            ("skip_invalid_system_use_next_valid", [
-                {"coding": [{"system": "http://example.org", "code": "invalid"}]},
-                {"coding": [{"system": "http://snomed.info/sct", "code": "999999"}]}
-            ], "999999"),
-            ("all_invalid_systems", [
-                {"coding": [{"system": "http://example.com", "code": "abc"}]},
-                {"coding": [{"system": "http://example.org", "code": "def"}]}
-            ], ""),
-            ("reasoncode_missing", None, ""),
-            ("reasoncode_no_coding", [{}], ""),
+    def test_indication_code_all_reasoncodes_invalid_system_returns_empty(self):
+        self.request_json_data["reasonCode"] = [
+            {"coding": [{"system": "http://example.com", "code": "abc"}]},
+            {"coding": [{"system": "http://example.org", "code": "def"}]}
         ]
+        self._run_snomed_test("INDICATION_CODE", "")
 
-        for name, reason_code_value, expected in test_cases:
-            with self.subTest(name=name):
-                if reason_code_value is None:
-                    self.request_json_data.pop("reasonCode", None)
-                elif isinstance(reason_code_value[0], dict) and "coding" in reason_code_value[0]:
-                    self.request_json_data["reasonCode"] = reason_code_value
-                else:
-                    self._set_snomed_codings("reasonCode", reason_code_value)
-                self._run_snomed_test("INDICATION_CODE", expected)
+    def test_indication_code_reasoncode_missing_returns_empty(self):
+        self.request_json_data.pop("reasonCode", None)
+        self._run_snomed_test("INDICATION_CODE", "")
+
+    def test_indication_code_reasoncode_exists_but_no_coding_returns_empty(self):
+        self.request_json_data["reasonCode"] = [{}]
+        self._run_snomed_test("INDICATION_CODE", "")
