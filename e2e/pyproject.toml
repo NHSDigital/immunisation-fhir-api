@@ -15,7 +15,7 @@ simplejson = "^3.19.2"
 [tool.poetry.group.dev.dependencies]
 requests = "^2.31.0"
 pyjwt = "^2.8.0"
-cryptography = "^42.0.3"
+cryptography = "^44.0.1"
 lxml = "~4.9.0"
 
 [build-system]
