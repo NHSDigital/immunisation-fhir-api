@@ -1,15 +1,18 @@
+import copy
 import json
 import unittest
 from tests.utils_for_converter_tests import ValuesForTests
 from Converter import Converter
 
-request_json_data = ValuesForTests.json_data
 
 class TestPersonSiteCodeToFlatJson(unittest.TestCase):
     
+    def setUp(self):
+        self.request_json_data = copy.deepcopy(ValuesForTests.json_data)
+        
     def test_site_code_single_performer(self):
         """Test case where only one performer instance exists"""
-        request_json_data["performer"] = [
+        self.request_json_data["performer"] = [
             {
                 "actor": {
                     "type": "Organization",
@@ -24,7 +27,7 @@ class TestPersonSiteCodeToFlatJson(unittest.TestCase):
 
     def test_site_code_performer_type_organization_only(self):
         """Test case where performer has type=organization and system=https://fhir.nhs.uk/Id/ods-organization-code with more than one instance"""
-        request_json_data["performer"] = [
+        self.request_json_data["performer"] = [
             {
                 "actor": {
                     "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "code1"},
@@ -49,7 +52,7 @@ class TestPersonSiteCodeToFlatJson(unittest.TestCase):
 
     def test_site_code_performer_type_organization(self):
         """Test case where performer has type=organization but no NHS system"""
-        request_json_data["performer"] = [
+        self.request_json_data["performer"] = [
             {
                 "actor": {
                     "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organizatdion-code", "value": "code1"},
@@ -74,7 +77,7 @@ class TestPersonSiteCodeToFlatJson(unittest.TestCase):
 
     def test_site_code_performer_type_without_oraganisation(self):
         """Test case where performer has type=organization but no NHS system"""
-        request_json_data["performer"] = [
+        self.request_json_data["performer"] = [
             {
                 "actor": {
                     "identifier": {"system": "https://fhir.nhs.uk/Id/ods-nhs-code", "value": "code2"},
@@ -102,7 +105,7 @@ class TestPersonSiteCodeToFlatJson(unittest.TestCase):
 
     def test_site_code_fallback_to_first_performer(self):
         """Test case where no performers match specific criteria, fallback to first instance"""
-        request_json_data["performer"] = [
+        self.request_json_data["performer"] = [
             {
                 "actor": {
                     "identifier": {"system": "https://fhir.nhs.uk/Id/ods-nhs-code", "value": "code1"},
@@ -120,6 +123,6 @@ class TestPersonSiteCodeToFlatJson(unittest.TestCase):
 
     def _run_site_code_test(self, expected_site_code):
         """Helper function to run the test"""
-        self.converter = Converter(json.dumps(request_json_data))
-        flat_json = self.converter.runConversion(request_json_data, False, True)
+        self.converter = Converter(json.dumps(self.request_json_data))
+        flat_json = self.converter.runConversion(self.request_json_data, False, True)
         self.assertEqual(flat_json.get("SITE_CODE"), expected_site_code)

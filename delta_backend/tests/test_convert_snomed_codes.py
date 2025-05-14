@@ -1,20 +1,23 @@
+import copy
 import json
 import unittest
 from tests.utils_for_converter_tests import ValuesForTests
 from Converter import Converter
 
-request_json_data = ValuesForTests.json_data
 
 class TestPersonSNOMEDToFlatJson(unittest.TestCase):
 
+    def setUp(self):
+        self.request_json_data = copy.deepcopy(ValuesForTests.json_data)
+        
     def _set_snomed_codings(self, target_path: str, codings: list[dict], extension_url: str = None):
-        """Helper to insert coding entries into request_json_data at the desired FHIR path"""
+        """Helper to insert coding entries into self.request_json_data at the desired FHIR path"""
         if target_path in {"vaccineCode", "site", "route"}:
-            request_json_data[target_path] = {"coding": codings}
+            self.request_json_data[target_path] = {"coding": codings}
         elif target_path == "reasonCode":
-            request_json_data["reasonCode"] = [{"coding": codings}]
+            self.request_json_data["reasonCode"] = [{"coding": codings}]
         elif target_path == "extension":
-            request_json_data["extension"] = [{
+            self.request_json_data["extension"] = [{
                 "url": extension_url or "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure",
                 "valueCodeableConcept": {
                     "coding": codings
@@ -23,12 +26,12 @@ class TestPersonSNOMEDToFlatJson(unittest.TestCase):
 
     def _run_snomed_test(self, flat_field_name, expected_snomed_code):
         """Helper function to run the test"""
-        self.converter = Converter(json.dumps(request_json_data))
-        flat_json = self.converter.runConversion(request_json_data, False, True)
+        self.converter = Converter(json.dumps(self.request_json_data))
+        flat_json = self.converter.runConversion(self.request_json_data, False, True)
         self.assertEqual(flat_json.get(flat_field_name), expected_snomed_code)
     
     def test_vaccination_procedure_code_no_matching_extension_url_returns_empty(self):
-        request_json_data["extension"] = [
+        self.request_json_data["extension"] = [
             {
                 "url": "https://wrong.url",
                 "valueCodeableConcept": {
@@ -57,7 +60,7 @@ class TestPersonSNOMEDToFlatJson(unittest.TestCase):
         self._run_snomed_test("VACCINATION_PROCEDURE_CODE", "")
     
     def test_vaccination_procedure_code_correct_extension_url_matched(self):
-        request_json_data["extension"] = [
+        self.request_json_data["extension"] = [
             {
                 "url": "https://wrong.url",
                 "valueCodeableConcept": {
@@ -98,7 +101,7 @@ class TestPersonSNOMEDToFlatJson(unittest.TestCase):
         self._run_snomed_test("VACCINATION_PROCEDURE_CODE", "1324681000000101")
 
     def test_vaccine_product_code_missing_field_returns_empty(self):
-        request_json_data.pop("vaccineCode", None)
+        self.request_json_data.pop("vaccineCode", None)
         self._run_snomed_test("VACCINE_PRODUCT_CODE", "")
     
     def test_vaccine_product_code_no_snomed_returns_empty(self):
@@ -157,7 +160,7 @@ class TestPersonSNOMEDToFlatJson(unittest.TestCase):
         self._run_snomed_test("SITE_OF_VACCINATION_CODE", "")
         
     def test_site_field_missing_returns_empty(self):
-        request_json_data.pop("site", None)
+        self.request_json_data.pop("site", None)
         self._run_snomed_test("SITE_OF_VACCINATION_CODE", "")
         
     def test_site_vaccination_code_single_coding_returns_first_code(self):
@@ -192,7 +195,7 @@ class TestPersonSNOMEDToFlatJson(unittest.TestCase):
         self._run_snomed_test("ROUTE_OF_VACCINATION_CODE", "")
     
     def test_route_field_missing_returns_empty(self):
-        request_json_data.pop("route", None)
+        self.request_json_data.pop("route", None)
         self._run_snomed_test("ROUTE_OF_VACCINATION_CODE", "")
     
     def test_route_vaccination_code_single_coding_returns_first_code(self):
@@ -216,33 +219,33 @@ class TestPersonSNOMEDToFlatJson(unittest.TestCase):
         self._run_snomed_test("ROUTE_OF_VACCINATION_CODE", "39114911000001102")
         
     def test_dose_unit_code_valid_snomed_returns_code(self):
-        request_json_data["doseQuantity"] = {
+        self.request_json_data["doseQuantity"] = {
             "code": "258684004",
             "system": "http://snomed.info/sct"
         }
         self._run_snomed_test("DOSE_UNIT_CODE", "258684004")
 
     def test_dose_unit_code_wrong_system_returns_empty(self):
-        request_json_data["doseQuantity"] = {
+        self.request_json_data["doseQuantity"] = {
             "code": "258684004",
             "system": "http://unitsofmeasure.org"
         }
         self._run_snomed_test("DOSE_UNIT_CODE", "")
 
     def test_dose_unit_code_missing_system_returns_empty(self):
-        request_json_data["doseQuantity"] = {
+        self.request_json_data["doseQuantity"] = {
             "code": "258684004"
         }
         self._run_snomed_test("DOSE_UNIT_CODE", "")
 
     def test_dose_unit_code_missing_code_returns_empty(self):
-        request_json_data["doseQuantity"] = {
+        self.request_json_data["doseQuantity"] = {
             "system": "http://snomed.info/sct"
         }
         self._run_snomed_test("DOSE_UNIT_CODE", "")
 
     def test_dose_unit_code_missing_field_returns_empty(self):
-        request_json_data.pop("doseQuantity", None)
+        self.request_json_data.pop("doseQuantity", None)
         self._run_snomed_test("DOSE_UNIT_CODE", "")
         
     def test_indication_code_single_reasoncode_with_valid_snomed(self):
@@ -252,30 +255,30 @@ class TestPersonSNOMEDToFlatJson(unittest.TestCase):
         self._run_snomed_test("INDICATION_CODE", "123456")
 
     def test_indication_code_multiple_reasoncodes_first_with_valid_snomed(self):
-        request_json_data["reasonCode"] = [
+        self.request_json_data["reasonCode"] = [
             {"coding": [{"system": "http://snomed.info/sct", "code": "111111"}]},
             {"coding": [{"system": "http://snomed.info/sct", "code": "222222"}]}
         ]
         self._run_snomed_test("INDICATION_CODE", "111111")
 
     def test_indication_code_skips_invalid_system_and_selects_valid_next(self):
-        request_json_data["reasonCode"] = [
+        self.request_json_data["reasonCode"] = [
             {"coding": [{"system": "http://example.org", "code": "invalid"}]},
             {"coding": [{"system": "http://snomed.info/sct", "code": "999999"}]}
         ]
         self._run_snomed_test("INDICATION_CODE", "999999")
 
     def test_indication_code_all_reasoncodes_invalid_system_returns_empty(self):
-        request_json_data["reasonCode"] = [
+        self.request_json_data["reasonCode"] = [
             {"coding": [{"system": "http://example.com", "code": "abc"}]},
             {"coding": [{"system": "http://example.org", "code": "def"}]}
         ]
         self._run_snomed_test("INDICATION_CODE", "")
 
     def test_indication_code_reasoncode_missing_returns_empty(self):
-        request_json_data.pop("reasonCode", None)
+        self.request_json_data.pop("reasonCode", None)
         self._run_snomed_test("INDICATION_CODE", "")
 
     def test_indication_code_reasoncode_exists_but_no_coding_returns_empty(self):
-        request_json_data["reasonCode"] = [{}]
+        self.request_json_data["reasonCode"] = [{}]
         self._run_snomed_test("INDICATION_CODE", "")

@@ -1,14 +1,18 @@
+import copy
 import json
 import unittest
 from tests.utils_for_converter_tests import ValuesForTests
 from Converter import Converter
 
-request_json_data = ValuesForTests.json_data
 
 class TestPractitionerForeNameToFlatJson(unittest.TestCase):
+    
+    def setUp(self):
+        self.request_json_data = copy.deepcopy(ValuesForTests.json_data)
+        
     def test_practitioner_forename_multiple_names_official(self):
         """Test case where multiple name instances exist, and one has use=official with period covering vaccination date"""
-        request_json_data["contained"][0]["name"] = [
+        self.request_json_data["contained"][0]["name"] = [
             {
                 "family": "Doe",
                 "given": ["Johnny"],
@@ -39,7 +43,7 @@ class TestPractitionerForeNameToFlatJson(unittest.TestCase):
 
     def test_practitioner_forename_multiple_names_current(self):
         """Test case where no official name is present, but a name is current at the vaccination date"""
-        request_json_data["contained"][0]["name"] = [
+        self.request_json_data["contained"][0]["name"] = [
             {"family": "Doe", "given": ["John"], "period": {"start": "2020-01-01", "end": "2023-01-01"}},
             {"family": "Doe", "given": ["Johnny"], "use": "nickname"},
         ]
@@ -48,13 +52,13 @@ class TestPractitionerForeNameToFlatJson(unittest.TestCase):
 
     def test_Practitioner_forename_single_name(self):
         """Test case where only one name instance exists"""
-        request_json_data["contained"][0]["name"] = [{"family": "Doe", "given": ["Alex"], "use": "nickname"}]
+        self.request_json_data["contained"][0]["name"] = [{"family": "Doe", "given": ["Alex"], "use": "nickname"}]
         expected_forename = "Alex"
         self._run_practitioner_test(expected_forename)
 
     def test_Practitioner_forename_no_official_but_current_not_old(self):
         """Test case where no official name is present, but a current name with use!=old exists at vaccination date"""
-        request_json_data["contained"][0]["name"] = [
+        self.request_json_data["contained"][0]["name"] = [
             {"family": "Doe", "given": ["John"], "use": "old", "period": {"start": "2018-01-01", "end": "2020-12-31"}},
             {
                 "family": "Doe",
@@ -68,7 +72,7 @@ class TestPractitionerForeNameToFlatJson(unittest.TestCase):
 
     def test_Practitioner_forename_fallback_to_first_name(self):
         """Test case where no names match the previous conditions, fallback to first available name"""
-        request_json_data["contained"][0]["name"] = [
+        self.request_json_data["contained"][0]["name"] = [
             {"family": "Doe", "given": ["Elliot"], "use": "nickname"},
             {"family": "Doe", "given": ["John"], "use": "old", "period": {"start": "2018-01-01", "end": "2020-12-31"}},
             {
@@ -83,7 +87,7 @@ class TestPractitionerForeNameToFlatJson(unittest.TestCase):
 
     def test_Practitioner_forename_multiple_given_names_concatenation(self):
         """Test case where the selected name has multiple given names"""
-        request_json_data["contained"][0]["name"] = [
+        self.request_json_data["contained"][0]["name"] = [
             {
                 "family": "Doe",
                 "given": ["Chris"],
@@ -102,7 +106,7 @@ class TestPractitionerForeNameToFlatJson(unittest.TestCase):
 
     def test_Practitioner_forename_given_missing(self):
         """Test case where the selected name has multiple given names"""
-        request_json_data["contained"][0]["name"] = [
+        self.request_json_data["contained"][0]["name"] = [
             {"family": "Doe", "use": "official", "period": {"start": "2021-01-01", "end": "2022-12-31"}}
         ]
         expected_forename = ""
@@ -110,13 +114,13 @@ class TestPractitionerForeNameToFlatJson(unittest.TestCase):
 
     def test_Practitioner_forename_empty(self):
         """Test case where the selected name has multiple given names"""
-        request_json_data["contained"][0]["name"] = []
+        self.request_json_data["contained"][0]["name"] = []
         expected_forename = ""
         self._run_practitioner_test(expected_forename)
 
     def _run_practitioner_test(self, expected_forename):
         """Helper function to run the test"""
-        self.converter = Converter(json.dumps(request_json_data))
-        flat_json = self.converter.runConversion(request_json_data, False, True)
+        self.converter = Converter(json.dumps(self.request_json_data))
+        flat_json = self.converter.runConversion(self.request_json_data, False, True)
         self.assertEqual(flat_json["PERFORMING_PROFESSIONAL_FORENAME"], expected_forename)
 
