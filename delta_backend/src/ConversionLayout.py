@@ -1,6 +1,7 @@
 
 # This file holds the schema/base layout that maps FHIR fields to flat JSON fields
 # Each entry tells the converter how to extract and transform a specific value
+from utils import is_integer_like
 
 EXTENSION_URL_VACCINATION_PRODEDURE = "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure"
 EXTENSION_URL_SCT_DESC_DISPLAY = "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-CodingSCTDescDisplay"
@@ -51,7 +52,8 @@ def _extract_dose_unit_code(immunization) -> str:
 def _extract_dose_unit_term(immunization) -> str:
     dose_quantity = immunization.get("doseQuantity", {})
     return dose_quantity.get("unit", "")
-  
+
+    
 def _get_first_snomed_code(coding_container: dict) -> str:
     codings = coding_container.get("coding", [])
     for coding in codings:
@@ -94,6 +96,16 @@ def _extract_site_of_vaccination_term(immunization) -> str:
 def _extract_route_of_vaccination_term(immunization) -> str:
     return _get_term_from_codeable_concept(immunization.get("route", {}))
 
+# TBC 
+# - requirements: If element doseNumberPositiveInt exists and is < 10 then populate as received, else null 
+# - path : protocolApplied.doseNumber[x]
+def _extract_dose_sequence(immunization) -> str: 
+    protocol_applied = immunization.get("protocolApplied")
+    dose_number_positive_int = protocol_applied.get("doseNumberPositiveInt", "")
+    
+    return dose_number_positive_int if is_integer_like(dose_number_positive_int) else ""
+    
+    
 
 ConvertLayout = {
   "id": "7d78e9a6-d859-45d3-bb05-df9c405acbdb",
