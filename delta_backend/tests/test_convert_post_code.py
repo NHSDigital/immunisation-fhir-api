@@ -54,9 +54,9 @@ class TestPersonPostalCodeToFlatJson(unittest.TestCase):
         """Test case where a home address with type!=postal should be selected"""
         self.request_json_data["contained"][1]["address"] = [
             {"postalCode": "CC33 3CC", "use": "old", "type": "physical"},
+            {"postalCode": "EE55 5EE", "use": "temp", "type": "postal"},
             {"postalCode": "DD44 4DD", "use": "home", "type": "physical"},
             {"postalCode": "DD44 4DP", "use": "home", "type": "physical"},
-            {"postalCode": "EE55 5EE", "use": "temp", "type": "postal"},
         ]
         expected_postal_code = "DD44 4DD"
         self._run_postal_code_test(expected_postal_code)
@@ -66,8 +66,8 @@ class TestPersonPostalCodeToFlatJson(unittest.TestCase):
         self.request_json_data["contained"][1]["address"] = [
             {"postalCode": "FF66 6FF", "use": "old", "type": "physical"},
             {"postalCode": "GG77 7GG", "use": "temp", "type": "physical"},
-            {"postalCode": "GG77 7GI", "use": "temp", "type": "physical"},
             {"postalCode": "HH88 8HH", "use": "old", "type": "postal"},
+            {"postalCode": "GG77 7GI", "use": "temp", "type": "physical"},
         ]
         expected_postal_code = "GG77 7GG"
         self._run_postal_code_test(expected_postal_code)
