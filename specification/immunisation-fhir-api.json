@@ -415,12 +415,12 @@
                             "system": {
                               "description": "The system which defines the location. Typically this will be https://fhir.nhs.uk/Id/ods-organization-code for a health setting (ODS use) or https://fhir.hl7.org.uk/Id/urn-school-number for an education setting (URN use). ",
                               "type": "string",
-                              "example": "urn:iso:std:iso:3166"
+                              "example": "https://fhir.nhs.uk/Id/ods-organization-code"
                             },
                             "value": {
                               "description": "The ODS or URN code of the location where the vaccination was administered. \n1. For occupational health vaccinations administered in a hospital trust by an independent healthcare provider, this SHALL be the ODS code of the hospital trust. \n2. For school vaccinations administered by a School Aged Immunisation Service provider, this SHALL be the URN of the school where the vaccination was administered. \n3. For roving teams on care home visits, this SHALL be the ODS code of the care home, where known. \n4. For any other vaccinations, populate with the same code as provided for `performer` ODS code.  \n\nWhere the ODS/URN code is unavailable, a default value of `X99999` MUST be used.",
                               "type": "string",
-                              "example": "GB"
+                              "example": "X99999"
                             }
                           },
                           "required": [
@@ -772,8 +772,8 @@
                   },
                   "location": {
                     "identifier": {
-                      "value": "X99999",
-                      "system": "https://fhir.nhs.uk/Id/ods-organization-code"
+                      "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                      "value": "X99999"
                     }
                   },
                   "lotNumber": "4120Z001",
@@ -1238,12 +1238,12 @@
                                             "system": {
                                               "description": "The system which defines the location. Typically this will be https://fhir.nhs.uk/Id/ods-organization-code for a health setting or https://fhir.hl7.org.uk/Id/urn-school-number for an education setting.",
                                               "type": "string",
-                                              "example": "urn:iso:std:iso:3166"
+                                              "example": "https://fhir.nhs.uk/Id/ods-organization-code"
                                             },
                                             "value": {
                                               "description": "A code from the system to represent the location. An ODS code of X99999 represents a location where a code is not available.",
                                               "type": "string",
-                                              "example": "GB"
+                                              "example": "X99999"
                                             }
                                           },
                                           "required": [
@@ -1671,8 +1671,8 @@
                           "primarySource": true,
                           "location": {
                             "identifier": {
-                              "system": "urn:iso:std:iso:3166",
-                              "value": "GB"
+                              "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                              "value": "X99999"
                             }
                           },
                           "manufacturer": {
@@ -3122,12 +3122,12 @@
                               "system": {
                                 "description": "The system which defines the location. Typically this will be https://fhir.nhs.uk/Id/ods-organization-code for a health setting or https://fhir.hl7.org.uk/Id/urn-school-number for an education setting.",
                                 "type": "string",
-                                "example": "urn:iso:std:iso:3166"
+                                "example": "https://fhir.nhs.uk/Id/ods-organization-code"
                               },
                               "value": {
                                 "description": "A code from the system to represent the location. An ODS code of X99999 represents a location where a code is not available.",
                                 "type": "string",
-                                "example": "GB"
+                                "example": "X99999"
                               }
                             },
                             "required": [
@@ -3505,8 +3505,8 @@
                     "primarySource": true,
                     "location": {
                       "identifier": {
-                        "system": "urn:iso:std:iso:3166",
-                        "value": "GB"
+                        "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                        "value": "X99999"
                       }
                     },
                     "manufacturer": {
@@ -3549,7 +3549,7 @@
                           "type": "Organization",
                           "identifier": {
                             "system": "https://fhir.nhs.uk/Id/ods-organization-code",
-                            "value": "N2N9I"
+                            "value": "B0C4P"
                           }
                         }
                       }
