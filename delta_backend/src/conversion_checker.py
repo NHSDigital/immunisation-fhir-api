@@ -1,10 +1,10 @@
 
 # Handles the transformation logic for each field based on the schema
 # Root and base type expression checker functions
-import ExceptionMessages
+import exception_messages
 from datetime import datetime,timedelta, timezone
 import re
-from LookUpData import LookUpData
+from utils import LookUpData
 
 
 # --------------------------------------------------------------------------------------------------------
@@ -93,14 +93,14 @@ class ConversionChecker:
                 )
             case "NORMAL":
                 # TODO - check expression_rule is callable
-                return expressionRule(fieldValue)
+                return expressionRule()
             case _:
                 raise ValueError("Schema expression not found! Check your expression type : " + expressionType)
 
     # Utility function for logging errors
-    def _log_error(self, fieldName, fieldValue, e, code=ExceptionMessages.RECORD_CHECK_FAILED):
+    def _log_error(self, fieldName, fieldValue, e, code=exception_messages.RECORD_CHECK_FAILED):
         if isinstance(e, Exception):
-            message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, str(e))
+            message = exception_messages.MESSAGES[exception_messages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, str(e))
         else:
             message = str(e)  # if a simple string message was passed
 
@@ -170,7 +170,7 @@ class ConversionChecker:
             return ""
         except Exception as e:
             if report_unexpected_exception:
-                message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+                message = exception_messages.MESSAGES[exception_messages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
                 self._log_error(fieldName, fieldValue, message)
             return ""
 
@@ -190,7 +190,7 @@ class ConversionChecker:
             raise ValueError(f"NHS Number must be exactly 10 digits: {fieldValue}")
         except Exception as e:
             if report_unexpected_exception:
-                message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+                message = exception_messages.MESSAGES[exception_messages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
                 self.errorRecords.append({
                 "field": fieldName,
                 "value": fieldValue,
@@ -233,7 +233,7 @@ class ConversionChecker:
             return expressionRule
         except Exception as e:
             if report_unexpected_exception:
-                message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+                message = exception_messages.MESSAGES[exception_messages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
                 return message
     # Code for converting Dose Sequence
     def _convertToDose(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
@@ -252,7 +252,7 @@ class ConversionChecker:
 
         except Exception as e:
             if report_unexpected_exception:
-                message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+                message = exception_messages.MESSAGES[exception_messages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
                 self._log_error(fieldName, fieldValue, message)
             return ""
 
@@ -264,7 +264,7 @@ class ConversionChecker:
             return str(fieldValue)
         except Exception as e:
             if report_unexpected_exception:
-                message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+                message = exception_messages.MESSAGES[exception_messages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
                 return message
 
     # Default to Validate
@@ -281,7 +281,7 @@ class ConversionChecker:
             return fieldValue
         except Exception as e:
             if report_unexpected_exception:
-                message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+                message = exception_messages.MESSAGES[exception_messages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
                 return message
 
     # Check if Snomed code is numeric and reject other forms
@@ -297,7 +297,7 @@ class ConversionChecker:
             return fieldValue
         except Exception as e:
             if report_unexpected_exception:
-                message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+                message = exception_messages.MESSAGES[exception_messages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
                 self._log_error(fieldName, fieldValue, message)
             return ""
 

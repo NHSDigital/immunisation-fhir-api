@@ -2,7 +2,7 @@ import copy
 import json
 import unittest
 from tests.utils_for_converter_tests import ValuesForTests
-from Converter import Converter
+from delta_converter import Converter
 
 
 class TestPersonPostalCodeToFlatJson(unittest.TestCase):
@@ -94,6 +94,6 @@ class TestPersonPostalCodeToFlatJson(unittest.TestCase):
     def _run_postal_code_test(self, expected_postal_code):
         """Helper function to run the test"""
         self.converter = Converter(json.dumps(self.request_json_data))
-        flat_json = self.converter.runConversion(self.request_json_data, False, True)
+        flat_json = self.converter.runConversion()
         self.assertEqual(flat_json["PERSON_POSTCODE"], expected_postal_code)
 

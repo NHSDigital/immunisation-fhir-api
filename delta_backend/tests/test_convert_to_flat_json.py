@@ -5,10 +5,10 @@ from unittest.mock import patch, Mock
 from moto import mock_dynamodb, mock_sqs
 from boto3 import resource as boto3_resource
 from tests.utils_for_converter_tests import ValuesForTests, ErrorValuesForTests
-from SchemaParser import SchemaParser
-from Converter import Converter
+from schema_parser import SchemaParser
+from delta_converter import Converter
 from ConversionChecker import ConversionChecker
-import ExceptionMessages
+import exception_messages
 
 MOCK_ENV_VARS = {
     "AWS_SQS_QUEUE_URL": "https://sqs.eu-west-2.amazonaws.com/123456789012/test-queue",
@@ -111,7 +111,7 @@ class TestConvertToFlatJson(unittest.TestCase):
         json_data = json.dumps(ValuesForTests.json_data)
 
         FHIRConverter = Converter(json_data)
-        FlatFile = FHIRConverter.runConversion(ValuesForTests.json_data, False, True)
+        FlatFile = FHIRConverter.runConversion()
 
         flatJSON = json.dumps(FlatFile)
         expected_imms_value = deepcopy(ValuesForTests.expected_imms2)  # UPDATE is currently the default action-flag
@@ -130,7 +130,7 @@ class TestConvertToFlatJson(unittest.TestCase):
             json_data = json.dumps(test_case)
 
             FHIRConverter = Converter(json_data)
-            FHIRConverter.runConversion(ValuesForTests.json_data, False, True)
+            FHIRConverter.runConversion()
 
             errorRecords = FHIRConverter.getErrorRecords()
 
@@ -192,7 +192,7 @@ class TestConvertToFlatJson(unittest.TestCase):
         mock_fhir_parser.side_effect = Exception("FHIR Parsing Error")
         converter = Converter(fhir_data="some_data")
 
-        response = converter.runConversion("somedata")
+        response = converter.runConversion()
 
         # Check if the error message was added to ErrorRecords
         self.assertEqual(len(response), 2)
@@ -212,7 +212,7 @@ class TestConvertToFlatJson(unittest.TestCase):
         mock_schema_parser.side_effect = Exception("Schema Parsing Error")
         converter = Converter(fhir_data="{}")
 
-        converter.runConversion("some_data")
+        converter.runConversion()
 
         # Check if the error message was added to ErrorRecords
         errors = converter.getErrorRecords()
@@ -226,7 +226,7 @@ class TestConvertToFlatJson(unittest.TestCase):
         mock_conversion_checker.side_effect = Exception("Conversion Checking Error")
         converter = Converter(fhir_data="some_data")
 
-        response = converter.runConversion(ValuesForTests.json_data)
+        response = converter.runConversion()
 
         # Check if the error message was added to ErrorRecords
         self.assertEqual(len(converter.getErrorRecords()), 1)
@@ -242,7 +242,7 @@ class TestConvertToFlatJson(unittest.TestCase):
         mock_get_conversions.side_effect = Exception("Error while getting conversions")
         converter = Converter(fhir_data="some_data")
 
-        response = converter.runConversion(ValuesForTests.json_data)
+        response = converter.runConversion()
 
         # Check if the error message was added to ErrorRecords
         self.assertEqual(len(converter.getErrorRecords()), 1)
@@ -270,7 +270,7 @@ class TestConvertToFlatJson(unittest.TestCase):
         }
         converter.SchemaFile = schema
 
-        response = converter.runConversion(ValuesForTests.json_data)
+        response = converter.runConversion()
 
         error_records = converter.getErrorRecords()
         self.assertEqual(len(error_records), 1)
@@ -304,7 +304,7 @@ class TestConvertToFlatJson(unittest.TestCase):
         self.assertEqual(error["field"], "test_field")
         self.assertEqual(error["value"], "test_value")
         self.assertIn("Invalid value", error["message"])
-        self.assertEqual(error["code"], ExceptionMessages.RECORD_CHECK_FAILED)
+        self.assertEqual(error["code"], exception_messages.RECORD_CHECK_FAILED)
 
     @patch("ConversionChecker.LookUpData")
     def test_convert_to_not_empty(self, MockLookUpData):
@@ -516,7 +516,7 @@ class TestConvertToFlatJson(unittest.TestCase):
         # message should include our literal
         self.assertIn("Invalid String Data", err["message"])
         # and code should default to UNEXPECTED_EXCEPTION
-        self.assertEqual(err["code"], ExceptionMessages.RECORD_CHECK_FAILED)
+        self.assertEqual(err["code"], exception_messages.RECORD_CHECK_FAILED)
 
     #check for dose sequence
     @patch("ConversionChecker.LookUpData")

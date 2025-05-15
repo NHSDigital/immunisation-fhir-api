@@ -1,5 +1,5 @@
 import unittest
-from ConversionChecker import RecordError
+from conversion_checker import RecordError
 
 class TestRecordError(unittest.TestCase):
     def test_fields_and_str(self):

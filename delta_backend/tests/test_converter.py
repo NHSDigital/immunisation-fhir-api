@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch, MagicMock
-from Converter import Converter
-import ExceptionMessages
+from delta_converter import Converter
+import exception_messages
 
 
 class TestConverter(unittest.TestCase):
@@ -11,7 +11,7 @@ class TestConverter(unittest.TestCase):
         converter = Converter({})
         mock_getFHIRParser.side_effect = RuntimeError("Mocked FHIR parser failure")
 
-        result = converter.runConversion(json_data={})
+        result = converter.runConversion()
 
         self.assertIsInstance(result, dict)
         self.assertEqual(result["code"], 0)
@@ -26,7 +26,7 @@ class TestConverter(unittest.TestCase):
         mock_getFHIRParser.return_value = MagicMock()
         mock_getSchemaParser.side_effect = RuntimeError("Mocked Schema parser failure")
 
-        result = converter.runConversion(json_data={})
+        result = converter.runConversion()
 
         self.assertEqual(result["code"], 0)
         self.assertIn("Schema Parser Unexpected exception", result["message"])
@@ -40,7 +40,7 @@ class TestConverter(unittest.TestCase):
         mock_getSchemaParser.return_value = MagicMock()
 
         with patch('Converter.ConversionChecker', side_effect=RuntimeError("Mocked Checker failure")):
-            result = converter.runConversion(json_data={})
+            result = converter.runConversion()
             self.assertEqual(result["code"], 0)
             self.assertIn("Expression Checker Unexpected exception", result["message"])
 
@@ -54,7 +54,7 @@ class TestConverter(unittest.TestCase):
         mock_getSchemaParser.return_value = schema_mock
 
         with patch('Converter.ConversionChecker', return_value=MagicMock()):
-            result = converter.runConversion(json_data={})
+            result = converter.runConversion()
             self.assertEqual(result["code"], 0)
             self.assertIn("Expression Getter Unexpected exception", result["message"])
 
@@ -62,7 +62,7 @@ class TestConverter(unittest.TestCase):
     @patch.object(Converter, '_getSchemaParser')
     @patch('Converter.ConversionChecker')
     def test_runConversion_success(self, mock_checker, mock_schema_parser, mock_fhir_parser):
-        converter = Converter({})
+        converter = Converter(json_data={"occurrenceDateTime": "2023-01-01T12:00:00"})
         mock_fhir_parser.return_value.getKeyValue.return_value = ["test_value"]
         mock_schema_parser.return_value.getConversions.return_value = [{
             "fieldNameFHIR": "someFHIRField",
@@ -76,7 +76,7 @@ class TestConverter(unittest.TestCase):
         checker_instance.convertData.return_value = "converted_value"
         mock_checker.return_value = checker_instance
 
-        result = converter.runConversion(json_data={"occurrenceDateTime": "2023-01-01T12:00:00"})
+        result = converter.runConversion()
 
         self.assertEqual(len(result), 2)
         self.assertIn("someFlatField", result)
@@ -123,7 +123,7 @@ class TestConverter(unittest.TestCase):
 
             self.assertIn("DateTime conversion error", error_message)
             self.assertIn("ValueError", error_message)
-            self.assertEqual(error_code, ExceptionMessages.UNEXPECTED_EXCEPTION)
+            self.assertEqual(error_code, exception_messages.UNEXPECTED_EXCEPTION)
             self.assertEqual(result, "mocked-error")
 
 if __name__ == "__main__":

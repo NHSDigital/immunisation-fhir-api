@@ -2,7 +2,7 @@ import copy
 import json
 import unittest
 from tests.utils_for_converter_tests import ValuesForTests
-from Converter import Converter
+from delta_converter import Converter
 
 
 class TestPersonSNOMEDToFlatJson(unittest.TestCase):
@@ -27,7 +27,7 @@ class TestPersonSNOMEDToFlatJson(unittest.TestCase):
     def _run_snomed_test(self, flat_field_name, expected_snomed_code):
         """Helper function to run the test"""
         self.converter = Converter(json.dumps(self.request_json_data))
-        flat_json = self.converter.runConversion(self.request_json_data, False, True)
+        flat_json = self.converter.runConversion()
         self.assertEqual(flat_json.get(flat_field_name), expected_snomed_code)
     
     def test_vaccination_procedure_code_no_matching_extension_url_returns_empty(self):

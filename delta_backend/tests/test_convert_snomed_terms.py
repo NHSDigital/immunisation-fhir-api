@@ -2,7 +2,7 @@ import copy
 import json
 import unittest
 from tests.utils_for_converter_tests import ValuesForTests
-from Converter import Converter
+from delta_converter import Converter
 
 class TestPersonSNOMEDTermsToFlatJson(unittest.TestCase):
 
