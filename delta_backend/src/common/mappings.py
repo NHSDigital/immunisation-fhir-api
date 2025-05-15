@@ -1,12 +1,12 @@
 """ 
-    Define enums for event names, operations, and action flags. 
+    Enums for event names, operations, and action flags. 
     
     # case            eventName operation actionFlag
     ----------------- --------- --------- ----------
     create            INSERT    CREATE    NEW
     update            MODIFY    UPDATE    UPDATE
-    logically delete  MODIFY    DELETE    DELETE
-    physically delete REMOVE    REMOVE    N/A
+    logical delete    MODIFY    DELETE    DELETE
+    physical delete   REMOVE    REMOVE    N/A
 """
 
 class EventName():

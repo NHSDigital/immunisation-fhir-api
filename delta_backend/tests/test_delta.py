@@ -125,19 +125,8 @@ class DeltaTestCase(unittest.TestCase):
     @patch("boto3.resource")
     def test_handler_success_update(self, mock_boto_resource):
         # Arrange
-        self.setup_mock_dynamodb(mock_boto_resource)
-        event = ValuesForTests.get_event(event_name=EventName.UPDATE, operation=Operation.UPDATE)
-
-        # Act
-        result = handler(event, self.context)
-
-        # Assert
-        self.assertTrue(result)
-
-    @patch("boto3.resource")
-    def test_handler_success_remove(self, mock_boto_resource):
-        # Arrange
         mock_table = self.setup_mock_dynamodb(mock_boto_resource)
+        self.setup_mock_dynamodb(mock_boto_resource)
         imms_id = "test-update-imms-id"
         event = ValuesForTests.get_event(event_name=EventName.UPDATE, operation=Operation.UPDATE, imms_id=imms_id)
 
@@ -153,6 +142,49 @@ class DeltaTestCase(unittest.TestCase):
         self.assertIn("Imms", put_item_data)
         self.assertEqual(put_item_data["Imms"]["ACTION_FLAG"], ActionFlag.UPDATE)
         self.assertEqual(put_item_data["Operation"], Operation.UPDATE)
+        self.assertEqual(put_item_data["ImmsID"], imms_id)
+
+    @patch("boto3.resource")
+    def test_handler_success_delete_physical(self, mock_boto_resource):
+        # Arrange
+        mock_table = self.setup_mock_dynamodb(mock_boto_resource)
+        imms_id = "test-update-imms-id"
+        event = ValuesForTests.get_event(event_name=EventName.DELETE_PHYSICAL, operation=Operation.DELETE_PHYSICAL, imms_id=imms_id)
+
+        # Act
+        result = handler(event, self.context)
+
+        # Assert
+        self.assertTrue(result)
+        mock_table.put_item.assert_called()
+        self.mock_firehose_logger.send_log.assert_called() # check logged
+        put_item_call_args = mock_table.put_item.call_args # check data written to DynamoDB
+        put_item_data = put_item_call_args.kwargs["Item"]
+        self.assertIn("Imms", put_item_data)
+        self.assertEqual(put_item_data["Operation"], Operation.DELETE_PHYSICAL)
+        self.assertEqual(put_item_data["ImmsID"], imms_id)
+        self.assertEqual(put_item_data["Imms"], "")     # check imms has been blanked out
+
+    @patch("boto3.resource")
+    def test_handler_success_delete_logical(self, mock_boto_resource):
+        # Arrange
+        mock_table = self.setup_mock_dynamodb(mock_boto_resource)
+        imms_id = "test-update-imms-id"
+        event = ValuesForTests.get_event(event_name=EventName.UPDATE,
+                                         operation=Operation.DELETE_LOGICAL, 
+                                         imms_id=imms_id)
+        # Act
+        result = handler(event, self.context)
+
+        # Assert
+        self.assertTrue(result)
+        mock_table.put_item.assert_called()
+        self.mock_firehose_logger.send_log.assert_called() # check logged
+        put_item_call_args = mock_table.put_item.call_args # check data written to DynamoDB
+        put_item_data = put_item_call_args.kwargs["Item"]
+        self.assertIn("Imms", put_item_data)
+        self.assertEqual(put_item_data["Imms"]["ACTION_FLAG"], ActionFlag.DELETE_LOGICAL)
+        self.assertEqual(put_item_data["Operation"], Operation.DELETE_LOGICAL)
         self.assertEqual(put_item_data["ImmsID"], imms_id)
 
     @patch("boto3.resource")
@@ -195,7 +227,7 @@ class DeltaTestCase(unittest.TestCase):
 
         self.assertFalse(response)
 
-    @patch("delta.logger.info")  # Mock logging
+    @patch("delta.logger.info") 
     def test_dps_record_skipped(self, mock_logger_info):
         event = ValuesForTests.get_event(supplier="DPSFULL")
         context = {}
@@ -245,7 +277,6 @@ class DeltaTestCase(unittest.TestCase):
             RecordConfig(EventName.DELETE_LOGICAL, Operation.DELETE_LOGICAL, "id3", ActionFlag.DELETE_LOGICAL),
             RecordConfig(EventName.DELETE_PHYSICAL, Operation.DELETE_PHYSICAL, "id4"),
         ]
-        # Generate the event using ValuesForTests.get_multi_record_event
         event = ValuesForTests.get_multi_record_event(records_config)
 
         # Act
@@ -266,7 +297,6 @@ class DeltaTestCase(unittest.TestCase):
             RecordConfig(EventName.CREATE, Operation.CREATE, "create-id2", ActionFlag.CREATE),
             RecordConfig(EventName.CREATE, Operation.CREATE, "create-id3", ActionFlag.CREATE)
         ]
-        # Generate the event using ValuesForTests.get_multi_record_event
         event = ValuesForTests.get_multi_record_event(records_config)
 
         # Act
@@ -288,7 +318,6 @@ class DeltaTestCase(unittest.TestCase):
             RecordConfig(EventName.UPDATE, Operation.UPDATE, "update-id2", ActionFlag.UPDATE),
             RecordConfig(EventName.UPDATE, Operation.UPDATE, "update-id3", ActionFlag.UPDATE)
         ]
-        # Generate the event using ValuesForTests.get_multi_record_event
         event = ValuesForTests.get_multi_record_event(records_config)
 
         # Act
@@ -305,11 +334,10 @@ class DeltaTestCase(unittest.TestCase):
         mock_table = self.setup_mock_dynamodb(mock_boto_resource)
 
         records_config = [
-            RecordConfig(EventName.DELETE_LOGICAL, Operation.DELETE_LOGICAL, "update-id1", ActionFlag.DELETE_LOGICAL),
-            RecordConfig(EventName.DELETE_LOGICAL, Operation.DELETE_LOGICAL, "update-id2", ActionFlag.DELETE_LOGICAL),
-            RecordConfig(EventName.DELETE_LOGICAL, Operation.DELETE_LOGICAL, "update-id3", ActionFlag.DELETE_LOGICAL)
+            RecordConfig(EventName.DELETE_LOGICAL, Operation.DELETE_LOGICAL, "delete-id1", ActionFlag.DELETE_LOGICAL),
+            RecordConfig(EventName.DELETE_LOGICAL, Operation.DELETE_LOGICAL, "delete-id2", ActionFlag.DELETE_LOGICAL),
+            RecordConfig(EventName.DELETE_LOGICAL, Operation.DELETE_LOGICAL, "delete-id3", ActionFlag.DELETE_LOGICAL)
         ]
-        # Generate the event using ValuesForTests.get_multi_record_event
         event = ValuesForTests.get_multi_record_event(records_config)
 
         # Act
@@ -326,11 +354,10 @@ class DeltaTestCase(unittest.TestCase):
         mock_table = self.setup_mock_dynamodb(mock_boto_resource)
 
         records_config = [
-            RecordConfig(EventName.DELETE_PHYSICAL, Operation.DELETE_PHYSICAL, "update-id1"),
-            RecordConfig(EventName.DELETE_PHYSICAL, Operation.DELETE_PHYSICAL, "update-id2"),
-            RecordConfig(EventName.DELETE_PHYSICAL, Operation.DELETE_PHYSICAL, "update-id3")
+            RecordConfig(EventName.DELETE_PHYSICAL, Operation.DELETE_PHYSICAL, "remove-id1"),
+            RecordConfig(EventName.DELETE_PHYSICAL, Operation.DELETE_PHYSICAL, "remove-id2"),
+            RecordConfig(EventName.DELETE_PHYSICAL, Operation.DELETE_PHYSICAL, "remove-id3")
         ]
-        # Generate the event using ValuesForTests.get_multi_record_event
         event = ValuesForTests.get_multi_record_event(records_config)
 
         # Act
