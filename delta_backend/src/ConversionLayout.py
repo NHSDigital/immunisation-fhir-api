@@ -1,8 +1,5 @@
-
 # This file holds the schema/base layout that maps FHIR fields to flat JSON fields
 # Each entry tells the converter how to extract and transform a specific value
-from utils import is_integer_like
-
 EXTENSION_URL_VACCINATION_PRODEDURE = "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure"
 EXTENSION_URL_SCT_DESC_DISPLAY = "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-CodingSCTDescDisplay"
 
@@ -99,13 +96,13 @@ def _extract_route_of_vaccination_term(immunization) -> str:
 # - requirements: If element doseNumberPositiveInt exists and is < 10 then populate as received, else null 
 # - path : protocolApplied.doseNumber[x]
 def _extract_dose_sequence(immunization) -> str: 
-    protocol_applied = immunization.get("protocolApplied")
-    dose_number_positive_int = protocol_applied.get("doseNumberPositiveInt", "")
+    protocol_applied = immunization.get("protocolApplied", [])
     
-    return dose_number_positive_int if is_integer_like(dose_number_positive_int) else ""
-    
-    
-
+    if protocol_applied:   
+        dose = protocol_applied[0].get("doseNumberPositiveInt", None)
+        return str(dose) if dose else ""
+    return ""
+        
 ConvertLayout = {
   "id": "7d78e9a6-d859-45d3-bb05-df9c405acbdb",
   "schemaName": "JSON Base",
@@ -279,7 +276,7 @@ ConvertLayout = {
       "fieldNameFlat": "DOSE_SEQUENCE",
       "expression": {
         "expressionName": "Not Empty",
-        "expressionType": "DOSESEQUENCE",
+        "expressionType": "NORMAL",
         "expressionRule": _extract_dose_sequence
       }
     },
