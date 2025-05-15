@@ -5,6 +5,19 @@
 
 version: 2
 updates:
+  - package-ecosystem: "docker"
+    directories:
+      - "/ack_backend"
+      - "/delta_backend"
+      - "/filenameprocessor"
+      - "/grafana/non-prod/docker"
+      - "/mesh_processor"
+      - "/recordprocessor"
+      - "/sandbox"
+      - "/temporary_sandbox"
+    schedule:
+      interval: "daily"
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
@@ -31,7 +44,9 @@ updates:
 
   - package-ecosystem: "terraform"
     directories:
+      - "/grafana/non-prod/terraform"
       - "/infra/**"
+      - "/mesh-infra"
       - "/terraform"
       - "/terraform_aws_backup/**"
     schedule:
