@@ -1,19 +1,30 @@
-
 {
-  "resourceType": "Immunization",
   "contained": [
     {
-      "resourceType": "Practitioner",
       "id": "Pract1",
       "name": [
         {
           "family": "Nightingale",
-          "given": ["Florence"]
+          "given": [
+            "Florence"
+          ]
         }
-      ]
+      ],
+      "resourceType": "Practitioner"
     },
     {
-      "resourceType": "Patient",
+      "address": [
+        {
+          "city": "London",
+          "line": [
+            "123 High Street"
+          ],
+          "postalCode": "SW1A 1AA",
+          "use": "home"
+        }
+      ],
+      "birthDate": "2026-03-10",
+      "gender": "other",
       "id": "Pat1",
       "identifier": [
         {
@@ -24,44 +35,90 @@
       "name": [
         {
           "family": "Taylor",
-          "given": ["Sarah"]
+          "given": [
+            "Sarah"
+          ]
         }
       ],
-      "gender": "other",
-      "birthDate": "2026-03-10",
-      "address": [
-        {
-          "use": "home",
-          "line": ["123 High Street"],
-          "city": "London",
-          "postalCode": "SW1A 1AA"
-        }
-      ]
+      "resourceType": "Patient"
     }
   ],
+  "doseQuantity": {
+    "code": "ml",
+    "system": "http://unitsofmeasure.org",
+    "unit": "milliliter",
+    "value": 0.5
+  },
+  "expirationDate": "2024-10-05",
   "extension": [
     {
       "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure",
       "valueCodeableConcept": {
-          "coding": [
+        "coding": [
+          {
+            "code": "1324681000000104",
+            "display": "Administration of first dose 111 of severe acute respiratory syndrome coronavirus 2 vaccine (procedure)",
+            "extension": [
               {
-                  "code": "956951000000105",
-                  "display": "Seasonal influenza vaccination (procedure)",
-                  "system": "http://snomed.info/test"
+                "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-CodingSCTDescDisplay",
+                "valueString": "Test Value string 123456 COVID19 vaccination"
               },
               {
-                  "code": "956951000000104",
-                  "display": "Seasonal influenza vaccination (procedure)",
-                  "system": "http://snomed.info/sct"
-              },
-              {
-                  "code": "NEG",
-                  "display": "Seasonal influenza vaccination (procedure)",
-                  "system": "https://acme.lab/resultcodes"
+                "url": "http://hl7.org/fhir/StructureDefinition/coding-sctdescid",
+                "valueId": "1 - 5306706018"
               }
-          ]
-        }
+            ],
+            "system": "http://snomed.info/test"
+          },
+          {
+            "code": "1324681000000101",
+            "display": "Administration of first dose 222 of severe acute respiratory syndrome coronavirus 2 vaccine (procedure)",
+            "extension": [
+              {
+                "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-CodingSCTDescDisplay",
+                "valueString": "Test Value string 99996 COVID19 vaccination"
+              },
+              {
+                "url": "http://hl7.org/fhir/StructureDefinition/coding-sctdescid",
+                "valueId": "5306706019"
+              }
+            ],
+            "system": "http://snomed.info/sct"
+          },
+          {
+            "code": "1324681000000103",
+            "display": "Administration of first dose 333 of severe acute respiratory syndrome coronavirus 2 vaccine (procedure)",
+            "extension": [
+              {
+                "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-CodingSCTDescDisplay",
+                "valueString": "Test Value string 464645 COVID19 vaccination"
+              },
+              {
+                "url": "http://hl7.org/fhir/StructureDefinition/coding-sctdescid",
+                "valueId": "5306706018"
+              }
+            ],
+            "system": "http://snomed.info/sct"
+          },
+          {
+            "code": "1324681000000222",
+            "display": "Administration of first dose 333 of severe acute respiratory syndrome coronavirus 2 vaccine (procedure)",
+            "extension": [
+              {
+                "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-CodingSCTDescDisplay",
+                "valueString": "Test Value string 19874 COVID19 vaccination"
+              },
+              {
+                "url": "http://hl7.org/fhir/StructureDefinition/coding-sctdescid",
+                "valueId": "5306706019"
+              }
+            ],
+            "system": "http://snomed.info/sct"
+          }
+        ],
+        "text": "Negative RSV for Chlamydia Trachomatis rRNA"
       }
+    }
   ],
   "identifier": [
     {
@@ -69,63 +126,20 @@
       "value": "ACME-vacc123456"
     }
   ],
-  "status": "completed",
-  "vaccineCode": {
-    "coding": [
-      {
-        "system": "http://snomed.info/sct",
-        "code": "39114911000001104",
-        "display": "COVID-19 Vaccine Vaxzevria (ChAdOx1 S [recombinant]) not less than 2.5x100,000,000 infectious units/0.5ml dose suspension for injection multidose vials (AstraZeneca UK Ltd) (product)"
-      },
-      {
-        "system": "http://snomed.info/sct",
-        "code": "39114911000001105",
-        "display": "COVID-19 Vaccine Vaxzevria (ChAdOx1 S [recombinant]) not less than 2.5x100,000,000 infectious units/0.5ml dose suspension for injection multidose vials (AstraZeneca UK Ltd) (product)"
-      }
-    ]
+  "location": {
+    "identifier": {
+      "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+      "value": "X99999"
+    },
+    "type": "Location"
   },
-  "patient": {
-    "reference": "#Pat1"
-  },
-  "occurrenceDateTime": "2021-05-07T12:24:37+00:00",
-  "recorded": "2025-01-01T00:00:00.000000",
-  "primarySource": "True",
+  "lotNumber": "4120Z001",
   "manufacturer": {
     "display": "AstraZeneca Ltd"
   },
-  "location": {
-    "type": "Location",
-    "identifier": {
-      "value": "X99999",
-      "system": "https://fhir.nhs.uk/Id/ods-organization-code"
-    }
-  },
-  "lotNumber": "4120Z001",
-  "expirationDate": "2024-10-05",
-
-  "site": {
-    "coding": [
-      {
-        "system": "http://snomed.info/sct",
-        "code": "368208006",
-        "display": "Left upper arm structure (body structure)"
-      }
-    ]
-  },
-  "route": {
-    "coding": [
-      {
-        "system": "http://snomed.info/sct",
-        "code": "78421000",
-        "display": "Intramuscular route (qualifier value)"
-      }
-    ]
-  },
-  "doseQuantity": {
-    "value": 0.5,
-    "unit": "milliliter",
-    "system": "http://unitsofmeasure.org",
-    "code": "ml"
+  "occurrenceDateTime": "2021-05-07T12:24:37+00:00",
+  "patient": {
+    "reference": "#Pat1"
   },
   "performer": [
     {
@@ -135,12 +149,29 @@
     },
     {
       "actor": {
-        "type": "Organization",
         "identifier": {
           "system": "https://fhir.hl7.org.uk/Id/urn-school-number",
           "value": "B0C4P"
-        }
+        },
+        "type": "Organization"
       }
+    }
+  ],
+  "primarySource": "True",
+  "protocolApplied": [
+    {
+      "doseNumberPositiveInt": 2,
+      "targetDisease": [
+        {
+          "coding": [
+            {
+              "code": "840539006",
+              "display": "Disease caused by severe acute respiratory syndrome coronavirus 2",
+              "system": "http://snomed.info/sct"
+            }
+          ]
+        }
+      ]
     }
   ],
   "reasonCode": [
@@ -148,25 +179,91 @@
       "coding": [
         {
           "code": "443684005",
+          "display": "Disease outbreak (event)",
+          "system": "http://snomed.info/test"
+        },
+        {
+          "code": "543684005",
+          "display": "Disease outbreak (event)",
+          "system": "http://snomed.info/sct"
+        },
+        {
+          "code": "643684005",
+          "display": "Disease outbreak (event)",
           "system": "http://snomed.info/sct"
         }
       ]
     }
   ],
-  "protocolApplied": [
-    {
-      "targetDisease": [
-        {
-          "coding": [
-            {
-              "system": "http://snomed.info/sct",
-              "code": "840539006",
-              "display": "Disease caused by severe acute respiratory syndrome coronavirus 2"
-            }
-          ]
-        }
-      ],
-      "doseNumberPositiveInt": 2
-    }
-  ]
+  "recorded": "2025-01-01T00:00:00.000000",
+  "resourceType": "Immunization",
+  "route": {
+    "coding": [
+      {
+        "code": "78421000",
+        "display": "Intramuscular route (qualifier value)",
+        "system": "http://snomed.info/sct"
+      }
+    ]
+  },
+  "site": {
+    "coding": [
+      {
+        "code": "368208006",
+        "display": "Left upper arm structure (body structure)",
+        "system": "http://snomed.info/sct"
+      }
+    ]
+  },
+  "status": "completed",
+  "vaccineCode": {
+    "coding": [
+      {
+        "code": "39114911000001105",
+        "display": "COVID-19 Vaccine 111 Vaxzevria (ChAdOx1 S [recombinant]) not less than 2.5x100,000,000 infectious units/0.5ml dose suspension for injection multidose vials (AstraZeneca UK Ltd) (product)",
+        "extension": [
+          {
+            "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-CodingSCTDescDisplay",
+            "valueString": "Test Value string vaccineCode 12"
+          },
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/coding-sctdescid",
+            "valueId": "5306706018"
+          }
+        ],
+        "system": "http://snomed.info/test"
+      },
+      {
+        "code": "39114911000001106",
+        "display": "COVID-19 Vaccine 222 Vaxzevria (ChAdOx1 S [recombinant]) not less than 2.5x100,000,000 infectious units/0.5ml dose suspension for injection multidose vials (AstraZeneca UK Ltd) (product)",
+        "extension": [
+          {
+            "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-CodingSCTDescDisplay",
+            "valueString": "Test Value string vaccineCode 12"
+          },
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/coding-sctdescid",
+            "valueId": "5306706018"
+          }
+        ],
+        "system": "http://snomed.info/sct"
+      },
+      {
+        "code": "39114911000001107",
+        "display": "COVID-19 Vaccine 333 Vaxzevria (ChAdOx1 S [recombinant]) not less than 2.5x100,000,000 infectious units/0.5ml dose suspension for injection multidose vials (AstraZeneca UK Ltd) (product)",
+        "extension": [
+          {
+            "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-CodingSCTDescDisplay",
+            "valueString": "Test Value string vaccineCode 12"
+          },
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/coding-sctdescid",
+            "valueId": "5306706018"
+          }
+        ],
+        "system": "http://snomed.info/sct"
+      }
+    ],
+    "text": "Test String for VaccineCode"
+  }
 }

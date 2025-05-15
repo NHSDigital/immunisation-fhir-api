@@ -46,6 +46,16 @@ class ValuesForTests:
                             "system": "http://snomed.info/sct",
                             "code": "13246814444444",
                             "display": "Administration of first dose of severe acute respiratory syndrome coronavirus 2 vaccine (procedure)",
+                            "extension": [
+                                {
+                                    "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-CodingSCTDescDisplay",
+                                    "valueString": "Test Value string 123456 COVID19 vaccination"
+                                },
+                                {
+                                    "url": "http://hl7.org/fhir/StructureDefinition/coding-sctdescid",
+                                    "valueId": "5306706018"
+                                }
+                            ],
                         }
                     ]
                 },
@@ -94,7 +104,7 @@ class ValuesForTests:
         "doseQuantity": {
             "value": str(Decimal(0.5)),
             "unit": "milliliter",
-            "system": "http://unitsofmeasure.org",
+            "system": "http://snomed.info/sct",
             "code": "ml",
         },
         "performer": [
@@ -217,8 +227,8 @@ class ValuesForTests:
                 "RECORDED_DATE": "20210207",
                 "PRIMARY_SOURCE": True,
                 "VACCINATION_PROCEDURE_CODE": "13246814444444",
-                "VACCINATION_PROCEDURE_TERM": "Administration of first dose of severe acute respiratory syndrome coronavirus 2 vaccine (procedure)",
-                "DOSE_SEQUENCE": 1,
+                "VACCINATION_PROCEDURE_TERM": "Test Value string 123456 COVID19 vaccination",
+                "DOSE_SEQUENCE": "1",
                 "VACCINE_PRODUCT_CODE": "39114911000001105",
                 "VACCINE_PRODUCT_TERM": "COVID-19 Vaccine Vaxzevria (ChAdOx1 S [recombinant]) not less than 2.5x100,000,000 infectious units/0.5ml dose suspension for injection multidose vials (AstraZeneca UK Ltd) (product)",
                 "VACCINE_MANUFACTURER": "AstraZeneca Ltd",
@@ -229,7 +239,7 @@ class ValuesForTests:
                 "ROUTE_OF_VACCINATION_CODE": "78421000",
                 "ROUTE_OF_VACCINATION_TERM": "Intramuscular route (qualifier value)",
                 "DOSE_AMOUNT": "0.5",
-                "DOSE_UNIT_CODE": "",
+                "DOSE_UNIT_CODE": "ml",
                 "DOSE_UNIT_TERM": "milliliter",
                 "INDICATION_CODE": "443684005",
                 "LOCATION_CODE": "EC1111",
@@ -293,8 +303,8 @@ class ValuesForTests:
             "RECORDED_DATE": "20210207",
             "PRIMARY_SOURCE": True,
             "VACCINATION_PROCEDURE_CODE": "13246814444444",
-            "VACCINATION_PROCEDURE_TERM": "Administration of first dose of severe acute respiratory syndrome coronavirus 2 vaccine (procedure)",
-            "DOSE_SEQUENCE": 1,
+            "VACCINATION_PROCEDURE_TERM": "Test Value string 123456 COVID19 vaccination",
+            "DOSE_SEQUENCE": "1",
             "VACCINE_PRODUCT_CODE": "39114911000001105",
             "VACCINE_PRODUCT_TERM": "COVID-19 Vaccine Vaxzevria (ChAdOx1 S [recombinant]) not less than 2.5x100,000,000 infectious units/0.5ml dose suspension for injection multidose vials (AstraZeneca UK Ltd) (product)",
             "VACCINE_MANUFACTURER": "AstraZeneca Ltd",
@@ -305,7 +315,7 @@ class ValuesForTests:
             "ROUTE_OF_VACCINATION_CODE": "78421000",
             "ROUTE_OF_VACCINATION_TERM": "Intramuscular route (qualifier value)",
             "DOSE_AMOUNT": "0.5",
-            "DOSE_UNIT_CODE": "",
+            "DOSE_UNIT_CODE": "ml",
             "DOSE_UNIT_TERM": "milliliter",
             "INDICATION_CODE": "443684005",
             "LOCATION_CODE": "EC1111",

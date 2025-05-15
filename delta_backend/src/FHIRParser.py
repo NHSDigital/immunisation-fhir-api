@@ -15,21 +15,21 @@ class FHIRParser:
         """
         Applies expression rules for filtering key-value pairs during searches.
 
-        This method provides a flexible foundation for implementing various filtering 
-        or validation rules, enabling more dynamic and configurable search behavior. 
-        While it currently supports only SNOMED code validation, the structure opens 
+        This method provides a flexible foundation for implementing various filtering
+        or validation rules, enabling more dynamic and configurable search behavior.
+        While it currently supports only SNOMED code validation, the structure opens
         the door to applying a wide range of expression rules in the future.
 
-        For example, when processing a list of items, this method helps determine 
-        which item(s) satisfy specific criteria based on the logic defined by the 
+        For example, when processing a list of items, this method helps determine
+        which item(s) satisfy specific criteria based on the logic defined by the
         expression type and rule.
         """
         if expression_type == "SNOMED" and expression_rule == "validate-code":
             if key_value_pair.get("code"):
                 return is_valid_simple_snomed(key_value_pair["code"])
-        
+
         return True
-        
+
     # scan for a key name or a value
     def _scanValuesForMatch(self, parent, matchValue):
         try:
@@ -93,10 +93,14 @@ class FHIRParser:
         return rootfield
 
     # get the value for a key
-    def getKeyValue(self, fieldName, expression_type: str = "", expression_rule: str = ""):
+    def getKeyValue(self, fieldName, flatFieldName, expression_type: str = "", expression_rule = ""):
         value = []
         try:
-            responseValue = self._scanForValue(fieldName, expression_type, expression_rule)
+            # extract
+            if expression_type == "NORMAL":
+                responseValue = self.FHIRFile
+            else:
+                responseValue = self._scanForValue(fieldName, expression_type, expression_rule)
         except:
             responseValue = ""
 

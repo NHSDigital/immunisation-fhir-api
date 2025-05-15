@@ -1,7 +1,108 @@
-
 # This file holds the schema/base layout that maps FHIR fields to flat JSON fields
 # Each entry tells the converter how to extract and transform a specific value
+EXTENSION_URL_VACCINATION_PRODEDURE = "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure"
+EXTENSION_URL_SCT_DESC_DISPLAY = "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-CodingSCTDescDisplay"
 
+CODING_SYSTEM_URL_SNOMED = "http://snomed.info/sct"
+
+
+def _extract_vaccination_procedure_code(immunization) -> str:
+    extensions = immunization.get("extension", [])
+    for ext in extensions:
+        if ext.get("url") == EXTENSION_URL_VACCINATION_PRODEDURE:
+            value_cc = ext.get("valueCodeableConcept", {})
+            return _get_first_snomed_code(value_cc)
+    return ""
+
+
+def _extract_vaccine_product_code(immunization) -> str:
+    vaccine_code = immunization.get("vaccineCode", {})
+    return _get_first_snomed_code(vaccine_code)
+
+
+# Could be merged with smt
+def _extract_site_of_vaccination_code(immunization) -> str:
+    site = immunization.get("site", {})
+    return _get_first_snomed_code(site)
+
+
+def _extract_route_of_vaccination_code(immunization) -> str:
+    route = immunization.get("route", {})
+    return _get_first_snomed_code(route)
+
+
+def _extract_indication_code(immunization) -> str:
+    for reason in immunization.get("reasonCode", []):
+        codings = reason.get("coding", [])
+        for coding in codings:
+            if coding.get("system") == CODING_SYSTEM_URL_SNOMED:
+                return coding.get("code", "")
+    return ""
+
+
+def _extract_dose_unit_code(immunization) -> str:
+    dose_quantity = immunization.get("doseQuantity", {})
+    if dose_quantity.get("system") == CODING_SYSTEM_URL_SNOMED and dose_quantity.get("code"):
+        return dose_quantity.get("code")
+    return ""
+
+def _extract_dose_unit_term(immunization) -> str:
+    dose_quantity = immunization.get("doseQuantity", {})
+    return dose_quantity.get("unit", "")
+  
+def _get_first_snomed_code(coding_container: dict) -> str:
+    codings = coding_container.get("coding", [])
+    for coding in codings:
+        if coding.get("system") == CODING_SYSTEM_URL_SNOMED:
+            return coding.get("code", "")
+    return ""
+
+def _get_term_from_codeable_concept(concept: dict) -> str:
+    if concept.get("text"):
+        return concept["text"]
+
+    codings = concept.get("coding", [])
+    for coding in codings:
+        if coding.get("system") == CODING_SYSTEM_URL_SNOMED:
+            # Try SCTDescDisplay extension first
+            for ext in coding.get("extension", []):
+                if ext.get("url") == EXTENSION_URL_SCT_DESC_DISPLAY:
+                    value_string = ext.get("valueString")
+                    if value_string:
+                        return value_string
+
+            # Fallback to display
+            return coding.get("display", "")
+
+    return ""
+  
+def _extract_vaccination_procedure_term(immunization) -> str:
+    extensions = immunization.get("extension", [])
+    for ext in extensions:
+        if ext.get("url") == EXTENSION_URL_VACCINATION_PRODEDURE:
+            return _get_term_from_codeable_concept(ext.get("valueCodeableConcept", {}))
+    return ""
+
+def _extract_vaccine_product_term(immunization) -> str:
+    return _get_term_from_codeable_concept(immunization.get("vaccineCode", {}))
+
+def _extract_site_of_vaccination_term(immunization) -> str:
+    return _get_term_from_codeable_concept(immunization.get("site", {}))
+
+def _extract_route_of_vaccination_term(immunization) -> str:
+    return _get_term_from_codeable_concept(immunization.get("route", {}))
+
+# TBC 
+# - requirements: If element doseNumberPositiveInt exists and is < 10 then populate as received, else null 
+# - path : protocolApplied.doseNumber[x]
+def _extract_dose_sequence(immunization) -> str: 
+    protocol_applied = immunization.get("protocolApplied", [])
+    
+    if protocol_applied:   
+        dose = protocol_applied[0].get("doseNumberPositiveInt", None)
+        return str(dose) if dose else ""
+    return ""
+        
 ConvertLayout = {
   "id": "7d78e9a6-d859-45d3-bb05-df9c405acbdb",
   "schemaName": "JSON Base",
@@ -157,8 +258,8 @@ ConvertLayout = {
       "fieldNameFlat": "VACCINATION_PROCEDURE_CODE",
       "expression": {
         "expressionName": "Not Empty",
-        "expressionType": "SNOMED",
-        "expressionRule": ""
+        "expressionType": "NORMAL",
+        "expressionRule": _extract_vaccination_procedure_code
       }
     },
     {
@@ -166,8 +267,8 @@ ConvertLayout = {
       "fieldNameFlat": "VACCINATION_PROCEDURE_TERM",
       "expression": {
         "expressionName": "Not Empty",
-        "expressionType": "NOTEMPTY",
-        "expressionRule": ""
+        "expressionType": "NORMAL",
+        "expressionRule": _extract_vaccination_procedure_term
       }
     },
     {
@@ -175,8 +276,8 @@ ConvertLayout = {
       "fieldNameFlat": "DOSE_SEQUENCE",
       "expression": {
         "expressionName": "Not Empty",
-        "expressionType": "DOSESEQUENCE",
-        "expressionRule": ""
+        "expressionType": "NORMAL",
+        "expressionRule": _extract_dose_sequence
       }
     },
     {
@@ -184,8 +285,8 @@ ConvertLayout = {
       "fieldNameFlat": "VACCINE_PRODUCT_CODE",
       "expression": {
         "expressionName": "Not Empty",
-        "expressionType": "SNOMED",
-        "expressionRule": ""
+        "expressionType": "NORMAL",
+        "expressionRule": _extract_vaccine_product_code
       }
     },
     {
@@ -193,8 +294,8 @@ ConvertLayout = {
       "fieldNameFlat": "VACCINE_PRODUCT_TERM",
       "expression": {
         "expressionName": "Not Empty",
-        "expressionType": "NOTEMPTY",
-        "expressionRule": ""
+        "expressionType": "NORMAL",
+        "expressionRule": _extract_vaccine_product_term
       }
     },
     {
@@ -229,8 +330,8 @@ ConvertLayout = {
       "fieldNameFlat": "SITE_OF_VACCINATION_CODE",
       "expression": {
         "expressionName": "Not Empty",
-        "expressionType": "SNOMED",
-        "expressionRule": ""
+        "expressionType": "NORMAL",
+        "expressionRule": _extract_site_of_vaccination_code
       }
     },
     {
@@ -238,8 +339,8 @@ ConvertLayout = {
       "fieldNameFlat": "SITE_OF_VACCINATION_TERM",
       "expression": {
         "expressionName": "Look Up",
-        "expressionType": "LOOKUP",
-        "expressionRule": "site|coding|#:http://snomed.info/sct|code"
+        "expressionType": "NORMAL",
+        "expressionRule": _extract_site_of_vaccination_term
       }
     },
     {
@@ -247,8 +348,8 @@ ConvertLayout = {
       "fieldNameFlat": "ROUTE_OF_VACCINATION_CODE",
       "expression": {
         "expressionName": "Not Empty",
-        "expressionType": "SNOMED",
-        "expressionRule": ""
+        "expressionType": "NORMAL",
+        "expressionRule": _extract_route_of_vaccination_code
       }
     },
     {
@@ -256,8 +357,8 @@ ConvertLayout = {
       "fieldNameFlat": "ROUTE_OF_VACCINATION_TERM",
       "expression": {
         "expressionName": "Look Up",
-        "expressionType": "LOOKUP",
-        "expressionRule": "route|coding|#:http://snomed.info/sct|code"
+        "expressionType": "NORMAL",
+        "expressionRule": _extract_route_of_vaccination_term
       }
     },
     {
@@ -274,8 +375,8 @@ ConvertLayout = {
       "fieldNameFlat": "DOSE_UNIT_CODE",
       "expression": {
         "expressionName": "Only If",
-        "expressionType": "ONLYIF",
-        "expressionRule": "doseQuantity|system|http://snomed.info/sct"
+        "expressionType": "NORMAL",
+        "expressionRule": _extract_dose_unit_code
       }
     },
     {
@@ -283,8 +384,8 @@ ConvertLayout = {
       "fieldNameFlat": "DOSE_UNIT_TERM",
       "expression": {
         "expressionName": "Not Empty",
-        "expressionType": "NOTEMPTY",
-        "expressionRule": ""
+        "expressionType": "NORMAL",
+        "expressionRule": _extract_dose_unit_term
       }
     },
     {
@@ -292,8 +393,8 @@ ConvertLayout = {
       "fieldNameFlat": "INDICATION_CODE",
       "expression": {
         "expressionName": "Not Empty",
-        "expressionType": "SNOMED",
-        "expressionRule": ""
+        "expressionType": "NORMAL",
+        "expressionRule": _extract_indication_code
       }
     },
     {

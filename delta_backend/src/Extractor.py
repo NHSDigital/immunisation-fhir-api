@@ -104,7 +104,6 @@ def extract_practitioner_names(json_data, occurrence_time):
 
     return performing_professional_forename, performing_professional_surname
 
-
 def is_current_period(name, occurrence_time):
     period = name.get("period")
     if not isinstance(period, dict):
