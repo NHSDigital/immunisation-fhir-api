@@ -14,6 +14,10 @@ os.environ["SOURCE"] = "my_source"
 from delta import send_message, handler  # Import after setting environment variables
 from utils_for_converter_tests import ValuesForTests, RecordConfig
 
+success_response = {"ResponseMetadata": {"HTTPStatusCode": 200}}
+exception_response = ClientError({"Error": {"Code": "ConditionalCheckFailedException"}}, "PutItem")
+fail_response = {"ResponseMetadata": {"HTTPStatusCode": 500}}
+
 class DeltaTestCase(unittest.TestCase):
 
     def setUp(self):
@@ -25,13 +29,22 @@ class DeltaTestCase(unittest.TestCase):
         self.logger_exception_patcher = patch("logging.Logger.exception")
         self.mock_logger_exception = self.logger_exception_patcher.start()
 
+        self.logger_warning_patcher = patch("logging.Logger.warning")
+        self.mock_logger_warning = self.logger_warning_patcher.start()
+
         self.firehose_logger_patcher = patch("delta.firehose_logger")
         self.mock_firehose_logger = self.firehose_logger_patcher.start()
+        
+        self.boto_client_patcher = patch("boto3.client")
+        self.mock_boto_client = self.boto_client_patcher.start()
+
 
     def tearDown(self):
         self.logger_exception_patcher.stop()
+        self.logger_warning_patcher.stop()
         self.logger_info_patcher.stop()
         self.mock_firehose_logger.stop()
+        self.boto_client_patcher.stop()
 
     @staticmethod
     def setup_mock_sqs(mock_boto_client, return_value={"ResponseMetadata": {"HTTPStatusCode": 200}}):
@@ -53,10 +66,9 @@ class DeltaTestCase(unittest.TestCase):
         mock_table.put_item.side_effect = Exception("Test Exception")
         return mock_table
 
-    @patch("boto3.client")
-    def test_send_message_success(self, mock_boto_client):
+    def test_send_message_success(self):
         # Arrange
-        mock_sqs = self.setup_mock_sqs(mock_boto_client)
+        mock_sqs = self.setup_mock_sqs(self.mock_boto_client)
         record = {"key": "value"}
 
         # Act
@@ -187,38 +199,38 @@ class DeltaTestCase(unittest.TestCase):
         self.assertEqual(put_item_data["Operation"], Operation.DELETE_LOGICAL)
         self.assertEqual(put_item_data["ImmsID"], imms_id)
 
+
     @patch("boto3.resource")
     @patch("boto3.client")
-    def test_handler_exception_intrusion_check(self, mock_boto_resource, mock_boto_client):
+    def test_handler_exception_intrusion_check(self, mock_boto_client, mock_boto_resource):
         # Arrange
-        self.setup_mock_dynamodb(mock_boto_resource, status_code=500)
-        mock_boto_client.return_value = MagicMock()
+        self.setUp_mock_resources(mock_boto_client, mock_boto_resource)
         event = ValuesForTests.get_event()
+        expected_message = "Delta Lambda failure: Incorrect invocation of Lambda"
 
         # Act & Assert
 
         result = handler(event, self.context)
         self.assertFalse(result)
+        
+        self.mock_firehose_logger.send_log.assert_called()
+        firehose_log = self.mock_firehose_logger.send_log.call_args[0][0]
+        firehose_log_event = firehose_log["event"]
+        operation_outcome = firehose_log_event["operation_outcome"]
+        self.assertEqual(operation_outcome["statusDesc"], "Exception")
+        self.assertEqual(operation_outcome["diagnostics"], expected_message)
+        self.mock_logger_exception.assert_called_once_with(expected_message)
 
-    @patch("boto3.resource")
-    @patch("boto3.client")
-    def test_handler_exception_intrusion(self, mock_boto_client, mock_boto_resource):
-        # Arrange
-        self.setUp_mock_resources(mock_boto_resource, mock_boto_client)
-        event = ValuesForTests.get_event()
-        context = {}
 
-        # Act & Assert
-        with self.assertRaises(Exception):
-            handler(event, context)
-
-        self.mock_logger_exception.assert_called_once_with("Delta Lambda failure: Test Exception")
-
+    @patch("logging.Logger.error")
     @patch("boto3.resource")
     @patch("delta.handler")
-    def test_handler_exception_intrusion_check_false(self, mocked_intrusion, mock_boto_client):
+    def test_handler_exception_intrusion_check_false(self, mocked_intrusion, mock_boto_client, mock_logger_error):
         # Arrange
         self.setUp_mock_resources(mocked_intrusion, mock_boto_client)
+        self.setup_mock_sqs(self.mock_boto_client)
+        mock_logger_error.side_effect = None
+        mock_logger_error.return_value = None
         event = ValuesForTests.get_event()
         context = {}
 
@@ -367,3 +379,75 @@ class DeltaTestCase(unittest.TestCase):
         self.assertTrue(result)
         self.assertEqual(mock_table.put_item.call_count, 3)
         self.assertEqual(self.mock_firehose_logger.send_log.call_count, 3)
+
+    @patch("boto3.resource")
+    def test_single_error_in_multi(self, mock_boto_resource):
+        # Arrange
+        mock_table = self.setup_mock_dynamodb(mock_boto_resource)
+        mock_table.put_item.side_effect = [ success_response, fail_response, success_response]
+
+        records_config = [
+            RecordConfig(EventName.CREATE, Operation.CREATE, "ok-id1", ActionFlag.CREATE),
+            RecordConfig(EventName.UPDATE, Operation.UPDATE, "fail-id1.2", ActionFlag.UPDATE),
+            RecordConfig(EventName.DELETE_PHYSICAL, Operation.DELETE_PHYSICAL, "ok-id1.3"),
+        ]
+        event = ValuesForTests.get_multi_record_event(records_config)
+
+        # Act
+        result = handler(event, self.context)
+
+        # Assert
+        self.assertFalse(result)
+        self.assertEqual(mock_table.put_item.call_count, 3)
+        self.assertEqual(self.mock_firehose_logger.send_log.call_count, 2)
+        self.assertEqual(self.mock_logger_warning.call_count, 1)
+
+    @patch("boto3.resource")
+    def test_single_exception_in_multi(self, mock_boto_resource):
+        # Arrange
+        mock_table = self.setup_mock_dynamodb(mock_boto_resource)
+        # arrange so the 3rd record fails
+        mock_table.put_item.side_effect = [success_response, exception_response, success_response]
+
+        records_config = [
+            RecordConfig(EventName.CREATE, Operation.CREATE, "ok-id2.1", ActionFlag.CREATE),
+            RecordConfig(EventName.UPDATE, Operation.UPDATE, "exception-id2.2", ActionFlag.UPDATE),
+            RecordConfig(EventName.DELETE_PHYSICAL, Operation.DELETE_PHYSICAL, "ok-id2.3"),
+        ]
+        event = ValuesForTests.get_multi_record_event(records_config)
+
+        # Act
+        result = handler(event, self.context)
+
+        # Assert
+        self.assertFalse(result)
+        self.assertEqual(mock_table.put_item.call_count, 3)
+        self.assertEqual(self.mock_firehose_logger.send_log.call_count, 2)
+        self.assertEqual(self.mock_logger_exception.call_count, 1)
+
+@patch("delta.process_record")
+@patch("boto3.resource")
+def test_handler_calls_process_record_for_each_event(self, mock_boto_resource, mock_process_record):
+    # Arrange
+    mock_delta_table = MagicMock()
+    mock_boto_resource.return_value.Table.return_value = mock_delta_table
+
+    # Create an event with 3 records
+    event = {
+        "Records": [
+            { "a": "record1" },
+            { "a": "record2" },
+            { "a": "record3" }
+        ]
+    }
+    context = {}
+
+    # Mock process_record to always return True
+    mock_process_record.return_value = True
+
+    # Act
+    result = handler(event, context)
+
+    # Assert
+    self.assertTrue(result)
+    self.assertEqual(mock_process_record.call_count, len(event["Records"]))
