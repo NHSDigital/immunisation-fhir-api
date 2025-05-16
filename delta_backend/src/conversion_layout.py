@@ -268,8 +268,8 @@ class ConversionLayout:
               "fieldNameFlat": "DOSE_AMOUNT",
               "expression": {
                 "expressionName": "Not Empty",
-                "expressionType": "DEFAULT",
-                "expressionRule": ""
+                "expressionType": "NORMAL",
+                "expressionRule": self.extractor.extract_dose_amount
               }
             },
             {
@@ -304,8 +304,8 @@ class ConversionLayout:
               "fieldNameFlat": "LOCATION_CODE",
               "expression": {
                 "expressionName": "Defaults to",
-                "expressionType": "DEFAULT",
-                "expressionRule": "X99999"
+                "expressionType": "NORMAL",
+                "expressionRule": self.extractor.extract_location_code
               }
             },
             {
@@ -313,8 +313,8 @@ class ConversionLayout:
               "fieldNameFlat": "LOCATION_CODE_TYPE_URI",
               "expression": {
                 "expressionName": "Defaults to",
-                "expressionType": "DEFAULT",
-                "expressionRule": "https://fhir.nhs.uk/Id/ods-organization-code"
+                "expressionType": "NORMAL",
+                "expressionRule": self.extractor.extract_location_code_type_uri
               }
             }
           ]

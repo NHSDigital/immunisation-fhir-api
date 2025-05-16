@@ -11,7 +11,8 @@ class Extractor:
 
     CODING_SYSTEM_URL_SNOMED = "http://snomed.info/sct"
     ODS_ORG_CODE_SYSTEM_URL = "https://fhir.nhs.uk/Id/ods-organization-code"
-
+    DEFAULT_LOCATION = "X99999"
+    
     def __init__(self, fhir_json_data):
         self.fhir_json_data = json.loads(fhir_json_data) if isinstance(fhir_json_data, str) else fhir_json_data
         
@@ -19,15 +20,70 @@ class Extractor:
         contained = self.fhir_json_data.get("contained", [])
         return next((c for c in contained if isinstance(c, dict) and c.get("resourceType") == "Patient"), None)
 
-    def _get_valid_names(self, names, occurrence_time):
-        
+    def _get_valid_names(self, names, occurrence_time):  
         official_names = [n for n in names if n.get("use") == "official" and self._is_current_period(n, occurrence_time)]
         if official_names:
             return official_names[0]
 
         valid_names = [n for n in names if self._is_current_period(n, occurrence_time) and n.get("use") != "old"]
         return valid_names[0] if valid_names else names[0]
+   
+    def _is_current_period(self, name, occurrence_time):
+        period = name.get("period")
+        if not isinstance(period, dict):
+            return True  # If no period is specified, assume it's valid
 
+        start = datetime.fromisoformat(period.get("start")) if period.get("start") else None
+        end = datetime.fromisoformat(period.get("end")) if period.get("end") else None
+
+        # Ensure all datetime objects are timezone-aware
+        if start and start.tzinfo is None:
+            start = start.replace(tzinfo=timezone.utc)
+        if end and end.tzinfo is None:
+            end = end.replace(tzinfo=timezone.utc)
+
+        return (not start or start <= occurrence_time) and (not end or occurrence_time <= end)
+    
+    def _get_occurance_date_time(self) -> str:
+        try:
+            #TODO: Double check if this logic is correct
+            occurrence_time = datetime.fromisoformat(self.fhir_json_data.get("occurrenceDateTime", ""))
+            if occurrence_time and occurrence_time.tzinfo is None:
+                occurrence_time = occurrence_time.replace(tzinfo=timezone.utc)
+                return occurrence_time
+            return occurrence_time
+        
+        except Exception as e:
+            message = "DateTime conversion error [%s]: %s" % (e.__class__.__name__, e)
+            error = self._log_error(message, code=exception_messages.UNEXPECTED_EXCEPTION)
+            return error
+    
+    def _get_first_snomed_code(self, coding_container: dict) -> str:
+        codings = coding_container.get("coding", [])
+        for coding in codings:
+            if coding.get("system") == self.CODING_SYSTEM_URL_SNOMED:
+                return coding.get("code", "")
+        return ""
+
+    def _get_term_from_codeable_concept(self, concept: dict) -> str:
+        if concept.get("text"):
+            return concept["text"]
+
+        codings = concept.get("coding", [])
+        for coding in codings:
+            if coding.get("system") == self.CODING_SYSTEM_URL_SNOMED:
+                # Try SCTDescDisplay extension first
+                for ext in coding.get("extension", []):
+                    if ext.get("url") == self.EXTENSION_URL_SCT_DESC_DISPLAY:
+                        value_string = ext.get("valueString")
+                        if value_string:
+                            return value_string
+
+                # Fallback to display
+                return coding.get("display", "")
+
+        return ""
+    
     def extract_person_forename(self):
         return self.extract_person_names()[0]
     
@@ -133,21 +189,6 @@ class Extractor:
 
         return performing_professional_forename, performing_professional_surname
 
-    def _is_current_period(self, name, occurrence_time):
-        period = name.get("period")
-        if not isinstance(period, dict):
-            return True  # If no period is specified, assume it's valid
-
-        start = datetime.fromisoformat(period.get("start")) if period.get("start") else None
-        end = datetime.fromisoformat(period.get("end")) if period.get("end") else None
-
-        # Ensure all datetime objects are timezone-aware
-        if start and start.tzinfo is None:
-            start = start.replace(tzinfo=timezone.utc)
-        if end and end.tzinfo is None:
-            end = end.replace(tzinfo=timezone.utc)
-
-        return (not start or start <= occurrence_time) and (not end or occurrence_time <= end)
         
     def extract_vaccination_procedure_code(self) -> str:
         extensions = self.fhir_json_data.get("extension", [])
@@ -176,6 +217,10 @@ class Extractor:
                 if coding.get("system") == self.CODING_SYSTEM_URL_SNOMED:
                     return coding.get("code", "")
         return ""
+  
+    def extract_dose_amount(self) -> str:
+        dose_quantity = self.fhir_json_data.get("doseQuantity", {})
+        return dose_quantity.get("value", "")
 
     def extract_dose_unit_code(self) -> str:
         dose_quantity = self.fhir_json_data.get("doseQuantity", {})
@@ -186,32 +231,6 @@ class Extractor:
     def extract_dose_unit_term(self) -> str:
         dose_quantity = self.fhir_json_data.get("doseQuantity", {})
         return dose_quantity.get("unit", "")
-
-    def _get_first_snomed_code(self, coding_container: dict) -> str:
-        codings = coding_container.get("coding", [])
-        for coding in codings:
-            if coding.get("system") == self.CODING_SYSTEM_URL_SNOMED:
-                return coding.get("code", "")
-        return ""
-
-    def _get_term_from_codeable_concept(self, concept: dict) -> str:
-        if concept.get("text"):
-            return concept["text"]
-
-        codings = concept.get("coding", [])
-        for coding in codings:
-            if coding.get("system") == self.CODING_SYSTEM_URL_SNOMED:
-                # Try SCTDescDisplay extension first
-                for ext in coding.get("extension", []):
-                    if ext.get("url") == self.EXTENSION_URL_SCT_DESC_DISPLAY:
-                        value_string = ext.get("valueString")
-                        if value_string:
-                            return value_string
-
-                # Fallback to display
-                return coding.get("display", "")
-
-        return ""
 
     def extract_vaccination_procedure_term(self) -> str:
         extensions = self.fhir_json_data.get("extension", [])
@@ -237,16 +256,21 @@ class Extractor:
             return str(dose) if dose else ""
         return ""
     
-    def _get_occurance_date_time(self) -> str:
-        try:
-            #TODO: Double check if this logic is correct
-            occurrence_time = datetime.fromisoformat(self.fhir_json_data.get("occurrenceDateTime", ""))
-            if occurrence_time and occurrence_time.tzinfo is None:
-                occurrence_time = occurrence_time.replace(tzinfo=timezone.utc)
-                return occurrence_time
-            return occurrence_time
+    def extract_location_code(self) -> str: 
+        location = self.fhir_json_data.get("location", {})
+            
+        if location: 
+            identifier = location.get("identifier", {})
+            return identifier.get("value", self.DEFAULT_LOCATION)
         
-        except Exception as e:
-            message = "DateTime conversion error [%s]: %s" % (e.__class__.__name__, e)
-            error = self._log_error(message, code=exception_messages.UNEXPECTED_EXCEPTION)
-            return error
+        return self.DEFAULT_LOCATION
+    
+    def extract_location_code_type_uri(self) -> str: 
+        location = self.fhir_json_data.get("location", {})
+            
+        if location: 
+            identifier = location.get("identifier", {})
+            return identifier.get("system", self.ODS_ORG_CODE_SYSTEM_URL)
+        
+        return self.ODS_ORG_CODE_SYSTEM_URL
+
