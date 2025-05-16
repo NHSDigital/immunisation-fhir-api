@@ -60,6 +60,7 @@ class Converter:
             ### TODO: Remove this after refactoring all fields to be extracted with the Extractor
             values = self.data_parser.get_key_value(fhir_field, flat_field, expr_type, expr_rule)
             ###
+            
             if flat_field == "ACTION_FLAG":
                 self.converted[flat_field] = self.action_flag
             else:

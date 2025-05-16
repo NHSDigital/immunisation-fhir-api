@@ -320,3 +320,25 @@ class Extractor:
             return identifier.get("system", self.ODS_ORG_CODE_SYSTEM_URL)
         
         return self.ODS_ORG_CODE_SYSTEM_URL
+    
+    def extract_primary_source(self) -> str: 
+        primary_source = self.fhir_json_data.get("primarySource")
+        
+        if isinstance(primary_source, bool):
+            return primary_source
+        if str(primary_source).strip().lower() == "true":
+            return True
+        if str(primary_source).strip().lower() == "false":
+            return False
+        
+        return ""
+    
+    def extract_vaccine_manufacturer(self) -> str: 
+        manufacturer = self.fhir_json_data.get("manufacturer", {})
+        if manufacturer: 
+            return manufacturer.get("display", "")
+        return ""
+    
+    def extract_batch_number(self) -> str: 
+        return self.fhir_json_data.get("lotNumber", "")
+       

@@ -100,9 +100,9 @@ You can now:
 | DATE_AND_TIME                          | DATETIME                                          |  X         |
 | UNIQUE_ID                              | self.extract_unique_id                            | ✅         |
 | UNIQUE_ID_URI                          | self.extract_unique_id_uri                        | ✅         |
-| ACTION_FLAG                            |                                                   |            |
+| ACTION_FLAG                            |  INTERNAL                                         |  X         |
 | RECORDED_DATE                          |  DATECONVERT                                      |  X         |
-| PRIMARY_SOURCE                         |                                                   |            |
-| VACCINE_MANUFACTURER                   |                                                   |            |
-| BATCH_NUMBER                           |                                                   |            |
+| PRIMARY_SOURCE                         | self.extract_primary_source                       |  ✅        |
+| VACCINE_MANUFACTURER                   | self.extract_vaccine_manufacturer                 |  ✅        |
+| BATCH_NUMBER                           | self.extract_batch_number                         |  ✅        |
 | EXPIRY_DATE                            |  DATECONVERT                                      |  X         |

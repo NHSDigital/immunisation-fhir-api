@@ -151,8 +151,8 @@ class ConversionLayout:
               "fieldNameFlat": "PRIMARY_SOURCE",
               "expression": {
                 "expressionName": "Not Empty",
-                "expressionType": "BOOLEAN",
-                "expressionRule": ""
+                "expressionType": "NORMAL",
+                "expressionRule": self.extractor.extract_primary_source
               }
             },
             {
@@ -206,7 +206,7 @@ class ConversionLayout:
               "expression": {
                 "expressionName": "Not Empty",
                 "expressionType": "NOTEMPTY",
-                "expressionRule": ""
+                "expressionRule": self.extractor.extract_vaccine_manufacturer
               }
             },
             {
@@ -215,7 +215,7 @@ class ConversionLayout:
               "expression": {
                 "expressionName": "Not Empty",
                 "expressionType": "NOTEMPTY",
-                "expressionRule": ""
+                "expressionRule": self.extractor.extract_batch_number
               }
             },
             {
