@@ -16,7 +16,7 @@ class ConversionLayout:
               "fieldNameFlat": "NHS_NUMBER",
               "expression": {
                 "expressionName": "NHS NUMBER",
-                "expressionType": "NORMAL",
+                "expressionType": "DEFAULT",
                 "expressionRule": self.extractor.extract_nhs_number
               }
             },
@@ -25,7 +25,7 @@ class ConversionLayout:
               "fieldNameFlat": "PERSON_FORENAME",
               "expression": {
                 "expressionName": "Not Empty",
-                "expressionType": "NORMAL",
+                "expressionType": "DEFAULT",
                 "expressionRule": self.extractor.extract_person_forename
               }
             },
@@ -34,7 +34,7 @@ class ConversionLayout:
               "fieldNameFlat": "PERSON_SURNAME",
               "expression": {
                 "expressionName": "Not Empty",
-                "expressionType": "NORMAL",
+                "expressionType": "DEFAULT",
                 "expressionRule": self.extractor.extract_person_surname
               }
             },
@@ -52,7 +52,7 @@ class ConversionLayout:
               "fieldNameFlat": "PERSON_GENDER_CODE",
               "expression": {
                 "expressionName": "Gender Conversion",
-                "expressionType": "NORMAL",
+                "expressionType": "DEFAULT",
                 "expressionRule": self.extractor.extract_person_gender
               }
             },
@@ -61,7 +61,7 @@ class ConversionLayout:
               "fieldNameFlat": "PERSON_POSTCODE",
               "expression": {
                 "expressionName": "Defaults to",
-                "expressionType": "NORMAL",
+                "expressionType": "DEFAULT",
                 "expressionRule": self.extractor.extract_valid_address
               }
             },
@@ -79,7 +79,7 @@ class ConversionLayout:
               "fieldNameFlat": "SITE_CODE",
               "expression": {
                 "expressionName": "Not Empty",
-                "expressionType": "NORMAL",
+                "expressionType": "DEFAULT",
                 "expressionRule": self.extractor.extract_site_code
               }
             },
@@ -88,7 +88,7 @@ class ConversionLayout:
               "fieldNameFlat": "SITE_CODE_TYPE_URI",
               "expression": {
                 "expressionName": "Defaults to",
-                "expressionType": "NORMAL",
+                "expressionType": "DEFAULT",
                 "expressionRule": self.extractor.extract_site_code_type_uri
               }
             },
@@ -97,7 +97,7 @@ class ConversionLayout:
               "fieldNameFlat": "UNIQUE_ID",
               "expression": {
                 "expressionName": "Not Empty",
-                "expressionType": "NORMAL",
+                "expressionType": "DEFAULT",
                 "expressionRule": self.extractor.extract_unique_id
               }
             },
@@ -106,7 +106,7 @@ class ConversionLayout:
               "fieldNameFlat": "UNIQUE_ID_URI",
               "expression": {
                 "expressionName": "Not Empty",
-                "expressionType": "NORMAL",
+                "expressionType": "DEFAULT",
                 "expressionRule": self.extractor.extract_unique_id_uri
               }
             },
@@ -124,7 +124,7 @@ class ConversionLayout:
               "fieldNameFlat": "PERFORMING_PROFESSIONAL_FORENAME",
               "expression": {
                 "expressionName": "Not Empty",
-                "expressionType": "NORMAL",
+                "expressionType": "DEFAULT",
                 "expressionRule": self.extractor.extract_practitioner_forename
               }
             },
@@ -133,7 +133,7 @@ class ConversionLayout:
               "fieldNameFlat": "PERFORMING_PROFESSIONAL_SURNAME",
               "expression": {
                 "expressionName": "Not Empty",
-                "expressionType": "NORMAL",
+                "expressionType": "DEFAULT",
                 "expressionRule": self.extractor.extract_practitioner_surname
               }
             },
@@ -151,7 +151,7 @@ class ConversionLayout:
               "fieldNameFlat": "PRIMARY_SOURCE",
               "expression": {
                 "expressionName": "Not Empty",
-                "expressionType": "NORMAL",
+                "expressionType": "DEFAULT",
                 "expressionRule": self.extractor.extract_primary_source
               }
             },
@@ -160,7 +160,7 @@ class ConversionLayout:
               "fieldNameFlat": "VACCINATION_PROCEDURE_CODE",
               "expression": {
                 "expressionName": "Not Empty",
-                "expressionType": "NORMAL",
+                "expressionType": "DEFAULT",
                 "expressionRule": self.extractor.extract_vaccination_procedure_code
               }
             },
@@ -169,7 +169,7 @@ class ConversionLayout:
               "fieldNameFlat": "VACCINATION_PROCEDURE_TERM",
               "expression": {
                 "expressionName": "Not Empty",
-                "expressionType": "NORMAL",
+                "expressionType": "DEFAULT",
                 "expressionRule": self.extractor.extract_vaccination_procedure_term
               }
             },
@@ -178,7 +178,7 @@ class ConversionLayout:
               "fieldNameFlat": "DOSE_SEQUENCE",
               "expression": {
                 "expressionName": "Not Empty",
-                "expressionType": "NORMAL",
+                "expressionType": "DEFAULT",
                 "expressionRule": self.extractor.extract_dose_sequence
               }
             },
@@ -187,7 +187,7 @@ class ConversionLayout:
               "fieldNameFlat": "VACCINE_PRODUCT_CODE",
               "expression": {
                 "expressionName": "Not Empty",
-                "expressionType": "NORMAL",
+                "expressionType": "DEFAULT",
                 "expressionRule": self.extractor.extract_vaccine_product_code
               }
             },
@@ -196,7 +196,7 @@ class ConversionLayout:
               "fieldNameFlat": "VACCINE_PRODUCT_TERM",
               "expression": {
                 "expressionName": "Not Empty",
-                "expressionType": "NORMAL",
+                "expressionType": "DEFAULT",
                 "expressionRule": self.extractor.extract_vaccine_product_term
               }
             },
@@ -205,7 +205,7 @@ class ConversionLayout:
               "fieldNameFlat": "VACCINE_MANUFACTURER",
               "expression": {
                 "expressionName": "Not Empty",
-                "expressionType": "NOTEMPTY",
+                "expressionType": "DEFAULT",
                 "expressionRule": self.extractor.extract_vaccine_manufacturer
               }
             },
@@ -214,7 +214,7 @@ class ConversionLayout:
               "fieldNameFlat": "BATCH_NUMBER",
               "expression": {
                 "expressionName": "Not Empty",
-                "expressionType": "NOTEMPTY",
+                "expressionType": "DEFAULT",
                 "expressionRule": self.extractor.extract_batch_number
               }
             },
@@ -232,7 +232,7 @@ class ConversionLayout:
               "fieldNameFlat": "SITE_OF_VACCINATION_CODE",
               "expression": {
                 "expressionName": "Not Empty",
-                "expressionType": "NORMAL",
+                "expressionType": "DEFAULT",
                 "expressionRule": self.extractor.extract_site_of_vaccination_code
               }
             },
@@ -241,7 +241,7 @@ class ConversionLayout:
               "fieldNameFlat": "SITE_OF_VACCINATION_TERM",
               "expression": {
                 "expressionName": "Look Up",
-                "expressionType": "NORMAL",
+                "expressionType": "DEFAULT",
                 "expressionRule": self.extractor.extract_site_of_vaccination_term
               }
             },
@@ -250,7 +250,7 @@ class ConversionLayout:
               "fieldNameFlat": "ROUTE_OF_VACCINATION_CODE",
               "expression": {
                 "expressionName": "Not Empty",
-                "expressionType": "NORMAL",
+                "expressionType": "DEFAULT",
                 "expressionRule": self.extractor.extract_route_of_vaccination_code
               }
             },
@@ -259,7 +259,7 @@ class ConversionLayout:
               "fieldNameFlat": "ROUTE_OF_VACCINATION_TERM",
               "expression": {
                 "expressionName": "Look Up",
-                "expressionType": "NORMAL",
+                "expressionType": "DEFAULT",
                 "expressionRule": self.extractor.extract_route_of_vaccination_term
               }
             },
@@ -268,7 +268,7 @@ class ConversionLayout:
               "fieldNameFlat": "DOSE_AMOUNT",
               "expression": {
                 "expressionName": "Not Empty",
-                "expressionType": "NORMAL",
+                "expressionType": "DEFAULT",
                 "expressionRule": self.extractor.extract_dose_amount
               }
             },
@@ -277,7 +277,7 @@ class ConversionLayout:
               "fieldNameFlat": "DOSE_UNIT_CODE",
               "expression": {
                 "expressionName": "Only If",
-                "expressionType": "NORMAL",
+                "expressionType": "DEFAULT",
                 "expressionRule": self.extractor.extract_dose_unit_code
               }
             },
@@ -286,7 +286,7 @@ class ConversionLayout:
               "fieldNameFlat": "DOSE_UNIT_TERM",
               "expression": {
                 "expressionName": "Not Empty",
-                "expressionType": "NORMAL",
+                "expressionType": "DEFAULT",
                 "expressionRule": self.extractor.extract_dose_unit_term
               }
             },
@@ -295,7 +295,7 @@ class ConversionLayout:
               "fieldNameFlat": "INDICATION_CODE",
               "expression": {
                 "expressionName": "Not Empty",
-                "expressionType": "NORMAL",
+                "expressionType": "DEFAULT",
                 "expressionRule": self.extractor.extract_indication_code
               }
             },
@@ -304,7 +304,7 @@ class ConversionLayout:
               "fieldNameFlat": "LOCATION_CODE",
               "expression": {
                 "expressionName": "Defaults to",
-                "expressionType": "NORMAL",
+                "expressionType": "DEFAULT",
                 "expressionRule": self.extractor.extract_location_code
               }
             },
@@ -313,7 +313,7 @@ class ConversionLayout:
               "fieldNameFlat": "LOCATION_CODE_TYPE_URI",
               "expression": {
                 "expressionName": "Defaults to",
-                "expressionType": "NORMAL",
+                "expressionType": "DEFAULT",
                 "expressionRule": self.extractor.extract_location_code_type_uri
               }
             }

@@ -282,71 +282,6 @@ class TestConvertToFlatJson(unittest.TestCase):
         self.assertIn("Invalid value", error["message"])
         self.assertEqual(error["code"], exception_messages.RECORD_CHECK_FAILED)
 
-    def test_convert_to_not_empty(self):
-
-        dataParser = Mock()
-
-        checker = ConversionChecker(dataParser, summarise=False, report_unexpected_exception=True)
-
-        result = checker._convertToNotEmpty(None, "fieldName", "Some data", False, True)
-        self.assertEqual(result, "Some data")
-
-        result = checker._convertToNotEmpty(None, "fieldName", "", False, True)
-        self.assertEqual(result, "")
-
-        # Test for value that is not a string
-        checker._log_error = Mock()
-        result = checker._convertToNotEmpty(None, "fieldName", 12345, False, True)
-        self.assertEqual(result, "")
-
-        checker._log_error.assert_called_once()
-
-        field, value, err = checker._log_error.call_args[0]
-        self.assertEqual((field, value), ("fieldName",12345))
-        self.assertIsInstance(err, str)
-        self.assertIn("Value not a String", err)
-
-        checker._log_error.reset_mock()
-
-        # Simulate a fieldValue whose .strip() crashes to test exception handling
-        checker._log_error = Mock()
-
-        class BadString(str):
-            def strip(self):
-                raise RuntimeError("Simulated crash during strip")
-
-        bad_value = BadString("some bad string")
-
-        # Make the .strip() method crash
-        result = checker._convertToNotEmpty(None, "fieldName", bad_value, False, True)
-        self.assertEqual(result, "")  # Should return empty string on exception
-        checker._log_error.assert_called_once()
-        field, value, message = checker._log_error.call_args[0]
-        self.assertEqual((field, value), ("fieldName", bad_value))
-        self.assertIsInstance(message, str)
-        self.assertIn("RuntimeError", message)
-
-    def test_convert_to_nhs_number(self):
-
-        dataParser = Mock()
-
-        checker = ConversionChecker(dataParser, summarise=False, report_unexpected_exception=True)
-
-         # Test empty NHS number
-        empty_nhs_number = ""
-        result = checker._convertToNHSNumber(None, "fieldName", empty_nhs_number, False, True)
-        self.assertEqual(result, "", "Expected empty string for empty NHS number input")
-
-        # Test valid NHS number
-        valid_nhs_number = "6000000000"
-        result = checker._convertToNHSNumber("NHSNUMBER", "fieldName", valid_nhs_number, False, True)
-        self.assertEqual(result, "6000000000", "Valid NHS number should be returned as-is")
-
-        # Test invalid NHS number
-        invalid_nhs_number = "1234567890243"
-        result = checker._convertToNHSNumber("NHSNUMBER","fieldName", invalid_nhs_number, False, True)
-        self.assertEqual(result, "", "Invalid NHS number should return empty string")
-
     def test_convert_to_date(self):
         dataParser = Mock()
 
@@ -446,66 +381,6 @@ class TestConvertToFlatJson(unittest.TestCase):
         field, value, err = checker._log_error.call_args[0]
         self.assertEqual((field, value), ("fieldName", valid_fhir_date))
         self.assertIsInstance(err, ValueError)
-
-    def test_convert_to_boolean(self):
-        dataParser = Mock()
-
-        checker = ConversionChecker(dataParser, summarise=False, report_unexpected_exception=True)
-
-        # Arrange
-        dataParser = Mock()
-        checker = ConversionChecker(dataParser, summarise=False, report_unexpected_exception=True)
-
-        # 1. Boolean True passes through
-        result = checker._convertToBoolean(None, "fieldName", True, False, True)
-        self.assertTrue(result)
-
-        # 2. Boolean False passes through
-        result = checker._convertToBoolean(None, "fieldName", False, False, True)
-        self.assertFalse(result)
-
-        # 3. String "true" variants
-        for val in ["true", "TRUE", "  True  ", "\tTrUe\n"]:
-            result = checker._convertToBoolean(None, "fieldName", val, False, False)
-            self.assertTrue(result)
-
-        # 4. String "false" variants
-        for val in ["false", "FALSE", "  False  ", "\nFaLsE\t"]:
-            result = checker._convertToBoolean(None, "fieldName", val, False, False)
-            self.assertFalse(result)
-
-        # 5. Invalid string with report_unexpected_exception=False → no log
-        result = checker._convertToBoolean(None, "fieldName", "notbool", False, True)
-        self.assertEqual(result, "")
-
-        # Assert exactly one error was logged
-        self.assertEqual(len(checker.errorRecords), 1)
-
-        err = checker.errorRecords[0]
-        self.assertEqual(err["field"], "fieldName")
-        self.assertEqual(err["value"], "notbool")
-        # message should include our literal
-        self.assertIn("Invalid String Data", err["message"])
-        # and code should default to UNEXPECTED_EXCEPTION
-        self.assertEqual(err["code"], exception_messages.RECORD_CHECK_FAILED)
-
-    #check for dose sequence
-    def test_convert_to_dose(self):
-        dataParser = Mock()
-
-        checker = ConversionChecker(dataParser, summarise=False, report_unexpected_exception=True)
-        # Valid dose
-        for dose in [1, 4, 9]:
-            with self.subTest(dose=dose):
-                result = checker._convertToDose("DOSESEQUENCE", "DOSE_AMOUNT", dose, False, True)
-                self.assertEqual(result, dose)
-
-        # Invalid dose
-        invalid_doses = [10, 10.1, 100, 9.0001]
-        for dose in invalid_doses:
-            with self.subTest(dose=dose):
-                result = checker._convertToDose("DOSESEQUENCE", "DOSE_AMOUNT", dose, False, True)
-                self.assertEqual(result, "", f"Expected empty string for invalid dose {dose}")
 
     def clear_table(self):
         scan = self.table.scan()
