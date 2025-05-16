@@ -111,12 +111,12 @@ class ConversionLayout:
               }
             },
             {
-              "fieldNameFHIR": "id",
+              "fieldNameFHIR": "",
               "fieldNameFlat": "ACTION_FLAG",
               "expression": {
-                "expressionName": "Change To",
-                "expressionType": "CHANGETO",
-                "expressionRule": "update"
+                "expressionName": "",
+                "expressionType": "",
+                "expressionRule": ""
               }
             },
             {

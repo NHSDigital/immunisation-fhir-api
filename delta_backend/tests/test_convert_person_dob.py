@@ -15,6 +15,3 @@ class TestPersonDob(unittest.TestCase):
         self.converter = Converter(json.dumps(self.request_json_data))
         flat_json = self.converter.run_conversion()
         self.assertEqual(flat_json.get("PERSON_DOB"), expected_site_code)
-        
-    
-    

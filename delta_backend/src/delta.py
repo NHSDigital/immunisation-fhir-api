@@ -72,7 +72,7 @@ def handler(event, context):
                     operation = new_image["Operation"]["S"]
                     action_flag = ActionFlag.CREATE if operation == Operation.CREATE else operation
                     resource_json = json.loads(new_image["Resource"]["S"])
-                    FHIRConverter = Converter(json.dumps(resource_json))
+                    FHIRConverter = Converter(json.dumps(resource_json), action_flag = action_flag)
                     flat_json = FHIRConverter.run_conversion()  # Get the flat JSON
                     error_records = FHIRConverter.get_error_records()
                     flat_json["ACTION_FLAG"] = action_flag

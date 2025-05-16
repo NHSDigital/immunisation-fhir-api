@@ -12,9 +12,10 @@ from json_field_extractor import Extractor
 # Converter
 class Converter:
 
-    def __init__(self, fhir_data, summarise=False, report_unexpected_exception=True):
+    def __init__(self, fhir_data, action_flag = "UPDATE", summarise=False, report_unexpected_exception=True):
         self.converted = {}
         self.error_records = []
+        self.action_flag = action_flag
         self.fhir_data = fhir_data
         self.summarise = summarise
         self.report_unexpected_exception = report_unexpected_exception
@@ -59,11 +60,13 @@ class Converter:
             ### TODO: Remove this after refactoring all fields to be extracted with the Extractor
             values = self.data_parser.get_key_value(fhir_field, flat_field, expr_type, expr_rule)
             ###
-            
-            for val in values:
-                converted = self.conversion_checker.convertData(expr_type, expr_rule, fhir_field, val)
-                if converted is not None:
-                    self.converted[flat_field] = converted
+            if flat_field == "ACTION_FLAG":
+                self.converted[flat_field] = self.action_flag
+            else:
+                for val in values:
+                    converted = self.conversion_checker.convertData(expr_type, expr_rule, fhir_field, val)
+                    if converted is not None:
+                        self.converted[flat_field] = converted
         
         except Exception as e:
             return self._log_error(f"Conversion error [{e.__class__.__name__}]: {e}", code=exception_messages.PARSING_ERROR)
