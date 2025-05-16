@@ -94,9 +94,9 @@ You can now:
 | INDICATION_CODE                        | self.extractor.extract_indication_code            | ✅         |
 | LOCATION_CODE                          | self.extractor.extract_location_code              | ✅         |
 | LOCATION_CODE_TYPE_URI                 | self.extractor.extract_location_code_type_uri     | ✅         |
-| NHS_NUMBER                             |                                                   |            |
-| PERSON_DOB                             |                                                   |            |
-| PERSON_GENDER_CODE                     |                                                   |            |
+| NHS_NUMBER                             | self.extract_nhs_number                           | ✅         |
+| PERSON_DOB                             | DATECONVERT                                       | X          |
+| PERSON_GENDER_CODE                     | self.extract_person_gender                        | X          |
 | DATE_AND_TIME                          |                                                   |            |
 | UNIQUE_ID                              |                                                   |            |
 | UNIQUE_ID_URI                          |                                                   |            |

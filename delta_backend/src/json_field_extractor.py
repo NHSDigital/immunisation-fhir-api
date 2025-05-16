@@ -12,13 +12,14 @@ class Extractor:
     CODING_SYSTEM_URL_SNOMED = "http://snomed.info/sct"
     ODS_ORG_CODE_SYSTEM_URL = "https://fhir.nhs.uk/Id/ods-organization-code"
     DEFAULT_LOCATION = "X99999"
+    NHS_NUMBER_SYSTEM_URL = "https://fhir.nhs.uk/Id/nhs-number"
     
     def __init__(self, fhir_json_data):
         self.fhir_json_data = json.loads(fhir_json_data) if isinstance(fhir_json_data, str) else fhir_json_data
         
     def _get_patient(self):
         contained = self.fhir_json_data.get("contained", [])
-        return next((c for c in contained if isinstance(c, dict) and c.get("resourceType") == "Patient"), None)
+        return next((c for c in contained if isinstance(c, dict) and c.get("resourceType") == "Patient"), "")
 
     def _get_valid_names(self, names, occurrence_time):  
         official_names = [n for n in names if n.get("use") == "official" and self._is_current_period(n, occurrence_time)]
@@ -84,13 +85,61 @@ class Extractor:
 
         return ""
     
+    def extract_nhs_number(self):
+        patient = self._get_patient()
+        if patient:
+            identifier_list = patient.get("identifier", [])
+            for identifier in identifier_list:
+                if identifier.get("system", "") == self.NHS_NUMBER_SYSTEM_URL:
+                    return identifier.get("value", "")
+        return ""
+            
     def extract_person_forename(self):
-        return self.extract_person_names()[0]
+        return self._extract_person_names()[0]
     
     def extract_person_surname(self):
-        return self.extract_person_names()[1]
+        return self._extract_person_names()[1]
     
-    def extract_person_names(self):
+    # TODO: This is incomplete to refactor
+    def extract_person_dob(self):
+        patient = self._get_patient()
+        
+        if patient:
+            dob = patient.get("birthDate", "")   
+            
+            try: 
+                dt = datetime.fromisoformat(dob)
+                return dt.strftime("%Y%m%d")
+            except:                            
+                raise "Value is not a string"            
+        return ""
+    
+    def extract_person_gender(self):
+        #TODO: Extract mapping
+        """
+        Converts gender string to numeric representation.
+        Mapping:
+            - "male" → "1"
+            - "female" → "2"
+            - "other" → "9"
+            - "unknown" → "0"
+        """
+        gender_map = {
+            "male": "1",
+            "female": "2",
+            "other": "9",
+            "unknown": "0"
+        }
+        patient = self._get_patient()
+        if patient: 
+            gender = patient.get("gender", "")
+            normalized_gender = str(gender).lower()
+            if normalized_gender not in gender_map:
+                return ""
+            return gender_map[normalized_gender]
+        return ""
+    
+    def _extract_person_names(self):
         occurrence_time = self._get_occurance_date_time()
         patient = self._get_patient()
         names = patient.get("name", [])
@@ -145,14 +194,14 @@ class Extractor:
                 p
                 for p in valid_performers
                 if p.get("actor", {}).get("type") == "Organization"
-                and p.get("actor", {}).get("identifier", {}).get("system") == "https://fhir.nhs.uk/Id/ods-organization-code"
+                and p.get("actor", {}).get("identifier", {}).get("system") == self.ODS_ORG_CODE_SYSTEM_URL
             ),
             next(
                 (
                     p
                     for p in valid_performers
                     if p.get("actor", {}).get("identifier", {}).get("system")
-                    == "https://fhir.nhs.uk/Id/ods-organization-code"
+                    == self.ODS_ORG_CODE_SYSTEM_URL
                 ),
                 next(
                     (p for p in valid_performers if p.get("actor", {}).get("type") == "Organization"),
@@ -189,7 +238,7 @@ class Extractor:
 
         return performing_professional_forename, performing_professional_surname
 
-        
+      
     def extract_vaccination_procedure_code(self) -> str:
         extensions = self.fhir_json_data.get("extension", [])
         for ext in extensions:

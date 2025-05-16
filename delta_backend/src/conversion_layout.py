@@ -16,8 +16,8 @@ class ConversionLayout:
               "fieldNameFlat": "NHS_NUMBER",
               "expression": {
                 "expressionName": "NHS NUMBER",
-                "expressionType": "NHSNUMBER",
-                "expressionRule": ""
+                "expressionType": "NORMAL",
+                "expressionRule": self.extractor.extract_nhs_number
               }
             },
             {
@@ -52,8 +52,8 @@ class ConversionLayout:
               "fieldNameFlat": "PERSON_GENDER_CODE",
               "expression": {
                 "expressionName": "Gender Conversion",
-                "expressionType": "GENDER",
-                "expressionRule": ""
+                "expressionType": "NORMAL",
+                "expressionRule": self.extractor.extract_person_gender
               }
             },
             {
