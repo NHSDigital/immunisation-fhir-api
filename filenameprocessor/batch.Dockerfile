@@ -1,4 +1,4 @@
-FROM public.ecr.aws/lambda/python:3.10 as base
+FROM public.ecr.aws/lambda/python:3.13 as base
 
 RUN pip install "poetry~=1.5.0"
 
