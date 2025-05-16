@@ -17,16 +17,19 @@ updates:
       - "/temporary_sandbox"
     schedule:
       interval: "daily"
+    open-pull-requests-limit: 1
 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "daily"
+    open-pull-requests-limit: 1
 
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "daily"
+    open-pull-requests-limit: 1
 
   - package-ecosystem: "pip"
     directories:
@@ -41,6 +44,7 @@ updates:
       - "/recordprocessor"
     schedule:
       interval: "daily"
+    open-pull-requests-limit: 1
 
   - package-ecosystem: "terraform"
     directories:
@@ -51,3 +55,4 @@ updates:
       - "/terraform_aws_backup/**"
     schedule:
       interval: "daily"
+    open-pull-requests-limit: 1
