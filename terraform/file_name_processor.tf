@@ -16,6 +16,7 @@ resource "aws_ecr_repository" "file_name_processor_lambda_repository" {
 # Module for building and pushing Docker image to ECR
 module "file_processor_docker_image" {
   source = "terraform-aws-modules/lambda/aws//modules/docker-build"
+  version = "7.20.2"
 
   create_ecr_repo = false
   ecr_repo        = aws_ecr_repository.file_name_processor_lambda_repository.name
