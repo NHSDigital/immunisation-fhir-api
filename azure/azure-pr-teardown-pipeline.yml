@@ -22,7 +22,7 @@ jobs:
       name: 'AWS-ECS'
       vmImage: 'ubuntu-latest'
     steps:
-      - checkout: self
+      - checkout: self@master
 
       - bash: |
           echo $(action_pr_number)
