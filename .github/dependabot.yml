@@ -5,7 +5,49 @@
 
 version: 2
 updates:
-  - package-ecosystem: "" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  - package-ecosystem: "docker"
+    directories:
+      - "/ack_backend"
+      - "/delta_backend"
+      - "/filenameprocessor"
+      - "/grafana/non-prod/docker"
+      - "/mesh_processor"
+      - "/recordprocessor"
+      - "/sandbox"
+      - "/temporary_sandbox"
     schedule:
-      interval: "weekly"
+      interval: "daily"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "pip"
+    directories:
+      - "/"
+      - "/ack_backend"
+      - "/backend"
+      - "/delta_backend"
+      - "/e2e"
+      - "/e2e_batch"
+      - "/filenameprocessor"
+      - "/mesh_processor"
+      - "/recordprocessor"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "terraform"
+    directories:
+      - "/grafana/non-prod/terraform"
+      - "/infra/**"
+      - "/mesh-infra"
+      - "/terraform"
+      - "/terraform_aws_backup/**"
+    schedule:
+      interval: "daily"

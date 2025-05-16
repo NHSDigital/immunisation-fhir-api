@@ -1,4 +1,4 @@
-FROM public.ecr.aws/lambda/python:3.10 AS base
+FROM public.ecr.aws/lambda/python:3.11 AS base
 # Create a non-root user with a specific UID and GID
 RUN mkdir -p /home/appuser && \
     echo 'appuser:x:1001:1001::/home/appuser:/sbin/nologin' >> /etc/passwd && \
