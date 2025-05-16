@@ -1,3 +1,5 @@
+from enum import Enum
+
 """ 
     Enums for event names, operations, and action flags. 
     
@@ -25,3 +27,9 @@ class ActionFlag():
     CREATE = "NEW"
     UPDATE = "UPDATE"
     DELETE_LOGICAL = "DELETE"
+    
+class Gender(Enum):
+    MALE = "1"
+    FEMALE = "2"
+    OTHER = "9"
+    UNKNOWN = "0"

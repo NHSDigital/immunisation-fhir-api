@@ -95,14 +95,14 @@ You can now:
 | LOCATION_CODE                          | self.extractor.extract_location_code              | ✅         |
 | LOCATION_CODE_TYPE_URI                 | self.extractor.extract_location_code_type_uri     | ✅         |
 | NHS_NUMBER                             | self.extract_nhs_number                           | ✅         |
-| PERSON_DOB                             | DATECONVERT                                       | X          |
-| PERSON_GENDER_CODE                     | self.extract_person_gender                        | X          |
-| DATE_AND_TIME                          |                                                   |            |
-| UNIQUE_ID                              |                                                   |            |
-| UNIQUE_ID_URI                          |                                                   |            |
+| PERSON_DOB                             | DATECONVERT                                       |  X          |
+| PERSON_GENDER_CODE                     | self.extract_person_gender                        | ✅         |
+| DATE_AND_TIME                          | DATETIME                                          |  X         |
+| UNIQUE_ID                              | self.extract_unique_id                            | ✅         |
+| UNIQUE_ID_URI                          | self.extract_unique_id_uri                        | ✅         |
 | ACTION_FLAG                            |                                                   |            |
-| RECORDED_DATE                          |                                                   |            |
+| RECORDED_DATE                          |  DATECONVERT                                      |  X         |
 | PRIMARY_SOURCE                         |                                                   |            |
 | VACCINE_MANUFACTURER                   |                                                   |            |
 | BATCH_NUMBER                           |                                                   |            |
-| EXPIRY_DATE                            |                                                   |            |
+| EXPIRY_DATE                            |  DATECONVERT                                      |  X         |

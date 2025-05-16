@@ -174,7 +174,6 @@ class TestConvertToFlatJson(unittest.TestCase):
 
     # TODO revisit and amend if necessary
     @patch("delta_converter.FHIRParser")
-    @patch("delta_converter.ConversionLayout")
     def test_fhir_parser_exception(self, mock_fhir_parser):
         # Mock FHIRParser to raise an exception
         mock_fhir_parser.side_effect = Exception("FHIR Parsing Error")
@@ -202,7 +201,7 @@ class TestConvertToFlatJson(unittest.TestCase):
         # Check if the error message was added to ErrorRecords
         errors = converter.get_error_records()
         self.assertEqual(len(errors), 1)
-        self.assertIn("Schema Parser Unexpected exception", errors[0]["message"])
+        self.assertIn("Initialization failed: [Exception] Schema Parsing Error", errors[0]["message"])
         self.assertEqual(errors[0]["code"], 0)
 
     @patch("delta_converter.ConversionChecker")

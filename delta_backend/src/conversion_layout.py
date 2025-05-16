@@ -97,8 +97,8 @@ class ConversionLayout:
               "fieldNameFlat": "UNIQUE_ID",
               "expression": {
                 "expressionName": "Not Empty",
-                "expressionType": "NOTEMPTY",
-                "expressionRule": ""
+                "expressionType": "NORMAL",
+                "expressionRule": self.extractor.extract_unique_id
               }
             },
             {
@@ -106,8 +106,8 @@ class ConversionLayout:
               "fieldNameFlat": "UNIQUE_ID_URI",
               "expression": {
                 "expressionName": "Not Empty",
-                "expressionType": "NOTEMPTY",
-                "expressionRule": ""
+                "expressionType": "NORMAL",
+                "expressionRule": self.extractor.extract_unique_id_uri
               }
             },
             {

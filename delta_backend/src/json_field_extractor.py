@@ -1,6 +1,7 @@
 import json
 import exception_messages
 from datetime import datetime, timezone
+from common.mappings import Gender
 
 class Extractor: 
 
@@ -115,28 +116,13 @@ class Extractor:
         return ""
     
     def extract_person_gender(self):
-        #TODO: Extract mapping
-        """
-        Converts gender string to numeric representation.
-        Mapping:
-            - "male" → "1"
-            - "female" → "2"
-            - "other" → "9"
-            - "unknown" → "0"
-        """
-        gender_map = {
-            "male": "1",
-            "female": "2",
-            "other": "9",
-            "unknown": "0"
-        }
         patient = self._get_patient()
         if patient: 
-            gender = patient.get("gender", "")
-            normalized_gender = str(gender).lower()
-            if normalized_gender not in gender_map:
-                return ""
-            return gender_map[normalized_gender]
+            gender = patient.get("gender", "").upper()
+            try:
+                return Gender[gender].value
+            except KeyError:
+                return ""   
         return ""
     
     def _extract_person_names(self):
@@ -219,6 +205,18 @@ class Extractor:
     
     def extract_practitioner_surname(self):
         return self.extract_practitioner_names()[1]
+    
+    def extract_unique_id(self):
+        identifier = self.fhir_json_data.get("identifier", [])
+        if identifier and len(identifier) == 1: 
+            return identifier[0].get("value", "")
+        return ""
+    
+    def extract_unique_id_uri(self):
+        identifier = self.fhir_json_data.get("identifier", [])
+        if identifier and len(identifier) == 1:
+            return identifier[0].get("system", "")
+        return ""
     
     def extract_practitioner_names(self):
         contained = self.fhir_json_data.get("contained", [])
