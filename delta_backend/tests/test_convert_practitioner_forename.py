@@ -121,6 +121,6 @@ class TestPractitionerForeNameToFlatJson(unittest.TestCase):
     def _run_practitioner_test(self, expected_forename):
         """Helper function to run the test"""
         self.converter = Converter(json.dumps(self.request_json_data))
-        flat_json = self.converter.runConversion()
+        flat_json = self.converter.run_conversion()
         self.assertEqual(flat_json["PERFORMING_PROFESSIONAL_FORENAME"], expected_forename)
 

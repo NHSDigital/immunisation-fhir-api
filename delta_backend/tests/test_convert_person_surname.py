@@ -93,5 +93,5 @@ class TestPersonSurNameToFlatJson(unittest.TestCase):
     def _run_test_surname(self, expected_surname):
         """Helper function to run the test"""
         self.converter = Converter(json.dumps(self.request_json_data))
-        flat_json = self.converter.runConversion()
+        flat_json = self.converter.run_conversion()
         self.assertEqual(flat_json["PERSON_SURNAME"], expected_surname)

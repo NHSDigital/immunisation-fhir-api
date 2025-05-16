@@ -124,5 +124,5 @@ class TestPersonSiteCodeToFlatJson(unittest.TestCase):
     def _run_site_code_test(self, expected_site_code):
         """Helper function to run the test"""
         self.converter = Converter(json.dumps(self.request_json_data))
-        flat_json = self.converter.runConversion()
+        flat_json = self.converter.run_conversion()
         self.assertEqual(flat_json.get("SITE_CODE"), expected_site_code)

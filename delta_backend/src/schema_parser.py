@@ -11,14 +11,5 @@ class SchemaParser:
         self.schema_file = schema_file
         self.conversions = self.schema_file["conversions"]
 
-    def conversionCount(self):
-        count = 0
-        count = sum([1 for d in self.conversions if "conversion" in d])
-        return count
-
-    def getConversions(self):
+    def get_conversions(self):
         return self.conversions
-
-    def getConversion(self, conversion_number):
-        conversion = self.conversions[conversion_number]
-        return conversion

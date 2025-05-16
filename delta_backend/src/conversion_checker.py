@@ -4,8 +4,6 @@
 import exception_messages
 from datetime import datetime,timedelta, timezone
 import re
-from utils import LookUpData
-
 
 # --------------------------------------------------------------------------------------------------------
 # Custom error type to handle validation failures
@@ -31,11 +29,9 @@ class ConversionChecker:
     summarise = False
     report_unexpected_exception = True
     dataParser = any
-    dataLookUp = any
 
     def __init__(self, dataParser, summarise, report_unexpected_exception):
         self.dataParser = dataParser  # FHIR data parser for additional functions
-        self.dataLookUp = LookUpData()  # used for generic look up
         self.summarise = summarise  # instance attribute
         self.report_unexpected_exception = report_unexpected_exception  # instance attribute
         self.errorRecords = []  # Store all errors here
@@ -73,10 +69,6 @@ class ConversionChecker:
                 )
             case "BOOLEAN":
                 return self._convertToBoolean(
-                    expressionRule, fieldName, fieldValue, self.summarise, self.report_unexpected_exception
-                )
-            case "LOOKUP":
-                return self._convertToLookUp(
                     expressionRule, fieldName, fieldValue, self.summarise, self.report_unexpected_exception
                 )
             case "SNOMED":
@@ -241,21 +233,6 @@ class ConversionChecker:
             return fieldValue
         return ""
 
-    # Change to Lookup (loads expected data as is but if empty use lookup extraction to populate value)
-    def _convertToLookUp(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
-        if isinstance(fieldValue, str) and any(char.isalpha() for char in fieldValue) and not fieldValue.isdigit():
-            return fieldValue
-        try:
-                lookUpValue = self.dataParser.getKeyValue(expressionRule)
-                IdentifiedLookup = self.dataLookUp.findLookUp(lookUpValue[0])
-                return IdentifiedLookup
-
-        except Exception as e:
-            if report_unexpected_exception:
-                message = exception_messages.MESSAGES[exception_messages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                self._log_error(fieldName, fieldValue, message)
-            return ""
-
     # Default to Validate
     def _convertToDefaultTo(self, expressionRule, fieldName, fieldValue, summarise, report_unexpected_exception):
         try:
@@ -273,7 +250,7 @@ class ConversionChecker:
             conversionList = expressionRule.split("|")
             location = conversionList[0]
             valueCheck = conversionList[1]
-            dataValue = self.dataParser.getKeyValue(location)
+            dataValue = self.dataParser.get_key_value(location)
 
             if dataValue[0] != valueCheck:
                 return ""

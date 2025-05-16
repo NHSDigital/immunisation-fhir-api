@@ -94,6 +94,6 @@ class TestPersonPostalCodeToFlatJson(unittest.TestCase):
     def _run_postal_code_test(self, expected_postal_code):
         """Helper function to run the test"""
         self.converter = Converter(json.dumps(self.request_json_data))
-        flat_json = self.converter.runConversion()
+        flat_json = self.converter.run_conversion()
         self.assertEqual(flat_json["PERSON_POSTCODE"], expected_postal_code)
 

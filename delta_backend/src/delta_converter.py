@@ -31,6 +31,7 @@ class Converter:
             
             self.conversion_checker = ConversionChecker(self.data_parser, summarise, report_unexpected_exception)
             self.extractor = Extractor(self.data_parser)
+            
         except Exception as e:
             self._log_error(f"Initialization failed: [{e.__class__.__name__}] {e}")
 
@@ -55,7 +56,10 @@ class Converter:
             expr_type = expression["expression"]["expressionType"]
             expr_rule = expression["expression"]["expressionRule"]
 
-            values = self.data_parser.getKeyValue(fhir_field, flat_field, expr_type, expr_rule)
+            ### TODO: Remove this after refactoring all fields to be extracted with the Extractor
+            values = self.data_parser.get_key_value(fhir_field, flat_field, expr_type, expr_rule)
+            ###
+            
             for val in values:
                 converted = self.conversion_checker.convertData(expr_type, expr_rule, fhir_field, val)
                 if converted is not None:
@@ -66,11 +70,11 @@ class Converter:
 
 
     # run the conversion against the data
-    def runConversion(self):
+    def run_conversion(self):
         try:
-            conversions = self.schema_parser.getConversions()
+            conversions = self.schema_parser.get_conversions()
         except Exception as e:
-            return self._log_error(f"Schema getConversions error [{e.__class__.__name__}]: {e}")
+            return self._log_error(f"Schema get_conversions error [{e.__class__.__name__}]: {e}")
 
         for conversion in conversions:
             self._convertData(conversion)
@@ -83,5 +87,5 @@ class Converter:
         self.converted["CONVERSION_ERRORS"] = self.conversion_checker.get_error_records() + self.error_records
         return self.converted
 
-    def getErrorRecords(self):
+    def get_error_records(self):
         return self.error_records

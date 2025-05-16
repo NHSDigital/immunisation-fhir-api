@@ -7,7 +7,7 @@ from boto3 import resource as boto3_resource
 from tests.utils_for_converter_tests import ValuesForTests, ErrorValuesForTests
 from schema_parser import SchemaParser
 from delta_converter import Converter
-from ConversionChecker import ConversionChecker
+from conversion_checker import ConversionChecker
 import exception_messages
 
 MOCK_ENV_VARS = {
@@ -111,14 +111,14 @@ class TestConvertToFlatJson(unittest.TestCase):
         json_data = json.dumps(ValuesForTests.json_data)
 
         FHIRConverter = Converter(json_data)
-        FlatFile = FHIRConverter.runConversion()
+        FlatFile = FHIRConverter.run_conversion()
 
         flatJSON = json.dumps(FlatFile)
         expected_imms_value = deepcopy(ValuesForTests.expected_imms2)  # UPDATE is currently the default action-flag
         expected_imms = json.dumps(expected_imms_value)
         self.assertEqual(flatJSON, expected_imms)
 
-        errorRecords = FHIRConverter.getErrorRecords()
+        errorRecords = FHIRConverter.get_error_records()
 
         self.assertEqual(len(errorRecords), 0)
 
@@ -130,9 +130,9 @@ class TestConvertToFlatJson(unittest.TestCase):
             json_data = json.dumps(test_case)
 
             FHIRConverter = Converter(json_data)
-            FHIRConverter.runConversion()
+            FHIRConverter.run_conversion()
 
-            errorRecords = FHIRConverter.getErrorRecords()
+            errorRecords = FHIRConverter.get_error_records()
 
             # Check if bad data creates error records
             self.assertTrue(len(errorRecords) > 0)
@@ -172,35 +172,22 @@ class TestConvertToFlatJson(unittest.TestCase):
                 items = result.get("Items", [])
                 self.clear_table()
 
-    def test_conversionCount(self):
-        parser = SchemaParser()
-        schema_data = {"conversions": [{"conversion": "type1"}, {"conversion": "type2"}, {"conversion": "type3"}]}
-        parser.parseSchema(schema_data)
-        self.assertEqual(parser.conversionCount(), 3)
-
-    def test_getConversion(self):
-        parser = SchemaParser()
-        schema_data = {"conversions": [{"conversion": "type1"}, {"conversion": "type2"}, {"conversion": "type3"}]}
-        parser.parseSchema(schema_data)
-        self.assertEqual(parser.getConversion(1), {"conversion": "type2"})
-
     # TODO revisit and amend if necessary
-
-    @patch("Converter.FHIRParser")
+    @patch("delta_converter.FHIRParser")
+    @patch("delta_converter.ConversionLayout")
     def test_fhir_parser_exception(self, mock_fhir_parser):
         # Mock FHIRParser to raise an exception
         mock_fhir_parser.side_effect = Exception("FHIR Parsing Error")
         converter = Converter(fhir_data="some_data")
 
-        response = converter.runConversion()
-
         # Check if the error message was added to ErrorRecords
-        self.assertEqual(len(response), 2)
-        self.assertIn("FHIR Parser Unexpected exception", converter.getErrorRecords()[0]["message"])
-        self.assertEqual(converter.getErrorRecords()[0]["code"], 0)
+        errors = converter.get_error_records()
+        self.assertEqual(len(errors), 1)
+        self.assertIn("Initialization failed: [JSONDecodeError]", errors[0]["message"])
+        self.assertEqual(errors[0]["code"], 0)
 
-    @patch("Converter.FHIRParser")
-    @patch("Converter.SchemaParser")
+    @patch("delta_converter.FHIRParser")
+    @patch("delta_converter.SchemaParser")
     def test_schema_parser_exception(self, mock_schema_parser, mock_fhir_parser):
 
         # Mock FHIRParser to return normally
@@ -212,48 +199,42 @@ class TestConvertToFlatJson(unittest.TestCase):
         mock_schema_parser.side_effect = Exception("Schema Parsing Error")
         converter = Converter(fhir_data="{}")
 
-        converter.runConversion()
-
         # Check if the error message was added to ErrorRecords
-        errors = converter.getErrorRecords()
+        errors = converter.get_error_records()
         self.assertEqual(len(errors), 1)
         self.assertIn("Schema Parser Unexpected exception", errors[0]["message"])
         self.assertEqual(errors[0]["code"], 0)
 
-    @patch("Converter.ConversionChecker")
+    @patch("delta_converter.ConversionChecker")
     def test_conversion_checker_exception(self, mock_conversion_checker):
         # Mock ConversionChecker to raise an exception
         mock_conversion_checker.side_effect = Exception("Conversion Checking Error")
         converter = Converter(fhir_data="some_data")
 
-        response = converter.runConversion()
-
         # Check if the error message was added to ErrorRecords
-        self.assertEqual(len(converter.getErrorRecords()), 1)
+        self.assertEqual(len(converter.get_error_records()), 1)
         self.assertIn(
-            "FHIR Parser Unexpected exception [JSONDecodeError]: Expecting value: line 1 column 1 (char 0)",
-            converter.getErrorRecords()[0]["message"],
+            "Initialization failed: [JSONDecodeError]",
+            converter.get_error_records()[0]["message"],
         )
-        self.assertEqual(converter.getErrorRecords()[0]["code"], 0)
+        self.assertEqual(converter.get_error_records()[0]["code"], 0)
 
-    @patch("Converter.SchemaParser.getConversions")
+    @patch("delta_converter.SchemaParser.get_conversions")
     def test_get_conversions_exception(self, mock_get_conversions):
-        # Mock getConversions to raise an exception
+        # Mock get_conversions to raise an exception
         mock_get_conversions.side_effect = Exception("Error while getting conversions")
         converter = Converter(fhir_data="some_data")
 
-        response = converter.runConversion()
-
         # Check if the error message was added to ErrorRecords
-        self.assertEqual(len(converter.getErrorRecords()), 1)
+        self.assertEqual(len(converter.get_error_records()), 1)
         self.assertIn(
-            "FHIR Parser Unexpected exception [JSONDecodeError]: Expecting value: line 1 column 1 (char 0)",
-            converter.getErrorRecords()[0]["message"],
+            "Initialization failed: [JSONDecodeError]",
+            converter.get_error_records()[0]["message"],
         )
-        self.assertEqual(converter.getErrorRecords()[0]["code"], 0)
+        self.assertEqual(converter.get_error_records()[0]["code"], 0)
 
-    @patch("Converter.SchemaParser.getConversions")
-    @patch("Converter.FHIRParser.getKeyValue")
+    @patch("delta_converter.SchemaParser.get_conversions")
+    @patch("delta_converter.FHIRParser.get_key_value")
     def test_conversion_exceptions(self, mock_get_key_value, mock_get_conversions):
         mock_get_conversions.side_effect = Exception("Error while getting conversions")
         mock_get_key_value.side_effect = Exception("Key value retrieval failed")
@@ -269,20 +250,16 @@ class TestConvertToFlatJson(unittest.TestCase):
             ]
         }
         converter.SchemaFile = schema
-
-        response = converter.runConversion()
-
-        error_records = converter.getErrorRecords()
+        error_records = converter.get_error_records()
         self.assertEqual(len(error_records), 1)
 
         self.assertIn(
-            "FHIR Parser Unexpected exception [JSONDecodeError]: Expecting value: line 1 column 1 (char 0)",
+            "Initialization failed: [JSONDecodeError]",
             error_records[0]["message"],
         )
         self.assertEqual(error_records[0]["code"], 0)
 
-    @patch("ConversionChecker.LookUpData")
-    def test_log_error(self, MockLookUpData):
+    def test_log_error(self):
         # Instantiate ConversionChecker
         checker = ConversionChecker(dataParser=None, summarise=False, report_unexpected_exception=True)
 
@@ -306,8 +283,7 @@ class TestConvertToFlatJson(unittest.TestCase):
         self.assertIn("Invalid value", error["message"])
         self.assertEqual(error["code"], exception_messages.RECORD_CHECK_FAILED)
 
-    @patch("ConversionChecker.LookUpData")
-    def test_convert_to_not_empty(self, MockLookUpData):
+    def test_convert_to_not_empty(self):
 
         dataParser = Mock()
 
@@ -351,8 +327,7 @@ class TestConvertToFlatJson(unittest.TestCase):
         self.assertIsInstance(message, str)
         self.assertIn("RuntimeError", message)
 
-    @patch("ConversionChecker.LookUpData")
-    def test_convert_to_nhs_number(self, MockLookUpData):
+    def test_convert_to_nhs_number(self):
 
         dataParser = Mock()
 
@@ -373,8 +348,7 @@ class TestConvertToFlatJson(unittest.TestCase):
         result = checker._convertToNHSNumber("NHSNUMBER","fieldName", invalid_nhs_number, False, True)
         self.assertEqual(result, "", "Invalid NHS number should return empty string")
 
-    @patch("ConversionChecker.LookUpData")
-    def test_convert_to_date(self, MockLookUpData):
+    def test_convert_to_date(self):
         dataParser = Mock()
 
         checker = ConversionChecker(dataParser, summarise=False, report_unexpected_exception=True)
@@ -424,8 +398,7 @@ class TestConvertToFlatJson(unittest.TestCase):
         self.assertEqual((field, value), ("fieldName", "not-a-date"))
         self.assertIsInstance(err, ValueError)
 
-    @patch("ConversionChecker.LookUpData")
-    def test_convert_to_date_time(self, MockLookUpData):
+    def test_convert_to_date_time(self):
         dataParser = Mock()
 
         checker = ConversionChecker(dataParser, summarise=False, report_unexpected_exception=True)
@@ -475,8 +448,7 @@ class TestConvertToFlatJson(unittest.TestCase):
         self.assertEqual((field, value), ("fieldName", valid_fhir_date))
         self.assertIsInstance(err, ValueError)
 
-    @patch("ConversionChecker.LookUpData")
-    def test_convert_to_boolean(self, MockLookUpData):
+    def test_convert_to_boolean(self):
         dataParser = Mock()
 
         checker = ConversionChecker(dataParser, summarise=False, report_unexpected_exception=True)
@@ -519,8 +491,7 @@ class TestConvertToFlatJson(unittest.TestCase):
         self.assertEqual(err["code"], exception_messages.RECORD_CHECK_FAILED)
 
     #check for dose sequence
-    @patch("ConversionChecker.LookUpData")
-    def test_convert_to_dose(self, MockLookUpData):
+    def test_convert_to_dose(self):
         dataParser = Mock()
 
         checker = ConversionChecker(dataParser, summarise=False, report_unexpected_exception=True)

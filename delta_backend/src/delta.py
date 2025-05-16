@@ -71,8 +71,8 @@ def handler(event, context):
                     action_flag = "NEW" if operation == "CREATE" else operation
                     resource_json = json.loads(new_image["Resource"]["S"])
                     FHIRConverter = Converter(json.dumps(resource_json))
-                    flat_json = FHIRConverter.runConversion(resource_json)  # Get the flat JSON
-                    error_records = FHIRConverter.getErrorRecords()
+                    flat_json = FHIRConverter.run_conversion()  # Get the flat JSON
+                    error_records = FHIRConverter.get_error_records()
                     flat_json["ACTION_FLAG"] = action_flag
                     response = delta_table.put_item(
                         Item={

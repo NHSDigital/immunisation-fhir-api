@@ -13,7 +13,7 @@ class TestDoseSequenceToFlatJson(unittest.TestCase):
     def _run_test(self, expected_result):
         """Helper function to run the test"""
         self.converter = Converter(json.dumps(self.request_json_data))
-        flat_json = self.converter.runConversion()
+        flat_json = self.converter.run_conversion()
         self.assertEqual(flat_json["DOSE_SEQUENCE"], expected_result)
         
     def test_dose_sequence_present_int(self):

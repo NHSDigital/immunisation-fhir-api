@@ -21,7 +21,7 @@ class Extractor:
 
     def _get_valid_names(self, names, occurrence_time):
         
-        official_names = [n for n in names if n.get("use") == "official" and self.is_current_period(n, occurrence_time)]
+        official_names = [n for n in names if n.get("use") == "official" and self._is_current_period(n, occurrence_time)]
         if official_names:
             return official_names[0]
 
@@ -239,10 +239,13 @@ class Extractor:
     
     def _get_occurance_date_time(self) -> str:
         try:
+            #TODO: Double check if this logic is correct
             occurrence_time = datetime.fromisoformat(self.fhir_json_data.get("occurrenceDateTime", ""))
             if occurrence_time and occurrence_time.tzinfo is None:
                 occurrence_time = occurrence_time.replace(tzinfo=timezone.utc)
                 return occurrence_time
+            return occurrence_time
+        
         except Exception as e:
             message = "DateTime conversion error [%s]: %s" % (e.__class__.__name__, e)
             error = self._log_error(message, code=exception_messages.UNEXPECTED_EXCEPTION)
