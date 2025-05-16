@@ -68,4 +68,41 @@ You can now:
 - Open `output.csv` in Excel or Google Sheets to view cleanly structured records
 - Inspect `output.json` to validate the flat key-value output programmatically
 
+### TO REMOVED ONCE DONE
 ---
+| Field Name Flat                        | Method Used                                       | Unit Tests |
+|----------------------------------------|---------------------------------------------------|------------|
+| PERSON_FORENAME                        | self.extractor.extract_person_forename            | ✅         |
+| PERSON_SURNAME                         | self.extractor.extract_person_surname             | ✅         |
+| PERSON_POSTCODE                        | self.extractor.extract_valid_address              | ✅         |
+| SITE_CODE                              | self.extractor.extract_site_code                  | ✅         |
+| SITE_CODE_TYPE_URI                     | self.extractor.extract_site_code_type_uri         | ✅         |
+| PERFORMING_PROFESSIONAL_FORENAME       | self.extractor.extract_practitioner_forename      | ✅         |
+| PERFORMING_PROFESSIONAL_SURNAME        | self.extractor.extract_practitioner_surname       | ✅         |
+| VACCINATION_PROCEDURE_CODE             | self.extractor.extract_vaccination_procedure_code | ✅         |
+| VACCINATION_PROCEDURE_TERM             | self.extractor.extract_vaccination_procedure_term | ✅         |
+| DOSE_SEQUENCE                          | self.extractor.extract_dose_sequence              | ✅         |
+| VACCINE_PRODUCT_CODE                   | self.extractor.extract_vaccine_product_code       | ✅         |
+| VACCINE_PRODUCT_TERM                   | self.extractor.extract_vaccine_product_term       | ✅         |
+| SITE_OF_VACCINATION_CODE               | self.extractor.extract_site_of_vaccination_code   | ✅         |
+| SITE_OF_VACCINATION_TERM               | self.extractor.extract_site_of_vaccination_term   | ✅         |
+| ROUTE_OF_VACCINATION_CODE              | self.extractor.extract_route_of_vaccination_code  | ✅         |
+| ROUTE_OF_VACCINATION_TERM              | self.extractor.extract_route_of_vaccination_term  | ✅         |
+| DOSE_AMOUNT                            | self.extractor.extract_dose_amount                | ✅         |
+| DOSE_UNIT_CODE                         | self.extractor.extract_dose_unit_code             | ✅         |
+| DOSE_UNIT_TERM                         | self.extractor.extract_dose_unit_term             | ✅         |
+| INDICATION_CODE                        | self.extractor.extract_indication_code            | ✅         |
+| LOCATION_CODE                          | self.extractor.extract_location_code              | ✅         |
+| LOCATION_CODE_TYPE_URI                 | self.extractor.extract_location_code_type_uri     | ✅         |
+| NHS_NUMBER                             |                                                   |            |
+| PERSON_DOB                             |                                                   |            |
+| PERSON_GENDER_CODE                     |                                                   |            |
+| DATE_AND_TIME                          |                                                   |            |
+| UNIQUE_ID                              |                                                   |            |
+| UNIQUE_ID_URI                          |                                                   |            |
+| ACTION_FLAG                            |                                                   |            |
+| RECORDED_DATE                          |                                                   |            |
+| PRIMARY_SOURCE                         |                                                   |            |
+| VACCINE_MANUFACTURER                   |                                                   |            |
+| BATCH_NUMBER                           |                                                   |            |
+| EXPIRY_DATE                            |                                                   |            |
