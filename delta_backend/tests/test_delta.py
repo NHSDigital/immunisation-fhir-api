@@ -415,3 +415,30 @@ class DeltaTestCase(unittest.TestCase):
         self.assertEqual(mock_table.put_item.call_count, 3)
         self.assertEqual(self.mock_firehose_logger.send_log.call_count, 2)
         self.assertEqual(self.mock_logger_exception.call_count, 1)
+
+@patch("delta.process_record")
+@patch("boto3.resource")
+def test_handler_calls_process_record_for_each_event(self, mock_boto_resource, mock_process_record):
+    # Arrange
+    mock_delta_table = MagicMock()
+    mock_boto_resource.return_value.Table.return_value = mock_delta_table
+
+    # Create an event with 3 records
+    event = {
+        "Records": [
+            { "a": "record1" },
+            { "a": "record2" },
+            { "a": "record3" }
+        ]
+    }
+    context = {}
+
+    # Mock process_record to always return True
+    mock_process_record.return_value = True
+
+    # Act
+    result = handler(event, context)
+
+    # Assert
+    self.assertTrue(result)
+    self.assertEqual(mock_process_record.call_count, len(event["Records"]))
