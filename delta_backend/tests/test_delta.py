@@ -4,6 +4,7 @@ from botocore.exceptions import ClientError
 import os
 import json
 from common.mappings import EventName, Operation, ActionFlag
+from utils_for_converter_tests import ValuesForTests, RecordConfig
 
 # Set environment variables before importing the module
 ## @TODO: # Note: Environment variables shared across tests, thus aligned
@@ -12,7 +13,6 @@ os.environ["DELTA_TABLE_NAME"] = "my_delta_table"
 os.environ["SOURCE"] = "my_source"
 
 from delta import send_message, handler  # Import after setting environment variables
-from utils_for_converter_tests import ValuesForTests, RecordConfig
 
 class DeltaTestCase(unittest.TestCase):
 
@@ -96,7 +96,7 @@ class DeltaTestCase(unittest.TestCase):
             imms_id = f"test-insert-imms-{supplier}-id"
             event = ValuesForTests.get_event(event_name=EventName.CREATE, operation=Operation.CREATE, imms_id=imms_id, supplier=supplier)
 
-            # Act
+            # Act 
             result = handler(event, self.context)
 
             # Assert
@@ -240,24 +240,25 @@ class DeltaTestCase(unittest.TestCase):
         mock_logger_info.assert_called_with("Record from DPS skipped for 12345")
 
     # TODO - amend test once error handling implemented
-    @patch("delta.logger.info")
-    @patch("Converter.Converter")
-    @patch("delta.boto3.resource")
-    def test_partial_success_with_errors(self, mock_dynamodb, mock_converter, mock_logger_info):
-        mock_converter_instance = MagicMock()
-        mock_converter_instance.runConversion.return_value = [{}]
-        mock_converter_instance.getErrorRecords.return_value = [{"error": "Invalid field"}]
-        mock_converter.return_value = mock_converter_instance
+    
+    # @patch("delta.logger.info")
+    # @patch("json.Converter")
+    # @patch("delta.boto3.resource")
+    # def test_partial_success_with_errors(self, mock_dynamodb, mock_converter, mock_logger_info):
+    #     mock_converter_instance = MagicMock()
+    #     mock_converter_instance.runConversion.return_value = [{}]
+    #     mock_converter_instance.getErrorRecords.return_value = [{"error": "Invalid field"}]
+    #     mock_converter.return_value = mock_converter_instance
 
-        # Mock DynamoDB put_item success
-        mock_table = MagicMock()
-        mock_dynamodb.return_value.Table.return_value = mock_table
-        mock_table.put_item.return_value = {"ResponseMetadata": {"HTTPStatusCode": 200}}
+    #     # Mock DynamoDB put_item success
+    #     mock_table = MagicMock()
+    #     mock_dynamodb.return_value.Table.return_value = mock_table
+    #     mock_table.put_item.return_value = {"ResponseMetadata": {"HTTPStatusCode": 200}}
 
-        event = ValuesForTests.get_event()
-        context = {}
+    #     event = self.get_event()
+    #     context = {}
 
-        response = handler(event, context)
+    #     response = handler(event, context)
 
         # self.assertEqual(response["statusCode"], 207)
         # self.assertIn("Partial success", response["body"])

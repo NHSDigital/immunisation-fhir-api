@@ -93,11 +93,10 @@ class FHIRParser:
         return rootfield
 
     # get the value for a key
-    def getKeyValue(self, fieldName, flatFieldName, expression_type: str = "", expression_rule = ""):
+    def get_key_value(self, fieldName, flatFieldName, expression_type: str = "", expression_rule = ""):
         value = []
         try:
-            # extract
-            if expression_type == "NORMAL":
+            if expression_type == "DEFAULT":
                 responseValue = self.FHIRFile
             else:
                 responseValue = self._scanForValue(fieldName, expression_type, expression_rule)

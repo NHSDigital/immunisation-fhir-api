@@ -18,3 +18,4 @@ def is_valid_simple_snomed(simple_snomed: str) -> bool:
         )
     except:
         return False
+    
