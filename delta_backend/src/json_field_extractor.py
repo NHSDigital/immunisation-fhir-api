@@ -322,4 +322,3 @@ class Extractor:
             return identifier.get("system", self.ODS_ORG_CODE_SYSTEM_URL)
         
         return self.ODS_ORG_CODE_SYSTEM_URL
-

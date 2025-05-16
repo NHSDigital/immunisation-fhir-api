@@ -4,7 +4,7 @@ from copy import deepcopy
 from unittest.mock import patch, Mock
 from moto import mock_dynamodb, mock_sqs
 from boto3 import resource as boto3_resource
-from tests.utils_for_converter_tests import ValuesForTests, ErrorValuesForTests
+from utils_for_converter_tests import ValuesForTests, ErrorValuesForTests
 from schema_parser import SchemaParser
 from delta_converter import Converter
 from conversion_checker import ConversionChecker

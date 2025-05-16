@@ -4,6 +4,7 @@ from botocore.exceptions import ClientError
 import os
 import json
 from common.mappings import EventName, Operation, ActionFlag
+from utils_for_converter_tests import ValuesForTests, RecordConfig
 
 # Set environment variables before importing the module
 ## @TODO: # Note: Environment variables shared across tests, thus aligned
@@ -12,7 +13,6 @@ os.environ["DELTA_TABLE_NAME"] = "my_delta_table"
 os.environ["SOURCE"] = "my_source"
 
 from delta import send_message, handler  # Import after setting environment variables
-from utils_for_converter_tests import ValuesForTests, RecordConfig
 
 class DeltaTestCase(unittest.TestCase):
 
