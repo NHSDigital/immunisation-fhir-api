@@ -22,7 +22,7 @@ jobs:
       name: 'AWS-ECS'
       vmImage: 'ubuntu-latest'
     steps:
-      - checkout: self@master
+      - checkout: git://NHSDigital/immunisation-fhir-api@master
 
       - bash: |
           echo $(action_pr_number)

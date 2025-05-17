@@ -21,6 +21,7 @@ resource "aws_ecr_repository" "processing_repository" {
     scan_on_push = true
   }
   name = "${local.short_prefix}-processing-repo"
+  force_delete = local.is_temp
 }
 
 # Build and Push Docker Image to ECR (Reusing the existing module)
