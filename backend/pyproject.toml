@@ -22,7 +22,7 @@ cffi                    = "~1.17.1"
 jsonpath-ng             = "^1.6.0"
 simplejson              = "^3.19.2"
 structlog               = "^24.1.0"
-python-stdnum           = "^1.20"
+python-stdnum           = "^2.1"
 freezegun               = "^1.5.1"
 
 [build-system]
