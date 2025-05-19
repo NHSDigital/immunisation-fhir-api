@@ -5,10 +5,10 @@ pr: none
 
 resources:
   repositories:
-    - repository: common
+    - repository: immunisation-fhir-api
       type: github
-      name: NHSDigital/api-management-utils
-      ref: refs/heads/edge
+      name: NHSDigital/immunisation-fhir-api
+      ref: master
       endpoint: NHSDigital
 
 variables:
@@ -22,7 +22,7 @@ jobs:
       name: 'AWS-ECS'
       vmImage: 'ubuntu-latest'
     steps:
-      - checkout: git://NHSDigital/immunisation-fhir-api@master
+      - checkout: immunisation-fhir-api
 
       - bash: |
           echo $(action_pr_number)
