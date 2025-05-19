@@ -267,7 +267,6 @@ class Extractor:
         )
         return selected_address.get("postalCode", "ZZ99 3CZ")
     
-        
     def extract_date_time(self) -> str: 
         date = self.fhir_json_data.get("occurrenceDateTime","")
         if date: 
