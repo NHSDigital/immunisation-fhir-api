@@ -12,11 +12,13 @@ resource "aws_ecr_repository" "delta_lambda_repository" {
     scan_on_push = true
   }
   name = "${local.prefix}-delta-lambda-repo"
+  force_delete = local.is_temp
 }
 
 module "delta_docker_image" {
     source = "terraform-aws-modules/lambda/aws//modules/docker-build"
-    
+    version = "7.20.2"
+
     create_ecr_repo = false
     ecr_repo        = "${local.prefix}-delta-lambda-repo"
     ecr_repo_lifecycle_policy = jsonencode({
@@ -42,7 +44,7 @@ module "delta_docker_image" {
     triggers = {
         dir_sha = local.delta_dir_sha
     }
-    
+
 }
 
 # Define the lambdaECRImageRetreival policy
@@ -131,8 +133,8 @@ resource "aws_lambda_function" "delta_sync_lambda" {
   package_type = "Image"
   architectures = ["x86_64"]
   image_uri    = module.delta_docker_image.image_uri
-  
-    
+
+
   environment {
     variables = {
       DELTA_TABLE_NAME      = data.aws_dynamodb_table.delta-dynamodb-table.name
@@ -145,7 +147,7 @@ resource "aws_lambda_function" "delta_sync_lambda" {
   depends_on = [
     aws_cloudwatch_log_group.delta_lambda
   ]
-   
+
 }
 
 
