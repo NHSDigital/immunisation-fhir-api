@@ -182,7 +182,7 @@ class TestConvertToFlatJson(unittest.TestCase):
         # Check if the error message was added to ErrorRecords
         errors = converter.get_error_records()
         self.assertEqual(len(errors), 1)
-        self.assertIn("Initialization failed: [JSONDecodeError]", errors[0]["message"])
+        self.assertIn("Initialization failed: [Exception] FHIR Parsing Error", errors[0]["message"])
         self.assertEqual(errors[0]["code"], 0)
 
     @patch("delta_converter.FHIRParser")
