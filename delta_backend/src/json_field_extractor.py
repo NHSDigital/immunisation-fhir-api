@@ -1,6 +1,6 @@
 import json
 import exception_messages
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from common.mappings import Gender
 
 class Extractor: 
@@ -15,8 +15,12 @@ class Extractor:
     DEFAULT_LOCATION = "X99999"
     NHS_NUMBER_SYSTEM_URL = "https://fhir.nhs.uk/Id/nhs-number"
     
-    def __init__(self, fhir_json_data):
+    DATE_CONVERT_FORMAT = "%Y%m%d"
+    
+    def __init__(self, fhir_json_data, report_unexpected_exception = True):
         self.fhir_json_data = json.loads(fhir_json_data) if isinstance(fhir_json_data, str) else fhir_json_data
+        self.report_unexpected_exception = report_unexpected_exception
+        self.error_records = []
         
     def _get_patient(self):
         contained = self.fhir_json_data.get("contained", [])
@@ -29,7 +33,39 @@ class Extractor:
 
         valid_names = [n for n in names if self._is_current_period(n, occurrence_time) and n.get("use") != "old"]
         return valid_names[0] if valid_names else names[0]
-   
+    
+    def _get_person_names(self):
+        occurrence_time = self._get_occurance_date_time()
+        patient = self._get_patient()
+        names = patient.get("name", [])
+        
+        if not isinstance(names, list) or not names:
+            return "", ""
+
+        selected_name = self._get_valid_names(names, occurrence_time)
+        person_forename = " ".join(selected_name.get("given", []))
+        person_surname = selected_name.get("family", "")
+
+        return person_forename, person_surname
+    
+    def _get_practitioner_names(self):
+        contained = self.fhir_json_data.get("contained", [])
+        occurrence_time = self._get_occurance_date_time()
+        practitioner = next((c for c in contained if isinstance(c, dict) and c.get("resourceType") == "Practitioner"), None)
+        if not practitioner or "name" not in practitioner:
+            return "", ""
+
+        practitioner_names = practitioner.get("name", [])
+        valid_practitioner_names = [n for n in practitioner_names if "given" in n or "family" in n]
+        if not valid_practitioner_names:
+            return "", ""
+
+        selected_practitioner_name = self._get_valid_names(valid_practitioner_names, occurrence_time)
+        performing_professional_forename = " ".join(selected_practitioner_name.get("given", []))
+        performing_professional_surname = selected_practitioner_name.get("family", "")
+
+        return performing_professional_forename, performing_professional_surname
+
     def _is_current_period(self, name, occurrence_time):
         period = name.get("period")
         if not isinstance(period, dict):
@@ -57,7 +93,7 @@ class Extractor:
         
         except Exception as e:
             message = "DateTime conversion error [%s]: %s" % (e.__class__.__name__, e)
-            error = self._log_error(message, code=exception_messages.UNEXPECTED_EXCEPTION)
+            error = self._log_error("DATE_AND_TIME", message, e, code=exception_messages.UNEXPECTED_EXCEPTION)
             return error
     
     def _get_first_snomed_code(self, coding_container: dict) -> str:
@@ -86,87 +122,7 @@ class Extractor:
 
         return ""
     
-    def extract_nhs_number(self):
-        patient = self._get_patient()
-        if patient:
-            identifier_list = patient.get("identifier", [])
-            for identifier in identifier_list:
-                if identifier.get("system", "") == self.NHS_NUMBER_SYSTEM_URL:
-                    return identifier.get("value", "")
-        return ""
-            
-    def extract_person_forename(self):
-        return self._extract_person_names()[0]
-    
-    def extract_person_surname(self):
-        return self._extract_person_names()[1]
-    
-    # TODO: This is incomplete to refactor
-    def extract_person_dob(self):
-        patient = self._get_patient()
-        
-        if patient:
-            dob = patient.get("birthDate", "")   
-            
-            try: 
-                dt = datetime.fromisoformat(dob)
-                return dt.strftime("%Y%m%d")
-            except:                            
-                raise "Value is not a string"            
-        return ""
-    
-    def extract_person_gender(self):
-        patient = self._get_patient()
-        if patient: 
-            gender = patient.get("gender", "").upper()
-            try:
-                return Gender[gender].value
-            except KeyError:
-                return ""   
-        return ""
-    
-    def _extract_person_names(self):
-        occurrence_time = self._get_occurance_date_time()
-        patient = self._get_patient()
-        names = patient.get("name", [])
-        
-        if not isinstance(names, list) or not names:
-            return "", ""
-
-        selected_name = self._get_valid_names(names, occurrence_time)
-        person_forename = " ".join(selected_name.get("given", []))
-        person_surname = selected_name.get("family", "")
-
-        return person_forename, person_surname
-
-    def extract_valid_address(self):
-        occurrence_time = self._get_occurance_date_time()
-        patient = self._get_patient()
-        
-        addresses = patient.get("address", [])
-        if not isinstance(addresses, list) or not addresses:
-            return "ZZ99 3CZ"
-
-        valid_addresses = [a for a in addresses if "postalCode" in a and self._is_current_period(a, occurrence_time)]
-        if not valid_addresses:
-            return "ZZ99 3CZ"
-
-        selected_address = next(
-            (a for a in valid_addresses if a.get("use") == "home" and a.get("type") != "postal"),
-            next(
-                (a for a in valid_addresses if a.get("use") != "old" and a.get("type") != "postal"),
-                next((a for a in valid_addresses if a.get("use") != "old"), valid_addresses[0]),
-            ),
-        )
-        return selected_address.get("postalCode", "ZZ99 3CZ")
-
-    def extract_site_code(self):
-        return self.extract_site_information()[0]
-    
-    def extract_site_code_type_uri(self):
-        return self.extract_site_information()[1]
-        
-    def extract_site_information(self):
+    def _get_site_information(self):
         performers = self.fhir_json_data.get("performer", [])
         if not isinstance(performers, list) or not performers:
             return None, None
@@ -199,13 +155,131 @@ class Extractor:
         site_code_type_uri = selected_performer["actor"].get("identifier", {}).get("system")
 
         return site_code, site_code_type_uri
+    
+    def _log_error(self, field_name, field_value, e, code=exception_messages.RECORD_CHECK_FAILED):
+        if isinstance(e, Exception):
+            message = exception_messages.MESSAGES[exception_messages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, str(e))
+        else:
+            message = str(e)  # if a simple string message was passed
 
-    def extract_practitioner_forename(self):
-        return self.extract_practitioner_names()[0]
+        self.error_records.append({
+            "code": code,
+            "field": field_name,
+            "value": field_value,
+            "message": message
+        })
     
-    def extract_practitioner_surname(self):
-        return self.extract_practitioner_names()[1]
+    def _convert_date(self, field_name, date, format) -> str:
+        """
+        Convert a date string according to match YYYYMMDD format.
+        """
+        if not date or not isinstance(date, str):
+            if self.report_unexpected_exception:
+                self._log_error(field_name, date, "Invalid value. Must be non empty string")
+            return ""
+        try:
+            dt = datetime.fromisoformat(date)
+            return dt.strftime(format)
+        except ValueError as e:
+            if self.report_unexpected_exception:
+                self._log_error(field_name, date, e)
+            return ""
     
+    def _convert_date_to_safe_format(self, field_name, date) -> str:
+        if not date:
+            return ""
+
+        try:
+            dt = datetime.fromisoformat(date)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+        except Exception as e:
+            if self.report_unexpected_exception:
+                self._log_error(field_name, date, e)
+            return ""
+
+        # Allow only +00:00 or +01:00 offsets (UTC and BST) and reject unsupported timezones
+        offset = dt.utcoffset()
+        allowed_offsets = [timedelta(hours=0), timedelta(hours=1)]
+        if offset is not None and offset not in allowed_offsets:
+            if self.report_unexpected_exception:
+                self._log_error(field_name, date, "Unsupported Format or offset")
+            return ""
+
+        # remove microseconds
+        dt_format = dt.replace(microsecond=0)
+
+        formatted = dt_format.strftime("%Y%m%dT%H%M%S%z")
+        return formatted.replace("+0000", "00").replace("+0100", "01")
+    
+    def extract_nhs_number(self):
+        patient = self._get_patient()
+        if patient:
+            identifier_list = patient.get("identifier", [])
+            for identifier in identifier_list:
+                if identifier.get("system", "") == self.NHS_NUMBER_SYSTEM_URL:
+                    return identifier.get("value", "")
+        return ""
+            
+    def extract_person_forename(self):
+        return self._get_person_names()[0]
+    
+    def extract_person_surname(self):
+        return self._get_person_names()[1]
+    
+    def extract_person_dob(self):
+        patient = self._get_patient()
+        
+        if patient:
+            dob = patient.get("birthDate", "")   
+            
+            return self._convert_date("PERSON_DOB", dob, self.DATE_CONVERT_FORMAT)          
+        return ""
+    
+    def extract_person_gender(self):
+        patient = self._get_patient()
+        if patient: 
+            gender = patient.get("gender", "").upper()
+            try:
+                return Gender[gender].value
+            except KeyError:
+                return ""   
+        return ""
+    
+    def extract_valid_address(self):
+        occurrence_time = self._get_occurance_date_time()
+        patient = self._get_patient()
+        
+        addresses = patient.get("address", [])
+        if not isinstance(addresses, list) or not addresses:
+            return "ZZ99 3CZ"
+
+        valid_addresses = [a for a in addresses if "postalCode" in a and self._is_current_period(a, occurrence_time)]
+        if not valid_addresses:
+            return "ZZ99 3CZ"
+
+        selected_address = next(
+            (a for a in valid_addresses if a.get("use") == "home" and a.get("type") != "postal"),
+            next(
+                (a for a in valid_addresses if a.get("use") != "old" and a.get("type") != "postal"),
+                next((a for a in valid_addresses if a.get("use") != "old"), valid_addresses[0]),
+            ),
+        )
+        return selected_address.get("postalCode", "ZZ99 3CZ")
+    
+        
+    def extract_date_time(self) -> str: 
+        date = self.fhir_json_data.get("occurrenceDateTime","")
+        if date: 
+            return self._convert_date_to_safe_format("DATE_AND_TIME", date)
+        return ""
+    
+    def extract_site_code(self):
+        return self._get_site_information()[0]
+    
+    def extract_site_code_type_uri(self):
+        return self._get_site_information()[1]
+        
     def extract_unique_id(self):
         identifier = self.fhir_json_data.get("identifier", [])
         if identifier and len(identifier) == 1: 
@@ -217,26 +291,29 @@ class Extractor:
         if identifier and len(identifier) == 1:
             return identifier[0].get("system", "")
         return ""
+
+    def extract_practitioner_forename(self):
+        return self._get_practitioner_names()[0]
     
-    def extract_practitioner_names(self):
-        contained = self.fhir_json_data.get("contained", [])
-        occurrence_time = self._get_occurance_date_time()
-        practitioner = next((c for c in contained if isinstance(c, dict) and c.get("resourceType") == "Practitioner"), None)
-        if not practitioner or "name" not in practitioner:
-            return "", ""
-
-        practitioner_names = practitioner.get("name", [])
-        valid_practitioner_names = [n for n in practitioner_names if "given" in n or "family" in n]
-        if not valid_practitioner_names:
-            return "", ""
-
-        selected_practitioner_name = self._get_valid_names(valid_practitioner_names, occurrence_time)
-        performing_professional_forename = " ".join(selected_practitioner_name.get("given", []))
-        performing_professional_surname = selected_practitioner_name.get("family", "")
-
-        return performing_professional_forename, performing_professional_surname
-
-      
+    def extract_practitioner_surname(self):
+        return self._get_practitioner_names()[1]
+    
+    def extract_recorded_date(self) -> str:
+        date = self.fhir_json_data.get("recorded", "")
+        return self._convert_date("RECORDED_DATE", date, self.DATE_CONVERT_FORMAT)
+    
+    def extract_primary_source(self) -> str: 
+        primary_source = self.fhir_json_data.get("primarySource")
+        
+        if isinstance(primary_source, bool):
+            return primary_source
+        if str(primary_source).strip().lower() == "true":
+            return True
+        if str(primary_source).strip().lower() == "false":
+            return False
+        
+        return ""
+    
     def extract_vaccination_procedure_code(self) -> str:
         extensions = self.fhir_json_data.get("extension", [])
         for ext in extensions:
@@ -245,26 +322,55 @@ class Extractor:
                 return self._get_first_snomed_code(value_cc)
         return ""
     
+    def extract_vaccination_procedure_term(self) -> str:
+        extensions = self.fhir_json_data.get("extension", [])
+        for ext in extensions:
+            if ext.get("url") == self.EXTENSION_URL_VACCINATION_PRODEDURE:
+                return self._get_term_from_codeable_concept(ext.get("valueCodeableConcept", {}))
+        return ""
+    
+    def extract_dose_sequence(self) -> str: 
+        protocol_applied = self.fhir_json_data.get("protocolApplied", [])
+        
+        if protocol_applied:   
+            dose = protocol_applied[0].get("doseNumberPositiveInt", None)
+            return str(dose) if dose else ""
+        return ""
+        
     def extract_vaccine_product_code(self) -> str:
         vaccine_code = self.fhir_json_data.get("vaccineCode", {})
         return self._get_first_snomed_code(vaccine_code)
 
+    def extract_vaccine_product_term(self) -> str:
+        return self._get_term_from_codeable_concept(self.fhir_json_data.get("vaccineCode", {}))
+    
+    def extract_vaccine_manufacturer(self) -> str: 
+        manufacturer = self.fhir_json_data.get("manufacturer", {})
+        if manufacturer: 
+            return manufacturer.get("display", "")
+        return ""
+
+    def extract_batch_number(self) -> str: 
+        return self.fhir_json_data.get("lotNumber", "")
+      
+    def extract_expiry_date(self) -> str:
+        date = self.fhir_json_data.get("expirationDate","")
+        return self._convert_date("EXPIRY_DATE", date, self.DATE_CONVERT_FORMAT)
+    
     def extract_site_of_vaccination_code(self) -> str:
         site = self.fhir_json_data.get("site", {})
         return self._get_first_snomed_code(site)
 
+    def extract_site_of_vaccination_term(self) -> str:
+        return self._get_term_from_codeable_concept(self.fhir_json_data.get("site", {}))
+    
     def extract_route_of_vaccination_code(self) -> str:
         route = self.fhir_json_data.get("route", {})
         return self._get_first_snomed_code(route)
+    
+    def extract_route_of_vaccination_term(self) -> str:
+        return self._get_term_from_codeable_concept(self.fhir_json_data.get("route", {}))
 
-    def extract_indication_code(self) -> str:
-        for reason in self.fhir_json_data.get("reasonCode", []):
-            codings = reason.get("coding", [])
-            for coding in codings:
-                if coding.get("system") == self.CODING_SYSTEM_URL_SNOMED:
-                    return coding.get("code", "")
-        return ""
-  
     def extract_dose_amount(self) -> str:
         dose_quantity = self.fhir_json_data.get("doseQuantity", {})
         return dose_quantity.get("value", "")
@@ -278,31 +384,15 @@ class Extractor:
     def extract_dose_unit_term(self) -> str:
         dose_quantity = self.fhir_json_data.get("doseQuantity", {})
         return dose_quantity.get("unit", "")
-
-    def extract_vaccination_procedure_term(self) -> str:
-        extensions = self.fhir_json_data.get("extension", [])
-        for ext in extensions:
-            if ext.get("url") == self.EXTENSION_URL_VACCINATION_PRODEDURE:
-                return self._get_term_from_codeable_concept(ext.get("valueCodeableConcept", {}))
-        return ""
-
-    def extract_vaccine_product_term(self) -> str:
-        return self._get_term_from_codeable_concept(self.fhir_json_data.get("vaccineCode", {}))
-
-    def extract_site_of_vaccination_term(self) -> str:
-        return self._get_term_from_codeable_concept(self.fhir_json_data.get("site", {}))
-
-    def extract_route_of_vaccination_term(self) -> str:
-        return self._get_term_from_codeable_concept(self.fhir_json_data.get("route", {}))
-
-    def extract_dose_sequence(self) -> str: 
-        protocol_applied = self.fhir_json_data.get("protocolApplied", [])
-        
-        if protocol_applied:   
-            dose = protocol_applied[0].get("doseNumberPositiveInt", None)
-            return str(dose) if dose else ""
-        return ""
     
+    def extract_indication_code(self) -> str:
+        for reason in self.fhir_json_data.get("reasonCode", []):
+            codings = reason.get("coding", [])
+            for coding in codings:
+                if coding.get("system") == self.CODING_SYSTEM_URL_SNOMED:
+                    return coding.get("code", "")
+        return ""
+
     def extract_location_code(self) -> str: 
         location = self.fhir_json_data.get("location", {})
             
@@ -321,24 +411,5 @@ class Extractor:
         
         return self.ODS_ORG_CODE_SYSTEM_URL
     
-    def extract_primary_source(self) -> str: 
-        primary_source = self.fhir_json_data.get("primarySource")
-        
-        if isinstance(primary_source, bool):
-            return primary_source
-        if str(primary_source).strip().lower() == "true":
-            return True
-        if str(primary_source).strip().lower() == "false":
-            return False
-        
-        return ""
-    
-    def extract_vaccine_manufacturer(self) -> str: 
-        manufacturer = self.fhir_json_data.get("manufacturer", {})
-        if manufacturer: 
-            return manufacturer.get("display", "")
-        return ""
-    
-    def extract_batch_number(self) -> str: 
-        return self.fhir_json_data.get("lotNumber", "")
-       
+    def get_error_records(self):
+        return self.error_records

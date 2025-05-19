@@ -1,9 +1,9 @@
 from json_field_extractor import Extractor
 
 class ConversionLayout:
-    def __init__(self, fhir_data):
+    def __init__(self, extractor: Extractor):
            
-        self.extractor = Extractor(fhir_data)
+        self.extractor = extractor
       
         self.conversion_layout = {
           "id": "7d78e9a6-d859-45d3-bb05-df9c405acbdb",
@@ -43,8 +43,8 @@ class ConversionLayout:
               "fieldNameFlat": "PERSON_DOB",
               "expression": {
                 "expressionName": "Date Convert",
-                "expressionType": "DATECONVERT",
-                "expressionRule": "%Y%m%d"
+                "expressionType": "DEFAULT",
+                "expressionRule": self.extractor.extract_person_dob
               }
             },
             {
@@ -70,8 +70,8 @@ class ConversionLayout:
               "fieldNameFlat": "DATE_AND_TIME",
               "expression": {
                 "expressionName": "Date Convert",
-                "expressionType": "DATETIME",
-                "expressionRule": "fhir-date"
+                "expressionType": "DEFAULT",
+                "expressionRule": self.extractor.extract_date_time 
               }
             },
             {
@@ -142,8 +142,8 @@ class ConversionLayout:
               "fieldNameFlat": "RECORDED_DATE",
               "expression": {
                 "expressionName": "Date Convert",
-                "expressionType": "DATECONVERT",
-                "expressionRule": "%Y%m%d"
+                "expressionType": "DEFAULT",
+                "expressionRule": self.extractor.extract_recorded_date
               }
             },
             {
@@ -223,8 +223,8 @@ class ConversionLayout:
               "fieldNameFlat": "EXPIRY_DATE",
               "expression": {
                 "expressionName": "Date Convert",
-                "expressionType": "DATECONVERT",
-                "expressionRule": "%Y%m%d"
+                "expressionType": "DEFAULT",
+                "expressionRule": self.extractor.extract_expiry_date
               }
             },
             {

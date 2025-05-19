@@ -21,17 +21,18 @@ class Converter:
         self.report_unexpected_exception = report_unexpected_exception
 
         try:
-            conversion_layout = ConversionLayout(fhir_data)
-            self.schema_file = conversion_layout.get_conversion_layout()
-            
             self.data_parser = FHIRParser()
             self.data_parser.parseFHIRData(fhir_data)
-
+            
+            self.extractor = Extractor(self.data_parser.FHIRFile)
+            conversion_layout = ConversionLayout(self.extractor)
+            
+            self.schema_file = conversion_layout.get_conversion_layout()
             self.schema_parser = SchemaParser()
             self.schema_parser.parseSchema(self.schema_file)
             
             self.conversion_checker = ConversionChecker(self.data_parser, summarise, report_unexpected_exception)
-            self.extractor = Extractor(self.data_parser)
+            
             
         except Exception as e:
             self._log_error(f"Initialization failed: [{e.__class__.__name__}] {e}")
@@ -79,12 +80,12 @@ class Converter:
             conversions = self.schema_parser.get_conversions()
         except Exception as e:
             return self._log_error(f"Schema get_conversions error [{e.__class__.__name__}]: {e}")
-
+        
         for conversion in conversions:
             self._convertData(conversion)
         
         # Collect and store any errors from ConversionChecker
-        all_errors = self.conversion_checker.get_error_records()
+        all_errors = self.conversion_checker.get_error_records() + self.extractor.get_error_records()
         self.error_records.extend(all_errors)
 
         # Add CONVERSION_ERRORS as the 35th field
