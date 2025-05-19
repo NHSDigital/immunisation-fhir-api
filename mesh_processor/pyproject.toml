@@ -8,9 +8,9 @@ packages    = [{include = "src"}]
 
 [tool.poetry.dependencies]
 python = "~3.10"
-boto3 = "~1.26.90"
-mypy-boto3-dynamodb = "^1.26.164"
-moto = "~4.2.11"
+boto3 = "~1.38.17"
+mypy-boto3-dynamodb = "^1.38.4"
+moto = "~5.1.4"
 
 [build-system]
 requires = ["poetry-core"]

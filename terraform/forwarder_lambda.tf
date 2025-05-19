@@ -15,6 +15,7 @@ resource "aws_ecr_repository" "forwarder_lambda_repository" {
     scan_on_push = true
   }
   name = "${local.short_prefix}-forwarding-repo"
+  force_delete = local.is_temp
 }
 
 module "forwarding_docker_image" {
@@ -217,7 +218,7 @@ resource "aws_lambda_function" "forwarding_lambda" {
     aws_cloudwatch_log_group.forwarding_lambda_log_group
   ]
 
-  reserved_concurrent_executions = startswith(local.environment, "pr-") ? -1 : 20
+  reserved_concurrent_executions = local.is_temp ? -1 : 20
 }
 
  resource "aws_lambda_event_source_mapping" "kinesis_event_source_mapping_forwarder_lambda" {

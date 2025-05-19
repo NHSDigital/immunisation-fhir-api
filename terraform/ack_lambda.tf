@@ -11,6 +11,7 @@ resource "aws_ecr_repository" "ack_lambda_repository" {
     scan_on_push = true
   }
   name = "${local.short_prefix}-ack-repo"
+  force_delete = local.is_temp
 }
 
 # Module for building and pushing Docker image to ECR
@@ -220,7 +221,7 @@ resource "aws_lambda_function" "ack_processor_lambda" {
     }
   }
 
-  reserved_concurrent_executions = startswith(local.environment, "pr-") ? -1 : 20
+  reserved_concurrent_executions = local.is_temp ? -1 : 20
   depends_on = [
     aws_cloudwatch_log_group.ack_lambda_log_group
   ]
