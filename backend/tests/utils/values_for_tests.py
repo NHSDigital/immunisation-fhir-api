@@ -34,11 +34,11 @@ class ValidValues:
     for_date_times = [
         "2000-01-01",  # Full date only
         "2000-01-01T00:00:00+00:00",  # Time and offset all zeroes
-        "1933-12-31T11:11:11+12:45",  # Positive offset (with hours and minutes not 0)
-        "1933-12-31T11:11:11-05:00",  # Negative offset
-        "1933-12-31T11:11:11.1+12:45",  # DateTime with milliseconds to 1 decimal place
+        "2000-01-01T00:00:00+01:00",  # Time and offset all zeroes
+        "1933-12-31T11:11:11+01:00",  # Positive offset (with hours and minutes not 0)
+        "1933-12-31T11:11:11.1+00:00",  # DateTime with milliseconds to 1 decimal place
         "2000-01-01T00:00:00.000+00:00",  # DateTime with milliseconds to 3 decimal places
-        "1933-12-31T11:11:11.111111+12:45",  # DateTime with milliseconds to 6 decimal places
+        "1933-12-31T11:11:11.111111+00:00",  # DateTime with milliseconds to 6 decimal places
     ]
 
     for_strings_with_any_length_chars = (

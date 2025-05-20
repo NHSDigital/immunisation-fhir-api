@@ -114,8 +114,8 @@ class PreValidation:
         error_message = (
             f"{field_location} must be a valid datetime in the format 'YYYY-MM-DDThh:mm:ss+zz:zz' (where time element "
             + "is optional, timezone must be given if and only if time is given, and milliseconds can be optionally "
-            + "included after the seconds). Note that partial dates are not allowed for "
-            + "Only '+00:00' and '+01:00' are accepted as valid timezone offsets. "
+            + "included after the seconds). Only '+00:00' and '+01:00' are accepted as valid timezone offsets. " 
+            + "Note that partial dates are not allowed for "
             + f"{field_location} for this service."
         )
 
