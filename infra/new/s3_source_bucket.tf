@@ -1,5 +1,7 @@
-# TODO - move to instance terraform
+# TODO: Confirm this is used. This was in the prod infra terraform but not non-prod.
+# Presumably because only prod uses blue / green deployments, and this is the overall entry point into batch?
 resource "aws_s3_bucket" "batch_data_source_bucket" {
+  count = local.environment == "prod" ? 1 : 0
   bucket        = "immunisation-batch-${local.environment}-data-sources"
   force_destroy = local.is_temp
   tags = {
@@ -10,7 +12,8 @@ resource "aws_s3_bucket" "batch_data_source_bucket" {
 }
 
 resource "aws_s3_bucket_policy" "batch_data_source_bucket_policy" {
-  bucket = aws_s3_bucket.batch_data_source_bucket.id
+  count = local.environment == "prod" ? 1 : 0
+  bucket = aws_s3_bucket.batch_data_source_bucket[0].id
   policy = jsonencode({
     Version : "2012-10-17",
     Statement : [
@@ -23,8 +26,8 @@ resource "aws_s3_bucket_policy" "batch_data_source_bucket_policy" {
           "s3:PutObject"
         ],
         Resource : [
-          "arn:aws:s3:::${aws_s3_bucket.batch_data_source_bucket.bucket}",
-          "arn:aws:s3:::${aws_s3_bucket.batch_data_source_bucket.bucket}/*"
+          "arn:aws:s3:::${aws_s3_bucket.batch_data_source_bucket[0].bucket}",
+          "arn:aws:s3:::${aws_s3_bucket.batch_data_source_bucket[0].bucket}/*"
         ]
       }
     ]
@@ -32,7 +35,8 @@ resource "aws_s3_bucket_policy" "batch_data_source_bucket_policy" {
 }
 
 # resource "aws_s3_bucket_server_side_encryption_configuration" "s3_batch_source_encryption" {
-#   bucket = aws_s3_bucket.batch_data_source_bucket.id
+#   count = local.environment == "prod" ? 1 : 0
+#   bucket = aws_s3_bucket.batch_data_source_bucket[0].id
 
 #   rule {
 #     apply_server_side_encryption_by_default {
@@ -43,7 +47,8 @@ resource "aws_s3_bucket_policy" "batch_data_source_bucket_policy" {
 # }
 
 resource "aws_s3_bucket_lifecycle_configuration" "datasources_lifecycle" {
-  bucket = aws_s3_bucket.batch_data_source_bucket.id
+  count = local.environment == "prod" ? 1 : 0
+  bucket = aws_s3_bucket.batch_data_source_bucket[0].id
 
   rule {
     id     = "DeleteFilesAfter7Days"
