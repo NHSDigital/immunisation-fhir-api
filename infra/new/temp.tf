@@ -1,11 +1,11 @@
 # TODO - delete this file once the state has been updated in all environments
 
-# removed {
-#     from = aws_dynamodb_table.audit-table
-#     lifecycle {
-#         destroy = false
-#     }
-# }
+removed {
+    from = aws_dynamodb_table.audit-table
+    lifecycle {
+        destroy = false
+    }
+}
 removed {
     from = aws_dynamodb_table.audit-table-int
     lifecycle {
@@ -19,12 +19,12 @@ removed {
     }
 }
 
-# removed {
-#     from = aws_dynamodb_table.delta-dynamodb-table
-#     lifecycle {
-#         destroy = false
-#     }
-# }
+removed {
+    from = aws_dynamodb_table.delta-dynamodb-table
+    lifecycle {
+        destroy = false
+    }
+}
 removed {
     from = aws_dynamodb_table.delta-dynamodb-int-table
     lifecycle {
@@ -38,12 +38,12 @@ removed {
     }
 }
 
-# removed {
-#     from = aws_dynamodb_table.events-dynamodb-table
-#     lifecycle {
-#         destroy = false
-#     }
-# }
+removed {
+    from = aws_dynamodb_table.events-dynamodb-table
+    lifecycle {
+        destroy = false
+    }
+}
 removed {
     from = aws_dynamodb_table.events-dynamodb-int-table
     lifecycle {
@@ -81,6 +81,8 @@ removed {
 # }
 
 # ---
+
+# TODO - replace with moved blocks as we're not removing this (yet)
 
 # removed {
 #     from = aws_s3_bucket.batch_data_destination_bucket
