@@ -1,6 +1,6 @@
 # Define the Kinesis Data Stream resource with 15 shards
 resource "aws_kinesis_stream" "processor_data_streams" {
-  name        = "${local.short_prefix}-processingdata-stream"
+  name = "${local.short_prefix}-processingdata-stream"
   stream_mode_details {
     stream_mode = "ON_DEMAND"
   }

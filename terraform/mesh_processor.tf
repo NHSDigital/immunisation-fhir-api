@@ -10,13 +10,13 @@ resource "aws_ecr_repository" "mesh_file_converter_lambda_repository" {
   image_scanning_configuration {
     scan_on_push = true
   }
-  name = "${local.short_prefix}-mesh_processor-repo"
+  name         = "${local.short_prefix}-mesh_processor-repo"
   force_delete = local.is_temp
 }
 
 # Module for building and pushing Docker image to ECR
 module "mesh_processor_docker_image" {
-  source = "terraform-aws-modules/lambda/aws//modules/docker-build"
+  source  = "terraform-aws-modules/lambda/aws//modules/docker-build"
   version = "7.20.2"
 
   create_ecr_repo = false
