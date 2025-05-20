@@ -5,6 +5,7 @@ import os
 import json
 from common.mappings import EventName, Operation, ActionFlag
 from utils_for_converter_tests import ValuesForTests, RecordConfig
+from converter import Converter
 
 # Set environment variables before importing the module
 ## @TODO: # Note: Environment variables shared across tests, thus aligned
@@ -239,33 +240,43 @@ class DeltaTestCase(unittest.TestCase):
         # Check logging and Firehose were called
         mock_logger_info.assert_called_with("Record from DPS skipped for 12345")
 
-    # TODO - amend test once error handling implemented
-    
-    # @patch("delta.logger.info")
-    # @patch("json.Converter")
-    # @patch("delta.boto3.resource")
-    # def test_partial_success_with_errors(self, mock_dynamodb, mock_converter, mock_logger_info):
-    #     mock_converter_instance = MagicMock()
-    #     mock_converter_instance.runConversion.return_value = [{}]
-    #     mock_converter_instance.getErrorRecords.return_value = [{"error": "Invalid field"}]
-    #     mock_converter.return_value = mock_converter_instance
+    @patch("delta.logger.info")
+    @patch("delta.Converter")
+    @patch("delta.boto3.resource")
+    def test_partial_success_with_errors(self, mock_dynamodb, mock_converter, mock_logger_info):
+        mock_converter_instance = MagicMock()
+        mock_converter_instance.run_conversion.return_value = {"ABC":"DEF"}
+        mock_converter_instance.get_error_records.return_value = [{"error": "Invalid field"}]
+        mock_converter.return_value = mock_converter_instance
 
-    #     # Mock DynamoDB put_item success
-    #     mock_table = MagicMock()
-    #     mock_dynamodb.return_value.Table.return_value = mock_table
-    #     mock_table.put_item.return_value = {"ResponseMetadata": {"HTTPStatusCode": 200}}
+        # Mock DynamoDB put_item success
+        mock_table = MagicMock()
+        mock_dynamodb.return_value.Table.return_value = mock_table
+        mock_table.put_item.return_value = {"ResponseMetadata": {"HTTPStatusCode": 200}}
 
-    #     event = self.get_event()
-    #     context = {}
+        event = ValuesForTests.get_event()
+        context = {}
 
-    #     response = handler(event, context)
+        response = handler(event, context)
 
-        # self.assertEqual(response["statusCode"], 207)
-        # self.assertIn("Partial success", response["body"])
-
+        self.assertTrue(response)
         # Check logging and Firehose were called
-        # mock_logger_info.assert_called()
-        # mock_firehose_send_log.assert_called()
+        mock_logger_info.assert_called()
+        self.assertEqual(self.mock_firehose_logger.send_log.call_count, 1)
+        self.mock_firehose_logger.send_log.assert_called_once()
+
+        # Get the actual argument passed to send_log
+        args, kwargs = self.mock_firehose_logger.send_log.call_args
+        sent_payload = args[0]  # First positional arg
+
+        # Navigate to the specific message
+        status_desc = sent_payload["event"]["operation_outcome"]["statusDesc"]
+
+        # Assert the expected message is present
+        self.assertIn(
+            "Partial success: successfully synced into delta, but issues found within record",
+            status_desc
+        )
 
     @patch("boto3.resource")
     def test_send_message_multi_records_diverse(self, mock_boto_resource):

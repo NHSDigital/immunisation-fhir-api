@@ -25,7 +25,7 @@ class Converter:
         conversions = self.conversion_layout.get_conversion_layout()
         
         for conversion in conversions:
-            self._convertData(conversion)
+            self._convert_data(conversion)
         
         self.error_records.extend(self.extractor.get_error_records())
 
@@ -33,7 +33,7 @@ class Converter:
         self.converted["CONVERSION_ERRORS"] = self.error_records
         return self.converted
 
-    def _convertData(self, expression):
+    def _convert_data(self, expression):
         try:
             flat_field = expression["fieldNameFlat"]
             extract_value = expression["expressionRule"]
