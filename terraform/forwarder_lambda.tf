@@ -171,8 +171,10 @@ resource "aws_iam_policy" "forwarding_lambda_exec_policy" {
           "dynamodb:UpdateItem",
           "dynamodb:Query"
         ]
-        Resource = ["arn:aws:dynamodb:*:*:table/${aws_dynamodb_table.events-dynamodb-table.name}",
-                    "arn:aws:dynamodb:*:*:table/${aws_dynamodb_table.events-dynamodb-table.name}/index/*"]
+        Resource = [
+          aws_dynamodb_table.events-dynamodb-table.arn,
+          "${aws_dynamodb_table.events-dynamodb-table.arn}/index/*"
+        ]
       },
       {
         Effect = "Allow"

@@ -137,8 +137,8 @@ resource "aws_iam_policy" "ack_lambda_exec_policy" {
           "dynamodb:UpdateItem"
         ]
        Resource  = [
-          "arn:aws:dynamodb:${var.aws_region}:${local.local_account_id}:table/${aws_dynamodb_table.audit-table.name}",
-          "arn:aws:dynamodb:${var.aws_region}:${local.local_account_id}:table/${aws_dynamodb_table.audit-table.name}/index/*",
+          aws_dynamodb_table.audit-table.arn,
+          "${aws_dynamodb_table.audit-table.arn}/index/*",
         ]
       },
       {
