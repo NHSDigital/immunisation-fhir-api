@@ -5,4 +5,3 @@ resource "aws_sqs_queue" "fifo_queue" {
  content_based_deduplication = true # Optional, helps with deduplication
  visibility_timeout_seconds = 900
 }
-

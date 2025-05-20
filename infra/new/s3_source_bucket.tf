@@ -13,7 +13,7 @@ resource "aws_s3_bucket" "batch_data_source_bucket" {
 
 resource "aws_s3_bucket_policy" "batch_data_source_bucket_policy" {
   count = local.environment == "prod" ? 1 : 0
-  bucket = aws_s3_bucket.batch_data_source_bucket[0].id
+  bucket = aws_s3_bucket.batch_data_source_bucket[0].bucket
   policy = jsonencode({
     Version : "2012-10-17",
     Statement : [
@@ -36,7 +36,7 @@ resource "aws_s3_bucket_policy" "batch_data_source_bucket_policy" {
 
 # resource "aws_s3_bucket_server_side_encryption_configuration" "s3_batch_source_encryption" {
 #   count = local.environment == "prod" ? 1 : 0
-#   bucket = aws_s3_bucket.batch_data_source_bucket[0].id
+#   bucket = aws_s3_bucket.batch_data_source_bucket[0].bucket
 
 #   rule {
 #     apply_server_side_encryption_by_default {
@@ -48,7 +48,7 @@ resource "aws_s3_bucket_policy" "batch_data_source_bucket_policy" {
 
 resource "aws_s3_bucket_lifecycle_configuration" "datasources_lifecycle" {
   count = local.environment == "prod" ? 1 : 0
-  bucket = aws_s3_bucket.batch_data_source_bucket[0].id
+  bucket = aws_s3_bucket.batch_data_source_bucket[0].bucket
 
   rule {
     id     = "DeleteFilesAfter7Days"

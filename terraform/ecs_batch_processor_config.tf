@@ -105,9 +105,9 @@ resource "aws_iam_policy" "ecs_task_exec_policy" {
           "s3:DeleteObject"
         ],
         Resource = [
-          "arn:aws:s3:::${local.batch_prefix}-data-sources",
-          "arn:aws:s3:::${local.batch_prefix}-data-sources/*",
-          "${data.aws_s3_bucket.existing_destination_bucket.arn}",
+          aws_s3_bucket.batch_data_source_bucket.arn,
+          "${aws_s3_bucket.batch_data_source_bucket.arn}/*",
+          data.aws_s3_bucket.existing_destination_bucket.arn,
           "${data.aws_s3_bucket.existing_destination_bucket.arn}/*"
         ]
       },
@@ -118,8 +118,9 @@ resource "aws_iam_policy" "ecs_task_exec_policy" {
           "dynamodb:UpdateItem"
         ]
        Resource  = [
-          "arn:aws:dynamodb:${var.aws_region}:${local.local_account_id}:table/${data.aws_dynamodb_table.audit-table.name}",
-          "arn:aws:dynamodb:${var.aws_region}:${local.local_account_id}:table/${data.aws_dynamodb_table.audit-table.name}/index/*",
+          # TODO - is this just the table ARN?
+          "arn:aws:dynamodb:${var.aws_region}:${local.local_account_id}:table/${aws_dynamodb_table.audit-table.name}",
+          "arn:aws:dynamodb:${var.aws_region}:${local.local_account_id}:table/${aws_dynamodb_table.audit-table.name}/index/*",
         ]
       },
       {
@@ -154,7 +155,7 @@ resource "aws_iam_policy" "ecs_task_exec_policy" {
         Effect   = "Allow"
         Action   = "lambda:InvokeFunction"
         Resource = [
-          "${data.aws_lambda_function.existing_file_name_proc_lambda.arn}"
+          aws_lambda_function.file_processor_lambda.arn
         ]
       },
       {
@@ -200,7 +201,7 @@ resource "aws_ecs_task_definition" "ecs_task" {
     environment = [
       {
         name  = "SOURCE_BUCKET_NAME"
-        value = "${local.batch_prefix}-data-sources"
+        value = aws_s3_bucket.batch_data_source_bucket.bucket
       },
       {
         name  = "ACK_BUCKET_NAME"
@@ -208,7 +209,7 @@ resource "aws_ecs_task_definition" "ecs_task" {
       },
       {
         name  = "KINESIS_STREAM_ARN"
-        value = "${local.kinesis_arn}"
+        value = local.kinesis_arn
       },
       {
         name  = "KINESIS_STREAM_NAME"
@@ -220,11 +221,11 @@ resource "aws_ecs_task_definition" "ecs_task" {
       },
       {
         name  = "AUDIT_TABLE_NAME"
-        value = "${data.aws_dynamodb_table.audit-table.name}"
+        value = aws_dynamodb_table.audit-table.name
       },
       {
         name  = "FILE_NAME_PROC_LAMBDA_NAME"
-        value =  "${data.aws_lambda_function.existing_file_name_proc_lambda.function_name}"
+        value =  aws_lambda_function.file_processor_lambda.function_name
       }
     ]
     logConfiguration = {

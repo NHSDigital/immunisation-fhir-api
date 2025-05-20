@@ -17,7 +17,7 @@ terraform {
 }
 
 provider "aws" {
-  region  = var.region
+  region  = var.aws_region
   profile = "apim-dev"
   default_tags {
     tags = {
@@ -30,7 +30,7 @@ provider "aws" {
 
 provider "aws" {
   alias   = "acm_provider"
-  region  = var.region
+  region  = var.aws_region
   profile = "apim-dev"
 }
 

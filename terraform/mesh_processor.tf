@@ -116,8 +116,8 @@ resource "aws_iam_policy" "mesh_processor_lambda_exec_policy" {
           "s3:CopyObject"
         ]
         Resource = [
-          "arn:aws:s3:::${local.batch_prefix}-data-sources",
-          "arn:aws:s3:::${local.batch_prefix}-data-sources/*"
+          aws_s3_bucket.batch_data_source_bucket.arn,
+          "${aws_s3_bucket.batch_data_source_bucket.arn}/*"
         ]
       },
       {
@@ -186,7 +186,7 @@ resource "aws_lambda_function" "mesh_file_converter_lambda" {
 
   environment {
     variables = {
-      Destination_BUCKET_NAME    = "${local.batch_prefix}-data-sources"
+      Destination_BUCKET_NAME    = aws_s3_bucket.batch_data_source_bucket.bucket
       MESH_FILE_PROC_LAMBDA_NAME = "imms-${local.env}-meshfileproc_lambda"
     }
   }

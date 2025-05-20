@@ -44,7 +44,7 @@ locals {
     }
 }
 
-variable "region" {
+variable "aws_region" {
     default = "eu-west-2"
 }
 
@@ -54,10 +54,6 @@ data "aws_kms_key" "existing_s3_encryption_key" {
 
 data "aws_kms_key" "existing_dynamo_encryption_key" {
   key_id = "alias/imms-event-dynamodb-encryption"
-}
-
-variable "aws_region" {
-    default = "eu-west-2"
 }
 
 data "aws_elasticache_cluster" "existing_redis" {
@@ -79,10 +75,6 @@ data "aws_s3_bucket" "existing_destination_bucket" {
   bucket = "immunisation-batch-${local.local_config}-data-destinations"
 }
 
-data "aws_s3_bucket" "existing_source_bucket" {
-  bucket = "immunisation-batch-${local.local_config}-data-sources"
-}
-
 data "aws_kms_key" "existing_lambda_encryption_key" {
   key_id = "alias/imms-batch-lambda-env-encryption"
 }
@@ -91,23 +83,6 @@ data "aws_kms_key" "existing_kinesis_encryption_key" {
   key_id = "alias/imms-batch-kinesis-stream-encryption"
 }
 
-data "aws_dynamodb_table" "events-dynamodb-table" { 
-  name = "imms-${local.local_config}-imms-events" 
-}
-
-data "aws_dynamodb_table" "audit-table" { 
-  name = "immunisation-batch-${local.local_config}-audit-table" 
-}
-
-data "aws_dynamodb_table" "delta-dynamodb-table" { 
-  name = "imms-${local.local_config}-delta" 
-}
-
-data "aws_lambda_function" "existing_file_name_proc_lambda" {
-  function_name = aws_lambda_function.file_processor_lambda.function_name
-}
-
 data "aws_kms_key" "mesh_s3_encryption_key" {
   key_id = "alias/local-immunisation-mesh"
 }
-

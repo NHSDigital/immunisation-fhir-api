@@ -21,7 +21,7 @@ locals {
     imms_endpoints = [
         "get_imms", "create_imms", "update_imms", "search_imms", "delete_imms", "not_found"
     ]
-    imms_table_name      = data.aws_dynamodb_table.events-dynamodb-table.name
+    imms_table_name      = aws_dynamodb_table.events-dynamodb-table.name
     imms_lambda_env_vars = {
         "DYNAMODB_TABLE_NAME"    = local.imms_table_name,
         "IMMUNIZATION_ENV"       = local.environment,

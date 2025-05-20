@@ -10,17 +10,17 @@ data "aws_iam_policy_document" "batch_data_source_bucket_policy" {
         } ):  templatefile("${local.policy_path}/s3_batch_source_policy.json", {
             "bucket-name" : aws_s3_bucket.batch_data_source_bucket.bucket
         } ),
-        
+
     ]
 }
 
 resource "aws_s3_bucket_policy" "batch_data_source_bucket_policy" {
-   bucket = aws_s3_bucket.batch_data_source_bucket.id
+   bucket = aws_s3_bucket.batch_data_source_bucket.bucket
    policy = data.aws_iam_policy_document.batch_data_source_bucket_policy.json
 }
 
 # resource "aws_s3_bucket_server_side_encryption_configuration" "s3_batch_source_encryption" {
-#   bucket = aws_s3_bucket.batch_data_source_bucket.id
+#   bucket = aws_s3_bucket.batch_data_source_bucket.bucket
 
 #   rule {
 #     apply_server_side_encryption_by_default {
@@ -31,23 +31,23 @@ resource "aws_s3_bucket_policy" "batch_data_source_bucket_policy" {
 # }
 
 resource "aws_s3_bucket_versioning" "source_versioning" {
-  bucket = aws_s3_bucket.batch_data_source_bucket.id
+  bucket = aws_s3_bucket.batch_data_source_bucket.bucket
   versioning_configuration {
     status = "Enabled"
   }
 }
 
 resource "aws_s3_bucket_lifecycle_configuration" "datasources_lifecycle" {
-  bucket = "${local.batch_prefix}-data-sources"
- 
+  bucket = aws_s3_bucket.batch_data_source_bucket.bucket
+
   rule {
     id     = "DeleteFinalFilesAfter7Days"
     status = "Enabled"
- 
+
     filter {
       prefix = "archive/"
     }
- 
+
     expiration {
       days = 7
     }

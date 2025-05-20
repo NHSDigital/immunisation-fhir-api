@@ -11,4 +11,3 @@ resource "aws_kinesis_stream" "processor_data_streams" {
 locals {
   kinesis_arn = aws_kinesis_stream.processor_data_streams.arn
 }
-

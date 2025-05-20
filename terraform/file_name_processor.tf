@@ -117,8 +117,8 @@ resource "aws_iam_policy" "filenameprocessor_lambda_exec_policy" {
           "s3:DeleteObject"
         ]
         Resource = [
-          "arn:aws:s3:::${local.batch_prefix}-data-sources",
-          "arn:aws:s3:::${local.batch_prefix}-data-sources/*"
+          aws_s3_bucket.batch_data_source_bucket.arn,
+          "${aws_s3_bucket.batch_data_source_bucket.arn}/*"
         ]
       },
       {
@@ -129,7 +129,7 @@ resource "aws_iam_policy" "filenameprocessor_lambda_exec_policy" {
           "s3:ListBucket"
         ]
         Resource = [
-          "${data.aws_s3_bucket.existing_destination_bucket.arn}",
+          data.aws_s3_bucket.existing_destination_bucket.arn,
           "${data.aws_s3_bucket.existing_destination_bucket.arn}/*"
         ]
       },
@@ -234,8 +234,8 @@ resource "aws_iam_policy" "filenameprocessor_dynamo_access_policy" {
         ]
         Effect    = "Allow"
         Resource  = [
-          "arn:aws:dynamodb:${var.aws_region}:${local.local_account_id}:table/${data.aws_dynamodb_table.audit-table.name}",
-          "arn:aws:dynamodb:${var.aws_region}:${local.local_account_id}:table/${data.aws_dynamodb_table.audit-table.name}/index/*",
+          "arn:aws:dynamodb:${var.aws_region}:${local.local_account_id}:table/${aws_dynamodb_table.audit-table.name}",
+          "arn:aws:dynamodb:${var.aws_region}:${local.local_account_id}:table/${aws_dynamodb_table.audit-table.name}/index/*",
         ]
       }
     ]
@@ -282,14 +282,14 @@ resource "aws_lambda_function" "file_processor_lambda" {
 
   environment {
     variables = {
-      SOURCE_BUCKET_NAME   = "${local.batch_prefix}-data-sources"
+      SOURCE_BUCKET_NAME   = aws_s3_bucket.batch_data_source_bucket.bucket
       ACK_BUCKET_NAME      = data.aws_s3_bucket.existing_destination_bucket.bucket
       QUEUE_URL           = aws_sqs_queue.supplier_fifo_queue.url
       CONFIG_BUCKET_NAME   = data.aws_s3_bucket.existing_config_bucket.bucket
       REDIS_HOST           = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].address
       REDIS_PORT           = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].port
       SPLUNK_FIREHOSE_NAME = module.splunk.firehose_stream_name
-      AUDIT_TABLE_NAME     = "${data.aws_dynamodb_table.audit-table.name}"
+      AUDIT_TABLE_NAME     = aws_dynamodb_table.audit-table.name
       FILE_NAME_GSI        = "filename_index"
       FILE_NAME_PROC_LAMBDA_NAME = "imms-${local.env}-filenameproc_lambda"
 
@@ -385,7 +385,7 @@ resource "aws_iam_policy" "elasticache_permissions" {
         Resource = "arn:aws:elasticache:${var.aws_region}:${local.local_account_id}:cluster/immunisation-redis-cluster"
         Condition = {
           "StringEquals": {
-            "aws:RequestedRegion": "${var.aws_region}"
+            "aws:RequestedRegion": var.aws_region
           }
         }
       },
@@ -406,7 +406,7 @@ resource "aws_iam_policy" "elasticache_permissions" {
         Resource = "arn:aws:elasticache:${var.aws_region}:${local.local_account_id}:subnet-group/immunisation-redis-subnet-group"
         Condition = {
           "StringEquals": {
-            "aws:RequestedRegion": "${var.aws_region}"
+            "aws:RequestedRegion": var.aws_region
           }
         }
       }
