@@ -2150,12 +2150,12 @@
                                             "system": {
                                               "description": "The system which defines the location. Typically this will be https://fhir.nhs.uk/Id/ods-organization-code for a health setting or https://fhir.hl7.org.uk/Id/urn-school-number for an education setting.",
                                               "type": "string",
-                                              "example": "urn:iso:std:iso:3166"
+                                              "example": "https://fhir.nhs.uk/Id/ods-organization-code"
                                             },
                                             "value": {
                                               "description": "A code from the system to represent the location. An ODS code of X99999 represents a location where a code is not available.",
                                               "type": "string",
-                                              "example": "GB"
+                                              "example": "X99999"
                                             }
                                           },
                                           "required": [
@@ -2457,8 +2457,7 @@
                                   "type": "object",
                                   "required": [
                                     "resourceType",
-                                    "id",
-                                    "birthDate"
+                                    "id"
                                   ],
                                   "properties": {
                                     "resourceType": {
@@ -2494,11 +2493,6 @@
                                           }
                                         }
                                       }
-                                    },
-                                    "birthDate": {
-                                      "description": "Patient's date of birth.",
-                                      "type": "string",
-                                      "example": "1965-02-28"
                                     }
                                   }
                                 }
@@ -2589,8 +2583,8 @@
                           "primarySource": true,
                           "location": {
                             "identifier": {
-                              "system": "urn:iso:std:iso:3166",
-                              "value": "GB"
+                              "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                              "value": "X99999"
                             }
                           },
                           "manufacturer": {
@@ -2676,8 +2670,7 @@
                               "system": "https://fhir.nhs.uk/Id/nhs-number",
                               "value": "9000000009"
                             }
-                          ],
-                          "birthDate": "2014-03-25"
+                          ]
                         },
                         "search": {
                           "mode": "include"

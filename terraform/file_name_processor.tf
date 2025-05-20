@@ -11,11 +11,13 @@ resource "aws_ecr_repository" "file_name_processor_lambda_repository" {
     scan_on_push = true
   }
   name = "${local.short_prefix}-filenameproc-repo"
+  force_delete = local.is_temp
 }
 
 # Module for building and pushing Docker image to ECR
 module "file_processor_docker_image" {
   source = "terraform-aws-modules/lambda/aws//modules/docker-build"
+  version = "7.20.2"
 
   create_ecr_repo = false
   ecr_repo        = aws_ecr_repository.file_name_processor_lambda_repository.name
@@ -294,7 +296,7 @@ resource "aws_lambda_function" "file_processor_lambda" {
     }
   }
   kms_key_arn = data.aws_kms_key.existing_lambda_encryption_key.arn
-  reserved_concurrent_executions = startswith(local.environment, "pr-") ? -1 : 20
+  reserved_concurrent_executions = local.is_temp ? -1 : 20
   depends_on = [
     aws_cloudwatch_log_group.file_name_processor_log_group,
     aws_iam_policy.filenameprocessor_lambda_exec_policy
