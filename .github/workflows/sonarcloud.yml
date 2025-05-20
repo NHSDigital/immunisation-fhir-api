@@ -47,6 +47,7 @@ jobs:
         id: recordforwarder
         continue-on-error: true
         run: |
+          pip install poetry==1.8.4 moto==5.1.4
           PYTHONPATH=$(pwd)/backend:$(pwd)/backend/tests poetry run coverage run --source=backend -m unittest discover -s backend/tests -p "*batch*.py" || echo "recordforwarder tests failed" >> failed_tests.txt
           poetry run coverage xml -o sonarcloud-coverage-recordforwarder-coverage.xml
 
