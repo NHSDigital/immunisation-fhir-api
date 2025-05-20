@@ -1,4 +1,5 @@
-# TODO - move to instance terraform
+# TODO - consider moving to instance terraform so we have separate destinations for PR deploys.
+# If we do this, make sure to consider blue / green vs prod.
 resource "aws_s3_bucket" "batch_data_destination_bucket" {
   bucket        = "immunisation-batch-${local.environment}-data-destinations"
   force_destroy = local.is_temp
@@ -19,9 +20,13 @@ resource "aws_s3_bucket_policy" "batch_data_destination_bucket_policy" {
         Principal : {
           AWS : "arn:aws:iam::${local.account_id}:root"
         },
-        Action : [
+        Action : local.environment == "prod" ? [
           "s3:ListBucket",
-          "s3:GetObject"
+          "s3:GetObject",
+        ] : [
+          "s3:ListBucket",
+          "s3:GetObject",
+          "s3:DeleteObject"
         ],
         Resource : [
           "arn:aws:s3:::${aws_s3_bucket.batch_data_destination_bucket.bucket}",
