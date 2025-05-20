@@ -118,9 +118,8 @@ resource "aws_iam_policy" "ecs_task_exec_policy" {
           "dynamodb:UpdateItem"
         ]
        Resource  = [
-          # TODO - is this just the table ARN?
-          "arn:aws:dynamodb:${var.aws_region}:${local.local_account_id}:table/${aws_dynamodb_table.audit-table.name}",
-          "arn:aws:dynamodb:${var.aws_region}:${local.local_account_id}:table/${aws_dynamodb_table.audit-table.name}/index/*",
+          aws_dynamodb_table.audit-table.arn,
+          "${aws_dynamodb_table.audit-table.arn}/index/*",
         ]
       },
       {
