@@ -47,5 +47,3 @@ resource "aws_cloudwatch_log_metric_filter" "max_memory_used_metric" {
         value     = "$18"
     }
 }
-
-

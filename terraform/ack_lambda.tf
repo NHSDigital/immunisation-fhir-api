@@ -117,9 +117,9 @@ resource "aws_iam_policy" "ack_lambda_exec_policy" {
           "s3:DeleteObject"
         ]
         Resource = [
-          "arn:aws:s3:::immunisation-batch-${local.env}-data-sources",
-          "arn:aws:s3:::immunisation-batch-${local.env}-data-sources/*",
-          "${data.aws_s3_bucket.existing_destination_bucket.arn}",
+          aws_s3_bucket.batch_data_source_bucket.arn,
+          "${aws_s3_bucket.batch_data_source_bucket.arn}/*",
+          data.aws_s3_bucket.existing_destination_bucket.arn,
           "${data.aws_s3_bucket.existing_destination_bucket.arn}/*"
         ]
       },
@@ -127,7 +127,7 @@ resource "aws_iam_policy" "ack_lambda_exec_policy" {
         Effect   = "Allow"
         Action   = "lambda:InvokeFunction"
         Resource = [
-          data.aws_lambda_function.existing_file_name_proc_lambda.arn,
+          aws_lambda_function.file_processor_lambda.arn,
         ]
       },
       {
@@ -137,8 +137,8 @@ resource "aws_iam_policy" "ack_lambda_exec_policy" {
           "dynamodb:UpdateItem"
         ]
        Resource  = [
-          "arn:aws:dynamodb:${var.aws_region}:${local.local_account_id}:table/${data.aws_dynamodb_table.audit-table.name}",
-          "arn:aws:dynamodb:${var.aws_region}:${local.local_account_id}:table/${data.aws_dynamodb_table.audit-table.name}/index/*",
+          "arn:aws:dynamodb:${var.aws_region}:${local.local_account_id}:table/${aws_dynamodb_table.audit-table.name}",
+          "arn:aws:dynamodb:${var.aws_region}:${local.local_account_id}:table/${aws_dynamodb_table.audit-table.name}/index/*",
         ]
       },
       {
@@ -216,8 +216,8 @@ resource "aws_lambda_function" "ack_processor_lambda" {
       ACK_BUCKET_NAME     = data.aws_s3_bucket.existing_destination_bucket.bucket
       SPLUNK_FIREHOSE_NAME   = module.splunk.firehose_stream_name
       ENVIRONMENT         = terraform.workspace
-      AUDIT_TABLE_NAME     = "${data.aws_dynamodb_table.audit-table.name}"
-      FILE_NAME_PROC_LAMBDA_NAME = data.aws_lambda_function.existing_file_name_proc_lambda.function_name
+      AUDIT_TABLE_NAME     = aws_dynamodb_table.audit-table.name
+      FILE_NAME_PROC_LAMBDA_NAME = aws_lambda_function.file_processor_lambda.function_name
     }
   }
 
