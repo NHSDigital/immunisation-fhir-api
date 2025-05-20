@@ -21,11 +21,13 @@ resource "aws_ecr_repository" "processing_repository" {
     scan_on_push = true
   }
   name = "${local.short_prefix}-processing-repo"
+  force_delete = local.is_temp
 }
 
 # Build and Push Docker Image to ECR (Reusing the existing module)
 module "processing_docker_image" {
   source = "terraform-aws-modules/lambda/aws//modules/docker-build"
+  version = "7.20.2"
 
   docker_file_path = "Dockerfile"
   create_ecr_repo  = false
@@ -105,8 +107,8 @@ resource "aws_iam_policy" "ecs_task_exec_policy" {
         Resource = [
           "arn:aws:s3:::${local.batch_prefix}-data-sources",
           "arn:aws:s3:::${local.batch_prefix}-data-sources/*",
-          "${data.aws_s3_bucket.existing_destination_bucket.arn}",       
-          "${data.aws_s3_bucket.existing_destination_bucket.arn}/*" 
+          "${data.aws_s3_bucket.existing_destination_bucket.arn}",
+          "${data.aws_s3_bucket.existing_destination_bucket.arn}/*"
         ]
       },
       {
@@ -152,7 +154,7 @@ resource "aws_iam_policy" "ecs_task_exec_policy" {
         Effect   = "Allow"
         Action   = "lambda:InvokeFunction"
         Resource = [
-          "${data.aws_lambda_function.existing_file_name_proc_lambda.arn}"               
+          "${data.aws_lambda_function.existing_file_name_proc_lambda.arn}"
         ]
       },
       {

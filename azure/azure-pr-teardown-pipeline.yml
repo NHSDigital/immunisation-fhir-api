@@ -10,6 +10,11 @@ resources:
       name: NHSDigital/api-management-utils
       ref: refs/heads/edge
       endpoint: NHSDigital
+    - repository: immunisation-fhir-api
+      type: github
+      name: NHSDigital/immunisation-fhir-api
+      ref: master
+      endpoint: NHSDigital
 
 variables:
   - template: project.yml
@@ -22,7 +27,7 @@ jobs:
       name: 'AWS-ECS'
       vmImage: 'ubuntu-latest'
     steps:
-      - checkout: self
+      - checkout: immunisation-fhir-api
 
       - bash: |
           echo $(action_pr_number)

@@ -1,6 +1,16 @@
 from decimal import Decimal
 import json
+from common.mappings import EventName, Operation
+from typing import List
 
+
+class RecordConfig:
+    def __init__(self, event_name, operation, imms_id, expected_action_flag=None, supplier="EMIS"):
+        self.event_name = event_name
+        self.operation = operation
+        self.supplier = supplier
+        self.imms_id = imms_id
+        self.expected_action_flag = expected_action_flag
 
 class ValuesForTests:
 
@@ -36,6 +46,16 @@ class ValuesForTests:
                             "system": "http://snomed.info/sct",
                             "code": "13246814444444",
                             "display": "Administration of first dose of severe acute respiratory syndrome coronavirus 2 vaccine (procedure)",
+                            "extension": [
+                                {
+                                    "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-CodingSCTDescDisplay",
+                                    "valueString": "Test Value string 123456 COVID19 vaccination"
+                                },
+                                {
+                                    "url": "http://hl7.org/fhir/StructureDefinition/coding-sctdescid",
+                                    "valueId": "5306706018"
+                                }
+                            ],
                         }
                     ]
                 },
@@ -84,7 +104,7 @@ class ValuesForTests:
         "doseQuantity": {
             "value": str(Decimal(0.5)),
             "unit": "milliliter",
-            "system": "http://unitsofmeasure.org",
+            "system": "http://snomed.info/sct",
             "code": "ml",
         },
         "performer": [
@@ -118,43 +138,65 @@ class ValuesForTests:
     json_value_for_test = json.dumps(json_data)
 
     @staticmethod
-    def get_event(event_name="INSERT", operation="CREATE", supplier="EMIS"):
-        if operation != "REMOVE":
-            return {
-                "Records": [
-                    {
-                        "eventName": event_name,
-                        "dynamodb": {
-                            "ApproximateCreationDateTime": 1690896000,
-                            "NewImage": {
-                                "PK": {"S": "covid#12345"},
-                                "PatientSK": {"S": "COVID19#ca8ba2c6-2383-4465-b456-c1174c21cf31"},
-                                "IdentifierPK": {"S": "system#1"},
-                                "Operation": {"S": operation},
-                                "SupplierSystem": {"S": supplier},
-                                "Resource": {"S": ValuesForTests.json_value_for_test},
-                            },
-                        },
+    def get_event(event_name=EventName.CREATE, operation=Operation.CREATE, supplier="EMIS", imms_id="12345"):
+        """Create test event for the handler function."""
+        return {
+            "Records": [
+                ValuesForTests.get_event_record(imms_id, event_name, operation, supplier)
+            ]
+        }
+
+    @staticmethod
+    def get_multi_record_event(records_config: List[RecordConfig]):
+        records = []
+        for config in records_config:
+            # Extract values from the config dictionary
+            imms_id = config.imms_id
+            event_name = config.event_name
+            operation = config.operation
+            supplier = config.supplier
+
+            # Generate record using the provided configuration
+            records.append(
+                ValuesForTests.get_event_record(
+                    imms_id=imms_id,
+                    event_name=event_name,
+                    operation=operation,
+                    supplier=supplier,
+                )
+            )
+        return {"Records": records}
+
+    @staticmethod
+    def get_event_record(imms_id, event_name, operation, supplier="EMIS"):
+        pk = f"covid#{imms_id}"
+        if operation != Operation.DELETE_PHYSICAL:
+            return{
+                "eventName": event_name,
+                "dynamodb": {
+                    "ApproximateCreationDateTime": 1690896000,
+                    "NewImage": {
+                        "PK": {"S": pk},
+                        "PatientSK": {"S": "COVID19#ca8ba2c6-2383-4465-b456-c1174c21cf31"},
+                        "IdentifierPK": {"S": "system#1"},
+                        "Operation": {"S": operation},
+                        "SupplierSystem": {"S": supplier},
+                        "Resource": {"S": ValuesForTests.json_value_for_test},
                     }
-                ]
+                }
             }
         else:
             return {
-                "Records": [
-                    {
-                        "eventName": "REMOVE",
-                        "dynamodb": {
-                            "ApproximateCreationDateTime": 1690896000,
-                            "Keys": {
-                                "PK": {"S": "covid#12345"},
-                                "PatientSK": {"S": "covid#12345"},
-                                "SupplierSystem": {"S": "EMIS"},
-                                "Resource": {"S": ValuesForTests.json_value_for_test},
-                                "PatientSK": {"S": "COVID19#ca8ba2c6-2383-4465-b456-c1174c21cf31"},
-                            },
-                        },
+                "eventName": event_name,
+                "dynamodb": {
+                    "ApproximateCreationDateTime": 1690896000,
+                    "Keys": {
+                        "PK": {"S": pk},
+                        "PatientSK": {"S": "COVID19#ca8ba2c6-2383-4465-b456-c1174c21cf31"},
+                        "SupplierSystem": {"S": supplier},
+                        "Resource": {"S": ValuesForTests.json_value_for_test},
                     }
-                ]
+                }
             }
 
     expected_static_values = {
@@ -185,8 +227,8 @@ class ValuesForTests:
                 "RECORDED_DATE": "20210207",
                 "PRIMARY_SOURCE": True,
                 "VACCINATION_PROCEDURE_CODE": "13246814444444",
-                "VACCINATION_PROCEDURE_TERM": "Administration of first dose of severe acute respiratory syndrome coronavirus 2 vaccine (procedure)",
-                "DOSE_SEQUENCE": 1,
+                "VACCINATION_PROCEDURE_TERM": "Test Value string 123456 COVID19 vaccination",
+                "DOSE_SEQUENCE": "1",
                 "VACCINE_PRODUCT_CODE": "39114911000001105",
                 "VACCINE_PRODUCT_TERM": "COVID-19 Vaccine Vaxzevria (ChAdOx1 S [recombinant]) not less than 2.5x100,000,000 infectious units/0.5ml dose suspension for injection multidose vials (AstraZeneca UK Ltd) (product)",
                 "VACCINE_MANUFACTURER": "AstraZeneca Ltd",
@@ -197,7 +239,7 @@ class ValuesForTests:
                 "ROUTE_OF_VACCINATION_CODE": "78421000",
                 "ROUTE_OF_VACCINATION_TERM": "Intramuscular route (qualifier value)",
                 "DOSE_AMOUNT": "0.5",
-                "DOSE_UNIT_CODE": "",
+                "DOSE_UNIT_CODE": "ml",
                 "DOSE_UNIT_TERM": "milliliter",
                 "INDICATION_CODE": "443684005",
                 "LOCATION_CODE": "EC1111",
@@ -261,8 +303,8 @@ class ValuesForTests:
             "RECORDED_DATE": "20210207",
             "PRIMARY_SOURCE": True,
             "VACCINATION_PROCEDURE_CODE": "13246814444444",
-            "VACCINATION_PROCEDURE_TERM": "Administration of first dose of severe acute respiratory syndrome coronavirus 2 vaccine (procedure)",
-            "DOSE_SEQUENCE": 1,
+            "VACCINATION_PROCEDURE_TERM": "Test Value string 123456 COVID19 vaccination",
+            "DOSE_SEQUENCE": "1",
             "VACCINE_PRODUCT_CODE": "39114911000001105",
             "VACCINE_PRODUCT_TERM": "COVID-19 Vaccine Vaxzevria (ChAdOx1 S [recombinant]) not less than 2.5x100,000,000 infectious units/0.5ml dose suspension for injection multidose vials (AstraZeneca UK Ltd) (product)",
             "VACCINE_MANUFACTURER": "AstraZeneca Ltd",
@@ -273,7 +315,7 @@ class ValuesForTests:
             "ROUTE_OF_VACCINATION_CODE": "78421000",
             "ROUTE_OF_VACCINATION_TERM": "Intramuscular route (qualifier value)",
             "DOSE_AMOUNT": "0.5",
-            "DOSE_UNIT_CODE": "",
+            "DOSE_UNIT_CODE": "ml",
             "DOSE_UNIT_TERM": "milliliter",
             "INDICATION_CODE": "443684005",
             "LOCATION_CODE": "EC1111",
