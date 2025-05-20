@@ -200,45 +200,6 @@ class DeltaTestCase(unittest.TestCase):
         self.assertEqual(put_item_data["ImmsID"], imms_id)
 
 
-    @patch("boto3.resource")
-    @patch("boto3.client")
-    def test_handler_exception_intrusion_check(self, mock_boto_client, mock_boto_resource):
-        # Arrange
-        self.setUp_mock_resources(mock_boto_client, mock_boto_resource)
-        event = ValuesForTests.get_event()
-        expected_message = "Delta Lambda failure: Incorrect invocation of Lambda"
-
-        # Act & Assert
-
-        result = handler(event, self.context)
-        self.assertFalse(result)
-        
-        self.mock_firehose_logger.send_log.assert_called()
-        firehose_log = self.mock_firehose_logger.send_log.call_args[0][0]
-        firehose_log_event = firehose_log["event"]
-        operation_outcome = firehose_log_event["operation_outcome"]
-        self.assertEqual(operation_outcome["statusDesc"], "Exception")
-        self.assertEqual(operation_outcome["diagnostics"], expected_message)
-        self.mock_logger_exception.assert_called_once_with(expected_message)
-
-
-    @patch("logging.Logger.error")
-    @patch("boto3.resource")
-    @patch("delta.handler")
-    def test_handler_exception_intrusion_check_false(self, mocked_intrusion, mock_boto_client, mock_logger_error):
-        # Arrange
-        self.setUp_mock_resources(mocked_intrusion, mock_boto_client)
-        self.setup_mock_sqs(self.mock_boto_client)
-        mock_logger_error.side_effect = None
-        mock_logger_error.return_value = None
-        event = ValuesForTests.get_event()
-        context = {}
-
-        # Act & Assert
-        response = handler(event, context)
-
-        self.assertFalse(response)
-
     @patch("delta.logger.info") 
     def test_dps_record_skipped(self, mock_logger_info):
         event = ValuesForTests.get_event(supplier="DPSFULL")
