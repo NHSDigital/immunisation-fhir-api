@@ -2,7 +2,7 @@ import copy
 import json
 import unittest
 from utils_for_converter_tests import ValuesForTests
-from delta_converter import Converter
+from converter import Converter
 
 
 class TestPersonForeNameToFlatJson(unittest.TestCase):
@@ -104,6 +104,11 @@ class TestPersonForeNameToFlatJson(unittest.TestCase):
         expected_forename = "Alice Marie"
         self._run_test(expected_forename)
 
+    def test_person_forename_names_not_provided(self):
+        """Test case where the selected name has multiple given names"""
+        self.request_json_data["contained"][1]["name"] = []
+        self._run_test("")
+        
     def _run_test(self, expected_forename):
         """Helper function to run the test"""
         self.converter = Converter(json.dumps(self.request_json_data))

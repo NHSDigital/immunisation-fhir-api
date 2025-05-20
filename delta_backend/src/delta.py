@@ -7,7 +7,7 @@ import uuid
 import logging
 from botocore.exceptions import ClientError
 from log_firehose import FirehoseLogger
-from delta_converter import Converter
+from converter import Converter
 from common.mappings import ActionFlag, Operation, EventName
 
 failure_queue_url = os.environ["AWS_SQS_QUEUE_URL"]

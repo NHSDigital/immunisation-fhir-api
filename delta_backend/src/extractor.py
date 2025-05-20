@@ -160,7 +160,7 @@ class Extractor:
         if isinstance(e, Exception):
             message = exception_messages.MESSAGES[exception_messages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, str(e))
         else:
-            message = str(e)  # if a simple string message was passed
+            message = str(e)
 
         self.error_records.append({
             "code": code,

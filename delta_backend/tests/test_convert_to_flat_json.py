@@ -2,12 +2,10 @@ import json
 import unittest
 from copy import deepcopy
 from unittest.mock import patch, Mock
-from moto import mock_dynamodb, mock_sqs
+from moto import mock_aws
 from boto3 import resource as boto3_resource
 from utils_for_converter_tests import ValuesForTests, ErrorValuesForTests
-from schema_parser import SchemaParser
-from delta_converter import Converter
-from conversion_checker import ConversionChecker
+from converter import Converter
 from common.mappings import ActionFlag, Operation, EventName
 import exception_messages
 
@@ -22,11 +20,13 @@ with patch.dict("os.environ", MOCK_ENV_VARS):
 
 
 @patch.dict("os.environ", MOCK_ENV_VARS, clear=True)
-@mock_dynamodb
-@mock_sqs
 class TestConvertToFlatJson(unittest.TestCase):
     maxDiff = None
     def setUp(self):
+        # Start moto AWS mocks
+        self.mock = mock_aws(services=["dynamodb", "sqs"])
+        self.mock.start()
+    
         """Set up mock DynamoDB table."""
         self.dynamodb_resource = boto3_resource("dynamodb", "eu-west-2")
         self.table = self.dynamodb_resource.create_table(
@@ -72,6 +72,8 @@ class TestConvertToFlatJson(unittest.TestCase):
         self.logger_exception_patcher.stop()
         self.logger_info_patcher.stop()
         self.mock_firehose_logger.stop()
+        
+        self.mock.stop()
 
     @staticmethod
     def get_event(event_name=EventName.CREATE, operation="operation", supplier="EMIS"):
@@ -171,116 +173,6 @@ class TestConvertToFlatJson(unittest.TestCase):
                 result = self.table.scan()
                 items = result.get("Items", [])
                 self.clear_table()
-
-    # TODO revisit and amend if necessary
-    @patch("delta_converter.FHIRParser")
-    def test_fhir_parser_exception(self, mock_fhir_parser):
-        # Mock FHIRParser to raise an exception
-        mock_fhir_parser.side_effect = Exception("FHIR Parsing Error")
-        converter = Converter(fhir_data="some_data")
-
-        # Check if the error message was added to ErrorRecords
-        errors = converter.get_error_records()
-        self.assertEqual(len(errors), 1)
-        self.assertIn("Initialization failed: [Exception] FHIR Parsing Error", errors[0]["message"])
-        self.assertEqual(errors[0]["code"], 0)
-
-    @patch("delta_converter.FHIRParser")
-    @patch("delta_converter.SchemaParser")
-    def test_schema_parser_exception(self, mock_schema_parser, mock_fhir_parser):
-
-        # Mock FHIRParser to return normally
-        mock_fhir_instance = Mock()
-        mock_fhir_instance.parseFHIRData.return_value = None
-        mock_fhir_parser.return_value = mock_fhir_instance
-
-        # Mock SchemaParser to raise an exception
-        mock_schema_parser.side_effect = Exception("Schema Parsing Error")
-        converter = Converter(fhir_data="{}")
-
-        # Check if the error message was added to ErrorRecords
-        errors = converter.get_error_records()
-        self.assertEqual(len(errors), 1)
-        self.assertIn("Initialization failed: [Exception] Schema Parsing Error", errors[0]["message"])
-        self.assertEqual(errors[0]["code"], 0)
-
-    @patch("delta_converter.ConversionChecker")
-    def test_conversion_checker_exception(self, mock_conversion_checker):
-        # Mock ConversionChecker to raise an exception
-        mock_conversion_checker.side_effect = Exception("Conversion Checking Error")
-        converter = Converter(fhir_data="some_data")
-
-        # Check if the error message was added to ErrorRecords
-        self.assertEqual(len(converter.get_error_records()), 1)
-        self.assertIn(
-            "Initialization failed: [JSONDecodeError]",
-            converter.get_error_records()[0]["message"],
-        )
-        self.assertEqual(converter.get_error_records()[0]["code"], 0)
-
-    @patch("delta_converter.SchemaParser.get_conversions")
-    def test_get_conversions_exception(self, mock_get_conversions):
-        # Mock get_conversions to raise an exception
-        mock_get_conversions.side_effect = Exception("Error while getting conversions")
-        converter = Converter(fhir_data="some_data")
-
-        # Check if the error message was added to ErrorRecords
-        self.assertEqual(len(converter.get_error_records()), 1)
-        self.assertIn(
-            "Initialization failed: [JSONDecodeError]",
-            converter.get_error_records()[0]["message"],
-        )
-        self.assertEqual(converter.get_error_records()[0]["code"], 0)
-
-    @patch("delta_converter.SchemaParser.get_conversions")
-    @patch("delta_converter.FHIRParser.get_key_value")
-    def test_conversion_exceptions(self, mock_get_key_value, mock_get_conversions):
-        mock_get_conversions.side_effect = Exception("Error while getting conversions")
-        mock_get_key_value.side_effect = Exception("Key value retrieval failed")
-        converter = Converter(fhir_data="some_data")
-
-        schema = {
-            "conversions": [
-                {
-                    "fieldNameFHIR": "some_field",
-                    "fieldNameFlat": "flat_field",
-                    "expression": {"expressionType": "type", "expressionRule": "rule"},
-                }
-            ]
-        }
-        converter.SchemaFile = schema
-        error_records = converter.get_error_records()
-        self.assertEqual(len(error_records), 1)
-
-        self.assertIn(
-            "Initialization failed: [JSONDecodeError]",
-            error_records[0]["message"],
-        )
-        self.assertEqual(error_records[0]["code"], 0)
-
-    def test_log_error(self):
-        # Instantiate ConversionChecker
-        checker = ConversionChecker(dataParser=None, summarise=False, report_unexpected_exception=True)
-
-        # Simulate an exception
-        exception = ValueError("Invalid value")
-
-        # Call the _log_error method twice to also check deduplication
-        checker._log_error("test_field", "test_value", exception)
-        checker._log_error("test_field", "test_value", exception)
-
-        # Assert that only one error record is added due to deduplication
-        self.assertEqual(len(checker.errorRecords), 2)
-
-        # Assert that one error record is added
-        self.assertEqual(len(checker.errorRecords), 2)
-        error = checker.errorRecords[0]
-
-        # Assert that the error record contains correct details
-        self.assertEqual(error["field"], "test_field")
-        self.assertEqual(error["value"], "test_value")
-        self.assertIn("Invalid value", error["message"])
-        self.assertEqual(error["code"], exception_messages.RECORD_CHECK_FAILED)
 
     def clear_table(self):
         scan = self.table.scan()

@@ -3,7 +3,7 @@ import csv
 import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
-from delta_converter import Converter
+from converter import Converter
 
 
 # Sample FHIR Immunization resource (minimal test data)

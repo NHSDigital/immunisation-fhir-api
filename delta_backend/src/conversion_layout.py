@@ -1,324 +1,146 @@
-from json_field_extractor import Extractor
+from extractor import Extractor
 
 class ConversionLayout:
-    def __init__(self, extractor: Extractor):
-           
+    def __init__(self, extractor: Extractor):        
         self.extractor = extractor
-      
-        self.conversion_layout = {
-          "id": "7d78e9a6-d859-45d3-bb05-df9c405acbdb",
-          "schemaName": "JSON Base",
-          "version": 1.0,
-          "releaseDate": "2024-07-17T00:00:00|000Z",
-          "conversions": [
-            {
-              "fieldNameFHIR": "contained|#:Patient|identifier|#:https://fhir.nhs.uk/Id/nhs-number|value",
+        self.conversion_layout = [
+          {
               "fieldNameFlat": "NHS_NUMBER",
-              "expression": {
-                "expressionName": "NHS NUMBER",
-                "expressionType": "DEFAULT",
-                "expressionRule": self.extractor.extract_nhs_number
-              }
-            },
-            {
-              "fieldNameFHIR": "contained|#:Patient|name|#:official|given|0",
+              "expressionRule": self.extractor.extract_nhs_number
+          },
+          {
               "fieldNameFlat": "PERSON_FORENAME",
-              "expression": {
-                "expressionName": "Not Empty",
-                "expressionType": "DEFAULT",
-                "expressionRule": self.extractor.extract_person_forename
-              }
-            },
-            {
-              "fieldNameFHIR": "contained|#:Patient|name|#:official|family",
+              "expressionRule": self.extractor.extract_person_forename
+          },
+          {
               "fieldNameFlat": "PERSON_SURNAME",
-              "expression": {
-                "expressionName": "Not Empty",
-                "expressionType": "DEFAULT",
-                "expressionRule": self.extractor.extract_person_surname
-              }
-            },
-            {
-              "fieldNameFHIR": "contained|#:Patient|birthDate",
+              "expressionRule": self.extractor.extract_person_surname
+          },
+          {
               "fieldNameFlat": "PERSON_DOB",
-              "expression": {
-                "expressionName": "Date Convert",
-                "expressionType": "DEFAULT",
-                "expressionRule": self.extractor.extract_person_dob
-              }
-            },
-            {
-              "fieldNameFHIR": "contained|#:Patient|gender",
+              "expressionRule": self.extractor.extract_person_dob
+          },
+          {
               "fieldNameFlat": "PERSON_GENDER_CODE",
-              "expression": {
-                "expressionName": "Gender Conversion",
-                "expressionType": "DEFAULT",
-                "expressionRule": self.extractor.extract_person_gender
-              }
-            },
-            {
-              "fieldNameFHIR": "contained|#:Patient|address|#:postalCode|postalCode",
+              "expressionRule": self.extractor.extract_person_gender
+          },
+          {
               "fieldNameFlat": "PERSON_POSTCODE",
-              "expression": {
-                "expressionName": "Defaults to",
-                "expressionType": "DEFAULT",
-                "expressionRule": self.extractor.extract_valid_address
-              }
-            },
-            {
-              "fieldNameFHIR": "occurrenceDateTime",
+              "expressionRule": self.extractor.extract_valid_address
+          },
+          {
               "fieldNameFlat": "DATE_AND_TIME",
-              "expression": {
-                "expressionName": "Date Convert",
-                "expressionType": "DEFAULT",
-                "expressionRule": self.extractor.extract_date_time 
-              }
-            },
-            {
-              "fieldNameFHIR": "performer|#:Organization|actor|identifier|value",
+              "expressionRule": self.extractor.extract_date_time
+          },
+          {
               "fieldNameFlat": "SITE_CODE",
-              "expression": {
-                "expressionName": "Not Empty",
-                "expressionType": "DEFAULT",
-                "expressionRule": self.extractor.extract_site_code
-              }
-            },
-            {
-              "fieldNameFHIR": "performer|#:Organization|actor|identifier|system",
+              "expressionRule": self.extractor.extract_site_code
+          },
+          {
               "fieldNameFlat": "SITE_CODE_TYPE_URI",
-              "expression": {
-                "expressionName": "Defaults to",
-                "expressionType": "DEFAULT",
-                "expressionRule": self.extractor.extract_site_code_type_uri
-              }
-            },
-            {
-              "fieldNameFHIR": "identifier|0|value",
+              "expressionRule": self.extractor.extract_site_code_type_uri
+          },
+          {
               "fieldNameFlat": "UNIQUE_ID",
-              "expression": {
-                "expressionName": "Not Empty",
-                "expressionType": "DEFAULT",
-                "expressionRule": self.extractor.extract_unique_id
-              }
-            },
-            {
-              "fieldNameFHIR": "identifier|0|system",
+              "expressionRule": self.extractor.extract_unique_id
+          },
+          {
               "fieldNameFlat": "UNIQUE_ID_URI",
-              "expression": {
-                "expressionName": "Not Empty",
-                "expressionType": "DEFAULT",
-                "expressionRule": self.extractor.extract_unique_id_uri
-              }
-            },
-            {
-              "fieldNameFHIR": "",
+              "expressionRule": self.extractor.extract_unique_id_uri
+          },
+          {
               "fieldNameFlat": "ACTION_FLAG",
-              "expression": {
-                "expressionName": "",
-                "expressionType": "",
-                "expressionRule": ""
-              }
-            },
-            {
-              "fieldNameFHIR": "contained|#:Practitioner|name|0|given|0",
+              "expressionRule": ""
+          },
+          {
               "fieldNameFlat": "PERFORMING_PROFESSIONAL_FORENAME",
-              "expression": {
-                "expressionName": "Not Empty",
-                "expressionType": "DEFAULT",
-                "expressionRule": self.extractor.extract_practitioner_forename
-              }
-            },
-            {
-              "fieldNameFHIR": "contained|#:Practitioner|name|0|family",
+              "expressionRule": self.extractor.extract_practitioner_forename
+          },
+          {
               "fieldNameFlat": "PERFORMING_PROFESSIONAL_SURNAME",
-              "expression": {
-                "expressionName": "Not Empty",
-                "expressionType": "DEFAULT",
-                "expressionRule": self.extractor.extract_practitioner_surname
-              }
-            },
-            {
-              "fieldNameFHIR": "recorded",
+              "expressionRule": self.extractor.extract_practitioner_surname
+          },
+          {
               "fieldNameFlat": "RECORDED_DATE",
-              "expression": {
-                "expressionName": "Date Convert",
-                "expressionType": "DEFAULT",
-                "expressionRule": self.extractor.extract_recorded_date
-              }
-            },
-            {
-              "fieldNameFHIR": "primarySource",
+              "expressionRule": self.extractor.extract_recorded_date
+          },
+          {
               "fieldNameFlat": "PRIMARY_SOURCE",
-              "expression": {
-                "expressionName": "Not Empty",
-                "expressionType": "DEFAULT",
-                "expressionRule": self.extractor.extract_primary_source
-              }
-            },
-            {
-              "fieldNameFHIR": "extension|#:https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure|valueCodeableConcept|coding|#:http://snomed.info/sct|code",
+              "expressionRule": self.extractor.extract_primary_source
+          },
+          {
               "fieldNameFlat": "VACCINATION_PROCEDURE_CODE",
-              "expression": {
-                "expressionName": "Not Empty",
-                "expressionType": "DEFAULT",
-                "expressionRule": self.extractor.extract_vaccination_procedure_code
-              }
-            },
-            {
-              "fieldNameFHIR": "extension|0|valueCodeableConcept|coding|0|display",
+              "expressionRule": self.extractor.extract_vaccination_procedure_code
+          },
+          {
               "fieldNameFlat": "VACCINATION_PROCEDURE_TERM",
-              "expression": {
-                "expressionName": "Not Empty",
-                "expressionType": "DEFAULT",
-                "expressionRule": self.extractor.extract_vaccination_procedure_term
-              }
-            },
-            {
-              "fieldNameFHIR": "protocolApplied|0|doseNumberPositiveInt",
+              "expressionRule": self.extractor.extract_vaccination_procedure_term
+          },
+          {
               "fieldNameFlat": "DOSE_SEQUENCE",
-              "expression": {
-                "expressionName": "Not Empty",
-                "expressionType": "DEFAULT",
-                "expressionRule": self.extractor.extract_dose_sequence
-              }
-            },
-            {
-              "fieldNameFHIR": "vaccineCode|coding|#:http://snomed.info/sct|code",
+              "expressionRule": self.extractor.extract_dose_sequence
+          },
+          {
               "fieldNameFlat": "VACCINE_PRODUCT_CODE",
-              "expression": {
-                "expressionName": "Not Empty",
-                "expressionType": "DEFAULT",
-                "expressionRule": self.extractor.extract_vaccine_product_code
-              }
-            },
-            {
-              "fieldNameFHIR": "vaccineCode|coding|#:http://snomed.info/sct|display",
+              "expressionRule": self.extractor.extract_vaccine_product_code
+          },
+          {
               "fieldNameFlat": "VACCINE_PRODUCT_TERM",
-              "expression": {
-                "expressionName": "Not Empty",
-                "expressionType": "DEFAULT",
-                "expressionRule": self.extractor.extract_vaccine_product_term
-              }
-            },
-            {
-              "fieldNameFHIR": "manufacturer|display",
+              "expressionRule": self.extractor.extract_vaccine_product_term
+          },
+          {
               "fieldNameFlat": "VACCINE_MANUFACTURER",
-              "expression": {
-                "expressionName": "Not Empty",
-                "expressionType": "DEFAULT",
-                "expressionRule": self.extractor.extract_vaccine_manufacturer
-              }
-            },
-            {
-              "fieldNameFHIR": "lotNumber",
+              "expressionRule": self.extractor.extract_vaccine_manufacturer
+          },
+          {
               "fieldNameFlat": "BATCH_NUMBER",
-              "expression": {
-                "expressionName": "Not Empty",
-                "expressionType": "DEFAULT",
-                "expressionRule": self.extractor.extract_batch_number
-              }
-            },
-            {
-              "fieldNameFHIR": "expirationDate",
+              "expressionRule": self.extractor.extract_batch_number
+          },
+          {
               "fieldNameFlat": "EXPIRY_DATE",
-              "expression": {
-                "expressionName": "Date Convert",
-                "expressionType": "DEFAULT",
-                "expressionRule": self.extractor.extract_expiry_date
-              }
-            },
-            {
-              "fieldNameFHIR": "site|coding|#:http://snomed.info/sct|code",
+              "expressionRule": self.extractor.extract_expiry_date
+          },
+          {
               "fieldNameFlat": "SITE_OF_VACCINATION_CODE",
-              "expression": {
-                "expressionName": "Not Empty",
-                "expressionType": "DEFAULT",
-                "expressionRule": self.extractor.extract_site_of_vaccination_code
-              }
-            },
-            {
-              "fieldNameFHIR": "site|coding|#:http://snomed.info/sct|display",
+              "expressionRule": self.extractor.extract_site_of_vaccination_code
+          },
+          {
               "fieldNameFlat": "SITE_OF_VACCINATION_TERM",
-              "expression": {
-                "expressionName": "Look Up",
-                "expressionType": "DEFAULT",
-                "expressionRule": self.extractor.extract_site_of_vaccination_term
-              }
-            },
-            {
-              "fieldNameFHIR": "route|coding|#:http://snomed.info/sct|code",
+              "expressionRule": self.extractor.extract_site_of_vaccination_term
+          },
+          {
               "fieldNameFlat": "ROUTE_OF_VACCINATION_CODE",
-              "expression": {
-                "expressionName": "Not Empty",
-                "expressionType": "DEFAULT",
-                "expressionRule": self.extractor.extract_route_of_vaccination_code
-              }
-            },
-            {
-              "fieldNameFHIR": "route|coding|#:http://snomed.info/sct|display",
+              "expressionRule": self.extractor.extract_route_of_vaccination_code
+          },
+          {
               "fieldNameFlat": "ROUTE_OF_VACCINATION_TERM",
-              "expression": {
-                "expressionName": "Look Up",
-                "expressionType": "DEFAULT",
-                "expressionRule": self.extractor.extract_route_of_vaccination_term
-              }
-            },
-            {
-              "fieldNameFHIR": "doseQuantity|value",
+              "expressionRule": self.extractor.extract_route_of_vaccination_term
+          },
+          {
               "fieldNameFlat": "DOSE_AMOUNT",
-              "expression": {
-                "expressionName": "Not Empty",
-                "expressionType": "DEFAULT",
-                "expressionRule": self.extractor.extract_dose_amount
-              }
-            },
-            {
-              "fieldNameFHIR": "doseQuantity|code",
+              "expressionRule": self.extractor.extract_dose_amount
+          },
+          {
               "fieldNameFlat": "DOSE_UNIT_CODE",
-              "expression": {
-                "expressionName": "Only If",
-                "expressionType": "DEFAULT",
-                "expressionRule": self.extractor.extract_dose_unit_code
-              }
-            },
-            {
-              "fieldNameFHIR": "doseQuantity|unit",
+              "expressionRule": self.extractor.extract_dose_unit_code
+          },
+          {
               "fieldNameFlat": "DOSE_UNIT_TERM",
-              "expression": {
-                "expressionName": "Not Empty",
-                "expressionType": "DEFAULT",
-                "expressionRule": self.extractor.extract_dose_unit_term
-              }
-            },
-            {
-              "fieldNameFHIR": "reasonCode|#:http://snomed.info/sct|coding|#:http://snomed.info/sct|code",
+              "expressionRule": self.extractor.extract_dose_unit_term
+          },
+          {
               "fieldNameFlat": "INDICATION_CODE",
-              "expression": {
-                "expressionName": "Not Empty",
-                "expressionType": "DEFAULT",
-                "expressionRule": self.extractor.extract_indication_code
-              }
-            },
-            {
-              "fieldNameFHIR": "location|identifier|value",
+              "expressionRule": self.extractor.extract_indication_code
+          },
+          {
               "fieldNameFlat": "LOCATION_CODE",
-              "expression": {
-                "expressionName": "Defaults to",
-                "expressionType": "DEFAULT",
-                "expressionRule": self.extractor.extract_location_code
-              }
-            },
-            {
-              "fieldNameFHIR": "location|identifier|system",
+              "expressionRule": self.extractor.extract_location_code
+          },
+          {
               "fieldNameFlat": "LOCATION_CODE_TYPE_URI",
-              "expression": {
-                "expressionName": "Defaults to",
-                "expressionType": "DEFAULT",
-                "expressionRule": self.extractor.extract_location_code_type_uri
-              }
-            }
-          ]
-        }
+              "expressionRule": self.extractor.extract_location_code_type_uri
+          }
+        ]
 
     def get_conversion_layout(self):
         return self.conversion_layout
