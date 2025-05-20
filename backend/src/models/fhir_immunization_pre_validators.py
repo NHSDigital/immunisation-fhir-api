@@ -392,7 +392,7 @@ class PreValidators:
         try:
             field_value = values["occurrenceDateTime"]
             PreValidation.for_date_time(field_value, field_location)
-        except KeyError: 
+        except KeyError:
             pass
 
     def pre_validate_performer(self, values: dict) -> dict:
