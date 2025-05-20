@@ -115,6 +115,7 @@ class PreValidation:
             f"{field_location} must be a valid datetime in the format 'YYYY-MM-DDThh:mm:ss+zz:zz' (where time element "
             + "is optional, timezone must be given if and only if time is given, and milliseconds can be optionally "
             + "included after the seconds). Note that partial dates are not allowed for "
+            + "Only '+00:00' and '+01:00' are accepted as valid timezone offsets. "
             + f"{field_location} for this service."
         )
 
@@ -129,8 +130,7 @@ class PreValidation:
 
             # Using %z in datetime.strptime function is more permissive than FHIR,
             # so check that timezone meets FHIR format requirements first
-            timezone_pattern = re.compile(r"(\+|-)\d{2}:\d{2}")
-            if not timezone_pattern.fullmatch(field_value[-6:]):
+            if field_value[-6:] not in {"+00:00", "+01:00"}:
                 raise ValueError(error_message)
 
             # Full date, time without milliseconds, timezone
