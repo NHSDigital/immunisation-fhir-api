@@ -1,8 +1,8 @@
 # Define the directory containing the Docker image and calculate its SHA-256 hash for triggering redeployments
 locals {
-  filename_lambda_dir = abspath("${path.root}/../filenameprocessor")
-  filename_lambda_files         = fileset(local.filename_lambda_dir, "**")
-  filename_lambda_dir_sha       = sha1(join("", [for f in local.filename_lambda_files : filesha1("${local.filename_lambda_dir}/${f}")]))
+  filename_lambda_dir     = abspath("${path.root}/../filenameprocessor")
+  filename_lambda_files   = fileset(local.filename_lambda_dir, "**")
+  filename_lambda_dir_sha = sha1(join("", [for f in local.filename_lambda_files : filesha1("${local.filename_lambda_dir}/${f}")]))
 }
 
 
@@ -10,13 +10,13 @@ resource "aws_ecr_repository" "file_name_processor_lambda_repository" {
   image_scanning_configuration {
     scan_on_push = true
   }
-  name = "${local.short_prefix}-filenameproc-repo"
+  name         = "${local.short_prefix}-filenameproc-repo"
   force_delete = local.is_temp
 }
 
 # Module for building and pushing Docker image to ECR
 module "file_processor_docker_image" {
-  source = "terraform-aws-modules/lambda/aws//modules/docker-build"
+  source  = "terraform-aws-modules/lambda/aws//modules/docker-build"
   version = "7.20.2"
 
   create_ecr_repo = false
@@ -54,25 +54,25 @@ resource "aws_ecr_repository_policy" "filenameprocessor_lambda_ECRImageRetreival
     Version = "2012-10-17"
     Statement = [
       {
-        "Sid": "LambdaECRImageRetrievalPolicy",
-        "Effect": "Allow",
-        "Principal": {
-          "Service": "lambda.amazonaws.com"
+        "Sid" : "LambdaECRImageRetrievalPolicy",
+        "Effect" : "Allow",
+        "Principal" : {
+          "Service" : "lambda.amazonaws.com"
         },
-        "Action": [
+        "Action" : [
           "ecr:BatchGetImage",
           "ecr:DeleteRepositoryPolicy",
           "ecr:GetDownloadUrlForLayer",
           "ecr:GetRepositoryPolicy",
           "ecr:SetRepositoryPolicy"
         ],
-        "Condition": {
-          "StringLike": {
-            "aws:sourceArn": "arn:aws:lambda:eu-west-2:${local.local_account_id}:function:${local.short_prefix}-filenameproc_lambda"
+        "Condition" : {
+          "StringLike" : {
+            "aws:sourceArn" : "arn:aws:lambda:eu-west-2:${local.local_account_id}:function:${local.short_prefix}-filenameproc_lambda"
           }
         }
       }
-  ]
+    ]
   })
 }
 
@@ -83,7 +83,7 @@ resource "aws_iam_role" "filenameprocessor_lambda_exec_role" {
     Version = "2012-10-17",
     Statement = [{
       Effect = "Allow",
-      Sid = "",
+      Sid    = "",
       Principal = {
         Service = "lambda.amazonaws.com"
       },
@@ -94,22 +94,22 @@ resource "aws_iam_role" "filenameprocessor_lambda_exec_role" {
 
 # Policy for Lambda execution role
 resource "aws_iam_policy" "filenameprocessor_lambda_exec_policy" {
-  name   = "${local.short_prefix}-filenameproc-lambda-exec-policy"
+  name = "${local.short_prefix}-filenameproc-lambda-exec-policy"
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
       {
-        Effect   = "Allow"
-        Action   = [
+        Effect = "Allow"
+        Action = [
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ]
-       Resource = "arn:aws:logs:${var.aws_region}:${local.local_account_id}:log-group:/aws/lambda/${local.short_prefix}-filenameproc_lambda:*"
+        Resource = "arn:aws:logs:${var.aws_region}:${local.local_account_id}:log-group:/aws/lambda/${local.short_prefix}-filenameproc_lambda:*"
       },
       {
-        Effect   = "Allow"
-        Action   = [
+        Effect = "Allow"
+        Action = [
           "s3:GetObject",
           "s3:ListBucket",
           "s3:PutObject",
@@ -122,8 +122,8 @@ resource "aws_iam_policy" "filenameprocessor_lambda_exec_policy" {
         ]
       },
       {
-        Effect   = "Allow"
-        Action   = [
+        Effect = "Allow"
+        Action = [
           "s3:GetObject",
           "s3:PutObject",
           "s3:ListBucket"
@@ -134,17 +134,17 @@ resource "aws_iam_policy" "filenameprocessor_lambda_exec_policy" {
         ]
       },
       {
-        Effect   = "Allow",
-        Action   = [
+        Effect = "Allow",
+        Action = [
           "ec2:CreateNetworkInterface",
           "ec2:DescribeNetworkInterfaces",
           "ec2:DeleteNetworkInterface"
         ],
         Resource = "*"
-        },
+      },
       {
-        Effect   = "Allow"
-        Action   = [
+        Effect = "Allow"
+        Action = [
           "s3:GetObject",
           "s3:PutObject",
           "s3:ListBucket"
@@ -155,16 +155,16 @@ resource "aws_iam_policy" "filenameprocessor_lambda_exec_policy" {
         ]
       },
       {
-        "Effect": "Allow",
-        "Action": [
+        "Effect" : "Allow",
+        "Action" : [
           "firehose:PutRecord",
           "firehose:PutRecordBatch"
         ],
-        "Resource": "arn:aws:firehose:*:*:deliverystream/${module.splunk.firehose_stream_name}"
+        "Resource" : "arn:aws:firehose:*:*:deliverystream/${module.splunk.firehose_stream_name}"
       },
       {
-        Effect   = "Allow"
-        Action   = "lambda:InvokeFunction"
+        Effect = "Allow"
+        Action = "lambda:InvokeFunction"
         Resource = [
           "arn:aws:lambda:${var.aws_region}:${local.local_account_id}:function:imms-${local.env}-filenameproc_lambda",
         ]
@@ -211,8 +211,8 @@ resource "aws_iam_policy" "filenameprocessor_lambda_kms_access_policy" {
           "kms:GenerateDataKey*"
         ]
         Resource = [
-            data.aws_kms_key.existing_s3_encryption_key.arn,
-            data.aws_kms_key.existing_dynamo_encryption_key.arn
+          data.aws_kms_key.existing_s3_encryption_key.arn,
+          data.aws_kms_key.existing_dynamo_encryption_key.arn
         ]
       }
     ]
@@ -227,13 +227,13 @@ resource "aws_iam_policy" "filenameprocessor_dynamo_access_policy" {
     Version = "2012-10-17"
     Statement = [
       {
-        Action    = [
+        Action = [
           "dynamodb:PutItem",
           "dynamodb:Query",
           "dynamodb:UpdateItem"
         ]
-        Effect    = "Allow"
-        Resource  = [
+        Effect = "Allow"
+        Resource = [
           aws_dynamodb_table.audit-table.arn,
           "${aws_dynamodb_table.audit-table.arn}/index/*",
         ]
@@ -268,12 +268,12 @@ resource "aws_iam_role_policy_attachment" "filenameprocessor_lambda_dynamo_acces
 }
 # Lambda Function with Security Group and VPC.
 resource "aws_lambda_function" "file_processor_lambda" {
-  function_name   = "${local.short_prefix}-filenameproc_lambda"
-  role            = aws_iam_role.filenameprocessor_lambda_exec_role.arn
-  package_type    = "Image"
-  image_uri       = module.file_processor_docker_image.image_uri
-  architectures   = ["x86_64"]
-  timeout         = 360
+  function_name = "${local.short_prefix}-filenameproc_lambda"
+  role          = aws_iam_role.filenameprocessor_lambda_exec_role.arn
+  package_type  = "Image"
+  image_uri     = module.file_processor_docker_image.image_uri
+  architectures = ["x86_64"]
+  timeout       = 360
 
   vpc_config {
     subnet_ids         = data.aws_subnets.default.ids
@@ -282,20 +282,20 @@ resource "aws_lambda_function" "file_processor_lambda" {
 
   environment {
     variables = {
-      SOURCE_BUCKET_NAME   = aws_s3_bucket.batch_data_source_bucket.bucket
-      ACK_BUCKET_NAME      = data.aws_s3_bucket.existing_destination_bucket.bucket
-      QUEUE_URL           = aws_sqs_queue.supplier_fifo_queue.url
-      CONFIG_BUCKET_NAME   = data.aws_s3_bucket.existing_config_bucket.bucket
-      REDIS_HOST           = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].address
-      REDIS_PORT           = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].port
-      SPLUNK_FIREHOSE_NAME = module.splunk.firehose_stream_name
-      AUDIT_TABLE_NAME     = aws_dynamodb_table.audit-table.name
-      FILE_NAME_GSI        = "filename_index"
+      SOURCE_BUCKET_NAME         = aws_s3_bucket.batch_data_source_bucket.bucket
+      ACK_BUCKET_NAME            = data.aws_s3_bucket.existing_destination_bucket.bucket
+      QUEUE_URL                  = aws_sqs_queue.supplier_fifo_queue.url
+      CONFIG_BUCKET_NAME         = data.aws_s3_bucket.existing_config_bucket.bucket
+      REDIS_HOST                 = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].address
+      REDIS_PORT                 = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].port
+      SPLUNK_FIREHOSE_NAME       = module.splunk.firehose_stream_name
+      AUDIT_TABLE_NAME           = aws_dynamodb_table.audit-table.name
+      FILE_NAME_GSI              = "filename_index"
       FILE_NAME_PROC_LAMBDA_NAME = "imms-${local.env}-filenameproc_lambda"
 
     }
   }
-  kms_key_arn = data.aws_kms_key.existing_lambda_encryption_key.arn
+  kms_key_arn                    = data.aws_kms_key.existing_lambda_encryption_key.arn
   reserved_concurrent_executions = local.is_temp ? -1 : 20
   depends_on = [
     aws_cloudwatch_log_group.file_name_processor_log_group,
@@ -351,7 +351,7 @@ resource "aws_iam_role" "elasticache_exec_role" {
     Version = "2012-10-17",
     Statement = [{
       Effect = "Allow",
-      Sid = "",
+      Sid    = "",
       Principal = {
         Service = "elasticache.amazonaws.com" # ElastiCache service principal
       },
@@ -361,7 +361,7 @@ resource "aws_iam_role" "elasticache_exec_role" {
 }
 
 resource "aws_iam_policy" "elasticache_permissions" {
-  name   = "${local.short_prefix}-elasticache-permissions"
+  name = "${local.short_prefix}-elasticache-permissions"
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
@@ -384,8 +384,8 @@ resource "aws_iam_policy" "elasticache_permissions" {
         ]
         Resource = "arn:aws:elasticache:${var.aws_region}:${local.local_account_id}:cluster/immunisation-redis-cluster"
         Condition = {
-          "StringEquals": {
-            "aws:RequestedRegion": var.aws_region
+          "StringEquals" : {
+            "aws:RequestedRegion" : var.aws_region
           }
         }
       },
@@ -405,8 +405,8 @@ resource "aws_iam_policy" "elasticache_permissions" {
         ]
         Resource = "arn:aws:elasticache:${var.aws_region}:${local.local_account_id}:subnet-group/immunisation-redis-subnet-group"
         Condition = {
-          "StringEquals": {
-            "aws:RequestedRegion": var.aws_region
+          "StringEquals" : {
+            "aws:RequestedRegion" : var.aws_region
           }
         }
       }

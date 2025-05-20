@@ -1,8 +1,8 @@
 # Define the directory containing the Docker image and calculate its SHA-256 hash for triggering redeployments
 locals {
-  ack_lambda_dir = abspath("${path.root}/../ack_backend")
-  ack_lambda_files         = fileset(local.ack_lambda_dir, "**")
-  ack_lambda_dir_sha       = sha1(join("", [for f in local.ack_lambda_files : filesha1("${local.ack_lambda_dir}/${f}")]))
+  ack_lambda_dir     = abspath("${path.root}/../ack_backend")
+  ack_lambda_files   = fileset(local.ack_lambda_dir, "**")
+  ack_lambda_dir_sha = sha1(join("", [for f in local.ack_lambda_files : filesha1("${local.ack_lambda_dir}/${f}")]))
 }
 
 
@@ -10,13 +10,13 @@ resource "aws_ecr_repository" "ack_lambda_repository" {
   image_scanning_configuration {
     scan_on_push = true
   }
-  name = "${local.short_prefix}-ack-repo"
+  name         = "${local.short_prefix}-ack-repo"
   force_delete = local.is_temp
 }
 
 # Module for building and pushing Docker image to ECR
 module "ack_processor_docker_image" {
-  source = "terraform-aws-modules/lambda/aws//modules/docker-build"
+  source  = "terraform-aws-modules/lambda/aws//modules/docker-build"
   version = "7.20.2"
 
   create_ecr_repo = false
@@ -54,25 +54,25 @@ resource "aws_ecr_repository_policy" "ack_lambda_ECRImageRetreival_policy" {
     Version = "2012-10-17"
     Statement = [
       {
-        "Sid": "LambdaECRImageRetrievalPolicy",
-        "Effect": "Allow",
-        "Principal": {
-          "Service": "lambda.amazonaws.com"
+        "Sid" : "LambdaECRImageRetrievalPolicy",
+        "Effect" : "Allow",
+        "Principal" : {
+          "Service" : "lambda.amazonaws.com"
         },
-        "Action": [
+        "Action" : [
           "ecr:BatchGetImage",
           "ecr:DeleteRepositoryPolicy",
           "ecr:GetDownloadUrlForLayer",
           "ecr:GetRepositoryPolicy",
           "ecr:SetRepositoryPolicy"
         ],
-        "Condition": {
-          "StringLike": {
-            "aws:sourceArn": "arn:aws:lambda:eu-west-2:${local.local_account_id}:function:${local.short_prefix}-ack-lambda"
+        "Condition" : {
+          "StringLike" : {
+            "aws:sourceArn" : "arn:aws:lambda:eu-west-2:${local.local_account_id}:function:${local.short_prefix}-ack-lambda"
           }
         }
       }
-  ]
+    ]
   })
 }
 
@@ -83,7 +83,7 @@ resource "aws_iam_role" "ack_lambda_exec_role" {
     Version = "2012-10-17",
     Statement = [{
       Effect = "Allow",
-      Sid = "",
+      Sid    = "",
       Principal = {
         Service = "lambda.amazonaws.com"
       },
@@ -94,22 +94,22 @@ resource "aws_iam_role" "ack_lambda_exec_role" {
 
 # Policy for Lambda execution role
 resource "aws_iam_policy" "ack_lambda_exec_policy" {
-  name   = "${local.short_prefix}-ack-lambda-exec-policy"
+  name = "${local.short_prefix}-ack-lambda-exec-policy"
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
       {
-        Effect   = "Allow"
-        Action   = [
+        Effect = "Allow"
+        Action = [
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ]
-       Resource = "arn:aws:logs:eu-west-2:${local.local_account_id}:log-group:/aws/lambda/${local.short_prefix}-ack-lambda:*"
+        Resource = "arn:aws:logs:eu-west-2:${local.local_account_id}:log-group:/aws/lambda/${local.short_prefix}-ack-lambda:*"
       },
       {
-        Effect   = "Allow"
-        Action   = [
+        Effect = "Allow"
+        Action = [
           "s3:GetObject",
           "s3:PutObject",
           "s3:ListBucket",
@@ -124,19 +124,19 @@ resource "aws_iam_policy" "ack_lambda_exec_policy" {
         ]
       },
       {
-        Effect   = "Allow"
-        Action   = "lambda:InvokeFunction"
+        Effect = "Allow"
+        Action = "lambda:InvokeFunction"
         Resource = [
           aws_lambda_function.file_processor_lambda.arn,
         ]
       },
       {
-        Effect   = "Allow"
-        Action   = [
+        Effect = "Allow"
+        Action = [
           "dynamodb:Query",
           "dynamodb:UpdateItem"
         ]
-       Resource  = [
+        Resource = [
           aws_dynamodb_table.audit-table.arn,
           "${aws_dynamodb_table.audit-table.arn}/index/*",
         ]
@@ -144,18 +144,18 @@ resource "aws_iam_policy" "ack_lambda_exec_policy" {
       {
         Effect = "Allow",
         Action = [
-                  "sqs:ReceiveMessage",
-                  "sqs:DeleteMessage",
-                  "sqs:GetQueueAttributes"
-                  ],
-        Resource = "arn:aws:sqs:eu-west-2:${local.local_account_id}:${local.short_prefix}-ack-metadata-queue.fifo" },
+          "sqs:ReceiveMessage",
+          "sqs:DeleteMessage",
+          "sqs:GetQueueAttributes"
+        ],
+      Resource = "arn:aws:sqs:eu-west-2:${local.local_account_id}:${local.short_prefix}-ack-metadata-queue.fifo" },
       {
-        "Effect": "Allow",
-        "Action": [
+        "Effect" : "Allow",
+        "Action" : [
           "firehose:PutRecord",
           "firehose:PutRecordBatch"
         ],
-        "Resource": "arn:aws:firehose:*:*:deliverystream/${module.splunk.firehose_stream_name}"
+        "Resource" : "arn:aws:firehose:*:*:deliverystream/${module.splunk.firehose_stream_name}"
       }
     ]
   })
@@ -179,9 +179,10 @@ resource "aws_iam_policy" "ack_s3_kms_access_policy" {
           "kms:Decrypt",
           "kms:GenerateDataKey*"
         ]
-        Resource = [data.aws_kms_key.existing_s3_encryption_key.arn,
-                    data.aws_kms_key.existing_dynamo_encryption_key.arn
-                   ]
+        Resource = [
+          data.aws_kms_key.existing_s3_encryption_key.arn,
+          data.aws_kms_key.existing_dynamo_encryption_key.arn
+        ]
       }
     ]
   })
@@ -200,23 +201,23 @@ resource "aws_iam_role_policy_attachment" "lambda_kms_policy_attachment" {
 }
 # Lambda Function with Security Group and VPC.
 resource "aws_lambda_function" "ack_processor_lambda" {
-  function_name   = "${local.short_prefix}-ack-lambda"
-  role            = aws_iam_role.ack_lambda_exec_role.arn
-  package_type    = "Image"
-  image_uri       = module.ack_processor_docker_image.image_uri
-  architectures   = ["x86_64"]
-  timeout         = 900
-  memory_size    = 2048
+  function_name = "${local.short_prefix}-ack-lambda"
+  role          = aws_iam_role.ack_lambda_exec_role.arn
+  package_type  = "Image"
+  image_uri     = module.ack_processor_docker_image.image_uri
+  architectures = ["x86_64"]
+  timeout       = 900
+  memory_size   = 2048
   ephemeral_storage {
-      size = 2048
+    size = 2048
   }
 
   environment {
     variables = {
-      ACK_BUCKET_NAME     = data.aws_s3_bucket.existing_destination_bucket.bucket
-      SPLUNK_FIREHOSE_NAME   = module.splunk.firehose_stream_name
-      ENVIRONMENT         = terraform.workspace
-      AUDIT_TABLE_NAME     = aws_dynamodb_table.audit-table.name
+      ACK_BUCKET_NAME            = data.aws_s3_bucket.existing_destination_bucket.bucket
+      SPLUNK_FIREHOSE_NAME       = module.splunk.firehose_stream_name
+      ENVIRONMENT                = terraform.workspace
+      AUDIT_TABLE_NAME           = aws_dynamodb_table.audit-table.name
       FILE_NAME_PROC_LAMBDA_NAME = aws_lambda_function.file_processor_lambda.function_name
     }
   }
@@ -227,9 +228,9 @@ resource "aws_lambda_function" "ack_processor_lambda" {
   ]
 }
 
-resource "aws_lambda_event_source_mapping" "sqs_to_lambda"{
+resource "aws_lambda_event_source_mapping" "sqs_to_lambda" {
   event_source_arn = aws_sqs_queue.fifo_queue.arn
-  function_name = aws_lambda_function.ack_processor_lambda.arn
-  batch_size = 10
-  enabled = true
+  function_name    = aws_lambda_function.ack_processor_lambda.arn
+  batch_size       = 10
+  enabled          = true
 }

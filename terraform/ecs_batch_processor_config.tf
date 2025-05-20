@@ -20,13 +20,13 @@ resource "aws_ecr_repository" "processing_repository" {
   image_scanning_configuration {
     scan_on_push = true
   }
-  name = "${local.short_prefix}-processing-repo"
+  name         = "${local.short_prefix}-processing-repo"
   force_delete = local.is_temp
 }
 
 # Build and Push Docker Image to ECR (Reusing the existing module)
 module "processing_docker_image" {
-  source = "terraform-aws-modules/lambda/aws//modules/docker-build"
+  source  = "terraform-aws-modules/lambda/aws//modules/docker-build"
   version = "7.20.2"
 
   docker_file_path = "Dockerfile"
@@ -112,12 +112,12 @@ resource "aws_iam_policy" "ecs_task_exec_policy" {
         ]
       },
       {
-        Effect   = "Allow"
-        Action   = [
+        Effect = "Allow"
+        Action = [
           "dynamodb:Query",
           "dynamodb:UpdateItem"
         ]
-       Resource  = [
+        Resource = [
           aws_dynamodb_table.audit-table.arn,
           "${aws_dynamodb_table.audit-table.arn}/index/*",
         ]
@@ -151,8 +151,8 @@ resource "aws_iam_policy" "ecs_task_exec_policy" {
         Resource = "arn:aws:ecr:${var.aws_region}:${local.local_account_id}:repository/${local.short_prefix}-processing-repo"
       },
       {
-        Effect   = "Allow"
-        Action   = "lambda:InvokeFunction"
+        Effect = "Allow"
+        Action = "lambda:InvokeFunction"
         Resource = [
           aws_lambda_function.file_processor_lambda.arn
         ]
@@ -175,8 +175,8 @@ resource "aws_iam_role_policy_attachment" "ecs_task_exec_policy_attachment" {
 }
 
 resource "aws_cloudwatch_log_group" "ecs_task_log_group" {
-  name = "/aws/vendedlogs/ecs/${local.short_prefix}-processor-task"
-  retention_in_days =  30
+  name              = "/aws/vendedlogs/ecs/${local.short_prefix}-processor-task"
+  retention_in_days = 30
 }
 
 # Create the ECS Task Definition
@@ -224,7 +224,7 @@ resource "aws_ecs_task_definition" "ecs_task" {
       },
       {
         name  = "FILE_NAME_PROC_LAMBDA_NAME"
-        value =  aws_lambda_function.file_processor_lambda.function_name
+        value = aws_lambda_function.file_processor_lambda.function_name
       }
     ]
     logConfiguration = {
@@ -357,6 +357,6 @@ resource "aws_pipes_pipe" "fifo_pipe" {
 
 # Custom Log Group
 resource "aws_cloudwatch_log_group" "pipe_log_group" {
-  name = "/aws/vendedlogs/pipes/${local.short_prefix}-pipe-logs"
+  name              = "/aws/vendedlogs/pipes/${local.short_prefix}-pipe-logs"
   retention_in_days = 30
 }
