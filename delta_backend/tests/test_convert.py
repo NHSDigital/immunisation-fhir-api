@@ -7,7 +7,6 @@ from boto3 import resource as boto3_resource
 from utils_for_converter_tests import ValuesForTests, ErrorValuesForTests
 from converter import Converter
 from common.mappings import ActionFlag, Operation, EventName
-import exception_messages
 
 MOCK_ENV_VARS = {
     "AWS_SQS_QUEUE_URL": "https://sqs.eu-west-2.amazonaws.com/123456789012/test-queue",
@@ -24,7 +23,7 @@ class TestConvertToFlatJson(unittest.TestCase):
     maxDiff = None
     def setUp(self):
         # Start moto AWS mocks
-        self.mock = mock_aws(services=["dynamodb", "sqs"])
+        self.mock = mock_aws()
         self.mock.start()
     
         """Set up mock DynamoDB table."""
@@ -123,8 +122,24 @@ class TestConvertToFlatJson(unittest.TestCase):
         errorRecords = FHIRConverter.get_error_records()
 
         self.assertEqual(len(errorRecords), 0)
+        
+    def test_fhir_converter_json_direct_data(self):
+        """it should convert fhir json data to flat json"""
+        json_data = json.dumps(ValuesForTests.json_data)
 
-    def test_fhir_converter_json_error_scenario(self):
+        FHIRConverter = Converter(json_data)
+        FlatFile = FHIRConverter.run_conversion()
+
+        flatJSON = json.dumps(FlatFile)
+        expected_imms_value = deepcopy(ValuesForTests.expected_imms2)  # UPDATE is currently the default action-flag
+        expected_imms = json.dumps(expected_imms_value)
+        self.assertEqual(flatJSON, expected_imms)
+
+        errorRecords = FHIRConverter.get_error_records()
+
+        self.assertEqual(len(errorRecords), 0)
+
+    def test_fhir_converter_json_error_scenario_reporting_on(self):
         """it should convert fhir json data to flat json - error scenarios"""
         error_test_cases = [ErrorValuesForTests.missing_json, ErrorValuesForTests.json_dob_error]
 
@@ -138,6 +153,36 @@ class TestConvertToFlatJson(unittest.TestCase):
 
             # Check if bad data creates error records
             self.assertTrue(len(errorRecords) > 0)
+            
+    def test_fhir_converter_json_error_scenario_reporting_off(self):
+        """it should convert fhir json data to flat json - error scenarios"""
+        error_test_cases = [ErrorValuesForTests.missing_json, ErrorValuesForTests.json_dob_error]
+
+        for test_case in error_test_cases:
+            json_data = json.dumps(test_case)
+
+            FHIRConverter = Converter(json_data, report_unexpected_exception=False)
+            FHIRConverter.run_conversion()
+
+            errorRecords = FHIRConverter.get_error_records()
+
+            # Check if bad data creates error records
+            self.assertTrue(len(errorRecords) == 0)
+            
+    def test_fhir_converter_json_incorrect_data_scenario_reporting_on(self):
+        """it should convert fhir json data to flat json - error scenarios"""
+
+        FHIRConverter = Converter(None)
+        errorRecords = FHIRConverter.get_error_records()
+        self.assertTrue(len(errorRecords) > 0)
+    
+    
+    def test_fhir_converter_json_incorrect_data_scenario_reporting_off(self):
+        """it should convert fhir json data to flat json - error scenarios"""
+
+        FHIRConverter = Converter(None, report_unexpected_exception=False)
+        errorRecords = FHIRConverter.get_error_records()
+        self.assertTrue(len(errorRecords) == 0)
 
     def test_handler_imms_convert_to_flat_json(self):
         """Test that the Imms field contains the correct flat JSON data for CREATE, UPDATE, and DELETE operations."""

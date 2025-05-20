@@ -9,6 +9,14 @@ class TestSiteCodeToFlatJson(unittest.TestCase):
     
     def setUp(self):
         self.request_json_data = copy.deepcopy(ValuesForTests.json_data)
+    
+    def test_site_code_not_exists(self):
+        self.request_json_data["performer"] = None
+        self._run_site_code_test("")
+        
+    def test_site_code_actor_empty(self):
+        self.request_json_data["performer"] = [{"actor": {}}]
+        self._run_site_code_test("")
         
     def test_site_code_single_performer(self):
         """Test case where only one performer instance exists"""

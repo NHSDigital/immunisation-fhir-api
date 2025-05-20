@@ -125,11 +125,11 @@ class Extractor:
     def _get_site_information(self):
         performers = self.fhir_json_data.get("performer", [])
         if not isinstance(performers, list) or not performers:
-            return None, None
+            return "", ""
 
         valid_performers = [p for p in performers if "actor" in p and "identifier" in p["actor"]]
         if not valid_performers:
-            return None, None
+            return "", ""
 
         selected_performer = next(
             (
@@ -147,7 +147,7 @@ class Extractor:
                 ),
                 next(
                     (p for p in valid_performers if p.get("actor", {}).get("type") == "Organization"),
-                    valid_performers[0] if valid_performers else None,
+                    valid_performers[0] if valid_performers else "",
                 ),
             ),
         )
@@ -157,53 +157,47 @@ class Extractor:
         return site_code, site_code_type_uri
     
     def _log_error(self, field_name, field_value, e, code=exception_messages.RECORD_CHECK_FAILED):
-        if isinstance(e, Exception):
-            message = exception_messages.MESSAGES[exception_messages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, str(e))
-        else:
-            message = str(e)
+        if self.report_unexpected_exception:
+            if isinstance(e, Exception):
+                message = exception_messages.MESSAGES[exception_messages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, str(e))
+            else:
+                message = str(e)
 
-        self.error_records.append({
-            "code": code,
-            "field": field_name,
-            "value": field_value,
-            "message": message
-        })
+            self.error_records.append({
+                "code": code,
+                "field": field_name,
+                "value": field_value,
+                "message": message
+            })
     
     def _convert_date(self, field_name, date, format) -> str:
         """
         Convert a date string according to match YYYYMMDD format.
         """
         if not date or not isinstance(date, str):
-            if self.report_unexpected_exception:
-                self._log_error(field_name, date, "Invalid value. Must be non empty string")
+            self._log_error(field_name, date, "Invalid value. Must be non empty string")
             return ""
         try:
             dt = datetime.fromisoformat(date)
             return dt.strftime(format)
         except ValueError as e:
-            if self.report_unexpected_exception:
-                self._log_error(field_name, date, e)
+            self._log_error(field_name, date, e)
             return ""
     
     def _convert_date_to_safe_format(self, field_name, date) -> str:
-        if not date:
-            return ""
-
         try:
             dt = datetime.fromisoformat(date)
             if dt.tzinfo is None:
                 dt = dt.replace(tzinfo=timezone.utc)
         except Exception as e:
-            if self.report_unexpected_exception:
-                self._log_error(field_name, date, e)
+            self._log_error(field_name, date, e)
             return ""
 
         # Allow only +00:00 or +01:00 offsets (UTC and BST) and reject unsupported timezones
         offset = dt.utcoffset()
         allowed_offsets = [timedelta(hours=0), timedelta(hours=1)]
         if offset is not None and offset not in allowed_offsets:
-            if self.report_unexpected_exception:
-                self._log_error(field_name, date, "Unsupported Format or offset")
+            self._log_error(field_name, date, "Unsupported Format or offset")
             return ""
 
         # remove microseconds
