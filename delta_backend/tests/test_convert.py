@@ -111,15 +111,15 @@ class TestConvertToFlatJson(unittest.TestCase):
         """it should convert fhir json data to flat json"""
         json_data = json.dumps(ValuesForTests.json_data)
 
-        FHIRConverter = Converter(json_data)
-        FlatFile = FHIRConverter.run_conversion()
+        fhir_converter = Converter(json_data)
+        FlatFile = fhir_converter.run_conversion()
 
         flatJSON = json.dumps(FlatFile)
         expected_imms_value = deepcopy(ValuesForTests.expected_imms2)  # UPDATE is currently the default action-flag
         expected_imms = json.dumps(expected_imms_value)
         self.assertEqual(flatJSON, expected_imms)
 
-        errorRecords = FHIRConverter.get_error_records()
+        errorRecords = fhir_converter.get_error_records()
 
         self.assertEqual(len(errorRecords), 0)
         
@@ -127,15 +127,15 @@ class TestConvertToFlatJson(unittest.TestCase):
         """it should convert fhir json data to flat json"""
         json_data = json.dumps(ValuesForTests.json_data)
 
-        FHIRConverter = Converter(json_data)
-        FlatFile = FHIRConverter.run_conversion()
+        fhir_converter = Converter(json_data)
+        FlatFile = fhir_converter.run_conversion()
 
         flatJSON = json.dumps(FlatFile)
         expected_imms_value = deepcopy(ValuesForTests.expected_imms2)  # UPDATE is currently the default action-flag
         expected_imms = json.dumps(expected_imms_value)
         self.assertEqual(flatJSON, expected_imms)
 
-        errorRecords = FHIRConverter.get_error_records()
+        errorRecords = fhir_converter.get_error_records()
 
         self.assertEqual(len(errorRecords), 0)
 
@@ -146,10 +146,10 @@ class TestConvertToFlatJson(unittest.TestCase):
         for test_case in error_test_cases:
             json_data = json.dumps(test_case)
 
-            FHIRConverter = Converter(json_data)
-            FHIRConverter.run_conversion()
+            fhir_converter = Converter(json_data)
+            fhir_converter.run_conversion()
 
-            errorRecords = FHIRConverter.get_error_records()
+            errorRecords = fhir_converter.get_error_records()
 
             # Check if bad data creates error records
             self.assertTrue(len(errorRecords) > 0)
@@ -161,10 +161,10 @@ class TestConvertToFlatJson(unittest.TestCase):
         for test_case in error_test_cases:
             json_data = json.dumps(test_case)
 
-            FHIRConverter = Converter(json_data, report_unexpected_exception=False)
-            FHIRConverter.run_conversion()
+            fhir_converter = Converter(json_data, report_unexpected_exception=False)
+            fhir_converter.run_conversion()
 
-            errorRecords = FHIRConverter.get_error_records()
+            errorRecords = fhir_converter.get_error_records()
 
             # Check if bad data creates error records
             self.assertTrue(len(errorRecords) == 0)
@@ -172,17 +172,19 @@ class TestConvertToFlatJson(unittest.TestCase):
     def test_fhir_converter_json_incorrect_data_scenario_reporting_on(self):
         """it should convert fhir json data to flat json - error scenarios"""
 
-        FHIRConverter = Converter(None)
-        errorRecords = FHIRConverter.get_error_records()
-        self.assertTrue(len(errorRecords) > 0)
+        with self.assertRaises(ValueError):
+            fhir_converter = Converter(None)
+            errorRecords = fhir_converter.get_error_records()
+            self.assertTrue(len(errorRecords) > 0)
     
     
     def test_fhir_converter_json_incorrect_data_scenario_reporting_off(self):
         """it should convert fhir json data to flat json - error scenarios"""
 
-        FHIRConverter = Converter(None, report_unexpected_exception=False)
-        errorRecords = FHIRConverter.get_error_records()
-        self.assertTrue(len(errorRecords) == 0)
+        with self.assertRaises(ValueError):
+            fhir_converter = Converter(None, report_unexpected_exception=False)
+            errorRecords = fhir_converter.get_error_records()
+            self.assertTrue(len(errorRecords) == 0)
 
     def test_handler_imms_convert_to_flat_json(self):
         """Test that the Imms field contains the correct flat JSON data for CREATE, UPDATE, and DELETE operations."""

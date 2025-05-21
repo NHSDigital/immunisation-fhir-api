@@ -75,7 +75,6 @@ def handler(event, context):
                     FHIRConverter = Converter(resource_json, action_flag = action_flag)
                     flat_json = FHIRConverter.run_conversion()  # Get the flat JSON
                     error_records = FHIRConverter.get_error_records()
-                    flat_json["ACTION_FLAG"] = action_flag
                     response = delta_table.put_item(
                         Item={
                             "PK": str(uuid.uuid4()),

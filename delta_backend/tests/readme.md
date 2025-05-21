@@ -9,15 +9,15 @@ The basic layout for conversion is below:
 FHIR_data_folder = Path("C:/Source Code/Vaccs to JSON Converter/FHIR-data")
 FHIRFilePath = FHIR_data_folder / "vaccination7.json"
 
-FHIRConverter = Converter(FHIRFilePath)
-FlatFile = FHIRConverter.runConversion(False, True)
+fhir_converter = Converter(FHIRFilePath)
+FlatFile = fhir_converter.runConversion(False, True)
 
 flatJSON = json.dumps(FlatFile)
 
 if len(flatJSON) > 0:
     print(flatJSON)
 
-errorRecords = FHIRConverter.getErrorRecords()
+errorRecords = fhir_converter.getErrorRecords()
 
 if len(errorRecords) > 0:
     print('Converted With Errors')

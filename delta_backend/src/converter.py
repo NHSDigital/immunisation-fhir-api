@@ -2,10 +2,11 @@
 import exception_messages
 from conversion_layout import ConversionLayout
 from extractor import Extractor
+from common.mappings import ActionFlag
 
 class Converter:
 
-    def __init__(self, fhir_data, action_flag = "UPDATE", report_unexpected_exception=True):
+    def __init__(self, fhir_data, action_flag = ActionFlag.UPDATE, report_unexpected_exception=True):
         self.converted = {}
         self.error_records = []
         self.action_flag = action_flag
@@ -20,6 +21,7 @@ class Converter:
         except Exception as e:
             if report_unexpected_exception:
                 self._log_error(f"Initialization failed: [{e.__class__.__name__}] {e}")
+            raise
 
     def run_conversion(self):
         conversions = self.conversion_layout.get_conversion_layout()
