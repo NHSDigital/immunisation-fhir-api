@@ -16,6 +16,7 @@ class Extractor:
     NHS_NUMBER_SYSTEM_URL = "https://fhir.nhs.uk/Id/nhs-number"
     
     DATE_CONVERT_FORMAT = "%Y%m%d"
+    DEFAULT_POSTCODE = "ZZ99 3CZ"
     
     def __init__(self, fhir_json_data, report_unexpected_exception = True):
         self.fhir_json_data = json.loads(fhir_json_data) if isinstance(fhir_json_data, str) else fhir_json_data
@@ -84,7 +85,6 @@ class Extractor:
     
     def _get_occurance_date_time(self) -> str:
         try:
-            #TODO: Double check if this logic is correct
             occurrence_time = datetime.fromisoformat(self.fhir_json_data.get("occurrenceDateTime", ""))
             if occurrence_time and occurrence_time.tzinfo is None:
                 occurrence_time = occurrence_time.replace(tzinfo=timezone.utc)
@@ -103,7 +103,7 @@ class Extractor:
                 return coding.get("code", "")
         return ""
 
-    def _get_term_from_codeable_concept(self, concept: dict) -> str:
+    def _get_codeable_concept_term(self, concept: dict) -> str:
         if concept.get("text"):
             return concept["text"]
 
@@ -246,11 +246,11 @@ class Extractor:
         
         addresses = patient.get("address", [])
         if not isinstance(addresses, list) or not addresses:
-            return "ZZ99 3CZ"
+            return self.DEFAULT_POSTCODE
 
         valid_addresses = [a for a in addresses if "postalCode" in a and self._is_current_period(a, occurrence_time)]
         if not valid_addresses:
-            return "ZZ99 3CZ"
+            return self.DEFAULT_POSTCODE
 
         selected_address = next(
             (a for a in valid_addresses if a.get("use") == "home" and a.get("type") != "postal"),
@@ -259,7 +259,7 @@ class Extractor:
                 next((a for a in valid_addresses if a.get("use") != "old"), valid_addresses[0]),
             ),
         )
-        return selected_address.get("postalCode", "ZZ99 3CZ")
+        return selected_address.get("postalCode", self.DEFAULT_POSTCODE)
     
     def extract_date_time(self) -> str: 
         date = self.fhir_json_data.get("occurrenceDateTime","")
@@ -295,7 +295,7 @@ class Extractor:
         date = self.fhir_json_data.get("recorded", "")
         return self._convert_date("RECORDED_DATE", date, self.DATE_CONVERT_FORMAT)
     
-    def extract_primary_source(self) -> str: 
+    def extract_primary_source(self) -> bool: 
         primary_source = self.fhir_json_data.get("primarySource")
         
         if isinstance(primary_source, bool):
@@ -319,7 +319,7 @@ class Extractor:
         extensions = self.fhir_json_data.get("extension", [])
         for ext in extensions:
             if ext.get("url") == self.EXTENSION_URL_VACCINATION_PRODEDURE:
-                return self._get_term_from_codeable_concept(ext.get("valueCodeableConcept", {}))
+                return self._get_codeable_concept_term(ext.get("valueCodeableConcept", {}))
         return ""
     
     def extract_dose_sequence(self) -> str: 
@@ -335,7 +335,7 @@ class Extractor:
         return self._get_first_snomed_code(vaccine_code)
 
     def extract_vaccine_product_term(self) -> str:
-        return self._get_term_from_codeable_concept(self.fhir_json_data.get("vaccineCode", {}))
+        return self._get_codeable_concept_term(self.fhir_json_data.get("vaccineCode", {}))
     
     def extract_vaccine_manufacturer(self) -> str: 
         manufacturer = self.fhir_json_data.get("manufacturer", {})
@@ -355,14 +355,14 @@ class Extractor:
         return self._get_first_snomed_code(site)
 
     def extract_site_of_vaccination_term(self) -> str:
-        return self._get_term_from_codeable_concept(self.fhir_json_data.get("site", {}))
+        return self._get_codeable_concept_term(self.fhir_json_data.get("site", {}))
     
     def extract_route_of_vaccination_code(self) -> str:
         route = self.fhir_json_data.get("route", {})
         return self._get_first_snomed_code(route)
     
     def extract_route_of_vaccination_term(self) -> str:
-        return self._get_term_from_codeable_concept(self.fhir_json_data.get("route", {}))
+        return self._get_codeable_concept_term(self.fhir_json_data.get("route", {}))
 
     def extract_dose_amount(self) -> str:
         dose_quantity = self.fhir_json_data.get("doseQuantity", {})
