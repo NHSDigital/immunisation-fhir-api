@@ -325,6 +325,8 @@ resource "aws_s3_bucket_notification" "datasources_lambda_notification" {
   }
 }
 
+# TODO - This is scoped to the bucket, so is overwritten by each deployment
+# That might be intentional in prod, to switch between blue and green, but surely isn't in non-prod
 # S3 Bucket notification to trigger Lambda function for config bucket
 resource "aws_s3_bucket_notification" "config_lambda_notification" {
   bucket = data.aws_s3_bucket.existing_config_bucket.bucket
