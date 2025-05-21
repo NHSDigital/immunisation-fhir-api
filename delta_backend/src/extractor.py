@@ -2,7 +2,6 @@ import json
 import exception_messages
 from datetime import datetime, timedelta, timezone
 from common.mappings import Gender
-from typing import Union
 
 class Extractor: 
 
@@ -297,7 +296,7 @@ class Extractor:
         date = self.fhir_json_data.get("recorded", "")
         return self._convert_date("RECORDED_DATE", date, self.DATE_CONVERT_FORMAT)
     
-    def extract_primary_source(self) -> Union[bool, str]: 
+    def extract_primary_source(self) -> bool | str: 
         primary_source = self.fhir_json_data.get("primarySource")
         
         if isinstance(primary_source, bool):
