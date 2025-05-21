@@ -11,8 +11,8 @@ os.environ["AWS_SQS_QUEUE_URL"] = "https://sqs.eu-west-2.amazonaws.com/123456789
 os.environ["DELTA_TABLE_NAME"] = "my_delta_table"
 os.environ["SOURCE"] = "my_source"
 
-from delta import send_message, handler  # Import after setting environment variables
-from utils_for_converter_tests import ValuesForTests, RecordConfig
+from delta import send_message, handler, process_record  # Import after setting environment variables
+from utils_for_converter_tests import ValuesForTests, RecordConfig, TestConfig
 
 success_response = {"ResponseMetadata": {"HTTPStatusCode": 200}}
 exception_response = ClientError({"Error": {"Code": "ConditionalCheckFailedException"}}, "PutItem")
@@ -360,15 +360,15 @@ class DeltaTestCase(unittest.TestCase):
         # Assert
         self.assertFalse(result)
         self.assertEqual(mock_table.put_item.call_count, 3)
-        self.assertEqual(self.mock_firehose_logger.send_log.call_count, 2)
+        self.assertEqual(self.mock_firehose_logger.send_log.call_count, 3)
         self.assertEqual(self.mock_logger_warning.call_count, 1)
 
     @patch("boto3.resource")
     def test_single_exception_in_multi(self, mock_boto_resource):
         # Arrange
-        mock_table = self.setup_mock_dynamodb(mock_boto_resource)
+        mock_delta_table = self.setup_mock_dynamodb(mock_boto_resource)
         # arrange so the 3rd record fails
-        mock_table.put_item.side_effect = [success_response, exception_response, success_response]
+        mock_delta_table.put_item.side_effect = [success_response, exception_response, success_response]
 
         records_config = [
             RecordConfig(EventName.CREATE, Operation.CREATE, "ok-id2.1", ActionFlag.CREATE),
@@ -382,9 +382,69 @@ class DeltaTestCase(unittest.TestCase):
 
         # Assert
         self.assertFalse(result)
-        self.assertEqual(mock_table.put_item.call_count, 3)
-        self.assertEqual(self.mock_firehose_logger.send_log.call_count, 2)
+        self.assertEqual(mock_delta_table.put_item.call_count, len(records_config))
+        self.assertEqual(self.mock_firehose_logger.send_log.call_count, len(records_config))
+
+
+    @patch("boto3.resource")
+    def test_single_record_success(self, mock_boto_resource):
+        
+        # Arrange
+        mock_delta_table = self.setup_mock_dynamodb(mock_boto_resource)
+        mock_delta_table.put_item.return_value = success_response
+        test_configs = [
+            RecordConfig(EventName.CREATE, Operation.CREATE, "ok-id.1", ActionFlag.CREATE),
+            RecordConfig(EventName.UPDATE, Operation.UPDATE, "ok-id.2", ActionFlag.UPDATE),
+            RecordConfig(EventName.DELETE_PHYSICAL, Operation.DELETE_PHYSICAL, "ok-id.3"),
+        ]
+        for config in test_configs:
+            record = ValuesForTests.get_event_record(
+                imms_id=config.imms_id,
+                event_name=config.event_name,
+                operation=config.operation,
+                supplier=config.supplier,
+            )
+            log_data = {}
+            # Act
+            result, log_data = process_record(record, mock_delta_table, log_data)
+
+            # Assert
+            self.assertEqual(result, True)
+            operation_outcome = log_data["operation_outcome"]
+            self.assertEqual(operation_outcome["record"], config.imms_id)
+            self.assertEqual(operation_outcome["operation_type"], config.operation)
+            self.assertEqual(operation_outcome["statusCode"], "200")
+            self.assertEqual(operation_outcome["statusDesc"], "Successfully synched into delta")
+        self.assertEqual(mock_delta_table.put_item.call_count, len(test_configs))
+        self.assertEqual(self.mock_logger_exception.call_count, 0)
+
+    @patch("boto3.resource")
+    def test_single_record_table_exception(self, mock_boto_resource):
+        
+        # Arrange
+        mock_delta_table = self.setup_mock_dynamodb(mock_boto_resource)
+        imms_id = "exception-id"
+        record = ValuesForTests.get_event_record(
+            imms_id,
+            event_name=EventName.UPDATE,
+            operation=Operation.UPDATE,
+            supplier="EMIS",
+        )
+        mock_delta_table.put_item.return_value = exception_response
+        log_data = {}
+        # Act
+        result, log_data = process_record(record, mock_delta_table, log_data)
+
+        # Assert
+        self.assertEqual(result, False)
+        operation_outcome = log_data["operation_outcome"]
+        self.assertEqual(operation_outcome["record"], imms_id)
+        self.assertEqual(operation_outcome["operation_type"], Operation.UPDATE)
+        self.assertEqual(operation_outcome["statusCode"], "500")
+        self.assertEqual(operation_outcome["statusDesc"], "Exception")
+        self.assertEqual(mock_delta_table.put_item.call_count, 1)
         self.assertEqual(self.mock_logger_exception.call_count, 1)
+
 
 @patch("delta.process_record")
 @patch("boto3.resource")

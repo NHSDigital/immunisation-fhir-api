@@ -33,12 +33,19 @@ def get_vaccine_type(patientsk) -> str:
     parsed = [str.strip(str.lower(s)) for s in patientsk.split("#")]
     return parsed[0]
 
+def send_firehose(log_data):
+    try:
+        firehose_log = {"event": log_data}
+        firehose_logger.send_log(firehose_log)
+    except Exception as e:
+        logger.error(f"Error sending log to Firehose: {e}")
 
-def process_record(record, delta_table, log_data, firehose_log):
+def process_record(record, delta_table, log_data):
     """
     Processes a single record from the event.
 
     Args:
+
         record (dict): The DynamoDB stream record to process.
         delta_table (boto3.Table): The DynamoDB table resource.
         log_data (dict): Log data for the current record.
@@ -47,6 +54,7 @@ def process_record(record, delta_table, log_data, firehose_log):
     Returns:
         bool: True if the record was processed successfully, False otherwise.
     """
+    ret = True
     try:
         start = time.time()
         approximate_creation_time = datetime.utcfromtimestamp(record["dynamodb"]["ApproximateCreationDateTime"])
@@ -56,15 +64,19 @@ def process_record(record, delta_table, log_data, firehose_log):
         response = str()
         imms_id = str()
         operation = str()
+        operation_outcome = {}
 
         if record["eventName"] != EventName.DELETE_PHYSICAL:
             new_image = record["dynamodb"]["NewImage"]
             imms_id = new_image["PK"]["S"].split("#")[1]
+            operation_outcome["record"] = imms_id
             vaccine_type = get_vaccine_type(new_image["PatientSK"]["S"])
             supplier_system = new_image["SupplierSystem"]["S"]
 
             if supplier_system not in ("DPSFULL", "DPSREDUCED"):
                 operation = new_image["Operation"]["S"]
+                operation_outcome["operation_type"] = operation
+
                 action_flag = ActionFlag.CREATE if operation == Operation.CREATE else operation
                 resource_json = json.loads(new_image["Resource"]["S"])
                 FHIRConverter = Converter(json.dumps(resource_json))
@@ -86,20 +98,17 @@ def process_record(record, delta_table, log_data, firehose_log):
                     }
                 )
             else:
-                operation_outcome = {
-                    "statusCode": "200",
-                    "statusDesc": "Record from DPS skipped",
-                }
-                log_data["operation_outcome"] = operation_outcome
-                firehose_log["event"] = log_data
-                firehose_logger.send_log(firehose_log)
+                operation_outcome["statusCode"] = "200"
+                operation_outcome["statusDesc"] = "Record from DPS skipped"
                 logger.info(f"Record from DPS skipped for {imms_id}")
-                return True
+                return True, log_data
         else:
             operation = Operation.DELETE_PHYSICAL
             new_image = record["dynamodb"]["Keys"]
             logger.info(f"Record to delta: {new_image}")
             imms_id = new_image["PK"]["S"].split("#")[1]
+            operation_outcome["record"] = imms_id
+            operation_outcome["operation_type"] = operation
 
             response = delta_table.put_item(
                 Item={
@@ -117,7 +126,6 @@ def process_record(record, delta_table, log_data, firehose_log):
 
         end = time.time()
         log_data["time_taken"] = f"{round(end - start, 5)}s"
-        operation_outcome = {"record": imms_id, "operation_type": operation}
 
         if response["ResponseMetadata"]["HTTPStatusCode"] == 200:
             if error_records:
@@ -136,23 +144,21 @@ def process_record(record, delta_table, log_data, firehose_log):
             operation_outcome["statusCode"] = "500"
             operation_outcome["statusDesc"] = "Exception"
             logger.warning(log)
-            return False
-
-        log_data["operation_outcome"] = operation_outcome
-        firehose_log["event"] = log_data
-        firehose_logger.send_log(firehose_log)
-        return True
+            ret = False
 
     except Exception as e:
+        operation_outcome["statusCode"] = "500"
+        operation_outcome["statusDesc"] = "Exception"
         logger.exception(f"Error processing record: {e}")
-        return False
+        ret = False
 
+    log_data["operation_outcome"] = operation_outcome
+    return ret, log_data
 
 def handler(event, context):
     ret = True
     logger.info("Starting Delta Handler")
     log_data = dict()
-    firehose_log = dict()
     log_data["function_name"] = "delta_sync"
     try:
         dynamodb = boto3.resource("dynamodb", region_name="eu-west-2")
@@ -161,7 +167,8 @@ def handler(event, context):
             log_data["date_time"] = str(datetime.now())
 
             # Process each record
-            result = process_record(record, delta_table, log_data, firehose_log)
+            result, log_data = process_record(record, delta_table, log_data)
+            send_firehose(log_data)
             if not result:
                 ret = False
 
@@ -175,6 +182,5 @@ def handler(event, context):
         logger.exception(operation_outcome["diagnostics"])
         send_message(event)  # Send failed records to DLQ
         log_data["operation_outcome"] = operation_outcome
-        firehose_log["event"] = log_data
-        firehose_logger.send_log(firehose_log)
+        send_firehose(log_data)
     return ret
