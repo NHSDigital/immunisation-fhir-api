@@ -3,6 +3,7 @@ import json
 import unittest
 from utils_for_converter_tests import ValuesForTests
 from converter import Converter
+from common.mappings import ConversionFieldName
 
 class TestLocationCode(unittest.TestCase):
     
@@ -13,7 +14,7 @@ class TestLocationCode(unittest.TestCase):
         """Helper function to run the test"""
         self.converter = Converter(json.dumps(self.request_json_data))
         flat_json = self.converter.run_conversion()
-        self.assertEqual(flat_json.get("LOCATION_CODE"), expected_site_code)
+        self.assertEqual(flat_json.get(ConversionFieldName.LOCATION_CODE), expected_site_code)
     
     def test_location_code_when_present(self):
         """Should return the correct LOCATION_CODE from input"""

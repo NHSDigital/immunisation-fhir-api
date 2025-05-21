@@ -3,7 +3,7 @@ import json
 import unittest
 from utils_for_converter_tests import ValuesForTests
 from converter import Converter
-
+from common.mappings import ConversionFieldName
 
 class TestDoseSequenceToFlatJson(unittest.TestCase):
     
@@ -14,7 +14,7 @@ class TestDoseSequenceToFlatJson(unittest.TestCase):
         """Helper function to run the test"""
         self.converter = Converter(json.dumps(self.request_json_data))
         flat_json = self.converter.run_conversion()
-        self.assertEqual(flat_json["DOSE_SEQUENCE"], expected_result)
+        self.assertEqual(flat_json[ConversionFieldName.DOSE_SEQUENCE], expected_result)
         
     def test_dose_sequence_present_int(self):
         self.request_json_data["protocolApplied"] = [

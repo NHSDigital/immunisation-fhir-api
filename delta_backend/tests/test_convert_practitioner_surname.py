@@ -3,6 +3,7 @@ import json
 import unittest
 from utils_for_converter_tests import ValuesForTests
 from converter import Converter
+from common.mappings import ConversionFieldName
 
 class TestPractitionerSurNameToFlatJson(unittest.TestCase):
     
@@ -119,4 +120,4 @@ class TestPractitionerSurNameToFlatJson(unittest.TestCase):
         """Helper function to run the test"""
         self.converter = Converter(json.dumps(self.request_json_data))
         flat_json = self.converter.run_conversion()
-        self.assertEqual(flat_json["PERFORMING_PROFESSIONAL_SURNAME"], expected_forename)
+        self.assertEqual(flat_json[ConversionFieldName.PERFORMING_PROFESSIONAL_SURNAME], expected_forename)

@@ -1,6 +1,6 @@
 # Main validation engine
 import exception_messages
-from conversion_layout import ConversionLayout
+from conversion_layout import ConversionLayout, ConversionField
 from extractor import Extractor
 from common.mappings import ActionFlag
 
@@ -35,15 +35,14 @@ class Converter:
         self.converted["CONVERSION_ERRORS"] = self.error_records
         return self.converted
 
-    def _convert_data(self, expression):
+    def _convert_data(self, conversion: ConversionField):
         try:
-            flat_field = expression["fieldNameFlat"]
-            extract_value = expression["expressionRule"]
-            
+            flat_field = conversion.field_name_flat
+         
             if flat_field == "ACTION_FLAG":
                 self.converted[flat_field] = self.action_flag
             else:
-                converted = extract_value()
+                converted = conversion.expression_rule()
                 if converted is not None:
                     self.converted[flat_field] = converted
 

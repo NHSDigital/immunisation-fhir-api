@@ -3,6 +3,7 @@ import json
 import unittest
 from utils_for_converter_tests import ValuesForTests
 from converter import Converter
+from common.mappings import ConversionFieldName
 
 class TestBatchNumber(unittest.TestCase):
     
@@ -13,7 +14,7 @@ class TestBatchNumber(unittest.TestCase):
         """Helper function to run the test"""
         self.converter = Converter(json.dumps(self.request_json_data))
         flat_json = self.converter.run_conversion()
-        self.assertEqual(flat_json.get("BATCH_NUMBER"), expected_result)
+        self.assertEqual(flat_json.get(ConversionFieldName.BATCH_NUMBER), expected_result)
         
     def test_batch_number_present(self):
         """Should extract lotNumber when present"""

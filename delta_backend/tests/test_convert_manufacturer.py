@@ -3,6 +3,7 @@ import json
 import unittest
 from utils_for_converter_tests import ValuesForTests
 from converter import Converter
+from common.mappings import ConversionFieldName
 
 class TestVaccineManufacturer(unittest.TestCase):
     
@@ -13,7 +14,7 @@ class TestVaccineManufacturer(unittest.TestCase):
         """Helper function to run the test"""
         self.converter = Converter(json.dumps(self.request_json_data))
         flat_json = self.converter.run_conversion()
-        self.assertEqual(flat_json.get("VACCINE_MANUFACTURER"), expected_result)
+        self.assertEqual(flat_json.get(ConversionFieldName.VACCINE_MANUFACTURER), expected_result)
         
     def test_vaccine_manufacturer_present(self):
         """Should return the manufacturer name when present"""

@@ -3,6 +3,7 @@ import json
 import unittest
 from utils_for_converter_tests import ValuesForTests
 from converter import Converter
+from common.mappings import ConversionFieldName
 
 class TestUniqueIdUri(unittest.TestCase):
 
@@ -13,7 +14,7 @@ class TestUniqueIdUri(unittest.TestCase):
         """Helper function to run the test"""
         self.converter = Converter(json.dumps(self.request_json_data))
         flat_json = self.converter.run_conversion()
-        self.assertEqual(flat_json.get("UNIQUE_ID_URI"), expected_result)
+        self.assertEqual(flat_json.get(ConversionFieldName.UNIQUE_ID_URI), expected_result)
 
     def test_unique_id_uri_present(self):
         """Should extract UNIQUE_ID_URI when identifier[0].system exists"""

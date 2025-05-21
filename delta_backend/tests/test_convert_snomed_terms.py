@@ -3,6 +3,7 @@ import json
 import unittest
 from utils_for_converter_tests import ValuesForTests
 from converter import Converter
+from common.mappings import ConversionFieldName
 
 class TestSNOMEDTermsToFlatJson(unittest.TestCase):
 
@@ -42,24 +43,24 @@ class TestSNOMEDTermsToFlatJson(unittest.TestCase):
             extension_url="https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure"
         )
         self.request_json_data["extension"][0]["valueCodeableConcept"]["text"] = "Procedure term from text"
-        self._run_snomed_test("VACCINATION_PROCEDURE_TERM", "Procedure term from text")
+        self._run_snomed_test(ConversionFieldName.VACCINATION_PROCEDURE_TERM, "Procedure term from text")
 
     def test_vaccination_procedure_term_from_text(self):
         """Test when valueCodeableConcept.text is present — it takes priority."""
         self.request_json_data["extension"][0]["valueCodeableConcept"]["text"] = "Procedure term from text"
-        self._run_snomed_test("VACCINATION_PROCEDURE_TERM", "Procedure term from text")
+        self._run_snomed_test(ConversionFieldName.VACCINATION_PROCEDURE_TERM, "Procedure term from text")
 
     def test_vaccination_procedure_term_from_extension_value_string(self):
         """Test fallback to extension.valueString when text is missing."""
         self.request_json_data["extension"][0]["valueCodeableConcept"].pop("text", None)  # Remove text
-        self._run_snomed_test("VACCINATION_PROCEDURE_TERM", "Test Value string 123456 COVID19 vaccination")
+        self._run_snomed_test(ConversionFieldName.VACCINATION_PROCEDURE_TERM, "Test Value string 123456 COVID19 vaccination")
 
     def test_vaccination_procedure_term_from_display_fallback(self):
         """Test fallback to display when no extension valueString is present."""
         coding = self.request_json_data["extension"][0]["valueCodeableConcept"]["coding"][0]
         coding.pop("extension", None)  # Remove all extensions
         self.request_json_data["extension"][0]["valueCodeableConcept"].pop("text", None)  # Remove text
-        self._run_snomed_test("VACCINATION_PROCEDURE_TERM", 
+        self._run_snomed_test(ConversionFieldName.VACCINATION_PROCEDURE_TERM, 
                               "Administration of first dose of severe acute respiratory syndrome coronavirus 2 vaccine (procedure)")
 
     def test_vaccination_procedure_term_null_when_nothing_matches(self):
@@ -68,7 +69,7 @@ class TestSNOMEDTermsToFlatJson(unittest.TestCase):
         coding.pop("extension", None)
         coding.pop("display", None)
         self.request_json_data["extension"][0]["valueCodeableConcept"].pop("text", None)
-        self._run_snomed_test("VACCINATION_PROCEDURE_TERM", "")
+        self._run_snomed_test(ConversionFieldName.VACCINATION_PROCEDURE_TERM, "")
 
     def test_vaccination_procedure_term_skips_non_sct_systems(self):
         """Test that only the first SNOMED SCT system coding is used."""
@@ -80,12 +81,28 @@ class TestSNOMEDTermsToFlatJson(unittest.TestCase):
             "code": "IGNORE",
             "display": "Ignore this"
         })
-        self._run_snomed_test("VACCINATION_PROCEDURE_TERM", "Test Value string 123456 COVID19 vaccination")
+        self._run_snomed_test(ConversionFieldName.VACCINATION_PROCEDURE_TERM, "Test Value string 123456 COVID19 vaccination")
+    
+    
+    def test_vaccine_product_term_uses_first_snomed_value_string(self):
+        self._set_snomed_codings("vaccineCode", [
+            {
+                "code": "123",
+                "system": "http://snomed.info/sct",
+                "extension": [
+                    {
+                        "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-CodingSCTDescDisplay",
+                        "valueString": "Preferred display string"
+                    }
+                ]
+            }
+        ])
+        self._run_snomed_test(ConversionFieldName.VACCINE_PRODUCT_TERM, "Preferred display string")
         
     def test_vaccine_product_term_from_text(self):
         """Test when vaccineCode.text is present — it takes priority."""
         self.request_json_data["vaccineCode"]["text"] = "Preferred vaccine product text"
-        self._run_snomed_test("VACCINE_PRODUCT_TERM", "Preferred vaccine product text")
+        self._run_snomed_test(ConversionFieldName.VACCINE_PRODUCT_TERM, "Preferred vaccine product text")
 
     def test_vaccine_product_term_from_extension_value_string(self):
         """Test fallback to coding.extension.valueString when text is missing."""
@@ -100,7 +117,7 @@ class TestSNOMEDTermsToFlatJson(unittest.TestCase):
             "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-CodingSCTDescDisplay",
             "valueString": "Extension value from vaccine code"
         }]
-        self._run_snomed_test("VACCINE_PRODUCT_TERM", "Extension value from vaccine code")
+        self._run_snomed_test(ConversionFieldName.VACCINE_PRODUCT_TERM, "Extension value from vaccine code")
 
     def test_vaccine_product_term_from_display_fallback(self):
         """Test fallback to display when text and extension.valueString are missing."""
@@ -111,7 +128,7 @@ class TestSNOMEDTermsToFlatJson(unittest.TestCase):
         )
         sct_coding.pop("extension", None)
         sct_coding["display"] = "Display fallback for vaccine"
-        self._run_snomed_test("VACCINE_PRODUCT_TERM", "Display fallback for vaccine")
+        self._run_snomed_test(ConversionFieldName.VACCINE_PRODUCT_TERM, "Display fallback for vaccine")
 
     def test_vaccine_product_term_returns_empty_when_no_data(self):
         """Test returns empty string when no text, no valueString, no display."""
@@ -122,7 +139,7 @@ class TestSNOMEDTermsToFlatJson(unittest.TestCase):
         )
         sct_coding.pop("extension", None)
         sct_coding.pop("display", None)
-        self._run_snomed_test("VACCINE_PRODUCT_TERM", "")
+        self._run_snomed_test(ConversionFieldName.VACCINE_PRODUCT_TERM, "")
 
     def test_vaccine_product_term_skips_non_sct_codings(self):
         """Test ignores non-SNOMED codings and uses first valid SNOMED coding."""
@@ -143,12 +160,12 @@ class TestSNOMEDTermsToFlatJson(unittest.TestCase):
             "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-CodingSCTDescDisplay",
             "valueString": "Valid SNOMED vaccine product"
         }]
-        self._run_snomed_test("VACCINE_PRODUCT_TERM", "Valid SNOMED vaccine product")
+        self._run_snomed_test(ConversionFieldName.VACCINE_PRODUCT_TERM, "Valid SNOMED vaccine product")
         
     def test_site_of_vaccination_term_from_text(self):
         """Test when site.text is present — takes highest priority."""
         self.request_json_data["site"]["text"] = "Left arm from text"
-        self._run_snomed_test("SITE_OF_VACCINATION_TERM", "Left arm from text")
+        self._run_snomed_test(ConversionFieldName.SITE_OF_VACCINATION_TERM, "Left arm from text")
 
     def test_site_of_vaccination_term_from_extension_value_string(self):
         """Test fallback to extension.valueString when text is missing."""
@@ -162,7 +179,7 @@ class TestSNOMEDTermsToFlatJson(unittest.TestCase):
             "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-CodingSCTDescDisplay",
             "valueString": "Extension site description"
         }]
-        self._run_snomed_test("SITE_OF_VACCINATION_TERM", "Extension site description")
+        self._run_snomed_test(ConversionFieldName.SITE_OF_VACCINATION_TERM, "Extension site description")
 
     def test_site_of_vaccination_term_from_display(self):
         """Test fallback to display when text and extension are missing."""
@@ -173,7 +190,7 @@ class TestSNOMEDTermsToFlatJson(unittest.TestCase):
         )
         sct_coding.pop("extension", None)
         sct_coding["display"] = "Left upper arm (display)"
-        self._run_snomed_test("SITE_OF_VACCINATION_TERM", "Left upper arm (display)")
+        self._run_snomed_test(ConversionFieldName.SITE_OF_VACCINATION_TERM, "Left upper arm (display)")
 
     def test_site_of_vaccination_term_returns_empty_when_no_valid_data(self):
         """Test when no text, no extension, no display."""
@@ -184,7 +201,7 @@ class TestSNOMEDTermsToFlatJson(unittest.TestCase):
         )
         sct_coding.pop("extension", None)
         sct_coding.pop("display", None)
-        self._run_snomed_test("SITE_OF_VACCINATION_TERM", "")
+        self._run_snomed_test(ConversionFieldName.SITE_OF_VACCINATION_TERM, "")
 
     def test_site_of_vaccination_term_skips_non_sct_systems(self):
         """Test ignores codings with non-SNOMED systems."""
@@ -210,7 +227,7 @@ class TestSNOMEDTermsToFlatJson(unittest.TestCase):
     def test_route_of_vaccination_term_from_text(self):
         """Test when route.text is present — takes highest priority."""
         self.request_json_data["route"]["text"] = "Oral route from text"
-        self._run_snomed_test("ROUTE_OF_VACCINATION_TERM", "Oral route from text")
+        self._run_snomed_test(ConversionFieldName.ROUTE_OF_VACCINATION_TERM, "Oral route from text")
 
     def test_route_of_vaccination_term_from_extension_value_string(self):
         """Test fallback to extension.valueString when text is missing."""
@@ -224,7 +241,7 @@ class TestSNOMEDTermsToFlatJson(unittest.TestCase):
             "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-CodingSCTDescDisplay",
             "valueString": "Intramuscular route from extension"
         }]
-        self._run_snomed_test("ROUTE_OF_VACCINATION_TERM", "Intramuscular route from extension")
+        self._run_snomed_test(ConversionFieldName.ROUTE_OF_VACCINATION_TERM, "Intramuscular route from extension")
 
     def test_route_of_vaccination_term_from_display(self):
         """Test fallback to display when text and extension are missing."""
@@ -235,7 +252,7 @@ class TestSNOMEDTermsToFlatJson(unittest.TestCase):
         )
         sct_coding.pop("extension", None)
         sct_coding["display"] = "Intranasal route"
-        self._run_snomed_test("ROUTE_OF_VACCINATION_TERM", "Intranasal route")
+        self._run_snomed_test(ConversionFieldName.ROUTE_OF_VACCINATION_TERM, "Intranasal route")
 
     def test_route_of_vaccination_term_returns_empty_when_no_valid_data(self):
         """Test returns empty string when no text, extension, or display."""
@@ -246,7 +263,7 @@ class TestSNOMEDTermsToFlatJson(unittest.TestCase):
         )
         sct_coding.pop("extension", None)
         sct_coding.pop("display", None)
-        self._run_snomed_test("ROUTE_OF_VACCINATION_TERM", "")
+        self._run_snomed_test(ConversionFieldName.ROUTE_OF_VACCINATION_TERM, "")
 
     def test_route_of_vaccination_term_skips_non_sct_systems(self):
         """Test that non-SNOMED codings are ignored."""
@@ -267,7 +284,7 @@ class TestSNOMEDTermsToFlatJson(unittest.TestCase):
             "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-CodingSCTDescDisplay",
             "valueString": "Correct route from SCT"
         }]
-        self._run_snomed_test("ROUTE_OF_VACCINATION_TERM", "Correct route from SCT")
+        self._run_snomed_test(ConversionFieldName.ROUTE_OF_VACCINATION_TERM, "Correct route from SCT")
 
     def test_dose_unit_term_when_unit_exists(self):
         """Test returns doseQuantity.unit when present."""
@@ -277,12 +294,12 @@ class TestSNOMEDTermsToFlatJson(unittest.TestCase):
             "system": "http://unitsofmeasure.org",
             "code": "ml"
         }
-        self._run_snomed_test("DOSE_UNIT_TERM", "milliliter")
+        self._run_snomed_test(ConversionFieldName.DOSE_UNIT_TERM, "milliliter")
 
     def test_dose_unit_term_returns_empty_when_dose_quantity_absent(self):
         """Test returns empty string when doseQuantity is missing."""
         self.request_json_data.pop("doseQuantity", None)
-        self._run_snomed_test("DOSE_UNIT_TERM", "")
+        self._run_snomed_test(ConversionFieldName.DOSE_UNIT_TERM, "")
 
     def test_dose_unit_term_returns_empty_when_unit_missing(self):
         """Test returns empty string when doseQuantity.unit is missing."""
@@ -292,4 +309,4 @@ class TestSNOMEDTermsToFlatJson(unittest.TestCase):
             "code": "ml"
             # unit is missing
         }
-        self._run_snomed_test("DOSE_UNIT_TERM", "")
+        self._run_snomed_test(ConversionFieldName.DOSE_UNIT_TERM, "")

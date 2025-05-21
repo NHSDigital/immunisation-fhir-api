@@ -3,6 +3,7 @@ import json
 import unittest
 from utils_for_converter_tests import ValuesForTests
 from converter import Converter
+from common.mappings import ConversionFieldName
 
 class TestDoseAmountTypeUriToFlatJson(unittest.TestCase):
     
@@ -13,7 +14,7 @@ class TestDoseAmountTypeUriToFlatJson(unittest.TestCase):
         """Helper function to run the test"""
         self.converter = Converter(json.dumps(self.request_json_data))
         flat_json = self.converter.run_conversion()
-        self.assertEqual(flat_json.get("DOSE_AMOUNT"), expected_result)
+        self.assertEqual(flat_json.get(ConversionFieldName.DOSE_AMOUNT), expected_result)
         
     def test_dose_amount_value_exists(self):
         self.request_json_data["doseQuantity"] = {
