@@ -111,17 +111,18 @@ class Extractor:
         codings = concept.get("coding", [])
         for coding in codings:
             if coding.get("system") == self.CODING_SYSTEM_URL_SNOMED:
-                # Try SCTDescDisplay extension first
-                for ext in coding.get("extension", []):
-                    if ext.get("url") == self.EXTENSION_URL_SCT_DESC_DISPLAY:
-                        value_string = ext.get("valueString")
-                        if value_string:
-                            return value_string
-
-                # Fallback to display
-                return coding.get("display", "")
-
+                return self._get_snomed_display(coding)
+            
         return ""
+    
+    def _get_snomed_display(self, coding: dict) -> str:
+        for ext in coding.get("extension", []):
+            if ext.get("url") == self.EXTENSION_URL_SCT_DESC_DISPLAY:
+                value_string = ext.get("valueString")
+                if value_string:
+                    return value_string
+
+        return coding.get("display", "")
     
     def _get_site_information(self):
         performers = self.fhir_json_data.get("performer", [])
