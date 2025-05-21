@@ -202,8 +202,11 @@ resource "aws_lambda_permission" "mesh_s3_invoke_permission" {
   source_arn    = "arn:aws:s3:::local-immunisation-mesh"
 }
 
+# TODO - This is scoped to the bucket, so is overwritten by each deployment
+# That might be intentional in prod, to switch between blue and green, but surely isn't in non-prod
 # S3 Bucket notification to trigger Lambda function
 resource "aws_s3_bucket_notification" "mesh_datasources_lambda_notification" {
+  # TODO - what is this bucket and why isn't it managed by Terraform?
   bucket = "local-immunisation-mesh"
 
   lambda_function {
