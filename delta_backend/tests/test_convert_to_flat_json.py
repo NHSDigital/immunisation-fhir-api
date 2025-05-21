@@ -2,7 +2,7 @@ import json
 import unittest
 from copy import deepcopy
 from unittest.mock import patch, Mock
-from moto import mock_dynamodb, mock_sqs
+from moto import mock_aws
 from boto3 import resource as boto3_resource
 from tests.utils_for_converter_tests import ValuesForTests, ErrorValuesForTests
 from SchemaParser import SchemaParser
@@ -22,8 +22,7 @@ with patch.dict("os.environ", MOCK_ENV_VARS):
 
 
 @patch.dict("os.environ", MOCK_ENV_VARS, clear=True)
-@mock_dynamodb
-@mock_sqs
+@mock_aws
 class TestConvertToFlatJson(unittest.TestCase):
     maxDiff = None
     def setUp(self):
