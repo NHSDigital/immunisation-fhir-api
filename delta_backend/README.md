@@ -18,6 +18,26 @@ This project is designed to convert FHIR-compliant JSON data (e.g., Immunization
 ---
 
 
+## Setting up the delta lambda locally
+Note: Paths are relative to this directory, `delta_backend`.
+
+1. Follow the instructions in the root level README.md to setup the [dependencies](../README.md#environment-setup) and create a [virtual environment](../README.md#) for this folder.
+
+2. Replace the `.env` file in the `delta_backend` folder. Note the variables might change in the future. These environment variables will be loaded automatically when using `direnv`.
+    ```
+    AWS_PROFILE=
+    DYNAMODB_TABLE_NAME=
+    IMMUNIZATION_ENV=
+    SPLUNK_FIREHOSE_NAME=
+    AWS_SQS_QUEUE_URL=
+    DELTA_TABLE_NAME=
+    SOURCE="local"
+    ```
+
+3. Run `poetry install` to install dependencies.
+
+4. Run `make test` to run unit tests or `make coverage-run`. To see the unit test coverage, run `make coverage-run` first and then `make coverage-report`.
+
 ## 🛠️ Key Features
 
 - Schema-driven field extraction and formatting

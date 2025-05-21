@@ -2,6 +2,7 @@ import json
 import exception_messages
 from datetime import datetime, timedelta, timezone
 from common.mappings import Gender
+from typing import Union
 
 class Extractor: 
 
@@ -103,7 +104,7 @@ class Extractor:
                 return coding.get("code", "")
         return ""
 
-    def _get_codeable_concept_term(self, concept: dict) -> str:
+    def _get_codeable_term(self, concept: dict) -> str:
         if concept.get("text"):
             return concept["text"]
 
@@ -295,7 +296,7 @@ class Extractor:
         date = self.fhir_json_data.get("recorded", "")
         return self._convert_date("RECORDED_DATE", date, self.DATE_CONVERT_FORMAT)
     
-    def extract_primary_source(self) -> bool: 
+    def extract_primary_source(self) -> Union[bool, str]: 
         primary_source = self.fhir_json_data.get("primarySource")
         
         if isinstance(primary_source, bool):
@@ -319,7 +320,7 @@ class Extractor:
         extensions = self.fhir_json_data.get("extension", [])
         for ext in extensions:
             if ext.get("url") == self.EXTENSION_URL_VACCINATION_PRODEDURE:
-                return self._get_codeable_concept_term(ext.get("valueCodeableConcept", {}))
+                return self._get_codeable_term(ext.get("valueCodeableConcept", {}))
         return ""
     
     def extract_dose_sequence(self) -> str: 
@@ -335,7 +336,7 @@ class Extractor:
         return self._get_first_snomed_code(vaccine_code)
 
     def extract_vaccine_product_term(self) -> str:
-        return self._get_codeable_concept_term(self.fhir_json_data.get("vaccineCode", {}))
+        return self._get_codeable_term(self.fhir_json_data.get("vaccineCode", {}))
     
     def extract_vaccine_manufacturer(self) -> str: 
         manufacturer = self.fhir_json_data.get("manufacturer", {})
@@ -355,14 +356,14 @@ class Extractor:
         return self._get_first_snomed_code(site)
 
     def extract_site_of_vaccination_term(self) -> str:
-        return self._get_codeable_concept_term(self.fhir_json_data.get("site", {}))
+        return self._get_codeable_term(self.fhir_json_data.get("site", {}))
     
     def extract_route_of_vaccination_code(self) -> str:
         route = self.fhir_json_data.get("route", {})
         return self._get_first_snomed_code(route)
     
     def extract_route_of_vaccination_term(self) -> str:
-        return self._get_codeable_concept_term(self.fhir_json_data.get("route", {}))
+        return self._get_codeable_term(self.fhir_json_data.get("route", {}))
 
     def extract_dose_amount(self) -> str:
         dose_quantity = self.fhir_json_data.get("doseQuantity", {})
