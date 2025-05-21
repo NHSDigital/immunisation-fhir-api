@@ -419,7 +419,9 @@ class DeltaTestCase(unittest.TestCase):
             RecordConfig(EventName.UPDATE, Operation.UPDATE, "ok-id.2", ActionFlag.UPDATE),
             RecordConfig(EventName.DELETE_PHYSICAL, Operation.DELETE_PHYSICAL, "ok-id.3"),
         ]
+        test_index = 0
         for config in test_configs:
+            test_index += 1
             record = ValuesForTests.get_event_record(
                 imms_id=config.imms_id,
                 event_name=config.event_name,
@@ -437,7 +439,8 @@ class DeltaTestCase(unittest.TestCase):
             self.assertEqual(operation_outcome["operation_type"], config.operation)
             self.assertEqual(operation_outcome["statusCode"], "200")
             self.assertEqual(operation_outcome["statusDesc"], "Successfully synched into delta")
-        self.assertEqual(mock_delta_table.put_item.call_count, len(test_configs))
+            self.assertEqual(mock_delta_table.put_item.call_count, test_index)
+
         self.assertEqual(self.mock_logger_exception.call_count, 0)
 
     @patch("boto3.resource")
