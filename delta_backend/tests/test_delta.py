@@ -261,6 +261,28 @@ class DeltaTestCase(unittest.TestCase):
         self.assertEqual(self.mock_firehose_logger.send_log.call_count, len(records_config))
 
     @patch("boto3.resource")
+    def test_send_message_skipped_records_diverse(self, mock_boto_resource):
+        '''Check skipped records sent to firehose but not to DynamoDB'''
+        # Arrange
+        mock_table = self.setup_mock_dynamodb(mock_boto_resource)
+
+        records_config = [
+            RecordConfig(EventName.CREATE, Operation.CREATE, "id1", ActionFlag.CREATE),
+            RecordConfig(EventName.UPDATE, Operation.UPDATE, "id2", ActionFlag.UPDATE),
+            RecordConfig(EventName.CREATE, Operation.CREATE, "id-skip", ActionFlag.CREATE, "DPSFULL"),
+            RecordConfig(EventName.DELETE_PHYSICAL, Operation.DELETE_PHYSICAL, "id4"),
+        ]
+        event = ValuesForTests.get_multi_record_event(records_config)
+
+        # Act
+        result = handler(event, self.context)
+
+        # Assert
+        self.assertTrue(result)
+        self.assertEqual(mock_table.put_item.call_count, 3)
+        self.assertEqual(self.mock_firehose_logger.send_log.call_count, len(records_config))
+
+    @patch("boto3.resource")
     def test_send_message_multi_create(self, mock_boto_resource):
         # Arrange
         mock_table = self.setup_mock_dynamodb(mock_boto_resource)
