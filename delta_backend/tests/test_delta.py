@@ -12,7 +12,7 @@ os.environ["DELTA_TABLE_NAME"] = "my_delta_table"
 os.environ["SOURCE"] = "my_source"
 
 from delta import send_message, handler, process_record  # Import after setting environment variables
-from utils_for_converter_tests import ValuesForTests, RecordConfig, TestConfig
+from utils_for_converter_tests import ValuesForTests, RecordConfig
 
 success_response = {"ResponseMetadata": {"HTTPStatusCode": 200}}
 exception_response = ClientError({"Error": {"Code": "ConditionalCheckFailedException"}}, "PutItem")

@@ -12,12 +12,6 @@ class RecordConfig:
         self.imms_id = imms_id
         self.expected_action_flag = expected_action_flag
 
-class TestConfig:
-    def __init__(self, record_config: RecordConfig, table_response: any):
-        self.record_config = record_config
-        self.table_response = table_response
-
-
 class ValuesForTests:
 
     MOCK_ENVIRONMENT_DICT = {
