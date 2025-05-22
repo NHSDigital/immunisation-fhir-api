@@ -62,13 +62,14 @@ class DeltaTestCase(unittest.TestCase):
         # Arrange
         self.mock_sqs_client.send_message.return_value = {"MessageId": "123"}
         record = {"key": "value"}
+        sqs_queue_url = "test-queue-url"
 
         # Act
-        send_message(record)
+        send_message(record, sqs_queue_url)
 
         # Assert
         self.mock_sqs_client.send_message.assert_called_once_with(
-            QueueUrl="some-queue", MessageBody=json.dumps(record)
+            QueueUrl=sqs_queue_url, MessageBody=json.dumps(record)
         )
 
     @patch("logging.Logger.error")
@@ -81,7 +82,7 @@ class DeltaTestCase(unittest.TestCase):
         self.mock_sqs_client.send_message.side_effect = ClientError(error_response, "SendMessage")
 
         # Act
-        send_message(record)
+        send_message(record, "test-queue-url")
 
         # Assert
         mock_logger_error.assert_called_once_with(

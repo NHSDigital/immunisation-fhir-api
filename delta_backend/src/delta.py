@@ -20,12 +20,12 @@ firehose_logger = FirehoseLogger()
 sqs_client = boto3.client("sqs")
 
 
-def send_message(record):
+def send_message(record, queue_url):
     # Create a message
-    message_body = record
+    message_body = json.dumps(record)
     try:
         # Send the record to the queue
-        sqs_client.send_message(QueueUrl=failure_queue_url, MessageBody=json.dumps(message_body))
+        sqs_client.send_message(QueueUrl=queue_url, MessageBody=message_body)
         logger.info("Record saved successfully to the DLQ")
     except ClientError as e:
         logger.error(f"Error sending record to DLQ: {e}")
@@ -150,7 +150,7 @@ def handler(event, context):
         else:
             operation_outcome["diagnostics"] = f"Delta Lambda failure: {e}"
             logger.exception(f"Delta Lambda failure: {e}")
-            send_message(event)  # Send failed records to DLQ
+            send_message(event, failure_queue_url)  # Send failed records to DLQ
         log_data["operation_outcome"] = operation_outcome
         firehose_log["event"] = log_data
         firehose_logger.send_log(firehose_log)
