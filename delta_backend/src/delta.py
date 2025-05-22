@@ -17,13 +17,12 @@ logging.basicConfig()
 logger = logging.getLogger()
 logger.setLevel("INFO")
 firehose_logger = FirehoseLogger()
+sqs_client = boto3.client("sqs")
 
 
 def send_message(record):
     # Create a message
     message_body = record
-    # Use boto3 to interact with SQS
-    sqs_client = boto3.client("sqs")
     try:
         # Send the record to the queue
         sqs_client.send_message(QueueUrl=failure_queue_url, MessageBody=json.dumps(message_body))

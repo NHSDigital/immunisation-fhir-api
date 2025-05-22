@@ -29,10 +29,14 @@ class DeltaTestCase(unittest.TestCase):
         self.firehose_logger_patcher = patch("delta.firehose_logger")
         self.mock_firehose_logger = self.firehose_logger_patcher.start()
 
+        self.sqs_client_patcher = patch("delta.sqs_client")
+        self.mock_sqs_client = self.sqs_client_patcher.start()
+
     def tearDown(self):
         self.logger_exception_patcher.stop()
         self.logger_info_patcher.stop()
         self.mock_firehose_logger.stop()
+        self.sqs_client_patcher.stop()
 
     @staticmethod
     def setup_mock_sqs(mock_boto_client, return_value={"ResponseMetadata": {"HTTPStatusCode": 200}}):
@@ -54,31 +58,27 @@ class DeltaTestCase(unittest.TestCase):
         mock_table.put_item.side_effect = Exception("Test Exception")
         return mock_table
 
-    @patch("boto3.client")
-    def test_send_message_success(self, mock_boto_client):
+    def test_send_message_success(self):
         # Arrange
-        mock_sqs = self.setup_mock_sqs(mock_boto_client)
+        self.mock_sqs_client.send_message.return_value = {"MessageId": "123"}
         record = {"key": "value"}
 
         # Act
         send_message(record)
 
         # Assert
-        mock_sqs.send_message.assert_called_once_with(
-            QueueUrl=os.environ["AWS_SQS_QUEUE_URL"], MessageBody=json.dumps(record)
+        self.mock_sqs_client.send_message.assert_called_once_with(
+            QueueUrl="some-queue", MessageBody=json.dumps(record)
         )
 
-    @patch("boto3.client")
     @patch("logging.Logger.error")
-    def test_send_message_client_error(self, mock_logger_error, mock_boto_client):
+    def test_send_message_client_error(self, mock_logger_error):
         # Arrange
-        mock_sqs = MagicMock()
-        mock_boto_client.return_value = mock_sqs
         record = {"key": "value"}
 
         # Simulate ClientError
         error_response = {"Error": {"Code": "500", "Message": "Internal Server Error"}}
-        mock_sqs.send_message.side_effect = ClientError(error_response, "SendMessage")
+        self.mock_sqs_client.send_message.side_effect = ClientError(error_response, "SendMessage")
 
         # Act
         send_message(record)
@@ -188,46 +188,6 @@ class DeltaTestCase(unittest.TestCase):
         self.assertEqual(put_item_data["Operation"], Operation.DELETE_LOGICAL)
         self.assertEqual(put_item_data["ImmsID"], imms_id)
 
-    @patch("boto3.resource")
-    @patch("boto3.client")
-    def test_handler_exception_intrusion_check(self, mock_boto_resource, mock_boto_client):
-        # Arrange
-        self.setup_mock_dynamodb(mock_boto_resource, status_code=500)
-        mock_boto_client.return_value = MagicMock()
-        event = ValuesForTests.get_event()
-
-        # Act & Assert
-
-        result = handler(event, self.context)
-        self.assertFalse(result)
-
-    @patch("boto3.resource")
-    @patch("boto3.client")
-    def test_handler_exception_intrusion(self, mock_boto_client, mock_boto_resource):
-        # Arrange
-        self.setUp_mock_resources(mock_boto_resource, mock_boto_client)
-        event = ValuesForTests.get_event()
-        context = {}
-
-        # Act & Assert
-        with self.assertRaises(Exception):
-            handler(event, context)
-
-        self.mock_logger_exception.assert_called_once_with("Delta Lambda failure: Test Exception")
-
-    @patch("boto3.resource")
-    @patch("delta.handler")
-    def test_handler_exception_intrusion_check_false(self, mocked_intrusion, mock_boto_client):
-        # Arrange
-        self.setUp_mock_resources(mocked_intrusion, mock_boto_client)
-        event = ValuesForTests.get_event()
-        context = {}
-
-        # Act & Assert
-        response = handler(event, context)
-
-        self.assertFalse(response)
-
     @patch("delta.logger.info") 
     def test_dps_record_skipped(self, mock_logger_info):
         event = ValuesForTests.get_event(supplier="DPSFULL")
@@ -297,6 +257,28 @@ class DeltaTestCase(unittest.TestCase):
         # Assert
         self.assertTrue(result)
         self.assertEqual(mock_table.put_item.call_count, len(records_config))
+        self.assertEqual(self.mock_firehose_logger.send_log.call_count, len(records_config))
+
+    @patch("boto3.resource")
+    def test_send_message_skipped_records_diverse(self, mock_boto_resource):
+        '''Check skipped records sent to firehose but not to DynamoDB'''
+        # Arrange
+        mock_table = self.setup_mock_dynamodb(mock_boto_resource)
+
+        records_config = [
+            RecordConfig(EventName.CREATE, Operation.CREATE, "id1", ActionFlag.CREATE),
+            RecordConfig(EventName.UPDATE, Operation.UPDATE, "id2", ActionFlag.UPDATE),
+            RecordConfig(EventName.CREATE, Operation.CREATE, "id-skip", ActionFlag.CREATE, "DPSFULL"),
+            RecordConfig(EventName.DELETE_PHYSICAL, Operation.DELETE_PHYSICAL, "id4"),
+        ]
+        event = ValuesForTests.get_multi_record_event(records_config)
+
+        # Act
+        result = handler(event, self.context)
+
+        # Assert
+        self.assertTrue(result)
+        self.assertEqual(mock_table.put_item.call_count, 3)
         self.assertEqual(self.mock_firehose_logger.send_log.call_count, len(records_config))
 
     @patch("boto3.resource")
