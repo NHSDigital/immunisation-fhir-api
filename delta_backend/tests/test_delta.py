@@ -13,7 +13,11 @@ os.environ["AWS_SQS_QUEUE_URL"] = "https://sqs.eu-west-2.amazonaws.com/123456789
 os.environ["DELTA_TABLE_NAME"] = "my_delta_table"
 os.environ["SOURCE"] = "my_source"
 
-from delta import send_message, handler  # Import after setting environment variables
+from delta import send_message, handler, process_record  # Import after setting environment variables
+
+success_response = {"ResponseMetadata": {"HTTPStatusCode": 200}}
+exception_response = ClientError({"Error": {"Code": "ConditionalCheckFailedException"}}, "PutItem")
+fail_response = {"ResponseMetadata": {"HTTPStatusCode": 500}}
 
 class DeltaTestCase(unittest.TestCase):
 
@@ -26,37 +30,28 @@ class DeltaTestCase(unittest.TestCase):
         self.logger_exception_patcher = patch("logging.Logger.exception")
         self.mock_logger_exception = self.logger_exception_patcher.start()
 
+        self.logger_warning_patcher = patch("logging.Logger.warning")
+        self.mock_logger_warning = self.logger_warning_patcher.start()
+
         self.firehose_logger_patcher = patch("delta.firehose_logger")
         self.mock_firehose_logger = self.firehose_logger_patcher.start()
 
         self.sqs_client_patcher = patch("delta.sqs_client")
         self.mock_sqs_client = self.sqs_client_patcher.start()
 
+        self.init_patcher = patch("delta.init")
+        self.mock_init = self.init_patcher.start()
+        self.mock_delta_table = MagicMock()
+        self.mock_init.return_value = self.mock_delta_table
+
+
     def tearDown(self):
         self.logger_exception_patcher.stop()
+        self.logger_warning_patcher.stop()
         self.logger_info_patcher.stop()
         self.mock_firehose_logger.stop()
         self.sqs_client_patcher.stop()
-
-    @staticmethod
-    def setup_mock_sqs(mock_boto_client, return_value={"ResponseMetadata": {"HTTPStatusCode": 200}}):
-        mock_sqs = mock_boto_client.return_value
-        mock_sqs.send_message.return_value = return_value
-        return mock_sqs
-
-    @staticmethod
-    def setup_mock_dynamodb(mock_boto_resource, status_code=200):
-        mock_dynamodb = mock_boto_resource.return_value
-        mock_table = mock_dynamodb.Table.return_value
-        mock_table.put_item.return_value = {"ResponseMetadata": {"HTTPStatusCode": status_code}}
-        return mock_table
-
-    def setUp_mock_resources(self, mock_boto_resource, mock_boto_client):
-        mock_dynamodb = mock_boto_resource.return_value
-        mock_table = mock_dynamodb.Table.return_value
-        mock_boto_client.return_value = {"key": "value"}
-        mock_table.put_item.side_effect = Exception("Test Exception")
-        return mock_table
+        self.init_patcher.stop()
 
     def test_send_message_success(self):
         # Arrange
@@ -89,12 +84,11 @@ class DeltaTestCase(unittest.TestCase):
             f"Error sending record to DLQ: An error occurred (500) when calling the SendMessage operation: Internal Server Error"
         )
 
-    @patch("boto3.resource")
-    def test_handler_success_insert(self, mock_boto_resource):
+    def test_handler_success_insert(self):
         # Arrange
-        mock_table = self.setup_mock_dynamodb(mock_boto_resource)
-        suppilers = ["DPS", "EMIS"]
-        for supplier in suppilers:
+        self.mock_delta_table.put_item.return_value = success_response
+        suppliers = ["DPS", "EMIS"]
+        for supplier in suppliers:
             imms_id = f"test-insert-imms-{supplier}-id"
             event = ValuesForTests.get_event(event_name=EventName.CREATE, operation=Operation.CREATE, imms_id=imms_id, supplier=supplier)
 
@@ -103,19 +97,18 @@ class DeltaTestCase(unittest.TestCase):
 
             # Assert
             self.assertTrue(result)
-            mock_table.put_item.assert_called()
+            self.mock_delta_table.put_item.assert_called()
             self.mock_firehose_logger.send_log.assert_called() # check logged
-            put_item_call_args = mock_table.put_item.call_args # check data written to DynamoDB
+            put_item_call_args = self.mock_delta_table.put_item.call_args # check data written to DynamoDB
             put_item_data = put_item_call_args.kwargs["Item"]
             self.assertIn("Imms", put_item_data)
             self.assertEqual(put_item_data["Imms"]["ACTION_FLAG"], ActionFlag.CREATE)
             self.assertEqual(put_item_data["Operation"], Operation.CREATE)
             self.assertEqual(put_item_data["SupplierSystem"], supplier)
 
-    @patch("boto3.resource")
-    def test_handler_failure(self, mock_boto_resource):
+    def test_handler_failure(self):
         # Arrange
-        self.setup_mock_dynamodb(mock_boto_resource, status_code=500)
+        self.mock_delta_table.put_item.return_value = fail_response
         event = ValuesForTests.get_event()
 
         # Act
@@ -124,11 +117,9 @@ class DeltaTestCase(unittest.TestCase):
         # Assert
         self.assertFalse(result)
 
-    @patch("boto3.resource")
-    def test_handler_success_update(self, mock_boto_resource):
+    def test_handler_success_update(self):
         # Arrange
-        mock_table = self.setup_mock_dynamodb(mock_boto_resource)
-        self.setup_mock_dynamodb(mock_boto_resource)
+        self.mock_delta_table.put_item.return_value = success_response
         imms_id = "test-update-imms-id"
         event = ValuesForTests.get_event(event_name=EventName.UPDATE, operation=Operation.UPDATE, imms_id=imms_id)
 
@@ -137,19 +128,18 @@ class DeltaTestCase(unittest.TestCase):
 
         # Assert
         self.assertTrue(result)
-        mock_table.put_item.assert_called()
+        self.mock_delta_table.put_item.assert_called()
         self.mock_firehose_logger.send_log.assert_called() # check logged
-        put_item_call_args = mock_table.put_item.call_args # check data written to DynamoDB
+        put_item_call_args = self.mock_delta_table.put_item.call_args # check data written to DynamoDB
         put_item_data = put_item_call_args.kwargs["Item"]
         self.assertIn("Imms", put_item_data)
         self.assertEqual(put_item_data["Imms"]["ACTION_FLAG"], ActionFlag.UPDATE)
         self.assertEqual(put_item_data["Operation"], Operation.UPDATE)
         self.assertEqual(put_item_data["ImmsID"], imms_id)
 
-    @patch("boto3.resource")
-    def test_handler_success_delete_physical(self, mock_boto_resource):
+    def test_handler_success_delete_physical(self):
         # Arrange
-        mock_table = self.setup_mock_dynamodb(mock_boto_resource)
+        self.mock_delta_table.put_item.return_value = success_response
         imms_id = "test-update-imms-id"
         event = ValuesForTests.get_event(event_name=EventName.DELETE_PHYSICAL, operation=Operation.DELETE_PHYSICAL, imms_id=imms_id)
 
@@ -158,19 +148,18 @@ class DeltaTestCase(unittest.TestCase):
 
         # Assert
         self.assertTrue(result)
-        mock_table.put_item.assert_called()
+        self.mock_delta_table.put_item.assert_called()
         self.mock_firehose_logger.send_log.assert_called() # check logged
-        put_item_call_args = mock_table.put_item.call_args # check data written to DynamoDB
+        put_item_call_args = self.mock_delta_table.put_item.call_args # check data written to DynamoDB
         put_item_data = put_item_call_args.kwargs["Item"]
         self.assertIn("Imms", put_item_data)
         self.assertEqual(put_item_data["Operation"], Operation.DELETE_PHYSICAL)
         self.assertEqual(put_item_data["ImmsID"], imms_id)
         self.assertEqual(put_item_data["Imms"], "")     # check imms has been blanked out
 
-    @patch("boto3.resource")
-    def test_handler_success_delete_logical(self, mock_boto_resource):
+    def test_handler_success_delete_logical(self):
         # Arrange
-        mock_table = self.setup_mock_dynamodb(mock_boto_resource)
+        self.mock_delta_table.put_item.return_value = success_response
         imms_id = "test-update-imms-id"
         event = ValuesForTests.get_event(event_name=EventName.UPDATE,
                                          operation=Operation.DELETE_LOGICAL, 
@@ -180,9 +169,9 @@ class DeltaTestCase(unittest.TestCase):
 
         # Assert
         self.assertTrue(result)
-        mock_table.put_item.assert_called()
+        self.mock_delta_table.put_item.assert_called()
         self.mock_firehose_logger.send_log.assert_called() # check logged
-        put_item_call_args = mock_table.put_item.call_args # check data written to DynamoDB
+        put_item_call_args = self.mock_delta_table.put_item.call_args # check data written to DynamoDB
         put_item_data = put_item_call_args.kwargs["Item"]
         self.assertIn("Imms", put_item_data)
         self.assertEqual(put_item_data["Imms"]["ACTION_FLAG"], ActionFlag.DELETE_LOGICAL)
@@ -211,9 +200,7 @@ class DeltaTestCase(unittest.TestCase):
         mock_converter.return_value = mock_converter_instance
 
         # Mock DynamoDB put_item success
-        mock_table = MagicMock()
-        mock_dynamodb.return_value.Table.return_value = mock_table
-        mock_table.put_item.return_value = {"ResponseMetadata": {"HTTPStatusCode": 200}}
+        self.mock_delta_table.put_item.return_value = success_response
 
         event = ValuesForTests.get_event()
         context = {}
@@ -239,11 +226,9 @@ class DeltaTestCase(unittest.TestCase):
             status_desc
         )
 
-    @patch("boto3.resource")
-    def test_send_message_multi_records_diverse(self, mock_boto_resource):
+    def test_send_message_multi_records_diverse(self):
         # Arrange
-        mock_table = self.setup_mock_dynamodb(mock_boto_resource)
-
+        self.mock_delta_table.put_item.return_value = success_response
         records_config = [
             RecordConfig(EventName.CREATE, Operation.CREATE, "id1", ActionFlag.CREATE),
             RecordConfig(EventName.UPDATE, Operation.UPDATE, "id2", ActionFlag.UPDATE),
@@ -257,15 +242,13 @@ class DeltaTestCase(unittest.TestCase):
 
         # Assert
         self.assertTrue(result)
-        self.assertEqual(mock_table.put_item.call_count, len(records_config))
+        self.assertEqual(self.mock_delta_table.put_item.call_count, len(records_config))
         self.assertEqual(self.mock_firehose_logger.send_log.call_count, len(records_config))
 
-    @patch("boto3.resource")
-    def test_send_message_skipped_records_diverse(self, mock_boto_resource):
+    def test_send_message_skipped_records_diverse(self):
         '''Check skipped records sent to firehose but not to DynamoDB'''
         # Arrange
-        mock_table = self.setup_mock_dynamodb(mock_boto_resource)
-
+        self.mock_delta_table.put_item.return_value = success_response
         records_config = [
             RecordConfig(EventName.CREATE, Operation.CREATE, "id1", ActionFlag.CREATE),
             RecordConfig(EventName.UPDATE, Operation.UPDATE, "id2", ActionFlag.UPDATE),
@@ -279,14 +262,12 @@ class DeltaTestCase(unittest.TestCase):
 
         # Assert
         self.assertTrue(result)
-        self.assertEqual(mock_table.put_item.call_count, 3)
+        self.assertEqual(self.mock_delta_table.put_item.call_count, 3)
         self.assertEqual(self.mock_firehose_logger.send_log.call_count, len(records_config))
 
-    @patch("boto3.resource")
-    def test_send_message_multi_create(self, mock_boto_resource):
+    def test_send_message_multi_create(self):
         # Arrange
-        mock_table = self.setup_mock_dynamodb(mock_boto_resource)
-
+        self.mock_delta_table.put_item.return_value = success_response
         records_config = [
             RecordConfig(EventName.CREATE, Operation.CREATE, "create-id1", ActionFlag.CREATE),
             RecordConfig(EventName.CREATE, Operation.CREATE, "create-id2", ActionFlag.CREATE),
@@ -299,15 +280,14 @@ class DeltaTestCase(unittest.TestCase):
 
         # Assert
         self.assertTrue(result)
-        self.assertEqual(mock_table.put_item.call_count, 3)
+        self.assertEqual(self.mock_delta_table.put_item.call_count, 3)
         self.assertEqual(self.mock_firehose_logger.send_log.call_count, 3)
 
 
     @patch("boto3.resource")
     def test_send_message_multi_update(self, mock_boto_resource):
         # Arrange
-        mock_table = self.setup_mock_dynamodb(mock_boto_resource)
-
+        self.mock_delta_table.put_item.return_value = success_response
         records_config = [
             RecordConfig(EventName.UPDATE, Operation.UPDATE, "update-id1", ActionFlag.UPDATE),
             RecordConfig(EventName.UPDATE, Operation.UPDATE, "update-id2", ActionFlag.UPDATE),
@@ -320,13 +300,12 @@ class DeltaTestCase(unittest.TestCase):
 
         # Assert
         self.assertTrue(result)
-        self.assertEqual(mock_table.put_item.call_count, 3)
+        self.assertEqual(self.mock_delta_table.put_item.call_count, 3)
         self.assertEqual(self.mock_firehose_logger.send_log.call_count, 3)
 
-    @patch("boto3.resource")
-    def test_send_message_multi_logical_delete(self, mock_boto_resource):
+    def test_send_message_multi_logical_delete(self):
         # Arrange
-        mock_table = self.setup_mock_dynamodb(mock_boto_resource)
+        self.mock_delta_table.put_item.return_value = success_response
 
         records_config = [
             RecordConfig(EventName.DELETE_LOGICAL, Operation.DELETE_LOGICAL, "delete-id1", ActionFlag.DELETE_LOGICAL),
@@ -340,14 +319,13 @@ class DeltaTestCase(unittest.TestCase):
 
         # Assert
         self.assertTrue(result)
-        self.assertEqual(mock_table.put_item.call_count, 3)
+        self.assertEqual(self.mock_delta_table.put_item.call_count, 3)
         self.assertEqual(self.mock_firehose_logger.send_log.call_count, 3)
 
     @patch("boto3.resource")
     def test_send_message_multi_physical_delete(self, mock_boto_resource):
         # Arrange
-        mock_table = self.setup_mock_dynamodb(mock_boto_resource)
-
+        self.mock_delta_table.put_item.return_value = success_response
         records_config = [
             RecordConfig(EventName.DELETE_PHYSICAL, Operation.DELETE_PHYSICAL, "remove-id1"),
             RecordConfig(EventName.DELETE_PHYSICAL, Operation.DELETE_PHYSICAL, "remove-id2"),
@@ -360,5 +338,162 @@ class DeltaTestCase(unittest.TestCase):
 
         # Assert
         self.assertTrue(result)
-        self.assertEqual(mock_table.put_item.call_count, 3)
+        self.assertEqual(self.mock_delta_table.put_item.call_count, 3)
         self.assertEqual(self.mock_firehose_logger.send_log.call_count, 3)
+
+    def test_single_error_in_multi(self):
+        # Arrange
+        self.mock_delta_table.put_item.side_effect = [ success_response, fail_response, success_response]
+
+        records_config = [
+            RecordConfig(EventName.CREATE, Operation.CREATE, "ok-id1", ActionFlag.CREATE),
+            RecordConfig(EventName.UPDATE, Operation.UPDATE, "fail-id1.2", ActionFlag.UPDATE),
+            RecordConfig(EventName.DELETE_PHYSICAL, Operation.DELETE_PHYSICAL, "ok-id1.3"),
+        ]
+        event = ValuesForTests.get_multi_record_event(records_config)
+
+        # Act
+        result = handler(event, self.context)
+
+        # Assert
+        self.assertFalse(result)
+        self.assertEqual(self.mock_delta_table.put_item.call_count, 3)
+        self.assertEqual(self.mock_firehose_logger.send_log.call_count, 3)
+        self.assertEqual(self.mock_logger_warning.call_count, 1)
+
+    @patch("boto3.resource")
+    def test_single_exception_in_multi(self, mock_boto_resource):
+        # Arrange
+        # arrange so the 3rd record fails
+        self.mock_delta_table.put_item.side_effect = [success_response, exception_response, success_response]
+
+        records_config = [
+            RecordConfig(EventName.CREATE, Operation.CREATE, "ok-id2.1", ActionFlag.CREATE),
+            RecordConfig(EventName.UPDATE, Operation.UPDATE, "exception-id2.2", ActionFlag.UPDATE),
+            RecordConfig(EventName.DELETE_PHYSICAL, Operation.DELETE_PHYSICAL, "ok-id2.3"),
+        ]
+        event = ValuesForTests.get_multi_record_event(records_config)
+
+        # Act
+        result = handler(event, self.context)
+
+        # Assert
+        self.assertFalse(result)
+        self.assertEqual(self.mock_delta_table.put_item.call_count, len(records_config))
+        self.assertEqual(self.mock_firehose_logger.send_log.call_count, len(records_config))
+
+
+    # @patch("boto3.resource")
+    def test_single_record_success(self): #, mock_boto_resource):
+
+        # Arrange
+        self.mock_delta_table.put_item.return_value = success_response
+        test_configs = [
+            RecordConfig(EventName.CREATE, Operation.CREATE, "ok-id.1", ActionFlag.CREATE),
+            RecordConfig(EventName.UPDATE, Operation.UPDATE, "ok-id.2", ActionFlag.UPDATE),
+            RecordConfig(EventName.DELETE_PHYSICAL, Operation.DELETE_PHYSICAL, "ok-id.3"),
+        ]
+        test_index = 0
+        for config in test_configs:
+            test_index += 1
+            record = ValuesForTests.get_event_record(
+                imms_id=config.imms_id,
+                event_name=config.event_name,
+                operation=config.operation,
+                supplier=config.supplier,
+            )
+            log_data = {}
+            # Act
+            result, log_data = process_record(record, self.mock_delta_table, log_data)
+
+            # Assert
+            self.assertEqual(result, True)
+            operation_outcome = log_data["operation_outcome"]
+            self.assertEqual(operation_outcome["record"], config.imms_id)
+            self.assertEqual(operation_outcome["operation_type"], config.operation)
+            self.assertEqual(operation_outcome["statusCode"], "200")
+            self.assertEqual(operation_outcome["statusDesc"], "Successfully synched into delta")
+            self.assertEqual(self.mock_delta_table.put_item.call_count, test_index)
+
+        self.assertEqual(self.mock_logger_exception.call_count, 0)
+
+    def test_single_record_table_exception(self):
+
+        # Arrange
+        imms_id = "exception-id"
+        record = ValuesForTests.get_event_record(
+            imms_id,
+            event_name=EventName.UPDATE,
+            operation=Operation.UPDATE,
+            supplier="EMIS",
+        )
+        self.mock_delta_table.put_item.return_value = exception_response
+        log_data = {}
+        # Act
+        result, log_data = process_record(record, self.mock_delta_table, log_data)
+
+        # Assert
+        self.assertEqual(result, False)
+        operation_outcome = log_data["operation_outcome"]
+        self.assertEqual(operation_outcome["record"], imms_id)
+        self.assertEqual(operation_outcome["operation_type"], Operation.UPDATE)
+        self.assertEqual(operation_outcome["statusCode"], "500")
+        self.assertEqual(operation_outcome["statusDesc"], "Exception")
+        self.assertEqual(self.mock_delta_table.put_item.call_count, 1)
+        self.assertEqual(self.mock_logger_exception.call_count, 1)
+
+
+    @patch("delta.process_record")
+    @patch("delta.send_firehose")
+    def test_handler_calls_process_record_for_each_event(self, mock_send_firehose, mock_process_record):
+        # Arrange
+
+        # Create an event with 3 records
+        event = {
+            "Records": [
+                { "a": "record1" },
+                { "a": "record2" },
+                { "a": "record3" }
+            ]
+        }
+        context = {}
+
+        # Mock process_record to always return True
+        mock_process_record.return_value = True, {}
+        mock_send_firehose.return_value = None
+
+        # Act
+        result = handler(event, context)
+
+        # Assert
+        self.assertTrue(result)
+        self.assertEqual(mock_process_record.call_count, len(event["Records"]))
+
+    @patch("delta.process_record")
+    @patch("delta.send_firehose")
+    def test_handler_sends_all_to_firehose(self, mock_send_firehose, mock_process_record):
+        # Arrange
+
+        # Create an event with 3 records
+        event = {
+            "Records": [
+                { "a": "record1" },
+                { "a": "record2" },
+                { "a": "record3" }
+            ]
+        }
+        context = {}
+        return_success = ( True, {})
+        return_failure = ( False, {})
+        mock_send_firehose.return_value = None
+        mock_process_record.side_effect = [return_success, return_failure, return_success]
+
+
+        # Act
+        result = handler(event, context)
+
+        # Assert
+        self.assertFalse(result)
+        self.assertEqual(mock_process_record.call_count, len(event["Records"]))
+        # check that all records were sent to firehose
+        self.assertEqual(mock_send_firehose.call_count, len(event["Records"]))
