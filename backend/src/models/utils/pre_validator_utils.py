@@ -1,5 +1,5 @@
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Union
 
@@ -104,6 +104,8 @@ class PreValidation:
         containing a valid datetime. Note that partial dates are valid for FHIR, but are not allowed for this API.
         Valid formats are any of the following:
         * 'YYYY-MM-DD' - Full date only
+        * 'YYYY-MM-DDThh:mm:ss' - Full date, time without milliseconds
+        * 'YYYY-MM-DDThh:mm:ss.000' - Full date, time with milliseconds (any level of precision)
         * 'YYYY-MM-DDT00:00:00+00:00' - Full date, time without milliseconds, timezone
         * 'YYYY-MM-DDT00:00:00.000+00:00' - Full date, time with milliseconds (any level of precision), timezone
         """
@@ -119,34 +121,25 @@ class PreValidation:
             + f"{field_location} for this service."
         )
 
-        # Full date only
-        if "T" not in field_value:
-            try:
-                datetime.strptime(field_value, "%Y-%m-%d")
-            except ValueError as error:
-                raise ValueError(error_message) from error
-
-        else:
-
-            # Using %z in datetime.strptime function is more permissive than FHIR,
-            # so check that timezone meets FHIR format requirements first
-            if field_value[-6:] not in {"+00:00", "+01:00"}:
+        if "T" in field_value and any(tz in field_value for tz in ["+", "-"]):
+            if not field_value.endswith(("+00:00", "+01:00", "+0000", "+0100")):
                 raise ValueError(error_message)
 
-            # Full date, time without milliseconds, timezone
-            if "." not in field_value:
-                try:
-                    datetime.strptime(field_value, "%Y-%m-%dT%H:%M:%S%z")
-                except ValueError as error:
-                    raise ValueError(error_message) from error
+        # List of accepted strict formats
+        formats = [
+            "%Y-%m-%d", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%dT%H:%M:%S.%f",
+            "%Y-%m-%dT%H:%M:%S%z", "%Y-%m-%dT%H:%M:%S.%f%z",
+        ]
 
-            # Full date, time with milliseconds, timezone
-            else:
-                try:
-                    datetime.strptime(field_value, "%Y-%m-%dT%H:%M:%S.%f%z")
-                except ValueError as error:
-                    raise ValueError(error_message) from error
-                    
+        for fmt in formats:
+            try:
+                dt = datetime.strptime(field_value, fmt)
+                return dt.isoformat()
+            except ValueError:
+                continue
+
+        raise ValueError(error_message)
+ 
     @staticmethod
     def for_snomed_code(field_value: str, field_location: str):
         """

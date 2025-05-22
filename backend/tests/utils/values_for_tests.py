@@ -286,8 +286,6 @@ class InvalidValues:
         "200001010000000000",  # Date, time and timezone digits only
         "2000",  # Year only
         "2000-01",  # Year and month only
-        "2000-01-01T00:00:00",  # Date and time only
-        "2000-01-01T00:00:00.000",  # Date and time only (with milliseconds)
         "2000-01-01T00:00:00+00",  # Date and time with GMT timezone offset only in hours
         "2000-01-01T00:00:00+01",  # Date and time with BST timezone offset only in hours
         "12000-01-01T00:00:00+00:00",  # Extra character at start of string
