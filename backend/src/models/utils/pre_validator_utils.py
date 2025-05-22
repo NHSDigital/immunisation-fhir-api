@@ -121,9 +121,7 @@ class PreValidation:
             + f"{field_location} for this service."
         )
 
-        if "T" in field_value and any(tz in field_value for tz in ["+", "-"]):
-            if not field_value.endswith(("+00:00", "+01:00", "+0000", "+0100")):
-                raise ValueError(error_message)
+        allowed_suffixes = {"+00:00", "+01:00", "+0000", "+0100",}
 
         # List of accepted strict formats
         formats = [
@@ -133,8 +131,12 @@ class PreValidation:
 
         for fmt in formats:
             try:
-                dt = datetime.strptime(field_value, fmt)
-                return dt.isoformat()
+                fhir_date = datetime.strptime(field_value, fmt)
+                
+                if fhir_date.tzinfo is not None:
+                   if not any(field_value.endswith(suffix) for suffix in allowed_suffixes):
+                    raise ValueError(error_message)
+                return fhir_date.isoformat()
             except ValueError:
                 continue
 
