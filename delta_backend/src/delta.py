@@ -13,31 +13,50 @@ from common.mappings import ActionFlag, Operation, EventName
 failure_queue_url = os.environ["AWS_SQS_QUEUE_URL"]
 delta_table_name = os.environ["DELTA_TABLE_NAME"]
 delta_source = os.environ["SOURCE"]
+region_name = "eu-west-2"
 logging.basicConfig()
 logger = logging.getLogger()
 logger.setLevel("INFO")
 firehose_logger = FirehoseLogger()
-sqs_client = boto3.client("sqs")
 initialized = False
 
-def init():
+delta_table = None
+def get_delta_table():
     """
-    Initialize the lambda. This runs on cold start.
+    Initialize the DynamoDB table resource with exception handling.
     """
-    global delta_table, initialized 
-    if not initialized:        
-        logger.info("Initializing Delta Handler")
-        dynamodb = boto3.resource("dynamodb", region_name="eu-west-2")
-        delta_table = dynamodb.Table(delta_table_name)
-        initialized = True
+    global delta_table
+    if not delta_table:
+        try:
+            logger.info("Initializing Delta Table")
+            dynamodb = boto3.resource("dynamodb", region_name)
+            delta_table = dynamodb.Table(delta_table_name)
+        except Exception as e:
+            logger.error(f"Error initializing Delta Table: {e}")
+            delta_table = None
     return delta_table
 
-def send_message(record, queue_url):
+sqs_client = None
+def get_sqs_client():
+    """
+    Initialize the SQS client with exception handling.
+    """
+    global sqs_client
+    if not sqs_client:
+        try:
+            logger.info("Initializing SQS Client")
+            sqs_client = boto3.client("sqs", region_name)
+        except Exception as e:
+            logger.error(f"Error initializing SQS Client: {e}")
+            sqs_client = None
+    return sqs_client
+
+def send_message(record, queue_url=failure_queue_url):
     # Create a message
-    message_body = json.dumps(record)
+    message_body = record
     try:
         # Send the record to the queue
-        sqs_client.send_message(QueueUrl=queue_url, MessageBody=message_body)
+        get_sqs_client().send_message(QueueUrl=queue_url, MessageBody=json.dumps(message_body))
         logger.info("Record saved successfully to the DLQ")
     except ClientError as e:
         logger.error(f"Error sending record to DLQ: {e}")
@@ -53,7 +72,7 @@ def send_firehose(log_data):
     except Exception as e:
         logger.error(f"Error sending log to Firehose: {e}")
 
-def process_record(record, delta_table, log_data):
+def process_record(record, log_data):
     ret = True
     try:
         start = time.time()
@@ -65,6 +84,7 @@ def process_record(record, delta_table, log_data):
         approximate_creation_time = datetime.utcfromtimestamp(record["dynamodb"]["ApproximateCreationDateTime"])
         expiry_time = approximate_creation_time + timedelta(days=30)
         expiry_time_epoch = int(expiry_time.timestamp())
+        delta_table = get_delta_table()
 
         if record["eventName"] != EventName.DELETE_PHYSICAL:
             new_image = record["dynamodb"]["NewImage"]
@@ -152,11 +172,9 @@ def handler(event, context):
     operation_outcome = dict()
     log_data["function_name"] = "delta_sync"
     try:
-        delta_table = init()
-
         for record in event["Records"]:
             log_data["date_time"] = str(datetime.now())
-            result, log_data = process_record(record, delta_table, log_data)
+            result, log_data = process_record(record, log_data)
             send_firehose(log_data)
             if not result:
                 ret = False
@@ -169,7 +187,7 @@ def handler(event, context):
             "diagnostics": f"Delta Lambda failure: Incorrect invocation of Lambda"
         }
         logger.exception(operation_outcome["diagnostics"])
-        send_message(event, sqs_client)  # Send failed records to DLQ
+        send_message(event)  # Send failed records to DLQ
         log_data["operation_outcome"] = operation_outcome
         send_firehose(log_data)
     return ret

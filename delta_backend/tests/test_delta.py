@@ -21,6 +21,7 @@ fail_response = {"ResponseMetadata": {"HTTPStatusCode": 500}}
 
 class DeltaHandlerTestCase(unittest.TestCase):
 
+    # TODO refactor for dependency injection, eg process_record, send_firehose etc
     def setUp(self):
         self.context = {}
         self.logger_info_patcher = patch("logging.Logger.info")
@@ -38,11 +39,8 @@ class DeltaHandlerTestCase(unittest.TestCase):
         self.sqs_client_patcher = patch("delta.sqs_client")
         self.mock_sqs_client = self.sqs_client_patcher.start()
 
-        self.init_patcher = patch("delta.init")
-        self.mock_init = self.init_patcher.start()
-        self.mock_delta_table = MagicMock()
-        self.mock_init.return_value = self.mock_delta_table
-
+        self.delta_table_patcher=patch("delta.delta_table")
+        self.mock_delta_table = self.delta_table_patcher.start()
 
     def tearDown(self):
         self.logger_exception_patcher.stop()
@@ -50,7 +48,8 @@ class DeltaHandlerTestCase(unittest.TestCase):
         self.logger_info_patcher.stop()
         self.mock_firehose_logger.stop()
         self.sqs_client_patcher.stop()
-        self.init_patcher.stop()
+        self.delta_table_patcher.stop()
+        # self.process_record_patcher.stop()
 
     def test_send_message_success(self):
         # Arrange
@@ -363,7 +362,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
     @patch("boto3.resource")
     def test_single_exception_in_multi(self, mock_boto_resource):
         # Arrange
-        # arrange so the 3rd record fails
+        # 2nd record fails
         self.mock_delta_table.put_item.side_effect = [success_response, exception_response, success_response]
 
         records_config = [
@@ -381,13 +380,10 @@ class DeltaHandlerTestCase(unittest.TestCase):
         self.assertEqual(self.mock_delta_table.put_item.call_count, len(records_config))
         self.assertEqual(self.mock_firehose_logger.send_log.call_count, len(records_config))
 
-
     @patch("delta.process_record")
     @patch("delta.send_firehose")
     def test_handler_calls_process_record_for_each_event(self, mock_send_firehose, mock_process_record):
         # Arrange
-
-        # Create an event with 3 records
         event = {
             "Records": [
                 { "a": "record1" },
@@ -408,12 +404,13 @@ class DeltaHandlerTestCase(unittest.TestCase):
         self.assertTrue(result)
         self.assertEqual(mock_process_record.call_count, len(event["Records"]))
 
+    # TODO depedency injection needed here
     @patch("delta.process_record")
     @patch("delta.send_firehose")
     def test_handler_sends_all_to_firehose(self, mock_send_firehose, mock_process_record):
         # Arrange
 
-        # Create an event with 3 records
+        # event with 3 records
         event = {
             "Records": [
                 { "a": "record1" },
@@ -449,13 +446,14 @@ class DeltaRecordProcessorTestCase(unittest.TestCase):
         self.logger_warning_patcher = patch("logging.Logger.warning")
         self.mock_logger_warning = self.logger_warning_patcher.start()
 
-        self.mock_delta_table = MagicMock()
+        self.delta_table_patcher=patch("delta.delta_table")
+        self.mock_delta_table = self.delta_table_patcher.start()
 
     def tearDown(self):
-        self.mock_delta_table.reset_mock()
         self.logger_exception_patcher.stop()
         self.logger_warning_patcher.stop()
         self.logger_info_patcher.stop()
+        self.delta_table_patcher.stop()
 
     def test_multi_record_success(self):
 
@@ -477,7 +475,7 @@ class DeltaRecordProcessorTestCase(unittest.TestCase):
             )
             log_data = {}
             # Act
-            result, log_data = process_record(record, self.mock_delta_table, log_data)
+            result, log_data = process_record(record, log_data)
 
             # Assert
             self.assertEqual(result, True)
@@ -512,7 +510,7 @@ class DeltaRecordProcessorTestCase(unittest.TestCase):
             )
             log_data = {}
             # Act
-            result, log_data = process_record(record, self.mock_delta_table, log_data)
+            result, log_data = process_record(record, log_data)
 
             # Assert
             self.assertEqual(result, expected_returns[test_index-1])
@@ -535,7 +533,7 @@ class DeltaRecordProcessorTestCase(unittest.TestCase):
         self.mock_delta_table.put_item.return_value = exception_response
         log_data = {}
         # Act
-        result, log_data = process_record(record, self.mock_delta_table, log_data)
+        result, log_data = process_record(record, log_data)
 
         # Assert
         self.assertEqual(result, False)
