@@ -3,20 +3,31 @@ resource "aws_s3_bucket" "batch_data_source_bucket" {
   force_destroy = local.is_temp
 }
 
-data "aws_iam_policy_document" "batch_data_source_bucket_policy" {
-  source_policy_documents = [
-    local.environment == "prod" ? templatefile("${local.policy_path}/s3_batch_source_policy_prod.json", {
-      "bucket-name" : aws_s3_bucket.batch_data_source_bucket.bucket
-      }) : templatefile("${local.policy_path}/s3_batch_source_policy.json", {
-      "bucket-name" : aws_s3_bucket.batch_data_source_bucket.bucket
-    }),
-
-  ]
-}
-
 resource "aws_s3_bucket_policy" "batch_data_source_bucket_policy" {
   bucket = aws_s3_bucket.batch_data_source_bucket.bucket
-  policy = data.aws_iam_policy_document.batch_data_source_bucket_policy.json
+  policy = jsonencode({
+    Version : "2012-10-17",
+    Statement : [
+      {
+        Effect : "Allow",
+        Principal : {
+          AWS : "arn:aws:iam::${local.account_id}:root"
+        },
+        Action : local.environment == "prod" ? [
+          "s3:PutObject"
+          ] : [
+          "s3:ListBucket",
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject"
+        ],
+        Resource : [
+          aws_s3_bucket.batch_data_source_bucket.arn,
+          "${aws_s3_bucket.batch_data_source_bucket.arn}/*"
+        ]
+      }
+    ]
+  })
 }
 
 # resource "aws_s3_bucket_server_side_encryption_configuration" "s3_batch_source_encryption" {
@@ -79,8 +90,8 @@ resource "aws_s3_bucket_policy" "batch_data_destination_bucket_policy" {
           "s3:DeleteObject"
         ],
         Resource : [
-          "arn:aws:s3:::${aws_s3_bucket.batch_data_destination_bucket.bucket}",
-          "arn:aws:s3:::${aws_s3_bucket.batch_data_destination_bucket.bucket}/*"
+          aws_s3_bucket.batch_data_destination_bucket.arn,
+          "${aws_s3_bucket.batch_data_destination_bucket.arn}/*"
         ]
       }
     ]
