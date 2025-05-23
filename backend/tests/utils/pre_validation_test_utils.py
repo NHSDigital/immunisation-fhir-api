@@ -349,13 +349,15 @@ class ValidatorModelTests:
                 expected_error_message=f"{field_location} must be a string",
             )
 
-            expected_error_message = (
-                f"{field_location} must be a valid datetime in the format 'YYYY-MM-DDThh:mm:ss+zz:zz' (where time element "
-                + "is optional, timezone must be given if and only if time is given, and milliseconds can be optionally "
-                + "included after the seconds). Only '+00:00' and '+01:00' are accepted as valid timezone offsets. " 
-                + "Note that partial dates are not allowed for "
-                + f"{field_location} for this service."
-            )
+        expected_error_message = f"""{field_location} must be a valid datetime in one of the following formats:
+        - 'YYYY-MM-DD' — Full date only
+        - 'YYYY-MM-DDThh:mm:ss' — Full date and time without milliseconds
+        - 'YYYY-MM-DDThh:mm:ss.f' — Full date and time with milliseconds (any level of precision)
+        - 'YYYY-MM-DDThh:mm:ss%z' — Full date and time with timezone (e.g. +00:00 or +01:00)
+        - 'YYYY-MM-DDThh:mm:ss.f%z' — Full date and time with milliseconds and timezone
+
+        Only '+00:00' and '+01:00' are accepted as valid timezone offsets.
+        Note that partial dates are not allowed for {field_location} in this service."""
 
         # Test invalid date time string formats
         for invalid_occurrence_date_time in InvalidValues.for_date_time_string_formats:
