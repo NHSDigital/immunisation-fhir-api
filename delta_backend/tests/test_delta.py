@@ -23,7 +23,6 @@ class DeltaHandlerTestCase(unittest.TestCase):
 
     # TODO refactor for dependency injection, eg process_record, send_firehose etc
     def setUp(self):
-        self.context = {}
         self.logger_info_patcher = patch("logging.Logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
 
@@ -32,6 +31,9 @@ class DeltaHandlerTestCase(unittest.TestCase):
 
         self.logger_warning_patcher = patch("logging.Logger.warning")
         self.mock_logger_warning = self.logger_warning_patcher.start()
+
+        self.logger_error_patcher = patch("logging.Logger.error")
+        self.mock_logger_error = self.logger_error_patcher.start()
 
         self.firehose_logger_patcher = patch("delta.firehose_logger")
         self.mock_firehose_logger = self.firehose_logger_patcher.start()
@@ -45,6 +47,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
     def tearDown(self):
         self.logger_exception_patcher.stop()
         self.logger_warning_patcher.stop()
+        self.logger_error_patcher.stop()
         self.logger_info_patcher.stop()
         self.mock_firehose_logger.stop()
         self.sqs_client_patcher.stop()
@@ -64,8 +67,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
             QueueUrl=sqs_queue_url, MessageBody=json.dumps(record)
         )
 
-    @patch("logging.Logger.error")
-    def test_send_message_client_error(self, mock_logger_error):
+    def test_send_message_client_error(self):
         # Arrange
         record = {"key": "value"}
 
@@ -77,7 +79,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         send_message(record, "test-queue-url")
 
         # Assert
-        mock_logger_error.assert_called_once_with(
+        self.mock_logger_error.assert_called_once_with(
             f"Error sending record to DLQ: An error occurred (500) when calling the SendMessage operation: Internal Server Error"
         )
 
@@ -90,7 +92,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
             event = ValuesForTests.get_event(event_name=EventName.CREATE, operation=Operation.CREATE, imms_id=imms_id, supplier=supplier)
 
             # Act 
-            result = handler(event, self.context)
+            result = handler(event, None)
 
             # Assert
             self.assertTrue(result)
@@ -109,7 +111,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         event = ValuesForTests.get_event()
 
         # Act
-        result = handler(event, self.context)
+        result = handler(event, None)
 
         # Assert
         self.assertFalse(result)
@@ -121,7 +123,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         event = ValuesForTests.get_event(event_name=EventName.UPDATE, operation=Operation.UPDATE, imms_id=imms_id)
 
         # Act
-        result = handler(event, self.context)
+        result = handler(event, None)
 
         # Assert
         self.assertTrue(result)
@@ -141,7 +143,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         event = ValuesForTests.get_event(event_name=EventName.DELETE_PHYSICAL, operation=Operation.DELETE_PHYSICAL, imms_id=imms_id)
 
         # Act
-        result = handler(event, self.context)
+        result = handler(event, None)
 
         # Assert
         self.assertTrue(result)
@@ -162,7 +164,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
                                          operation=Operation.DELETE_LOGICAL, 
                                          imms_id=imms_id)
         # Act
-        result = handler(event, self.context)
+        result = handler(event, None)
 
         # Assert
         self.assertTrue(result)
@@ -235,7 +237,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         event = ValuesForTests.get_multi_record_event(records_config)
 
         # Act
-        result = handler(event, self.context)
+        result = handler(event, None)
 
         # Assert
         self.assertTrue(result)
@@ -255,7 +257,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         event = ValuesForTests.get_multi_record_event(records_config)
 
         # Act
-        result = handler(event, self.context)
+        result = handler(event, None)
 
         # Assert
         self.assertTrue(result)
@@ -273,7 +275,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         event = ValuesForTests.get_multi_record_event(records_config)
 
         # Act
-        result = handler(event, self.context)
+        result = handler(event, None)
 
         # Assert
         self.assertTrue(result)
@@ -281,8 +283,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         self.assertEqual(self.mock_firehose_logger.send_log.call_count, 3)
 
 
-    @patch("boto3.resource")
-    def test_send_message_multi_update(self, mock_boto_resource):
+    def test_send_message_multi_update(self):
         # Arrange
         self.mock_delta_table.put_item.return_value = success_response
         records_config = [
@@ -293,7 +294,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         event = ValuesForTests.get_multi_record_event(records_config)
 
         # Act
-        result = handler(event, self.context)
+        result = handler(event, None)
 
         # Assert
         self.assertTrue(result)
@@ -312,15 +313,14 @@ class DeltaHandlerTestCase(unittest.TestCase):
         event = ValuesForTests.get_multi_record_event(records_config)
 
         # Act
-        result = handler(event, self.context)
+        result = handler(event, None)
 
         # Assert
         self.assertTrue(result)
         self.assertEqual(self.mock_delta_table.put_item.call_count, 3)
         self.assertEqual(self.mock_firehose_logger.send_log.call_count, 3)
 
-    @patch("boto3.resource")
-    def test_send_message_multi_physical_delete(self, mock_boto_resource):
+    def test_send_message_multi_physical_delete(self):
         # Arrange
         self.mock_delta_table.put_item.return_value = success_response
         records_config = [
@@ -331,7 +331,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         event = ValuesForTests.get_multi_record_event(records_config)
 
         # Act
-        result = handler(event, self.context)
+        result = handler(event, None)
 
         # Assert
         self.assertTrue(result)
@@ -350,7 +350,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         event = ValuesForTests.get_multi_record_event(records_config)
 
         # Act
-        result = handler(event, self.context)
+        result = handler(event, None)
 
         # Assert
         self.assertFalse(result)
@@ -358,8 +358,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         self.assertEqual(self.mock_firehose_logger.send_log.call_count, 3)
         self.assertEqual(self.mock_logger_warning.call_count, 1)
 
-    @patch("boto3.resource")
-    def test_single_exception_in_multi(self, mock_boto_resource):
+    def test_single_exception_in_multi(self):
         # Arrange
         # 2nd record fails
         self.mock_delta_table.put_item.side_effect = [success_response, exception_response, success_response]
@@ -372,7 +371,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         event = ValuesForTests.get_multi_record_event(records_config)
 
         # Act
-        result = handler(event, self.context)
+        result = handler(event, None)
 
         # Assert
         self.assertFalse(result)
@@ -390,14 +389,12 @@ class DeltaHandlerTestCase(unittest.TestCase):
                 { "a": "record3" }
             ]
         }
-        context = {}
-
         # Mock process_record to always return True
         mock_process_record.return_value = True, {}
         mock_send_firehose.return_value = None
 
         # Act
-        result = handler(event, context)
+        result = handler(event, {})
 
         # Assert
         self.assertTrue(result)
@@ -417,15 +414,13 @@ class DeltaHandlerTestCase(unittest.TestCase):
                 { "a": "record3" }
             ]
         }
-        context = {}
-        return_success = ( True, {})
-        return_failure = ( False, {})
+        return_ok = (True, {})
+        return_fail = (False, {})
         mock_send_firehose.return_value = None
-        mock_process_record.side_effect = [return_success, return_failure, return_success]
-
+        mock_process_record.side_effect = [return_ok, return_fail, return_ok]
 
         # Act
-        result = handler(event, context)
+        result = handler(event, {})
 
         # Assert
         self.assertFalse(result)
@@ -472,9 +467,8 @@ class DeltaRecordProcessorTestCase(unittest.TestCase):
                 operation=config.operation,
                 supplier=config.supplier,
             )
-            log_data = {}
             # Act
-            result, log_data = process_record(record, log_data)
+            result, log_data = process_record(record, {})
 
             # Assert
             self.assertEqual(result, True)
@@ -530,9 +524,8 @@ class DeltaRecordProcessorTestCase(unittest.TestCase):
             supplier="EMIS",
         )
         self.mock_delta_table.put_item.return_value = exception_response
-        log_data = {}
         # Act
-        result, log_data = process_record(record, log_data)
+        result, log_data = process_record(record, {})
 
         # Assert
         self.assertEqual(result, False)
