@@ -189,10 +189,8 @@ class DeltaHandlerTestCase(unittest.TestCase):
         # Check logging and Firehose were called
         mock_logger_info.assert_called_with("Record from DPS skipped for 12345")
 
-    @patch("delta.logger.info")
     @patch("delta.Converter")
-    @patch("delta.boto3.resource")
-    def test_partial_success_with_errors(self, mock_dynamodb, mock_converter, mock_logger_info):
+    def test_partial_success_with_errors(self, mock_converter):
         mock_converter_instance = MagicMock()
         mock_converter_instance.run_conversion.return_value = {"ABC":"DEF"}
         mock_converter_instance.get_error_records.return_value = [{"error": "Invalid field"}]
@@ -208,7 +206,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
 
         self.assertTrue(response)
         # Check logging and Firehose were called
-        mock_logger_info.assert_called()
+        self.mock_logger_info.assert_called()
         self.assertEqual(self.mock_firehose_logger.send_log.call_count, 1)
         self.mock_firehose_logger.send_log.assert_called_once()
 
