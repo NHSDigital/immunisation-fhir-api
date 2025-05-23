@@ -49,7 +49,6 @@ class DeltaHandlerTestCase(unittest.TestCase):
         self.mock_firehose_logger.stop()
         self.sqs_client_patcher.stop()
         self.delta_table_patcher.stop()
-        # self.process_record_patcher.stop()
 
     def test_send_message_success(self):
         # Arrange
