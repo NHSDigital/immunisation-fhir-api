@@ -1,9 +1,9 @@
 import copy
 import json
 import unittest
-from tests.utils_for_converter_tests import ValuesForTests
-from Converter import Converter
-
+from utils_for_converter_tests import ValuesForTests
+from converter import Converter
+from common.mappings import ConversionFieldName
 
 class TestPersonForeNameToFlatJson(unittest.TestCase):
     
@@ -104,8 +104,13 @@ class TestPersonForeNameToFlatJson(unittest.TestCase):
         expected_forename = "Alice Marie"
         self._run_test(expected_forename)
 
+    def test_person_forename_names_not_provided(self):
+        """Test case where the selected name has multiple given names"""
+        self.request_json_data["contained"][1]["name"] = []
+        self._run_test("")
+        
     def _run_test(self, expected_forename):
         """Helper function to run the test"""
         self.converter = Converter(json.dumps(self.request_json_data))
-        flat_json = self.converter.runConversion(self.request_json_data, False, True)
-        self.assertEqual(flat_json["PERSON_FORENAME"], expected_forename)
+        flat_json = self.converter.run_conversion()
+        self.assertEqual(flat_json[ConversionFieldName.PERSON_FORENAME], expected_forename)

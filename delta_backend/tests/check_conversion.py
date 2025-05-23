@@ -3,7 +3,7 @@ import csv
 import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
-from Converter import Converter
+from converter import Converter
 
 
 # Sample FHIR Immunization resource (minimal test data)
@@ -15,7 +15,7 @@ with open(fhir_sample, "r", encoding="utf-8") as f:
 
 # Run the converter
 converter = Converter(json_data)
-result = converter.runConversion(json_data)
+result = converter.run_conversion()
 
 # Absolute path to /delta_backend
 output_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))

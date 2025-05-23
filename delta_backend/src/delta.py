@@ -7,7 +7,7 @@ import uuid
 import logging
 from botocore.exceptions import ClientError
 from log_firehose import FirehoseLogger
-from Converter import Converter
+from converter import Converter
 from common.mappings import ActionFlag, Operation, EventName
 
 failure_queue_url = os.environ["AWS_SQS_QUEUE_URL"]
@@ -72,10 +72,9 @@ def handler(event, context):
                     operation = new_image["Operation"]["S"]
                     action_flag = ActionFlag.CREATE if operation == Operation.CREATE else operation
                     resource_json = json.loads(new_image["Resource"]["S"])
-                    FHIRConverter = Converter(json.dumps(resource_json))
-                    flat_json = FHIRConverter.runConversion(resource_json)  # Get the flat JSON
-                    error_records = FHIRConverter.getErrorRecords()
-                    flat_json["ACTION_FLAG"] = action_flag
+                    FHIRConverter = Converter(resource_json, action_flag = action_flag)
+                    flat_json = FHIRConverter.run_conversion()  # Get the flat JSON
+                    error_records = FHIRConverter.get_error_records()
                     response = delta_table.put_item(
                         Item={
                             "PK": str(uuid.uuid4()),

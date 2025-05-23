@@ -1,14 +1,22 @@
 import copy
 import json
 import unittest
-from tests.utils_for_converter_tests import ValuesForTests
-from Converter import Converter
+from utils_for_converter_tests import ValuesForTests
+from converter import Converter
+from common.mappings import ConversionFieldName
 
-
-class TestPersonSiteCodeToFlatJson(unittest.TestCase):
+class TestSiteCodeToFlatJson(unittest.TestCase):
     
     def setUp(self):
         self.request_json_data = copy.deepcopy(ValuesForTests.json_data)
+    
+    def test_site_code_not_exists(self):
+        self.request_json_data["performer"] = None
+        self._run_site_code_test("")
+        
+    def test_site_code_actor_empty(self):
+        self.request_json_data["performer"] = [{"actor": {}}]
+        self._run_site_code_test("")
         
     def test_site_code_single_performer(self):
         """Test case where only one performer instance exists"""
@@ -124,5 +132,5 @@ class TestPersonSiteCodeToFlatJson(unittest.TestCase):
     def _run_site_code_test(self, expected_site_code):
         """Helper function to run the test"""
         self.converter = Converter(json.dumps(self.request_json_data))
-        flat_json = self.converter.runConversion(self.request_json_data, False, True)
-        self.assertEqual(flat_json.get("SITE_CODE"), expected_site_code)
+        flat_json = self.converter.run_conversion()
+        self.assertEqual(flat_json.get(ConversionFieldName.SITE_CODE), expected_site_code)
