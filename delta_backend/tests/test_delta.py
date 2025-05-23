@@ -607,7 +607,8 @@ class TestGetSqsClient(unittest.TestCase):
 
         client = delta.get_sqs_client()
         self.assertIs(client, mock_client)
-        self.mock_sqs_client.assert_not_called()  # Should not re-initialize
+        # Should not re-initialize
+        self.mock_sqs_client.assert_not_called()
 
     def test_returns_none_on_exception(self):
         self.mock_sqs_client.side_effect = Exception("fail")
@@ -620,13 +621,11 @@ import delta
 
 class TestSendMessage(unittest.TestCase):
     def setUp(self):
-        # Patch get_sqs_client to return a mock SQS client
         self.get_sqs_client_patcher = patch("delta.get_sqs_client")
         self.mock_get_sqs_client = self.get_sqs_client_patcher.start()
         self.mock_sqs_client = MagicMock()
         self.mock_get_sqs_client.return_value = self.mock_sqs_client
 
-        # Patch logger.info and logger.error
         self.logger_info_patcher = patch("logging.Logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
         self.logger_error_patcher = patch("logging.Logger.error")
@@ -638,7 +637,7 @@ class TestSendMessage(unittest.TestCase):
         self.logger_error_patcher.stop()
 
     def test_send_message_success(self):
-        record = {"foo": "bar"}
+        record = {"a": "bbb"}
         self.mock_sqs_client.send_message.return_value = {"MessageId": "123"}
 
         delta.send_message(record)
@@ -648,7 +647,7 @@ class TestSendMessage(unittest.TestCase):
         self.mock_logger_error.assert_not_called()
 
     def test_send_message_client_error(self):
-        record = {"foo": "bar"}
+        record = {"a": "bbb"}
         self.mock_sqs_client.send_message.side_effect = Exception("SQS error")
 
         delta.send_message(record, "test-queue-url")
