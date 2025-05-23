@@ -19,10 +19,9 @@ success_response = {"ResponseMetadata": {"HTTPStatusCode": 200}}
 exception_response = ClientError({"Error": {"Code": "ConditionalCheckFailedException"}}, "PutItem")
 fail_response = {"ResponseMetadata": {"HTTPStatusCode": 500}}
 
-class DeltaTestCase(unittest.TestCase):
+class DeltaHandlerTestCase(unittest.TestCase):
 
     def setUp(self):
-        # Common setup if needed
         self.context = {}
         self.logger_info_patcher = patch("logging.Logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
@@ -383,66 +382,6 @@ class DeltaTestCase(unittest.TestCase):
         self.assertEqual(self.mock_firehose_logger.send_log.call_count, len(records_config))
 
 
-    # @patch("boto3.resource")
-    def test_single_record_success(self): #, mock_boto_resource):
-
-        # Arrange
-        self.mock_delta_table.put_item.return_value = success_response
-        test_configs = [
-            RecordConfig(EventName.CREATE, Operation.CREATE, "ok-id.1", ActionFlag.CREATE),
-            RecordConfig(EventName.UPDATE, Operation.UPDATE, "ok-id.2", ActionFlag.UPDATE),
-            RecordConfig(EventName.DELETE_PHYSICAL, Operation.DELETE_PHYSICAL, "ok-id.3"),
-        ]
-        test_index = 0
-        for config in test_configs:
-            test_index += 1
-            record = ValuesForTests.get_event_record(
-                imms_id=config.imms_id,
-                event_name=config.event_name,
-                operation=config.operation,
-                supplier=config.supplier,
-            )
-            log_data = {}
-            # Act
-            result, log_data = process_record(record, self.mock_delta_table, log_data)
-
-            # Assert
-            self.assertEqual(result, True)
-            operation_outcome = log_data["operation_outcome"]
-            self.assertEqual(operation_outcome["record"], config.imms_id)
-            self.assertEqual(operation_outcome["operation_type"], config.operation)
-            self.assertEqual(operation_outcome["statusCode"], "200")
-            self.assertEqual(operation_outcome["statusDesc"], "Successfully synched into delta")
-            self.assertEqual(self.mock_delta_table.put_item.call_count, test_index)
-
-        self.assertEqual(self.mock_logger_exception.call_count, 0)
-
-    def test_single_record_table_exception(self):
-
-        # Arrange
-        imms_id = "exception-id"
-        record = ValuesForTests.get_event_record(
-            imms_id,
-            event_name=EventName.UPDATE,
-            operation=Operation.UPDATE,
-            supplier="EMIS",
-        )
-        self.mock_delta_table.put_item.return_value = exception_response
-        log_data = {}
-        # Act
-        result, log_data = process_record(record, self.mock_delta_table, log_data)
-
-        # Assert
-        self.assertEqual(result, False)
-        operation_outcome = log_data["operation_outcome"]
-        self.assertEqual(operation_outcome["record"], imms_id)
-        self.assertEqual(operation_outcome["operation_type"], Operation.UPDATE)
-        self.assertEqual(operation_outcome["statusCode"], "500")
-        self.assertEqual(operation_outcome["statusDesc"], "Exception")
-        self.assertEqual(self.mock_delta_table.put_item.call_count, 1)
-        self.assertEqual(self.mock_logger_exception.call_count, 1)
-
-
     @patch("delta.process_record")
     @patch("delta.send_firehose")
     def test_handler_calls_process_record_for_each_event(self, mock_send_firehose, mock_process_record):
@@ -497,3 +436,113 @@ class DeltaTestCase(unittest.TestCase):
         self.assertEqual(mock_process_record.call_count, len(event["Records"]))
         # check that all records were sent to firehose
         self.assertEqual(mock_send_firehose.call_count, len(event["Records"]))
+
+class DeltaRecordProcessorTestCase(unittest.TestCase):
+
+    def setUp(self):
+        self.logger_info_patcher = patch("logging.Logger.info")
+        self.mock_logger_info = self.logger_info_patcher.start()
+
+        self.logger_exception_patcher = patch("logging.Logger.exception")
+        self.mock_logger_exception = self.logger_exception_patcher.start()
+
+        self.logger_warning_patcher = patch("logging.Logger.warning")
+        self.mock_logger_warning = self.logger_warning_patcher.start()
+
+        self.mock_delta_table = MagicMock()
+
+    def tearDown(self):
+        self.mock_delta_table.reset_mock()
+        self.logger_exception_patcher.stop()
+        self.logger_warning_patcher.stop()
+        self.logger_info_patcher.stop()
+
+    def test_multi_record_success(self):
+
+        # Arrange
+        self.mock_delta_table.put_item.return_value = success_response
+        test_configs = [
+            RecordConfig(EventName.CREATE, Operation.CREATE, "ok-id.1", ActionFlag.CREATE),
+            RecordConfig(EventName.UPDATE, Operation.UPDATE, "ok-id.2", ActionFlag.UPDATE),
+            RecordConfig(EventName.DELETE_PHYSICAL, Operation.DELETE_PHYSICAL, "ok-id.3"),
+        ]
+        test_index = 0
+        for config in test_configs:
+            test_index += 1
+            record = ValuesForTests.get_event_record(
+                imms_id=config.imms_id,
+                event_name=config.event_name,
+                operation=config.operation,
+                supplier=config.supplier,
+            )
+            log_data = {}
+            # Act
+            result, log_data = process_record(record, self.mock_delta_table, log_data)
+
+            # Assert
+            self.assertEqual(result, True)
+            operation_outcome = log_data["operation_outcome"]
+            self.assertEqual(operation_outcome["record"], config.imms_id)
+            self.assertEqual(operation_outcome["operation_type"], config.operation)
+            self.assertEqual(operation_outcome["statusCode"], "200")
+            self.assertEqual(operation_outcome["statusDesc"], "Successfully synched into delta")
+            self.assertEqual(self.mock_delta_table.put_item.call_count, test_index)
+
+        self.assertEqual(self.mock_logger_exception.call_count, 0)
+        self.assertEqual(self.mock_logger_warning.call_count, 0)
+
+    def test_multi_record_success_with_fail(self):
+
+        # Arrange
+        expected_returns = [ True, False, True]
+        self.mock_delta_table.put_item.side_effect = [success_response, fail_response, success_response]
+        test_configs = [
+            RecordConfig(EventName.CREATE, Operation.CREATE, "ok-id.1", ActionFlag.CREATE),
+            RecordConfig(EventName.UPDATE, Operation.UPDATE, "fail-id.2", ActionFlag.UPDATE),
+            RecordConfig(EventName.DELETE_PHYSICAL, Operation.DELETE_PHYSICAL, "ok-id.3"),
+        ]
+        test_index = 0
+        for config in test_configs:
+            test_index += 1
+            record = ValuesForTests.get_event_record(
+                imms_id=config.imms_id,
+                event_name=config.event_name,
+                operation=config.operation,
+                supplier=config.supplier,
+            )
+            log_data = {}
+            # Act
+            result, log_data = process_record(record, self.mock_delta_table, log_data)
+
+            # Assert
+            self.assertEqual(result, expected_returns[test_index-1])
+            self.assertEqual(self.mock_delta_table.put_item.call_count, test_index)
+
+        self.assertEqual(self.mock_logger_exception.call_count, 0)
+        self.assertEqual(self.mock_logger_warning.call_count, 1)
+
+
+    def test_single_record_table_exception(self):
+
+        # Arrange
+        imms_id = "exception-id"
+        record = ValuesForTests.get_event_record(
+            imms_id,
+            event_name=EventName.UPDATE,
+            operation=Operation.UPDATE,
+            supplier="EMIS",
+        )
+        self.mock_delta_table.put_item.return_value = exception_response
+        log_data = {}
+        # Act
+        result, log_data = process_record(record, self.mock_delta_table, log_data)
+
+        # Assert
+        self.assertEqual(result, False)
+        operation_outcome = log_data["operation_outcome"]
+        self.assertEqual(operation_outcome["record"], imms_id)
+        self.assertEqual(operation_outcome["operation_type"], Operation.UPDATE)
+        self.assertEqual(operation_outcome["statusCode"], "500")
+        self.assertEqual(operation_outcome["statusDesc"], "Exception")
+        self.assertEqual(self.mock_delta_table.put_item.call_count, 1)
+        self.assertEqual(self.mock_logger_exception.call_count, 1)
