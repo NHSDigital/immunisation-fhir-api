@@ -25,7 +25,7 @@ class TestGetImmunisationById(unittest.TestCase):
 
         # Then
         self.controller.get_immunization_by_id.assert_called_once_with(lambda_event)
-        self.assertDictEqual(exp_res, act_res)
+        self.assertDictEqual(exp_res, "bad value")
 
     def test_handle_exception(self):
         """unhandled exceptions should result in 500"""
