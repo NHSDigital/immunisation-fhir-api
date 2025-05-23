@@ -23,7 +23,7 @@ provider "aws" {
   default_tags {
     tags = {
       Project     = "immunisation-fhir-api"
-      Environment = local.environment
+      Environment = local.account
     }
   }
 }
