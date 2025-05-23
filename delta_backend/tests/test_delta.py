@@ -180,9 +180,8 @@ class DeltaHandlerTestCase(unittest.TestCase):
     @patch("delta.logger.info") 
     def test_dps_record_skipped(self, mock_logger_info):
         event = ValuesForTests.get_event(supplier="DPSFULL")
-        context = {}
 
-        response = handler(event, context)
+        response = handler(event, None)
 
         self.assertTrue(response)
 
@@ -200,9 +199,8 @@ class DeltaHandlerTestCase(unittest.TestCase):
         self.mock_delta_table.put_item.return_value = success_response
 
         event = ValuesForTests.get_event()
-        context = {}
 
-        response = handler(event, context)
+        response = handler(event, None)
 
         self.assertTrue(response)
         # Check logging and Firehose were called
