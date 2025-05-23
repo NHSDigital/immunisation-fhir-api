@@ -57,7 +57,7 @@ def send_message(record, queue_url=failure_queue_url):
         # Send the record to the queue
         get_sqs_client().send_message(QueueUrl=queue_url, MessageBody=json.dumps(message_body))
         logger.info("Record saved successfully to the DLQ")
-    except ClientError as e:
+    except Exception as e:
         logger.error(f"Error sending record to DLQ: {e}")
 
 def get_vaccine_type(patientsk) -> str:

@@ -5,7 +5,6 @@ import os
 import json
 from common.mappings import EventName, Operation, ActionFlag
 from utils_for_converter_tests import ValuesForTests, RecordConfig
-from converter import Converter
 
 # Set environment variables before importing the module
 ## @TODO: # Note: Environment variables shared across tests, thus aligned
@@ -532,3 +531,126 @@ class DeltaRecordProcessorTestCase(unittest.TestCase):
         self.assertEqual(operation_outcome["statusDesc"], "Exception")
         self.assertEqual(self.mock_delta_table.put_item.call_count, 1)
         self.assertEqual(self.mock_logger_exception.call_count, 1)
+
+import delta
+
+class TestGetDeltaTable(unittest.TestCase):
+    def setUp(self):
+        self.delta_table_patcher=patch("delta.delta_table")
+        self.mock_delta_table = self.delta_table_patcher.start()
+        self.logger_info_patcher = patch("logging.Logger.info")
+        self.mock_logger_info = self.logger_info_patcher.start()
+        self.logger_error_patcher = patch("logging.Logger.error")
+        self.mock_logger_error = self.logger_error_patcher.start()
+
+    def tearDown(self):
+        self.delta_table_patcher.stop()
+        self.logger_info_patcher.stop()
+        self.logger_error_patcher.stop()
+
+    def test_returns_table_on_success(self):
+
+        table = delta.get_delta_table()
+        self.assertIs(table, self.mock_delta_table)
+        # Should cache the table
+        self.assertIs(delta.delta_table, self.mock_delta_table)
+
+    @patch("boto3.resource")
+    def test_returns_cached_table(self, mock_boto3_resource):
+        delta.delta_table = self.mock_delta_table
+
+        table = delta.get_delta_table()
+        self.assertIs(table, self.mock_delta_table)
+        # Should not call boto3 again
+        mock_boto3_resource.assert_not_called()
+
+    # mock boto3.resource to raise an exception
+    @patch("boto3.resource")
+    def test_returns_none_on_exception(self, mock_boto3_resource):
+        delta.delta_table = None
+        mock_boto3_resource.side_effect = Exception("fail")
+        table = delta.get_delta_table()
+        self.assertIsNone(table)
+        self.mock_logger_error.assert_called()
+
+import delta
+
+class TestGetSqsClient(unittest.TestCase):
+    def setUp(self):
+        # Patch logger.info and logger.error
+        self.logger_info_patcher = patch("logging.Logger.info")
+        self.mock_logger_info = self.logger_info_patcher.start()
+        self.logger_error_patcher = patch("logging.Logger.error")
+        self.mock_logger_error = self.logger_error_patcher.start()
+        self.sqs_client_patcher = patch("delta.boto3.client")
+        self.mock_sqs_client = self.sqs_client_patcher.start()
+        # Reset the global sqs_client before each test
+        delta.sqs_client = None
+
+    def tearDown(self):
+        self.logger_info_patcher.stop()
+        self.logger_error_patcher.stop()
+        self.sqs_client_patcher.stop()
+
+    def test_returns_client_on_success(self):
+        mock_client = MagicMock()
+        self.mock_sqs_client.return_value = mock_client
+
+        client = delta.get_sqs_client()
+        self.assertIs(client, mock_client)
+        # Should cache the client
+        self.assertIs(delta.sqs_client, mock_client)
+
+    def test_returns_cached_client(self):
+        mock_client = MagicMock()
+        delta.sqs_client = mock_client
+
+        client = delta.get_sqs_client()
+        self.assertIs(client, mock_client)
+        self.mock_sqs_client.assert_not_called()  # Should not re-initialize
+
+    def test_returns_none_on_exception(self):
+        self.mock_sqs_client.side_effect = Exception("fail")
+        client = delta.get_sqs_client()
+        self.assertIsNone(client)
+        self.mock_logger_error.assert_called()
+
+
+import delta
+
+class TestSendMessage(unittest.TestCase):
+    def setUp(self):
+        # Patch get_sqs_client to return a mock SQS client
+        self.get_sqs_client_patcher = patch("delta.get_sqs_client")
+        self.mock_get_sqs_client = self.get_sqs_client_patcher.start()
+        self.mock_sqs_client = MagicMock()
+        self.mock_get_sqs_client.return_value = self.mock_sqs_client
+
+        # Patch logger.info and logger.error
+        self.logger_info_patcher = patch("logging.Logger.info")
+        self.mock_logger_info = self.logger_info_patcher.start()
+        self.logger_error_patcher = patch("logging.Logger.error")
+        self.mock_logger_error = self.logger_error_patcher.start()
+
+    def tearDown(self):
+        self.get_sqs_client_patcher.stop()
+        self.logger_info_patcher.stop()
+        self.logger_error_patcher.stop()
+
+    def test_send_message_success(self):
+        record = {"foo": "bar"}
+        self.mock_sqs_client.send_message.return_value = {"MessageId": "123"}
+
+        delta.send_message(record)
+
+        self.mock_sqs_client.send_message.assert_called_once()
+        self.mock_logger_info.assert_any_call("Record saved successfully to the DLQ")
+        self.mock_logger_error.assert_not_called()
+
+    def test_send_message_client_error(self):
+        record = {"foo": "bar"}
+        self.mock_sqs_client.send_message.side_effect = Exception("SQS error")
+
+        delta.send_message(record, "test-queue-url")
+
+        self.mock_logger_error.assert_called()
