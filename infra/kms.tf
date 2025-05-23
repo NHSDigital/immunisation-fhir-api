@@ -39,7 +39,7 @@ locals {
   }
 
   policy_statement_allow_devops = {
-    Sid    = "KMS KeyUser access for Devops",
+    Sid    = "KMS KeyUser access for DevOps",
     Effect = "Allow",
     Principal = {
       AWS = ["arn:aws:iam::${local.local_account_id}:role/DevOps"]

@@ -225,6 +225,13 @@ resource "aws_vpc_endpoint" "kinesis_stream_endpoint" {
   }
 }
 
+# TODO - remove and use the key we manage in this Terraform workspace
+data "aws_kms_key" "existing_lambda_env_encryption" {
+  count = local.account != "prod" ? 1 : 0
+
+  key_id = "648c8c6f-54bf-4b79-ad72-0be6e8d72423"
+}
+
 resource "aws_vpc_endpoint" "kms_endpoint" {
   vpc_id            = data.aws_vpc.default.id
   service_name      = "com.amazonaws.${var.aws_region}.kms"
@@ -245,10 +252,13 @@ resource "aws_vpc_endpoint" "kms_endpoint" {
           "kms:Encrypt",
           "kms:GenerateDataKey*"
         ],
-        Resource = [
-          # TODO - this doesn't match up in non-prod
+        Resource = local.account == "prod" ? [
           aws_kms_key.lambda_env_encryption.arn,
           aws_kms_key.s3_shared_key.arn
+          ] : [
+          aws_kms_key.lambda_env_encryption.arn,
+          aws_kms_key.s3_shared_key.arn,
+          data.aws_kms_key.existing_lambda_env_encryption[0].arn
         ]
       }
     ]
