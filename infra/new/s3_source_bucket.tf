@@ -1,5 +1,4 @@
-# TODO: Confirm this is used. This was in the prod infra terraform but not non-prod.
-# Presumably because only prod uses blue / green deployments, and this is the overall entry point into batch?
+# Overall entry point into batch in prod. Files are forwarded into the appropriate blue / green bucket.
 resource "aws_s3_bucket" "batch_data_source_bucket" {
   count = local.environment == "prod" ? 1 : 0
   bucket        = "immunisation-batch-${local.environment}-data-sources"

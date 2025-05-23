@@ -28,12 +28,6 @@ provider "aws" {
   }
 }
 
-provider "aws" {
-  alias   = "acm_provider"
-  region  = var.aws_region
-  profile = "apim-dev"
-}
-
 data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
 data "aws_ecr_authorization_token" "token" {}

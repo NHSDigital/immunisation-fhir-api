@@ -1,5 +1,7 @@
 # TODO - delete this file once the state has been updated in all environments
 
+# --- TABLES
+
 removed {
     from = aws_dynamodb_table.audit-table
     lifecycle {
@@ -18,6 +20,8 @@ removed {
         destroy = false
     }
 }
+
+# ---
 
 removed {
     from = aws_dynamodb_table.delta-dynamodb-table
@@ -38,6 +42,8 @@ removed {
     }
 }
 
+# ---
+
 removed {
     from = aws_dynamodb_table.events-dynamodb-table
     lifecycle {
@@ -57,39 +63,37 @@ removed {
     }
 }
 
-# ---
+# --- CONFIG BUCKET
 
-# removed {
-#     from = aws_s3_bucket.batch_config_bucket
-#     lifecycle {
-#         destroy = false
-#     }
-# }
-#
-# removed {
-#     from = aws_s3_bucket_public_access_block.batch_config_bucket_public_access_block
-#     lifecycle {
-#         destroy = false
-#     }
-# }
-#
-# removed {
-#     from = aws_s3_bucket_policy.batch_config_bucket_policy
-#     lifecycle {
-#         destroy = false
-#     }
-# }
+removed {
+    from = aws_s3_bucket.batch_config_bucket
+    lifecycle {
+        destroy = false
+    }
+}
 
-# ---
+removed {
+    from = aws_s3_bucket_public_access_block.batch_config_bucket_public_access_block
+    lifecycle {
+        destroy = false
+    }
+}
 
-# TODO - replace with moved blocks as we're not removing this (yet)
+removed {
+    from = aws_s3_bucket_policy.batch_config_bucket_policy
+    lifecycle {
+        destroy = false
+    }
+}
 
-# removed {
-#     from = aws_s3_bucket.batch_data_destination_bucket
-#     lifecycle {
-#         destroy = false
-#     }
-# }
+# --- BATCH DESTINATION BUCKET
+
+removed {
+    from = aws_s3_bucket.batch_data_destination_bucket
+    lifecycle {
+        destroy = false
+    }
+}
 removed {
     from = aws_s3_bucket.batch_data_destination_int_bucket
     lifecycle {
@@ -103,12 +107,14 @@ removed {
     }
 }
 
-# removed {
-#     from = aws_s3_bucket_policy.batch_data_destination_bucket_policy
-#     lifecycle {
-#         destroy = false
-#     }
-# }
+# ---
+
+removed {
+    from = aws_s3_bucket_policy.batch_data_destination_bucket_policy
+    lifecycle {
+        destroy = false
+    }
+}
 removed {
     from = aws_s3_bucket_policy.batch_data_destination_int_bucket_policy
     lifecycle {
@@ -122,12 +128,14 @@ removed {
     }
 }
 
-# removed {
-#     from = aws_s3_bucket_server_side_encryption_configuration.s3_batch_destination_encryption
-#     lifecycle {
-#         destroy = false
-#     }
-# }
+# ---
+
+removed {
+    from = aws_s3_bucket_server_side_encryption_configuration.s3_batch_destination_encryption
+    lifecycle {
+        destroy = false
+    }
+}
 removed {
     from = aws_s3_bucket_server_side_encryption_configuration.s3_batch_destination_int_encryption
     lifecycle {
@@ -141,32 +149,11 @@ removed {
     }
 }
 
-# removed {
-#     from = aws_s3_bucket_lifecycle_configuration.data_destinations
-#     lifecycle {
-#         destroy = false
-#     }
-# }
-
 # ---
 
-# removed {
-#     from = aws_s3_bucket.batch_data_source_bucket
-#     lifecycle {
-#         destroy = false
-#     }
-# }
-#
-# removed {
-#     from = aws_s3_bucket_policy.batch_data_source_bucket_policy
-#     lifecycle {
-#         destroy = false
-#     }
-# }
-#
-# removed {
-#     from = aws_s3_bucket_lifecycle_configuration.datasources_lifecycle
-#     lifecycle {
-#         destroy = false
-#     }
-# }
+removed {
+    from = aws_s3_bucket_lifecycle_configuration.data_destinations
+    lifecycle {
+        destroy = false
+    }
+}

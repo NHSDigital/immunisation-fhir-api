@@ -119,8 +119,8 @@ resource "aws_iam_policy" "ack_lambda_exec_policy" {
         Resource = [
           aws_s3_bucket.batch_data_source_bucket.arn,
           "${aws_s3_bucket.batch_data_source_bucket.arn}/*",
-          data.aws_s3_bucket.existing_destination_bucket.arn,
-          "${data.aws_s3_bucket.existing_destination_bucket.arn}/*"
+          aws_s3_bucket.batch_data_destination_bucket.arn,
+          "${aws_s3_bucket.batch_data_destination_bucket.arn}/*"
         ]
       },
       {
@@ -214,7 +214,7 @@ resource "aws_lambda_function" "ack_processor_lambda" {
 
   environment {
     variables = {
-      ACK_BUCKET_NAME            = data.aws_s3_bucket.existing_destination_bucket.bucket
+      ACK_BUCKET_NAME            = aws_s3_bucket.batch_data_destination_bucket.bucket
       SPLUNK_FIREHOSE_NAME       = module.splunk.firehose_stream_name
       ENVIRONMENT                = terraform.workspace
       AUDIT_TABLE_NAME           = aws_dynamodb_table.audit-table.name
