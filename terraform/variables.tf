@@ -29,8 +29,8 @@ locals {
 
   # For now, only create the config bucket in internal-dev and prod as we only have one Redis instance per account.
   create_config_bucket = local.environment == local.config_bucket_env
-  config_bucket_arn  = local.create_config_bucket ? aws_s3_bucket.batch_config_bucket[0].arn : data.aws_s3_bucket.existing_config_bucket[0].arn
-  config_bucket_name = local.create_config_bucket ? aws_s3_bucket.batch_config_bucket[0].bucket : data.aws_s3_bucket.existing_config_bucket[0].bucket
+  config_bucket_arn    = local.create_config_bucket ? aws_s3_bucket.batch_config_bucket[0].arn : data.aws_s3_bucket.existing_config_bucket[0].arn
+  config_bucket_name   = local.create_config_bucket ? aws_s3_bucket.batch_config_bucket[0].bucket : data.aws_s3_bucket.existing_config_bucket[0].bucket
 }
 
 data "aws_vpc" "default" {
