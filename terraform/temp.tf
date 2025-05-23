@@ -70,10 +70,67 @@
 # }
 
 # import {
+#   id = "immunisation-batch-internal-dev-data-destinations"
+#   to = aws_s3_bucket_policy.batch_data_destination_bucket_policy
+# }
+# import {
+#   id = "immunisation-batch-int-data-destinations"
+#   to = aws_s3_bucket_policy.batch_data_destination_bucket_policy
+# }
+# import {
+#   id = "immunisation-batch-ref-data-destinations"
+#   to = aws_s3_bucket_policy.batch_data_destination_bucket_policy
+# }
+# import {
+#   id = "immunisation-batch-prod-data-destinations"
+#   to = aws_s3_bucket_policy.batch_data_destination_bucket_policy
+# }
+
+# import {
+#   id = "immunisation-batch-internal-dev-data-destinations"
+#   to = aws_s3_bucket_server_side_encryption_configuration.s3_batch_destination_encryption
+# }
+# import {
+#   id = "immunisation-batch-int-data-destinations"
+#   to = aws_s3_bucket_server_side_encryption_configuration.s3_batch_destination_encryption
+# }
+# import {
+#   id = "immunisation-batch-ref-data-destinations"
+#   to = aws_s3_bucket_server_side_encryption_configuration.s3_batch_destination_encryption
+# }
+# import {
+#   id = "immunisation-batch-prod-data-destinations"
+#   to = aws_s3_bucket_server_side_encryption_configuration.s3_batch_destination_encryption
+# }
+
+# import {
+#   id = "immunisation-batch-prod-data-destinations"
+#   to = aws_s3_bucket_lifecycle_configuration.data_destinations
+# }
+
+# import {
 #   id = "imms-internal-dev-supplier-config"
 #   to = aws_s3_bucket.batch_config_bucket[0]
 # }
 # import {
 #   id = "imms-prod-supplier-config"
 #   to = aws_s3_bucket.batch_config_bucket[0]
+# }
+
+# import {
+#   id = "imms-internal-dev-supplier-config"
+#   to = aws_s3_bucket_public_access_block.batch_config_bucket_public_access_block[0]
+# }
+# import {
+#   id = "imms-prod-supplier-config"
+#   to = aws_s3_bucket_public_access_block.batch_config_bucket_public_access_block[0]
+# }
+
+# import {
+#   id = "imms-internal-dev-supplier-config"
+#   to = aws_s3_bucket_policy.batch_config_bucket_policy[0]
+# }
+# import {
+#   id = "imms-prod-supplier-config"
+#   to = aws_s3_bucket_policy.batch_config_bucket_policy[0]
 # }
