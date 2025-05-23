@@ -18,7 +18,6 @@ logging.basicConfig()
 logger = logging.getLogger()
 logger.setLevel("INFO")
 firehose_logger = FirehoseLogger()
-initialized = False
 
 delta_table = None
 def get_delta_table():
