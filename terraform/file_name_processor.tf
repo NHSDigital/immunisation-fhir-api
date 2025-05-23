@@ -129,8 +129,8 @@ resource "aws_iam_policy" "filenameprocessor_lambda_exec_policy" {
           "s3:ListBucket"
         ]
         Resource = [
-          data.aws_s3_bucket.existing_destination_bucket.arn,
-          "${data.aws_s3_bucket.existing_destination_bucket.arn}/*"
+          aws_s3_bucket.batch_data_destination_bucket.arn,
+          "${aws_s3_bucket.batch_data_destination_bucket.arn}/*"
         ]
       },
       {
@@ -150,8 +150,8 @@ resource "aws_iam_policy" "filenameprocessor_lambda_exec_policy" {
           "s3:ListBucket"
         ]
         Resource = [
-          "arn:aws:s3:::${data.aws_s3_bucket.existing_config_bucket.bucket}",
-          "arn:aws:s3:::${data.aws_s3_bucket.existing_config_bucket.bucket}/*"
+          local.config_bucket_arn,
+          "${local.config_bucket_arn}/*"
         ]
       },
       {
@@ -283,9 +283,9 @@ resource "aws_lambda_function" "file_processor_lambda" {
   environment {
     variables = {
       SOURCE_BUCKET_NAME         = aws_s3_bucket.batch_data_source_bucket.bucket
-      ACK_BUCKET_NAME            = data.aws_s3_bucket.existing_destination_bucket.bucket
+      ACK_BUCKET_NAME            = aws_s3_bucket.batch_data_destination_bucket.bucket
       QUEUE_URL                  = aws_sqs_queue.supplier_fifo_queue.url
-      CONFIG_BUCKET_NAME         = data.aws_s3_bucket.existing_config_bucket.bucket
+      CONFIG_BUCKET_NAME         = local.config_bucket_name
       REDIS_HOST                 = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].address
       REDIS_PORT                 = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].port
       SPLUNK_FIREHOSE_NAME       = module.splunk.firehose_stream_name
@@ -325,11 +325,12 @@ resource "aws_s3_bucket_notification" "datasources_lambda_notification" {
   }
 }
 
-# TODO - This is scoped to the bucket, so is overwritten by each deployment
-# That might be intentional in prod, to switch between blue and green, but surely isn't in non-prod
 # S3 Bucket notification to trigger Lambda function for config bucket
 resource "aws_s3_bucket_notification" "config_lambda_notification" {
-  bucket = data.aws_s3_bucket.existing_config_bucket.bucket
+  # For now, only create a trigger in internal-dev and prod as those are the envs with a config bucket
+  count = local.create_config_bucket ? 1 : 0
+
+  bucket = aws_s3_bucket.batch_config_bucket[0].bucket
 
   lambda_function {
     lambda_function_arn = aws_lambda_function.file_processor_lambda.arn
@@ -339,11 +340,13 @@ resource "aws_s3_bucket_notification" "config_lambda_notification" {
 
 # Permission for the new S3 bucket to invoke the Lambda function
 resource "aws_lambda_permission" "new_s3_invoke_permission" {
+  count = local.create_config_bucket ? 1 : 0
+
   statement_id  = "AllowExecutionFromNewS3"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.file_processor_lambda.function_name
   principal     = "s3.amazonaws.com"
-  source_arn    = data.aws_s3_bucket.existing_config_bucket.arn
+  source_arn    = local.config_bucket_arn
 }
 
 # IAM Role for ElastiCache.

@@ -20,6 +20,12 @@ terraform {
 provider "aws" {
   region  = var.aws_region
   profile = "apim-dev"
+  default_tags {
+    tags = {
+      Project     = "immunisation-fhir-api"
+      Environment = local.environment
+    }
+  }
 }
 
 # TODO - use these instead of some of the hard coded values?

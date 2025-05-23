@@ -130,8 +130,8 @@ resource "aws_iam_policy" "forwarding_lambda_exec_policy" {
           "s3:ListBucket"
         ]
         Resource = [
-          data.aws_s3_bucket.existing_destination_bucket.arn,
-          "${data.aws_s3_bucket.existing_destination_bucket.arn}/*"
+          aws_s3_bucket.batch_data_destination_bucket.arn,
+          "${aws_s3_bucket.batch_data_destination_bucket.arn}/*"
         ]
       },
       {
@@ -212,7 +212,7 @@ resource "aws_lambda_function" "forwarding_lambda" {
   environment {
     variables = {
       SOURCE_BUCKET_NAME  = aws_s3_bucket.batch_data_source_bucket.bucket
-      ACK_BUCKET_NAME     = data.aws_s3_bucket.existing_destination_bucket.bucket
+      ACK_BUCKET_NAME     = aws_s3_bucket.batch_data_destination_bucket.bucket
       DYNAMODB_TABLE_NAME = aws_dynamodb_table.events-dynamodb-table.name
       SQS_QUEUE_URL       = aws_sqs_queue.fifo_queue.url
     }
