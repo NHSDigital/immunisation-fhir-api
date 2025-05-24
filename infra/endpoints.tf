@@ -10,20 +10,26 @@ resource "aws_security_group" "lambda_redis_sg" {
     cidr_blocks = ["172.31.0.0/16"]
   }
 
-  egress  {
-              cidr_blocks      = []
-              from_port        = 0
-              ipv6_cidr_blocks = []
-              prefix_list_ids  = [
-                  "pl-b3a742da",
-                  "pl-93a247fa",
-                  "pl-7ca54015",
-                ]
-              protocol         = "-1"
-              security_groups  = []
-              self             = true
-              to_port          = 0
-            }
+  # Outbound rules to specific AWS services using prefix lists
+  egress {
+    from_port = 0
+    to_port   = 0
+    protocol  = "-1"
+    # TODO - maybe look these up by name?
+    prefix_list_ids = [
+      "pl-7ca54015", # com.amazonaws.eu-west-2.s3
+      "pl-93a247fa", # com.amazonaws.global.cloudfront.origin-facing
+      "pl-b3a742da"  # com.amazonaws.eu-west-2.dynamodb
+    ]
+  }
+
+  # Egress rule to allow communication within the same security group
+  egress {
+    from_port = 0
+    to_port   = 0
+    protocol  = "-1"
+    self      = true
+  }
 }
 
 resource "aws_vpc_endpoint" "sqs_endpoint" {
@@ -39,16 +45,18 @@ resource "aws_vpc_endpoint" "sqs_endpoint" {
     Version = "2012-10-17",
     Statement = [
       {
-        Effect    = "Allow"
+        Effect = "Allow"
         Principal = {
-                AWS ="*"
+          "AWS" : [
+            "*"
+          ]
         },
-        Action    = [
+        Action = [
           "sqs:SendMessage",
           "sqs:ReceiveMessage",
           "kms:Decrypt"
         ]
-        Resource  = "*",
+        Resource = "*"
       }
     ]
   })
@@ -69,18 +77,18 @@ resource "aws_vpc_endpoint" "s3_endpoint" {
     Version = "2012-10-17",
     Statement = [
       {
-        Effect    = "Allow"
+        Effect = "Allow"
         Principal = {
-                AWS ="*"
+          "AWS" : "*"
         },
-        Action    = [
+        Action = [
           "s3:GetObject",
           "s3:PutObject",
           "s3:ListBucket",
-          "s3:DeleteObject",
-          "s3:CopyObject"
+          "s3:CopyObject",
+          "s3:DeleteObject"
         ]
-        Resource  = "*",
+        Resource = "*"
       }
     ]
   })
@@ -102,7 +110,7 @@ resource "aws_vpc_endpoint" "kinesis_endpoint" {
     Version = "2012-10-17",
     Statement = [
       {
-        Effect = "Allow",
+        Effect    = "Allow",
         Principal = "*",
         Action = [
           "firehose:ListDeliveryStreams",
@@ -130,18 +138,16 @@ resource "aws_vpc_endpoint" "dynamodb" {
     Version = "2012-10-17",
     Statement = [
       {
-        "Effect": "Allow",
-        "Principal": "*",
-        "Action": "*",
-        "Resource": "*"
+        "Effect" : "Allow",
+        "Principal" : "*",
+        "Action" : "*",
+        "Resource" : "*"
       }
     ]
   })
   tags = {
     Name = "immunisation-dynamo-endpoint"
   }
-
-
 }
 
 
@@ -150,8 +156,8 @@ resource "aws_vpc_endpoint" "ecr_api" {
   service_name      = "com.amazonaws.${var.aws_region}.ecr.api"
   vpc_endpoint_type = "Interface"
 
-  subnet_ids = data.aws_subnets.default.ids
-  security_group_ids = [aws_security_group.lambda_redis_sg.id]
+  subnet_ids          = data.aws_subnets.default.ids
+  security_group_ids  = [aws_security_group.lambda_redis_sg.id]
   private_dns_enabled = true
   tags = {
     Name = "immunisation-ecr-api-endpoint"
@@ -163,8 +169,8 @@ resource "aws_vpc_endpoint" "ecr_dkr" {
   service_name      = "com.amazonaws.${var.aws_region}.ecr.dkr"
   vpc_endpoint_type = "Interface"
 
-  subnet_ids = data.aws_subnets.default.ids
-  security_group_ids = [aws_security_group.lambda_redis_sg.id]
+  subnet_ids          = data.aws_subnets.default.ids
+  security_group_ids  = [aws_security_group.lambda_redis_sg.id]
   private_dns_enabled = true
   tags = {
     Name = "immunisation-ecr-dkr-endpoint"
@@ -176,8 +182,8 @@ resource "aws_vpc_endpoint" "cloud_watch" {
   service_name      = "com.amazonaws.${var.aws_region}.logs"
   vpc_endpoint_type = "Interface"
 
-  subnet_ids = data.aws_subnets.default.ids
-  security_group_ids = [aws_security_group.lambda_redis_sg.id]
+  subnet_ids          = data.aws_subnets.default.ids
+  security_group_ids  = [aws_security_group.lambda_redis_sg.id]
   private_dns_enabled = true
   tags = {
     Name = "immunisation-cloud-watch-endpoint"
@@ -200,7 +206,9 @@ resource "aws_vpc_endpoint" "kinesis_stream_endpoint" {
       {
         Effect = "Allow",
         Principal = {
-                AWS ="*"
+          "AWS" : [
+            "*"
+          ]
         },
         Action = [
           "kinesis:ListShards",
@@ -217,6 +225,13 @@ resource "aws_vpc_endpoint" "kinesis_stream_endpoint" {
   }
 }
 
+# TODO - remove and use the key we manage in this Terraform workspace
+data "aws_kms_key" "existing_lambda_env_encryption" {
+  count = local.account != "prod" ? 1 : 0
+
+  key_id = "648c8c6f-54bf-4b79-ad72-0be6e8d72423"
+}
+
 resource "aws_vpc_endpoint" "kms_endpoint" {
   vpc_id            = data.aws_vpc.default.id
   service_name      = "com.amazonaws.${var.aws_region}.kms"
@@ -230,35 +245,40 @@ resource "aws_vpc_endpoint" "kms_endpoint" {
     Version = "2012-10-17",
     Statement = [
       {
-        Effect = "Allow",
+        Effect    = "Allow",
         Principal = "*",
         Action = [
           "kms:Decrypt",
           "kms:Encrypt",
           "kms:GenerateDataKey*"
         ],
-        Resource = [
-           "arn:aws:kms:eu-west-2:345594581768:key/648c8c6f-54bf-4b79-ad72-0be6e8d72423",
-           "arn:aws:kms:eu-west-2:345594581768:key/9bbfbfd9-1745-4325-a9b7-33d1f6be89c1"
+        Resource = local.account == "prod" ? [
+          aws_kms_key.lambda_env_encryption.arn,
+          aws_kms_key.s3_shared_key.arn
+          ] : [
+          aws_kms_key.lambda_env_encryption.arn,
+          aws_kms_key.s3_shared_key.arn,
+          data.aws_kms_key.existing_lambda_env_encryption[0].arn
         ]
       }
     ]
   })
+
   tags = {
     Name = "immunisation-kms-endpoint"
   }
 }
-
 
 resource "aws_vpc_endpoint" "lambda_endpoint" {
   vpc_id            = data.aws_vpc.default.id
   service_name      = "com.amazonaws.${var.aws_region}.lambda"
   vpc_endpoint_type = "Interface"
 
-  subnet_ids = data.aws_subnets.default.ids
-  security_group_ids = [aws_security_group.lambda_redis_sg.id]
+  subnet_ids          = data.aws_subnets.default.ids
+  security_group_ids  = [aws_security_group.lambda_redis_sg.id]
   private_dns_enabled = true
   tags = {
     Name = "immunisation-lambda-endpoint"
   }
 }
+

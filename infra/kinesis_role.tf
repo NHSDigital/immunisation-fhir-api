@@ -4,7 +4,7 @@ resource "aws_iam_role" "kinesis_role" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Effect    = "Allow"
+      Effect = "Allow"
       Principal = {
         Service = "kinesis.amazonaws.com"
       }
@@ -20,8 +20,8 @@ resource "aws_iam_policy" "kinesis_kms_policy" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Effect   = "Allow"
-      Action   = [
+      Effect = "Allow"
+      Action = [
         "kms:Encrypt",
         "kms:Decrypt",
         "kms:GenerateDataKey*",

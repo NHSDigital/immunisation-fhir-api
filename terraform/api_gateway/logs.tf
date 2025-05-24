@@ -3,6 +3,7 @@ resource "aws_cloudwatch_log_group" "api_access_log" {
     retention_in_days = 30
 }
 
+# TODO - This is global, so is overwritten by each deployment - move to infra Terraform?
 resource "aws_api_gateway_account" "api_account" {
     cloudwatch_role_arn = aws_iam_role.api_cloudwatch.arn
 }
