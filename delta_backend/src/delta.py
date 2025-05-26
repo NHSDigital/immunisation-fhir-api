@@ -1,3 +1,5 @@
+import decimal
+
 import boto3
 import json
 import os
@@ -93,7 +95,7 @@ def process_record(record, log_data):
             if supplier_system not in ("DPSFULL", "DPSREDUCED"):
                 operation = new_image["Operation"]["S"]
                 action_flag = ActionFlag.CREATE if operation == Operation.CREATE else operation
-                resource_json = json.loads(new_image["Resource"]["S"])
+                resource_json = json.loads(new_image["Resource"]["S"], parse_float=decimal.Decimal)
                 FHIRConverter = Converter(resource_json, action_flag=action_flag)
                 flat_json = FHIRConverter.run_conversion()
                 error_records = FHIRConverter.get_error_records()
@@ -160,7 +162,7 @@ def process_record(record, log_data):
         operation_outcome["statusDesc"] = "Exception"
         logger.exception(f"Error processing record: {e}")
         ret = False
-    
+
     log_data["operation_outcome"] = operation_outcome
     return ret, log_data
 
