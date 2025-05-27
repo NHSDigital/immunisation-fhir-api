@@ -1,7 +1,7 @@
 import json
 import exception_messages
 from datetime import datetime, timedelta, timezone
-from common.mappings import Gender
+from common.mappings import Gender, ConversionFieldName
 
 class Extractor: 
 
@@ -47,7 +47,10 @@ class Extractor:
         person_forename = " ".join(selected_name.get("given", []))
         person_surname = selected_name.get("family", "")
 
-        return person_forename, person_surname
+        if person_forename and person_surname:
+            return person_forename, person_surname
+        
+        return "", ""
     
     def _get_practitioner_names(self):
         contained = self.fhir_json_data.get("contained", [])
@@ -57,7 +60,7 @@ class Extractor:
             return "", ""
 
         practitioner_names = practitioner.get("name", [])
-        valid_practitioner_names = [n for n in practitioner_names if "given" in n or "family" in n]
+        valid_practitioner_names = [n for n in practitioner_names if "given" in n and "family" in n]
         if not valid_practitioner_names:
             return "", ""
 
@@ -65,7 +68,10 @@ class Extractor:
         performing_professional_forename = " ".join(selected_practitioner_name.get("given", []))
         performing_professional_surname = selected_practitioner_name.get("family", "")
 
-        return performing_professional_forename, performing_professional_surname
+        if performing_professional_forename and performing_professional_surname:
+            return performing_professional_forename, performing_professional_surname
+        
+        return "", ""
 
     def _is_current_period(self, name, occurrence_time):
         period = name.get("period")
@@ -93,7 +99,7 @@ class Extractor:
         
         except Exception as e:
             message = "DateTime conversion error [%s]: %s" % (e.__class__.__name__, e)
-            error = self._log_error("DATE_AND_TIME", message, e, code=exception_messages.UNEXPECTED_EXCEPTION)
+            error = self._log_error(ConversionFieldName.DATE_AND_TIME, message, e, code=exception_messages.UNEXPECTED_EXCEPTION)
             return error
     
     def _get_first_snomed_code(self, coding_container: dict) -> str:
@@ -228,7 +234,7 @@ class Extractor:
         if patient:
             dob = patient.get("birthDate", "")   
             
-            return self._convert_date("PERSON_DOB", dob, self.DATE_CONVERT_FORMAT)          
+            return self._convert_date(ConversionFieldName.PERSON_DOB, dob, self.DATE_CONVERT_FORMAT)          
         return ""
     
     def extract_person_gender(self):
@@ -250,9 +256,6 @@ class Extractor:
             return self.DEFAULT_POSTCODE
 
         valid_addresses = [a for a in addresses if "postalCode" in a and self._is_current_period(a, occurrence_time)]
-        if not valid_addresses:
-            return self.DEFAULT_POSTCODE
-
         selected_address = next(
             (a for a in valid_addresses if a.get("use") == "home" and a.get("type") != "postal"),
             next(
@@ -260,12 +263,16 @@ class Extractor:
                 next((a for a in valid_addresses if a.get("use") != "old"), valid_addresses[0]),
             ),
         )
-        return selected_address.get("postalCode", self.DEFAULT_POSTCODE)
+        post_code = selected_address.get("postalCode", self.DEFAULT_POSTCODE)
+        if post_code: 
+            return post_code
+        
+        return addresses[0].get("postalCode", self.DEFAULT_POSTCODE) if addresses else self.DEFAULT_POSTCODE
     
     def extract_date_time(self) -> str: 
         date = self.fhir_json_data.get("occurrenceDateTime","")
         if date: 
-            return self._convert_date_to_safe_format("DATE_AND_TIME", date)
+            return self._convert_date_to_safe_format(ConversionFieldName.DATE_AND_TIME, date)
         return ""
     
     def extract_site_code(self):
@@ -276,7 +283,7 @@ class Extractor:
         
     def extract_unique_id(self):
         identifier = self.fhir_json_data.get("identifier", [])
-        if identifier and len(identifier) == 1: 
+        if identifier: 
             return identifier[0].get("value", "")
         return ""
     
@@ -294,18 +301,13 @@ class Extractor:
     
     def extract_recorded_date(self) -> str:
         date = self.fhir_json_data.get("recorded", "")
-        return self._convert_date("RECORDED_DATE", date, self.DATE_CONVERT_FORMAT)
+        return self._convert_date(ConversionFieldName.RECORDED_DATE, date, self.DATE_CONVERT_FORMAT)
     
     def extract_primary_source(self) -> bool | str: 
         primary_source = self.fhir_json_data.get("primarySource")
         
         if isinstance(primary_source, bool):
             return primary_source
-        if str(primary_source).strip().lower() == "true":
-            return True
-        if str(primary_source).strip().lower() == "false":
-            return False
-        
         return ""
     
     def extract_vaccination_procedure_code(self) -> str:
@@ -349,7 +351,7 @@ class Extractor:
       
     def extract_expiry_date(self) -> str:
         date = self.fhir_json_data.get("expirationDate","")
-        return self._convert_date("EXPIRY_DATE", date, self.DATE_CONVERT_FORMAT)
+        return self._convert_date(ConversionFieldName.EXPIRY_DATE, date, self.DATE_CONVERT_FORMAT)
     
     def extract_site_of_vaccination_code(self) -> str:
         site = self.fhir_json_data.get("site", {})

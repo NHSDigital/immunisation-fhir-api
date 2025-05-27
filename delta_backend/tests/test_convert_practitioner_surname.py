@@ -5,7 +5,7 @@ from utils_for_converter_tests import ValuesForTests
 from converter import Converter
 from common.mappings import ConversionFieldName
 
-class TestPractitionerSurNameToFlatJson(unittest.TestCase):
+class TestPractitionerSurnameToFlatJson(unittest.TestCase):
     
     def setUp(self):
         self.request_json_data = copy.deepcopy(ValuesForTests.json_data)
@@ -38,8 +38,8 @@ class TestPractitionerSurNameToFlatJson(unittest.TestCase):
                 "period": {"start": "2021-01-01", "end": "2021-02-09"},
             },
         ]
-        expected_forename = "Davis"
-        self._run_test_practitioner_surname(expected_forename)
+        expected_surname = "Davis"
+        self._run_test_practitioner_surname(expected_surname)
 
     def test_practitioner_surname_multiple_names_current(self):
         """Test case where no official name is present, but a name is current at the vaccination date"""
@@ -47,14 +47,14 @@ class TestPractitionerSurNameToFlatJson(unittest.TestCase):
             {"family": "Manny", "given": ["John"], "period": {"start": "2020-01-01", "end": "2023-01-01"}},
             {"family": "Doe", "given": ["Johnny"], "use": "nickname"},
         ]
-        expected_forename = "Manny"
-        self._run_test_practitioner_surname(expected_forename)
+        expected_surname = "Manny"
+        self._run_test_practitioner_surname(expected_surname)
 
     def test_practitioner_surname_single_name(self):
         """Test case where only one name instance exists"""
         self.request_json_data["contained"][0]["name"] = [{"family": "Doe", "given": ["Alex"], "use": "nickname"}]
-        expected_forename = "Doe"
-        self._run_test_practitioner_surname(expected_forename)
+        expected_surname = "Doe"
+        self._run_test_practitioner_surname(expected_surname)
 
     def test_practitioner_surname_no_official_but_current_not_old(self):
         """Test case where no official name is present, but a current name with use!=old exists at vaccination date"""
@@ -67,8 +67,8 @@ class TestPractitionerSurNameToFlatJson(unittest.TestCase):
                 "period": {"start": "2021-01-01", "end": "2023-01-01"},
             },
         ]
-        expected_forename = "Manny"
-        self._run_test_practitioner_surname(expected_forename)
+        expected_surname = "Manny"
+        self._run_test_practitioner_surname(expected_surname)
 
     def test_practitioner_surname_fallback_to_first_name(self):
         """Test case where no names match the previous conditions, fallback to first available name"""
@@ -87,37 +87,23 @@ class TestPractitionerSurNameToFlatJson(unittest.TestCase):
                 "period": {"start": "2021-01-01", "end": "2023-01-01"},
             },
         ]
-        expected_forename = "Doe"
-        self._run_test_practitioner_surname(expected_forename)
-
-    def test_practitioner_surname_empty(self):
-        """Test case where no names match the previous conditions, fallback to first available name"""
-        self.request_json_data["contained"][0]["name"] = [
-            {"given": ["Elliot"], "use": "nickname"},
-            {
-                "family": "Manny",
-                "given": ["John"],
-                "use": "old",
-                "period": {"start": "2018-01-01", "end": "2020-12-31"},
-            },
-            {
-                "family": "Davis",
-                "given": ["Chris"],
-                "use": "nickname",
-                "period": {"start": "2021-01-01", "end": "2023-01-01"},
-            },
-        ]
-        expected_forename = ""
-        self._run_test_practitioner_surname(expected_forename)
+        expected_surname = "Doe"
+        self._run_test_practitioner_surname(expected_surname)
 
     def test_contained_empty(self):
         """Test case where no names match the previous conditions, fallback to first available name"""
         self.request_json_data["contained"][0]["name"] = []
-        expected_forename = ""
-        self._run_test_practitioner_surname(expected_forename)
+        expected_surname = ""
+        self._run_test_practitioner_surname(expected_surname)
+        
+    def test_contained_only_surname(self):
+        """Test case where no names match the previous conditions, fallback to first available name"""
+        self.request_json_data["contained"][0]["name"] = [{"family": "Doe", "given": [], "use": "official"}]
+        expected_surname = ""
+        self._run_test_practitioner_surname(expected_surname)
 
-    def _run_test_practitioner_surname(self, expected_forename):
+    def _run_test_practitioner_surname(self, expected_surname):
         """Helper function to run the test"""
         self.converter = Converter(json.dumps(self.request_json_data))
         flat_json = self.converter.run_conversion()
-        self.assertEqual(flat_json[ConversionFieldName.PERFORMING_PROFESSIONAL_SURNAME], expected_forename)
+        self.assertEqual(flat_json[ConversionFieldName.PERFORMING_PROFESSIONAL_SURNAME], expected_surname)

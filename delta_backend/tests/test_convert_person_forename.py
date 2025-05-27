@@ -5,7 +5,7 @@ from utils_for_converter_tests import ValuesForTests
 from converter import Converter
 from common.mappings import ConversionFieldName
 
-class TestPersonForeNameToFlatJson(unittest.TestCase):
+class TestPersonForenmeToFlatJson(unittest.TestCase):
     
     def setUp(self):
         self.request_json_data = copy.deepcopy(ValuesForTests.json_data)
@@ -104,6 +104,18 @@ class TestPersonForeNameToFlatJson(unittest.TestCase):
         expected_forename = "Alice Marie"
         self._run_test(expected_forename)
 
+    def test_person_forename_exists_only(self):
+        """Test case where the selected name has multiple given names"""
+        self.request_json_data["contained"][1]["name"] = [
+            {
+                "given": ["Chris"],
+                "use": "official",
+                "period": {"start": "2021-01-01", "end": "2023-01-01"},
+            }
+        ]
+        expected_forename = ""
+        self._run_test(expected_forename)
+               
     def test_person_forename_names_not_provided(self):
         """Test case where the selected name has multiple given names"""
         self.request_json_data["contained"][1]["name"] = []
