@@ -1,3 +1,13 @@
+data "aws_ec2_managed_prefix_list" "egress" {
+    for_each = toset([
+        "com.amazonaws.global.cloudfront.origin-facing",
+        "com.amazonaws.eu-west-2.dynamodb",
+        "com.amazonaws.eu-west-2.s3"
+    ])
+
+    name = each.value
+}
+
 resource "aws_security_group" "lambda_redis_sg" {
   vpc_id = data.aws_vpc.default.id
   name   = "immunisation-security-group"
@@ -15,11 +25,8 @@ resource "aws_security_group" "lambda_redis_sg" {
     from_port = 0
     to_port   = 0
     protocol  = "-1"
-    # TODO - maybe look these up by name?
     prefix_list_ids = [
-      "pl-7ca54015", # com.amazonaws.eu-west-2.s3
-      "pl-93a247fa", # com.amazonaws.global.cloudfront.origin-facing
-      "pl-b3a742da"  # com.amazonaws.eu-west-2.dynamodb
+      for pl in data.aws_ec2_managed_prefix_list.egress : pl.id
     ]
   }
 
