@@ -273,7 +273,7 @@ class Extractor:
     
     def extract_date_time(self) -> str: 
         date = self.fhir_json_data.get("occurrenceDateTime","")
-        if date: 
+        if date:
             return self._convert_date_to_safe_format(ConversionFieldName.DATE_AND_TIME, date)
         return ""
 
@@ -285,7 +285,7 @@ class Extractor:
 
     def extract_unique_id(self):
         identifier = self.fhir_json_data.get("identifier", [])
-        if identifier: 
+        if identifier:
             return identifier[0].get("value", "")
         return ""
 
@@ -305,7 +305,7 @@ class Extractor:
         date = self.fhir_json_data.get("recorded", "")
         return self._convert_date(ConversionFieldName.RECORDED_DATE, date, self.DATE_CONVERT_FORMAT)
 
-    def extract_primary_source(self) -> bool | str: 
+    def extract_primary_source(self) -> bool | str:
         primary_source = self.fhir_json_data.get("primarySource")
 
         if isinstance(primary_source, bool):
