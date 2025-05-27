@@ -1,5 +1,5 @@
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Union
 
@@ -104,49 +104,47 @@ class PreValidation:
         containing a valid datetime. Note that partial dates are valid for FHIR, but are not allowed for this API.
         Valid formats are any of the following:
         * 'YYYY-MM-DD' - Full date only
-        * 'YYYY-MM-DDT00:00:00+00:00' - Full date, time without milliseconds, timezone
-        * 'YYYY-MM-DDT00:00:00.000+00:00' - Full date, time with milliseconds (any level of precision), timezone
+        * 'YYYY-MM-DDThh:mm:ss' - Full date, time without milliseconds
+        * 'YYYY-MM-DDThh:mm:ss.f' - Full date, time with milliseconds (any level of precision)
+        * 'YYYY-MM-DDThh:mm:ss%z' - Full date, time without milliseconds, timezone
+        * 'YYYY-MM-DDThh:mm:ss.f%z' - Full date, time with milliseconds (any level of precision), timezone
         """
 
         if not isinstance(field_value, str):
             raise TypeError(f"{field_location} must be a string")
 
-        error_message = (
-            f"{field_location} must be a valid datetime in the format 'YYYY-MM-DDThh:mm:ss+zz:zz' (where time element "
-            + "is optional, timezone must be given if and only if time is given, and milliseconds can be optionally "
-            + "included after the seconds). Note that partial dates are not allowed for "
-            + f"{field_location} for this service."
-        )
+        error_message = f"""{field_location} must be a valid datetime in one of the following formats:
+        - 'YYYY-MM-DD' — Full date only
+        - 'YYYY-MM-DDThh:mm:ss' — Full date and time without milliseconds
+        - 'YYYY-MM-DDThh:mm:ss.f' — Full date and time with milliseconds (any level of precision)
+        - 'YYYY-MM-DDThh:mm:ss%z' — Full date and time with timezone (e.g. +00:00 or +01:00)
+        - 'YYYY-MM-DDThh:mm:ss.f%z' — Full date and time with milliseconds and timezone
 
-        # Full date only
-        if "T" not in field_value:
+        Only '+00:00' and '+01:00' are accepted as valid timezone offsets.
+        Note that partial dates are not allowed for {field_location} in this service."""
+
+
+        allowed_suffixes = {"+00:00", "+01:00", "+0000", "+0100",}
+
+        # List of accepted strict formats
+        formats = [
+            "%Y-%m-%d", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%dT%H:%M:%S.%f",
+            "%Y-%m-%dT%H:%M:%S%z", "%Y-%m-%dT%H:%M:%S.%f%z",
+        ]
+
+        for fmt in formats:
             try:
-                datetime.strptime(field_value, "%Y-%m-%d")
-            except ValueError as error:
-                raise ValueError(error_message) from error
+                fhir_date = datetime.strptime(field_value, fmt)
+                
+                if fhir_date.tzinfo is not None:
+                   if not any(field_value.endswith(suffix) for suffix in allowed_suffixes):
+                       raise ValueError(error_message)
+                return fhir_date.isoformat()
+            except ValueError:
+                continue
 
-        else:
-
-            # Using %z in datetime.strptime function is more permissive than FHIR,
-            # so check that timezone meets FHIR format requirements first
-            timezone_pattern = re.compile(r"(\+|-)\d{2}:\d{2}")
-            if not timezone_pattern.fullmatch(field_value[-6:]):
-                raise ValueError(error_message)
-
-            # Full date, time without milliseconds, timezone
-            if "." not in field_value:
-                try:
-                    datetime.strptime(field_value, "%Y-%m-%dT%H:%M:%S%z")
-                except ValueError as error:
-                    raise ValueError(error_message) from error
-
-            # Full date, time with milliseconds, timezone
-            else:
-                try:
-                    datetime.strptime(field_value, "%Y-%m-%dT%H:%M:%S.%f%z")
-                except ValueError as error:
-                    raise ValueError(error_message) from error
-                    
+        raise ValueError(error_message)
+ 
     @staticmethod
     def for_snomed_code(field_value: str, field_location: str):
         """

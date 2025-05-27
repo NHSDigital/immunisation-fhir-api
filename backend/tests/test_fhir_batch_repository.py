@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, ANY, patch
 import boto3
 import simplejson as json
 import botocore.exceptions
-from moto import mock_dynamodb
+from moto import mock_aws
 from uuid import uuid4
 from models.errors import IdentifierDuplicationError, ResourceNotFoundError, UnhandledResponseError, ResourceFoundError
 from fhir_batch_repository import ImmunizationBatchRepository, create_table
@@ -15,7 +15,7 @@ imms_id = str(uuid4())
 def _make_immunization_pk(_id):
     return f"Immunization#{_id}"
 
-@mock_dynamodb
+@mock_aws
 class TestImmunizationBatchRepository(unittest.TestCase):
     
     def setUp(self):
@@ -331,7 +331,7 @@ class TestDeleteImmunization(TestImmunizationBatchRepository):
             )
                 self.repository.delete_immunization(self.immunization, "supplier", "vax-type", self.table, False)
 
-@mock_dynamodb
+@mock_aws
 @patch.dict(os.environ, {"DYNAMODB_TABLE_NAME": "TestTable"})
 class TestCreateTable(TestImmunizationBatchRepository):
 

@@ -34,11 +34,14 @@ class ValidValues:
     for_date_times = [
         "2000-01-01",  # Full date only
         "2000-01-01T00:00:00+00:00",  # Time and offset all zeroes
-        "1933-12-31T11:11:11+12:45",  # Positive offset (with hours and minutes not 0)
-        "1933-12-31T11:11:11-05:00",  # Negative offset
-        "1933-12-31T11:11:11.1+12:45",  # DateTime with milliseconds to 1 decimal place
+        "2000-01-01T10:34:27",        # Date with Time only
+        "2000-01-01T10:34:27.234",    # Date with Time and milliseconds
+        "2025-05-20T18:26:30+01:00",  # Date with Time with no milliseconds and positive offset
+        "2000-01-01T00:00:00+01:00",  # Time and offset all zeroes
+        "1933-12-31T11:11:11+01:00",  # Positive offset (with hours and minutes not 0)
+        "1933-12-31T11:11:11.1+00:00",  # DateTime with milliseconds to 1 decimal place
         "2000-01-01T00:00:00.000+00:00",  # DateTime with milliseconds to 3 decimal places
-        "1933-12-31T11:11:11.111111+12:45",  # DateTime with milliseconds to 6 decimal places
+        "1933-12-31T11:11:11.111111+00:00",  # DateTime with milliseconds to 6 decimal places
     ]
 
     for_strings_with_any_length_chars = (
@@ -286,9 +289,11 @@ class InvalidValues:
         "200001010000000000",  # Date, time and timezone digits only
         "2000",  # Year only
         "2000-01",  # Year and month only
-        "2000-01-01T00:00:00",  # Date and time only
-        "2000-01-01T00:00:00.000",  # Date and time only (with milliseconds)
         "2000-01-01T00:00:00+00",  # Date and time with GMT timezone offset only in hours
+        "2000-01-01T00:00:00-00:00",  # Date and time with negative GMT timezone offset
+        "2000-01-01T00:00:00-01:00",  # Date and time with negative GMT timezone offset
+        "2000-01-01T00:00:00-05:00",  # Date and time with negative offset asides from GMT and BST
+        "2000-01-01T00:00:00+05:00",  # Date and time with offset asides from GMT and BST
         "2000-01-01T00:00:00+01",  # Date and time with BST timezone offset only in hours
         "12000-01-01T00:00:00+00:00",  # Extra character at start of string
         "2000-01-01T00:00:00+00:001",  # Extra character at end of string
