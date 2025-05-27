@@ -27,7 +27,7 @@ class TestPersonPostalCodeToFlatJson(unittest.TestCase):
         
         expected_postal_code = "AB12 3CD"
         self._run_postal_code_test(expected_postal_code)
-    
+
     def test_person_postal_code_ignore_address_without_postal_code(self):
         """Test case where multiple addresses exist, but one lacks a postalCode"""
         self.request_json_data["contained"][1]["address"] = [

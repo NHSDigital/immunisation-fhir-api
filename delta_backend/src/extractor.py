@@ -233,9 +233,8 @@ class Extractor:
         patient = self._get_patient()
 
         if patient:
-            dob = patient.get("birthDate", "")   
-            
-            return self._convert_date(ConversionFieldName.PERSON_DOB, dob, self.DATE_CONVERT_FORMAT)          
+            dob = patient.get("birthDate", "")
+            return self._convert_date(ConversionFieldName.PERSON_DOB, dob, self.DATE_CONVERT_FORMAT)
         return ""
 
     def extract_person_gender(self):
@@ -305,7 +304,7 @@ class Extractor:
     def extract_recorded_date(self) -> str:
         date = self.fhir_json_data.get("recorded", "")
         return self._convert_date(ConversionFieldName.RECORDED_DATE, date, self.DATE_CONVERT_FORMAT)
-    
+
     def extract_primary_source(self) -> bool | str: 
         primary_source = self.fhir_json_data.get("primarySource")
 
@@ -355,7 +354,7 @@ class Extractor:
     def extract_expiry_date(self) -> str:
         date = self.fhir_json_data.get("expirationDate","")
         return self._convert_date(ConversionFieldName.EXPIRY_DATE, date, self.DATE_CONVERT_FORMAT)
-    
+
     def extract_site_of_vaccination_code(self) -> str:
         site = self.fhir_json_data.get("site", {})
         return self._get_first_snomed_code(site)
