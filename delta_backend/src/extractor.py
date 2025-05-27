@@ -256,17 +256,19 @@ class Extractor:
             return self.DEFAULT_POSTCODE
 
         valid_addresses = [a for a in addresses if "postalCode" in a and self._is_current_period(a, occurrence_time)]
-        selected_address = next(
-            (a for a in valid_addresses if a.get("use") == "home" and a.get("type") != "postal"),
-            next(
-                (a for a in valid_addresses if a.get("use") != "old" and a.get("type") != "postal"),
-                next((a for a in valid_addresses if a.get("use") != "old"), valid_addresses[0]),
-            ),
-        )
-        post_code = selected_address.get("postalCode", self.DEFAULT_POSTCODE)
-        if post_code: 
-            return post_code
         
+        if len(valid_addresses) > 0:
+            selected_address = next(
+                (a for a in valid_addresses if a.get("use") == "home" and a.get("type") != "postal"),
+                next(
+                    (a for a in valid_addresses if a.get("use") != "old" and a.get("type") != "postal"),
+                    next((a for a in valid_addresses if a.get("use") != "old"), valid_addresses[0]),
+                ),
+            )
+            post_code = selected_address.get("postalCode", self.DEFAULT_POSTCODE)
+            if post_code: 
+                return post_code
+            
         return addresses[0].get("postalCode", self.DEFAULT_POSTCODE) if addresses else self.DEFAULT_POSTCODE
     
     def extract_date_time(self) -> str: 
