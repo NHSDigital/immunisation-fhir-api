@@ -1,14 +1,20 @@
 import copy
+import datetime
 import json
 import unittest
-from tests.utils_for_converter_tests import ValuesForTests
-from Converter import Converter
-
+from utils_for_converter_tests import ValuesForTests
+from converter import Converter
+from common.mappings import ConversionFieldName
 
 class TestPersonPostalCodeToFlatJson(unittest.TestCase):
     
     def setUp(self):
         self.request_json_data = copy.deepcopy(ValuesForTests.json_data)
+    
+    def test_person_postal_code_not_valid_object(self): 
+        self.request_json_data["contained"][1]["address"] = {}
+        expected_postal_code = "ZZ99 3CZ"
+        self._run_postal_code_test(expected_postal_code)
         
     def test_person_postal_code_single_address(self):
         """Test case where only one address instance exists"""
@@ -94,6 +100,6 @@ class TestPersonPostalCodeToFlatJson(unittest.TestCase):
     def _run_postal_code_test(self, expected_postal_code):
         """Helper function to run the test"""
         self.converter = Converter(json.dumps(self.request_json_data))
-        flat_json = self.converter.runConversion(self.request_json_data, False, True)
-        self.assertEqual(flat_json["PERSON_POSTCODE"], expected_postal_code)
+        flat_json = self.converter.run_conversion()
+        self.assertEqual(flat_json[ConversionFieldName.PERSON_POSTCODE], expected_postal_code)
 
