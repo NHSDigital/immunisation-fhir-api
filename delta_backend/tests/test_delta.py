@@ -423,6 +423,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         # check that all records were sent to firehose
         self.assertEqual(mock_send_firehose.call_count, len(event["Records"]))
 
+import decimal
 class DeltaRecordProcessorTestCase(unittest.TestCase):
 
     def setUp(self):
@@ -531,6 +532,25 @@ class DeltaRecordProcessorTestCase(unittest.TestCase):
         self.assertEqual(operation_outcome["statusDesc"], "Exception")
         self.assertEqual(self.mock_delta_table.put_item.call_count, 1)
         self.assertEqual(self.mock_logger_exception.call_count, 1)
+
+    @patch("delta.json.loads")
+    def test_json_loads_called_with_parse_float_decimal(self, mock_json_loads):
+
+        # Arrange
+        record = ValuesForTests.get_event_record(
+            imms_id="id",
+            event_name=EventName.UPDATE,
+            operation=Operation.UPDATE
+        )
+        record["dynamodb"]["NewImage"]["Resource"]["S"] = f'{{"float_value": "1.23"}}'
+
+        self.mock_delta_table.put_item.return_value = success_response
+        # Act
+        delta.process_record(record, {})
+
+        # Assert
+        mock_json_loads.assert_any_call('{"float_value": "1.23"}', parse_float=decimal.Decimal)
+
 
 import delta
 
@@ -653,3 +673,4 @@ class TestSendMessage(unittest.TestCase):
         delta.send_message(record, "test-queue-url")
 
         self.mock_logger_error.assert_called()
+
