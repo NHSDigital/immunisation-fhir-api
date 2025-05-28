@@ -118,12 +118,12 @@ class TestPractitionerForenameToFlatJson(unittest.TestCase):
         expected_forename = ""
         self._run_practitioner_test(expected_forename)
 
-    def test_person_forename_exists_only(self):
+    def test_practitioner_forename_exists_only(self):
         """Test case where the selected name has multiple given names"""
         self.request_json_data["contained"][0]["name"] = [
-            {"use": "official", "period": {"start": "2021-01-01", "end": "2022-12-31"}}
+            {"given" : ["test"], "use": "official", "period": {"start": "2021-01-01", "end": "2022-12-31"}}
         ]
-        expected_forename = ""
+        expected_forename = "test"
         self._run_practitioner_test(expected_forename)
         
     def _run_practitioner_test(self, expected_forename):

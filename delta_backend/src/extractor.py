@@ -61,7 +61,7 @@ class Extractor:
             return "", ""
 
         practitioner_names = practitioner.get("name", [])
-        valid_practitioner_names = [n for n in practitioner_names if "given" in n and "family" in n]
+        valid_practitioner_names = [n for n in practitioner_names if "given" in n or "family" in n]
         if not valid_practitioner_names:
             return "", ""
 
@@ -69,10 +69,8 @@ class Extractor:
         performing_professional_forename = " ".join(selected_practitioner_name.get("given", []))
         performing_professional_surname = selected_practitioner_name.get("family", "")
 
-        if performing_professional_forename and performing_professional_surname:
-            return performing_professional_forename, performing_professional_surname
-        
-        return "", ""
+        return performing_professional_forename, performing_professional_surname
+
 
     def _is_current_period(self, name, occurrence_time):
         period = name.get("period")

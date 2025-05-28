@@ -98,8 +98,8 @@ class TestPractitionerSurnameToFlatJson(unittest.TestCase):
         
     def test_contained_only_surname(self):
         """Test case where no names match the previous conditions, fallback to first available name"""
-        self.request_json_data["contained"][0]["name"] = [{"family": "Doe", "given": [], "use": "official"}]
-        expected_surname = ""
+        self.request_json_data["contained"][0]["name"] = [{"family": "Doe", "use": "official"}]
+        expected_surname = "Doe"
         self._run_test_practitioner_surname(expected_surname)
 
     def _run_test_practitioner_surname(self, expected_surname):
