@@ -3,6 +3,7 @@ from unittest.mock import patch, MagicMock
 from botocore.exceptions import ClientError
 import os
 import json
+import decimal
 from common.mappings import EventName, Operation, ActionFlag
 from utils_for_converter_tests import ValuesForTests, RecordConfig
 
@@ -531,6 +532,26 @@ class DeltaRecordProcessorTestCase(unittest.TestCase):
         self.assertEqual(operation_outcome["statusDesc"], "Exception")
         self.assertEqual(self.mock_delta_table.put_item.call_count, 1)
         self.assertEqual(self.mock_logger_exception.call_count, 1)
+
+    @patch("delta.json.loads")
+    def test_json_loads_called_with_parse_float_decimal(self, mock_json_loads):
+
+        # Arrange
+        record = ValuesForTests.get_event_record(
+            imms_id="id",
+            event_name=EventName.UPDATE,
+            operation=Operation.UPDATE
+        )
+        record["dynamodb"]["NewImage"]["Resource"]["S"] = f'{{"float_value": "1.23"}}'
+
+        self.mock_delta_table.put_item.return_value = success_response
+        # Act
+        process_record(record, {})
+
+        # Assert
+        mock_json_loads.assert_any_call('{"float_value": "1.23"}', parse_float=decimal.Decimal)
+        
+
 
 import delta
 
