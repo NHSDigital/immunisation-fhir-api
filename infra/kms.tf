@@ -3,7 +3,7 @@ locals {
     Sid    = "Allow administration of the key",
     Effect = "Allow",
     Principal = {
-      AWS = "arn:aws:iam::${local.local_account_id}:root"
+      AWS = "arn:aws:iam::${local.immunisation_account_id}:root"
     },
     Action = [
       "kms:Create*",
@@ -29,7 +29,7 @@ locals {
     Sid    = "KMS KeyUser access",
     Effect = "Allow",
     Principal = {
-      AWS = ["arn:aws:iam::${local.local_account_id}:role/auto-ops"]
+      AWS = ["arn:aws:iam::${local.immunisation_account_id}:role/auto-ops"]
     },
     Action = [
       "kms:Encrypt",
@@ -42,7 +42,7 @@ locals {
     Sid    = "KMS KeyUser access for DevOps",
     Effect = "Allow",
     Principal = {
-      AWS = ["arn:aws:iam::${local.local_account_id}:role/DevOps"]
+      AWS = ["arn:aws:iam::${local.immunisation_account_id}:role/DevOps"]
     },
     Action = [
       "kms:Encrypt",
@@ -55,7 +55,7 @@ locals {
     Sid    = "AllowAccountA",
     Effect = "Allow",
     Principal = {
-      AWS = "arn:aws:iam::${local.account_id}:root"
+      AWS = "arn:aws:iam::${local.dspp_core_account_id}:root"
     },
     Action = [
       "kms:Encrypt",

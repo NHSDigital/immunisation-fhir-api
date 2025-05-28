@@ -4,6 +4,16 @@ resource "aws_s3_bucket" "batch_data_source_bucket" {
   bucket = "immunisation-batch-${local.account}-data-sources"
 }
 
+resource "aws_s3_bucket_public_access_block" "batch_data_source_bucket_public_access_block" {
+  count  = local.account == "prod" ? 1 : 0
+  bucket = aws_s3_bucket.batch_data_source_bucket[0].id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
 resource "aws_s3_bucket_policy" "batch_data_source_bucket_policy" {
   count  = local.account == "prod" ? 1 : 0
   bucket = aws_s3_bucket.batch_data_source_bucket[0].bucket
@@ -13,16 +23,33 @@ resource "aws_s3_bucket_policy" "batch_data_source_bucket_policy" {
       {
         Effect : "Allow",
         Principal : {
-          AWS : "arn:aws:iam::${local.account_id}:root"
+          AWS : "arn:aws:iam::${local.dspp_core_account_id}:root"
         },
         Action : [
           "s3:PutObject"
         ],
         Resource : [
-          "arn:aws:s3:::${aws_s3_bucket.batch_data_source_bucket[0].bucket}",
-          "arn:aws:s3:::${aws_s3_bucket.batch_data_source_bucket[0].bucket}/*"
+          aws_s3_bucket.batch_data_source_bucket[0].arn,
+          "${aws_s3_bucket.batch_data_source_bucket[0].arn}/*"
         ]
-      }
+      },
+      {
+        Sid    = "HTTPSOnly"
+        Effect = "Deny"
+        Principal = {
+          "AWS" : "*"
+        }
+        Action = "s3:*"
+        Resource = [
+          aws_s3_bucket.batch_data_source_bucket[0].arn,
+          "${aws_s3_bucket.batch_data_source_bucket[0].arn}/*",
+        ]
+        Condition = {
+          Bool = {
+            "aws:SecureTransport" = "false"
+          }
+        }
+      },
     ]
   })
 }

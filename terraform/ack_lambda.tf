@@ -68,7 +68,7 @@ resource "aws_ecr_repository_policy" "ack_lambda_ECRImageRetreival_policy" {
         ],
         "Condition" : {
           "StringLike" : {
-            "aws:sourceArn" : "arn:aws:lambda:eu-west-2:${local.local_account_id}:function:${local.short_prefix}-ack-lambda"
+            "aws:sourceArn" : "arn:aws:lambda:eu-west-2:${local.immunisation_account_id}:function:${local.short_prefix}-ack-lambda"
           }
         }
       }
@@ -105,7 +105,7 @@ resource "aws_iam_policy" "ack_lambda_exec_policy" {
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ]
-        Resource = "arn:aws:logs:eu-west-2:${local.local_account_id}:log-group:/aws/lambda/${local.short_prefix}-ack-lambda:*"
+        Resource = "arn:aws:logs:eu-west-2:${local.immunisation_account_id}:log-group:/aws/lambda/${local.short_prefix}-ack-lambda:*"
       },
       {
         Effect = "Allow"
@@ -148,7 +148,7 @@ resource "aws_iam_policy" "ack_lambda_exec_policy" {
           "sqs:DeleteMessage",
           "sqs:GetQueueAttributes"
         ],
-      Resource = "arn:aws:sqs:eu-west-2:${local.local_account_id}:${local.short_prefix}-ack-metadata-queue.fifo" },
+      Resource = "arn:aws:sqs:eu-west-2:${local.immunisation_account_id}:${local.short_prefix}-ack-metadata-queue.fifo" },
       {
         "Effect" : "Allow",
         "Action" : [

@@ -69,7 +69,7 @@ resource "aws_ecr_repository_policy" "delta_lambda_ECRImageRetreival_policy" {
         ],
         "Condition" : {
           "StringLike" : {
-            "aws:sourceArn" : "arn:aws:lambda:eu-west-2:${local.local_account_id}:function:${local.short_prefix}-${local.function_name}"
+            "aws:sourceArn" : "arn:aws:lambda:eu-west-2:${local.immunisation_account_id}:function:${local.short_prefix}-${local.function_name}"
           }
         }
       }

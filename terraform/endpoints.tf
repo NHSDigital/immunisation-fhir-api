@@ -29,7 +29,7 @@ locals {
     # except for prod and ref, any other env uses PDS int environment
     "PDS_ENV"              = local.environment == "prod" ? "prod" : local.environment == "ref" ? "ref" : "int",
     "SPLUNK_FIREHOSE_NAME" = module.splunk.firehose_stream_name
-    "SQS_QUEUE_URL"        = "https://sqs.eu-west-2.amazonaws.com/${local.local_account_id}/${local.short_prefix}-ack-metadata-queue.fifo"
+    "SQS_QUEUE_URL"        = "https://sqs.eu-west-2.amazonaws.com/${local.immunisation_account_id}/${local.short_prefix}-ack-metadata-queue.fifo"
   }
 }
 data "aws_iam_policy_document" "imms_policy_document" {
@@ -39,7 +39,7 @@ data "aws_iam_policy_document" "imms_policy_document" {
     }),
     templatefile("${local.policy_path}/log.json", {}),
     templatefile("${local.policy_path}/lambda_to_sqs.json", {
-      "local_account" : local.local_account_id
+      "local_account" : local.immunisation_account_id
       "queue_prefix" : local.short_prefix
     }),
     templatefile("${local.policy_path}/dynamo_key_access.json", {

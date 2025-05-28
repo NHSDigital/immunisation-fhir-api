@@ -93,7 +93,7 @@ resource "aws_iam_policy" "ecs_task_exec_policy" {
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ],
-        Resource = "arn:aws:logs:${var.aws_region}:${local.local_account_id}:log-group:/aws/vendedlogs/ecs/${local.short_prefix}-processor-task:*"
+        Resource = "arn:aws:logs:${var.aws_region}:${local.immunisation_account_id}:log-group:/aws/vendedlogs/ecs/${local.short_prefix}-processor-task:*"
       },
       {
         Effect = "Allow",
@@ -148,7 +148,7 @@ resource "aws_iam_policy" "ecs_task_exec_policy" {
         Action = [
           "ecr:GetAuthorizationToken"
         ],
-        Resource = "arn:aws:ecr:${var.aws_region}:${local.local_account_id}:repository/${local.short_prefix}-processing-repo"
+        Resource = "arn:aws:ecr:${var.aws_region}:${local.immunisation_account_id}:repository/${local.short_prefix}-processing-repo"
       },
       {
         Effect = "Allow"
@@ -271,7 +271,7 @@ resource "aws_iam_policy" "fifo_pipe_policy" {
           "pipes:DescribePipe"
         ],
         Resource = [
-          "arn:aws:pipes:${var.aws_region}:${local.local_account_id}:pipe/${local.short_prefix}-pipe",
+          "arn:aws:pipes:${var.aws_region}:${local.immunisation_account_id}:pipe/${local.short_prefix}-pipe",
           aws_ecs_task_definition.ecs_task.arn
         ]
       },
@@ -288,11 +288,11 @@ resource "aws_iam_policy" "fifo_pipe_policy" {
         ],
         Effect = "Allow",
         Resource = [
-          "arn:aws:logs:${var.aws_region}:${local.local_account_id}:log-group:/aws/vendedlogs/pipes/${local.short_prefix}-pipe-logs:*",
-          "arn:aws:ecs:${var.aws_region}:${local.local_account_id}:task/${local.short_prefix}-ecs-cluster/*",
-          "arn:aws:logs:${var.aws_region}:${local.local_account_id}:log-group:/aws/vendedlogs/ecs/${local.short_prefix}-processor-task:*",
+          "arn:aws:logs:${var.aws_region}:${local.immunisation_account_id}:log-group:/aws/vendedlogs/pipes/${local.short_prefix}-pipe-logs:*",
+          "arn:aws:ecs:${var.aws_region}:${local.immunisation_account_id}:task/${local.short_prefix}-ecs-cluster/*",
+          "arn:aws:logs:${var.aws_region}:${local.immunisation_account_id}:log-group:/aws/vendedlogs/ecs/${local.short_prefix}-processor-task:*",
           aws_sqs_queue.supplier_fifo_queue.arn,
-          "arn:aws:ecs:${var.aws_region}:${local.local_account_id}:cluster/${local.short_prefix}-ecs-cluster",
+          "arn:aws:ecs:${var.aws_region}:${local.immunisation_account_id}:cluster/${local.short_prefix}-ecs-cluster",
           aws_ecs_task_definition.ecs_task.arn
         ]
       },

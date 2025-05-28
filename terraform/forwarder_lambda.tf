@@ -72,7 +72,7 @@ resource "aws_ecr_repository_policy" "forwarder_lambda_ECRImageRetreival_policy"
         ],
         "Condition" : {
           "StringLike" : {
-            "aws:sourceArn" : "arn:aws:lambda:eu-west-2:${local.local_account_id}:function:${local.short_prefix}-forwarding_lambda"
+            "aws:sourceArn" : "arn:aws:lambda:eu-west-2:${local.immunisation_account_id}:function:${local.short_prefix}-forwarding_lambda"
           }
         }
       }
@@ -109,7 +109,7 @@ resource "aws_iam_policy" "forwarding_lambda_exec_policy" {
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ]
-        Resource = "arn:aws:logs:${var.aws_region}:${local.local_account_id}:log-group:/aws/lambda/${local.short_prefix}-forwarding_lambda:*",
+        Resource = "arn:aws:logs:${var.aws_region}:${local.immunisation_account_id}:log-group:/aws/lambda/${local.short_prefix}-forwarding_lambda:*",
       },
       {
         Effect = "Allow"

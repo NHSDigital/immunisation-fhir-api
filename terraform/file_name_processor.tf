@@ -68,7 +68,7 @@ resource "aws_ecr_repository_policy" "filenameprocessor_lambda_ECRImageRetreival
         ],
         "Condition" : {
           "StringLike" : {
-            "aws:sourceArn" : "arn:aws:lambda:eu-west-2:${local.local_account_id}:function:${local.short_prefix}-filenameproc_lambda"
+            "aws:sourceArn" : "arn:aws:lambda:eu-west-2:${local.immunisation_account_id}:function:${local.short_prefix}-filenameproc_lambda"
           }
         }
       }
@@ -105,7 +105,7 @@ resource "aws_iam_policy" "filenameprocessor_lambda_exec_policy" {
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ]
-        Resource = "arn:aws:logs:${var.aws_region}:${local.local_account_id}:log-group:/aws/lambda/${local.short_prefix}-filenameproc_lambda:*"
+        Resource = "arn:aws:logs:${var.aws_region}:${local.immunisation_account_id}:log-group:/aws/lambda/${local.short_prefix}-filenameproc_lambda:*"
       },
       {
         Effect = "Allow"
@@ -166,7 +166,7 @@ resource "aws_iam_policy" "filenameprocessor_lambda_exec_policy" {
         Effect = "Allow"
         Action = "lambda:InvokeFunction"
         Resource = [
-          "arn:aws:lambda:${var.aws_region}:${local.local_account_id}:function:imms-${local.env}-filenameproc_lambda",
+          "arn:aws:lambda:${var.aws_region}:${local.immunisation_account_id}:function:imms-${local.env}-filenameproc_lambda",
         ]
       }
     ]
@@ -378,7 +378,7 @@ resource "aws_iam_policy" "elasticache_permissions" {
           "elasticache:AddTagsToResource",
           "elasticache:RemoveTagsFromResource"
         ]
-        Resource = "arn:aws:elasticache:${var.aws_region}:${local.local_account_id}:cluster/immunisation-redis-cluster"
+        Resource = "arn:aws:elasticache:${var.aws_region}:${local.immunisation_account_id}:cluster/immunisation-redis-cluster"
       },
       {
         Effect = "Allow"
@@ -387,7 +387,7 @@ resource "aws_iam_policy" "elasticache_permissions" {
           "elasticache:DeleteCacheCluster",
           "elasticache:ModifyCacheCluster"
         ]
-        Resource = "arn:aws:elasticache:${var.aws_region}:${local.local_account_id}:cluster/immunisation-redis-cluster"
+        Resource = "arn:aws:elasticache:${var.aws_region}:${local.immunisation_account_id}:cluster/immunisation-redis-cluster"
         Condition = {
           "StringEquals" : {
             "aws:RequestedRegion" : var.aws_region
@@ -399,7 +399,7 @@ resource "aws_iam_policy" "elasticache_permissions" {
         Action = [
           "elasticache:DescribeCacheSubnetGroups"
         ]
-        Resource = "arn:aws:elasticache:${var.aws_region}:${local.local_account_id}:subnet-group/immunisation-redis-subnet-group"
+        Resource = "arn:aws:elasticache:${var.aws_region}:${local.immunisation_account_id}:subnet-group/immunisation-redis-subnet-group"
       },
       {
         Effect = "Allow"
@@ -408,7 +408,7 @@ resource "aws_iam_policy" "elasticache_permissions" {
           "elasticache:DeleteCacheSubnetGroup",
           "elasticache:ModifyCacheSubnetGroup"
         ]
-        Resource = "arn:aws:elasticache:${var.aws_region}:${local.local_account_id}:subnet-group/immunisation-redis-subnet-group"
+        Resource = "arn:aws:elasticache:${var.aws_region}:${local.immunisation_account_id}:subnet-group/immunisation-redis-subnet-group"
         Condition = {
           "StringEquals" : {
             "aws:RequestedRegion" : var.aws_region

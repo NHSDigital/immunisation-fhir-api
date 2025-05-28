@@ -6,7 +6,7 @@ resource "aws_iam_role" "dynamo_s3_access_role" {
       {
         Effect : "Allow",
         Principal : {
-          AWS : "arn:aws:iam::${local.account_id}:root"
+          AWS : "arn:aws:iam::${local.dspp_core_account_id}:root"
         },
         Action : "sts:AssumeRole"
       }

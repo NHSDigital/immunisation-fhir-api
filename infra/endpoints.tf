@@ -54,7 +54,7 @@ resource "aws_vpc_endpoint" "sqs_endpoint" {
       {
         Effect = "Allow"
         Principal = {
-          AWS = "arn:aws:iam::${local.account_id}:root"
+          AWS = "arn:aws:iam::${local.dspp_core_account_id}:root"
         },
         Action = [
           "sqs:SendMessage",
@@ -84,7 +84,7 @@ resource "aws_vpc_endpoint" "s3_endpoint" {
       {
         Effect = "Allow"
         Principal = {
-          AWS = "arn:aws:iam::${local.account_id}:root"
+          AWS = "arn:aws:iam::${local.dspp_core_account_id}:root"
         },
         Action = [
           "s3:GetObject",
@@ -117,7 +117,7 @@ resource "aws_vpc_endpoint" "kinesis_endpoint" {
       {
         Effect = "Allow",
         Principal = {
-          AWS = "arn:aws:iam::${local.account_id}:root"
+          AWS = "arn:aws:iam::${local.dspp_core_account_id}:root"
         },
         Action = [
           "firehose:ListDeliveryStreams",
@@ -147,7 +147,7 @@ resource "aws_vpc_endpoint" "dynamodb" {
       {
         "Effect" : "Allow",
         "Principal" : {
-          AWS = "arn:aws:iam::${local.account_id}:root"
+          AWS = "arn:aws:iam::${local.dspp_core_account_id}:root"
         },
         "Action" : "*",
         "Resource" : "*"
@@ -215,7 +215,7 @@ resource "aws_vpc_endpoint" "kinesis_stream_endpoint" {
       {
         Effect = "Allow",
         Principal = {
-          AWS = "arn:aws:iam::${local.account_id}:root"
+          AWS = "arn:aws:iam::${local.dspp_core_account_id}:root"
         },
         Action = [
           "kinesis:ListShards",
@@ -254,7 +254,7 @@ resource "aws_vpc_endpoint" "kms_endpoint" {
       {
         Effect = "Allow",
         Principal = {
-          AWS = "arn:aws:iam::${local.account_id}:root"
+          AWS = "arn:aws:iam::${local.dspp_core_account_id}:root"
         },
         Action = [
           "kms:Decrypt",

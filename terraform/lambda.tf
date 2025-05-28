@@ -74,13 +74,13 @@ resource "aws_ecr_repository_policy" "operation_lambda_ECRImageRetreival_policy"
         "Condition" : {
           "StringLike" : {
             "aws:sourceArn" : [
-              "arn:aws:lambda:eu-west-2:${local.local_account_id}:function:${local.short_prefix}_get_status",
-              "arn:aws:lambda:eu-west-2:${local.local_account_id}:function:${local.short_prefix}_not_found",
-              "arn:aws:lambda:eu-west-2:${local.local_account_id}:function:${local.short_prefix}_search_imms",
-              "arn:aws:lambda:eu-west-2:${local.local_account_id}:function:${local.short_prefix}_get_imms",
-              "arn:aws:lambda:eu-west-2:${local.local_account_id}:function:${local.short_prefix}_delete_imms",
-              "arn:aws:lambda:eu-west-2:${local.local_account_id}:function:${local.short_prefix}_create_imms",
-              "arn:aws:lambda:eu-west-2:${local.local_account_id}:function:${local.short_prefix}_update_imms"
+              "arn:aws:lambda:eu-west-2:${local.immunisation_account_id}:function:${local.short_prefix}_get_status",
+              "arn:aws:lambda:eu-west-2:${local.immunisation_account_id}:function:${local.short_prefix}_not_found",
+              "arn:aws:lambda:eu-west-2:${local.immunisation_account_id}:function:${local.short_prefix}_search_imms",
+              "arn:aws:lambda:eu-west-2:${local.immunisation_account_id}:function:${local.short_prefix}_get_imms",
+              "arn:aws:lambda:eu-west-2:${local.immunisation_account_id}:function:${local.short_prefix}_delete_imms",
+              "arn:aws:lambda:eu-west-2:${local.immunisation_account_id}:function:${local.short_prefix}_create_imms",
+              "arn:aws:lambda:eu-west-2:${local.immunisation_account_id}:function:${local.short_prefix}_update_imms"
             ]
           }
         }

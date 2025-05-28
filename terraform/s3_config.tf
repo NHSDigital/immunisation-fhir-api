@@ -20,7 +20,7 @@ resource "aws_s3_bucket_policy" "batch_data_source_bucket_policy" {
       {
         Effect : "Allow",
         Principal : {
-          AWS : "arn:aws:iam::${local.account_id}:root"
+          AWS : "arn:aws:iam::${local.dspp_core_account_id}:root"
         },
         Action : local.environment == "prod" ? [
           "s3:PutObject"
@@ -114,7 +114,7 @@ resource "aws_s3_bucket_policy" "batch_data_destination_bucket_policy" {
       {
         Effect : "Allow",
         Principal : {
-          AWS : "arn:aws:iam::${local.account_id}:root"
+          AWS : "arn:aws:iam::${local.dspp_core_account_id}:root"
         },
         Action : local.environment == "prod" ? [
           "s3:ListBucket",
