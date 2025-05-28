@@ -39,11 +39,11 @@ class Extractor:
             return filtered_official_names[0]
 
         valid_names = [n for n in names if self._is_current_period(n, occurrence_time) and n.get("use") != "old"]
-        if valid_names:
-            filtered_valid_names = [n for n in valid_names if has_required_fields(n)]
-            return filtered_valid_names[0]
+        filtered_valid_names = [n for n in valid_names if has_required_fields(n)]
+        
+        return filtered_valid_names[0] if filtered_valid_names else names[0]
             
-        return names[0]
+
 
     def _get_person_names(self):
         occurrence_time = self._get_occurance_date_time()
