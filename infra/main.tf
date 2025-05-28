@@ -4,11 +4,6 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5"
     }
-    # TODO - do we need docker?
-    docker = {
-      source  = "kreuzwerker/docker"
-      version = "3.0.2"
-    }
   }
   backend "s3" {
     region = "eu-west-2"
