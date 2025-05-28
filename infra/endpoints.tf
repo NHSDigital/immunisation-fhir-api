@@ -1,11 +1,11 @@
 data "aws_ec2_managed_prefix_list" "egress" {
-    for_each = toset([
-        "com.amazonaws.global.cloudfront.origin-facing",
-        "com.amazonaws.eu-west-2.dynamodb",
-        "com.amazonaws.eu-west-2.s3"
-    ])
+  for_each = toset([
+    "com.amazonaws.global.cloudfront.origin-facing",
+    "com.amazonaws.eu-west-2.dynamodb",
+    "com.amazonaws.eu-west-2.s3"
+  ])
 
-    name = each.value
+  name = each.value
 }
 
 resource "aws_security_group" "lambda_redis_sg" {
@@ -54,9 +54,7 @@ resource "aws_vpc_endpoint" "sqs_endpoint" {
       {
         Effect = "Allow"
         Principal = {
-          "AWS" : [
-            "*"
-          ]
+          AWS = "arn:aws:iam::${local.account_id}:root"
         },
         Action = [
           "sqs:SendMessage",
@@ -86,7 +84,7 @@ resource "aws_vpc_endpoint" "s3_endpoint" {
       {
         Effect = "Allow"
         Principal = {
-          "AWS" : "*"
+          AWS = "arn:aws:iam::${local.account_id}:root"
         },
         Action = [
           "s3:GetObject",
@@ -117,8 +115,10 @@ resource "aws_vpc_endpoint" "kinesis_endpoint" {
     Version = "2012-10-17",
     Statement = [
       {
-        Effect    = "Allow",
-        Principal = "*",
+        Effect = "Allow",
+        Principal = {
+          AWS = "arn:aws:iam::${local.account_id}:root"
+        },
         Action = [
           "firehose:ListDeliveryStreams",
           "firehose:PutRecord",
@@ -146,7 +146,9 @@ resource "aws_vpc_endpoint" "dynamodb" {
     Statement = [
       {
         "Effect" : "Allow",
-        "Principal" : "*",
+        "Principal" : {
+          AWS = "arn:aws:iam::${local.account_id}:root"
+        },
         "Action" : "*",
         "Resource" : "*"
       }
@@ -213,9 +215,7 @@ resource "aws_vpc_endpoint" "kinesis_stream_endpoint" {
       {
         Effect = "Allow",
         Principal = {
-          "AWS" : [
-            "*"
-          ]
+          AWS = "arn:aws:iam::${local.account_id}:root"
         },
         Action = [
           "kinesis:ListShards",
@@ -252,8 +252,10 @@ resource "aws_vpc_endpoint" "kms_endpoint" {
     Version = "2012-10-17",
     Statement = [
       {
-        Effect    = "Allow",
-        Principal = "*",
+        Effect = "Allow",
+        Principal = {
+          AWS = "arn:aws:iam::${local.account_id}:root"
+        },
         Action = [
           "kms:Decrypt",
           "kms:Encrypt",
@@ -288,4 +290,3 @@ resource "aws_vpc_endpoint" "lambda_endpoint" {
     Name = "immunisation-lambda-endpoint"
   }
 }
-

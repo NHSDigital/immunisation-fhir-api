@@ -3,6 +3,15 @@ resource "aws_s3_bucket" "batch_data_source_bucket" {
   force_destroy = local.is_temp
 }
 
+resource "aws_s3_bucket_public_access_block" "batch_data_source_bucket_public_access_block" {
+  bucket = aws_s3_bucket.batch_data_source_bucket.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
 resource "aws_s3_bucket_policy" "batch_data_source_bucket_policy" {
   bucket = aws_s3_bucket.batch_data_source_bucket.bucket
   policy = jsonencode({
@@ -25,7 +34,24 @@ resource "aws_s3_bucket_policy" "batch_data_source_bucket_policy" {
           aws_s3_bucket.batch_data_source_bucket.arn,
           "${aws_s3_bucket.batch_data_source_bucket.arn}/*"
         ]
-      }
+      },
+      {
+        Sid    = "HTTPSOnly"
+        Effect = "Deny"
+        Principal = {
+          "AWS" : "*"
+        }
+        Action = "s3:*"
+        Resource = [
+          aws_s3_bucket.batch_data_source_bucket.arn,
+          "${aws_s3_bucket.batch_data_source_bucket.arn}/*",
+        ]
+        Condition = {
+          Bool = {
+            "aws:SecureTransport" = "false"
+          }
+        }
+      },
     ]
   })
 }
@@ -71,6 +97,15 @@ resource "aws_s3_bucket" "batch_data_destination_bucket" {
   force_destroy = local.is_temp
 }
 
+resource "aws_s3_bucket_public_access_block" "batch_data_destination_bucket_public_access_block" {
+  bucket = aws_s3_bucket.batch_data_destination_bucket.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
 resource "aws_s3_bucket_policy" "batch_data_destination_bucket_policy" {
   bucket = aws_s3_bucket.batch_data_destination_bucket.id
   policy = jsonencode({
@@ -93,7 +128,24 @@ resource "aws_s3_bucket_policy" "batch_data_destination_bucket_policy" {
           aws_s3_bucket.batch_data_destination_bucket.arn,
           "${aws_s3_bucket.batch_data_destination_bucket.arn}/*"
         ]
-      }
+      },
+      {
+        Sid    = "HTTPSOnly"
+        Effect = "Deny"
+        Principal = {
+          "AWS" : "*"
+        }
+        Action = "s3:*"
+        Resource = [
+          aws_s3_bucket.batch_data_destination_bucket.arn,
+          "${aws_s3_bucket.batch_data_destination_bucket.arn}/*",
+        ]
+        Condition = {
+          Bool = {
+            "aws:SecureTransport" = "false"
+          }
+        }
+      },
     ]
   })
 }
@@ -170,7 +222,7 @@ resource "aws_s3_bucket_policy" "batch_config_bucket_policy" {
         Sid    = "HTTPSOnly"
         Effect = "Deny"
         Principal = {
-          AWS = "arn:aws:iam::${local.local_account_id}:root"
+          AWS = "*"
         }
         Action = "s3:*"
         Resource = [
