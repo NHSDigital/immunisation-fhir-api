@@ -254,6 +254,9 @@ class Extractor:
                 return ""
         return ""
 
+    def normalize(self, value):
+        return value.lower() if isinstance(value, str) else value
+
     def extract_valid_address(self):
         occurrence_time = self._get_occurance_date_time()
         patient = self._get_patient()
@@ -262,21 +265,23 @@ class Extractor:
         if not isinstance(addresses, list) or not addresses:
             return self.DEFAULT_POSTCODE
 
-        valid_addresses = [a for a in addresses if "postalCode" in a and self._is_current_period(a, occurrence_time)]
-        
-        if len(valid_addresses) > 0:
-            selected_address = next(
-                (a for a in valid_addresses if a.get("use") == "home" and a.get("type") != "postal"),
-                next(
-                    (a for a in valid_addresses if a.get("use") != "old" and a.get("type") != "postal"),
-                    next((a for a in valid_addresses if a.get("use") != "old"), valid_addresses[0]),
-                ),
-            )
-            post_code = selected_address.get("postalCode", self.DEFAULT_POSTCODE)
-            if post_code: 
-                return post_code
-            
-        return addresses[0].get("postalCode", self.DEFAULT_POSTCODE) if addresses else self.DEFAULT_POSTCODE
+        if len(addresses) == 1:
+            return addresses[0].get("postalCode", self.DEFAULT_POSTCODE)
+
+        if not (valid_addresses := [
+            addr for addr in addresses
+            if "postalCode" in addr and self._is_current_period(addr, occurrence_time)
+        ]):
+            return self.DEFAULT_POSTCODE
+
+        selected_address = (
+            next((a for a in valid_addresses if self.normalize(a.get("use")) == "home" and self.normalize(a.get("type")) != "postal"), None)
+            or next((a for a in valid_addresses if self.normalize(a.get("use")) != "old" and self.normalize(a.get("type")) != "postal"), None)
+            or next((a for a in valid_addresses if self.normalize(a.get("use")) != "old"), None)
+            or valid_addresses[0]
+        )
+
+        return selected_address.get("postalCode", self.DEFAULT_POSTCODE)
     
     def extract_date_time(self) -> str: 
         date = self.fhir_json_data.get("occurrenceDateTime","")
