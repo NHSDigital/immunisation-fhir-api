@@ -120,6 +120,24 @@ class TestPersonForenmeToFlatJson(unittest.TestCase):
         """Test case where the selected name has multiple given names"""
         self.request_json_data["contained"][1]["name"] = []
         self._run_test("")
+    
+    def test_person_forename_exists_only_in_one_instance(self):
+        """Test case where the selected name has multiple given names"""
+        self.request_json_data["contained"][1]["name"] = [
+            {
+                "given": ["Jack"],
+                "use": "official",
+                "period": { "start": "2021-01-01", "end": "2023-01-01" }
+            },
+            {
+                "family": "Smith",
+                "given": ["Alex"],
+                "use": "official",
+                "period": { "start": "2021-01-01", "end": "2023-01-01" }
+            }
+        ]
+        expected_forename = "Alex"
+        self._run_test(expected_forename)
         
     def _run_test(self, expected_forename):
         """Helper function to run the test"""

@@ -28,13 +28,22 @@ class Extractor:
         contained = self.fhir_json_data.get("contained", [])
         return next((c for c in contained if isinstance(c, dict) and c.get("resourceType") == "Patient"), "")
 
-    def _get_valid_names(self, names, occurrence_time):
+    def _get_valid_names(self, names, occurrence_time, resource_type="Patient"):
+        
+        def has_required_fields(name):
+            return "given" in name and "family" in name if resource_type == "Patient" else True
+        
         official_names = [n for n in names if n.get("use") == "official" and self._is_current_period(n, occurrence_time)]
         if official_names:
-            return official_names[0]
+            filtered_official_names = [n for n in official_names if has_required_fields(n)]
+            return filtered_official_names[0]
 
         valid_names = [n for n in names if self._is_current_period(n, occurrence_time) and n.get("use") != "old"]
-        return valid_names[0] if valid_names else names[0]
+        if valid_names:
+            filtered_valid_names = [n for n in valid_names if has_required_fields(n)]
+            return filtered_valid_names[0]
+            
+        return names[0]
 
     def _get_person_names(self):
         occurrence_time = self._get_occurance_date_time()
@@ -44,7 +53,7 @@ class Extractor:
         if not isinstance(names, list) or not names:
             return "", ""
 
-        selected_name = self._get_valid_names(names, occurrence_time)
+        selected_name = self._get_valid_names(names, occurrence_time, resource_type="Patient")
         person_forename = " ".join(selected_name.get("given", []))
         person_surname = selected_name.get("family", "")
 
@@ -65,7 +74,7 @@ class Extractor:
         if not valid_practitioner_names:
             return "", ""
 
-        selected_practitioner_name = self._get_valid_names(valid_practitioner_names, occurrence_time)
+        selected_practitioner_name = self._get_valid_names(valid_practitioner_names, occurrence_time, resource_type="Practitioner")
         performing_professional_forename = " ".join(selected_practitioner_name.get("given", []))
         performing_professional_surname = selected_practitioner_name.get("family", "")
 
