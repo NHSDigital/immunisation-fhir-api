@@ -17,6 +17,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install poetry
+        run: pip install poetry==1.8.4
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
@@ -35,7 +38,6 @@ jobs:
 
       - name: Create venvs and install dependencies
         run: |
-          pip install poetry==1.8.4
           for subproject in filenameprocessor recordprocessor backend ack_backend delta_backend mesh_processor
           do
             cd $subproject
