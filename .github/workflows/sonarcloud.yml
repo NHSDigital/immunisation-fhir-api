@@ -35,9 +35,6 @@ jobs:
           aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
           aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
 
-      - name: Initialize Unit Test Failure Tracker
-        run: echo "false" > test_failed.txt
-
       - name: Run unittest with filenameprocessor-coverage
         working-directory: filenameprocessor
         id: filenameprocessor
@@ -45,8 +42,8 @@ jobs:
         run: |
           poetry env use 3.10
           poetry install
-          poetry run coverage run -m unittest discover || echo "filenameprocessor tests failed" >> failed_tests.txt
-          poetry run coverage xml -o sonarcloud-coverage-filenameprocessor-coverage.xml
+          poetry run coverage run -m unittest discover || echo "filenameprocessor tests failed" >> ../failed_tests.txt
+          poetry run coverage xml -o ../sonarcloud-coverage-filenameprocessor-coverage.xml
 
       - name: Run unittest with recordprocessor-coverage
         working-directory: recordprocessor
@@ -55,8 +52,8 @@ jobs:
         run: |
           poetry env use 3.10
           poetry install
-          poetry run coverage run -m unittest discover || echo "recordprocessor tests failed" >> failed_tests.txt
-          poetry run coverage xml -o sonarcloud-coverage-recordprocessor-coverage.xml
+          poetry run coverage run -m unittest discover || echo "recordprocessor tests failed" >> ../failed_tests.txt
+          poetry run coverage xml -o ../sonarcloud-coverage-recordprocessor-coverage.xml
 
       - name: Run unittest with recordforwarder-coverage
         working-directory: backend
@@ -67,8 +64,8 @@ jobs:
         run: |
           poetry env use 3.11
           poetry install
-          poetry run coverage run -m unittest discover -p "*batch*.py" || echo "recordforwarder tests failed" >> failed_tests.txt
-          poetry run coverage xml -o sonarcloud-coverage-recordforwarder-coverage.xml
+          poetry run coverage run -m unittest discover -p "*batch*.py" || echo "recordforwarder tests failed" >> ../failed_tests.txt
+          poetry run coverage xml -o ../sonarcloud-coverage-recordforwarder-coverage.xml
 
       - name: Run unittest with coverage-ack-lambda
         working-directory: ack_backend
@@ -77,8 +74,8 @@ jobs:
         run: |
           poetry env use 3.10
           poetry install
-          poetry run coverage run -m unittest discover || echo "ack-lambda tests failed" >> failed_tests.txt
-          poetry run coverage xml -o sonarcloud-coverage-ack-lambda.xml
+          poetry run coverage run -m unittest discover || echo "ack-lambda tests failed" >> ../failed_tests.txt
+          poetry run coverage xml -o ../sonarcloud-coverage-ack-lambda.xml
 
       - name: Run unittest with coverage-delta
         working-directory: delta_backend
@@ -89,8 +86,8 @@ jobs:
         run: |
           poetry env use 3.11
           poetry install
-          poetry run coverage run -m unittest discover || echo "delta tests failed" >> failed_tests.txt
-          poetry run coverage xml -o sonarcloud-coverage-delta.xml
+          poetry run coverage run -m unittest discover || echo "delta tests failed" >> ../failed_tests.txt
+          poetry run coverage xml -o ../sonarcloud-coverage-delta.xml
 
       - name: Run unittest with coverage-fhir-api
         working-directory: backend
@@ -99,8 +96,8 @@ jobs:
         run: |
           poetry env use 3.11
           poetry install
-          poetry run coverage run -m unittest discover || echo "fhir-api tests failed" >> failed_tests.txt
-          poetry run coverage xml -o sonarcloud-coverage.xml
+          poetry run coverage run -m unittest discover || echo "fhir-api tests failed" >> ../failed_tests.txt
+          poetry run coverage xml -o ../sonarcloud-coverage.xml
 
       - name: Run unittest with coverage-mesh-processor
         working-directory: mesh_processor
@@ -109,8 +106,8 @@ jobs:
         run: |
           poetry env use 3.10
           poetry install
-          poetry run coverage run -m unittest discover || echo "mesh_processor tests failed" >> failed_tests.txt
-          poetry run coverage xml -o sonarcloud-mesh_processor-coverage.xml
+          poetry run coverage run -m unittest discover || echo "mesh_processor tests failed" >> ../failed_tests.txt
+          poetry run coverage xml -o ../sonarcloud-mesh_processor-coverage.xml
 
       - name: Run Test Failure Summary
         id: check_failure
