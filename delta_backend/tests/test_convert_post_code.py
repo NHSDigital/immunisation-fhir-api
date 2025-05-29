@@ -18,7 +18,13 @@ class TestPersonPostalCodeToFlatJson(unittest.TestCase):
         
     def test_person_postal_code_single_address(self):
         """Test case where only one address instance exists"""
-        self.request_json_data["contained"][1]["address"] = [{"postalCode": "AB12 3CD"}]
+        self.request_json_data["contained"][1]["address"] = [{
+                "postalCode": "AB12 3CD",
+                "use": "home",
+                "type": "physical",
+                "period": {"start": "2018-01-01", "end": "2020-12-31"},
+        }]
+        
         expected_postal_code = "AB12 3CD"
         self._run_postal_code_test(expected_postal_code)
 

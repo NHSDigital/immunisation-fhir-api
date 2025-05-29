@@ -5,7 +5,7 @@ from utils_for_converter_tests import ValuesForTests
 from converter import Converter
 from common.mappings import ConversionFieldName
 
-class TestPersonSurNameToFlatJson(unittest.TestCase):
+class TestPersonSurnameToFlatJson(unittest.TestCase):
 
     def setUp(self):
         self.request_json_data = copy.deepcopy(ValuesForTests.json_data)
@@ -90,6 +90,62 @@ class TestPersonSurNameToFlatJson(unittest.TestCase):
         expected_surname = "Doe"
         self._run_test_surname(expected_surname)
 
+    def test_person_surname_exists_only(self):
+        """Test case where only surname exists"""
+        self.request_json_data["contained"][1]["name"] = [
+            {
+                "family": "Doe",
+                "use": "official",
+                "period": {"start": "2021-01-01", "end": "2023-01-01"},
+            }
+        ]
+        self._run_test_surname("")
+
+    def test_person_surname_exists_only_in_one_instance(self):
+        """Test case where the selected name has multiple given names"""
+        self.request_json_data["contained"][1]["name"] = [
+            {
+                "family": "Doe",
+                "use": "official",
+                "period": { "start": "2021-01-01", "end": "2023-01-01" }
+            },
+            {
+                "family": "Smith",
+                "given": ["Jack"],
+                "use": "official",
+                "period": { "start": "2021-01-01", "end": "2023-01-01" }
+            }
+        ]
+        expected_surname = "Smith"
+        self._run_test_surname(expected_surname)
+        
+    def test_person_surname_and_forename_exists_only(self):
+        """Test case where only family and given properties exist"""
+        self.request_json_data["contained"][1]["name"] = [
+            {
+                "family": "Doe",
+                "given": ["Test"]       
+            }
+        ]
+        expected_surname = "Doe"
+        self._run_test_surname(expected_surname)
+    
+    def test_person_returns_first_name_as_fallback(self):
+        """Test fallback to names[0] when no official or valid names with both given and family exist"""
+        self.request_json_data["contained"][1]["name"] = [
+            {
+                "use": "nickname",
+                "given": ["OnlyGiven"]
+            },
+            {
+                "use": "old",
+                "family": "OldFamily"
+            }
+        ]
+        
+        expected_surname = ""  
+        self._run_test_surname(expected_surname)
+    
     def _run_test_surname(self, expected_surname):
         """Helper function to run the test"""
         self.converter = Converter(json.dumps(self.request_json_data))
