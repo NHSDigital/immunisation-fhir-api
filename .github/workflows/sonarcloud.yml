@@ -35,7 +35,7 @@ jobs:
           do
             cd $subproject
             python -m venv .venv
-            source .venv/activate
+            source .venv/bin/activate
             poetry install
             deactivate
             cd ..
