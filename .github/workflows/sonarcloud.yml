@@ -38,26 +38,18 @@ jobs:
       - name: Initialize Unit Test Failure Tracker
         run: echo "false" > test_failed.txt
 
-      - name: Create venvs and install dependencies
-        run: |
-          for subproject in filenameprocessor recordprocessor backend ack_backend delta_backend mesh_processor
-          do
-            cd $subproject
-            python -m venv .venv
-            source .venv/bin/activate
-            poetry install
-            deactivate
-            cd ..
-          done
-
       - name: Run unittest with filenameprocessor-coverage
         working-directory: filenameprocessor
         id: filenameprocessor
         continue-on-error: true
         run: |
           poetry env use 3.10
+          python -m venv .venv
+          source .venv/bin/activate
+          poetry install
           poetry run coverage run -m unittest discover || echo "filenameprocessor tests failed" >> failed_tests.txt
           poetry run coverage xml -o sonarcloud-coverage-filenameprocessor-coverage.xml
+          deactivate
 
       - name: Run unittest with recordprocessor-coverage
         working-directory: recordprocessor
@@ -65,8 +57,12 @@ jobs:
         continue-on-error: true
         run: |
           poetry env use 3.10
+          python -m venv .venv
+          source .venv/bin/activate
+          poetry install
           poetry run coverage run -m unittest discover || echo "recordprocessor tests failed" >> failed_tests.txt
           poetry run coverage xml -o sonarcloud-coverage-recordprocessor-coverage.xml
+          deactivate
 
       - name: Run unittest with recordforwarder-coverage
         working-directory: backend
@@ -76,8 +72,12 @@ jobs:
         continue-on-error: true
         run: |
           poetry env use 3.11
+          python -m venv .venv
+          source .venv/bin/activate
+          poetry install
           poetry run coverage run -m unittest discover -p "*batch*.py" || echo "recordforwarder tests failed" >> failed_tests.txt
           poetry run coverage xml -o sonarcloud-coverage-recordforwarder-coverage.xml
+          deactivate
 
       - name: Run unittest with coverage-ack-lambda
         working-directory: ack_backend
@@ -85,8 +85,12 @@ jobs:
         continue-on-error: true
         run: |
           poetry env use 3.10
+          python -m venv .venv
+          source .venv/bin/activate
+          poetry install
           poetry run coverage run -m unittest discover || echo "ack-lambda tests failed" >> failed_tests.txt
           poetry run coverage xml -o sonarcloud-coverage-ack-lambda.xml
+          deactivate
 
       - name: Run unittest with coverage-delta
         working-directory: delta_backend
@@ -96,8 +100,12 @@ jobs:
         continue-on-error: true
         run: |
           poetry env use 3.11
+          python -m venv .venv
+          source .venv/bin/activate
+          poetry install
           poetry run coverage run -m unittest discover || echo "delta tests failed" >> failed_tests.txt
           poetry run coverage xml -o sonarcloud-coverage-delta.xml
+          deactivate
 
       - name: Run unittest with coverage-fhir-api
         working-directory: backend
@@ -105,8 +113,12 @@ jobs:
         continue-on-error: true
         run: |
           poetry env use 3.11
+          python -m venv .venv
+          source .venv/bin/activate
+          poetry install
           poetry run coverage run -m unittest discover || echo "fhir-api tests failed" >> failed_tests.txt
           poetry run coverage xml -o sonarcloud-coverage.xml
+          deactivate
 
       - name: Run unittest with coverage-mesh-processor
         working-directory: mesh_processor
@@ -114,8 +126,12 @@ jobs:
         continue-on-error: true
         run: |
           poetry env use 3.10
+          python -m venv .venv
+          source .venv/bin/activate
+          poetry install
           poetry run coverage run -m unittest discover || echo "mesh_processor tests failed" >> failed_tests.txt
           poetry run coverage xml -o sonarcloud-mesh_processor-coverage.xml
+          deactivate
 
       - name: Run Test Failure Summary
         id: check_failure
