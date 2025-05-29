@@ -266,11 +266,11 @@ class Extractor:
             return self.DEFAULT_POSTCODE
 
         if len(addresses) == 1:
-            return addresses[0].get("postalCode", self.DEFAULT_POSTCODE)
+            return addresses[0].get("postalCode") or self.DEFAULT_POSTCODE
 
         if not (valid_addresses := [
             addr for addr in addresses
-            if "postalCode" in addr and self._is_current_period(addr, occurrence_time)
+            if addr.get("postalCode") and self._is_current_period(addr, occurrence_time)
         ]):
             return self.DEFAULT_POSTCODE
 
@@ -281,7 +281,7 @@ class Extractor:
             or valid_addresses[0]
         )
 
-        return selected_address.get("postalCode", self.DEFAULT_POSTCODE)
+        return selected_address.get("postalCode") or self.DEFAULT_POSTCODE
     
     def extract_date_time(self) -> str: 
         date = self.fhir_json_data.get("occurrenceDateTime","")
