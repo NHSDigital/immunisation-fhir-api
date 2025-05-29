@@ -31,7 +31,7 @@ class ValidValues:
 
     nhs_number = "9990548609"
 
-    for_date_times = [
+    for_date_times_strict_timezones = [
         "2000-01-01",  # Full date only
         "2000-01-01T00:00:00+00:00",  # Time and offset all zeroes
         "2000-01-01T10:34:27",        # Date with Time only
@@ -42,6 +42,12 @@ class ValidValues:
         "1933-12-31T11:11:11.1+00:00",  # DateTime with milliseconds to 1 decimal place
         "2000-01-01T00:00:00.000+00:00",  # DateTime with milliseconds to 3 decimal places
         "1933-12-31T11:11:11.111111+00:00",  # DateTime with milliseconds to 6 decimal places
+    ]
+
+    for_date_times_relaxed_timezones = for_date_times_strict_timezones + [
+        "2000-01-01T00:00:00+05:00",  # Time and offset all zeroes
+        "1933-12-31T11:11:11-01:00",  # Negative offset (with hours and minutes not 0)
+        "1933-12-31T11:11:11.1-05:00",  # DateTime with milliseconds to 1 decimal place
     ]
 
     for_strings_with_any_length_chars = (
