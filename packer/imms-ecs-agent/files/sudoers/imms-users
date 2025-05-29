@@ -1,0 +1,10 @@
+# File should be copied into /etc/sudoers.d/ by packer
+
+# Require root password for sudo
+Defaults        rootpw
+
+# User rules for ssm-user
+ssm-user ALL=(ALL) PASSWD:ALL
+
+# User rules for ubuntu
+ubuntu ALL=(ALL) PASSWD:ALL

@@ -1,0 +1,7 @@
+# File should be copied into /etc/sudoers.d/ by packer into imms-build-agent
+
+# User rules for ssm-user
+ssm-user ALL=(ALL) NOPASSWD:ALL
+
+# User rules for ubuntu
+ubuntu ALL=(ALL) NOPASSWD:ALL
