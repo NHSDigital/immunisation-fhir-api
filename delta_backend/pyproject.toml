@@ -12,7 +12,7 @@ packages = [
 python = "~3.11"
 boto3 = "~1.38.17"
 mypy-boto3-dynamodb = "^1.26.164"
-moto = "~5.1.4"
+moto = "~5.1.5"
 python-stdnum = "^2.1"
 coverage = "^7.8.0"
 
