@@ -356,12 +356,22 @@ class ValidatorModelTests:
             "- 'YYYY-MM-DDThh:mm:ss.f' — Full date and time with milliseconds (any level of precision)"
             "- 'YYYY-MM-DDThh:mm:ss%z' — Full date and time with timezone (e.g. +00:00 or +01:00)"
             "- 'YYYY-MM-DDThh:mm:ss.f%z' — Full date and time with milliseconds and timezone"
-            "Only '+00:00' and '+01:00' are accepted as valid timezone offsets."
-            f"Note that partial dates are not allowed for {field_location} in this service."
         )
 
+        if is_occurrence_date_time:
+            expected_error_message += "Only '+00:00' and '+01:00' are accepted as valid timezone offsets.\n"
+            expected_error_message += f"Note that partial dates are not allowed for {field_location} in this service."
+
+        if is_occurrence_date_time:
+            invalid_datetime_formats = InvalidValues.for_date_time_string_formats
+            invalid_datetime_values = InvalidValues.for_date_times
+        else:
+            # For recorded, skip values that are valid ISO with non-restricted timezone
+            invalid_datetime_formats = InvalidValues.for_date_time_string_formats_for_recorded
+            invalid_datetime_values = InvalidValues.for_date_times_for_recorded
+
         # Test invalid date time string formats
-        for invalid_occurrence_date_time in InvalidValues.for_date_time_string_formats:
+        for invalid_occurrence_date_time in invalid_datetime_formats:
             test_invalid_values_rejected(
                 test_instance,
                 valid_json_data,
@@ -371,7 +381,7 @@ class ValidatorModelTests:
             )
 
         # Test invalid date times
-        for invalid_occurrence_date_time in InvalidValues.for_date_times:
+        for invalid_occurrence_date_time in invalid_datetime_values:
             test_invalid_values_rejected(
                 test_instance,
                 valid_json_data,

@@ -323,6 +323,40 @@ class InvalidValues:
         "2000-01-01T00:00:00+00:60",  # Timezone minute 60
     ]
 
+    for_date_time_string_formats_for_recorded = [
+        "",  # Empty string
+        "invalid",  # Invalid format
+        "20000101",  # Date digits only (i.e. without hypens)
+        "20000101000000",  # Date and time digits only
+        "200001010000000000",  # Date, time and timezone digits only
+        "2000",  # Year only
+        "2000-01",  # Year and month only
+        "2000-01-01T00:00:00+00",  # Date and time with GMT timezone offset only in hours
+        "2000-01-01T00:00:00+01",  # Date and time with BST timezone offset only in hours
+        "12000-01-01T00:00:00+00:00",  # Extra character at start of string
+        "2000-01-01T00:00:00+00:001",  # Extra character at end of string
+        "12000-01-02T00:00:00-01:001",  # Extra characters at start and end of string
+        "2000-01-0122:22:22+00:00",  # Missing T
+        "2000-01-0122:22:22+00:00.000",  # Missing T (with milliseconds)
+        "2000-01-01T222222+00:00",  # Missing time colons
+        "2000-01-01T22:22:2200:00",  # Missing timezone indicator
+        "2000-01-01T22:22:22-01",  # Timezone hours only
+        "99-01-01T00:00:00+00:00",  # Missing century (i.e. only 2 digits for year)
+        "01-01-2000T00:00:00+00:00",  # Date in wrong order (DD-MM-YYYY)
+    ]
+
+    for_date_times_for_recorded = [
+        "2000-00-01T00:00:00+00:00",  # Month 00
+        "2000-13-01T00:00:00+00:00",  # Month 13
+        "2000-01-32T00:00:00+00:00",  # Day 32
+        "2000-02-30T00:00:00+00:00",  # Invalid month and day combination (30th February)
+        "2000-01-01T24:00:00+00:00",  # Hour 24
+        "2000-01-01T00:60:00+00:00",  # Minute 60
+        "2000-01-01T00:00:60+00:00",  # Second 60
+        "2000-01-01T00:00:00+00:60",  # Timezone minute 60
+    ]
+
+
     for_lists_of_strings_of_length_1 = [[1], [False], [["Test1"]]]
 
     for_lists_of_dicts_of_length_1 = [[1], [False], [["Invalid"]], ["Invalid"]]
