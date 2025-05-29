@@ -96,15 +96,6 @@ class PreValidation:
             raise ValueError(
                 f'{field_location} must be a valid date string in the format "YYYY-MM-DD"'
             ) from value_error
-    
-    @staticmethod
-    def for_recorded_date_time(field_value: str, field_location: str):
-        """
-        Relaxed validator for the 'recorded' field.
-        Accepts any timezone or no timezone.
-        """
-        return PreValidation.for_date_time(field_value, field_location, strict_timezone=False)
-
 
     @staticmethod
     def for_date_time(field_value: str, field_location: str, strict_timezone: bool = True):

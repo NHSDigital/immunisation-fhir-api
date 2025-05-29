@@ -363,12 +363,10 @@ class ValidatorModelTests:
             expected_error_message += f"Note that partial dates are not allowed for {field_location} in this service."
 
         if is_occurrence_date_time:
-            invalid_datetime_formats = InvalidValues.for_date_time_string_formats
-            invalid_datetime_values = InvalidValues.for_date_times
+            invalid_datetime_formats = InvalidValues.for_date_time_string_formats_for_strict_timezone
         else:
             # For recorded, skip values that are valid ISO with non-restricted timezone
-            invalid_datetime_formats = InvalidValues.for_date_time_string_formats_for_recorded
-            invalid_datetime_values = InvalidValues.for_date_times_for_recorded
+            invalid_datetime_formats = InvalidValues.for_date_time_string_formats_for_relaxed_timezone
 
         # Test invalid date time string formats
         for invalid_occurrence_date_time in invalid_datetime_formats:
@@ -381,7 +379,7 @@ class ValidatorModelTests:
             )
 
         # Test invalid date times
-        for invalid_occurrence_date_time in invalid_datetime_values:
+        for invalid_occurrence_date_time in InvalidValues.for_date_times:
             test_invalid_values_rejected(
                 test_instance,
                 valid_json_data,
