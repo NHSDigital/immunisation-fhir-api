@@ -1,0 +1,20 @@
+CWD: /
+total 104
+-rw-r--r--    1 root     root           706 May 14 15:47 Dockerfile
+-rw-r--r--    1 root     root           371 May 14 15:47 Makefile
+-rw-r--r--    1 root     root          3670 May 27 11:01 README.md
+-rw-r--r--    1 root     root             0 Apr  7 11:38 __init__.py
+drwxr-xr-x    3 root     root            96 Apr  8 14:57 __pycache__
+-rw-r--r--    1 root     root            19 May 29 15:43 failed_tests.txt
+drwxr-xr-x    2 root     root            64 May 27 19:06 logs
+-rw-r--r--    1 root     root          1376 May  8 14:27 output.csv
+-rw-r--r--    1 root     root          1648 May  8 14:27 output.json
+-rw-r--r--    1 root     root         75040 May 21 13:40 poetry.lock
+-rw-r--r--    1 root     root           469 May 21 13:40 pyproject.toml
+drwxr-xr-x   13 root     root           416 May 28 14:43 src
+drwxr-xr-x   33 root     root          1056 May 29 15:03 tests
+PRJ_NAME: "delta"
+SOURCE: "delta_backend"
+DEPENDENCIES: "poetry==1.8.4 moto==5.1.4 mypy-boto3-dynamodb==1.35.54 boto3==1.26.165 coverage botocore==1.29.165 jmespath==1.0.1 python-dateutil==2.9.0 urllib3==1.26.20 s3transfer==0.6.2 typing-extensions==4.12.2"
+Running unit tests...
+Unit tests DONE

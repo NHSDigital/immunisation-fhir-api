@@ -1,41 +1,21 @@
 FROM python:3.13-alpine
 
-# Runtime environment variables
-# ENV DESC=""
-# ENV SOURCE=""
-ENV LOGFILE="/logs/logs.txt"
-ENV DEPENDENCIES=""
+# Install system dependencies needed for building Python packages
+RUN apk add --no-cache gcc musl-dev libffi-dev openssl-dev python3-dev
 
+# Install Poetry
+RUN pip install poetry==1.8.4
 
+WORKDIR /app
 
-CMD sh -c 'echo "Run unit tests with coverage" >> $LOGFILE'
+# Copy only poetry files first for better caching of dependencies
+COPY pyproject.toml poetry.lock ./
 
-# RUN mkdir -p /logs
+# Install Python dependencies (from poetry.lock)
+RUN poetry install --no-root
 
-# RUN echo "CWD: $(pwd)" >> $LOGFILE
-# RUN echo ">>>>>>>>>>>>> Setting up environment variables: DESC=$DESC, SOURCE=$SOURCE, LOGFILE=$LOGFILE, DEPENDENCIES=$DEPENDENCIES" >> $LOGFILE
+# Copy the rest of the code
+COPY . .
 
-# # Install system dependencies
-# RUN apk add --no-cache gcc musl-dev
-
-# # Install Poetry
-# RUN echo ">>>>>>>>>>>>> Installing Poetry..." >> $LOGFILE
-# RUN pip install poetry==1.8.4
-
-# # Set workdir and copy dependency files first for caching
-# RUN echo ">>>>>>>>>>>>> Setting up work directory and copying dependency files..." >> $LOGFILE
-# WORKDIR /app
-# COPY pyproject.toml poetry.lock ./
-# RUN poetry install --no-root
-
-# # Copy the rest of the code
-# COPY . .
-
-# # Set PYTHONPATH for runtime
-# ENV PYTHONPATH=$SOURCE/src:$SOURCE/tests
-
-# # Default command: install dependencies at runtime, then run tests
-# CMD sh -c 'if [ -n "$DEPENDENCIES" ]; then pip install $DEPENDENCIES; fi && \
-#     echo "Run unit tests with coverage" >> $LOGFILE && \
-#     poetry run coverage run --source=$SOURCE -m unittest discover -s $SOURCE || echo "$DESC tests failed" >> /logs/failed_tests.txt && \
-#     poetry run coverage xml -o /logs/sonarcloud-coverage-$DESC.xml'
+# Optionally, set a default command (can be overridden in docker run)
+CMD ["poetry", "run", "python", "-m", "unittest", "discover"]
