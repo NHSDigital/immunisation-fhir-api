@@ -66,14 +66,6 @@ jobs:
           aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
           aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
 
-      - name: Cache Poetry virtualenv (filenameprocessor)
-        uses: actions/cache@v4
-        with:
-          path: ./filenameprocessor/.venv
-          key: ${{ runner.os }}-venv-filenameprocessor-${{ hashFiles('filenameprocessor/poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-venv-filenameprocessor-
-
       - name: Run unittest with filenameprocessor-coverage
         working-directory: filenameprocessor
         id: filenameprocessor

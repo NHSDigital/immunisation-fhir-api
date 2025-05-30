@@ -7,6 +7,7 @@ COVERAGE_XML="sonarcloud-coverage-$3.xml"
 
 echo "Using Python $PYTHON_VERSION"
 poetry env use "$PYTHON_VERSION"
+poetry config virtualenvs.in-project true
 poetry install
 
 if poetry run coverage run -m unittest discover; then
