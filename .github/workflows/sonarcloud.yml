@@ -58,8 +58,6 @@ jobs:
       - name: Run unittest with recordforwarder-coverage
         working-directory: backend
         id: recordforwarder
-        env:
-            PYTHONPATH: backend/src:backend/tests
         continue-on-error: true
         run: |
           poetry env use 3.11
