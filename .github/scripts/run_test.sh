@@ -3,10 +3,7 @@ set -e
 
 PYTHON_VERSION="$1"
 DESCRIPTION="$2"
-COVERAGE_SUFFIX="$3"
-
-
-COVERAGE_XML="sonarcloud-coverage-$COVERAGE_SUFFIX.xml"
+COVERAGE_XML="sonarcloud-coverage-$3.xml"
 
 echo "Using Python $PYTHON_VERSION"
 poetry env use "$PYTHON_VERSION"

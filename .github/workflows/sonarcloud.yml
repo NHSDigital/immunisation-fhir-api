@@ -81,15 +81,7 @@ jobs:
         run: |
           $TEST_SCRIPT 3.10 \
           "filenameprocessor" \
-          "sonarcloud-coverage-filenameprocessor-coverage.xml"
-
-      - name: Cache Poetry virtualenv (recordprocessor)
-        uses: actions/cache@v4
-        with:
-          path: ./recordprocessor/.venv
-          key: ${{ runner.os }}-venv-recordprocessor-${{ hashFiles('recordprocessor/poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-venv-recordprocessor-
+          "filenameprocessor-coverage.xml"
 
       - name: Run unittest with recordprocessor-coverage
         working-directory: recordprocessor
@@ -98,15 +90,7 @@ jobs:
         run: |
           $TEST_SCRIPT 3.10 \
           "recordprocessor" \
-          "sonarcloud-coverage-recordprocessor-coverage.xml"
-
-      - name: Cache Poetry virtualenv (backend)
-        uses: actions/cache@v4
-        with:
-          path: ./backend/.venv
-          key: ${{ runner.os }}-venv-backend-${{ hashFiles('backend/poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-venv-backend-
+          "recordprocessor-coverage.xml"
 
       - name: Run unittest with recordforwarder-coverage
         working-directory: backend
@@ -115,15 +99,7 @@ jobs:
         run: |
           $TEST_SCRIPT 3.11 \
           "recordforwarder" \
-          "sonarcloud-coverage-recordforwarder-coverage.xml"
-
-      - name: Cache Poetry virtualenv (ack_backend)
-        uses: actions/cache@v4
-        with:
-          path: ./ack_backend/.venv
-          key: ${{ runner.os }}-venv-ack_backend-${{ hashFiles('ack_backend/poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-venv-ack_backend-
+          "recordforwarder-coverage.xml"
 
       - name: Run unittest with coverage-ack-lambda
         working-directory: ack_backend
@@ -132,7 +108,7 @@ jobs:
         run: |
           $TEST_SCRIPT 3.10 \
           "ack-lambda" \
-          "sonarcloud-coverage-ack-lambda.xml"
+          "ack-lambda.xml"
 
       - name: Run unittest with coverage-delta
         working-directory: delta_backend
@@ -143,7 +119,7 @@ jobs:
         run: |
           $TEST_SCRIPT 3.11 \
           "delta" \
-          "sonarcloud-coverage-delta.xml"
+          "delta.xml"
 
       - name: Run unittest with coverage-fhir-api
         working-directory: backend
@@ -152,7 +128,7 @@ jobs:
         run: |
           $TEST_SCRIPT 3.11 \
           "fhir-api" \
-          "sonarcloud-coverage-fhir-api.xml"
+          "fhir-api.xml"
 
       - name: Run unittest with coverage-mesh-processor
         working-directory: mesh_processor
@@ -161,7 +137,7 @@ jobs:
         run: |
           $TEST_SCRIPT 3.10 \
           "mesh_processor" \
-          "sonarcloud-coverage-mesh_processor-coverage.xml"
+          "mesh_processor-coverage.xml"
 
       - name: Run Test Failure Summary
         id: check_failure
