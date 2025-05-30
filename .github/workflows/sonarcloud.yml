@@ -8,7 +8,7 @@ on:
     types: [labeled, opened, synchronize, reopened, unlabeled]
 env:
   SCRIPT_FOLDER: ./.github/scripts
-  TEST_SCRIPT: ./.github/scripts/run_test.sh
+  # TEST_SCRIPT: ./.github/scripts/run_test.sh
 
 jobs:
   sonarcloud:
@@ -22,38 +22,13 @@ jobs:
 
       - name: List .github directory
         run: |
-          echo "SCRIPT_FOLDER=$SCRIPT_FOLDER"
-          echo "Listing 1"
-          ls -la ./.github
-          echo "Listing 2"
-          ls -la ./.github/scripts
-
-          echo "listing 3"
-          ls -la $SCRIPT_FOLDER/*.sh
-
-          echo "listing 4"
-          ls -la $SCRIPT_FOLDER/*.sh
-
-          echo "listing 5:"
-          ls -la $SCRIPT_FOLDER/run_test.sh
-
-          echo "chmod 6:"
-          chmod +x $SCRIPT_FOLDER/run_test.sh
-
-          echo "chmod 6.1:"
-          chmod +x $TEST_SCRIPT
-
-          echo "chmod 7:"
-          ls -la $TEST_SCRIPT
-          echo "chmod 7.1:"
-          chmod +x $TEST_SCRIPT
-          echo "chmod 7.2:"
           chmod +x $SCRIPT_FOLDER/*.sh
           echo "Listing .github directory:"
           ls -la ./.github/scripts
 
       - name: Check Script Path
         run: |
+          TEST_SCRIPT=$SCRIPT_FOLDER/run_test.sh
           echo "TEST_SCRIPT is set to: $TEST_SCRIPT"
           if [ -f "$TEST_SCRIPT" ]; then
             echo "Script exists and is executable."
