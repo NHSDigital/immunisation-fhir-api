@@ -23,13 +23,23 @@ jobs:
       - name: List .github directory
         run: |
           echo "SCRIPT_FOLDER=$SCRIPT_FOLDER"
-          echo "Listing github directory:"
+          echo "Listing 1"
           ls -la ./.github
-          echo "Listing scripts directory:"
+          echo "Listing 2"
           ls -la ./.github/scripts
-          echo "listing scripts in .github/scripts:"
+
+          echo "listing 3"
           ls -la $SCRIPT_FOLDER/*.sh
-          echo "listing run_test.sh script:"
+
+          echo "listing 4"
+          ls -la $SCRIPT_FOLDER/*.sh
+
+          echo "listing 5:"
+          ls -la $SCRIPT_FOLDER/run_test.sh
+
+          echo "chmod 6:"
+          chmod +x $SCRIPT_FOLDER/run_test.sh
+
           ls -la $TEST_SCRIPT
           chmod +x $TEST_SCRIPT
           chmod +x $SCRIPT_FOLDER/*.sh
