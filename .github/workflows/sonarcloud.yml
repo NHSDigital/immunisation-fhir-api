@@ -20,10 +20,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: List all subdirectories
+      - name: List all subdirectories (including hidden)
         run: |
-          echo "Immediate subdirectories:"
-          ls -d */
+          echo "All subdirectories (including hidden):"
+          find . -type d
 
       - name: Check Script Path
         run: |
