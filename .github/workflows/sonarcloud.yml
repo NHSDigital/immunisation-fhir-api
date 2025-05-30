@@ -22,6 +22,10 @@ jobs:
 
       - name: List .github directory
         run: |
+          ls -la ./.github
+          ls -la ./.github/scripts
+          ls -la $SCRIPT_FOLDER/*.sh
+          ls -la $TEST_SCRIPT
           chmod +x $TEST_SCRIPT
           chmod +x $SCRIPT_FOLDER/*.sh
           echo "Listing .github directory:"
