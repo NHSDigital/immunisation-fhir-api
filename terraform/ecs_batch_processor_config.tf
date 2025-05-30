@@ -27,7 +27,7 @@ resource "aws_ecr_repository" "processing_repository" {
 # Build and Push Docker Image to ECR (Reusing the existing module)
 module "processing_docker_image" {
   source = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version = "7.20.2"
+  version = "7.21.0"
 
   docker_file_path = "Dockerfile"
   create_ecr_repo  = false
