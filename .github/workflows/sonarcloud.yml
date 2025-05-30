@@ -55,6 +55,7 @@ jobs:
           poetry run coverage run -m unittest discover || echo "recordprocessor tests failed" >> ../failed_tests.txt
           poetry run coverage xml -o ../sonarcloud-coverage-recordprocessor-coverage.xml
 
+        # This step is redundant - all of these tests will be run in the backend step below
       - name: Run unittest with recordforwarder-coverage
         working-directory: backend
         id: recordforwarder
@@ -62,7 +63,7 @@ jobs:
         run: |
           poetry env use 3.11
           poetry install
-          poetry run coverage run -m unittest discover -p "*batch*.py" || echo "recordforwarder tests failed" >> ../failed_tests.txt
+          poetry run coverage run -m unittest discover -s "./tests" -p "*batch*.py" || echo "recordforwarder tests failed" >> ../failed_tests.txt
           poetry run coverage xml -o ../sonarcloud-coverage-recordforwarder-coverage.xml
 
       - name: Run unittest with coverage-ack-lambda
