@@ -8,7 +8,7 @@ on:
     types: [labeled, opened, synchronize, reopened, unlabeled]
 env:
   SCRIPT_FOLDER: ./.github/scripts
-  # TEST_SCRIPT: ./.github/scripts/run_test.sh
+  TEST_SCRIPT: ./.github/scripts/run_test.sh
 
 jobs:
   sonarcloud:
