@@ -98,7 +98,7 @@ class PreValidation:
             ) from value_error
 
     @staticmethod
-    def for_date_time(field_value: str, field_location: str):
+    def for_date_time(field_value: str, field_location: str, strict_timezone: bool = True):
         """
         Apply pre-validation to a datetime field to ensure that it is a string (JSON dates must be written as strings)
         containing a valid datetime. Note that partial dates are valid for FHIR, but are not allowed for this API.
@@ -120,9 +120,11 @@ class PreValidation:
             "- 'YYYY-MM-DDThh:mm:ss.f' — Full date and time with milliseconds (any level of precision)"
             "- 'YYYY-MM-DDThh:mm:ss%z' — Full date and time with timezone (e.g. +00:00 or +01:00)"
             "- 'YYYY-MM-DDThh:mm:ss.f%z' — Full date and time with milliseconds and timezone"
-            "Only '+00:00' and '+01:00' are accepted as valid timezone offsets."
-            f"Note that partial dates are not allowed for {field_location} in this service."
         )
+         
+        if strict_timezone:
+            error_message += "Only '+00:00' and '+01:00' are accepted as valid timezone offsets.\n"
+            error_message += f"Note that partial dates are not allowed for {field_location} in this service."
 
         allowed_suffixes = {"+00:00", "+01:00", "+0000", "+0100",}
 
@@ -136,7 +138,7 @@ class PreValidation:
             try:
                 fhir_date = datetime.strptime(field_value, fmt)
                 
-                if fhir_date.tzinfo is not None:
+                if strict_timezone and fhir_date.tzinfo is not None:
                    if not any(field_value.endswith(suffix) for suffix in allowed_suffixes):
                        raise ValueError(error_message)
                 return fhir_date.isoformat()
