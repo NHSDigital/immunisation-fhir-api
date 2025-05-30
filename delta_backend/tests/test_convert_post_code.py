@@ -24,6 +24,12 @@ class TestPersonPostalCodeToFlatJson(unittest.TestCase):
                 "type": "physical",
                 "period": {"start": "2018-01-01", "end": "2020-12-31"},
         }]
+
+    def test_person_postal_code_single_address_only_postal_code(self):
+        """Test case where only one address instance exists with one postalCode"""
+        self.request_json_data["contained"][1]["address"] = [{
+            "postalCode": "AB12 3CD",
+        }]
         
         expected_postal_code = "AB12 3CD"
         self._run_postal_code_test(expected_postal_code)
@@ -94,6 +100,25 @@ class TestPersonPostalCodeToFlatJson(unittest.TestCase):
         expected_postal_code = "KK20 2KK"
         self._run_postal_code_test(expected_postal_code)
 
+    def test_person_postal_code_case_insensitive_match(self):
+        """Test case where 'use' and 'type' values require case-insensitive comparison"""
+        self.request_json_data["contained"][1]["address"] = [
+            {
+                "postalCode": "LS8 4ED",
+                "use": "work",
+                "type": "both",
+                "period": {"start": "2000-01-01", "end": "2023-01-01"},
+            },
+            {
+                "postalCode": "WF8 4ED",
+                "use": "Home",  # capital H
+                "type": "Physical",  # capital P
+                "period": {"start": "2000-01-01", "end": "2023-01-01"},
+            }
+        ]
+        expected_postal_code = "WF8 4ED"
+        self._run_postal_code_test(expected_postal_code)
+
     def test_person_postal_code_default_to_ZZ99_3CZ(self):
         """Test case where no valid postalCode is found, should default to ZZ99 3CZ"""
         self.request_json_data["contained"][1]["address"] = [
@@ -103,6 +128,22 @@ class TestPersonPostalCodeToFlatJson(unittest.TestCase):
         expected_postal_code = "ZZ99 3CZ"
         self._run_postal_code_test(expected_postal_code)
 
+    def test_person_postal_code_blank_string_should_fallback(self):
+        """Test case where postalCode is an empty string — should fallback to ZZ99 3CZ"""
+        self.request_json_data["contained"][1]["address"] = [
+            {"postalCode": "", 
+             "use": "home", 
+             "type": "physical",
+             "period": {"start": "2018-01-01", "end": "2030-12-31"},
+             },
+        ]
+        expected_postal_code = "ZZ99 3CZ"
+        self._run_postal_code_test(expected_postal_code)
+        assert "postalCode" in self.request_json_data["contained"][1]["address"][0]
+        assert self.request_json_data["contained"][1]["address"][0]["postalCode"] == ""
+
+
+   
     def _run_postal_code_test(self, expected_postal_code):
         """Helper function to run the test"""
         self.converter = Converter(json.dumps(self.request_json_data))

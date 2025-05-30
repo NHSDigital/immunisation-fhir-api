@@ -519,7 +519,7 @@ class PreValidators:
         """
         try:
             recorded = values["recorded"]
-            PreValidation.for_date_time(recorded, "recorded")
+            PreValidation.for_date_time(recorded, "recorded",strict_timezone=False)
         except KeyError:
             pass
 
