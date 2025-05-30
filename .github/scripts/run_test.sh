@@ -17,4 +17,4 @@ else
 fi
 
 poetry run coverage xml -o "../$COVERAGE_XML"
-poetry env list --full-path | awk '{print $1}' | xargs -n 1 poetry env remove || true
+# poetry env list --full-path | awk '{print $1}' | xargs -n 1 poetry env remove || true
