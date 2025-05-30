@@ -27,6 +27,17 @@ jobs:
             ls -l "$TEST_SCRIPT"
           else
             echo "Script does NOT exist at $TEST_SCRIPT"
+            # show cwd
+            echo "Current working directory:"
+            pwd
+            # list files in cwd
+            echo "Files in current directory:"
+            ls -la
+            # list files in parent directory
+            echo "Files in parent directory:"
+            ls -la ..
+            # list files in the .github/scripts directory
+            echo "Files in .github/scripts directory:"
             exit 1
           fi
 
