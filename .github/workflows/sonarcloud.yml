@@ -7,7 +7,7 @@ on:
   pull_request:
     types: [labeled, opened, synchronize, reopened, unlabeled]
 env:
-  TEST_SCRIPT: ../.github/scripts/run_poetry_tests.sh
+  TEST_SCRIPT: ./.github/scripts/run_poetry_tests.sh
 
 jobs:
   sonarcloud:
