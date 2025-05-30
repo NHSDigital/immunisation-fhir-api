@@ -40,6 +40,7 @@ jobs:
           echo "chmod 6:"
           chmod +x $SCRIPT_FOLDER/run_test.sh
 
+          echo "chmod 7:"
           ls -la $TEST_SCRIPT
           chmod +x $TEST_SCRIPT
           chmod +x $SCRIPT_FOLDER/*.sh
