@@ -3985,7 +3985,7 @@
                       }
                     },
                     "occurrenceDateTime": {
-                      "description": "A dateTime format SHALL be provided. It SHOULD be to the level of precision as recorded within the source system, subject to the FHIR rules for dateTime.  \nWhere time zone information is required but is not available in the source system the time zone element can be a hardcoded static value of `+00:00`.",
+                      "description": "A dateTime format SHALL be provided. It SHOULD be to the level of precision as recorded within the source system, subject to the FHIR rules for dateTime.  \nOnly positive timezone offsets of '+00:00' (GMT) and '+01:00' (BST) are allowed. Where time zone information is required but is not available in the source system the time zone element can be a hardcoded static value of `+00:00`.",
                       "type": "string",
                       "example": "2021-02-07T13:28:17.271000+00:00"
                     },
