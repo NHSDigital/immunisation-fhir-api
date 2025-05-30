@@ -66,6 +66,14 @@ jobs:
           aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
           aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
 
+      - name: Cache Poetry virtualenv (filenameprocessor)
+        uses: actions/cache@v4
+        with:
+          path: ./filenameprocessor/.venv
+          key: ${{ runner.os }}-venv-filenameprocessor-${{ hashFiles('filenameprocessor/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-venv-filenameprocessor-
+
       - name: Run unittest with filenameprocessor-coverage
         working-directory: filenameprocessor
         id: filenameprocessor
@@ -74,6 +82,14 @@ jobs:
           $TEST_SCRIPT 3.10 \
           "filenameprocessor" \
           "sonarcloud-coverage-filenameprocessor-coverage.xml"
+
+      - name: Cache Poetry virtualenv (recordprocessor)
+        uses: actions/cache@v4
+        with:
+          path: ./recordprocessor/.venv
+          key: ${{ runner.os }}-venv-recordprocessor-${{ hashFiles('recordprocessor/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-venv-recordprocessor-
 
       - name: Run unittest with recordprocessor-coverage
         working-directory: recordprocessor
@@ -84,7 +100,14 @@ jobs:
           "recordprocessor" \
           "sonarcloud-coverage-recordprocessor-coverage.xml"
 
-        # This step is redundant - all of these tests will be run in the backend step below
+      - name: Cache Poetry virtualenv (backend)
+        uses: actions/cache@v4
+        with:
+          path: ./backend/.venv
+          key: ${{ runner.os }}-venv-backend-${{ hashFiles('backend/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-venv-backend-
+
       - name: Run unittest with recordforwarder-coverage
         working-directory: backend
         id: recordforwarder
@@ -93,6 +116,14 @@ jobs:
           $TEST_SCRIPT 3.11 \
           "recordforwarder" \
           "sonarcloud-coverage-recordforwarder-coverage.xml"
+
+      - name: Cache Poetry virtualenv (ack_backend)
+        uses: actions/cache@v4
+        with:
+          path: ./ack_backend/.venv
+          key: ${{ runner.os }}-venv-ack_backend-${{ hashFiles('ack_backend/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-venv-ack_backend-
 
       - name: Run unittest with coverage-ack-lambda
         working-directory: ack_backend
