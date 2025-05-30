@@ -5,6 +5,7 @@ PYTHON_VERSION="$1"
 DESCRIPTION="$2"
 COVERAGE_SUFFIX="$3"
 
+
 COVERAGE_XML="sonarcloud-coverage-$COVERAGE_SUFFIX.xml"
 
 echo "Using Python $PYTHON_VERSION"

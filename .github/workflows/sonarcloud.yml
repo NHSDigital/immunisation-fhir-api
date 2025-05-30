@@ -7,7 +7,7 @@ on:
   pull_request:
     types: [labeled, opened, synchronize, reopened, unlabeled]
 env:
-  TEST_SCRIPT: ../scripts/run_poetry_tests.sh
+  TEST_SCRIPT: ../.github/scripts/run_poetry_tests.sh
 
 jobs:
   sonarcloud:
@@ -18,6 +18,17 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Check Script Path
+        run: |
+          echo "TEST_SCRIPT is set to: $TEST_SCRIPT"
+          if [ -f "$TEST_SCRIPT" ]; then
+            echo "Script exists and is executable."
+            ls -l "$TEST_SCRIPT"
+          else
+            echo "Script does NOT exist at $TEST_SCRIPT"
+            exit 1
+          fi
 
       - name: Install poetry
         run: pip install poetry==1.8.4
