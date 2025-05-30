@@ -25,6 +25,11 @@ jobs:
           echo "Listing .github directory:"
           ls -la ./.github
 
+      - name: List scripts directory
+        run: |
+          echo "Listing scripts directory:"
+          ls -la ./.github/scripts
+          ls -la $SCRIPT_FOLDER
 
       - name: List all subdirectories (including hidden)
         run: |
