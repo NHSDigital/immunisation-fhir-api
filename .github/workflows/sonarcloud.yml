@@ -16,9 +16,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      - name: make executable
+        run: |
+          echo "Making scripts executable:"
+          chmod +x $TEST_SCRIPT
 
       - name: List .github directory
         run: |
