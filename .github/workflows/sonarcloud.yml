@@ -8,7 +8,7 @@ on:
     types: [labeled, opened, synchronize, reopened, unlabeled]
 env:
   SCRIPT_FOLDER: ./.github/scripts
-  TEST_SCRIPT: $SCRIPT_FOLDER/run_test.sh
+  TEST_SCRIPT: ./.github/scripts/run_test.sh
 
 jobs:
   sonarcloud:
@@ -40,9 +40,14 @@ jobs:
           echo "chmod 6:"
           chmod +x $SCRIPT_FOLDER/run_test.sh
 
+          echo "chmod 6.1:"
+          chmod +x $TEST_SCRIPT
+
           echo "chmod 7:"
           ls -la $TEST_SCRIPT
+          echo "chmod 7.1:"
           chmod +x $TEST_SCRIPT
+          echo "chmod 7.2:"
           chmod +x $SCRIPT_FOLDER/*.sh
           echo "Listing .github directory:"
           ls -la ./.github/scripts
