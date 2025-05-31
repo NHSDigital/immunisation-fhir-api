@@ -29,16 +29,6 @@ jobs:
             3.10
             3.11
           cache: 'poetry'
-  
-      - name: Install poetry
-        run: pip install poetry==1.8.4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: |
-            3.10
-            3.11
-          cache: 'poetry'
 
       - name: Set up AWS credentials
         env:
@@ -51,7 +41,15 @@ jobs:
       - name: Chmod .github directory
         run: |
           chmod +x $SCRIPT_FOLDER/*.sh
-  
+
+      - name: Cache Poetry virtualenv (filenameprocessor)
+        uses: actions/cache@v4
+        with:
+          path: ./filenameprocessor/.venv
+          key: ${{ runner.os }}-venv-filenameprocessor-${{ hashFiles('filenameprocessor/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-venv-filenameprocessor-
+
       - name: Run unittest with filenameprocessor-coverage (S)
         working-directory: filenameprocessor
         id: filenameprocessor
@@ -70,14 +68,14 @@ jobs:
           "recordprocessor" \
           "recordprocessor-coverage.xml"
 
-      # - name: Run unittest with recordforwarder-coverage
-      #   working-directory: backend
-      #   id: recordforwarder
-      #   continue-on-error: true
-      #   run: |
-      #     $TEST_SCRIPT 3.11 \
-      #     "recordforwarder" \
-      #     "recordforwarder-coverage.xml"
+      - name: Run unittest with recordforwarder-coverage
+        working-directory: backend
+        id: recordforwarder
+        continue-on-error: true
+        run: |
+          $TEST_SCRIPT 3.11 \
+          "recordforwarder" \
+          "recordforwarder-coverage.xml"
 
       # - name: Run unittest with coverage-ack-lambda
       #   working-directory: ack_backend
@@ -88,16 +86,16 @@ jobs:
       #     "ack-lambda" \
       #     "ack-lambda.xml"
 
-      # - name: Run unittest with coverage-delta
-      #   working-directory: delta_backend
-      #   id: delta
-      #   env:
-      #       PYTHONPATH: delta_backend/src:delta_backend/tests
-      #   continue-on-error: true
-      #   run: |
-      #     $TEST_SCRIPT 3.11 \
-      #     "delta" \
-      #     "delta.xml"
+      - name: Run unittest with coverage-delta
+        working-directory: delta_backend
+        id: delta
+        env:
+            PYTHONPATH: delta_backend/src:delta_backend/tests
+        continue-on-error: true
+        run: |
+          $TEST_SCRIPT 3.11 \
+          "delta" \
+          "delta.xml"
 
       # - name: Run unittest with coverage-fhir-api
       #   working-directory: backend
