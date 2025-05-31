@@ -42,6 +42,9 @@ jobs:
         run: |
           chmod +x $SCRIPT_FOLDER/*.sh
 
+      - name: Set Poetry to use in-project venvs
+        run: poetry config virtualenvs.in-project true
+
       - name: Cache Poetry virtualenv (filenameprocessor)
         uses: actions/cache@v4
         with:
@@ -126,7 +129,7 @@ jobs:
         continue-on-error: true
         run: |
           $TEST_SCRIPT 3.11 \
-          "delta" \
+          "delta_backend" \
           "delta.xml"
 
       # - name: Run unittest with coverage-fhir-api
