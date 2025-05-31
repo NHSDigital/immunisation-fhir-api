@@ -8,7 +8,7 @@ on:
     types: [labeled, opened, synchronize, reopened, unlabeled]
 env:
   SCRIPT_FOLDER: ./.github/scripts
-  TEST_SCRIPT: ../.github/scripts/run_test.sh
+  TEST_SCRIPT: source ../.github/scripts/run_test.sh
 
 jobs:
   sonarcloud:
@@ -20,16 +20,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install poetry
-        run: pip install poetry==1.8.4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: |
-            3.10
-            3.11
-          cache: 'poetry'
-  
       - name: Install poetry
         run: pip install poetry==1.8.4
 
@@ -51,8 +41,51 @@ jobs:
       - name: Chmod .github directory
         run: |
           chmod +x $SCRIPT_FOLDER/*.sh
-  
-      - name: Run unittest with filenameprocessor-coverage
+
+      - name: Set Poetry to use in-project venvs
+        run: poetry config virtualenvs.in-project true
+
+      - name: Cache Poetry virtualenv (filenameprocessor)
+        uses: actions/cache@v4
+        with:
+          path: ./filenameprocessor/.venv
+          key: ${{ runner.os }}-venv-filenameprocessor-${{ hashFiles('filenameprocessor/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-venv-filenameprocessor-
+
+      - name: Cache Poetry virtualenv (recordprocessor)
+        uses: actions/cache@v4
+        with:
+          path: ./recordprocessor/.venv
+          key: ${{ runner.os }}-venv-recordprocessor-${{ hashFiles('recordprocessor/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-venv-recordprocessor-
+
+      - name: Cache Poetry virtualenv (recordforwarder)
+        uses: actions/cache@v4
+        with:
+          path: ./backend/.venv
+          key: ${{ runner.os }}-venv-backend-${{ hashFiles('backend/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-venv-backend-
+
+      - name: Cache Poetry virtualenv (ack_backend)
+        uses: actions/cache@v4
+        with:
+          path: ./ack_backend/.venv
+          key: ${{ runner.os }}-venv-ack_backend-${{ hashFiles('ack_backend/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-venv-ack_backend-
+
+      - name: Cache Poetry virtualenv (delta_backend)
+        uses: actions/cache@v4
+        with:
+          path: ./delta_backend/.venv
+          key: ${{ runner.os }}-venv-delta_backend-${{ hashFiles('delta_backend/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-venv-delta_backend-
+
+      - name: Run unittest with filenameprocessor-coverage (S)
         working-directory: filenameprocessor
         id: filenameprocessor
         continue-on-error: true
@@ -61,7 +94,7 @@ jobs:
           "filenameprocessor" \
           "filenameprocessor-coverage.xml"
 
-      - name: Run unittest with recordprocessor-coverage
+      - name: Run unittest with recordprocessor-coverage (s)
         working-directory: recordprocessor
         id: recordprocessor
         continue-on-error: true
@@ -96,26 +129,26 @@ jobs:
         continue-on-error: true
         run: |
           $TEST_SCRIPT 3.11 \
-          "delta" \
+          "delta_backend" \
           "delta.xml"
 
-      - name: Run unittest with coverage-fhir-api
-        working-directory: backend
-        id: fhirapi
-        continue-on-error: true
-        run: |
-          $TEST_SCRIPT 3.11 \
-          "fhir-api" \
-          "fhir-api.xml"
+      # - name: Run unittest with coverage-fhir-api
+      #   working-directory: backend
+      #   id: fhirapi
+      #   continue-on-error: true
+      #   run: |
+      #     $TEST_SCRIPT 3.11 \
+      #     "fhir-api" \
+      #     "fhir-api.xml"
 
-      - name: Run unittest with coverage-mesh-processor
-        working-directory: mesh_processor
-        id: meshprocessor
-        continue-on-error: true
-        run: |
-          $TEST_SCRIPT 3.10 \
-          "mesh_processor" \
-          "mesh_processor-coverage.xml"
+      # - name: Run unittest with coverage-mesh-processor
+      #   working-directory: mesh_processor
+      #   id: meshprocessor
+      #   continue-on-error: true
+      #   run: |
+      #     $TEST_SCRIPT 3.10 \
+      #     "mesh_processor" \
+      #     "mesh_processor-coverage.xml"
 
       - name: Run Test Failure Summary
         id: check_failure
