@@ -42,13 +42,21 @@ jobs:
         run: |
           chmod +x $SCRIPT_FOLDER/*.sh
 
-      - name: Cache Poetry virtualenv (filenameprocessor)
+      # - name: Cache Poetry virtualenv (filenameprocessor)
+      #   uses: actions/cache@v4
+      #   with:
+      #     path: ./filenameprocessor/.venv
+      #     key: ${{ runner.os }}-venv-filenameprocessor-${{ hashFiles('filenameprocessor/poetry.lock') }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-venv-filenameprocessor-
+
+      - name: Cache Poetry virtualenv (shared)
         uses: actions/cache@v4
         with:
-          path: ./filenameprocessor/.venv
-          key: ${{ runner.os }}-venv-filenameprocessor-${{ hashFiles('filenameprocessor/poetry.lock') }}
+          path: ./.venv
+          key: ${{ runner.os }}-venv-shared-${{ hashFiles('poetry.lock') }}
           restore-keys: |
-            ${{ runner.os }}-venv-filenameprocessor-
+            ${{ runner.os }}-venv-shared-
 
       - name: Run unittest with filenameprocessor-coverage (S)
         working-directory: filenameprocessor
