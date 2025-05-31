@@ -9,10 +9,12 @@ echo "Using Python $PYTHON_VERSION"
 poetry config virtualenvs.in-project true
 
 # Only create/use the env and install if .venv does not exist
+poetry env list
 if [ ! -d ".venv" ]; then
   echo "Creating virtual environment (.venv) with Poetry"
   poetry env use "$PYTHON_VERSION"
   poetry install
+  poetry env list
 else
   echo "Using cached virtual environment (.venv)"
 fi
