@@ -5,10 +5,11 @@ PYTHON_VERSION="$1"
 DESCRIPTION="$2"
 COVERAGE_XML="sonarcloud-coverage-$3.xml"
 
-echo "Using Python $PYTHON_VERSION"
+echo "Using Python $PYTHON_VERSION again"
 poetry config virtualenvs.in-project true
 
 # Only create/use the env and install if .venv does not exist
+echo "Checking for Poetry virtual environment (.venv)"
 poetry env list
 if [ ! -d ".venv" ]; then
   echo "Creating virtual environment (.venv) with Poetry"
