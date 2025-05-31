@@ -42,21 +42,45 @@ jobs:
         run: |
           chmod +x $SCRIPT_FOLDER/*.sh
 
-      # - name: Cache Poetry virtualenv (filenameprocessor)
-      #   uses: actions/cache@v4
-      #   with:
-      #     path: ./filenameprocessor/.venv
-      #     key: ${{ runner.os }}-venv-filenameprocessor-${{ hashFiles('filenameprocessor/poetry.lock') }}
-      #     restore-keys: |
-      #       ${{ runner.os }}-venv-filenameprocessor-
-
-      - name: Cache Poetry virtualenv (shared)
+      - name: Cache Poetry virtualenv (filenameprocessor)
         uses: actions/cache@v4
         with:
-          path: ./.venv
-          key: ${{ runner.os }}-venv-shared-${{ hashFiles('poetry.lock') }}
+          path: ./filenameprocessor/.venv
+          key: ${{ runner.os }}-venv-filenameprocessor-${{ hashFiles('filenameprocessor/poetry.lock') }}
           restore-keys: |
-            ${{ runner.os }}-venv-shared-
+            ${{ runner.os }}-venv-filenameprocessor-
+
+      - name: Cache Poetry virtualenv (recordprocessor)
+        uses: actions/cache@v4
+        with:
+          path: ./recordprocessor/.venv
+          key: ${{ runner.os }}-venv-recordprocessor-${{ hashFiles('recordprocessor/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-venv-recordprocessor-
+
+      - name: Cache Poetry virtualenv (recordforwarder)
+        uses: actions/cache@v4
+        with:
+          path: ./backend/.venv
+          key: ${{ runner.os }}-venv-backend-${{ hashFiles('backend/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-venv-backend-
+
+      - name: Cache Poetry virtualenv (ack_backend)
+        uses: actions/cache@v4
+        with:
+          path: ./ack_backend/.venv
+          key: ${{ runner.os }}-venv-ack_backend-${{ hashFiles('ack_backend/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-venv-ack_backend-
+
+      - name: Cache Poetry virtualenv (delta_backend)
+        uses: actions/cache@v4
+        with:
+          path: ./delta_backend/.venv
+          key: ${{ runner.os }}-venv-delta_backend-${{ hashFiles('delta_backend/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-venv-delta_backend-
 
       - name: Run unittest with filenameprocessor-coverage (S)
         working-directory: filenameprocessor
@@ -85,14 +109,14 @@ jobs:
           "recordforwarder" \
           "recordforwarder-coverage.xml"
 
-      # - name: Run unittest with coverage-ack-lambda
-      #   working-directory: ack_backend
-      #   id: acklambda
-      #   continue-on-error: true
-      #   run: |
-      #     $TEST_SCRIPT 3.10 \
-      #     "ack-lambda" \
-      #     "ack-lambda.xml"
+      - name: Run unittest with coverage-ack-lambda
+        working-directory: ack_backend
+        id: acklambda
+        continue-on-error: true
+        run: |
+          $TEST_SCRIPT 3.10 \
+          "ack-lambda" \
+          "ack-lambda.xml"
 
       - name: Run unittest with coverage-delta
         working-directory: delta_backend
