@@ -8,7 +8,7 @@ on:
     types: [labeled, opened, synchronize, reopened, unlabeled]
 env:
   SCRIPT_FOLDER: ./.github/scripts
-  RUN_TEST: source ../.github/scripts/run_test.sh
+  TEST_SCRIPT: source ../.github/scripts/run_test.sh
 
 jobs:
   sonarcloud:
@@ -16,9 +16,25 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.10', '3.11']
+        include:
+          - project: filenameprocessor
+            python-version: "3.10"
+          - project: recordprocessor
+            python-version: "3.10"
+          - project: backend
+            python-version: "3.11"
+            test-name: recordforwarder
+            coverage-file: recordforwarder-coverage.xml
+          - project: ack_backend
+            python-version: "3.10"
+            test-name: ack-lambda
+            coverage-file: ack-lambda.xml
+          - project: delta_backend
+            python-version: "3.11"
+            test-name: delta_backend
+            coverage-file: delta.xml
+          # Add more projects as needed
 
-        
     steps:
       - uses: actions/checkout@v4
         with:
@@ -31,6 +47,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'poetry'
+
 
       - name: Set up AWS credentials
         env:
@@ -46,90 +63,79 @@ jobs:
 
       - name: Set Poetry to use in-project venvs
         run: poetry config virtualenvs.in-project true
-
-      - name: Cache Poetry virtualenv (filenameprocessor)
-        if: matrix.python-version == '3.10'
+  
+      - name: Cache Poetry virtualenv
         uses: actions/cache@v4
         with:
-          path: ./filenameprocessor/.venv
-          key: ${{ runner.os }}-venv-fp-py3.10-${{ hashFiles('filenameprocessor/poetry.lock') }}
+          path: ./${{ matrix.project }}/.venv
+          key: ${{ runner.os }}-venv-${{ matrix.project }}-py${{ matrix.python-version }}-${{ hashFiles(format('{0}/poetry.lock', matrix.project)) }}
           restore-keys: |
-            ${{ runner.os }}-venv-fp-py3.10-
-
-      - name: Cache Poetry virtualenv (recordprocessor)
-        if: matrix.python-version == '3.10'
-        uses: actions/cache@v4
-        with:
-          path: ./recordprocessor/.venv
-          key: ${{ runner.os }}-venv-rp-py3.10-${{ hashFiles('recordprocessor/poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-venv-rp-py3.10-
-
-      - name: Cache Poetry virtualenv (recordforwarder)
-        if: matrix.python-version == '3.11'
-        uses: actions/cache@v4
-        with:
-          path: ./backend/.venv
-          key: ${{ runner.os }}-venv-be-py3.11-${{ hashFiles('backend/poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-venv-be-py3.11-
-
-      - name: Cache Poetry virtualenv (ack_backend)
-        if: matrix.python-version == '3.10'
-        uses: actions/cache@v4
-        with:
-          path: ./ack_backend/.venv
-          key: ${{ runner.os }}-venv-ack-py3.10-${{ hashFiles('ack_backend/poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-venv-ack-py3.10-
-
-      - name: Cache Poetry virtualenv (delta_backend)
-        if: matrix.python-version == '3.11'
-        uses: actions/cache@v4
-        with:
-          path: ./delta_backend/.venv
-          key: ${{ runner.os }}-venv-delta-py3.11-${{ hashFiles('delta_backend/poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-venv-delta-py3.11-
+            ${{ runner.os }}-venv-${{ matrix.project }}-py${{ matrix.python-version }}-
 
       - name: Run unittest with filenameprocessor-coverage (S)
-        if: matrix.python-version == '3.10'
         working-directory: filenameprocessor
         id: filenameprocessor
         continue-on-error: true
-        run: $RUN_TEST 3.10 filenameprocessor filenameprocessor-coverage.xml
+        run: |
+          $TEST_SCRIPT 3.10 \
+          "filenameprocessor" \
+          "filenameprocessor-coverage.xml"
 
       - name: Run unittest with recordprocessor-coverage (s)
-        if: matrix.python-version == '3.10'
         working-directory: recordprocessor
         id: recordprocessor
         continue-on-error: true
-        run: $RUN_TEST 3.10 recordprocessor recordprocessor-coverage.xml
+        run: |
+          $TEST_SCRIPT 3.10 \
+          "recordprocessor" \
+          "recordprocessor-coverage.xml"
 
       - name: Run unittest with recordforwarder-coverage
-        if: matrix.python-version == '3.11'
         working-directory: backend
         id: recordforwarder
         continue-on-error: true
         run: |
-          poetry config virtualenvs.in-project true
-          $RUN_TEST 3.11 recordforwarder recordforwarder-coverage.xml
+          $TEST_SCRIPT 3.11 \
+          "recordforwarder" \
+          "recordforwarder-coverage.xml"
 
       - name: Run unittest with coverage-ack-lambda
-        if: matrix.python-version == '3.10'
         working-directory: ack_backend
         id: acklambda
         continue-on-error: true
-        run: $RUN_TEST 3.10 ack-lambda ack-lambda.xml
+        run: |
+          $TEST_SCRIPT 3.10 \
+          "ack-lambda" \
+          "ack-lambda.xml"
 
       - name: Run unittest with coverage-delta
-        if: matrix.python-version == '3.11'
         working-directory: delta_backend
         id: delta
         env:
             PYTHONPATH: delta_backend/src:delta_backend/tests
         continue-on-error: true
-        run: $RUN_TEST 3.11 delta_backend delta.xml
+        run: |
+          $TEST_SCRIPT 3.11 \
+          "delta_backend" \
+          "delta.xml"
+
+      # - name: Run unittest with coverage-fhir-api
+      #   working-directory: backend
+      #   id: fhirapi
+      #   continue-on-error: true
+      #   run: |
+      #     $TEST_SCRIPT 3.11 \
+      #     "fhir-api" \
+      #     "fhir-api.xml"
+
+      # - name: Run unittest with coverage-mesh-processor
+      #   working-directory: mesh_processor
+      #   id: meshprocessor
+      #   continue-on-error: true
+      #   run: |
+      #     $TEST_SCRIPT 3.10 \
+      #     "mesh_processor" \
+      #     "mesh_processor-coverage.xml"
 
       - name: Run Test Failure Summary
         id: check_failure

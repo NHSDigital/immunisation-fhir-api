@@ -5,7 +5,14 @@ PYTHON_VERSION="$1"
 DESCRIPTION="$2"
 COVERAGE_XML="sonarcloud-coverage-$3.xml"
 
-echo "Using Python $PYTHON_VERSION again"
+# show cwd
+echo "Current working directory: $(pwd)"
+# list contents of venv
+
+ls -la .
+
+
+echo "Using Python Version $PYTHON_VERSION"
 poetry config virtualenvs.in-project true
 
 # Only create/use the env and install if .venv does not exist
