@@ -5,24 +5,6 @@ PYTHON_VERSION="$1"
 DESCRIPTION="$2"
 COVERAGE_XML="sonarcloud-coverage-$3.xml"
 
-# show cwd
-echo "Current working directory: $(pwd)"
-# list contents of venv
-
-ls -la .
-
-########### debug
-echo "Which Python:"
-which python$PYTHON_VERSION || echo "python$PYTHON_VERSION not found in PATH"
-
-
-echo "Using Python Version $PYTHON_VERSION"
-##############
-
-
-# Only create/use the env and install if .venv does not exist
-echo "Checking for Poetry virtual environment (.venv)"
-poetry env list
 if [ ! -d ".venv" ]; then
   echo "Creating virtual environment (.venv) with Poetry"
   poetry env use "$PYTHON_VERSION"
