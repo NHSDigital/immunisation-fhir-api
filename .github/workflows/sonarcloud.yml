@@ -28,6 +28,14 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: 'poetry'
 
+      - name: Cache global Poetry virtualenvs
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pypoetry/virtualenvs
+          key: ${{ runner.os }}-poetry-global-venv-py${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-global-venv-py${{ matrix.python-version }}-
+
       - name: Set up AWS credentials
         env:
           AWS_ACCESS_KEY_ID: "FOOBARKEY"

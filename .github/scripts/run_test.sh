@@ -4,7 +4,7 @@ set -e
 PYTHON_VERSION="$1"
 DESCRIPTION="$2"
 COVERAGE_XML="sonarcloud-coverage-$3.xml"
-
+# poetry config virtualenvs.in-project true
 if [ ! -d ".venv" ]; then
   echo "Creating virtual environment (.venv) with Poetry"
   poetry env use "$PYTHON_VERSION"
