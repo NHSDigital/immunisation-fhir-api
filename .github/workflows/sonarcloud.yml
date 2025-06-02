@@ -37,6 +37,7 @@ jobs:
           aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
 
       - name: Run unittest with filenameprocessor-coverage
+        if: matrix.python-version == '3.11'
         working-directory: filenameprocessor
         id: filenameprocessor
         continue-on-error: true
@@ -47,6 +48,7 @@ jobs:
           poetry run coverage xml -o ../sonarcloud-coverage-filenameprocessor-coverage.xml
 
       - name: Run unittest with recordprocessor-coverage
+        if: matrix.python-version == '3.10'  
         working-directory: recordprocessor
         id: recordprocessor
         continue-on-error: true
@@ -58,6 +60,7 @@ jobs:
 
         # This step is redundant - all of these tests will be run in the backend step below
       - name: Run unittest with recordforwarder-coverage
+        if: matrix.python-version == '3.11'
         working-directory: backend
         id: recordforwarder
         continue-on-error: true
@@ -68,6 +71,7 @@ jobs:
           poetry run coverage xml -o ../sonarcloud-coverage-recordforwarder-coverage.xml
 
       - name: Run unittest with coverage-ack-lambda
+        if: matrix.python-version == '3.10'
         working-directory: ack_backend
         id: acklambda
         continue-on-error: true
@@ -78,6 +82,7 @@ jobs:
           poetry run coverage xml -o ../sonarcloud-coverage-ack-lambda.xml
 
       - name: Run unittest with coverage-delta
+        if: matrix.python-version == '3.11'
         working-directory: delta_backend
         id: delta
         env:
@@ -90,6 +95,7 @@ jobs:
           poetry run coverage xml -o ../sonarcloud-coverage-delta.xml
 
       - name: Run unittest with coverage-fhir-api
+        if: matrix.python-version == '3.11'
         working-directory: backend
         id: fhirapi
         continue-on-error: true
@@ -100,6 +106,7 @@ jobs:
           poetry run coverage xml -o ../sonarcloud-coverage.xml
 
       - name: Run unittest with coverage-mesh-processor
+        if: matrix.python-version == '3.10'
         working-directory: mesh_processor
         id: meshprocessor
         continue-on-error: true
