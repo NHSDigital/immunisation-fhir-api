@@ -59,15 +59,15 @@ jobs:
           aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
           aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
 
-      # - name: Run unittest with filenameprocessor-coverage
-      #   working-directory: filenameprocessor
-      #   id: filenameprocessor
-      #   continue-on-error: true
-      #   run: |
-      #     poetry env use 3.10
-      #     poetry install
-      #     poetry run coverage run -m unittest discover || echo "filenameprocessor tests failed" >> ../failed_tests.txt
-      #     poetry run coverage xml -o ../sonarcloud-coverage-filenameprocessor-coverage.xml
+      - name: Run unittest with filenameprocessor-coverage
+        working-directory: filenameprocessor
+        id: filenameprocessor
+        continue-on-error: true
+        run: |
+          poetry env use 3.10
+          poetry install
+          poetry run coverage run -m unittest discover || echo "filenameprocessor tests failed" >> ../failed_tests.txt
+          poetry run coverage xml -o ../sonarcloud-coverage-filenameprocessor-coverage.xml
 
       # - name: Run unittest with recordprocessor-coverage
       #   working-directory: recordprocessor
@@ -108,15 +108,15 @@ jobs:
         run: |
           $RUN_TEST 3.11 delta_backend delta.xml
 
-      # - name: Run unittest with coverage-fhir-api
-      #   working-directory: backend
-      #   id: fhirapi
-      #   continue-on-error: true
-      #   run: |
-      #     poetry env use 3.11
-      #     poetry install
-      #     poetry run coverage run -m unittest discover || echo "fhir-api tests failed" >> ../failed_tests.txt
-      #     poetry run coverage xml -o ../sonarcloud-coverage.xml
+      - name: Run unittest with coverage-fhir-api
+        working-directory: backend
+        id: fhirapi
+        continue-on-error: true
+        run: |
+          poetry env use 3.11
+          poetry install
+          poetry run coverage run -m unittest discover || echo "fhir-api tests failed" >> ../failed_tests.txt
+          poetry run coverage xml -o ../sonarcloud-coverage.xml
 
       # - name: Run unittest with coverage-mesh-processor
       #   working-directory: mesh_processor
