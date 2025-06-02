@@ -15,10 +15,12 @@ ls -la .
 echo "Which Python:"
 which python$PYTHON_VERSION || echo "python$PYTHON_VERSION not found in PATH"
 
+echo "Available interpreters:"
+pyenv versions || true
 
 echo "Using Python Version $PYTHON_VERSION"
+poetry config virtualenvs.in-project true
 ##############
-
 
 # Only create/use the env and install if .venv does not exist
 echo "Checking for Poetry virtual environment (.venv)"

@@ -1,0 +1,78 @@
+name: SonarCloud
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    types: [labeled, opened, synchronize, reopened, unlabeled]
+env:
+  SCRIPT_FOLDER: ./.github/scripts
+  RUN_TEST: source ../.github/scripts/run_test.sh
+
+jobs:
+  sonarcloud:
+    name: SonarCloud
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.11']
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install poetry
+        run: pip install poetry==1.8.4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'poetry'
+
+      - name: Set up AWS credentials
+        env:
+          AWS_ACCESS_KEY_ID: "FOOBARKEY"
+          AWS_SECRET_ACCESS_KEY: "FOOBARSECRET"
+        run: |
+          aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+          aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+
+      - name: Chmod .github directory
+        run: |
+          chmod +x $SCRIPT_FOLDER/*.sh
+
+      - name: Cache global Poetry virtualenvs
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pypoetry/virtualenvs
+          key: ${{ runner.os }}-poetry-global-venv-py${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-global-venv-py${{ matrix.python-version }}-
+
+      - name: Run unittest with coverage-delta
+        if: matrix.python-version == '3.11'
+        working-directory: delta_backend
+        id: delta
+        env:
+            PYTHONPATH: delta_backend/src:delta_backend/tests
+        continue-on-error: true
+        run: |
+          $RUN_TEST 3.11 delta_backend delta.xml
+
+      - name: Run Test Failure Summary
+        id: check_failure
+        run: |
+          if [ -s failed_tests.txt ]; then
+            echo "The following tests failed:"
+            cat failed_tests.txt
+
+            while IFS= read -r line; do
+              echo "##[error]Test Failures: $line"
+            done < failed_tests.txt
+
+            exit 1
+          else
+            echo "All tests passed."
+          fi
