@@ -45,7 +45,7 @@ jobs:
           aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
 
       - name: Run unittest with filenameprocessor-coverage
-        if: matrix.python-version == '3.11'
+        if: matrix.python-version == '3.10'
         working-directory: filenameprocessor
         id: filenameprocessor
         continue-on-error: true
@@ -128,7 +128,7 @@ jobs:
         id: check_failure
         run: |
           if [ -s failed_tests.txt ]; then
-            echo "The following tests failed:"
+            echo "The following ${{ matrix.python-version }} tests failed:"
             cat failed_tests.txt
 
             while IFS= read -r line; do
@@ -137,9 +137,17 @@ jobs:
 
             exit 1
           else
-            echo "All tests passed."
+            echo "All ${{ matrix.python-version }} tests passed."
           fi
 
+  sonarcloud_scan:
+    name: SonarCloud Scan
+    runs-on: ubuntu-latest
+    needs: sonarcloud
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@master
         env:
