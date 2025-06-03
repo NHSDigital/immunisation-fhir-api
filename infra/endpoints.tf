@@ -141,24 +141,10 @@ resource "aws_vpc_endpoint" "dynamodb" {
     for rt in data.aws_route_tables.default_route_tables.ids : rt
   ]
 
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        "Effect" : "Allow",
-        "Principal" : {
-          AWS = "*"
-        },
-        "Action" : "*",
-        "Resource" : "*"
-      }
-    ]
-  })
   tags = {
     Name = "immunisation-dynamo-endpoint"
   }
 }
-
 
 resource "aws_vpc_endpoint" "ecr_api" {
   vpc_id            = data.aws_vpc.default.id
