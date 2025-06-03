@@ -104,8 +104,6 @@ class PreValidation:
         containing a valid datetime. Note that partial dates are valid for FHIR, but are not allowed for this API.
         Valid formats are any of the following:
         * 'YYYY-MM-DD' - Full date only
-        * 'YYYY-MM-DDThh:mm:ss' - Full date, time without milliseconds
-        * 'YYYY-MM-DDThh:mm:ss.f' - Full date, time with milliseconds (any level of precision)
         * 'YYYY-MM-DDThh:mm:ss%z' - Full date, time without milliseconds, timezone
         * 'YYYY-MM-DDThh:mm:ss.f%z' - Full date, time with milliseconds (any level of precision), timezone
         """
@@ -116,8 +114,6 @@ class PreValidation:
         error_message = (
             f"{field_location} must be a valid datetime in one of the following formats:"
             "- 'YYYY-MM-DD' — Full date only"
-            "- 'YYYY-MM-DDThh:mm:ss' — Full date and time without milliseconds"
-            "- 'YYYY-MM-DDThh:mm:ss.f' — Full date and time with milliseconds (any level of precision)"
             "- 'YYYY-MM-DDThh:mm:ss%z' — Full date and time with timezone (e.g. +00:00 or +01:00)"
             "- 'YYYY-MM-DDThh:mm:ss.f%z' — Full date and time with milliseconds and timezone"
         )
@@ -130,7 +126,7 @@ class PreValidation:
 
         # List of accepted strict formats
         formats = [
-            "%Y-%m-%d", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%dT%H:%M:%S.%f",
+            "%Y-%m-%d",
             "%Y-%m-%dT%H:%M:%S%z", "%Y-%m-%dT%H:%M:%S.%f%z",
         ]
 
