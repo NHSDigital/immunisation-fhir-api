@@ -4,26 +4,16 @@ set -e
 PYTHON_VERSION="$1"
 DESCRIPTION="$2"
 COVERAGE_XML="sonarcloud-coverage-$3.xml"
-# poetry config virtualenvs.in-project true
-if [ ! -d ".venv" ]; then
-  echo "Creating virtual environment (.venv) with Poetry"
+
+
+          poetry env use 3.10
+          poetry install
+          poetry run coverage run -m unittest discover || echo "mesh_processor tests failed" >> ../failed_tests.txt
+          poetry run coverage xml -o ../sonarcloud-mesh_processor-coverage.xml
+
+
   poetry env use "$PYTHON_VERSION"
-
-  ########### debug
-  echo "Poetry environment info:"
-  poetry env info || true
-  ###########
-
   poetry install
-  poetry env list
-else
-  echo "Using cached virtual environment (.venv)"
-fi
-
-if poetry run coverage run -m unittest discover; then
-  echo "$DESCRIPTION tests passed"
-else
-  echo "$DESCRIPTION tests failed" >> ../failed_tests.txt
-fi
+  poetry run coverage run -m unittest discover || echo "$DESCRIPTION tests failed" >> ../failed_tests.txt
 
 poetry run coverage xml -o "../$COVERAGE_XML"
