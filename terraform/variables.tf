@@ -1,51 +1,47 @@
 variable "project_name" {
-    default = "immunisations"
+  default = "immunisations"
 }
 
 variable "project_short_name" {
-    default = "imms"
+  default = "imms"
 }
 
 variable "service" {
-    default = "fhir-api"
+  default = "fhir-api"
 }
+
+variable "aws_region" {
+  default = "eu-west-2"
+}
+
+locals {
+  environment       = terraform.workspace == "green" ? "prod" : terraform.workspace == "blue" ? "prod" : terraform.workspace
+  env               = terraform.workspace
+  prefix            = "${var.project_name}-${var.service}-${local.env}"
+  short_prefix      = "${var.project_short_name}-${local.env}"
+  batch_prefix      = "immunisation-batch-${local.env}"
+  config_env        = local.environment == "prod" ? "prod" : "dev"
+  config_bucket_env = local.environment == "prod" ? "prod" : "internal-dev"
+
+  root_domain         = "${local.config_env}.vds.platform.nhs.uk"
+  project_domain_name = data.aws_route53_zone.project_zone.name
+  service_domain_name = "${local.env}.${local.project_domain_name}"
+
+  # For now, only create the config bucket in internal-dev and prod as we only have one Redis instance per account.
+  create_config_bucket = local.environment == local.config_bucket_env
+  config_bucket_arn    = local.create_config_bucket ? aws_s3_bucket.batch_config_bucket[0].arn : data.aws_s3_bucket.existing_config_bucket[0].arn
+  config_bucket_name   = local.create_config_bucket ? aws_s3_bucket.batch_config_bucket[0].bucket : data.aws_s3_bucket.existing_config_bucket[0].bucket
+}
+
 data "aws_vpc" "default" {
-    default = true
+  default = true
 }
+
 data "aws_subnets" "default" {
-    filter {
-        name   = "vpc-id"
-        values = [data.aws_vpc.default.id]
-    }
-}
-
-locals {
-    root_domain = "${local.config_env}.vds.platform.nhs.uk"
-}
-
-locals {
-    project_domain_name = data.aws_route53_zone.project_zone.name
-}
-
-locals {
-    environment         = terraform.workspace == "green" ? "prod" : terraform.workspace == "blue" ? "prod" : terraform.workspace
-    env                 = terraform.workspace
-    prefix              = "${var.project_name}-${var.service}-${local.env}"
-    short_prefix        = "${var.project_short_name}-${local.env}"
-    batch_prefix        = "immunisation-batch-${local.env}"
-    service_domain_name = "${local.env}.${local.project_domain_name}"
-    config_env = local.environment == "prod" ? "prod" : "dev"
-    config_bucket_env = local.environment == "prod" ? "prod" : "internal-dev"
-
-    tags = {
-        Project     = var.project_name
-        Environment = local.environment
-        Service     = var.service
-    }
-}
-
-variable "region" {
-    default = "eu-west-2"
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default.id]
+  }
 }
 
 data "aws_kms_key" "existing_s3_encryption_key" {
@@ -54,10 +50,6 @@ data "aws_kms_key" "existing_s3_encryption_key" {
 
 data "aws_kms_key" "existing_dynamo_encryption_key" {
   key_id = "alias/imms-event-dynamodb-encryption"
-}
-
-variable "aws_region" {
-    default = "eu-west-2"
 }
 
 data "aws_elasticache_cluster" "existing_redis" {
@@ -72,15 +64,10 @@ data "aws_security_group" "existing_securitygroup" {
 }
 
 data "aws_s3_bucket" "existing_config_bucket" {
+  # For now, look up the internal-dev bucket during int, ref and PR branch deploys.
+  count = local.create_config_bucket ? 0 : 1
+
   bucket = "imms-${local.config_bucket_env}-supplier-config"
-}
-
-data "aws_s3_bucket" "existing_destination_bucket" {
-  bucket = "immunisation-batch-${local.local_config}-data-destinations"
-}
-
-data "aws_s3_bucket" "existing_source_bucket" {
-  bucket = "immunisation-batch-${local.local_config}-data-sources"
 }
 
 data "aws_kms_key" "existing_lambda_encryption_key" {
@@ -91,23 +78,6 @@ data "aws_kms_key" "existing_kinesis_encryption_key" {
   key_id = "alias/imms-batch-kinesis-stream-encryption"
 }
 
-data "aws_dynamodb_table" "events-dynamodb-table" { 
-  name = "imms-${local.local_config}-imms-events" 
-}
-
-data "aws_dynamodb_table" "audit-table" { 
-  name = "immunisation-batch-${local.local_config}-audit-table" 
-}
-
-data "aws_dynamodb_table" "delta-dynamodb-table" { 
-  name = "imms-${local.local_config}-delta" 
-}
-
-data "aws_lambda_function" "existing_file_name_proc_lambda" {
-  function_name = aws_lambda_function.file_processor_lambda.function_name
-}
-
 data "aws_kms_key" "mesh_s3_encryption_key" {
   key_id = "alias/local-immunisation-mesh"
 }
-

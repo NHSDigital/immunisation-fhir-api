@@ -10,13 +10,13 @@ resource "aws_ecr_repository" "mesh_file_converter_lambda_repository" {
   image_scanning_configuration {
     scan_on_push = true
   }
-  name = "${local.short_prefix}-mesh_processor-repo"
+  name         = "${local.short_prefix}-mesh_processor-repo"
   force_delete = local.is_temp
 }
 
 # Module for building and pushing Docker image to ECR
 module "mesh_processor_docker_image" {
-  source = "terraform-aws-modules/lambda/aws//modules/docker-build"
+  source  = "terraform-aws-modules/lambda/aws//modules/docker-build"
   version = "7.20.2"
 
   create_ecr_repo = false
@@ -68,7 +68,7 @@ resource "aws_ecr_repository_policy" "mesh_processor_lambda_ECRImageRetreival_po
         ],
         "Condition" : {
           "StringLike" : {
-            "aws:sourceArn" : "arn:aws:lambda:eu-west-2:${local.local_account_id}:function:${local.short_prefix}-mesh_processor_lambda"
+            "aws:sourceArn" : "arn:aws:lambda:eu-west-2:${local.immunisation_account_id}:function:${local.short_prefix}-mesh_processor_lambda"
           }
         }
       }
@@ -105,7 +105,7 @@ resource "aws_iam_policy" "mesh_processor_lambda_exec_policy" {
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ]
-        Resource = "arn:aws:logs:${var.aws_region}:${local.local_account_id}:log-group:/aws/lambda/${local.short_prefix}-mesh_processor_lambda:*"
+        Resource = "arn:aws:logs:${var.aws_region}:${local.immunisation_account_id}:log-group:/aws/lambda/${local.short_prefix}-mesh_processor_lambda:*"
       },
       {
         Effect = "Allow"
@@ -116,8 +116,8 @@ resource "aws_iam_policy" "mesh_processor_lambda_exec_policy" {
           "s3:CopyObject"
         ]
         Resource = [
-          "arn:aws:s3:::${local.batch_prefix}-data-sources",
-          "arn:aws:s3:::${local.batch_prefix}-data-sources/*"
+          aws_s3_bucket.batch_data_source_bucket.arn,
+          "${aws_s3_bucket.batch_data_source_bucket.arn}/*"
         ]
       },
       {
@@ -186,7 +186,7 @@ resource "aws_lambda_function" "mesh_file_converter_lambda" {
 
   environment {
     variables = {
-      Destination_BUCKET_NAME    = "${local.batch_prefix}-data-sources"
+      Destination_BUCKET_NAME    = aws_s3_bucket.batch_data_source_bucket.bucket
       MESH_FILE_PROC_LAMBDA_NAME = "imms-${local.env}-meshfileproc_lambda"
     }
   }
@@ -202,8 +202,11 @@ resource "aws_lambda_permission" "mesh_s3_invoke_permission" {
   source_arn    = "arn:aws:s3:::local-immunisation-mesh"
 }
 
+# TODO - This is scoped to the bucket, so is overwritten by each deployment
+# That might be intentional in prod, to switch between blue and green, but surely isn't in non-prod
 # S3 Bucket notification to trigger Lambda function
 resource "aws_s3_bucket_notification" "mesh_datasources_lambda_notification" {
+  # TODO - what is this bucket and why isn't it managed by Terraform?
   bucket = "local-immunisation-mesh"
 
   lambda_function {
