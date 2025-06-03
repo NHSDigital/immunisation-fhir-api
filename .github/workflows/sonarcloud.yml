@@ -6,6 +6,9 @@ on:
       - master
   pull_request:
     types: [labeled, opened, synchronize, reopened, unlabeled]
+env:
+  SCRIPT_FOLDER: ./.github/scripts
+  RUN_TEST: source ../.github/scripts/run_test.sh
 
 jobs:
   sonarcloud:
@@ -19,6 +22,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Chmod .github directory
+        run: |
+          chmod +x $SCRIPT_FOLDER/*.sh
 
       - name: Install poetry
         run: pip install poetry==1.8.4
@@ -44,50 +51,50 @@ jobs:
           aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
           aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
 
-      # - name: Run unittest with filenameprocessor-coverage
-      #   if: matrix.python-version == '3.10'
-      #   working-directory: filenameprocessor
-      #   id: filenameprocessor
-      #   continue-on-error: true
-      #   run: |
-      #     poetry env use 3.10
-      #     poetry install
-      #     poetry run coverage run -m unittest discover || echo "filenameprocessor tests failed" >> ../failed_tests.txt
-      #     poetry run coverage xml -o ../sonarcloud-coverage-filenameprocessor-coverage.xml
+      - name: Run unittest with filenameprocessor-coverage
+        if: matrix.python-version == '3.10'
+        working-directory: filenameprocessor
+        id: filenameprocessor
+        continue-on-error: true
+        run: |
+          poetry env use 3.10
+          poetry install
+          poetry run coverage run -m unittest discover || echo "filenameprocessor tests failed" >> ../failed_tests.txt
+          poetry run coverage xml -o ../sonarcloud-coverage-filenameprocessor-coverage.xml
 
-      # - name: Run unittest with recordprocessor-coverage
-      #   if: matrix.python-version == '3.10'  
-      #   working-directory: recordprocessor
-      #   id: recordprocessor
-      #   continue-on-error: true
-      #   run: |
-      #     poetry env use 3.10
-      #     poetry install
-      #     poetry run coverage run -m unittest discover || echo "recordprocessor tests failed" >> ../failed_tests.txt
-      #     poetry run coverage xml -o ../sonarcloud-coverage-recordprocessor-coverage.xml
+      - name: Run unittest with recordprocessor-coverage
+        if: matrix.python-version == '3.10'  
+        working-directory: recordprocessor
+        id: recordprocessor
+        continue-on-error: true
+        run: |
+          poetry env use 3.10
+          poetry install
+          poetry run coverage run -m unittest discover || echo "recordprocessor tests failed" >> ../failed_tests.txt
+          poetry run coverage xml -o ../sonarcloud-coverage-recordprocessor-coverage.xml
 
-      #   # This step is redundant - all of these tests will be run in the backend step below
-      # - name: Run unittest with recordforwarder-coverage
-      #   if: matrix.python-version == '3.11'
-      #   working-directory: backend
-      #   id: recordforwarder
-      #   continue-on-error: true
-      #   run: |
-      #     poetry env use 3.11
-      #     poetry install
-      #     poetry run coverage run -m unittest discover -s "./tests" -p "*batch*.py" || echo "recordforwarder tests failed" >> ../failed_tests.txt
-      #     poetry run coverage xml -o ../sonarcloud-coverage-recordforwarder-coverage.xml
+        # This step is redundant - all of these tests will be run in the backend step below
+      - name: Run unittest with recordforwarder-coverage
+        if: matrix.python-version == '3.11'
+        working-directory: backend
+        id: recordforwarder
+        continue-on-error: true
+        run: |
+          poetry env use 3.11
+          poetry install
+          poetry run coverage run -m unittest discover -s "./tests" -p "*batch*.py" || echo "recordforwarder tests failed" >> ../failed_tests.txt
+          poetry run coverage xml -o ../sonarcloud-coverage-recordforwarder-coverage.xml
 
-      # - name: Run unittest with coverage-ack-lambda
-      #   if: matrix.python-version == '3.10'
-      #   working-directory: ack_backend
-      #   id: acklambda
-      #   continue-on-error: true
-      #   run: |
-      #     poetry env use 3.10
-      #     poetry install
-      #     poetry run coverage run -m unittest discover || echo "ack-lambda tests failed" >> ../failed_tests.txt
-      #     poetry run coverage xml -o ../sonarcloud-coverage-ack-lambda.xml
+      - name: Run unittest with coverage-ack-lambda
+        if: matrix.python-version == '3.10'
+        working-directory: ack_backend
+        id: acklambda
+        continue-on-error: true
+        run: |
+          poetry env use 3.10
+          poetry install
+          poetry run coverage run -m unittest discover || echo "ack-lambda tests failed" >> ../failed_tests.txt
+          poetry run coverage xml -o ../sonarcloud-coverage-ack-lambda.xml
 
       - name: Run unittest with coverage-delta
         if: matrix.python-version == '3.11'
@@ -102,27 +109,38 @@ jobs:
           poetry run coverage run -m unittest discover || echo "delta tests failed" >> ../failed_tests.txt
           poetry run coverage xml -o ../sonarcloud-coverage-delta.xml
 
-      # - name: Run unittest with coverage-fhir-api
-      #   if: matrix.python-version == '3.11'
-      #   working-directory: backend
-      #   id: fhirapi
-      #   continue-on-error: true
-      #   run: |
-      #     poetry env use 3.11
-      #     poetry install
-      #     poetry run coverage run -m unittest discover || echo "fhir-api tests failed" >> ../failed_tests.txt
-      #     poetry run coverage xml -o ../sonarcloud-coverage.xml
 
-      # - name: Run unittest with coverage-mesh-processor
-      #   if: matrix.python-version == '3.10'
-      #   working-directory: mesh_processor
-      #   id: meshprocessor
-      #   continue-on-error: true
-      #   run: |
-      #     poetry env use 3.10
-      #     poetry install
-      #     poetry run coverage run -m unittest discover || echo "mesh_processor tests failed" >> ../failed_tests.txt
-      #     poetry run coverage xml -o ../sonarcloud-mesh_processor-coverage.xml
+      - name: Run unittest with coverage-delta2
+        if: matrix.python-version == '3.11'
+        working-directory: delta_backend
+        id: delta2
+        env:
+            PYTHONPATH: delta_backend/src:delta_backend/tests
+        continue-on-error: true
+        run: |
+          $RUN_TEST 3.11 delta_backend delta_backend
+
+      - name: Run unittest with coverage-fhir-api
+        if: matrix.python-version == '3.11'
+        working-directory: backend
+        id: fhirapi
+        continue-on-error: true
+        run: |
+          poetry env use 3.11
+          poetry install
+          poetry run coverage run -m unittest discover || echo "fhir-api tests failed" >> ../failed_tests.txt
+          poetry run coverage xml -o ../sonarcloud-coverage.xml
+
+      - name: Run unittest with coverage-mesh-processor
+        if: matrix.python-version == '3.10'
+        working-directory: mesh_processor
+        id: meshprocessor
+        continue-on-error: true
+        run: |
+          poetry env use 3.10
+          poetry install
+          poetry run coverage run -m unittest discover || echo "mesh_processor tests failed" >> ../failed_tests.txt
+          poetry run coverage xml -o ../sonarcloud-mesh_processor-coverage.xml
 
       - name: Run Test Failure Summary
         id: check_failure
