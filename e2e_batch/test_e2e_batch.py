@@ -10,7 +10,9 @@ from utils import (
     upload_config_file,
     generate_csv_with_ordered_100000_rows,
     verify_final_ack_file,
+    delete_file_from_s3
 )
+
 from constants import (
     SOURCE_BUCKET,
     INPUT_PREFIX,
@@ -19,19 +21,35 @@ from constants import (
     POST_VALIDATION_ERROR,
     DUPLICATE,
     FILE_NAME_VAL_ERROR,
-    env_value
+    environment
 )
 
 
 class TestE2EBatch(unittest.TestCase):
-    if env_value != "ref":
+    def setUp(self):
+        self.uploaded_files = []  # Tracks uploaded input keys
+        self.ack_files = []       # Tracks ack keys
 
+    def tearDown(self):
+        for file_key in self.uploaded_files:
+            delete_file_from_s3(SOURCE_BUCKET, file_key)
+        for ack_key in self.ack_files:
+            delete_file_from_s3(ACK_BUCKET, ack_key)
+
+    if environment != "ref":
+        # TODO: Clenaup functionality after each test
         def test_create_success(self):
             """Test CREATE scenario."""
             input_file = generate_csv("PHYLIS", "0.3", action_flag="CREATE")
-            upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
+
+            key = upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
+            self.uploaded_files.append(key)
+
             ack_key = wait_for_ack_file(None, input_file)
+            self.ack_files.append(ack_key)
+
             validate_row_count(input_file, ack_key)
+
             ack_content = get_file_content_from_s3(ACK_BUCKET, ack_key)
             check_ack_file_content(ack_content, "OK", None, "CREATE")
 

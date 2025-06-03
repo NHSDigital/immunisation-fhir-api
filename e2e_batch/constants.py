@@ -3,19 +3,15 @@ import os
 from datetime import datetime, timezone
 from clients import logger
 
-env_value = os.environ.get("ENV", "internal-dev")
-environment_value = os.environ.get("ENVIRONMENT", "")
-logger.info("Environment : %s", env_value)
-logger.info("Build Env   : %s", environment_value)
+environment = os.environ.get("ENVIRONMENT", "internal-dev")
+logger.info("Environment : %s", environment)
 
-env_internal_dev = environment_value == "internal-dev"
-
-SOURCE_BUCKET = f"immunisation-batch-{env_value}-data-sources"
+SOURCE_BUCKET = f"immunisation-batch-{environment}-data-sources"
 INPUT_PREFIX = ""
 ACK_BUCKET = (
     "immunisation-batch-ref-data-destinations"
-    if env_value == "ref"
-    else "immunisation-batch-internal-dev-data-destinations"
+    if environment == "ref"
+    else f"immunisation-batch-{environment}-data-destinations"
 )
 
 FORWARDEDFILE_PREFIX = "forwardedFile/"
