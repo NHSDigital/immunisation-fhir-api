@@ -13,7 +13,7 @@ files = [
 
 [[package]]
 name = "boto3"
-version = "1.38.17"
+version = "1.38.29"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">=3.9"
@@ -532,7 +532,7 @@ name = "charset-normalizer"
 version = "3.4.2"
 description = "The Real First Universal Charset Detector. Open, modern and actively maintained alternative to Chardet."
 optional = false
-python-versions = ">=3.7.0"
+python-versions = ">=3.7"
 files = [
     {file = "charset_normalizer-3.4.2-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:7c48ed483eb946e6c04ccbe02c6b4d1d48e51944b6db70f697e089c193404941"},
     {file = "charset_normalizer-3.4.2-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:b2d318c11350e10662026ad0eb71bb51c7812fc8590825304ae0bdd4ac283acd"},
@@ -823,8 +823,7 @@ name = "freezegun"
 version = "1.5.2"
 description = "Let your Python tests travel through time"
 optional = false
-python-versions = ">=3.7"
-
+python-versions = ">=3.8"
 files = [
     {file = "freezegun-1.5.2-py3-none-any.whl", hash = "sha256:5aaf3ba229cda57afab5bd311f0108d86b6fb119ae89d2cd9c43ec8c1733c85b"},
     {file = "freezegun-1.5.2.tar.gz", hash = "sha256:a54ae1d2f9c02dbf42e02c18a3ab95ab4295818b549a34dac55592d72a905181"},
@@ -1393,8 +1392,7 @@ name = "six"
 version = "1.17.0"
 description = "Python 2 and 3 compatibility utilities"
 optional = false
-
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*"
+python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,>=2.7"
 files = [
     {file = "six-1.17.0-py2.py3-none-any.whl", hash = "sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274"},
     {file = "six-1.17.0.tar.gz", hash = "sha256:ff70335d468e7eb6ec65b95b99d3a2836546063f63acc5171de367e834932a81"},
@@ -1444,8 +1442,7 @@ name = "typing-extensions"
 version = "4.14.0"
 description = "Backported and Experimental Type Hints for Python 3.9+"
 optional = false
-
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 files = [
     {file = "typing_extensions-4.14.0-py3-none-any.whl", hash = "sha256:a1514509136dd0b477638fc68d6a91497af5076466ad0fa6c338e44e359944af"},
     {file = "typing_extensions-4.14.0.tar.gz", hash = "sha256:8676b788e32f02ab42d9e7c61324048ae4c6d844a399eebace3d4979d75ceef4"},
@@ -1456,19 +1453,17 @@ name = "urllib3"
 version = "2.4.0"
 description = "HTTP library with thread-safe connection pooling, file post, and more."
 optional = false
-
-python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,>=2.7"
+python-versions = ">=3.9"
 files = [
     {file = "urllib3-2.4.0-py3-none-any.whl", hash = "sha256:4e16665048960a0900c702d4a66415956a584919c03361cac9f1df5c5dd7e813"},
     {file = "urllib3-2.4.0.tar.gz", hash = "sha256:414bc6535b787febd7567804cc015fee39daab8ad86268f1310a9250697de466"},
 ]
 
 [package.extras]
-
-brotli = ["brotli (==1.0.9)", "brotli (>=1.0.9)", "brotlicffi (>=0.8.0)", "brotlipy (>=0.6.0)"]
-secure = ["certifi", "cryptography (>=1.3.4)", "idna (>=2.0.0)", "ipaddress", "pyOpenSSL (>=0.14)", "urllib3-secure-extra"]
-socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
-
+brotli = ["brotli (>=1.0.9)", "brotlicffi (>=0.8.0)"]
+h2 = ["h2 (>=4,<5)"]
+socks = ["pysocks (>=1.5.6,!=1.5.7,<2.0)"]
+zstd = ["zstandard (>=0.18.0)"]
 
 [[package]]
 name = "werkzeug"
@@ -1501,6 +1496,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.11"
-
 content-hash = "c1a83dc0d3320999216b17e21921b2f0c255e8bdc080d2026c9f918c9ff94fde"
-
