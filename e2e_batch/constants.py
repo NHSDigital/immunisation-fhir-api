@@ -1,10 +1,8 @@
 import os
-
 from datetime import datetime, timezone
-from clients import logger
 
 environment = os.environ.get("ENVIRONMENT", "internal-dev")
-logger.info("Environment : %s", environment)
+REGION = "eu-west-2"
 
 SOURCE_BUCKET = f"immunisation-batch-{environment}-data-sources"
 INPUT_PREFIX = ""
