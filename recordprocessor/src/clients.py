@@ -1,6 +1,8 @@
 """Initialise s3 and kinesis clients"""
 
+import os
 import logging
+import redis
 from boto3 import client as boto3_client, resource as boto3_resource
 from botocore.config import Config
 
@@ -16,6 +18,8 @@ dynamodb_client = boto3_client("dynamodb", region_name=REGION_NAME)
 lambda_client = boto3_client("lambda", region_name=REGION_NAME)
 
 dynamodb_resource = boto3_resource("dynamodb", region_name=REGION_NAME)
+
+redis_client = redis.StrictRedis(host=os.getenv("REDIS_HOST"), port=os.getenv("REDIS_PORT"), decode_responses=True)
 
 # Logger
 logging.basicConfig(level="INFO")
