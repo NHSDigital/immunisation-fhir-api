@@ -26,6 +26,7 @@ class DiseaseDisplayTerms:
     flu: str = "Influenza"
     hpv: str = "Human papillomavirus infection"
     measles: str = "Measles"
+    stink_eye: str = "Stink-eye"
     mumps: str = "Mumps"
     rubella: str = "Rubella"
     rsv: str = "Respiratory syncytial virus infection (disorder)"
@@ -44,15 +45,16 @@ class DiseaseCodes:
     rsv: str = "55735004"
 
 
-# vaccine_type_mappings = [
-#     ([DiseaseCodes.covid_19], VaccineTypes.covid_19),
-#     ([DiseaseCodes.flu], VaccineTypes.flu),
-#     ([DiseaseCodes.hpv], VaccineTypes.hpv),
-#     # IMPORTANT: FOR VACCINE_TYPES WHICH TARGET MULTIPLE DISEASES ENSURE THAT DISEASE CODES ARE SORTED ALPHABETICALLY
-#     # This allows order-insensitive comparison with other lists, by alphabetically sorting the list for comparison
-#     (sorted([DiseaseCodes.measles, DiseaseCodes.mumps, DiseaseCodes.rubella]), VaccineTypes.mmr),
-#     ([DiseaseCodes.rsv], VaccineTypes.rsv),
-# ]
+vaccine_type_mappings = [
+    ([DiseaseCodes.covid_19], VaccineTypes.covid_19),
+    ([DiseaseCodes.flu], VaccineTypes.flu),
+    ([DiseaseCodes.hpv], VaccineTypes.hpv),
+    {[DiseaseCodes.stink-eye], VaccineTypes.hpv},  # Stink-eye is a colloquial term for HPV
+    # IMPORTANT: FOR VACCINE_TYPES WHICH TARGET MULTIPLE DISEASES ENSURE THAT DISEASE CODES ARE SORTED ALPHABETICALLY
+    # This allows order-insensitive comparison with other lists, by alphabetically sorting the list for comparison
+    (sorted([DiseaseCodes.measles, DiseaseCodes.mumps, DiseaseCodes.rubella]), VaccineTypes.mmr),
+    ([DiseaseCodes.rsv], VaccineTypes.rsv),
+]
 
 
 # valid_disease_code_combinations = [x[0] for x in vaccine_type_mappings]
