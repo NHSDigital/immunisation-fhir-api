@@ -55,4 +55,4 @@ vaccine_type_mappings = [
 ]
 
 
-# valid_disease_code_combinations = [x[0] for x in vaccine_type_mappings]
+valid_disease_code_combinations = [x[0] for x in vaccine_type_mappings]
