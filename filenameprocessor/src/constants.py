@@ -17,7 +17,6 @@ AUDIT_TABLE_QUEUE_NAME_GSI = "queue_name_index"
 AUDIT_TABLE_FILENAME_GSI = "filename_index"
 
 PERMISSIONS_CONFIG_FILE_KEY = "permissions_config.json"
-DISEASE_MAPPING_FILE_KEY = "disease_mapping.json"
 
 ERROR_TYPE_TO_STATUS_CODE_MAP = {
     VaccineTypePermissionsError: 403,

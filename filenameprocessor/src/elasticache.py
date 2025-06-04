@@ -2,7 +2,7 @@
 
 import json
 from clients import s3_client, redis_client
-from constants import PERMISSIONS_CONFIG_FILE_KEY, DISEASE_MAPPING_FILE_KEY
+from constants import PERMISSIONS_CONFIG_FILE_KEY
 
 
 def upload_to_elasticache(file_key: str, bucket_name: str) -> None:
@@ -16,8 +16,3 @@ def upload_to_elasticache(file_key: str, bucket_name: str) -> None:
 def get_permissions_config_json_from_cache() -> dict:
     """Gets and returns the permissions config file content from ElastiCache (Redis)."""
     return json.loads(redis_client.get(PERMISSIONS_CONFIG_FILE_KEY))
-
-
-def get_disease_mapping_json_from_cache() -> dict:
-    """Gets and returns the disease mapping file from ElastiCache (Redis)."""
-    return json.loads(redis_client.get(DISEASE_MAPPING_FILE_KEY))
