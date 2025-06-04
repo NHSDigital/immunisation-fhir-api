@@ -70,3 +70,15 @@ def map_target_disease(vaccine: Vaccine) -> list:
         }
         for disease in diseases
     ]
+
+
+class Config:
+    ''' Generic Configuration class for configuration management
+    check in redis if the config file is already uploaded
+    if not, upload the config file from S3 to redis
+    '''
+    @staticmethod
+    def get_disease_mapping_from_cache() -> dict:
+        """Gets the disease mapping from the cache."""
+        from elasticache import get_permissions_config_json_from_cache
+        return get_permissions_config_json_from_cache()

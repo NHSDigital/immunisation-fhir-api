@@ -1,0 +1,95 @@
+{
+    "disease":
+    [
+        {
+            "id": "COVID19",
+            "code": "840539006",
+            "display": "Disease caused by severe acute respiratory syndrome coronavirus 2"
+        },
+        {
+            "id": "FLU",
+            "code": "6142004",
+            "display": "Influenza"
+        },
+        {
+            "id": "HPV",
+            "code": "240532009",
+            "display": "Human Papillomavirus Infection"
+        },
+        {
+            "id": "FLU_B",
+            "code": "77385005",
+            "display": "Influenza B"
+        },
+        {
+            "id": "FLU_C",
+            "code": "77388002",
+            "display": "Influenza C"
+        },
+        {
+            "id": "MEASLES",
+            "code": "14189004",
+            "display": "Measles"
+        },
+        {
+            "id": "MUMPS",
+            "code": "36989005",
+            "display": "Mumps"
+        },
+        {
+            "id": "RUBELLA",
+            "code": "36653000",
+            "display": "Rubella"
+        },
+        {
+            "id": "RSV",
+            "code": "55735004",
+            "display": "Respiratory syncytial virus infection (disorder)"
+        }
+    ],
+    "vaccine":
+    [
+        {
+            "id": "COVID19",
+            "display": "COVID-19 vaccine",
+            "diseases":
+            [
+                "COVID19"
+            ]
+        },
+        {
+            "id": "FLU",
+            "display": "Influenza vaccine",
+            "diseases":
+            [
+                "FLU"
+            ]
+        },
+        {
+            "id": "HPV",
+            "display": "Human Papillomavirus vaccine",
+            "diseases":
+            [
+                "HPV"
+            ]
+        },
+        {
+            "id": "MMR",
+            "display": "Measles, mumps, and rubella vaccine",
+            "diseases":
+            [
+                "MEASLES",
+                "MUMPS",
+                "RUBELLA"
+            ]
+        },
+        {
+            "id": "RSV",
+            "display": "Respiratory syncytial virus vaccine",
+            "diseases":
+            [
+                "RSV"
+            ]
+        }
+    ]
+}
