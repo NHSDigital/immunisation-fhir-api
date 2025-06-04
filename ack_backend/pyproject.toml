@@ -7,9 +7,9 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "~3.10"
-boto3 = "~1.38.17"
+boto3 = "~1.38.29"
 mypy-boto3-dynamodb = "^1.38.4"
-freezegun      = "^1.5.1"
+freezegun      = "^1.5.2"
 moto           = "^4"
 coverage = "^7.8.0"
 
