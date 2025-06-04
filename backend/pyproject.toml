@@ -24,6 +24,7 @@ simplejson              = "^3.19.2"
 structlog               = "^24.1.0"
 python-stdnum           = "^2.1"
 freezegun               = "^1.5.1"
+coverage                = "^7.8.0"
 
 [build-system]
 requires      = ["poetry-core ~= 1.5.0"]
