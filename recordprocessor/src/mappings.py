@@ -3,6 +3,7 @@
 from enum import Enum
 from typing import Dict, List
 from constants import Urls
+from elasticache import get_disease_mapping_json_from_cache
 
 
 class Vaccine(Enum):
@@ -45,6 +46,9 @@ class DiseaseDisplayTerm(Enum):
     MUMPS: str = "Mumps"
     RUBELLA: str = "Rubella"
     RSV: str = "Respiratory syncytial virus infection (disorder)"
+
+
+VACCINE_DISEASE_MAPPING2 = get_disease_mapping_json_from_cache()
 
 
 VACCINE_DISEASE_MAPPING: Dict[Vaccine, List[Disease]] = {
