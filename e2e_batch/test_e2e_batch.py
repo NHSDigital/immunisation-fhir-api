@@ -37,7 +37,6 @@ class TestE2EBatch(unittest.TestCase):
             delete_file_from_s3(ACK_BUCKET, ack_key)
 
     if environment != "ref":
-        # TODO: Clenaup functionality after each test
         def test_create_success(self):
             """Test CREATE scenario."""
             input_file = generate_csv("PHYLIS", "0.3", action_flag="CREATE")
@@ -183,9 +182,13 @@ class TestE2EBatch(unittest.TestCase):
             ack_content = get_file_content_from_s3(ACK_BUCKET, ack_key)
             check_ack_file_content(ack_content, "Failure", FILE_NAME_VAL_ERROR, None)
 
+        # This test updates the permissions_config.json file from the imms-internal-dev-supplier-config 
+        # S3 bucket shared across multiple environments (PR environments, internal-dev, int, and ref). 
+        # Running this may modify permissions in these environments, causing unintended side effects.
+        @unittest.skip("Modifies shared S3 permissions configuration")
         def test_invalid_permission(self):
             """Test INVALID-PERMISSION error scenario."""
-            upload_config_file("MMR_FULL")
+            upload_config_file("MMR_FULL")  # permissions_config.json is updated here
             time.sleep(20)
 
             input_file = generate_csv("PHYLIS", "0.3", action_flag="CREATE")
@@ -207,8 +210,13 @@ class TestE2EBatch(unittest.TestCase):
         def test_end_to_end_speed_test_with_100000_rows(self):
             """Test end_to_end_speed_test_with_100000_rows scenario with full integration"""
             input_file = generate_csv_with_ordered_100000_rows(None)
-            upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
+
+            key = upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
+            self.uploaded_files.append(key)
+
             final_ack_key = wait_for_ack_file(None, input_file, timeout=1800)
+            self.ack_files.append(final_ack_key)
+
             response = verify_final_ack_file(final_ack_key)
             assert response is True
 
