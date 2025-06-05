@@ -175,9 +175,7 @@ steps:
       fi
     workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/e2e"
     displayName: Run Full Test Suite
-    condition: eq(1, 2)
   
-
   - bash: |
       pyenv local 3.11 
       poetry env use 3.11
@@ -209,7 +207,6 @@ steps:
  
     displayName: Run full batch test suite
     workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/e2e_batch"
-    #condition: eq(1, 2) # Disable task but make this step visible in the pipeline
 
   - task: PublishTestResults@2
     displayName: 'Publish test results'
