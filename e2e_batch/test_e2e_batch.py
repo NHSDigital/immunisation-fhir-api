@@ -182,8 +182,8 @@ class TestE2EBatch(unittest.TestCase):
             ack_content = get_file_content_from_s3(ACK_BUCKET, ack_key)
             check_ack_file_content(ack_content, "Failure", FILE_NAME_VAL_ERROR, None)
 
-        # This test updates the permissions_config.json file from the imms-internal-dev-supplier-config 
-        # S3 bucket shared across multiple environments (PR environments, internal-dev, int, and ref). 
+        # This test updates the permissions_config.json file from the imms-internal-dev-supplier-config
+        # S3 bucket shared across multiple environments (PR environments, internal-dev, int, and ref).
         # Running this may modify permissions in these environments, causing unintended side effects.
         @unittest.skip("Modifies shared S3 permissions configuration")
         def test_invalid_permission(self):
