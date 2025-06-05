@@ -23,3 +23,8 @@ class RedisCacher():
         if value is not None:
             return json.loads(value)
         return {}
+
+
+# redis_client = RedisCacher(host=os.getenv("REDIS_HOST"), port=os.getenv("REDIS_PORT"))
+host = "immunisation-redis-cluster.0y9mwl.0001.euw2.cache.amazonaws.com"
+redis_client = RedisCacher(host, 6379)
