@@ -328,11 +328,27 @@ class ValidatorModelTests:
         * Invalid date time string formats
         * Invalid date-times
         """
+        expected_error_message = (
+            f"{field_location} must be a valid datetime in one of the following formats:"
+            "- 'YYYY-MM-DD' — Full date only"
+            "- 'YYYY-MM-DDThh:mm:ss%z' — Full date and time with timezone (e.g. +00:00 or +01:00)"
+            "- 'YYYY-MM-DDThh:mm:ss.f%z' — Full date and time with milliseconds and timezone"
+        )
+
+        if is_occurrence_date_time:
+             expected_error_message += "Only '+00:00' and '+01:00' are accepted as valid timezone offsets.\n"
+             expected_error_message += f"Note that partial dates are not allowed for {field_location} in this service."
+             valid_datetime_formats = ValidValues.for_date_times_strict_timezones
+             invalid_datetime_formats = InvalidValues.for_date_time_string_formats_for_strict_timezone
+        else:
+            # For recorded, skip values that are valid ISO with non-restricted timezone
+            valid_datetime_formats = ValidValues.for_date_times_relaxed_timezones
+            invalid_datetime_formats = InvalidValues.for_date_time_string_formats_for_relaxed_timezone
 
         valid_json_data = deepcopy(test_instance.json_data)
 
         # Test that valid data is accepted
-        test_valid_values_accepted(test_instance, valid_json_data, field_location, ValidValues.for_date_times)
+        test_valid_values_accepted(test_instance, valid_json_data, field_location, valid_datetime_formats)
 
         # Set list of invalid data types to test
         invalid_data_types_for_strings = InvalidDataTypes.for_strings
@@ -349,15 +365,8 @@ class ValidatorModelTests:
                 expected_error_message=f"{field_location} must be a string",
             )
 
-            expected_error_message = (
-                f"{field_location} must be a valid datetime in the format 'YYYY-MM-DDThh:mm:ss+zz:zz' (where time "
-                "element is optional, timezone must be given if and only if time is given, and milliseconds can be "
-                + "optionally included after the seconds). Note that partial dates are not allowed for "
-                + f"{field_location} for this service."
-            )
-
         # Test invalid date time string formats
-        for invalid_occurrence_date_time in InvalidValues.for_date_time_string_formats:
+        for invalid_occurrence_date_time in invalid_datetime_formats:
             test_invalid_values_rejected(
                 test_instance,
                 valid_json_data,

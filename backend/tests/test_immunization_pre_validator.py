@@ -514,7 +514,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         }
         result = self.validator.run_postalCode_validator(values)
         self.assertIsNone(result)
-        
+
     def test_pre_validate_occurrence_date_time(self):
         """Test pre_validate_occurrence_date_time accepts valid values and rejects invalid values"""
         ValidatorModelTests.test_date_time_value(
@@ -645,7 +645,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
 
     def test_pre_validate_recorded(self):
         """Test pre_validate_recorded accepts valid values and rejects invalid values"""
-        ValidatorModelTests.test_date_time_value(self, field_location="recorded")
+        ValidatorModelTests.test_date_time_value(self, field_location="recorded", is_occurrence_date_time=False)
 
     def test_pre_validate_primary_source(self):
         """Test pre_validate_primary_source accepts valid values and rejects invalid values"""

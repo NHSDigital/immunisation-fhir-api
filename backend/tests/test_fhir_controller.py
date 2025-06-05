@@ -10,7 +10,7 @@ from fhir.resources.R4B.immunization import Immunization
 from unittest.mock import create_autospec, ANY, patch, Mock
 from urllib.parse import urlencode
 import urllib.parse
-from moto import mock_sqs
+from moto import mock_aws
 from authorization import Authorization
 from fhir_controller import FhirController
 from fhir_repository import ImmunizationRepository
@@ -903,7 +903,7 @@ class TestCreateImmunization(unittest.TestCase):
         response = self.controller.create_immunization(aws_event)
         self.assertEqual(response["statusCode"], 403)
 
-    @mock_sqs
+    @mock_aws
     @patch("fhir_controller.sqs_client.send_message")
     def test_create_immunization_for_batch(self, mock_send_message):
         """It should create Immunization and return resource's location"""
@@ -1027,7 +1027,7 @@ class TestCreateImmunization(unittest.TestCase):
         self.assertEqual(body["resourceType"], "OperationOutcome")
         self.assertTrue(invalid_nhs_num in body["issue"][0]["diagnostics"])
 
-    @mock_sqs
+    @mock_aws
     @patch("fhir_controller.sqs_client.send_message")
     def test_invalid_nhs_number_batch(self, mock_send_message):
         """it should handle ValidationError when patient doesn't exist"""
@@ -1056,7 +1056,7 @@ class TestCreateImmunization(unittest.TestCase):
         self.assertEqual(body["resourceType"], "OperationOutcome")
         self.assertTrue(invalid_nhs_num in body["issue"][0]["diagnostics"])
 
-    @mock_sqs
+    @mock_aws
     @patch("fhir_controller.sqs_client.send_message")
     def test_duplicate_record_batch(self, mock_send_message):
         """it should handle ValidationError when patient doesn't exist"""
@@ -1098,7 +1098,7 @@ class TestCreateImmunization(unittest.TestCase):
         body = json.loads(response["body"])
         self.assertEqual(body["resourceType"], "OperationOutcome")
 
-    @mock_sqs
+    @mock_aws
     @patch("fhir_controller.sqs_client.send_message")
     def test_pds_unhandled_error_batch(self, mock_send_message):
         """it should respond with 500 if PDS returns error"""

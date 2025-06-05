@@ -30,13 +30,41 @@
       "gender": "other",
       "birthDate": "2026-03-10",
       "address": [
-        {
-          "use": "home",
-          "line": ["123 High Street"],
-          "city": "London",
-          "postalCode": "SW1A 1AA"
-        }
-      ]
+    {
+      "use": "work",
+      "type": "both",
+      "text": "Validate Obf",
+      "line": [
+        "1, work_2"
+      ],
+      "city": "work_3",
+      "district": "work_4",
+      "state": "work_5",
+      "country": "work_7",
+      "postalCode": "LS8 4ED",
+      "period": {
+        "start": "2000-01-01",
+        "end": "2030-01-01"
+      }
+    },
+    {
+      "use": "Home",
+      "type": "Physical",
+      "text": "Validate Obf",
+      "line": [
+        "1, obf_2"
+      ],
+      "city": "obf_3",
+      "district": "obf_4",
+      "state": "obf_5",
+      "postalCode": "WF8 4ED",
+      "country": "obf_7",
+      "period": {
+        "start": "2000-01-01",
+        "end": "2030-01-01"
+      }
+    }
+  ]
     }
   ],
   "extension": [

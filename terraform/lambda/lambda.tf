@@ -1,5 +1,6 @@
 module "lambda_function_container_image" {
     source = "terraform-aws-modules/lambda/aws"
+    version = "7.20.2"
 
     create_role = false
     lambda_role = aws_iam_role.lambda_role.arn
@@ -46,5 +47,3 @@ resource "aws_cloudwatch_log_metric_filter" "max_memory_used_metric" {
         value     = "$18"
     }
 }
-
-

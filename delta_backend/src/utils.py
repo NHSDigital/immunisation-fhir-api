@@ -1,6 +1,6 @@
 
 from stdnum.verhoeff import validate
-
+   
 def is_valid_simple_snomed(simple_snomed: str) -> bool:
     """
     This utility is designed for reuse and should be packaged as part of a 
@@ -18,3 +18,4 @@ def is_valid_simple_snomed(simple_snomed: str) -> bool:
         )
     except:
         return False
+    

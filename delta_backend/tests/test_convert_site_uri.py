@@ -1,11 +1,11 @@
 import copy
 import json
 import unittest
-from tests.utils_for_converter_tests import ValuesForTests
-from Converter import Converter
+from utils_for_converter_tests import ValuesForTests
+from converter import Converter
+from common.mappings import ConversionFieldName
 
-
-class TestPersonSiteUriToFlatJson(unittest.TestCase):
+class TestSiteUriToFlatJson(unittest.TestCase):
     
     def setUp(self):
         self.request_json_data = copy.deepcopy(ValuesForTests.json_data)
@@ -96,6 +96,6 @@ class TestPersonSiteUriToFlatJson(unittest.TestCase):
     def _run_site_uri_test(self, expected_site_code):
         """Helper function to run the test"""
         self.converter = Converter(json.dumps(self.request_json_data))
-        flat_json = self.converter.runConversion(self.request_json_data, False, True)
-        self.assertEqual(flat_json.get("SITE_CODE_TYPE_URI"), expected_site_code)
+        flat_json = self.converter.run_conversion()
+        self.assertEqual(flat_json.get(ConversionFieldName.SITE_CODE_TYPE_URI), expected_site_code)
 

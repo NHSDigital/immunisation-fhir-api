@@ -4,7 +4,7 @@ from unittest import TestCase
 from unittest.mock import patch, MagicMock
 import boto3
 from boto3 import resource as boto3_resource
-from moto import mock_dynamodb
+from moto import mock_aws
 from models.errors import (
     MessageNotSuccessfulError,
     RecordProcessorError,
@@ -23,7 +23,7 @@ with patch.dict("os.environ", ForwarderValues.MOCK_ENVIRONMENT_DICT):
     from forwarding_batch_lambda import forward_lambda_handler, create_diagnostics_dictionary, forward_request_to_dynamo
 
 
-@mock_dynamodb
+@mock_aws
 @patch.dict(os.environ, ForwarderValues.MOCK_ENVIRONMENT_DICT)
 class TestForwardLambdaHandler(TestCase):
 

@@ -1,11 +1,11 @@
 import copy
 import json
 import unittest
-from tests.utils_for_converter_tests import ValuesForTests
-from Converter import Converter
+from utils_for_converter_tests import ValuesForTests
+from converter import Converter
+from common.mappings import ConversionFieldName
 
-
-class TestPractitionerForeNameToFlatJson(unittest.TestCase):
+class TestPractitionerForenameToFlatJson(unittest.TestCase):
     
     def setUp(self):
         self.request_json_data = copy.deepcopy(ValuesForTests.json_data)
@@ -118,9 +118,25 @@ class TestPractitionerForeNameToFlatJson(unittest.TestCase):
         expected_forename = ""
         self._run_practitioner_test(expected_forename)
 
+    def test_practitioner_forename_exists_only_and_official(self):
+        """Test case where the selected name has multiple given names"""
+        self.request_json_data["contained"][0]["name"] = [
+            {"given" : ["test"], "use": "official", "period": {"start": "2021-01-01", "end": "2022-12-31"}}
+        ]
+        expected_forename = "test"
+        self._run_practitioner_test(expected_forename)
+        
+    def test_practitioner_forename_exists_only_and_not_official(self):
+        """Test case where the selected name has multiple given names"""
+        self.request_json_data["contained"][0]["name"] = [
+            {"given" : ["test"], "period": {"start": "2021-01-01", "end": "2022-12-31"}}
+        ]
+        expected_forename = "test"
+        self._run_practitioner_test(expected_forename)
+        
     def _run_practitioner_test(self, expected_forename):
         """Helper function to run the test"""
         self.converter = Converter(json.dumps(self.request_json_data))
-        flat_json = self.converter.runConversion(self.request_json_data, False, True)
-        self.assertEqual(flat_json["PERFORMING_PROFESSIONAL_FORENAME"], expected_forename)
+        flat_json = self.converter.run_conversion()
+        self.assertEqual(flat_json[ConversionFieldName.PERFORMING_PROFESSIONAL_FORENAME], expected_forename)
 
