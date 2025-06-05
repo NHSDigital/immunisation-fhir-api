@@ -1,10 +1,10 @@
 """Initialise s3 and kinesis clients"""
 
-import os
+# import os
 import logging
-import redis
 from boto3 import client as boto3_client, resource as boto3_resource
 from botocore.config import Config
+from redis_cacher import RedisCacher
 
 REGION_NAME = "eu-west-2"
 
@@ -19,8 +19,9 @@ lambda_client = boto3_client("lambda", region_name=REGION_NAME)
 
 dynamodb_resource = boto3_resource("dynamodb", region_name=REGION_NAME)
 
-redis_client = redis.StrictRedis(host=os.getenv("REDIS_HOST"), port=os.getenv("REDIS_PORT"), decode_responses=True)
-
+# redis_client = RedisCacher(host=os.getenv("REDIS_HOST"), port=os.getenv("REDIS_PORT"))
+host = "immunisation-redis-cluster.0y9mwl.0001.euw2.cache.amazonaws.com"
+redis_client = RedisCacher(host, 6379)
 # Logger
 logging.basicConfig(level="INFO")
 logger = logging.getLogger()
