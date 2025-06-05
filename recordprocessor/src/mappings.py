@@ -1,8 +1,10 @@
 """Mappings for converting vaccine type into target disease FHIR element"""
 
 from enum import Enum
-from typing import Dict, List
+# from typing import Dict, List
 from constants import Urls
+from redis_disease_mapping import DiseaseMapping
+from clients import redis_cacher
 
 
 class Vaccine(Enum):
@@ -47,12 +49,14 @@ class DiseaseDisplayTerm(Enum):
     RSV: str = "Respiratory syncytial virus infection (disorder)"
 
 
-VACCINE_DISEASE_MAPPING: Dict[Vaccine, List[Disease]] = {
-    Vaccine.COVID_19: [Disease.COVID_19],
-    Vaccine.FLU: [Disease.FLU],
-    Vaccine.MMR: [Disease.MEASLES, Disease.MUMPS, Disease.RUBELLA],
-    Vaccine.RSV: [Disease.RSV],
-}
+# VACCINE_DISEASE_MAPPING: Dict[Vaccine, List[Disease]] = {
+#     Vaccine.COVID_19: [Disease.COVID_19],
+#     Vaccine.FLU: [Disease.FLU],
+#     Vaccine.MMR: [Disease.MEASLES, Disease.MUMPS, Disease.RUBELLA],
+#     Vaccine.RSV: [Disease.RSV],
+# }
+
+VACCINE_DISEASE_MAPPING = (DiseaseMapping(redis_cacher)).get_vaccine_map()
 
 
 def map_target_disease(vaccine: Vaccine) -> list:
