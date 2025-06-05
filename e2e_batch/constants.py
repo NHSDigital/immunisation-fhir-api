@@ -1,23 +1,12 @@
 import os
-
 from datetime import datetime, timezone
-from clients import logger
 
-env_value = os.environ.get("ENV", "internal-dev")
-environment_value = os.environ.get("ENVIRONMENT", "")
-logger.info("Environment : %s", env_value)
-logger.info("Build Env   : %s", environment_value)
+environment = os.environ.get("ENVIRONMENT", "internal-dev")
+REGION = "eu-west-2"
 
-env_internal_dev = environment_value == "internal-dev"
-
-SOURCE_BUCKET = f"immunisation-batch-{env_value}-data-sources"
+SOURCE_BUCKET = f"immunisation-batch-{environment}-data-sources"
 INPUT_PREFIX = ""
-ACK_BUCKET = (
-    "immunisation-batch-ref-data-destinations"
-    if env_value == "ref"
-    else "immunisation-batch-internal-dev-data-destinations"
-)
-
+ACK_BUCKET = f"immunisation-batch-{environment}-data-destinations"
 FORWARDEDFILE_PREFIX = "forwardedFile/"
 PRE_VALIDATION_ERROR = "Validation errors: doseQuantity.value must be a number"
 POST_VALIDATION_ERROR = "Validation errors: contained[?(@.resourceType=='Patient')].name[0].given is a mandatory field"
