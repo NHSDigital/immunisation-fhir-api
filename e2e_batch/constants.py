@@ -6,12 +6,7 @@ REGION = "eu-west-2"
 
 SOURCE_BUCKET = f"immunisation-batch-{environment}-data-sources"
 INPUT_PREFIX = ""
-ACK_BUCKET = (
-    "immunisation-batch-ref-data-destinations"
-    if environment == "ref"
-    else f"immunisation-batch-{environment}-data-destinations"
-)
-
+ACK_BUCKET = f"immunisation-batch-{environment}-data-destinations"
 FORWARDEDFILE_PREFIX = "forwardedFile/"
 PRE_VALIDATION_ERROR = "Validation errors: doseQuantity.value must be a number"
 POST_VALIDATION_ERROR = "Validation errors: contained[?(@.resourceType=='Patient')].name[0].given is a mandatory field"
