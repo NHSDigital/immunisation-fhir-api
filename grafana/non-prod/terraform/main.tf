@@ -7,7 +7,7 @@ terraform {
     }
     docker = {
       source  = "kreuzwerker/docker"
-      version = "3.0.2"
+      version = "3.6.0"
     }
     template = {
       source  = "hashicorp/template"
