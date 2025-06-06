@@ -32,14 +32,17 @@ class RedisCacher():
 
 
 class DiseaseMapping:
-    """Class to handle disease mapping operations."""
+    """Class to handle disease mapping operations.
+    The implementation on redis is abstracted - so code knows
+    nothing about how the data is stored or retrieved.
+    """
     # redis_cache instance is found in clients.py
     def __init__(self, redis_cache: RedisCacher):
         mapping = redis_cache.get(DISEASE_MAPPING_FILE_KEY)
         self.vaccines = mapping["vaccine"]
         self.diseases = mapping["disease"]
         self.load_vaccines_into_diseases()
-        self.vaccine_mapp = self.load_simple_vaccine_map()
+        self.vaccine_map = self.load_simple_vaccine_map()
 
     def load_simple_vaccine_map(self) -> dict:
         """Load a simple vaccine map for quick access."""
