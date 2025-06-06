@@ -7,7 +7,9 @@ from constants import DISEASE_MAPPING_FILE_KEY
 
 class RedisCacher():
     """ RedisCacher abstraction class to decouple application code
-    from direct use of Redis client."""
+    from direct use of Redis client.
+    Also centralised error handling & extensibility.
+    """
 
     def __init__(self, redis_host, redis_port, logger):
         try:
