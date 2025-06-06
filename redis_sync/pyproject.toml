@@ -1,0 +1,16 @@
+[project]
+name = "redis-sync"
+version = "0.1.0"
+description = "Sync s3 to REDIS"
+authors = [
+    {name = "nhsdevws",email = "stephen.wates1@nhs.net"}
+]
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
