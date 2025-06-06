@@ -1,6 +1,6 @@
 # Define the directory containing source code and calculate its SHA-256 hash for triggering redeployments
 locals {
-  redis_sync_dir     = abspath("${path.root}/../redis_sync_lambda")
+  redis_sync_dir     = abspath("${path.root}/../redis_sync")
   redis_sync_files   = fileset(local.redis_sync_dir, "**")
   redis_sync_dir_sha = sha1(join("", [for f in local.redis_sync_files : filesha1("${local.redis_sync_dir}/${f}")]))
 }
