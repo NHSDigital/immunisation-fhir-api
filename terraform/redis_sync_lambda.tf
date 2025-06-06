@@ -28,12 +28,9 @@ resource "aws_lambda_function" "redis_sync_lambda" {
 
   environment {
     variables = {
-      SOURCE_BUCKET_NAME         = aws_s3_bucket.batch_data_source_bucket.bucket
-      ACK_BUCKET_NAME            = aws_s3_bucket.batch_data_destination_bucket.bucket
       CONFIG_BUCKET_NAME         = local.config_bucket_name
       REDIS_HOST                 = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].address
       REDIS_PORT                 = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].port
-      SPLUNK_FIREHOSE_NAME       = module.splunk.firehose_stream_name
       REDIS_SYNC_PROC_LAMBDA_NAME = "imms-${local.env}-redis_sync_lambda"
     }
   }
@@ -100,32 +97,6 @@ resource "aws_iam_policy" "redis_sync_lambda_exec_policy" {
         Resource = "arn:aws:logs:${var.aws_region}:${local.immunisation_account_id}:log-group:/aws/lambda/${local.short_prefix}-redis_sync_lambda:*"
       },
       {
-        Effect = "Allow"
-        Action = [
-          "s3:GetObject",
-          "s3:ListBucket",
-          "s3:PutObject",
-          "s3:CopyObject",
-          "s3:DeleteObject"
-        ]
-        Resource = [
-          aws_s3_bucket.batch_data_source_bucket.arn,
-          "${aws_s3_bucket.batch_data_source_bucket.arn}/*"
-        ]
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:GetObject",
-          "s3:PutObject",
-          "s3:ListBucket"
-        ]
-        Resource = [
-          aws_s3_bucket.batch_data_destination_bucket.arn,
-          "${aws_s3_bucket.batch_data_destination_bucket.arn}/*"
-        ]
-      },
-      {
         Effect = "Allow",
         Action = [
           "ec2:CreateNetworkInterface",
@@ -145,14 +116,6 @@ resource "aws_iam_policy" "redis_sync_lambda_exec_policy" {
           local.config_bucket_arn,
           "${local.config_bucket_arn}/*"
         ]
-      },
-      {
-        "Effect" : "Allow",
-        "Action" : [
-          "firehose:PutRecord",
-          "firehose:PutRecordBatch"
-        ],
-        "Resource" : "arn:aws:firehose:*:*:deliverystream/${module.splunk.firehose_stream_name}"
       },
       {
         Effect = "Allow"
@@ -208,27 +171,6 @@ resource "aws_iam_role_policy_attachment" "redis_sync_lambda_kms_policy_attachme
   policy_arn = aws_iam_policy.redis_sync_lambda_kms_access_policy.arn
 }
 
-
-# Permission for S3 to invoke Lambda function
-resource "aws_lambda_permission" "s3_invoke_permission" {
-  statement_id  = "AllowExecutionFromS3"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.file_processor_lambda.function_name
-  principal     = "s3.amazonaws.com"
-  source_arn    = aws_s3_bucket.batch_data_source_bucket.arn
-}
-
-# S3 Bucket notification to trigger Lambda function
-resource "aws_s3_bucket_notification" "datasources_lambda_notification" {
-  bucket = aws_s3_bucket.batch_data_source_bucket.bucket
-
-  lambda_function {
-    lambda_function_arn = aws_lambda_function.file_processor_lambda.arn
-    events              = ["s3:ObjectCreated:*"]
-    #filter_prefix      =""
-  }
-}
-
 # S3 Bucket notification to trigger Lambda function for config bucket
 resource "aws_s3_bucket_notification" "config_lambda_notification" {
   # For now, only create a trigger in internal-dev and prod as those are the envs with a config bucket
@@ -237,7 +179,7 @@ resource "aws_s3_bucket_notification" "config_lambda_notification" {
   bucket = aws_s3_bucket.batch_config_bucket[0].bucket
 
   lambda_function {
-    lambda_function_arn = aws_lambda_function.file_processor_lambda.arn
+    lambda_function_arn = aws_lambda_function.redis_sync_lambda.arn
     events              = ["s3:ObjectCreated:*"]
   }
 }
@@ -248,7 +190,7 @@ resource "aws_lambda_permission" "new_s3_invoke_permission" {
 
   statement_id  = "AllowExecutionFromNewS3"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.file_processor_lambda.function_name
+  function_name = aws_lambda_function.redis_sync_lambda.function_name
   principal     = "s3.amazonaws.com"
   source_arn    = local.config_bucket_arn
 }
