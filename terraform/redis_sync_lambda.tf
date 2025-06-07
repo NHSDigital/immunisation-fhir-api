@@ -1,6 +1,6 @@
 # Define the directory containing source code and calculate its SHA-256 hash for triggering redeployments
 locals {
-  redis_sync_dir     = abspath("${path.root}/../redis_sync/src")
+  redis_sync_dir     = abspath("${path.root}/../redis_sync")
   redis_sync_files   = fileset(local.redis_sync_dir, "**")
   redis_sync_dir_sha = sha1(join("", [for f in local.redis_sync_files : filesha1("${local.redis_sync_dir}/${f}")]))
 }
@@ -13,16 +13,37 @@ output "redis_sync_files" {
   value = "redis_sync_files: ${join(", ", local.redis_sync_files)}"
 }
 
+# data "archive_file" "redis_sync_lambda_zip" {
+#   type        = "zip"
+#   source_dir  = local.redis_sync_dir
+#   output_path = "${path.module}/build/redis_sync_lambda.zip"
+#   excludes    = ["test/*", "*.zip", "build/*", "venv/*"]
+# }
+
+resource "null_resource" "package_lambda" {
+  provisioner "local-exec" {
+    command = "${path.module}/package_lambda.sh ${local.redis_sync_dir}"
+  }
+
+  triggers = {
+    src_hash  = sha1(join("", fileset(local.redis_sync_dir, "**")))
+    toml_hash = filesha1("${local.redis_sync_dir}/pyproject.toml")
+    lock_hash = filesha1("${local.redis_sync_dir}/poetry.lock")
+  }
+}
+
 data "archive_file" "redis_sync_lambda_zip" {
   type        = "zip"
-  source_dir  = local.redis_sync_dir
+  source_dir  = "${path.module}/build"
   output_path = "${path.module}/build/redis_sync_lambda.zip"
+
+  depends_on = [null_resource.package_lambda]
 }
 
 resource "aws_lambda_function" "redis_sync_lambda" {
   function_name = "${local.short_prefix}-redis-sync-lambda"
   role          = aws_iam_role.redis_sync_lambda_exec_role.arn
-  handler       = "redis_sync.sync_handler" # Update as appropriate
+  handler       = "src/redis_sync.sync_handler" # Update as appropriate
   runtime       = "python3.11"
   filename      = data.archive_file.redis_sync_lambda_zip.output_path
   source_code_hash = data.archive_file.redis_sync_lambda_zip.output_base64sha256
