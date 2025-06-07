@@ -10,7 +10,7 @@ output "redis_sync_dir" {
 }
 
 output "redis_sync_files" {
-  value = "redis_sync_files: ${local.redis_sync_files}"
+  value = "redis_sync_files: ${join(", ", local.redis_sync_files)}"
 }
 
 data "archive_file" "redis_sync_lambda_zip" {
