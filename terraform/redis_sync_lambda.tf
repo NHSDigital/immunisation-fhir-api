@@ -22,7 +22,7 @@ data "archive_file" "redis_sync_lambda_zip" {
 resource "aws_lambda_function" "redis_sync_lambda" {
   function_name = "${local.short_prefix}-redis-sync-lambda"
   role          = aws_iam_role.redis_sync_lambda_exec_role.arn
-  handler       = "redis_sync_handler.sync_handler" # Update as appropriate
+  handler       = "redis_sync.sync_handler" # Update as appropriate
   runtime       = "python3.11"
   filename      = data.archive_file.redis_sync_lambda_zip.output_path
   source_code_hash = data.archive_file.redis_sync_lambda_zip.output_base64sha256
