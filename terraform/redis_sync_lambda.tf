@@ -5,6 +5,14 @@ locals {
   redis_sync_dir_sha = sha1(join("", [for f in local.redis_sync_files : filesha1("${local.redis_sync_dir}/${f}")]))
 }
 
+output "redis_sync_dir" {
+  value = "redis_sync_dir: ${local.redis_sync_dir}"
+}
+
+output "redis_sync_files" {
+  value = "redis_sync_files: ${local.redis_sync_files}"
+}
+
 data "archive_file" "redis_sync_lambda_zip" {
   type        = "zip"
   source_dir  = local.redis_sync_dir
