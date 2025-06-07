@@ -50,6 +50,22 @@ resource "aws_lambda_function" "redis_sync_lambda" {
   ]
 }
 
+resource "aws_lambda_version" "redis_sync_lambda_version" {
+  function_name = aws_lambda_function.redis_sync_lambda.arn
+  description   = "Automatic version for redis_sync_lambda"
+  provisioned_concurrent_executions = 0
+
+  # This ensures a new version is published when the code or config changes
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+output "redis_sync_lambda_version" {
+  value = aws_lambda_version.redis_sync_lambda_version.version
+  description = "The published version number of the redis_sync_lambda Lambda function"
+}
+
 # Permission for S3 to invoke Lambda function
 resource "aws_lambda_permission" "redis_sync_s3_invoke_permission" {
   statement_id  = "AllowExecutionFromS3"
