@@ -71,20 +71,20 @@ resource "aws_lambda_function" "redis_sync_lambda" {
   ]
 }
 
-resource "aws_lambda_version" "redis_sync_lambda_version" {
-  function_name = aws_lambda_function.redis_sync_lambda.function_name
-  description   = "Automatic version for redis_sync_lambda"
+# resource "aws_lambda_version" "redis_sync_lambda_version" {
+#   function_name = aws_lambda_function.redis_sync_lambda.function_name
+#   description   = "Automatic version for redis_sync_lambda"
 
-  # This ensures a new version is published when the code or config changes
-  lifecycle {
-    create_before_destroy = true
-  }
-}
+#   # This ensures a new version is published when the code or config changes
+#   lifecycle {
+#     create_before_destroy = true
+#   }
+# }
 
-output "redis_sync_lambda_version" {
-  value = aws_lambda_version.redis_sync_lambda_version.version
-  description = "The published version number of the redis_sync_lambda Lambda function"
-}
+# output "redis_sync_lambda_version" {
+#   value = aws_lambda_version.redis_sync_lambda_version.version
+#   description = "The published version number of the redis_sync_lambda Lambda function"
+# }
 
 # Permission for S3 to invoke Lambda function
 resource "aws_lambda_permission" "redis_sync_s3_invoke_permission" {
