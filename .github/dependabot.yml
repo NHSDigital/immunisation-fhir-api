@@ -52,6 +52,7 @@ updates:
       - "/ack_backend"
       - "/backend"
       - "/delta_backend"
+      - "/redis_sync"
       - "/e2e"
       - "/e2e_batch"
       - "/filenameprocessor"

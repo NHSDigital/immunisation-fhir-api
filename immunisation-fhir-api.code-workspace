@@ -1,26 +1,29 @@
 {
-	"folders": [
-		{
-			"path": "."
-		},
-		{
-			"path": "backend"
-		},
-		{
-			"path": "filenameprocessor"
-		},
-		{
-			"path": "recordprocessor"
-		},
-		{
-			"path": "ack_backend"
-		},
-		{
-			"path": "delta_backend"
-		},
-		{
-			"path": "mesh_processor"
-		}
-	],
-	"settings": {},
+    "folders": [
+        {
+            "path": "."
+        },
+        {
+            "path": "backend"
+        },
+        {
+            "path": "filenameprocessor"
+        },
+        {
+            "path": "recordprocessor"
+        },
+        {
+            "path": "ack_backend"
+        },
+        {
+            "path": "delta_backend"
+        },
+        {
+            "path": "mesh_processor"
+        },
+        {
+            "path": "redis_sync"
+        }
+    ],
+    "settings": {}
 }
