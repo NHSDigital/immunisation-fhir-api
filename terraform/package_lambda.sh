@@ -9,7 +9,7 @@ echo "Project directory: $PROJECT_DIR"
 echo "Build directory: $BUILD_DIR"
 
 # show current directory
-echo "📂 Current directory: $(pwd)
+echo "📂 Current directory: $(pwd)"
 
 # list contents of the project directory
 echo "📂 Contents of project directory:     $(ls -1 $PROJECT_DIR)"
