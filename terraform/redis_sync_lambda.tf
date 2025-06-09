@@ -1,6 +1,9 @@
 # Define the directory containing source code and calculate its SHA-256 hash for triggering redeployments
 locals {
-  redis_sync_dir     = abspath("${path.root}/../redis_sync")
+  redis_project_name = "redis_sync"
+  redis_sync_dir     = abspath("${path.root}/../${local.redis_project_name}")
+  build_dir        = "${local.redis_sync_dir}/build"
+  zip_file_name    = "redis_sync_lambda.zip"
   redis_sync_files   = fileset(local.redis_sync_dir, "**")
   redis_sync_dir_sha = sha1(join("", [for f in local.redis_sync_files : filesha1("${local.redis_sync_dir}/${f}")]))
 }
@@ -34,7 +37,10 @@ resource "null_resource" "chmod_package_lambda" {
 
 resource "null_resource" "package_lambda" {
   provisioner "local-exec" {
-command = "chmod +x ${path.module}/package_lambda.sh && ${path.module}/package_lambda.sh ${local.redis_sync_dir}"
+    command = <<-EOT
+      chmod +x ${path.module}/package_lambda.sh && \
+      ${path.module}/package_lambda.sh ${local.redis_project_name} ${local.redis_sync_dir} ${local.build_dir} ${local.zip_file_name}
+    EOT
   }
   depends_on = [null_resource.chmod_package_lambda]
   triggers = {
@@ -46,8 +52,8 @@ command = "chmod +x ${path.module}/package_lambda.sh && ${path.module}/package_l
 
 data "archive_file" "redis_sync_lambda_zip" {
   type        = "zip"
-  source_dir  = "${path.module}/build"
-  output_path = "${path.module}/build/redis_sync_lambda.zip"
+  source_dir  = "${local.build_dir}"
+  output_path = "${local.build_dir}/${local.zip_file_name}"
 
   depends_on = [null_resource.package_lambda]
 }

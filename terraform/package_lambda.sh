@@ -3,12 +3,16 @@ set -e
 
 echo "🚀 Packaging Lambda1..."
 
+# parameters passed in as  project_name project_folder abs_build_folder zip_file_name
+
+
 PROJECT="${1:-.}"
-PROJECT_DIR=$(realpath "$PROJECT")  # Default to current dir if not provided
-BUILD_DIR="${2:-build}"  # Default build directory if not provided
-ZIP_FILE="${3:-lambda_package.zip}"  # Default zip file name if not provided
+PROJECT_DIR="${2:-$(realpath \"$PROJECT\")}"  # Default to current dir if not provided
+BUILD_DIR="${3:-build}"  # Default build directory if not provided
+ZIP_FILE="${4:-$PROJECT.zip}"  # Default zip file name if not provided
 echo "Project directory: $PROJECT_DIR"
 echo "Build directory: $BUILD_DIR"
+echo "Zip file: $ZIP_FILE"
 
 # show current directory
 echo "📂 Current directory: $(pwd)"
@@ -55,9 +59,8 @@ cd ..
 echo "📂 Current directory: $(pwd)"
 
 #list contents of the build directory
-echo "📂 Contents of build directory:     $(ls -1 $BUILD_DIR)"
+echo "📂 Contents of build directory:     $(ls -1 $BUILD_DIR/$ZIP_FILE)"
 
-echo "📂 Contents of project directory:     $(ls -1 $PROJECT_DIR)"
-echo "📂 Contents of parent directory:     $(ls -1 $PROJECT_DIR/..)"
+echo "📂 Contents of parent directory:     $(ls -1 $PROJECT_DIR/$ZIP_FILE)"
 
 echo "✅ Lambda package created: $ZIP_FILE"
