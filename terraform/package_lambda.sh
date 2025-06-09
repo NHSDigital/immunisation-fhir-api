@@ -52,4 +52,7 @@ cd ..
 
 echo "📂 Current directory: $(pwd)"
 
+#list contents of the build directory
+echo "📂 Contents of build directory:     $(ls -1 $BUILD_DIR)"
+
 echo "✅ Lambda package created: lambda_package.zip"
