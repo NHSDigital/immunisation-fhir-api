@@ -34,7 +34,7 @@ resource "null_resource" "chmod_package_lambda" {
 
 resource "null_resource" "package_lambda" {
   provisioner "local-exec" {
-command = "chmod +x ${path.module}/package_lambda.sh && ${path.module}/package_lambda.sh ${local.redis_sync_dir}"
+command = "chmod +x ${path.module}/package_lambda.sh && ${path.module}/package_lambda.sh ${local.redis_sync_dir} ${path.module}/build"
   }
   depends_on = [null_resource.chmod_package_lambda]
   triggers = {
