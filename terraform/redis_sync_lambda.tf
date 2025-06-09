@@ -69,17 +69,8 @@ resource "aws_lambda_function" "redis_sync_lambda" {
     aws_cloudwatch_log_group.redis_sync_lambda_log_group,
     aws_iam_policy.redis_sync_lambda_exec_policy
   ]
+  publish = true
 }
-
-# resource "aws_lambda_version" "redis_sync_lambda_version" {
-#   function_name = aws_lambda_function.redis_sync_lambda.function_name
-#   description   = "Automatic version for redis_sync_lambda"
-
-#   # This ensures a new version is published when the code or config changes
-#   lifecycle {
-#     create_before_destroy = true
-#   }
-# }
 
 # output "redis_sync_lambda_version" {
 #   value = aws_lambda_version.redis_sync_lambda_version.version
