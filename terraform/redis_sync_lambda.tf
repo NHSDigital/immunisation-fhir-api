@@ -28,7 +28,7 @@ resource "null_resource" "debug_dir" {
 
 resource "null_resource" "chmod_package_lambda" {
   provisioner "local-exec" {
-    command = "chmod +x ${path.module}/package_lambda.sh"
+    command = "echo \"======SAW =====\" && ls -ltr  ${local.redis_sync_dir} && chmod +x ${path.module}/package_lambda.sh"
   }
 }
 
