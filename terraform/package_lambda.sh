@@ -3,7 +3,8 @@ set -e
 
 echo "🚀 Packaging Lambda1..."
 
-PROJECT_DIR="${1:-.}"  # Default to current dir if not provided
+PROJECT="${1:-.}"
+PROJECT_DIR=$(realpath "$PROJECT")  # Default to current dir if not provided
 BUILD_DIR="${2:-build}"  # Default build directory if not provided
 ZIP_FILE="${3:-lambda_package.zip}"  # Default zip file name if not provided
 echo "Project directory: $PROJECT_DIR"
