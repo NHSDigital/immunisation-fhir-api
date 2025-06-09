@@ -20,11 +20,17 @@ output "redis_sync_files" {
 #   excludes    = ["test/*", "*.zip", "build/*", "venv/*"]
 # }
 
+resource "null_resource" "chmod_package_lambda" {
+  provisioner "local-exec" {
+    command = "chmod +x ${path.module}/package_lambda.sh"
+  }
+}
+
 resource "null_resource" "package_lambda" {
   provisioner "local-exec" {
     command = "${path.module}/package_lambda.sh ${local.redis_sync_dir}"
   }
-
+  depends_on = [null_resource.chmod_package_lambda]
   triggers = {
     src_hash  = sha1(join("", fileset(local.redis_sync_dir, "**")))
     toml_hash = filesha1("${local.redis_sync_dir}/pyproject.toml")
