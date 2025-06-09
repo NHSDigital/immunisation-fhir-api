@@ -22,20 +22,34 @@ cd "$PROJECT_DIR"
 echo "📂 Current directory after change: $(pwd)"
 
 # Clean previous build
+echo "🧹 Cleaning previous build..."
 rm -rf "$BUILD_DIR" lambda_package.zip
+echo "✅ Previous build cleaned."
+echo "📂 mkdir $BUILD_DIR"
 mkdir -p "$BUILD_DIR"
 
+echo "Exporting dependencies and packaging Lambda..."
 # Export dependencies (using poetry) and install them
 poetry export -f requirements.txt --without-hashes -o requirements.txt
+echo "📦 Installing dependencies to $BUILD_DIR..."
 pip install -r requirements.txt -t "$BUILD_DIR"
 
 # Copy only the needed source code and files
+echo "📂 Copying source files to $BUILD_DIR..."
 cp -r src/* "$BUILD_DIR"
+echo "📂 Copying additional files to $BUILD_DIR..."
 cp pyproject.toml poetry.lock "$BUILD_DIR"
 
+
 # Create deployment zip
+echo "📦 Creating deployment package..."
+echo "📂 cd $BUILD_DIR"
 cd "$BUILD_DIR"
+echo "Zipping contents to lambda_package.zip..."
 zip -r ../lambda_package.zip .
+echo "📂 Returning to project directory... cd.."
 cd ..
+
+echo "📂 Current directory: $(pwd)"
 
 echo "✅ Lambda package created: lambda_package.zip"
