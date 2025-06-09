@@ -1,7 +1,22 @@
 #!/bin/bash
 set -e
 
-echo "🚀 Packaging Lambda..."
+echo "🚀 Packaging Lambda1..."
+
+PROJECT_DIR="${1:-.}"  # Default to current dir if not provided
+
+# show current directory
+echo "📂 Current directory: $(pwd)
+Project directory: $PROJECT_DIR"
+# list contents of the project directory
+echo "📂 Contents of project directory:     $(ls -1 $PROJECT_DIR)"
+
+echo "🚀 Packaging Lambda from $PROJECT_DIR..."
+
+
+cd "$PROJECT_DIR"
+# Ensure we are in the correct directory
+echo "📂 Current directory after change: $(pwd)"
 
 # Clean previous build
 rm -rf build lambda_package.zip
