@@ -5,6 +5,7 @@ echo "🚀 Packaging Lambda1..."
 
 PROJECT_DIR="${1:-.}"  # Default to current dir if not provided
 BUILD_DIR="${2:-build}"  # Default build directory if not provided
+ZIP_FILE="${3:-lambda_package.zip}"  # Default zip file name if not provided
 echo "Project directory: $PROJECT_DIR"
 echo "Build directory: $BUILD_DIR"
 
@@ -45,8 +46,8 @@ cp pyproject.toml poetry.lock "$BUILD_DIR"
 echo "📦 Creating deployment package..."
 echo "📂 cd $BUILD_DIR"
 cd "$BUILD_DIR"
-echo "Zipping contents to lambda_package.zip..."
-zip -r ../lambda_package.zip .
+echo "Zipping contents to $ZIP_FILE..."
+zip -r ./$ZIP_FILE .
 echo "📂 Returning to project directory... cd.."
 cd ..
 
@@ -58,4 +59,4 @@ echo "📂 Contents of build directory:     $(ls -1 $BUILD_DIR)"
 echo "📂 Contents of project directory:     $(ls -1 $PROJECT_DIR)"
 echo "📂 Contents of parent directory:     $(ls -1 $PROJECT_DIR/..)"
 
-echo "✅ Lambda package created: lambda_package.zip"
+echo "✅ Lambda package created: $ZIP_FILE"
