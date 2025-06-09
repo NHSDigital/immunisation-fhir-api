@@ -5,12 +5,28 @@ description = "Sync s3 to REDIS"
 authors = [
     {name = "nhsdevws",email = "stephen.wates1@nhs.net"}
 ]
+
+[tool.poetry]
+name = "redis-sync"
+version = "0.1.0"
+description = ""
+authors = ["stephen.wates1@nhs.net"]
 readme = "README.md"
-requires-python = ">=3.11"
-dependencies = [
+packages = [
+    {include = "src"}
 ]
 
+[tool.poetry.dependencies]
+python = "~3.11"
+boto3 = "~1.38.29"
+mypy-boto3-dynamodb = "^1.26.164"
+moto = "~5.1.5"
+python-stdnum = "^2.1"
+coverage = "^7.8.0"
+
+[tool.poetry.group.dev.dependencies]
+coverage = "^7.8.0"
 
 [build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
+requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
