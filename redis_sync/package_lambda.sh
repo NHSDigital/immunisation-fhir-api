@@ -3,6 +3,13 @@ set -e
 
 PROJECT_DIR="${1:-.}"  # Default to current dir if not provided
 
+# show current directory
+echo "📂 Current directory: $(pwd)
+Project directory: $PROJECT_DIR"
+# list contents of the project directory
+echo "📂 Contents of project directory:     $(ls -1 $PROJECT_DIR)"
+
+
 echo "🚀 Packaging Lambda from $PROJECT_DIR..."
 
 # Clean previous build
