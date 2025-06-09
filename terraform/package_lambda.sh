@@ -55,4 +55,7 @@ echo "📂 Current directory: $(pwd)"
 #list contents of the build directory
 echo "📂 Contents of build directory:     $(ls -1 $BUILD_DIR)"
 
+echo "📂 Contents of project directory:     $(ls -1 $PROJECT_DIR)"
+echo "📂 Contents of parent directory:     $(ls -1 $PROJECT_DIR/..)"
+
 echo "✅ Lambda package created: lambda_package.zip"
