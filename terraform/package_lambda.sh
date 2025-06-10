@@ -51,8 +51,8 @@ echo "📂 Copying additional files to $BUILD_DIR..."
 echo "📦 Creating deployment package..."
 echo "📂 cd $BUILD_DIR"
 cd "$BUILD_DIR"
-echo "Zipping contents to $ZIP_FILE..."
-zip -r "$ZIP_FILE" . -x "$ZIP_FILE"
+echo "Zipping contents to ../$ZIP_FILE..."
+zip -r "$ZIP_FILE" . -x "../$ZIP_FILE"
 echo "📂 Returning to project directory... cd.."
 cd ..
 
@@ -64,6 +64,6 @@ echo "📂 Contents of build directory:     $(ls -1 $BUILD_DIR/$ZIP_FILE)"
 echo "📂 Contents of parent directory:     $(ls -1 $PROJECT_DIR/$ZIP_FILE)"
 
 # lis contents of the zip file
-echo "📦 Contents of the zip file: $(unzip -l $BUILD_DIR/$ZIP_FILE | tail -n +4 | head -n -2)"
+echo "📦 Contents of the zip file: $(unzip -l $ZIP_FILE | tail -n +4 | head -n -2)"
 
 echo "✅ Lambda package created: $ZIP_FILE"

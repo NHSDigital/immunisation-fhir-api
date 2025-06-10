@@ -53,7 +53,7 @@ resource "null_resource" "package_lambda" {
 data "archive_file" "redis_sync_lambda_zip" {
   type        = "zip"
   source_dir  = "${local.build_dir}"
-  output_path = "${local.build_dir}/${local.zip_file_name}"
+  output_path = "${local.redis_sync_dir}/${local.zip_file_name}"
 
   depends_on = [null_resource.package_lambda]
 }
