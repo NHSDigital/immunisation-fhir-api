@@ -49,6 +49,7 @@ class Extractor:
         occurrence_time = self._get_occurance_date_time()
         patient = self._get_patient()
         names = patient.get("name", [])
+        names = [n for n in names if "given" in n and "family" in n]
 
         if not isinstance(names, list) or not names:
             return "", ""
