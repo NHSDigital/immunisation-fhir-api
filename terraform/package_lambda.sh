@@ -63,4 +63,7 @@ echo "📂 Contents of build directory:     $(ls -1 $BUILD_DIR/$ZIP_FILE)"
 
 echo "📂 Contents of parent directory:     $(ls -1 $PROJECT_DIR/$ZIP_FILE)"
 
+# lis contents of the zip file
+echo "📦 Contents of the zip file: $(unzip -l $BUILD_DIR/$ZIP_FILE | tail -n +4 | head -n -2)"
+
 echo "✅ Lambda package created: $ZIP_FILE"
