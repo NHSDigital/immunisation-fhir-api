@@ -32,7 +32,7 @@ resource "null_resource" "make_build_dir" {
   provisioner "local-exec" {
     command = "mkdir -p ${local.build_dir} && echo \"Created build directory: ${local.build_dir}\""
   }
-
+  depends_on = [local.redis_sync_dir]
 }
 
 resource "null_resource" "chmod_package_lambda" {
