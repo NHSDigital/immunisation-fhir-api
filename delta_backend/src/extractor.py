@@ -50,8 +50,7 @@ class Extractor:
         patient = self._get_patient()
         names = patient.get("name", [])
         names = [n for n in names if "given" in n and "family" in n]
-
-        if not isinstance(names, list) or not names:
+        if not names:
             return "", ""
 
         selected_name = self._get_valid_names(names, occurrence_time, resource_type="Patient")
