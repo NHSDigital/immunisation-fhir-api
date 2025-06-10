@@ -3,9 +3,6 @@ set -e
 
 echo "🚀 Packaging Lambda2..."
 
-# parameters passed in as  project_name project_folder abs_build_folder zip_file_name
-
-
 PROJECT="${1:-.}"
 PROJECT_DIR="${2:-$(realpath \"$PROJECT\")}"  # Default to current dir if not provided
 BUILD_DIR="${3:-build}"  # Default build directory if not provided
@@ -14,8 +11,10 @@ echo "Project directory: $PROJECT_DIR"
 echo "Build directory: $BUILD_DIR"
 echo "Zip file: $ZIP_FILE"
 
+
 # show current directory
 echo "📂 Current directory: $(pwd)"
+
 
 # list contents of the project directory
 echo "📂 Contents of project directory:     $(ls -1 $PROJECT_DIR)"
@@ -34,11 +33,16 @@ echo "✅ Previous build cleaned."
 echo "📂 mkdir $BUILD_DIR"
 mkdir -p "$BUILD_DIR"
 
+if [ ! -d "$BUILD_DIR" ]; then
+  echo "❌ ERROR: Build directory not created!"
+  exit 1
+fi
+
 echo "Exporting dependencies and packaging Lambda..."
 # Export dependencies (using poetry) and install them
-poetry export -f requirements.txt --without-hashes -o requirements.txt
+poetry export -f requirements.txt --without-hashes -o requirements.txt || exit 1
 echo "📦 Installing dependencies to $BUILD_DIR..."
-pip install -r requirements.txt -t "$BUILD_DIR"
+pip install -r requirements.txt -t "$BUILD_DIR" || exit 1
 
 # Copy only the needed source code and files
 echo "📂 Copying source files to $BUILD_DIR..."

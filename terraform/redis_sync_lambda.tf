@@ -16,12 +16,6 @@ output "redis_sync_files" {
   value = "redis_sync_files: ${join(", ", local.redis_sync_files)}"
 }
 
-# data "archive_file" "redis_sync_lambda_zip" {
-#   type        = "zip"
-#   source_dir  = local.redis_sync_dir
-#   output_path = "${path.module}/build/redis_sync_lambda.zip"
-#   excludes    = ["test/*", "*.zip", "build/*", "venv/*"]
-# }
 
 resource "null_resource" "debug_script" {
   provisioner "local-exec" {
@@ -33,6 +27,12 @@ resource "null_resource" "debug_dir" {
   provisioner "local-exec" {
     command = "ls -ltr  ${local.redis_sync_dir}"
   }
+}
+resource "null_resource" "make_build_dir" {
+  provisioner "local-exec" {
+    command = "mkdir -p ${local.build_dir} && echo \"Created build directory: ${local.build_dir}\""
+  }
+
 }
 
 resource "null_resource" "chmod_package_lambda" {
@@ -48,9 +48,10 @@ resource "null_resource" "package_lambda" {
       ${path.module}/package_lambda.sh ${local.redis_project_name} ${local.redis_sync_dir} ${local.build_dir} ${local.zip_file_name}
     EOT
   }
-  depends_on = [null_resource.chmod_package_lambda]
+  depends_on = [null_resource.chmod_package_lambda, null_resource.make_build_dir, null_resource.debug_script, null_resource.debug_dir]
   triggers = {
-    src_hash  = sha1(join("", fileset(local.redis_sync_dir, "**")))
+    build_hash = local.redis_sync_dir_sha
+    # src_hash  = sha1(join("", fileset(local.redis_sync_dir, "**")))
     toml_hash = filesha1("${local.redis_sync_dir}/pyproject.toml")
     lock_hash = filesha1("${local.redis_sync_dir}/poetry.lock")
   }
