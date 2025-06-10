@@ -52,7 +52,7 @@ echo "📦 Creating deployment package..."
 echo "📂 cd $BUILD_DIR"
 cd "$BUILD_DIR"
 echo "Zipping contents to ../$ZIP_FILE..."
-zip -r "$ZIP_FILE" . -x "../$ZIP_FILE"
+zip -r "../$ZIP_FILE" . # -x "../$ZIP_FILE"
 echo "📂 Returning to project directory... cd.."
 cd ..
 

@@ -3,7 +3,7 @@ locals {
   redis_project_name = "redis_sync"
   redis_sync_dir     = abspath("${path.root}/../${local.redis_project_name}")
   build_dir        = "${local.redis_sync_dir}/build"
-  zip_file_name    = "redis_sync_lambda.zip"
+  zip_file_name    = "${local.redis_project_name}.zip"
   redis_sync_files   = fileset(local.redis_sync_dir, "**")
   redis_sync_dir_sha = sha1(join("", [for f in local.redis_sync_files : filesha1("${local.redis_sync_dir}/${f}")]))
 }
@@ -50,26 +50,10 @@ resource "null_resource" "package_lambda" {
   }
 }
 
-# list contents of the build directory
-resource "null_resource" "debug_build_dir" {
-  provisioner "local-exec" {
-    command = "ls -ltr ${local.build_dir}"
-  }
-  depends_on = [ null_resource.package_lambda ]
-}
-# list contents of the project directory
-resource "null_resource" "debug_project_dir" {
-  provisioner "local-exec" {
-    command = "ls -ltr ${local.redis_sync_dir}"
-  }
-  depends_on = [ null_resource.package_lambda ]
-}
-
-
 data "archive_file" "redis_sync_lambda_zip" {
   type        = "zip"
   source_dir  = "${local.build_dir}"
-  output_path = "${local.build_dir}/${local.zip_file_name}"
+  output_path = "${local.redis_sync_dir}/${local.zip_file_name}"
 
   depends_on = [null_resource.package_lambda]
 }
@@ -79,7 +63,7 @@ resource "aws_lambda_function" "redis_sync_lambda" {
   role          = aws_iam_role.redis_sync_lambda_exec_role.arn
   handler       = "src/redis_sync.sync_handler" # Update as appropriate
   runtime       = "python3.11"
-  filename      = data.archive_file.redis_sync_lambda_zip.output_path
+  filename         = data.archive_file.redis_sync_lambda_zip.output_path
   source_code_hash = data.archive_file.redis_sync_lambda_zip.output_base64sha256
   architectures = ["x86_64"]
   timeout       = 360
