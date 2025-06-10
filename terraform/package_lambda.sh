@@ -36,7 +36,7 @@ mkdir -p "$BUILD_DIR"
 
 echo "Exporting dependencies and packaging Lambda..."
 # Export dependencies (using poetry) and install them
-poetry export -f requirements.txt --without-hashes -o requirements.txt
+# poetry export -f requirements.txt --without-hashes -o requirements.txt
 echo "📦 Installing dependencies to $BUILD_DIR..."
 pip install -r requirements.txt -t "$BUILD_DIR"
 
