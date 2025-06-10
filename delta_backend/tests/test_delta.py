@@ -16,7 +16,8 @@ os.environ["SOURCE"] = "my_source"
 from delta import send_message, handler, process_record  # Import after setting environment variables
 
 SUCCESS_RESPONSE = {"ResponseMetadata": {"HTTPStatusCode": 200}}
-EXCEPTION_RESPONSE = ClientError({"Error": {"Code": "ConditionalCheckFailedException"}}, "PutItem")
+DUPLICATE_RESPONSE = ClientError({"Error": {"Code": "ConditionalCheckFailedException"}}, "PutItem")
+EXCEPTION_RESPONSE = ClientError({"Error": {"Code": "InternalServerError"}}, "PutItem")
 FAIL_RESPONSE = {"ResponseMetadata": {"HTTPStatusCode": 500}}
 
 class DeltaHandlerTestCase(unittest.TestCase):
@@ -371,6 +372,25 @@ class DeltaHandlerTestCase(unittest.TestCase):
 
         # Assert
         self.assertFalse(result)
+        self.assertEqual(self.mock_delta_table.put_item.call_count, len(records_config))
+        self.assertEqual(self.mock_firehose_logger.send_log.call_count, len(records_config))
+
+    def test_single_duplicate_in_multi(self):
+        # Arrange
+        self.mock_delta_table.put_item.side_effect = [SUCCESS_RESPONSE, DUPLICATE_RESPONSE, SUCCESS_RESPONSE]
+
+        records_config = [
+            RecordConfig(EventName.CREATE, Operation.CREATE, "ok-id2.1", ActionFlag.CREATE),
+            RecordConfig(EventName.UPDATE, Operation.UPDATE, "duplicate-id2.2", ActionFlag.UPDATE),
+            RecordConfig(EventName.DELETE_PHYSICAL, Operation.DELETE_PHYSICAL, "ok-id2.3"),
+        ]
+        event = ValuesForTests.get_multi_record_event(records_config)
+
+        # Act
+        result = handler(event, None)
+
+        # Assert
+        self.assertTrue(result)
         self.assertEqual(self.mock_delta_table.put_item.call_count, len(records_config))
         self.assertEqual(self.mock_firehose_logger.send_log.call_count, len(records_config))
 

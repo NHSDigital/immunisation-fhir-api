@@ -1,16 +1,17 @@
 import decimal
-
-import boto3
 import json
+import logging
 import os
 import time
-from datetime import datetime, timedelta
-import uuid
-import logging
+from datetime import datetime, timedelta, UTC
+
+import boto3
+from boto3.dynamodb.conditions import Attr
 from botocore.exceptions import ClientError
-from log_firehose import FirehoseLogger
-from converter import Converter
+
 from common.mappings import ActionFlag, Operation, EventName
+from converter import Converter
+from log_firehose import FirehoseLogger
 
 failure_queue_url = os.environ["AWS_SQS_QUEUE_URL"]
 delta_table_name = os.environ["DELTA_TABLE_NAME"]
@@ -75,33 +76,36 @@ def send_firehose(log_data):
 
 def process_record(record, log_data):
     ret = True
+    operation_outcome = {}
     try:
         start = time.time()
-        operation_outcome = {}
         error_records = []
         response = str()
         imms_id = str()
         operation = str()
-        approximate_creation_time = datetime.utcfromtimestamp(record["dynamodb"]["ApproximateCreationDateTime"])
+        approximate_creation_time = datetime.fromtimestamp(record["dynamodb"]["ApproximateCreationDateTime"], UTC)
         expiry_time = approximate_creation_time + timedelta(days=30)
         expiry_time_epoch = int(expiry_time.timestamp())
         delta_table = get_delta_table()
 
+        event_id = record["eventID"]
         if record["eventName"] != EventName.DELETE_PHYSICAL:
             new_image = record["dynamodb"]["NewImage"]
             imms_id = new_image["PK"]["S"].split("#")[1]
+            operation_outcome["record"] = imms_id
             vaccine_type = get_vaccine_type(new_image["PatientSK"]["S"])
             supplier_system = new_image["SupplierSystem"]["S"]
             if supplier_system not in ("DPSFULL", "DPSREDUCED"):
                 operation = new_image["Operation"]["S"]
+                operation_outcome["operation_type"] = operation
                 action_flag = ActionFlag.CREATE if operation == Operation.CREATE else operation
                 resource_json = json.loads(new_image["Resource"]["S"], parse_float=decimal.Decimal)
-                FHIRConverter = Converter(resource_json, action_flag=action_flag)
-                flat_json = FHIRConverter.run_conversion()
-                error_records = FHIRConverter.get_error_records()
+                fhir_converter = Converter(resource_json, action_flag=action_flag)
+                flat_json = fhir_converter.run_conversion()
+                error_records = fhir_converter.get_error_records()
                 response = delta_table.put_item(
                     Item={
-                        "PK": str(uuid.uuid4()),
+                        "PK": event_id,
                         "ImmsID": imms_id,
                         "Operation": operation,
                         "VaccineType": vaccine_type,
@@ -110,7 +114,8 @@ def process_record(record, log_data):
                         "Source": delta_source,
                         "Imms": flat_json,
                         "ExpiresAt": expiry_time_epoch,
-                    }
+                    },
+                    ConditionExpression=Attr("PK").not_exists(),
                 )
             else:
                 operation_outcome["statusCode"] = "200"
@@ -120,12 +125,14 @@ def process_record(record, log_data):
                 return True, log_data
         else:
             operation = Operation.DELETE_PHYSICAL
+            operation_outcome["operation_type"] = operation
             new_image = record["dynamodb"]["Keys"]
             logger.info(f"Record to delta:{new_image}")
             imms_id = new_image["PK"]["S"].split("#")[1]
+            operation_outcome["record"] = imms_id
             response = delta_table.put_item(
                 Item={
-                    "PK": str(uuid.uuid4()),
+                    "PK": event_id,
                     "ImmsID": imms_id,
                     "Operation": operation,
                     "VaccineType": "default",
@@ -134,11 +141,10 @@ def process_record(record, log_data):
                     "Source": delta_source,
                     "Imms": "",
                     "ExpiresAt": expiry_time_epoch,
-                }
+                },
+                ConditionExpression=Attr("PK").not_exists(),
             )
-        end = time.time()
-        log_data["time_taken"] = f"{round(end - start, 5)}s"
-        operation_outcome = {"record": imms_id, "operation_type": operation}
+
         if response["ResponseMetadata"]["HTTPStatusCode"] == 200:
             if error_records:
                 log = f"Partial success: successfully synced into delta, but issues found within record {imms_id}"
@@ -154,23 +160,29 @@ def process_record(record, log_data):
         else:
             log = f"Record NOT created for {imms_id}"
             operation_outcome["statusCode"] = "500"
-            operation_outcome["statusDesc"] = "Exception"
+            operation_outcome["statusDesc"] = "Failure response from DynamoDB"
             logger.warning(log)
             ret = False
     except Exception as e:
-        operation_outcome["statusCode"] = "500"
-        operation_outcome["statusDesc"] = "Exception"
-        logger.exception(f"Error processing record: {e}")
-        ret = False
+        if isinstance(e, ClientError) and e.response["Error"]["Code"] == "ConditionalCheckFailedException":
+            operation_outcome["statusCode"] = "200"
+            operation_outcome["statusDesc"] = "Skipped record already present in delta"
+            logger.info(f"Skipped record {event_id} already present in delta for {imms_id}")
+        else:
+            operation_outcome["statusCode"] = "500"
+            operation_outcome["statusDesc"] = "Exception"
+            logger.exception(f"Error processing record: {e}")
+            ret = False
 
+    end = time.time()
+    log_data["time_taken"] = f"{round(end - start, 5)}s"
     log_data["operation_outcome"] = operation_outcome
     return ret, log_data
 
-def handler(event, context):
+def handler(event, _context):
     ret = True
     logger.info("Starting Delta Handler")
     log_data = dict()
-    operation_outcome = dict()
     log_data["function_name"] = "delta_sync"
     try:
         for record in event["Records"]:
@@ -180,7 +192,7 @@ def handler(event, context):
             if not result:
                 ret = False
 
-    except Exception as e:
+    except Exception:
         ret = False
         operation_outcome = {
             "statusCode": "500",
