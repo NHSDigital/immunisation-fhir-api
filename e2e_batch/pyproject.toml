@@ -8,5 +8,5 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python                  = "~3.10"
-boto3                   = "~1.38.17"
+boto3                   = "~1.38.29"
 pandas                  = "^2.2.3"

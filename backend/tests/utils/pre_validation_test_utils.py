@@ -331,8 +331,6 @@ class ValidatorModelTests:
         expected_error_message = (
             f"{field_location} must be a valid datetime in one of the following formats:"
             "- 'YYYY-MM-DD' — Full date only"
-            "- 'YYYY-MM-DDThh:mm:ss' — Full date and time without milliseconds"
-            "- 'YYYY-MM-DDThh:mm:ss.f' — Full date and time with milliseconds (any level of precision)"
             "- 'YYYY-MM-DDThh:mm:ss%z' — Full date and time with timezone (e.g. +00:00 or +01:00)"
             "- 'YYYY-MM-DDThh:mm:ss.f%z' — Full date and time with milliseconds and timezone"
         )
