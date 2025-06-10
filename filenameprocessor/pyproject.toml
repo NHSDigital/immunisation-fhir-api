@@ -9,11 +9,11 @@ packages = [{ include = "src" }]
 [tool.poetry.dependencies]
 python = "~3.10"
 "fhir.resources" = "~7.0.2"
-boto3 = "~1.38.29"
-boto3-stubs-lite = { extras = ["dynamodb"], version = "~1.38.29" }
+boto3 = "~1.38.33"
+boto3-stubs-lite = { extras = ["dynamodb"], version = "~1.38.33" }
 aws-lambda-typing = "~2.20.0"
 moto = "^4"
-requests = "~2.32.3"
+requests = "~2.32.4"
 responses = "~0.25.7"
 pydantic = "~1.10.13"
 pyjwt = "~2.10.1"
