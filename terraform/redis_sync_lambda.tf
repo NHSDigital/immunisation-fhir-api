@@ -106,7 +106,7 @@ resource "aws_lambda_permission" "redis_sync_s3_invoke_permission" {
 
 # S3 Bucket notification to trigger Lambda function
 resource "aws_s3_bucket_notification" "redis_sync_lambda_notification" {
-  bucket = "imms-${local.env}-supplier-config"
+  bucket = "imms-${local.config_bucket_env}-supplier-config"
 
   lambda_function {
     lambda_function_arn = aws_lambda_function.redis_sync_lambda.arn
