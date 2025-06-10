@@ -23,6 +23,12 @@ output "redis_sync_files" {
 #   excludes    = ["test/*", "*.zip", "build/*", "venv/*"]
 # }
 
+resource "null_resource" "debug_script" {
+  provisioner "local-exec" {
+    command = "echo \"SAW DEBUG >>>>\" && pwd && ls -l ${path.module}"
+  }
+}
+
 resource "null_resource" "debug_dir" {
   provisioner "local-exec" {
     command = "ls -ltr  ${local.redis_sync_dir}"

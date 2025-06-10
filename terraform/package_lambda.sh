@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "🚀 Packaging Lambda1..."
+echo "🚀 Packaging Lambda2..."
 
 # parameters passed in as  project_name project_folder abs_build_folder zip_file_name
 
