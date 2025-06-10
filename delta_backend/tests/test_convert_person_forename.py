@@ -104,6 +104,23 @@ class TestPersonForenmeToFlatJson(unittest.TestCase):
         expected_forename = "Alice Marie"
         self._run_test(expected_forename)
 
+    def test_person_forename_where_names_only_exist_when_use_isequal_to_old(self):
+        """Test case where only available name is selected name where use=old"""
+        self.request_json_data["contained"][1]["name"] = [
+            {
+                "use": "official",
+                "period": {"start": "2021-01-01", "end": "2023-01-01"},
+            },
+            {
+                "family": "Doe",
+                "given": ["Alice", "Marie"],
+                "use": "old",
+                "period": {"start": "2021-01-01", "end": "2022-12-31"},
+            },
+        ]
+        expected_forename = "Alice Marie"
+        self._run_test(expected_forename)
+
     def test_person_forename_exists_only(self):
         """Test case where the selected name has multiple given names"""
         self.request_json_data["contained"][1]["name"] = [

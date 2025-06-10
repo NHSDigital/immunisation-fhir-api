@@ -53,9 +53,9 @@
             {
                 "use": "home",
                 "text": "hello pat1",
-                "family": "1test10 ",
+                "family": "test10 ",
                 "given": [
-                 "1test11", "test12", "test13"
+                 "test11", "test12", "test13"
                 ],
                 "period":   {
                     "start" : "2000-01-01",
@@ -65,9 +65,9 @@
             {
                 "use": "old",
                 "text": "hello pat3",
-                "family": "3test14",
+                "family": "test14",
                 "given": [
-                    "3test15", "test16", "test17"
+                    "test15", "test16", "test17"
                 ],
                 "period":   {
                     "start" : "2000-01-01",
