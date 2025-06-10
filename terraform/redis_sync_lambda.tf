@@ -37,7 +37,7 @@ resource "null_resource" "make_build_dir" {
 
 resource "null_resource" "chmod_package_lambda" {
   provisioner "local-exec" {
-    command = "echo \"======SAW =====\" && ls -ltr  ${local.redis_sync_dir} && chmod +x ${path.module}/package_lambda.sh"
+    command = "echo \"======SAW2 =====\" && ls -ltr  ${local.redis_sync_dir} && chmod +x ${path.module}/package_lambda.sh"
   }
 }
 
