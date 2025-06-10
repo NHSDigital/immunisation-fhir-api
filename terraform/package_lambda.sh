@@ -44,7 +44,7 @@ pip install -r requirements.txt -t "$BUILD_DIR"
 echo "📂 Copying source files to $BUILD_DIR..."
 cp -r src/* "$BUILD_DIR"
 echo "📂 Copying additional files to $BUILD_DIR..."
-cp pyproject.toml poetry.lock "$BUILD_DIR"
+# cp pyproject.toml poetry.lock "$BUILD_DIR"
 
 
 # Create deployment zip
@@ -52,7 +52,7 @@ echo "📦 Creating deployment package..."
 echo "📂 cd $BUILD_DIR"
 cd "$BUILD_DIR"
 echo "Zipping contents to $ZIP_FILE..."
-zip -r ./$ZIP_FILE .
+zip -r "$ZIP_FILE" . -x "$ZIP_FILE"
 echo "📂 Returning to project directory... cd.."
 cd ..
 
