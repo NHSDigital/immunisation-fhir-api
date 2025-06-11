@@ -36,6 +36,11 @@ if [ ! -d "$BUILD_DIR" ]; then
   exit 1
 fi
 
+pyenv install -s 3.11.12
+pyenv global 3.11.12
+python --version
+
+
 # Check for poetry and python3.11
 command -v poetry >/dev/null 2>&1 || { echo "❌ poetry not found. Please install poetry."; exit 1; }
 command -v python3.11 >/dev/null 2>&1 || { echo "❌ python3.11 not found. Please install Python 3.11."; exit 1; }

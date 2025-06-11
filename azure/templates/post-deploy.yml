@@ -36,7 +36,11 @@ steps:
       role: "auto-ops"
       profile: "apim-dev"
       aws_account: ${{ parameters.aws_account_type }}
-
+  - bash: |
+      pyenv install -s 3.11.12
+      pyenv global 3.11.12
+      python --version
+    displayName: Set Python 3.11
   - bash: |
       set -e
       if ! [[ $APIGEE_ENVIRONMENT =~ .*-*sandbox ]]; then
