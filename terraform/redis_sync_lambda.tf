@@ -1,6 +1,7 @@
 # Define the directory containing source code and calculate its SHA-256 hash for triggering redeployments
 locals {
   redis_project_name = "redis_sync"
+  redis_sync_lambda_name = "${local.short_prefix}-redis-sync-lambda"
   redis_sync_dir     = abspath("${path.root}/../${local.redis_project_name}")
   build_dir        = "${local.redis_sync_dir}/build"
   zip_file_name    = "${local.redis_project_name}.zip"
@@ -66,7 +67,7 @@ data "archive_file" "redis_sync_lambda_zip" {
 }
 
 resource "aws_lambda_function" "redis_sync_lambda" {
-  function_name = "${local.short_prefix}-redis-sync-lambda"
+  function_name = local.redis_sync_lambda_name
   role          = aws_iam_role.redis_sync_lambda_exec_role.arn
   handler       = "redis_sync.sync_handler" # Update as appropriate
   runtime       = "python3.11"
@@ -333,6 +334,6 @@ resource "aws_iam_role_policy_attachment" "elasticache_policy_attachment" {
 }
 
 resource "aws_cloudwatch_log_group" "redis_sync_lambda_log_group" {
-  name              = "/aws/lambda/${aws_lambda_function.redis_sync_lambda.function_name}"
+  name              = "/aws/lambda/${local.redis_sync_lambda_name}"
   retention_in_days = 30
 }
