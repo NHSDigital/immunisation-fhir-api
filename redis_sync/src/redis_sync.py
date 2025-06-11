@@ -16,15 +16,15 @@ def sync_handler(event, context):
 
     print("Marker23. New code - no publish @ 0935")
     logger.info("Marker23. New code - no publish @ 0936")
-    
+
     # handler is triggered by S3 event
     logger.info("Event: %s", event)
-    
+
     # Extract bucket and key from the event
     bucket = event['Records'][0]['s3']['bucket']['name']
     key = event['Records'][0]['s3']['object']['key']
     logger.info("Bucket: %s, Key: %s", bucket, key)
-    
+
     # TEST REDIS code
     logger.info("Connecting to Redis at %s:%d", redis_host, redis_port)
     r = redis.Redis(host=redis_host, port=redis_port, db=0)
