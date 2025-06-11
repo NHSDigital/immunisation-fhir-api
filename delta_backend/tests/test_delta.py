@@ -351,7 +351,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         self.assertFalse(result)
         self.assertEqual(self.mock_delta_table.put_item.call_count, 3)
         self.assertEqual(self.mock_firehose_logger.send_log.call_count, 3)
-        self.assertEqual(self.mock_logger_exception.call_count, 1)
+        self.assertEqual(self.mock_logger_error.call_count, 1)
 
     def test_single_exception_in_multi(self):
         # Arrange
@@ -448,11 +448,14 @@ class DeltaRecordProcessorTestCase(unittest.TestCase):
         self.logger_info_patcher = patch("logging.Logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
 
-        self.logger_exception_patcher = patch("logging.Logger.exception")
-        self.mock_logger_exception = self.logger_exception_patcher.start()
-
         self.logger_warning_patcher = patch("logging.Logger.warning")
         self.mock_logger_warning = self.logger_warning_patcher.start()
+
+        self.logger_error_patcher = patch("logging.Logger.error")
+        self.mock_logger_error = self.logger_error_patcher.start()
+
+        self.logger_exception_patcher = patch("logging.Logger.exception")
+        self.mock_logger_exception = self.logger_exception_patcher.start()
 
         self.delta_table_patcher=patch("delta.delta_table")
         self.mock_delta_table = self.delta_table_patcher.start()
@@ -521,7 +524,7 @@ class DeltaRecordProcessorTestCase(unittest.TestCase):
             self.assertEqual(result, expected_returns[test_index-1])
             self.assertEqual(self.mock_delta_table.put_item.call_count, test_index)
 
-        self.assertEqual(self.mock_logger_exception.call_count, 1)
+        self.assertEqual(self.mock_logger_error.call_count, 1)
 
 
     def test_single_record_table_exception(self):
@@ -534,7 +537,7 @@ class DeltaRecordProcessorTestCase(unittest.TestCase):
             operation=Operation.UPDATE,
             supplier="EMIS",
         )
-        self.mock_delta_table.put_item.return_value = EXCEPTION_RESPONSE
+        self.mock_delta_table.put_item.side_effect = EXCEPTION_RESPONSE
         # Act
         result, operation_outcome = process_record(record)
 
@@ -543,7 +546,7 @@ class DeltaRecordProcessorTestCase(unittest.TestCase):
         self.assertEqual(operation_outcome["record"], imms_id)
         self.assertEqual(operation_outcome["operation_type"], Operation.UPDATE)
         self.assertEqual(operation_outcome["statusCode"], "500")
-        self.assertEqual(operation_outcome["statusDesc"], "Failure response from DynamoDB")
+        self.assertEqual(operation_outcome["statusDesc"], "Exception")
         self.assertEqual(self.mock_delta_table.put_item.call_count, 1)
         self.assertEqual(self.mock_logger_exception.call_count, 1)
 

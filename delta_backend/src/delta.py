@@ -93,7 +93,7 @@ def handle_dynamodb_response(response, error_records):
             logger.info("Successfully synched into delta")
             return True, {"statusCode": "200", "statusDesc": "Successfully synched into delta"}
         case _:
-            logger.exception("Failure response from DynamoDB")
+            logger.error(f"Failure response from DynamoDB: {response}")
             return False, {"statusCode": "500", "statusDesc": "Failure response from DynamoDB", "diagnostics": response}
 
 def handle_exception_response(response):
