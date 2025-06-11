@@ -80,14 +80,12 @@ class DeltaHandlerTestCase(unittest.TestCase):
         send_message(record, "test-queue-url")
 
         # Assert
-        self.mock_logger_error.assert_called_once_with(
-            f"Error sending record to DLQ: An error occurred (500) when calling the SendMessage operation: Internal Server Error"
-        )
+        self.mock_logger_exception.assert_called_once_with("Error sending record to DLQ")
 
     def test_handler_success_insert(self):
         # Arrange
         self.mock_delta_table.put_item.return_value = SUCCESS_RESPONSE
-        suppliers = ["DPS", "EMIS"]
+        suppliers = ["RAVS", "EMIS"]
         for supplier in suppliers:
             imms_id = f"test-insert-imms-{supplier}-id"
             event = ValuesForTests.get_event(event_name=EventName.CREATE, operation=Operation.CREATE, imms_id=imms_id, supplier=supplier)

@@ -49,8 +49,8 @@ def get_sqs_client():
         try:
             logger.info("Initializing SQS Client")
             sqs_client = boto3.client("sqs", region_name)
-        except Exception as e:
-            logger.error(f"Error initializing SQS Client: {e}")
+        except Exception:
+            logger.exception("Error initializing SQS Client")
             sqs_client = None
     return sqs_client
 
@@ -61,8 +61,8 @@ def send_message(record, queue_url=failure_queue_url):
         # Send the record to the queue
         get_sqs_client().send_message(QueueUrl=queue_url, MessageBody=json.dumps(message_body))
         logger.info("Record saved successfully to the DLQ")
-    except Exception as e:
-        logger.error(f"Error sending record to DLQ: {e}")
+    except Exception:
+        logger.exception("Error sending record to DLQ")
 
 def get_vaccine_type(patient_sort_key: str) -> str:
     vaccine_type = patient_sort_key.split("#")[0]
@@ -81,14 +81,14 @@ def send_firehose(log_data):
     try:
         firehose_log = {"event": log_data}
         firehose_logger.send_log(firehose_log)
-    except Exception as e:
-        logger.error(f"Error sending log to Firehose: {e}")
+    except Exception:
+        logger.exception("Error sending log to Firehose")
 
 def handle_dynamodb_response(response, error_records):
     match response:
         case {"ResponseMetadata": {"HTTPStatusCode": 200}} if error_records:
             logger.warning(f"Partial success: successfully synced into delta, but issues found within record: {json.dumps(error_records)}")
-            return True, {"statusCode": "207", "statusDesc": f"Partial success: successfully synced into delta, but issues found within record", "diagnostics": error_records}
+            return True, {"statusCode": "207", "statusDesc": "Partial success: successfully synced into delta, but issues found within record", "diagnostics": error_records}
         case {"ResponseMetadata": {"HTTPStatusCode": 200}}:
             logger.info("Successfully synched into delta")
             return True, {"statusCode": "200", "statusDesc": "Successfully synched into delta"}
@@ -105,98 +105,7 @@ def handle_exception_response(response):
             logger.exception("Exception during processing")
             return False, {"statusCode": "500", "statusDesc": "Exception", "diagnostics": response}
 
-# def process_record_test(record):
-#     try:
-#         match record:
-#             case {
-#                 "eventName": EventName.DELETE_PHYSICAL,
-#                 "eventId": event_id,
-#                 "dynamodb": {
-#                     "Keys": {"PK": {"S": primary_key}},
-#                     "ApproximateCreationDateTime": approximate_creation_timestamp
-#                 }
-#             }:
-#                 imms_id = get_imms_id(primary_key)
-#                 creation_datetime, expiry_timestamp = get_creation_and_expiry_times(approximate_creation_timestamp)
-#                 # process_removal(event_id, primary_key, approximate_creation_time)
-#                 try:
-#                     response = get_delta_table().put_item(
-#                         Item={
-#                             "PK": event_id,
-#                             "ImmsID": imms_id,
-#                             "Operation": Operation.DELETE_PHYSICAL,
-#                             "VaccineType": "default",
-#                             "SupplierSystem": "default",
-#                             "DateTimeStamp": creation_datetime,
-#                             "Source": delta_source,
-#                             "Imms": "",
-#                             "ExpiresAt": expiry_timestamp,
-#                         },
-#                         ConditionExpression=Attr("PK").not_exists(),
-#                     )
-#                     return handle_dynamodb_response(response, None)
-#                 except Exception as e:
-#                     return handle_exception_response(e)
-#
-#             case {
-#                 "eventId": event_id,
-#                 "dynamodb": {
-#                     "NewImage": {
-#                         "PK": {"S": primary_key},
-#                         "SupplierSystem": {"S": supplier_system},
-#                     },
-#                 }
-#             } if supplier_system in ("DPSFULL", "DPSREDUCED"):
-#                 imms_id = get_imms_id(primary_key)
-#                 return True, {"statusCode": "200", "statusDesc": "Record from DPS skipped"}
-#
-#             case {
-#                 "eventId": event_id,
-#                 "dynamodb": {
-#                     "NewImage": {
-#                         "PK": {"S": primary_key},
-#                         "PatientSK": {"S": patient_sort_key},
-#                         "SupplierSystem": {"S": supplier_system},
-#                         "Operation": {"S": operation},
-#                         "Resource": {"S": resource_str},
-#                     },
-#                     "ApproximateCreationDateTime": approximate_creation_timestamp
-#                 }
-#             }:
-#                 imms_id = get_imms_id(primary_key)
-#                 vaccine_type = get_vaccine_type(patient_sort_key)
-#                 creation_datetime, expiry_timestamp = get_creation_and_expiry_times(approximate_creation_timestamp)
-#                 action_flag = ActionFlag.CREATE if operation == Operation.CREATE else operation
-#                 resource = json.loads(resource_str, parse_float=decimal.Decimal)
-#                 fhir_converter = Converter(resource, action_flag=action_flag)
-#                 flat_json = fhir_converter.run_conversion()
-#                 error_records = fhir_converter.get_error_records()
-#                 # process_insert_update_delete(event_id, primary_key, approximate_creation_time)
-#                 try:
-#                     response = get_delta_table().put_item(
-#                         Item={
-#                             "PK": event_id,
-#                             "ImmsID": imms_id,
-#                             "Operation": operation,
-#                             "VaccineType": vaccine_type,
-#                             "SupplierSystem": supplier_system,
-#                             "DateTimeStamp": creation_datetime,
-#                             "Source": delta_source,
-#                             "Imms": flat_json,
-#                             "ExpiresAt": expiry_timestamp,
-#                         },
-#                         ConditionExpression=Attr("PK").not_exists(),
-#                     )
-#                     return handle_dynamodb_response(response, error_records)
-#                 except Exception as e:
-#                     return handle_exception_response(e)
-#
-#             case _:
-#                 return False, {"statusCode": "500", "statusDesc": "Unhandled record format", "diagnostics": record}
-#     except Exception as e:
-#         return False, {"statusCode": "500", "statusDesc": "Exception", "diagnostics": e}
-
-def handle_removal(record):
+def handle_remove(record):
     event_id = record["eventID"]
     primary_key = record["dynamodb"]["Keys"]["PK"]["S"]
     imms_id = get_imms_id(primary_key)
@@ -276,7 +185,7 @@ def handle_create_update_delete(record):
 def process_record(record):
     try:
         if record["eventName"] == EventName.DELETE_PHYSICAL:
-            return handle_removal(record)
+            return handle_remove(record)
 
         supplier_system = record["dynamodb"]["NewImage"]["SupplierSystem"]["S"]
         if supplier_system in ("DPSFULL", "DPSREDUCED"):
