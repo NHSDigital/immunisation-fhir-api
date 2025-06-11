@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-
+set -x
 echo "🚀 Packaging Lambda2..."
 
 PROJECT="${1:-.}"

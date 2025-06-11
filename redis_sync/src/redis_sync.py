@@ -14,8 +14,8 @@ redis_port = int(os.environ.get('REDIS_PORT', 6379))
 
 def sync_handler(event, context):
 
-    print("Marker23. New code - no publish @ 0935")
-    logger.info("Marker23. New code - no publish @ 0936")
+    print("Marker24. New code - no publish @ 0935")
+    logger.info("Marker24. New code - no publish @ 0936")
 
     # handler is triggered by S3 event
     logger.info("Event: %s", event)
