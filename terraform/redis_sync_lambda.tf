@@ -7,6 +7,7 @@ locals {
   zip_file_name    = "${local.redis_project_name}.zip"
   redis_sync_files   = fileset(local.redis_sync_dir, "**")
   redis_sync_dir_sha = sha1(join("", [for f in local.redis_sync_files : filesha1("${local.redis_sync_dir}/${f}")]))
+  build_script = "${path.module}/package_lambda.sh"
 }
 
 output "redis_sync_dir" {
@@ -38,15 +39,15 @@ resource "null_resource" "make_build_dir" {
 
 resource "null_resource" "chmod_package_lambda" {
   provisioner "local-exec" {
-    command = "echo \"======SAW2 =====\" && ls -ltr  ${local.redis_sync_dir} && chmod +x ${path.module}/package_lambda.sh"
+    command = "echo \"======SAW2 =====\" && ls -ltr  ${local.redis_sync_dir} && chmod +x ${local.build_script} && echo \"chmod done\""
   }
 }
 
 resource "null_resource" "package_lambda" {
   provisioner "local-exec" {
     command = <<-EOT
-      chmod +x ${path.module}/package_lambda.sh && \
-      ${path.module}/package_lambda.sh ${local.redis_project_name} ${local.redis_sync_dir} ${local.build_dir} ${local.zip_file_name}
+      chmod +x ${local.build_script} && \
+      ${local.build_script} ${local.redis_project_name} ${local.redis_sync_dir} ${local.build_dir} ${local.zip_file_name}
     EOT
   }
   depends_on = [null_resource.chmod_package_lambda, null_resource.make_build_dir, null_resource.debug_script, null_resource.debug_dir]
@@ -55,6 +56,7 @@ resource "null_resource" "package_lambda" {
     src_hash  = sha1(join("", fileset(local.redis_sync_dir, "**")))
     toml_hash = filesha1("${local.redis_sync_dir}/pyproject.toml")
     lock_hash = filesha1("${local.redis_sync_dir}/poetry.lock")
+    bash_hash = filesha1("${local.build_script}")
   }
 }
 
