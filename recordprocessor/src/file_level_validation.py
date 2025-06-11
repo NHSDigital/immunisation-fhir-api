@@ -65,7 +65,7 @@ def move_file(bucket_name: str, source_file_key: str, destination_file_key: str)
 
 
 @file_level_validation_logging_decorator
-def file_level_validation(incoming_message_body: dict) -> None:
+def file_level_validation(incoming_message_body: dict) -> dict:
     """
     Validates that the csv headers are correct and that the supplier has permission to perform at least one of
     the requested operations. Uploades the inf ack file and moves the source file to the processing folder.
@@ -114,7 +114,10 @@ def file_level_validation(incoming_message_body: dict) -> None:
         created_at_formatted_string = created_at_formatted_string or "Unable to ascertain created_at_formatted_string"
         make_and_upload_ack_file(message_id, file_key, False, False, created_at_formatted_string)
 
-        move_file(SOURCE_BUCKET_NAME, file_key, f"archive/{file_key}")
+        try:
+            move_file(SOURCE_BUCKET_NAME, file_key, f"archive/{file_key}")
+        except Exception as move_file_error:
+            logger.error("Failed to move file to archive: %s", move_file_error)
 
         # Update the audit table and invoke the filename lambda with next file in the queue (if one exists)
         change_audit_table_status_to_processed(file_key, message_id)

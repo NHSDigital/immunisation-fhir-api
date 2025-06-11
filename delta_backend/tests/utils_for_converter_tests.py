@@ -1,3 +1,4 @@
+import uuid
 from decimal import Decimal
 import json
 from common.mappings import EventName, Operation
@@ -171,7 +172,8 @@ class ValuesForTests:
     def get_event_record(imms_id, event_name, operation, supplier="EMIS"):
         pk = f"covid#{imms_id}"
         if operation != Operation.DELETE_PHYSICAL:
-            return{
+            return {
+                "eventID": str(uuid.uuid4()),
                 "eventName": event_name,
                 "dynamodb": {
                     "ApproximateCreationDateTime": 1690896000,
@@ -187,6 +189,7 @@ class ValuesForTests:
             }
         else:
             return {
+                "eventID": str(uuid.uuid4()),
                 "eventName": event_name,
                 "dynamodb": {
                     "ApproximateCreationDateTime": 1690896000,

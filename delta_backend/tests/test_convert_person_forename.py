@@ -6,6 +6,13 @@ from converter import Converter
 from common.mappings import ConversionFieldName
 
 class TestPersonForenmeToFlatJson(unittest.TestCase):
+    """"
+    Test cases for converting person forename to flat JSON format.
+    ## 1. If there is only one name use that one, else
+    ## 2. Select first name where Use=official with period covering vaccination date, else
+    ## 3. select instance where current name with use!=old at vaccination date
+    ## 4. Fallback to first available name instance
+    """
     
     def setUp(self):
         self.request_json_data = copy.deepcopy(ValuesForTests.json_data)
@@ -98,6 +105,23 @@ class TestPersonForenmeToFlatJson(unittest.TestCase):
                 "family": "Doe",
                 "given": ["Alice", "Marie"],
                 "use": "official",
+                "period": {"start": "2021-01-01", "end": "2022-12-31"},
+            },
+        ]
+        expected_forename = "Alice Marie"
+        self._run_test(expected_forename)
+
+    def test_person_forename_where_names_only_exist_when_use_isequal_to_old(self):
+        """Test case where only available name is selected name where use=old"""
+        self.request_json_data["contained"][1]["name"] = [
+            {
+                "use": "official",
+                "period": {"start": "2021-01-01", "end": "2023-01-01"},
+            },
+            {
+                "family": "Doe",
+                "given": ["Alice", "Marie"],
+                "use": "old",
                 "period": {"start": "2021-01-01", "end": "2022-12-31"},
             },
         ]
