@@ -52,7 +52,7 @@ resource "null_resource" "package_lambda" {
   depends_on = [null_resource.chmod_package_lambda, null_resource.make_build_dir, null_resource.debug_script, null_resource.debug_dir]
   triggers = {
     build_hash = local.redis_sync_dir_sha
-    # src_hash  = sha1(join("", fileset(local.redis_sync_dir, "**")))
+    src_hash  = sha1(join("", fileset(local.redis_sync_dir, "**")))
     toml_hash = filesha1("${local.redis_sync_dir}/pyproject.toml")
     lock_hash = filesha1("${local.redis_sync_dir}/poetry.lock")
   }
