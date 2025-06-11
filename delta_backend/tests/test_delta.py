@@ -7,9 +7,11 @@ import decimal
 from common.mappings import EventName, Operation, ActionFlag
 from utils_for_converter_tests import ValuesForTests, RecordConfig
 
+TEST_QUEUE_URL = "https://sqs.eu-west-2.amazonaws.com/123456789012/test-queue"
+
 # Set environment variables before importing the module
 ## @TODO: # Note: Environment variables shared across tests, thus aligned
-os.environ["AWS_SQS_QUEUE_URL"] = "https://sqs.eu-west-2.amazonaws.com/123456789012/test-queue"
+os.environ["AWS_SQS_QUEUE_URL"] = TEST_QUEUE_URL
 os.environ["DELTA_TABLE_NAME"] = "my_delta_table"
 os.environ["SOURCE"] = "my_source"
 
@@ -103,8 +105,20 @@ class DeltaHandlerTestCase(unittest.TestCase):
             self.assertEqual(put_item_data["Imms"]["ACTION_FLAG"], ActionFlag.CREATE)
             self.assertEqual(put_item_data["Operation"], Operation.CREATE)
             self.assertEqual(put_item_data["SupplierSystem"], supplier)
+            self.mock_sqs_client.send_message.assert_not_called()
 
-    def test_handler_failure(self):
+    def test_handler_overall_failure(self):
+        # Arrange
+        event = {"invalid_format": True}
+
+        # Act
+        result = handler(event, None)
+
+        # Assert
+        self.assertFalse(result)
+        self.mock_sqs_client.send_message.assert_called_with(QueueUrl=TEST_QUEUE_URL, MessageBody=json.dumps(event))
+
+    def test_handler_processing_failure(self):
         # Arrange
         self.mock_delta_table.put_item.return_value = FAIL_RESPONSE
         event = ValuesForTests.get_event()
@@ -114,6 +128,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
 
         # Assert
         self.assertFalse(result)
+        self.mock_sqs_client.send_message.assert_called_with(QueueUrl=TEST_QUEUE_URL, MessageBody=json.dumps(event))
 
     def test_handler_success_update(self):
         # Arrange
@@ -134,6 +149,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         self.assertEqual(put_item_data["Imms"]["ACTION_FLAG"], ActionFlag.UPDATE)
         self.assertEqual(put_item_data["Operation"], Operation.UPDATE)
         self.assertEqual(put_item_data["ImmsID"], imms_id)
+        self.mock_sqs_client.send_message.assert_not_called()
 
     def test_handler_success_delete_physical(self):
         # Arrange
@@ -154,6 +170,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         self.assertEqual(put_item_data["Operation"], Operation.DELETE_PHYSICAL)
         self.assertEqual(put_item_data["ImmsID"], imms_id)
         self.assertEqual(put_item_data["Imms"], "")     # check imms has been blanked out
+        self.mock_sqs_client.send_message.assert_not_called()
 
     def test_handler_success_delete_logical(self):
         # Arrange
@@ -175,6 +192,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         self.assertEqual(put_item_data["Imms"]["ACTION_FLAG"], ActionFlag.DELETE_LOGICAL)
         self.assertEqual(put_item_data["Operation"], Operation.DELETE_LOGICAL)
         self.assertEqual(put_item_data["ImmsID"], imms_id)
+        self.mock_sqs_client.send_message.assert_not_called()
 
     @patch("delta.logger.info")
     def test_dps_record_skipped(self, mock_logger_info):
@@ -186,6 +204,8 @@ class DeltaHandlerTestCase(unittest.TestCase):
 
         # Check logging and Firehose were called
         mock_logger_info.assert_called_with("Record from DPS skipped")
+        self.mock_firehose_logger.send_log.assert_called()
+        self.mock_sqs_client.send_message.assert_not_called()
 
     @patch("delta.Converter")
     def test_partial_success_with_errors(self, mock_converter):

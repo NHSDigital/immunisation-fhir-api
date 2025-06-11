@@ -223,8 +223,7 @@ def handler(event, _context):
         send_message(event)  # Send failed records to DLQ
         send_firehose({"function_name": "delta_sync", "operation_outcome": operation_outcome})
 
-    # TODO - should we be doing this too?
-    # if not overall_success:
-    #     send_message(event)
+    if not overall_success:
+        send_message(event)
 
     return overall_success
