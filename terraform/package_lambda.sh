@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 set -x
-echo "🚀 Packaging Lambda..."
+echo "🚀 Nudge Packaging Lambda..."
 
 PROJECT="${1:-.}"
 PROJECT_DIR="${2:-$(realpath "$PROJECT")}"  # Default to current dir if not provided
