@@ -1,18 +1,20 @@
-import json
-from clients import logger, redis_cacher
-from redis_disease_mapping import DiseaseMapping
+from clients import logger
+from event_processor import event_processor
 
-disease_vaccine_mapping = DiseaseMapping(redis_cacher)
+'''Redis Sync Lambda Handler
+    This contains the handler code and nothing else.
+    It is used to process S3 events and upload data to Redis.
+    It is triggered by S3 events and processes the event to upload data to Redis.
+'''
 
 
 def sync_handler(event, context):
 
-    logger.info("Marker3. New code - no publish @ 0936")
+    logger.info("Sync Handler")
+    try:
 
-    # handler is triggered by S3 event
-    logger.info("Event: %s", json.dumps(event, indent=2))
+        return event_processor(event, context)
 
-    # save the disease mapping to Redis
-    logger.info("Saving disease mapping to Redis (TEST).")
-    disease_vaccine_mapping.put({"text": "hello world"})
-    logger.info("Disease mapping saved to Redis.")
+    except Exception:  # pylint: disable=broad-except
+        logger.exception("Error in Redis Sync Processor")
+        return False

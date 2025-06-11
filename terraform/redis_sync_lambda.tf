@@ -53,11 +53,12 @@ resource "null_resource" "package_lambda" {
   }
   depends_on = [null_resource.chmod_package_lambda, null_resource.make_build_dir, null_resource.debug_script, null_resource.debug_dir]
   triggers = {
-    build_hash = local.redis_sync_dir_sha
-    src_hash  = sha1(join("", fileset(local.redis_sync_dir, "**")))
-    toml_hash = filesha1("${local.redis_sync_dir}/pyproject.toml")
-    lock_hash = filesha1("${local.redis_sync_dir}/poetry.lock")
-    bash_hash = filesha1("${local.build_script}")
+    zip_exists_hash = fileexists("${local.build_dir}/${local.zip_file_name}") ? filesha1("${local.build_dir}/${local.zip_file_name}") : timestamp()
+
+    src_hash        = sha1(join("", fileset(local.redis_sync_dir, "**")))
+    pyproject_hash  = filesha1("${local.redis_sync_dir}/pyproject.toml")
+    poetry_lock_hash = filesha1("${local.redis_sync_dir}/poetry.lock")
+    build_script_hash = filesha1(local.build_script)
   }
 }
 

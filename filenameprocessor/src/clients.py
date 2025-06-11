@@ -8,8 +8,7 @@ import logging
 import redis
 from boto3 import client as boto3_client, resource as boto3_resource
 
-# AWS Clients and Resources.
-REGION_NAME = "eu-west-2"
+REGION_NAME = os.getenv("AWS_REGION", "eu-west-2")
 
 s3_client = boto3_client("s3", region_name=REGION_NAME)
 sqs_client = boto3_client("sqs", region_name=REGION_NAME)

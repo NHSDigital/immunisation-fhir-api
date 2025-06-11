@@ -1,48 +1,38 @@
 "Upload the content from a config file in S3 to ElastiCache (Redis)"
 
 import json
-import redis
+from clients import redis_client
+from transform_map import transform_map
+from constants import RedisCacheKey
+from s3_reader import S3Reader
 
 
-class RedisCacher():
-    """ RedisCacher abstraction class to decouple application code
-    from direct use of Redis client.
-    Also centralised error handling & extensibility.
-    """
+class RedisCacher:
+    """Class to handle interactions with ElastiCache (Redis) for configuration files."""
 
-    def __init__(self, redis_host, redis_port, logger):
-        try:
-            self.logger = logger
-            # Attempt to connect to Redis
-            self.redis_client = redis.StrictRedis(redis_host, redis_port, decode_responses=True)
-            # Check the connection with a PING command
-            if self.redis_client.ping():
-                logger.info("Successfully connected to Redis.")
-            else:
-                logger.error("Failed to connect to Redis.")
-        except Exception as e:
-            logger.exception(f"Connection to Redis failed: {e}")
+    @staticmethod
+    def upload(bucket_name: str, file_key: str, file_type) -> None:
 
-    def get(self, key: str) -> dict:
-        """Gets the value from Redis cache for the given key."""
-        value = self.redis_client.get(key)
-        if value is not None:
-            return json.loads(value)
-        return {}
+        config_file_content = S3Reader.read(bucket_name, file_key)
 
-    # save data to Redis cache
-    def set(self, key: str, value: dict):
-        """Sets the value in Redis cache for the given key."""
-        try:
-            self.redis_client.set(key, json.dumps(value))
-        except Exception as e:
-            raise RuntimeError(f"Failed to set key {key} in Redis: {e}")
+        # Transform the content based on the file type
+        trx_data = transform_map(config_file_content, file_type)
 
-    # def close(self):
-    #     """Closes the Redis connection."""
-    #     try:
-    #         self.redis_client.close()
-    #         self.redis_client.connection_pool.disconnect()
-    #     except Exception as e:
-    #         raise RuntimeError(f"Failed to close Redis connection: {e}")
-    #     self.logger.info("Redis connection closed.")
+        # Use the file_key as the Redis key and file content as the value
+        redis_client.set(file_key, trx_data)
+        return True
+
+    @staticmethod
+    def get_cached_config_json(file_type) -> dict:
+        """Gets and returns the permissions config file content from ElastiCache (Redis)."""
+        return json.loads(redis_client.get(file_type))
+
+    @staticmethod
+    def get_cached_permissions_config_json() -> dict:
+        """ return Permissions config data from cache."""
+        return RedisCacher.get_cached_config_json(RedisCacheKey.PERMISSIONS_CONFIG_FILE_KEY)
+
+    @staticmethod
+    def get_cached_disease_mapping_json() -> dict:
+        """return Disease mapping data from cache."""
+        return RedisCacher.get_cached_config_json(RedisCacheKey.DISEASE_MAPPING_FILE_KEY)

@@ -1,0 +1,62 @@
+{
+  "disease": {
+    "COVID19": {
+      "code": "840539006",
+      "display": "Disease caused by severe acute respiratory syndrome coronavirus 2"
+    },
+    "FLU": {
+      "code": "6142004",
+      "display": "Influenza"
+    },
+    "HPV": {
+      "code": "240532009",
+      "display": "Human Papillomavirus Infection"
+    },
+    "FLU_B": {
+      "code": "77385005",
+      "display": "Influenza B"
+    },
+    "FLU_C": {
+      "code": "77388002",
+      "display": "Influenza C"
+    },
+    "MEASLES": {
+      "code": "14189004",
+      "display": "Measles"
+    },
+    "MUMPS": {
+      "code": "36989005",
+      "display": "Mumps"
+    },
+    "RUBELLA": {
+      "code": "36653000",
+      "display": "Rubella"
+    },
+    "RSV": {
+      "code": "55735004",
+      "display": "Respiratory syncytial virus infection (disorder)"
+    }
+  },
+  "vaccine": {
+    "COVID19": {
+      "display": "COVID-19 vaccine",
+      "diseases": ["COVID19"]
+    },
+    "FLU": {
+      "display": "Influenza vaccine",
+      "diseases": ["FLU"]
+    },
+    "HPV": {
+      "display": "Human Papillomavirus vaccine",
+      "diseases": ["HPV"]
+    },
+    "MMR": {
+      "display": "Measles, mumps, and rubella vaccine",
+      "diseases": ["MEASLES", "MUMPS", "RUBELLA"]
+    },
+    "RSV": {
+      "display": "Respiratory syncytial virus vaccine",
+      "diseases": ["RSV"]
+    }
+  }
+}
