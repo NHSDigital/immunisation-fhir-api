@@ -6,6 +6,13 @@ from converter import Converter
 from common.mappings import ConversionFieldName
 
 class TestPersonSurnameToFlatJson(unittest.TestCase):
+    """"
+    Test cases for converting person surname to flat JSON format.
+    ## 1. If there is only one name use that one, else
+    ## 2. Select first name where Use=official with period covering vaccination date, else
+    ## 3. select instance where current name with use!=old at vaccination date
+    ## 4. Fallback to first available name instance
+    """
 
     def setUp(self):
         self.request_json_data = copy.deepcopy(ValuesForTests.json_data)

@@ -63,6 +63,18 @@
                     }                
             },
             {
+                "use": "official",
+                "text": "hello pat2",
+                "family": "test12",
+                "given": [
+                 "test13", "test14", "test15"
+                ],
+                "period":   {
+                    "start" : "2000-01-01",
+                    "end" : "2026-01-01"
+                    }                
+            },
+            {
                 "use": "old",
                 "text": "hello pat3",
                 "family": "test14",
