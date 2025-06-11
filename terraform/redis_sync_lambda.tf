@@ -8,6 +8,7 @@ locals {
   redis_sync_files   = fileset(local.redis_sync_dir, "**")
   redis_sync_dir_sha = sha1(join("", [for f in local.redis_sync_files : filesha1("${local.redis_sync_dir}/${f}")]))
   build_script = "${path.module}/package_lambda.sh"
+  redis_cloudwatch_group_name = "/aws/lambda/${local.redis_sync_lambda_name}"
 }
 
 output "redis_sync_dir" {
@@ -158,7 +159,7 @@ resource "aws_iam_policy" "redis_sync_lambda_exec_policy" {
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ]
-        Resource = "arn:aws:logs:${var.aws_region}:${local.immunisation_account_id}:log-group:/aws/lambda/${local.short_prefix}-redis_sync_lambda:*"
+        Resource = "arn:aws:logs:${var.aws_region}:${local.immunisation_account_id}:log-group:${local.redis_cloudwatch_group_name}:*"
       },
       {
         Effect = "Allow",
@@ -336,6 +337,6 @@ resource "aws_iam_role_policy_attachment" "elasticache_policy_attachment" {
 }
 
 resource "aws_cloudwatch_log_group" "redis_sync_lambda_log_group" {
-  name              = "/aws/lambda/${local.redis_sync_lambda_name}"
+  name              = local.redis_cloudwatch_group_name
   retention_in_days = 30
 }
