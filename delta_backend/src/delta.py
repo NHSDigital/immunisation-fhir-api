@@ -105,7 +105,7 @@ def handle_exception_response(response):
             logger.exception("Exception during processing")
             return False, {"statusCode": "500", "statusDesc": "Exception", "diagnostics": response}
 
-def handle_remove(record):
+def process_remove(record):
     event_id = record["eventID"]
     primary_key = record["dynamodb"]["Keys"]["PK"]["S"]
     imms_id = get_imms_id(primary_key)
@@ -136,13 +136,13 @@ def handle_remove(record):
         operation_outcome.update(extra_log_fields)
         return success, operation_outcome
 
-def handle_skipped(record):
+def process_skip(record):
     primary_key = record["dynamodb"]["NewImage"]["PK"]["S"]
     imms_id = get_imms_id(primary_key)
     logger.info("Record from DPS skipped")
     return True, {"record": imms_id, "statusCode": "200", "statusDesc": "Record from DPS skipped"}
 
-def handle_create_update_delete(record):
+def process_create_update_delete(record):
     event_id = record["eventID"]
     new_image = record["dynamodb"]["NewImage"]
     primary_key = new_image["PK"]["S"]
@@ -185,13 +185,13 @@ def handle_create_update_delete(record):
 def process_record(record):
     try:
         if record["eventName"] == EventName.DELETE_PHYSICAL:
-            return handle_remove(record)
+            return process_remove(record)
 
         supplier_system = record["dynamodb"]["NewImage"]["SupplierSystem"]["S"]
         if supplier_system in ("DPSFULL", "DPSREDUCED"):
-            return handle_skipped(record)
+            return process_skip(record)
 
-        return handle_create_update_delete(record)
+        return process_create_update_delete(record)
     except Exception as e:
         logger.exception("Exception during processing")
         return False, {"statusCode": "500", "statusDesc": "Exception", "diagnostics": e}
