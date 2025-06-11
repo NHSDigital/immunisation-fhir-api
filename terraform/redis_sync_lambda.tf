@@ -94,7 +94,7 @@ resource "aws_lambda_function" "redis_sync_lambda" {
     aws_cloudwatch_log_group.redis_sync_lambda_log_group,
     aws_iam_policy.redis_sync_lambda_exec_policy
   ]
-  publish = true
+  publish = false
 }
 
 # output "redis_sync_lambda_version" {
