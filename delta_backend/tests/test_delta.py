@@ -187,7 +187,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         self.assertTrue(response)
 
         # Check logging and Firehose were called
-        mock_logger_info.assert_called_with("Record from DPS skipped for 12345")
+        mock_logger_info.assert_called_with("Record from DPS skipped")
 
     @patch("delta.Converter")
     def test_partial_success_with_errors(self, mock_converter):
@@ -353,7 +353,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         self.assertFalse(result)
         self.assertEqual(self.mock_delta_table.put_item.call_count, 3)
         self.assertEqual(self.mock_firehose_logger.send_log.call_count, 3)
-        self.assertEqual(self.mock_logger_warning.call_count, 1)
+        self.assertEqual(self.mock_logger_exception.call_count, 1)
 
     def test_single_exception_in_multi(self):
         # Arrange
@@ -484,11 +484,10 @@ class DeltaRecordProcessorTestCase(unittest.TestCase):
                 supplier=config.supplier,
             )
             # Act
-            result, log_data = process_record(record, {})
+            result, operation_outcome = process_record(record)
 
             # Assert
             self.assertEqual(result, True)
-            operation_outcome = log_data["operation_outcome"]
             self.assertEqual(operation_outcome["record"], config.imms_id)
             self.assertEqual(operation_outcome["operation_type"], config.operation)
             self.assertEqual(operation_outcome["statusCode"], "200")
@@ -517,16 +516,14 @@ class DeltaRecordProcessorTestCase(unittest.TestCase):
                 operation=config.operation,
                 supplier=config.supplier,
             )
-            log_data = {}
             # Act
-            result, log_data = process_record(record, log_data)
+            result, _ = process_record(record)
 
             # Assert
             self.assertEqual(result, expected_returns[test_index-1])
             self.assertEqual(self.mock_delta_table.put_item.call_count, test_index)
 
-        self.assertEqual(self.mock_logger_exception.call_count, 0)
-        self.assertEqual(self.mock_logger_warning.call_count, 1)
+        self.assertEqual(self.mock_logger_exception.call_count, 1)
 
 
     def test_single_record_table_exception(self):
@@ -541,15 +538,14 @@ class DeltaRecordProcessorTestCase(unittest.TestCase):
         )
         self.mock_delta_table.put_item.return_value = EXCEPTION_RESPONSE
         # Act
-        result, log_data = process_record(record, {})
+        result, operation_outcome = process_record(record)
 
         # Assert
         self.assertEqual(result, False)
-        operation_outcome = log_data["operation_outcome"]
         self.assertEqual(operation_outcome["record"], imms_id)
         self.assertEqual(operation_outcome["operation_type"], Operation.UPDATE)
         self.assertEqual(operation_outcome["statusCode"], "500")
-        self.assertEqual(operation_outcome["statusDesc"], "Exception")
+        self.assertEqual(operation_outcome["statusDesc"], "Failure response from DynamoDB")
         self.assertEqual(self.mock_delta_table.put_item.call_count, 1)
         self.assertEqual(self.mock_logger_exception.call_count, 1)
 
@@ -565,7 +561,7 @@ class DeltaRecordProcessorTestCase(unittest.TestCase):
 
         self.mock_delta_table.put_item.return_value = SUCCESS_RESPONSE
         # Act
-        process_record(record, {})
+        process_record(record)
 
         # Assert
         mock_json_loads.assert_any_call(ValuesForTests.json_value_for_test, parse_float=decimal.Decimal)
