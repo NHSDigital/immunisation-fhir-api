@@ -80,41 +80,38 @@ steps:
 
   - bash: |
       set -ex
-      if ! [[ $APIGEE_ENVIRONMENT =~ .*-*sandbox ]]; then
-        counter=0
-        base_path="$SERVICE_BASE_PATH"
 
-        endpoint=""
-
-        if [[ $APIGEE_ENVIRONMENT =~ "prod" ]]; then
-          endpoint="https://api.service.nhs.uk/${base_path}/_status"
-        else
-          endpoint="https://${APIGEE_ENVIRONMENT}.api.service.nhs.uk/${base_path}/_status"
-        fi
-
-        while [[ $counter -lt 11 ]]; do
-          response=$(curl -H "apikey: $(status-endpoint-api-key)" -s "$endpoint")
-          response_code=$(jq -r '.checks.healthcheck.responseCode' <<< "$response")
-          response_body=$(jq -r '.checks.healthcheck.outcome' <<< "$response")
-          status=$(jq -r '.status' <<< "$response")
-          if [ "$response_code" -eq 200 ] && [ "$response_body" == "OK" ] && [ "$status" == "pass" ]; then
-              echo "Status test successful"
-              break
-          else
-              echo "Waiting for $endpoint to return a 200 response with 'OK' body..."
-              ((counter=counter+1)) # Increment counter by 1
-              echo "Attempt $counter"
-              sleep 30
-          fi
-        done
-        if [ $counter -eq 21 ]; then
-            echo "Status test failed: Maximum number of attempts reached"
-            echo "Last response received:"
-            echo "$response"
-            exit 1
-        fi
+      endpoint=""
+      if [[ $APIGEE_ENVIRONMENT =~ "prod" ]]; then
+        endpoint="https://api.service.nhs.uk/${SERVICE_BASE_PATH}/_status"
+      else
+        endpoint="https://${APIGEE_ENVIRONMENT}.api.service.nhs.uk/${SERVICE_BASE_PATH}/_status"
       fi
-    displayName: Waiting for TF resources to be UP
+
+      counter=0
+      while [[ $counter -lt 21 ]]; do
+        response=$(curl -H "apikey: $(status-endpoint-api-key)" -s "$endpoint")
+        response_code=$(jq -r '.checks.healthcheck.responseCode' <<< "$response")
+        response_body=$(jq -r '.checks.healthcheck.outcome' <<< "$response")
+        status=$(jq -r '.status' <<< "$response")
+        if [ "$response_code" -eq 200 ] && [ "$response_body" == "OK" ] && [ "$status" == "pass" ]; then
+            echo "Status test successful"
+            break
+        else
+            echo "Waiting for $endpoint to return a 200 response with 'OK' body..."
+            ((counter=counter+1)) # Increment counter by 1
+            echo "Attempt $counter"
+            sleep 30
+        fi
+      done
+
+      if [ $counter -eq 21 ]; then
+          echo "Status test failed: Maximum number of attempts reached"
+          echo "Last response received:"
+          echo "$response"
+          exit 1
+      fi
+    displayName: Waiting for API to be available
     workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)"
 
   - bash: |
