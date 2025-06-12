@@ -54,7 +54,7 @@ resource "aws_vpc_endpoint" "sqs_endpoint" {
       {
         Effect = "Allow"
         Principal = {
-          AWS = "arn:aws:iam::${local.immunisation_account_id}:root"
+          AWS = "*"
         },
         Action = [
           "sqs:SendMessage",
@@ -84,7 +84,7 @@ resource "aws_vpc_endpoint" "s3_endpoint" {
       {
         Effect = "Allow"
         Principal = {
-          AWS = "arn:aws:iam::${local.immunisation_account_id}:root"
+          AWS = "*"
         },
         Action = [
           "s3:GetObject",
@@ -117,7 +117,7 @@ resource "aws_vpc_endpoint" "kinesis_endpoint" {
       {
         Effect = "Allow",
         Principal = {
-          AWS = "arn:aws:iam::${local.immunisation_account_id}:root"
+          AWS = "*"
         },
         Action = [
           "firehose:ListDeliveryStreams",
@@ -141,24 +141,10 @@ resource "aws_vpc_endpoint" "dynamodb" {
     for rt in data.aws_route_tables.default_route_tables.ids : rt
   ]
 
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        "Effect" : "Allow",
-        "Principal" : {
-          AWS = "arn:aws:iam::${local.immunisation_account_id}:root"
-        },
-        "Action" : "*",
-        "Resource" : "*"
-      }
-    ]
-  })
   tags = {
     Name = "immunisation-dynamo-endpoint"
   }
 }
-
 
 resource "aws_vpc_endpoint" "ecr_api" {
   vpc_id            = data.aws_vpc.default.id
@@ -215,7 +201,7 @@ resource "aws_vpc_endpoint" "kinesis_stream_endpoint" {
       {
         Effect = "Allow",
         Principal = {
-          AWS = "arn:aws:iam::${local.immunisation_account_id}:root"
+          AWS = "*"
         },
         Action = [
           "kinesis:ListShards",
@@ -254,7 +240,7 @@ resource "aws_vpc_endpoint" "kms_endpoint" {
       {
         Effect = "Allow",
         Principal = {
-          AWS = "arn:aws:iam::${local.immunisation_account_id}:root"
+          AWS = "*"
         },
         Action = [
           "kms:Decrypt",

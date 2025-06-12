@@ -6,6 +6,13 @@ from converter import Converter
 from common.mappings import ConversionFieldName
 
 class TestPersonSurnameToFlatJson(unittest.TestCase):
+    """"
+    Test cases for converting person surname to flat JSON format.
+    ## 1. If there is only one name use that one, else
+    ## 2. Select first name where Use=official with period covering vaccination date, else
+    ## 3. select instance where current name with use!=old at vaccination date
+    ## 4. Fallback to first available name instance
+    """
 
     def setUp(self):
         self.request_json_data = copy.deepcopy(ValuesForTests.json_data)
@@ -46,6 +53,23 @@ class TestPersonSurnameToFlatJson(unittest.TestCase):
         self.request_json_data["contained"][1]["name"] = [
             {"family": "Manny", "given": ["John"], "period": {"start": "2020-01-01", "end": "2023-01-01"}},
             {"family": "Doe", "given": ["Johnny"], "use": "nickname"},
+        ]
+        expected_surname = "Manny"
+        self._run_test_surname(expected_surname)
+
+    def test_person_surname_where_names_only_exist_when_use_isequal_to_old(self):
+        """Test case where only available name is selected name where use=old"""
+        self.request_json_data["contained"][1]["name"] = [
+            {
+                "use": "official",
+                "period": {"start": "2021-01-01", "end": "2023-01-01"},
+            },
+            {
+                "family": "Manny",
+                "given": ["Alice", "Marie"],
+                "use": "old",
+                "period": {"start": "2021-01-01", "end": "2022-12-31"},
+            },
         ]
         expected_surname = "Manny"
         self._run_test_surname(expected_surname)
