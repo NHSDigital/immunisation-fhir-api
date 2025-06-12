@@ -1,6 +1,7 @@
 import unittest
 from datetime import datetime, timezone
-from src.extractor import Extractor  # adjust this import to your actual path
+from src.extractor import Extractor 
+
 
 class TestIsCurrentPeriod(unittest.TestCase):
     def setUp(self):
