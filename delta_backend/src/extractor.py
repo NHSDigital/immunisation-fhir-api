@@ -81,7 +81,7 @@ class Extractor:
         period = name.get("period")
         if not isinstance(period, dict):
             return True  # If no period is specified, assume it's valid
-        
+
         start = datetime.fromisoformat(period.get("start")) if period.get("start") else None
         end_str = period.get("end")
         end = datetime.fromisoformat(period.get("end")) if end_str else None
@@ -94,7 +94,7 @@ class Extractor:
         if end and end.tzinfo is None:
             # If end still has no timezone info, assign UTC
             end = end.replace(tzinfo=timezone.utc)
-        
+
         return (not start or start <= occurrence_time) and (not end or occurrence_time <= end)
 
     def _get_occurance_date_time(self) -> str:
