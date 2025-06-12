@@ -96,7 +96,8 @@ steps:
           response=$(curl -H "apikey: $(status-endpoint-api-key)" -s "$endpoint")
           response_code=$(jq -r '.checks.healthcheck.responseCode' <<< "$response")
           response_body=$(jq -r '.checks.healthcheck.outcome' <<< "$response")
-          if [ "$response_code" -eq 200 ] && [ "$response_body" == "OK" ]; then
+          status=$(jq -r '.status' <<< "$response")
+          if [ "$response_code" -eq 200 ] && [ "$response_body" == "OK" ] && [ "$status" == "pass" ]; then
               echo "Status test successful"
               break
           else
@@ -106,8 +107,10 @@ steps:
               sleep 30
           fi
         done
-        if [ $counter -eq 11 ]; then
+        if [ $counter -eq 21 ]; then
             echo "Status test failed: Maximum number of attempts reached"
+            echo "Last response received:"
+            echo "$response"
             exit 1
         fi
       fi
@@ -164,7 +167,7 @@ steps:
         export DEFAULT_CLIENT_SECRET="$(INT_CLIENT_SECRET)"
         echo "running: $test_cmd -v -c test_deployment.py test_proxy.py"
         $test_cmd -v -c test_deployment.py test_proxy.py
-      
+
       elif [[ $APIGEE_ENVIRONMENT == "prod" ]]; then
         echo "Proxy test completed successfully as part of terraform resource up status check"
 
@@ -175,35 +178,35 @@ steps:
     workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/e2e"
     displayName: Run Full Test Suite
 
-  
+
 
   - bash: |
       set -e
       if ! [[ "$APIGEE_ENVIRONMENT" == "prod" || "$APIGEE_ENVIRONMENT" == "int" || "$APIGEE_ENVIRONMENT" == *"sandbox" ]]; then
         echo "Running E2E batch folder test cases"
- 
+
         export AWS_PROFILE="apim-dev"
         aws_account_no="$(aws sts get-caller-identity --query Account --output text)"
         echo "Using AWS Account: $aws_account_no"
-        
+
         service_name="${FULLY_QUALIFIED_SERVICE_NAME}"
- 
+
         pr_no=$(echo "$service_name" | { grep -oE '[0-9]+$' || true; })
         if [ -z "$pr_no" ]; then
           workspace="$APIGEE_ENVIRONMENT"
         else
           workspace="pr-$pr_no"
         fi
- 
+
         poetry install --no-root  # Install dependencies defined in pyproject.toml
- 
+
         ENV="$workspace" poetry run python -m unittest -v -c
- 
+
         echo "E2E batch folder test cases executed successfully"
       else
         echo "Skipping E2E batch folder test cases as the environment is prod-int-sandbox"
       fi
- 
+
     displayName: Run full batch test suite
     workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/e2e_batch"
     condition: eq(1, 2) # Disable task but make this step visible in the pipeline
