@@ -89,7 +89,11 @@ class Extractor:
         # Ensure all datetime objects are timezone-aware
         if start and start.tzinfo is None:
             start = start.replace(tzinfo=timezone.utc)
+        if end and end.time() == datetime.min.time():
+            # If end is a date-only string like "2025-06-12", upgrade to full end-of-day
+            end = end.replace(hour=23, minute=59, second=59, microsecond=999999)
         if end and end.tzinfo is None:
+            # If end still has no timezone info, assign UTC
             end = end.replace(tzinfo=timezone.utc)
 
         return (not start or start <= occurrence_time) and (not end or occurrence_time <= end)
