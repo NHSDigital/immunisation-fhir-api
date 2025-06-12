@@ -29,7 +29,6 @@ class Extractor:
         return next((c for c in contained if isinstance(c, dict) and c.get("resourceType") == "Patient"), "")
 
     def _get_valid_names(self, names, occurrence_time):
-        
         official_names = [n for n in names if n.get("use") == "official" and self._is_current_period(n, occurrence_time)]
         if official_names:
             return official_names[0]
@@ -37,13 +36,11 @@ class Extractor:
         valid_names = [n for n in names if self._is_current_period(n, occurrence_time) and n.get("use") != "old"]
         if valid_names:
             return valid_names[0]
-        
-        return names[0] 
-            
 
+        return names[0]
 
     def _get_person_names(self):
-        occurrence_time = self._get_occurance_date_time()
+        occurrence_time = self._get_occurrence_date_time()
         patient = self._get_patient()
         names = patient.get("name", [])
         names = [n for n in names if "given" in n and "family" in n]
@@ -56,12 +53,12 @@ class Extractor:
 
         if person_forename and person_surname:
             return person_forename, person_surname
-        
+
         return "", ""
-    
+
     def _get_practitioner_names(self):
         contained = self.fhir_json_data.get("contained", [])
-        occurrence_time = self._get_occurance_date_time()
+        occurrence_time = self._get_occurrence_date_time()
         practitioner = next((c for c in contained if isinstance(c, dict) and c.get("resourceType") == "Practitioner"), None)
         if not practitioner or "name" not in practitioner:
             return "", ""
@@ -76,7 +73,6 @@ class Extractor:
         performing_professional_surname = selected_practitioner_name.get("family", "")
 
         return performing_professional_forename, performing_professional_surname
-
 
     def _is_current_period(self, name, occurrence_time):
         period = name.get("period")
@@ -94,18 +90,26 @@ class Extractor:
 
         return (not start or start <= occurrence_time) and (not end or occurrence_time <= end)
 
-    def _get_occurance_date_time(self) -> str:
+    def _get_occurrence_date_time(self) -> datetime:
+        occurrence_datetime_str = self.fhir_json_data.get("occurrenceDateTime", "")
+
         try:
-            occurrence_time = datetime.fromisoformat(self.fhir_json_data.get("occurrenceDateTime", ""))
-            if occurrence_time and occurrence_time.tzinfo is None:
-                occurrence_time = occurrence_time.replace(tzinfo=timezone.utc)
-                return occurrence_time
-            return occurrence_time
+            occurrence_datetime = datetime.fromisoformat(occurrence_datetime_str)
+
+            if occurrence_datetime and occurrence_datetime.tzinfo is None:
+                occurrence_datetime = occurrence_datetime.replace(tzinfo=timezone.utc)
+
+            return occurrence_datetime
 
         except Exception as e:
             message = "DateTime conversion error [%s]: %s" % (e.__class__.__name__, e)
-            error = self._log_error(ConversionFieldName.DATE_AND_TIME, message, e, code=exception_messages.UNEXPECTED_EXCEPTION)
-            return error
+            self._log_error(
+                ConversionFieldName.DATE_AND_TIME,
+                occurrence_datetime_str,
+                message,
+                code=exception_messages.UNEXPECTED_EXCEPTION
+            )
+            raise
 
     def _get_first_snomed_code(self, coding_container: dict) -> str:
         codings = coding_container.get("coding", [])
@@ -255,7 +259,7 @@ class Extractor:
         return value.lower() if isinstance(value, str) else value
 
     def extract_valid_address(self):
-        occurrence_time = self._get_occurance_date_time()
+        occurrence_time = self._get_occurrence_date_time()
         patient = self._get_patient()
 
         addresses = patient.get("address", [])
@@ -279,8 +283,8 @@ class Extractor:
         )
 
         return selected_address.get("postalCode") or self.DEFAULT_POSTCODE
-    
-    def extract_date_time(self) -> str: 
+
+    def extract_date_time(self) -> str:
         date = self.fhir_json_data.get("occurrenceDateTime","")
         if date:
             return self._convert_date_to_safe_format(ConversionFieldName.DATE_AND_TIME, date)
