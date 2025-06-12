@@ -89,7 +89,7 @@ steps:
       fi
 
       counter=0
-      while [[ $counter -lt 21 ]]; do
+      while [[ $counter -lt 31 ]]; do
         response=$(curl -H "apikey: $(status-endpoint-api-key)" -s "$endpoint")
         response_code=$(jq -r '.checks.healthcheck.responseCode' <<< "$response")
         response_body=$(jq -r '.checks.healthcheck.outcome' <<< "$response")
@@ -105,13 +105,13 @@ steps:
         fi
       done
 
-      if [ $counter -eq 21 ]; then
+      if [ $counter -eq 31 ]; then
           echo "Status test failed: Maximum number of attempts reached"
           echo "Last response received:"
           echo "$response"
           exit 1
       fi
-    displayName: Waiting for API to be available
+    displayName: Wait for API to be available
     workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)"
 
   - bash: |
