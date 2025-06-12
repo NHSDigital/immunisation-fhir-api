@@ -92,7 +92,9 @@ class Extractor:
         # Ensure all datetime objects are timezone-aware
         if start and start.tzinfo is None:
             start = start.replace(tzinfo=timezone.utc)
-        if end and end.tzinfo is None:
+        if end and end.time() == datetime.min.time():
+            end = end.replace(hour=23, minute=59, second=59, microsecond=999999)
+        if end.tzinfo is None:
             end = end.replace(tzinfo=timezone.utc)
 
         return (not start or start <= occurrence_time) and (not end or occurrence_time <= end)
