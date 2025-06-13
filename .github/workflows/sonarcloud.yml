@@ -116,6 +116,12 @@ jobs:
         continue-on-error: true
         run: |
             poetry env use 3.11
+            PYTHONPATH=redis_sync/src:redis_sync/tests \
+            export PYTHONPATH
+            export PYTHONPATH=$PYTHONPATH:$(pwd)/redis_sync/src:$(pwd)/redis_sync/tests
+            echo "PYTHONPATH is set to: $PYTHONPATH"
+            echo "Running tests in redis_sync directory"
+            echo "Current working directory: $(pwd)"
             poetry install
             poetry run coverage run -m unittest discover || echo "redis_sync tests failed" >> ../failed_tests.txt
             poetry run coverage xml -o ../sonarcloud-redis_sync-coverage.xml
