@@ -23,7 +23,7 @@ from tests.utils_for_tests.values_for_tests import MOCK_CREATED_AT_FORMATTED_STR
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from file_name_processor import lambda_handler, handle_record
     from clients import REGION_NAME
-    from constants import PERMISSIONS_CONFIG_FILE_KEY, AUDIT_TABLE_NAME, FileStatus, AuditTableKeys
+    from constants import AUDIT_TABLE_NAME, FileStatus, AuditTableKeys
 
 
 s3_client = boto3_client("s3", region_name=REGION_NAME)
