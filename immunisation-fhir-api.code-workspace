@@ -20,7 +20,14 @@
 		},
 		{
 			"path": "mesh_processor"
+		},
+		{
+			"path": "e2e"
+		},
+		{
+			"path": "e2e_batch"
 		}
+
 	],
 	"settings": {},
 }

@@ -3,16 +3,17 @@ should be initialised ONCE ONLY (in this file) and then imported into the files 
 """
 
 import logging
+from constants import (environment, REGION)
 from boto3 import client as boto3_client, resource as boto3_resource
 
 
 # AWS Clients and Resources
-REGION = "eu-west-2"
+
 
 s3_client = boto3_client("s3", region_name=REGION)
 
 dynamodb = boto3_resource("dynamodb", region_name=REGION)
-table_name = "imms-internal-dev-imms-events"
+table_name = f"imms-{environment}-imms-events"
 table = dynamodb.Table(table_name)
 # Logger
 logging.basicConfig(level="INFO")

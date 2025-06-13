@@ -6,6 +6,7 @@ import json
 import random
 import io
 import os
+from botocore.exceptions import ClientError
 from io import StringIO
 from datetime import datetime, timezone
 from clients import logger, s3_client, table
@@ -95,12 +96,46 @@ def generate_csv(fore_name, dose_amount, action_flag, headers="NHS_NUMBER", same
 
 
 def upload_file_to_s3(file_name, bucket, prefix):
-    """Upload the given file to the specified bucket under the provided prefix."""
+    """Upload the given file to the specified bucket under the provided prefix.
+    Returns the S3 key if successful, or raises an exception."""
+
     key = f"{prefix}{file_name}"
-    with open(file_name, "rb") as f:
-        s3_client.put_object(Bucket=bucket, Key=key, Body=f)
-    os.remove(file_name)
-    return key
+    try:
+        with open(file_name, "rb") as f:
+            response = s3_client.put_object(Bucket=bucket, Key=key, Body=f)
+
+        # Confirm success
+        status_code = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
+        if status_code != 200:
+            raise Exception(f"Upload failed with status code: {status_code}")
+
+        os.remove(file_name)
+        return key
+
+    except ClientError as e:
+        raise Exception(f"ClientError during S3 upload: {e}")
+    except Exception as e:
+        raise Exception(f"Unexpected error during file upload: {e}")
+
+
+def delete_file_from_s3(bucket, key):
+    """Delete the specified file (object) from the given S3 bucket.
+    Returns True if deletion is successful, otherwise raises an exception."""
+    try:
+        response = s3_client.delete_object(Bucket=bucket, Key=key)
+
+        # Optionally verify deletion status
+        status_code = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
+        if status_code != 204:
+            raise Exception(f"Delete failed with status code: {status_code}")
+
+        print(f"Deleted {key} from bucket {bucket}")
+        return True
+
+    except ClientError as e:
+        raise Exception(f"ClientError during S3 delete: {e}")
+    except Exception as e:
+        raise Exception(f"Unexpected error during file deletion: {e}")
 
 
 def wait_for_ack_file(ack_prefix, input_file_name, timeout=120):
