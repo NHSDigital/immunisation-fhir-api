@@ -769,6 +769,7 @@ description = "Backported and Experimental Type Hints for Python 3.9+"
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
+markers = "python_version == \"3.11\""
 files = [
     {file = "typing_extensions-4.14.0-py3-none-any.whl", hash = "sha256:a1514509136dd0b477638fc68d6a91497af5076466ad0fa6c338e44e359944af"},
     {file = "typing_extensions-4.14.0.tar.gz", hash = "sha256:8676b788e32f02ab42d9e7c61324048ae4c6d844a399eebace3d4979d75ceef4"},
@@ -824,5 +825,5 @@ files = [
 
 [metadata]
 lock-version = "2.1"
-python-versions = "~3.11"
-content-hash = "66aada5c07d6aefa46727f76b6c6b709b85078d11f6167198db58cfe2aa3d3fb"
+python-versions = ">=3.11"
+content-hash = "fa4f5800186cada842de5add1c388f8f153cdb0aeea6844c058cb60b8d835b88"

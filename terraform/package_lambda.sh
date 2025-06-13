@@ -45,7 +45,7 @@ python --version
 command -v poetry >/dev/null 2>&1 || { echo "❌ poetry not found. Please install poetry."; exit 1; }
 command -v python3.11 >/dev/null 2>&1 || { echo "❌ python3.11 not found. Please install Python 3.11."; exit 1; }
 
-poetry lock --no-update
+poetry lock
 if [ $? -ne 0 ]; then
   echo "❌ ERROR: Poetry lock failed. Check your poetry configuration."
   exit 1
