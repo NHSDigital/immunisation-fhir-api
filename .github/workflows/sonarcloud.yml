@@ -112,13 +112,11 @@ jobs:
         working-directory: redis_sync
         id: redis_sync
         env:
-            PYTHONPATH: redis_sync/src:redis_sync/tests
+            PYTHONPATH: redis_sync/src:redis_sync/tests:src:tests
         continue-on-error: true
         run: |
             poetry env use 3.11
-            PYTHONPATH=redis_sync/src:redis_sync/tests \
-            export PYTHONPATH
-            export PYTHONPATH=$PYTHONPATH:$(pwd)/redis_sync/src:$(pwd)/redis_sync/tests
+            export PYTHONPATH=$(pwd)/redis_sync/src:$(pwd)/redis_sync/tests:$(pwd)/src:$(pwd)/tests
             echo "PYTHONPATH is set to: $PYTHONPATH"
             echo "Running tests in redis_sync directory"
             echo "Current working directory: $(pwd)"
