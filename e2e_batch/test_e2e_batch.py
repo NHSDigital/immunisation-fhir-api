@@ -206,7 +206,6 @@ class TestE2EBatch(unittest.TestCase):
             time.sleep(20)
 
     else:
-
         def test_end_to_end_speed_test_with_100000_rows(self):
             """Test end_to_end_speed_test_with_100000_rows scenario with full integration"""
             input_file = generate_csv_with_ordered_100000_rows(None)
