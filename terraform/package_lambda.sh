@@ -45,7 +45,11 @@ python --version
 command -v poetry >/dev/null 2>&1 || { echo "❌ poetry not found. Please install poetry."; exit 1; }
 command -v python3.11 >/dev/null 2>&1 || { echo "❌ python3.11 not found. Please install Python 3.11."; exit 1; }
 
-
+poetry lock --no-update
+if [ $? -ne 0 ]; then
+  echo "❌ ERROR: Poetry lock failed. Check your poetry configuration."
+  exit 1
+fi
 echo "Exporting dependencies and packaging Lambda..."
 poetry export -f requirements.txt --without-hashes -o requirements.txt || exit 1
 echo "📦 Installing dependencies to $BUILD_DIR..."
