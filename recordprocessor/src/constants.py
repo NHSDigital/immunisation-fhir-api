@@ -84,3 +84,8 @@ class Urls:
     NHS_NUMBER = "https://fhir.nhs.uk/Id/nhs-number"
     NULL_FLAVOUR_CODES = "http://terminology.hl7.org/CodeSystem/v3-NullFlavor"
     VACCINATION_PROCEDURE = "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure"
+
+
+class RedisCacheKeys:
+    PERMISSIONS_CONFIG_FILE_KEY = "permissions_config.json"
+    DISEASE_MAPPING_FILE_KEY = "disease_mapping.json"
