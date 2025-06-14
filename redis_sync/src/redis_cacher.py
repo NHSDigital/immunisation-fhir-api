@@ -11,12 +11,12 @@ class RedisCacher:
     """Class to handle interactions with ElastiCache (Redis) for configuration files."""
 
     @staticmethod
-    def upload(bucket_name: str, file_key: str, file_type) -> None:
+    def upload(bucket_name: str, file_key: str) -> None:
 
         config_file_content = S3Reader.read(bucket_name, file_key)
 
         # Transform the content based on the file type
-        trx_data = transform_map(config_file_content, file_type)
+        trx_data = transform_map(config_file_content, file_key)
 
         # Use the file_key as the Redis key and file content as the value
         redis_client.set(file_key, trx_data)
