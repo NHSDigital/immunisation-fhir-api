@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-set -x
+
 echo "🚀 Nudge Packaging Lambda..."
 
 PROJECT="${1:-.}"

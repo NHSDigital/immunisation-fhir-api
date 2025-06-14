@@ -18,7 +18,6 @@ class TestClients(unittest.TestCase):
         # patch logging
         self.logging_patch = patch("logging.getLogger")
         self.mock_logging = self.logging_patch.start()
-        # patch 
 
         self.getenv_patch = patch("os.getenv")
         self.mock_getenv = self.getenv_patch.start()
@@ -28,7 +27,7 @@ class TestClients(unittest.TestCase):
             "REDIS_HOST": self.REDIS_HOST,
             "REDIS_PORT": self.REDIS_PORT
         }.get(key, default)
-        
+
         # patch redis
         self.redis_patch = patch("redis.StrictRedis")
         self.mock_redis = self.redis_patch.start()

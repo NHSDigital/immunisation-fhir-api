@@ -8,12 +8,8 @@ class TestS3Reader(unittest.TestCase):
         self.s3_reader = S3Reader()
         self.bucket = "test-bucket"
         self.key = "test.json"
-
-        # Patch s3_client
         self.s3_client_patcher = patch("s3_reader.s3_client")
         self.mock_s3_client = self.s3_client_patcher.start()
-
-        # Patch logger.exception
         self.logger_exception_patcher = patch("logging.Logger.exception")
         self.mock_logger_exception = self.logger_exception_patcher.start()
 
@@ -23,12 +19,13 @@ class TestS3Reader(unittest.TestCase):
 
     def test_read_success(self):
         mock_body = MagicMock()
-        mock_body.read.return_value = b'{"foo": "bar"}'
+        mock_data = '{"test-read-ok": "test-read-ok-data"}'
+        mock_body.read.return_value = mock_data.encode('utf-8')
         self.mock_s3_client.get_object.return_value = {"Body": mock_body}
 
         result = self.s3_reader.read(self.bucket, self.key)
 
-        self.assertEqual(result, '{"foo": "bar"}')
+        self.assertEqual(result, mock_data)
         self.mock_s3_client.get_object.assert_called_once_with(Bucket=self.bucket, Key=self.key)
 
     def test_read_raises_exception(self):
