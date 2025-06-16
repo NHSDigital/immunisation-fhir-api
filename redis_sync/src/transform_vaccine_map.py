@@ -1,24 +1,15 @@
-'''
-for json structure
-{
-    "disease": {"d1": {}, "d2": {}, "d3": {}},
-    "vaccine": {"v1": {"diseases": ["d1"]}, "v2": {"diseases": ["d1", "d3"]}}
-}
-modify the disease key to hold 1 to many relationship with vaccine key
-
-'''
+from clients import logger
 
 
-def transform_vaccine_map(data):
+def transform_vaccine_map(map):
     # Transform the vaccine map data as needed
+    logger.info("Transforming vaccine map data")
+    logger.info("source data:%s", map)
 
-    vaccines = data["vaccine"]
-    diseases = data["disease"]
+    vacc_to_diseases = {m['vacc_type']: m['diseases'] for m in map}
+    diseases_to_vacc = {':'.join(sorted(d['code'] for d in m['diseases'])): m['vacc_type'] for m in map}
 
-    # vaccines has a 1 to many with disease. Disease needs to have a reciprocal relationship
-    for vaccine_id, vaccine_data in vaccines.items():
-        for disease_id in vaccine_data["diseases"]:
-            if "vaccines" not in diseases[disease_id]:
-                diseases[disease_id]["vaccines"] = []
-            diseases[disease_id]["vaccines"].append(vaccine_id)
-    return data
+    return {
+        "vacc_to_diseases": vacc_to_diseases,
+        "diseases_to_vacc": diseases_to_vacc
+    }

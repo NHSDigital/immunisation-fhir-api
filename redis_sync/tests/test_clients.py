@@ -12,14 +12,12 @@ class TestClients(unittest.TestCase):
     REDIS_PORT = 6379
 
     def setUp(self):
-        # patch boto3_client
         self.boto3_client_patch = patch("boto3.client")
         self.mock_boto3_client = self.boto3_client_patch.start()
-        # patch logging
         self.logging_patch = patch("logging.getLogger")
         self.mock_logging = self.logging_patch.start()
-        # patch 
-
+        self.logger_info_patcher = patch("logging.Logger.info")
+        self.mock_logger_info = self.logger_info_patcher.start()
         self.getenv_patch = patch("os.getenv")
         self.mock_getenv = self.getenv_patch.start()
         self.mock_getenv.side_effect = lambda key, default=None: {
@@ -28,11 +26,10 @@ class TestClients(unittest.TestCase):
             "REDIS_HOST": self.REDIS_HOST,
             "REDIS_PORT": self.REDIS_PORT
         }.get(key, default)
-        
-        # patch redis
+
         self.redis_patch = patch("redis.StrictRedis")
         self.mock_redis = self.redis_patch.start()
-        # default mock returns for redis and s3 client
+
         self.mock_redis.return_value = self.mock_redis
         self.mock_boto3_client.return_value = self.mock_boto3_client
         self.mock_boto3_client.return_value.send_message = {}
@@ -42,6 +39,7 @@ class TestClients(unittest.TestCase):
         self.boto3_client_patch.stop()
         self.logging_patch.stop()
         self.redis_patch.stop()
+        self.logger_info_patcher.stop()
 
     def test_os_environ(self):
         # Test if environment variables are set correctly
@@ -54,7 +52,12 @@ class TestClients(unittest.TestCase):
     def test_boto3_client(self):
         ''' Test boto3 client is created with correct parameters '''
         importlib.reload(clients)
-        self.mock_boto3_client.assert_called_once_with("s3", region_name=self.AWS_REGION)
+        self.mock_boto3_client.assert_any_call("s3", region_name=self.AWS_REGION)
+
+    def test_firehose_client(self):
+        ''' Test firehose client is created with correct parameters '''
+        importlib.reload(clients)
+        self.mock_boto3_client.assert_any_call("firehose", region_name=self.AWS_REGION)
 
     def test_redis_client(self):
         ''' Test redis client is created with correct parameters '''

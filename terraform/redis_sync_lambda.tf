@@ -19,18 +19,6 @@ output "redis_sync_files" {
   value = "redis_sync_files: ${join(", ", local.redis_sync_files)}"
 }
 
-
-resource "null_resource" "debug_script" {
-  provisioner "local-exec" {
-    command = "echo \"SAW DEBUG >>>>\" && pwd && ls -l ${path.module}"
-  }
-}
-
-resource "null_resource" "debug_dir" {
-  provisioner "local-exec" {
-    command = "ls -ltr  ${local.redis_sync_dir}"
-  }
-}
 resource "null_resource" "make_build_dir" {
   provisioner "local-exec" {
     command = "mkdir -p ${local.build_dir} && echo \"Created build directory: ${local.build_dir}\""
@@ -51,7 +39,7 @@ resource "null_resource" "package_lambda" {
       ${local.build_script} ${local.redis_project_name} ${local.redis_sync_dir} ${local.build_dir} ${local.zip_file_name}
     EOT
   }
-  depends_on = [null_resource.chmod_package_lambda, null_resource.make_build_dir, null_resource.debug_script, null_resource.debug_dir]
+  depends_on = [null_resource.chmod_package_lambda, null_resource.make_build_dir]
   triggers = {
     zip_exists_hash = fileexists("${local.build_dir}/${local.zip_file_name}") ? filesha1("${local.build_dir}/${local.zip_file_name}") : timestamp()
 
@@ -73,7 +61,7 @@ data "archive_file" "redis_sync_lambda_zip" {
 resource "aws_lambda_function" "redis_sync_lambda" {
   function_name = local.redis_sync_lambda_name
   role          = aws_iam_role.redis_sync_lambda_exec_role.arn
-  handler       = "redis_sync.sync_handler" # Update as appropriate
+  handler       = "redis_sync.sync_handler"
   runtime       = "python3.11"
   filename         = data.archive_file.redis_sync_lambda_zip.output_path
   source_code_hash = data.archive_file.redis_sync_lambda_zip.output_base64sha256
@@ -102,11 +90,6 @@ resource "aws_lambda_function" "redis_sync_lambda" {
   publish = true
 }
 
-# output "redis_sync_lambda_version" {
-#   value = aws_lambda_version.redis_sync_lambda_version.version
-#   description = "The published version number of the redis_sync_lambda Lambda function"
-# }
-
 # Permission for S3 to invoke Lambda function
 resource "aws_lambda_permission" "redis_sync_s3_invoke_permission" {
   statement_id  = "AllowExecutionFromS3"
@@ -124,8 +107,6 @@ resource "aws_s3_bucket_notification" "redis_sync_lambda_notification" {
   lambda_function {
     lambda_function_arn = aws_lambda_function.redis_sync_lambda.arn
     events              = ["s3:ObjectCreated:*"]
-    # filter_prefix      = ""
-    # filter_suffix      = ""
   }
 
   depends_on = [aws_lambda_permission.redis_sync_s3_invoke_permission]
