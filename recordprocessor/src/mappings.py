@@ -2,7 +2,8 @@
 
 from enum import Enum
 from typing import Dict, List
-from constants import Urls
+from constants import Urls, RedisCacheKeys
+from redis_cacher import redis_cacher
 
 
 class Vaccine(Enum):
@@ -53,6 +54,8 @@ VACCINE_DISEASE_MAPPING: Dict[Vaccine, List[Disease]] = {
     Vaccine.MMR: [Disease.MEASLES, Disease.MUMPS, Disease.RUBELLA],
     Vaccine.RSV: [Disease.RSV],
 }
+
+VACCINE_DISEASE_MAPPING = redis_cacher.get(RedisCacheKeys.DISEASE_MAPPING_FILE_KEY)
 
 
 def map_target_disease(vaccine: Vaccine) -> list:

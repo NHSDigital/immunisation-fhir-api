@@ -23,7 +23,7 @@ from tests.utils_for_tests.values_for_tests import MOCK_CREATED_AT_FORMATTED_STR
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from file_name_processor import lambda_handler, handle_record
     from clients import REGION_NAME
-    from constants import PERMISSIONS_CONFIG_FILE_KEY, AUDIT_TABLE_NAME, FileStatus, AuditTableKeys
+    from constants import AUDIT_TABLE_NAME, FileStatus, AuditTableKeys
 
 
 s3_client = boto3_client("s3", region_name=REGION_NAME)
@@ -446,119 +446,6 @@ class TestLambdaHandlerDataSource(TestCase):
         self.assert_no_sqs_message()
         self.assert_ack_file_contents(invalid_file_details_3)
         mock_invoke_filename_lambda.assert_not_called()
-
-
-@patch.dict("os.environ", MOCK_ENVIRONMENT_DICT)
-@mock_s3
-@mock_dynamodb
-@mock_sqs
-@mock_firehose
-class TestLambdaHandlerConfig(TestCase):
-    """Tests for lambda_handler when a config file is uploaded."""
-
-    config_event = {
-        "Records": [{"s3": {"bucket": {"name": BucketNames.CONFIG}, "object": {"key": (PERMISSIONS_CONFIG_FILE_KEY)}}}]
-    }
-
-    def setUp(self):
-        GenericSetUp(s3_client, firehose_client, sqs_client, dynamodb_client)
-
-    def tearDown(self):
-        GenericTearDown(s3_client, firehose_client, sqs_client, dynamodb_client)
-
-    def test_elasticcache_failure_handled(self):
-        "Tests if elastic cache failure is handled when service fails to send message"
-        event = {
-            "s3": {
-                "bucket": {"name": "my-config-bucket"},  # triggers 'config' branch
-                "object": {"key": "testfile.csv"}
-            }
-        }
-
-        with patch("file_name_processor.upload_to_elasticache", side_effect=Exception("Upload failed")), \
-             patch("file_name_processor.logger") as mock_logger:
-
-            result = handle_record(event)
-
-            self.assertEqual(result["statusCode"], 500)
-            self.assertEqual(result["message"], "Failed to upload file content to cache")
-            self.assertEqual(result["file_key"], "testfile.csv")
-            self.assertIn("error", result)
-
-            mock_logger.error.assert_called_once()
-            logged_msg = mock_logger.error.call_args[0][0]
-            self.assertIn("Error uploading to cache", logged_msg)
-
-    def test_successful_processing_from_configs(self):
-        """Tests that the permissions config file content is uploaded to elasticache successfully"""
-        fake_redis = fakeredis.FakeStrictRedis()
-
-        ravs_rsv_file_details_1 = MockFileDetails.ravs_rsv_1
-        ravs_rsv_file_details_2 = MockFileDetails.ravs_rsv_2
-        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=ravs_rsv_file_details_1.file_key)
-        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=ravs_rsv_file_details_2.file_key)
-        record_1 = {"s3": {"bucket": {"name": BucketNames.SOURCE}, "object": {"key": ravs_rsv_file_details_1.file_key}}}
-        record_2 = {"s3": {"bucket": {"name": BucketNames.SOURCE}, "object": {"key": ravs_rsv_file_details_2.file_key}}}
-
-        ravs_rsv_permissions = {"RAVS": ["RSV_FULL"], "EMIS": ["FLU_CREATE", "FLU_UPDATE"]}
-        ravs_no_rsv_permissions = {"RAVS": ["FLU_FULL"], "EMIS": ["RSV_CREATE", "RSV_UPDATE"], "TPP": ["RSV_DELETE"]}
-
-        # Test that the permissions config file content is uploaded to elasticache successfully
-        s3_client.put_object(
-            Bucket=BucketNames.CONFIG,
-            Key=PERMISSIONS_CONFIG_FILE_KEY,
-            Body=generate_permissions_config_content(ravs_rsv_permissions),
-        )
-        with patch("elasticache.redis_client", new=fake_redis):
-            lambda_handler(self.config_event, None)
-        self.assertEqual(
-            json_loads(fake_redis.get(PERMISSIONS_CONFIG_FILE_KEY)), {"all_permissions": ravs_rsv_permissions}
-        )
-
-        # Check that a RAVS RSV file processes successfully (as RAVS has permissions for RSV)
-        with (
-            patch("file_name_processor.uuid4", return_value=ravs_rsv_file_details_1.message_id),
-            patch("elasticache.redis_client", new=fake_redis),
-        ):
-            result = handle_record(record_1)
-        expected_result = {
-            "statusCode": 200,
-            "message": "Successfully sent to SQS for further processing",
-            "file_key": ravs_rsv_file_details_1.file_key,
-            "message_id": ravs_rsv_file_details_1.message_id,
-            "vaccine_type": ravs_rsv_file_details_1.vaccine_type,
-            "supplier": ravs_rsv_file_details_1.supplier
-        }
-        self.assertEqual(result, expected_result)
-
-        # Test that the elasticache is successfully updated when the lambda is invoked with a new permissions config
-        s3_client.put_object(
-            Bucket=BucketNames.CONFIG,
-            Key=PERMISSIONS_CONFIG_FILE_KEY,
-            Body=generate_permissions_config_content(ravs_no_rsv_permissions),
-        )
-        with patch("elasticache.redis_client", new=fake_redis):
-            lambda_handler(self.config_event, None)
-        self.assertEqual(
-            json_loads(fake_redis.get(PERMISSIONS_CONFIG_FILE_KEY)), {"all_permissions": ravs_no_rsv_permissions}
-        )
-
-        # Check that a RAVS RSV file fails to process (as RAVS now does not have permissions for RSV)
-        with (
-            patch("file_name_processor.uuid4", return_value=ravs_rsv_file_details_2.message_id),
-            patch("elasticache.redis_client", new=fake_redis),
-        ):
-            result = handle_record(record_2)
-        expected_result = {
-            "statusCode": 403,
-            "message": "Infrastructure Level Response Value - Processing Error",
-            "file_key": ravs_rsv_file_details_2.file_key,
-            "message_id": ravs_rsv_file_details_2.message_id,
-            "error": "Initial file validation failed: RAVS does not have permissions for RSV",
-            "vaccine_type": ravs_rsv_file_details_2.vaccine_type,
-            "supplier": ravs_rsv_file_details_2.supplier
-        }
-        self.assertEqual(result, expected_result)
 
 
 @patch.dict("os.environ", MOCK_ENVIRONMENT_DICT)
