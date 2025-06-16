@@ -1,17 +1,12 @@
-'''
-for json structure
-{
-    "disease": {"d1": {}, "d2": {}, "d3": {}},
-    "vaccine": {"v1": {"diseases": ["d1"]}, "v2": {"diseases": ["d1", "d3"]}}
-}
-modify the disease key to hold 1 to many relationship with vaccine key
+from clients import logger
 
-'''
+import json
 
 
 def transform_vaccine_map(data):
     # Transform the vaccine map data as needed
-
+    logger.info("Transforming vaccine map data")
+    logger.info("source data:%s", data)
     vaccines = data["vaccine"]
     diseases = data["disease"]
 
@@ -21,4 +16,10 @@ def transform_vaccine_map(data):
             if "vaccines" not in diseases[disease_id]:
                 diseases[disease_id]["vaccines"] = []
             diseases[disease_id]["vaccines"].append(vaccine_id)
-    return data
+
+    transformed_data = {
+        "vaccine": vaccines,
+        "disease": diseases
+    }
+    logger.info("transformed_data: %s", json.dumps(transformed_data))
+    return transformed_data

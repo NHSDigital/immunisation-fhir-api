@@ -47,7 +47,7 @@ class TestEventProcessor(unittest.TestCase):
         result = event_processor(mock_event, None)
 
         self.assertTrue(result)
-        self.mock_logger_info.assert_called_with("Processing S3 event with %d records", 1)
+        self.mock_logger_info.assert_called_with("Successfully processed all %d records", 1)
 
     def test_event_processor_failure(self):
         mock_event = {'Records': [self.s3_vaccine]}
@@ -57,7 +57,7 @@ class TestEventProcessor(unittest.TestCase):
 
         result = event_processor(mock_event, None)
 
-        self.assertFalse(result)
+        self.assertEqual(result, {'status': 'error', 'message': 'Error processing S3 event'})
         self.mock_logger_info.assert_called_with("Processing S3 event with %d records", 1)
 
     def test_event_processor_no_records(self):
@@ -68,7 +68,7 @@ class TestEventProcessor(unittest.TestCase):
         result = event_processor(mock_event, None)
 
         self.assertTrue(result)
-        self.mock_logger_info.assert_called_with("Processing S3 event with %d records", 0)
+        self.mock_logger_info.assert_called_with("Successfully processed all %d records", 0)
 
     def test_event_processor_exception(self):
         mock_event = {'Records': [self.s3_vaccine]}
@@ -77,7 +77,7 @@ class TestEventProcessor(unittest.TestCase):
 
         result = event_processor(mock_event, None)
 
-        self.assertFalse(result)
+        self.assertEqual(result, {'status': 'error', 'message': 'Error processing S3 event'})
         self.mock_logger_info.assert_called_with("Processing S3 event with %d records", 1)
 
     def test_event_processor_with_empty_event(self):
@@ -86,7 +86,9 @@ class TestEventProcessor(unittest.TestCase):
         result = event_processor({}, None)
 
         self.assertTrue(result)
-        self.mock_logger_info.assert_called_with("Processing S3 event with %d records", 0)
+        self.mock_logger_info.assert_any_call("Successfully processed all %d records", 0)
+        self.mock_logger_info.assert_any_call("Processing S3 event with %d records", 0)
+        self.mock_logger_info.assert_any_call("Successfully processed all %d records", 0)
 
     def test_event_processor_multi_record(self):
         mock_event = {'Records': [self.s3_vaccine, self.s3_supplier]}

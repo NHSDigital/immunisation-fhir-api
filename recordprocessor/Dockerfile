@@ -13,6 +13,9 @@ RUN poetry config virtualenvs.create false && poetry install --no-interaction --
 # -----------------------------
 FROM base AS test
 COPY src src
+# @TODO include following lines to include shared code
+# COPY common_src common_src
+# ENV PYTHONPATH=/var/task/common_src:/var/task/src:$PYTHONPATH
 COPY tests tests
 RUN poetry install --no-interaction --no-ansi --no-root && \
     pytest --disable-warnings tests
