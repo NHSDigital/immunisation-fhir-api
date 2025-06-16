@@ -8,7 +8,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "~3.10"
-boto3 = "^1.38.35"
+boto3 = "^1.38.36"
 mypy-boto3-dynamodb = "^1.38.4"
 simplejson = "^3.20.1"
 
