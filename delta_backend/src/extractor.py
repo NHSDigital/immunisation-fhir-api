@@ -77,19 +77,22 @@ class Extractor:
 
         return performing_professional_forename, performing_professional_surname
 
-
     def _is_current_period(self, name, occurrence_time):
         period = name.get("period")
         if not isinstance(period, dict):
             return True  # If no period is specified, assume it's valid
 
         start = datetime.fromisoformat(period.get("start")) if period.get("start") else None
-        end = datetime.fromisoformat(period.get("end")) if period.get("end") else None
-
+        end_str = period.get("end")
+        end = datetime.fromisoformat(period.get("end")) if end_str else None
         # Ensure all datetime objects are timezone-aware
         if start and start.tzinfo is None:
             start = start.replace(tzinfo=timezone.utc)
+        if end and "T" not in end_str:
+            # If end is a date-only string like "2025-06-12", upgrade to full end-of-day
+            end = end.replace(hour=23, minute=59, second=59, microsecond=999999)
         if end and end.tzinfo is None:
+            # If end still has no timezone info, assign UTC
             end = end.replace(tzinfo=timezone.utc)
 
         return (not start or start <= occurrence_time) and (not end or occurrence_time <= end)
