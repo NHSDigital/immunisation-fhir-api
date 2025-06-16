@@ -23,6 +23,7 @@ See https://nhsd-confluence.digital.nhs.uk/display/APM/Glossary.
 | `filenameprocessor` | **Imms Batch** – Processes batch file names. |
 | `mesh_processor`    | **Imms Batch** – MESH-specific batch processing functionality. |
 | `recordprocessor`   | **Imms Batch** – Handles batch record processing. |
+| `redis_sync`        | **Imms Redis** – Handles sync s3 to REDIS. |
 ---
 
 ### Pipelines

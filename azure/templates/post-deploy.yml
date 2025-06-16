@@ -116,9 +116,10 @@ steps:
 
   - bash: |
       pyenv install -s 3.10.8
+      pyenv install -s 3.11.11
       pyenv global 3.10.8
       python --version
-    displayName: Set Python 3.10
+    displayName: Install python 3.10 and 3.11
 
   - bash: |
       set -e
@@ -175,9 +176,9 @@ steps:
     workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/e2e"
     displayName: Run Full Test Suite
 
-
-
   - bash: |
+      pyenv local 3.11
+      poetry env use 3.11
       set -e
       if ! [[ "$APIGEE_ENVIRONMENT" == "prod" || "$APIGEE_ENVIRONMENT" == "int" || "$APIGEE_ENVIRONMENT" == *"sandbox" ]]; then
         echo "Running E2E batch folder test cases"

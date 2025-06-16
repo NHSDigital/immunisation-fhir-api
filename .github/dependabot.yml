@@ -57,6 +57,7 @@ updates:
       - "/filenameprocessor"
       - "/mesh_processor"
       - "/recordprocessor"
+      - "/redis_sync"
     schedule:
       interval: "daily"
     open-pull-requests-limit: 1
