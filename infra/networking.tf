@@ -18,6 +18,9 @@ locals {
 
 resource "aws_vpc" "default" {
   cidr_block = "172.31.0.0/16"
+  tags = {
+    Name = "imms-${local.account}-fhir-api-vpc"
+  }
 }
 
 resource "aws_subnet" "default_subnets" {
@@ -30,10 +33,16 @@ resource "aws_subnet" "default_subnets" {
 
 resource "aws_internet_gateway" "default" {
   vpc_id = aws_vpc.default.id
+  tags = {
+    Name = "imms-${local.account}-fhir-api-igw"
+  }
 }
 
 resource "aws_route_table" "default" {
   vpc_id = aws_vpc.default.id
+  tags = {
+    Name = "imms-${local.account}-fhir-api-rtb"
+  }
 }
 
 resource "aws_route" "igw_route" {
