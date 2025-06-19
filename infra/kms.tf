@@ -51,6 +51,7 @@ locals {
     Resource = "*"
   }
 
+  #TODO: This should be renamed (account_a)
   policy_statement_allow_account_a = {
     Sid    = "AllowAccountA",
     Effect = "Allow",
@@ -75,7 +76,7 @@ resource "aws_kms_key" "dynamodb_encryption" {
     Id      = "key-default-1",
     Statement = [
       local.policy_statement_allow_administration,
-      local.policy_statement_allow_auto_ops,
+      #local.policy_statement_allow_auto_ops,
       local.policy_statement_allow_devops,
       local.policy_statement_allow_account_a
     ]
@@ -96,7 +97,7 @@ resource "aws_kms_key" "kinesis_stream_encryption" {
     Id      = "key-default-1",
     Statement = [
       local.policy_statement_allow_administration,
-      local.policy_statement_allow_auto_ops,
+      #local.policy_statement_allow_auto_ops,
       local.policy_statement_allow_devops
     ]
   })
@@ -116,7 +117,7 @@ resource "aws_kms_key" "lambda_env_encryption" {
     Id      = "key-default-1",
     Statement = [
       local.policy_statement_allow_administration,
-      local.policy_statement_allow_auto_ops,
+      #local.policy_statement_allow_auto_ops,
       local.policy_statement_allow_devops
     ]
   })
