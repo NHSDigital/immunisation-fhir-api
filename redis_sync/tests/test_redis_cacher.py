@@ -62,4 +62,3 @@ class TestRedisCacher(unittest.TestCase):
         result = RedisCacher.get_cached_disease_mapping_json()
         self.assertEqual(result, json.loads(cached_disease_mapping))
         self.mock_redis_client.get.assert_called_once_with(RedisCacheKey.DISEASE_MAPPING_FILE_KEY)
-
