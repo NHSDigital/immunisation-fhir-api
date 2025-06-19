@@ -48,6 +48,7 @@ class DiseaseDisplayTerm(Enum):
     RUBELLA: str = "Rubella"
     RSV: str = "Respiratory syncytial virus infection (disorder)"
 
+
 VACCINE_DISEASE_MAPPING: Dict[Vaccine, List[Disease]] = {
     Vaccine.COVID_19: [Disease.COVID_19],
     Vaccine.FLU: [Disease.FLU],
