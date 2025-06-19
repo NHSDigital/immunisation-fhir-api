@@ -47,12 +47,13 @@ class DiseaseDisplayTerm(Enum):
     RSV: str = "Respiratory syncytial virus infection (disorder)"
 
 
-VACCINE_DISEASE_MAPPING = redis_client.get(RedisCacheKeys.DISEASE_MAPPING_FILE_KEY)
+def get_vaccine_disease_mapping():
+    return redis_client.get(RedisCacheKeys.DISEASE_MAPPING_FILE_KEY)
 
 
 def map_target_disease(vaccine: Vaccine) -> list:
     """Returns the target disease element for the given vaccine type using the vaccine_disease_mapping"""
-    diseases = VACCINE_DISEASE_MAPPING.get(vaccine, [])
+    diseases = get_vaccine_disease_mapping().get(vaccine, [])
     return [
         {
             "coding": [
