@@ -1,8 +1,6 @@
 """Mappings for converting vaccine type into target disease FHIR element"""
 
 from enum import Enum
-# from constants import RedisCacheKeys, Urls
-# from clients import redis_client
 from typing import Dict, List
 from constants import Urls
 

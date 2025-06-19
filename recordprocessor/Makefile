@@ -14,6 +14,6 @@ coverage report:
 	coverage report -m 
 
 coverage html:
-	coverage html  
+	coverage html
 
 .PHONY: build package
