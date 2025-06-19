@@ -1,10 +1,10 @@
 """Initialise s3 and kinesis clients"""
 
 import logging
-import os
+# import os
 from boto3 import client as boto3_client, resource as boto3_resource
 from botocore.config import Config
-import redis
+# import redis
 
 REGION_NAME = "eu-west-2"
 
