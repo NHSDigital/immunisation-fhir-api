@@ -1,8 +1,10 @@
 """Mappings for converting vaccine type into target disease FHIR element"""
 
 from enum import Enum
-from constants import RedisCacheKeys, Urls
-from clients import redis_client
+# from constants import RedisCacheKeys, Urls
+# from clients import redis_client
+from typing import Dict, List
+from constants import Urls
 
 
 class Vaccine(Enum):
@@ -46,14 +48,17 @@ class DiseaseDisplayTerm(Enum):
     RUBELLA: str = "Rubella"
     RSV: str = "Respiratory syncytial virus infection (disorder)"
 
-
-def get_vaccine_disease_mapping():
-    return redis_client.get(RedisCacheKeys.DISEASE_MAPPING_FILE_KEY)
+VACCINE_DISEASE_MAPPING: Dict[Vaccine, List[Disease]] = {
+    Vaccine.COVID_19: [Disease.COVID_19],
+    Vaccine.FLU: [Disease.FLU],
+    Vaccine.MMR: [Disease.MEASLES, Disease.MUMPS, Disease.RUBELLA],
+    Vaccine.RSV: [Disease.RSV],
+}
 
 
 def map_target_disease(vaccine: Vaccine) -> list:
     """Returns the target disease element for the given vaccine type using the vaccine_disease_mapping"""
-    diseases = get_vaccine_disease_mapping().get(vaccine, [])
+    diseases = VACCINE_DISEASE_MAPPING.get(vaccine, [])
     return [
         {
             "coding": [
@@ -66,3 +71,28 @@ def map_target_disease(vaccine: Vaccine) -> list:
         }
         for disease in diseases
     ]
+
+# def get_vaccine_disease_mapping():
+#     return redis_client.get(RedisCacheKeys.DISEASE_MAPPING_FILE_KEY)
+
+
+# class Mapping:
+#     diseases = {}
+
+#     @staticmethod
+#     def map_target_disease(vaccine: Vaccine) -> list:
+#         """Returns the target disease element for the given vaccine type using the vaccine_disease_mapping"""
+#         if Mapping.diseases == {}:
+#             Mapping.diseases = get_vaccine_disease_mapping()
+#         return [
+#             {
+#                 "coding": [
+#                     {
+#                         "system": Urls.SNOMED,
+#                         "code": DiseaseCode[disease.name].value,
+#                         "display": DiseaseDisplayTerm[disease.name].value,
+#                     }
+#                 ]
+#             }
+#             for disease in Mapping.diseases
+#         ]
