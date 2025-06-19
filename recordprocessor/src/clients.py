@@ -22,8 +22,3 @@ dynamodb_resource = boto3_resource("dynamodb", region_name=REGION_NAME)
 logging.basicConfig(level="INFO")
 logger = logging.getLogger()
 logger.setLevel("INFO")
-
-# REDIS_HOST = os.getenv("REDIS_HOST")
-# REDIS_PORT = os.getenv("REDIS_PORT")
-
-# redis_client = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)

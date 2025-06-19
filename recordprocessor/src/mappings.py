@@ -72,28 +72,3 @@ def map_target_disease(vaccine: Vaccine) -> list:
         }
         for disease in diseases
     ]
-
-# def get_vaccine_disease_mapping():
-#     return redis_client.get(RedisCacheKeys.DISEASE_MAPPING_FILE_KEY)
-
-
-# class Mapping:
-#     diseases = {}
-
-#     @staticmethod
-#     def map_target_disease(vaccine: Vaccine) -> list:
-#         """Returns the target disease element for the given vaccine type using the vaccine_disease_mapping"""
-#         if Mapping.diseases == {}:
-#             Mapping.diseases = get_vaccine_disease_mapping()
-#         return [
-#             {
-#                 "coding": [
-#                     {
-#                         "system": Urls.SNOMED,
-#                         "code": DiseaseCode[disease.name].value,
-#                         "display": DiseaseDisplayTerm[disease.name].value,
-#                     }
-#                 ]
-#             }
-#             for disease in Mapping.diseases
-#         ]
