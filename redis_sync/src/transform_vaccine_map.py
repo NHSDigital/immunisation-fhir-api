@@ -10,6 +10,6 @@ def transform_vaccine_map(map):
     diseases_to_vacc = {':'.join(sorted(d['code'] for d in m['diseases'])): m['vacc_type'] for m in map}
 
     return {
-        "vaccine": vacc_to_diseases,
-        "disease": diseases_to_vacc
+        "vacc_to_diseases": vacc_to_diseases,
+        "diseases_to_vacc": diseases_to_vacc
     }
