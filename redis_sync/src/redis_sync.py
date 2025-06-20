@@ -8,7 +8,7 @@ from event_processor import event_processor
 '''
 
 
-def sync_handler(event, context):
+def handler(event, context):
 
     logger.info("Sync Handler")
     try:

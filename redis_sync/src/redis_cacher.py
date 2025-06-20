@@ -12,7 +12,7 @@ class RedisCacher:
     """Class to handle interactions with ElastiCache (Redis) for configuration files."""
 
     @staticmethod
-    def upload(bucket_name: str, file_key: str) -> None:
+    def upload(bucket_name: str, file_key: str) -> dict:
 
         try:
             logger.info("Upload from s3 to Redis cache. file '%s'. bucket '%s'", file_key, bucket_name)
