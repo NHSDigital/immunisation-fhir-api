@@ -1,4 +1,7 @@
+
+
 class S3EventRecord:
+
     def __init__(self, s3_record):
         self.s3_record = s3_record
 
