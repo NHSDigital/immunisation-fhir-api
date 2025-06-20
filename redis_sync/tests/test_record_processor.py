@@ -1,4 +1,4 @@
-from record_processor import record_processor
+from record_processor import process_record
 import unittest
 from unittest.mock import patch
 
@@ -7,15 +7,14 @@ from constants import RedisCacheKey
 
 
 class TestRecordProcessor(unittest.TestCase):
-
     s3_vaccine = {
-                        'bucket': {'name': 'test-bucket1'},
-                        'object': {'key': RedisCacheKey.DISEASE_MAPPING_FILE_KEY}
-                }
+        'bucket': {'name': 'test-bucket1'},
+        'object': {'key': RedisCacheKey.DISEASE_MAPPING_FILE_KEY}
+    }
     s3_supplier = {
-                        'bucket': {'name': 'test-bucket1'},
-                        'object': {'key': RedisCacheKey.PERMISSIONS_CONFIG_FILE_KEY}
-                }
+        'bucket': {'name': 'test-bucket1'},
+        'object': {'key': RedisCacheKey.PERMISSIONS_CONFIG_FILE_KEY}
+    }
     mock_test_file = {'a': 'test', 'b': 'test2'}
 
     def setUp(self):
@@ -37,17 +36,17 @@ class TestRecordProcessor(unittest.TestCase):
     def test_record_processor_success(self):
         # Test successful processing of a record
         self.mock_redis_cacher_upload.return_value = {"status": "success"}
-        result = record_processor(S3EventRecord(self.s3_vaccine))
+        result = process_record(S3EventRecord(self.s3_vaccine))
         self.assertEqual(result["status"], "success")
 
     def test_record_processor_failure(self):
         # Test failure in processing a record
         self.mock_redis_cacher_upload.return_value = {"status": "error"}
-        result = record_processor(S3EventRecord(self.s3_vaccine))
+        result = process_record(S3EventRecord(self.s3_vaccine))
         self.assertEqual(result["status"], "error")
 
     def test_record_processor_exception(self):
         # Test exception handling in record processing
         self.mock_redis_cacher_upload.side_effect = Exception("Upload error")
-        result = record_processor(S3EventRecord(self.s3_vaccine))
+        result = process_record(S3EventRecord(self.s3_vaccine))
         self.assertEqual(result["status"], "error")
