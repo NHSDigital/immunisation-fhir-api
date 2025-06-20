@@ -23,7 +23,7 @@ resource "aws_s3_bucket_policy" "batch_data_source_bucket_policy" {
       {
         Effect : "Allow",
         Principal : {
-          AWS : "arn:aws:iam::${local.dspp_core_account_id}:root"
+          AWS : "arn:aws:iam::${var.dspp_account_id}:root"
         },
         Action : [
           "s3:PutObject"

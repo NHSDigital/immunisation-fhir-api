@@ -1,9 +1,9 @@
 locals {
   policy_statement_allow_administration = {
-    Sid    = "Allow administration of the key",
+    Sid    = "AllowKeyAdministration",
     Effect = "Allow",
     Principal = {
-      AWS = "arn:aws:iam::${local.immunisation_account_id}:root"
+      AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${admin_role}"
     },
     Action = [
       "kms:Create*",
@@ -26,10 +26,10 @@ locals {
   }
 
   policy_statement_allow_auto_ops = {
-    Sid    = "KMS KeyUser access",
+    Sid    = "KMSKeyUserAccess",
     Effect = "Allow",
     Principal = {
-      AWS = ["arn:aws:iam::${local.immunisation_account_id}:role/auto-ops"]
+      AWS = "arn:aws:iam::${var.imms_account_id}:role/${var.auto_ops_role}"
     },
     Action = [
       "kms:Encrypt",
@@ -39,10 +39,10 @@ locals {
   }
 
   policy_statement_allow_devops = {
-    Sid    = "KMS KeyUser access for DevOps",
+    Sid    = "KMSKeyUserAccessForDevOps",
     Effect = "Allow",
     Principal = {
-      AWS = ["arn:aws:iam::${local.immunisation_account_id}:role/DevOps"]
+      AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_PREPROD-IMMS-Devops_1d28e4f37b940bcd"
     },
     Action = [
       "kms:Encrypt",
@@ -56,7 +56,7 @@ locals {
     Sid    = "AllowAccountA",
     Effect = "Allow",
     Principal = {
-      AWS = "arn:aws:iam::${local.dspp_core_account_id}:root"
+      AWS = "arn:aws:iam::${var.dspp_account_id}:${var.admin_role}"
     },
     Action = [
       "kms:Encrypt",
@@ -78,7 +78,7 @@ resource "aws_kms_key" "dynamodb_encryption" {
       local.policy_statement_allow_administration,
       #local.policy_statement_allow_auto_ops,
       local.policy_statement_allow_devops,
-      local.policy_statement_allow_account_a
+      #local.policy_statement_allow_account_a
     ]
   })
 }
@@ -128,20 +128,20 @@ resource "aws_kms_alias" "lambda_env_encryption" {
   target_key_id = aws_kms_key.lambda_env_encryption.key_id
 }
 
-resource "aws_kms_key" "s3_shared_key" {
-  description         = "KMS key for S3 batch bucket"
-  enable_key_rotation = true
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Id      = "key-default-1",
-    Statement = [
-      local.policy_statement_allow_administration,
-      local.policy_statement_allow_account_a
-    ]
-  })
-}
+# resource "aws_kms_key" "s3_shared_key" {
+#   description         = "KMS key for S3 batch bucket"
+#   enable_key_rotation = true
+#   policy = jsonencode({
+#     Version = "2012-10-17",
+#     Id      = "key-default-1",
+#     Statement = [
+#       #local.policy_statement_allow_administration,
+#       #local.policy_statement_allow_account_a
+#     ]
+#   })
+# }
 
-resource "aws_kms_alias" "s3_shared_key" {
-  name          = "alias/imms-batch-s3-shared-key"
-  target_key_id = aws_kms_key.s3_shared_key.key_id
-}
+# resource "aws_kms_alias" "s3_shared_key" {
+#   name          = "alias/imms-batch-s3-shared-key"
+#   target_key_id = aws_kms_key.s3_shared_key.key_id
+# }

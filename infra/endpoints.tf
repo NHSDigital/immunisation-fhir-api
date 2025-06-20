@@ -245,11 +245,11 @@ resource "aws_vpc_endpoint" "kms_endpoint" {
         ],
         Resource = local.account == "non-prod" ? [
           aws_kms_key.lambda_env_encryption.arn,
-          aws_kms_key.s3_shared_key.arn,
+          #aws_kms_key.s3_shared_key.arn,
           data.aws_kms_key.existing_lambda_env_encryption[0].arn
           ] : [
-          aws_kms_key.lambda_env_encryption.arn,
-          aws_kms_key.s3_shared_key.arn
+          aws_kms_key.lambda_env_encryption.arn
+          #aws_kms_key.s3_shared_key.arn
         ]
       }
     ]

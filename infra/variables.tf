@@ -2,9 +2,23 @@ variable "aws_region" {
   default = "eu-west-2"
 }
 
+variable "imms_account_id" {
+  type = string
+}
+variable "dspp_account_id" {
+  type = string
+}
+variable "auto_ops_role" {
+  type = string
+}
+variable "admin_role" {
+  type = string
+}
+variable "dev_ops_role" {
+  type = string
+}
+
 locals {
-  account                 = terraform.workspace                                   # non-prod or prod
-  dspp_core_account_id    = local.account == "prod" ? 232116723729 : 603871901111 # get equivalent for int
-  immunisation_account_id = local.account == "prod" ? 664418956997 : local.account == "int" ? 084828561157 : 345594581768
+  account = terraform.workspace # non-prod or prod
   # TODO - add new accounts for CDP migration
 }
