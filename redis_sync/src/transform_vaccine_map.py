@@ -1,25 +1,15 @@
 from clients import logger
 
-import json
 
-
-def transform_vaccine_map(data):
+def transform_vaccine_map(map):
     # Transform the vaccine map data as needed
     logger.info("Transforming vaccine map data")
-    logger.info("source data:%s", data)
-    vaccines = data["vaccine"]
-    diseases = data["disease"]
+    logger.info("source data:%s", map)
 
-    # vaccines has a 1 to many with disease. Disease needs to have a reciprocal relationship
-    for vaccine_id, vaccine_data in vaccines.items():
-        for disease_id in vaccine_data["diseases"]:
-            if "vaccines" not in diseases[disease_id]:
-                diseases[disease_id]["vaccines"] = []
-            diseases[disease_id]["vaccines"].append(vaccine_id)
+    vacc_to_diseases = {m['vacc_type']: m['diseases'] for m in map}
+    diseases_to_vacc = {':'.join(sorted(d['code'] for d in m['diseases'])): m['vacc_type'] for m in map}
 
-    transformed_data = {
-        "vaccine": vaccines,
-        "disease": diseases
+    return {
+        "vaccine": vacc_to_diseases,
+        "disease": diseases_to_vacc
     }
-    logger.info("transformed_data: %s", json.dumps(transformed_data))
-    return transformed_data

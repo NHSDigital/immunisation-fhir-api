@@ -25,10 +25,11 @@ class RedisCacher:
             logger.info("Config file content for '%s': %s", file_key, config_file_content)
 
             # Transform
-            trx_data = transform_map(config_file_content, file_key)
+            redis_mappings = transform_map(config_file_content, file_key)
 
-            # Upload to Redis
-            redis_client.set(file_key,  trx_data)
+            for key, mapping in redis_mappings.items():
+                redis_client.hmset(key, mapping)
+            
             return {"status": "success", "message": f"File {file_key} uploaded to Redis cache."}
         except Exception:
             msg = f"Error uploading file '{file_key}' to Redis cache"
