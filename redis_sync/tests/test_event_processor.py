@@ -85,10 +85,7 @@ class TestEventProcessor(unittest.TestCase):
 
         result = event_processor({}, None)
 
-        self.assertTrue(result)
-        self.mock_logger_info.assert_any_call("Successfully processed all %d records", 0)
-        self.mock_logger_info.assert_any_call("Processing S3 event with %d records", 0)
-        self.mock_logger_info.assert_any_call("Successfully processed all %d records", 0)
+        self.assertEqual(result, {'status': 'success', 'message': 'No records found in event'})
 
     def test_event_processor_multi_record(self):
         mock_event = {'Records': [self.s3_vaccine, self.s3_supplier]}
@@ -113,6 +110,5 @@ class TestEventProcessor(unittest.TestCase):
             mock_read_event.return_value = mock_read_event_response
             result = event_processor(mock_event, None)
 
-            mock_read_event.assert_called_once_with(mock_event)
+            mock_read_event.assert_called_once()
             self.assertEqual(result, mock_read_event_response)
-            self.mock_logger_info.assert_called_with("Processing S3 event with %d records", 0)

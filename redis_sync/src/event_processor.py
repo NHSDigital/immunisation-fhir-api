@@ -2,6 +2,7 @@ from clients import logger
 from s3_event import S3Event
 from record_processor import record_processor
 from event_read import read_event
+from clients import redis_client
 '''
     Event Processor
     The Business Logic for the Redis Sync Lambda Function.
@@ -11,12 +12,11 @@ from event_read import read_event
 def event_processor(event, context):
 
     try:
-        logger.info("Processing S3 event with %d records", len(event.get('Records', [])))
-
         # check if the event requires a read, ie {"read": "my-hashmap"}
         if "read" in event:
-            return read_event(event)
-        else:
+            return read_event(redis_client, event, logger)
+        elif "Records" in event:
+            logger.info("Processing S3 event with %d records", len(event.get('Records', [])))
             s3Event = S3Event(event)
             record_count = len(s3Event.get_s3_records())
             error_count = 0
@@ -30,6 +30,9 @@ def event_processor(event, context):
             else:
                 logger.info("Successfully processed all %d records", record_count)
                 return {"status": "success", "message": f"Successfully processed {record_count} records"}
+        else:
+            logger.info("No records found in event")
+            return {"status": "success", "message": "No records found in event"}
 
     except Exception:
         logger.exception("Error processing S3 event")
