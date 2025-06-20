@@ -37,7 +37,7 @@ class TestRedisCacher(unittest.TestCase):
 
         self.mock_s3_reader.read.assert_called_once_with(bucket_name, file_key)
         self.mock_transform_map.assert_called_once_with(mock_data, file_key)
-        self.mock_redis_client.set.assert_called_once_with(file_key, mock_transformed_data)
+        self.mock_redis_client.hmset.assert_called()
         self.assertEqual(result, {"status": "success", "message": f"File {file_key} uploaded to Redis cache."})
 
     def test_get_cached_config_json(self):

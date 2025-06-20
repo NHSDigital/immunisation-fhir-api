@@ -5,7 +5,7 @@ from transform_vaccine_map import transform_vaccine_map
 
 
 # Import the sample input from the sample_data module
-with open("./sample_data/disease_mapping.json") as f:
+with open("./tests/sample_data/disease_mapping.json") as f:
     sample_map = json.load(f)
 
 
