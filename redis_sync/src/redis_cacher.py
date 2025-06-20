@@ -28,7 +28,8 @@ class RedisCacher:
             redis_mappings = transform_map(config_file_content, file_key)
 
             for key, mapping in redis_mappings.items():
-                redis_client.hmset(key, mapping)
+                safe_mapping = {k: json.dumps(v) if isinstance(v, list) else v for k, v in mapping.items()}
+                redis_client.hmset(key, safe_mapping)
 
             return {"status": "success", "message": f"File {file_key} uploaded to Redis cache."}
         except Exception:

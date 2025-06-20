@@ -26,7 +26,11 @@ class TestRedisCacher(unittest.TestCase):
 
     def test_upload(self):
         mock_data = {"a": "b"}
-        mock_transformed_data = {"b": "c"}
+        mock_transformed_data = {
+            "vacc_to_diseases": {"b": "c"},
+            "diseases_to_vacc": {"c": "b"}
+        }
+
         self.mock_s3_reader.read = unittest.mock.Mock()
         self.mock_s3_reader.read.return_value = mock_data
         self.mock_transform_map.return_value = mock_transformed_data
