@@ -29,7 +29,7 @@ class RedisCacher:
 
             for key, mapping in redis_mappings.items():
                 redis_client.hmset(key, mapping)
-            
+
             return {"status": "success", "message": f"File {file_key} uploaded to Redis cache."}
         except Exception:
             msg = f"Error uploading file '{file_key}' to Redis cache"

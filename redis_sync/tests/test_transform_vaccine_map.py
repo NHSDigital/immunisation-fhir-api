@@ -139,11 +139,11 @@ class TestTransformVaccineMap(unittest.TestCase):
                 }
             ],
             "MENACWY": [
-                {
-                    "code": '23511006',
-                    "term": 'Meningococcal infectious disease'
-                }
-        ]
+                    {
+                        "code": '23511006',
+                        "term": 'Meningococcal infectious disease'
+                    }
+                ]
             }
 
         result = transform_vaccine_map(sample_map)
