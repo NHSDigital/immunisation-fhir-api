@@ -1,8 +1,6 @@
 import unittest
-import json
 from unittest.mock import patch
 from redis_cacher import RedisCacher
-from constants import RedisCacheKey
 
 
 class TestRedisCacher(unittest.TestCase):
@@ -43,26 +41,3 @@ class TestRedisCacher(unittest.TestCase):
         self.mock_transform_map.assert_called_once_with(mock_data, file_key)
         self.mock_redis_client.hmset.assert_called()
         self.assertEqual(result, {"status": "success", "message": f"File {file_key} uploaded to Redis cache."})
-
-    def test_get_cached_config_json(self):
-        """Test getting cached config JSON from Redis."""
-        cache_key = "some-key"
-        cached_data = '{"some-data-key": "some-data-value"}'
-        self.mock_redis_client.get.return_value = cached_data
-        result = RedisCacher.get_cached_config_json(cache_key)
-        self.assertEqual(result, json.loads(cached_data))
-        self.mock_redis_client.get.assert_called_once_with(cache_key)
-
-    def test_get_cached_permissions_config_json(self):
-        cached_permissions = '{"permissions": "perm_config"}'
-        self.mock_redis_client.get.return_value = cached_permissions
-        result = RedisCacher.get_cached_permissions_config_json()
-        self.assertEqual(result, json.loads(cached_permissions))
-        self.mock_redis_client.get.assert_called_once_with(RedisCacheKey.PERMISSIONS_CONFIG_FILE_KEY)
-
-    def test_get_cached_disease_mapping_json(self):
-        cached_disease_mapping = '{"disease": "disease-mapping"}'
-        self.mock_redis_client.get.return_value = cached_disease_mapping
-        result = RedisCacher.get_cached_disease_mapping_json()
-        self.assertEqual(result, json.loads(cached_disease_mapping))
-        self.mock_redis_client.get.assert_called_once_with(RedisCacheKey.DISEASE_MAPPING_FILE_KEY)

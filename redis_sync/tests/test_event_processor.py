@@ -1,4 +1,4 @@
-''' unit tests for event_processor.py '''
+''' unit tests for redis_sync.py '''
 import unittest
 from unittest.mock import patch
 from event_processor import event_processor

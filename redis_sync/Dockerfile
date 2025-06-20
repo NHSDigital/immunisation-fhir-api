@@ -22,4 +22,4 @@ COPY src .
 RUN chmod 644 $(find . -type f) && chmod 755 $(find . -type d)
 # Build as non-root user
 USER 1001:1001
-CMD ["event_processor.event_processor"]
+CMD ["redis_sync.handler"]

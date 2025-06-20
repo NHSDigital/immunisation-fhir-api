@@ -53,20 +53,20 @@ resource "aws_ecr_repository_policy" "redis_sync_lambda_ECRImageRetreival_policy
     Version = "2012-10-17"
     Statement = [
       {
-        "Sid" : "LambdaECRImageRetrievalPolicy",
-        "Effect" : "Allow",
-        "Principal" : {
-          "Service" : "lambda.amazonaws.com"
+        Sid : "LambdaECRImageRetrievalPolicy",
+        Effect : "Allow",
+        Principal : {
+          Service : "lambda.amazonaws.com"
         },
-        "Action" : [
+        Action : [
           "ecr:BatchGetImage",
           "ecr:DeleteRepositoryPolicy",
           "ecr:GetDownloadUrlForLayer",
           "ecr:GetRepositoryPolicy",
           "ecr:SetRepositoryPolicy"
         ],
-        "Condition" : {
-          "StringLike" : {
+        Condition : {
+          StringLike : {
             # "aws:sourceArn" : "arn:aws:lambda:eu-west-2:${local.immunisation_account_id}:function:${local.short_prefix}-redis_sync_lambda"
             "aws:sourceArn" : aws_lambda_function.redis_sync_lambda.arn
           }
@@ -155,12 +155,12 @@ resource "aws_iam_policy" "redis_sync_lambda_exec_policy" {
         ]
       },
       {
-        "Effect" : "Allow",
-        "Action" : [
+        Effect : "Allow",
+        Action : [
           "firehose:PutRecord",
           "firehose:PutRecordBatch"
         ],
-        "Resource" : "arn:aws:firehose:*:*:deliverystream/${module.splunk.firehose_stream_name}"
+        Resource : "arn:aws:firehose:*:*:deliverystream/${module.splunk.firehose_stream_name}"
       },
       {
         Effect = "Allow"
@@ -201,76 +201,6 @@ resource "aws_iam_policy" "redis_sync_lambda_kms_access_policy" {
     ]
   })
 }
-#
-# # IAM Role for ElastiCache.
-# resource "aws_iam_role" "elasticache_exec_role" {
-#   name = "${local.short_prefix}-elasticache-exec-role"
-#   assume_role_policy = jsonencode({
-#     Version = "2012-10-17",
-#     Statement = [{
-#       Effect = "Allow",
-#       Sid    = "",
-#       Principal = {
-#         Service = "elasticache.amazonaws.com" # ElastiCache service principal
-#       },
-#       Action = "sts:AssumeRole"
-#     }]
-#   })
-# }
-
-resource "aws_iam_policy" "elasticache_permissions" {
-  name = "${local.short_prefix}-elasticache-permissions"
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "elasticache:DescribeCacheClusters",
-          "elasticache:ListTagsForResource",
-          "elasticache:AddTagsToResource",
-          "elasticache:RemoveTagsFromResource"
-        ]
-        Resource = "arn:aws:elasticache:${var.aws_region}:${local.immunisation_account_id}:cluster/immunisation-redis-cluster"
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "elasticache:CreateCacheCluster",
-          "elasticache:DeleteCacheCluster",
-          "elasticache:ModifyCacheCluster"
-        ]
-        Resource = "arn:aws:elasticache:${var.aws_region}:${local.immunisation_account_id}:cluster/immunisation-redis-cluster"
-        Condition = {
-          "StringEquals" : {
-            "aws:RequestedRegion" : var.aws_region
-          }
-        }
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "elasticache:DescribeCacheSubnetGroups"
-        ]
-        Resource = "arn:aws:elasticache:${var.aws_region}:${local.immunisation_account_id}:subnet-group/immunisation-redis-subnet-group"
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "elasticache:CreateCacheSubnetGroup",
-          "elasticache:DeleteCacheSubnetGroup",
-          "elasticache:ModifyCacheSubnetGroup"
-        ]
-        Resource = "arn:aws:elasticache:${var.aws_region}:${local.immunisation_account_id}:subnet-group/immunisation-redis-subnet-group"
-        Condition = {
-          "StringEquals" : {
-            "aws:RequestedRegion" : var.aws_region
-          }
-        }
-      }
-    ]
-  })
-}
 
 # Attach the execution policy to the Lambda role
 resource "aws_iam_role_policy_attachment" "redis_sync_lambda_exec_policy_attachment" {
@@ -282,13 +212,6 @@ resource "aws_iam_role_policy_attachment" "redis_sync_lambda_exec_policy_attachm
 resource "aws_iam_role_policy_attachment" "redis_sync_lambda_kms_policy_attachment" {
   role       = aws_iam_role.redis_sync_lambda_exec_role.name
   policy_arn = aws_iam_policy.redis_sync_lambda_kms_access_policy.arn
-}
-
-# Attach the policy to the ElastiCache role
-resource "aws_iam_role_policy_attachment" "elasticache_policy_attachment" {
-  # role       = aws_iam_role.elasticache_exec_role.name
-  role       = aws_iam_role.redis_sync_lambda_exec_role.name
-  policy_arn = aws_iam_policy.elasticache_permissions.arn
 }
 
 # Lambda Function with Security Group and VPC.

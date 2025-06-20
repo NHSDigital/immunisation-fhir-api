@@ -12,6 +12,6 @@ def transform_map(data, file_type):
     if file_type == RedisCacheKey.PERMISSIONS_CONFIG_FILE_KEY:
         return data
     if file_type == RedisCacheKey.DISEASE_MAPPING_FILE_KEY:
-        return transform_vaccine_map(data)  # No transformation available yet
+        return transform_vaccine_map(data)
     logger.info("No specific transformation defined for file type: %s", file_type)
     return data  # Default case, return data as is if no transformation is defined
