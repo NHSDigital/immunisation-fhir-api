@@ -225,6 +225,18 @@ resource "aws_ecs_task_definition" "ecs_task" {
       {
         name  = "FILE_NAME_PROC_LAMBDA_NAME"
         value = aws_lambda_function.file_processor_lambda.function_name
+      },
+      {
+        name  = "AWS_REGION"
+        value = var.aws_region
+      },
+      {
+        name  = "REDIS_HOST"
+        value = aws_elasticache_cluster.redis_cluster.configuration_endpoint
+      },
+      {
+        name  = "REDIS_PORT"
+        value = "6379"
       }
     ]
     logConfiguration = {

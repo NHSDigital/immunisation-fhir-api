@@ -1,8 +1,8 @@
 """Mappings for converting vaccine type into target disease FHIR element"""
 
 from enum import Enum
-from typing import Dict, List
 from constants import Urls
+from elasticache import get_disease_mapping_json_from_cache
 
 
 class Vaccine(Enum):
@@ -47,17 +47,9 @@ class DiseaseDisplayTerm(Enum):
     RSV: str = "Respiratory syncytial virus infection (disorder)"
 
 
-VACCINE_DISEASE_MAPPING: Dict[Vaccine, List[Disease]] = {
-    Vaccine.COVID_19: [Disease.COVID_19],
-    Vaccine.FLU: [Disease.FLU],
-    Vaccine.MMR: [Disease.MEASLES, Disease.MUMPS, Disease.RUBELLA],
-    Vaccine.RSV: [Disease.RSV],
-}
-
-
 def map_target_disease(vaccine: Vaccine) -> list:
     """Returns the target disease element for the given vaccine type using the vaccine_disease_mapping"""
-    diseases = VACCINE_DISEASE_MAPPING.get(vaccine, [])
+    diseases = get_disease_mapping_json_from_cache()(vaccine, [])
     return [
         {
             "coding": [
