@@ -103,3 +103,16 @@ class TestEventProcessor(unittest.TestCase):
 
         self.assertTrue(result)
         self.mock_logger_info.assert_called_with("Processing S3 event with %d records", 2)
+
+    # test to check that event_read is called when "read" key is passed in the event
+    def test_event_processor_read_event(self):
+        mock_event = {'read': 'myhash'}
+        mock_read_event_response = {'field1': 'value1'}
+
+        with patch('event_processor.read_event') as mock_read_event:
+            mock_read_event.return_value = mock_read_event_response
+            result = event_processor(mock_event, None)
+
+            mock_read_event.assert_called_once_with(mock_event)
+            self.assertEqual(result, mock_read_event_response)
+            self.mock_logger_info.assert_called_with("Processing S3 event with %d records", 0)

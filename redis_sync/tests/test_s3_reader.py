@@ -13,12 +13,14 @@ class TestS3Reader(unittest.TestCase):
         self.s3_client_patcher = patch("s3_reader.s3_client")
         self.mock_s3_client = self.s3_client_patcher.start()
 
-        # Patch logger.exception
+        self.logger_info_patcher = patch("logging.Logger.info")
+        self.mock_logger_info = self.logger_info_patcher.start()
         self.logger_exception_patcher = patch("logging.Logger.exception")
         self.mock_logger_exception = self.logger_exception_patcher.start()
 
     def tearDown(self):
         self.s3_client_patcher.stop()
+        self.logger_info_patcher.stop()
         self.logger_exception_patcher.stop()
 
     def test_read_success(self):
