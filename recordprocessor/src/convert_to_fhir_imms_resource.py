@@ -2,7 +2,7 @@
 
 from typing import List, Callable, Dict
 from utils_for_fhir_conversion import _is_not_empty, Generate, Add, Convert
-from mappings import map_target_disease, Vaccine
+from mappings import map_target_disease
 from constants import Urls
 
 
@@ -196,7 +196,7 @@ all_decorators: List[ImmunizationDecorator] = [
 ]
 
 
-def convert_to_fhir_imms_resource(row: dict, vaccine: Vaccine) -> dict:
+def convert_to_fhir_imms_resource(row: dict, vaccine: str) -> dict:
     """Converts a row of data to a FHIR Immunization Resource"""
     # Prepare the imms_resource. Note that all data sent via this service is assumed to be for completed vaccinations.
     imms_resource = {"resourceType": "Immunization", "status": "completed"}
