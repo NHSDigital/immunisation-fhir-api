@@ -1,7 +1,7 @@
 """Mappings for converting vaccine type into target disease FHIR element"""
 import json
 from constants import Urls
-from src.clients import redis_client
+from clients import redis_client
 
 
 def map_target_disease(vaccine: str) -> list:
