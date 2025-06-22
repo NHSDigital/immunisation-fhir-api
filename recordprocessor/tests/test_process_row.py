@@ -51,11 +51,13 @@ class TestProcessRow(unittest.TestCase):
             "resourceType": "Immunization",
             "status": "completed",
             "protocolApplied": [{
-                "targetDisease": [{"coding": [{
-                    "system": "http://snomed.info/sct",
-                    "code": "55735004",
-                    "display": "Respiratory syncytial virus infection (disorder)"
-                }]}],
+                "targetDisease": [{
+                    "coding": [{
+                        "system": "http://snomed.info/sct",
+                        "code": "55735004",
+                        "display": "Respiratory syncytial virus infection (disorder)"
+                    }]
+                }],
                 "doseNumberPositiveInt": 1
             }],
             "reasonCode": [{"coding": [{"system": "http://snomed.info/sct", "code": "1037351000000105"}]}],

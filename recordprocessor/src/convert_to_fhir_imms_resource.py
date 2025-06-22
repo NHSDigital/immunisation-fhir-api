@@ -2,7 +2,6 @@
 
 from typing import List, Callable, Dict
 from utils_for_fhir_conversion import _is_not_empty, Generate, Add, Convert
-from mappings import map_target_disease
 from constants import Urls
 
 
