@@ -232,7 +232,7 @@ resource "aws_ecs_task_definition" "ecs_task" {
       },
       {
         name  = "REDIS_PORT"
-        value = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].port
+        value = tostring(data.aws_elasticache_cluster.existing_redis.cache_nodes[0].port)
       }
     ]
     logConfiguration = {
