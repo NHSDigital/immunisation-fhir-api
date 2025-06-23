@@ -3,7 +3,7 @@ locals {
     Sid    = "AllowKeyAdministration",
     Effect = "Allow",
     Principal = {
-      AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${admin_role}"
+      AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.admin_role}"
     },
     Action = [
       "kms:Create*",
