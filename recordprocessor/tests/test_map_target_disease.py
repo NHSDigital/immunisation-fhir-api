@@ -30,7 +30,7 @@ class TestMapTargetDisease(unittest.TestCase):
             }]
         }])
 
-        mock_redis_client.hget.assert_called_with("vacc-to-diseases", "RSV")
+        mock_redis_client.hget.assert_called_with("vacc_to_diseases", "RSV")
 
     def test_map_target_disease_invalid(self, mock_redis_client):
         """Tests map_target_disease does not return the disease coding information when using invalid vaccine types."""
@@ -39,7 +39,7 @@ class TestMapTargetDisease(unittest.TestCase):
 
         self.assertEqual(map_target_disease("invalid_vaccine"), [])
 
-        mock_redis_client.hget.assert_called_with("vacc-to-diseases", "invalid_vaccine")
+        mock_redis_client.hget.assert_called_with("vacc_to_diseases", "invalid_vaccine")
 
 
 if __name__ == "__main__":
