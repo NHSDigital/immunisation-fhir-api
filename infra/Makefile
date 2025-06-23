@@ -4,7 +4,7 @@ interactionId=$(ENVIRONMENT)
 
 tf_cmd = AWS_PROFILE=$(AWS_PROFILE) terraform
 tf_state= -backend-config="bucket=$(BUCKET_NAME)"
-tf_vars= -var-file=environments/int/int.tfvars
+tf_vars= -var-file=environments/$(ENVIRONMENT)/variables.tfvars
 
 
 .PHONY : lock-provider workspace init plan apply clean destroy output state-list lambda-zip catch-all-zip
