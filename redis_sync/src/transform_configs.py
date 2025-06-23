@@ -16,7 +16,7 @@ def transform_vaccine_map(map):
 
 def transform_supplier_permissions(supplier):
     """
-    Transform a supplier-permission 
+    Transform a supplier-permission
     """
     logger.info("Transforming supplier permissions data")
     logger.info("source data: %s", supplier)
@@ -25,4 +25,4 @@ def transform_supplier_permissions(supplier):
         entry["supplier"]: entry["permissions"] for entry in supplier
     }
 
-    return supplier_permissions
+    return {"supplier_permissions": supplier_permissions}
