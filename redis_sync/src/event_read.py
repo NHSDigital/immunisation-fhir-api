@@ -1,6 +1,6 @@
 import redis
 
-
+# Reads a Redis hash using the 'read' key from the event payload.
 def read_event(redis_client: redis.Redis, event: dict, logger) -> dict:
     try:
         read_key = event["read"]

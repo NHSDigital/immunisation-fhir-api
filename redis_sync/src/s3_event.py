@@ -1,4 +1,13 @@
 class S3EventRecord:
+    """
+    S3 Event Parsing Utilities
+
+    This module defines helper classes for extracting relevant information from
+    AWS S3 event records, such as the bucket name and object key.
+
+    - `S3EventRecord` provides access to individual record fields.
+    - `S3Event` wraps the event and extracts a list of `S3EventRecord` objects.
+    """
     def __init__(self, s3_record):
         self.s3_record = s3_record
 

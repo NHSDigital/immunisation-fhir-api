@@ -1,7 +1,7 @@
 import unittest
 import json
 from unittest.mock import patch
-from transform_vaccine_map import transform_vaccine_map
+from transform_configs import transform_vaccine_map
 
 
 # Import the sample input from the sample_data module

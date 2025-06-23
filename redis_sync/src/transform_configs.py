@@ -14,11 +14,9 @@ def transform_vaccine_map(map):
         "diseases_to_vacc": diseases_to_vacc
     }
 
-
 def transform_supplier_permissions(supplier):
     """
-    Transforms a list of supplier-permission entries into a mapping of:
-    supplier -> list of permissions
+    Transform a supplier-permission 
     """
     logger.info("Transforming supplier permissions data")
     logger.info("source data: %s", supplier)
