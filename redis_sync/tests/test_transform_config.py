@@ -80,17 +80,6 @@ class TestTransformVaccineMap(unittest.TestCase):
             result = transform_vaccine_map(sample_map)
             self.assertEqual(result["vacc_to_diseases"], expected_vacc_to_diseases)
 
-sample_supplier_data = [
-    {
-        "supplier": "SupplierA",
-        "permissions": ["read:vaccine", "write:vaccine"]
-    },
-    {
-        "supplier": "SupplierB",
-        "permissions": ["read:report"]
-    }
-]
-
 class TransformSupplierPermissions(unittest.TestCase):
 
     def setUp(self):
