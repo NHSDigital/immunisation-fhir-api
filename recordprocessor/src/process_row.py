@@ -13,7 +13,7 @@ def process_row(vaccine: Vaccine, allowed_operations: set, row: dict) -> dict:
     (where applicable), version(where applicable) and any diagnostics.
     The local_id is combination of unique_id and unique_id_uri combined by "^"
     """
-    action_flag = row.get("ACTION_FLAG", "").upper()
+    action_flag = (row.get("ACTION_FLAG") or "").upper()
     unique_id_uri = row.get("UNIQUE_ID_URI")
     unique_id = row.get("UNIQUE_ID")
     local_id = f"{unique_id}^{unique_id_uri}"
