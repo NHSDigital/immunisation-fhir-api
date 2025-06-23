@@ -1,3 +1,5 @@
+# flake8: noqa: F811
+
 import unittest
 import json
 from unittest.mock import patch
@@ -44,7 +46,6 @@ class TestTransformVaccineMap(unittest.TestCase):
 
             result = transform_vaccine_map(sample_map)
             self.assertEqual(result["vacc_to_diseases"], expected_vacc_to_diseases)
-
 
     def setUp(self):
         self.logger_info_patcher = patch("logging.Logger.info")
