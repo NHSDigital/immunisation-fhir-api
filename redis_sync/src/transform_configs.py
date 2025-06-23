@@ -14,6 +14,7 @@ def transform_vaccine_map(map):
         "diseases_to_vacc": diseases_to_vacc
     }
 
+
 def transform_supplier_permissions(supplier):
     """
     Transform a supplier-permission
