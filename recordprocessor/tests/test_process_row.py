@@ -10,6 +10,7 @@ from decimal import Decimal
 
 from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
     MockFieldDictionaries,
+    TargetDiseaseElements
 )
 
 from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
@@ -49,7 +50,16 @@ class TestProcessRow(unittest.TestCase):
         expected_result = {
             "resourceType": "Immunization",
             "status": "completed",
-            "protocolApplied": [{"targetDisease": [], "doseNumberPositiveInt": 1}],
+            "protocolApplied": [{
+                "targetDisease": [{
+                    "coding": [{
+                        "system": "http://snomed.info/sct",
+                        "code": "55735004",
+                        "display": "Respiratory syncytial virus infection (disorder)"
+                    }]
+                }],
+                "doseNumberPositiveInt": 1
+            }],
             "reasonCode": [{"coding": [{"system": "http://snomed.info/sct", "code": "1037351000000105"}]}],
             "recorded": "2024-09-04",
             "identifier": [{"value": "RSV_002", "system": "https://www.ravs.england.nhs.uk/"}],
@@ -120,8 +130,10 @@ class TestProcessRow(unittest.TestCase):
             "location": {"identifier": {"value": "RJC02", "system": "https://fhir.nhs.uk/Id/ods-organization-code"}},
         }
 
+        self.maxDiff = None
+
         # call 'process_row' with required details
-        imms_fhir_resource = process_row("EMIS", Allowed_Operations, ROW_DETAILS)
+        imms_fhir_resource = process_row(TargetDiseaseElements.RSV, Allowed_Operations, ROW_DETAILS)
         # validate if the response with expected result
         self.assertDictEqual(imms_fhir_resource["fhir_json"], expected_result)
 
@@ -135,7 +147,7 @@ class TestProcessRow(unittest.TestCase):
         Mock_Row["ACTION_FLAG"] = "Invalid"
 
         # call 'process_row' with required details
-        response = process_row("EMIS", Allowed_Operations, Mock_Row)
+        response = process_row(TargetDiseaseElements.RSV, Allowed_Operations, Mock_Row)
 
         # validate if we got INVALID_ACTION_FLAG in response
         self.assertEqual(response["diagnostics"]["error_type"], "INVALID_ACTION_FLAG")
@@ -151,7 +163,7 @@ class TestProcessRow(unittest.TestCase):
         Mock_Row.pop("ACTION_FLAG")
 
         # call 'process_row' with required details
-        response = process_row("EMIS", Allowed_Operations, Mock_Row)
+        response = process_row(TargetDiseaseElements.RSV, Allowed_Operations, Mock_Row)
         # validate if we got INVALID_ACTION_FLAG in response
         self.assertEqual(response["diagnostics"]["error_type"], "INVALID_ACTION_FLAG")
 
@@ -166,7 +178,7 @@ class TestProcessRow(unittest.TestCase):
         Mock_Row = deepcopy(ROW_DETAILS)
 
         # call 'process_row' with required details
-        response = process_row("EMIS", allowed_operation, Mock_Row)
+        response = process_row(TargetDiseaseElements.RSV, allowed_operation, Mock_Row)
         self.assertEqual(response["diagnostics"]["error_type"], "NO_PERMISSIONS")
         self.assertEqual(response["diagnostics"]["statusCode"], 403)
 
@@ -179,7 +191,7 @@ class TestProcessRow(unittest.TestCase):
         Mock_Row = deepcopy(ROW_DETAILS)
         Mock_Row.pop("UNIQUE_ID")
         # call 'process_row' with required details
-        response = process_row("EMIS", Allowed_Operations, Mock_Row)
+        response = process_row(TargetDiseaseElements.RSV, Allowed_Operations, Mock_Row)
 
         self.assertEqual(response["diagnostics"]["error_type"], "MISSING_UNIQUE_ID")
         self.assertEqual(response["diagnostics"]["statusCode"], 400)
@@ -193,7 +205,7 @@ class TestProcessRow(unittest.TestCase):
         Mock_Row = deepcopy(ROW_DETAILS)
         Mock_Row.pop("UNIQUE_ID_URI")
         # call 'process_row' with required details
-        response = process_row("EMIS", Allowed_Operations, Mock_Row)
+        response = process_row(TargetDiseaseElements.RSV, Allowed_Operations, Mock_Row)
 
         self.assertEqual(response["diagnostics"]["error_message"], "UNIQUE_ID or UNIQUE_ID_URI is missing")
         self.assertEqual(response["diagnostics"]["statusCode"], 400)

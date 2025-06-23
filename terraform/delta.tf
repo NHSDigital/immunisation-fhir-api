@@ -17,7 +17,7 @@ resource "aws_ecr_repository" "delta_lambda_repository" {
 
 module "delta_docker_image" {
   source  = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version = "7.20.2"
+  version = "7.21.1"
 
   create_ecr_repo = false
   ecr_repo        = "${local.prefix}-delta-lambda-repo"
@@ -133,7 +133,7 @@ resource "aws_lambda_function" "delta_sync_lambda" {
   package_type  = "Image"
   architectures = ["x86_64"]
   image_uri     = module.delta_docker_image.image_uri
-  timeout = 60
+  timeout       = 60
 
   environment {
     variables = {

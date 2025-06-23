@@ -7,7 +7,6 @@ from tests.utils_for_recordprocessor_tests.mock_environment_variables import MOC
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
     from constants import Urls, AuditTableKeys
-    from mappings import Vaccine
 
 
 REGION_NAME = "eu-west-2"
@@ -385,7 +384,7 @@ class MockFhirImmsResources:
         "reasonCode": [{"coding": [{"code": "1037351000000105", "system": Urls.SNOMED}]}],
         "protocolApplied": [
             {
-                "targetDisease": getattr(TargetDiseaseElements, Vaccine.RSV.value),
+                "targetDisease": TargetDiseaseElements.RSV,
                 "doseNumberPositiveInt": 1,
             }
         ],
@@ -439,7 +438,7 @@ class MockFhirImmsResources:
         ],
         "protocolApplied": [
             {
-                "targetDisease": getattr(TargetDiseaseElements, Vaccine.RSV.value),
+                "targetDisease": TargetDiseaseElements.RSV,
                 "doseNumberString": "Dose sequence not recorded",
             }
         ],
@@ -452,7 +451,7 @@ class MockFhirImmsResources:
         "identifier": [{"system": "a_unique_id_uri", "value": "a_unique_id"}],
         "protocolApplied": [
             {
-                "targetDisease": getattr(TargetDiseaseElements, Vaccine.RSV.value),
+                "targetDisease": TargetDiseaseElements.RSV,
                 "doseNumberString": "Dose sequence not recorded",
             }
         ],

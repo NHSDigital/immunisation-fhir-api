@@ -2,12 +2,11 @@
 
 from convert_to_fhir_imms_resource import convert_to_fhir_imms_resource
 from constants import Diagnostics
-from mappings import Vaccine
 from clients import logger
 from utils_for_recordprocessor import create_diagnostics_dictionary
 
 
-def process_row(vaccine: Vaccine, allowed_operations: set, row: dict) -> dict:
+def process_row(target_disease: list, allowed_operations: set, row: dict) -> dict:
     """
     Processes a row of the file and returns a dictionary containing the fhir_json, action_flag, imms_id, local_id
     (where applicable), version(where applicable) and any diagnostics.
@@ -51,7 +50,7 @@ def process_row(vaccine: Vaccine, allowed_operations: set, row: dict) -> dict:
 
     # Handle success
     return {
-        "fhir_json": convert_to_fhir_imms_resource(row, vaccine),
+        "fhir_json": convert_to_fhir_imms_resource(row, target_disease),
         "operation_requested": operation_requested,
         "local_id": local_id,
     }

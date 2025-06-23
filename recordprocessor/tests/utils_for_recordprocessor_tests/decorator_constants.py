@@ -7,13 +7,12 @@ from tests.utils_for_recordprocessor_tests.mock_environment_variables import MOC
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
     from constants import Urls
-    from mappings import Vaccine
 
 
 VALID_NHS_NUMBER = "1345678940"
 ADDRESS_UNKNOWN_POSTCODE = "ZZ99 3WZ"
 
-RSV_TARGET_DISEASE_ELEMENT = getattr(TargetDiseaseElements, Vaccine.RSV.value)
+RSV_TARGET_DISEASE_ELEMENT = TargetDiseaseElements.RSV
 
 
 class ExtensionItems:

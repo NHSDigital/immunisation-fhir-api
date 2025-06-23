@@ -6,7 +6,6 @@ Functions for completing file-level validation
 from unique_permission import get_unique_action_flags_from_s3
 from clients import logger, s3_client
 from make_and_upload_ack_file import make_and_upload_ack_file
-from mappings import Vaccine
 from utils_for_recordprocessor import get_csv_content_dict_reader, invoke_filename_lambda
 from errors import InvalidHeaders, NoOperationPermissions
 from logging_decorator import file_level_validation_logging_decorator
@@ -75,9 +74,7 @@ def file_level_validation(incoming_message_body: dict) -> dict:
     """
     try:
         message_id = incoming_message_body.get("message_id")
-        vaccine: Vaccine = next(  # Convert vaccine_type to Vaccine enum
-            vaccine for vaccine in Vaccine if vaccine.value == incoming_message_body.get("vaccine_type").upper()
-        )
+        vaccine = incoming_message_body.get("vaccine_type").upper()
         supplier = incoming_message_body.get("supplier").upper()
         file_key = incoming_message_body.get("filename")
         permission = incoming_message_body.get("permission")
@@ -89,7 +86,7 @@ def file_level_validation(incoming_message_body: dict) -> dict:
         validate_content_headers(csv_reader)
 
         # Validate has permission to perform at least one of the requested actions
-        allowed_operations_set = validate_action_flag_permissions(supplier, vaccine.value, permission, csv_data)
+        allowed_operations_set = validate_action_flag_permissions(supplier, vaccine, permission, csv_data)
 
         make_and_upload_ack_file(message_id, file_key, True, True, created_at_formatted_string)
 

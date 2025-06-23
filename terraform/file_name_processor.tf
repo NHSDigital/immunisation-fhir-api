@@ -17,7 +17,7 @@ resource "aws_ecr_repository" "file_name_processor_lambda_repository" {
 # Module for building and pushing Docker image to ECR
 module "file_processor_docker_image" {
   source  = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version = "7.20.2"
+  version = "7.21.1"
 
   create_ecr_repo = false
   ecr_repo        = aws_ecr_repository.file_name_processor_lambda_repository.name
@@ -321,108 +321,7 @@ resource "aws_s3_bucket_notification" "datasources_lambda_notification" {
   lambda_function {
     lambda_function_arn = aws_lambda_function.file_processor_lambda.arn
     events              = ["s3:ObjectCreated:*"]
-    #filter_prefix      =""
   }
-}
-
-# S3 Bucket notification to trigger Lambda function for config bucket
-resource "aws_s3_bucket_notification" "config_lambda_notification" {
-  # For now, only create a trigger in internal-dev and prod as those are the envs with a config bucket
-  count = local.create_config_bucket ? 1 : 0
-
-  bucket = aws_s3_bucket.batch_config_bucket[0].bucket
-
-  lambda_function {
-    lambda_function_arn = aws_lambda_function.file_processor_lambda.arn
-    events              = ["s3:ObjectCreated:*"]
-  }
-}
-
-# Permission for the new S3 bucket to invoke the Lambda function
-resource "aws_lambda_permission" "new_s3_invoke_permission" {
-  count = local.create_config_bucket ? 1 : 0
-
-  statement_id  = "AllowExecutionFromNewS3"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.file_processor_lambda.function_name
-  principal     = "s3.amazonaws.com"
-  source_arn    = local.config_bucket_arn
-}
-
-# IAM Role for ElastiCache.
-resource "aws_iam_role" "elasticache_exec_role" {
-  name = "${local.short_prefix}-elasticache-exec-role"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [{
-      Effect = "Allow",
-      Sid    = "",
-      Principal = {
-        Service = "elasticache.amazonaws.com" # ElastiCache service principal
-      },
-      Action = "sts:AssumeRole"
-    }]
-  })
-}
-
-resource "aws_iam_policy" "elasticache_permissions" {
-  name = "${local.short_prefix}-elasticache-permissions"
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "elasticache:DescribeCacheClusters",
-          "elasticache:ListTagsForResource",
-          "elasticache:AddTagsToResource",
-          "elasticache:RemoveTagsFromResource"
-        ]
-        Resource = "arn:aws:elasticache:${var.aws_region}:${local.immunisation_account_id}:cluster/immunisation-redis-cluster"
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "elasticache:CreateCacheCluster",
-          "elasticache:DeleteCacheCluster",
-          "elasticache:ModifyCacheCluster"
-        ]
-        Resource = "arn:aws:elasticache:${var.aws_region}:${local.immunisation_account_id}:cluster/immunisation-redis-cluster"
-        Condition = {
-          "StringEquals" : {
-            "aws:RequestedRegion" : var.aws_region
-          }
-        }
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "elasticache:DescribeCacheSubnetGroups"
-        ]
-        Resource = "arn:aws:elasticache:${var.aws_region}:${local.immunisation_account_id}:subnet-group/immunisation-redis-subnet-group"
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "elasticache:CreateCacheSubnetGroup",
-          "elasticache:DeleteCacheSubnetGroup",
-          "elasticache:ModifyCacheSubnetGroup"
-        ]
-        Resource = "arn:aws:elasticache:${var.aws_region}:${local.immunisation_account_id}:subnet-group/immunisation-redis-subnet-group"
-        Condition = {
-          "StringEquals" : {
-            "aws:RequestedRegion" : var.aws_region
-          }
-        }
-      }
-    ]
-  })
-}
-
-# Attach the policy to the ElastiCache role
-resource "aws_iam_role_policy_attachment" "elasticache_policy_attachment" {
-  role       = aws_iam_role.elasticache_exec_role.name
-  policy_arn = aws_iam_policy.elasticache_permissions.arn
 }
 
 resource "aws_cloudwatch_log_group" "file_name_processor_log_group" {

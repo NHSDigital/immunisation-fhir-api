@@ -2,7 +2,6 @@
 
 from typing import List, Callable, Dict
 from utils_for_fhir_conversion import _is_not_empty, Generate, Add, Convert
-from mappings import map_target_disease, Vaccine
 from constants import Urls
 
 
@@ -196,13 +195,14 @@ all_decorators: List[ImmunizationDecorator] = [
 ]
 
 
-def convert_to_fhir_imms_resource(row: dict, vaccine: Vaccine) -> dict:
+def convert_to_fhir_imms_resource(row: dict, target_disease: list) -> dict:
     """Converts a row of data to a FHIR Immunization Resource"""
     # Prepare the imms_resource. Note that all data sent via this service is assumed to be for completed vaccinations.
-    imms_resource = {"resourceType": "Immunization", "status": "completed"}
-
-    # Add the targetDisease element based on the vaccine type
-    imms_resource["protocolApplied"] = [{"targetDisease": map_target_disease(vaccine)}]
+    imms_resource = {
+        "resourceType": "Immunization",
+        "status": "completed",
+        "protocolApplied": [{"targetDisease": target_disease}]
+    }
 
     # Apply all decorators to add the relevant fields to the imms_resource
     for decorator in all_decorators:
