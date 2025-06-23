@@ -19,6 +19,9 @@ workspace:
 init:
 	$(tf_cmd) init $(tf_state) -upgrade $(tf_vars)
 
+init-reconfigure:
+	$(tf_cmd) init $(tf_state) -upgrade $(tf_vars) -reconfigure
+
 plan: workspace
 	 $(tf_cmd) plan $(tf_vars)
 
@@ -38,6 +41,9 @@ ifndef name
 	$(error name variable not set. Use 'make output name=...')
 endif
 	$(tf_cmd) output -raw $(name)
+
+import: 
+	$(tf_cmd) import $(tf_vars) $(to) $(id)
 
 tf-%:
 	$(tf_cmd) $*

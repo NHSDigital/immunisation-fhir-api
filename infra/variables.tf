@@ -2,23 +2,15 @@ variable "aws_region" {
   default = "eu-west-2"
 }
 
-variable "imms_account_id" {
-  type = string
+variable "imms_account_id" {}
+variable "dspp_account_id" {}
+variable "auto_ops_role" {}
+variable "admin_role" {}
+variable "dev_ops_role" {}
+variable "dspp_admin_role" {}
+variable "build_agent_account_id" {
+  default = "958002497996"
 }
-variable "dspp_account_id" {
-  type = string
-}
-variable "auto_ops_role" {
-  type = string
-}
-variable "admin_role" {
-  type = string
-}
-variable "dev_ops_role" {
-  type = string
-}
-
-locals {
-  account = terraform.workspace # non-prod or prod
-  # TODO - add new accounts for CDP migration
+variable "environment" {
+  default = "non-prod"
 }

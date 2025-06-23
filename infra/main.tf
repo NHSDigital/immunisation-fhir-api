@@ -13,15 +13,11 @@ terraform {
 }
 
 provider "aws" {
-  region  = var.aws_region
+  region = var.aws_region
   default_tags {
     tags = {
       Project     = "immunisation-fhir-api"
-      Environment = local.account
+      Environment = var.environment
     }
   }
 }
-
-# TODO - use these instead of some of the hard coded values?
-data "aws_region" "current" {}
-data "aws_caller_identity" "current" {}

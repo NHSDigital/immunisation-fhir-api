@@ -13,6 +13,7 @@ locals {
       availability_zone = "eu-west-2c"
     }
   ]
+  environment = var.environment == "non-prod" ? "dev" : var.environment
 }
 
 resource "aws_vpc" "default" {
@@ -20,7 +21,7 @@ resource "aws_vpc" "default" {
   enable_dns_support   = true
   enable_dns_hostnames = true
   tags = {
-    Name = "imms-${local.account}-fhir-api-vpc"
+    Name = "imms-${local.environment}-fhir-api-vpc"
   }
 }
 
@@ -35,14 +36,14 @@ resource "aws_subnet" "default_subnets" {
 resource "aws_internet_gateway" "default" {
   vpc_id = aws_vpc.default.id
   tags = {
-    Name = "imms-${local.account}-fhir-api-igw"
+    Name = "imms-${local.environment}-fhir-api-igw"
   }
 }
 
 resource "aws_route_table" "default" {
   vpc_id = aws_vpc.default.id
   tags = {
-    Name = "imms-${local.account}-fhir-api-rtb"
+    Name = "imms-${local.environment}-fhir-api-rtb"
   }
 }
 
