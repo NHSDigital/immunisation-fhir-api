@@ -25,4 +25,4 @@ def transform_supplier_permissions(supplier):
         entry["supplier"]: entry["permissions"] for entry in supplier
     }
 
-    return supplier_permissions
+    return {"supplier_permissions": supplier_permissions}
