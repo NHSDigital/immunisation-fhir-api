@@ -1,10 +1,15 @@
-"Upload the content from a config file in S3 to ElastiCache (Redis)"
-
 from clients import s3_client
 from clients import logger
 
 
 class S3Reader:
+
+    """
+    Fetch the file from S3 using the specified bucket and key.
+    The file is expected to be a UTF-8 encoded text file (e.g., JSON or plain text).
+    We read the file content from the response body and decode it into a string.
+    This string can then be passed to json.loads() or other parsers as needed.
+    """
 
     @staticmethod
     def read(bucket_name, file_key):
