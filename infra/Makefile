@@ -6,8 +6,7 @@ tf_cmd = AWS_PROFILE=$(AWS_PROFILE) terraform
 tf_state= -backend-config="bucket=$(BUCKET_NAME)"
 tf_vars= -var-file=environments/$(ENVIRONMENT)/variables.tfvars
 
-
-.PHONY : lock-provider workspace init plan apply clean destroy output state-list lambda-zip catch-all-zip
+.PHONY: lock-provider workspace init plan apply clean destroy output tf-%
 
 lock-provider:
 	# Run this only when you install a new terraform provider. This will generate sha code in lock file for all platform
@@ -35,19 +34,10 @@ destroy: workspace
 	$(tf_cmd) workspace delete $(ENVIRONMENT)
 
 output:
+ifndef name
+	$(error name variable not set. Use 'make output name=...')
+endif
 	$(tf_cmd) output -raw $(name)
-
-#Make lambda zip file in /terraform/zips directory. Whenever code gets changed in lamdba_typescript directory , new zip file gets uploaded to s3. For local,you can you this make target
-lambda-zip:
-	cd ../lambda_typescript && \
-	chmod +x ./deploy.sh && \
-	./deploy.sh
-
-#Make catch-all-lambda zip file in /terraform/zips directory. Whenever code gets changed in lamdba_typescript directory , new zip file gets uploaded to s3. For local,you can you this make target
-catch-all-zip:
-	cd ../catch_all_lambda && \
-	chmod +x ./deploy.sh && \
-	./deploy.sh
 
 tf-%:
 	$(tf_cmd) $*
