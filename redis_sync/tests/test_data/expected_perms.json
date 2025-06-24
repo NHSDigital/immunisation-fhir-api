@@ -1,0 +1,16 @@
+{
+  "supplier_permissions": {
+    "DPSFULL": ["COVID19_FULL", "FLU_FULL", "MMR_FULL", "RSV_FULL"],
+    "DPSREDUCED": ["COVID19_FULL", "FLU_FULL", "MMR_FULL", "RSV_FULL"],
+    "EMIS": ["RSV_UPDATE"],
+    "PINNACLE": [""],
+    "SONAR": ["FLU_CREATE", "FLU_DELETE"],
+    "TPP": [""],
+    "AGEM-NIVS": [""],
+    "NIMS": [""],
+    "EVA": ["COVID19_CREATE", "COVID19_DELETE", "COVID19_UPDATE"],
+    "RAVS": [""],
+    "MEDICAL_DIRECTOR": [""],
+    "COVID19_VACCINE_RESOLUTION_SERVICEDESK": [""]
+  }
+}

@@ -1,0 +1,50 @@
+[
+		{
+			"supplier": "DPSFULL",
+			"permissions": ["COVID19_FULL", "FLU_FULL", "MMR_FULL", "RSV_FULL"]
+		},
+		{
+			"supplier": "DPSREDUCED",
+			"permissions": ["COVID19_FULL", "FLU_FULL", "MMR_FULL", "RSV_FULL"]
+		},
+		{
+			"supplier": "EMIS",
+			"permissions": ["RSV_UPDATE"]
+		},
+		{
+			"supplier": "PINNACLE",
+			"permissions": [""]
+		},
+		{
+			"supplier": "SONAR",
+			"permissions": ["FLU_CREATE", "FLU_DELETE"]
+		},
+		{
+			"supplier": "TPP",
+			"permissions": [""]
+		},
+		{
+			"supplier": "AGEM-NIVS",
+			"permissions": [""]
+		},
+		{
+			"supplier": "NIMS",
+			"permissions": [""]
+		},
+		{
+			"supplier": "EVA",
+			"permissions": ["COVID19_CREATE", "COVID19_DELETE", "COVID19_UPDATE"]
+		},
+		{
+			"supplier": "RAVS",
+			"permissions": [""]
+		},
+		{
+			"supplier": "MEDICAL_DIRECTOR",
+			"permissions": [""]
+		},
+		{
+			"supplier": "COVID19_VACCINE_RESOLUTION_SERVICEDESK",
+			"permissions": [""]
+		}
+	] 
