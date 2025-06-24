@@ -31,7 +31,7 @@ def generate_and_send_logs(
     send_log_to_firehose(log_data)
 
 
-def redis_sync_logging_decorator(prefix="redis_sync"):
+def logging_decorator(prefix="redis_sync"):
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):

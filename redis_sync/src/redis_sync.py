@@ -2,7 +2,7 @@ from clients import logger
 from s3_event import S3Event
 from record_processor import process_record
 from event_read import read_event
-from redis_sync_log_decorator import redis_sync_logging_decorator as logging_decorator
+from log_decorator import logging_decorator
 from clients import redis_client
 '''
     Event Processor
