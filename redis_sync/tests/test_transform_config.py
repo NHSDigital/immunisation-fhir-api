@@ -10,108 +10,43 @@ from transform_configs import transform_vaccine_map, transform_supplier_permissi
 with open("./tests/test_data/disease_mapping.json") as f:
     sample_map = json.load(f)
 
+with open("./tests/test_data/permissions_config.json") as permissions_data:
+    supplier_data = json.load(permissions_data)
 
-class TestTransformVaccineMap(unittest.TestCase):
 
-    def setUp(self):
-        self.logger_info_patcher = patch("logging.Logger.info")
-        self.mock_logger_info = self.logger_info_patcher.start()
+    class TestTransformConfigs(unittest.TestCase):
 
-    def tearDown(self):
-        self.logger_info_patcher.stop()
+        def setUp(self):
+            self.logger_info_patcher = patch("logging.Logger.info")
+            self.mock_logger_info = self.logger_info_patcher.start()
 
-    def test_transform_vaccine_map(self):
-        result = transform_vaccine_map(sample_map)
-        # Check that all vaccine keys are present and map to the correct diseases
-        for entry in sample_map:
-            self.assertIn(entry["vacc_type"], result["vacc_to_diseases"])
-            self.assertEqual(result["vacc_to_diseases"][entry["vacc_type"]], entry["diseases"])
-        # Check that all disease keys are present and map to the correct vaccine
-        for entry in sample_map:
-            disease_codes = ':'.join(sorted(d["code"] for d in entry["diseases"]))
-            self.assertIn(disease_codes, result["diseases_to_vacc"])
-            self.assertEqual(result["diseases_to_vacc"][disease_codes], entry["vacc_type"])
+        def tearDown(self):
+            self.logger_info_patcher.stop()
 
-    def test_disease_to_vacc(self):
-        """ Test that the disease to vaccine mapping is correct."""
-        with open("./tests/test_data/expected_disease_to_vacc.json") as f:
-            expected_disease_to_vacc = json.load(f)
-            result = transform_vaccine_map(sample_map)
-            self.assertEqual(result["diseases_to_vacc"], expected_disease_to_vacc)
+        def test_disease_to_vacc(self):
+            """ Test that the disease to vaccine mapping is correct."""
+            with open("./tests/test_data/expected_disease_to_vacc.json") as f:
+                expected_disease_to_vacc = json.load(f)
+                result = transform_vaccine_map(sample_map)
+                self.assertEqual(result["diseases_to_vacc"], expected_disease_to_vacc)
 
-    def test_vacc_to_diseases(self):
+        def test_vacc_to_diseases(self):
+            with open("./tests/test_data/expected_vacc_to_diseases.json") as f:
+                expected_vacc_to_diseases = json.load(f)
+                result = transform_vaccine_map(sample_map)
+                self.assertEqual(result["vacc_to_diseases"], expected_vacc_to_diseases)
+        
+        def test_permissions_expected_output_file(self):
+            with open("./tests/test_data/expected_perms.json") as permissions_data:
+                expected_supplier_data = json.load(permissions_data) 
+            result = transform_supplier_permissions(supplier_data)
+            self.assertEqual(result, expected_supplier_data)
 
-        with open("./tests/test_data/expected_vacc_to_diseases.json") as f:
-            expected_vacc_to_diseases = json.load(f)
+        def test_empty_input(self):
+            result = transform_supplier_permissions([])
+            self.assertEqual(result, {"supplier_permissions": {}})
 
-            result = transform_vaccine_map(sample_map)
-            self.assertEqual(result["vacc_to_diseases"], expected_vacc_to_diseases)
-
-    def setUp(self):
-        self.logger_info_patcher = patch("logging.Logger.info")
-        self.mock_logger_info = self.logger_info_patcher.start()
-
-    def tearDown(self):
-        self.logger_info_patcher.stop()
-
-    def test_transform_vaccine_map(self):
-        result = transform_vaccine_map(sample_map)
-        # Check that all vaccine keys are present and map to the correct diseases
-        for entry in sample_map:
-            self.assertIn(entry["vacc_type"], result["vacc_to_diseases"])
-            self.assertEqual(result["vacc_to_diseases"][entry["vacc_type"]], entry["diseases"])
-        # Check that all disease keys are present and map to the correct vaccine
-        for entry in sample_map:
-            disease_codes = ':'.join(sorted(d["code"] for d in entry["diseases"]))
-            self.assertIn(disease_codes, result["diseases_to_vacc"])
-            self.assertEqual(result["diseases_to_vacc"][disease_codes], entry["vacc_type"])
-
-    def test_disease_to_vacc(self):
-        """ Test that the disease to vaccine mapping is correct."""
-        with open("./tests/test_data/expected_disease_to_vacc.json") as f:
-            expected_disease_to_vacc = json.load(f)
-            result = transform_vaccine_map(sample_map)
-            self.assertEqual(result["diseases_to_vacc"], expected_disease_to_vacc)
-
-    def test_vacc_to_diseases(self):
-
-        with open("./tests/test_data/expected_vacc_to_diseases.json") as f:
-            expected_vacc_to_diseases = json.load(f)
-
-            result = transform_vaccine_map(sample_map)
-            self.assertEqual(result["vacc_to_diseases"], expected_vacc_to_diseases)
-
-class TransformSupplierPermissions(unittest.TestCase):
-
-    def setUp(self):
-        self.logger_info_patcher = patch("transform_configs.logger.info")
-        self.mock_logger_info = self.logger_info_patcher.start()
-
-        # Load input data from external file
-        with open("./tests/test_data/permissions_config.json") as permissions_data:
-            self.supplier_data = json.load(permissions_data)
-
-        # Load expected result for full match test
-        with open("./tests/test_data/expected_perms.json") as permissions_data:
-            self.expected_supplier_data = json.load(permissions_data)
-
-    def tearDown(self):
-        self.logger_info_patcher.stop()
-
-    def test_transform_structure(self):
-        result = transform_supplier_permissions(self.supplier_data)
-        expected_keys = set(self.expected_supplier_data["supplier_permissions"].keys())
-        self.assertEqual(set(result["supplier_permissions"].keys()), expected_keys)
-
-    def test_against_expected_output_file(self):
-        result = transform_supplier_permissions(self.supplier_data)
-        self.assertEqual(result, self.expected_supplier_data)
-
-    def test_empty_input(self):
-        result = transform_supplier_permissions([])
-        self.assertEqual(result, {"supplier_permissions": {}})
-
-    def test_missing_keys_raises_error(self):
-        broken_input = [{"supplier": "X"}, {"permissions": ["read:vaccine"]}]
-        with self.assertRaises(KeyError):
-            transform_supplier_permissions(broken_input)
+        def test_missing_keys_raises_error(self):
+            broken_input = [{"supplier": "X"}, {"permissions": ["read:vaccine"]}]
+            with self.assertRaises(KeyError):
+                transform_supplier_permissions(broken_input)
