@@ -1,4 +1,3 @@
-# flake8: noqa: F811
 
 import unittest
 import json
