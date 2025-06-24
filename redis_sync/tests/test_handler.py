@@ -1,9 +1,12 @@
 ''' unit tests for redis_sync.py '''
 import unittest
 from unittest.mock import patch
-from redis_sync import handler
+# from redis_sync import handler
 from s3_event import S3EventRecord
 from constants import RedisCacheKey
+
+with patch("redis_sync_log_decorator.redis_sync_logging_decorator", lambda prefix=None: (lambda f: f)):
+    from redis_sync import handler
 
 
 class TestHandler(unittest.TestCase):
@@ -42,11 +45,11 @@ class TestHandler(unittest.TestCase):
     def test_handler_success(self):
         mock_event = {'Records': [self.s3_vaccine]}
         self.mock_get_s3_records.return_value = [self.s3_vaccine]
+        self.mock_record_processor.return_value = {'status': 'success', 'message': 'Processed successfully'}
 
         result = handler(mock_event, None)
 
-        self.assertTrue(result)
-        self.mock_logger_info.assert_called_with("Successfully processed all %d records", 1)
+        self.assertEqual(result, {'status': 'success', 'message': 'Successfully processed 1 records'})
 
     def test_handler_failure(self):
         mock_event = {'Records': [self.s3_vaccine]}
@@ -57,7 +60,6 @@ class TestHandler(unittest.TestCase):
         result = handler(mock_event, None)
 
         self.assertEqual(result, {'status': 'error', 'message': 'Error processing S3 event'})
-        self.mock_logger_info.assert_called_with("Processing S3 event with %d records", 1)
 
     def test_handler_no_records(self):
         mock_event = {'Records': []}
@@ -66,8 +68,7 @@ class TestHandler(unittest.TestCase):
 
         result = handler(mock_event, None)
 
-        self.assertTrue(result)
-        self.mock_logger_info.assert_called_with("Successfully processed all %d records", 0)
+        self.assertEqual(result, {'status': 'success', 'message': 'No records found in event'})
 
     def test_handler_exception(self):
         mock_event = {'Records': [self.s3_vaccine]}
@@ -93,12 +94,11 @@ class TestHandler(unittest.TestCase):
             S3EventRecord(self.s3_vaccine),
             S3EventRecord(self.s3_supplier)
         ]
-        self.mock_record_processor.return_value = True
+        self.mock_record_processor.return_value = {'status': 'success', 'message': 'Processed successfully' }
 
         result = handler(mock_event, None)
 
-        self.assertTrue(result)
-        self.mock_logger_info.assert_called_with("Processing S3 event with %d records", 2)
+        self.assertEqual(result, {'status': 'success', 'message': 'Successfully processed 2 records'})
 
     # test to check that event_read is called when "read" key is passed in the event
     def test_handler_read_event(self):
