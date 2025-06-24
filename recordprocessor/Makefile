@@ -8,12 +8,12 @@ test:
 	python -m unittest	
 
 coverage run:
-    coverage run -m unittest discover
+	coverage run -m unittest discover
 
 coverage report:
 	coverage report -m 
 
 coverage html:
-    coverage html  
+	coverage html
 
 .PHONY: build package

@@ -1,5 +1,5 @@
 """Tests for process_csv_to_fhir function"""
-
+import json
 import unittest
 from unittest.mock import patch
 from copy import deepcopy
@@ -33,6 +33,14 @@ class TestProcessCsvToFhir(unittest.TestCase):
 
     def setUp(self) -> None:
         GenericSetUp(s3_client, firehose_client)
+
+        redis_patcher = patch("mappings.redis_client")
+        self.addCleanup(redis_patcher.stop)
+        mock_redis_client = redis_patcher.start()
+        mock_redis_client.hget.return_value = json.dumps([{
+            "code": "55735004",
+            "term": "Respiratory syncytial virus infection (disorder)"
+        }])
 
     def tearDown(self) -> None:
         GenericTearDown(s3_client, firehose_client)

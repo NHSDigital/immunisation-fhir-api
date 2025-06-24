@@ -27,7 +27,7 @@ resource "aws_ecr_repository" "processing_repository" {
 # Build and Push Docker Image to ECR (Reusing the existing module)
 module "processing_docker_image" {
   source  = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version = "7.20.2"
+  version = "7.21.1"
 
   docker_file_path = "Dockerfile"
   create_ecr_repo  = false
@@ -225,6 +225,14 @@ resource "aws_ecs_task_definition" "ecs_task" {
       {
         name  = "FILE_NAME_PROC_LAMBDA_NAME"
         value = aws_lambda_function.file_processor_lambda.function_name
+      },
+      {
+        name  = "REDIS_HOST"
+        value = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].address
+      },
+      {
+        name  = "REDIS_PORT"
+        value = tostring(data.aws_elasticache_cluster.existing_redis.cache_nodes[0].port)
       }
     ]
     logConfiguration = {

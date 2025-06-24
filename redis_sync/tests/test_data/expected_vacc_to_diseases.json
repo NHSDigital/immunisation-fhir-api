@@ -1,0 +1,96 @@
+{
+  "COVID19": [
+    {
+      "code": "840539006",
+      "term": "Disease caused by severe acute respiratory syndrome coronavirus 2"
+    }
+  ],
+  "FLU": [
+    {
+      "code": "6142004",
+      "term": "Influenza caused by seasonal influenza virus (disorder)"
+    }
+  ],
+  "HPV": [
+    {
+      "code": "240532009",
+      "term": "Human papillomavirus infection"
+    }
+  ],
+  "MMR": [
+    {
+      "code": "14189004",
+      "term": "Measles (disorder)"
+    },
+    {
+      "code": "36989005",
+      "term": "Mumps (disorder)"
+    },
+    {
+      "code": "36653000",
+      "term": "Rubella (disorder)"
+    }
+  ],
+  "MMRV": [
+    {
+      "code": "14189004",
+      "term": "Measles (disorder)"
+    },
+    {
+      "code": "36989005",
+      "term": "Mumps (disorder)"
+    },
+    {
+      "code": "36653000",
+      "term": "Rubella (disorder)"
+    },
+    {
+      "code": "38907003",
+      "term": "Varicella (disorder)"
+    }
+  ],
+  "RSV": [
+    {
+      "code": "55735004",
+      "term": "Respiratory syncytial virus infection (disorder)"
+    }
+  ],
+  "PERTUSSIS": [
+    {
+      "code": "27836007",
+      "term": "Pertussis (disorder)"
+    }
+  ],
+  "SHINGLES": [
+    {
+      "code": "4740000",
+      "term": "Herpes zoster"
+    }
+  ],
+  "PCV13": [
+    {
+      "code": "16814004",
+      "term": "Pneumococcal infectious disease"
+    }
+  ],
+  "3in1": [
+    {
+      "code": "398102009",
+      "term": "Acute poliomyelitis"
+    },
+    {
+      "code": "397430003",
+      "term": "Diphtheria caused by Corynebacterium diphtheriae"
+    },
+    {
+      "code": "76902006",
+      "term": "Tetanus (disorder)"
+    }
+  ],
+  "MENACWY": [
+    {
+      "code": "23511006",
+      "term": "Meningococcal infectious disease"
+    }
+  ]
+}
