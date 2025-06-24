@@ -265,3 +265,27 @@ class RecordProcessorError(Exception):
 
     def __init__(self, diagnostics_dictionary: dict):
         self.diagnostics_dictionary = diagnostics_dictionary
+
+class VaccineTypePermissionsError(Exception):
+    """
+    Raised when a supplier tries to access a vaccine type they don't have permission for.
+    """
+
+    def __init__(self, message: str):
+        super().__init__(message)
+        self.message = message
+
+    def to_operation_outcome(self) -> dict:
+        """
+        Converts the error to a FHIR-compliant OperationOutcome resource.
+        """
+        return {
+            "resourceType": "OperationOutcome",
+            "issue": [
+                {
+                    "severity": "error",
+                    "code": "forbidden",
+                    "diagnostics": self.message,
+                }
+            ]
+        }
