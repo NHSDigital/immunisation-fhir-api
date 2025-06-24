@@ -209,9 +209,9 @@ class FhirController:
     def update_immunization(self, aws_event):
         try:
             if aws_event.get("headers"):
-                    if response := self.authorize_request(EndpointOperation.UPDATE, aws_event):
-                        return response
-                    imms_id = aws_event["pathParameters"]["id"]
+                if response := self.authorize_request(EndpointOperation.UPDATE, aws_event):
+                    return response
+                imms_id = aws_event["pathParameters"]["id"]
             else:
                 raise UnauthorizedError()
         except UnauthorizedError as unauthorized:
