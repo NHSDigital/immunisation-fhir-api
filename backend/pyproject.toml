@@ -13,6 +13,7 @@ boto3                   = "~1.38.35"
 boto3-stubs-lite        = {extras = ["dynamodb"], version = "~1.38.35"}
 aws-lambda-typing       = "~2.20.0"
 moto                    = "^5.1.4"
+redis                   = "^4.6.0"
 requests                = "~2.32.4"
 responses               = "~0.25.7"
 pydantic                = "~1.10.13"

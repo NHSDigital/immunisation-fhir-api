@@ -1,5 +1,4 @@
 from clients import redis_client
-from errors import VaccineTypePermissionsError
 import json
 
 def get_supplier_permissions(supplier: str) -> list[str]:
