@@ -94,7 +94,7 @@ class TestHandler(unittest.TestCase):
             S3EventRecord(self.s3_vaccine),
             S3EventRecord(self.s3_supplier)
         ]
-        self.mock_record_processor.return_value = {'status': 'success', 'message': 'Processed successfully' }
+        self.mock_record_processor.return_value = {'status': 'success', 'message': 'Processed successfully'}
 
         result = handler(mock_event, None)
 

@@ -15,13 +15,23 @@ def process_record(record: S3EventRecord) -> dict:
         bucket_name = record.get_bucket_name()
         file_key = record.get_object_key()
 
+        base_log_data = {
+            "bucket_name": bucket_name,
+            "file_key": file_key
+        }
+
         try:
-            return RedisCacher.upload(bucket_name, file_key)
+            result = RedisCacher.upload(bucket_name, file_key)
+            result.update(base_log_data)
+            return result
 
         except Exception as error:  # pylint: disable=broad-except
             logger.exception("Error uploading to cache for filename '%s'", file_key)
-            return {"status": "error", "message": str(error)}
+            error_data = {"status": "error", "message": str(error)}
+            error_data.update(base_log_data)
+            return error_data
 
     except Exception:  # pylint: disable=broad-except
-        logger.exception("Error obtaining file_key")
-        return {"status": "error", "message": "Error obtaining file_key"}
+        msg = "Error processing record"
+        logger.exception(msg)
+        return {"status": "error", "message": msg}
