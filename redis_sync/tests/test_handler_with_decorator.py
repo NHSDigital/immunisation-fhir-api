@@ -37,12 +37,7 @@ class TestHandlerDecorator(unittest.TestCase):
         self.mock_firehose_client.put_record.return_value = True
 
     def tearDown(self):
-        self.logger_info_patcher.stop()
-        self.get_s3_records_patcher.stop()
-        self.record_processor_patcher.stop()
-        self.logger_error_patcher.stop()
-        self.logger_exception_patcher.stop()
-        self.firehose_patcher.stop()
+        patch.stopall()
 
     def test_handler_decorator_success(self):  # , mock_firehose_client):
         mock_event = {'Records': [self.s3_vaccine]}
