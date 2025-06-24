@@ -9,12 +9,12 @@ class TestTransformConfigs(unittest.TestCase):
     def setUp(self):
         self.logger_info_patcher = patch("transform_configs.logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
-        
+
         with open("./tests/test_data/disease_mapping.json") as mapping_data:
-                self.sample_map = json.load(mapping_data)
-        
+            self.sample_map = json.load(mapping_data)
+
         with open("./tests/test_data/permissions_config.json") as permissions_data:
-                self.supplier_data = json.load(permissions_data)
+            self.supplier_data = json.load(permissions_data)
 
     def tearDown(self):
         self.logger_info_patcher.stop()
