@@ -34,6 +34,7 @@ from models.errors import (
     UnauthorizedSystemError,
 )
 from models.utils.generic_utils import check_keys_in_sources
+from models.utils.permissions import get_supplier_permissions
 from pds_service import PdsService
 from parameter_parser import process_params, process_search_params, create_query_string
 import urllib.parse
@@ -108,7 +109,8 @@ class FhirController:
         try:
             imms_vax_type_perms = None
             if not is_imms_batch_app:
-                imms_vax_type_perms = aws_event["headers"]["VaccineTypePermissions"]
+                supplier_system = self._identify_supplier_system(aws_event)
+                imms_vax_type_perms = get_supplier_permissions(supplier_system)
                 if len(imms_vax_type_perms) == 0:
                     raise UnauthorizedVaxError()
         except UnauthorizedVaxError as unauthorized:
@@ -132,7 +134,8 @@ class FhirController:
 
         try:
             if aws_event.get("headers"):
-                imms_vax_type_perms = aws_event["headers"]["VaccineTypePermissions"]
+                supplier_system = self._identify_supplier_system(aws_event)
+                imms_vax_type_perms = get_supplier_permissions(supplier_system)
                 if len(imms_vax_type_perms) == 0:
                     raise UnauthorizedVaxError()
             else:
@@ -612,7 +615,8 @@ class FhirController:
         # Check vaxx type permissions- start
         try:
             if aws_event.get("headers"):
-                imms_vax_type_perms = aws_event["headers"]["VaccineTypePermissions"]
+                supplier_system = self._identify_supplier_system(aws_event)
+                imms_vax_type_perms = get_supplier_permissions(supplier_system)
                 if len(imms_vax_type_perms) == 0:
                     raise UnauthorizedVaxError()
             else:
@@ -826,7 +830,8 @@ class FhirController:
         try:
             imms_vax_type_perms = None
             if not is_imms_batch_app:
-                imms_vax_type_perms = aws_event["headers"]["VaccineTypePermissions"]
+                supplier_system = self._identify_supplier_system(aws_event)
+                imms_vax_type_perms = get_supplier_permissions(supplier_system)
                 if len(imms_vax_type_perms) == 0:
                     raise UnauthorizedVaxError()
 
