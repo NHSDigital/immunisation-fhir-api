@@ -1,5 +1,6 @@
 import argparse
 import json
+import logging
 import pprint
 import traceback
 import uuid
@@ -14,9 +15,11 @@ from log_structure import function_info
 import base64
 import urllib.parse
 
+logging.basicConfig(level="INFO")
+logger = logging.getLogger()
 
 @function_info
-def search_imms_handler(event: events.APIGatewayProxyEventV1, context: context_):
+def search_imms_handler(event: events.APIGatewayProxyEventV1, _context: context_):
     return search_imms(event, make_controller())
 
 
@@ -67,6 +70,7 @@ def search_imms(event: events.APIGatewayProxyEventV1, controller: FhirController
             return FhirController.create_response(400, exp_error)
         return response
     except Exception:  # pylint: disable = broad-exception-caught
+        logger.exception("Unhandled exception")
         exp_error = create_operation_outcome(
             resource_id=str(uuid.uuid4()),
             severity=Severity.error,

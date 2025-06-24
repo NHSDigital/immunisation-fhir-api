@@ -1,10 +1,10 @@
-import logging
 import json
+import logging
 import time
 from datetime import datetime
 from functools import wraps
+
 from log_firehose import FirehoseLogger
-from models.utils.generic_utils import extract_file_key_elements
 
 logging.basicConfig()
 logger = logging.getLogger()

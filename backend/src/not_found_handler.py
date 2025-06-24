@@ -8,7 +8,7 @@ def not_found_handler(event, context):
     return not_found(event, context)
 
 
-def not_found(event, context):
+def not_found(event, _context):
 
     if event.get("httpMethod") not in ALLOWED_METHODS:
         response = {
