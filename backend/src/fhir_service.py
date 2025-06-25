@@ -65,7 +65,7 @@ class FhirService:
         return the Immunization without calling PDS or checking S flag.
         """
         imms_resp = self.immunization_repo.get_immunization_by_identifier(
-            identifier_pk, imms_vax_type_perms, is_imms_batch_app
+            identifier_pk, imms_vax_type_perms
         )
         if not imms_resp:
             base_url = f"{get_service_url()}/Immunization"
@@ -106,7 +106,7 @@ class FhirService:
         return imms_resp
 
     def create_immunization(
-        self, immunization: dict, imms_vax_type_perms, supplier_system, is_imms_batch_app
+        self, immunization: dict, imms_vax_type_perms, supplier_system
     ) -> Immunization:
 
         if immunization.get("id") is not None:
@@ -117,13 +117,11 @@ class FhirService:
         except (ValidationError, ValueError, MandatoryError) as error:
             raise CustomValidationError(message=str(error)) from error
         patient = None
-        if not is_imms_batch_app:
-            patient = self._validate_patient(immunization)
-            if "diagnostics" in patient:
-                return patient
+        if "diagnostics" in patient:
+            return patient
 
         imms = self.immunization_repo.create_immunization(
-            immunization, patient, imms_vax_type_perms, supplier_system, is_imms_batch_app
+            immunization, patient, imms_vax_type_perms, supplier_system
         )
 
         return Immunization.parse_obj(imms)
@@ -135,23 +133,19 @@ class FhirService:
         existing_resource_version: int,
         imms_vax_type_perms: str,
         supplier_system: str,
-        is_imms_batch_app,
     ) -> tuple[UpdateOutcome, Immunization]:
         immunization["id"] = imms_id
 
-        patient = None
-        if not is_imms_batch_app:
-            patient = self._validate_patient(immunization)
-            if "diagnostics" in patient:
-                return (None, patient)
+        patient = self._validate_patient(immunization)
+        if "diagnostics" in patient:
+            return (None, patient)
         imms = self.immunization_repo.update_immunization(
             imms_id,
             immunization,
             patient,
             existing_resource_version,
             imms_vax_type_perms,
-            supplier_system,
-            is_imms_batch_app,
+            supplier_system
         )
 
         return UpdateOutcome.UPDATE, Immunization.parse_obj(imms)

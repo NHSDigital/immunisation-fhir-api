@@ -684,11 +684,7 @@ class FhirController:
 
     @staticmethod
     def _parse_vaccine_permissions_controller(imms_vax_type_perms) -> set:
-        parsed = [str.strip(str.lower(s)) for s in imms_vax_type_perms.split(",")]
-        vaccine_permissions = set()
-        for s in parsed:
-            vaccine_permissions.add(s)
-        return vaccine_permissions
+        return {str(s).strip().lower() for s in imms_vax_type_perms}
 
     @staticmethod
     def _check_permission(requested: set, allowed: set) -> set:
