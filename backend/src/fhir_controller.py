@@ -403,6 +403,7 @@ class FhirController:
            return self.create_response(500, unhandled_error.to_operation_outcome())
         except UnauthorizedVaxError as unauthorized:
             return self.create_response(403, unauthorized.to_operation_outcome())
+
     def search_immunizations(self, aws_event: APIGatewayProxyEventV1) -> dict:
         if response := self.authorize_request(EndpointOperation.SEARCH, aws_event):
             return response

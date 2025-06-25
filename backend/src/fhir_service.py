@@ -116,7 +116,7 @@ class FhirService:
             self.validator.validate(immunization)
         except (ValidationError, ValueError, MandatoryError) as error:
             raise CustomValidationError(message=str(error)) from error
-        patient = None
+        patient = self._validate_patient(immunization)
         if "diagnostics" in patient:
             return patient
 
