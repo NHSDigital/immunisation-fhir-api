@@ -17,6 +17,10 @@ VALID_RSV_RAVS_FILE_KEY = MockFileDetails.ravs_rsv_1.file_key
 
 class TestFileKeyValidation(TestCase):
     """Tests for file_key_validation functions"""
+    def setUp(self):
+        redis_patcher = patch("clients.redis_client.hkeys", return_value=["FLU", "COVID19", "MMR", "RSV"])
+        self.addCleanup(redis_patcher.stop)
+        redis_patcher.start()
 
     def test_is_valid_datetime(self):
         "Tests that is_valid_datetime returns True for valid datetimes, and false otherwise"

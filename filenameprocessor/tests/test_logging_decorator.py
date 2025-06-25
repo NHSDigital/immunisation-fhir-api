@@ -48,6 +48,10 @@ class TestLoggingDecorator(unittest.TestCase):
         GenericSetUp(s3_client, firehose_client, sqs_client, dynamodb_client)
         s3_client.put_object(Bucket=BucketNames.SOURCE, Key=FILE_DETAILS.file_key)
 
+        redis_patcher = patch("clients.redis_client.hkeys", return_value=["FLU", "COVID19", "MMR", "RSV"])
+        self.addCleanup(redis_patcher.stop)
+        redis_patcher.start()
+
     def tearDown(self):
         """Clean the mock AWS environment"""
         GenericTearDown(s3_client, firehose_client, sqs_client, dynamodb_client)
