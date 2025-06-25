@@ -1028,18 +1028,15 @@ class TestUpdateImmunization(unittest.TestCase):
         self.assertTrue("body" not in response)
 
     @patch("fhir_controller.sqs_client.send_message")
-    def test_update_immunization_etag_missing(self, mock_sqs_message, mock):
+    @patch("fhir_controller.get_supplier_permissions")
+    def test_update_immunization_etag_missing(self, mock_sqs_message, mock_permissions):
         """it should update Immunization"""
+        mock_permissions.return_value = ["COVID19:update"]
         imms_id = "valid-id"
         imms = {"id": "valid-id"}
         aws_event = {
             "headers": {
-                "VaccineTypePermissions": "COVID19:update",
-                "SupplierSystem": "Imms-Batch-App",
-                "BatchSupplierSystem": "Test",
-                "file_key": "test",
-                "row_id": "123",
-                "created_at_formatted_string": "2020-01-01",
+                "SupplierSystem": "Test",
                 "local_id": ValidValues.test_local_id,
                 "operation_requested": "update"
             },
@@ -1048,6 +1045,7 @@ class TestUpdateImmunization(unittest.TestCase):
         }
         response = self.controller.update_immunization(aws_event)
         mock_sqs_message.assert_called_once()
+        mock_permissions.assert_called_once_with("Test")
         self.assertEqual(response["statusCode"], 400)
         self.assertIn(
             "Validation errors: Immunization resource version not specified in the request headers",
@@ -1180,6 +1178,7 @@ class TestUpdateImmunization(unittest.TestCase):
         self.assertEqual(response["statusCode"], 403)
 
     @patch("fhir_controller.sqs_client.send_message")
+    @patch("fhir_controller.get_supplier_permissions")
     def test_update_immunization_for_batch(self, mock_send_message):
         """it should update Immunization"""
         imms_id = "valid-id"
@@ -1777,7 +1776,8 @@ class TestSearchImmunizations(unittest.TestCase):
     @patch("fhir_controller.get_supplier_permissions")
     def test_get_search_immunizations(self, mock_get_supplier_permissions):
         """it should search based on patient_identifier and immunization_target"""
-        mock_get_supplier_permissions.return_value = {"vaccine_type_permissions": "flu:search"}
+        
+        mock_get_supplier_permissions.return_value = ["covid19:search"]
         search_result = Bundle.construct()
         self.service.search_immunizations.return_value = search_result
 
@@ -1827,9 +1827,11 @@ class TestSearchImmunizations(unittest.TestCase):
         # Then
         self.assertEqual(response["statusCode"], 403)
 
-    def test_get_search_immunizations_for_unauthorized_vaccine_type_search(self):
+    @patch("fhir_controller.get_supplier_permissions")
+    def test_get_search_immunizations_for_unauthorized_vaccine_type_search(self, mock_get_supplier_permissions):
         """it should return 200 and contains warning operation outcome as the user is not having authorization for one of the vaccine type"""
         search_result = load_json_data("sample_immunization_response _for _not_done_event.json")
+        mock_get_supplier_permissions.return_value = ["covid19:search"]
         bundle = Bundle.parse_obj(search_result)
         self.service.search_immunizations.return_value = bundle
 
@@ -1837,7 +1839,7 @@ class TestSearchImmunizations(unittest.TestCase):
         vaccine_type = ",".join(vaccine_type)
 
         lambda_event = {
-            "headers": {"Content-Type": "application/x-www-form-urlencoded", "VaccineTypePermissions": "flu:search"},
+            "headers": {"Content-Type": "application/x-www-form-urlencoded", "SupplierSystem": "test",},
             "multiValueQueryStringParameters": {
                 self.immunization_target_key: [vaccine_type],
                 self.patient_identifier_key: [self.patient_identifier_valid_value],
@@ -1855,16 +1857,18 @@ class TestSearchImmunizations(unittest.TestCase):
         )
         self.assertTrue(operation_outcome_present, "OperationOutcome resource is not present in the response")
 
-    def test_get_search_immunizations_for_unauthorized_vaccine_type_search_400(self):
+    @patch("fhir_controller.get_supplier_permissions")
+    def test_get_search_immunizations_for_unauthorized_vaccine_type_search_400(self,mock_get_supplier_permissions):
         """it should return 400 as the the request is having invalid vaccine type"""
         search_result = load_json_data("sample_immunization_response _for _not_done_event.json")
+        mock_get_supplier_permissions.return_value = ["covid19:search"]
         bundle = Bundle.parse_obj(search_result)
         self.service.search_immunizations.return_value = bundle
 
         vaccine_type = "FLUE"
 
         lambda_event = {
-            "headers": {"Content-Type": "application/x-www-form-urlencoded", "VaccineTypePermissions": "flu:search"},
+            "headers": {"Content-Type": "application/x-www-form-urlencoded", "SupplierSystem": "test"},
             "multiValueQueryStringParameters": {
                 self.immunization_target_key: [vaccine_type],
                 self.patient_identifier_key: [self.patient_identifier_valid_value],
@@ -1877,17 +1881,19 @@ class TestSearchImmunizations(unittest.TestCase):
         body = json.loads(response["body"])
         self.assertEqual(body["resourceType"], "OperationOutcome")
 
-    def test_get_search_immunizations_for_unauthorized_vaccine_type_search_403(self):
+    @patch("fhir_controller.get_supplier_permissions")
+    def test_get_search_immunizations_for_unauthorized_vaccine_type_search_403(self, mock_get_supplier_permissions):
         """it should return 403 as the user doesnt have vaccinetype permission"""
         search_result = load_json_data("sample_immunization_response _for _not_done_event.json")
         bundle = Bundle.parse_obj(search_result)
+        mock_get_supplier_permissions.return_value = []
         self.service.search_immunizations.return_value = bundle
 
         vaccine_type = VaccineTypes().all[0], VaccineTypes().all[1]
         vaccine_type = ",".join(vaccine_type)
 
         lambda_event = {
-            "headers": {"Content-Type": "application/x-www-form-urlencoded", "VaccineTypePermissions": ""},
+            "headers": {"Content-Type": "application/x-www-form-urlencoded", "SupplierSystem": "test",},
             "multiValueQueryStringParameters": {
                 self.immunization_target_key: [vaccine_type],
                 self.patient_identifier_key: [self.patient_identifier_valid_value],
@@ -1896,13 +1902,16 @@ class TestSearchImmunizations(unittest.TestCase):
 
         # When
         response = self.controller.search_immunizations(lambda_event)
+        mock_get_supplier_permissions.assert_called_once_with("test")
         self.assertEqual(response["statusCode"], 403)
         body = json.loads(response["body"])
         self.assertEqual(body["resourceType"], "OperationOutcome")
 
-    def test_get_search_immunizations_unauthorized(self):
+    @patch("fhir_controller.get_supplier_permissions")
+    def test_get_search_immunizations_unauthorized(self, mock_get_supplier_permissions):
         """it should search based on patient_identifier and immunization_target"""
         search_result = Bundle.construct()
+        mock_get_supplier_permissions.return_value = []
         self.service.search_immunizations.return_value = search_result
 
         vaccine_type = VaccineTypes().all[0]
@@ -1910,7 +1919,7 @@ class TestSearchImmunizations(unittest.TestCase):
             [(f"{self.patient_identifier_key}", f"{self.patient_identifier_valid_value}")]
         )
         lambda_event = {
-            "headers": {"Content-Type": "application/x-www-form-urlencoded", "VaccineTypePermissions": "FLU:search"},
+            "headers": {"Content-Type": "application/x-www-form-urlencoded", "SupplierSystem": "test"},
             "multiValueQueryStringParameters": {
                 self.immunization_target_key: [vaccine_type],
                 self.patient_identifier_key: [self.patient_identifier_valid_value],
@@ -1919,11 +1928,13 @@ class TestSearchImmunizations(unittest.TestCase):
 
         # When
         response = self.controller.search_immunizations(lambda_event)
-
+        mock_get_supplier_permissions.assert_called_once_with("test")
         self.assertEqual(response["statusCode"], 403)
 
-    def test_post_search_immunizations(self):
+    @patch("fhir_controller.get_supplier_permissions")
+    def test_post_search_immunizations(self,mock_get_supplier_permissions):
         """it should search based on patient_identifier and immunization_target"""
+        mock_get_supplier_permissions.return_value = ["covid19:search"]
         search_result = Bundle.construct()
         self.service.search_immunizations.return_value = search_result
 
@@ -1943,12 +1954,10 @@ class TestSearchImmunizations(unittest.TestCase):
         # Construct the lambda event
         lambda_event = {
             "httpMethod": "POST",
-            "headers": {
-                "Content-Type": "application/x-www-form-urlencoded",
-                "VaccineTypePermissions": "COVID19:search",
-            },
+            "headers": {"Content-Type": "application/x-www-form-urlencoded", "SupplierSystem": "Test"},
             "body": base64_encoded_body,
         }
+        
         # When
         response = self.controller.search_immunizations(lambda_event)
         # Then
@@ -1956,14 +1965,17 @@ class TestSearchImmunizations(unittest.TestCase):
             self.nhs_number_valid_value, [vaccine_type], params, ANY, ANY
         )
         self.assertEqual(response["statusCode"], 200)
+        mock_get_supplier_permissions.assert_called_once_with("Test")
         body = json.loads(response["body"])
         self.assertEqual(body["resourceType"], "Bundle")
 
-    def test_post_search_immunizations_for_unauthorized_vaccine_type_search(self):
+    @patch("fhir_controller.get_supplier_permissions")
+    def test_post_search_immunizations_for_unauthorized_vaccine_type_search(self,mock_get_supplier_permissions):
         """it should return 200 and contains warning operation outcome as the user is not having authorization for one of the vaccine type"""
         search_result = load_json_data("sample_immunization_response _for _not_done_event.json")
         bundle = Bundle.parse_obj(search_result)
         self.service.search_immunizations.return_value = bundle
+        mock_get_supplier_permissions.return_value = ["covid19:search"]
 
         vaccine_type = VaccineTypes().all[0], VaccineTypes().all[1]
         vaccine_type = ",".join(vaccine_type)
@@ -1979,7 +1991,7 @@ class TestSearchImmunizations(unittest.TestCase):
         # Construct the lambda event
         lambda_event = {
             "httpMethod": "POST",
-            "headers": {"Content-Type": "application/x-www-form-urlencoded", "VaccineTypePermissions": "flu:search"},
+            "headers": {"Content-Type": "application/x-www-form-urlencoded", "SupplierSystem": "Test"},
             "body": base64_encoded_body,
         }
         # When
@@ -2022,10 +2034,12 @@ class TestSearchImmunizations(unittest.TestCase):
         body = json.loads(response["body"])
         self.assertEqual(body["resourceType"], "OperationOutcome")
 
-    def test_post_search_immunizations_for_unauthorized_vaccine_type_search_403(self):
+    @patch("fhir_controller.get_supplier_permissions")
+    def test_post_search_immunizations_for_unauthorized_vaccine_type_search_403(self, mock_get_supplier_permissions):
         """it should return 403 as the user doesnt have vaccinetype permission"""
         search_result = load_json_data("sample_immunization_response _for _not_done_event.json")
         bundle = Bundle.parse_obj(search_result)
+        mock_get_supplier_permissions.return_value = []
         self.service.search_immunizations.return_value = bundle
 
         vaccine_type = VaccineTypes().all[0], VaccineTypes().all[1]
@@ -2043,7 +2057,7 @@ class TestSearchImmunizations(unittest.TestCase):
         # Construct the lambda event
         lambda_event = {
             "httpMethod": "POST",
-            "headers": {"Content-Type": "application/x-www-form-urlencoded", "VaccineTypePermissions": ""},
+            "headers": {"Content-Type": "application/x-www-form-urlencoded", "SupplierSystem": "Test"},
             "body": base64_encoded_body,
         }
         # When
@@ -2089,18 +2103,20 @@ class TestSearchImmunizations(unittest.TestCase):
         outcome = json.loads(response["body"])
         self.assertEqual(outcome["resourceType"], "OperationOutcome")
 
-    def test_search_immunizations_returns_400_on_passing_superseded_nhs_number(self):
+    @patch("fhir_controller.get_supplier_permissions")
+    def test_search_immunizations_returns_400_on_passing_superseded_nhs_number(self, mock_get_supplier_permissions):
         "This method should return 400 as input paramter has superseded nhs number."
         search_result = {
             "diagnostics": "Validation errors: contained[?(@.resourceType=='Patient')].identifier[0].value does not exists"
         }
         self.service.search_immunizations.return_value = search_result
+        mock_get_supplier_permissions.return_value = ["covid19:search"]
 
         vaccine_type = VaccineTypes().all[0]
         lambda_event = {
             "headers": {
                 "Content-Type": "application/x-www-form-urlencoded",
-                "VaccineTypePermissions": "COVID19:search",
+                "SupplierSystem": "Test",
             },
             "multiValueQueryStringParameters": {
                 self.immunization_target_key: [vaccine_type],
@@ -2112,19 +2128,22 @@ class TestSearchImmunizations(unittest.TestCase):
         response = self.controller.search_immunizations(lambda_event)
 
         self.assertEqual(response["statusCode"], 400)
+        mock_get_supplier_permissions.assert_called_once_with("Test")
         body = json.loads(response["body"])
         self.assertEqual(body["resourceType"], "OperationOutcome")
 
-    def test_search_immunizations_returns_200_remove_vaccine_not_done(self):
+    @patch("fhir_controller.get_supplier_permissions")
+    def test_search_immunizations_returns_200_remove_vaccine_not_done(self, mock_get_supplier_permissions):
         "This method should return 200 but remove the data which has status as not done."
         search_result = load_json_data("sample_immunization_response _for _not_done_event.json")
         bundle = Bundle.parse_obj(search_result)
+        mock_get_supplier_permissions.return_value = ["covid19:search"]
         self.service.search_immunizations.return_value = bundle
         vaccine_type = VaccineTypes().all[0]
         lambda_event = {
             "headers": {
                 "Content-Type": "application/x-www-form-urlencoded",
-                "VaccineTypePermissions": "COVID19:search",
+                "SupplierSystem": "Test",
             },
             "multiValueQueryStringParameters": {
                 self.immunization_target_key: [vaccine_type],
@@ -2140,10 +2159,12 @@ class TestSearchImmunizations(unittest.TestCase):
         for entry in body.get("entry", []):
             self.assertNotEqual(entry.get("resource", {}).get("status"), "not-done", "entered-in-error")
 
-    def test_self_link_excludes_extraneous_params(self):
+    @patch("fhir_controller.get_supplier_permissions")
+    def test_self_link_excludes_extraneous_params(self, mock_get_supplier_permissions):
         search_result = Bundle.construct()
         self.service.search_immunizations.return_value = search_result
         vaccine_type = VaccineTypes().all[0]
+        mock_get_supplier_permissions.return_value = ["covid19:search"]
         params = f"{self.immunization_target_key}={vaccine_type}&" + urllib.parse.urlencode(
             [(f"{self.patient_identifier_key}", f"{self.patient_identifier_valid_value}")]
         )
@@ -2158,7 +2179,7 @@ class TestSearchImmunizations(unittest.TestCase):
             "body": None,
             "headers": {
                 "Content-Type": "application/x-www-form-urlencoded",
-                "VaccineTypePermissions": "COVID19:search",
+                "SupplierSystem": "Test",
             },
             "httpMethod": "POST",
         }
