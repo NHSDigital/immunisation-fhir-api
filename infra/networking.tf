@@ -53,6 +53,18 @@ resource "aws_route" "igw_route" {
   gateway_id             = aws_internet_gateway.default.id
 }
 
-resource "aws_route53_zone" "hosted_zone" {
-  name = var.route53_zone_name
+resource "aws_route53_zone" "parent_hosted_zone" {
+  name = var.parent_route53_zone_name
+}
+
+resource "aws_route53_zone" "child_hosted_zone" {
+  name = var.child_route53_zone_name
+}
+
+resource "aws_route53_record" "imms_ns" {
+  zone_id = aws_route53_zone.parent_hosted_zone.zone_id
+  name    = var.child_route53_zone_name
+  type    = "NS"
+  ttl     = 172800
+  records = [for ns in aws_route53_zone.child_hosted_zone.name_servers : "${ns}."]
 }

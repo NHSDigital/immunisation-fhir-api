@@ -8,7 +8,8 @@ variable "auto_ops_role" {}
 variable "admin_role" {}
 variable "dev_ops_role" {}
 variable "dspp_admin_role" {}
-variable "route53_zone_name" {}
+variable "parent_route53_zone_name" {}
+variable "child_route53_zone_name" {}
 variable "build_agent_account_id" {
   default = "958002497996"
 }
