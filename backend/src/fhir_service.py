@@ -157,15 +157,11 @@ class FhirService:
         existing_resource_version: int,
         imms_vax_type_perms: str,
         supplier_system: str,
-        is_imms_batch_app,
     ) -> tuple[UpdateOutcome, Immunization]:
         immunization["id"] = imms_id
-
-        patient = None
-        if not is_imms_batch_app:
-            patient = self._validate_patient(immunization)
-            if "diagnostics" in patient:
-                return (None, patient)
+        patient = self._validate_patient(immunization)
+        if "diagnostics" in patient:
+            return (None, patient)
         imms = self.immunization_repo.reinstate_immunization(
             imms_id,
             immunization,
@@ -173,7 +169,6 @@ class FhirService:
             existing_resource_version,
             imms_vax_type_perms,
             supplier_system,
-            is_imms_batch_app,
         )
 
         return UpdateOutcome.UPDATE, Immunization.parse_obj(imms)
@@ -206,14 +201,14 @@ class FhirService:
 
         return UpdateOutcome.UPDATE, Immunization.parse_obj(imms)
 
-    def delete_immunization(self, imms_id, imms_vax_type_perms, supplier_system, is_imms_batch_app) -> Immunization:
+    def delete_immunization(self, imms_id, imms_vax_type_perms, supplier_system) -> Immunization:
         """
         Delete an Immunization if it exits and return the ID back if successful.
         Exception will be raised if resource didn't exit. Multiple calls to this method won't change
         the record in the database.
         """
         imms = self.immunization_repo.delete_immunization(
-            imms_id, imms_vax_type_perms, supplier_system, is_imms_batch_app
+            imms_id, imms_vax_type_perms, supplier_system
         )
         return Immunization.parse_obj(imms)
 
