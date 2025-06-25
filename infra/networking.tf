@@ -52,3 +52,7 @@ resource "aws_route" "igw_route" {
   destination_cidr_block = "0.0.0.0/16"
   gateway_id             = aws_internet_gateway.default.id
 }
+
+resource "aws_route53_zone" "hosted_zone" {
+  name = var.route53_zone_name
+}
