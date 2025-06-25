@@ -212,6 +212,14 @@ class FhirController:
                 if response := self.authorize_request(EndpointOperation.UPDATE, aws_event):
                     return response
                 imms_id = aws_event["pathParameters"]["id"]
+                if "E-Tag" not in aws_event["headers"]:
+                    exp_error = create_operation_outcome(
+                resource_id=str(uuid.uuid4()),
+                severity=Severity.error,
+                code=Code.invariant,
+                diagnostics="Validation errors: Immunization resource version not specified in the request headers",
+            )
+                    return self.create_response(400, json.dumps(exp_error))
             else:
                 raise UnauthorizedError()
         except UnauthorizedError as unauthorized:
