@@ -39,7 +39,6 @@ class TestHandler(unittest.TestCase):
         self.logger_error_patcher.stop()
         self.logger_exception_patcher.stop()
 
-    # @patch("log_decorator.logging_decorator", lambda prefix=None: (lambda f: f))
     def test_handler_success(self):
         with patch("log_decorator.logging_decorator", lambda prefix=None: (lambda f: f)):
             importlib.reload(redis_sync)

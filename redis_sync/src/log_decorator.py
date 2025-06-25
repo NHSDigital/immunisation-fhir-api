@@ -2,6 +2,7 @@
     The decorator log pattern is shared by filenameprocessor, recordprocessor, ack_backend and redis_sync modules.
     and therefore could be moved to a common module in the future.
     TODO: refactor to a common module.
+    TODO: Duplication check has been suppressed in sonar-project.properties. Remove once refactored.
 """
 import json
 import time

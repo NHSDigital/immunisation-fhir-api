@@ -161,32 +161,30 @@ class TestHandlerDecorator(unittest.TestCase):
     def test_handler_multi_record(self):
         mock_event = {'Records': [self.s3_vaccine, self.s3_supplier]}
 
-        with patch.object(self.mock_get_s3_records,
-                          "return_value", 
-                          [S3EventRecord(self.s3_vaccine), S3EventRecord(self.s3_supplier)]):
-            # repatch mock_record_processor
-            with patch("redis_sync.process_record") as mock_record_processor:
-                # Mock the return value for each record
-                mock_record_processor.side_effect = [
-                    {'status': 'success', 'message': 'Processed successfully',
-                     'file_key': RedisCacheKey.DISEASE_MAPPING_FILE_KEY},
-                    {'status': 'success', 'message': 'Processed successfully',
-                     'file_key': RedisCacheKey.PERMISSIONS_CONFIG_FILE_KEY}
-                ]
+        self.mock_get_s3_records.return_value = [
+            S3EventRecord(self.s3_vaccine), S3EventRecord(self.s3_supplier)]
 
-                handler(mock_event, None)
+        # Mock the return value for each record
+        self.mock_record_processor.side_effect = [
+            {'status': 'success', 'message': 'Processed successfully',
+                'file_key': RedisCacheKey.DISEASE_MAPPING_FILE_KEY},
+            {'status': 'success', 'message': 'Processed successfully',
+                'file_key': RedisCacheKey.PERMISSIONS_CONFIG_FILE_KEY}
+        ]
 
-                # Get put_record arguments
-                args, kwargs = self.mock_firehose_client.put_record.call_args
-                record = kwargs.get("Record") or args[1]
-                data_bytes = record["Data"]
-                log_json = data_bytes.decode("utf-8")
-                log_dict = json.loads(log_json)
-                # check expected content
-                event = log_dict["event"]
-                self.assertIn("function_name", event)
-                self.assertEqual(event["function_name"], "redis_sync_handler")
-                self.assertEqual(event["status"], "success")
+        handler(mock_event, None)
+
+        # Get put_record arguments
+        args, kwargs = self.mock_firehose_client.put_record.call_args
+        record = kwargs.get("Record") or args[1]
+        data_bytes = record["Data"]
+        log_json = data_bytes.decode("utf-8")
+        log_dict = json.loads(log_json)
+        # check expected content
+        event = log_dict["event"]
+        self.assertIn("function_name", event)
+        self.assertEqual(event["function_name"], "redis_sync_handler")
+        self.assertEqual(event["status"], "success")
 
     # test to check that event_read is called when "read" key is passed in the event
     def test_handler_read_event(self):
