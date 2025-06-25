@@ -17,11 +17,6 @@ VALID_RSV_RAVS_FILE_KEY = MockFileDetails.ravs_rsv_1.file_key
 
 class TestFileKeyValidation(TestCase):
     """Tests for file_key_validation functions"""
-    def setUp(self):
-        redis_patcher = patch("clients.redis_client.hkeys", return_value=["FLU", "COVID19", "MMR", "RSV"])
-        self.addCleanup(redis_patcher.stop)
-        redis_patcher.start()
-
     def test_is_valid_datetime(self):
         "Tests that is_valid_datetime returns True for valid datetimes, and false otherwise"
         # Test case tuples are stuctured as (date_time_string, expected_result)
@@ -43,7 +38,8 @@ class TestFileKeyValidation(TestCase):
             with self.subTest():
                 self.assertEqual(is_valid_datetime(date_time_string), expected_result)
 
-    def test_validate_file_key(self):
+    @patch("elasticache.redis_client.hkeys", return_value=["FLU", "RSV"])
+    def test_validate_file_key(self, _mock_hkeys):
         """Tests that file_key_validation returns True if all elements pass validation, and False otherwise"""
         # Test case tuples are structured as (file_key, expected_result)
         test_cases_for_success_scenarios = [
@@ -60,6 +56,7 @@ class TestFileKeyValidation(TestCase):
         for file_key, expected_result in test_cases_for_success_scenarios:
             with self.subTest(f"SubTest for file key: {file_key}"):
                 self.assertEqual(validate_file_key(file_key), expected_result)
+                _mock_hkeys.assert_called_with("vacc_to_diseases")
 
         key_format_error_message = "Initial file validation failed: invalid file key format"
         invalid_file_key_error_message = "Initial file validation failed: invalid file key"
@@ -105,3 +102,4 @@ class TestFileKeyValidation(TestCase):
                 with self.assertRaises(InvalidFileKeyError) as context:
                     validate_file_key(file_key)
                 self.assertEqual(str(context.exception), expected_result)
+                _mock_hkeys.assert_called_with("vacc_to_diseases")

@@ -48,10 +48,6 @@ class TestLoggingDecorator(unittest.TestCase):
         GenericSetUp(s3_client, firehose_client, sqs_client, dynamodb_client)
         s3_client.put_object(Bucket=BucketNames.SOURCE, Key=FILE_DETAILS.file_key)
 
-        redis_patcher = patch("clients.redis_client.hkeys", return_value=["FLU", "COVID19", "MMR", "RSV"])
-        self.addCleanup(redis_patcher.stop)
-        redis_patcher.start()
-
     def tearDown(self):
         """Clean the mock AWS environment"""
         GenericTearDown(s3_client, firehose_client, sqs_client, dynamodb_client)
@@ -77,6 +73,7 @@ class TestLoggingDecorator(unittest.TestCase):
             # Time is incremented by 1.0 for each call to time.time for ease of testing.
             # Range is set to a large number (100) due to many calls being made to time.time for some tests.
             patch("logging_decorator.time.time", side_effect=[0.0 + i for i in range(100)]),
+            patch("clients.redis_client.hkeys", return_value=["FLU"])
         ]
 
         # Set up the ExitStack. Note that patches need to be explicitly started so that they will be applied even when

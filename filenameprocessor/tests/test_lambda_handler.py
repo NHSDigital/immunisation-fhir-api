@@ -1,11 +1,12 @@
 """Tests for lambda_handler"""
-import json
 import sys
 from unittest.mock import patch
 from unittest import TestCase
 from json import loads as json_loads
 from contextlib import ExitStack
 from copy import deepcopy
+from constants import VACCINE_TYPE_TO_DISEASES_HASH_KEY
+from elasticache import get_valid_vaccine_types_from_cache
 import fakeredis
 from boto3 import client as boto3_client
 from moto import mock_s3, mock_sqs, mock_firehose, mock_dynamodb
@@ -19,10 +20,6 @@ from tests.utils_for_tests.utils_for_filenameprocessor_tests import (
 )
 from tests.utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT, BucketNames, Sqs
 from tests.utils_for_tests.values_for_tests import MOCK_CREATED_AT_FORMATTED_STRING, MockFileDetails
-
-from constants import VACCINE_TYPE_TO_DISEASES_HASH_KEY
-
-from elasticache import get_valid_vaccine_types_from_cache
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
