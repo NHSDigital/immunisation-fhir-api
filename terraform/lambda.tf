@@ -15,7 +15,7 @@ resource "aws_ecr_repository" "operation_lambda_repository" {
     scan_on_push = true
   }
   name         = "${local.prefix}-operation-lambda-repo"
-  force_delete = local.is_temp
+  force_delete = true #local.is_temp
 }
 
 #resource "docker_image" "lambda_function_docker" {

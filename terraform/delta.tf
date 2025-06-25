@@ -12,7 +12,7 @@ resource "aws_ecr_repository" "delta_lambda_repository" {
     scan_on_push = true
   }
   name         = "${local.prefix}-delta-lambda-repo"
-  force_delete = local.is_temp
+  force_delete = true #local.is_temp
 }
 
 module "delta_docker_image" {

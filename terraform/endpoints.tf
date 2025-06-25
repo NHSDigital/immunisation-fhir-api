@@ -109,6 +109,7 @@ module "api_gateway" {
   api_domain_name = local.service_domain_name
   environment     = local.environment
   oas             = local.oas
+  config_env      = local.config_env
 }
 
 resource "aws_lambda_permission" "api_gw" {
