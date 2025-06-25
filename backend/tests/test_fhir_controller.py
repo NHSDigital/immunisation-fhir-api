@@ -461,9 +461,11 @@ class TestFhirControllerGetImmunizationByIdentifierPost(unittest.TestCase):
         identifiers = converted_identifier.replace("|", "#")
         return identifiers, converted_identifier, converted_element
 
-    def test_get_imms_by_identifier(self):
+    @patch("fhir_controller.get_supplier_permissions")
+    def test_get_imms_by_identifier(self,mock_get_permissions):
         """It should return Immunization Id if it exists"""
         # Given
+        mock_get_permissions.return_value = ["COVID19:search"]
         self.service.get_immunization_by_identifier.return_value = {"id": "test", "Version": 1}
         body = "immunization.identifier=https://supplierABC/identifiers/vacc#f10b59b3-fc73-4616-99c9-9e882ab31184&_element=id|meta"
         lambda_event = self.set_up_lambda_event(body)
@@ -473,16 +475,19 @@ class TestFhirControllerGetImmunizationByIdentifierPost(unittest.TestCase):
         response = self.controller.get_immunization_by_identifier(lambda_event)
 
         # Then
+        mock_get_permissions.assert_called_once_with("test")
         self.service.get_immunization_by_identifier.assert_called_once_with(
-            identifiers, "COVID19:search", converted_identifier, converted_element, False
+            identifiers, ["COVID19:search"], converted_identifier, converted_element
         )
         self.assertEqual(response["statusCode"], 200)
         body = json.loads(response["body"])
         self.assertEqual(body["id"], "test")
 
-    def test_not_found_for_identifier(self):
+    @patch("fhir_controller.get_supplier_permissions")
+    def test_not_found_for_identifier(self, mock_get_permissions):
         """It should return not-found OperationOutcome if it doesn't exist"""
         # Given
+        mock_get_permissions.return_value = ["COVID19:search"]
         self.service.get_immunization_by_identifier.return_value = {
             "resourceType": "Bundle",
             "type": "searchset",
@@ -503,8 +508,9 @@ class TestFhirControllerGetImmunizationByIdentifierPost(unittest.TestCase):
         response = self.controller.get_immunization_by_identifier(lambda_event)
 
         # Then
+        mock_get_permissions.assert_called_once_with("test")
         self.service.get_immunization_by_identifier.assert_called_once_with(
-            identifiers, "COVID19:search", converted_identifier, converted_element, False
+            identifiers, ["COVID19:search"], converted_identifier, converted_element
         )
         self.assertEqual(response["statusCode"], 200)
         body = json.loads(response["body"])
@@ -512,42 +518,14 @@ class TestFhirControllerGetImmunizationByIdentifierPost(unittest.TestCase):
         self.assertEqual(body["entry"], [])
         self.assertEqual(body["total"], 0)
 
-    def test_get_imms_by_identifer_for_batch(self):
-        """it should return Immunization Id if it exists"""
-        # Given
-        self.service.get_immunization_by_identifier.return_value = {"id": "test", "Version": 1}
-        lambda_event = {
-            "headers": {"VaccineTypePermissions": "COVID19:search", "SupplierSystem": "Imms-Batch-App"},
-            "queryStringParameters": None,
-            "body": "aW1tdW5pemF0aW9uLmlkZW50aWZpZXI9aHR0cHMlM0ElMkYlMkZzdXBwbGllckFCQyUyRmlkZW50aWZpZXJzJTJGdmFjYyU3Q2YxMGI1OWIzLWZjNzMtNDYxNi05OWM5LTllODgyYWIzMTE4NCZfZWxlbWVudD1pZCUyQ21ldGEmaWQ9cw==",
-        }
-        decoded_body = base64.b64decode(lambda_event["body"]).decode("utf-8")
-        # Parse the URL encoded body
-        parsed_body = urllib.parse.parse_qs(decoded_body)
-
-        immunization_identifier = parsed_body.get("immunization.identifier", "")
-        converted_identifer = "".join(immunization_identifier)
-        element = parsed_body.get("_element", "")
-        converted_element = "".join(element)
-
-        identifiers = converted_identifer.replace("|", "#")
-        # When
-        response = self.controller.get_immunization_by_identifier(lambda_event)
-        # Then
-        self.service.get_immunization_by_identifier.assert_called_once_with(
-            identifiers, None, converted_identifer, converted_element, True
-        )
-
-        self.assertEqual(response["statusCode"], 200)
-        body = json.loads(response["body"])
-        self.assertEqual(body["id"], "test")
-
-    def test_get_imms_by_identifer_patient_identifier_and_element_present(self):
+    @patch("fhir_controller.get_supplier_permissions")
+    def test_get_imms_by_identifer_patient_identifier_and_element_present(self, mock_get_permissions):
         """it should return 400 as its having invalid request"""
         # Given
+        mock_get_permissions.return_value = ["COVID19:search"]
         self.service.get_immunization_by_identifier.return_value = {"id": "test", "Version": 1}
         lambda_event = {
-            "headers": {"VaccineTypePermissions": "COVID19:search", "SupplierSystem": "test"},
+            "headers": {"SupplierSystem": "test"},
             "queryStringParameters": None,
             "body": "cGF0aWVudC5pZGVudGlmaWVyPWh0dHBzJTNBJTJGJTJGZmhpci5uaHMudWslMkZJZCUyRm5ocy1udW1iZXIlN0M5NjkzNjMyMTA5Jl9lbGVtZW50PWlkJTJDbWV0YQ==",
         }
@@ -766,61 +744,72 @@ class TestFhirControllerGetImmunizationById(unittest.TestCase):
         self.authorizer = create_autospec(Authorization)
         self.controller = FhirController(self.authorizer, self.service)
 
-    def test_get_imms_by_id(self):
+    @patch("fhir_controller.get_supplier_permissions")
+    def test_get_imms_by_id(self, mock_permissions):
         """it should return Immunization resource if it exists"""
         # Given
+        mock_permissions.return_value = ["COVID19:read"]
         imms_id = "a-id"
         self.service.get_immunization_by_id.return_value = Immunization.construct()
         lambda_event = {
-            "headers": {"VaccineTypePermissions": "COVID19:read"},
+            "headers": {"SupplierSystem": "test"},
             "pathParameters": {"id": imms_id},
         }
 
         # When
         response = self.controller.get_immunization_by_id(lambda_event)
         # Then
-        self.service.get_immunization_by_id.assert_called_once_with(imms_id, "COVID19:read")
+        mock_permissions.assert_called_once_with("test")
+        self.service.get_immunization_by_id.assert_called_once_with(imms_id, ["COVID19:read"])
 
         self.assertEqual(response["statusCode"], 200)
         body = json.loads(response["body"])
         self.assertEqual(body["resourceType"], "Immunization")
 
-    def test_get_imms_by_id_unauthorised_vax_error(self):
+    @patch("fhir_controller.get_supplier_permissions")
+    def test_get_imms_by_id_unauthorised_vax_error(self,mock_permissions):
         """it should return Immunization resource if it exists"""
         # Given
+        mock_permissions.return_value = ["COVID19:read"]
         imms_id = "a-id"
         self.service.get_immunization_by_id.side_effect = UnauthorizedVaxError
         lambda_event = {
-            "headers": {"VaccineTypePermissions": "COVID19:read"},
+            "headers": {"SupplierSystem": "test"},
             "pathParameters": {"id": imms_id},
         }
 
         # When
         response = self.controller.get_immunization_by_id(lambda_event)
         # Then
+        mock_permissions.assert_called_once_with("test")
         self.assertEqual(response["statusCode"], 403)
-
-    def test_get_imms_by_id_no_vax_permission(self):
+    
+    @patch("fhir_controller.get_supplier_permissions")
+    def test_get_imms_by_id_no_vax_permission(self, mock_permissions):
         """it should return Immunization Id if it exists"""
         # Given
+        mock_permissions.return_value = []
         imms_id = "a-id"
         lambda_event = {
-            "headers": {"VaccineTypePermissions": "", "SupplierSystem": "test"},
+            "headers": {"SupplierSystem": "test"},
             "pathParameters": {"id": imms_id},
             "body": None,
         }
         # When
         response = self.controller.get_immunization_by_id(lambda_event)
         # Then
+        mock_permissions.assert_called_once_with("test")
         self.assertEqual(response["statusCode"], 403)
 
-    def test_not_found(self):
+    @patch("fhir_controller.get_supplier_permissions")
+    def test_not_found(self,mock_permissions):
         """it should return not-found OperationOutcome if it doesn't exist"""
         # Given
+        mock_permissions.return_value = ["COVID19:read"]
         imms_id = "a-non-existing-id"
         self.service.get_immunization_by_id.return_value = None
         lambda_event = {
-            "headers": {"VaccineTypePermissions": "COVID19:read"},
+            "headers": {"SupplierSystem": "test"},
             "pathParameters": {"id": imms_id},
         }
 
@@ -828,7 +817,8 @@ class TestFhirControllerGetImmunizationById(unittest.TestCase):
         response = self.controller.get_immunization_by_id(lambda_event)
 
         # Then
-        self.service.get_immunization_by_id.assert_called_once_with(imms_id, "COVID19:read")
+        mock_permissions.assert_called_once_with("test")
+        self.service.get_immunization_by_id.assert_called_once_with(imms_id, ["COVID19:read"])
 
         self.assertEqual(response["statusCode"], 404)
         body = json.loads(response["body"])
