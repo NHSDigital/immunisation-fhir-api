@@ -40,7 +40,6 @@ class TestRecordProcessor(unittest.TestCase):
         result = process_record(S3EventRecord(self.s3_vaccine))
 
         self.assertEqual(result["status"], "success")
-        self.assertEqual(result["bucket_name"], "test-bucket1")
         self.assertEqual(result["file_key"], RedisCacheKey.DISEASE_MAPPING_FILE_KEY)
 
     def test_record_processor_failure(self):
@@ -50,7 +49,6 @@ class TestRecordProcessor(unittest.TestCase):
         result = process_record(S3EventRecord(self.s3_vaccine))
 
         self.assertEqual(result["status"], "error")
-        self.assertEqual(result["bucket_name"], "test-bucket1")
         self.assertEqual(result["file_key"], RedisCacheKey.DISEASE_MAPPING_FILE_KEY)
 
     def test_record_processor_exception(self):

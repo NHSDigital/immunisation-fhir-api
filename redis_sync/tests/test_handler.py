@@ -46,9 +46,12 @@ class TestHandler(unittest.TestCase):
             mock_event = {'Records': [self.s3_vaccine]}
             self.mock_get_s3_records.return_value = [self.s3_vaccine]
             with patch("redis_sync.process_record") as mock_record_processor:
-                mock_record_processor.return_value = {'status': 'success', 'message': 'Processed successfully'}
+                mock_record_processor.return_value = {'status': 'success', 'message': 'Processed successfully',
+                                                      'file_key': 'test-key'}
                 result = redis_sync.handler(mock_event, None)
-                self.assertEqual(result, {'status': 'success', 'message': 'Successfully processed 1 records'})
+                self.assertEqual(result["status"], "success")
+                self.assertEqual(result["message"], "Successfully processed 1 records")
+                self.assertEqual(result["file_keys"], ['test-key'])
 
     def test_handler_failure(self):
         with patch("log_decorator.logging_decorator", lambda prefix=None: (lambda f: f)):
@@ -57,7 +60,7 @@ class TestHandler(unittest.TestCase):
             mock_event = {'Records': [self.s3_vaccine]}
             with patch("redis_sync.process_record") as mock_record_processor:
                 self.mock_get_s3_records.return_value = [self.s3_vaccine]
-                mock_record_processor.side_effect = Exception("Processing error")
+                mock_record_processor.side_effect = Exception("Processing error 1")
 
                 result = redis_sync.handler(mock_event, None)
 
@@ -77,7 +80,7 @@ class TestHandler(unittest.TestCase):
             mock_event = {'Records': [self.s3_vaccine]}
             self.mock_get_s3_records.return_value = [self.s3_vaccine]
             with patch("redis_sync.process_record") as mock_record_processor:
-                mock_record_processor.side_effect = Exception("Processing error")
+                mock_record_processor.side_effect = Exception("Processing error 2")
                 result = redis_sync.handler(mock_event, None)
                 self.assertEqual(result, {'status': 'error', 'message': 'Error processing S3 event'})
 
@@ -99,9 +102,15 @@ class TestHandler(unittest.TestCase):
             # ]
             self.mock_get_s3_records.return_value = [self.s3_vaccine, self.s3_supplier]
             with patch("redis_sync.process_record") as mock_record_processor:
-                mock_record_processor.return_value = {'status': 'success', 'message': 'Processed successfully'}
+                mock_record_processor.side_effect = [{'status': 'success', 'message': 'Processed successfully',
+                                                      'file_key': 'test-key1'},
+                                                     {'status': 'success', 'message': 'Processed successfully',
+                                                     'file_key': 'test-key2'}]
                 result = redis_sync.handler(mock_event, None)
-                self.assertEqual(result, {'status': 'success', 'message': 'Successfully processed 2 records'})
+                self.assertEqual(result['status'], 'success')
+                self.assertEqual(result['message'], 'Successfully processed 2 records')
+                self.assertEqual(result['file_keys'][0], 'test-key1')
+                self.assertEqual(result['file_keys'][1], 'test-key2')
 
     def test_handler_read_event(self):
         with patch("log_decorator.logging_decorator", lambda prefix=None: (lambda f: f)):

@@ -26,16 +26,20 @@ def handler(event, _):
                 return {"status": "success", "message": "No records found in event"}
             else:
                 error_count = 0
+                file_keys = []
                 for record in s3_event.get_s3_records():
                     record_result = process_record(record)
+                    file_keys.append(record_result["file_key"])
                     if record_result["status"] == "error":
                         error_count += 1
                 if error_count > 0:
                     logger.error("Processed %d records with %d errors", record_count, error_count)
-                    return {"status": "error", "message": f"Processed {record_count} records with {error_count} errors"}
+                    return {"status": "error", "message": f"Processed {record_count} records with {error_count} errors",
+                            "file_keys": file_keys}
                 else:
                     logger.info("Successfully processed all %d records", record_count)
-                    return {"status": "success", "message": f"Successfully processed {record_count} records"}
+                    return {"status": "success", "message": f"Successfully processed {record_count} records",
+                            "file_keys": file_keys}
         else:
             logger.info("No records found in event")
             return {"status": "success", "message": "No records found in event"}

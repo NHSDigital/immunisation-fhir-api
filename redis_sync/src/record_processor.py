@@ -16,7 +16,6 @@ def process_record(record: S3EventRecord) -> dict:
         file_key = record.get_object_key()
 
         base_log_data = {
-            "bucket_name": bucket_name,
             "file_key": file_key
         }
 
