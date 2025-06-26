@@ -1,51 +1,64 @@
+variable "profile" {
+  default = "apim-dev"
+}
+variable "aws_account_name" {
+  default = "non-prod"
+}
 variable "project_name" {
-    default = "immunisations"
+  default = "immunisations"
 }
 
 variable "project_short_name" {
-    default = "imms"
+  default = "imms"
 }
 
 variable "service" {
-    default = "fhir-api"
+  default = "fhir-api"
 }
+
 data "aws_vpc" "default" {
-    default = true
+  filter {
+    name   = "tag:Name"
+    values = [local.vpc_name]
+  }
 }
+
 data "aws_subnets" "default" {
-    filter {
-        name   = "vpc-id"
-        values = [data.aws_vpc.default.id]
-    }
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default.id]
+  }
 }
 
 locals {
-    root_domain = "${local.config_env}.vds.platform.nhs.uk"
+  root_domain = "${local.config_env}.vds.platform.nhs.uk"
 }
 
 locals {
-    project_domain_name = data.aws_route53_zone.project_zone.name
+  project_domain_name = data.aws_route53_zone.project_zone.name
 }
 
 locals {
-    environment         = terraform.workspace == "green" ? "prod" : terraform.workspace == "blue" ? "prod" : terraform.workspace
-    env                 = terraform.workspace
-    prefix              = "${var.project_name}-${var.service}-${local.env}"
-    short_prefix        = "${var.project_short_name}-${local.env}"
-    batch_prefix        = "immunisation-batch-${local.env}"
-    service_domain_name = "${local.env}.${local.project_domain_name}"
-    config_env = local.environment == "prod" ? "prod" : "dev"
-    config_bucket_env = local.environment == "prod" ? "prod" : "internal-dev"
-
-    tags = {
-        Project     = var.project_name
-        Environment = local.environment
-        Service     = var.service
-    }
+  environment             = var.aws_account_name
+  env                     = terraform.workspace
+  prefix                  = "${var.project_name}-${var.service}-${local.env}"
+  short_prefix            = "${var.project_short_name}-${local.env}"
+  batch_prefix            = "immunisation-batch-${local.env}"
+  service_domain_name     = "${local.env}.${local.project_domain_name}"
+  config_env              = local.environment
+  vpc_name                = "imms-${local.config_env}-fhir-api-vpc"
+  immunisation_account_id = "084828561157"
+  dspp_core_account_id    = "603871901111"
+  local_config            = "int"
+  tags = {
+    Project     = var.project_name
+    Environment = local.environment
+    Service     = var.service
+  }
 }
 
 variable "region" {
-    default = "eu-west-2"
+  default = "eu-west-2"
 }
 
 data "aws_kms_key" "existing_s3_encryption_key" {
@@ -57,7 +70,7 @@ data "aws_kms_key" "existing_dynamo_encryption_key" {
 }
 
 variable "aws_region" {
-    default = "eu-west-2"
+  default = "eu-west-2"
 }
 
 data "aws_elasticache_cluster" "existing_redis" {
@@ -72,15 +85,15 @@ data "aws_security_group" "existing_securitygroup" {
 }
 
 data "aws_s3_bucket" "existing_config_bucket" {
-  bucket = "imms-${local.config_bucket_env}-supplier-config"
+  bucket = "imms-int-supplier-config"
 }
 
 data "aws_s3_bucket" "existing_destination_bucket" {
-  bucket = "immunisation-batch-${local.local_config}-data-destinations"
+  bucket = "immunisation-batch-${var.aws_account_name}-preprod-data-destinations"
 }
 
 data "aws_s3_bucket" "existing_source_bucket" {
-  bucket = "immunisation-batch-${local.local_config}-data-sources"
+  bucket = "immunisation-batch-${var.aws_account_name}-preprod-data-sources"
 }
 
 data "aws_kms_key" "existing_lambda_encryption_key" {
@@ -91,16 +104,16 @@ data "aws_kms_key" "existing_kinesis_encryption_key" {
   key_id = "alias/imms-batch-kinesis-stream-encryption"
 }
 
-data "aws_dynamodb_table" "events-dynamodb-table" { 
-  name = "imms-${local.local_config}-imms-events" 
+data "aws_dynamodb_table" "events-dynamodb-table" {
+  name = "imms-${var.aws_account_name}-imms-events"
 }
 
-data "aws_dynamodb_table" "audit-table" { 
-  name = "immunisation-batch-${local.local_config}-audit-table" 
+data "aws_dynamodb_table" "audit-table" {
+  name = "immunisation-batch-${var.aws_account_name}-audit-table"
 }
 
-data "aws_dynamodb_table" "delta-dynamodb-table" { 
-  name = "imms-${local.local_config}-delta" 
+data "aws_dynamodb_table" "delta-dynamodb-table" {
+  name = "imms-${var.aws_account_name}-delta"
 }
 
 data "aws_lambda_function" "existing_file_name_proc_lambda" {

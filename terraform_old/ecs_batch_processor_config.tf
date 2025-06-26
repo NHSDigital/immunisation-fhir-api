@@ -25,8 +25,8 @@ resource "aws_ecr_repository" "processing_repository" {
 
 # Build and Push Docker Image to ECR (Reusing the existing module)
 module "processing_docker_image" {
-  source = "terraform-aws-modules/lambda/aws//modules/docker-build"
-
+  source           = "terraform-aws-modules/lambda/aws//modules/docker-build"
+  version          = "7.21.1"
   docker_file_path = "Dockerfile"
   create_ecr_repo  = false
   ecr_repo         = aws_ecr_repository.processing_repository.name
@@ -91,7 +91,7 @@ resource "aws_iam_policy" "ecs_task_exec_policy" {
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ],
-        Resource = "arn:aws:logs:${var.aws_region}:${local.local_account_id}:log-group:/aws/vendedlogs/ecs/${local.short_prefix}-processor-task:*"
+        Resource = "arn:aws:logs:${var.aws_region}:${local.immunisation_account_id}:log-group:/aws/vendedlogs/ecs/${local.short_prefix}-processor-task:*"
       },
       {
         Effect = "Allow",
@@ -105,19 +105,19 @@ resource "aws_iam_policy" "ecs_task_exec_policy" {
         Resource = [
           "arn:aws:s3:::${local.batch_prefix}-data-sources",
           "arn:aws:s3:::${local.batch_prefix}-data-sources/*",
-          "${data.aws_s3_bucket.existing_destination_bucket.arn}",       
-          "${data.aws_s3_bucket.existing_destination_bucket.arn}/*" 
+          "${data.aws_s3_bucket.existing_destination_bucket.arn}",
+          "${data.aws_s3_bucket.existing_destination_bucket.arn}/*"
         ]
       },
       {
-        Effect   = "Allow"
-        Action   = [
+        Effect = "Allow"
+        Action = [
           "dynamodb:Query",
           "dynamodb:UpdateItem"
         ]
-       Resource  = [
-          "arn:aws:dynamodb:${var.aws_region}:${local.local_account_id}:table/${data.aws_dynamodb_table.audit-table.name}",
-          "arn:aws:dynamodb:${var.aws_region}:${local.local_account_id}:table/${data.aws_dynamodb_table.audit-table.name}/index/*",
+        Resource = [
+          "arn:aws:dynamodb:${var.aws_region}:${local.immunisation_account_id}:table/${data.aws_dynamodb_table.audit-table.name}",
+          "arn:aws:dynamodb:${var.aws_region}:${local.immunisation_account_id}:table/${data.aws_dynamodb_table.audit-table.name}/index/*",
         ]
       },
       {
@@ -146,13 +146,13 @@ resource "aws_iam_policy" "ecs_task_exec_policy" {
         Action = [
           "ecr:GetAuthorizationToken"
         ],
-        Resource = "arn:aws:ecr:${var.aws_region}:${local.local_account_id}:repository/${local.short_prefix}-processing-repo"
+        Resource = "arn:aws:ecr:${var.aws_region}:${local.immunisation_account_id}:repository/${local.short_prefix}-processing-repo"
       },
       {
-        Effect   = "Allow"
-        Action   = "lambda:InvokeFunction"
+        Effect = "Allow"
+        Action = "lambda:InvokeFunction"
         Resource = [
-          "${data.aws_lambda_function.existing_file_name_proc_lambda.arn}"               
+          "${data.aws_lambda_function.existing_file_name_proc_lambda.arn}"
         ]
       },
       {
@@ -173,8 +173,8 @@ resource "aws_iam_role_policy_attachment" "ecs_task_exec_policy_attachment" {
 }
 
 resource "aws_cloudwatch_log_group" "ecs_task_log_group" {
-  name = "/aws/vendedlogs/ecs/${local.short_prefix}-processor-task"
-  retention_in_days =  30
+  name              = "/aws/vendedlogs/ecs/${local.short_prefix}-processor-task"
+  retention_in_days = 30
 }
 
 # Create the ECS Task Definition
@@ -222,7 +222,7 @@ resource "aws_ecs_task_definition" "ecs_task" {
       },
       {
         name  = "FILE_NAME_PROC_LAMBDA_NAME"
-        value =  "${data.aws_lambda_function.existing_file_name_proc_lambda.function_name}"
+        value = "${data.aws_lambda_function.existing_file_name_proc_lambda.function_name}"
       }
     ]
     logConfiguration = {
@@ -269,7 +269,7 @@ resource "aws_iam_policy" "fifo_pipe_policy" {
           "pipes:DescribePipe"
         ],
         Resource = [
-          "arn:aws:pipes:${var.aws_region}:${local.local_account_id}:pipe/${local.short_prefix}-pipe",
+          "arn:aws:pipes:${var.aws_region}:${local.immunisation_account_id}:pipe/${local.short_prefix}-pipe",
           aws_ecs_task_definition.ecs_task.arn
         ]
       },
@@ -286,11 +286,11 @@ resource "aws_iam_policy" "fifo_pipe_policy" {
         ],
         Effect = "Allow",
         Resource = [
-          "arn:aws:logs:${var.aws_region}:${local.local_account_id}:log-group:/aws/vendedlogs/pipes/${local.short_prefix}-pipe-logs:*",
-          "arn:aws:ecs:${var.aws_region}:${local.local_account_id}:task/${local.short_prefix}-ecs-cluster/*",
-          "arn:aws:logs:${var.aws_region}:${local.local_account_id}:log-group:/aws/vendedlogs/ecs/${local.short_prefix}-processor-task:*",
+          "arn:aws:logs:${var.aws_region}:${local.immunisation_account_id}:log-group:/aws/vendedlogs/pipes/${local.short_prefix}-pipe-logs:*",
+          "arn:aws:ecs:${var.aws_region}:${local.immunisation_account_id}:task/${local.short_prefix}-ecs-cluster/*",
+          "arn:aws:logs:${var.aws_region}:${local.immunisation_account_id}:log-group:/aws/vendedlogs/ecs/${local.short_prefix}-processor-task:*",
           aws_sqs_queue.supplier_fifo_queue.arn,
-          "arn:aws:ecs:${var.aws_region}:${local.local_account_id}:cluster/${local.short_prefix}-ecs-cluster",
+          "arn:aws:ecs:${var.aws_region}:${local.immunisation_account_id}:cluster/${local.short_prefix}-ecs-cluster",
           aws_ecs_task_definition.ecs_task.arn
         ]
       },
@@ -355,6 +355,6 @@ resource "aws_pipes_pipe" "fifo_pipe" {
 
 # Custom Log Group
 resource "aws_cloudwatch_log_group" "pipe_log_group" {
-  name = "/aws/vendedlogs/pipes/${local.short_prefix}-pipe-logs"
+  name              = "/aws/vendedlogs/pipes/${local.short_prefix}-pipe-logs"
   retention_in_days = 30
 }

@@ -1,16 +1,16 @@
 -include .env
 
-interactionId=$(environment)
-
-aws_profile = apim-dev
+interactionId = $(ENVIRONMENT)# to change to lower case
+environment = $(ENVIRONMENT)
+aws_profile = $(AWS_PROFILE)#apim-dev # Leave this here for pipeline
 tf_cmd = AWS_PROFILE=$(aws_profile) terraform
 
 project_name = immunisation
 project_short_name = imms
-state_bucket = $(project_name)-$(APIGEE_ENVIRONMENT)-terraform-state-files
+state_bucket = $(BUCKET_NAME)#$(project_name)-$(APIGEE_ENVIRONMENT)-terraform-state-files
 tf_state= -backend-config="bucket=$(state_bucket)"
 
-tf_vars= -var="project_name=$(project_name)" -var="project_short_name=$(project_short_name)"
+tf_vars= -var="project_name=$(project_name)" -var="project_short_name=$(project_short_name)" -var="profile=$(aws_profile)" -var="aws_account_name=$(AWS_ACCOUNT)"
 
 .PHONY : lock-provider workspace init plan apply clean destroy output state-list lambda-zip catch-all-zip
 
@@ -20,10 +20,14 @@ lock-provider:
 	$(tf_cmd) providers lock -platform=darwin_arm64 -platform=darwin_amd64 -platform=linux_amd64 -platform=windows_amd64
 
 workspace:
-	$(tf_cmd) workspace new $(environment) || $(tf_cmd) workspace select $(environment) && echo "Switched to workspace/environment: $(environment)"
+	$(tf_cmd) workspace new $(ENVIRONMENT) || $(tf_cmd) workspace select $(ENVIRONMENT) && echo "Switched to workspace/environment: $(ENVIRONMENT)"
 
 init:
-	$(tf_cmd) init $(tf_state) -upgrade  $(tf_vars)
+	$(tf_cmd) init $(tf_state) -upgrade $(tf_vars)
+
+
+init-reconfigure:
+	$(tf_cmd) init $(tf_state) -upgrade $(tf_vars) -reconfigure
 
 plan: workspace
 	 $(tf_cmd) plan $(tf_vars)
@@ -40,7 +44,7 @@ clean:
 destroy: workspace
 	$(tf_cmd) destroy $(tf_vars) -auto-approve
 	$(tf_cmd) workspace select default
-	$(tf_cmd) workspace delete $(environment)
+	$(tf_cmd) workspace delete $(ENVIRONMENT)
 
 output:
 	$(tf_cmd) output -raw $(name)
