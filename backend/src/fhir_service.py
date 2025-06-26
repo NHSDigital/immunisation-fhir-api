@@ -180,15 +180,13 @@ class FhirService:
         existing_resource_version: int,
         imms_vax_type_perms: str,
         supplier_system: str,
-        is_imms_batch_app,
     ) -> tuple[UpdateOutcome, Immunization]:
         immunization["id"] = imms_id
 
         patient = None
-        if not is_imms_batch_app:
-            patient = self._validate_patient(immunization)
-            if "diagnostics" in patient:
-                return (None, patient)
+        patient = self._validate_patient(immunization)
+        if "diagnostics" in patient:
+            return (None, patient)
         imms = self.immunization_repo.update_reinstated_immunization(
             imms_id,
             immunization,
@@ -196,7 +194,6 @@ class FhirService:
             existing_resource_version,
             imms_vax_type_perms,
             supplier_system,
-            is_imms_batch_app,
         )
 
         return UpdateOutcome.UPDATE, Immunization.parse_obj(imms)
