@@ -30,6 +30,8 @@ locals {
     "PDS_ENV"              = local.environment == "prod" ? "prod" : local.environment == "ref" ? "ref" : "int",
     "SPLUNK_FIREHOSE_NAME" = module.splunk.firehose_stream_name
     "SQS_QUEUE_URL"        = "https://sqs.eu-west-2.amazonaws.com/${local.immunisation_account_id}/${local.short_prefix}-ack-metadata-queue.fifo"
+    "REDIS_HOST"           = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].address
+    "REDIS_PORT"           = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].port
   }
 }
 data "aws_iam_policy_document" "imms_policy_document" {
