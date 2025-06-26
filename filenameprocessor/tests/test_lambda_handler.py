@@ -5,6 +5,8 @@ from unittest import TestCase
 from json import loads as json_loads
 from contextlib import ExitStack
 from copy import deepcopy
+from constants import VACCINE_TYPE_TO_DISEASES_HASH_KEY
+from elasticache import get_valid_vaccine_types_from_cache
 import fakeredis
 from boto3 import client as boto3_client
 from moto import mock_s3, mock_sqs, mock_firehose, mock_dynamodb
@@ -67,6 +69,7 @@ class TestLambdaHandlerDataSource(TestCase):
             patch("elasticache.redis_client", new=fakeredis.FakeStrictRedis()),
             # Patch the permissions config to allow all suppliers full permissions for all vaccine types.
             patch("elasticache.redis_client.get", return_value=all_permissions_config_content),
+            patch("elasticache.redis_client.hkeys", return_value=all_vaccine_types_in_this_test_file),
         ]
 
         with ExitStack() as stack:
@@ -457,11 +460,17 @@ class TestLambdaHandlerConfig(TestCase):
     """Tests for lambda_handler when a config file is uploaded."""
 
     config_event = {
-        "Records": [{"s3": {"bucket": {"name": BucketNames.CONFIG}, "object": {"key": (PERMISSIONS_CONFIG_FILE_KEY)}}}]
+        "Records": [{"s3": {"bucket": {"name": BucketNames.CONFIG}, "object": {"key": PERMISSIONS_CONFIG_FILE_KEY}}}]
     }
 
     def setUp(self):
         GenericSetUp(s3_client, firehose_client, sqs_client, dynamodb_client)
+
+        self.fake_redis = fakeredis.FakeStrictRedis(decode_responses=True)
+        self.fake_redis.hmset(VACCINE_TYPE_TO_DISEASES_HASH_KEY, {"RSV": "[]"})
+        redis_patcher = patch("elasticache.redis_client", new=self.fake_redis)
+        self.addCleanup(redis_patcher.stop)
+        redis_patcher.start()
 
     def tearDown(self):
         GenericTearDown(s3_client, firehose_client, sqs_client, dynamodb_client)
@@ -475,8 +484,10 @@ class TestLambdaHandlerConfig(TestCase):
             }
         }
 
-        with patch("file_name_processor.upload_to_elasticache", side_effect=Exception("Upload failed")), \
-             patch("file_name_processor.logger") as mock_logger:
+        with (
+            patch("file_name_processor.upload_to_elasticache", side_effect=Exception("Upload failed")),
+            patch("file_name_processor.logger") as mock_logger
+        ):
 
             result = handle_record(event)
 
@@ -491,8 +502,6 @@ class TestLambdaHandlerConfig(TestCase):
 
     def test_successful_processing_from_configs(self):
         """Tests that the permissions config file content is uploaded to elasticache successfully"""
-        fake_redis = fakeredis.FakeStrictRedis()
-
         ravs_rsv_file_details_1 = MockFileDetails.ravs_rsv_1
         ravs_rsv_file_details_2 = MockFileDetails.ravs_rsv_2
         s3_client.put_object(Bucket=BucketNames.SOURCE, Key=ravs_rsv_file_details_1.file_key)
@@ -509,17 +518,13 @@ class TestLambdaHandlerConfig(TestCase):
             Key=PERMISSIONS_CONFIG_FILE_KEY,
             Body=generate_permissions_config_content(ravs_rsv_permissions),
         )
-        with patch("elasticache.redis_client", new=fake_redis):
-            lambda_handler(self.config_event, None)
+        lambda_handler(self.config_event, None)
         self.assertEqual(
-            json_loads(fake_redis.get(PERMISSIONS_CONFIG_FILE_KEY)), {"all_permissions": ravs_rsv_permissions}
+            json_loads(self.fake_redis.get(PERMISSIONS_CONFIG_FILE_KEY)), {"all_permissions": ravs_rsv_permissions}
         )
 
         # Check that a RAVS RSV file processes successfully (as RAVS has permissions for RSV)
-        with (
-            patch("file_name_processor.uuid4", return_value=ravs_rsv_file_details_1.message_id),
-            patch("elasticache.redis_client", new=fake_redis),
-        ):
+        with patch("file_name_processor.uuid4", return_value=ravs_rsv_file_details_1.message_id):
             result = handle_record(record_1)
         expected_result = {
             "statusCode": 200,
@@ -537,17 +542,13 @@ class TestLambdaHandlerConfig(TestCase):
             Key=PERMISSIONS_CONFIG_FILE_KEY,
             Body=generate_permissions_config_content(ravs_no_rsv_permissions),
         )
-        with patch("elasticache.redis_client", new=fake_redis):
-            lambda_handler(self.config_event, None)
+        lambda_handler(self.config_event, None)
         self.assertEqual(
-            json_loads(fake_redis.get(PERMISSIONS_CONFIG_FILE_KEY)), {"all_permissions": ravs_no_rsv_permissions}
+            json_loads(self.fake_redis.get(PERMISSIONS_CONFIG_FILE_KEY)), {"all_permissions": ravs_no_rsv_permissions}
         )
 
         # Check that a RAVS RSV file fails to process (as RAVS now does not have permissions for RSV)
-        with (
-            patch("file_name_processor.uuid4", return_value=ravs_rsv_file_details_2.message_id),
-            patch("elasticache.redis_client", new=fake_redis),
-        ):
+        with patch("file_name_processor.uuid4", return_value=ravs_rsv_file_details_2.message_id):
             result = handle_record(record_2)
         expected_result = {
             "statusCode": 403,
@@ -571,6 +572,10 @@ class TestUnexpectedBucket(TestCase):
 
     def setUp(self):
         GenericSetUp(s3_client, firehose_client, sqs_client, dynamodb_client)
+
+        redis_patcher = patch("elasticache.redis_client.hkeys", return_value=all_vaccine_types_in_this_test_file)
+        self.addCleanup(redis_patcher.stop)
+        redis_patcher.start()
 
     def tearDown(self):
         GenericTearDown(s3_client, firehose_client, sqs_client, dynamodb_client)
