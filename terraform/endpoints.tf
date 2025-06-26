@@ -1,7 +1,7 @@
 /// This file creates all lambdas needed for each endpoint plus api-gateway
 
 locals {
-  policy_path     = "${path.root}/policies"
+  policy_path = "${path.root}/policies"
 }
 
 data "aws_iam_policy_document" "logs_policy_document" {
@@ -51,7 +51,8 @@ data "aws_iam_policy_document" "imms_policy_document" {
     }),
     templatefile("${local.policy_path}/secret_manager.json", {
       "account_id" : data.aws_caller_identity.current.account_id
-    })
+    }),
+    file("${local.policy_path}/ec2_network_interfaces.json")
   ]
 }
 
