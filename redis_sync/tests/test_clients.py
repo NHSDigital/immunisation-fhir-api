@@ -35,11 +35,7 @@ class TestClients(unittest.TestCase):
         self.mock_boto3_client.return_value.send_message = {}
 
     def tearDown(self):
-        self.getenv_patch.stop()
-        self.boto3_client_patch.stop()
-        self.logging_patch.stop()
-        self.redis_patch.stop()
-        self.logger_info_patcher.stop()
+        patch.stopall()
 
     def test_os_environ(self):
         # Test if environment variables are set correctly
