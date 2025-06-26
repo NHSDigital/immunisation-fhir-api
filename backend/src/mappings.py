@@ -11,10 +11,28 @@ class VaccineTypes:
     flu: str = "FLU"
     hpv: str = "HPV"
     mmr: str = "MMR"
+    mmrv: str = "MMRV"
     rsv: str = "RSV"
+    pertussis: str = "PERTUSSIS"
+    shingles: str = "SHINGLES"
+    pcv13: str = "PCV13"
+    three_in_one: str = "3IN1"
+    menacwy: str = "MENACWY"
 
     all: list[str] = field(
-        default_factory=lambda: [VaccineTypes.covid_19, VaccineTypes.flu, VaccineTypes.hpv, VaccineTypes.mmr,VaccineTypes.rsv]
+        default_factory=lambda: [
+            VaccineTypes.covid_19,
+            VaccineTypes.flu,
+            VaccineTypes.hpv,
+            VaccineTypes.mmr,
+            VaccineTypes.mmrv,
+            VaccineTypes.rsv,
+            VaccineTypes.pertussis,
+            VaccineTypes.shingles,
+            VaccineTypes.pcv13,
+            VaccineTypes.three_in_one,
+            VaccineTypes.menacwy,
+        ]
     )
 
 
@@ -29,6 +47,11 @@ class DiseaseDisplayTerms:
     mumps: str = "Mumps"
     rubella: str = "Rubella"
     rsv: str = "Respiratory syncytial virus infection (disorder)"
+    pertussis: str = "Whooping cough"
+    shingles: str = "Herpes zoster"
+    pcv13: str = "Pneumococcal disease"
+    three_in_one: str = "Diphtheria, Tetanus and Polio"
+    menacwy: str = "Meningococcal groups A, C, W and Y"
 
 @dataclass
 class DiseaseCodes:
@@ -51,7 +74,13 @@ vaccine_type_mappings = [
     # IMPORTANT: FOR VACCINE_TYPES WHICH TARGET MULTIPLE DISEASES ENSURE THAT DISEASE CODES ARE SORTED ALPHABETICALLY
     # This allows order-insensitive comparison with other lists, by alphabetically sorting the list for comparison
     (sorted([DiseaseCodes.measles, DiseaseCodes.mumps, DiseaseCodes.rubella]), VaccineTypes.mmr),
+    (DiseaseCodes.mmrv, VaccineTypes.mmrv),
     ([DiseaseCodes.rsv], VaccineTypes.rsv),
+    ([DiseaseCodes.pertussis], VaccineTypes.pertussis),
+    ([DiseaseCodes.shingles], VaccineTypes.shingles),
+    ([DiseaseCodes.pcv13], VaccineTypes.pcv13),
+    ([DiseaseCodes.three_in_one], VaccineTypes.three_in_one),
+    ([DiseaseCodes.menacwy], VaccineTypes.menacwy),
 ]
 
 
