@@ -1,5 +1,6 @@
 import json
 import unittest
+from unittest.mock import patch
 import uuid
 from typing import Set
 from unittest.mock import create_autospec
@@ -75,8 +76,10 @@ class TestFhirControllerAuthorization(unittest.TestCase):
         self.assertEqual(body["issue"][0]["code"], "exception")
 
     # EndpointOperation.CREATE
-    def test_create_imms_authorized(self):
-        aws_event = {"headers":{"VaccineTypePermissions":"COVID19:create", "SupplierSystem" : "Test"},"body": create_covid_19_immunization(str(uuid.uuid4())).json()}
+    @patch("fhir_controller.get_supplier_permissions")
+    def test_create_imms_authorized_supplier_system(self, mock_get_supplier_permissions):
+        mock_get_supplier_permissions.return_value = ["Covid19:create"]
+        aws_event = {"headers":{"SupplierSystem" : "Test"},"body": create_covid_19_immunization(str(uuid.uuid4())).json()}
 
         _ = self.controller.create_immunization(aws_event)
 
@@ -105,9 +108,11 @@ class TestFhirControllerAuthorization(unittest.TestCase):
         self.assertEqual(body["issue"][0]["code"], "exception")
 
     # EndpointOperation.UPDATE
-    def test_update_imms_authorized(self):
+    @patch("fhir_controller.get_supplier_permissions")
+    def test_update_imms_authorized(self, mock_get_supplier_permissions):
+        mock_get_supplier_permissions.return_value = ["Covid19:update"]
         imms_id = str(uuid.uuid4())
-        aws_event = {"headers": {"E-Tag":1,"VaccineTypePermissions":"COVID19:update", "SupplierSystem" : "Test"},"pathParameters": {"id": imms_id}, "body": create_covid_19_immunization(imms_id).json()}
+        aws_event = {"headers": {"E-Tag":1, "SupplierSystem" : "Test"},"pathParameters": {"id": imms_id}, "body": create_covid_19_immunization(imms_id).json()}
         self.service.get_immunization_by_id_all.return_value = {"resource":"new_value","Version":2,"DeletedAt": False, "VaccineType":"COVID19"}
         self.service.update_immunization.return_value = UpdateOutcome.UPDATE, "value doesn't matter"
 
@@ -115,7 +120,9 @@ class TestFhirControllerAuthorization(unittest.TestCase):
 
         self.authorizer.authorize.assert_called_once_with(EndpointOperation.UPDATE, aws_event)
     
-    def test_update_imms_unauthorized_vaxx_in_record(self):
+    @patch("fhir_controller.get_supplier_permissions")
+    def test_update_imms_unauthorized_vaxx_in_record(self,mock_get_supplier_permissions):
+        mock_get_supplier_permissions.return_value = ["Covid19:update"]
         imms_id = str(uuid.uuid4())
         aws_event = {"headers": {"E-Tag":1,"VaccineTypePermissions":"COVID19:update", "SupplierSystem" : "Test"},"pathParameters": {"id": imms_id}, "body": create_covid_19_immunization(imms_id).json()}
         self.service.get_immunization_by_id_all.return_value = {"resource":"new_value","Version":1,"DeletedAt": False, "VaccineType":"Flu"}
@@ -153,7 +160,9 @@ class TestFhirControllerAuthorization(unittest.TestCase):
         self.assertEqual(body["issue"][0]["code"], "exception")
 
     # EndpointOperation.DELETE
-    def test_delete_imms_authorized(self):
+    @patch("fhir_controller.get_supplier_permissions")
+    def test_delete_imms_authorized(self, mock_get_supplier_permissions):
+        mock_get_supplier_permissions.return_value = ["COVID19:delete"]
         aws_event = {"pathParameters": {"id": "an-id"},"headers": {"VaccineTypePermissions":"COVID19:delete", "SupplierSystem" : "Test"}}
 
         _ = self.controller.delete_immunization(aws_event)

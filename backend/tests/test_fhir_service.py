@@ -284,11 +284,11 @@ class TestGetImmunizationIdentifier(unittest.TestCase):
         self.pds_service.get_patient_details.return_value = {}
 
         # When
-        service_resp = self.fhir_service.get_immunization_by_identifier(imms, "COVID19:search", identifier, element, False)
+        service_resp = self.fhir_service.get_immunization_by_identifier(imms, "COVID19:search", identifier, element)
         act_imms = service_resp
 
         # Then
-        self.imms_repo.get_immunization_by_identifier.assert_called_once_with(imms, "COVID19:search", False)
+        self.imms_repo.get_immunization_by_identifier.assert_called_once_with(imms, "COVID19:search")
 
         self.assertEqual(act_imms["resourceType"], "Bundle")
 
@@ -300,10 +300,10 @@ class TestGetImmunizationIdentifier(unittest.TestCase):
         self.imms_repo.get_immunization_by_identifier.return_value = None
 
         # When
-        act_imms = self.fhir_service.get_immunization_by_identifier(imms_id, "COVID19:search", identifier, element, False)
+        act_imms = self.fhir_service.get_immunization_by_identifier(imms_id, "COVID19:search", identifier, element)
 
         # Then
-        self.imms_repo.get_immunization_by_identifier.assert_called_once_with(imms_id, "COVID19:search", False)
+        self.imms_repo.get_immunization_by_identifier.assert_called_once_with(imms_id, "COVID19:search")
         
         self.assertEqual(act_imms["entry"], [])
 
@@ -339,34 +339,15 @@ class TestCreateImmunization(unittest.TestCase):
         req_imms = create_covid_19_immunization_dict_no_id(nhs_number)
 
         # When
-        stored_imms = self.fhir_service.create_immunization(req_imms, "COVID19:create", "Test", False)
+        stored_imms = self.fhir_service.create_immunization(req_imms, ["COVID19:create"], "Test")
 
         # Then
-        self.imms_repo.create_immunization.assert_called_once_with(req_imms, pds_patient, "COVID19:create", "Test", False)
+        self.imms_repo.create_immunization.assert_called_once_with(req_imms, pds_patient, ["COVID19:create"], "Test")
         
         self.validator.validate.assert_called_once_with(req_imms)
         self.fhir_service.pds_service.get_patient_details.assert_called_once_with(
             nhs_number
         )
-        self.assertIsInstance(stored_imms, Immunization)
-
-    def test_create_immunization_batch(self):
-        """it should create Immunization and validate it"""
-        self.imms_repo.create_immunization.return_value = create_covid_19_immunization_dict_no_id()
-        pds_patient = {"identifier": [{"system": "https://fhir.nhs.uk/Id/nhs-number", "value": "9990548609"}]}
-        self.fhir_service.pds_service.get_patient_details.return_value = pds_patient
-
-        nhs_number = VALID_NHS_NUMBER
-        req_imms = create_covid_19_immunization_dict_no_id(nhs_number)
-
-        # When
-        stored_imms = self.fhir_service.create_immunization(req_imms, None, "Test", True)
-
-        # Then
-        self.imms_repo.create_immunization.assert_called_once_with(req_imms, None, None, "Test", True)
-        
-        self.validator.validate.assert_called_once_with(req_imms)
-        self.fhir_service.pds_service.get_patient_details.assert_not_called
         self.assertIsInstance(stored_imms, Immunization)
 
     def test_create_immunization_with_id(self):
@@ -376,7 +357,7 @@ class TestCreateImmunization(unittest.TestCase):
 
         with self.assertRaises(CustomValidationError) as error:
             # When
-            self.pre_validate_fhir_service.create_immunization(imms, "COVID19:create", "Test", False)
+            self.pre_validate_fhir_service.create_immunization(imms, "COVID19:create", "Test")
 
         # Then
         self.assertTrue(expected_msg in error.exception.message)
@@ -391,7 +372,7 @@ class TestCreateImmunization(unittest.TestCase):
 
         with self.assertRaises(CustomValidationError) as error:
             # When
-            self.pre_validate_fhir_service.create_immunization(imms, "COVID19:create", "Test", False)
+            self.pre_validate_fhir_service.create_immunization(imms, ["COVID19:create"], "Test")
 
         # Then
         self.assertTrue(expected_msg in error.exception.message)
@@ -421,7 +402,7 @@ class TestCreateImmunization(unittest.TestCase):
         # Create
         # Invalid target_disease
         with self.assertRaises(CustomValidationError) as error:
-            fhir_service.create_immunization(bad_target_disease_imms, "COVID19:create", "Test", False)
+            fhir_service.create_immunization(bad_target_disease_imms, "COVID19:create", "Test")
 
         self.assertEqual(bad_target_disease_msg, error.exception.message)
         self.imms_repo.create_immunization.assert_not_called()
@@ -429,7 +410,7 @@ class TestCreateImmunization(unittest.TestCase):
 
         # Missing patient name (Mandatory field)
         with self.assertRaises(CustomValidationError) as error:
-            fhir_service.create_immunization(bad_patient_name_imms, "COVID19:create", "Test", False)
+            fhir_service.create_immunization(bad_patient_name_imms, "COVID19:create", "Test")
 
         self.assertTrue(bad_patient_name_msg in error.exception.message)
         self.imms_repo.create_immunization.assert_not_called()
@@ -443,7 +424,7 @@ class TestCreateImmunization(unittest.TestCase):
 
         with self.assertRaises(InvalidPatientId) as e:
             # When
-            self.fhir_service.create_immunization(bad_patient_imms, "COVID19:create", "Test", False)
+            self.fhir_service.create_immunization(bad_patient_imms, "COVID19:create", "Test")
 
         # Then
         self.assertEqual(e.exception.patient_identifier, invalid_nhs_number)
@@ -472,30 +453,12 @@ class TestUpdateImmunization(unittest.TestCase):
         req_imms = create_covid_19_immunization_dict(imms_id, nhs_number)
 
         # When
-        outcome, _ = self.fhir_service.update_immunization(imms_id, req_imms, 1, "COVID19:update", "Test", False)
+        outcome, _ = self.fhir_service.update_immunization(imms_id, req_imms, 1, "COVID19:update", "Test")
 
         # Then
         self.assertEqual(outcome, UpdateOutcome.UPDATE)
-        self.imms_repo.update_immunization.assert_called_once_with(imms_id, req_imms, pds_patient, 1, "COVID19:update", "Test", False)
+        self.imms_repo.update_immunization.assert_called_once_with(imms_id, req_imms, pds_patient, 1, "COVID19:update", "Test")
         self.fhir_service.pds_service.get_patient_details.assert_called_once_with(nhs_number)
-
-    def test_update_immunization_batch(self):
-        """it should update Immunization and validate NHS number"""
-        imms_id = "an-id"
-        self.imms_repo.update_immunization.return_value = create_covid_19_immunization_dict(imms_id)
-        pds_patient = {"identifier": [{"system": "https://fhir.nhs.uk/Id/nhs-number", "value": "9990548609"}]}
-        self.fhir_service.pds_service.get_patient_details.return_value = pds_patient
-
-        nhs_number = VALID_NHS_NUMBER
-        req_imms = create_covid_19_immunization_dict(imms_id, nhs_number)
-
-        # When
-        outcome, _ = self.fhir_service.update_immunization(imms_id, req_imms, 1, None, "Test", True)
-
-        # Then
-        self.assertEqual(outcome, UpdateOutcome.UPDATE)
-        self.imms_repo.update_immunization.assert_called_once_with(imms_id, req_imms, None, 1, None, "Test", True)
-        self.fhir_service.pds_service.get_patient_details.assert_not_called()
 
     def test_id_not_present(self):
         """it should populate id in the message if it is not present"""
@@ -507,7 +470,7 @@ class TestUpdateImmunization(unittest.TestCase):
         del req_imms["id"]
 
         # When
-        self.fhir_service.update_immunization(req_imms_id, req_imms, 1, "COVID19:update", "Test", False)
+        self.fhir_service.update_immunization(req_imms_id, req_imms, 1, "COVID19:update", "Test")
 
         # Then
         passed_imms = self.imms_repo.update_immunization.call_args.args[1]
@@ -522,7 +485,7 @@ class TestUpdateImmunization(unittest.TestCase):
 
         with self.assertRaises(InvalidPatientId) as e:
             # When
-            self.fhir_service.update_immunization(imms_id, bad_patient_imms, 1, "COVID19:update", "Test", False)
+            self.fhir_service.update_immunization(imms_id, bad_patient_imms, 1, ["COVID19:update"], "Test")
 
         # Then
         self.assertEqual(e.exception.patient_identifier, invalid_nhs_number)
@@ -547,10 +510,10 @@ class TestDeleteImmunization(unittest.TestCase):
         self.imms_repo.delete_immunization.return_value = imms
 
         # When
-        act_imms = self.fhir_service.delete_immunization(imms_id, "COVID:delete", "Test", False)
+        act_imms = self.fhir_service.delete_immunization(imms_id, "COVID:delete", "Test")
 
         # Then
-        self.imms_repo.delete_immunization.assert_called_once_with(imms_id, "COVID:delete", "Test", False)
+        self.imms_repo.delete_immunization.assert_called_once_with(imms_id, "COVID:delete", "Test")
         self.assertIsInstance(act_imms, Immunization)
         self.assertEqual(act_imms.id, imms_id)
 
@@ -561,11 +524,11 @@ class TestDeleteImmunization(unittest.TestCase):
         self.imms_repo.delete_immunization.return_value = imms
 
         # When
-        act_imms = self.fhir_service.delete_immunization(imms_id, None, "Test", True)
+        act_imms = self.fhir_service.delete_immunization(imms_id, None, "Test")
 
         # Then
         self.imms_repo.delete_immunization.assert_called_once_with(
-            imms_id, None, "Test", True
+            imms_id, None, "Test"
         )
         self.assertIsInstance(act_imms, Immunization)
         self.assertEqual(act_imms.id, imms_id)
