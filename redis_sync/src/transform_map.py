@@ -1,6 +1,6 @@
 from constants import RedisCacheKey
 from clients import logger
-from src.transform_configs import transform_vaccine_map, transform_supplier_permissions
+from transform_configs import transform_vaccine_map, transform_supplier_permissions
 '''
 Transform config file to format required in REDIS cache.
 '''

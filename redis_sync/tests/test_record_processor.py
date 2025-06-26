@@ -34,19 +34,31 @@ class TestRecordProcessor(unittest.TestCase):
         self.redis_cacher_upload_patcher.stop()
 
     def test_record_processor_success(self):
-        # Test successful processing of a record
+        """ Test successful processing of a record """
         self.mock_redis_cacher_upload.return_value = {"status": "success"}
+
         result = process_record(S3EventRecord(self.s3_vaccine))
+
         self.assertEqual(result["status"], "success")
+        self.assertEqual(result["file_key"], RedisCacheKey.DISEASE_MAPPING_FILE_KEY)
 
     def test_record_processor_failure(self):
-        # Test failure in processing a record
+        """ Test failure in processing a record """
         self.mock_redis_cacher_upload.return_value = {"status": "error"}
+
         result = process_record(S3EventRecord(self.s3_vaccine))
+
         self.assertEqual(result["status"], "error")
+        self.assertEqual(result["file_key"], RedisCacheKey.DISEASE_MAPPING_FILE_KEY)
 
     def test_record_processor_exception(self):
-        # Test exception handling in record processing
-        self.mock_redis_cacher_upload.side_effect = Exception("Upload error")
+        """ Test exception handling in record processing """
+        msg = "my error msg"
+        self.mock_redis_cacher_upload.side_effect = Exception(msg)
+
         result = process_record(S3EventRecord(self.s3_vaccine))
+
         self.assertEqual(result["status"], "error")
+        self.assertEqual(result["message"], msg)
+        self.mock_logger_exception.assert_called_once_with("Error uploading to cache for filename '%s'",
+                                                           RedisCacheKey.DISEASE_MAPPING_FILE_KEY)

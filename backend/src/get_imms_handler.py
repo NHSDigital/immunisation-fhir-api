@@ -1,4 +1,5 @@
 import argparse
+import logging
 import pprint
 import uuid
 
@@ -8,9 +9,11 @@ from models.errors import Severity, Code, create_operation_outcome
 from log_structure import function_info
 from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
 
+logging.basicConfig(level="INFO")
+logger = logging.getLogger()
 
 @function_info
-def get_imms_handler(event, context):
+def get_imms_handler(event, _context):
     return get_immunization_by_id(event, make_controller())
 
 
@@ -18,6 +21,7 @@ def get_immunization_by_id(event, controller: FhirController):
     try:
         return controller.get_immunization_by_id(event)
     except Exception:  # pylint: disable = broad-exception-caught
+        logger.exception("Unhandled exception")
         exp_error = create_operation_outcome(
             resource_id=str(uuid.uuid4()),
             severity=Severity.error,

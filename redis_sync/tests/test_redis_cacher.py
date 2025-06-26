@@ -47,13 +47,20 @@ class TestRedisCacher(unittest.TestCase):
     def test_deletes_extra_fields(self):
         mock_data = {"input_key": "input_val"}
         mock_transformed_data = {
-            "hash_name": {"transformed_key": "transformed_val"},
+            "hash_name": {
+                "transformed_key_1": "transformed_val_1",
+                "transformed_key_2": "transformed_val_2"
+            },
         }
 
         self.mock_s3_reader.read = unittest.mock.Mock()
         self.mock_s3_reader.read.return_value = mock_data
         self.mock_transform_map.return_value = mock_transformed_data
-        self.mock_redis_client.hgetall.return_value = {"old_key": "old_val"}
+        self.mock_redis_client.hgetall.return_value = {
+            "obsolete_key_1": "obsolete_val_1",
+            "obsolete_key_2": "obsolete_val_2",
+            "transformed_key_2": "transformed_val_2",
+        }
 
         bucket_name = "bucket"
         file_key = "file-key"
@@ -62,6 +69,9 @@ class TestRedisCacher(unittest.TestCase):
         self.mock_s3_reader.read.assert_called_once_with(bucket_name, file_key)
         self.mock_transform_map.assert_called_once_with(mock_data, file_key)
         self.mock_redis_client.hgetall.assert_called_once_with("hash_name")
-        self.mock_redis_client.hmset.assert_called_once_with("hash_name", {"transformed_key": "transformed_val"})
-        self.mock_redis_client.hdel.assert_called_once_with("hash_name", ["old_key"])
+        self.mock_redis_client.hmset.assert_called_once_with("hash_name", {
+            "transformed_key_1": "transformed_val_1",
+            "transformed_key_2": "transformed_val_2"
+        })
+        self.mock_redis_client.hdel.assert_called_once_with("hash_name", "obsolete_key_1", "obsolete_key_2")
         self.assertEqual(result, {"status": "success", "message": f"File {file_key} uploaded to Redis cache."})

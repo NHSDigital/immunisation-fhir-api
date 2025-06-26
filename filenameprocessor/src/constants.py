@@ -17,6 +17,7 @@ AUDIT_TABLE_QUEUE_NAME_GSI = "queue_name_index"
 AUDIT_TABLE_FILENAME_GSI = "filename_index"
 
 PERMISSIONS_CONFIG_FILE_KEY = "permissions_config.json"
+VACCINE_TYPE_TO_DISEASES_HASH_KEY = "vacc_to_diseases"
 
 ERROR_TYPE_TO_STATUS_CODE_MAP = {
     VaccineTypePermissionsError: 403,
@@ -50,9 +51,6 @@ class AuditTableKeys:
 
 class Constants:
     """Constants for the filenameprocessor lambda"""
-
-    VALID_VACCINE_TYPES = ["FLU", "COVID19", "MMR", "RSV"]
-
     VALID_VERSIONS = ["V5"]
 
     # Mappings from ODS code to supplier name.
