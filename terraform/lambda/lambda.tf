@@ -13,6 +13,9 @@ module "lambda_function_container_image" {
     architectures = ["x86_64"]
     timeout = 6
 
+    vpc_subnet_ids = var.vpc_subnet_ids
+    vpc_security_group_ids = var.vpc_security_group_ids
+
     # A JWT encode took 7 seconds at default memory size of 128 and 0.8 seconds at 1024.
     # 2048 gets it down to around 0.5 but since Lambda is charged at GB * ms then it costs more for minimal benefit.
     memory_size = 1024
