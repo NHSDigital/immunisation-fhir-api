@@ -371,8 +371,6 @@ class FhirController:
 
     def delete_immunization(self, aws_event):
         try:
-            file_name = ""
-            message_id = ""
             if aws_event.get("headers"):
                 if response := self.authorize_request(EndpointOperation.DELETE, aws_event):
                         return response
