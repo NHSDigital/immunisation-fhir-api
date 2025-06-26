@@ -2,7 +2,6 @@
 
 locals {
   policy_path     = "${path.root}/policies"
-  domain_name_url = "https://${local.service_domain_name}"
 }
 
 data "aws_iam_policy_document" "logs_policy_document" {
@@ -60,12 +59,14 @@ module "imms_event_endpoint_lambdas" {
   source = "./lambda"
   count  = length(local.imms_endpoints)
 
-  prefix        = local.prefix
-  short_prefix  = local.short_prefix
-  function_name = local.imms_endpoints[count.index]
-  image_uri     = module.docker_image.image_uri
-  policy_json   = data.aws_iam_policy_document.imms_policy_document.json
-  environments  = local.imms_lambda_env_vars
+  prefix                 = local.prefix
+  short_prefix           = local.short_prefix
+  function_name          = local.imms_endpoints[count.index]
+  image_uri              = module.docker_image.image_uri
+  policy_json            = data.aws_iam_policy_document.imms_policy_document.json
+  environments           = local.imms_lambda_env_vars
+  vpc_subnet_ids         = data.aws_subnets.default.ids
+  vpc_security_group_ids = [data.aws_security_group.existing_securitygroup.id]
 }
 
 locals {
