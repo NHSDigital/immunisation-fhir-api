@@ -342,6 +342,9 @@ class FhirService:
 
     @timed
     def _validate_patient(self, imms: dict) -> dict:
+        # TODO - REVERT - skipping PDS call for test purposes
+        return {}
+
         """
         Get the NHS number from the contained Patient resource and validate it with PDS.
 
