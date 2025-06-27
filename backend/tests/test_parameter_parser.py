@@ -5,7 +5,6 @@ from unittest.mock import create_autospec
 
 from authorization import Authorization
 from fhir_service import FhirService
-from mappings import VaccineTypes
 from models.errors import ParameterException
 from parameter_parser import (
     date_from_key,
@@ -100,7 +99,7 @@ class TestParameterParser(unittest.TestCase):
         params = process_search_params(
             {
                 self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
-                self.immunization_target_key: [VaccineTypes().all[0]],
+                self.immunization_target_key: ["RSV"],
             }
         )
         self.assertIsNotNone(params)
@@ -115,13 +114,13 @@ class TestParameterParser(unittest.TestCase):
             )
         self.assertEqual(
             str(e.exception),
-            f"immunization-target must be one or more of the following: {','.join(VaccineTypes().all)}",
+            "immunization-target must be one or more of the following: COVID19, FLU, HPV, MMR, MMRV, RSV, PERTUSSIS, SHINGLES, PCV13, 3in1, MENACWY",
         )
 
         params = process_search_params(
             {
                 self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
-                self.immunization_target_key: [VaccineTypes().all[0]],
+                self.immunization_target_key: ["RSV"],
             }
         )
 
@@ -131,7 +130,7 @@ class TestParameterParser(unittest.TestCase):
         params = process_search_params(
             {
                 self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
-                self.immunization_target_key: [VaccineTypes().all[0]],
+                self.immunization_target_key: ["RSV"],
                 self.date_from_key: ["2021-03-06"],
                 self.date_to_key: ["2021-03-08"],
             }
@@ -142,7 +141,7 @@ class TestParameterParser(unittest.TestCase):
         params = process_search_params(
             {
                 self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
-                self.immunization_target_key: [VaccineTypes().all[0]],
+                self.immunization_target_key: ["RSV"],
                 self.date_from_key: ["2021-03-07"],
                 self.date_to_key: ["2021-03-07"],
             }
@@ -154,7 +153,7 @@ class TestParameterParser(unittest.TestCase):
             _ = process_search_params(
                 {
                     self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
-                    self.immunization_target_key: [VaccineTypes().all[0]],
+                    self.immunization_target_key: ["RSV"],
                     self.date_from_key: ["2021-03-08"],
                     self.date_to_key: ["2021-03-07"],
                 }
