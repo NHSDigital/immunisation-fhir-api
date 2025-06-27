@@ -323,7 +323,6 @@ class TestCreateImmunization(unittest.TestCase):
             ImmunizationValidator(add_post_validators=False),
         )
 
-    @skip
     def test_create_immunization(self):
         """it should create Immunization and validate it"""
         imms_id = "an-id"
@@ -418,7 +417,6 @@ class TestCreateImmunization(unittest.TestCase):
         self.imms_repo.create_immunization.assert_not_called()
         self.pds_service.get_patient_details.assert_not_called()
 
-    @skip
     def test_patient_error(self):
         """it should throw error when PDS can't resolve patient"""
         self.fhir_service.pds_service.get_patient_details.return_value = None
@@ -443,7 +441,6 @@ class TestUpdateImmunization(unittest.TestCase):
         self.validator = create_autospec(ImmunizationValidator)
         self.fhir_service = FhirService(self.imms_repo, self.pds_service, self.validator)
 
-    @skip
     def test_update_immunization(self):
         """it should update Immunization and validate NHS number"""
         imms_id = "an-id"
@@ -480,7 +477,6 @@ class TestUpdateImmunization(unittest.TestCase):
         passed_imms = self.imms_repo.update_immunization.call_args.args[1]
         self.assertEqual(passed_imms["id"], req_imms_id)
 
-    @skip
     def test_patient_error(self):
         """it should throw error when PDS can't resolve patient"""
         self.fhir_service.pds_service.get_patient_details.return_value = None
