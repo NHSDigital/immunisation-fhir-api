@@ -3,6 +3,7 @@ import logging
 import pprint
 import uuid
 import redis
+from clients import redis_client
 
 from authorization import Permission
 from fhir_controller import FhirController, make_controller
