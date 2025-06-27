@@ -47,6 +47,12 @@ resource "aws_route_table" "default" {
   }
 }
 
+resource "aws_route_table_association" "subnet_associations" {
+  for_each       = aws_subnet.default_subnets
+  subnet_id      = each.value.id
+  route_table_id = aws_route_table.default.id
+}
+
 resource "aws_route" "igw_route" {
   route_table_id         = aws_route_table.default.id
   destination_cidr_block = "0.0.0.0/16"
@@ -63,8 +69,8 @@ resource "aws_route53_zone" "child_hosted_zone" {
 
 resource "aws_route53_record" "imms_ns" {
   zone_id = aws_route53_zone.parent_hosted_zone.zone_id
-  name    = var.child_route53_zone_name
+  name    = "imms"
   type    = "NS"
-  ttl     = 172800
+  ttl     = 300 # 5 mins
   records = [for ns in aws_route53_zone.child_hosted_zone.name_servers : "${ns}."]
 }

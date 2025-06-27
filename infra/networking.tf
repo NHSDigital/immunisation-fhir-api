@@ -47,6 +47,13 @@ resource "aws_route_table" "default" {
   }
 }
 
+resource "aws_route_table_association" "subnet_associations" {
+  for_each       = aws_subnet.default_subnets
+  subnet_id      = each.value.id
+  route_table_id = aws_route_table.default.id
+}
+
+
 resource "aws_route" "igw_route" {
   route_table_id         = aws_route_table.default.id
   destination_cidr_block = "0.0.0.0/16"
