@@ -16,6 +16,8 @@ from models.errors import (
 import base64
 import copy
 import json
+
+from tests.utils.mock_redis import MockRedisClient
 from tests.utils.test_utils_for_batch import ForwarderValues, MockFhirImmsResources
 
 

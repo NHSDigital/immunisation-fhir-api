@@ -126,15 +126,8 @@ class PostValidators:
         # Initialise the mandation validation functions
         mandation_functions = MandationFunctions(self.imms, self.vaccine_type)
 
-        # Identify whether to use the vaccine_type_agnostic, or else a vaccine type specific, validation rule set
-        validation_set_to_use = (
-            "vaccine_type_agnostic"
-            if self.vaccine_type in ValidationSets.vaccine_types_which_use_agnostic_set
-            else self.vaccine_type.lower()
-        )
-
         # Obtain the relevant validation set
-        validation_set = getattr(ValidationSets, validation_set_to_use)
+        validation_set = getattr(ValidationSets, self.vaccine_type.lower(), ValidationSets.vaccine_type_agnostic)
 
         # Create an instance of FieldLocations and set dynamic fields
         field_locations = FieldLocations()

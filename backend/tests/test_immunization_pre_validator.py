@@ -3,11 +3,14 @@
 import unittest
 from copy import deepcopy
 from decimal import Decimal
+from unittest import mock
+from unittest.mock import patch
+
 from jsonpath_ng.ext import parse
 
+from src.clients import redis_client
 from src.models.fhir_immunization import ImmunizationValidator
 from src.models.utils.generic_utils import get_generic_extension_value
-from src.mappings import DiseaseCodes
 from .utils.generic_utils import (
     # these have an underscore to avoid pytest collecting them as tests
     test_valid_values_accepted as _test_valid_values_accepted,
@@ -20,6 +23,7 @@ from src.models.utils.generic_utils import (
     practitioner_name_given_field_location,
     practitioner_name_family_field_location,
 )
+from .utils.mock_redis import mock_redis, MockRedisClient
 from .utils.pre_validation_test_utils import ValidatorModelTests
 from .utils.values_for_tests import ValidValues, InvalidValues
 from models.obtain_field_value import ObtainFieldValue
@@ -32,6 +36,9 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         """Set up for each test. This runs before every test"""
         self.json_data = load_json_data(filename="completed_covid19_immunization_event.json")
         self.validator = ImmunizationValidator(add_post_validators=False)
+        # redis_patcher = mock.patch("redis.StrictRedis", return_value=MockRedisClient())
+        # self.addCleanup(redis_patcher.stop)
+        # redis_patcher.start()
 
     def test_collected_errors(self):
         """Test that when passed multiple validation errors, it returns a list of all expected errors."""
@@ -499,7 +506,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         )
 
     def test_pre_validate_patient_address_postal_code(self):
-        """Test pre_validate_patient_address_postal_code accepts valid values and rejects invalid values"""        
+        """Test pre_validate_patient_address_postal_code accepts valid values and rejects invalid values"""
         values = {
             "contained": [
                 {
@@ -744,12 +751,12 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
 
             full_error_message = str(error.exception)
             actual_error_messages = full_error_message.replace("Validation errors: ", "").split("; ")
-            self.assertIn("extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding[?(@.system=='http://snomed.info/sct')].code is not a valid snomed code", actual_error_messages)    
-    
+            self.assertIn("extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding[?(@.system=='http://snomed.info/sct')].code is not a valid snomed code", actual_error_messages)
+
     def test_pre_validate_extension_to_extract_the_coding_code_value(self):
         "Test the array length for extension and it should be length 1"
         invalid_json_data = deepcopy(self.json_data)
-        
+
         # Adding a new SNOMED code and testing if a specific code is retrieved
         invalid_json_data["extension"][0]["valueCodeableConcept"]["coding"].append({
             "system": "http://snomed.info/sct",
@@ -1025,18 +1032,18 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
             field_location="protocolApplied[0].targetDisease[0]."
             + "coding[?(@.system=='http://snomed.info/sct')].code",
             valid_strings_to_test=[
-                DiseaseCodes.covid_19,
-                DiseaseCodes.flu,
-                DiseaseCodes.hpv,
+                "840539006",
+                "6142004",
+                "240532009",
             ],
             valid_json_data=load_json_data(filename="completed_covid19_immunization_event.json"),
         )
 
         # Test data with multiple disease_type_coding_codes
         for i, disease_code in [
-            (0, DiseaseCodes.measles),
-            (1, DiseaseCodes.mumps),
-            (2, DiseaseCodes.rubella),
+            (0, "14189004"),
+            (1, "36989005"),
+            (2, "36653000"),
         ]:
             ValidatorModelTests.test_string_value(
                 self,
