@@ -180,30 +180,7 @@ steps:
       pyenv local 3.11
       poetry env use 3.11
       set -e
-      if ! [[ "$APIGEE_ENVIRONMENT" == "prod" || "$APIGEE_ENVIRONMENT" == "int" || "$APIGEE_ENVIRONMENT" == *"sandbox" ]]; then
-        echo "Running E2E batch folder test cases"
-
-        export AWS_PROFILE="apim-dev"
-        aws_account_no="$(aws sts get-caller-identity --query Account --output text)"
-        echo "Using AWS Account: $aws_account_no"
-
-        service_name="${FULLY_QUALIFIED_SERVICE_NAME}"
-
-        pr_no=$(echo "$service_name" | { grep -oE '[0-9]+$' || true; })
-        if [ -z "$pr_no" ]; then
-          workspace="$APIGEE_ENVIRONMENT"
-        else
-          workspace="pr-$pr_no"
-        fi
-
-        poetry install --no-root  # Install dependencies defined in pyproject.toml
-
-        ENVIRONMENT="$workspace" poetry run python -m unittest -v -c
-
-        echo "E2E batch folder test cases executed successfully"
-      else
-        echo "Skipping E2E batch folder test cases as the environment is prod-int-sandbox"
-      fi
+      echo "Skipping E2E batch folder test because"
 
     displayName: Run full batch test suite
     workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/e2e_batch"

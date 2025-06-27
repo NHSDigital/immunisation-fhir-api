@@ -2,6 +2,7 @@ import argparse
 import logging
 import pprint
 import uuid
+import redis
 
 from authorization import Permission
 from fhir_controller import FhirController, make_controller
@@ -14,7 +15,25 @@ logger = logging.getLogger()
 
 @function_info
 def get_imms_handler(event, _context):
-    return get_immunization_by_id(event, make_controller())
+    if "read" in event:
+        logger.info("GET IMMS - Hello World")
+        return read_event(redis_client, event, logger)
+    else:
+        return get_immunization_by_id(event, make_controller())
+
+    
+def read_event(redis_client: redis.Redis, event: dict, logger) -> dict:
+    try:
+        read_key = event["read"]
+        if not read_key:
+            return {"status": "error", "message": "Read key is required."}
+        return redis_client.hgetall(read_key)
+
+    except Exception:
+        msg = f"Error reading key '{read_key}' from Redis cache"
+        logger.exception(msg)
+        return {"status": "error", "message": msg}
+
 
 
 def get_immunization_by_id(event, controller: FhirController):
