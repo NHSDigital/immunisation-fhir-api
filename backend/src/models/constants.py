@@ -39,3 +39,5 @@ class Constants:
     }
 
     ALLOWED_CONTAINED_RESOURCES = {"Practitioner", "Patient"}
+
+    SUPPLIER_PERMISSIONS_KEY = "supplier_permissions"

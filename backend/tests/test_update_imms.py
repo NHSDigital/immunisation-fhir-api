@@ -1,6 +1,6 @@
 import json
 import unittest
-from unittest.mock import create_autospec
+from unittest.mock import create_autospec, patch
 
 from fhir_controller import FhirController
 from models.errors import Severity, Code, create_operation_outcome
@@ -10,7 +10,18 @@ from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
 
 class TestUpdateImmunizations(unittest.TestCase):
     def setUp(self):
+        # self.controller = create_autospec(FhirController)
+        self.logger_exception_patcher = patch("logging.Logger.exception")
+        self.mock_logger_exception = self.logger_exception_patcher.start()
+        # patch FhirController
         self.controller = create_autospec(FhirController)
+        self.controller.update_immunization = FhirController.update_immunization        
+
+        
+
+    def tearDown(self):
+        self.logger_exception_patcher.stop()
+
 
     def test_update_immunization(self):
         """it should call service update method"""
@@ -26,7 +37,8 @@ class TestUpdateImmunizations(unittest.TestCase):
         self.controller.update_immunization.assert_called_once_with(lambda_event)
         self.assertDictEqual(exp_res, act_res)
 
-    def test_handle_exception(self):
+    @patch("update_imms_handler.FhirController.create_response")
+    def test_update_imms_exception(self, mock_create_response):
         """unhandled exceptions should result in 500"""
         lambda_event = {"pathParameters": {"id": "an-id"}}
         error_msg = "an unhandled error"
@@ -38,16 +50,26 @@ class TestUpdateImmunizations(unittest.TestCase):
             code=Code.server_error,
             diagnostics=GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE,
         )
+        mock_response = "controller-response-error"
+        mock_create_response.return_value = mock_response
 
         # When
         act_res = update_imms(lambda_event, self.controller)
 
         # Then
-        act_body = json.loads(act_res["body"])
-        act_body["id"] = None
+        # check parameters used to call create_response
+        args, kwargs = mock_create_response.call_args
+        self.assertEqual(args[0], 500)
+        issue = args[1]["issue"][0]
+        severity = issue["severity"]
+        code = issue["code"]
+        diagnostics = issue["diagnostics"]
+        self.assertEqual(severity, "error")
+        self.assertEqual(code, "exception")
+        self.assertEqual(diagnostics, GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE)
+        self.assertEqual(act_res, mock_response)
 
-        self.assertDictEqual(act_body, exp_error)
-        self.assertEqual(act_res["statusCode"], 500)
+        
 
     def test_update_imms_with_duplicated_identifier_returns_error(self):
         """Should return an IdentifierDuplication error"""
