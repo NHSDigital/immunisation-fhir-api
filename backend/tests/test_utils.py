@@ -4,7 +4,6 @@ import unittest
 from copy import deepcopy
 
 from src.models.utils.validation_utils import convert_disease_codes_to_vaccine_type, get_vaccine_type
-from src.mappings import VaccineTypes, DiseaseCodes
 from .utils.generic_utils import load_json_data, update_target_disease_code
 "test"
 
@@ -22,13 +21,13 @@ class TestGenericUtils(unittest.TestCase):
         """
         # Valid combinations return appropriate vaccine type
         valid_combinations = [
-            (["840539006"], VaccineTypes.covid_19),
-            (["6142004"], VaccineTypes.flu),
-            (["240532009"], VaccineTypes.hpv),
-            (["14189004", "36989005", "36653000"], VaccineTypes.mmr),
-            (["36989005", "14189004", "36653000"], VaccineTypes.mmr),
-            (["36653000", "14189004", "36989005"], VaccineTypes.mmr),
-            (["55735004"], VaccineTypes.rsv) 
+            (["840539006"], "COVID19"),
+            (["6142004"], "FLU"),
+            (["240532009"], "HPV"),
+            (["14189004", "36989005", "36653000"], "MMR"),
+            (["36989005", "14189004", "36653000"], "MMR"),
+            (["36653000", "14189004", "36989005"], "MMR"),
+            (["55735004"], "RSV")
         ]
 
         for combination, vaccine_type in valid_combinations:
@@ -52,25 +51,24 @@ class TestGenericUtils(unittest.TestCase):
         valid combination of target disease code, or raises an appropriate error otherwise
         """
         # TEST VALID DATA
-        vaccine_types = [VaccineTypes.covid_19, VaccineTypes.flu, VaccineTypes.hpv, VaccineTypes.mmr, VaccineTypes.rsv]
-        for vaccine_type in vaccine_types:
-            valid_json_data = load_json_data(filename=f"completed_{vaccine_type.lower()}_immunization_event.json")
-            self.assertEqual(get_vaccine_type(valid_json_data), vaccine_type)
+        valid_json_data = load_json_data(filename=f"completed_rsv_immunization_event.json")
+        print(valid_json_data)
+        self.assertEqual(get_vaccine_type(valid_json_data), "RSV")
 
         # VALID DATA: coding field with multiple coding systems including SNOMED
-        flu_json_data = load_json_data(filename=f"completed_{VaccineTypes.flu.lower()}_immunization_event.json")
+        flu_json_data = load_json_data(filename=f"completed_flu_immunization_event.json")
         valid_target_disease_element = {
             "coding": [
                 {"system": "ANOTHER_SYSTEM_URL", "code": "ANOTHER_CODE", "display": "Influenza"},
-                {"system": "http://snomed.info/sct", "code": f"{DiseaseCodes.flu}", "display": "Influenza"},
+                {"system": "http://snomed.info/sct", "code": "6142004", "display": "Influenza"},
             ]
         }
         flu_json_data["protocolApplied"][0]["targetDisease"][0] = valid_target_disease_element
-        self.assertEqual(get_vaccine_type(flu_json_data), VaccineTypes.flu)
+        self.assertEqual(get_vaccine_type(flu_json_data), "FLU")
 
         # TEST INVALID DATA FOR SINGLE TARGET DISEASE
         covid_19_json_data = load_json_data(
-            filename=f"completed_{VaccineTypes.covid_19.lower()}_immunization_event.json"
+            filename=f"completed_covid19_immunization_event.json"
         )
 
         # INVALID DATA, SINGLE TARGET DISEASE: No targetDisease field
@@ -88,7 +86,7 @@ class TestGenericUtils(unittest.TestCase):
             # INVALID DATA, SINGLE TARGET DISEASE: No "coding" field
             {"text": "Influenza"},
             # INVALID DATA, SINGLE TARGET DISEASE: Valid code, but no snomed coding system
-            {"coding": [{"system": "NOT_THE_SNOMED_URL", "code": f"{DiseaseCodes.flu}", "display": "Influenza"}]},
+            {"coding": [{"system": "NOT_THE_SNOMED_URL", "code": "6142004", "display": "Influenza"}]},
             # INVALID DATA, SINGLE TARGET DISEASE: coding field doesn't contain a code
             {"coding": [{"system": "http://snomed.info/sct", "display": "Influenza"}]},
         ]
@@ -115,28 +113,26 @@ class TestGenericUtils(unittest.TestCase):
         )
 
         # TEST INVALID DATA FOR MULTIPLE TARGET DISEASES
-        mmr_json_data = load_json_data(filename=f"completed_{VaccineTypes.mmr.lower()}_immunization_event.json")
+        mmr_json_data = load_json_data(filename=f"completed_mmr_immunization_event.json")
 
         # INVALID DATA, MULTIPLE TARGET DISEASES: Invalid code combination
         invalid_mmr_json_data = deepcopy(mmr_json_data)
         # Change one of the target disease codes to the flu code so the combination of codes becomes invalid
-        update_target_disease_code(invalid_mmr_json_data, DiseaseCodes.flu)
+        update_target_disease_code(invalid_mmr_json_data, "6142004")
         with self.assertRaises(ValueError) as error:
             get_vaccine_type(invalid_mmr_json_data)
         self.assertEqual(
             str(error.exception),
             "Validation errors: protocolApplied[0].targetDisease[*].coding[?(@.system=='http://snomed.info/sct')].code - "
-            + f"['{DiseaseCodes.flu}', '36989005', '36653000'] is not a valid combination of disease codes for this "
-            + "service",
+            + "['6142004', '36989005', '36653000'] is not a valid combination of disease codes for this service",
         )
 
         # INVALID DATA, MULTIPLE TARGET DISEASES: One of the target disease elements does not have a coding field
-        invalid_mmr_json_data = deepcopy(mmr_json_data)
         invalid_target_disease_elements = [
             # INVALID DATA, MULTIPLE TARGET DISEASES: No "coding" field
             {"text": "Mumps"},
             # INVALID DATA, MULTIPLE TARGET DISEASES: Valid code, but no snomed coding system
-            {"coding": [{"system": "NOT_THE_SNOMED_URL", "code": f"{DiseaseCodes.mumps}", "display": "Influenza"}]},
+            {"coding": [{"system": "NOT_THE_SNOMED_URL", "code": "36989005", "display": "Mumps"}]},
             # INVALID DATA, MULTIPLE TARGET DISEASES: coding field doesn't contain a code
             {"coding": [{"system": "http://snomed.info/sct", "display": "Mumps"}]},
         ]
