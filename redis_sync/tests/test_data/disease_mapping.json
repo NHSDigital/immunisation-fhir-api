@@ -125,14 +125,5 @@
         "term": "Meningococcal infectious disease"
       }
     ]
-  },
-  {
-    "vacc_type": "JARVIS_TEST",
-    "diseases": [
-      {
-        "code": "23511006",
-        "term": "Meningococcal infectious disease"
-      }
-    ]
   }
 ]
