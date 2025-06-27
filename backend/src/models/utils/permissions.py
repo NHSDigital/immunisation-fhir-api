@@ -2,7 +2,7 @@
 import json
 import redis
 
-from src.clients import REDIS_HOST, REDIS_PORT
+from clients import REDIS_HOST, REDIS_PORT
 
 
 def get_supplier_permissions(supplier: str) -> list[str]:
