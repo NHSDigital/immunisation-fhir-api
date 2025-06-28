@@ -3,6 +3,7 @@ import uuid
 import datetime
 import unittest
 from copy import deepcopy
+from unittest import skip
 from unittest.mock import create_autospec
 from decimal import Decimal
 
@@ -304,7 +305,7 @@ class TestGetImmunizationIdentifier(unittest.TestCase):
 
         # Then
         self.imms_repo.get_immunization_by_identifier.assert_called_once_with(imms_id, "COVID19:search")
-        
+
         self.assertEqual(act_imms["entry"], [])
 
 
@@ -343,7 +344,7 @@ class TestCreateImmunization(unittest.TestCase):
 
         # Then
         self.imms_repo.create_immunization.assert_called_once_with(req_imms, pds_patient, ["COVID19:create"], "Test")
-        
+
         self.validator.validate.assert_called_once_with(req_imms)
         self.fhir_service.pds_service.get_patient_details.assert_called_once_with(
             nhs_number
