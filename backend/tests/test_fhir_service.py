@@ -453,11 +453,11 @@ class TestUpdateImmunization(unittest.TestCase):
         req_imms = create_covid_19_immunization_dict(imms_id, nhs_number)
 
         # When
-        outcome, _ = self.fhir_service.update_immunization(imms_id, req_imms, 1, "COVID19:update", "Test")
+        outcome, _ = self.fhir_service.update_immunization(imms_id, req_imms, 1, ["COVID19.CRUD"], "Test")
 
         # Then
         self.assertEqual(outcome, UpdateOutcome.UPDATE)
-        self.imms_repo.update_immunization.assert_called_once_with(imms_id, req_imms, pds_patient, 1, "COVID19:update", "Test")
+        self.imms_repo.update_immunization.assert_called_once_with(imms_id, req_imms, pds_patient, 1,["COVID19.CRUD"], "Test")
         self.fhir_service.pds_service.get_patient_details.assert_called_once_with(nhs_number)
 
     def test_id_not_present(self):

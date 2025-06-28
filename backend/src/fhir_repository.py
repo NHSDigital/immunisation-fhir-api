@@ -85,7 +85,7 @@ class ImmunizationRepository:
         self.table = table
 
     def get_immunization_by_identifier(
-        self, identifier_pk: str, imms_vax_type_perms: str
+        self, identifier_pk: str, imms_vax_type_perms: list[str]
     ) -> Optional[dict]:
         response = self.table.query(
             IndexName="IdentifierGSI", KeyConditionExpression=Key("IdentifierPK").eq(identifier_pk)
@@ -94,7 +94,7 @@ class ImmunizationRepository:
             item = response["Items"][0]
             resp = dict()
             vaccine_type = self._vaccine_type(item["PatientSK"])
-            vax_type_perms = self._parse_vaccine_permissions(imms_vax_type_perms)
+            vax_type_perms = self._expand_permissions(imms_vax_type_perms)
             vax_type_perm = self._vaccine_permission(vaccine_type, "search")
             self._check_permission(vax_type_perm, vax_type_perms)
             resource = json.loads(item["Resource"])
@@ -112,7 +112,7 @@ class ImmunizationRepository:
             if "DeletedAt" in response["Item"]:
                 if response["Item"]["DeletedAt"] == "reinstated":
                     vaccine_type = self._vaccine_type(response["Item"]["PatientSK"])
-                    vax_type_perms = self._parse_vaccine_permissions(imms_vax_type_perms)
+                    vax_type_perms = self._expand_permissions(imms_vax_type_perms)
                     vax_type_perm = self._vaccine_permission(vaccine_type, "read")
                     self._check_permission(vax_type_perm, vax_type_perms)
                     resp["Resource"] = json.loads(response["Item"]["Resource"])
@@ -122,7 +122,7 @@ class ImmunizationRepository:
                     return None
             else:
                 vaccine_type = self._vaccine_type(response["Item"]["PatientSK"])
-                vax_type_perms = self._parse_vaccine_permissions(imms_vax_type_perms)
+                vax_type_perms = self._expand_permissions(imms_vax_type_perms)
                 vax_type_perm = self._vaccine_permission(vaccine_type, "read")
                 self._check_permission(vax_type_perm, vax_type_perms)
                 resp["Resource"] = json.loads(response["Item"]["Resource"])
@@ -170,7 +170,7 @@ class ImmunizationRepository:
         new_id = str(uuid.uuid4())
         immunization["id"] = new_id
         attr = RecordAttributes(immunization, patient)
-        vax_type_perms = self._parse_vaccine_permissions(imms_vax_type_perms)
+        vax_type_perms = self._expand_permissions(imms_vax_type_perms)
         vax_type_perm = self._vaccine_permission(attr.vaccine_type, "create")
         self._check_permission(vax_type_perm, vax_type_perms)
         query_response = _query_identifier(self.table, "IdentifierGSI", "IdentifierPK", attr.identifier)
@@ -273,7 +273,7 @@ class ImmunizationRepository:
         )
 
     def _handle_permissions(self, imms_vax_type_perms: str, attr: RecordAttributes):
-        vax_type_perms = self._parse_vaccine_permissions(imms_vax_type_perms)
+        vax_type_perms = self._expand_permissions(imms_vax_type_perms)
         vax_type_perm = self._vaccine_permission(attr.vaccine_type, "update")
         self._check_permission(vax_type_perm, vax_type_perms)
 
@@ -370,12 +370,12 @@ class ImmunizationRepository:
                 if "DeletedAt" in resp["Item"]:
                     if resp["Item"]["DeletedAt"] == "reinstated":
                         vaccine_type = self._vaccine_type(resp["Item"]["PatientSK"])
-                        vax_type_perms = self._parse_vaccine_permissions(imms_vax_type_perms)
+                        vax_type_perms = self._expand_permissions(imms_vax_type_perms)
                         vax_type_perm = self._vaccine_permission(vaccine_type, "delete")
                         self._check_permission(vax_type_perm, vax_type_perms)
                 else:
                     vaccine_type = self._vaccine_type(resp["Item"]["PatientSK"])
-                    vax_type_perms = self._parse_vaccine_permissions(imms_vax_type_perms)
+                    vax_type_perms = self._expand_permissions(imms_vax_type_perms)
                     vax_type_perm = self._vaccine_permission(vaccine_type, "delete")
                     self._check_permission(vax_type_perm, vax_type_perms)
 
@@ -432,9 +432,26 @@ class ImmunizationRepository:
 
     @staticmethod
     def _vaccine_permission(vaccine_type, operation) -> set:
+        mapped_operations = {
+            "create": "c",
+            "read": "r",
+            "update": "u",
+            "delete": "d",
+            "search": "s"
+        }
+
+        operation = mapped_operations.get(operation.lower())
+        if not operation:
+            raise ValueError(f"Unsupported operation: {operation}")
+
         vaccine_permission = set()
-        vaccine_permission.add(str.lower(f"{vaccine_type}:{operation}"))
-        return vaccine_permission
+        if isinstance(vaccine_type, list):
+            for x in vaccine_type:
+                vaccine_permission.add(str.lower(f"{x}.{operation}"))
+            return vaccine_permission
+        else:
+            vaccine_permission.add(str.lower(f"{vaccine_type}.{operation}"))
+            return vaccine_permission
 
     @staticmethod
     def _parse_vaccine_permissions(imms_vax_type_perms) -> set:
@@ -443,6 +460,22 @@ class ImmunizationRepository:
         for s in parsed:
             vaccine_permissions.add(s)
         return vaccine_permissions
+    
+    @staticmethod
+    def _expand_permissions(supplier_permissions: list[str]) -> set[str]:
+        expanded = set()
+        for permissions in supplier_permissions:
+            if '.' not in permissions:
+                continue  # skip invalid format
+        vaccineType, allowed_operations = permissions.split('.', 1)
+        print(f"Vax_type: {vaccineType}, Ops: {allowed_operations}")
+        vaccineType = vaccineType.lower()
+        for operation in allowed_operations.lower():
+            if operation not in {'c', 'r', 'u', 'd', 's'}:
+                raise ValueError(f"Unknown operation code: {operation} in a permission {permissions}")
+            expanded.add(f"{vaccineType}.{operation}")
+        print(f"Expanded permissions: {expanded}")
+        return expanded
 
     @staticmethod
     def _check_permission(requested: set, allowed: set) -> set:

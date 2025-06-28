@@ -271,8 +271,10 @@ class FhirController:
 
         # Check vaccine type permissions on the existing record - start
         try:
-            vax_type_perms = self._parse_vaccine_permissions_controller(imms_vax_type_perms)
+            vax_type_perms = self._expand_permissions(imms_vax_type_perms)
+            print(f"vax_type_perms: {vax_type_perms}, imms_vax_type_perms: {imms_vax_type_perms}")
             vax_type_perm = self._vaccine_permission(existing_record["VaccineType"], "update")
+            print(f"vax_type_perm(operation_perms): {vax_type_perm}, is subset of vax_type_perms (imms_vax): {vax_type_perms}")
             self._check_permission(vax_type_perm, vax_type_perms)
         except UnauthorizedVaxOnRecordError as unauthorized:
             return self.create_response(403, unauthorized.to_operation_outcome())
@@ -333,6 +335,7 @@ class FhirController:
 
                 # Check if the record is reinstated record - start
                 if existing_record["Reinstated"] == True:
+                    print(f"imms_params_reinstate: {imms_vax_type_perms}, supplier_system: {supplier_system}")
                     outcome, resource = self.fhir_service.update_reinstated_immunization(
                         imms_id,
                         imms,
@@ -341,6 +344,7 @@ class FhirController:
                         supplier_system
                     )
                 else:
+                    print(f"imms_params: {imms_vax_type_perms}, supplier_system: {supplier_system}")
                     outcome, resource = self.fhir_service.update_immunization(
                         imms_id,
                         imms,
@@ -428,8 +432,9 @@ class FhirController:
             return self.create_response(403, unauthorized.to_operation_outcome())
         # Check vaxx type permissions on the existing record - start
         try:
-            vax_type_perms = self._parse_vaccine_permissions_controller(imms_vax_type_perms)
+            vax_type_perms = self._expand_permissions(imms_vax_type_perms)
             vax_type_perm = self._new_vaccine_request(search_params.immunization_targets, "search", vax_type_perms)
+            print(f"vax_type_perm: {vax_type_perm}, vax_type_perms: {vax_type_perms}")
             if not vax_type_perm:
                 raise UnauthorizedVaxError
         except UnauthorizedVaxError as unauthorized:
@@ -662,28 +667,47 @@ class FhirController:
         }
 
     @staticmethod
-    def _sendack(payload, file_name, message_id, created_at_formatted_string, local_id, operation_requested):
-        payload["file_key"] = file_name
-        payload["row_id"] = message_id
-        payload["created_at_formatted_string"] = created_at_formatted_string
-        payload["local_id"] = local_id
-        payload["operation_requested"] = operation_requested
-        sqs_client.send_message(QueueUrl=queue_url, MessageBody=json.dumps(payload), MessageGroupId=file_name)
-
-    @staticmethod
     def _vaccine_permission(vaccine_type, operation) -> set:
+        mapped_operations = {
+            "create": "c",
+            "read": "r",
+            "update": "u",
+            "delete": "d",
+            "search": "s"
+        }
+
+        operation = mapped_operations.get(operation.lower())
+        if not operation:
+            raise ValueError(f"Unsupported operation: {operation}")
+
         vaccine_permission = set()
         if isinstance(vaccine_type, list):
             for x in vaccine_type:
-                vaccine_permission.add(str.lower(f"{x}:{operation}"))
+                vaccine_permission.add(str.lower(f"{x}.{operation}"))
             return vaccine_permission
         else:
-            vaccine_permission.add(str.lower(f"{vaccine_type}:{operation}"))
+            vaccine_permission.add(str.lower(f"{vaccine_type}.{operation}"))
             return vaccine_permission
 
     @staticmethod
     def _parse_vaccine_permissions_controller(imms_vax_type_perms) -> set:
         return {str(s).strip().lower() for s in imms_vax_type_perms}
+    
+    @staticmethod
+    def _expand_permissions(supplier_permissions: list[str]) -> set[str]:
+        expanded = set()
+        for permissions in supplier_permissions:
+            if '.' not in permissions:
+                continue  # skip invalid format
+        vaccineType, allowed_operations = permissions.split('.', 1)
+        print(f"Vax_type: {vaccineType}, Ops: {allowed_operations}")
+        vaccineType = vaccineType.lower()
+        for operation in allowed_operations.lower():
+            if operation not in {'c', 'r', 'u', 'd', 's'}:
+                raise ValueError(f"Unknown operation code: {operation} in a permission {permissions}")
+            expanded.add(f"{vaccineType}.{operation}")
+        print(f"Expanded permissions: {expanded}")
+        return expanded
 
     @staticmethod
     def _check_permission(requested: set, allowed: set) -> set:
@@ -694,11 +718,20 @@ class FhirController:
 
     @staticmethod
     def _new_vaccine_request(vaccine_type, operation, vaccine_type_permissions: None) -> Optional[list]:
+        mapped_operations = {
+            "create": "c",
+            "read": "r",
+            "update": "u",
+            "delete": "d",
+            "search": "s"
+        }
+
+        operation = mapped_operations.get(operation.lower())
         vaccine_permission = list()
         if isinstance(vaccine_type, list):
             for x in vaccine_type:
                 vaccs_prms = set()
-                vaccs_prms.add(str.lower(f"{x}:{operation}"))
+                vaccs_prms.add(str.lower(f"{x}.{operation}"))
                 if vaccs_prms.issubset(vaccine_type_permissions):
                     vaccine_permission.append(x)
             return vaccine_permission

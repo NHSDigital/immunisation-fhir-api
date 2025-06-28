@@ -131,7 +131,7 @@ class FhirService:
         imms_id: str,
         immunization: dict,
         existing_resource_version: int,
-        imms_vax_type_perms: str,
+        imms_vax_type_perms: list[str],
         supplier_system: str,
     ) -> tuple[UpdateOutcome, Immunization]:
         immunization["id"] = imms_id
