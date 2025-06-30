@@ -17,6 +17,15 @@ class VaccineTypes:
         default_factory=lambda: [VaccineTypes.covid_19, VaccineTypes.flu, VaccineTypes.hpv, VaccineTypes.mmr,VaccineTypes.rsv]
     )
 
+class mappedOperation:
+    """Vaccine types"""
+    mapped_operations = {
+            "create": "c",
+            "read": "r",
+            "update": "u",
+            "delete": "d",
+            "search": "s"
+        }
 
 @dataclass
 class DiseaseDisplayTerms:

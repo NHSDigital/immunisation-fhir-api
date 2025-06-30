@@ -36,6 +36,7 @@ from models.errors import (
 from models.utils.generic_utils import check_keys_in_sources
 from models.utils.permissions import get_supplier_permissions
 from pds_service import PdsService
+from mappings import mappedOperation
 from parameter_parser import process_params, process_search_params, create_query_string
 import urllib.parse
 
@@ -668,15 +669,8 @@ class FhirController:
 
     @staticmethod
     def _vaccine_permission(vaccine_type, operation) -> set:
-        mapped_operations = {
-            "create": "c",
-            "read": "r",
-            "update": "u",
-            "delete": "d",
-            "search": "s"
-        }
-
-        operation = mapped_operations.get(operation.lower())
+        
+        operation = mappedOperation.mapped_operations.get(operation.lower())
         if not operation:
             raise ValueError(f"Unsupported operation: {operation}")
 
@@ -688,10 +682,6 @@ class FhirController:
         else:
             vaccine_permission.add(str.lower(f"{vaccine_type}.{operation}"))
             return vaccine_permission
-
-    @staticmethod
-    def _parse_vaccine_permissions_controller(imms_vax_type_perms) -> set:
-        return {str(s).strip().lower() for s in imms_vax_type_perms}
     
     @staticmethod
     def _expand_permissions(supplier_permissions: list[str]) -> set[str]:
@@ -718,15 +708,8 @@ class FhirController:
 
     @staticmethod
     def _new_vaccine_request(vaccine_type, operation, vaccine_type_permissions: None) -> Optional[list]:
-        mapped_operations = {
-            "create": "c",
-            "read": "r",
-            "update": "u",
-            "delete": "d",
-            "search": "s"
-        }
 
-        operation = mapped_operations.get(operation.lower())
+        operation = mappedOperation.mapped_operations.get(operation.lower())
         vaccine_permission = list()
         if isinstance(vaccine_type, list):
             for x in vaccine_type:

@@ -162,7 +162,7 @@ class TestFhirControllerAuthorization(unittest.TestCase):
     # EndpointOperation.DELETE
     @patch("fhir_controller.get_supplier_permissions")
     def test_delete_imms_authorized(self, mock_get_supplier_permissions):
-        mock_get_supplier_permissions.return_value = ["COVID19:delete"]
+        mock_get_supplier_permissions.return_value = ["COVID19.CRUDS"]
         aws_event = {"pathParameters": {"id": "an-id"},"headers": {"SupplierSystem" : "Test"}}
 
         _ = self.controller.delete_immunization(aws_event)
