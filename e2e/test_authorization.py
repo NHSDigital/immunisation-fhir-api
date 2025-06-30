@@ -17,6 +17,7 @@ from utils.immunisation_api import ImmunisationApi
 from utils.resource import generate_imms_resource
 from utils.mappings import VaccineTypes
 
+
 @unittest.skip("Skipping this entire test suite for now")
 class TestApplicationRestrictedAuthorization(ImmunizationBaseTest):
 
