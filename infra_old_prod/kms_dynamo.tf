@@ -50,7 +50,17 @@ resource "aws_kms_key" "dynamodb_encryption" {
       ],
       "Resource": "*"
     },
-        {
+    {
+      "Sid": "KMS KeyUser access for Admin",
+      "Effect": "Allow",
+      "Principal": { "AWS": ["arn:aws:iam::084828561157:role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_PREPROD-IMMS-Admin_acce656dcacf6f4c"] },
+      "Action": [
+        "kms:Encrypt",
+        "kms:GenerateDataKey*"
+      ],
+      "Resource": "*"
+    },
+    {
       "Sid": "AllowAccountA",
       "Effect": "Allow",
       "Principal": {

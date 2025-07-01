@@ -2,10 +2,10 @@ variable "profile" {
   default = "apim-dev"
 }
 variable "aws_account_name" {
-  default = "non-prod"
+  default = "int"
 }
 variable "project_name" {
-  default = "immunisations"
+  default = "immunisation"
 }
 
 variable "project_short_name" {
@@ -19,7 +19,7 @@ variable "service" {
 data "aws_vpc" "default" {
   filter {
     name   = "tag:Name"
-    values = [local.vpc_name]
+    values = ["imms-${var.aws_account_name}-fhir-api-vpc"]
   }
 }
 
@@ -38,18 +38,19 @@ locals {
   project_domain_name = data.aws_route53_zone.project_zone.name
 }
 
+
 locals {
+  local_config            = "int"
   environment             = var.aws_account_name
   env                     = terraform.workspace
-  prefix                  = "${var.project_name}-${var.service}-${local.env}"
-  short_prefix            = "${var.project_short_name}-${local.env}"
-  batch_prefix            = "immunisation-batch-${local.env}"
-  service_domain_name     = "${local.env}.${local.project_domain_name}"
   config_env              = local.environment
-  vpc_name                = "imms-${local.config_env}-fhir-api-vpc"
+  prefix                  = "${var.project_name}-${var.service}-${local.env}-${local.local_config}"
+  short_prefix            = "${var.project_short_name}-${local.env}-${local.local_config}"
+  batch_prefix            = "immunisation-batch-${local.env}-${local.local_config}"
+  service_domain_name     = "${local.env}.${local.project_domain_name}"
   immunisation_account_id = "084828561157"
   dspp_core_account_id    = "603871901111"
-  local_config            = "int"
+
   tags = {
     Project     = var.project_name
     Environment = local.environment
