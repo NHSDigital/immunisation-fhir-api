@@ -6,6 +6,7 @@ import json
 from copy import deepcopy
 from pydantic import ValidationError
 from jsonpath_ng.ext import parse
+from sample_data.mock_redis_cache import fake_hget
 
 
 from src.models.fhir_immunization import ImmunizationValidator
@@ -41,6 +42,7 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
         ]
         self.redis_patcher = patch("models.utils.validation_utils.redis_client")
         self.mock_redis_client = self.redis_patcher.start()
+        self.mock_redis_client.hget.side_effect = fake_hget
 
     def test_collected_errors(self):
         """Test that when passed multiple validation errors, it returns a list of all expected errors"""
