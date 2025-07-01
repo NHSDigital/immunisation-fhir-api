@@ -42,7 +42,7 @@ def fake_hget(name, key):
     return {}
 
 def fake_hkeys(name):
-    ret = fake_hget(name)
+    ret = get_data(name)
     # return all keys
     if ret != {}:
         return list(ret.keys())
