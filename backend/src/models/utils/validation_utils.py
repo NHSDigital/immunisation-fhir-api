@@ -1,7 +1,7 @@
 """Utils for backend folder"""
 
 import json
-
+import inspect
 
 from typing import Union
 from .generic_utils import create_diagnostics_error
@@ -54,13 +54,7 @@ def convert_disease_codes_to_vaccine_type(disease_codes_input: list) -> Union[st
     otherwise raises a value error
     """
     key = ":".join(sorted(disease_codes_input))
-    # vaccine_type = redis_client.hget("diseases_to_vacc", key)
-    
-    
-    if isinstance(redis_client.hget, Mock):
-        vaccine_type = redis_client.hget("diseases_to_vacc", key)
-    else:
-        print("XXXXXX   ------>>>  redis_client.hget is mocked")
+    vaccine_type = redis_client.hget("diseases_to_vacc", key)
     
     if not vaccine_type:
         raise ValueError(

@@ -765,7 +765,6 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         full_error_message = str(error.exception)
         actual_error_messages = full_error_message.replace("Validation errors: ", "").split("; ")
         self.assertIn("extension[0].url must be one of the following: https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure", actual_error_messages)
-        print("hello world")
 
     def test_pre_validate_extension_snomed_code(self):
         """Test test_pre_validate_extension_url accepts valid values and rejects invalid values for extension[0].url"""

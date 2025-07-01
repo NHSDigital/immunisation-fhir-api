@@ -6,8 +6,8 @@ from unittest.mock import MagicMock, patch, ANY
 
 import botocore.exceptions
 from boto3.dynamodb.conditions import Attr, Key
-from src.fhir_repository import ImmunizationRepository
-from src.models.utils.validation_utils import get_vaccine_type
+from fhir_repository import ImmunizationRepository
+from models.utils.validation_utils import get_vaccine_type
 from models.errors import (
     ResourceNotFoundError,
     UnhandledResponseError,
@@ -16,9 +16,7 @@ from models.errors import (
 )
 from tests.utils.generic_utils import update_target_disease_code
 from tests.utils.immunization_utils import create_covid_19_immunization_dict
-
-"test"
-
+from sample_data.mock_redis_cache import fake_hget
 
 def _make_immunization_pk(_id):
     return f"Immunization#{_id}"
@@ -27,11 +25,32 @@ def _make_immunization_pk(_id):
 def _make_patient_pk(_id):
     return f"Patient#{_id}"
 
+class TestFhirRepositoryBase(unittest.TestCase):
+    """Base class for all tests to set up common fixtures"""
 
-class TestGetImmunizationByIdentifier(unittest.TestCase):
     def setUp(self):
+        super().setUp()
+        self.redis_patcher = patch("models.utils.validation_utils.redis_client")
+        self.mock_redis_client = self.redis_patcher.start()
+        self.mock_redis_client.hget.side_effect = fake_hget
+        self.logger_info_patcher = patch("logging.Logger.info")
+        self.mock_logger_info = self.logger_info_patcher.start()
+
+    def tearDown(self):
+        self.redis_patcher.stop()
+        self.logger_info_patcher.stop()
+        super().tearDown()
+
+
+class TestGetImmunizationByIdentifier(TestFhirRepository):
+    def setUp(self):
+        super().setUp()
         self.table = MagicMock()
         self.repository = ImmunizationRepository(table=self.table)
+
+    def tearDown(self):
+        self.redis_patcher.stop()
+        super().tearDown()
 
     def test_get_immunization_by_identifier(self):
         """it should find an Immunization by id"""
@@ -280,13 +299,17 @@ class TestCreateImmunizationMainIndex(unittest.TestCase):
         self.assertEqual(str(e.exception), f"The provided identifier: {identifier} is duplicated")
 
 
-class TestCreateImmunizationPatientIndex(unittest.TestCase):
+class TestCreateImmunizationPatientIndex(TestFhirRepositoryBase):
     """create_immunization should create a patient record with vaccine type"""
 
     def setUp(self):
+        super().setUp()
         self.table = MagicMock()
         self.repository = ImmunizationRepository(table=self.table)
         self.patient = {"id": "a-patient-id"}
+
+    def tearDown(self):
+        super().tearDown()
 
     def test_create_patient_gsi(self):
         """create Immunization method should create Patient index with nhs-number as ID and no system"""
@@ -332,13 +355,17 @@ class TestCreateImmunizationPatientIndex(unittest.TestCase):
             self.repository.create_immunization(imms, self.patient, "COVID:create", "Test")
 
 
-class TestUpdateImmunization(unittest.TestCase):
+class TestUpdateImmunization(TestFhirRepository):
     def setUp(self):
+        super().setUp()
         self.table = MagicMock()
         self.repository = ImmunizationRepository(table=self.table)
         self.patient = _make_a_patient("update-patient-id")
 
-    def test_update(self):
+    def tearDown(self):
+        return super().tearDown()
+
+    def test_update1(self):
         """it should update record by replacing both Immunization and Patient"""
         imms_id = "an-imms-id"
         imms = create_covid_19_immunization_dict(imms_id)
@@ -651,13 +678,17 @@ class TestFindImmunizations(unittest.TestCase):
         self.assertDictEqual(e.exception.response, response)
 
 
-class TestImmunizationDecimals(unittest.TestCase):
+class TestImmunizationDecimals(TestFhirRepository):
     """It should create a record and keep decimal precision"""
 
     def setUp(self):
+        super().setUp()
         self.table = MagicMock()
         self.repository = ImmunizationRepository(table=self.table)
         self.patient = {"id": "a-patient-id", "identifier": {"value": "an-identifier"}}
+
+    def tearDown(self):
+        return super().tearDown()
 
     def test_decimal_on_create(self):
         """it should create Immunization, and preserve decimal value"""
