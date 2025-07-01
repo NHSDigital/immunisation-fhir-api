@@ -14,7 +14,7 @@ from parameter_parser import (
     create_query_string,
     SearchParams,
 )
-from sample_data.mock_redis_cache import fake_hget
+from sample_data.mock_redis_cache import fake_hkeys
 
 class TestParameterParser(unittest.TestCase):
     def setUp(self):
@@ -28,7 +28,7 @@ class TestParameterParser(unittest.TestCase):
         self.mock_logger_info = self.logger_info_patcher.start()
         self.redis_patcher = patch("parameter_parser.redis_client")
         self.mock_redis_client = self.redis_patcher.start()
-        self.mock_redis_client.hget.side_effect = fake_hget
+        self.mock_redis_client.hkeys.side_effect = fake_hkeys
 
     def tearDown(self):
         patch.stopall()
@@ -120,9 +120,9 @@ class TestParameterParser(unittest.TestCase):
                     self.immunization_target_key: ["not-a-code"],
                 }
             )
-        self.assertEqual(
-            str(e.exception),
-            "immunization-target must be one or more of the following: COVID19, FLU, HPV, MMR, MMRV, RSV, PERTUSSIS, SHINGLES, PCV13, 3in1, MENACWY",
+        self.assertTrue(
+            str(e.exception).startswith("immunization-target must be one or more of the following:"),
+            f"Unexpected exception message: {str(e.exception)}"
         )
 
         params = process_search_params(

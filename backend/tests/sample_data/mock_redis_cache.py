@@ -27,12 +27,23 @@ MOCK_REDIS_V2D_RESPONSE = {
     "MENACWY": "[{\"code\": \"23511006\", \"term\": \"Meningococcal infectious disease\"}]"
 }
 
-def fake_hget(name, key):
-    # Custom logic for your test
+
+def get_data(name):
     if name == "diseases_to_vacc":
-        if key in MOCK_REDIS_D2V_RESPONSE:
-            return MOCK_REDIS_D2V_RESPONSE[key]
+        return MOCK_REDIS_D2V_RESPONSE
     elif name == "vacc_to_diseases":
-        if key in MOCK_REDIS_V2D_RESPONSE:
-            return MOCK_REDIS_V2D_RESPONSE[key]
-    return None
+        return MOCK_REDIS_V2D_RESPONSE
+    return {}
+
+def fake_hget(name, key):
+    ret = get_data(name)
+    if key in ret:
+        return ret[key]
+    return {}
+
+def fake_hkeys(name):
+    ret = fake_hget(name)
+    # return all keys
+    if ret != {}:
+        return list(ret.keys())
+    return []
