@@ -14,7 +14,7 @@ from parameter_parser import (
     create_query_string,
     SearchParams,
 )
-from sample_data.mock_redis_cache import fake_hkeys
+from utils.mock_redis import mock_redis_hkeys
 
 class TestParameterParser(unittest.TestCase):
     def setUp(self):
@@ -28,7 +28,6 @@ class TestParameterParser(unittest.TestCase):
         self.mock_logger_info = self.logger_info_patcher.start()
         self.redis_patcher = patch("parameter_parser.redis_client")
         self.mock_redis_client = self.redis_patcher.start()
-        self.mock_redis_client.hkeys.side_effect = fake_hkeys
 
     def tearDown(self):
         patch.stopall()
@@ -103,7 +102,7 @@ class TestParameterParser(unittest.TestCase):
             '"https://fhir.nhs.uk/Id/nhs-number|{NHS number}" '
             'e.g. "https://fhir.nhs.uk/Id/nhs-number|9000000009"',
         )
-
+        self.mock_redis_client.hkeys.return_value = ["RSV"]
         params = process_search_params(
             {
                 self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
@@ -113,6 +112,7 @@ class TestParameterParser(unittest.TestCase):
         self.assertIsNotNone(params)
 
     def test_process_search_params_whitelists_immunization_target(self):
+        self.mock_redis_client.hkeys.return_value = ["RSV"]
         with self.assertRaises(ParameterException) as e:
             process_search_params(
                 {
@@ -135,6 +135,7 @@ class TestParameterParser(unittest.TestCase):
         self.assertIsNotNone(params)
 
     def test_search_params_date_from_must_be_before_date_to(self):
+        self.mock_redis_client.hkeys.return_value = ["RSV"]
         params = process_search_params(
             {
                 self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
@@ -170,6 +171,7 @@ class TestParameterParser(unittest.TestCase):
         self.assertEqual(str(e.exception), f"Search parameter {date_from_key} must be before {date_to_key}")
 
     def test_process_search_params_immunization_target_is_mandatory(self):
+        self.mock_redis_client.hkeys.return_value = ["RSV"]
         with self.assertRaises(ParameterException) as e:
             _ = process_search_params(
                 {

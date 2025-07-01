@@ -1,4 +1,3 @@
-import json
 MOCK_REDIS_D2V_RESPONSE = {
     "4740000": "SHINGLES",
     "6142004": "FLU",
@@ -35,13 +34,13 @@ def get_data(name):
         return MOCK_REDIS_V2D_RESPONSE
     return {}
 
-def fake_hget(name, key):
+def mock_redis_hget(name, key):
     ret = get_data(name)
     if key in ret:
         return ret[key]
     return {}
 
-def fake_hkeys(name):
+def mock_redis_hkeys(name):
     ret = get_data(name)
     # return all keys
     if isinstance(ret, dict) and ret:

@@ -16,7 +16,7 @@ from models.errors import (
 )
 from tests.utils.generic_utils import update_target_disease_code
 from tests.utils.immunization_utils import create_covid_19_immunization_dict
-from sample_data.mock_redis_cache import fake_hget
+from utils.mock_redis import mock_redis_hget
 
 def _make_immunization_pk(_id):
     return f"Immunization#{_id}"
@@ -32,7 +32,7 @@ class TestFhirRepositoryBase(unittest.TestCase):
         super().setUp()
         self.redis_patcher = patch("models.utils.validation_utils.redis_client")
         self.mock_redis_client = self.redis_patcher.start()
-        self.mock_redis_client.hget.side_effect = fake_hget
+        self.mock_redis_client.hget.side_effect = mock_redis_hget
         self.logger_info_patcher = patch("logging.Logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
 

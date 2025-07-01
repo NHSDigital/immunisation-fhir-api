@@ -7,7 +7,7 @@ from models.errors import CustomValidationError
 from models.fhir_immunization import ImmunizationValidator
 from fhir_batch_repository import ImmunizationBatchRepository
 from fhir_batch_service import ImmunizationBatchService
-from sample_data.mock_redis_cache import fake_hget
+from utils.mock_redis import mock_redis_hget
 
 
 class TestFhirBatchServiceBase(unittest.TestCase):
@@ -17,7 +17,7 @@ class TestFhirBatchServiceBase(unittest.TestCase):
         super().setUp()
         self.redis_patcher = patch("models.utils.validation_utils.redis_client")
         self.mock_redis_client = self.redis_patcher.start()
-        self.mock_redis_client.hget.side_effect = fake_hget
+        self.mock_redis_client.hget.side_effect = mock_redis_hget
         self.logger_info_patcher = patch("logging.Logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
 

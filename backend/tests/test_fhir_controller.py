@@ -28,7 +28,7 @@ from models.errors import (
 from tests.utils.immunization_utils import create_covid_19_immunization
 from parameter_parser import patient_identifier_system, process_search_params
 from tests.utils.generic_utils import load_json_data
-from sample_data.mock_redis_cache import fake_hkeys
+from utils.mock_redis import mock_redis_hkeys
 
 
 class TestFhirControllerBase(unittest.TestCase):
@@ -38,7 +38,7 @@ class TestFhirControllerBase(unittest.TestCase):
         super().setUp()
         self.redis_patcher = patch("parameter_parser.redis_client")
         self.mock_redis_client = self.redis_patcher.start()
-        self.mock_redis_client.hkeys.side_effect = fake_hkeys
+        self.mock_redis_client.hkeys.side_effect = mock_redis_hkeys
         self.logger_info_patcher = patch("logging.Logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
 

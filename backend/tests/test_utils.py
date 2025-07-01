@@ -4,7 +4,7 @@ import unittest
 import json
 from unittest.mock import patch, MagicMock
 from copy import deepcopy
-from sample_data.mock_redis_cache import fake_hget
+from utils.mock_redis import mock_redis_hget
 
 from models.utils.validation_utils import convert_disease_codes_to_vaccine_type, get_vaccine_type
 from utils.generic_utils import load_json_data, update_target_disease_code
@@ -17,7 +17,7 @@ class TestGenericUtils(unittest.TestCase):
         self.json_data = load_json_data(filename="completed_mmr_immunization_event.json")
         self.redis_patcher = patch("models.utils.validation_utils.redis_client")
         self.mock_redis_client = self.redis_patcher.start()
-        self.mock_redis_client.hget.side_effect = fake_hget
+        self.mock_redis_client.hget.side_effect = mock_redis_hget
 
     def tearDown(self):
         """Tear down after each test. This runs after every test"""

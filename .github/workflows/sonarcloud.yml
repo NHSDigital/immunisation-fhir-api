@@ -90,6 +90,8 @@ jobs:
 
       - name: Run unittest with coverage-fhir-api
         working-directory: backend
+        env:
+          PYTHONPATH: ${{ github.workspace }}/backend/src:${{ github.workspace }}/backend/tests
         id: fhirapi
         continue-on-error: true
         run: |
