@@ -42,7 +42,7 @@ class TestFhirRepositoryBase(unittest.TestCase):
         super().tearDown()
 
 
-class TestGetImmunizationByIdentifier(TestFhirRepository):
+class TestGetImmunizationByIdentifier(TestFhirRepositoryBase):
     def setUp(self):
         super().setUp()
         self.table = MagicMock()
@@ -170,11 +170,16 @@ def _make_a_patient(nhs_number="1234567890") -> dict:
     }
 
 
-class TestCreateImmunizationMainIndex(unittest.TestCase):
+class TestCreateImmunizationMainIndex(TestFhirRepositoryBase):
     def setUp(self):
+        super().setUp()
         self.table = MagicMock()
         self.repository = ImmunizationRepository(table=self.table)
         self.patient = {"id": "a-patient-id", "identifier": {"value": "an-identifier"}}
+
+    def tearDown(self):
+        patch.stopall()
+        super().tearDown()
 
     def test_create_immunization(self):
         """it should create Immunization, and return created object"""
@@ -355,7 +360,7 @@ class TestCreateImmunizationPatientIndex(TestFhirRepositoryBase):
             self.repository.create_immunization(imms, self.patient, "COVID:create", "Test")
 
 
-class TestUpdateImmunization(TestFhirRepository):
+class TestUpdateImmunization(TestFhirRepositoryBase):
     def setUp(self):
         super().setUp()
         self.table = MagicMock()
@@ -678,7 +683,7 @@ class TestFindImmunizations(unittest.TestCase):
         self.assertDictEqual(e.exception.response, response)
 
 
-class TestImmunizationDecimals(TestFhirRepository):
+class TestImmunizationDecimals(TestFhirRepositoryBase):
     """It should create a record and keep decimal precision"""
 
     def setUp(self):

@@ -9,16 +9,16 @@ from unittest.mock import patch
 
 from jsonpath_ng.ext import parse
 
-from src.clients import redis_client
-from src.models.fhir_immunization import ImmunizationValidator
-from src.models.utils.generic_utils import get_generic_extension_value
+from clients import redis_client
+from models.fhir_immunization import ImmunizationValidator
+from models.utils.generic_utils import get_generic_extension_value
 from .utils.generic_utils import (
     # these have an underscore to avoid pytest collecting them as tests
     test_valid_values_accepted as _test_valid_values_accepted,
     test_invalid_values_rejected as _test_invalid_values_rejected,
     load_json_data,
 )
-from src.models.utils.generic_utils import (
+from models.utils.generic_utils import (
     patient_name_given_field_location,
     patient_name_family_field_location,
     practitioner_name_given_field_location,

@@ -10,7 +10,7 @@ from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests impor
 from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import MockFileDetails
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
-    from src.make_and_upload_ack_file import make_ack_data, upload_ack_file, make_and_upload_ack_file
+    from make_and_upload_ack_file import make_ack_data, upload_ack_file, make_and_upload_ack_file
     from clients import REGION_NAME
 
 from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import GenericSetUp, GenericTearDown

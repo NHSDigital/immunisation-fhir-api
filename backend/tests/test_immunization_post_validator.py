@@ -9,7 +9,7 @@ from jsonpath_ng.ext import parse
 from sample_data.mock_redis_cache import fake_hget
 
 
-from src.models.fhir_immunization import ImmunizationValidator
+from models.fhir_immunization import ImmunizationValidator
 from tests.utils.generic_utils import (
     # these have an underscore to avoid pytest collecting them as tests
     test_invalid_values_rejected as _test_invalid_values_rejected,
