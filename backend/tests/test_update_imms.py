@@ -11,9 +11,7 @@ from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
 class TestUpdateImmunizations(unittest.TestCase):
     def setUp(self):
         self.controller = create_autospec(FhirController)
-        # patch FhirController
-        self.controller = create_autospec(FhirController)
-        self.controller.update_immunization = FhirController.update_immunization
+        # self.controller.update_immunization = FhirController.update_immunization
         self.logger_exception_patcher = patch("logging.Logger.exception")
         self.mock_logger_exception = self.logger_exception_patcher.start()
         self.logger_info_patcher = patch("logging.Logger.info")
