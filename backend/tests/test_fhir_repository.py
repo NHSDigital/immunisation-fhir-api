@@ -14,6 +14,7 @@ from models.errors import (
     UnhandledResponseError,
     IdentifierDuplicationError,
     UnauthorizedVaxError,
+    UnauthorizedVaxOnRecordError
 )
 from tests.utils.generic_utils import update_target_disease_code
 from tests.utils.immunization_utils import create_covid_19_immunization_dict
@@ -78,7 +79,7 @@ class TestGetImmunizationByIdentifier(unittest.TestCase):
                 ]
             }
         )
-        with self.assertRaises(UnauthorizedVaxError) as e:
+        with self.assertRaises(UnauthorizedVaxOnRecordError) as e:
             # When
             self.repository.get_immunization_by_identifier(imms_id, ["FLU.CRUD"])
 
@@ -132,7 +133,7 @@ class TestGetImmunization(unittest.TestCase):
                 }
             }
         )
-        with self.assertRaises(UnauthorizedVaxError) as e:
+        with self.assertRaises(UnauthorizedVaxOnRecordError) as e:
             # When
             self.repository.get_immunization_by_id(imms_id, ["FLU.CRUD"])
 
@@ -328,7 +329,7 @@ class TestCreateImmunizationPatientIndex(unittest.TestCase):
         imms = create_covid_19_immunization_dict("an-id")
 
         update_target_disease_code(imms, DiseaseCodes.flu)
-        with self.assertRaises(UnauthorizedVaxError) as e:
+        with self.assertRaises(UnauthorizedVaxOnRecordError) as e:
             # When
             self.repository.create_immunization(imms, self.patient, ["COVID.CRUD"], "Test")
 
@@ -514,7 +515,7 @@ class TestDeleteImmunization(unittest.TestCase):
             }
         )
 
-        with self.assertRaises(UnauthorizedVaxError) as e:
+        with self.assertRaises(UnauthorizedVaxOnRecordError) as e:
             self.repository.delete_immunization(imms_id, ["COVID19.CRUD"], "Test")
 
     def test_multiple_delete_should_not_update_timestamp(self):

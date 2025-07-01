@@ -35,8 +35,8 @@ from models.errors import (
 )
 from models.utils.generic_utils import check_keys_in_sources
 from models.utils.permissions import get_supplier_permissions
+from models.utils.permission_checker import VaccinePermissionChecker
 from pds_service import PdsService
-from mappings import mappedOperation
 from parameter_parser import process_params, process_search_params, create_query_string
 import urllib.parse
 
@@ -272,9 +272,8 @@ class FhirController:
 
         # Check vaccine type permissions on the existing record - start
         try:
-            vax_type_perms = self._expand_permissions(imms_vax_type_perms)
-            vax_type_perm = self._vaccine_permission(existing_record["VaccineType"], "update")
-            self._check_permission(vax_type_perm, vax_type_perms)
+            checker = VaccinePermissionChecker(imms_vax_type_perms)
+            checker.validate(existing_record["VaccineType"], "update")
         except UnauthorizedVaxOnRecordError as unauthorized:
             return self.create_response(403, unauthorized.to_operation_outcome())
         # Check vaccine type permissions on the existing record - end
@@ -429,7 +428,8 @@ class FhirController:
             return self.create_response(403, unauthorized.to_operation_outcome())
         # Check vaxx type permissions on the existing record - start
         try:
-            vax_type_perms = self._expand_permissions(imms_vax_type_perms)
+            checker = VaccinePermissionChecker(imms_vax_type_perms)
+            vax_type_perms = checker.expanded_permissions
             vax_type_perm = self._new_vaccine_request(search_params.immunization_targets, "search", vax_type_perms)
             if not vax_type_perm:
                 raise UnauthorizedVaxError
@@ -634,6 +634,7 @@ class FhirController:
             if len(supplier_system) == 0:
                 raise UnauthorizedSystemError()
             imms_vax_type_perms = get_supplier_permissions(supplier_system)
+            print(f" update imms = {imms_vax_type_perms}")
             if len(imms_vax_type_perms) == 0:
                 raise UnauthorizedVaxError()
             # Return the values needed for later use
@@ -677,32 +678,11 @@ class FhirController:
         else:
             vaccine_permission.add(str.lower(f"{vaccine_type}.{operation}"))
             return vaccine_permission
-    
-    @staticmethod
-    def _expand_permissions(supplier_permissions: list[str]) -> set[str]:
-        expanded = set()
-        for permissions in supplier_permissions:
-            if '.' not in permissions:
-                continue  # skip invalid format
-        vaccineType, allowed_operations = permissions.split('.', 1)
-        vaccineType = vaccineType.lower()
-        for operation in allowed_operations.lower():
-            if operation not in {'c', 'r', 'u', 'd', 's'}:
-                raise ValueError(f"Unknown operation code: {operation} in a permission {permissions}")
-            expanded.add(f"{vaccineType}.{operation}")
-        return expanded
-
-    @staticmethod
-    def _check_permission(requested: set, allowed: set) -> set:
-        if not requested.issubset(allowed):
-            raise UnauthorizedVaxOnRecordError()
-        else:
-            return None
 
     @staticmethod
     def _new_vaccine_request(vaccine_type, operation, vaccine_type_permissions: None) -> Optional[list]:
 
-        operation = mappedOperation.mapped_operations.get(operation.lower())
+        operation = VaccinePermissionChecker.mapped_operations.get(operation.lower())
         vaccine_permission = list()
         if isinstance(vaccine_type, list):
             for x in vaccine_type:

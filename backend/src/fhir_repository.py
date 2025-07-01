@@ -8,7 +8,7 @@ from typing import Optional
 import boto3
 import botocore.exceptions
 from boto3.dynamodb.conditions import Attr, Key
-from mappings import mappedOperation
+from models.utils.permission_checker import VaccinePermissionChecker
 from botocore.config import Config
 from models.errors import (
     ResourceNotFoundError,
@@ -95,9 +95,8 @@ class ImmunizationRepository:
             item = response["Items"][0]
             resp = dict()
             vaccine_type = self._vaccine_type(item["PatientSK"])
-            vax_type_perms = self._expand_permissions(imms_vax_type_perms)
-            vax_type_perm = self._vaccine_permission(vaccine_type, "search")
-            self._check_permission(vax_type_perm, vax_type_perms)
+            checker = VaccinePermissionChecker(imms_vax_type_perms)
+            checker.validate(vaccine_type, "search")
             resource = json.loads(item["Resource"])
             resp["id"] = resource.get("id")
             resp["version"] = int(response["Items"][0]["Version"])
@@ -113,9 +112,8 @@ class ImmunizationRepository:
             if "DeletedAt" in response["Item"]:
                 if response["Item"]["DeletedAt"] == "reinstated":
                     vaccine_type = self._vaccine_type(response["Item"]["PatientSK"])
-                    vax_type_perms = self._expand_permissions(imms_vax_type_perms)
-                    vax_type_perm = self._vaccine_permission(vaccine_type, "read")
-                    self._check_permission(vax_type_perm, vax_type_perms)
+                    checker = VaccinePermissionChecker(imms_vax_type_perms)
+                    checker.validate(vaccine_type, "read")
                     resp["Resource"] = json.loads(response["Item"]["Resource"])
                     resp["Version"] = response["Item"]["Version"]
                     return resp
@@ -123,9 +121,8 @@ class ImmunizationRepository:
                     return None
             else:
                 vaccine_type = self._vaccine_type(response["Item"]["PatientSK"])
-                vax_type_perms = self._expand_permissions(imms_vax_type_perms)
-                vax_type_perm = self._vaccine_permission(vaccine_type, "read")
-                self._check_permission(vax_type_perm, vax_type_perms)
+                checker = VaccinePermissionChecker(imms_vax_type_perms)
+                checker.validate(vaccine_type, "read")
                 resp["Resource"] = json.loads(response["Item"]["Resource"])
                 resp["Version"] = response["Item"]["Version"]
                 return resp
@@ -171,9 +168,8 @@ class ImmunizationRepository:
         new_id = str(uuid.uuid4())
         immunization["id"] = new_id
         attr = RecordAttributes(immunization, patient)
-        vax_type_perms = self._expand_permissions(imms_vax_type_perms)
-        vax_type_perm = self._vaccine_permission(attr.vaccine_type, "create")
-        self._check_permission(vax_type_perm, vax_type_perms)
+        checker = VaccinePermissionChecker(imms_vax_type_perms)
+        checker.validate(attr.vaccine_type, "create")
         query_response = _query_identifier(self.table, "IdentifierGSI", "IdentifierPK", attr.identifier)
 
         if query_response is not None:
@@ -273,10 +269,9 @@ class ImmunizationRepository:
             update_reinstated=True,
         )
 
-    def _handle_permissions(self, imms_vax_type_perms: str, attr: RecordAttributes):
-        vax_type_perms = self._expand_permissions(imms_vax_type_perms)
-        vax_type_perm = self._vaccine_permission(attr.vaccine_type, "update")
-        self._check_permission(vax_type_perm, vax_type_perms)
+    def _handle_permissions(self, imms_vax_type_perms: list[str], attr: RecordAttributes):
+        checker = VaccinePermissionChecker(imms_vax_type_perms)
+        checker.validate(attr.vaccine_type, "update")
 
     def _build_update_expression(self, is_reinstate: bool) -> str:
         if is_reinstate:
@@ -370,15 +365,10 @@ class ImmunizationRepository:
             if "Item" in resp:
                 if "DeletedAt" in resp["Item"]:
                     if resp["Item"]["DeletedAt"] == "reinstated":
-                        vaccine_type = self._vaccine_type(resp["Item"]["PatientSK"])
-                        vax_type_perms = self._expand_permissions(imms_vax_type_perms)
-                        vax_type_perm = self._vaccine_permission(vaccine_type, "delete")
-                        self._check_permission(vax_type_perm, vax_type_perms)
-                else:
-                    vaccine_type = self._vaccine_type(resp["Item"]["PatientSK"])
-                    vax_type_perms = self._expand_permissions(imms_vax_type_perms)
-                    vax_type_perm = self._vaccine_permission(vaccine_type, "delete")
-                    self._check_permission(vax_type_perm, vax_type_perms)
+                        pass
+                vaccine_type = self._vaccine_type(resp["Item"]["PatientSK"])
+                checker = VaccinePermissionChecker(imms_vax_type_perms)
+                checker.validate(vaccine_type, "delete")
 
             response = self.table.update_item(
                 Key={"PK": _make_immunization_pk(imms_id)},
@@ -430,45 +420,6 @@ class ImmunizationRepository:
             return json.loads(response["Attributes"]["Resource"])
         else:
             raise UnhandledResponseError(message="Non-200 response from dynamodb", response=response)
-
-    @staticmethod
-    def _vaccine_permission(vaccine_type, operation) -> set:
-
-        operation = mappedOperation.mapped_operations.get(operation.lower())
-        if not operation:
-            raise ValueError(f"Unsupported operation: {operation}")
-
-        vaccine_permission = set()
-        if isinstance(vaccine_type, list):
-            for x in vaccine_type:
-                vaccine_permission.add(str.lower(f"{x}.{operation}"))
-            return vaccine_permission
-        else:
-            vaccine_permission.add(str.lower(f"{vaccine_type}.{operation}"))
-            return vaccine_permission
-    
-    @staticmethod
-    def _expand_permissions(supplier_permissions: list[str]) -> set[str]:
-        expanded = set()
-        for permissions in supplier_permissions:
-            if '.' not in permissions:
-                continue  # skip invalid format
-        vaccineType, allowed_operations = permissions.split('.', 1)
-        print(f"Vax_type: {vaccineType}, Ops: {allowed_operations}")
-        vaccineType = vaccineType.lower()
-        for operation in allowed_operations.lower():
-            if operation not in {'c', 'r', 'u', 'd', 's'}:
-                raise ValueError(f"Unknown operation code: {operation} in a permission {permissions}")
-            expanded.add(f"{vaccineType}.{operation}")
-        print(f"Expanded permissions: {expanded}")
-        return expanded
-
-    @staticmethod
-    def _check_permission(requested: set, allowed: set) -> set:
-        if not requested.issubset(allowed):
-            raise UnauthorizedVaxError()
-        else:
-            return None
 
     @staticmethod
     def _vaccine_type(patientsk) -> str:
