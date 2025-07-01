@@ -17,7 +17,6 @@ import base64
 import copy
 import json
 
-from tests.utils.mock_redis import MockRedisClient
 from tests.utils.test_utils_for_batch import ForwarderValues, MockFhirImmsResources
 
 
@@ -28,6 +27,21 @@ with patch.dict("os.environ", ForwarderValues.MOCK_ENVIRONMENT_DICT):
 @mock_aws
 @patch.dict(os.environ, ForwarderValues.MOCK_ENVIRONMENT_DICT)
 class TestForwardLambdaHandler(TestCase):
+
+    MOCK_REDIS_D2V_RESPONSE = json.dumps({
+        "4740000": "SHINGLES",
+        "6142004": "FLU",
+        "16814004": "PCV13",
+        "23511006": "MENACWY",
+        "27836007": "PERTUSSIS",
+        "55735004": "RSV",
+        "240532009": "HPV",
+        "840539006": "COVID19",
+        "14189004:36653000:36989005": "MMR",
+        "14189004:36653000:36989005:38907003": "MMRV",
+        "397430003:398102009:76902006": "3in1"
+    })
+
 
     def setUp(self):
         """Set up dynamodb table test values to be used for the tests"""
@@ -60,6 +74,13 @@ class TestForwardLambdaHandler(TestCase):
                 },
             ],
         )
+        self.redis_patcher = patch("models.utils.validation_utils.redis_client")
+        self.mock_redis_client = self.redis_patcher.start()
+        self.mock_redis_client.hget.return_value = self.MOCK_REDIS_D2V_RESPONSE
+
+    def tearDown(self):
+        """Tear down after each test. This runs after every test"""
+        self.redis_patcher.stop()
 
     @staticmethod
     def generate_fhir_json(include_fhir_json=True, identifier_value=None):
@@ -182,6 +203,7 @@ class TestForwardLambdaHandler(TestCase):
                 "PatientSK": "RSV#4d2ac1eb-080f-4e54-9598-f2d53334681c",
             }
         )
+        self.mock_redis_client.hget.return_value = self.MOCK_REDIS_D2V_RESPONSE
 
         test_cases = [
             {

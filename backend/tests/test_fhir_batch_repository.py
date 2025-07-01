@@ -41,6 +41,8 @@ class TestCreateImmunization(TestImmunizationBatchRepository):
 
     def create_immunization_test_logic(self, is_present, remove_nhs):
         """Common logic for testing immunization creation."""
+        print("create_immunization_test_logic...")
+        print(f"Is present: {is_present}, Remove NHS: {remove_nhs}")
         self.modify_immunization(remove_nhs)
 
         self.repository.create_immunization(
@@ -65,18 +67,18 @@ class TestCreateImmunization(TestImmunizationBatchRepository):
 
     def test_create_immunization_with_nhs_number(self):
         """Test creating Immunization with NHS number."""
-
+        print("test_create_immunization_with_nhs_number...")
         self.create_immunization_test_logic(is_present=True, remove_nhs=False)
 
     def test_create_immunization_without_nhs_number(self):
         """Test creating Immunization without NHS number."""
-
+        print("test_create_immunization_without_nhs_number...")
         self.create_immunization_test_logic(is_present=False, remove_nhs=True)    
 
 
     def test_create_immunization_duplicate(self):
         """it should not create Immunization since the request is duplicate"""
-
+        print("test_create_immunization_duplicate...")
         self.table.query = MagicMock(return_value={
             "id": imms_id,
             "identifier": [{"system": "test-system", "value": "12345"}],

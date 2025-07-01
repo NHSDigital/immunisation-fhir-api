@@ -1,18 +1,27 @@
 """Tests for generic utils"""
 
 import unittest
+import json
+from unittest.mock import patch, MagicMock
 from copy import deepcopy
+from sample_data.mock_redis_cache import fake_hget
 
-from src.models.utils.validation_utils import convert_disease_codes_to_vaccine_type, get_vaccine_type
-from .utils.generic_utils import load_json_data, update_target_disease_code
-"test"
+from models.utils.validation_utils import convert_disease_codes_to_vaccine_type, get_vaccine_type
+from utils.generic_utils import load_json_data, update_target_disease_code
+
 
 class TestGenericUtils(unittest.TestCase):
     """Tests for generic utils functions"""
-
     def setUp(self):
         """Set up for each test. This runs before every test"""
         self.json_data = load_json_data(filename="completed_mmr_immunization_event.json")
+        self.redis_patcher = patch("models.utils.validation_utils.redis_client")
+        self.mock_redis_client = self.redis_patcher.start()
+        self.mock_redis_client.hget.side_effect = fake_hget
+
+    def tearDown(self):
+        """Tear down after each test. This runs after every test"""
+        self.redis_patcher.stop()
 
     def test_convert_disease_codes_to_vaccine_type(self):
         """
@@ -52,8 +61,9 @@ class TestGenericUtils(unittest.TestCase):
         """
         # TEST VALID DATA
         valid_json_data = load_json_data(filename=f"completed_rsv_immunization_event.json")
-        print(valid_json_data)
-        self.assertEqual(get_vaccine_type(valid_json_data), "RSV")
+        # print(valid_json_data)
+        vac_type = get_vaccine_type(valid_json_data)
+        self.assertEqual(vac_type, "RSV")
 
         # VALID DATA: coding field with multiple coding systems including SNOMED
         flu_json_data = load_json_data(filename=f"completed_flu_immunization_event.json")

@@ -4,6 +4,7 @@ import unittest
 from copy import deepcopy
 from decimal import Decimal
 from unittest import mock
+import json
 from unittest.mock import patch
 
 from jsonpath_ng.ext import parse
@@ -23,7 +24,6 @@ from src.models.utils.generic_utils import (
     practitioner_name_given_field_location,
     practitioner_name_family_field_location,
 )
-from .utils.mock_redis import mock_redis, MockRedisClient
 from .utils.pre_validation_test_utils import ValidatorModelTests
 from .utils.values_for_tests import ValidValues, InvalidValues
 from models.obtain_field_value import ObtainFieldValue
@@ -32,6 +32,20 @@ from models.obtain_field_value import ObtainFieldValue
 class TestImmunizationModelPreValidationRules(unittest.TestCase):
     """Test immunization pre validation rules on the FHIR model using the covid sample data"""
 
+    MOCK_REDIS_D2V_RESPONSE = json.dumps({
+        "4740000": "SHINGLES",
+        "6142004": "FLU",
+        "16814004": "PCV13",
+        "23511006": "MENACWY",
+        "27836007": "PERTUSSIS",
+        "55735004": "RSV",
+        "240532009": "HPV",
+        "840539006": "COVID19",
+        "14189004:36653000:36989005": "MMR",
+        "14189004:36653000:36989005:38907003": "MMRV",
+        "397430003:398102009:76902006": "3in1"
+    })
+
     def setUp(self):
         """Set up for each test. This runs before every test"""
         self.json_data = load_json_data(filename="completed_covid19_immunization_event.json")
@@ -39,6 +53,14 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         # redis_patcher = mock.patch("redis.StrictRedis", return_value=MockRedisClient())
         # self.addCleanup(redis_patcher.stop)
         # redis_patcher.start()
+        # patch clients.redis_client
+        # @patch('models.utils.validation_utils.redis_client.hget')
+        self.redis_patcher = patch("models.utils.validation_utils.redis_client")
+        self.mock_redis_client = self.redis_patcher.start()
+        
+        
+    def tearDown(self):
+        patch.stopall()
 
     def test_collected_errors(self):
         """Test that when passed multiple validation errors, it returns a list of all expected errors."""
@@ -671,6 +693,8 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         actual_error_messages = full_error_message.replace("Validation errors: ", "").split("; ")
         self.assertIn("extension is a mandatory field", actual_error_messages)
 
+    def test_pre_validate_missing_valueCodeableConcept(self):
+        """Test pre_validate_extension  missing "valueCodeableConcept" within an extension"""
         # Test case: missing "valueCodeableConcept" within an extension
         invalid_json_data = deepcopy(self.json_data)
         del invalid_json_data["extension"][0]["valueCodeableConcept"]
@@ -682,6 +706,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         actual_error_messages = full_error_message.replace("Validation errors: ", "").split("; ")
         self.assertIn("extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept is a mandatory field", actual_error_messages)
 
+    def test_pre_validate_missing_valueCodeableConcept2(self):
         # Test case: missing "coding" within "valueCodeableConcept"
         invalid_json_data = deepcopy(self.json_data)
         del invalid_json_data["extension"][0]["valueCodeableConcept"]["coding"]
@@ -693,12 +718,15 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         actual_error_messages = full_error_message.replace("Validation errors: ", "").split("; ")
         self.assertIn("extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding is a mandatory field", actual_error_messages)
 
+    def test_pre_validate_missing_valueCodeableConcept3(self):
         # Test case: valid data (should not raise an exception)
+        self.mock_redis_client.hget.return_value = self.MOCK_REDIS_D2V_RESPONSE
         valid_json_data = deepcopy(self.json_data)
         try:
             self.validator.validate(valid_json_data)
         except Exception as error:
             self.fail(f"Validation unexpectedly raised an exception: {error}")
+        print("Validation passed successfully with valid data.")
 
 
     def test_pre_validate_extension_length(self):
@@ -725,7 +753,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         actual_error_messages = full_error_message.replace("Validation errors: ", "").split("; ")
         self.assertIn("extension must be an array of length 1", actual_error_messages)
 
-    def test_pre_validate_extension_url(self):
+    def test_pre_validate_extension_url1(self):
         """Test test_pre_validate_extension_url accepts valid values and rejects invalid values for extension[0].url"""
         # Test case: missing "extension"
         invalid_json_data = deepcopy(self.json_data)
@@ -737,6 +765,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         full_error_message = str(error.exception)
         actual_error_messages = full_error_message.replace("Validation errors: ", "").split("; ")
         self.assertIn("extension[0].url must be one of the following: https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure", actual_error_messages)
+        print("hello world")
 
     def test_pre_validate_extension_snomed_code(self):
         """Test test_pre_validate_extension_url accepts valid values and rejects invalid values for extension[0].url"""
@@ -1096,6 +1125,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
 
     def test_pre_validate_route_coding(self):
         """Test pre_validate_route_coding accepts valid values and rejects invalid values"""
+        print("Testing pre_validate_route_coding")
         ValidatorModelTests.test_unique_list(
             self,
             field_location="route.coding",
@@ -1109,11 +1139,13 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
 
     def test_pre_validate_route_coding_code(self):
         """Test pre_validate_route_coding_code accepts valid values and rejects invalid values"""
+        print("Testing pre_validate_route_coding_code")
         field_location = "route.coding[?(@.system=='http://snomed.info/sct')].code"
         ValidatorModelTests.test_string_value(self, field_location, valid_strings_to_test=["dummy"])
 
     def test_pre_validate_route_coding_display(self):
         """Test pre_validate_route_coding_display accepts valid values and rejects invalid values"""
+        print("Testing pre_validate_route_coding_display")
         field_location = "route.coding[?(@.system=='http://snomed.info/sct')].display"
         ValidatorModelTests.test_string_value(self, field_location, valid_strings_to_test=["dummy"])
 

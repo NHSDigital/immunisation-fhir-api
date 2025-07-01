@@ -1,6 +1,8 @@
 """Test immunization pre validation rules on the model"""
 
 import unittest
+from unittest.mock import patch
+import json
 from copy import deepcopy
 from pydantic import ValidationError
 from jsonpath_ng.ext import parse
@@ -15,7 +17,7 @@ from tests.utils.generic_utils import (
 from tests.utils.mandation_test_utils import MandationTests
 from tests.utils.values_for_tests import NameInstances
 from tests.utils.generic_utils import update_contained_resource_field
-
+from sample_data.mock_redis_cache import MOCK_REDIS_D2V_RESPONSE, MOCK_REDIS_V2D_RESPONSE
 
 class TestImmunizationModelPostValidationRules(unittest.TestCase):
     """Test immunization post validation rules on the FHIR model"""
@@ -37,6 +39,8 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
             "MMR",
             "RSV",
         ]
+        self.redis_patcher = patch("models.utils.validation_utils.redis_client")
+        self.mock_redis_client = self.redis_patcher.start()
 
     def test_collected_errors(self):
         """Test that when passed multiple validation errors, it returns a list of all expected errors"""
@@ -465,13 +469,16 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
             self, "performer[?(@.actor.type=='Organization')].actor.identifier.system"
         )
 
-    def test_pre_validate_extension_url(self):
+    # TODO confirm if this is correct. Why pre-validate in post validator tests?
+    def test_post_pre_validate_extension_url(self):
         """
         Test pre_validate_extension_url accepts valid values and rejects
         if the snomed code are unable to fetch if the url is invalid
         and get passed only with the snomed url.
         """
         # Test case: missing "extension"
+        self.mock_redis_client.hget.return_value = MOCK_REDIS_D2V_RESPONSE
+
         invalid_json_data = deepcopy(self.completed_json_data["COVID19"])
         invalid_json_data["extension"][0]["valueCodeableConcept"]["coding"][0]["system"]='https://xyz/Extension-UKCore-VaccinationProcedure'
 
