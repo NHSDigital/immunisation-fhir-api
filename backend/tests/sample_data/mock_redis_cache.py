@@ -44,6 +44,6 @@ def fake_hget(name, key):
 def fake_hkeys(name):
     ret = get_data(name)
     # return all keys
-    if ret != {}:
+    if isinstance(ret, dict) and ret:
         return list(ret.keys())
     return []

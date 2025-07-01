@@ -22,17 +22,30 @@ from models.errors import (
     InvalidPatientId,
     CustomValidationError,
     ParameterException,
-    InconsistentIdError,
     UnauthorizedVaxError,
-    UnauthorizedError,
     IdentifierDuplicationError,
 )
 from tests.utils.immunization_utils import create_covid_19_immunization
 from parameter_parser import patient_identifier_system, process_search_params
 from tests.utils.generic_utils import load_json_data
-from tests.utils.values_for_tests import ValidValues
+from sample_data.mock_redis_cache import fake_hkeys
 
-"test"
+
+class TestFhirControllerBase(unittest.TestCase):
+    """Base class for all tests to set up common fixtures"""
+
+    def setUp(self):
+        super().setUp()
+        self.redis_patcher = patch("parameter_parser.redis_client")
+        self.mock_redis_client = self.redis_patcher.start()
+        self.mock_redis_client.hkeys.side_effect = fake_hkeys
+        self.logger_info_patcher = patch("logging.Logger.info")
+        self.mock_logger_info = self.logger_info_patcher.start()
+
+    def tearDown(self):
+        self.redis_patcher.stop()
+        self.logger_info_patcher.stop()
+        super().tearDown()
 
 
 class TestFhirController(unittest.TestCase):
@@ -1561,8 +1574,9 @@ class TestDeleteImmunization(unittest.TestCase):
         self.assertEqual(body["resourceType"], "OperationOutcome")
         self.assertEqual(body["issue"][0]["code"], "exception")
 
-class TestSearchImmunizations(unittest.TestCase):
+class TestSearchImmunizations(TestFhirControllerBase):
     def setUp(self):
+        super().setUp()
         self.service = create_autospec(FhirService)
         self.authorizer = create_autospec(Authorization)
         self.controller = FhirController(self.authorizer, self.service)
@@ -1572,6 +1586,9 @@ class TestSearchImmunizations(unittest.TestCase):
         self.date_to_key = "-date.to"
         self.nhs_number_valid_value = "9000000009"
         self.patient_identifier_valid_value = f"{patient_identifier_system}|{self.nhs_number_valid_value}"
+
+    def tearDown(self):
+        return super().tearDown()
 
     @patch("fhir_controller.get_supplier_permissions")
     def test_get_search_immunizations(self, mock_get_supplier_permissions):
