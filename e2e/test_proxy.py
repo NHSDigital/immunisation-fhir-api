@@ -7,6 +7,7 @@ from utils.immunisation_api import ImmunisationApi
 from lib.env import get_service_base_path, get_status_endpoint_api_key
 
 
+@unittest.skip("This test is skipped because it requires a live FHIR server connection.")
 class TestProxyHealthcheck(unittest.TestCase):
 
     proxy_url: str

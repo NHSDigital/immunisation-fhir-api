@@ -10,7 +10,7 @@ deployment is the latest. It works by hitting /_status endpoint and comparing th
 deployment with the one that returned from the deployed proxy.
 You can ignore these tests if you are running them in your local environment"""
 
-
+@unittest.skip("This test is skipped because it requires a live FHIR server connection.")
 class TestDeployment(unittest.TestCase):
     proxy_url: str
     status_api_key: str

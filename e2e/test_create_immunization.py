@@ -1,7 +1,9 @@
 from utils.base_test import ImmunizationBaseTest
 from utils.resource import generate_imms_resource, get_full_row_from_identifier
+import unittest
 
 
+@unittest.skip("This test is skipped because it requires a live FHIR server connection.")
 class TestCreateImmunization(ImmunizationBaseTest):
 
     def test_create_imms(self):

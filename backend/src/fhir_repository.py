@@ -8,6 +8,7 @@ from typing import Optional
 import boto3
 import botocore.exceptions
 from boto3.dynamodb.conditions import Attr, Key
+from mappings import mappedOperation
 from botocore.config import Config
 from models.errors import (
     ResourceNotFoundError,
@@ -432,15 +433,8 @@ class ImmunizationRepository:
 
     @staticmethod
     def _vaccine_permission(vaccine_type, operation) -> set:
-        mapped_operations = {
-            "create": "c",
-            "read": "r",
-            "update": "u",
-            "delete": "d",
-            "search": "s"
-        }
 
-        operation = mapped_operations.get(operation.lower())
+        operation = mappedOperation.mapped_operations.get(operation.lower())
         if not operation:
             raise ValueError(f"Unsupported operation: {operation}")
 
@@ -452,14 +446,6 @@ class ImmunizationRepository:
         else:
             vaccine_permission.add(str.lower(f"{vaccine_type}.{operation}"))
             return vaccine_permission
-
-    @staticmethod
-    def _parse_vaccine_permissions(imms_vax_type_perms) -> set:
-        parsed = [str.strip(str.lower(s)) for s in imms_vax_type_perms.split(",")]
-        vaccine_permissions = set()
-        for s in parsed:
-            vaccine_permissions.add(s)
-        return vaccine_permissions
     
     @staticmethod
     def _expand_permissions(supplier_permissions: list[str]) -> set[str]:

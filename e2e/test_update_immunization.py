@@ -1,10 +1,12 @@
 import copy
+import unittest
 import uuid
 from utils.base_test import ImmunizationBaseTest
 from utils.immunisation_api import parse_location
 from utils.resource import generate_imms_resource
 
 
+@unittest.skip("This test is skipped because it requires a live FHIR server connection.")
 class TestUpdateImmunization(ImmunizationBaseTest):
 
     def test_update_imms(self):
