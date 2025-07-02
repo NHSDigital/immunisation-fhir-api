@@ -17,7 +17,6 @@ class TestFhirBatchServiceBase(unittest.TestCase):
         super().setUp()
         self.redis_patcher = patch("models.utils.validation_utils.redis_client")
         self.mock_redis_client = self.redis_patcher.start()
-        self.mock_redis_client.hget.side_effect = mock_redis_hget
         self.logger_info_patcher = patch("logging.Logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
 
@@ -85,6 +84,7 @@ class TestCreateImmunizationBatchService(TestFhirBatchServiceBase):
         bad_target_disease_imms = deepcopy(valid_imms)
         bad_target_disease_imms["protocolApplied"][0]["targetDisease"][0]["coding"][0]["code"] = "bad-code"
         expected_msg = "protocolApplied[0].targetDisease[*].coding[?(@.system=='http://snomed.info/sct')].code - ['bad-code'] is not a valid combination of disease codes for this service"
+        self.mock_redis_client.hget.return_value = None  # Reset mock for invalid cases
         with self.assertRaises(CustomValidationError) as error:
             self.pre_validate_fhir_service.create_immunization(
                 immunization=bad_target_disease_imms, 
@@ -150,6 +150,8 @@ class TestUpdateImmunizationBatchService(TestFhirBatchServiceBase):
 
     def test_update_immunization_post_validation_error(self):
         """it should return error since it got failed in initial validation"""
+
+        self.mock_redis_client.hget.return_value = None  # Reset mock for invalid cases
 
         valid_imms = create_covid_19_immunization_dict_no_id()
         bad_target_disease_imms = deepcopy(valid_imms)
