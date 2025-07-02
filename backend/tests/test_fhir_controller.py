@@ -4,6 +4,7 @@ import urllib
 import json
 import unittest
 import uuid
+import datetime
 
 from unittest.mock import patch
 from fhir.resources.R4B.bundle import Bundle
@@ -26,7 +27,7 @@ from models.errors import (
     IdentifierDuplicationError,
 )
 from tests.utils.immunization_utils import create_covid_19_immunization
-from parameter_parser import patient_identifier_system, process_search_params
+from parameter_parser import patient_identifier_system, process_search_params, SearchParams
 from tests.utils.generic_utils import load_json_data
 from utils.mock_redis import mock_redis_hkeys
 
@@ -38,7 +39,6 @@ class TestFhirControllerBase(unittest.TestCase):
         super().setUp()
         self.redis_patcher = patch("parameter_parser.redis_client")
         self.mock_redis_client = self.redis_patcher.start()
-        self.mock_redis_client.hkeys.side_effect = mock_redis_hkeys
         self.logger_info_patcher = patch("logging.Logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
 
@@ -54,6 +54,11 @@ class TestFhirController(unittest.TestCase):
         self.repository = create_autospec(ImmunizationRepository)
         self.authorizer = create_autospec(Authorization)
         self.controller = FhirController(self.authorizer, self.service)
+    def tearDown(self):
+        self.service.reset_mock()
+        self.repository.reset_mock()
+        self.authorizer.reset_mock()
+        self.controller = None
 
     def test_create_response(self):
         """it should return application/fhir+json with correct status code"""
@@ -1588,7 +1593,10 @@ class TestSearchImmunizations(TestFhirControllerBase):
         self.patient_identifier_valid_value = f"{patient_identifier_system}|{self.nhs_number_valid_value}"
 
     def tearDown(self):
-        return super().tearDown()
+        self.service.reset_mock()
+        self.authorizer.reset_mock()
+        self.controller = None
+        
 
     @patch("fhir_controller.get_supplier_permissions")
     def test_get_search_immunizations(self, mock_get_supplier_permissions):
@@ -1599,6 +1607,7 @@ class TestSearchImmunizations(TestFhirControllerBase):
         self.service.search_immunizations.return_value = search_result
 
         vaccine_type = "COVID19"
+        self.mock_redis_client.hkeys.return_value = [vaccine_type]
         params = f"{self.immunization_target_key}={vaccine_type}&" + urllib.parse.urlencode(
             [(f"{self.patient_identifier_key}", f"{self.patient_identifier_valid_value}")]
         )
@@ -1633,6 +1642,7 @@ class TestSearchImmunizations(TestFhirControllerBase):
         self.service.search_immunizations.return_value = search_result
 
         vaccine_type = "COVID19"
+        self.mock_redis_client.hkeys.return_value = [vaccine_type]
         lambda_event = {
             "SupplierSystem": "test",
             "multiValueQueryStringParameters": {
@@ -1657,7 +1667,7 @@ class TestSearchImmunizations(TestFhirControllerBase):
 
         vaccine_type = "COVID19", "FLU"
         vaccine_type = ",".join(vaccine_type)
-
+        self.mock_redis_client.hkeys.return_value = ["COVID19", "FLU"]
         lambda_event = {
             "headers": {"Content-Type": "application/x-www-form-urlencoded", "SupplierSystem": "test",},
             "multiValueQueryStringParameters": {
@@ -1686,7 +1696,7 @@ class TestSearchImmunizations(TestFhirControllerBase):
         self.service.search_immunizations.return_value = bundle
 
         vaccine_type = "FLUE"
-
+        self.mock_redis_client.hkeys.return_value = ["NOT-FLUUE"]
         lambda_event = {
             "headers": {"Content-Type": "application/x-www-form-urlencoded", "SupplierSystem": "test"},
             "multiValueQueryStringParameters": {
@@ -1711,7 +1721,7 @@ class TestSearchImmunizations(TestFhirControllerBase):
 
         vaccine_type = "COVID19", "FLU"
         vaccine_type = ",".join(vaccine_type)
-
+        self.mock_redis_client.hkeys.return_value = ["COVID19", "FLU"]
         lambda_event = {
             "headers": {"Content-Type": "application/x-www-form-urlencoded", "SupplierSystem": "test",},
             "multiValueQueryStringParameters": {
@@ -1735,6 +1745,7 @@ class TestSearchImmunizations(TestFhirControllerBase):
         self.service.search_immunizations.return_value = search_result
 
         vaccine_type = "COVID19"
+        self.mock_redis_client.hkeys.return_value = [vaccine_type]
         params = f"{self.immunization_target_key}={vaccine_type}&" + urllib.parse.urlencode(
             [(f"{self.patient_identifier_key}", f"{self.patient_identifier_valid_value}")]
         )
@@ -1759,6 +1770,7 @@ class TestSearchImmunizations(TestFhirControllerBase):
         self.service.search_immunizations.return_value = search_result
 
         vaccine_type = "COVID19"
+        self.mock_redis_client.hkeys.return_value = [vaccine_type]
         params = f"{self.immunization_target_key}={vaccine_type}&" + urllib.parse.urlencode(
             [(f"{self.patient_identifier_key}", f"{self.patient_identifier_valid_value}")]
         )
@@ -1799,6 +1811,7 @@ class TestSearchImmunizations(TestFhirControllerBase):
 
         vaccine_type = "COVID19", "FLU"
         vaccine_type = ",".join(vaccine_type)
+        self.mock_redis_client.hkeys.return_value = ["COVID19", "FLU"]
         # Construct the application/x-www-form-urlencoded body
         body = {
             self.patient_identifier_key: self.patient_identifier_valid_value,
@@ -1832,7 +1845,7 @@ class TestSearchImmunizations(TestFhirControllerBase):
         self.service.search_immunizations.return_value = bundle
 
         vaccine_type = "FLUE"
-
+        self.mock_redis_client.hkeys.return_value = ["NOT-FLUE"]
         # Construct the application/x-www-form-urlencoded body
         body = {
             self.patient_identifier_key: self.patient_identifier_valid_value,
@@ -1864,6 +1877,7 @@ class TestSearchImmunizations(TestFhirControllerBase):
 
         vaccine_type = "COVID19", "FLU"
         vaccine_type = ",".join(vaccine_type)
+        self.mock_redis_client.hkeys.return_value = ["COVID19", "FLU"]
 
         # Construct the application/x-www-form-urlencoded body
         body = {
@@ -1933,6 +1947,7 @@ class TestSearchImmunizations(TestFhirControllerBase):
         mock_get_supplier_permissions.return_value = ["covid19:search"]
 
         vaccine_type = "COVID19"
+        self.mock_redis_client.hkeys.return_value = [vaccine_type]
         lambda_event = {
             "headers": {
                 "Content-Type": "application/x-www-form-urlencoded",
@@ -1960,6 +1975,7 @@ class TestSearchImmunizations(TestFhirControllerBase):
         mock_get_supplier_permissions.return_value = ["covid19:search"]
         self.service.search_immunizations.return_value = bundle
         vaccine_type = "COVID19"
+        self.mock_redis_client.hkeys.return_value = [vaccine_type]
         lambda_event = {
             "headers": {
                 "Content-Type": "application/x-www-form-urlencoded",
@@ -1980,10 +1996,20 @@ class TestSearchImmunizations(TestFhirControllerBase):
             self.assertNotEqual(entry.get("resource", {}).get("status"), "not-done", "entered-in-error")
 
     @patch("fhir_controller.get_supplier_permissions")
-    def test_self_link_excludes_extraneous_params(self, mock_get_supplier_permissions):
+    @patch("fhir_controller.process_search_params")
+    def test_self_link_excludes_extraneous_params(self, mock_process_search_params, mock_get_supplier_permissions):
+        # patch process_search_params called from search_immunizations
         search_result = Bundle.construct()
         self.service.search_immunizations.return_value = search_result
         vaccine_type = "COVID19"
+
+        mock_process_search_params.return_value = SearchParams(
+            patient_identifier=self.nhs_number_valid_value,
+            immunization_targets=[vaccine_type],
+            date_from=datetime.date(1900, 1, 1),
+            date_to=datetime.date(9999, 12, 31),
+            include=None
+        )
         mock_get_supplier_permissions.return_value = ["covid19:search"]
         params = f"{self.immunization_target_key}={vaccine_type}&" + urllib.parse.urlencode(
             [(f"{self.patient_identifier_key}", f"{self.patient_identifier_valid_value}")]
@@ -2003,6 +2029,7 @@ class TestSearchImmunizations(TestFhirControllerBase):
             },
             "httpMethod": "POST",
         }
+        self.controller._new_vaccine_request.return_value = False
 
         self.controller.search_immunizations(lambda_event)
 
