@@ -20,8 +20,6 @@ from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests impor
 from tests.utils_for_recordprocessor_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
-    # Do not attempt 'from mappings import Vaccine' as this imports a different instance of Vaccine
-    # and tests will break
     from clients import REGION_NAME
     from process_row import process_row
 

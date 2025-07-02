@@ -1,4 +1,6 @@
-MOCK_REDIS_D2V_RESPONSE = {
+import json
+
+MOCK_REDIS_D2V_RESPONSE = json.dumps({
     "4740000": "SHINGLES",
     "6142004": "FLU",
     "16814004": "PCV13",
@@ -10,7 +12,7 @@ MOCK_REDIS_D2V_RESPONSE = {
     "14189004:36653000:36989005": "MMR",
     "14189004:36653000:36989005:38907003": "MMRV",
     "397430003:398102009:76902006": "3in1"
-}
+})
 
 MOCK_REDIS_V2D_RESPONSE = {
     "PERTUSSIS": "[{\"code\": \"27836007\", \"term\": \"Pertussis (disorder)\"}]",
