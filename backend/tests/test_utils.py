@@ -64,7 +64,7 @@ class TestGenericUtils(unittest.TestCase):
         self.mock_redis_client.hget.return_value = 'RSV'
         # TEST VALID DATA
         valid_json_data = load_json_data(filename=f"completed_rsv_immunization_event.json")
-        # print(valid_json_data)
+
         vac_type = get_vaccine_type(valid_json_data)
         self.assertEqual(vac_type, "RSV")
 

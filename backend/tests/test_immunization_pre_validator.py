@@ -726,7 +726,6 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
             self.validator.validate(valid_json_data)
         except Exception as error:
             self.fail(f"Validation unexpectedly raised an exception: {error}")
-        print("Validation passed successfully with valid data.")
 
 
     def test_pre_validate_extension_length(self):
@@ -1124,7 +1123,6 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
 
     def test_pre_validate_route_coding(self):
         """Test pre_validate_route_coding accepts valid values and rejects invalid values"""
-        print("Testing pre_validate_route_coding")
         ValidatorModelTests.test_unique_list(
             self,
             field_location="route.coding",
@@ -1138,13 +1136,11 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
 
     def test_pre_validate_route_coding_code(self):
         """Test pre_validate_route_coding_code accepts valid values and rejects invalid values"""
-        print("Testing pre_validate_route_coding_code")
         field_location = "route.coding[?(@.system=='http://snomed.info/sct')].code"
         ValidatorModelTests.test_string_value(self, field_location, valid_strings_to_test=["dummy"])
 
     def test_pre_validate_route_coding_display(self):
         """Test pre_validate_route_coding_display accepts valid values and rejects invalid values"""
-        print("Testing pre_validate_route_coding_display")
         field_location = "route.coding[?(@.system=='http://snomed.info/sct')].display"
         ValidatorModelTests.test_string_value(self, field_location, valid_strings_to_test=["dummy"])
 
