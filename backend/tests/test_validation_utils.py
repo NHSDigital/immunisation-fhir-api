@@ -14,7 +14,6 @@ from models.utils.generic_utils import (
 
 from models.fhir_immunization import ImmunizationValidator
 from utils.generic_utils import (
-    # these have an underscore to avoid pytest collecting them as tests
     load_json_data,
 )
 from utils.values_for_tests import ValidValues, InvalidValues, NameInstances

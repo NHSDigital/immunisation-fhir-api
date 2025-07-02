@@ -158,7 +158,6 @@ class TestSearchImmunizations(unittest.TestCase):
 
         # Then
         act_body = json.loads(act_res["body"])
-        # act_body["id"] = None
 
         self.assertEqual(exp_error["issue"][0]["code"], act_body["issue"][0]["code"])
         self.assertEqual(exp_error["issue"][0]["severity"], act_body["issue"][0]["severity"])
