@@ -25,9 +25,39 @@ MOCK_REDIS_V2D_RESPONSE = {
     "FLU": "[{\"code\": \"6142004\", \"term\": \"Influenza caused by seasonal influenza virus (disorder)\"}]",
     "MENACWY": "[{\"code\": \"23511006\", \"term\": \"Meningococcal infectious disease\"}]"
 }
-
-
+last = None
 def get_data(name):
+    # extract name of calling unit test and print to console
+    import inspect
+    # static variable to keep track of last printed message
+    global last
+    # get the name of the calling unit test
+    # this is useful for debugging and understanding which test is calling this mock
+    # function, especially when multiple tests are using the same mock
+    test_name = None
+    for frame_info in inspect.stack():
+        if frame_info.function.startswith("test_"):
+            test_name = frame_info.function
+            # Optionally, get the class name if available
+            test_self = frame_info.frame.f_locals.get("self", None)
+            msg = ''
+            if test_self:
+                test_class = type(test_self).__name__
+                msg = f"Mocking redis call for: {test_class} - {test_name}"
+            else:
+                msg = f"Mocking redis call for: {test_name}"
+
+            if msg != last:
+                print(msg)
+                last = msg
+
+            break
+    else:
+        print("Mocking redis call: test function not found in stack.")
+
+    
+    
+    
     if name == "diseases_to_vacc":
         return MOCK_REDIS_D2V_RESPONSE
     elif name == "vacc_to_diseases":
@@ -37,7 +67,10 @@ def get_data(name):
 def mock_redis_hget(name, key):
     ret = get_data(name)
     if key in ret:
+        print(f"Mocking redis hget({name},{key}): {ret[key]}")
         return ret[key]
+    
+    print(f"Mocking redis hget({name},{key}): None")
     return {}
 
 def mock_redis_hkeys(name):
