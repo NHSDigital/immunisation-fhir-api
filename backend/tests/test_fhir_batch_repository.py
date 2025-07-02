@@ -9,6 +9,7 @@ from uuid import uuid4
 from models.errors import IdentifierDuplicationError, ResourceNotFoundError, UnhandledResponseError, ResourceFoundError
 from fhir_batch_repository import ImmunizationBatchRepository, create_table
 from tests.utils.immunization_utils import create_covid_19_immunization_dict
+
 imms_id = str(uuid4())
 
 
@@ -28,6 +29,12 @@ class TestImmunizationBatchRepository(unittest.TestCase):
         self.table.query = MagicMock(return_value={})
         self.immunization = create_covid_19_immunization_dict(imms_id)
         self.table.update_item = MagicMock(return_value = {"ResponseMetadata": {"HTTPStatusCode": 200}})
+        self.redis_patcher = patch("models.utils.validation_utils.redis_client")
+        self.mock_redis_client = self.redis_patcher.start()
+
+    def tearDown(self):
+        self.redis_patcher.stop()
+        return super().tearDown()
 
 class TestCreateImmunization(TestImmunizationBatchRepository): 
     
@@ -41,8 +48,7 @@ class TestCreateImmunization(TestImmunizationBatchRepository):
 
     def create_immunization_test_logic(self, is_present, remove_nhs):
         """Common logic for testing immunization creation."""
-        print("create_immunization_test_logic...")
-        print(f"Is present: {is_present}, Remove NHS: {remove_nhs}")
+        self.mock_redis_client.hget.side_effect = [None, 'COVID19']
         self.modify_immunization(remove_nhs)
 
         self.repository.create_immunization(
@@ -67,18 +73,16 @@ class TestCreateImmunization(TestImmunizationBatchRepository):
 
     def test_create_immunization_with_nhs_number(self):
         """Test creating Immunization with NHS number."""
-        print("test_create_immunization_with_nhs_number...")
         self.create_immunization_test_logic(is_present=True, remove_nhs=False)
 
     def test_create_immunization_without_nhs_number(self):
         """Test creating Immunization without NHS number."""
-        print("test_create_immunization_without_nhs_number...")
+        
         self.create_immunization_test_logic(is_present=False, remove_nhs=True)    
 
 
     def test_create_immunization_duplicate(self):
         """it should not create Immunization since the request is duplicate"""
-        print("test_create_immunization_duplicate...")
         self.table.query = MagicMock(return_value={
             "id": imms_id,
             "identifier": [{"system": "test-system", "value": "12345"}],

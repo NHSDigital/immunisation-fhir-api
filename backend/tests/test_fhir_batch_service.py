@@ -7,7 +7,6 @@ from models.errors import CustomValidationError
 from models.fhir_immunization import ImmunizationValidator
 from fhir_batch_repository import ImmunizationBatchRepository
 from fhir_batch_service import ImmunizationBatchService
-from utils.mock_redis import mock_redis_hget
 
 
 class TestFhirBatchServiceBase(unittest.TestCase):
