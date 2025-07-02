@@ -39,8 +39,10 @@ See https://nhsd-confluence.digital.nhs.uk/display/APM/Glossary.
 | Folder                | Description |
 |------------------------|-------------|
 | `infra`                | Base infrastructure components. |
+| `infra_old`            | Old infra code used to create INT to mimic prod. |
 | `grafana`              | Terraform configuration for Grafana, built on top of core infra. |
 | `terraform`            | Core Terraform infrastructure code. This is run in each PR and sets up lambdas associated with the PR.|
+| `terraform_old`        | Old tf code used to create INT to mimic prod. |
 | `terraform_sandbox`    | Sandbox environment for testing infrastructure changes. |
 | `terraform_aws_backup` | Streamlined backup processing with AWS. |
 | `mesh-infra`           | Infrastructure setup for Imms batch MESH integration. |
