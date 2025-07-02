@@ -17,8 +17,6 @@ from tests.utils.generic_utils import (
 from tests.utils.mandation_test_utils import MandationTests
 from tests.utils.values_for_tests import NameInstances
 from tests.utils.generic_utils import update_contained_resource_field
-# import redis mock functions
-from utils.mock_redis import mock_redis_hget, mock_redis_hkeys
 
 class TestImmunizationModelPostValidationRules(unittest.TestCase):
     """Test immunization post validation rules on the FHIR model"""
@@ -99,7 +97,6 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
             "protocolApplied[0].targetDisease[0].coding[?(@.system=='http://snomed.info/sct')].code"
         )
 
-        # self.mock_redis_client.hget.side_effect = mock_redis_hget
         self.mock_redis_client.hget.side_effect = [ "COVID19", "FLU",
             "HPV",
             "MMR",

@@ -23,7 +23,6 @@ from tests.utils.immunization_utils import (
 )
 from utils.generic_utils import load_json_data
 from constants import NHS_NUMBER_USED_IN_SAMPLE_DATA
-from utils.mock_redis import mock_redis_hget
 
 class TestFhirServiceBase(unittest.TestCase):
     """Base class for all tests to set up common fixtures"""
@@ -32,7 +31,6 @@ class TestFhirServiceBase(unittest.TestCase):
         super().setUp()
         self.redis_patcher = patch("models.utils.validation_utils.redis_client")
         self.mock_redis_client = self.redis_patcher.start()
-        self.mock_redis_client.hget.side_effect = mock_redis_hget
         self.logger_info_patcher = patch("logging.Logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
 
@@ -140,6 +138,7 @@ class TestGetImmunizationByAll(TestFhirServiceBase):
         self.imms_repo.update_immunization.assert_not_called()
 
     def test_post_validation_failed_get_by_all(self):
+        self.mock_redis_client.hget.side_effect = [None, 'COVID-19']
         valid_imms = create_covid_19_immunization_dict("an-id", VALID_NHS_NUMBER)
 
         bad_target_disease_imms = deepcopy(valid_imms)
@@ -260,6 +259,7 @@ class TestGetImmunization(TestFhirServiceBase):
         self.pds_service.get_patient_details.assert_not_called()
 
     def test_post_validation_failed_get(self):
+        self.mock_redis_client.hget.side_effect = [None, 'COVID-19']
         valid_imms = create_covid_19_immunization_dict("an-id", VALID_NHS_NUMBER)
 
         bad_target_disease_imms = deepcopy(valid_imms)
@@ -412,7 +412,7 @@ class TestCreateImmunization(TestFhirServiceBase):
 
     def test_post_validation_failed_create(self):
         """it should throw exception if Immunization is not valid"""
-
+        self.mock_redis_client.hget.side_effect = [None, 'COVID-19']
         valid_imms = create_covid_19_immunization_dict_no_id(VALID_NHS_NUMBER)
 
         bad_target_disease_imms = deepcopy(valid_imms)

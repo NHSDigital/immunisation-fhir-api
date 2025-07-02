@@ -4,7 +4,6 @@ import unittest
 import json
 from unittest.mock import patch, MagicMock
 from copy import deepcopy
-from utils.mock_redis import mock_redis_hget
 
 from models.utils.validation_utils import convert_disease_codes_to_vaccine_type, get_vaccine_type
 from utils.generic_utils import load_json_data, update_target_disease_code

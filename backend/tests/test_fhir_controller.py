@@ -29,7 +29,6 @@ from models.errors import (
 from tests.utils.immunization_utils import create_covid_19_immunization
 from parameter_parser import patient_identifier_system, process_search_params, SearchParams
 from tests.utils.generic_utils import load_json_data
-from utils.mock_redis import mock_redis_hkeys
 
 
 class TestFhirControllerBase(unittest.TestCase):

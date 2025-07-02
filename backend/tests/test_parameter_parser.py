@@ -14,7 +14,6 @@ from parameter_parser import (
     create_query_string,
     SearchParams,
 )
-from utils.mock_redis import mock_redis_hkeys
 
 class TestParameterParser(unittest.TestCase):
     def setUp(self):
