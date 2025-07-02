@@ -16,7 +16,6 @@ from models.errors import (
 )
 from tests.utils.generic_utils import update_target_disease_code
 from tests.utils.immunization_utils import create_covid_19_immunization_dict
-from utils.mock_redis import mock_redis_hget
 
 def _make_immunization_pk(_id):
     return f"Immunization#{_id}"
@@ -32,7 +31,6 @@ class TestFhirRepositoryBase(unittest.TestCase):
         super().setUp()
         self.redis_patcher = patch("models.utils.validation_utils.redis_client")
         self.mock_redis_client = self.redis_patcher.start()
-        self.mock_redis_client.hget.side_effect = mock_redis_hget
         self.logger_info_patcher = patch("logging.Logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
 
@@ -183,6 +181,8 @@ class TestCreateImmunizationMainIndex(TestFhirRepositoryBase):
 
     def test_create_immunization(self):
         """it should create Immunization, and return created object"""
+
+        self.mock_redis_client.hget.return_value = "COVID19"
         imms = create_covid_19_immunization_dict(imms_id="an-id")
 
         self.table.put_item = MagicMock(return_value={"ResponseMetadata": {"HTTPStatusCode": 200}})
@@ -206,6 +206,8 @@ class TestCreateImmunizationMainIndex(TestFhirRepositoryBase):
 
     def test_create_immunization_batch(self):
         """it should create Immunization, and return created object"""
+
+        self.mock_redis_client.hget.return_value = "COVID19"
         imms = create_covid_19_immunization_dict(imms_id="an-id")
 
         self.table.put_item = MagicMock(return_value={"ResponseMetadata": {"HTTPStatusCode": 200}})
@@ -229,6 +231,8 @@ class TestCreateImmunizationMainIndex(TestFhirRepositoryBase):
 
     def test_add_patient(self):
         """it should store patient along the Immunization resource"""
+
+        self.mock_redis_client.hget.return_value = "COVID19"
         imms = create_covid_19_immunization_dict("an-id")
         self.table.put_item = MagicMock(return_value={"ResponseMetadata": {"HTTPStatusCode": 200}})
         self.table.query = MagicMock(return_value={})
@@ -252,6 +256,8 @@ class TestCreateImmunizationMainIndex(TestFhirRepositoryBase):
     def test_create_immunization_makes_new_id(self):
         """create should create new Logical ID even if one is already provided"""
         imms_id = "original-id-from-request"
+
+        self.mock_redis_client.hget.return_value = "COVID19"
         imms = create_covid_19_immunization_dict(imms_id)
         self.table.put_item = MagicMock(return_value={"ResponseMetadata": {"HTTPStatusCode": 200}})
         self.table.query = MagicMock(return_value={})
@@ -264,6 +270,8 @@ class TestCreateImmunizationMainIndex(TestFhirRepositoryBase):
 
     def test_create_immunization_returns_new_id(self):
         """create should return the persisted object i.e. with new id"""
+
+        self.mock_redis_client.hget.return_value = "COVID19"
         imms_id = "original-id-from-request"
         imms = create_covid_19_immunization_dict(imms_id)
         self.table.put_item = MagicMock(return_value={"ResponseMetadata": {"HTTPStatusCode": 200}})
@@ -275,6 +283,8 @@ class TestCreateImmunizationMainIndex(TestFhirRepositoryBase):
 
     def test_create_should_catch_dynamo_error(self):
         """it should throw UnhandledResponse when the response from dynamodb can't be handled"""
+
+        self.mock_redis_client.hget.return_value = "COVID19"
         bad_request = 400
         response = {"ResponseMetadata": {"HTTPStatusCode": bad_request}}
         self.table.put_item = MagicMock(return_value=response)
@@ -291,6 +301,8 @@ class TestCreateImmunizationMainIndex(TestFhirRepositoryBase):
 
     def test_create_throws_error_when_identifier_already_in_dynamodb(self):
         """it should throw UnhandledResponse when trying to update an immunization with an identfier that is already stored"""
+
+        self.mock_redis_client.hget.return_value = "COVID19"
         imms_id = "an-id"
         imms = create_covid_19_immunization_dict(imms_id)
         imms["patient"] = self.patient
@@ -318,6 +330,8 @@ class TestCreateImmunizationPatientIndex(TestFhirRepositoryBase):
 
     def test_create_patient_gsi(self):
         """create Immunization method should create Patient index with nhs-number as ID and no system"""
+
+        self.mock_redis_client.hget.return_value = "COVID19"        
         imms = create_covid_19_immunization_dict("an-id")
 
         nhs_number = "1234567890"
@@ -335,6 +349,8 @@ class TestCreateImmunizationPatientIndex(TestFhirRepositoryBase):
 
     def test_create_patient_with_vaccine_type(self):
         """Patient record should have a sort-key based on vaccine-type"""
+
+        self.mock_redis_client.hget.return_value = "FLU"
         imms = create_covid_19_immunization_dict("an-id")
 
         update_target_disease_code(imms, "6142004")
@@ -352,6 +368,8 @@ class TestCreateImmunizationPatientIndex(TestFhirRepositoryBase):
 
     def test_create_patient_with_unauthorised_vaccine_type_permissions(self):
         """Patient record should not be created"""
+
+        self.mock_redis_client.hget.return_value = "FLU"
         imms = create_covid_19_immunization_dict("an-id")
 
         update_target_disease_code(imms, "6142004")
@@ -372,6 +390,8 @@ class TestUpdateImmunization(TestFhirRepositoryBase):
 
     def test_update1(self):
         """it should update record by replacing both Immunization and Patient"""
+
+        self.mock_redis_client.hget.return_value = "COVID19"
         imms_id = "an-imms-id"
         imms = create_covid_19_immunization_dict(imms_id)
         imms["patient"] = self.patient
@@ -425,6 +445,8 @@ class TestUpdateImmunization(TestFhirRepositoryBase):
 
     def test_update_throws_error_when_response_can_not_be_handled(self):
         """it should throw UnhandledResponse when the response from dynamodb can't be handled"""
+
+        self.mock_redis_client.hget.return_value = "COVID19"
         imms_id = "an-id"
         imms = create_covid_19_immunization_dict(imms_id)
         imms["patient"] = self.patient
@@ -444,6 +466,8 @@ class TestUpdateImmunization(TestFhirRepositoryBase):
 
     def test_update_throws_error_when_identifier_already_in_dynamodb(self):
         """it should throw IdentifierDuplicationError when trying to update an immunization with an identfier that is already stored"""
+
+        self.mock_redis_client.hget.return_value = "COVID19"
         imms_id = "an-id"
         imms = create_covid_19_immunization_dict(imms_id)
         imms["patient"] = self.patient
@@ -697,6 +721,8 @@ class TestImmunizationDecimals(TestFhirRepositoryBase):
 
     def test_decimal_on_create(self):
         """it should create Immunization, and preserve decimal value"""
+
+        self.mock_redis_client.hget.return_value = "COVID19"
         imms = create_covid_19_immunization_dict(imms_id="an-id")
         imms["doseQuantity"] = 0.7477
 
@@ -783,6 +809,7 @@ class TestImmunizationDecimals(TestFhirRepositoryBase):
 
     def test_decimal_on_update(self):
         """it should update record when replacing doseQuantity and keep decimal precision"""
+        self.mock_redis_client.hget.return_value = "COVID19"
         imms_id = "an-imms-id"
         imms = create_covid_19_immunization_dict(imms_id)
         imms["doseQuantity"] = 1.5556
@@ -794,6 +821,7 @@ class TestImmunizationDecimals(TestFhirRepositoryBase):
 
     def test_decimal_on_update_patient(self):
         """it should update record by replacing both Immunization and Patient and dosequantity"""
+        self.mock_redis_client.hget.return_value = "COVID19"
         imms_id = "an-imms-id"
         imms = create_covid_19_immunization_dict(imms_id)
         imms["doseQuantity"] = 1.590
