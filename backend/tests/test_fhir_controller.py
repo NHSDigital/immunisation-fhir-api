@@ -883,7 +883,7 @@ class TestCreateImmunization(unittest.TestCase):
     @patch("fhir_controller.get_supplier_permissions")
     def test_create_immunization(self,mock_get_permissions):
         """it should create Immunization and return resource's location"""
-        mock_get_permissions.return_value = ["COVID19.CRUDS"]
+        mock_get_permissions.return_value = ["COVID19.CRUDS", "FLU.CRUDS"]
         imms_id = str(uuid.uuid4())
         imms = create_covid_19_immunization(imms_id)
         aws_event = {
@@ -896,7 +896,7 @@ class TestCreateImmunization(unittest.TestCase):
 
         imms_obj = json.loads(aws_event["body"])
         mock_get_permissions.assert_called_once_with("Test")
-        self.service.create_immunization.assert_called_once_with(imms_obj, ["COVID19.CRUDS"], "Test")
+        self.service.create_immunization.assert_called_once_with(imms_obj, ["COVID19.CRUDS", "FLU.CRUDS"], "Test")
         self.assertEqual(response["statusCode"], 201)
         self.assertTrue("body" not in response)
         self.assertTrue(response["headers"]["Location"].endswith(f"Immunization/{imms_id}"))
@@ -1092,7 +1092,7 @@ class TestUpdateImmunization(unittest.TestCase):
     @patch("fhir_controller.get_supplier_permissions")
     def test_update_immunization_duplicate(self, mock_get_supplier_permissions):
         """it should not update the Immunization record"""
-        mock_get_supplier_permissions.return_value = ["Covid19.U"]
+        mock_get_supplier_permissions.return_value = ["COVID19.U"]
         # Given
         imms_id = "valid-id"
         imms = {"id": "valid-id"}
@@ -1146,7 +1146,7 @@ class TestUpdateImmunization(unittest.TestCase):
     @patch("fhir_controller.get_supplier_permissions")
     def test_update_immunization_UnauthorizedVaxError_check_for_non_batch(self, mock_get_supplier_permissions):
         """it should not update the Immunization record"""
-        mock_get_supplier_permissions.return_value = ["COVID19.U"]
+        mock_get_supplier_permissions.return_value = ["COVID19.CRDS"]
         imms_id = "valid-id"
         imms = {"id": "valid-id"}
         aws_event = {
@@ -1161,7 +1161,7 @@ class TestUpdateImmunization(unittest.TestCase):
     @patch("fhir_controller.get_supplier_permissions")
     def test_update_immunization_Unauthorizedsystem_check_for_non_batch(self, mock_get_supplier_permissions):
         """it should not update the Immunization record"""
-        mock_get_supplier_permissions.return_value = ["COVID19.CRUD"]
+        mock_get_supplier_permissions.return_value = ["COVID19.CRD"]
         imms_id = "valid-id"
         imms = {"id": "valid-id"}
         aws_event = {
@@ -1612,7 +1612,7 @@ class TestSearchImmunizations(unittest.TestCase):
     def test_get_search_immunizations(self, mock_get_supplier_permissions):
         """it should search based on patient_identifier and immunization_target"""
         
-        mock_get_supplier_permissions.return_value = ["covid19.s"]
+        mock_get_supplier_permissions.return_value = ["COVID19.S"]
         search_result = Bundle.construct()
         self.service.search_immunizations.return_value = search_result
 
@@ -1975,7 +1975,7 @@ class TestSearchImmunizations(unittest.TestCase):
         "This method should return 200 but remove the data which has status as not done."
         search_result = load_json_data("sample_immunization_response _for _not_done_event.json")
         bundle = Bundle.parse_obj(search_result)
-        mock_get_supplier_permissions.return_value = ["covid19.cruds"]
+        mock_get_supplier_permissions.return_value = ["COVID19.CRUDS"]
         self.service.search_immunizations.return_value = bundle
         vaccine_type = "COVID19"
         lambda_event = {

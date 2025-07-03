@@ -35,7 +35,7 @@ from models.errors import (
 )
 from models.utils.generic_utils import check_keys_in_sources
 from models.utils.permissions import get_supplier_permissions
-from models.utils.permission_checker import VaccinePermissionChecker
+from models.utils.permission_checker import ApiOperationCode, validate_permissions, _expand_permissions
 from pds_service import PdsService
 from parameter_parser import process_params, process_search_params, create_query_string
 import urllib.parse
@@ -271,11 +271,8 @@ class FhirController:
         # Validate if the imms resource does not exist - end
 
         # Check vaccine type permissions on the existing record - start
-        try:
-            checker = VaccinePermissionChecker(imms_vax_type_perms)
-            checker.validate(existing_record["VaccineType"], "update")
-        except UnauthorizedVaxOnRecordError as unauthorized:
-            return self.create_response(403, unauthorized.to_operation_outcome())
+        if not validate_permissions(imms_vax_type_perms, ApiOperationCode.UPDATE, [existing_record["VaccineType"]]):
+            return self.create_response(403, UnauthorizedVaxOnRecordError().to_operation_outcome())
         # Check vaccine type permissions on the existing record - end
 
         existing_resource_version = int(existing_record["Version"])
@@ -428,11 +425,15 @@ class FhirController:
             return self.create_response(403, unauthorized.to_operation_outcome())
         # Check vaxx type permissions on the existing record - start
         try:
-            checker = VaccinePermissionChecker(imms_vax_type_perms)
-            vax_type_perms = checker.expanded_permissions
-            operation_code = VaccinePermissionChecker.mapped_operations.get("search")
-            vax_type_perm = [ vaccine_type for vaccine_type in search_params.immunization_targets 
-                             if f"{vaccine_type.lower()}.{operation_code}" in vax_type_perms ]
+            expanded_permissions = _expand_permissions(imms_vax_type_perms)
+            vax_type_perm = [
+                vaccine_type
+                for vaccine_type in search_params.immunization_targets
+                if ApiOperationCode.SEARCH in expanded_permissions.get(vaccine_type.lower(), [])
+            ]
+            # vax_type_perms = _expand_permissions(imms_vax_type_perms, ApiOperationCode.SEARCH)
+            # vax_type_perm = [ vaccine_type for vaccine_type in search_params.immunization_targets 
+            #                  if f"{vaccine_type.lower()}.{ApiOperationCode.SEARCH}" in vax_type_perms ]
             if not vax_type_perm:
                 raise UnauthorizedVaxError
         except UnauthorizedVaxError as unauthorized:

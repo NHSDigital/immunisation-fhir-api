@@ -8,7 +8,7 @@ from typing import Optional
 import boto3
 import botocore.exceptions
 from boto3.dynamodb.conditions import Attr, Key
-from models.utils.permission_checker import VaccinePermissionChecker
+from models.utils.permission_checker import ApiOperationCode, validate_permissions
 from botocore.config import Config
 from models.errors import (
     ResourceNotFoundError,
@@ -95,8 +95,8 @@ class ImmunizationRepository:
             item = response["Items"][0]
             resp = dict()
             vaccine_type = self._vaccine_type(item["PatientSK"])
-            checker = VaccinePermissionChecker(imms_vax_type_perms)
-            checker.validate(vaccine_type, "search")
+            if not validate_permissions(imms_vax_type_perms,ApiOperationCode.SEARCH, [vaccine_type]):
+                raise UnauthorizedVaxError()
             resource = json.loads(item["Resource"])
             resp["id"] = resource.get("id")
             resp["version"] = int(response["Items"][0]["Version"])
@@ -112,8 +112,8 @@ class ImmunizationRepository:
             if "DeletedAt" in response["Item"]:
                 if response["Item"]["DeletedAt"] == "reinstated":
                     vaccine_type = self._vaccine_type(response["Item"]["PatientSK"])
-                    checker = VaccinePermissionChecker(imms_vax_type_perms)
-                    checker.validate(vaccine_type, "read")
+                    if not validate_permissions(imms_vax_type_perms,ApiOperationCode.READ, [vaccine_type]):
+                        raise UnauthorizedVaxError()
                     resp["Resource"] = json.loads(response["Item"]["Resource"])
                     resp["Version"] = response["Item"]["Version"]
                     return resp
@@ -121,8 +121,8 @@ class ImmunizationRepository:
                     return None
             else:
                 vaccine_type = self._vaccine_type(response["Item"]["PatientSK"])
-                checker = VaccinePermissionChecker(imms_vax_type_perms)
-                checker.validate(vaccine_type, "read")
+                if not validate_permissions(imms_vax_type_perms,ApiOperationCode.READ, [vaccine_type]):
+                    raise UnauthorizedVaxError()
                 resp["Resource"] = json.loads(response["Item"]["Resource"])
                 resp["Version"] = response["Item"]["Version"]
                 return resp
@@ -168,8 +168,8 @@ class ImmunizationRepository:
         new_id = str(uuid.uuid4())
         immunization["id"] = new_id
         attr = RecordAttributes(immunization, patient)
-        checker = VaccinePermissionChecker(imms_vax_type_perms)
-        checker.validate(attr.vaccine_type, "create")
+        if not validate_permissions(imms_vax_type_perms,ApiOperationCode.CREATE, [attr.vaccine_type]):
+            raise UnauthorizedVaxError()
         query_response = _query_identifier(self.table, "IdentifierGSI", "IdentifierPK", attr.identifier)
 
         if query_response is not None:
@@ -270,8 +270,7 @@ class ImmunizationRepository:
         )
 
     def _handle_permissions(self, imms_vax_type_perms: list[str], attr: RecordAttributes):
-        checker = VaccinePermissionChecker(imms_vax_type_perms)
-        checker.validate(attr.vaccine_type, "update")
+        validate_permissions(imms_vax_type_perms, ApiOperationCode.UPDATE, [attr.vaccine_type])
 
     def _build_update_expression(self, is_reinstate: bool) -> str:
         if is_reinstate:
@@ -367,8 +366,8 @@ class ImmunizationRepository:
                     if resp["Item"]["DeletedAt"] == "reinstated":
                         pass
                 vaccine_type = self._vaccine_type(resp["Item"]["PatientSK"])
-                checker = VaccinePermissionChecker(imms_vax_type_perms)
-                checker.validate(vaccine_type, "delete")
+                if not validate_permissions(imms_vax_type_perms, ApiOperationCode.DELETE, [vaccine_type]):
+                    raise UnauthorizedVaxError()
 
             response = self.table.update_item(
                 Key={"PK": _make_immunization_pk(imms_id)},

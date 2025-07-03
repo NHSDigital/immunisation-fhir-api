@@ -79,7 +79,7 @@ class TestGetImmunizationByIdentifier(unittest.TestCase):
                 ]
             }
         )
-        with self.assertRaises(UnauthorizedVaxOnRecordError) as e:
+        with self.assertRaises(UnauthorizedVaxError) as e:
             # When
             self.repository.get_immunization_by_identifier(imms_id, ["FLU.CRUD"])
 
@@ -112,7 +112,7 @@ class TestGetImmunization(unittest.TestCase):
                 }
             }
         )
-        imms = self.repository.get_immunization_by_id(imms_id, ["COVID19.CRUD"])
+        imms = self.repository.get_immunization_by_id(imms_id, ["COVID19.CRUDS"])
 
         # Validate the results
         self.assertDictEqual(resource, imms)
@@ -133,7 +133,7 @@ class TestGetImmunization(unittest.TestCase):
                 }
             }
         )
-        with self.assertRaises(UnauthorizedVaxOnRecordError) as e:
+        with self.assertRaises(UnauthorizedVaxError) as e:
             # When
             self.repository.get_immunization_by_id(imms_id, ["FLU.CRUD"])
 
@@ -328,10 +328,22 @@ class TestCreateImmunizationPatientIndex(unittest.TestCase):
         """Patient record should not be created"""
         imms = create_covid_19_immunization_dict("an-id")
 
+        self.repository.table.query.return_value = {
+            "Count": 0,
+            "Items": []
+        }
+
+        self.repository.table.put_item.return_value = {
+            "ResponseMetadata": {
+                "HTTPStatusCode": 200
+            }
+        }
+
         update_target_disease_code(imms, DiseaseCodes.flu)
-        with self.assertRaises(UnauthorizedVaxOnRecordError) as e:
+        with self.assertRaises(UnauthorizedVaxError) as e:
             # When
-            self.repository.create_immunization(imms, self.patient, ["COVID.CRUD"], "Test")
+            self.repository.create_immunization(imms, self.patient, ["COVID19.CRUD"], "Test")
+            
 
 
 class TestUpdateImmunization(unittest.TestCase):
@@ -515,7 +527,16 @@ class TestDeleteImmunization(unittest.TestCase):
             }
         )
 
-        with self.assertRaises(UnauthorizedVaxOnRecordError) as e:
+        self.repository.table.update_item.return_value = {
+        "ResponseMetadata": {
+            "HTTPStatusCode": 200
+        },
+        "Attributes": {
+            "Resource": json.dumps({"id": "valid-id", "status": "deleted"})
+        }
+    }
+
+        with self.assertRaises(UnauthorizedVaxError) as e:
             self.repository.delete_immunization(imms_id, ["COVID19.CRUD"], "Test")
 
     def test_multiple_delete_should_not_update_timestamp(self):
