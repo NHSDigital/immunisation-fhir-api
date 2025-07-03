@@ -1,0 +1,37 @@
+name: "$(SourceBranchName)+$(BuildID)"
+
+trigger: none
+pr: none
+
+resources:
+  repositories:
+    - repository: common
+      type: github
+      name: NHSDigital/api-management-utils
+      ref: refs/heads/edge
+      endpoint: NHSDigital
+
+pool:
+  name: 'AWS-ECS'
+
+variables:
+  - template: project.yml
+
+extends:
+  template: azure/common/apigee-deployment.yml@common
+  parameters:
+    service_name: ${{ variables.service_name }}
+    short_service_name: ${{ variables.short_service_name }}
+    service_base_path: ${{ variables.service_base_path }}
+    apigee_deployments:
+      # To Do: this should be moved to release step. keeping it here for testing
+      - environment: internal-qa # limited by api-management-utils
+        jinja_templates:
+          DOMAIN_ENDPOINT: https://green.imms.int.vds.platform.nhs.uk
+        post_deploy:
+          - template: ./templates/post-deploy.yml
+            parameters:
+              aws_account_type: 'dev'
+              tf_dir: 'terraform_old'
+              tf_environment: 'green'
+      
