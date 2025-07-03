@@ -1,12 +1,10 @@
 from datetime import datetime
 from utils.base_test import ImmunizationBaseTest
-import unittest
 from utils.immunisation_api import parse_location
 from utils.resource import generate_imms_resource, get_dynamodb_table
 import time
 import copy
 import os
-
 
 
 class TestDeltaImmunization(ImmunizationBaseTest):

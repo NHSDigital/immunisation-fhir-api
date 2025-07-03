@@ -7,7 +7,6 @@ from utils.resource import generate_imms_resource, generate_filtered_imms_resour
 from utils.mappings import EndpointOperationNames, VaccineTypes
 
 
-
 class TestGetImmunization(ImmunizationBaseTest):
 
     def test_get_imms(self):

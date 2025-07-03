@@ -175,6 +175,7 @@ class TestApplicationRestrictedAuthorization(ImmunizationBaseTest):
         # Then
         self.assertEqual(response.status_code, 403, response.text)
 
+
 @unittest.skip("Skipping this entire test suite for now")
 class TestCis2Authorization(ImmunizationBaseTest):
     my_app: ApigeeApp
