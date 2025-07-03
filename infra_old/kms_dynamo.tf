@@ -10,7 +10,7 @@ resource "aws_kms_key" "dynamodb_encryption" {
     {
       "Sid": "Allow administration of the key",
       "Effect": "Allow",
-      "Principal": { "AWS": "arn:aws:iam::084828561157:root" },
+      "Principal": { "AWS": "arn:aws:iam::${var.imms_account_id}:root" },
       "Action": [
         "kms:Create*",
         "kms:Describe*",
@@ -33,7 +33,7 @@ resource "aws_kms_key" "dynamodb_encryption" {
     {
       "Sid": "KMS KeyUser access",
       "Effect": "Allow",
-      "Principal": { "AWS": ["arn:aws:iam::084828561157:role/auto-ops"] },
+      "Principal": { "AWS": ["arn:aws:iam::${var.imms_account_id}:role/auto-ops"] },
       "Action": [
         "kms:Encrypt",
         "kms:GenerateDataKey*"
@@ -43,7 +43,7 @@ resource "aws_kms_key" "dynamodb_encryption" {
     {
       "Sid": "KMS KeyUser access for DevOps",
       "Effect": "Allow",
-      "Principal": { "AWS": ["arn:aws:iam::084828561157:role/DevOps"] },
+      "Principal": { "AWS": ["arn:aws:iam::${var.imms_account_id}:role/DevOps"] },
       "Action": [
         "kms:Encrypt",
         "kms:GenerateDataKey*"
@@ -53,7 +53,7 @@ resource "aws_kms_key" "dynamodb_encryption" {
     {
       "Sid": "KMS KeyUser access for Admin",
       "Effect": "Allow",
-      "Principal": { "AWS": ["arn:aws:iam::084828561157:role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_PREPROD-IMMS-Admin_acce656dcacf6f4c"] },
+      "Principal": { "AWS": ["arn:aws:iam::${var.imms_account_id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_PREPROD-IMMS-Admin_acce656dcacf6f4c"] },
       "Action": [
         "kms:Encrypt",
         "kms:GenerateDataKey*"

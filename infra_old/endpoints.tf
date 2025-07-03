@@ -243,8 +243,8 @@ resource "aws_vpc_endpoint" "kms_endpoint" {
           "kms:GenerateDataKey*"
         ],
         Resource = [
-          "arn:aws:kms:eu-west-2:084828561157:key/4e643221-4cb8-49c5-9a78-ced991ff52ae",
-          "arn:aws:kms:eu-west-2:084828561157:key/d7b3c213-3c05-4caf-bb95-fdb2a6e533b1"
+          "arn:aws:kms:eu-west-2:${var.imms_account_id}:key/4e643221-4cb8-49c5-9a78-ced991ff52ae",
+          "arn:aws:kms:eu-west-2:${var.imms_account_id}:key/d7b3c213-3c05-4caf-bb95-fdb2a6e533b1"
         ]
       }
     ]
