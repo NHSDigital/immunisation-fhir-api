@@ -523,18 +523,10 @@ class TestDeleteImmunization(unittest.TestCase):
                     "Resource": json.dumps({"foo": "bar"}),
                     "Version": 1,
                     "PatientSK": "FLU#2516525251",
+                    "DeletedAt": "reinstated"
                 }
             }
         )
-
-        self.repository.table.update_item.return_value = {
-        "ResponseMetadata": {
-            "HTTPStatusCode": 200
-        },
-        "Attributes": {
-            "Resource": json.dumps({"id": "valid-id", "status": "deleted"})
-        }
-    }
 
         with self.assertRaises(UnauthorizedVaxError) as e:
             self.repository.delete_immunization(imms_id, ["COVID19.CRUD"], "Test")

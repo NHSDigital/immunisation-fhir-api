@@ -106,28 +106,23 @@ class ImmunizationRepository:
 
     def get_immunization_by_id(self, imms_id: str, imms_vax_type_perms: str) -> Optional[dict]:
         response = self.table.get_item(Key={"PK": _make_immunization_pk(imms_id)})
+        item = response.get("Item")
 
-        if "Item" in response:
-            resp = dict()
-            if "DeletedAt" in response["Item"]:
-                if response["Item"]["DeletedAt"] == "reinstated":
-                    vaccine_type = self._vaccine_type(response["Item"]["PatientSK"])
-                    if not validate_permissions(imms_vax_type_perms,ApiOperationCode.READ, [vaccine_type]):
-                        raise UnauthorizedVaxError()
-                    resp["Resource"] = json.loads(response["Item"]["Resource"])
-                    resp["Version"] = response["Item"]["Version"]
-                    return resp
-                else:
-                    return None
-            else:
-                vaccine_type = self._vaccine_type(response["Item"]["PatientSK"])
-                if not validate_permissions(imms_vax_type_perms,ApiOperationCode.READ, [vaccine_type]):
-                    raise UnauthorizedVaxError()
-                resp["Resource"] = json.loads(response["Item"]["Resource"])
-                resp["Version"] = response["Item"]["Version"]
-                return resp
-        else:
+        if not item:
             return None
+        if item.get("DeletedAt") and item["DeletedAt"] != "reinstated":
+            return None
+
+        # Get vaccine type + validate permissions
+        vaccine_type = self._vaccine_type(item["PatientSK"])
+        if not validate_permissions(imms_vax_type_perms, ApiOperationCode.READ, [vaccine_type]):
+            raise UnauthorizedVaxError()
+
+        # Build response
+        return {
+            "Resource": json.loads(item["Resource"]),
+            "Version": item["Version"]
+        }
 
     def get_immunization_by_id_all(self, imms_id: str, imms: dict) -> Optional[dict]:
         response = self.table.get_item(Key={"PK": _make_immunization_pk(imms_id)})
@@ -355,36 +350,39 @@ class ImmunizationRepository:
                 )
 
     def delete_immunization(
-        self, imms_id: str, imms_vax_type_perms: str, supplier_system: str
-    ) -> dict:
+            self, imms_id: str, imms_vax_type_perms: str, supplier_system: str) -> dict:
         now_timestamp = int(time.time())
+        
         try:
-            resp = self.table.get_item(Key={"PK": _make_immunization_pk(imms_id)})
-
-            if "Item" in resp:
-                if "DeletedAt" in resp["Item"]:
-                    if resp["Item"]["DeletedAt"] == "reinstated":
-                        pass
-                vaccine_type = self._vaccine_type(resp["Item"]["PatientSK"])
+            item = self.table.get_item(Key={"PK": _make_immunization_pk(imms_id)}).get("Item")
+            if not item:
+                raise ResourceNotFoundError(resource_type="Immunization", resource_id=imms_id)
+            
+            if item.get("DeletedAt") == "reinstated":
+                vaccine_type = self._vaccine_type(item["PatientSK"])
                 if not validate_permissions(imms_vax_type_perms, ApiOperationCode.DELETE, [vaccine_type]):
                     raise UnauthorizedVaxError()
 
+            # Proceed with delete update
             response = self.table.update_item(
                 Key={"PK": _make_immunization_pk(imms_id)},
-                UpdateExpression="SET DeletedAt = :timestamp, Operation = :operation, SupplierSystem = :supplier_system",
+                UpdateExpression=(
+                    "SET DeletedAt = :timestamp, Operation = :operation, SupplierSystem = :supplier_system"
+                ),
                 ExpressionAttributeValues={
                     ":timestamp": now_timestamp,
                     ":operation": "DELETE",
                     ":supplier_system": supplier_system,
                 },
                 ReturnValues="ALL_NEW",
-                ConditionExpression=Attr("PK").eq(_make_immunization_pk(imms_id))
-                & (Attr("DeletedAt").not_exists() | Attr("DeletedAt").eq("reinstated")),
+                ConditionExpression=(
+                    Attr("PK").eq(_make_immunization_pk(imms_id)) &
+                    (Attr("DeletedAt").not_exists() | Attr("DeletedAt").eq("reinstated"))
+                ),
             )
+            
             return self._handle_dynamo_response(response)
-
         except botocore.exceptions.ClientError as error:
-            # Either resource didn't exist or it has already been deleted. See ConditionExpression in the request
             if error.response["Error"]["Code"] == "ConditionalCheckFailedException":
                 raise ResourceNotFoundError(resource_type="Immunization", resource_id=imms_id)
             else:

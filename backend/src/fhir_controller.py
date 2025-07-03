@@ -431,9 +431,6 @@ class FhirController:
                 for vaccine_type in search_params.immunization_targets
                 if ApiOperationCode.SEARCH in expanded_permissions.get(vaccine_type.lower(), [])
             ]
-            # vax_type_perms = _expand_permissions(imms_vax_type_perms, ApiOperationCode.SEARCH)
-            # vax_type_perm = [ vaccine_type for vaccine_type in search_params.immunization_targets 
-            #                  if f"{vaccine_type.lower()}.{ApiOperationCode.SEARCH}" in vax_type_perms ]
             if not vax_type_perm:
                 raise UnauthorizedVaxError
         except UnauthorizedVaxError as unauthorized:
@@ -670,5 +667,5 @@ class FhirController:
     def _identify_supplier_system(aws_event):
         supplier_system = aws_event["headers"]["SupplierSystem"]
         if not supplier_system:
-            raise UnauthorizedSystemError("SupplierSystem header is missing or empty.")
+            return self.create_response(403, unauthorized.to_operation_outcome())
         return supplier_system
