@@ -1179,7 +1179,7 @@ class TestUpdateImmunization(unittest.TestCase):
     @patch("fhir_controller.get_supplier_permissions")
     def test_update_immunization_Unauthorizedsystem_check_for_non_batch(self, mock_get_supplier_permissions):
         """it should not update the Immunization record"""
-        mock_get_supplier_permissions.return_value = ["COVID19.CRUD"]
+        mock_get_supplier_permissions.return_value = ["COVID19.CRD"]
         imms_id = "valid-id"
         imms = {"id": "valid-id"}
         aws_event = {
