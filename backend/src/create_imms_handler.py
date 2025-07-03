@@ -3,7 +3,7 @@ import logging
 import pprint
 import uuid
 
-from authorization import Permission
+
 from fhir_controller import FhirController, make_controller
 from local_lambda import load_string
 from models.errors import Severity, Code, create_operation_outcome
@@ -42,7 +42,6 @@ if __name__ == "__main__":
         "headers": {
             "Content-Type": "application/x-www-form-urlencoded",
             "AuthenticationType": "ApplicationRestricted",
-            "Permissions": (",".join([Permission.CREATE])),
         },
     }
 

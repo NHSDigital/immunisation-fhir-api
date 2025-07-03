@@ -1,12 +1,13 @@
-import unittest
 import json
 import boto3
+import unittest
 import os
 from utils.delete_sqs_messages import read_and_delete_messages
 from utils.get_sqs_url import get_queue_url
 from botocore.exceptions import ClientError  # Handle potential errors
 
 
+@unittest.skip("This test is skipped because it requires a live SQS connection.")
 class TestSQS(unittest.TestCase):
 
     def setUp(self):

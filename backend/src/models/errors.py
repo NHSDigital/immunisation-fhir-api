@@ -233,16 +233,17 @@ class ParameterException(RuntimeError):
         return self.message
 
 
-@dataclass
 class UnauthorizedSystemError(RuntimeError):
-    @staticmethod
-    def to_operation_outcome() -> dict:
-        msg = f"Unauthorized system"
+    def __init__(self, message="Unauthorized system"):
+        super().__init__(message)
+        self.message = message
+    
+    def to_operation_outcome(self) -> dict:
         return create_operation_outcome(
             resource_id=str(uuid.uuid4()),
             severity=Severity.error,
             code=Code.forbidden,
-            diagnostics=msg,
+            diagnostics=self.message,
         )
 
 

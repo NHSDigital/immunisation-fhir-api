@@ -2,7 +2,6 @@ import pprint
 import uuid
 from typing import NamedTuple, Literal, Optional, List
 from decimal import Decimal
-
 from utils.base_test import ImmunizationBaseTest
 from utils.constants import valid_nhs_number1, valid_nhs_number2, valid_patient_identifier2, valid_patient_identifier1
 from utils.resource import generate_imms_resource, generate_filtered_imms_resource

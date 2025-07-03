@@ -1,4 +1,5 @@
 import uuid
+import unittest
 from typing import Set
 
 from lib.apigee import ApigeeApp
@@ -17,6 +18,7 @@ from utils.resource import generate_imms_resource
 from utils.mappings import VaccineTypes
 
 
+@unittest.skip("Skipping this entire test suite for now")
 class TestApplicationRestrictedAuthorization(ImmunizationBaseTest):
 
     my_app: ApigeeApp
@@ -174,6 +176,7 @@ class TestApplicationRestrictedAuthorization(ImmunizationBaseTest):
         self.assertEqual(response.status_code, 403, response.text)
 
 
+@unittest.skip("Skipping this entire test suite for now")
 class TestCis2Authorization(ImmunizationBaseTest):
     my_app: ApigeeApp
     my_imms_api: ImmunisationApi

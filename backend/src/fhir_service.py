@@ -58,7 +58,7 @@ class FhirService:
         self.validator = validator
 
     def get_immunization_by_identifier(
-        self, identifier_pk: str, imms_vax_type_perms: str, identifier: str, element: str
+        self, identifier_pk: str, imms_vax_type_perms: list[str], identifier: str, element: str
     ) -> Optional[dict]:
         """
         Get an Immunization by its ID. Return None if not found. If the patient doesn't have an NHS number,
@@ -76,7 +76,7 @@ class FhirService:
             response = form_json(imms_resp, element, identifier, base_url)
             return response
 
-    def get_immunization_by_id(self, imms_id: str, imms_vax_type_perms: str) -> Optional[dict]:
+    def get_immunization_by_id(self, imms_id: str, imms_vax_type_perms: list[str]) -> Optional[dict]:
         """
         Get an Immunization by its ID. Return None if it is not found. If the patient doesn't have an NHS number,
         return the Immunization without calling PDS or checking S flag.
@@ -131,7 +131,7 @@ class FhirService:
         imms_id: str,
         immunization: dict,
         existing_resource_version: int,
-        imms_vax_type_perms: str,
+        imms_vax_type_perms: list[str],
         supplier_system: str,
     ) -> tuple[UpdateOutcome, Immunization]:
         immunization["id"] = imms_id
@@ -155,7 +155,7 @@ class FhirService:
         imms_id: str,
         immunization: dict,
         existing_resource_version: int,
-        imms_vax_type_perms: str,
+        imms_vax_type_perms: list[str],
         supplier_system: str,
     ) -> tuple[UpdateOutcome, Immunization]:
         immunization["id"] = imms_id
@@ -178,7 +178,7 @@ class FhirService:
         imms_id: str,
         immunization: dict,
         existing_resource_version: int,
-        imms_vax_type_perms: str,
+        imms_vax_type_perms: list[str],
         supplier_system: str,
     ) -> tuple[UpdateOutcome, Immunization]:
         immunization["id"] = imms_id

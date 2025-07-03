@@ -14,7 +14,7 @@ from botocore.config import Config
 from fhir.resources.R4B.immunization import Immunization
 from boto3 import client as boto3_client
 
-from authorization import Authorization, EndpointOperation, UnknownPermission
+from authorization import Authorization, UnknownPermission
 from cache import Cache
 from fhir_repository import ImmunizationRepository, create_table
 from fhir_service import FhirService, UpdateOutcome, get_service_url
@@ -35,6 +35,7 @@ from models.errors import (
 )
 from models.utils.generic_utils import check_keys_in_sources
 from models.utils.permissions import get_supplier_permissions
+from models.utils.permission_checker import VaccinePermissionChecker
 from pds_service import PdsService
 from parameter_parser import process_params, process_search_params, create_query_string
 import urllib.parse
@@ -79,7 +80,7 @@ class FhirController:
     def get_immunization_by_identifier(self, aws_event) -> dict:
         try:
             if aws_event.get("headers"):
-                if response := self.authorize_request(EndpointOperation.SEARCH, aws_event):
+                if response := self.authorize_request(aws_event):
                     return response
                 query_params = aws_event.get("queryStringParameters", {})
             else:
@@ -120,7 +121,7 @@ class FhirController:
             return self.create_response(403, unauthorized.to_operation_outcome())
 
     def get_immunization_by_id(self, aws_event) -> dict:
-        if response := self.authorize_request(EndpointOperation.READ, aws_event):
+        if response := self.authorize_request(aws_event):
             return response
 
         imms_id = aws_event["pathParameters"]["id"]
@@ -165,7 +166,7 @@ class FhirController:
     def create_immunization(self, aws_event):
         try:
             if aws_event.get("headers"):
-                if response := self.authorize_request(EndpointOperation.CREATE, aws_event):
+                if response := self.authorize_request(aws_event):
                         return response
             else:
                 raise UnauthorizedError()
@@ -209,7 +210,7 @@ class FhirController:
     def update_immunization(self, aws_event):
         try:
             if aws_event.get("headers"):
-                if response := self.authorize_request(EndpointOperation.UPDATE, aws_event):
+                if response := self.authorize_request(aws_event):
                     return response
                 imms_id = aws_event["pathParameters"]["id"]
             else:
@@ -271,9 +272,8 @@ class FhirController:
 
         # Check vaccine type permissions on the existing record - start
         try:
-            vax_type_perms = self._parse_vaccine_permissions_controller(imms_vax_type_perms)
-            vax_type_perm = self._vaccine_permission(existing_record["VaccineType"], "update")
-            self._check_permission(vax_type_perm, vax_type_perms)
+            checker = VaccinePermissionChecker(imms_vax_type_perms)
+            checker.validate(existing_record["VaccineType"], "update")
         except UnauthorizedVaxOnRecordError as unauthorized:
             return self.create_response(403, unauthorized.to_operation_outcome())
         # Check vaccine type permissions on the existing record - end
@@ -372,7 +372,7 @@ class FhirController:
     def delete_immunization(self, aws_event):
         try:
             if aws_event.get("headers"):
-                if response := self.authorize_request(EndpointOperation.DELETE, aws_event):
+                if response := self.authorize_request(aws_event):
                         return response
                 imms_id = aws_event["pathParameters"]["id"]
             else:
@@ -403,7 +403,7 @@ class FhirController:
             return self.create_response(403, unauthorized.to_operation_outcome())
 
     def search_immunizations(self, aws_event: APIGatewayProxyEventV1) -> dict:
-        if response := self.authorize_request(EndpointOperation.SEARCH, aws_event):
+        if response := self.authorize_request(aws_event):
             return response
 
         try:
@@ -428,8 +428,11 @@ class FhirController:
             return self.create_response(403, unauthorized.to_operation_outcome())
         # Check vaxx type permissions on the existing record - start
         try:
-            vax_type_perms = self._parse_vaccine_permissions_controller(imms_vax_type_perms)
-            vax_type_perm = self._new_vaccine_request(search_params.immunization_targets, "search", vax_type_perms)
+            checker = VaccinePermissionChecker(imms_vax_type_perms)
+            vax_type_perms = checker.expanded_permissions
+            operation_code = VaccinePermissionChecker.mapped_operations.get("search")
+            vax_type_perm = [ vaccine_type for vaccine_type in search_params.immunization_targets 
+                             if f"{vaccine_type.lower()}.{operation_code}" in vax_type_perms ]
             if not vax_type_perm:
                 raise UnauthorizedVaxError
         except UnauthorizedVaxError as unauthorized:
@@ -540,19 +543,19 @@ class FhirController:
         )
         return self.create_response(400, error)
 
-    def authorize_request(self, operation: EndpointOperation, aws_event: dict) -> Optional[dict]:
+    
+    def authorize_request(self, aws_event: dict) -> Optional[dict]:
         try:
-            self.authorizer.authorize(operation, aws_event)
+            self.authorizer.authorize(aws_event)
         except UnauthorizedError as e:
             return self.create_response(403, e.to_operation_outcome())
         except UnknownPermission:
-            # TODO: I think when AuthenticationType is not present, then we don't get below message. Double check again
             id_error = create_operation_outcome(
-                resource_id=str(uuid.uuid4()),
-                severity=Severity.error,
-                code=Code.server_error,
-                diagnostics="application includes invalid authorization values",
-            )
+            resource_id=str(uuid.uuid4()),
+            severity=Severity.error,
+            code=Code.server_error,
+            diagnostics="Application includes invalid authorization values",
+        )
             return self.create_response(500, id_error)
 
     def fetch_identifier_system_and_element(self, event: dict):
@@ -633,6 +636,7 @@ class FhirController:
             if len(supplier_system) == 0:
                 raise UnauthorizedSystemError()
             imms_vax_type_perms = get_supplier_permissions(supplier_system)
+            print(f" update imms = {imms_vax_type_perms}")
             if len(imms_vax_type_perms) == 0:
                 raise UnauthorizedVaxError()
             # Return the values needed for later use
@@ -660,50 +664,6 @@ class FhirController:
             "headers": headers if headers else {},
             **({"body": body} if body else {}),
         }
-
-    @staticmethod
-    def _sendack(payload, file_name, message_id, created_at_formatted_string, local_id, operation_requested):
-        payload["file_key"] = file_name
-        payload["row_id"] = message_id
-        payload["created_at_formatted_string"] = created_at_formatted_string
-        payload["local_id"] = local_id
-        payload["operation_requested"] = operation_requested
-        sqs_client.send_message(QueueUrl=queue_url, MessageBody=json.dumps(payload), MessageGroupId=file_name)
-
-    @staticmethod
-    def _vaccine_permission(vaccine_type, operation) -> set:
-        vaccine_permission = set()
-        if isinstance(vaccine_type, list):
-            for x in vaccine_type:
-                vaccine_permission.add(str.lower(f"{x}:{operation}"))
-            return vaccine_permission
-        else:
-            vaccine_permission.add(str.lower(f"{vaccine_type}:{operation}"))
-            return vaccine_permission
-
-    @staticmethod
-    def _parse_vaccine_permissions_controller(imms_vax_type_perms) -> set:
-        return {str(s).strip().lower() for s in imms_vax_type_perms}
-
-    @staticmethod
-    def _check_permission(requested: set, allowed: set) -> set:
-        if not requested.issubset(allowed):
-            raise UnauthorizedVaxOnRecordError()
-        else:
-            return None
-
-    @staticmethod
-    def _new_vaccine_request(vaccine_type, operation, vaccine_type_permissions: None) -> Optional[list]:
-        vaccine_permission = list()
-        if isinstance(vaccine_type, list):
-            for x in vaccine_type:
-                vaccs_prms = set()
-                vaccs_prms.add(str.lower(f"{x}:{operation}"))
-                if vaccs_prms.issubset(vaccine_type_permissions):
-                    vaccine_permission.append(x)
-            return vaccine_permission
-        else:
-            return vaccine_permission
 
     @staticmethod
     def _identify_supplier_system(aws_event):
