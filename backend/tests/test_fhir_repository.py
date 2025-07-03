@@ -351,6 +351,7 @@ class TestCreateImmunizationPatientIndex(TestFhirRepositoryBase):
 
     def test_create_patient_with_vaccine_type(self):
         """Patient record should have a sort-key based on vaccine-type"""
+        self.mock_redis_client.hget.return_value = VaccineTypes.flu
         imms = create_covid_19_immunization_dict("an-id")
 
         update_target_disease_code(imms, DiseaseCodes.flu)

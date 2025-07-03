@@ -32,16 +32,34 @@ from mappings import VaccineTypes
 from parameter_parser import patient_identifier_system, process_search_params
 from tests.utils.generic_utils import load_json_data
 from tests.utils.values_for_tests import ValidValues
+from utils.mock_redis import MOCK_REDIS_V2D_RESPONSE
 
-"test"
+class TestFhirControllerBase(unittest.TestCase):
+    """Base class for all tests to set up common fixtures"""
 
-
-class TestFhirController(unittest.TestCase):
     def setUp(self):
+        super().setUp()
+        self.redis_patcher = patch("parameter_parser.redis_client")
+        self.mock_redis_client = self.redis_patcher.start()
+        self.logger_info_patcher = patch("logging.Logger.info")
+        self.mock_logger_info = self.logger_info_patcher.start()
+
+    def tearDown(self):
+        self.redis_patcher.stop()
+        self.logger_info_patcher.stop()
+        super().tearDown()
+
+class TestFhirController(TestFhirControllerBase):
+    def setUp(self):
+        super().setUp()
         self.service = create_autospec(FhirService)
         self.repository = create_autospec(ImmunizationRepository)
         self.authorizer = create_autospec(Authorization)
         self.controller = FhirController(self.authorizer, self.service)
+
+    def tearDown(self):
+        self.redis_patcher.stop()
+        super().tearDown()
 
     def test_create_response(self):
         """it should return application/fhir+json with correct status code"""
@@ -1596,8 +1614,9 @@ class TestDeleteImmunization(unittest.TestCase):
         self.assertEqual(body["resourceType"], "OperationOutcome")
         self.assertEqual(body["issue"][0]["code"], "exception")
 
-class TestSearchImmunizations(unittest.TestCase):
+class TestSearchImmunizations(TestFhirControllerBase):
     def setUp(self):
+        super().setUp()
         self.service = create_autospec(FhirService)
         self.authorizer = create_autospec(Authorization)
         self.controller = FhirController(self.authorizer, self.service)
@@ -1607,11 +1626,15 @@ class TestSearchImmunizations(unittest.TestCase):
         self.date_to_key = "-date.to"
         self.nhs_number_valid_value = "9000000009"
         self.patient_identifier_valid_value = f"{patient_identifier_system}|{self.nhs_number_valid_value}"
+        self.mock_redis_client.hkeys.return_value = MOCK_REDIS_V2D_RESPONSE
+
+    def tearDown(self):
+        return super().tearDown()
 
     @patch("fhir_controller.get_supplier_permissions")
     def test_get_search_immunizations(self, mock_get_supplier_permissions):
         """it should search based on patient_identifier and immunization_target"""
-        
+
         mock_get_supplier_permissions.return_value = ["covid19.s"]
         search_result = Bundle.construct()
         self.service.search_immunizations.return_value = search_result
@@ -1906,6 +1929,7 @@ class TestSearchImmunizations(unittest.TestCase):
 
     @patch("fhir_controller.process_search_params", wraps=process_search_params)
     def test_uses_parameter_parser(self, process_search_params: Mock):
+        self.mock_redis_client.hkeys.return_value = MOCK_REDIS_V2D_RESPONSE
         lambda_event = {
             "multiValueQueryStringParameters": {
                 self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
