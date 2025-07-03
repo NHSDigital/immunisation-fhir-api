@@ -2,15 +2,12 @@ import pprint
 import uuid
 from typing import NamedTuple, Literal, Optional, List
 from decimal import Decimal
-import unittest
-
 from utils.base_test import ImmunizationBaseTest
 from utils.constants import valid_nhs_number1, valid_nhs_number2, valid_patient_identifier2, valid_patient_identifier1
 from utils.resource import generate_imms_resource, generate_filtered_imms_resource
 from utils.mappings import VaccineTypes
 
 
-@unittest.skip("This test is skipped because it requires a live FHIR server connection.")
 class TestSearchImmunization(ImmunizationBaseTest):
     # NOTE: In each test, the result may contain more hits. We only assert if the resource that we created is
     #  in the result set and assert the one that we don't expect is not present.

@@ -4,7 +4,6 @@ from utils.resource import generate_imms_resource
 import unittest
 
 
-@unittest.skip("This test is skipped because it requires a live FHIR server connection.")
 class TestDeleteImmunization(ImmunizationBaseTest):
 
     def test_delete_imms(self):

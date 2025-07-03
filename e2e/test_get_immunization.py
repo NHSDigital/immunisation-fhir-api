@@ -1,6 +1,5 @@
 from decimal import Decimal
 import uuid
-import unittest
 
 from utils.base_test import ImmunizationBaseTest
 from utils.immunisation_api import parse_location
@@ -8,7 +7,7 @@ from utils.resource import generate_imms_resource, generate_filtered_imms_resour
 from utils.mappings import EndpointOperationNames, VaccineTypes
 
 
-@unittest.skip("This test is skipped because it requires a live FHIR server connection.")
+
 class TestGetImmunization(ImmunizationBaseTest):
 
     def test_get_imms(self):
