@@ -150,7 +150,6 @@ class TestForwardLambdaHandler(TestCase):
                             assert message[key][sub_key] == sub_value
 
                     else:
-                        print(f"Asserting {key} {message[key]} == {value}")
                         assert message[key] == value
 
     def assert_dynamo_item(self, expected_dynamo_item):
