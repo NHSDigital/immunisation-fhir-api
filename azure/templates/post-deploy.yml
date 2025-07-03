@@ -8,6 +8,9 @@ parameters:
   - name: tf_dir
     type: string
     default: "terraform"
+  - name: tf_environment
+    type: string
+    default: "green"
 
 steps:
   - ${{ if parameters.is_ptl }}:
@@ -50,7 +53,7 @@ steps:
 
         pr_no=$(echo $service_name | { grep -oE '[0-9]+$' || true; })
         if [ -z $pr_no ]; then
-          workspace=$APIGEE_ENVIRONMENT
+          workspace=${{ parameters.tf_environment }}
         else
           workspace=pr-$pr_no
         fi
@@ -64,8 +67,11 @@ steps:
         echo "Moving to dir: ${{ parameters.tf_dir }}"
         cd ${{ parameters.tf_dir }}
 
+        =immunisation-preprod-terraform-state-files
+
         make init
-        make apply aws_account_no=${aws_account_no} environment=$workspace
+        make plan environment=$workspace bucket_name=immunisation-preprod-terraform-state-files
+        # make apply aws_account_no=${aws_account_no} environment=$workspace
 
         AWS_DOMAIN_NAME=$(make -s output name=service_domain_name)
         IMMS_DELTA_TABLE_NAME=$(make -s output name=imms_delta_table_name)
