@@ -66,7 +66,7 @@ module "imms_event_endpoint_lambdas" {
   image_uri              = module.docker_image.image_uri
   policy_json            = data.aws_iam_policy_document.imms_policy_document.json
   environments           = local.imms_lambda_env_vars
-  vpc_subnet_ids         = data.aws_subnets.default.ids
+  vpc_subnet_ids         = local.private_subnet_ids
   vpc_security_group_ids = [data.aws_security_group.existing_securitygroup.id]
 }
 
