@@ -10,7 +10,15 @@ resources:
       name: NHSDigital/api-management-utils
       ref: refs/heads/edge
       endpoint: NHSDigital
-
+  pipelines:
+    - pipeline: build_pipeline
+      source: "Immunisation-Fhir-Api-Build"
+      trigger:
+        branches:
+          exclude:
+            - master
+            - refs/heads/master
+            - refs/tags/v*
 pool:
   name: 'AWS-ECS'
 
