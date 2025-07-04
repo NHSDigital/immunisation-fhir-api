@@ -31,17 +31,35 @@ locals {
   create_config_bucket = local.environment == local.config_bucket_env
   config_bucket_arn    = local.create_config_bucket ? aws_s3_bucket.batch_config_bucket[0].arn : data.aws_s3_bucket.existing_config_bucket[0].arn
   config_bucket_name   = local.create_config_bucket ? aws_s3_bucket.batch_config_bucket[0].bucket : data.aws_s3_bucket.existing_config_bucket[0].bucket
+
+  # Public subnet - The subnet has a direct route to an internet gateway. Resources in a public subnet can access the public internet.
+  # public_subnet_ids = [for k, v in data.aws_route.internet_traffic_route_by_subnet : k if length(v.gateway_id) > 0]
+  # Private subnet - The subnet does not have a direct route to an internet gateway. Resources in a private subnet require a NAT device to access the public internet.
+  private_subnet_ids = [for k, v in data.aws_route.internet_traffic_route_by_subnet : k if length(v.nat_gateway_id) > 0]
 }
 
 data "aws_vpc" "default" {
   default = true
 }
 
-data "aws_subnets" "default" {
+data "aws_subnets" "all" {
   filter {
     name   = "vpc-id"
     values = [data.aws_vpc.default.id]
   }
+}
+
+data "aws_route_table" "route_table_by_subnet" {
+  for_each = toset(data.aws_subnets.all.ids)
+
+  subnet_id = each.value
+}
+
+data "aws_route" "internet_traffic_route_by_subnet" {
+  for_each = data.aws_route_table.route_table_by_subnet
+
+  route_table_id         = each.value.id
+  destination_cidr_block = "0.0.0.0/0"
 }
 
 data "aws_kms_key" "existing_s3_encryption_key" {
