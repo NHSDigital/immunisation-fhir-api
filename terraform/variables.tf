@@ -38,6 +38,13 @@ locals {
   private_subnet_ids = [for k, v in data.aws_route.internet_traffic_route_by_subnet : k if length(v.nat_gateway_id) > 0]
 }
 
+check "private_subnets" {
+  assert {
+    condition     = length(local.private_subnet_ids) > 0
+    error_message = "No private subnets with internet access found in VPC ${data.aws_vpc.default.id}"
+  }
+}
+
 data "aws_vpc" "default" {
   default = true
 }

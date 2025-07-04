@@ -23,7 +23,7 @@ def _expand_permissions(permissions: list[str]) -> dict[str, list[ApiOperationCo
 def validate_permissions(permissions: list[str], operation: ApiOperationCode, vaccine_types: list[str]):
     expanded_permissions = _expand_permissions(permissions)
     print(f"operation: {operation}, expanded_permissions: {expanded_permissions}, vaccine_types: {vaccine_types}")
-    return all([
+    return all(
         operation in expanded_permissions.get(vaccine_type.lower(), [])
         for vaccine_type in vaccine_types
-    ])
+    )
