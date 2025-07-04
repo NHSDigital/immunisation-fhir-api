@@ -1,6 +1,6 @@
 from unittest import TestCase
 from unittest.mock import patch, MagicMock
-from src.converter import lambda_handler, ensure_dat_extension
+from converter import lambda_handler, ensure_dat_extension
 
 
 class TestLambdaHandler(TestCase):

@@ -1,11 +1,11 @@
 import unittest
 import json
 from unittest.mock import patch, MagicMock, ANY
-from src.log_structure import function_info
+from log_structure import function_info
 
 
-@patch('src.log_structure.firehose_logger')
-@patch('src.log_structure.logger')
+@patch('log_structure.firehose_logger')
+@patch('log_structure.logger')
 class TestFunctionInfoWrapper(unittest.TestCase):
 
     @staticmethod

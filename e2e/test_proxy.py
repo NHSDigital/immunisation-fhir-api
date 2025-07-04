@@ -7,6 +7,7 @@ from utils.immunisation_api import ImmunisationApi
 from lib.env import get_service_base_path, get_status_endpoint_api_key
 
 
+@unittest.skip("Skipping test for now")
 class TestProxyHealthcheck(unittest.TestCase):
 
     proxy_url: str

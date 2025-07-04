@@ -5,7 +5,6 @@ from copy import deepcopy
 from pydantic import ValidationError
 
 from jsonpath_ng.ext import parse
-from src.mappings import VaccineTypes, vaccine_type_mappings
 
 
 class MandationTests:
@@ -14,20 +13,7 @@ class MandationTests:
     @staticmethod
     def prepare_json_data(test_instance: unittest.TestCase, json_data: dict = None) -> dict:
         """Returns json_data if given json_data, otherwise returns the complete covid19 json data as a default"""
-        return json_data if json_data else test_instance.completed_json_data[VaccineTypes.covid_19]
-
-    @staticmethod
-    def update_target_disease(test_instance: unittest.TestCase, vaccine_type: VaccineTypes, json_data: dict = None):
-        """Update the target_disease in the data to match the vaccine type"""
-        json_data = MandationTests.prepare_json_data(test_instance, json_data)
-
-        # Set the target disease field value based on vaccine type
-        target_disease_codes = next(x[0] for x in vaccine_type_mappings if x[1] == vaccine_type)
-        target_disease = []
-        for code in target_disease_codes:
-            target_disease.append({"coding": [{"system": "http://snomed.info/sct", "code": code, "display": "Dummy"}]})
-
-        return parse("protocolApplied[0].targetDisease").update(deepcopy(json_data), target_disease)
+        return json_data if json_data else test_instance.completed_json_data["COVID19"]
 
     @staticmethod
     def test_present_field_accepted(test_instance: unittest.TestCase, valid_json_data: dict = None):
