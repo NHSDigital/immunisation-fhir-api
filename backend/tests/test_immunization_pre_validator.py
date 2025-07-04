@@ -3,8 +3,6 @@
 import unittest
 from copy import deepcopy
 from decimal import Decimal
-from unittest import mock
-import json
 from unittest.mock import patch
 
 from jsonpath_ng.ext import parse
@@ -12,7 +10,7 @@ from jsonpath_ng.ext import parse
 from clients import redis_client
 from models.fhir_immunization import ImmunizationValidator
 from models.utils.generic_utils import get_generic_extension_value
-from .utils.generic_utils import (
+from utils.generic_utils import (
     # these have an underscore to avoid pytest collecting them as tests
     test_valid_values_accepted as _test_valid_values_accepted,
     test_invalid_values_rejected as _test_invalid_values_rejected,
@@ -26,10 +24,24 @@ from models.utils.generic_utils import (
 )
 from utils.pre_validation_test_utils import ValidatorModelTests
 from utils.values_for_tests import ValidValues, InvalidValues
-from utils.mock_redis import MOCK_REDIS_D2V_RESPONSE
+from models.constants import Constants
 
 class TestImmunizationModelPreValidationRules(unittest.TestCase):
     """Test immunization pre validation rules on the FHIR model using the covid sample data"""
+
+    MOCK_REDIS_D2V_RESPONSE = {
+        "4740000": "SHINGLES",
+        "6142004": "FLU",
+        "16814004": "PCV13",
+        "23511006": "MENACWY",
+        "27836007": "PERTUSSIS",
+        "55735004": "RSV",
+        "240532009": "HPV",
+        "840539006": "COVID19",
+        "14189004:36653000:36989005": "MMR",
+        "14189004:36653000:36989005:38907003": "MMRV",
+        "397430003:398102009:76902006": "3in1"
+    }
 
     def setUp(self):
         """Set up for each test. This runs before every test"""
@@ -37,6 +49,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         self.validator = ImmunizationValidator(add_post_validators=False)
         self.redis_patcher = patch("models.utils.validation_utils.redis_client")
         self.mock_redis_client = self.redis_patcher.start()
+        
         
         
     def tearDown(self):
@@ -700,7 +713,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
 
     def test_pre_validate_missing_valueCodeableConcept3(self):
         # Test case: valid data (should not raise an exception)
-        self.mock_redis_client.hget.return_value = MOCK_REDIS_D2V_RESPONSE
+        self.mock_redis_client.hget.return_value = self.MOCK_REDIS_D2V_RESPONSE
         valid_json_data = deepcopy(self.json_data)
         try:
             self.validator.validate(valid_json_data)

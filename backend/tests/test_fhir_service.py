@@ -3,6 +3,7 @@ import uuid
 import datetime
 import unittest
 from copy import deepcopy
+from unittest.mock import create_autospec, patch
 from unittest import skip
 from unittest.mock import create_autospec
 from decimal import Decimal
@@ -23,10 +24,25 @@ from tests.utils.immunization_utils import (
     create_covid_19_immunization_dict_no_id,
     VALID_NHS_NUMBER,
 )
-from .utils.generic_utils import load_json_data
-from src.constants import NHS_NUMBER_USED_IN_SAMPLE_DATA
+from utils.generic_utils import load_json_data
+from constants import NHS_NUMBER_USED_IN_SAMPLE_DATA
 
-"test"
+class TestFhirServiceBase(unittest.TestCase):
+    """Base class for all tests to set up common fixtures"""
+
+    def setUp(self):
+        super().setUp()
+        self.redis_patcher = patch("models.utils.validation_utils.redis_client")
+        self.mock_redis_client = self.redis_patcher.start()
+        self.logger_info_patcher = patch("logging.Logger.info")
+        self.mock_logger_info = self.logger_info_patcher.start()
+
+    def tearDown(self):
+        self.redis_patcher.stop()
+        self.logger_info_patcher.stop()
+        super().tearDown()
+
+
 class TestServiceUrl(unittest.TestCase):
     def test_get_service_url(self):
         """it should create service url"""
@@ -51,14 +67,19 @@ class TestServiceUrl(unittest.TestCase):
         self.assertEqual(url, f"https://internal-dev.api.service.nhs.uk/{base_path}")
 
 
-class TestGetImmunizationByAll(unittest.TestCase):
+class TestGetImmunizationByAll(TestFhirServiceBase):
     """Tests for FhirService.get_immunization_by_id"""
 
     def setUp(self):
+        super().setUp()
         self.imms_repo = create_autospec(ImmunizationRepository)
         self.pds_service = create_autospec(PdsService)
         self.validator = create_autospec(ImmunizationValidator)
         self.fhir_service = FhirService(self.imms_repo, self.pds_service, self.validator)
+
+    def tearDown(self):
+        super().tearDown()
+        patch.stopall()
 
     def test_get_immunization_by_id_by_all(self):
         """it should find an Immunization by id"""
@@ -119,7 +140,8 @@ class TestGetImmunizationByAll(unittest.TestCase):
         self.assertEqual(error.exception.message, expected_msg)
         self.imms_repo.update_immunization.assert_not_called()
 
-    def test_post_validation_failed(self):
+    def test_post_validation_failed_get_by_all(self):
+        self.mock_redis_client.hget.side_effect = [None, 'COVID-19']
         valid_imms = create_covid_19_immunization_dict("an-id", VALID_NHS_NUMBER)
 
         bad_target_disease_imms = deepcopy(valid_imms)
@@ -150,14 +172,19 @@ class TestGetImmunizationByAll(unittest.TestCase):
         self.imms_repo.get_immunization_by_id_all.assert_not_called()
 
 
-class TestGetImmunization(unittest.TestCase):
+class TestGetImmunization(TestFhirServiceBase):
     """Tests for FhirService.get_immunization_by_id"""
 
     def setUp(self):
+        super().setUp()
         self.imms_repo = create_autospec(ImmunizationRepository)
         self.pds_service = create_autospec(PdsService)
         self.validator = create_autospec(ImmunizationValidator)
         self.fhir_service = FhirService(self.imms_repo, self.pds_service, self.validator)
+        self.logger_info_patcher = patch("logging.Logger.info")
+        self.mock_logger_info = self.logger_info_patcher.start()
+    def tearDown(self):
+        patch.stopall()
 
     def test_get_immunization_by_id(self):
         """it should find an Immunization by id"""
@@ -234,7 +261,8 @@ class TestGetImmunization(unittest.TestCase):
         self.imms_repo.update_immunization.assert_not_called()
         self.pds_service.get_patient_details.assert_not_called()
 
-    def test_post_validation_failed(self):
+    def test_post_validation_failed_get(self):
+        self.mock_redis_client.hget.side_effect = [None, 'COVID-19']
         valid_imms = create_covid_19_immunization_dict("an-id", VALID_NHS_NUMBER)
 
         bad_target_disease_imms = deepcopy(valid_imms)
@@ -309,10 +337,11 @@ class TestGetImmunizationIdentifier(unittest.TestCase):
         self.assertEqual(act_imms["entry"], [])
 
 
-class TestCreateImmunization(unittest.TestCase):
+class TestCreateImmunization(TestFhirServiceBase):
     """Tests for FhirService.create_immunization"""
 
     def setUp(self):
+        super().setUp()
         self.imms_repo = create_autospec(ImmunizationRepository)
         self.pds_service = create_autospec(PdsService)
         self.validator = create_autospec(ImmunizationValidator)
@@ -322,6 +351,10 @@ class TestCreateImmunization(unittest.TestCase):
             self.pds_service,
             ImmunizationValidator(add_post_validators=False),
         )
+
+    def tearDown(self):
+        patch.stopall()
+        super().tearDown()
 
     def test_create_immunization(self):
         """it should create Immunization and validate it"""
@@ -382,7 +415,7 @@ class TestCreateImmunization(unittest.TestCase):
 
     def test_post_validation_failed(self):
         """it should throw exception if Immunization is not valid"""
-
+        self.mock_redis_client.hget.side_effect = [None, 'COVID-19']
         valid_imms = create_covid_19_immunization_dict_no_id(VALID_NHS_NUMBER)
 
         bad_target_disease_imms = deepcopy(valid_imms)
