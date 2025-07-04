@@ -431,6 +431,7 @@ class FhirController:
                 for vaccine_type in search_params.immunization_targets
                 if ApiOperationCode.SEARCH in expanded_permissions.get(vaccine_type.lower(), [])
             ]
+            print(f"vax type perm: {vax_type_perm}, expanded_permissions {expanded_permissions} ")
             if not vax_type_perm:
                 raise UnauthorizedVaxError
         except UnauthorizedVaxError as unauthorized:

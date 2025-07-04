@@ -358,7 +358,7 @@ class ImmunizationRepository:
             if not item:
                 raise ResourceNotFoundError(resource_type="Immunization", resource_id=imms_id)
             
-            if item.get("DeletedAt") == "reinstated":
+            if not item.get("DeletedAt") or item.get("DeletedAt") == "reinstated":
                 vaccine_type = self._vaccine_type(item["PatientSK"])
                 if not validate_permissions(imms_vax_type_perms, ApiOperationCode.DELETE, [vaccine_type]):
                     raise UnauthorizedVaxError()
