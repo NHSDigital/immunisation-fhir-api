@@ -33,7 +33,7 @@ extends:
     service_base_path: ${{ variables.service_base_path }}
     apigee_deployments:
       # To Do: this should be moved to release step. keeping it here for testing
-      - environment: internal-qa # limited by api-management-utils
+      - environment: ref # limited by api-management-utils
         jinja_templates:
           DOMAIN_ENDPOINT: https://green.imms.int.vds.platform.nhs.uk
         post_deploy:
