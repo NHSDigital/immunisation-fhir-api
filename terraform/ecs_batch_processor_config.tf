@@ -334,7 +334,7 @@ resource "aws_pipes_pipe" "fifo_pipe" {
       launch_type         = "FARGATE"
       network_configuration {
         aws_vpc_configuration {
-          subnets          = data.aws_subnets.default.ids
+          subnets          = local.private_subnet_ids
           assign_public_ip = "ENABLED"
         }
       }

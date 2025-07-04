@@ -576,6 +576,7 @@ class TestDeleteImmunization(unittest.TestCase):
                     "Resource": json.dumps({"foo": "bar"}),
                     "Version": 1,
                     "PatientSK": "FLU#2516525251",
+                    "DeletedAt": "reinstated"
                 }
             }
         )
