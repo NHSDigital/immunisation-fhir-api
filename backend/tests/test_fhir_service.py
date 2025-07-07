@@ -77,9 +77,6 @@ class TestGetImmunizationByAll(TestFhirServiceBase):
         self.validator = create_autospec(ImmunizationValidator)
         self.fhir_service = FhirService(self.imms_repo, self.pds_service, self.validator)
 
-    def tearDown(self):
-        super().tearDown()
-
     def test_get_immunization_by_id_by_all(self):
         """it should find an Immunization by id"""
         imms_id = "an-id"

@@ -734,8 +734,6 @@ class TestImmunizationDecimals(TestFhirRepositoryBase):
         self.repository = ImmunizationRepository(table=self.table)
         self.patient = {"id": "a-patient-id", "identifier": {"value": "an-identifier"}}
 
-    def tearDown(self):
-        return super().tearDown()
 
     def test_decimal_on_create(self):
         """it should create Immunization, and preserve decimal value"""
