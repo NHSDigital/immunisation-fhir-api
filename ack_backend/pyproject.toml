@@ -7,11 +7,11 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "~3.10"
-boto3 = "~1.38.42"
-mypy-boto3-dynamodb = "^1.38.4"
+boto3 = "~1.39.3"
+mypy-boto3-dynamodb = "^1.39.0"
 freezegun      = "^1.5.2"
 moto           = "^4"
-coverage = "^7.9.1"
+coverage = "^7.9.2"
 
 
 [build-system]
