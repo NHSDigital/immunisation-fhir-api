@@ -16,57 +16,64 @@ steps:
       echo "##vso[task.setvariable variable=AWS_ACCOUNT_ID]${{ parameters.aws_account_id }}"
     displayName: get imms role name
   - bash: |
+      set -e
+
+      echo "Running aws sts get-caller-identity:"
       aws sts get-caller-identity
 
-      set -e
-      aws_role="$(ROLE)"
-      echo "assume role: '${aws_role}'"
-      echo "account_id: $(AWS_ACCOUNT_ID)" 
-      
-      aws_role="arn:aws:iam::$(AWS_ACCOUNT_ID):role/${aws_role}"
-      echo "AWS role: $aws_role"
+      aws_role="$ROLE"
+      aws_account_id="$AWS_ACCOUNT_ID"
 
-      echo "Check if role exists"
-      # iam synchronisation issues can take a few to make the role appear
+      echo "Assume role: ${aws_role}"
+      echo "Account ID: ${aws_account_id}"
+
+      aws_role_arn="arn:aws:iam::${aws_account_id}:role/${aws_role}"
+      echo "AWS role ARN: ${aws_role_arn}"
+
+      echo "Checking if role exists"
       for i in {1..15}; do
-        if aws iam get-role --role-name ${aws_role} > /dev/null; then
-          echo role exists
+        if aws iam get-role --role-name "${aws_role}" > /dev/null 2>&1; then
+          echo "Role exists"
           sleep 2
           break
         fi
-        echo waiting for role ...
+        echo "Waiting for role ..."
         sleep 2
       done
-      account_id="$(aws sts get-caller-identity --query Account --output text)"
-      aws_role="arn:aws:iam::${account_id}:role/${aws_role}"
-      
-      cp ~/.aws/config.default ~/.aws/config
-      tmp_file="$(Agent.TempDirectory)/.aws.tmp.creds.json"
-      # add some backoff to allow for eventual consistency of IAM
-      for i in {2..4};
-      do
-          if aws sts assume-role --role-arn "${aws_role}" --role-session-name build-assume-role > ${tmp_file}; then
-              echo assumed role
-              assumed_role="yes"
-              break
-          fi
-          let "sleep_for=$i*10";
-          sleep $sleep_for
+
+      cp "${HOME}/.aws/config.default" "${HOME}/.aws/config"
+      tmp_file="${AGENT_TEMPDIRECTORY}/.aws.tmp.creds.json"
+
+      for i in {2..4}; do
+        if aws sts assume-role --role-arn "${aws_role_arn}" --role-session-name build-assume-role > "${tmp_file}"; then
+          echo "Assumed role"
+          assumed_role="yes"
+          break
+        fi
+        sleep_for=$((i * 10))
+        echo "Retrying assume-role in $sleep_for seconds..."
+        sleep "$sleep_for"
       done
+
       if [[ "${assumed_role}" != "yes" ]]; then
-          echo "assume role failed"
-          exit -1
+        echo "Assume role failed"
+        exit 1
       fi
-      echo "aws_access_key_id = $(jq -r .Credentials.AccessKeyId ${tmp_file})" >> ~/.aws/config
-      echo "aws_secret_access_key = $(jq -r .Credentials.SecretAccessKey ${tmp_file})" >> ~/.aws/config
-      echo "aws_session_token = $(jq -r .Credentials.SessionToken ${tmp_file})" >> ~/.aws/config
-      expiry=$(jq -r .Credentials.Expiration ${tmp_file})
+
+      echo "aws_access_key_id = $(jq -r .Credentials.AccessKeyId "${tmp_file}")" >> "${HOME}/.aws/config"
+      echo "aws_secret_access_key = $(jq -r .Credentials.SecretAccessKey "${tmp_file}")" >> "${HOME}/.aws/config"
+      echo "aws_session_token = $(jq -r .Credentials.SessionToken "${tmp_file}")" >> "${HOME}/.aws/config"
+
+      expiry=$(jq -r .Credentials.Expiration "${tmp_file}")
       echo "##vso[task.setvariable variable=ASSUME_ROLE_EXPIRY;]$expiry"
-      rm ${tmp_file}
+
+      rm "${tmp_file}"
+
       profile="${{ parameters.profile }}"
-      if [[ ! -z "${profile}" ]]; then
-        echo as profile ${profile}
-        sed -i "s#\[default\]#\[profile ${profile}\]#" ~/.aws/config
+      if [[ -n "${profile}" ]]; then
+        echo "Using profile: ${profile}"
+        sed -i "s#\[default\]#\[profile ${profile}\]#" "${HOME}/.aws/config"
       fi
+
     displayName: assume role
     condition: and(succeeded(), ne(variables['ROLE'], ''))
