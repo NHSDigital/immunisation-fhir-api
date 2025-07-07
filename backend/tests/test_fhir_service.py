@@ -140,7 +140,7 @@ class TestGetImmunizationByAll(TestFhirServiceBase):
         self.imms_repo.update_immunization.assert_not_called()
 
     def test_post_validation_failed_get_by_all(self):
-        self.mock_redis_client.hget.side_effect = [None, 'COVID-19']
+        self.mock_redis_client.hget.return_value = None
         valid_imms = create_covid_19_immunization_dict("an-id", VALID_NHS_NUMBER)
 
         bad_target_disease_imms = deepcopy(valid_imms)
@@ -161,7 +161,9 @@ class TestGetImmunizationByAll(TestFhirServiceBase):
             fhir_service.get_immunization_by_id_all("an-id", bad_target_disease_imms)
 
         self.assertEqual(bad_target_disease_msg, error.exception.message)
+
         self.imms_repo.get_immunization_by_id_all.assert_not_called()
+        self.mock_redis_client.hget.return_value = 'COVID-19'
 
         # Missing patient name (Mandatory field)
         with self.assertRaises(CustomValidationError) as error:
