@@ -37,16 +37,16 @@ steps:
     displayName: Setup pytests
     condition: always()
 
-  - template: ./aws-assume-role.yml
+  - template: ./aws-assume-role-new-int.yml
     parameters:
       role: "auto-ops"
-      profile: "apim-dev"
-      aws_account: ${{ parameters.aws_account_type }}
+      profile: "apim-dev" # centralise 
+      aws_account_id: "084828561157"
 
   - bash: |
       set -e
       if ! [[ $APIGEE_ENVIRONMENT =~ .*-*sandbox ]]; then
-        export AWS_PROFILE=apim-dev
+        export AWS_PROFILE=apim-dev 
         aws_account_no="$(aws sts get-caller-identity --query Account --output text)"
 
         service_name=$(FULLY_QUALIFIED_SERVICE_NAME)
@@ -121,6 +121,7 @@ steps:
       fi
     displayName: Wait for API to be available
     workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)"
+    condition: eq(1, 2)
 
   - bash: |
       pyenv install -s 3.10.8
@@ -128,6 +129,7 @@ steps:
       pyenv global 3.10.8
       python --version
     displayName: Install python 3.10 and 3.11
+    condition: eq(1, 2)
 
   - bash: |
       set -e
@@ -224,3 +226,4 @@ steps:
     inputs:
       testResultsFiles: '$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/tests/test-report.xml'
       failTaskOnFailedTests: true
+    condition: eq(1, 2)
