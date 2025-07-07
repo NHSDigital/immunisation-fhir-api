@@ -21,12 +21,10 @@ class TestGenericUtils(unittest.TestCase):
         """Tear down after each test. This runs after every test"""
         self.redis_patcher.stop()
 
-    def test_convert_disease_codes_to_vaccine_type(self):
+    def test_convert_disease_codes_to_vaccine_type_returns_vaccine_type(self):
         """
-        Test that disease_codes_to_vaccine_type returns correct vaccine type for valid combinations,
-        of disease codes, or raises a value error otherwise
+        If the mock returns a vaccine type, convert_disease_codes_to_vaccine_type returns that vaccine type.
         """
-        # Valid combinations return appropriate vaccine type
         valid_combinations = [
             (["840539006"], "COVID19"),
             (["6142004"], "FLU"),
@@ -41,14 +39,16 @@ class TestGenericUtils(unittest.TestCase):
         for combination, vaccine_type in valid_combinations:
             self.assertEqual(convert_disease_codes_to_vaccine_type(combination), vaccine_type)
 
-        # Invalid combinations raise value error
+    def test_convert_disease_codes_to_vaccine_type_raises_error_on_none(self):
+        """
+        If the mock returns None, convert_disease_codes_to_vaccine_type raises a ValueError.
+        """
         invalid_combinations = [
             ["8405390063"],
             ["14189004"],
             ["14189004", "36989005"],
             ["14189004", "36989005", "36653000", "840539006"],
         ]
-
         self.mock_redis_client.hget.side_effect = None
         self.mock_redis_client.hget.return_value = None  # Simulate no match in Redis for invalid combinations
         for invalid_combination in invalid_combinations:
