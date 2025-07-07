@@ -393,9 +393,6 @@ class TestUpdateImmunization(TestFhirRepositoryBase):
         self.repository = ImmunizationRepository(table=self.table)
         self.patient = _make_a_patient("update-patient-id")
 
-    def tearDown(self):
-        return super().tearDown()
-
     def test_update1(self):
         """it should update record by replacing both Immunization and Patient"""
 

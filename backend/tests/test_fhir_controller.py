@@ -1621,9 +1621,6 @@ class TestSearchImmunizations(TestFhirControllerBase):
         self.patient_identifier_valid_value = f"{patient_identifier_system}|{self.nhs_number_valid_value}"
         self.mock_redis_client.hkeys.return_value = self.MOCK_REDIS_V2D_HKEYS
 
-    def tearDown(self):
-        return super().tearDown()
-
     @patch("fhir_controller.get_supplier_permissions")
     def test_get_search_immunizations(self, mock_get_supplier_permissions):
         """it should search based on patient_identifier and immunization_target"""
