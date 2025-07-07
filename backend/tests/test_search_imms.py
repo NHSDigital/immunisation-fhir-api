@@ -1,6 +1,6 @@
 import json
 import unittest
-from unittest.mock import create_autospec
+from unittest.mock import create_autospec, patch
 
 from fhir_controller import FhirController
 from models.errors import Severity, Code, create_operation_outcome
@@ -14,6 +14,11 @@ script_location = Path(__file__).absolute().parent
 class TestSearchImmunizations(unittest.TestCase):
     def setUp(self):
         self.controller = create_autospec(FhirController)
+        self.logger_exception_patcher = patch("logging.Logger.exception")
+        self.mock_logger_exception = self.logger_exception_patcher.start()
+
+    def tearDown(self):
+        patch.stopall()
 
     def test_search_immunizations(self):
         """it should return a list of Immunizations"""
@@ -153,7 +158,6 @@ class TestSearchImmunizations(unittest.TestCase):
 
         # Then
         act_body = json.loads(act_res["body"])
-        act_body["id"] = None
 
         self.assertEqual(exp_error["issue"][0]["code"], act_body["issue"][0]["code"])
         self.assertEqual(exp_error["issue"][0]["severity"], act_body["issue"][0]["severity"])

@@ -59,6 +59,8 @@ jobs:
       - name: Run unittest with recordforwarder-coverage
         working-directory: backend
         id: recordforwarder
+        env:
+          PYTHONPATH: ${{ github.workspace }}/backend/src:${{ github.workspace }}/backend/tests
         continue-on-error: true
         run: |
           poetry env use 3.11
@@ -90,6 +92,8 @@ jobs:
 
       - name: Run unittest with coverage-fhir-api
         working-directory: backend
+        env:
+          PYTHONPATH: ${{ github.workspace }}/backend/src:${{ github.workspace }}/backend/tests
         id: fhirapi
         continue-on-error: true
         run: |

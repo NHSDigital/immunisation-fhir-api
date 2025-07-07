@@ -4,6 +4,7 @@ import uuid
 import datetime
 import unittest
 from copy import deepcopy
+from unittest.mock import create_autospec, patch
 from unittest import skip
 from unittest.mock import create_autospec, patch
 from decimal import Decimal
@@ -12,7 +13,6 @@ from fhir.resources.R4B.bundle import Bundle as FhirBundle, BundleEntry
 from fhir.resources.R4B.immunization import Immunization
 from fhir_repository import ImmunizationRepository
 from fhir_service import FhirService, UpdateOutcome, get_service_url
-from mappings import VaccineTypes
 from models.errors import InvalidPatientId, CustomValidationError
 from models.fhir_immunization import ImmunizationValidator
 from pds_service import PdsService
@@ -24,10 +24,24 @@ from tests.utils.immunization_utils import (
     create_covid_19_immunization_dict_no_id,
     VALID_NHS_NUMBER,
 )
-from .utils.generic_utils import load_json_data
-from src.constants import NHS_NUMBER_USED_IN_SAMPLE_DATA
+from utils.generic_utils import load_json_data
+from constants import NHS_NUMBER_USED_IN_SAMPLE_DATA
 
-"test"
+class TestFhirServiceBase(unittest.TestCase):
+    """Base class for all tests to set up common fixtures"""
+
+    def setUp(self):
+        super().setUp()
+        self.redis_patcher = patch("models.utils.validation_utils.redis_client")
+        self.mock_redis_client = self.redis_patcher.start()
+        self.logger_info_patcher = patch("logging.Logger.info")
+        self.mock_logger_info = self.logger_info_patcher.start()
+
+    def tearDown(self):
+        self.redis_patcher.stop()
+        self.logger_info_patcher.stop()
+        super().tearDown()
+
 class TestServiceUrl(unittest.TestCase):
     def test_get_service_url(self):
         """it should create service url"""
@@ -51,11 +65,11 @@ class TestServiceUrl(unittest.TestCase):
         url = get_service_url(env, base_path)
         self.assertEqual(url, f"https://internal-dev.api.service.nhs.uk/{base_path}")
 
-
-class TestGetImmunizationByAll(unittest.TestCase):
+class TestGetImmunizationByAll(TestFhirServiceBase):
     """Tests for FhirService.get_immunization_by_id"""
 
     def setUp(self):
+        super().setUp()
         self.imms_repo = create_autospec(ImmunizationRepository)
         self.pds_service = create_autospec(PdsService)
         self.validator = create_autospec(ImmunizationValidator)
@@ -120,7 +134,9 @@ class TestGetImmunizationByAll(unittest.TestCase):
         self.assertEqual(error.exception.message, expected_msg)
         self.imms_repo.update_immunization.assert_not_called()
 
-    def test_post_validation_failed(self):
+    def test_post_validation_failed_get_by_all_invalid_target_disease(self):
+        """it should raise CustomValidationError for invalid target disease code"""
+        self.mock_redis_client.hget.return_value = None
         valid_imms = create_covid_19_immunization_dict("an-id", VALID_NHS_NUMBER)
 
         bad_target_disease_imms = deepcopy(valid_imms)
@@ -130,35 +146,44 @@ class TestGetImmunizationByAll(unittest.TestCase):
             + ".code - ['bad-code'] is not a valid combination of disease codes for this service"
         )
 
-        bad_patient_name_imms = deepcopy(valid_imms)
-        del bad_patient_name_imms["contained"][1]["name"][0]["given"]
-        bad_patient_name_msg = ("contained[?(@.resourceType=='Patient')].name[0].given is a mandatory field")
-
         fhir_service = FhirService(self.imms_repo, self.pds_service)
 
-        # Invalid target_disease
         with self.assertRaises(CustomValidationError) as error:
             fhir_service.get_immunization_by_id_all("an-id", bad_target_disease_imms)
 
         self.assertEqual(bad_target_disease_msg, error.exception.message)
         self.imms_repo.get_immunization_by_id_all.assert_not_called()
 
-        # Missing patient name (Mandatory field)
+    def test_post_validation_failed_get_by_all_missing_patient_name(self):
+        """it should raise CustomValidationError for missing patient name"""
+        self.mock_redis_client.hget.return_value = 'COVID-19'
+        valid_imms = create_covid_19_immunization_dict("an-id", VALID_NHS_NUMBER)
+
+        bad_patient_name_imms = deepcopy(valid_imms)
+        del bad_patient_name_imms["contained"][1]["name"][0]["given"]
+        bad_patient_name_msg = "contained[?(@.resourceType=='Patient')].name[0].given is a mandatory field"
+
+        fhir_service = FhirService(self.imms_repo, self.pds_service)
+
         with self.assertRaises(CustomValidationError) as error:
             fhir_service.get_immunization_by_id_all("an-id", bad_patient_name_imms)
 
         self.assertTrue(bad_patient_name_msg in error.exception.message)
         self.imms_repo.get_immunization_by_id_all.assert_not_called()
 
-
-class TestGetImmunization(unittest.TestCase):
+class TestGetImmunization(TestFhirServiceBase):
     """Tests for FhirService.get_immunization_by_id"""
 
     def setUp(self):
+        super().setUp()
         self.imms_repo = create_autospec(ImmunizationRepository)
         self.pds_service = create_autospec(PdsService)
         self.validator = create_autospec(ImmunizationValidator)
         self.fhir_service = FhirService(self.imms_repo, self.pds_service, self.validator)
+        self.logger_info_patcher = patch("logging.Logger.info")
+        self.mock_logger_info = self.logger_info_patcher.start()
+    def tearDown(self):
+        patch.stopall()
 
     def test_get_immunization_by_id(self):
         """it should find an Immunization by id"""
@@ -235,38 +260,44 @@ class TestGetImmunization(unittest.TestCase):
         self.imms_repo.update_immunization.assert_not_called()
         self.pds_service.get_patient_details.assert_not_called()
 
-    def test_post_validation_failed(self):
-        valid_imms = create_covid_19_immunization_dict("an-id", VALID_NHS_NUMBER)
+def test_post_validation_failed_get_invalid_target_disease(self):
+    """it should raise CustomValidationError for invalid target disease code on get"""
+    self.mock_redis_client.hget.return_value = None
+    valid_imms = create_covid_19_immunization_dict("an-id", VALID_NHS_NUMBER)
 
-        bad_target_disease_imms = deepcopy(valid_imms)
-        bad_target_disease_imms["protocolApplied"][0]["targetDisease"][0]["coding"][0]["code"] = "bad-code"
-        bad_target_disease_msg = (
-            "Validation errors: protocolApplied[0].targetDisease[*].coding[?(@.system=='http://snomed.info/sct')].code"
-            + " - ['bad-code'] is not a valid combination of disease codes for this service"
-        )
+    bad_target_disease_imms = deepcopy(valid_imms)
+    bad_target_disease_imms["protocolApplied"][0]["targetDisease"][0]["coding"][0]["code"] = "bad-code"
+    bad_target_disease_msg = (
+        "Validation errors: protocolApplied[0].targetDisease[*].coding[?(@.system=='http://snomed.info/sct')].code"
+        + " - ['bad-code'] is not a valid combination of disease codes for this service"
+    )
 
-        bad_patient_name_imms = deepcopy(valid_imms)
-        del bad_patient_name_imms["contained"][1]["name"][0]["given"]
-        bad_patient_name_msg = "contained[?(@.resourceType=='Patient')].name[0].given is a mandatory field"
+    fhir_service = FhirService(self.imms_repo, self.pds_service)
 
-        fhir_service = FhirService(self.imms_repo, self.pds_service)
+    with self.assertRaises(CustomValidationError) as error:
+        fhir_service.get_immunization_by_id_all("an-id", bad_target_disease_imms)
 
-        # Invalid target_disease
-        with self.assertRaises(CustomValidationError) as error:
-            fhir_service.get_immunization_by_id_all("an-id", bad_target_disease_imms)
+    self.assertEqual(bad_target_disease_msg, error.exception.message)
+    self.imms_repo.get_immunization_by_id_all.assert_not_called()
+    self.pds_service.get_patient_details.assert_not_called()
 
-        self.assertEqual(bad_target_disease_msg, error.exception.message)
-        self.imms_repo.get_immunization_by_id_all.assert_not_called()
-        self.pds_service.get_patient_details.assert_not_called()
+def test_post_validation_failed_get_missing_patient_name(self):
+    """it should raise CustomValidationError for missing patient name on get"""
+    self.mock_redis_client.hget.return_value = 'COVID-19'
+    valid_imms = create_covid_19_immunization_dict("an-id", VALID_NHS_NUMBER)
 
-        # Missing patient name (Mandatory field)
-        with self.assertRaises(CustomValidationError) as error:
-            fhir_service.get_immunization_by_id_all("an-id", bad_patient_name_imms)
+    bad_patient_name_imms = deepcopy(valid_imms)
+    del bad_patient_name_imms["contained"][1]["name"][0]["given"]
+    bad_patient_name_msg = "contained[?(@.resourceType=='Patient')].name[0].given is a mandatory field"
 
-        self.assertTrue(bad_patient_name_msg in error.exception.message)
-        self.imms_repo.get_immunization_by_id_all.assert_not_called()
-        self.pds_service.get_patient_details.assert_not_called()
+    fhir_service = FhirService(self.imms_repo, self.pds_service)
 
+    with self.assertRaises(CustomValidationError) as error:
+        fhir_service.get_immunization_by_id_all("an-id", bad_patient_name_imms)
+
+    self.assertTrue(bad_patient_name_msg in error.exception.message)
+    self.imms_repo.get_immunization_by_id_all.assert_not_called()
+    self.pds_service.get_patient_details.assert_not_called()
 
 class TestGetImmunizationIdentifier(unittest.TestCase):
     """Tests for FhirService.get_immunization_by_id"""
@@ -310,10 +341,11 @@ class TestGetImmunizationIdentifier(unittest.TestCase):
         self.assertEqual(act_imms["entry"], [])
 
 
-class TestCreateImmunization(unittest.TestCase):
+class TestCreateImmunization(TestFhirServiceBase):
     """Tests for FhirService.create_immunization"""
 
     def setUp(self):
+        super().setUp()
         self.imms_repo = create_autospec(ImmunizationRepository)
         self.pds_service = create_autospec(PdsService)
         self.validator = create_autospec(ImmunizationValidator)
@@ -381,9 +413,9 @@ class TestCreateImmunization(unittest.TestCase):
         self.imms_repo.create_immunization.assert_not_called()
         self.pds_service.get_patient_details.assert_not_called()
 
-    def test_post_validation_failed(self):
-        """it should throw exception if Immunization is not valid"""
-
+    def test_post_validation_failed_create_invalid_target_disease(self):
+        """it should raise CustomValidationError for invalid target disease code on create"""
+        self.mock_redis_client.hget.return_value = None
         valid_imms = create_covid_19_immunization_dict_no_id(VALID_NHS_NUMBER)
 
         bad_target_disease_imms = deepcopy(valid_imms)
@@ -393,6 +425,20 @@ class TestCreateImmunization(unittest.TestCase):
             + ".code - ['bad-code'] is not a valid combination of disease codes for this service"
         )
 
+        fhir_service = FhirService(self.imms_repo, self.pds_service)
+
+        with self.assertRaises(CustomValidationError) as error:
+            fhir_service.create_immunization(bad_target_disease_imms, "COVID19:create", "Test")
+
+        self.assertEqual(bad_target_disease_msg, error.exception.message)
+        self.imms_repo.create_immunization.assert_not_called()
+        self.pds_service.get_patient_details.assert_not_called()
+
+    def test_post_validation_failed_create_missing_patient_name(self):
+        """it should raise CustomValidationError for missing patient name on create"""
+        self.mock_redis_client.hget.return_value = 'COVID-19'
+        valid_imms = create_covid_19_immunization_dict_no_id(VALID_NHS_NUMBER)
+
         bad_patient_name_imms = deepcopy(valid_imms)
         del bad_patient_name_imms["contained"][1]["name"][0]["given"]
         bad_patient_name_msg = (
@@ -401,16 +447,6 @@ class TestCreateImmunization(unittest.TestCase):
 
         fhir_service = FhirService(self.imms_repo, self.pds_service)
 
-        # Create
-        # Invalid target_disease
-        with self.assertRaises(CustomValidationError) as error:
-            fhir_service.create_immunization(bad_target_disease_imms, "COVID19:create", "Test")
-
-        self.assertEqual(bad_target_disease_msg, error.exception.message)
-        self.imms_repo.create_immunization.assert_not_called()
-        self.pds_service.get_patient_details.assert_not_called()
-
-        # Missing patient name (Mandatory field)
         with self.assertRaises(CustomValidationError) as error:
             fhir_service.create_immunization(bad_patient_name_imms, "COVID19:create", "Test")
 
@@ -561,7 +597,7 @@ class TestSearchImmunizations(unittest.TestCase):
     def test_vaccine_type_search(self):
         """It should search for the correct vaccine type"""
         nhs_number = VALID_NHS_NUMBER
-        vaccine_type = VaccineTypes.covid_19
+        vaccine_type = "COVID19"
         params = f"{self.nhs_search_param}={nhs_number}&{self.vaccine_type_search_param}={vaccine_type}"
 
         # When
@@ -580,7 +616,7 @@ class TestSearchImmunizations(unittest.TestCase):
             "meta": {"security": [{"code": "U"}]},
         }
         nhs_number = NHS_NUMBER_USED_IN_SAMPLE_DATA
-        vaccine_types = [VaccineTypes.covid_19]
+        vaccine_types = ["COVID19"]
         params = f"{self.nhs_search_param}={nhs_number}&{self.vaccine_type_search_param}={vaccine_types}"
         # When
         result = self.fhir_service.search_immunizations(nhs_number, vaccine_types, params)
@@ -612,7 +648,7 @@ class TestSearchImmunizations(unittest.TestCase):
             "meta": {"security": [{"code": "U"}]},
         }
         nhs_number = NHS_NUMBER_USED_IN_SAMPLE_DATA
-        vaccine_types = [VaccineTypes.covid_19]
+        vaccine_types = ["COVID19"]
 
         # CASE: Day before.
         self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
@@ -675,7 +711,7 @@ class TestSearchImmunizations(unittest.TestCase):
             "meta": {"security": [{"code": "U"}]},
         }
         nhs_number = NHS_NUMBER_USED_IN_SAMPLE_DATA
-        vaccine_types = [VaccineTypes.covid_19]
+        vaccine_types = ["COVID19"]
 
         # CASE: Without date_from
         self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
@@ -715,7 +751,7 @@ class TestSearchImmunizations(unittest.TestCase):
             "meta": {"security": [{"code": "U"}]},
         }
         nhs_number = NHS_NUMBER_USED_IN_SAMPLE_DATA
-        vaccine_types = [VaccineTypes.covid_19]
+        vaccine_types = ["COVID19"]
 
         # CASE: Day after.
         self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
@@ -780,7 +816,7 @@ class TestSearchImmunizations(unittest.TestCase):
             "meta": {"security": [{"code": "U"}]},
         }
         nhs_number = NHS_NUMBER_USED_IN_SAMPLE_DATA
-        vaccine_types = [VaccineTypes.covid_19]
+        vaccine_types = ["COVID19"]
 
         # CASE 1: Without date_to argument
         self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
@@ -818,7 +854,7 @@ class TestSearchImmunizations(unittest.TestCase):
             for imms_id in imms_ids
         ]
 
-        vaccine_types = [VaccineTypes.covid_19]
+        vaccine_types = ["COVID19"]
         self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
 
         # When
@@ -863,7 +899,7 @@ class TestSearchImmunizations(unittest.TestCase):
             "meta": {"security": [{"code": "U"}]},
         }
         nhs_number = NHS_NUMBER_USED_IN_SAMPLE_DATA
-        vaccine_types = [VaccineTypes.covid_19]
+        vaccine_types = ["COVID19"]
 
         # When
         result = self.fhir_service.search_immunizations(nhs_number, vaccine_types, "")
@@ -889,7 +925,7 @@ class TestSearchImmunizations(unittest.TestCase):
             "meta": {"security": [{"code": "U"}]},
         }
         nhs_number = NHS_NUMBER_USED_IN_SAMPLE_DATA
-        vaccine_types = [VaccineTypes.covid_19]
+        vaccine_types = ["COVID19"]
 
         # When
         result = self.fhir_service.search_immunizations(nhs_number, vaccine_types, "")
@@ -915,7 +951,7 @@ class TestSearchImmunizations(unittest.TestCase):
             "meta": {"security": [{"code": "U"}]},
         }
         nhs_number = VALID_NHS_NUMBER
-        vaccine_types = [VaccineTypes.covid_19]
+        vaccine_types = ["COVID19"]
 
         # When
         result = self.fhir_service.search_immunizations(nhs_number, vaccine_types, "")
@@ -936,7 +972,7 @@ class TestSearchImmunizations(unittest.TestCase):
             "meta": {"security": [{"code": "U"}]},
         }
         nhs_number = VALID_NHS_NUMBER
-        vaccine_types = [VaccineTypes.covid_19]
+        vaccine_types = ["COVID19"]
 
         # When
         result = self.fhir_service.search_immunizations(nhs_number, vaccine_types, "")

@@ -1,6 +1,6 @@
 import unittest
 from datetime import datetime, timezone
-from src.extractor import Extractor 
+from extractor import Extractor 
 
 
 class TestIsCurrentPeriod(unittest.TestCase):

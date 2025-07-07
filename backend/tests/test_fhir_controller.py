@@ -28,20 +28,33 @@ from models.errors import (
     IdentifierDuplicationError,
 )
 from tests.utils.immunization_utils import create_covid_19_immunization
-from mappings import VaccineTypes
 from parameter_parser import patient_identifier_system, process_search_params
 from tests.utils.generic_utils import load_json_data
 from tests.utils.values_for_tests import ValidValues
 
-"test"
+class TestFhirControllerBase(unittest.TestCase):
+    """Base class for all tests to set up common fixtures"""
 
-
-class TestFhirController(unittest.TestCase):
     def setUp(self):
+        super().setUp()
+        self.redis_patcher = patch("parameter_parser.redis_client")
+        self.mock_redis_client = self.redis_patcher.start()
+        self.logger_info_patcher = patch("logging.Logger.info")
+        self.mock_logger_info = self.logger_info_patcher.start()
+
+    def tearDown(self):
+        self.redis_patcher.stop()
+        self.logger_info_patcher.stop()
+        super().tearDown()
+
+class TestFhirController(TestFhirControllerBase):
+    def setUp(self):
+        super().setUp()
         self.service = create_autospec(FhirService)
         self.repository = create_autospec(ImmunizationRepository)
         self.authorizer = create_autospec(Authorization)
         self.controller = FhirController(self.authorizer, self.service)
+
 
     def test_create_response(self):
         """it should return application/fhir+json with correct status code"""
@@ -133,7 +146,6 @@ class TestFhirControllerGetImmunizationByIdentifier(unittest.TestCase):
         response = self.controller.get_immunization_by_identifier(lambda_event)
 
         self.assertEqual(response["statusCode"], 403)
-    
     @patch("fhir_controller.get_supplier_permissions")
     def test_not_found_for_identifier(self, mock_get_permissions):
         """it should return not-found OperationOutcome if it doesn't exist"""
@@ -165,7 +177,6 @@ class TestFhirControllerGetImmunizationByIdentifier(unittest.TestCase):
 
         imms = identifier.replace("|", "#")
         # When
-        
         response = self.controller.get_immunization_by_identifier(lambda_event)
 
         # Then
@@ -200,7 +211,6 @@ class TestFhirControllerGetImmunizationByIdentifier(unittest.TestCase):
         self.assertEqual(response["statusCode"], 400)
         body = json.loads(response["body"])
         self.assertEqual(body["resourceType"], "OperationOutcome")
-    
     @patch("fhir_controller.get_supplier_permissions")
     def test_get_imms_by_identifer_both_body_and_query_params_present(self, mock_get_supplier_permissions):
         """it should return Immunization Id if it exists"""
@@ -422,7 +432,6 @@ class TestFhirControllerGetImmunizationByIdentifier(unittest.TestCase):
         self.assertEqual(response["statusCode"], 400)
         outcome = json.loads(response["body"])
         self.assertEqual(outcome["resourceType"], "OperationOutcome")
-    
     @patch("fhir_controller.get_supplier_permissions")
     def test_validate_imms_id_invalid_vaccinetype(self, mock_get_permissions):
         """it should validate lambda's Immunization id"""
@@ -738,7 +747,6 @@ class TestFhirControllerGetImmunizationByIdentifierPost(unittest.TestCase):
         self.assertEqual(response["statusCode"], 400)
         outcome = json.loads(response["body"])
         self.assertEqual(outcome["resourceType"], "OperationOutcome")
-   
     @patch("fhir_controller.get_supplier_permissions")
     def test_validate_imms_id_invalid_vaccinetype(self, mock_get_permissions):
         """it should validate lambda's Immunization id"""
@@ -820,7 +828,6 @@ class TestFhirControllerGetImmunizationById(unittest.TestCase):
         # Then
         mock_permissions.assert_called_once_with("test")
         self.assertEqual(response["statusCode"], 403)
-    
     @patch("fhir_controller.get_supplier_permissions")
     def test_get_imms_by_id_no_vax_permission(self, mock_permissions):
         """it should return Immunization Id if it exists"""
@@ -1142,7 +1149,6 @@ class TestUpdateImmunization(unittest.TestCase):
         response = self.controller.update_immunization(aws_event)
         mock_get_supplier_permissions.assert_called_once_with("Test")
         self.assertEqual(response["statusCode"], 403)
-    
     @patch("fhir_controller.get_supplier_permissions")
     def test_update_immunization_UnauthorizedVaxError_check_for_non_batch(self, mock_get_supplier_permissions):
         """it should not update the Immunization record"""
@@ -1573,7 +1579,6 @@ class TestDeleteImmunization(unittest.TestCase):
         body = json.loads(response["body"])
         self.assertEqual(body["resourceType"], "OperationOutcome")
         self.assertEqual(body["issue"][0]["code"], "not-found")
-    
     @patch("fhir_controller.get_supplier_permissions")
     def test_immunization_unhandled_error(self, mock_get_supplier_permissions):
         """it should return server-error OperationOutcome if service throws UnhandledResponseError"""
@@ -1596,8 +1601,13 @@ class TestDeleteImmunization(unittest.TestCase):
         self.assertEqual(body["resourceType"], "OperationOutcome")
         self.assertEqual(body["issue"][0]["code"], "exception")
 
-class TestSearchImmunizations(unittest.TestCase):
+class TestSearchImmunizations(TestFhirControllerBase):
+    MOCK_REDIS_V2D_HKEYS = {
+        "PERTUSSIS", "RSV", "3in1", "MMR", "HPV", "MMRV", "PCV13",
+        "SHINGLES", "COVID19", "FLU", "MENACWY"
+    }
     def setUp(self):
+        super().setUp()
         self.service = create_autospec(FhirService)
         self.authorizer = create_autospec(Authorization)
         self.controller = FhirController(self.authorizer, self.service)
@@ -1607,11 +1617,11 @@ class TestSearchImmunizations(unittest.TestCase):
         self.date_to_key = "-date.to"
         self.nhs_number_valid_value = "9000000009"
         self.patient_identifier_valid_value = f"{patient_identifier_system}|{self.nhs_number_valid_value}"
+        self.mock_redis_client.hkeys.return_value = self.MOCK_REDIS_V2D_HKEYS
 
     @patch("fhir_controller.get_supplier_permissions")
     def test_get_search_immunizations(self, mock_get_supplier_permissions):
         """it should search based on patient_identifier and immunization_target"""
-        
         mock_get_supplier_permissions.return_value = ["COVID19.S"]
         search_result = Bundle.construct()
         self.service.search_immunizations.return_value = search_result
@@ -1650,7 +1660,7 @@ class TestSearchImmunizations(unittest.TestCase):
         search_result = Bundle.construct()
         self.service.search_immunizations.return_value = search_result
 
-        vaccine_type = VaccineTypes().all[0]
+        vaccine_type = "COVID19"
         lambda_event = {
             "SupplierSystem": "test",
             "multiValueQueryStringParameters": {
@@ -1673,7 +1683,7 @@ class TestSearchImmunizations(unittest.TestCase):
         bundle = Bundle.parse_obj(search_result)
         self.service.search_immunizations.return_value = bundle
 
-        vaccine_type = VaccineTypes().all[0], VaccineTypes().all[1]
+        vaccine_type = ["COVID19", "FLU"]
         vaccine_type = ",".join(vaccine_type)
 
         lambda_event = {
@@ -1727,9 +1737,7 @@ class TestSearchImmunizations(unittest.TestCase):
         mock_get_supplier_permissions.return_value = []
         self.service.search_immunizations.return_value = bundle
 
-        vaccine_type = VaccineTypes().all[0], VaccineTypes().all[1]
-        vaccine_type = ",".join(vaccine_type)
-
+        vaccine_type = "COVID19,FLU"
         lambda_event = {
             "headers": {"Content-Type": "application/x-www-form-urlencoded", "SupplierSystem": "test",},
             "multiValueQueryStringParameters": {
@@ -1752,7 +1760,7 @@ class TestSearchImmunizations(unittest.TestCase):
         mock_get_supplier_permissions.return_value = []
         self.service.search_immunizations.return_value = search_result
 
-        vaccine_type = VaccineTypes().all[0]
+        vaccine_type = "COVID19"
         params = f"{self.immunization_target_key}={vaccine_type}&" + urllib.parse.urlencode(
             [(f"{self.patient_identifier_key}", f"{self.patient_identifier_valid_value}")]
         )
@@ -1795,7 +1803,6 @@ class TestSearchImmunizations(unittest.TestCase):
             "headers": {"Content-Type": "application/x-www-form-urlencoded", "SupplierSystem": "Test"},
             "body": base64_encoded_body,
         }
-        
         # When
         response = self.controller.search_immunizations(lambda_event)
         # Then
@@ -1880,7 +1887,7 @@ class TestSearchImmunizations(unittest.TestCase):
         mock_get_supplier_permissions.return_value = []
         self.service.search_immunizations.return_value = bundle
 
-        vaccine_type = VaccineTypes().all[0], VaccineTypes().all[1]
+        vaccine_type = ["COVID19", "FLU"]
         vaccine_type = ",".join(vaccine_type)
 
         # Construct the application/x-www-form-urlencoded body
@@ -1906,6 +1913,7 @@ class TestSearchImmunizations(unittest.TestCase):
 
     @patch("fhir_controller.process_search_params", wraps=process_search_params)
     def test_uses_parameter_parser(self, process_search_params: Mock):
+        self.mock_redis_client.hkeys.return_value = self.MOCK_REDIS_V2D_HKEYS
         lambda_event = {
             "multiValueQueryStringParameters": {
                 self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
@@ -2001,7 +2009,7 @@ class TestSearchImmunizations(unittest.TestCase):
     def test_self_link_excludes_extraneous_params(self, mock_get_supplier_permissions):
         search_result = Bundle.construct()
         self.service.search_immunizations.return_value = search_result
-        vaccine_type = VaccineTypes().all[0]
+        vaccine_type = "COVID19"
         mock_get_supplier_permissions.return_value = ["covid19.CUDS"]
         params = f"{self.immunization_target_key}={vaccine_type}&" + urllib.parse.urlencode(
             [(f"{self.patient_identifier_key}", f"{self.patient_identifier_valid_value}")]

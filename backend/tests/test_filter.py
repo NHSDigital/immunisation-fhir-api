@@ -5,8 +5,8 @@ from uuid import uuid4
 
 import unittest
 
-from src.constants import Urls
-from src.filter import (
+from constants import Urls
+from filter import (
     Filter,
     remove_reference_to_contained_practitioner,
     create_reference_to_patient_resource,

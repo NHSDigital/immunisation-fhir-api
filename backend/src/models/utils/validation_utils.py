@@ -2,15 +2,15 @@
 
 import json
 
-
 from typing import Union
-from mappings import vaccine_type_mappings
 from .generic_utils import create_diagnostics_error
 from base_utils.base_utils import obtain_field_location
 from models.obtain_field_value import ObtainFieldValue
 from models.field_names import FieldNames
 from models.errors import MandatoryError
 from constants import Urls
+from models.constants import Constants
+from clients import redis_client
 
 
 def get_target_disease_codes(immunization: dict):
@@ -52,17 +52,15 @@ def convert_disease_codes_to_vaccine_type(disease_codes_input: list) -> Union[st
     Takes a list of disease codes and returns the corresponding vaccine type if found,
     otherwise raises a value error
     """
-    try:
-        return next(
-            vaccine_type
-            for disease_codes, vaccine_type in vaccine_type_mappings
-            if sorted(disease_codes_input) == disease_codes
-        )
-    except Exception as e:
+    key = ":".join(sorted(disease_codes_input))
+    vaccine_type = redis_client.hget(Constants.DISEASES_TO_VACCINE_TYPE_HASH_KEY, key)
+    
+    if not vaccine_type:
         raise ValueError(
             f"Validation errors: protocolApplied[0].targetDisease[*].coding[?(@.system=='http://snomed.info/sct')].code - "
             f"{disease_codes_input} is not a valid combination of disease codes for this service"
-        ) from e
+        )
+    return vaccine_type
 
 
 def get_vaccine_type(immunization: dict):
