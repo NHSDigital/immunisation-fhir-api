@@ -324,8 +324,6 @@ class TestCreateImmunizationPatientIndex(TestFhirRepositoryBase):
         self.repository = ImmunizationRepository(table=self.table)
         self.patient = {"id": "a-patient-id"}
 
-    def tearDown(self):
-        super().tearDown()
 
     def test_create_patient_gsi(self):
         """create Immunization method should create Patient index with nhs-number as ID and no system"""
