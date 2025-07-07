@@ -417,9 +417,9 @@ class TestCreateImmunization(TestFhirServiceBase):
         self.imms_repo.create_immunization.assert_not_called()
         self.pds_service.get_patient_details.assert_not_called()
 
-    def test_post_validation_failed(self):
-        """it should throw exception if Immunization is not valid"""
-        self.mock_redis_client.hget.side_effect = [None, 'COVID-19']
+    def test_post_validation_failed_create_invalid_target_disease(self):
+        """it should raise CustomValidationError for invalid target disease code on create"""
+        self.mock_redis_client.hget.return_value = None
         valid_imms = create_covid_19_immunization_dict_no_id(VALID_NHS_NUMBER)
 
         bad_target_disease_imms = deepcopy(valid_imms)
@@ -429,6 +429,20 @@ class TestCreateImmunization(TestFhirServiceBase):
             + ".code - ['bad-code'] is not a valid combination of disease codes for this service"
         )
 
+        fhir_service = FhirService(self.imms_repo, self.pds_service)
+
+        with self.assertRaises(CustomValidationError) as error:
+            fhir_service.create_immunization(bad_target_disease_imms, "COVID19:create", "Test")
+
+        self.assertEqual(bad_target_disease_msg, error.exception.message)
+        self.imms_repo.create_immunization.assert_not_called()
+        self.pds_service.get_patient_details.assert_not_called()
+
+    def test_post_validation_failed_create_missing_patient_name(self):
+        """it should raise CustomValidationError for missing patient name on create"""
+        self.mock_redis_client.hget.return_value = 'COVID-19'
+        valid_imms = create_covid_19_immunization_dict_no_id(VALID_NHS_NUMBER)
+
         bad_patient_name_imms = deepcopy(valid_imms)
         del bad_patient_name_imms["contained"][1]["name"][0]["given"]
         bad_patient_name_msg = (
@@ -437,16 +451,6 @@ class TestCreateImmunization(TestFhirServiceBase):
 
         fhir_service = FhirService(self.imms_repo, self.pds_service)
 
-        # Create
-        # Invalid target_disease
-        with self.assertRaises(CustomValidationError) as error:
-            fhir_service.create_immunization(bad_target_disease_imms, "COVID19:create", "Test")
-
-        self.assertEqual(bad_target_disease_msg, error.exception.message)
-        self.imms_repo.create_immunization.assert_not_called()
-        self.pds_service.get_patient_details.assert_not_called()
-
-        # Missing patient name (Mandatory field)
         with self.assertRaises(CustomValidationError) as error:
             fhir_service.create_immunization(bad_patient_name_imms, "COVID19:create", "Test")
 
