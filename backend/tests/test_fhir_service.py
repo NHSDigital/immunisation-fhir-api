@@ -13,7 +13,6 @@ from fhir.resources.R4B.bundle import Bundle as FhirBundle, BundleEntry
 from fhir.resources.R4B.immunization import Immunization
 from fhir_repository import ImmunizationRepository
 from fhir_service import FhirService, UpdateOutcome, get_service_url
-from mappings import VaccineTypes
 from models.errors import InvalidPatientId, CustomValidationError
 from models.fhir_immunization import ImmunizationValidator
 from pds_service import PdsService
@@ -594,7 +593,7 @@ class TestSearchImmunizations(unittest.TestCase):
     def test_vaccine_type_search(self):
         """It should search for the correct vaccine type"""
         nhs_number = VALID_NHS_NUMBER
-        vaccine_type = VaccineTypes.covid_19
+        vaccine_type = "COVID19"
         params = f"{self.nhs_search_param}={nhs_number}&{self.vaccine_type_search_param}={vaccine_type}"
 
         # When
@@ -613,7 +612,7 @@ class TestSearchImmunizations(unittest.TestCase):
             "meta": {"security": [{"code": "U"}]},
         }
         nhs_number = NHS_NUMBER_USED_IN_SAMPLE_DATA
-        vaccine_types = [VaccineTypes.covid_19]
+        vaccine_types = ["COVID19"]
         params = f"{self.nhs_search_param}={nhs_number}&{self.vaccine_type_search_param}={vaccine_types}"
         # When
         result = self.fhir_service.search_immunizations(nhs_number, vaccine_types, params)
@@ -645,7 +644,7 @@ class TestSearchImmunizations(unittest.TestCase):
             "meta": {"security": [{"code": "U"}]},
         }
         nhs_number = NHS_NUMBER_USED_IN_SAMPLE_DATA
-        vaccine_types = [VaccineTypes.covid_19]
+        vaccine_types = ["COVID19"]
 
         # CASE: Day before.
         self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
@@ -708,7 +707,7 @@ class TestSearchImmunizations(unittest.TestCase):
             "meta": {"security": [{"code": "U"}]},
         }
         nhs_number = NHS_NUMBER_USED_IN_SAMPLE_DATA
-        vaccine_types = [VaccineTypes.covid_19]
+        vaccine_types = ["COVID19"]
 
         # CASE: Without date_from
         self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
@@ -748,7 +747,7 @@ class TestSearchImmunizations(unittest.TestCase):
             "meta": {"security": [{"code": "U"}]},
         }
         nhs_number = NHS_NUMBER_USED_IN_SAMPLE_DATA
-        vaccine_types = [VaccineTypes.covid_19]
+        vaccine_types = ["COVID19"]
 
         # CASE: Day after.
         self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
@@ -813,7 +812,7 @@ class TestSearchImmunizations(unittest.TestCase):
             "meta": {"security": [{"code": "U"}]},
         }
         nhs_number = NHS_NUMBER_USED_IN_SAMPLE_DATA
-        vaccine_types = [VaccineTypes.covid_19]
+        vaccine_types = ["COVID19"]
 
         # CASE 1: Without date_to argument
         self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
@@ -851,7 +850,7 @@ class TestSearchImmunizations(unittest.TestCase):
             for imms_id in imms_ids
         ]
 
-        vaccine_types = [VaccineTypes.covid_19]
+        vaccine_types = ["COVID19"]
         self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
 
         # When
@@ -896,7 +895,7 @@ class TestSearchImmunizations(unittest.TestCase):
             "meta": {"security": [{"code": "U"}]},
         }
         nhs_number = NHS_NUMBER_USED_IN_SAMPLE_DATA
-        vaccine_types = [VaccineTypes.covid_19]
+        vaccine_types = ["COVID19"]
 
         # When
         result = self.fhir_service.search_immunizations(nhs_number, vaccine_types, "")
@@ -922,7 +921,7 @@ class TestSearchImmunizations(unittest.TestCase):
             "meta": {"security": [{"code": "U"}]},
         }
         nhs_number = NHS_NUMBER_USED_IN_SAMPLE_DATA
-        vaccine_types = [VaccineTypes.covid_19]
+        vaccine_types = ["COVID19"]
 
         # When
         result = self.fhir_service.search_immunizations(nhs_number, vaccine_types, "")
@@ -948,7 +947,7 @@ class TestSearchImmunizations(unittest.TestCase):
             "meta": {"security": [{"code": "U"}]},
         }
         nhs_number = VALID_NHS_NUMBER
-        vaccine_types = [VaccineTypes.covid_19]
+        vaccine_types = ["COVID19"]
 
         # When
         result = self.fhir_service.search_immunizations(nhs_number, vaccine_types, "")
@@ -969,7 +968,7 @@ class TestSearchImmunizations(unittest.TestCase):
             "meta": {"security": [{"code": "U"}]},
         }
         nhs_number = VALID_NHS_NUMBER
-        vaccine_types = [VaccineTypes.covid_19]
+        vaccine_types = ["COVID19"]
 
         # When
         result = self.fhir_service.search_immunizations(nhs_number, vaccine_types, "")

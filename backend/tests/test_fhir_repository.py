@@ -6,7 +6,6 @@ from unittest.mock import MagicMock, patch, ANY
 
 import botocore.exceptions
 from boto3.dynamodb.conditions import Attr, Key
-from mappings import DiseaseCodes, VaccineTypes
 from fhir_repository import ImmunizationRepository
 from models.utils.validation_utils import get_vaccine_type
 from models.errors import (
@@ -351,10 +350,10 @@ class TestCreateImmunizationPatientIndex(TestFhirRepositoryBase):
 
     def test_create_patient_with_vaccine_type(self):
         """Patient record should have a sort-key based on vaccine-type"""
-        self.mock_redis_client.hget.return_value = VaccineTypes.flu
+        self.mock_redis_client.hget.return_value = "FLU"
         imms = create_covid_19_immunization_dict("an-id")
 
-        update_target_disease_code(imms, DiseaseCodes.flu)
+        update_target_disease_code(imms, "FLU")
         vaccine_type = get_vaccine_type(imms)
 
         self.table.query = MagicMock(return_value={"Count": 0})
@@ -382,7 +381,7 @@ class TestCreateImmunizationPatientIndex(TestFhirRepositoryBase):
             }
         }
 
-        update_target_disease_code(imms, DiseaseCodes.flu)
+        update_target_disease_code(imms, "FLU")
         with self.assertRaises(UnauthorizedVaxError) as e:
             # When
             self.repository.create_immunization(imms, self.patient, ["COVID19.CRUD"], "Test")
@@ -666,7 +665,7 @@ class TestFindImmunizations(unittest.TestCase):
         condition = Key("PatientPK").eq(_make_patient_pk(nhs_number))
 
         # When
-        _ = self.repository.find_immunizations(nhs_number, vaccine_types=[VaccineTypes.covid_19])
+        _ = self.repository.find_immunizations(nhs_number, vaccine_types=["COVID19"])
 
         # Then
         self.table.query.assert_called_once_with(
@@ -683,7 +682,7 @@ class TestFindImmunizations(unittest.TestCase):
         is_ = Attr("DeletedAt").not_exists() | Attr("DeletedAt").eq("reinstated")
 
         # When
-        _ = self.repository.find_immunizations("an-id", [VaccineTypes.covid_19])
+        _ = self.repository.find_immunizations("an-id", ["COVID19"])
 
         # Then
         self.table.query.assert_called_once_with(
@@ -709,7 +708,7 @@ class TestFindImmunizations(unittest.TestCase):
         self.table.query = MagicMock(return_value=dynamo_response)
 
         # When
-        results = self.repository.find_immunizations("an-id", [VaccineTypes.covid_19])
+        results = self.repository.find_immunizations("an-id", ["COVID19"])
 
         # Then
         self.assertListEqual(results, [imms1, imms2])
@@ -722,7 +721,7 @@ class TestFindImmunizations(unittest.TestCase):
 
         with self.assertRaises(UnhandledResponseError) as e:
             # When
-            self.repository.find_immunizations("an-id", [VaccineTypes.covid_19])
+            self.repository.find_immunizations("an-id", ["COVID19"])
 
         # Then
         self.assertDictEqual(e.exception.response, response)

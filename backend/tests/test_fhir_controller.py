@@ -28,7 +28,6 @@ from models.errors import (
     IdentifierDuplicationError,
 )
 from tests.utils.immunization_utils import create_covid_19_immunization
-from mappings import VaccineTypes
 from parameter_parser import patient_identifier_system, process_search_params
 from tests.utils.generic_utils import load_json_data
 from tests.utils.values_for_tests import ValidValues
@@ -1666,7 +1665,7 @@ class TestSearchImmunizations(TestFhirControllerBase):
         search_result = Bundle.construct()
         self.service.search_immunizations.return_value = search_result
 
-        vaccine_type = VaccineTypes().all[0]
+        vaccine_type = "COVID19"
         lambda_event = {
             "SupplierSystem": "test",
             "multiValueQueryStringParameters": {
@@ -1689,7 +1688,7 @@ class TestSearchImmunizations(TestFhirControllerBase):
         bundle = Bundle.parse_obj(search_result)
         self.service.search_immunizations.return_value = bundle
 
-        vaccine_type = VaccineTypes().all[0], VaccineTypes().all[1]
+        vaccine_type = ["COVID19", "FLU"]
         vaccine_type = ",".join(vaccine_type)
 
         lambda_event = {
@@ -1743,9 +1742,7 @@ class TestSearchImmunizations(TestFhirControllerBase):
         mock_get_supplier_permissions.return_value = []
         self.service.search_immunizations.return_value = bundle
 
-        vaccine_type = VaccineTypes().all[0], VaccineTypes().all[1]
-        vaccine_type = ",".join(vaccine_type)
-
+        vaccine_type = "COVID19,FLU"
         lambda_event = {
             "headers": {"Content-Type": "application/x-www-form-urlencoded", "SupplierSystem": "test",},
             "multiValueQueryStringParameters": {
@@ -1768,7 +1765,7 @@ class TestSearchImmunizations(TestFhirControllerBase):
         mock_get_supplier_permissions.return_value = []
         self.service.search_immunizations.return_value = search_result
 
-        vaccine_type = VaccineTypes().all[0]
+        vaccine_type = "COVID19"
         params = f"{self.immunization_target_key}={vaccine_type}&" + urllib.parse.urlencode(
             [(f"{self.patient_identifier_key}", f"{self.patient_identifier_valid_value}")]
         )
@@ -1895,7 +1892,7 @@ class TestSearchImmunizations(TestFhirControllerBase):
         mock_get_supplier_permissions.return_value = []
         self.service.search_immunizations.return_value = bundle
 
-        vaccine_type = VaccineTypes().all[0], VaccineTypes().all[1]
+        vaccine_type = ["COVID19", "FLU"]
         vaccine_type = ",".join(vaccine_type)
 
         # Construct the application/x-www-form-urlencoded body
@@ -2017,7 +2014,7 @@ class TestSearchImmunizations(TestFhirControllerBase):
     def test_self_link_excludes_extraneous_params(self, mock_get_supplier_permissions):
         search_result = Bundle.construct()
         self.service.search_immunizations.return_value = search_result
-        vaccine_type = VaccineTypes().all[0]
+        vaccine_type = "COVID19"
         mock_get_supplier_permissions.return_value = ["covid19.CUDS"]
         params = f"{self.immunization_target_key}={vaccine_type}&" + urllib.parse.urlencode(
             [(f"{self.patient_identifier_key}", f"{self.patient_identifier_valid_value}")]
