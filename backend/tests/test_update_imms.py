@@ -17,7 +17,7 @@ class TestUpdateImmunizations(unittest.TestCase):
         self.mock_logger_info = self.logger_info_patcher.start()
 
     def tearDown(self):
-        self.logger_exception_patcher.stop()
+        patch.stopall()
 
 
     def test_update_immunization(self):

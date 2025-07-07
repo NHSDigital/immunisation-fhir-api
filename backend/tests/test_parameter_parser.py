@@ -111,7 +111,8 @@ class TestParameterParser(unittest.TestCase):
         self.assertIsNotNone(params)
 
     def test_process_search_params_whitelists_immunization_target(self):
-        self.mock_redis_client.hkeys.return_value = ["RSV"]
+        mock_redis_key = "RSV"
+        self.mock_redis_client.hkeys.return_value = [mock_redis_key]
         with self.assertRaises(ParameterException) as e:
             process_search_params(
                 {
@@ -119,8 +120,8 @@ class TestParameterParser(unittest.TestCase):
                     self.immunization_target_key: ["not-a-code"],
                 }
             )
-        self.assertTrue(
-            str(e.exception).startswith("immunization-target must be one or more of the following:"),
+        self.assertEqual(
+            str(e.exception), f"immunization-target must be one or more of the following: {mock_redis_key}",
             f"Unexpected exception message: {str(e.exception)}"
         )
 
