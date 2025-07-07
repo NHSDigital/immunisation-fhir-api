@@ -48,7 +48,7 @@ class TestCreateImmunization(TestImmunizationBatchRepository):
 
     def create_immunization_test_logic(self, is_present, remove_nhs):
         """Common logic for testing immunization creation."""
-        self.mock_redis_client.hget.side_effect = [None, 'COVID19']
+        self.mock_redis_client.hget.side_effect = ['COVID19']
         self.modify_immunization(remove_nhs)
 
         self.repository.create_immunization(
