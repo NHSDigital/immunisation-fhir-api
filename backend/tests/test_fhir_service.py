@@ -79,7 +79,6 @@ class TestGetImmunizationByAll(TestFhirServiceBase):
 
     def tearDown(self):
         super().tearDown()
-        patch.stopall()
 
     def test_get_immunization_by_id_by_all(self):
         """it should find an Immunization by id"""

@@ -12,8 +12,7 @@ from models.errors import (
     ResourceNotFoundError,
     UnhandledResponseError,
     IdentifierDuplicationError,
-    UnauthorizedVaxError,
-    UnauthorizedVaxOnRecordError
+    UnauthorizedVaxError
 )
 from tests.utils.generic_utils import update_target_disease_code
 from tests.utils.immunization_utils import create_covid_19_immunization_dict
@@ -48,7 +47,6 @@ class TestGetImmunizationByIdentifier(TestFhirRepositoryBase):
         self.repository = ImmunizationRepository(table=self.table)
 
     def tearDown(self):
-        self.redis_patcher.stop()
         super().tearDown()
 
     def test_get_immunization_by_identifier(self):
