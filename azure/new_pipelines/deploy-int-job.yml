@@ -8,218 +8,226 @@ parameters:
     type: string
     default: "green"
 
-steps:
-  - template: "azure/components/aws-assume-role.yml@common"
-    parameters:
-      role: "auto-ops"
-      profile: "apm_ptl"
+jobs:
+  - job: deploy
+    displayName: Deployment
+    timeoutInMinutes: 30
+    pool:
+      name: 'AWS-ECS'
+    workspace:
+      clean: all
+    steps:
+      - template: "azure/components/aws-assume-role.yml@common"
+        parameters:
+          role: "auto-ops"
+          profile: "apm_ptl"
 
-  - template: "azure/components/get-aws-secrets-and-ssm-params.yml@common"
-    parameters:
-      secret_file_ids:
-        - ptl/app-credentials/jwt_testing/non-prod/JWT_TESTING_PRIVATE_KEY
-      secret_ids:
-        - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INTROSPECTION_CLIENT_ID
-        - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INTROSPECTION_CLIENT_SECRET
-        - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INTROSPECTION_CLIENT_ID_INT
-        - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INTROSPECTION_CLIENT_SECRET_INT
-        - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INT_CLIENT_ID
-        - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INT_CLIENT_SECRET
+      - template: "azure/components/get-aws-secrets-and-ssm-params.yml@common"
+        parameters:
+          secret_file_ids:
+            - ptl/app-credentials/jwt_testing/non-prod/JWT_TESTING_PRIVATE_KEY
+          secret_ids:
+            - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INTROSPECTION_CLIENT_ID
+            - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INTROSPECTION_CLIENT_SECRET
+            - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INTROSPECTION_CLIENT_ID_INT
+            - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INTROSPECTION_CLIENT_SECRET_INT
+            - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INT_CLIENT_ID
+            - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INT_CLIENT_SECRET
 
-  - bash: |
-      make install-python
-    workingDirectory: $(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)
-    displayName: Setup pytests
-    condition: always()
+      - bash: |
+          make install-python
+        workingDirectory: $(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)
+        displayName: Setup pytests
+        condition: always()
 
-  - template: ./aws-assume-role-new-int.yml
-    parameters:
-      role: "auto-ops"
-      profile: "apim-dev" # centralise 
-      aws_account_id: "084828561157"
+      - template: ./aws-assume-role-new-int.yml
+        parameters:
+          role: "auto-ops"
+          profile: "apim-dev" # centralise 
+          aws_account_id: "084828561157"
 
-  - bash: |
-      set -e
-      if ! [[ $APIGEE_ENVIRONMENT =~ .*-*sandbox ]]; then
-        export AWS_PROFILE=apim-dev 
-        aws_account_no="$(aws sts get-caller-identity --query Account --output text)"
+      - bash: |
+          set -e
+          if ! [[ $APIGEE_ENVIRONMENT =~ .*-*sandbox ]]; then
+            export AWS_PROFILE=apim-dev 
+            aws_account_no="$(aws sts get-caller-identity --query Account --output text)"
 
-        service_name=$(FULLY_QUALIFIED_SERVICE_NAME)
-        # pr_no=$(echo $service_name | { grep -oE '[0-9]+$' || true; })
-        # if [ -z $pr_no ]; then
-        #   workspace=${{ parameters.tf_environment }}
-        # else
-        #   workspace=pr-$pr_no
-        # fi
+            service_name=$(FULLY_QUALIFIED_SERVICE_NAME)
+            # pr_no=$(echo $service_name | { grep -oE '[0-9]+$' || true; })
+            # if [ -z $pr_no ]; then
+            #   workspace=${{ parameters.tf_environment }}
+            # else
+            #   workspace=pr-$pr_no
+            # fi
 
-        workspace=${{ parameters.tf_environment }}
+            workspace=${{ parameters.tf_environment }}
 
-        echo sandbox with following parameters:
-        echo service_name: $service_name
-        echo workspace: $workspace
-        echo Apigee environment: $APIGEE_ENVIRONMENT
-        echo pr_no: $pr_no
+            echo sandbox with following parameters:
+            echo service_name: $service_name
+            echo workspace: $workspace
+            echo Apigee environment: $APIGEE_ENVIRONMENT
+            echo pr_no: $pr_no
 
-        echo "Moving to dir: ${{ parameters.tf_dir }}"
-        cd ${{ parameters.tf_dir }}
+            echo "Moving to dir: ${{ parameters.tf_dir }}"
+            cd ${{ parameters.tf_dir }}
 
-        make init
-        make plan environment=$workspace bucket_name=immunisation-preprod-terraform-state-files
-        # make apply aws_account_no=${aws_account_no} environment=$workspace
+            make init
+            make plan environment=$workspace bucket_name=immunisation-preprod-terraform-state-files
+            # make apply aws_account_no=${aws_account_no} environment=$workspace
 
-        AWS_DOMAIN_NAME=$(make -s output name=service_domain_name)
-        IMMS_DELTA_TABLE_NAME=$(make -s output name=imms_delta_table_name)
-        DYNAMODB_TABLE_NAME=$(make -s output name=dynamodb_table_name)
-        AWS_SQS_QUEUE_NAME=$(make -s output name=aws_sqs_queue_name)
-        AWS_SNS_TOPIC_NAME=$(make -s output name=aws_sns_topic_name)
-        echo "##vso[task.setvariable variable=DYNAMODB_TABLE_NAME]$DYNAMODB_TABLE_NAME"
-        echo "##vso[task.setvariable variable=AWS_DOMAIN_NAME]$AWS_DOMAIN_NAME"
-        echo "##vso[task.setvariable variable=IMMS_DELTA_TABLE_NAME]$IMMS_DELTA_TABLE_NAME"
-        echo "##vso[task.setvariable variable=AWS_SQS_QUEUE_NAME]$AWS_SQS_QUEUE_NAME"
-        echo "##vso[task.setvariable variable=AWS_SNS_TOPIC_NAME]$AWS_SNS_TOPIC_NAME"
-      fi
-    displayName: Apply Terraform
-    workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)"
-    retryCountOnTaskFailure: 2
+            AWS_DOMAIN_NAME=$(make -s output name=service_domain_name)
+            IMMS_DELTA_TABLE_NAME=$(make -s output name=imms_delta_table_name)
+            DYNAMODB_TABLE_NAME=$(make -s output name=dynamodb_table_name)
+            AWS_SQS_QUEUE_NAME=$(make -s output name=aws_sqs_queue_name)
+            AWS_SNS_TOPIC_NAME=$(make -s output name=aws_sns_topic_name)
+            echo "##vso[task.setvariable variable=DYNAMODB_TABLE_NAME]$DYNAMODB_TABLE_NAME"
+            echo "##vso[task.setvariable variable=AWS_DOMAIN_NAME]$AWS_DOMAIN_NAME"
+            echo "##vso[task.setvariable variable=IMMS_DELTA_TABLE_NAME]$IMMS_DELTA_TABLE_NAME"
+            echo "##vso[task.setvariable variable=AWS_SQS_QUEUE_NAME]$AWS_SQS_QUEUE_NAME"
+            echo "##vso[task.setvariable variable=AWS_SNS_TOPIC_NAME]$AWS_SNS_TOPIC_NAME"
+          fi
+        displayName: Apply Terraform
+        workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)"
+        retryCountOnTaskFailure: 2
 
-  - bash: |
-      set -ex
+      - bash: |
+          set -ex
 
-      endpoint=""
-      if [[ $APIGEE_ENVIRONMENT =~ "prod" ]]; then
-        endpoint="https://api.service.nhs.uk/${SERVICE_BASE_PATH}/_status"
-      else
-        endpoint="https://${APIGEE_ENVIRONMENT}.api.service.nhs.uk/${SERVICE_BASE_PATH}/_status"
-      fi
+          endpoint=""
+          if [[ $APIGEE_ENVIRONMENT =~ "prod" ]]; then
+            endpoint="https://api.service.nhs.uk/${SERVICE_BASE_PATH}/_status"
+          else
+            endpoint="https://${APIGEE_ENVIRONMENT}.api.service.nhs.uk/${SERVICE_BASE_PATH}/_status"
+          fi
 
-      counter=0
-      while [[ $counter -lt 31 ]]; do
-        response=$(curl -H "apikey: $(status-endpoint-api-key)" -s "$endpoint")
-        response_code=$(jq -r '.checks.healthcheck.responseCode' <<< "$response")
-        response_body=$(jq -r '.checks.healthcheck.outcome' <<< "$response")
-        status=$(jq -r '.status' <<< "$response")
-        if [ "$response_code" -eq 200 ] && [ "$response_body" == "OK" ] && [ "$status" == "pass" ]; then
-            echo "Status test successful"
-            break
-        else
-            echo "Waiting for $endpoint to return a 200 response with 'OK' body..."
-            ((counter=counter+1)) # Increment counter by 1
-            echo "Attempt $counter"
-            sleep 30
-        fi
-      done
+          counter=0
+          while [[ $counter -lt 31 ]]; do
+            response=$(curl -H "apikey: $(status-endpoint-api-key)" -s "$endpoint")
+            response_code=$(jq -r '.checks.healthcheck.responseCode' <<< "$response")
+            response_body=$(jq -r '.checks.healthcheck.outcome' <<< "$response")
+            status=$(jq -r '.status' <<< "$response")
+            if [ "$response_code" -eq 200 ] && [ "$response_body" == "OK" ] && [ "$status" == "pass" ]; then
+                echo "Status test successful"
+                break
+            else
+                echo "Waiting for $endpoint to return a 200 response with 'OK' body..."
+                ((counter=counter+1)) # Increment counter by 1
+                echo "Attempt $counter"
+                sleep 30
+            fi
+          done
 
-      if [ $counter -eq 31 ]; then
-          echo "Status test failed: Maximum number of attempts reached"
-          echo "Last response received:"
-          echo "$response"
-          exit 1
-      fi
-    displayName: Wait for API to be available
-    workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)"
-    condition: eq(1, 2)
+          if [ $counter -eq 31 ]; then
+              echo "Status test failed: Maximum number of attempts reached"
+              echo "Last response received:"
+              echo "$response"
+              exit 1
+          fi
+        displayName: Wait for API to be available
+        workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)"
+        condition: eq(1, 2)
 
-  - bash: |
-      pyenv install -s 3.10.8
-      pyenv install -s 3.11.11
-      pyenv global 3.10.8
-      python --version
-    displayName: Install python 3.10 and 3.11
-    condition: eq(1, 2)
+      - bash: |
+          pyenv install -s 3.10.8
+          pyenv install -s 3.11.11
+          pyenv global 3.10.8
+          python --version
+        displayName: Install python 3.10 and 3.11
+        condition: eq(1, 2)
 
-  - bash: |
-      set -e
-      export RELEASE_RELEASEID=$(Build.BuildId)
-      export SOURCE_COMMIT_ID=$(Build.SourceVersion)
-      export APIGEE_ENVIRONMENT="$(ENVIRONMENT)"
-      export APIGEE_USERNAME=apm-testing-internal-dev@nhs.net
-      export SERVICE_BASE_PATH="$(SERVICE_BASE_PATH)"
-      export APIGEE_ACCESS_TOKEN="$(secret.AccessToken)"
-      export PROXY_NAME="$(FULLY_QUALIFIED_SERVICE_NAME)"
-      export STATUS_API_KEY="$(status-endpoint-api-key)"
-      export AWS_DOMAIN_NAME="$(AWS_DOMAIN_NAME)"
-      export DYNAMODB_TABLE_NAME="$(DYNAMODB_TABLE_NAME)"
-      export IMMS_DELTA_TABLE_NAME="$(IMMS_DELTA_TABLE_NAME)"
-      export AWS_SQS_QUEUE_NAME="$(AWS_SQS_QUEUE_NAME)"
-      export AWS_SNS_TOPIC_NAME="$(AWS_SNS_TOPIC_NAME)"
-      export APIGEE_APP_ID=973b20ff-6e57-4248-b94f-200a18a03e37
-      echo "api key- $STATUS_API_KEY"
+      - bash: |
+          set -e
+          export RELEASE_RELEASEID=$(Build.BuildId)
+          export SOURCE_COMMIT_ID=$(Build.SourceVersion)
+          export APIGEE_ENVIRONMENT="$(ENVIRONMENT)"
+          export APIGEE_USERNAME=apm-testing-internal-dev@nhs.net
+          export SERVICE_BASE_PATH="$(SERVICE_BASE_PATH)"
+          export APIGEE_ACCESS_TOKEN="$(secret.AccessToken)"
+          export PROXY_NAME="$(FULLY_QUALIFIED_SERVICE_NAME)"
+          export STATUS_API_KEY="$(status-endpoint-api-key)"
+          export AWS_DOMAIN_NAME="$(AWS_DOMAIN_NAME)"
+          export DYNAMODB_TABLE_NAME="$(DYNAMODB_TABLE_NAME)"
+          export IMMS_DELTA_TABLE_NAME="$(IMMS_DELTA_TABLE_NAME)"
+          export AWS_SQS_QUEUE_NAME="$(AWS_SQS_QUEUE_NAME)"
+          export AWS_SNS_TOPIC_NAME="$(AWS_SNS_TOPIC_NAME)"
+          export APIGEE_APP_ID=973b20ff-6e57-4248-b94f-200a18a03e37
+          echo "api key- $STATUS_API_KEY"
 
-      #Exporting the same profile with which Terraform got deployed
-      export AWS_PROFILE=apim-dev
-      aws_account_no="$(aws sts get-caller-identity --query Account --output text)"
-      echo aws_account_no: $aws_account_no
+          #Exporting the same profile with which Terraform got deployed
+          export AWS_PROFILE=apim-dev
+          aws_account_no="$(aws sts get-caller-identity --query Account --output text)"
+          echo aws_account_no: $aws_account_no
 
-      poetry lock --no-update
-      poetry install
+          poetry lock --no-update
+          poetry install
 
-      test_cmd="poetry run python -m unittest"
-      # Run test_deployment before doing anything. This will wait until deployment is ready
-      $test_cmd -c -v -k test_deployment
+          test_cmd="poetry run python -m unittest"
+          # Run test_deployment before doing anything. This will wait until deployment is ready
+          $test_cmd -c -v -k test_deployment
 
-      if [[ $APIGEE_ENVIRONMENT =~ .*-*sandbox ]]; then
-        echo "Sandbox env tests"
-        echo "running: $test_cmd -c -v -k test_proxy.TestProxyHealthcheck -k test_deployment"
-        $test_cmd -c -v -k test_proxy.TestProxyHealthcheck -k test_deployment
+          if [[ $APIGEE_ENVIRONMENT =~ .*-*sandbox ]]; then
+            echo "Sandbox env tests"
+            echo "running: $test_cmd -c -v -k test_proxy.TestProxyHealthcheck -k test_deployment"
+            $test_cmd -c -v -k test_proxy.TestProxyHealthcheck -k test_deployment
 
-      elif [[ $APIGEE_ENVIRONMENT == "ref" ]]; then
-        echo "running: $test_cmd -v -c test_deployment.py test_proxy.py"
-        $test_cmd -v -c test_deployment.py test_proxy.py
+          elif [[ $APIGEE_ENVIRONMENT == "ref" ]]; then
+            echo "running: $test_cmd -v -c test_deployment.py test_proxy.py"
+            $test_cmd -v -c test_deployment.py test_proxy.py
 
-      elif [[ $APIGEE_ENVIRONMENT == "int" ]]; then
-        export DEFAULT_CLIENT_ID="$(INT_CLIENT_ID)"
-        export DEFAULT_CLIENT_SECRET="$(INT_CLIENT_SECRET)"
-        echo "running: $test_cmd -v -c test_deployment.py test_proxy.py"
-        $test_cmd -v -c test_deployment.py test_proxy.py
+          elif [[ $APIGEE_ENVIRONMENT == "int" ]]; then
+            export DEFAULT_CLIENT_ID="$(INT_CLIENT_ID)"
+            export DEFAULT_CLIENT_SECRET="$(INT_CLIENT_SECRET)"
+            echo "running: $test_cmd -v -c test_deployment.py test_proxy.py"
+            $test_cmd -v -c test_deployment.py test_proxy.py
 
-      elif [[ $APIGEE_ENVIRONMENT == "prod" ]]; then
-        echo "Proxy test completed successfully as part of terraform resource up status check"
+          elif [[ $APIGEE_ENVIRONMENT == "prod" ]]; then
+            echo "Proxy test completed successfully as part of terraform resource up status check"
 
-      else
-        echo "running: $test_cmd -v -c"
-        $test_cmd -v -c
-      fi
-    workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/e2e"
-    displayName: Run Full Test Suite
-    condition: eq(1, 2)
+          else
+            echo "running: $test_cmd -v -c"
+            $test_cmd -v -c
+          fi
+        workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/e2e"
+        displayName: Run Full Test Suite
+        condition: eq(1, 2)
 
-  - bash: |
-      pyenv local 3.11
-      poetry env use 3.11
-      set -e
-      if ! [[ "$APIGEE_ENVIRONMENT" == "prod" || "$APIGEE_ENVIRONMENT" == "int" || "$APIGEE_ENVIRONMENT" == *"sandbox" ]]; then
-        echo "Running E2E batch folder test cases"
+      - bash: |
+          pyenv local 3.11
+          poetry env use 3.11
+          set -e
+          if ! [[ "$APIGEE_ENVIRONMENT" == "prod" || "$APIGEE_ENVIRONMENT" == "int" || "$APIGEE_ENVIRONMENT" == *"sandbox" ]]; then
+            echo "Running E2E batch folder test cases"
 
-        export AWS_PROFILE="apim-dev"
-        aws_account_no="$(aws sts get-caller-identity --query Account --output text)"
-        echo "Using AWS Account: $aws_account_no"
+            export AWS_PROFILE="apim-dev"
+            aws_account_no="$(aws sts get-caller-identity --query Account --output text)"
+            echo "Using AWS Account: $aws_account_no"
 
-        service_name="${FULLY_QUALIFIED_SERVICE_NAME}"
+            service_name="${FULLY_QUALIFIED_SERVICE_NAME}"
 
-        pr_no=$(echo "$service_name" | { grep -oE '[0-9]+$' || true; })
-        if [ -z "$pr_no" ]; then
-          workspace="$APIGEE_ENVIRONMENT"
-        else
-          workspace="pr-$pr_no"
-        fi
+            pr_no=$(echo "$service_name" | { grep -oE '[0-9]+$' || true; })
+            if [ -z "$pr_no" ]; then
+              workspace="$APIGEE_ENVIRONMENT"
+            else
+              workspace="pr-$pr_no"
+            fi
 
-        poetry install --no-root  # Install dependencies defined in pyproject.toml
+            poetry install --no-root  # Install dependencies defined in pyproject.toml
 
-        ENV="$workspace" poetry run python -m unittest -v -c
+            ENV="$workspace" poetry run python -m unittest -v -c
 
-        echo "E2E batch folder test cases executed successfully"
-      else
-        echo "Skipping E2E batch folder test cases as the environment is prod-int-sandbox"
-      fi
+            echo "E2E batch folder test cases executed successfully"
+          else
+            echo "Skipping E2E batch folder test cases as the environment is prod-int-sandbox"
+          fi
 
-    displayName: Run full batch test suite
-    workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/e2e_batch"
-    condition: eq(1, 2) # Disable task but make this step visible in the pipeline
+        displayName: Run full batch test suite
+        workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/e2e_batch"
+        condition: eq(1, 2) # Disable task but make this step visible in the pipeline
 
-  - task: PublishTestResults@2
-    displayName: 'Publish test results'
-    condition: always()
-    inputs:
-      testResultsFiles: '$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/tests/test-report.xml'
-      failTaskOnFailedTests: true
-    condition: eq(1, 2)
+      - task: PublishTestResults@2
+        displayName: 'Publish test results'
+        condition: always()
+        inputs:
+          testResultsFiles: '$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/tests/test-report.xml'
+          failTaskOnFailedTests: true
+        condition: eq(1, 2)
