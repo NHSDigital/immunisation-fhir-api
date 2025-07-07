@@ -1605,18 +1605,9 @@ class TestDeleteImmunization(unittest.TestCase):
         self.assertEqual(body["issue"][0]["code"], "exception")
 
 class TestSearchImmunizations(TestFhirControllerBase):
-    MOCK_REDIS_V2D_RESPONSE = {
-        "PERTUSSIS": "[{\"code\": \"27836007\", \"term\": \"Pertussis (disorder)\"}]",
-        "RSV": "[{\"code\": \"55735004\", \"term\": \"Respiratory syncytial virus infection (disorder)\"}]",
-        "3in1": "[{\"code\": \"398102009\", \"term\": \"Acute poliomyelitis\"}, {\"code\": \"397430003\", \"term\": \"Diphtheria caused by Corynebacterium diphtheriae\"}, {\"code\": \"76902006\", \"term\": \"Tetanus (disorder)\"}]",
-        "MMR": "[{\"code\": \"14189004\", \"term\": \"Measles (disorder)\"}, {\"code\": \"36989005\", \"term\": \"Mumps (disorder)\"}, {\"code\": \"36653000\", \"term\": \"Rubella (disorder)\"}]",
-        "HPV": "[{\"code\": \"240532009\", \"term\": \"Human papillomavirus infection\"}]",
-        "MMRV": "[{\"code\": \"14189004\", \"term\": \"Measles (disorder)\"}, {\"code\": \"36989005\", \"term\": \"Mumps (disorder)\"}, {\"code\": \"36653000\", \"term\": \"Rubella (disorder)\"}, {\"code\": \"38907003\", \"term\": \"Varicella (disorder)\"}]",
-        "PCV13": "[{\"code\": \"16814004\", \"term\": \"Pneumococcal infectious disease\"}]",
-        "SHINGLES": "[{\"code\": \"4740000\", \"term\": \"Herpes zoster\"}]",
-        "COVID19": "[{\"code\": \"840539006\", \"term\": \"Disease caused by severe acute respiratory syndrome coronavirus 2\"}]",
-        "FLU": "[{\"code\": \"6142004\", \"term\": \"Influenza caused by seasonal influenza virus (disorder)\"}]",
-        "MENACWY": "[{\"code\": \"23511006\", \"term\": \"Meningococcal infectious disease\"}]"
+    MOCK_REDIS_V2D_HKEYS = {
+        "PERTUSSIS", "RSV", "3in1", "MMR", "HPV", "MMRV", "PCV13",
+        "SHINGLES", "COVID19", "FLU", "MENACWY"
     }
     def setUp(self):
         super().setUp()
@@ -1629,7 +1620,7 @@ class TestSearchImmunizations(TestFhirControllerBase):
         self.date_to_key = "-date.to"
         self.nhs_number_valid_value = "9000000009"
         self.patient_identifier_valid_value = f"{patient_identifier_system}|{self.nhs_number_valid_value}"
-        self.mock_redis_client.hkeys.return_value = self.MOCK_REDIS_V2D_RESPONSE
+        self.mock_redis_client.hkeys.return_value = self.MOCK_REDIS_V2D_HKEYS
 
     def tearDown(self):
         return super().tearDown()
@@ -1930,7 +1921,7 @@ class TestSearchImmunizations(TestFhirControllerBase):
 
     @patch("fhir_controller.process_search_params", wraps=process_search_params)
     def test_uses_parameter_parser(self, process_search_params: Mock):
-        self.mock_redis_client.hkeys.return_value = self.MOCK_REDIS_V2D_RESPONSE
+        self.mock_redis_client.hkeys.return_value = self.MOCK_REDIS_V2D_HKEYS
         lambda_event = {
             "multiValueQueryStringParameters": {
                 self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
