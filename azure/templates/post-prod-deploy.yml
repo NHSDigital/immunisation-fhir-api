@@ -36,7 +36,7 @@ steps:
         echo workspace: $workspace
         echo AWS environment: $APIGEE_ENVIRONMENT
         
-          cd terraform
+        cd terraform
 
         make init
         make apply aws_account_no=${aws_account_no} environment=$workspace

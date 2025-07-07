@@ -1,0 +1,19 @@
+trigger: none
+pr: none
+
+stages:
+  - stage: GreenDeploy
+    displayName: "Deploy to Green"
+    jobs:
+      - template: templates/deploy-int-job.yml
+        parameters:
+          environmentName: green-env
+  - stage: BlueDeploy
+    displayName: "Deploy to Blue"
+    dependsOn: GreenDeploy
+    jobs:
+      - template: templates/deploy-int-job.yml
+        parameters:
+          environmentName: blue-env
+
+      
