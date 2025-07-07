@@ -226,8 +226,8 @@ jobs:
 
       - task: PublishTestResults@2
         displayName: 'Publish test results'
-        condition: always()
+        condition: eq(1, 2)
         inputs:
           testResultsFiles: '$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/tests/test-report.xml'
           failTaskOnFailedTests: true
-        condition: eq(1, 2)
+        
