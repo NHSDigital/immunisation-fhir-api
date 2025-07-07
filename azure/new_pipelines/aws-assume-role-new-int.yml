@@ -20,6 +20,7 @@ steps:
 
       echo "Running aws sts get-caller-identity:"
       aws sts get-caller-identity
+      aws iam list-attached-role-policies --role-name build-agent
 
       aws_role="$ROLE"
       aws_account_id="$AWS_ACCOUNT_ID"
