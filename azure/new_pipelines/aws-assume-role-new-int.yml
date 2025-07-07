@@ -21,7 +21,7 @@ steps:
       echo "assume role: '${aws_role}'"
       echo "account_id: $(AWS_ACCOUNT_ID)" 
       
-      aws_role="arn:aws:iam::${account_id}:role/${aws_role}"
+      aws_role="arn:aws:iam::$(AWS_ACCOUNT_ID):role/${aws_role}"
       echo "AWS role: $aws_role"
 
       echo "Check if role exists"
