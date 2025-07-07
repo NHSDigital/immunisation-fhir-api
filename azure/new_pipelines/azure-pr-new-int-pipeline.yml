@@ -8,12 +8,12 @@ resources:
       name: NHSDigital/api-management-utils
       ref: refs/heads/edge
       endpoint: NHSDigital
-      
+
 stages:
   - stage: GreenDeploy
     displayName: "Deploy to Green"
     jobs:
-      - template: templates/deploy-int-job.yml
+      - template: ./deploy-int-job.yml
         parameters:
           tf_environment: green
           tf_dir: "terraform_old"
@@ -21,7 +21,7 @@ stages:
   #   displayName: "Deploy to Blue"
   #   dependsOn: GreenDeploy
   #   jobs:
-  #     - template: templates/deploy-int-job.yml
+  #     - template: ./deploy-int-job.yml
   #       parameters:
   #         tf_environment: blue
   #         tf_dir: "terraform_old"
