@@ -2,9 +2,7 @@
 
 from clients import logger, redis_client
 import json
-from constants import PERMISSIONS_CONFIG_FILE_KEY, VACCINE_TYPE_TO_DISEASES_HASH_KEY
 from errors import VaccineTypePermissionsError
-from elasticache import get_permissions_config_json_from_cache
 
 
 def get_supplier_permissions(supplier: str) -> list[str]:
@@ -13,15 +11,10 @@ def get_supplier_permissions(supplier: str) -> list[str]:
     Defaults return value is an empty list, including when the supplier has no permissions.
     """
      
-    permissions_data = redis_client.hget(PERMISSIONS_CONFIG_FILE_KEY, supplier)
+    permissions_data = redis_client.hget("supplier_permissions", supplier)
     if not permissions_data:
         return []
     return json.loads(permissions_data)
-
-def get_permissions_config_json_from_cache() -> dict:
-    """Gets and returns the permissions config file content from ElastiCache (Redis)."""
-    return json.loads(redis_client.get(PERMISSIONS_CONFIG_FILE_KEY))
-
 
 def validate_vaccine_type_permissions(vaccine_type: str, supplier: str) -> list:
     """

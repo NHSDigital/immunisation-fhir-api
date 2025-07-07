@@ -57,7 +57,10 @@ class Constants:
     # NOTE: Any ODS code not found in this dictionary's keys is invalid for this service
     ODS_TO_SUPPLIER_MAPPINGS = {
         "YGM41": "EMIS",
+
         "8J1100001": "PINNACLE",
+        "V0V8L":"MAVIS",
+        "X8E5B":"RAVS",
         "8HK48": "SONAR",
         "YGA": "TPP",
         "0DE": "AGEM-NIVS",

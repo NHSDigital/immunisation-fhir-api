@@ -15,7 +15,9 @@ with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from csv import DictReader
     from constants import AuditTableKeys, AUDIT_TABLE_NAME, FileStatus
 
-dynamodb_client = boto3_client("dynamodb", region_name=REGION_NAME)
+def get_dynamodb_client():
+    """Create a new DynamoDB client (used to avoid global instance conflicts with moto)"""
+    return boto3_client("dynamodb", region_name=REGION_NAME)
 
 
 def get_csv_file_dict_reader(s3_client, bucket_name: str, file_key: str) -> DictReader:

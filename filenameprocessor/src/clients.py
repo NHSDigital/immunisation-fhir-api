@@ -19,8 +19,17 @@ lambda_client = boto3_client("lambda", region_name=REGION_NAME)
 
 dynamodb_resource = boto3_resource("dynamodb", region_name=REGION_NAME)
 
-# Redis Client
-redis_client = redis.StrictRedis(host=os.getenv("REDIS_HOST"), port=os.getenv("REDIS_PORT"), decode_responses=True)
+
+REDIS_HOST = os.getenv("REDIS_HOST", "")
+REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
+
+
+logging.basicConfig(level="INFO")
+logger = logging.getLogger()
+logger.info(f"Connecting to Redis at {REDIS_HOST}:{REDIS_PORT}")
+
+redis_client = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+
 
 # Logger
 logging.basicConfig(level="INFO")

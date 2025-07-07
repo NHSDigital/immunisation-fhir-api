@@ -14,7 +14,6 @@ from send_sqs_message import make_and_send_sqs_message
 from make_and_upload_ack_file import make_and_upload_the_ack_file
 from audit_table import upsert_audit_table, get_next_queued_file_details, ensure_file_is_not_a_duplicate
 from clients import logger
-from elasticache import upload_to_elasticache
 from logging_decorator import logging_decorator
 from supplier_permissions import validate_vaccine_type_permissions
 from errors import (
@@ -140,23 +139,12 @@ def handle_record(record) -> dict:
                 "supplier": supplier
             }
 
-    elif "config" in bucket_name:
-        try:
-            upload_to_elasticache(file_key, bucket_name)
-            logger.info("%s content successfully uploaded to cache", file_key)
-            message = "File content successfully uploaded to cache"
-            return {"statusCode": 200, "message": message, "file_key": file_key}
-        except Exception as error:  # pylint: disable=broad-except
-            logger.error("Error uploading to cache for file '%s': %s", file_key, error)
-            message = "Failed to upload file content to cache"
-            return {"statusCode": 500, "message": message, "file_key": file_key, "error": str(error)}
-
     else:
         try:
             vaccine_type, supplier = validate_file_key(file_key)
             logger.error("Unable to process file %s due to unexpected bucket name %s", file_key, bucket_name)
             message = f"Failed to process file due to unexpected bucket name {bucket_name}"
-
+            print(f"vaccine_type {vaccine_type}, supplier {supplier}")
             return {"statusCode": 500, "message": message, "file_key": file_key,
                     "vaccine_type": vaccine_type, "supplier": supplier}
 

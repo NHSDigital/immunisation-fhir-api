@@ -7,7 +7,7 @@ authors = ["Your Name <you@example.com>"]
 packages = [{ include = "src" }]
 
 [tool.poetry.dependencies]
-python = "~3.10"
+python = "~3.11"
 "fhir.resources" = "~7.0.2"
 boto3 = "~1.38.42"
 boto3-stubs-lite = { extras = ["dynamodb"], version = "~1.38.42" }

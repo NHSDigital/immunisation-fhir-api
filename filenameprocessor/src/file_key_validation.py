@@ -3,7 +3,7 @@
 from re import match
 from datetime import datetime
 from constants import Constants
-from elasticache import get_valid_vaccine_types_from_cache
+from vaccine_types import get_valid_vaccine_types_from_cache
 from utils_for_filenameprocessor import identify_supplier
 from errors import InvalidFileKeyError
 

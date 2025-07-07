@@ -21,8 +21,6 @@ with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from errors import UnhandledAuditTableError, DuplicateFileError
     from clients import REGION_NAME
 
-dynamodb_client = boto3_client("dynamodb", region_name=REGION_NAME)
-
 FILE_DETAILS = MockFileDetails.ravs_rsv_1
 
 
@@ -33,16 +31,17 @@ class TestAuditTable(TestCase):
 
     def setUp(self):
         """Set up test values to be used for the tests"""
-        GenericSetUp(dynamodb_client=dynamodb_client)
+        self.dynamodb_client = boto3_client("dynamodb", region_name=REGION_NAME)
+        GenericSetUp(dynamodb_client=self.dynamodb_client)
 
     def tearDown(self):
         """Tear down the test values"""
-        GenericTearDown(dynamodb_client=dynamodb_client)
+        GenericTearDown(dynamodb_client=self.dynamodb_client)
 
     @staticmethod
-    def get_table_items() -> list:
+    def get_table_items(self) -> list:
         """Return all items in the audit table"""
-        return dynamodb_client.scan(TableName=AUDIT_TABLE_NAME).get("Items", [])
+        return self.dynamodb_client.scan(TableName=AUDIT_TABLE_NAME).get("Items", [])
 
     def test_get_next_queued_file_details(self):
         """Test that the get_next_queued_file_details function returns the correct file details"""
@@ -81,7 +80,7 @@ class TestAuditTable(TestCase):
         )
 
         # Add the file to the audit table
-        dynamodb_client.put_item(
+        self.dynamodb_client.put_item(
             TableName=AUDIT_TABLE_NAME,
             Item={
                 AuditTableKeys.MESSAGE_ID: {"S": FILE_DETAILS.message_id},
