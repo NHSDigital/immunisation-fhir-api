@@ -57,7 +57,6 @@ class TestFhirController(TestFhirControllerBase):
         self.controller = FhirController(self.authorizer, self.service)
 
     def tearDown(self):
-        self.redis_patcher.stop()
         super().tearDown()
 
     def test_create_response(self):
