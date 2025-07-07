@@ -29,19 +29,6 @@ from models.constants import Constants
 class TestImmunizationModelPreValidationRules(unittest.TestCase):
     """Test immunization pre validation rules on the FHIR model using the covid sample data"""
 
-    MOCK_REDIS_D2V_RESPONSE = {
-        "4740000": "SHINGLES",
-        "6142004": "FLU",
-        "16814004": "PCV13",
-        "23511006": "MENACWY",
-        "27836007": "PERTUSSIS",
-        "55735004": "RSV",
-        "240532009": "HPV",
-        "840539006": "COVID19",
-        "14189004:36653000:36989005": "MMR",
-        "14189004:36653000:36989005:38907003": "MMRV",
-        "397430003:398102009:76902006": "3in1"
-    }
 
     def setUp(self):
         """Set up for each test. This runs before every test"""
@@ -713,7 +700,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
 
     def test_pre_validate_missing_valueCodeableConcept3(self):
         # Test case: valid data (should not raise an exception)
-        self.mock_redis_client.hget.return_value = self.MOCK_REDIS_D2V_RESPONSE
+        self.mock_redis_client.hget.return_value = "COVID19"
         valid_json_data = deepcopy(self.json_data)
         try:
             self.validator.validate(valid_json_data)
