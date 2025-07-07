@@ -265,39 +265,44 @@ class TestGetImmunization(TestFhirServiceBase):
         self.imms_repo.update_immunization.assert_not_called()
         self.pds_service.get_patient_details.assert_not_called()
 
-    def test_post_validation_failed_get(self):
-        self.mock_redis_client.hget.side_effect = [None, 'COVID-19']
-        valid_imms = create_covid_19_immunization_dict("an-id", VALID_NHS_NUMBER)
+def test_post_validation_failed_get_invalid_target_disease(self):
+    """it should raise CustomValidationError for invalid target disease code on get"""
+    self.mock_redis_client.hget.return_value = None
+    valid_imms = create_covid_19_immunization_dict("an-id", VALID_NHS_NUMBER)
 
-        bad_target_disease_imms = deepcopy(valid_imms)
-        bad_target_disease_imms["protocolApplied"][0]["targetDisease"][0]["coding"][0]["code"] = "bad-code"
-        bad_target_disease_msg = (
-            "Validation errors: protocolApplied[0].targetDisease[*].coding[?(@.system=='http://snomed.info/sct')].code"
-            + " - ['bad-code'] is not a valid combination of disease codes for this service"
-        )
+    bad_target_disease_imms = deepcopy(valid_imms)
+    bad_target_disease_imms["protocolApplied"][0]["targetDisease"][0]["coding"][0]["code"] = "bad-code"
+    bad_target_disease_msg = (
+        "Validation errors: protocolApplied[0].targetDisease[*].coding[?(@.system=='http://snomed.info/sct')].code"
+        + " - ['bad-code'] is not a valid combination of disease codes for this service"
+    )
 
-        bad_patient_name_imms = deepcopy(valid_imms)
-        del bad_patient_name_imms["contained"][1]["name"][0]["given"]
-        bad_patient_name_msg = "contained[?(@.resourceType=='Patient')].name[0].given is a mandatory field"
+    fhir_service = FhirService(self.imms_repo, self.pds_service)
 
-        fhir_service = FhirService(self.imms_repo, self.pds_service)
+    with self.assertRaises(CustomValidationError) as error:
+        fhir_service.get_immunization_by_id_all("an-id", bad_target_disease_imms)
 
-        # Invalid target_disease
-        with self.assertRaises(CustomValidationError) as error:
-            fhir_service.get_immunization_by_id_all("an-id", bad_target_disease_imms)
+    self.assertEqual(bad_target_disease_msg, error.exception.message)
+    self.imms_repo.get_immunization_by_id_all.assert_not_called()
+    self.pds_service.get_patient_details.assert_not_called()
 
-        self.assertEqual(bad_target_disease_msg, error.exception.message)
-        self.imms_repo.get_immunization_by_id_all.assert_not_called()
-        self.pds_service.get_patient_details.assert_not_called()
+def test_post_validation_failed_get_missing_patient_name(self):
+    """it should raise CustomValidationError for missing patient name on get"""
+    self.mock_redis_client.hget.return_value = 'COVID-19'
+    valid_imms = create_covid_19_immunization_dict("an-id", VALID_NHS_NUMBER)
 
-        # Missing patient name (Mandatory field)
-        with self.assertRaises(CustomValidationError) as error:
-            fhir_service.get_immunization_by_id_all("an-id", bad_patient_name_imms)
+    bad_patient_name_imms = deepcopy(valid_imms)
+    del bad_patient_name_imms["contained"][1]["name"][0]["given"]
+    bad_patient_name_msg = "contained[?(@.resourceType=='Patient')].name[0].given is a mandatory field"
 
-        self.assertTrue(bad_patient_name_msg in error.exception.message)
-        self.imms_repo.get_immunization_by_id_all.assert_not_called()
-        self.pds_service.get_patient_details.assert_not_called()
+    fhir_service = FhirService(self.imms_repo, self.pds_service)
 
+    with self.assertRaises(CustomValidationError) as error:
+        fhir_service.get_immunization_by_id_all("an-id", bad_patient_name_imms)
+
+    self.assertTrue(bad_patient_name_msg in error.exception.message)
+    self.imms_repo.get_immunization_by_id_all.assert_not_called()
+    self.pds_service.get_patient_details.assert_not_called()
 
 class TestGetImmunizationIdentifier(unittest.TestCase):
     """Tests for FhirService.get_immunization_by_id"""
