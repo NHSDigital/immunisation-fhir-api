@@ -38,7 +38,7 @@ jobs:
           make install-python
         workingDirectory: $(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)
         displayName: Setup pytests
-        condition: always()
+        condition: eq(1,2)
 
       - template: ./aws-assume-role-new-int.yml
         parameters:
