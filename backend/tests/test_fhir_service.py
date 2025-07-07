@@ -139,7 +139,8 @@ class TestGetImmunizationByAll(TestFhirServiceBase):
         self.assertEqual(error.exception.message, expected_msg)
         self.imms_repo.update_immunization.assert_not_called()
 
-    def test_post_validation_failed_get_by_all(self):
+    def test_post_validation_failed_get_by_all_invalid_target_disease(self):
+        """it should raise CustomValidationError for invalid target disease code"""
         self.mock_redis_client.hget.return_value = None
         valid_imms = create_covid_19_immunization_dict("an-id", VALID_NHS_NUMBER)
 
@@ -150,28 +151,30 @@ class TestGetImmunizationByAll(TestFhirServiceBase):
             + ".code - ['bad-code'] is not a valid combination of disease codes for this service"
         )
 
-        bad_patient_name_imms = deepcopy(valid_imms)
-        del bad_patient_name_imms["contained"][1]["name"][0]["given"]
-        bad_patient_name_msg = ("contained[?(@.resourceType=='Patient')].name[0].given is a mandatory field")
-
         fhir_service = FhirService(self.imms_repo, self.pds_service)
 
-        # Invalid target_disease
         with self.assertRaises(CustomValidationError) as error:
             fhir_service.get_immunization_by_id_all("an-id", bad_target_disease_imms)
 
         self.assertEqual(bad_target_disease_msg, error.exception.message)
-
         self.imms_repo.get_immunization_by_id_all.assert_not_called()
-        self.mock_redis_client.hget.return_value = 'COVID-19'
 
-        # Missing patient name (Mandatory field)
+    def test_post_validation_failed_get_by_all_missing_patient_name(self):
+        """it should raise CustomValidationError for missing patient name"""
+        self.mock_redis_client.hget.return_value = 'COVID-19'
+        valid_imms = create_covid_19_immunization_dict("an-id", VALID_NHS_NUMBER)
+
+        bad_patient_name_imms = deepcopy(valid_imms)
+        del bad_patient_name_imms["contained"][1]["name"][0]["given"]
+        bad_patient_name_msg = "contained[?(@.resourceType=='Patient')].name[0].given is a mandatory field"
+
+        fhir_service = FhirService(self.imms_repo, self.pds_service)
+
         with self.assertRaises(CustomValidationError) as error:
             fhir_service.get_immunization_by_id_all("an-id", bad_patient_name_imms)
 
         self.assertTrue(bad_patient_name_msg in error.exception.message)
         self.imms_repo.get_immunization_by_id_all.assert_not_called()
-
 
 class TestGetImmunization(TestFhirServiceBase):
     """Tests for FhirService.get_immunization_by_id"""
