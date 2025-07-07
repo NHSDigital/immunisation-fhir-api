@@ -55,8 +55,6 @@ class TestFhirController(TestFhirControllerBase):
         self.authorizer = create_autospec(Authorization)
         self.controller = FhirController(self.authorizer, self.service)
 
-    def tearDown(self):
-        super().tearDown()
 
     def test_create_response(self):
         """it should return application/fhir+json with correct status code"""

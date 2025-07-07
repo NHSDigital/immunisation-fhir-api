@@ -42,7 +42,6 @@ class TestFhirServiceBase(unittest.TestCase):
         self.logger_info_patcher.stop()
         super().tearDown()
 
-
 class TestServiceUrl(unittest.TestCase):
     def test_get_service_url(self):
         """it should create service url"""
@@ -65,7 +64,6 @@ class TestServiceUrl(unittest.TestCase):
         base_path = "my-base-path"
         url = get_service_url(env, base_path)
         self.assertEqual(url, f"https://internal-dev.api.service.nhs.uk/{base_path}")
-
 
 class TestGetImmunizationByAll(TestFhirServiceBase):
     """Tests for FhirService.get_immunization_by_id"""
@@ -357,10 +355,6 @@ class TestCreateImmunization(TestFhirServiceBase):
             self.pds_service,
             ImmunizationValidator(add_post_validators=False),
         )
-
-    def tearDown(self):
-        patch.stopall()
-        super().tearDown()
 
     def test_create_immunization(self):
         """it should create Immunization and validate it"""

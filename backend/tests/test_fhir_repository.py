@@ -46,9 +46,6 @@ class TestGetImmunizationByIdentifier(TestFhirRepositoryBase):
         self.table = MagicMock()
         self.repository = ImmunizationRepository(table=self.table)
 
-    def tearDown(self):
-        super().tearDown()
-
     def test_get_immunization_by_identifier(self):
         """it should find an Immunization by id"""
         imms_id = "a-id#an-id"
@@ -173,10 +170,6 @@ class TestCreateImmunizationMainIndex(TestFhirRepositoryBase):
         self.table = MagicMock()
         self.repository = ImmunizationRepository(table=self.table)
         self.patient = {"id": "a-patient-id", "identifier": {"value": "an-identifier"}}
-
-    def tearDown(self):
-        patch.stopall()
-        super().tearDown()
 
     def test_create_immunization(self):
         """it should create Immunization, and return created object"""
