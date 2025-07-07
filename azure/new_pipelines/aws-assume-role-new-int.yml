@@ -16,6 +16,8 @@ steps:
       echo "##vso[task.setvariable variable=AWS_ACCOUNT_ID]${{ parameters.aws_account_id }}"
     displayName: get imms role name
   - bash: |
+      aws sts get-caller-identity
+
       set -e
       aws_role="$(ROLE)"
       echo "assume role: '${aws_role}'"
