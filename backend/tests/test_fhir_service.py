@@ -1,11 +1,12 @@
 import json
+import os
 import uuid
 import datetime
 import unittest
 from copy import deepcopy
 from unittest.mock import create_autospec, patch
 from unittest import skip
-from unittest.mock import create_autospec
+from unittest.mock import create_autospec, patch
 from decimal import Decimal
 
 from fhir.resources.R4B.bundle import Bundle as FhirBundle, BundleEntry
@@ -463,6 +464,16 @@ class TestCreateImmunization(TestFhirServiceBase):
         # Then
         self.assertEqual(e.exception.patient_identifier, invalid_nhs_number)
         self.imms_repo.create_immunization.assert_not_called()
+
+    @patch.dict(os.environ, {"PDS_CHECK_ENABLED": "false"}, False)
+    def test_pds_check_skipped(self):
+        bad_patient_imms = create_covid_19_immunization_dict_no_id("a-bad-patient-id")
+        self.imms_repo.create_immunization.return_value = bad_patient_imms
+
+        self.fhir_service.create_immunization(bad_patient_imms, "COVID19:create", "Test")
+
+        self.imms_repo.create_immunization.assert_called()
+        self.fhir_service.pds_service.get_patient_details.assert_not_called()
 
 
 class TestUpdateImmunization(unittest.TestCase):

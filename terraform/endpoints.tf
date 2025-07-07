@@ -27,6 +27,7 @@ locals {
     "IMMUNIZATION_BASE_PATH" = strcontains(local.environment, "pr-") ? "immunisation-fhir-api-${local.environment}" : "immunisation-fhir-api"
     # except for prod and ref, any other env uses PDS int environment
     "PDS_ENV"              = local.environment == "prod" ? "prod" : local.environment == "ref" ? "ref" : "int",
+    "PDS_CHECK_ENABLED"    = tostring(local.environment != "int")
     "SPLUNK_FIREHOSE_NAME" = module.splunk.firehose_stream_name
     "SQS_QUEUE_URL"        = "https://sqs.eu-west-2.amazonaws.com/${local.immunisation_account_id}/${local.short_prefix}-ack-metadata-queue.fifo"
     "REDIS_HOST"           = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].address

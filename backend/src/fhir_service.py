@@ -1,3 +1,4 @@
+import logging
 from uuid import uuid4
 import datetime
 import os
@@ -26,6 +27,8 @@ from pds_service import PdsService
 from timer import timed
 from filter import Filter
 
+logging.basicConfig(level="INFO")
+logger = logging.getLogger()
 
 def get_service_url(
     service_env: str = os.getenv("IMMUNIZATION_ENV"),
@@ -349,12 +352,17 @@ class FhirService:
         If the NHS number exists, get the patient details from PDS and return the patient details.
         """
         try:
-            nhs_number = [x for x in imms["contained"] if x["resourceType"] == "Patient"][0]["identifier"][0]["value"]
+            contained_patient = get_contained_patient(imms)
+            nhs_number = contained_patient["identifier"][0]["value"]
         except (KeyError, IndexError):
-            nhs_number = None
+            return {}
 
         if not nhs_number:
             return {}
+
+        if os.getenv("PDS_CHECK_ENABLED") == "false":
+            logger.warning("Skipping PDS check")
+            return contained_patient
 
         patient = self.pds_service.get_patient_details(nhs_number)
         # To check whether the Superseded NHS number present in PDS
