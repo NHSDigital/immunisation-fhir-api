@@ -21,6 +21,7 @@ locals {
   account                 = terraform.workspace # non-prod or prod
   dspp_core_account_id    = local.account == "prod" ? 232116723729 : 603871901111
   immunisation_account_id = local.account == "prod" ? 664418956997 : 345594581768
+  mesh_mailbox_id        = local.account == "prod" ? "prod-mesh-mailbox-id?" : "non-prod"? "X26OT304": "mystery-mailbox-id"
   # TODO - add new accounts for CDP migration
 }
 
