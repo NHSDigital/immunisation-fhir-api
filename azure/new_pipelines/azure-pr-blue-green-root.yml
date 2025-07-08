@@ -1,14 +1,6 @@
 trigger: none
 pr: none
 
-resources:
-  repositories:
-    - repository: common
-      type: github
-      name: NHSDigital/api-management-utils
-      ref: refs/heads/edge
-      endpoint: NHSDigital
-
 stages:
   - stage: GreenDeploy
     displayName: "Deploy to Green"

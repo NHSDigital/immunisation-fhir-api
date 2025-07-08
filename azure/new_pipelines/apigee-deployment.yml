@@ -4,6 +4,17 @@ parameters:
   - name: tf_dir
     type: string
 
+trigger: none
+pr: none
+
+resources:
+  repositories:
+    - repository: common
+      type: github
+      name: NHSDigital/api-management-utils
+      ref: refs/heads/edge
+      endpoint: NHSDigital
+      
 pool:
   name: 'AWS-ECS'
 
