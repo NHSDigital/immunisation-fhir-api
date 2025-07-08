@@ -25,7 +25,7 @@ extends:
         jinja_templates:
           DOMAIN_ENDPOINT: https://green.imms.int.vds.platform.nhs.uk
         post_deploy:
-          - template: ./post-apigee-deployment.yml
+          - template: ./new_pipelines/post-apigee-deployment.yml
             parameters:
               tf_dir: terraform_old
               tf_environment: green
