@@ -201,7 +201,7 @@ resource "aws_s3_bucket" "batch_config_bucket" {
 resource "aws_s3_bucket_public_access_block" "batch_config_bucket_public_access_block" {
   # count = local.create_config_bucket ? 1 : 0
 
-  bucket = aws_s3_bucket.batch_config_bucket[0].id
+  bucket = aws_s3_bucket.batch_config_bucket.id
 
   block_public_acls       = true
   block_public_policy     = true
@@ -212,7 +212,7 @@ resource "aws_s3_bucket_public_access_block" "batch_config_bucket_public_access_
 resource "aws_s3_bucket_policy" "batch_config_bucket_policy" {
   # count = local.create_config_bucket ? 1 : 0
 
-  bucket = aws_s3_bucket.batch_config_bucket[0].id
+  bucket = aws_s3_bucket.batch_config_bucket.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -226,8 +226,8 @@ resource "aws_s3_bucket_policy" "batch_config_bucket_policy" {
         }
         Action = "s3:*"
         Resource = [
-          aws_s3_bucket.batch_config_bucket[0].arn,
-          "${aws_s3_bucket.batch_config_bucket[0].arn}/*",
+          aws_s3_bucket.batch_config_bucket.arn,
+          "${aws_s3_bucket.batch_config_bucket.arn}/*",
         ]
         Condition = {
           Bool = {

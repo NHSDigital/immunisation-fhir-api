@@ -256,7 +256,7 @@ resource "aws_s3_bucket_notification" "config_lambda_notification" {
   # For now, only create a trigger in internal-dev and prod as those are the envs with a config bucket
   # count = local.create_config_bucket ? 1 : 0
 
-  bucket = aws_s3_bucket.batch_config_bucket[0].bucket
+  bucket = aws_s3_bucket.batch_config_bucket.bucket
 
   lambda_function {
     lambda_function_arn = aws_lambda_function.redis_sync_lambda.arn
