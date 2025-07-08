@@ -1,3 +1,5 @@
+# azure-pr-blue-green-root.yml
+
 trigger: none
 pr: none
 
@@ -9,25 +11,18 @@ resources:
       ref: refs/heads/edge
       endpoint: NHSDigital
 
-pool:
-  name: 'AWS-ECS'
-
-stages:
-  - stage: GreenDeploy
-    displayName: "Deploy to Green"
-    jobs:
-      - template: ./apigee-deployment.yml
-        parameters:
-          tf_environment: green
-          tf_dir: "terraform_old"
-          
-  # - stage: BlueDeploy
-  #   displayName: "Deploy to Blue"
-  #   dependsOn: GreenDeploy
-  #   jobs:
-  #     - template: ./apigee-deployment.yml
-  #       parameters:
-  #         tf_environment: blue
-  #         tf_dir: "terraform_old"
-
-      
+extends:
+  template: azure/common/apigee-deployment.yml@common
+  parameters:
+    service_name: immunisation-fhir-api
+    short_service_name: ifa
+    service_base_path: immunisation-fhir-api/FHIR/R4
+    apigee_deployments:
+      - environment: internal-dev
+        jinja_templates:
+          DOMAIN_ENDPOINT: https://green.imms.int.vds.platform.nhs.uk
+        post_deploy:
+          - template: post-apigee-deployment.yml
+            parameters:
+              tf_dir: terraform_old
+              tf_environment: green
