@@ -8,9 +8,6 @@ parameters:
     type: string
     default: "green"
 
-variables:
-  - template: project.yml
-
 jobs:
   - job: deploy
     displayName: Deployment
@@ -22,9 +19,9 @@ jobs:
     steps:
       - template: azure/common/apigee-deployment.yml@common
         parameters:
-          service_name: ${{ variables.service_name }}
-          short_service_name: ${{ variables.short_service_name }}
-          service_base_path: ${{ variables.service_base_path }}
+          service_name: immunisation-fhir-api
+          short_service_name: ifa
+          service_base_path: immunisation-fhir-api/FHIR/R4
           apigee_deployments:
             - environment: internal-dev
               jinja_templates:
