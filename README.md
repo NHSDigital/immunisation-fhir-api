@@ -108,11 +108,17 @@ Once connected, you should see the path as something similar to: `/mnt/d/Source/
 
 5. Configure pyenv.
     ```
-    pyenv install --list | grep "3.10"
-    pyenv install 3.10.16 #current latest
+    pyenv install --list | grep "3.11"
+    pyenv install 3.11.13 #current latest
     ```
 
-6. Install poetry 
+6. Install direnv if not already present, and hook it to the shell.
+    ```
+    sudo apt-get update && sudo apt-get install direnv
+    echo 'eval "$(direnv hook bash)"' >> ~/.bashrc
+    ```
+
+7. Install poetry 
     ```
     pip install poetry
     ```
@@ -125,8 +131,9 @@ For detailed instructions on running individual Lambdas, refer to the README.md 
 Steps: 
 1. Set the python version in the folder with the code used by lambda for example `./backend` (see [lambdas](#lambdas)) folder.
     ```
-    pyenv local 3.10.16 # Set version in backend (this creates a .python-version file)
+    pyenv local 3.11.13 # Set version in backend (this creates a .python-version file)
     ```
+   Note: consult the lambda's `pyproject.toml` file to get the required Python version for this lambda. At the time of writing, this is `~3.10` for the batch lambdas and `~3.11` for all the others.
 
 2. Configure poetry
     ```
@@ -204,3 +211,12 @@ The root (`immunisation-fhir-api`) should point to `/mnt/d/Source/immunisation-f
 Please note that this project requires that all commits are verified using a GPG key. 
 To set up a GPG key please follow the instructions specified here:
 https://docs.github.com/en/authentication/managing-commit-signature-verification
+
+
+## AWS configuration: Getting credentials for AWS federated user account
+
+In the 'Access keys' popup menu under AWS Access Portal:
+
+**NOTE** that AWS's 'Recommended' method of getting credentials **(AWS IAM Identity Center credentials)** will break mocking in unit tests; specifically any tests calling `dynamodb_client.create_table()` will fail with `botocore.errorfactory.ResourceInUseException: Table already exists`.
+
+Instead, use **Option 2 (Add a profile to your AWS credentials file)**.
