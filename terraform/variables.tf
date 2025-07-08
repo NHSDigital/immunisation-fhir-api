@@ -27,11 +27,6 @@ locals {
   project_domain_name = data.aws_route53_zone.project_zone.name
   service_domain_name = "${local.env}.${local.project_domain_name}"
 
-  # For now, only create the config bucket in internal-dev and prod as we only have one Redis instance per account.
-  # create_config_bucket = local.environment == local.config_bucket_env
-  # config_bucket_arn    = local.create_config_bucket ? aws_s3_bucket.batch_config_bucket[0].arn : data.aws_s3_bucket.existing_config_bucket[0].arn
-  # config_bucket_name   = local.create_config_bucket ? aws_s3_bucket.batch_config_bucket[0].bucket : data.aws_s3_bucket.existing_config_bucket[0].bucket
-
   config_bucket_arn    = aws_s3_bucket.batch_config_bucket.arn
   config_bucket_name   = aws_s3_bucket.batch_config_bucket.bucket
 
@@ -91,13 +86,6 @@ data "aws_security_group" "existing_securitygroup" {
     values = ["immunisation-security-group"]
   }
 }
-
-# data "aws_s3_bucket" "existing_config_bucket" {
-#   # For now, look up the internal-dev bucket during int, ref and PR branch deploys.
-#   count = local.create_config_bucket ? 0 : 1
-
-#   bucket = "imms-${local.config_bucket_env}-supplier-config"
-# }
 
 data "aws_kms_key" "existing_lambda_encryption_key" {
   key_id = "alias/imms-batch-lambda-env-encryption"

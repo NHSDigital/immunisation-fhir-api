@@ -192,15 +192,10 @@ resource "aws_s3_bucket_lifecycle_configuration" "data_destinations" {
 }
 
 resource "aws_s3_bucket" "batch_config_bucket" {
-  # For now, only create in internal-dev and prod as we only have one shared Redis instance per account.
-  # count = local.create_config_bucket ? 1 : 0
-
   bucket = "imms-${local.environment}-supplier-config"
 }
 
 resource "aws_s3_bucket_public_access_block" "batch_config_bucket_public_access_block" {
-  # count = local.create_config_bucket ? 1 : 0
-
   bucket = aws_s3_bucket.batch_config_bucket.id
 
   block_public_acls       = true
@@ -210,8 +205,6 @@ resource "aws_s3_bucket_public_access_block" "batch_config_bucket_public_access_
 }
 
 resource "aws_s3_bucket_policy" "batch_config_bucket_policy" {
-  # count = local.create_config_bucket ? 1 : 0
-
   bucket = aws_s3_bucket.batch_config_bucket.id
 
   policy = jsonencode({
