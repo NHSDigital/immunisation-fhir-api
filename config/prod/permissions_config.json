@@ -1,0 +1,20 @@
+[
+  {
+    "supplier": "DPSFULL",
+    "permissions": [
+      "RSV.CRUDS"
+    ]
+  },
+  {
+    "supplier": "DPSREDUCED",
+    "permissions": [
+      "RSV.CRUDS"
+    ]
+  },
+  {
+    "supplier": "RAVS",
+    "permissions": [
+      "RSV.RS"
+    ]
+  }
+]
