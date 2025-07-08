@@ -1,5 +1,5 @@
 locals {
-  subnet_config = [
+  public_subnet_config = [
     {
       cidr_block        = "172.31.16.0/20"
       availability_zone = "eu-west-2a"
@@ -10,6 +10,20 @@ locals {
     },
     {
       cidr_block        = "172.31.0.0/20"
+      availability_zone = "eu-west-2c"
+    }
+  ]
+  private_subnet_config = [
+    {
+      cidr_block        = "172.31.48.0/20"
+      availability_zone = "eu-west-2a"
+    },
+    {
+      cidr_block        = "172.31.64.0/20"
+      availability_zone = "eu-west-2b"
+    },
+    {
+      cidr_block        = "172.31.80.0/20"
       availability_zone = "eu-west-2c"
     }
   ]
@@ -25,8 +39,9 @@ resource "aws_vpc" "default" {
   }
 }
 
-resource "aws_subnet" "default_subnets" {
-  for_each                = { for idx, subnet in local.subnet_config : idx => subnet }
+resource "aws_subnet" "public" {
+  for_each                = { for idx, subnet in local.public_subnet_config : idx => subnet }
+
   vpc_id                  = aws_vpc.default.id
   cidr_block              = each.value.cidr_block
   availability_zone       = each.value.availability_zone
@@ -40,24 +55,63 @@ resource "aws_internet_gateway" "default" {
   }
 }
 
-resource "aws_route_table" "default" {
+resource "aws_route_table" "public" {
   vpc_id = aws_vpc.default.id
   tags = {
-    Name = "imms-${local.environment}-fhir-api-rtb"
+    Name = "imms-${local.environment}-fhir-api-public-rtb"
   }
 }
 
-resource "aws_route_table_association" "subnet_associations" {
-  for_each       = aws_subnet.default_subnets
+resource "aws_route_table_association" "public_subnets" {
+  for_each       = aws_subnet.public
+
   subnet_id      = each.value.id
-  route_table_id = aws_route_table.default.id
+  route_table_id = aws_route_table.public.id
 }
 
-
-resource "aws_route" "igw_route" {
-  route_table_id         = aws_route_table.default.id
-  destination_cidr_block = "0.0.0.0/16"
+resource "aws_route" "igw" {
+  route_table_id         = aws_route_table.public.id
+  destination_cidr_block = "0.0.0.0/0"
   gateway_id             = aws_internet_gateway.default.id
+}
+
+resource "aws_subnet" "private" {
+  for_each                = { for idx, subnet in local.private_subnet_config : idx => subnet }
+
+  vpc_id                  = aws_vpc.default.id
+  cidr_block              = each.value.cidr_block
+  availability_zone       = each.value.availability_zone
+}
+
+resource "aws_eip" "nat" {
+    domain = "vpc"
+
+    depends_on = [aws_internet_gateway.default]
+}
+
+resource "aws_nat_gateway" "default" {
+    allocation_id = aws_eip.nat.id
+    subnet_id = aws_subnet.public[0].id
+}
+
+resource "aws_route_table" "private" {
+  vpc_id = aws_vpc.default.id
+  tags = {
+    Name = "imms-${local.environment}-fhir-api-private-rtb"
+  }
+}
+
+resource "aws_route_table_association" "private_subnets" {
+  for_each       = aws_subnet.private
+
+  subnet_id      = each.value.id
+  route_table_id = aws_route_table.private.id
+}
+
+resource "aws_route" "nat" {
+  route_table_id         = aws_route_table.private.id
+  destination_cidr_block = "0.0.0.0/0"
+  nat_gateway_id = aws_nat_gateway.default.id
 }
 
 resource "aws_route53_zone" "parent_hosted_zone" {

@@ -44,7 +44,7 @@ resource "aws_vpc_endpoint" "sqs_endpoint" {
   service_name      = "com.amazonaws.${var.aws_region}.sqs"
   vpc_endpoint_type = "Interface"
 
-  subnet_ids          = values(aws_subnet.default_subnets)[*].id
+  subnet_ids          = values(aws_subnet.private)[*].id
   security_group_ids  = [aws_security_group.lambda_redis_sg.id]
   private_dns_enabled = true
 
@@ -74,7 +74,7 @@ resource "aws_vpc_endpoint" "s3_endpoint" {
   vpc_id       = aws_vpc.default.id
   service_name = "com.amazonaws.${var.aws_region}.s3"
 
-  route_table_ids = [aws_route_table.default.id]
+  route_table_ids = [aws_route_table.private.id]
 
   policy = jsonencode({
     Version = "2012-10-17",
@@ -105,7 +105,7 @@ resource "aws_vpc_endpoint" "kinesis_endpoint" {
   service_name      = "com.amazonaws.${var.aws_region}.kinesis-firehose"
   vpc_endpoint_type = "Interface"
 
-  subnet_ids          = values(aws_subnet.default_subnets)[*].id
+  subnet_ids          = values(aws_subnet.private)[*].id
   security_group_ids  = [aws_security_group.lambda_redis_sg.id]
   private_dns_enabled = true
 
@@ -135,7 +135,7 @@ resource "aws_vpc_endpoint" "dynamodb" {
   vpc_id       = aws_vpc.default.id
   service_name = "com.amazonaws.${var.aws_region}.dynamodb"
 
-  route_table_ids = [aws_route_table.default.id]
+  route_table_ids = [aws_route_table.private.id]
 
   tags = {
     Name = "immunisation-dynamo-endpoint"
@@ -147,7 +147,7 @@ resource "aws_vpc_endpoint" "ecr_api" {
   service_name      = "com.amazonaws.${var.aws_region}.ecr.api"
   vpc_endpoint_type = "Interface"
 
-  subnet_ids          = values(aws_subnet.default_subnets)[*].id
+  subnet_ids          = values(aws_subnet.private)[*].id
   security_group_ids  = [aws_security_group.lambda_redis_sg.id]
   private_dns_enabled = true
   tags = {
@@ -160,7 +160,7 @@ resource "aws_vpc_endpoint" "ecr_dkr" {
   service_name      = "com.amazonaws.${var.aws_region}.ecr.dkr"
   vpc_endpoint_type = "Interface"
 
-  subnet_ids          = values(aws_subnet.default_subnets)[*].id
+  subnet_ids          = values(aws_subnet.private)[*].id
   security_group_ids  = [aws_security_group.lambda_redis_sg.id]
   private_dns_enabled = true
   tags = {
@@ -173,7 +173,7 @@ resource "aws_vpc_endpoint" "cloud_watch" {
   service_name      = "com.amazonaws.${var.aws_region}.logs"
   vpc_endpoint_type = "Interface"
 
-  subnet_ids          = values(aws_subnet.default_subnets)[*].id
+  subnet_ids          = values(aws_subnet.private)[*].id
   security_group_ids  = [aws_security_group.lambda_redis_sg.id]
   private_dns_enabled = true
   tags = {
@@ -187,7 +187,7 @@ resource "aws_vpc_endpoint" "kinesis_stream_endpoint" {
   service_name      = "com.amazonaws.${var.aws_region}.kinesis-streams"
   vpc_endpoint_type = "Interface"
 
-  subnet_ids          = values(aws_subnet.default_subnets)[*].id
+  subnet_ids          = values(aws_subnet.private)[*].id
   security_group_ids  = [aws_security_group.lambda_redis_sg.id]
   private_dns_enabled = true
 
@@ -225,7 +225,7 @@ resource "aws_vpc_endpoint" "kms_endpoint" {
   service_name      = "com.amazonaws.${var.aws_region}.kms"
   vpc_endpoint_type = "Interface"
 
-  subnet_ids          = values(aws_subnet.default_subnets)[*].id
+  subnet_ids          = values(aws_subnet.private)[*].id
   security_group_ids  = [aws_security_group.lambda_redis_sg.id]
   private_dns_enabled = true
 
@@ -265,7 +265,7 @@ resource "aws_vpc_endpoint" "lambda_endpoint" {
   service_name      = "com.amazonaws.${var.aws_region}.lambda"
   vpc_endpoint_type = "Interface"
 
-  subnet_ids          = values(aws_subnet.default_subnets)[*].id
+  subnet_ids          = values(aws_subnet.private)[*].id
   security_group_ids  = [aws_security_group.lambda_redis_sg.id]
   private_dns_enabled = true
   tags = {
