@@ -16,7 +16,7 @@ resource "aws_ecr_repository" "redis_sync_lambda_repository" {
 # Module for building and pushing Docker image to ECR
 module "redis_sync_docker_image" {
   source  = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version = "7.21.1"
+  version = "8.0.1"
 
   create_ecr_repo = false
   ecr_repo        = aws_ecr_repository.redis_sync_lambda_repository.name
