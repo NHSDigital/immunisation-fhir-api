@@ -21,7 +21,6 @@ locals {
   short_prefix      = "${var.project_short_name}-${local.env}"
   batch_prefix      = "immunisation-batch-${local.env}"
   config_env        = local.environment == "prod" ? "prod" : "dev"
-  config_bucket_env = local.environment == "prod" ? "prod" : "internal-dev"
 
   root_domain         = "${local.config_env}.vds.platform.nhs.uk"
   project_domain_name = data.aws_route53_zone.project_zone.name
