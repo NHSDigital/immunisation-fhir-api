@@ -33,7 +33,7 @@ steps:
     displayName: Setup pytests
     condition: eq(1,2)
 
-  - template: ./new_pipelines/aws-assume-role-new-int.yml
+  - template: ./aws-assume-role-new-int.yml
     parameters:
       role: "auto-ops"
       profile: "apim-dev" # centralise 
