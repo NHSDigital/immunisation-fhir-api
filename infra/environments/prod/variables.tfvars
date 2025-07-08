@@ -1,9 +1,9 @@
 imms_account_id          = "664418956997"
 dspp_account_id          = "232116723729"
-admin_role               = "" # We shouldn't be using the root account. There should be an Admin role
-dev_ops_role             = ""
+admin_role               = "role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_PROD-IMMS-Admin_edd6691e4b74064e"
+dev_ops_role             = "role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_PROD-IMMS-Devops_8f32c62195d56b76"
 auto_ops_role            = "role/auto-ops"
 dspp_admin_role          = "root"
 environment              = "prod"
-parent_route53_zone_name = "imms.dev.vds.platform.nhs.uk" # TBC for prod might be blue/green
-child_route53_zone_name  = "imms.dev.vds.platform.nhs.uk" # TBC for prod might be blue/green
+parent_route53_zone_name = "prod.vds.platform.nhs.uk"
+child_route53_zone_name  = "imms.prod.vds.platform.nhs.uk"
