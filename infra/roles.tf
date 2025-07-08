@@ -59,14 +59,6 @@ resource "aws_iam_role" "auto_ops" {
           AWS = "arn:aws:iam::${var.build_agent_account_id}:role/build-agent"
         },
         Action = "sts:AssumeRole"
-      },
-      {
-        Sid    = ""
-        Effect = "Allow",
-        Principal = {
-          AWS = "arn:aws:iam::${var.imms_account_id}:role/DevOps"
-        },
-        Action = "sts:AssumeRole"
       }
     ]
   })
