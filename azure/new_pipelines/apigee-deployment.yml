@@ -1,0 +1,30 @@
+parameters:
+  - name: tf_environment
+    type: string
+  - name: tf_dir
+    type: string
+
+jobs:
+  - job: deploy
+    displayName: Deployment
+    timeoutInMinutes: 30
+    pool:
+      name: 'AWS-ECS'
+    workspace:
+      clean: all
+    steps:
+      - template: azure/common/apigee-deployment.yml@common
+        parameters:
+          service_name: immunisation-fhir-api
+          short_service_name: ifa
+          service_base_path: immunisation-fhir-api/FHIR/R4
+          apigee_deployments:
+            - environment: internal-dev
+              jinja_templates:
+                DOMAIN_ENDPOINT: https://green.imms.int.vds.platform.nhs.uk
+              post_deploy:
+              - template: ./post-apigee-deployment.yml
+                parameters:
+                  tf_dir: ${{ parameters.tf_dir }}
+                  tf_environment: ${{ parameters.tf_environment }}
+
