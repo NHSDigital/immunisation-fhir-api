@@ -92,12 +92,12 @@ data "aws_security_group" "existing_securitygroup" {
   }
 }
 
-data "aws_s3_bucket" "existing_config_bucket" {
-  # For now, look up the internal-dev bucket during int, ref and PR branch deploys.
-  count = local.create_config_bucket ? 0 : 1
+# data "aws_s3_bucket" "existing_config_bucket" {
+#   # For now, look up the internal-dev bucket during int, ref and PR branch deploys.
+#   count = local.create_config_bucket ? 0 : 1
 
-  bucket = "imms-${local.config_bucket_env}-supplier-config"
-}
+#   bucket = "imms-${local.config_bucket_env}-supplier-config"
+# }
 
 data "aws_kms_key" "existing_lambda_encryption_key" {
   key_id = "alias/imms-batch-lambda-env-encryption"
