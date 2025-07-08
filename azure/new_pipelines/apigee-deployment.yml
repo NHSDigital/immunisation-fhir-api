@@ -23,8 +23,7 @@ jobs:
               jinja_templates:
                 DOMAIN_ENDPOINT: https://green.imms.int.vds.platform.nhs.uk
               post_deploy:
-              - template: ./post-apigee-deployment.yml
-                parameters:
-                  tf_dir: ${{ parameters.tf_dir }}
-                  tf_environment: ${{ parameters.tf_environment }}
-
+                - template: ./post-apigee-deployment.yml
+                  parameters:
+                    tf_dir: ${{ parameters.tf_dir }}
+                    tf_environment: ${{ parameters.tf_environment }}
