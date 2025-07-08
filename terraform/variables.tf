@@ -28,9 +28,13 @@ locals {
   service_domain_name = "${local.env}.${local.project_domain_name}"
 
   # For now, only create the config bucket in internal-dev and prod as we only have one Redis instance per account.
-  create_config_bucket = local.environment == local.config_bucket_env
-  config_bucket_arn    = local.create_config_bucket ? aws_s3_bucket.batch_config_bucket[0].arn : data.aws_s3_bucket.existing_config_bucket[0].arn
-  config_bucket_name   = local.create_config_bucket ? aws_s3_bucket.batch_config_bucket[0].bucket : data.aws_s3_bucket.existing_config_bucket[0].bucket
+  # create_config_bucket = local.environment == local.config_bucket_env
+  # config_bucket_arn    = local.create_config_bucket ? aws_s3_bucket.batch_config_bucket[0].arn : data.aws_s3_bucket.existing_config_bucket[0].arn
+  # config_bucket_name   = local.create_config_bucket ? aws_s3_bucket.batch_config_bucket[0].bucket : data.aws_s3_bucket.existing_config_bucket[0].bucket
+
+  config_bucket_arn    = aws_s3_bucket.batch_config_bucket[0].arn
+  config_bucket_name   = aws_s3_bucket.batch_config_bucket[0].bucket
+
 
   # Public subnet - The subnet has a direct route to an internet gateway. Resources in a public subnet can access the public internet.
   # public_subnet_ids = [for k, v in data.aws_route.internet_traffic_route_by_subnet : k if length(v.gateway_id) > 0]

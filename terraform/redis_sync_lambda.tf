@@ -254,7 +254,7 @@ resource "aws_cloudwatch_log_group" "redis_sync_log_group" {
 # S3 Bucket notification to trigger Lambda function for config bucket
 resource "aws_s3_bucket_notification" "config_lambda_notification" {
   # For now, only create a trigger in internal-dev and prod as those are the envs with a config bucket
-  count = local.create_config_bucket ? 1 : 0
+  # count = local.create_config_bucket ? 1 : 0
 
   bucket = aws_s3_bucket.batch_config_bucket[0].bucket
 
@@ -266,7 +266,7 @@ resource "aws_s3_bucket_notification" "config_lambda_notification" {
 
 # Permission for the new S3 bucket to invoke the Lambda function
 resource "aws_lambda_permission" "new_s3_invoke_permission" {
-  count = local.create_config_bucket ? 1 : 0
+  # count = local.create_config_bucket ? 1 : 0
 
   statement_id  = "AllowExecutionFromNewS3"
   action        = "lambda:InvokeFunction"
