@@ -185,6 +185,15 @@ resource "aws_iam_policy" "forwarding_lambda_exec_policy" {
           "sqs:SendMessage"
         ]
         Resource = aws_sqs_queue.fifo_queue.arn
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "ec2:CreateNetworkInterface",
+          "ec2:DescribeNetworkInterfaces",
+          "ec2:DeleteNetworkInterface"
+        ],
+        Resource = "*"
       }
     ]
   })
