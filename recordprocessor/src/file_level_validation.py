@@ -10,7 +10,7 @@ from utils_for_recordprocessor import get_csv_content_dict_reader, invoke_filena
 from errors import InvalidHeaders, NoOperationPermissions
 from logging_decorator import file_level_validation_logging_decorator
 from audit_table import change_audit_table_status_to_processed, get_next_queued_file_details
-from constants import SOURCE_BUCKET_NAME, EXPECTED_CSV_HEADERS
+from constants import SOURCE_BUCKET_NAME, EXPECTED_CSV_HEADERS, Permission, ActionFlag
 
 
 def validate_content_headers(csv_content_reader) -> None:
@@ -27,29 +27,50 @@ def validate_action_flag_permissions(
     vaccine type and returns the set of allowed operations for that vaccine type.
     Raises a NoPermissionsError if the supplier does not have permission to perform any of the requested operations.
     """
-    # If the supplier has full permissions for the vaccine type, return a permission list containing full permissions
-    if f"{vaccine_type}_FULL" in allowed_permissions_list:
-        return {"CREATE", "UPDATE", "DELETE"}
 
     # Get unique ACTION_FLAG values from the S3 file
     operations_requested = get_unique_action_flags_from_s3(csv_data)
 
-    # Convert action flags into the expected operation names
-    requested_permissions_set = {
-        f"{vaccine_type}_{'CREATE' if action == 'NEW' else action}" for action in operations_requested
-    }
+    # Map ACTION_FLAGs to single-letter permissions
+    requested_permissions = {ActionFlag[flag].value.value for flag in operations_requested if flag in ActionFlag.__members__}
+    
+    if not requested_permissions:
+        logger.warning("No valid ACTION_FLAGs found in file. Skipping permission validation.")
+        return set()
 
-    # Check if any of the CSV permissions match the allowed permissions
-    if not requested_permissions_set.intersection(allowed_permissions_list):
+
+    # Get allowed permission in single letters from allowed_permissions_list
+    allowed_ops = set()
+    for perm in allowed_permissions_list:
+        if perm.startswith(f"{vaccine_type}."):
+            allowed_ops.update(perm.split(".")[1])
+
+    allowed_ops = set()
+    for perm in allowed_permissions_list:
+        if not perm.startswith(f"{vaccine_type}."):
+            continue
+
+        _, op_code = perm.split(".")
+        if op_code == "CRUD":
+            allowed_ops.update({"C", "R", "U", "D"})
+        elif op_code == "CRUDS":
+            allowed_ops.update({"C", "R", "U", "D", "S"})
+        else:
+            allowed_ops.add(op_code)
+    
+    if not requested_permissions.intersection(allowed_ops):
         raise NoOperationPermissions(f"{supplier} does not have permissions to perform any of the requested actions.")
+
 
     logger.info(
         "%s permissions %s match one of the requested permissions required to %s",
         supplier,
         allowed_permissions_list,
-        requested_permissions_set,
+        requested_permissions,
     )
-    return {perm.split("_")[1].upper() for perm in allowed_permissions_list if perm.startswith(vaccine_type)}
+
+    # Return allowed ops in full-word format for downstream logic
+    return {perm.name for perm in Permission if perm.value in allowed_ops }
 
 
 def move_file(bucket_name: str, source_file_key: str, destination_file_key: str) -> None:

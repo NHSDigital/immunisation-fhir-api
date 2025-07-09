@@ -62,27 +62,27 @@ class TestFileLevelValidation(unittest.TestCase):
         # Test case tuples are stuctured as (vaccine_type, vaccine_permissions, file_content, expected_output)
         test_cases = [
             # FLU, full permissions, lowercase action flags
-            ("FLU", ["FLU_FULL"], valid_content_new_and_update_lowercase, {"CREATE", "UPDATE", "DELETE"}),
+            ("FLU", ["FLU.CRUD"], valid_content_new_and_update_lowercase, {"CREATE", "UPDATE", "DELETE"}),
             # FLU, partial permissions, uppercase action flags
-            ("FLU", ["FLU_CREATE"], valid_content_new_and_update_uppercase, {"CREATE"}),
+            ("FLU", ["FLU.C"], valid_content_new_and_update_uppercase, {"CREATE"}),
             # FLU, full permissions, mixed case action flags
-            ("FLU", ["FLU_FULL"], valid_content_new_and_update_mixedcase, {"CREATE", "UPDATE", "DELETE"}),
+            ("FLU", ["FLU.CRUD"], valid_content_new_and_update_mixedcase, {"CREATE", "UPDATE", "DELETE"}),
             # FLU, partial permissions (create)
-            ("FLU", ["FLU_DELETE", "FLU_CREATE"], valid_content_new_and_update_lowercase, {"CREATE", "DELETE"}),
+            ("FLU", ["FLU.D", "FLU.C"], valid_content_new_and_update_lowercase, {"CREATE", "DELETE"}),
             # FLU, partial permissions (update)
-            ("FLU", ["FLU_UPDATE"], valid_content_new_and_update_lowercase, {"UPDATE"}),
+            ("FLU", ["FLU.U"], valid_content_new_and_update_lowercase, {"UPDATE"}),
             # FLU, partial permissions (delete)
-            ("FLU", ["FLU_DELETE"], valid_content_new_and_delete_lowercase, {"DELETE"}),
+            ("FLU", ["FLU.D"], valid_content_new_and_delete_lowercase, {"DELETE"}),
             # COVID19, full permissions
-            ("COVID19", ["COVID19_FULL"], valid_content_new_and_delete_lowercase, {"CREATE", "UPDATE", "DELETE"}),
+            ("COVID19", ["COVID19.CRUD"], valid_content_new_and_delete_lowercase, {"CREATE", "UPDATE", "DELETE"}),
             # COVID19, partial permissions
-            ("COVID19", ["COVID19_UPDATE"], valid_content_update_and_delete_lowercase, {"UPDATE"}),
+            ("COVID19", ["COVID19.U"], valid_content_update_and_delete_lowercase, {"UPDATE"}),
             # RSV, full permissions
-            ("RSV", ["RSV_FULL"], valid_content_new_and_delete_lowercase, {"CREATE", "UPDATE", "DELETE"}),
+            ("RSV", ["RSV.CRUD"], valid_content_new_and_delete_lowercase, {"CREATE", "UPDATE", "DELETE"}),
             # RSV, partial permissions
-            ("RSV", ["RSV_UPDATE"], valid_content_update_and_delete_lowercase, {"UPDATE"}),
+            ("RSV", ["RSV.U"], valid_content_update_and_delete_lowercase, {"UPDATE"}),
             # RSV, full permissions, mixed case action flags
-            ("RSV", ["RSV_FULL"], valid_content_new_and_update_mixedcase, {"CREATE", "UPDATE", "DELETE"}),
+            ("RSV", ["RSV.CRUD"], valid_content_new_and_update_mixedcase, {"CREATE", "UPDATE", "DELETE"}),
         ]
 
         for vaccine_type, vaccine_permissions, file_content, expected_output in test_cases:
@@ -96,11 +96,11 @@ class TestFileLevelValidation(unittest.TestCase):
         # Test case tuples are stuctured as (vaccine_type, vaccine_permissions, file_content)
         test_cases = [
             # FLU, no permissions
-            ("FLU", ["FLU_UPDATE", "COVID19_FULL"], valid_content_new_and_delete_lowercase),
+            ("FLU", ["FLU.U", "COVID19.CRUDS"], valid_content_new_and_delete_lowercase),
             # COVID19, no permissions
-            ("COVID19", ["FLU_CREATE", "FLU_UPDATE"], valid_content_update_and_delete_lowercase),
+            ("COVID19", ["FLU.C", "FLU.U"], valid_content_update_and_delete_lowercase),
             # RSV, no permissions
-            ("RSV", ["FLU_CREATE", "FLU_UPDATE"], valid_content_update_and_delete_lowercase),
+            ("RSV", ["FLU.C", "FLU.U"], valid_content_update_and_delete_lowercase),
         ]
 
         for vaccine_type, vaccine_permissions, file_content in test_cases:

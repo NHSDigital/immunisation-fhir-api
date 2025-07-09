@@ -1,6 +1,7 @@
 """Constants for recordprocessor"""
 
 import os
+from enum import Enum, auto
 
 SOURCE_BUCKET_NAME = os.getenv("SOURCE_BUCKET_NAME")
 ACK_BUCKET_NAME = os.getenv("ACK_BUCKET_NAME")
@@ -84,3 +85,15 @@ class Urls:
     NHS_NUMBER = "https://fhir.nhs.uk/Id/nhs-number"
     NULL_FLAVOUR_CODES = "http://terminology.hl7.org/CodeSystem/v3-NullFlavor"
     VACCINATION_PROCEDURE = "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure"
+
+class Permission(Enum):
+    CREATE = "C"
+    UPDATE = "U"
+    DELETE = "D"
+
+
+
+class ActionFlag(Enum):
+    NEW = Permission.CREATE
+    UPDATE = Permission.UPDATE
+    DELETE = Permission.DELETE
