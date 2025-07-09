@@ -8,6 +8,8 @@ locals {
   mesh_processor_lambda_dir     = abspath("${path.root}/../mesh_processor")
   mesh_processor_lambda_files   = fileset(local.mesh_processor_lambda_dir, "**")
   mesh_processor_lambda_dir_sha = sha1(join("", [for f in local.mesh_processor_lambda_files : filesha1("${local.mesh_processor_lambda_dir}/${f}")]))
+  mesh_s3_bucket_name          = local.is_mesh_enabled ? module.mesh[0].mesh_bucket_name : null
+  mesh_s3_logs_bucket_name      = local.is_mesh_enabled ? module.mesh[0].mesh_logs_bucket_name : null
 }
 
 resource "aws_ecr_repository" "mesh_file_converter_lambda_repository" {
@@ -140,6 +142,9 @@ resource "aws_iam_policy" "mesh_processor_lambda_exec_policy" {
           "s3:DeleteObject"
         ]
         Resource = [
+          "arn:aws:s3:::${local.mesh_s3_bucket_name}",
+          "arn:aws:s3:::${local.mesh_s3_bucket_name}/*",
+          "arn:aws:s3:::${local.mesh_s3_logs_bucket_name}/*",
           "arn:aws:s3:::local-immunisation-mesh",
           "arn:aws:s3:::local-immunisation-mesh/*",
           "arn:aws:s3:::local-immunisation-mesh-s3logs/*"
