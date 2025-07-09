@@ -13,7 +13,7 @@ module "mesh" {
   handshake_schedule             = "rate(24 hours)"
 
   account_id                     = local.immunisation_account_id
-  # TODO these need enviroment specific names to avoid conflicts
+  # TODO these bucket names need attention - enviroment specific names to avoid conflicts
   mesh_bucket_name              = "local-immunisation-mesh"
   mesh_logs_bucket_name         = "local-immunisation-mesh-s3logs"
 }
