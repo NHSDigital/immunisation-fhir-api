@@ -44,7 +44,7 @@ jobs:
         parameters:
           role: "auto-ops"
           profile: "apim-dev" # centralise 
-          aws_account_id: "084828561157"
+          aws_account_id: "345594581768"
 
       - bash: |
           set -e
