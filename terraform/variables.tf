@@ -15,19 +15,19 @@ variable "aws_region" {
 }
 
 locals {
-  environment       = terraform.workspace == "green" ? "prod" : terraform.workspace == "blue" ? "prod" : terraform.workspace
-  env               = terraform.workspace
-  prefix            = "${var.project_name}-${var.service}-${local.env}"
-  short_prefix      = "${var.project_short_name}-${local.env}"
-  batch_prefix      = "immunisation-batch-${local.env}"
-  config_env        = local.environment == "prod" ? "prod" : "dev"
+  environment  = terraform.workspace == "green" ? "prod" : terraform.workspace == "blue" ? "prod" : terraform.workspace
+  env          = terraform.workspace
+  prefix       = "${var.project_name}-${var.service}-${local.env}"
+  short_prefix = "${var.project_short_name}-${local.env}"
+  batch_prefix = "immunisation-batch-${local.env}"
+  config_env   = local.environment == "prod" ? "prod" : "dev"
 
   root_domain         = "${local.config_env}.vds.platform.nhs.uk"
   project_domain_name = data.aws_route53_zone.project_zone.name
   service_domain_name = "${local.env}.${local.project_domain_name}"
 
-  config_bucket_arn    = aws_s3_bucket.batch_config_bucket.arn
-  config_bucket_name   = aws_s3_bucket.batch_config_bucket.bucket
+  config_bucket_arn  = aws_s3_bucket.batch_config_bucket.arn
+  config_bucket_name = aws_s3_bucket.batch_config_bucket.bucket
 
 
   # Public subnet - The subnet has a direct route to an internet gateway. Resources in a public subnet can access the public internet.
