@@ -37,6 +37,15 @@ resource "aws_security_group" "lambda_redis_sg" {
     protocol  = "-1"
     self      = true
   }
+
+  egress {
+    description = "HTTPS outbound for PDS callout"
+    cidr_blocks = ["0.0.0.0/0"]
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    self        = false
+  }
 }
 
 resource "aws_vpc_endpoint" "sqs_endpoint" {

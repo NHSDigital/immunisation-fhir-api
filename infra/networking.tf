@@ -40,7 +40,7 @@ resource "aws_vpc" "default" {
 }
 
 resource "aws_subnet" "public" {
-  for_each                = { for idx, subnet in local.public_subnet_config : idx => subnet }
+  for_each = { for idx, subnet in local.public_subnet_config : idx => subnet }
 
   vpc_id                  = aws_vpc.default.id
   cidr_block              = each.value.cidr_block
@@ -63,7 +63,7 @@ resource "aws_route_table" "public" {
 }
 
 resource "aws_route_table_association" "public_subnets" {
-  for_each       = aws_subnet.public
+  for_each = aws_subnet.public
 
   subnet_id      = each.value.id
   route_table_id = aws_route_table.public.id
@@ -76,22 +76,22 @@ resource "aws_route" "igw" {
 }
 
 resource "aws_subnet" "private" {
-  for_each                = { for idx, subnet in local.private_subnet_config : idx => subnet }
+  for_each = { for idx, subnet in local.private_subnet_config : idx => subnet }
 
-  vpc_id                  = aws_vpc.default.id
-  cidr_block              = each.value.cidr_block
-  availability_zone       = each.value.availability_zone
+  vpc_id            = aws_vpc.default.id
+  cidr_block        = each.value.cidr_block
+  availability_zone = each.value.availability_zone
 }
 
 resource "aws_eip" "nat" {
-    domain = "vpc"
+  domain = "vpc"
 
-    depends_on = [aws_internet_gateway.default]
+  depends_on = [aws_internet_gateway.default]
 }
 
 resource "aws_nat_gateway" "default" {
-    allocation_id = aws_eip.nat.id
-    subnet_id = aws_subnet.public[0].id
+  allocation_id = aws_eip.nat.id
+  subnet_id     = aws_subnet.public[0].id
 }
 
 resource "aws_route_table" "private" {
@@ -102,7 +102,7 @@ resource "aws_route_table" "private" {
 }
 
 resource "aws_route_table_association" "private_subnets" {
-  for_each       = aws_subnet.private
+  for_each = aws_subnet.private
 
   subnet_id      = each.value.id
   route_table_id = aws_route_table.private.id
@@ -111,7 +111,7 @@ resource "aws_route_table_association" "private_subnets" {
 resource "aws_route" "nat" {
   route_table_id         = aws_route_table.private.id
   destination_cidr_block = "0.0.0.0/0"
-  nat_gateway_id = aws_nat_gateway.default.id
+  nat_gateway_id         = aws_nat_gateway.default.id
 }
 
 resource "aws_route53_zone" "parent_hosted_zone" {
@@ -128,4 +128,18 @@ resource "aws_route53_record" "imms_ns" {
   type    = "NS"
   ttl     = 172800
   records = [for ns in aws_route53_zone.child_hosted_zone.name_servers : "${ns}."]
+}
+
+# TODO - remove once state has been updated
+moved {
+  from = aws_subnet.default_subnets
+  to   = aws_subnet.public
+}
+moved {
+  from = aws_route_table.default
+  to   = aws_route_table.public
+}
+moved {
+  from = aws_route.igw_route
+  to   = aws_route.igw
 }
