@@ -10,7 +10,7 @@ from utils_for_recordprocessor import get_csv_content_dict_reader, invoke_filena
 from errors import InvalidHeaders, NoOperationPermissions
 from logging_decorator import file_level_validation_logging_decorator
 from audit_table import change_audit_table_status_to_processed, get_next_queued_file_details
-from constants import SOURCE_BUCKET_NAME, EXPECTED_CSV_HEADERS, Permission, ActionFlag
+from constants import SOURCE_BUCKET_NAME, EXPECTED_CSV_HEADERS, Permission, ActionFlag, AllowedPermission
 
 
 def validate_content_headers(csv_content_reader) -> None:
@@ -45,19 +45,12 @@ def validate_action_flag_permissions(
     # Get allowed permission in single letters from allowed_permissions_list
     allowed_ops = set()
     for perm in allowed_permissions_list:
-        if perm.startswith(f"{vaccine_type}."):
-            allowed_ops.update(perm.split(".")[1])
-
-    allowed_ops = set()
-    for perm in allowed_permissions_list:
         if not perm.startswith(f"{vaccine_type}."):
             continue
 
         _, op_code = perm.split(".")
-        if op_code == "CRUD":
-            allowed_ops.update({"C", "R", "U", "D"})
-        elif op_code == "CRUDS":
-            allowed_ops.update({"C", "R", "U", "D", "S"})
+        if op_code in AllowedPermission.__members__:
+            allowed_ops.update(AllowedPermission[op_code].value)
         else:
             allowed_ops.add(op_code)
 

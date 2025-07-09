@@ -97,3 +97,8 @@ class ActionFlag(Enum):
     NEW = Permission.CREATE
     UPDATE = Permission.UPDATE
     DELETE = Permission.DELETE
+
+
+class AllowedPermission(Enum):
+    CRUD = {"C", "U", "D"}
+    CRUDS = {"C", "U", "D"}

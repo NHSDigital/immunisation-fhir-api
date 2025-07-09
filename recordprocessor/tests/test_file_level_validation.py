@@ -94,7 +94,7 @@ class TestFileLevelValidation(unittest.TestCase):
 
         # Case: Supplier has no permissions to perform any of the requested operations
         # Test case tuples are stuctured as (vaccine_type, vaccine_permissions, file_content)
-        test_cases = [
+        invalid_cases = [
             # FLU, no permissions
             ("FLU", ["FLU.U", "COVID19.CRUDS"], valid_content_new_and_delete_lowercase),
             # COVID19, no permissions
@@ -103,10 +103,20 @@ class TestFileLevelValidation(unittest.TestCase):
             ("RSV", ["FLU.C", "FLU.U"], valid_content_update_and_delete_lowercase),
         ]
 
-        for vaccine_type, vaccine_permissions, file_content in test_cases:
+        for vaccine_type, vaccine_permissions, file_content in invalid_cases:
             with self.subTest():
                 with self.assertRaises(NoOperationPermissions):
                     validate_action_flag_permissions("TEST_SUPPLIER", vaccine_type, vaccine_permissions, file_content)
+
+        no_flag_cases = [
+            ("FLU", ["FLU.C"], valid_file_content.replace("new", "").replace("update", "")),
+            ("COVID19", ["COVID19.CRUD"], valid_file_content.replace("new", "INVALID").replace("update", "")),
+            ]
+
+        for vaccine_type, permissions, file_content in no_flag_cases:
+            with self.subTest(f"{vaccine_type} with invalid or missing ACTION_FLAGs"):
+                result = validate_action_flag_permissions("TEST_SUPPLIER", vaccine_type, permissions, file_content)
+                self.assertEqual(result, set())
 
 
 if __name__ == "__main__":
