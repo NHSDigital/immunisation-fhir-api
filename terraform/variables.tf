@@ -97,3 +97,15 @@ data "aws_kms_key" "existing_kinesis_encryption_key" {
 data "aws_kms_key" "mesh_s3_encryption_key" {
   key_id = "alias/local-immunisation-mesh"
 }
+
+variable "dev_mesh_mailbox_id" {
+  description = "MESH mailbox ID for dev environment. If null, MESH is disabled. If set, MESH is enabled."
+  type        = string
+  default     = null
+}
+# Dev DLQ only used if dev mesh mailbox is set
+variable "dev_mesh_dlq_mailbox_id" {
+  description = "MESH DLQ mailbox ID for dev environment. If null, MESH is disabled. If set, MESH is enabled."
+  type        = string
+  default     = null
+}

@@ -6,10 +6,11 @@ module "mesh" {
   subnet_ids                     = data.aws_subnets.default.ids
 
   mailbox_ids                    = [local.mesh_mailbox_id]
+  dlq_mailbox_id                 = local.mesh_dlq_mailbox_id
   verify_ssl                     = "true"
   get_message_max_concurrency    = 10
   compress_threshold             = 1 * 1024 * 1024
   handshake_schedule             = "rate(24 hours)"
 
-  account_id                     = 345594581768
+  account_id                     = local.immunisation_account_id
 }
