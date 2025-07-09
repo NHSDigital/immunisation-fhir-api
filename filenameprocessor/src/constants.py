@@ -16,7 +16,7 @@ AUDIT_TABLE_NAME = os.getenv("AUDIT_TABLE_NAME")
 AUDIT_TABLE_QUEUE_NAME_GSI = "queue_name_index"
 AUDIT_TABLE_FILENAME_GSI = "filename_index"
 
-PERMISSIONS_CONFIG_FILE_KEY = "permissions_config.json"
+SUPPLIER_PERMISSIONS_HASH_KEY = "supplier_permissions"
 VACCINE_TYPE_TO_DISEASES_HASH_KEY = "vacc_to_diseases"
 
 ERROR_TYPE_TO_STATUS_CODE_MAP = {

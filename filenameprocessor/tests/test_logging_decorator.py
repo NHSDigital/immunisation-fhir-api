@@ -3,7 +3,6 @@
 import unittest
 from unittest.mock import patch
 import json
-from copy import deepcopy
 from contextlib import ExitStack
 from boto3 import client as boto3_client
 from botocore.exceptions import ClientError
@@ -12,14 +11,12 @@ from moto import mock_s3, mock_firehose, mock_sqs, mock_dynamodb
 from tests.utils_for_tests.generic_setup_and_teardown import GenericSetUp, GenericTearDown
 from tests.utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT, BucketNames, Firehose
 from tests.utils_for_tests.values_for_tests import MockFileDetails, fixed_datetime
-from tests.utils_for_tests.utils_for_filenameprocessor_tests import generate_permissions_config_content
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from clients import REGION_NAME
     from file_name_processor import lambda_handler
     from logging_decorator import send_log_to_firehose, generate_and_send_logs
-    from constants import PERMISSIONS_CONFIG_FILE_KEY
 
 s3_client = boto3_client("s3", region_name=REGION_NAME)
 sqs_client = boto3_client("sqs", region_name=REGION_NAME)
@@ -29,9 +26,6 @@ dynamodb_client = boto3_client("dynamodb", region_name=REGION_NAME)
 FILE_DETAILS = MockFileDetails.emis_flu
 MOCK_VACCINATION_EVENT = {
     "Records": [{"s3": {"bucket": {"name": BucketNames.SOURCE}, "object": {"key": FILE_DETAILS.file_key}}}]
-}
-MOCK_CONFIG_EVENT = {
-    "Records": [{"s3": {"bucket": {"name": BucketNames.CONFIG}, "object": {"key": PERMISSIONS_CONFIG_FILE_KEY}}}]
 }
 
 
@@ -146,10 +140,9 @@ class TestLoggingDecorator(unittest.TestCase):
     def test_logging_successful_validation(self):
         """Tests that the correct logs are sent to cloudwatch and splunk when file validation is successful"""
         # Mock full permissions so that validation will pass
-        permissions_config_content = generate_permissions_config_content(deepcopy(FILE_DETAILS.permissions_config))
         with (  # noqa: E999
             patch("file_name_processor.uuid4", return_value=FILE_DETAILS.message_id),  # noqa: E999
-            patch("elasticache.redis_client.get", return_value=permissions_config_content),  # noqa: E999
+            patch("elasticache.redis_client.hget", return_value=json.dumps(["FLU.CRUDS"])),  # noqa: E999
             patch("logging_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
             patch("logging_decorator.logger") as mock_logger,  # noqa: E999
         ):  # noqa: E999
@@ -175,11 +168,9 @@ class TestLoggingDecorator(unittest.TestCase):
     def test_logging_failed_validation(self):
         """Tests that the correct logs are sent to cloudwatch and splunk when file validation fails"""
         # Set up permissions for COVID19 only (file is for FLU), so that validation will fail
-        permissions_config_content = generate_permissions_config_content({"EMIS": ["COVID19_FULL"]})
-
         with (  # noqa: E999
             patch("file_name_processor.uuid4", return_value=FILE_DETAILS.message_id),  # noqa: E999
-            patch("elasticache.redis_client.get", return_value=permissions_config_content),  # noqa: E999
+            patch("elasticache.redis_client.hget", return_value=json.dumps(["COVID19.CRUDS"])),  # noqa: E999
             patch("logging_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
             patch("logging_decorator.logger") as mock_logger,  # noqa: E999
         ):  # noqa: E999
@@ -205,8 +196,6 @@ class TestLoggingDecorator(unittest.TestCase):
 
     def test_logging_throws_exception(self):
         """Tests that exception is caught when failing to send message to Firehose"""
-        permissions_config_content = generate_permissions_config_content({"EMIS": ["COVID19_FULL"]})
-
         firehose_exception = ClientError(
             error_response={"Error": {"Code": "ServiceUnavailable", "Message": "Service down"}},
             operation_name="PutRecord"
@@ -214,7 +203,7 @@ class TestLoggingDecorator(unittest.TestCase):
 
         with (
             patch("file_name_processor.uuid4", return_value=FILE_DETAILS.message_id),
-            patch("elasticache.redis_client.get", return_value=permissions_config_content),
+            patch("elasticache.redis_client.hget", return_value=json.dumps(["FLU.CRUDS"])),
             patch("logging_decorator.firehose_client.put_record", side_effect=firehose_exception),
             patch("logging_decorator.logger") as mock_logger,
         ):
@@ -230,34 +219,3 @@ class TestLoggingDecorator(unittest.TestCase):
         # Check that the message format is correct
         self.assertIn("Error sending log to Firehose", exception_message)
         self.assertEqual(exception_obj, firehose_exception)
-
-    def test_logging_successful_config_upload(self):
-        """
-        Tests that the correct logs are sent to cloudwatch and splunk when the config cache is successfully updated
-        """
-        # Create a permissions config file and upload it to the config bucket
-        permissions_config_content = generate_permissions_config_content(deepcopy(FILE_DETAILS.permissions_config))
-        s3_client.put_object(
-            Bucket=BucketNames.CONFIG, Key=PERMISSIONS_CONFIG_FILE_KEY, Body=permissions_config_content
-        )
-
-        with (  # noqa: E999
-            patch("elasticache.redis_client.set"),  # noqa: E999
-            patch("logging_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
-            patch("logging_decorator.logger") as mock_logger,  # noqa: E999
-        ):  # noqa: E999
-            lambda_handler(MOCK_CONFIG_EVENT, context=None)
-
-        expected_log_data = {
-            "function_name": "filename_processor_handle_record",
-            "date_time": fixed_datetime.strftime("%Y-%m-%d %H:%M:%S"),
-            "time_taken": "1.0s",
-            "statusCode": 200,
-            "message": "File content successfully uploaded to cache",
-            "file_key": PERMISSIONS_CONFIG_FILE_KEY,
-        }
-
-        log_data = json.loads(mock_logger.info.call_args[0][0])
-        self.assertEqual(log_data, expected_log_data)
-
-        mock_send_log_to_firehose.assert_called_once_with(log_data)
