@@ -1,9 +1,10 @@
+
 locals {
   policy_statement_allow_administration = {
-    Sid    = "Allow administration of the key",
+    Sid    = "AllowKeyAdministration",
     Effect = "Allow",
     Principal = {
-      AWS = "arn:aws:iam::${local.immunisation_account_id}:root"
+      AWS = "arn:aws:iam::${var.imms_account_id}:${var.admin_role}"
     },
     Action = [
       "kms:Create*",
@@ -26,10 +27,10 @@ locals {
   }
 
   policy_statement_allow_auto_ops = {
-    Sid    = "KMS KeyUser access",
+    Sid    = "KMSKeyUserAccess",
     Effect = "Allow",
     Principal = {
-      AWS = ["arn:aws:iam::${local.immunisation_account_id}:role/auto-ops"]
+      AWS = "arn:aws:iam::${var.imms_account_id}:${var.auto_ops_role}"
     },
     Action = [
       "kms:Encrypt",
@@ -39,10 +40,10 @@ locals {
   }
 
   policy_statement_allow_devops = {
-    Sid    = "KMS KeyUser access for DevOps",
+    Sid    = "KMSKeyUserAccessForDevOps",
     Effect = "Allow",
     Principal = {
-      AWS = ["arn:aws:iam::${local.immunisation_account_id}:role/DevOps"]
+      AWS = "arn:aws:iam::${var.imms_account_id}:${var.dev_ops_role}"
     },
     Action = [
       "kms:Encrypt",
@@ -51,11 +52,12 @@ locals {
     Resource = "*"
   }
 
+  #TODO: This should be renamed (account_a)
   policy_statement_allow_account_a = {
     Sid    = "AllowAccountA",
     Effect = "Allow",
     Principal = {
-      AWS = "arn:aws:iam::${local.dspp_core_account_id}:root"
+      AWS = "arn:aws:iam::${var.dspp_account_id}:${var.dspp_admin_role}"
     },
     Action = [
       "kms:Encrypt",
@@ -65,6 +67,7 @@ locals {
     Resource = "*"
   }
 }
+
 
 resource "aws_kms_key" "dynamodb_encryption" {
   description         = "KMS key for DynamoDB encryption"
