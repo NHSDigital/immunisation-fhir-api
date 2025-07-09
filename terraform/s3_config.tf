@@ -192,7 +192,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "data_destinations" {
 }
 
 resource "aws_s3_bucket" "batch_config_bucket" {
-  bucket = "imms-${local.environment}-supplier-config"
+  bucket = "imms-${local.environment}-fhir-config"
 }
 
 resource "aws_s3_bucket_public_access_block" "batch_config_bucket_public_access_block" {
