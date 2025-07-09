@@ -29,16 +29,14 @@ class TestElasticache(TestCase):
         """Tear down the S3 buckets"""
         GenericTearDown(s3_client)
 
-    @patch("elasticache.redis_client")
-    def test_get_supplier_permissions_from_cache(self, mock_redis_client):
-        mock_redis_client.hget.return_value = json.dumps(["COVID19.CRUDS", "RSV.CRUDS"])
+    @patch("elasticache.redis_client.hget", return_value=json.dumps(["COVID19.CRUDS", "RSV.CRUDS"]))
+    def test_get_supplier_permissions_from_cache(self, mock_hget):
         result = get_supplier_permissions_from_cache("TEST_SUPPLIER")
         self.assertEqual(result, ["COVID19.CRUDS", "RSV.CRUDS"])
-        mock_redis_client.hget.assert_called_once_with("supplier_permissions", "TEST_SUPPLIER")
+        mock_hget.assert_called_once_with("supplier_permissions", "TEST_SUPPLIER")
 
-    @patch("elasticache.redis_client")
-    def test_get_supplier_permissions_from_cache_not_found(self, mock_redis_client):
-        mock_redis_client.hget.return_value = None
+    @patch("elasticache.redis_client.hget", return_value=None)
+    def test_get_supplier_permissions_from_cache_not_found(self, mock_hget):
         result = get_supplier_permissions_from_cache("TEST_SUPPLIER")
         self.assertEqual(result, [])
-        mock_redis_client.hget.assert_called_once_with("supplier_permissions", "TEST_SUPPLIER")
+        mock_hget.assert_called_once_with("supplier_permissions", "TEST_SUPPLIER")
