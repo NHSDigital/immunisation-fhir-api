@@ -9,7 +9,6 @@ MOCK_ACCOUNT_ID = "123456789012"
 class BucketNames:
     """Class to hold bucket names for use in tests"""
 
-    CONFIG = "immunisation-batch-internal-dev-data-configs"
     SOURCE = "immunisation-batch-internal-dev-data-sources"
     DESTINATION = "immunisation-batch-internal-dev-data-destinations"
     # Mock firehose bucket used for testing only (due to limitations of the moto testing package)

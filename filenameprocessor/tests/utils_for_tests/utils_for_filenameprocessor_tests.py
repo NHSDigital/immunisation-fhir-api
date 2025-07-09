@@ -15,6 +15,7 @@ with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from csv import DictReader
     from constants import AuditTableKeys, AUDIT_TABLE_NAME, FileStatus
 
+
 def get_dynamodb_client():
     """Create a new DynamoDB client (used to avoid global instance conflicts with moto)"""
     return boto3_client("dynamodb", region_name=REGION_NAME)
@@ -28,8 +29,8 @@ def get_csv_file_dict_reader(s3_client, bucket_name: str, file_key: str) -> Dict
 
 
 def generate_permissions_config_content(permissions_dict: dict) -> str:
-    """Converts the permissions dictionary to a JSON string of the permissions config file content"""
-    return json.dumps({"all_permissions": permissions_dict})
+    """Converts the permissions dictionary to a JSON string (no longer wrapped in 'all_permissions')"""
+    return json.dumps(permissions_dict)
 
 
 def deserialize_dynamodb_types(dynamodb_table_entry_with_types):
@@ -42,14 +43,17 @@ def deserialize_dynamodb_types(dynamodb_table_entry_with_types):
 
 def add_entry_to_table(file_details: MockFileDetails, file_status: FileStatus) -> None:
     """Add an entry to the audit table"""
+    dynamodb_client = get_dynamodb_client()
     audit_table_entry = {**file_details.audit_table_entry, "status": {"S": file_status}}
     dynamodb_client.put_item(TableName=AUDIT_TABLE_NAME, Item=audit_table_entry)
 
 
 def assert_audit_table_entry(file_details: FileDetails, expected_status: FileStatus) -> None:
     """Assert that the file details are in the audit table"""
+    dynamodb_client = get_dynamodb_client()
     table_entry = dynamodb_client.get_item(
-        TableName=AUDIT_TABLE_NAME, Key={AuditTableKeys.MESSAGE_ID: {"S": file_details.message_id}}
+        TableName=AUDIT_TABLE_NAME,
+        Key={AuditTableKeys.MESSAGE_ID: {"S": file_details.message_id}},
     ).get("Item")
     assert table_entry == {**file_details.audit_table_entry, "status": {"S": expected_status}}
 

@@ -38,7 +38,7 @@ class TestFileKeyValidation(TestCase):
             with self.subTest():
                 self.assertEqual(is_valid_datetime(date_time_string), expected_result)
 
-    @patch("elasticache.redis_client.hkeys", return_value=["FLU", "RSV"])
+    @patch("supplier_permissions.redis_client.hkeys", return_value=["FLU", "RSV"])
     def test_validate_file_key(self, _mock_hkeys):
         """Tests that file_key_validation returns True if all elements pass validation, and False otherwise"""
         # Test case tuples are structured as (file_key, expected_result)
