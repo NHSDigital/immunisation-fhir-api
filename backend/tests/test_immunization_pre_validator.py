@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 from jsonpath_ng.ext import parse
 
-from clients import redis_client
+from redis_client import redis_client
 from models.fhir_immunization import ImmunizationValidator
 from models.utils.generic_utils import get_generic_extension_value
 from utils.generic_utils import (
@@ -36,9 +36,9 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         self.validator = ImmunizationValidator(add_post_validators=False)
         self.redis_patcher = patch("models.utils.validation_utils.redis_client")
         self.mock_redis_client = self.redis_patcher.start()
-        
-        
-        
+
+
+
     def tearDown(self):
         patch.stopall()
 

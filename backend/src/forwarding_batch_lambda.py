@@ -7,7 +7,7 @@ import time
 import logging
 from fhir_batch_repository import create_table
 from fhir_batch_controller import ImmunizationBatchController, make_batch_controller
-from clients import sqs_client
+from aws_clients import sqs_client
 from models.errors import (
     MessageNotSuccessfulError,
     RecordProcessorError,

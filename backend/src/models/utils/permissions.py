@@ -1,4 +1,4 @@
-from clients import redis_client
+from redis_client import redis_client
 import json
 
 def get_supplier_permissions(supplier: str) -> list[str]:

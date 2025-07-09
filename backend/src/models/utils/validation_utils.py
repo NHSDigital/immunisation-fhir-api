@@ -10,7 +10,7 @@ from models.field_names import FieldNames
 from models.errors import MandatoryError
 from constants import Urls
 from models.constants import Constants
-from clients import redis_client
+from redis_client import redis_client
 
 
 def get_target_disease_codes(immunization: dict):
@@ -54,7 +54,7 @@ def convert_disease_codes_to_vaccine_type(disease_codes_input: list) -> Union[st
     """
     key = ":".join(sorted(disease_codes_input))
     vaccine_type = redis_client.hget(Constants.DISEASES_TO_VACCINE_TYPE_HASH_KEY, key)
-    
+
     if not vaccine_type:
         raise ValueError(
             f"Validation errors: protocolApplied[0].targetDisease[*].coding[?(@.system=='http://snomed.info/sct')].code - "
