@@ -91,9 +91,6 @@ class TestRecordProcessor(unittest.TestCase):
             "created_at_formatted_string", file_details.created_at_formatted_string
         )
 
-        print(f"actual_rows: {actual_rows,}")
-        print(f"expected_rows: {expected_row}")
-        
         self.assertEqual(actual_rows, [InfAckFileRows.HEADERS, expected_row])
 
     def make_kinesis_assertions(self, test_cases):

@@ -32,12 +32,15 @@ def validate_action_flag_permissions(
     operations_requested = get_unique_action_flags_from_s3(csv_data)
 
     # Map ACTION_FLAGs to single-letter permissions
-    requested_permissions = {ActionFlag[flag].value.value for flag in operations_requested if flag in ActionFlag.__members__}
-    
+    requested_permissions = {
+        ActionFlag[flag].value.value
+        for flag in operations_requested
+        if flag in ActionFlag.__members__
+        }
+
     if not requested_permissions:
         logger.warning("No valid ACTION_FLAGs found in file. Skipping permission validation.")
         return set()
-
 
     # Get allowed permission in single letters from allowed_permissions_list
     allowed_ops = set()
@@ -57,10 +60,11 @@ def validate_action_flag_permissions(
             allowed_ops.update({"C", "R", "U", "D", "S"})
         else:
             allowed_ops.add(op_code)
-    
-    if not requested_permissions.intersection(allowed_ops):
-        raise NoOperationPermissions(f"{supplier} does not have permissions to perform any of the requested actions.")
 
+    if not requested_permissions.intersection(allowed_ops):
+        raise NoOperationPermissions(
+            f"{supplier} does not have permissions to perform any of the requested actions."
+            )
 
     logger.info(
         "%s permissions %s match one of the requested permissions required to %s",
@@ -70,7 +74,7 @@ def validate_action_flag_permissions(
     )
 
     # Return allowed ops in full-word format for downstream logic
-    return {perm.name for perm in Permission if perm.value in allowed_ops }
+    return {perm.name for perm in Permission if perm.value in allowed_ops}
 
 
 def move_file(bucket_name: str, source_file_key: str, destination_file_key: str) -> None:
