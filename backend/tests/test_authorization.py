@@ -1,181 +1,108 @@
 import unittest
-from typing import Set
-
 from authorization import (
     Authorization,
     UnknownPermission,
-    EndpointOperation as Operation,
-    PERMISSIONS_HEADER,
     AUTHENTICATION_HEADER,
     authorize,
-    Permission,
-    AuthType)
+    AuthType
+)
 from models.errors import UnauthorizedError
 
-"test"
-def _make_aws_event(auth_type: AuthType, permissions: Set[str]):
-    header = ",".join(permissions)
+
+def _make_aws_event(auth_type: AuthType):
     return {
         "headers": {
-            PERMISSIONS_HEADER: header,
             AUTHENTICATION_HEADER: auth_type.value
         }
     }
 
 
-def _full_access(exclude: Set[Permission] = None):
-    return {*Permission}.difference(exclude)
-
-
 class TestAuthorizeDecorator(unittest.TestCase):
-    """This is a test for the decorator itself not the authorization logic.
-    This decorator uses Authorize class internally and it has its own tests"""
+    """Test the decorator itself, not the authorization logic."""
 
     class StubController:
-        @authorize(Operation.READ)
+        @authorize()
         def read_endpoint(self, aws_event: dict):
-            _ = aws_event
             return True
 
-    def test_decorator(self):
+    def test_decorator_authorized(self):
         controller = TestAuthorizeDecorator.StubController()
-
-        aws_event = _make_aws_event(AuthType.APP_RESTRICTED, {Permission.READ})
-        # When authorized
+        aws_event = _make_aws_event(AuthType.APP_RESTRICTED)
         is_called = controller.read_endpoint(aws_event)
         self.assertTrue(is_called)
 
-        aws_event = _make_aws_event(AuthType.APP_RESTRICTED, _full_access(exclude={Permission.READ}))
-        with self.assertRaises(UnauthorizedError):
-            # When unauthorized
-            is_called = controller.read_endpoint(aws_event)
-            self.assertFalse(is_called)
+    def test_decorator_unauthorized(self):
+        controller = TestAuthorizeDecorator.StubController()
+        aws_event = {
+            "headers": {
+                AUTHENTICATION_HEADER: "InvalidType"
+            }
+        }
+        with self.assertRaises(UnknownPermission):
+            controller.read_endpoint(aws_event)
 
 
 class TestAuthorization(unittest.TestCase):
-    """This class is for testing Authorization class before identifying the authentication type.
-    Each AuthenticationType has its own test class"""
+    """Test Authorization class."""
 
     def setUp(self):
         self.authorization = Authorization()
 
+    def test_valid_auth_types(self):
+        for auth_type in [AuthType.APP_RESTRICTED, AuthType.CIS2, AuthType.NHS_LOGIN]:
+            aws_event = _make_aws_event(auth_type)
+            try:
+                self.authorization.authorize(aws_event)
+            except Exception as e:
+                self.fail(f"Authorization failed for valid type {auth_type}: {e}")
+
     def test_unknown_authorization(self):
-        """it should raise UnknownPermission if auth type can't be determined"""
         aws_event = {
             "headers": {
-                PERMISSIONS_HEADER: str(Permission.READ),
                 AUTHENTICATION_HEADER: "unknown auth type"
             }
         }
-
         with self.assertRaises(UnknownPermission):
-            self.authorization.authorize(Operation.READ, aws_event)
+            self.authorization.authorize(aws_event)
 
 
 class TestApplicationRestrictedAuthorization(unittest.TestCase):
     def setUp(self):
         self.authorization = Authorization()
 
-    def test_parse_permissions_header(self):
-        """it should parse the content of permissions header"""
-        # test for case-insensitive, trim and duplicated
-        permissions = {"immunization:read", "immunization:read", "immunization:create\n", "\timmunization:UPDATE ",
-                       "immunization:delete", "immunization:search"}
-        aws_event = _make_aws_event(AuthType.APP_RESTRICTED, permissions)
+    def test_valid_app_restricted_auth(self):
+        aws_event = _make_aws_event(AuthType.APP_RESTRICTED)
+        try:
+            self.authorization.authorize(aws_event)
+        except Exception as e:
+            self.fail(f"Authorization failed unexpectedly: {e}")
 
-        # Try each operation. It's a pass if we don't get any exceptions
-        for op in [*Operation]:
-            try:
-                # When
-                self.authorization.authorize(op, aws_event)
-            except (UnauthorizedError, UnknownPermission):
-                self.fail()
-
-    def test_unknown_permission(self):
-        permissions = {"immunization:create", "bad-permission"}
-        aws_event = _make_aws_event(AuthType.APP_RESTRICTED, permissions)
-
-        with self.assertRaises(UnknownPermission):
-            # When
-            self.authorization.authorize(Operation.CREATE, aws_event)
-
-    def test_authorization(self):
-        """it authorizes each request based on the operation"""
-        # For each operation we need to test both authorized and unauthorized scenarios.
-        #  The set of permissions to get unauthorized should be the complement of authorized
-        operations = {
-            Operation.READ: {Permission.READ},
-            Operation.CREATE: {Permission.CREATE},
-            Operation.UPDATE: {Permission.UPDATE, Permission.CREATE},
-            Operation.DELETE: {Permission.DELETE},
-            Operation.SEARCH: {Permission.SEARCH},
+    def test_invalid_auth_type_raises_unknown_permission(self):
+        aws_event = {
+            "headers": {
+                AUTHENTICATION_HEADER: "InvalidAuthType"
+            }
         }
-        for op in operations:
-            # Authorized:
-            required_perms = operations[op]
-            aws_event = _make_aws_event(AuthType.APP_RESTRICTED, required_perms)
-            try:
-                self.authorization.authorize(op, aws_event)
-            except RuntimeError:
-                self.fail(f"Authorization test failed for operation {op}")
-
-            # Unauthorized:
-            unauthorized_perms = _full_access(exclude=required_perms)
-            aws_event = _make_aws_event(AuthType.APP_RESTRICTED, unauthorized_perms)
-            with self.assertRaises(UnauthorizedError):
-                self.authorization.authorize(op, aws_event)
+        with self.assertRaises(UnknownPermission):
+            self.authorization.authorize(aws_event)
 
 
-# NOTE: Cis2 works exactly the same as ApplicationRestricted.
 class TestCis2Authorization(unittest.TestCase):
     def setUp(self):
         self.authorization = Authorization()
 
-    def test_parse_permissions_header(self):
-        """it should parse the content of the permissions header"""
-        # test for case-insensitive, trim and duplicated
-        permissions = {"immunization:read", "immunization:read", "immunization:create\n", "\timmunization:UPDATE ",
-                       "immunization:delete", "immunization:search"}
-        aws_event = _make_aws_event(AuthType.CIS2, permissions)
+    def test_valid_cis2_auth(self):
+        aws_event = _make_aws_event(AuthType.CIS2)
+        try:
+            self.authorization.authorize(aws_event)
+        except Exception as e:
+            self.fail(f"Authorization failed unexpectedly: {e}")
 
-        # Try each operation. It's a pass if we don't get any exceptions
-        for op in [*Operation]:
-            try:
-                # When
-                self.authorization.authorize(op, aws_event)
-            except (UnauthorizedError, UnknownPermission):
-                self.fail()
-
-    def test_unknown_permission(self):
-        permissions = {"immunization:create", "bad-permission"}
-        aws_event = _make_aws_event(AuthType.CIS2, permissions)
-
-        with self.assertRaises(UnknownPermission):
-            # When
-            self.authorization.authorize(Operation.CREATE, aws_event)
-
-    def test_authorization(self):
-        """it authorizes each request based on the operation"""
-        # For each operation we need to test both authorized and unauthorized scenarios.
-        #  The set of permissions to get unauthorized should be the complement of authorized
-        operations = {
-            Operation.READ: {Permission.READ},
-            Operation.CREATE: {Permission.CREATE},
-            Operation.UPDATE: {Permission.UPDATE, Permission.CREATE},
-            Operation.DELETE: {Permission.DELETE},
-            Operation.SEARCH: {Permission.SEARCH},
+    def test_invalid_auth_type_raises_unknown_permission(self):
+        aws_event = {
+            "headers": {
+                AUTHENTICATION_HEADER: "InvalidAuthType"
+            }
         }
-        for op in operations:
-            # Authorized:
-            required_perms = operations[op]
-            aws_event = _make_aws_event(AuthType.CIS2, required_perms)
-            try:
-                self.authorization.authorize(op, aws_event)
-            except RuntimeError:
-                self.fail(f"Authorization test failed for operation {op}")
-
-            # Unauthorized:
-            unauthorized_perms = _full_access(exclude=required_perms)
-            aws_event = _make_aws_event(AuthType.CIS2, unauthorized_perms)
-            with self.assertRaises(UnauthorizedError):
-                self.authorization.authorize(op, aws_event)
+        with self.assertRaises(UnknownPermission):
+            self.authorization.authorize(aws_event)

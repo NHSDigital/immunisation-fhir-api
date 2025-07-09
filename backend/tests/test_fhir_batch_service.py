@@ -1,16 +1,34 @@
 import unittest
 import uuid
 from copy import deepcopy
-from unittest.mock import Mock, create_autospec
+from unittest.mock import Mock, create_autospec, patch
 from tests.utils.immunization_utils import  create_covid_19_immunization_dict_no_id
 from models.errors import CustomValidationError
 from models.fhir_immunization import ImmunizationValidator
 from fhir_batch_repository import ImmunizationBatchRepository
 from fhir_batch_service import ImmunizationBatchService
 
-class TestCreateImmunizationBatchService(unittest.TestCase):
+
+class TestFhirBatchServiceBase(unittest.TestCase):
+    """Base class for all tests to set up common fixtures"""
 
     def setUp(self):
+        super().setUp()
+        self.redis_patcher = patch("models.utils.validation_utils.redis_client")
+        self.mock_redis_client = self.redis_patcher.start()
+        self.logger_info_patcher = patch("logging.Logger.info")
+        self.mock_logger_info = self.logger_info_patcher.start()
+
+    def tearDown(self):
+        self.redis_patcher.stop()
+        self.logger_info_patcher.stop()
+        super().tearDown()
+
+
+class TestCreateImmunizationBatchService(TestFhirBatchServiceBase):
+
+    def setUp(self):
+        super().setUp()
         self.mock_repo = create_autospec(ImmunizationBatchRepository)
         self.mock_validator = create_autospec(ImmunizationValidator)
         self.mock_table = Mock()
@@ -18,6 +36,14 @@ class TestCreateImmunizationBatchService(unittest.TestCase):
         self.pre_validate_fhir_service = ImmunizationBatchService(
             self.mock_repo, ImmunizationValidator(add_post_validators=False)
         )
+
+    def tearDown(self):
+        super().tearDown()
+        self.mock_repo.reset_mock()
+        self.mock_validator.reset_mock()
+        self.mock_table.reset_mock()
+        self.service = None
+        self.pre_validate_fhir_service = None
 
     def test_create_immunization_valid(self):
         """it should create Immunization and return imms id location"""
@@ -57,6 +83,7 @@ class TestCreateImmunizationBatchService(unittest.TestCase):
         bad_target_disease_imms = deepcopy(valid_imms)
         bad_target_disease_imms["protocolApplied"][0]["targetDisease"][0]["coding"][0]["code"] = "bad-code"
         expected_msg = "protocolApplied[0].targetDisease[*].coding[?(@.system=='http://snomed.info/sct')].code - ['bad-code'] is not a valid combination of disease codes for this service"
+        self.mock_redis_client.hget.return_value = None  # Reset mock for invalid cases
         with self.assertRaises(CustomValidationError) as error:
             self.pre_validate_fhir_service.create_immunization(
                 immunization=bad_target_disease_imms, 
@@ -69,9 +96,10 @@ class TestCreateImmunizationBatchService(unittest.TestCase):
         self.mock_repo.create_immunization.assert_not_called() 
 
 
-class TestUpdateImmunizationBatchService(unittest.TestCase):
+class TestUpdateImmunizationBatchService(TestFhirBatchServiceBase):
 
     def setUp(self):
+        super().setUp()
         self.mock_repo = create_autospec(ImmunizationBatchRepository)
         self.mock_validator = create_autospec(ImmunizationValidator)
         self.mock_table = Mock()
@@ -79,6 +107,14 @@ class TestUpdateImmunizationBatchService(unittest.TestCase):
         self.pre_validate_fhir_service = ImmunizationBatchService(
             self.mock_repo, ImmunizationValidator(add_post_validators=False)
         )
+
+    def tearDown(self):
+        super().tearDown()
+        self.mock_repo.reset_mock()
+        self.mock_validator.reset_mock()
+        self.mock_table.reset_mock()
+        self.service = None
+        self.pre_validate_fhir_service = None
 
     def test_update_immunization_valid(self):
         """it should update Immunization and return imms id"""
@@ -113,6 +149,8 @@ class TestUpdateImmunizationBatchService(unittest.TestCase):
 
     def test_update_immunization_post_validation_error(self):
         """it should return error since it got failed in initial validation"""
+
+        self.mock_redis_client.hget.return_value = None  # Reset mock for invalid cases
 
         valid_imms = create_covid_19_immunization_dict_no_id()
         bad_target_disease_imms = deepcopy(valid_imms)

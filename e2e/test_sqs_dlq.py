@@ -1,6 +1,6 @@
-import unittest
 import json
 import boto3
+import unittest
 import os
 from utils.delete_sqs_messages import read_and_delete_messages
 from utils.get_sqs_url import get_queue_url

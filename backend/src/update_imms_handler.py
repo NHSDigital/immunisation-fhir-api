@@ -3,7 +3,7 @@ import logging
 import pprint
 import uuid
 
-from authorization import Permission
+
 from fhir_controller import FhirController, make_controller
 from local_lambda import load_string
 from models.errors import Severity, Code, create_operation_outcome
@@ -43,10 +43,10 @@ if __name__ == "__main__":
         "body": load_string(args.path),
         "headers": {
             "Content-Type": "application/x-www-form-urlencoded",
-            "AuthenticationType": "ApplicationRestricted",
-            "Permissions": (",".join([Permission.UPDATE])),
+            "AuthenticationType": "ApplicationRestricted"
         },
     }
 
     pprint.pprint(event)
     pprint.pprint(update_imms_handler(event, {}))
+ 

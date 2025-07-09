@@ -7,7 +7,7 @@ import uuid
 
 from aws_lambda_typing import context as context_, events
 
-from authorization import Permission
+
 from fhir_controller import FhirController, make_controller
 from models.errors import Severity, Code, create_operation_outcome
 from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
@@ -26,7 +26,7 @@ def search_imms_handler(event: events.APIGatewayProxyEventV1, _context: context_
 def search_imms(event: events.APIGatewayProxyEventV1, controller: FhirController):
     try:
         query_params = event.get("queryStringParameters", {})
-        body = event["body"]
+        body = event.get("body")
         body_has_immunization_identifier = False
         query_string_has_immunization_identifier = False
         query_string_has_element = False
@@ -38,8 +38,8 @@ def search_imms(event: events.APIGatewayProxyEventV1, controller: FhirController
                 )
                 query_string_has_element = "_element" in event.get("queryStringParameters", {})
             # Decode body from base64
-            if event["body"]:
-                decoded_body = base64.b64decode(event["body"]).decode("utf-8")
+            if body:
+                decoded_body = base64.b64decode(body).decode("utf-8")
                 # Parse the URL encoded body
                 parsed_body = urllib.parse.parse_qs(decoded_body)
 
@@ -122,8 +122,7 @@ if __name__ == "__main__":
         "httpMethod": "POST",
         "headers": {
             "Content-Type": "application/x-www-form-urlencoded",
-            "AuthenticationType": "ApplicationRestricted",
-            "Permissions": (",".join([Permission.SEARCH])),
+            "AuthenticationType": "ApplicationRestricted"
         },
         "body": None,
         "resource": None,

@@ -1,14 +1,14 @@
 {
   "supplier_permissions": {
-    "DPSFULL": ["COVID19_FULL", "FLU_FULL", "MMR_FULL", "RSV_FULL"],
-    "DPSREDUCED": ["COVID19_FULL", "FLU_FULL", "MMR_FULL", "RSV_FULL"],
-    "EMIS": ["RSV_UPDATE"],
+    "DPSFULL": ["COVID19.CRUDS", "FLU.CRUDS", "MMR.CRUDS", "RSV.CRUDS"],
+    "DPSREDUCED": ["COVID19.CRUDS", "FLU.CRUDS", "MMR.CRUDS", "RSV.CRUDS"],
+    "EMIS": ["RSV.U"],
     "PINNACLE": [""],
-    "SONAR": ["FLU_CREATE", "FLU_DELETE"],
+    "SONAR": ["FLU.CD"],
     "TPP": [""],
     "AGEM-NIVS": [""],
     "NIMS": [""],
-    "EVA": ["COVID19_CREATE", "COVID19_DELETE", "COVID19_UPDATE"],
+    "EVA": ["COVID19.CUD"],
     "RAVS": [""],
     "MEDICAL_DIRECTOR": [""],
     "COVID19_VACCINE_RESOLUTION_SERVICEDESK": [""]
