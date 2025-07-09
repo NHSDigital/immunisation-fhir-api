@@ -185,6 +185,15 @@ resource "aws_iam_policy" "forwarding_lambda_exec_policy" {
           "sqs:SendMessage"
         ]
         Resource = aws_sqs_queue.fifo_queue.arn
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "ec2:CreateNetworkInterface",
+          "ec2:DescribeNetworkInterfaces",
+          "ec2:DeleteNetworkInterface"
+        ],
+        Resource = "*"
       }
     ]
   })
@@ -209,12 +218,19 @@ resource "aws_lambda_function" "forwarding_lambda" {
     size = 1024
   }
 
+  vpc_config {
+    subnet_ids         = local.private_subnet_ids
+    security_group_ids = [data.aws_security_group.existing_securitygroup.id]
+  }
+
   environment {
     variables = {
       SOURCE_BUCKET_NAME  = aws_s3_bucket.batch_data_source_bucket.bucket
       ACK_BUCKET_NAME     = aws_s3_bucket.batch_data_destination_bucket.bucket
       DYNAMODB_TABLE_NAME = aws_dynamodb_table.events-dynamodb-table.name
       SQS_QUEUE_URL       = aws_sqs_queue.fifo_queue.url
+      REDIS_HOST          = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].address
+      REDIS_PORT          = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].port
     }
   }
   kms_key_arn = data.aws_kms_key.existing_lambda_encryption_key.arn
