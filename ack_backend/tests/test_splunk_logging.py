@@ -19,7 +19,7 @@ from tests.utils_for_ack_backend_tests.generic_setup_and_teardown_for_ack_backen
 from tests.utils_for_ack_backend_tests.utils_for_ack_backend_tests import generate_event
 
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
-    from src.ack_processor import lambda_handler
+    from ack_processor import lambda_handler
 
 s3_client = boto3_client("s3")
 

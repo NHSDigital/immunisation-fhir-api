@@ -17,7 +17,7 @@ resource "aws_ecr_repository" "file_name_processor_lambda_repository" {
 # Module for building and pushing Docker image to ECR
 module "file_processor_docker_image" {
   source  = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version = "7.21.1"
+  version = "8.0.1"
 
   create_ecr_repo = false
   ecr_repo        = aws_ecr_repository.file_name_processor_lambda_repository.name
@@ -276,7 +276,7 @@ resource "aws_lambda_function" "file_processor_lambda" {
   timeout       = 360
 
   vpc_config {
-    subnet_ids         = data.aws_subnets.default.ids
+    subnet_ids         = local.private_subnet_ids
     security_group_ids = [data.aws_security_group.existing_securitygroup.id]
   }
 

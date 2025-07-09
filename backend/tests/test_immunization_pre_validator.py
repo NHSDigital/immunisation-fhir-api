@@ -3,35 +3,44 @@
 import unittest
 from copy import deepcopy
 from decimal import Decimal
+from unittest.mock import patch
+
 from jsonpath_ng.ext import parse
 
-from src.models.fhir_immunization import ImmunizationValidator
-from src.models.utils.generic_utils import get_generic_extension_value
-from src.mappings import DiseaseCodes
-from .utils.generic_utils import (
+from clients import redis_client
+from models.fhir_immunization import ImmunizationValidator
+from models.utils.generic_utils import get_generic_extension_value
+from utils.generic_utils import (
     # these have an underscore to avoid pytest collecting them as tests
     test_valid_values_accepted as _test_valid_values_accepted,
     test_invalid_values_rejected as _test_invalid_values_rejected,
     load_json_data,
 )
-from src.models.utils.generic_utils import (
+from models.utils.generic_utils import (
     patient_name_given_field_location,
     patient_name_family_field_location,
     practitioner_name_given_field_location,
     practitioner_name_family_field_location,
 )
-from .utils.pre_validation_test_utils import ValidatorModelTests
-from .utils.values_for_tests import ValidValues, InvalidValues
-from models.obtain_field_value import ObtainFieldValue
-
+from utils.pre_validation_test_utils import ValidatorModelTests
+from utils.values_for_tests import ValidValues, InvalidValues
+from models.constants import Constants
 
 class TestImmunizationModelPreValidationRules(unittest.TestCase):
     """Test immunization pre validation rules on the FHIR model using the covid sample data"""
+
 
     def setUp(self):
         """Set up for each test. This runs before every test"""
         self.json_data = load_json_data(filename="completed_covid19_immunization_event.json")
         self.validator = ImmunizationValidator(add_post_validators=False)
+        self.redis_patcher = patch("models.utils.validation_utils.redis_client")
+        self.mock_redis_client = self.redis_patcher.start()
+        
+        
+        
+    def tearDown(self):
+        patch.stopall()
 
     def test_collected_errors(self):
         """Test that when passed multiple validation errors, it returns a list of all expected errors."""
@@ -499,7 +508,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         )
 
     def test_pre_validate_patient_address_postal_code(self):
-        """Test pre_validate_patient_address_postal_code accepts valid values and rejects invalid values"""        
+        """Test pre_validate_patient_address_postal_code accepts valid values and rejects invalid values"""
         values = {
             "contained": [
                 {
@@ -664,6 +673,8 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         actual_error_messages = full_error_message.replace("Validation errors: ", "").split("; ")
         self.assertIn("extension is a mandatory field", actual_error_messages)
 
+    def test_pre_validate_missing_valueCodeableConcept(self):
+        """Test pre_validate_extension  missing "valueCodeableConcept" within an extension"""
         # Test case: missing "valueCodeableConcept" within an extension
         invalid_json_data = deepcopy(self.json_data)
         del invalid_json_data["extension"][0]["valueCodeableConcept"]
@@ -675,6 +686,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         actual_error_messages = full_error_message.replace("Validation errors: ", "").split("; ")
         self.assertIn("extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept is a mandatory field", actual_error_messages)
 
+    def test_pre_validate_missing_valueCodeableConcept2(self):
         # Test case: missing "coding" within "valueCodeableConcept"
         invalid_json_data = deepcopy(self.json_data)
         del invalid_json_data["extension"][0]["valueCodeableConcept"]["coding"]
@@ -686,7 +698,9 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         actual_error_messages = full_error_message.replace("Validation errors: ", "").split("; ")
         self.assertIn("extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding is a mandatory field", actual_error_messages)
 
+    def test_pre_validate_missing_valueCodeableConcept3(self):
         # Test case: valid data (should not raise an exception)
+        self.mock_redis_client.hget.return_value = "COVID19"
         valid_json_data = deepcopy(self.json_data)
         try:
             self.validator.validate(valid_json_data)
@@ -718,7 +732,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         actual_error_messages = full_error_message.replace("Validation errors: ", "").split("; ")
         self.assertIn("extension must be an array of length 1", actual_error_messages)
 
-    def test_pre_validate_extension_url(self):
+    def test_pre_validate_extension_url1(self):
         """Test test_pre_validate_extension_url accepts valid values and rejects invalid values for extension[0].url"""
         # Test case: missing "extension"
         invalid_json_data = deepcopy(self.json_data)
@@ -744,12 +758,12 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
 
             full_error_message = str(error.exception)
             actual_error_messages = full_error_message.replace("Validation errors: ", "").split("; ")
-            self.assertIn("extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding[?(@.system=='http://snomed.info/sct')].code is not a valid snomed code", actual_error_messages)    
-    
+            self.assertIn("extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding[?(@.system=='http://snomed.info/sct')].code is not a valid snomed code", actual_error_messages)
+
     def test_pre_validate_extension_to_extract_the_coding_code_value(self):
         "Test the array length for extension and it should be length 1"
         invalid_json_data = deepcopy(self.json_data)
-        
+
         # Adding a new SNOMED code and testing if a specific code is retrieved
         invalid_json_data["extension"][0]["valueCodeableConcept"]["coding"].append({
             "system": "http://snomed.info/sct",
@@ -1025,18 +1039,18 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
             field_location="protocolApplied[0].targetDisease[0]."
             + "coding[?(@.system=='http://snomed.info/sct')].code",
             valid_strings_to_test=[
-                DiseaseCodes.covid_19,
-                DiseaseCodes.flu,
-                DiseaseCodes.hpv,
+                "840539006",
+                "6142004",
+                "240532009",
             ],
             valid_json_data=load_json_data(filename="completed_covid19_immunization_event.json"),
         )
 
         # Test data with multiple disease_type_coding_codes
         for i, disease_code in [
-            (0, DiseaseCodes.measles),
-            (1, DiseaseCodes.mumps),
-            (2, DiseaseCodes.rubella),
+            (0, "14189004"),
+            (1, "36989005"),
+            (2, "36653000"),
         ]:
             ValidatorModelTests.test_string_value(
                 self,

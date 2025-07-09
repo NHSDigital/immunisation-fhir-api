@@ -15,33 +15,56 @@ variable "aws_region" {
 }
 
 locals {
-  environment       = terraform.workspace == "green" ? "prod" : terraform.workspace == "blue" ? "prod" : terraform.workspace
-  env               = terraform.workspace
-  prefix            = "${var.project_name}-${var.service}-${local.env}"
-  short_prefix      = "${var.project_short_name}-${local.env}"
-  batch_prefix      = "immunisation-batch-${local.env}"
-  config_env        = local.environment == "prod" ? "prod" : "dev"
-  config_bucket_env = local.environment == "prod" ? "prod" : "internal-dev"
+  environment  = terraform.workspace == "green" ? "prod" : terraform.workspace == "blue" ? "prod" : terraform.workspace
+  env          = terraform.workspace
+  prefix       = "${var.project_name}-${var.service}-${local.env}"
+  short_prefix = "${var.project_short_name}-${local.env}"
+  batch_prefix = "immunisation-batch-${local.env}"
+  config_env   = local.environment == "prod" ? "prod" : "dev"
 
   root_domain         = "${local.config_env}.vds.platform.nhs.uk"
   project_domain_name = data.aws_route53_zone.project_zone.name
   service_domain_name = "${local.env}.${local.project_domain_name}"
 
-  # For now, only create the config bucket in internal-dev and prod as we only have one Redis instance per account.
-  create_config_bucket = local.environment == local.config_bucket_env
-  config_bucket_arn    = local.create_config_bucket ? aws_s3_bucket.batch_config_bucket[0].arn : data.aws_s3_bucket.existing_config_bucket[0].arn
-  config_bucket_name   = local.create_config_bucket ? aws_s3_bucket.batch_config_bucket[0].bucket : data.aws_s3_bucket.existing_config_bucket[0].bucket
+  config_bucket_arn  = aws_s3_bucket.batch_config_bucket.arn
+  config_bucket_name = aws_s3_bucket.batch_config_bucket.bucket
+
+
+  # Public subnet - The subnet has a direct route to an internet gateway. Resources in a public subnet can access the public internet.
+  # public_subnet_ids = [for k, v in data.aws_route.internet_traffic_route_by_subnet : k if length(v.gateway_id) > 0]
+  # Private subnet - The subnet does not have a direct route to an internet gateway. Resources in a private subnet require a NAT device to access the public internet.
+  private_subnet_ids = [for k, v in data.aws_route.internet_traffic_route_by_subnet : k if length(v.nat_gateway_id) > 0]
+}
+
+check "private_subnets" {
+  assert {
+    condition     = length(local.private_subnet_ids) > 0
+    error_message = "No private subnets with internet access found in VPC ${data.aws_vpc.default.id}"
+  }
 }
 
 data "aws_vpc" "default" {
   default = true
 }
 
-data "aws_subnets" "default" {
+data "aws_subnets" "all" {
   filter {
     name   = "vpc-id"
     values = [data.aws_vpc.default.id]
   }
+}
+
+data "aws_route_table" "route_table_by_subnet" {
+  for_each = toset(data.aws_subnets.all.ids)
+
+  subnet_id = each.value
+}
+
+data "aws_route" "internet_traffic_route_by_subnet" {
+  for_each = data.aws_route_table.route_table_by_subnet
+
+  route_table_id         = each.value.id
+  destination_cidr_block = "0.0.0.0/0"
 }
 
 data "aws_kms_key" "existing_s3_encryption_key" {
@@ -61,13 +84,6 @@ data "aws_security_group" "existing_securitygroup" {
     name   = "group-name"
     values = ["immunisation-security-group"]
   }
-}
-
-data "aws_s3_bucket" "existing_config_bucket" {
-  # For now, look up the internal-dev bucket during int, ref and PR branch deploys.
-  count = local.create_config_bucket ? 0 : 1
-
-  bucket = "imms-${local.config_bucket_env}-supplier-config"
 }
 
 data "aws_kms_key" "existing_lambda_encryption_key" {

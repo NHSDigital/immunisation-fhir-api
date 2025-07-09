@@ -1,0 +1,13 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "*",
+      "Resource": [
+        "arn:aws:dynamodb:*:*:table/${dynamodb_table_name}",
+        "arn:aws:dynamodb:*:*:table/${dynamodb_table_name}/index/*"
+      ]
+    }
+  ]
+}

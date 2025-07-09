@@ -6,8 +6,9 @@ from aws_lambda_typing.events import APIGatewayProxyEventV1
 from typing import Optional
 from urllib.parse import parse_qs, urlencode, quote
 
-from mappings import VaccineTypes
+from clients import redis_client
 from models.errors import ParameterException
+from models.constants import Constants
 
 ParamValue = list[str]
 ParamContainer = dict[str, ParamValue]
@@ -107,9 +108,11 @@ def process_search_params(params: ParamContainer) -> SearchParams:
                      vaccine_type is not None]
     if len(vaccine_types) < 1:
         raise ParameterException(f"Search parameter {immunization_target_key} must have one or more values.")
-    if any([x not in VaccineTypes().all for x in vaccine_types]):
+
+    valid_vaccine_types = redis_client.hkeys(Constants.VACCINE_TYPE_TO_DISEASES_HASH_KEY)
+    if any(x not in valid_vaccine_types for x in vaccine_types):
         raise ParameterException(
-            f"immunization-target must be one or more of the following: {','.join(VaccineTypes().all)}")
+            f"immunization-target must be one or more of the following: {', '.join(valid_vaccine_types)}")
 
     # date.from
     date_froms = params.get(date_from_key, [])

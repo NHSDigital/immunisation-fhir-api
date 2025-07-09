@@ -1,0 +1,2 @@
+## About
+This set of resources is used to set up the new INT environment. It replicates the production environment as of version v1.0.2361-alpha+313078, allowing us to simulate releases for production. Delete this folder once the infrastructure is standardised across all environmnets.
