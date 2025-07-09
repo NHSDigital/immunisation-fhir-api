@@ -5,6 +5,7 @@ module "mesh" {
   mesh_env                       = "integration"
   subnet_ids                     = data.aws_subnets.default.ids
 
+  # TODO single or many mailbox ids
   mailbox_ids                    = [local.mesh_mailbox_id]
   dlq_mailbox_id                 = local.mesh_dlq_mailbox_id
   verify_ssl                     = "true"
