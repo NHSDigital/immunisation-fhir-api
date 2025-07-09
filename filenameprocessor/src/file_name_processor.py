@@ -13,7 +13,7 @@ from file_key_validation import validate_file_key
 from send_sqs_message import make_and_send_sqs_message
 from make_and_upload_ack_file import make_and_upload_the_ack_file
 from audit_table import upsert_audit_table, get_next_queued_file_details, ensure_file_is_not_a_duplicate
-from clients import logger
+from clients import logger, s3_client
 from logging_decorator import logging_decorator
 from supplier_permissions import validate_vaccine_type_permissions
 from errors import (
@@ -121,7 +121,7 @@ def handle_record(record) -> dict:
             make_and_upload_the_ack_file(message_id, file_key, message_delivered, created_at_formatted_string)
 
             # Move file to archive
-            move_file(bucket_name, file_key, f"archive/{file_key}")
+            move_file(s3_client, bucket_name, file_key, f"archive/{file_key}")
 
             # If there is another file waiting in the queue, invoke the filename lambda with the next file
             next_queued_file_details = get_next_queued_file_details(queue_name=f"{supplier}_{vaccine_type}")
