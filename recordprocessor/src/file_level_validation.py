@@ -4,7 +4,6 @@ Functions for completing file-level validation
 """
 
 from unique_permission import get_unique_action_flags_from_s3
-from enum import StrEnum
 from clients import logger, s3_client
 from make_and_upload_ack_file import make_and_upload_ack_file
 from utils_for_recordprocessor import get_csv_content_dict_reader, invoke_filename_lambda
@@ -32,34 +31,33 @@ def validate_action_flag_permissions(
     # Get unique ACTION_FLAG values from the S3 file
     required_action_flags = get_unique_action_flags_from_s3(csv_data)
 
-    raw_action_flags = get_unique_action_flags_from_s3(csv_data)
     valid_action_flag_values = {flag.value for flag in ActionFlag}
-    required_action_flags = raw_action_flags & valid_action_flag_values  # intersection
+    required_action_flags = required_action_flags & valid_action_flag_values  # intersection
 
     if not required_action_flags:
         logger.warning("No valid ACTION_FLAGs found in file. Skipping permission validation.")
         return set()
 
     # Check if supplier has permission for the subject vaccine type and extract permissions
-    permission_strs_for_vaccine_type = set(
+    permission_strs_for_vaccine_type = {
         permission_str
         for permission_str in allowed_permissions_list
         if permission_str.split(".")[0].upper() == vaccine_type.upper()
-    )
- 
+    }
+
     # Extract permissions letters to get map key from the allowed vaccine type
-    permissions_for_vaccine_type = set(
+    permissions_for_vaccine_type = {
         Permission(permission)
         for permission_str in permission_strs_for_vaccine_type
-        for permission in permission_str.split(".")[1].upper() # CRUDS, CRUD etc
+        for permission in permission_str.split(".")[1].upper()
         if permission in list(Permission)
-    )
+    }
 
-   # Map Permission key to action flag 
-    permitted_action_flags_for_vaccine_type = set(
+    # Map Permission key to action flag
+    permitted_action_flags_for_vaccine_type = {
         permission_to_action_flag_map[permission].value
         for permission in permissions_for_vaccine_type
-    )
+    }
 
     if not required_action_flags.intersection(permitted_action_flags_for_vaccine_type):
         raise NoOperationPermissions(
