@@ -33,6 +33,7 @@ resource "aws_vpc" "default" {
   cidr_block           = "172.31.0.0/16"
   enable_dns_support   = true
   enable_dns_hostnames = true
+
   tags = {
     Name = "imms-${var.environment}-fhir-api-vpc"
   }
@@ -49,6 +50,7 @@ resource "aws_subnet" "public" {
 
 resource "aws_internet_gateway" "default" {
   vpc_id = aws_vpc.default.id
+
   tags = {
     Name = "imms-${var.environment}-fhir-api-igw"
   }
@@ -56,6 +58,7 @@ resource "aws_internet_gateway" "default" {
 
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.default.id
+
   tags = {
     Name = "imms-${var.environment}-fhir-api-public-rtb"
   }
@@ -91,10 +94,15 @@ resource "aws_eip" "nat" {
 resource "aws_nat_gateway" "default" {
   allocation_id = aws_eip.nat.id
   subnet_id     = aws_subnet.public[0].id
+
+  tags = {
+    Name = "imms-${var.environment}-fhir-api-nat"
+  }
 }
 
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.default.id
+
   tags = {
     Name = "imms-${var.environment}-fhir-api-private-rtb"
   }
