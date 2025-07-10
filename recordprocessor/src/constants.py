@@ -88,18 +88,19 @@ class Urls:
 
 
 class ActionFlag(StrEnum):
-        CREATE = "NEW"
-        UPDATE = "UPDATE"
-        DELETE = "DELETE"
+    CREATE = "NEW"
+    UPDATE = "UPDATE"
+    DELETE = "DELETE"
+
 
 class Permission(StrEnum):
-        CREATE = "C"
-        UPDATE = "U"
-        DELETE = "D"
+    CREATE = "C"
+    UPDATE = "U"
+    DELETE = "D"
 
 
 permission_to_action_flag_map = {
-        Permission.CREATE: ActionFlag.CREATE,
-        Permission.UPDATE: ActionFlag.UPDATE,
-        Permission.DELETE: ActionFlag.DELETE
+    Permission.CREATE: ActionFlag.CREATE,
+    Permission.UPDATE: ActionFlag.UPDATE,
+    Permission.DELETE: ActionFlag.DELETE
     }
