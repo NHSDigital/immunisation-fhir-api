@@ -1,7 +1,7 @@
 """Constants for recordprocessor"""
 
 import os
-from enum import Enum
+from enum import StrEnum
 
 SOURCE_BUCKET_NAME = os.getenv("SOURCE_BUCKET_NAME")
 ACK_BUCKET_NAME = os.getenv("ACK_BUCKET_NAME")
@@ -87,18 +87,19 @@ class Urls:
     VACCINATION_PROCEDURE = "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure"
 
 
-class Permission(Enum):
-    CREATE = "C"
-    UPDATE = "U"
-    DELETE = "D"
+class ActionFlag(StrEnum):
+        CREATE = "NEW"
+        UPDATE = "UPDATE"
+        DELETE = "DELETE"
+
+class Permission(StrEnum):
+        CREATE = "C"
+        UPDATE = "U"
+        DELETE = "D"
 
 
-class ActionFlag(Enum):
-    NEW = Permission.CREATE
-    UPDATE = Permission.UPDATE
-    DELETE = Permission.DELETE
-
-
-class AllowedPermission(Enum):
-    CRUD = {"C", "U", "D"}
-    CRUDS = {"C", "U", "D"}
+permission_to_action_flag_map = {
+        Permission.CREATE: ActionFlag.CREATE,
+        Permission.UPDATE: ActionFlag.UPDATE,
+        Permission.DELETE: ActionFlag.DELETE
+    }

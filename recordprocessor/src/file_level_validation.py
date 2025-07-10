@@ -11,25 +11,7 @@ from utils_for_recordprocessor import get_csv_content_dict_reader, invoke_filena
 from errors import InvalidHeaders, NoOperationPermissions
 from logging_decorator import file_level_validation_logging_decorator
 from audit_table import change_audit_table_status_to_processed, get_next_queued_file_details
-from constants import SOURCE_BUCKET_NAME, EXPECTED_CSV_HEADERS
-
-
-class ActionFlag(StrEnum):
-        CREATE = "NEW"
-        UPDATE = "UPDATE"
-        DELETE = "DELETE"
-
-class Permission(StrEnum):
-        CREATE = "C"
-        UPDATE = "U"
-        DELETE = "D"
-
-
-permission_to_action_flag_map = {
-        Permission.CREATE: ActionFlag.CREATE,
-        Permission.UPDATE: ActionFlag.UPDATE,
-        Permission.DELETE: ActionFlag.DELETE
-    }
+from constants import SOURCE_BUCKET_NAME, EXPECTED_CSV_HEADERS, permission_to_action_flag_map, ActionFlag, Permission
 
 
 def validate_content_headers(csv_content_reader) -> None:
