@@ -3,8 +3,8 @@
 from unittest import TestCase
 from unittest.mock import patch
 from copy import deepcopy
-from boto3 import client as boto3_client
-from moto import mock_s3
+import boto3
+from moto import mock_s3, mock_sqs
 
 from tests.utils_for_tests.utils_for_filenameprocessor_tests import get_csv_file_dict_reader
 from tests.utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT, BucketNames
@@ -14,9 +14,6 @@ from tests.utils_for_tests.values_for_tests import MockFileDetails
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from make_and_upload_ack_file import make_the_ack_data, upload_ack_file, make_and_upload_the_ack_file
     from clients import REGION_NAME
-
-
-s3_client = boto3_client("s3", region_name=REGION_NAME)
 
 FILE_DETAILS = MockFileDetails.emis_flu
 
@@ -38,6 +35,7 @@ EXPECTED_ACK_DATA = {
 }
 
 
+@mock_sqs
 @mock_s3
 @patch.dict("os.environ", MOCK_ENVIRONMENT_DICT)
 class TestMakeAndUploadAckFile(TestCase):
@@ -45,7 +43,8 @@ class TestMakeAndUploadAckFile(TestCase):
 
     def setUp(self):
         """Set up the bucket for the ack files"""
-        s3_client.create_bucket(
+        self.s3_client = boto3.client("s3", region_name=REGION_NAME)
+        self.s3_client.create_bucket(
             Bucket=BucketNames.DESTINATION, CreateBucketConfiguration={"LocationConstraint": REGION_NAME}
         )
 
@@ -63,29 +62,31 @@ class TestMakeAndUploadAckFile(TestCase):
 
     def test_upload_ack_file(self):
         """Test that upload_ack_file successfully uploads the ack file"""
-        upload_ack_file(
-            file_key=FILE_DETAILS.file_key,
-            ack_data=deepcopy(EXPECTED_ACK_DATA),
-            created_at_formatted_string=FILE_DETAILS.created_at_formatted_string,
-        )
+        with patch("make_and_upload_ack_file.s3_client", self.s3_client):
+            upload_ack_file(
+                file_key=FILE_DETAILS.file_key,
+                ack_data=deepcopy(EXPECTED_ACK_DATA),
+                created_at_formatted_string=FILE_DETAILS.created_at_formatted_string,
+            )
 
         expected_result = [deepcopy(EXPECTED_ACK_DATA)]
         # Note that the data downloaded from the CSV will contain the bool as a string
         expected_result[0]["MESSAGE_DELIVERY"] = "False"
-        csv_dict_reader = get_csv_file_dict_reader(s3_client, BucketNames.DESTINATION, FILE_DETAILS.ack_file_key)
+        csv_dict_reader = get_csv_file_dict_reader(self.s3_client, BucketNames.DESTINATION, FILE_DETAILS.ack_file_key)
         self.assertEqual(list(csv_dict_reader), expected_result)
 
     def test_make_and_upload_ack_file(self):
         """Test that make_and_upload_ack_file uploads an ack file containing the correct values"""
-        make_and_upload_the_ack_file(
-            message_id=FILE_DETAILS.message_id,
-            file_key=FILE_DETAILS.file_key,
-            message_delivered=False,
-            created_at_formatted_string=FILE_DETAILS.created_at_formatted_string,
-        )
+        with patch("make_and_upload_ack_file.s3_client", self.s3_client):
+            make_and_upload_the_ack_file(
+                message_id=FILE_DETAILS.message_id,
+                file_key=FILE_DETAILS.file_key,
+                message_delivered=False,
+                created_at_formatted_string=FILE_DETAILS.created_at_formatted_string,
+            )
 
         expected_result = [deepcopy(EXPECTED_ACK_DATA)]
         # Note that the data downloaded from the CSV will contain the bool as a string
         expected_result[0]["MESSAGE_DELIVERY"] = "False"
-        csv_dict_reader = get_csv_file_dict_reader(s3_client, BucketNames.DESTINATION, FILE_DETAILS.ack_file_key)
+        csv_dict_reader = get_csv_file_dict_reader(self.s3_client, BucketNames.DESTINATION, FILE_DETAILS.ack_file_key)
         self.assertEqual(list(csv_dict_reader), expected_result)

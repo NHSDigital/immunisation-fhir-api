@@ -1,11 +1,12 @@
 """Tests for the logging_decorator and its helper functions"""
 
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
+from datetime import datetime
 import json
 from copy import deepcopy
 from contextlib import ExitStack
-from boto3 import client as boto3_client
+import boto3
 from botocore.exceptions import ClientError
 from moto import mock_s3, mock_firehose, mock_sqs, mock_dynamodb
 
@@ -21,17 +22,10 @@ with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from logging_decorator import send_log_to_firehose, generate_and_send_logs
     from constants import PERMISSIONS_CONFIG_FILE_KEY
 
-s3_client = boto3_client("s3", region_name=REGION_NAME)
-sqs_client = boto3_client("sqs", region_name=REGION_NAME)
-firehose_client = boto3_client("firehose", region_name=REGION_NAME)
-dynamodb_client = boto3_client("dynamodb", region_name=REGION_NAME)
 
 FILE_DETAILS = MockFileDetails.emis_flu
 MOCK_VACCINATION_EVENT = {
     "Records": [{"s3": {"bucket": {"name": BucketNames.SOURCE}, "object": {"key": FILE_DETAILS.file_key}}}]
-}
-MOCK_CONFIG_EVENT = {
-    "Records": [{"s3": {"bucket": {"name": BucketNames.CONFIG}, "object": {"key": PERMISSIONS_CONFIG_FILE_KEY}}}]
 }
 
 
@@ -45,12 +39,28 @@ class TestLoggingDecorator(unittest.TestCase):
 
     def setUp(self):
         """Set up the mock AWS environment and upload a valid FLU/EMIS file example"""
-        GenericSetUp(s3_client, firehose_client, sqs_client, dynamodb_client)
-        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=FILE_DETAILS.file_key)
+        self.s3_client = boto3.client("s3", region_name=REGION_NAME)
+        self.sqs_client = boto3.client("sqs", region_name=REGION_NAME)
+        self.firehose_client = boto3.client("firehose", region_name=REGION_NAME)
+        self.dynamodb_client = boto3.client("dynamodb", region_name=REGION_NAME)
+        
+        GenericSetUp(
+            s3_client=self.s3_client, 
+            firehose_client=self.firehose_client, 
+            sqs_client=self.sqs_client, 
+            dynamodb_client=self.dynamodb_client
+            )
+        
+        self.s3_client.put_object(Bucket=BucketNames.SOURCE, Key=FILE_DETAILS.file_key)
 
     def tearDown(self):
         """Clean the mock AWS environment"""
-        GenericTearDown(s3_client, firehose_client, sqs_client, dynamodb_client)
+        GenericTearDown(
+        s3_client=self.s3_client,
+        firehose_client=self.firehose_client,
+        sqs_client=self.sqs_client,
+        dynamodb_client=self.dynamodb_client
+    )
 
     def run(self, result=None):
         """
@@ -143,17 +153,40 @@ class TestLoggingDecorator(unittest.TestCase):
         self.assertEqual(log_data, expected_log_data)
         mock_send_log_to_firehose.assert_called_once_with(expected_log_data)
 
+
     def test_logging_successful_validation(self):
         """Tests that the correct logs are sent to cloudwatch and splunk when file validation is successful"""
-        # Mock full permissions so that validation will pass
         permissions_config_content = generate_permissions_config_content(deepcopy(FILE_DETAILS.permissions_config))
-        with (  # noqa: E999
-            patch("file_name_processor.uuid4", return_value=FILE_DETAILS.message_id),  # noqa: E999
-            patch("elasticache.redis_client.get", return_value=permissions_config_content),  # noqa: E999
-            patch("logging_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
-            patch("logging_decorator.logger") as mock_logger,  # noqa: E999
-        ):  # noqa: E999
-            lambda_handler(MOCK_VACCINATION_EVENT, context=None)
+
+        # Mock Redis
+        mock_redis_client = MagicMock()
+        mock_redis_client.get.return_value = permissions_config_content
+        mock_redis_client.hget.return_value = json.dumps(FILE_DETAILS.permissions_config["EMIS"])
+
+        fixed_datetime = datetime(2023, 1, 1, 12, 0, 0)
+        fixed_time = 1000000.0
+
+        # Mock DynamoDB
+        mock_table = MagicMock()
+        mock_table.query.return_value = {"Items": []}
+        self.dynamodb_client = MagicMock()
+        self.dynamodb_client.Table.return_value = mock_table
+
+        mock_sqs_client = MagicMock()
+        mock_sqs_client.send_message.return_value = {"MessageId": "mock-message-id"}
+
+        mock_dynamodb_resource = MagicMock()
+        mock_dynamodb_resource.Table.return_value = mock_table
+
+        with (
+            patch("logging_decorator.datetime") as mock_datetime,
+            patch("logging_decorator.time") as mock_time,
+            patch("logging_decorator.logger") as mock_logger,
+            patch("logging_decorator.send_log_to_firehose") as mock_firehose,
+        ):
+            mock_datetime.now.return_value = fixed_datetime
+            mock_time.time.side_effect = [fixed_time, fixed_time + 1.0]
+
 
         expected_log_data = {
             "function_name": "filename_processor_handle_record",
@@ -168,9 +201,13 @@ class TestLoggingDecorator(unittest.TestCase):
         }
 
         log_data = json.loads(mock_logger.info.call_args[0][0])
+        print("Actual log_data:", log_data)
+        print("Expected:", expected_log_data)
         self.assertEqual(log_data, expected_log_data)
-
-        mock_send_log_to_firehose.assert_called_once_with(log_data)
+        mock_client.put_record.assert_called_once_with(
+        DeliveryStreamName="immunisation-fhir-api-internal-dev-splunk-firehose",
+        Record={"Data": json.dumps({"event": expected_log_data}).encode("utf-8")},
+    )
 
     def test_logging_failed_validation(self):
         """Tests that the correct logs are sent to cloudwatch and splunk when file validation fails"""
@@ -179,7 +216,7 @@ class TestLoggingDecorator(unittest.TestCase):
 
         with (  # noqa: E999
             patch("file_name_processor.uuid4", return_value=FILE_DETAILS.message_id),  # noqa: E999
-            patch("elasticache.redis_client.get", return_value=permissions_config_content),  # noqa: E999
+            patch("supplier_permissions.redis_client.get", return_value=permissions_config_content),  # noqa: E999
             patch("logging_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
             patch("logging_decorator.logger") as mock_logger,  # noqa: E999
         ):  # noqa: E999
@@ -214,7 +251,7 @@ class TestLoggingDecorator(unittest.TestCase):
 
         with (
             patch("file_name_processor.uuid4", return_value=FILE_DETAILS.message_id),
-            patch("elasticache.redis_client.get", return_value=permissions_config_content),
+            patch("supplier_permissions.redis_client.get", return_value=permissions_config_content),
             patch("logging_decorator.firehose_client.put_record", side_effect=firehose_exception),
             patch("logging_decorator.logger") as mock_logger,
         ):

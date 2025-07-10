@@ -2,7 +2,6 @@
 
 from clients import logger, redis_client
 import json
-from constants import PERMISSIONS_CONFIG_FILE_KEY, VACCINE_TYPE_TO_DISEASES_HASH_KEY
 from errors import VaccineTypePermissionsError
 
 
@@ -12,18 +11,10 @@ def get_supplier_permissions(supplier: str) -> list[str]:
     Defaults return value is an empty list, including when the supplier has no permissions.
     """
      
-    permissions_data = redis_client.hget(PERMISSIONS_CONFIG_FILE_KEY, supplier)
+    permissions_data = redis_client.hget("supplier_permissions", supplier)
     if not permissions_data:
         return []
     return json.loads(permissions_data)
-
-def get_permissions_config_json_from_cache() -> dict:
-    """Gets and returns the permissions config file content from ElastiCache (Redis)."""
-    return json.loads(redis_client.get(PERMISSIONS_CONFIG_FILE_KEY))
-
-def get_valid_vaccine_types_from_cache() -> list[str]:
-    return redis_client.hkeys(VACCINE_TYPE_TO_DISEASES_HASH_KEY)
-
 
 def validate_vaccine_type_permissions(vaccine_type: str, supplier: str) -> list:
     """
@@ -33,7 +24,7 @@ def validate_vaccine_type_permissions(vaccine_type: str, supplier: str) -> list:
     supplier_permissions = get_supplier_permissions(supplier)
 
     # Validate that supplier has at least one permissions for the vaccine type
-    if not any(vaccine_type in permission for permission in supplier_permissions):
+    if not any(permission.split(".")[0] == vaccine_type for permission in supplier_permissions):
         error_message = f"Initial file validation failed: {supplier} does not have permissions for {vaccine_type}"
         logger.error(error_message)
         raise VaccineTypePermissionsError(error_message)

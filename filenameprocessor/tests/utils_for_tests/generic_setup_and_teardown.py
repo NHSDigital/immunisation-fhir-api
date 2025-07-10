@@ -26,7 +26,6 @@ class GenericSetUp:
             for bucket_name in [
                 BucketNames.SOURCE,
                 BucketNames.DESTINATION,
-                BucketNames.CONFIG,
                 BucketNames.MOCK_FIREHOSE,
             ]:
                 s3_client.create_bucket(
@@ -87,7 +86,6 @@ class GenericTearDown:
             for bucket_name in [
                 BucketNames.SOURCE,
                 BucketNames.DESTINATION,
-                BucketNames.CONFIG,
                 BucketNames.MOCK_FIREHOSE,
             ]:
                 for obj in s3_client.list_objects_v2(Bucket=bucket_name).get("Contents", []):

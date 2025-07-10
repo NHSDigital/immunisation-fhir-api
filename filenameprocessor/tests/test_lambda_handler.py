@@ -6,7 +6,7 @@ from json import loads as json_loads
 from contextlib import ExitStack
 from copy import deepcopy
 from constants import VACCINE_TYPE_TO_DISEASES_HASH_KEY
-from elasticache import get_valid_vaccine_types_from_cache
+from vaccine_types import get_valid_vaccine_types_from_cache
 import fakeredis
 from boto3 import client as boto3_client
 from moto import mock_s3, mock_sqs, mock_firehose, mock_dynamodb

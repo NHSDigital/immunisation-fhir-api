@@ -2,8 +2,8 @@
 
 from unittest import TestCase
 from unittest.mock import patch
-from boto3 import client as boto3_client
-from moto import mock_dynamodb
+import boto3
+from moto import mock_dynamodb, mock_sqs
 
 from tests.utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT
 from tests.utils_for_tests.generic_setup_and_teardown import GenericSetUp, GenericTearDown
@@ -21,11 +21,9 @@ with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from errors import UnhandledAuditTableError, DuplicateFileError
     from clients import REGION_NAME
 
-dynamodb_client = boto3_client("dynamodb", region_name=REGION_NAME)
-
 FILE_DETAILS = MockFileDetails.ravs_rsv_1
 
-
+@mock_sqs
 @mock_dynamodb
 @patch.dict("os.environ", MOCK_ENVIRONMENT_DICT)
 class TestAuditTable(TestCase):
@@ -33,16 +31,36 @@ class TestAuditTable(TestCase):
 
     def setUp(self):
         """Set up test values to be used for the tests"""
-        GenericSetUp(dynamodb_client=dynamodb_client)
+        self.dynamodb_client = boto3.client("dynamodb", region_name=REGION_NAME)
+        self.dynamodb_resource = boto3.resource("dynamodb", region_name=REGION_NAME)
+
+        # Patch both the client and resource inside the audit_table module
+        patcher_client = patch("audit_table.dynamodb_client", self.dynamodb_client)
+        patcher_resource = patch("audit_table.dynamodb_resource", self.dynamodb_resource)
+
+        patcher_client.start()
+        patcher_resource.start()
+
+        self.addCleanup(patcher_client.stop)
+        self.addCleanup(patcher_resource.stop)
+
+        # Patch both the client and resource used inside the audit_table module
+        patcher_client = patch("audit_table.dynamodb_client", self.dynamodb_client)
+
+        patcher_client.start()
+
+        self.addCleanup(patcher_client.stop)
+
+        GenericSetUp(dynamodb_client=self.dynamodb_client)
 
     def tearDown(self):
         """Tear down the test values"""
-        GenericTearDown(dynamodb_client=dynamodb_client)
+        GenericTearDown(dynamodb_client=self.dynamodb_client)
 
     @staticmethod
-    def get_table_items() -> list:
+    def get_table_items(self) -> list:
         """Return all items in the audit table"""
-        return dynamodb_client.scan(TableName=AUDIT_TABLE_NAME).get("Items", [])
+        return self.dynamodb_client.scan(TableName=AUDIT_TABLE_NAME).get("Items", [])
 
     def test_get_next_queued_file_details(self):
         """Test that the get_next_queued_file_details function returns the correct file details"""
@@ -69,6 +87,7 @@ class TestAuditTable(TestCase):
         add_entry_to_table(MockFileDetails.ravs_rsv_3, file_status=FileStatus.QUEUED)
         add_entry_to_table(MockFileDetails.ravs_rsv_4, file_status=FileStatus.QUEUED)
         self.assertEqual(get_next_queued_file_details(queue_to_check), deserialize_dynamodb_types(expected_table_entry))
+    
 
     def test_ensure_file_is_not_a_duplicate(self):
         """
@@ -81,7 +100,7 @@ class TestAuditTable(TestCase):
         )
 
         # Add the file to the audit table
-        dynamodb_client.put_item(
+        self.dynamodb_client.put_item(
             TableName=AUDIT_TABLE_NAME,
             Item={
                 AuditTableKeys.MESSAGE_ID: {"S": FILE_DETAILS.message_id},
@@ -223,7 +242,7 @@ class TestAuditTable(TestCase):
             )
 
         # Final reconciliation: ensure that all of the correct items are in the audit table
-        table_items = self.get_table_items()
+        table_items = self.get_table_items(self)
         assert len(table_items) == 7
         assert_audit_table_entry(MockFileDetails.emis_flu, FileStatus.QUEUED)
         assert_audit_table_entry(MockFileDetails.emis_rsv, FileStatus.QUEUED)
