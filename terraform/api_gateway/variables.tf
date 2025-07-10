@@ -4,8 +4,8 @@ variable "zone_id" {}
 variable "api_domain_name" {}
 variable "environment" {}
 variable "oas" {}
+variable "config_env" {}
 
 locals {
-    environment         = terraform.workspace == "green" ? "prod" : terraform.workspace == "blue" ? "prod" : terraform.workspace
-    config_env = local.environment == "prod" ? "prod" : "dev"
+  environment = terraform.workspace == "green" ? "prod" : terraform.workspace == "blue" ? "prod" : terraform.workspace
 }

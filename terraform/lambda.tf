@@ -15,13 +15,13 @@ resource "aws_ecr_repository" "operation_lambda_repository" {
     scan_on_push = true
   }
   name         = "${local.prefix}-operation-lambda-repo"
-  force_delete = local.is_temp
+  force_delete = true #local.is_temp
 }
 
 #resource "docker_image" "lambda_function_docker" {
 module "docker_image" {
   source  = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version = "8.0.1"
+  version = "7.21.1"
 
   create_ecr_repo  = false
   ecr_repo         = "${local.prefix}-operation-lambda-repo"
