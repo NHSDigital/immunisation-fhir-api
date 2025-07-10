@@ -12,5 +12,5 @@ resource "aws_elasticache_cluster" "redis_cluster" {
 # Subnet Group for Redis
 resource "aws_elasticache_subnet_group" "redis_subnet_group" {
   name       = "immunisation-redis-subnet-group"
-  subnet_ids = data.aws_subnets.default.ids
+  subnet_ids = values(aws_subnet.default_subnets)[*].id
 }
