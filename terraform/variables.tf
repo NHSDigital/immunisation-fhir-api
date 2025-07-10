@@ -15,22 +15,20 @@ variable "aws_region" {
 }
 
 locals {
-  environment       = terraform.workspace == "green" ? "prod" : terraform.workspace == "blue" ? "prod" : terraform.workspace
-  env               = terraform.workspace
-  prefix            = "${var.project_name}-${var.service}-${local.env}"
-  short_prefix      = "${var.project_short_name}-${local.env}"
-  batch_prefix      = "immunisation-batch-${local.env}"
-  config_env        = local.environment == "prod" ? "prod" : "dev"
-  config_bucket_env = local.environment == "prod" ? "prod" : "internal-dev"
+  environment  = terraform.workspace == "green" ? "prod" : terraform.workspace == "blue" ? "prod" : terraform.workspace
+  env          = terraform.workspace
+  prefix       = "${var.project_name}-${var.service}-${local.env}"
+  short_prefix = "${var.project_short_name}-${local.env}"
+  batch_prefix = "immunisation-batch-${local.env}"
+  config_env   = local.environment == "prod" ? "prod" : "dev"
 
   root_domain         = "${local.config_env}.vds.platform.nhs.uk"
   project_domain_name = data.aws_route53_zone.project_zone.name
   service_domain_name = "${local.env}.${local.project_domain_name}"
 
-  # For now, only create the config bucket in internal-dev and prod as we only have one Redis instance per account.
-  create_config_bucket = local.environment == local.config_bucket_env
-  config_bucket_arn    = local.create_config_bucket ? aws_s3_bucket.batch_config_bucket[0].arn : data.aws_s3_bucket.existing_config_bucket[0].arn
-  config_bucket_name   = local.create_config_bucket ? aws_s3_bucket.batch_config_bucket[0].bucket : data.aws_s3_bucket.existing_config_bucket[0].bucket
+  config_bucket_arn  = aws_s3_bucket.batch_config_bucket.arn
+  config_bucket_name = aws_s3_bucket.batch_config_bucket.bucket
+
 
   # Public subnet - The subnet has a direct route to an internet gateway. Resources in a public subnet can access the public internet.
   # public_subnet_ids = [for k, v in data.aws_route.internet_traffic_route_by_subnet : k if length(v.gateway_id) > 0]
@@ -86,13 +84,6 @@ data "aws_security_group" "existing_securitygroup" {
     name   = "group-name"
     values = ["immunisation-security-group"]
   }
-}
-
-data "aws_s3_bucket" "existing_config_bucket" {
-  # For now, look up the internal-dev bucket during int, ref and PR branch deploys.
-  count = local.create_config_bucket ? 0 : 1
-
-  bucket = "imms-${local.config_bucket_env}-supplier-config"
 }
 
 data "aws_kms_key" "existing_lambda_encryption_key" {

@@ -16,7 +16,7 @@ resource "aws_ecr_repository" "redis_sync_lambda_repository" {
 # Module for building and pushing Docker image to ECR
 module "redis_sync_docker_image" {
   source  = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version = "7.21.1"
+  version = "8.0.1"
 
   create_ecr_repo = false
   ecr_repo        = aws_ecr_repository.redis_sync_lambda_repository.name
@@ -253,10 +253,8 @@ resource "aws_cloudwatch_log_group" "redis_sync_log_group" {
 
 # S3 Bucket notification to trigger Lambda function for config bucket
 resource "aws_s3_bucket_notification" "config_lambda_notification" {
-  # For now, only create a trigger in internal-dev and prod as those are the envs with a config bucket
-  count = local.create_config_bucket ? 1 : 0
 
-  bucket = aws_s3_bucket.batch_config_bucket[0].bucket
+  bucket = aws_s3_bucket.batch_config_bucket.bucket
 
   lambda_function {
     lambda_function_arn = aws_lambda_function.redis_sync_lambda.arn
@@ -266,7 +264,6 @@ resource "aws_s3_bucket_notification" "config_lambda_notification" {
 
 # Permission for the new S3 bucket to invoke the Lambda function
 resource "aws_lambda_permission" "new_s3_invoke_permission" {
-  count = local.create_config_bucket ? 1 : 0
 
   statement_id  = "AllowExecutionFromNewS3"
   action        = "lambda:InvokeFunction"
