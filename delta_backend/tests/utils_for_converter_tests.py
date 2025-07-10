@@ -179,7 +179,6 @@ class ValuesForTests:
                     "ApproximateCreationDateTime": 1690896000,
                     "NewImage": {
                         "PK": {"S": pk},
-                        # VED-455
                         "PatientSK": {"S": "Covid19#ca8ba2c6-2383-4465-b456-c1174c21cf31"},
                         "IdentifierPK": {"S": "system#1"},
                         "Operation": {"S": operation},
@@ -196,7 +195,6 @@ class ValuesForTests:
                     "ApproximateCreationDateTime": 1690896000,
                     "Keys": {
                         "PK": {"S": pk},
-                        # VED-455
                         "PatientSK": {"S": "Covid19#ca8ba2c6-2383-4465-b456-c1174c21cf31"},
                         "SupplierSystem": {"S": supplier},
                         "Resource": {"S": ValuesForTests.json_value_for_test},
@@ -205,7 +203,6 @@ class ValuesForTests:
             }
 
     expected_static_values = {
-        # VED-455
         "VaccineType": "COVID19",
         "SupplierSystem": "EMIS",
         "Source": "test-source",

@@ -66,7 +66,6 @@ def send_message(record, queue_url=failure_queue_url):
 
 def get_vaccine_type(patient_sort_key: str) -> str:
     vaccine_type = patient_sort_key.split("#")[0]
-    # VED-455: vaccine type should populate in upper case
     return str.strip(str.upper(vaccine_type))
 
 def get_imms_id(primary_key: str) -> str:
