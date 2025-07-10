@@ -10,7 +10,7 @@ from tests.utils_for_tests.generic_setup_and_teardown import GenericSetUp, Gener
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
-    from elasticache import get_supplier_permissions_from_cache
+    from elasticache import get_supplier_permissions_from_cache, get_valid_vaccine_types_from_cache
     from clients import REGION_NAME
 
 s3_client = boto3_client("s3", region_name=REGION_NAME)
@@ -40,3 +40,9 @@ class TestElasticache(TestCase):
         result = get_supplier_permissions_from_cache("TEST_SUPPLIER")
         self.assertEqual(result, [])
         mock_hget.assert_called_once_with("supplier_permissions", "TEST_SUPPLIER")
+
+    @patch("elasticache.redis_client.hkeys", return_value=["COVID19", "RSV", "FLU"])
+    def test_get_valid_vaccine_types_from_cache(self, mock_hkeys):
+        result = get_valid_vaccine_types_from_cache()
+        self.assertEqual(result, ["COVID19", "RSV", "FLU"])
+        mock_hkeys.assert_called_once_with("vacc_to_diseases")

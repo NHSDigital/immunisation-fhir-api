@@ -1,5 +1,3 @@
-"Upload the content from a config file in S3 to ElastiCache (Redis)"
-
 import json
 from clients import redis_client
 from constants import VACCINE_TYPE_TO_DISEASES_HASH_KEY, SUPPLIER_PERMISSIONS_HASH_KEY
