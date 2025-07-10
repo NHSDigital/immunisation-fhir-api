@@ -25,7 +25,7 @@ data "aws_subnets" "default" {
 }
 
 module "mesh" {
-  source = "git::https://github.com/nhsdigital/terraform-aws-mesh-client.git//module?ref=v2.1.5"
+  source = "git::https://github.com/nhsdigital/terraform-aws-mesh-client.git//module?ref=v2.1.6"
 
   name_prefix                    = "local-immunisation"
   mesh_env                       = "integration"
