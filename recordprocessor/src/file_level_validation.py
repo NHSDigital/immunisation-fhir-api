@@ -4,13 +4,32 @@ Functions for completing file-level validation
 """
 
 from unique_permission import get_unique_action_flags_from_s3
+from enum import StrEnum
 from clients import logger, s3_client
 from make_and_upload_ack_file import make_and_upload_ack_file
 from utils_for_recordprocessor import get_csv_content_dict_reader, invoke_filename_lambda
 from errors import InvalidHeaders, NoOperationPermissions
 from logging_decorator import file_level_validation_logging_decorator
 from audit_table import change_audit_table_status_to_processed, get_next_queued_file_details
-from constants import SOURCE_BUCKET_NAME, EXPECTED_CSV_HEADERS, Permission, ActionFlag, AllowedPermission
+from constants import SOURCE_BUCKET_NAME, EXPECTED_CSV_HEADERS
+
+
+class ActionFlag(StrEnum):
+        CREATE = "NEW"
+        UPDATE = "UPDATE"
+        DELETE = "DELETE"
+
+class Permission(StrEnum):
+        CREATE = "C"
+        UPDATE = "U"
+        DELETE = "D"
+
+
+permission_to_action_flag_map = {
+        Permission.CREATE: ActionFlag.CREATE,
+        Permission.UPDATE: ActionFlag.UPDATE,
+        Permission.DELETE: ActionFlag.DELETE
+    }
 
 
 def validate_content_headers(csv_content_reader) -> None:
@@ -29,45 +48,50 @@ def validate_action_flag_permissions(
     """
 
     # Get unique ACTION_FLAG values from the S3 file
-    operations_requested = get_unique_action_flags_from_s3(csv_data)
+    required_action_flags = get_unique_action_flags_from_s3(csv_data)
 
-    # Map ACTION_FLAGs to single-letter permissions
-    requested_permissions = {
-        ActionFlag[flag].value.value
-        for flag in operations_requested
-        if flag in ActionFlag.__members__
-        }
+    raw_action_flags = get_unique_action_flags_from_s3(csv_data)
+    valid_action_flag_values = {flag.value for flag in ActionFlag}
+    required_action_flags = raw_action_flags & valid_action_flag_values  # intersection
 
-    if not requested_permissions:
+    if not required_action_flags:
         logger.warning("No valid ACTION_FLAGs found in file. Skipping permission validation.")
         return set()
 
-    # Get allowed permission in single letters from allowed_permissions_list
-    allowed_ops = set()
-    for perm in allowed_permissions_list:
-        if not perm.startswith(f"{vaccine_type}."):
-            continue
-
-        _, op_code = perm.split(".")
-        if op_code in AllowedPermission.__members__:
-            allowed_ops.update(AllowedPermission[op_code].value)
-        else:
-            allowed_ops.add(op_code)
-
-    if not requested_permissions.intersection(allowed_ops):
-        raise NoOperationPermissions(
-            f"{supplier} does not have permissions to perform any of the requested actions."
-            )
-
-    logger.info(
-        "%s permissions %s match one of the requested permissions required to %s",
-        supplier,
-        allowed_permissions_list,
-        requested_permissions,
+    # Check if supplier has permission for the subject vaccine type and extract permissions
+    permission_strs_for_vaccine_type = set(
+        permission_str
+        for permission_str in allowed_permissions_list
+        if permission_str.split(".")[0].upper() == vaccine_type.upper()
+    )
+ 
+    # Extract permissions letters to get map key from the allowed vaccine type
+    permissions_for_vaccine_type = set(
+        Permission(permission)
+        for permission_str in permission_strs_for_vaccine_type
+        for permission in permission_str.split(".")[1].upper() # CRUDS, CRUD etc
+        if permission in list(Permission)
     )
 
-    # Return allowed ops in full-word format for downstream logic
-    return {perm.name for perm in Permission if perm.value in allowed_ops}
+   # Map Permission key to action flag 
+    permitted_action_flags_for_vaccine_type = set(
+        permission_to_action_flag_map[permission].value
+        for permission in permissions_for_vaccine_type
+    )
+
+    if not required_action_flags.intersection(permitted_action_flags_for_vaccine_type):
+        raise NoOperationPermissions(
+            f"{supplier} does not have permissions to perform any of the requested actions."
+        )
+
+    logger.info(
+         "%s permissions %s match one of the requested permissions required to %s",
+         supplier,
+         allowed_permissions_list,
+         permitted_action_flags_for_vaccine_type,
+     )
+
+    return {permission.name for permission in permissions_for_vaccine_type}
 
 
 def move_file(bucket_name: str, source_file_key: str, destination_file_key: str) -> None:
