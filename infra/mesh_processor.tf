@@ -108,7 +108,7 @@ resource "aws_iam_role" "mesh_processor_lambda_exec_role" {
 # Policy for Lambda execution role
 resource "aws_iam_policy" "mesh_processor_lambda_exec_policy" {
   count = local.create_mesh_processor ? 1 : 0
-  name  = "imms-${var.environment}-mesh_processor-lambda-exec-policy"
+  name  = "${local.mesh_processor_lambda_name}-exec-policy"
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
