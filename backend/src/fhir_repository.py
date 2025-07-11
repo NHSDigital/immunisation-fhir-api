@@ -301,6 +301,7 @@ class ImmunizationRepository:
         update_reinstated: bool,
     ) -> dict:
         try:
+            updated_version = existing_resource_version + 1
             condition_expression = Attr("PK").eq(attr.pk) & (
                 Attr("DeletedAt").exists()
                 if deleted_at_required
@@ -313,7 +314,7 @@ class ImmunizationRepository:
                     ":patient_sk": attr.patient_sk,
                     ":imms_resource_val": json.dumps(attr.resource, use_decimal=True),
                     ":operation": "UPDATE",
-                    ":version": existing_resource_version + 1,
+                    ":version": updated_version,
                     ":supplier_system": supplier_system,
                     ":respawn": "reinstated",
                 }
@@ -324,7 +325,7 @@ class ImmunizationRepository:
                     ":patient_sk": attr.patient_sk,
                     ":imms_resource_val": json.dumps(attr.resource, use_decimal=True),
                     ":operation": "UPDATE",
-                    ":version": existing_resource_version + 1,
+                    ":version": updated_version,
                     ":supplier_system": supplier_system,
                 }
 
@@ -338,7 +339,7 @@ class ImmunizationRepository:
                 ReturnValues="ALL_NEW",
                 ConditionExpression=condition_expression,
             )
-            return self._handle_dynamo_response(response)
+            return self._handle_dynamo_response(response), updated_version
         except botocore.exceptions.ClientError as error:
             # Either resource didn't exist or it has already been deleted. See ConditionExpression in the request
             if error.response["Error"]["Code"] == "ConditionalCheckFailedException":

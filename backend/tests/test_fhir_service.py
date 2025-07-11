@@ -492,7 +492,7 @@ class TestUpdateImmunization(unittest.TestCase):
         """it should update Immunization and validate NHS number"""
         imms_id = "an-id"
         self.imms_repo.update_immunization.return_value = (
-            create_covid_19_immunization_dict(imms_id)
+            create_covid_19_immunization_dict(imms_id), 2
         )
         pds_patient = {"identifier": [{"system": "https://fhir.nhs.uk/Id/nhs-number", "value": "9990548609"}]}
         self.fhir_service.pds_service.get_patient_details.return_value = pds_patient
@@ -501,7 +501,7 @@ class TestUpdateImmunization(unittest.TestCase):
         req_imms = create_covid_19_immunization_dict(imms_id, nhs_number)
 
         # When
-        outcome, _ = self.fhir_service.update_immunization(imms_id, req_imms, 1, ["COVID19.CRUD"], "Test")
+        outcome, _, _ = self.fhir_service.update_immunization(imms_id, req_imms, 1, ["COVID19.CRUD"], "Test")
 
         # Then
         self.assertEqual(outcome, UpdateOutcome.UPDATE)
@@ -511,7 +511,7 @@ class TestUpdateImmunization(unittest.TestCase):
     def test_id_not_present(self):
         """it should populate id in the message if it is not present"""
         req_imms_id = "an-id"
-        self.imms_repo.update_immunization.return_value = create_covid_19_immunization_dict(req_imms_id)
+        self.imms_repo.update_immunization.return_value = create_covid_19_immunization_dict(req_imms_id), 2
         self.fhir_service.pds_service.get_patient_details.return_value = {"identifier": [{"system": "https://fhir.nhs.uk/Id/nhs-number", "value": "9990548609"}]}
 
         req_imms = create_covid_19_immunization_dict("we-will-remove-this-id")
