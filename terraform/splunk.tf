@@ -1,8 +1,5 @@
-locals {
-  splunk_env = var.environment == "prod" ? "prod" : var.sub_environment == "int" ? "int" : "dev"
-}
 data "aws_secretsmanager_secret" "splunk_token" {
-  name = "imms/splunk/${local.splunk_env}/hec"
+  name = "imms/splunk/${var.environment}/hec"
 }
 data "aws_secretsmanager_secret_version" "splunk_token_id" {
   secret_id = data.aws_secretsmanager_secret.splunk_token.id

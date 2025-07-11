@@ -40,18 +40,35 @@ data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
 data "aws_ecr_authorization_token" "token" {}
 
-data "aws_vpc" "default" {
-  filter {
-    name   = "tag:Name"
-    values = [local.vpc_name]
+check "private_subnets" {
+  assert {
+    condition     = length(local.private_subnet_ids) > 0
+    error_message = "No private subnets with internet access found in VPC ${data.aws_vpc.default.id}"
   }
 }
 
-data "aws_subnets" "default" {
+data "aws_vpc" "default" {
+  default = true
+}
+
+data "aws_subnets" "all" {
   filter {
     name   = "vpc-id"
     values = [data.aws_vpc.default.id]
   }
+}
+
+data "aws_route_table" "route_table_by_subnet" {
+  for_each = toset(data.aws_subnets.all.ids)
+
+  subnet_id = each.value
+}
+
+data "aws_route" "internet_traffic_route_by_subnet" {
+  for_each = data.aws_route_table.route_table_by_subnet
+
+  route_table_id         = each.value.id
+  destination_cidr_block = "0.0.0.0/0"
 }
 
 data "aws_kms_key" "existing_s3_encryption_key" {
@@ -82,6 +99,5 @@ data "aws_kms_key" "existing_kinesis_encryption_key" {
 }
 
 data "aws_kms_key" "mesh_s3_encryption_key" {
-  count  = var.environment == "int" ? 0 : 1
   key_id = "alias/local-immunisation-mesh"
 }
