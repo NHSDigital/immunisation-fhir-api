@@ -2,7 +2,6 @@
 
 from unittest.mock import patch
 from io import StringIO
-import json
 from boto3.dynamodb.types import TypeDeserializer
 from boto3 import client as boto3_client
 
@@ -25,11 +24,6 @@ def get_csv_file_dict_reader(s3_client, bucket_name: str, file_key: str) -> Dict
     return DictReader(StringIO(csv_content_string), delimiter="|")
 
 
-def generate_permissions_config_content(permissions_dict: dict) -> str:
-    """Converts the permissions dictionary to a JSON string of the permissions config file content"""
-    return json.dumps({"all_permissions": permissions_dict})
-
-
 def deserialize_dynamodb_types(dynamodb_table_entry_with_types):
     """
     Convert a dynamodb table entry with types to a table entry without types
@@ -50,11 +44,3 @@ def assert_audit_table_entry(file_details: FileDetails, expected_status: FileSta
         TableName=AUDIT_TABLE_NAME, Key={AuditTableKeys.MESSAGE_ID: {"S": file_details.message_id}}
     ).get("Item")
     assert table_entry == {**file_details.audit_table_entry, "status": {"S": expected_status}}
-
-
-def generate_dict_full_permissions_all_suppliers_and_vaccine_types(
-    suppliers: list[str], vaccine_types: list[str]
-) -> dict:
-    """Generate a dictionary of full permissions for all suppliers for all vaccine types"""
-    all_vaccine_types = [f"{vaccine_type.upper()}_FULL" for vaccine_type in vaccine_types]
-    return {supplier.upper(): all_vaccine_types for supplier in suppliers}

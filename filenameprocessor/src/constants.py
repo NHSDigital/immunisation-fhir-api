@@ -16,7 +16,7 @@ AUDIT_TABLE_NAME = os.getenv("AUDIT_TABLE_NAME")
 AUDIT_TABLE_QUEUE_NAME_GSI = "queue_name_index"
 AUDIT_TABLE_FILENAME_GSI = "filename_index"
 
-PERMISSIONS_CONFIG_FILE_KEY = "permissions_config.json"
+SUPPLIER_PERMISSIONS_HASH_KEY = "supplier_permissions"
 VACCINE_TYPE_TO_DISEASES_HASH_KEY = "vacc_to_diseases"
 
 ERROR_TYPE_TO_STATUS_CODE_MAP = {
@@ -60,10 +60,11 @@ class Constants:
         "8J1100001": "PINNACLE",
         "8HK48": "SONAR",
         "YGA": "TPP",
+        "V0V8L": "MAVIS",
+        "X8E5B": "RAVS",
         "0DE": "AGEM-NIVS",
         "0DF": "NIMS",
         "8HA94": "EVA",
-        "X26": "RAVS",
         "YGMYH": "MEDICAL_DIRECTOR",
         "W00": "WELSH_DA_1",
         "W000": "WELSH_DA_2",

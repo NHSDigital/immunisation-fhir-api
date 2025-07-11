@@ -150,10 +150,10 @@ class FileDetails:
         self.file_date_and_time_string = f"20000101T0000000{file_number}"
         self.message_id = f"{vaccine_type.lower()}_{supplier.lower()}_test_id"
         self.message_id_order = f"{vaccine_type.lower()}_{supplier.lower()}_test_id_{file_number}"
-        self.full_permissions_list = [f"{vaccine_type}_FULL"]
-        self.create_permissions_only = [f"{vaccine_type}_CREATE"]
-        self.update_permissions_only = [f"{vaccine_type}_UPDATE"]
-        self.delete_permissions_only = [f"{vaccine_type}_DELETE"]
+        self.full_permissions_list = [f"{vaccine_type}.CRUD"]
+        self.create_permissions_only = [f"{vaccine_type}.C"]
+        self.update_permissions_only = [f"{vaccine_type}.U"]
+        self.delete_permissions_only = [f"{vaccine_type}.D"]
 
         self.queue_name = f"{supplier}_{vaccine_type}"
 

@@ -62,7 +62,7 @@ class TestUtilsForFilenameprocessor(TestCase):
             ("0DE", "AGEM-NIVS"),
             ("0DF", "NIMS"),
             ("8HA94", "EVA"),
-            ("X26", "RAVS"),
+            ("X8E5B", "RAVS"),
             ("YGMYH", "MEDICAL_DIRECTOR"),
             ("W00", "WELSH_DA_1"),
             ("W000", "WELSH_DA_2"),
