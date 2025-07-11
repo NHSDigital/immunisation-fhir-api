@@ -1,18 +1,8 @@
 -include .env
 
-interactionId = $(ENVIRONMENT)# to change to lower case
-environment = $(ENVIRONMENT)
-aws_profile = $(AWS_PROFILE)#apim-dev # Leave this here for pipeline
-tf_cmd = AWS_PROFILE=$(aws_profile) terraform
-
-project_name = immunisation
-project_short_name = imms
-state_bucket = $(BUCKET_NAME)#$(project_name)-$(APIGEE_ENVIRONMENT)-terraform-state-files
-tf_state= -backend-config="bucket=$(state_bucket)"
-
-tf_vars= -var="project_name=$(project_name)" -var="project_short_name=$(project_short_name)"
-
-.PHONY : lock-provider workspace init plan apply clean destroy output state-list lambda-zip catch-all-zip
+tf_cmd = AWS_PROFILE=$(AWS_PROFILE) terraform
+tf_state= -backend-config="bucket=$(STATE_BUCKET_NAME)"
+tf_vars= -var-file="./environments/$(ENVIRONMENT)/$(SUB_ENVIRONMENT)/variables.tfvars"
 
 lock-provider:
 	# Run this only when you install a new terraform provider. This will generate sha code in lock file for all platform
@@ -20,7 +10,7 @@ lock-provider:
 	$(tf_cmd) providers lock -platform=darwin_arm64 -platform=darwin_amd64 -platform=linux_amd64 -platform=windows_amd64
 
 workspace:
-	$(tf_cmd) workspace new $(ENVIRONMENT) || $(tf_cmd) workspace select $(ENVIRONMENT) && echo "Switched to workspace/environment: $(ENVIRONMENT)"
+	$(tf_cmd) workspace new $(SUB_ENVIRONMENT) || $(tf_cmd) workspace select $(SUB_ENVIRONMENT) && echo "Switched to workspace/environment: $(SUB_ENVIRONMENT)"
 
 init:
 	$(tf_cmd) init $(tf_state) -upgrade  $(tf_vars)
@@ -43,7 +33,7 @@ clean:
 destroy: workspace
 	$(tf_cmd) destroy $(tf_vars) -auto-approve
 	$(tf_cmd) workspace select default
-	$(tf_cmd) workspace delete $(ENVIRONMENT)
+	$(tf_cmd) workspace delete $(SUB_ENVIRONMENT)
 
 output:
 	$(tf_cmd) output -raw $(name)
@@ -62,3 +52,5 @@ catch-all-zip:
 
 tf-%:
 	$(tf_cmd) $*
+
+.PHONY : lock-provider workspace init plan apply clean destroy output state-list lambda-zip catch-all-zip

@@ -4,4 +4,4 @@ locals {
 }
 variable "splunk_endpoint" {}
 variable "hec_token" {}
-variable "environment" {}
+variable "force_destroy" {}

@@ -2,7 +2,6 @@ variable "environment" {}
 variable "sub_environment" {}
 variable "immunisation_account_id" {}
 variable "dspp_core_account_id" {}
-variable "splunk_environment" {}
 # For now, only create the config bucket in internal-dev and prod as we only have one Redis instance per account.
 variable "create_config_bucket" {
   default = false
