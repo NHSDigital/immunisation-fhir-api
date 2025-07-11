@@ -1,28 +1,34 @@
 locals {
   public_subnet_config = [
     {
+      name              = "imms-${var.environment}-fhir-api-public-subnet-a"
       cidr_block        = "172.31.16.0/20"
       availability_zone = "eu-west-2a"
     },
     {
+      name              = "imms-${var.environment}-fhir-api-public-subnet-b"
       cidr_block        = "172.31.32.0/20"
       availability_zone = "eu-west-2b"
     },
     {
+      name              = "imms-${var.environment}-fhir-api-public-subnet-c"
       cidr_block        = "172.31.0.0/20"
       availability_zone = "eu-west-2c"
     }
   ]
   private_subnet_config = [
     {
+      name              = "imms-${var.environment}-fhir-api-private-subnet-a"
       cidr_block        = "172.31.48.0/20"
       availability_zone = "eu-west-2a"
     },
     {
+      name              = "imms-${var.environment}-fhir-api-private-subnet-b"
       cidr_block        = "172.31.64.0/20"
       availability_zone = "eu-west-2b"
     },
     {
+      name              = "imms-${var.environment}-fhir-api-private-subnet-c"
       cidr_block        = "172.31.80.0/20"
       availability_zone = "eu-west-2c"
     }
@@ -42,10 +48,13 @@ resource "aws_vpc" "default" {
 resource "aws_subnet" "public" {
   for_each = { for idx, subnet in local.public_subnet_config : idx => subnet }
 
-  vpc_id                  = aws_vpc.default.id
-  cidr_block              = each.value.cidr_block
-  availability_zone       = each.value.availability_zone
-  map_public_ip_on_launch = true
+  vpc_id            = aws_vpc.default.id
+  cidr_block        = each.value.cidr_block
+  availability_zone = each.value.availability_zone
+
+  tags = {
+    Name = each.value.name
+  }
 }
 
 resource "aws_internet_gateway" "default" {
@@ -83,6 +92,10 @@ resource "aws_subnet" "private" {
   vpc_id            = aws_vpc.default.id
   cidr_block        = each.value.cidr_block
   availability_zone = each.value.availability_zone
+
+  tags = {
+    Name = each.value.name
+  }
 }
 
 resource "aws_eip" "nat" {
