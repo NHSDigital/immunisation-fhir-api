@@ -1,0 +1,110 @@
+[
+  {
+    "supplier": "DPSFULL",
+    "permissions": [
+      "COVID19.CRUDS",
+      "FLU.CRUDS",
+      "MMR.CRUDS",
+      "RSV.CRUDS"
+    ]
+  },
+  {
+    "supplier": "DPSREDUCED",
+    "permissions": [
+      "COVID19.CRUD",
+      "FLU.CRUD",
+      "MMR.CRUD",
+      "RSV.CRUD"
+    ]
+  },
+  {
+    "supplier": "MAVIS",
+    "permissions": [
+      "HPV.CRUDS",
+      "3IN1.CRUDS",
+      "MENACWY.CRUDS",
+      "MMR.CRUDS",
+      "FLU.CRUDS"
+    ]
+  },
+  {
+    "supplier": "EMIS",
+    "permissions": [
+      "RSV.U"
+    ]
+  },
+  {
+    "supplier": "PINNACLE",
+    "permissions": []
+  },
+  {
+    "supplier": "SONAR",
+    "permissions": [
+      "FLU.CD"
+    ]
+  },
+  {
+    "supplier": "TPP",
+    "permissions": []
+  },
+  {
+    "supplier": "AGEM-NIVS",
+    "permissions": []
+  },
+  {
+    "supplier": "NIMS",
+    "permissions": []
+  },
+  {
+    "supplier": "EVA",
+    "permissions": [
+      "COVID19.CUD"
+    ]
+  },
+  {
+    "supplier": "RAVS",
+    "permissions": [
+      "RSV.CRUDS"
+    ]
+  },
+  {
+    "supplier": "AGEM-RAVS-Integration",
+    "permissions": [
+      "RSV.CRUDS"
+    ]
+  },
+  {
+    "supplier": "MEDICAL_DIRECTOR",
+    "permissions": []
+  },
+  {
+    "supplier": "COVID19_VACCINE_RESOLUTION_SERVICEDESK",
+    "permissions": []
+  },
+  {
+    "supplier": "Test_App",
+    "permissions": [
+      "COVID19.CRUDS",
+      "FLU.CRUDS",
+      "MMR.CRUDS",
+      "RSV.CRUDS",
+      "HPV.CRUDS",
+      "MENACWY.CRUDS",
+      "PERTUSSIS.CRUDS",
+      "3IN1.CRUDS"
+    ]
+  },
+  {
+    "supplier": "Postman_Auth",
+    "permissions": [
+      "COVID19.CRUDS",
+      "FLU.CRUDS",
+      "MMR.CRUDS",
+      "RSV.CRUDS",
+      "HPV.CRUDS",
+      "MENACWY.CRUDS",
+      "PERTUSSIS.CRUDS",
+      "3IN1.CRUDS"
+    ]
+  }
+]

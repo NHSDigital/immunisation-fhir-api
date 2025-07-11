@@ -1,0 +1,129 @@
+[
+  {
+    "vacc_type": "COVID19",
+    "diseases": [
+      {
+        "code": "840539006",
+        "term": "Disease caused by severe acute respiratory syndrome coronavirus 2"
+      }
+    ]
+  },
+  {
+    "vacc_type": "FLU",
+    "diseases": [
+      {
+        "code": "6142004",
+        "term": "Influenza caused by seasonal influenza virus (disorder)"
+      }
+    ]
+  },
+  {
+    "vacc_type": "HPV",
+    "diseases": [
+      {
+        "code": "240532009",
+        "term": "Human papillomavirus infection"
+      }
+    ]
+  },
+  {
+    "vacc_type": "MMR",
+    "diseases": [
+      {
+        "code": "14189004",
+        "term": "Measles (disorder)"
+      },
+      {
+        "code": "36989005",
+        "term": "Mumps (disorder)"
+      },
+      {
+        "code": "36653000",
+        "term": "Rubella (disorder)"
+      }
+    ]
+  },
+  {
+    "vacc_type": "MMRV",
+    "diseases": [
+      {
+        "code": "14189004",
+        "term": "Measles (disorder)"
+      },
+      {
+        "code": "36989005",
+        "term": "Mumps (disorder)"
+      },
+      {
+        "code": "36653000",
+        "term": "Rubella (disorder)"
+      },
+      {
+        "code": "38907003",
+        "term": "Varicella (disorder)"
+      }
+    ]
+  },
+  {
+    "vacc_type": "RSV",
+    "diseases": [
+      {
+        "code": "55735004",
+        "term": "Respiratory syncytial virus infection (disorder)"
+      }
+    ]
+  },
+  {
+    "vacc_type": "PERTUSSIS",
+    "diseases": [
+      {
+        "code": "27836007",
+        "term": "Pertussis (disorder)"
+      }
+    ]
+  },
+  {
+    "vacc_type": "SHINGLES",
+    "diseases": [
+      {
+        "code": "4740000",
+        "term": "Herpes zoster"
+      }
+    ]
+  },
+  {
+    "vacc_type": "PCV13",
+    "diseases": [
+      {
+        "code": "16814004",
+        "term": "Pneumococcal infectious disease"
+      }
+    ]
+  },
+  {
+    "vacc_type": "3in1",
+    "diseases": [
+      {
+        "code": "398102009",
+        "term": "Acute poliomyelitis"
+      },
+      {
+        "code": "397430003",
+        "term": "Diphtheria caused by Corynebacterium diphtheriae"
+      },
+      {
+        "code": "76902006",
+        "term": "Tetanus (disorder)"
+      }
+    ]
+  },
+  {
+    "vacc_type": "MENACWY",
+    "diseases": [
+      {
+        "code": "23511006",
+        "term": "Meningococcal infectious disease"
+      }
+    ]
+  }
+]
