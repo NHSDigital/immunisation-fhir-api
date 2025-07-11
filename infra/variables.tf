@@ -16,3 +16,9 @@ variable "build_agent_account_id" {
 variable "environment" {
   default = "non-prod"
 }
+variable "mesh_mailbox_id" {
+  default = null
+}
+variable "mesh_dlq_mailbox_id" {
+  default = null
+}

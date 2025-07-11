@@ -7,3 +7,5 @@ dspp_admin_role          = "root"
 environment              = "dev"
 parent_route53_zone_name = "dev.vds.platform.nhs.uk"
 child_route53_zone_name  = "imms.dev.vds.platform.nhs.uk"
+mesh_mailbox_id          = null
+mesh_dlq_mailbox_id      = null
