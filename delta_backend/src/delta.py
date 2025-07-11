@@ -66,7 +66,7 @@ def send_message(record, queue_url=failure_queue_url):
 
 def get_vaccine_type(patient_sort_key: str) -> str:
     vaccine_type = patient_sort_key.split("#")[0]
-    return str.strip(str.upper(vaccine_type))
+    return str.strip(str.lower(vaccine_type))
 
 def get_imms_id(primary_key: str) -> str:
     return primary_key.split("#")[1]
