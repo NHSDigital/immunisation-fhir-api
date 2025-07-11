@@ -26,6 +26,10 @@ variable "aws_region" {
   default = "eu-west-2"
 }
 
+variable "pds_environment" {
+  default = "int"
+}
+
 locals {
   prefix       = "${var.project_name}-${var.service}-${var.sub_environment}"
   short_prefix = "${var.project_short_name}-${var.sub_environment}"

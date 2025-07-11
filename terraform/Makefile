@@ -19,7 +19,7 @@ init-reconfigure:
 	$(tf_cmd) init $(tf_state) -upgrade $(tf_vars) -reconfigure
 
 plan: workspace
-	 $(tf_cmd) plan $(tf_vars)
+	 $(tf_cmd) plan $(tf_vars) -out=tfplan
 
 plan-changes: workspace
 	 $(tf_cmd) plan $(tf_vars) -out=plan && $(tf_cmd) show -no-color -json plan | jq -r '.resource_changes[] | select(.change.actions[0]=="update" or .change.actions[0]=="create" or .change.actions[0]=="add") | .address'

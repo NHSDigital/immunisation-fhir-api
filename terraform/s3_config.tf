@@ -93,7 +93,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "datasources_lifecycle" {
 
 resource "aws_s3_bucket" "batch_data_destination_bucket" {
   # Deliberately not using `local.batch_prefix` as we don't want separate blue / green destinations in prod.
-  bucket        = "immunisation-batch-${var.environment}-data-destinations"
+  bucket        = "immunisation-batch-${var.sub_environment}-data-destinations"
   force_destroy = local.is_temp
 }
 
@@ -192,7 +192,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "data_destinations" {
 }
 
 resource "aws_s3_bucket" "batch_config_bucket" {
-  bucket = "imms-${var.environment}-fhir-config"
+  bucket = "imms-${var.sub_environment}-fhir-config"
 }
 
 resource "aws_s3_bucket_public_access_block" "batch_config_bucket_public_access_block" {

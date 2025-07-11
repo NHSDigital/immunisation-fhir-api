@@ -23,10 +23,10 @@ locals {
   imms_table_name = aws_dynamodb_table.events-dynamodb-table.name
   imms_lambda_env_vars = {
     "DYNAMODB_TABLE_NAME"    = local.imms_table_name,
-    "IMMUNIZATION_ENV"       = var.environment,
-    "IMMUNIZATION_BASE_PATH" = strcontains(var.environment, "pr-") ? "immunisation-fhir-api-${var.environment}" : "immunisation-fhir-api"
+    "IMMUNIZATION_ENV"       = var.sub_environment,
+    "IMMUNIZATION_BASE_PATH" = strcontains(terraform.workspace, "pr-") ? "immunisation-fhir-api-${terraform.workspace}" : "immunisation-fhir-api"
     # except for prod and ref, any other env uses PDS int environment
-    "PDS_ENV"              = var.environment == "prod" ? "prod" : var.environment == "ref" ? "ref" : "int",
+    "PDS_ENV"              = var.pds_environment
     "PDS_CHECK_ENABLED"    = tostring(var.environment != "int")
     "SPLUNK_FIREHOSE_NAME" = module.splunk.firehose_stream_name
     "SQS_QUEUE_URL"        = "https://sqs.eu-west-2.amazonaws.com/${var.immunisation_account_id}/${local.short_prefix}-ack-metadata-queue.fifo"
