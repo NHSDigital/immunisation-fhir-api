@@ -1,6 +1,6 @@
 # Only create MESH processor resources if MESH is configured for this environment
 locals {
-  create_mesh_processor = var.me
+  create_mesh_processor = var.mesh_mailbox_id != null 
 }
 
 # Define the directory containing the Docker image and calculate its SHA-256 hash for triggering redeployments
@@ -8,8 +8,10 @@ locals {
   mesh_processor_lambda_dir     = abspath("${path.root}/../mesh_processor")
   mesh_processor_lambda_files   = fileset(local.mesh_processor_lambda_dir, "**")
   mesh_processor_lambda_dir_sha = sha1(join("", [for f in local.mesh_processor_lambda_files : filesha1("${local.mesh_processor_lambda_dir}/${f}")]))
-  mesh_s3_bucket_name          = local.is_mesh_enabled ? module.mesh[0].mesh_bucket_name : null
-  mesh_s3_logs_bucket_name      = local.is_mesh_enabled ? module.mesh[0].mesh_logs_bucket_name : null
+  mesh_s3_bucket_name          = local.create_mesh_processor ? module.mesh[0].mesh_bucket_name : null
+  mesh_s3_logs_bucket_name      = local.create_mesh_processor ? module.mesh[0].mesh_logs_bucket_name : null
+  mesh_processor_name           = "imms-${var.environment}-mesh-processor"
+  mesh_processor_lambda_name    = "${local.mesh_processor_name}-lambda"
 }
 
 resource "aws_ecr_repository" "mesh_file_converter_lambda_repository" {
@@ -18,8 +20,8 @@ resource "aws_ecr_repository" "mesh_file_converter_lambda_repository" {
   image_scanning_configuration {
     scan_on_push = true
   }
-  name         = "${local.short_prefix}-mesh_processor-repo"
-  force_delete = local.is_temp
+  name         = "${local.mesh_processor_name}-repo"
+  force_delete = false
 }
 
 # Module for building and pushing Docker image to ECR
@@ -78,7 +80,7 @@ resource "aws_ecr_repository_policy" "mesh_processor_lambda_ECRImageRetreival_po
         ],
         "Condition" : {
           "StringLike" : {
-            "aws:sourceArn" : "arn:aws:lambda:eu-west-2:${local.immunisation_account_id}:function:${local.short_prefix}-mesh_processor_lambda"
+            "aws:sourceArn" : "arn:aws:lambda:eu-west-2:${var.imms_account_id}:function:${local.mesh_processor_lambda_name}"
           }
         }
       }
@@ -89,7 +91,7 @@ resource "aws_ecr_repository_policy" "mesh_processor_lambda_ECRImageRetreival_po
 # IAM Role for Lambda
 resource "aws_iam_role" "mesh_processor_lambda_exec_role" {
   count = local.create_mesh_processor ? 1 : 0
-  name  = "${local.short_prefix}-mesh_processor-lambda-exec-role"
+  name  = "${local.mesh_processor_lambda_name}-exec-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
@@ -106,7 +108,7 @@ resource "aws_iam_role" "mesh_processor_lambda_exec_role" {
 # Policy for Lambda execution role
 resource "aws_iam_policy" "mesh_processor_lambda_exec_policy" {
   count = local.create_mesh_processor ? 1 : 0
-  name  = "${local.short_prefix}-mesh_processor-lambda-exec-policy"
+  name  = "imms-${var.environment}-mesh_processor-lambda-exec-policy"
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
@@ -117,7 +119,7 @@ resource "aws_iam_policy" "mesh_processor_lambda_exec_policy" {
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ]
-        Resource = "arn:aws:logs:${var.aws_region}:${local.immunisation_account_id}:log-group:/aws/lambda/${local.short_prefix}-mesh_processor_lambda:*"
+        Resource = "arn:aws:logs:${var.aws_region}:${var.imms_account_id}:log-group:/aws/lambda/${local.mesh_processor_lambda_name}:*"
       },
       {
         Effect = "Allow"
@@ -156,7 +158,7 @@ resource "aws_iam_policy" "mesh_processor_lambda_exec_policy" {
 
 resource "aws_iam_policy" "mesh_processor_lambda_kms_access_policy" {
   count       = local.create_mesh_processor ? 1 : 0
-  name        = "${local.short_prefix}-mesh_processor-lambda-kms-policy"
+  name        = "${aws_lambda_function.mesh_file_converter_lambda[0].function_name}-kms-policy"
   description = "Allow Lambda to decrypt environment variables"
 
   policy = jsonencode({
@@ -194,7 +196,7 @@ resource "aws_iam_role_policy_attachment" "mesh_processor_lambda_kms_policy_atta
 # Lambda Function with Security Group and VPC.
 resource "aws_lambda_function" "mesh_file_converter_lambda" {
   count         = local.create_mesh_processor ? 1 : 0
-  function_name = "${local.short_prefix}-mesh_processor_lambda"
+  function_name = "${local.mesh_processor_name}_lambda"
   role          = aws_iam_role.mesh_processor_lambda_exec_role[0].arn
   package_type  = "Image"
   image_uri     = module.mesh_processor_docker_image[0].image_uri
@@ -204,7 +206,7 @@ resource "aws_lambda_function" "mesh_file_converter_lambda" {
   environment {
     variables = {
       Destination_BUCKET_NAME    = aws_s3_bucket.batch_data_source_bucket.bucket
-      MESH_FILE_PROC_LAMBDA_NAME = "imms-${local.env}-meshfileproc_lambda"
+      MESH_FILE_PROC_LAMBDA_NAME = "${local.mesh_processor_lambda_name}"
     }
   }
 }
@@ -234,6 +236,6 @@ resource "aws_s3_bucket_notification" "mesh_datasources_lambda_notification" {
 
 resource "aws_cloudwatch_log_group" "mesh_file_converter_log_group" {
   count             = local.create_mesh_processor ? 1 : 0
-  name              = "/aws/lambda/${local.short_prefix}-mesh_processor_lambda"
+  name              = "/aws/lambda/${aws_lambda_function.mesh_file_converter_lambda[0].function_name}"
   retention_in_days = 30
 }
