@@ -142,7 +142,7 @@ class FhirService:
         patient = self._validate_patient(immunization)
         if "diagnostics" in patient:
             return (None, patient)
-        imms = self.immunization_repo.update_immunization(
+        imms, updated_version = self.immunization_repo.update_immunization(
             imms_id,
             immunization,
             patient,
@@ -151,7 +151,7 @@ class FhirService:
             supplier_system
         )
 
-        return UpdateOutcome.UPDATE, Immunization.parse_obj(imms)
+        return UpdateOutcome.UPDATE, Immunization.parse_obj(imms), updated_version
 
     def reinstate_immunization(
         self,

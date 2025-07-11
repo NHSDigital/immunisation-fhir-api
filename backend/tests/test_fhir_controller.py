@@ -1051,7 +1051,7 @@ class TestUpdateImmunization(unittest.TestCase):
             "body": imms,
             "pathParameters": {"id": imms_id},
         }
-        self.service.update_immunization.return_value = UpdateOutcome.UPDATE, "value doesn't matter"
+        self.service.update_immunization.return_value = UpdateOutcome.UPDATE, "value doesn't matter", 2
         self.service.get_immunization_by_id_all.return_value = {
             "resource": "new_value",
             "Version": 1,
@@ -1066,7 +1066,7 @@ class TestUpdateImmunization(unittest.TestCase):
         )
         mock_get_permissions.assert_called_once_with("Test")
         self.assertEqual(response["statusCode"], 200)
-        self.assertTrue("body" not in response)
+        self.assertEqual(json.loads(response["body"]), {"E-Tag": 2})
 
     @patch("fhir_controller.get_supplier_permissions")
     def test_update_immunization_etag_missing(self, mock_get_supplier_permissions):
@@ -1247,7 +1247,7 @@ class TestUpdateImmunization(unittest.TestCase):
             "body": imms,
             "pathParameters": {"id": imms_id},
         }
-        self.service.reinstate_immunization.return_value = UpdateOutcome.UPDATE, "value doesn't matter"
+        self.service.reinstate_immunization.return_value = UpdateOutcome.UPDATE, {}, 2
         self.service.get_immunization_by_id_all.return_value = {
             "resource": "new_value",
             "Version": 1,
@@ -1261,7 +1261,7 @@ class TestUpdateImmunization(unittest.TestCase):
             imms_id, json.loads(imms), 1, ["COVID19.CRUDS"], "Test"
         )
         self.assertEqual(response["statusCode"], 200)
-        self.assertTrue("body" not in response)
+        self.assertEqual(json.loads(response["body"]), {"E-Tag": 2})
 
     @patch("fhir_controller.get_supplier_permissions")
     def test_update_deletedat_immunization_without_version(self, mock_get_supplier_permissions):
@@ -1271,11 +1271,11 @@ class TestUpdateImmunization(unittest.TestCase):
         imms = '{"id": "valid-id"}'
         imms_id = "valid-id"
         aws_event = {
-            "headers": {"SupplierSystem": "Test"},
+            "headers": {"SupplierSystem": "Test", "E-tag":1},
             "body": imms,
             "pathParameters": {"id": imms_id},
         }
-        self.service.reinstate_immunization.return_value = UpdateOutcome.UPDATE, "value doesn't matter"
+        self.service.reinstate_immunization.return_value = UpdateOutcome.UPDATE, {}, 2
         self.service.get_immunization_by_id_all.return_value = {
             "resource": "new_value",
             "Version": 1,
@@ -1290,7 +1290,7 @@ class TestUpdateImmunization(unittest.TestCase):
         )
         mock_get_supplier_permissions.assert_called_once_with("Test")
         self.assertEqual(response["statusCode"], 200)
-        self.assertTrue("body" not in response)
+        self.assertEqual(json.loads(response["body"]), {"E-Tag": 2})
 
     @patch("fhir_controller.get_supplier_permissions")
     def test_update_record_exists(self, mock_get_supplier_permissions):
@@ -1376,7 +1376,7 @@ class TestUpdateImmunization(unittest.TestCase):
         update_result = {
             "diagnostics": "Validation errors: contained[?(@.resourceType=='Patient')].identifier[0].value does not exists"
         }
-        self.service.update_immunization.return_value = None, update_result
+        self.service.update_immunization.return_value = None, update_result, 2
         req_imms = '{"id": "valid-id"}'
         path_id = "valid-id"
         aws_event = {
@@ -1396,7 +1396,7 @@ class TestUpdateImmunization(unittest.TestCase):
 
         self.assertEqual(response["statusCode"], 400)
         body = json.loads(response["body"])
-        self.assertEqual(body["resourceType"], "OperationOutcome")
+        self.assertEqual(body["resourceType"], "OperationOutcome", 2)
 
     @patch("fhir_controller.get_supplier_permissions")
     def test_validation_identifier_to_give_bad_request_for_update_immunization(self, mock_get_supplier_permissions):

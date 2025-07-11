@@ -405,7 +405,7 @@ class TestUpdateImmunization(TestFhirRepositoryBase):
             mock_time.return_value = now_epoch
             # When
 
-            act_resource = self.repository.update_immunization(
+            act_resource, updated_version = self.repository.update_immunization(
                 imms_id, imms, self.patient, 1, ["COVID19.CRUD"], "Test"
             )
 
@@ -773,10 +773,11 @@ class TestImmunizationDecimals(TestFhirRepositoryBase):
         now_epoch = 123456
         with patch("time.time") as mock_time:
             mock_time.return_value = now_epoch
-            act_resource = self.repository.update_immunization(
+            act_resource, act_version = self.repository.update_immunization(
                 imms_id, imms, self.patient, 1, ["COVID19.CRUD"], "Test"
             )
         self.assertDictEqual(act_resource, resource)
+        self.assertEqual(act_version, 2)
 
         update_exp = (
             "SET UpdatedAt = :timestamp, PatientPK = :patient_pk, "
