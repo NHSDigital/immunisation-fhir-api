@@ -68,7 +68,7 @@ resource "aws_ecr_repository_policy" "ack_lambda_ECRImageRetreival_policy" {
         ],
         "Condition" : {
           "StringLike" : {
-            "aws:sourceArn" : "arn:aws:lambda:eu-west-2:${local.immunisation_account_id}:function:${local.short_prefix}-ack-lambda"
+            "aws:sourceArn" : "arn:aws:lambda:eu-west-2:${var.immunisation_account_id}:function:${local.short_prefix}-ack-lambda"
           }
         }
       }
@@ -105,7 +105,7 @@ resource "aws_iam_policy" "ack_lambda_exec_policy" {
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ]
-        Resource = "arn:aws:logs:eu-west-2:${local.immunisation_account_id}:log-group:/aws/lambda/${local.short_prefix}-ack-lambda:*"
+        Resource = "arn:aws:logs:eu-west-2:${var.immunisation_account_id}:log-group:/aws/lambda/${local.short_prefix}-ack-lambda:*"
       },
       {
         Effect = "Allow"
@@ -148,7 +148,7 @@ resource "aws_iam_policy" "ack_lambda_exec_policy" {
           "sqs:DeleteMessage",
           "sqs:GetQueueAttributes"
         ],
-      Resource = "arn:aws:sqs:eu-west-2:${local.immunisation_account_id}:${local.short_prefix}-ack-metadata-queue.fifo" },
+      Resource = "arn:aws:sqs:eu-west-2:${var.immunisation_account_id}:${local.short_prefix}-ack-metadata-queue.fifo" },
       {
         "Effect" : "Allow",
         "Action" : [
@@ -216,7 +216,7 @@ resource "aws_lambda_function" "ack_processor_lambda" {
     variables = {
       ACK_BUCKET_NAME            = aws_s3_bucket.batch_data_destination_bucket.bucket
       SPLUNK_FIREHOSE_NAME       = module.splunk.firehose_stream_name
-      ENVIRONMENT                = terraform.workspace
+      ENVIRONMENT                = var.sub_environment
       AUDIT_TABLE_NAME           = aws_dynamodb_table.audit-table.name
       FILE_NAME_PROC_LAMBDA_NAME = aws_lambda_function.file_processor_lambda.function_name
     }

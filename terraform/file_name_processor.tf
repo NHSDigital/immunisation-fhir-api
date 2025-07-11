@@ -68,7 +68,7 @@ resource "aws_ecr_repository_policy" "filenameprocessor_lambda_ECRImageRetreival
         ],
         "Condition" : {
           "StringLike" : {
-            "aws:sourceArn" : "arn:aws:lambda:eu-west-2:${local.immunisation_account_id}:function:${local.short_prefix}-filenameproc_lambda"
+            "aws:sourceArn" : "arn:aws:lambda:eu-west-2:${var.immunisation_account_id}:function:${local.short_prefix}-filenameproc_lambda"
           }
         }
       }
@@ -105,7 +105,7 @@ resource "aws_iam_policy" "filenameprocessor_lambda_exec_policy" {
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ]
-        Resource = "arn:aws:logs:${var.aws_region}:${local.immunisation_account_id}:log-group:/aws/lambda/${local.short_prefix}-filenameproc_lambda:*"
+        Resource = "arn:aws:logs:${var.aws_region}:${var.immunisation_account_id}:log-group:/aws/lambda/${local.short_prefix}-filenameproc_lambda:*"
       },
       {
         Effect = "Allow"
@@ -166,7 +166,7 @@ resource "aws_iam_policy" "filenameprocessor_lambda_exec_policy" {
         Effect = "Allow"
         Action = "lambda:InvokeFunction"
         Resource = [
-          "arn:aws:lambda:${var.aws_region}:${local.immunisation_account_id}:function:imms-${local.env}-filenameproc_lambda",
+          "arn:aws:lambda:${var.aws_region}:${var.immunisation_account_id}:function:imms-${var.sub_environment}-filenameproc_lambda",
         ]
       }
     ]
@@ -291,7 +291,7 @@ resource "aws_lambda_function" "file_processor_lambda" {
       SPLUNK_FIREHOSE_NAME       = module.splunk.firehose_stream_name
       AUDIT_TABLE_NAME           = aws_dynamodb_table.audit-table.name
       FILE_NAME_GSI              = "filename_index"
-      FILE_NAME_PROC_LAMBDA_NAME = "imms-${local.env}-filenameproc_lambda"
+      FILE_NAME_PROC_LAMBDA_NAME = "imms-${var.sub_environment}-filenameproc_lambda"
 
     }
   }

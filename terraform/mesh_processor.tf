@@ -68,7 +68,7 @@ resource "aws_ecr_repository_policy" "mesh_processor_lambda_ECRImageRetreival_po
         ],
         "Condition" : {
           "StringLike" : {
-            "aws:sourceArn" : "arn:aws:lambda:eu-west-2:${local.immunisation_account_id}:function:${local.short_prefix}-mesh_processor_lambda"
+            "aws:sourceArn" : "arn:aws:lambda:eu-west-2:${var.immunisation_account_id}:function:${local.short_prefix}-mesh_processor_lambda"
           }
         }
       }
@@ -105,7 +105,7 @@ resource "aws_iam_policy" "mesh_processor_lambda_exec_policy" {
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ]
-        Resource = "arn:aws:logs:${var.aws_region}:${local.immunisation_account_id}:log-group:/aws/lambda/${local.short_prefix}-mesh_processor_lambda:*"
+        Resource = "arn:aws:logs:${var.aws_region}:${var.immunisation_account_id}:log-group:/aws/lambda/${local.short_prefix}-mesh_processor_lambda:*"
       },
       {
         Effect = "Allow"
@@ -186,8 +186,7 @@ resource "aws_lambda_function" "mesh_file_converter_lambda" {
 
   environment {
     variables = {
-      Destination_BUCKET_NAME    = aws_s3_bucket.batch_data_source_bucket.bucket
-      MESH_FILE_PROC_LAMBDA_NAME = "imms-${local.env}-meshfileproc_lambda"
+      Destination_BUCKET_NAME = aws_s3_bucket.batch_data_source_bucket.bucket
     }
   }
 
