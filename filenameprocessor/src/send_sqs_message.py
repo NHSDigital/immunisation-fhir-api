@@ -27,7 +27,12 @@ def send_to_supplier_queue(message_body: dict, vaccine_type: str, supplier: str)
 
 
 def make_and_send_sqs_message(
-    file_key: str, message_id: str, permission: str, vaccine_type: str, supplier: str, created_at_formatted_string: str
+    file_key: str,
+    message_id: str,
+    permission: list[str],
+    vaccine_type: str,
+    supplier: str,
+    created_at_formatted_string: str
 ) -> None:
     """Attempts to send a message to the SQS queue. Raises an exception if the message is not successfully sent."""
     message_body = {
