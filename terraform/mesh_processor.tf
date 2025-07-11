@@ -8,7 +8,7 @@ locals {
 
 
 resource "aws_ecr_repository" "mesh_file_converter_lambda_repository" {
-  count = local.config_env == "int" ? 0 : 1
+  count = var.environment == "int" ? 0 : 1
   image_scanning_configuration {
     scan_on_push = true
   }
@@ -18,7 +18,7 @@ resource "aws_ecr_repository" "mesh_file_converter_lambda_repository" {
 
 # Module for building and pushing Docker image to ECR
 module "mesh_processor_docker_image" {
-  count   = local.config_env == "int" ? 0 : 1
+  count   = var.environment == "int" ? 0 : 1
   source  = "terraform-aws-modules/lambda/aws//modules/docker-build"
   version = "7.21.1"
 
@@ -51,7 +51,7 @@ module "mesh_processor_docker_image" {
 
 # Define the lambdaECRImageRetreival policy
 resource "aws_ecr_repository_policy" "mesh_processor_lambda_ECRImageRetreival_policy" {
-  count      = local.config_env == "int" ? 0 : 1
+  count      = var.environment == "int" ? 0 : 1
   repository = aws_ecr_repository.mesh_file_converter_lambda_repository[0].name
 
   policy = jsonencode({
@@ -72,7 +72,7 @@ resource "aws_ecr_repository_policy" "mesh_processor_lambda_ECRImageRetreival_po
         ],
         "Condition" : {
           "StringLike" : {
-            "aws:sourceArn" : "arn:aws:lambda:eu-west-2:${local.immunisation_account_id}:function:${local.short_prefix}-mesh_processor_lambda"
+            "aws:sourceArn" : "arn:aws:lambda:eu-west-2:${var.immunisation_account_id}:function:${local.short_prefix}-mesh_processor_lambda"
           }
         }
       }
@@ -82,7 +82,7 @@ resource "aws_ecr_repository_policy" "mesh_processor_lambda_ECRImageRetreival_po
 
 # IAM Role for Lambda
 resource "aws_iam_role" "mesh_processor_lambda_exec_role" {
-  count = local.config_env == "int" ? 0 : 1
+  count = var.environment == "int" ? 0 : 1
   name  = "${local.short_prefix}-mesh_processor-lambda-exec-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -99,7 +99,7 @@ resource "aws_iam_role" "mesh_processor_lambda_exec_role" {
 
 # Policy for Lambda execution role
 resource "aws_iam_policy" "mesh_processor_lambda_exec_policy" {
-  count = local.config_env == "int" ? 0 : 1
+  count = var.environment == "int" ? 0 : 1
   name  = "${local.short_prefix}-mesh_processor-lambda-exec-policy"
   policy = jsonencode({
     Version = "2012-10-17",
@@ -111,7 +111,7 @@ resource "aws_iam_policy" "mesh_processor_lambda_exec_policy" {
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ]
-        Resource = "arn:aws:logs:${var.aws_region}:${local.immunisation_account_id}:log-group:/aws/lambda/${local.short_prefix}-mesh_processor_lambda:*"
+        Resource = "arn:aws:logs:${var.aws_region}:${var.immunisation_account_id}:log-group:/aws/lambda/${local.short_prefix}-mesh_processor_lambda:*"
       },
       {
         Effect = "Allow"
@@ -146,7 +146,7 @@ resource "aws_iam_policy" "mesh_processor_lambda_exec_policy" {
 }
 
 resource "aws_iam_policy" "mesh_processor_lambda_kms_access_policy" {
-  count       = local.config_env == "int" ? 0 : 1
+  count       = var.environment == "int" ? 0 : 1
   name        = "${local.short_prefix}-mesh_processor-lambda-kms-policy"
   description = "Allow Lambda to decrypt environment variables"
 
@@ -171,7 +171,7 @@ resource "aws_iam_policy" "mesh_processor_lambda_kms_access_policy" {
 
 # Attach the execution policy to the Lambda role
 resource "aws_iam_role_policy_attachment" "mesh_processor_lambda_exec_policy_attachment" {
-  count      = local.config_env == "int" ? 0 : 1
+  count      = var.environment == "int" ? 0 : 1
   role       = aws_iam_role.mesh_processor_lambda_exec_role[0].name
   policy_arn = aws_iam_policy.mesh_processor_lambda_exec_policy[0].arn
 }
@@ -179,14 +179,14 @@ resource "aws_iam_role_policy_attachment" "mesh_processor_lambda_exec_policy_att
 
 # Attach the kms policy to the Lambda role
 resource "aws_iam_role_policy_attachment" "mesh_processor_lambda_kms_policy_attachment" {
-  count      = local.config_env == "int" ? 0 : 1
+  count      = var.environment == "int" ? 0 : 1
   role       = aws_iam_role.mesh_processor_lambda_exec_role[0].name
   policy_arn = aws_iam_policy.mesh_processor_lambda_kms_access_policy[0].arn
 }
 
 # Lambda Function with Security Group and VPC.
 resource "aws_lambda_function" "mesh_file_converter_lambda" {
-  count         = local.config_env == "int" ? 0 : 1
+  count         = var.environment == "int" ? 0 : 1
   function_name = "${local.short_prefix}-mesh_processor_lambda"
   role          = aws_iam_role.mesh_processor_lambda_exec_role[0].arn
   package_type  = "Image"
@@ -197,7 +197,7 @@ resource "aws_lambda_function" "mesh_file_converter_lambda" {
   environment {
     variables = {
       Destination_BUCKET_NAME    = aws_s3_bucket.batch_data_source_bucket.bucket
-      MESH_FILE_PROC_LAMBDA_NAME = "imms-${local.env}-meshfileproc_lambda"
+      MESH_FILE_PROC_LAMBDA_NAME = "imms-${var.sub_environment}-meshfileproc_lambda"
     }
   }
 
@@ -205,7 +205,7 @@ resource "aws_lambda_function" "mesh_file_converter_lambda" {
 
 # Permission for S3 to invoke Lambda function
 resource "aws_lambda_permission" "mesh_s3_invoke_permission" {
-  count         = local.config_env == "int" ? 0 : 1
+  count         = var.environment == "int" ? 0 : 1
   statement_id  = "AllowExecutionFromS3"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.mesh_file_converter_lambda[0].function_name
@@ -218,7 +218,7 @@ resource "aws_lambda_permission" "mesh_s3_invoke_permission" {
 # S3 Bucket notification to trigger Lambda function
 resource "aws_s3_bucket_notification" "mesh_datasources_lambda_notification" {
   # TODO - what is this bucket and why isn't it managed by Terraform?
-  count  = local.config_env == "int" ? 0 : 1
+  count  = var.environment == "int" ? 0 : 1
   bucket = "local-immunisation-mesh"
 
   lambda_function {
@@ -229,7 +229,7 @@ resource "aws_s3_bucket_notification" "mesh_datasources_lambda_notification" {
 }
 
 resource "aws_cloudwatch_log_group" "mesh_file_converter_log_group" {
-  count             = local.config_env == "int" ? 0 : 1
+  count             = var.environment == "int" ? 0 : 1
   name              = "/aws/lambda/${local.short_prefix}-mesh_processor_lambda"
   retention_in_days = 30
 }

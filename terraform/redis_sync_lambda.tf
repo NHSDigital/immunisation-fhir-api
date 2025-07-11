@@ -67,7 +67,7 @@ resource "aws_ecr_repository_policy" "redis_sync_lambda_ECRImageRetreival_policy
         ],
         Condition : {
           StringLike : {
-            # "aws:sourceArn" : "arn:aws:lambda:eu-west-2:${local.immunisation_account_id}:function:${local.short_prefix}-redis_sync_lambda"
+            # "aws:sourceArn" : "arn:aws:lambda:eu-west-2:${var.immunisation_account_id}:function:${local.short_prefix}-redis_sync_lambda"
             "aws:sourceArn" : aws_lambda_function.redis_sync_lambda.arn
           }
         }
@@ -105,7 +105,7 @@ resource "aws_iam_policy" "redis_sync_lambda_exec_policy" {
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ]
-        Resource = "arn:aws:logs:${var.aws_region}:${local.immunisation_account_id}:log-group:/aws/lambda/${local.short_prefix}-redis_sync_lambda:*"
+        Resource = "arn:aws:logs:${var.aws_region}:${var.immunisation_account_id}:log-group:/aws/lambda/${local.short_prefix}-redis_sync_lambda:*"
       },
       {
         Effect = "Allow"
@@ -166,7 +166,7 @@ resource "aws_iam_policy" "redis_sync_lambda_exec_policy" {
         Effect = "Allow"
         Action = "lambda:InvokeFunction"
         Resource = [
-          "arn:aws:lambda:${var.aws_region}:${local.immunisation_account_id}:function:imms-${local.env}-redis_sync_lambda",
+          "arn:aws:lambda:${var.aws_region}:${var.immunisation_account_id}:function:imms-${var.sub_environment}-redis_sync_lambda",
         ]
       }
     ]
@@ -233,7 +233,7 @@ resource "aws_lambda_function" "redis_sync_lambda" {
       CONFIG_BUCKET_NAME          = local.config_bucket_name
       REDIS_HOST                  = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].address
       REDIS_PORT                  = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].port
-      REDIS_SYNC_PROC_LAMBDA_NAME = "imms-${local.env}-redis_sync_lambda"
+      REDIS_SYNC_PROC_LAMBDA_NAME = "imms-${var.sub_environment}-redis_sync_lambda"
       SPLUNK_FIREHOSE_NAME        = module.splunk.firehose_stream_name
     }
   }

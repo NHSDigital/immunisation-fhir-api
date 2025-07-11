@@ -22,13 +22,11 @@ provider "aws" {
   default_tags {
     tags = {
       Project     = var.project_name
-      Environment = local.environment
+      Environment = var.environment
       Service     = var.service
     }
   }
 }
-
-
 
 provider "docker" {
   registry_auth {
@@ -37,7 +35,6 @@ provider "docker" {
     password = data.aws_ecr_authorization_token.token.password
   }
 }
-
 
 data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
@@ -76,13 +73,6 @@ data "aws_security_group" "existing_securitygroup" {
   }
 }
 
-data "aws_s3_bucket" "existing_config_bucket" {
-  # For now, look up the internal-dev bucket during int, ref and PR branch deploys.
-  count = local.create_config_bucket ? 0 : 1
-
-  bucket = "imms-${local.config_bucket_env}-supplier-config"
-}
-
 data "aws_kms_key" "existing_lambda_encryption_key" {
   key_id = "alias/imms-batch-lambda-env-encryption"
 }
@@ -92,6 +82,6 @@ data "aws_kms_key" "existing_kinesis_encryption_key" {
 }
 
 data "aws_kms_key" "mesh_s3_encryption_key" {
-  count  = local.config_env == "int" ? 0 : 1
+  count  = var.environment == "int" ? 0 : 1
   key_id = "alias/local-immunisation-mesh"
 }

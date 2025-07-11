@@ -4,7 +4,7 @@ locals {
 }
 
 data "aws_s3_bucket" "cert_storage" {
-  bucket = "imms-fhir-${var.config_env}-cert-storage"
+  bucket = "imms-fhir-${var.environment}-cert-storage"
 }
 
 data "aws_s3_object" "cert" {

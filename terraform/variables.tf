@@ -1,7 +1,13 @@
 variable "environment" {}
 variable "sub_environment" {}
-variable "aws_account_name" {}
 variable "immunisation_account_id" {}
+variable "dspp_core_account_id" {}
+variable "splunk_environment" {}
+# For now, only create the config bucket in internal-dev and prod as we only have one Redis instance per account.
+variable "create_config_bucket" {
+  default = false
+}
+
 variable "project_name" {
   default = "immunisation"
 }
@@ -26,15 +32,17 @@ locals {
   short_prefix = "${var.project_short_name}-${var.sub_environment}"
   batch_prefix = "immunisation-batch-${var.sub_environment}"
 
-  vpc_name            = "imms-${var.environment}-fhir-api-vpc"
+  vpc_name            = "imms-${var.sub_environment}-fhir-api-vpc"
   root_domain         = "${var.sub_environment}.${var.environment}.vds.platform.nhs.uk"
-  service_domain_name = "${local.env}.${local.project_domain_name}"
   project_domain_name = data.aws_route53_zone.project_zone.name
+  service_domain_name = "${var.sub_environment}.${local.project_domain_name}"
 
-  # For now, only create the config bucket in internal-dev and prod as we only have one Redis instance per account.
-  create_config_bucket = local.environment == local.config_bucket_env
-  config_bucket_arn    = local.create_config_bucket ? aws_s3_bucket.batch_config_bucket[0].arn : data.aws_s3_bucket.existing_config_bucket[0].arn
-  config_bucket_name   = local.create_config_bucket ? aws_s3_bucket.batch_config_bucket[0].bucket : data.aws_s3_bucket.existing_config_bucket[0].bucket
+  config_bucket_arn  = aws_s3_bucket.batch_config_bucket.arn
+  config_bucket_name = aws_s3_bucket.batch_config_bucket.bucket
+  is_temp            = length(regexall("[a-z]{2,4}-?[0-9]+", var.sub_environment)) > 0
 
-  is_temp = length(regexall("[a-z]{2,4}-?[0-9]+", local.env)) > 0
+  # Public subnet - The subnet has a direct route to an internet gateway. Resources in a public subnet can access the public internet.
+  # public_subnet_ids = [for k, v in data.aws_route.internet_traffic_route_by_subnet : k if length(v.gateway_id) > 0]
+  # Private subnet - The subnet does not have a direct route to an internet gateway. Resources in a private subnet require a NAT device to access the public internet.
+  private_subnet_ids = [for k, v in data.aws_route.internet_traffic_route_by_subnet : k if length(v.nat_gateway_id) > 0]
 }
