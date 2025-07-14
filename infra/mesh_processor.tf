@@ -3,6 +3,24 @@ locals {
   create_mesh_processor = var.mesh_mailbox_id != null 
 }
 
+# MESH Client Module - conditionally created based on environment configuration
+module "mesh" {
+  count  = local.create_mesh_processor ? 1 : 0
+  source = "git::https://github.com/nhsdigital/terraform-aws-mesh-client.git//module?ref=v2.1.5"
+
+  name_prefix                    = "imms-${var.environment}"
+  mesh_env                       = var.environment == "prod"? "production" : "integration"
+  subnet_ids                     = data.aws_subnets.default.ids
+
+  mailbox_ids                    = [var.mesh_mailbox_id]
+  verify_ssl                     = "true"
+  get_message_max_concurrency    = 10
+  compress_threshold             = 1 * 1024 * 1024
+  handshake_schedule             = "rate(24 hours)"
+
+  account_id                     = var.imms_account_id
+}
+
 # Define the directory containing the Docker image and calculate its SHA-256 hash for triggering redeployments
 locals {
   mesh_processor_lambda_dir     = abspath("${path.root}/../mesh_processor")
@@ -146,10 +164,7 @@ resource "aws_iam_policy" "mesh_processor_lambda_exec_policy" {
         Resource = [
           "arn:aws:s3:::${local.mesh_s3_bucket_name}",
           "arn:aws:s3:::${local.mesh_s3_bucket_name}/*",
-          "arn:aws:s3:::${local.mesh_s3_logs_bucket_name}/*",
-          "arn:aws:s3:::local-immunisation-mesh",
-          "arn:aws:s3:::local-immunisation-mesh/*",
-          "arn:aws:s3:::local-immunisation-mesh-s3logs/*"
+          "arn:aws:s3:::${local.mesh_s3_logs_bucket_name}/*"
         ]
       }
     ]
