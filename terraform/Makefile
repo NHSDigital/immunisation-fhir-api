@@ -1,10 +1,18 @@
 -include .env
 
-tf_cmd = AWS_PROFILE=$(AWS_PROFILE) terraform
-tf_state= -backend-config="bucket=$(STATE_BUCKET_NAME)"
+environment        ?= $(ENVIRONMENT)
+sub_environment    ?= $(SUB_ENVIRONMENT)
+sub_environment_dir := $(if $(findstring pr-,$(sub_environment)),pr,$(sub_environment))
 
-sub_env_folder := $(if $(findstring pr-,$(SUB_ENVIRONMENT)),pr,$(SUB_ENVIRONMENT))
-tf_vars= -var="sub_environment=$(SUB_ENVIRONMENT)" -var-file="./environments/$(ENVIRONMENT)/$(sub_env_folder)/variables.tfvars"
+tf_cmd = AWS_PROFILE=$(AWS_PROFILE) terraform
+
+bucket_name = $(if $(filter dev,$(environment)),immunisation-$(sub_environment),immunisation-$(environment))-terraform-state-files
+
+tf_state = -backend-config="bucket=$(bucket_name)"
+
+tf_vars = \
+  -var="sub_environment=$(sub_environment)" \
+  -var-file="./environments/$(environment)/$(sub_environment_dir)/variables.tfvars"
 
 lock-provider:
 	# Run this only when you install a new terraform provider. This will generate sha code in lock file for all platform
@@ -12,7 +20,7 @@ lock-provider:
 	$(tf_cmd) providers lock -platform=darwin_arm64 -platform=darwin_amd64 -platform=linux_amd64 -platform=windows_amd64
 
 workspace:
-	$(tf_cmd) workspace new $(SUB_ENVIRONMENT) || $(tf_cmd) workspace select $(SUB_ENVIRONMENT) && echo "Switched to workspace/environment: $(SUB_ENVIRONMENT)"
+	$(tf_cmd) workspace new $(sub_environment) || $(tf_cmd) workspace select $(sub_environment) && echo "Switched to workspace/environment: $(sub_environment)"
 
 init:
 	$(tf_cmd) init $(tf_state) -upgrade  $(tf_vars)
@@ -35,7 +43,7 @@ clean:
 destroy: workspace
 	$(tf_cmd) destroy $(tf_vars) -auto-approve
 	$(tf_cmd) workspace select default
-	$(tf_cmd) workspace delete $(SUB_ENVIRONMENT)
+	$(tf_cmd) workspace delete $(sub_environment)
 
 output:
 	$(tf_cmd) output -raw $(name)
