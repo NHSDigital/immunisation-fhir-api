@@ -24,6 +24,7 @@ See https://nhsd-confluence.digital.nhs.uk/display/APM/Glossary.
 | `mesh_processor`    | **Imms Batch** – MESH-specific batch processing functionality. |
 | `recordprocessor`   | **Imms Batch** – Handles batch record processing. |
 | `redis_sync`        | **Imms Redis** – Handles sync s3 to REDIS. |
+| `id_sync`        | **Imms Redis** – Handles sync SQS to IEDS. |
 ---
 
 ### Pipelines
