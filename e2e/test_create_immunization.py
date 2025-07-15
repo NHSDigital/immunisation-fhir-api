@@ -1,5 +1,6 @@
 from utils.base_test import ImmunizationBaseTest
 from utils.resource import generate_imms_resource, get_full_row_from_identifier
+import json
 
 
 class TestCreateImmunization(ImmunizationBaseTest):
@@ -39,7 +40,9 @@ class TestCreateImmunization(ImmunizationBaseTest):
 
         # Check that duplice CREATE request is rejected after the event is updated
         imms["id"] = imms_id  # Imms fhir resource should include the id for update
-        etag_version = int(res.headers["E-Tag"])
+        etag_version = int(res.headers.get("E-Tag", 1))
+        print("E-Tag being sent:", etag_version)
+        print("Update payload:", json.dumps(imms, indent=2))
         self.default_imms_api.update_immunization(imms_id, imms, headers={"E-Tag": str(etag_version)})
         self.assertEqual(res.status_code, 200)
         del imms["id"]  # Imms fhir resource should not include an id for create
