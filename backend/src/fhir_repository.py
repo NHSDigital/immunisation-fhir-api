@@ -3,7 +3,7 @@ import os
 import time
 import uuid
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Tuple
 
 import boto3
 import botocore.exceptions
@@ -299,7 +299,7 @@ class ImmunizationRepository:
         supplier_system: str,
         deleted_at_required: bool,
         update_reinstated: bool,
-    ) -> dict:
+    ) -> Tuple[dict, int]:
         try:
             updated_version = existing_resource_version + 1
             condition_expression = Attr("PK").eq(attr.pk) & (
