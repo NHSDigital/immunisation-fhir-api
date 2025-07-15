@@ -112,7 +112,8 @@ module "api_gateway" {
   short_prefix    = local.short_prefix
   zone_id         = data.aws_route53_zone.project_zone.zone_id
   api_domain_name = local.service_domain_name
-  environment     = var.sub_environment
+  environment     = var.environment
+  sub_environment = var.sub_environment
   oas             = local.oas
 }
 

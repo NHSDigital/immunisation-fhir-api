@@ -30,19 +30,22 @@ variable "pds_environment" {
   default = "int"
 }
 
+variable "root_domain" {
+  default = "imms.dev.vds.platform.nhs.uk"
+}
+
 locals {
-  prefix       = "${var.project_name}-${var.service}-${var.sub_environment}"
-  short_prefix = "${var.project_short_name}-${var.sub_environment}"
-  batch_prefix = "immunisation-batch-${var.sub_environment}"
-
-  vpc_name            = "imms-${var.sub_environment}-fhir-api-vpc"
-  root_domain         = "${var.sub_environment}.${var.environment}.vds.platform.nhs.uk"
-  project_domain_name = data.aws_route53_zone.project_zone.name
+  sub_environment     = can(regex("pr-", var.sub_environment)) ? terraform.workspace : var.sub_environment
+  prefix              = "${var.project_name}-${var.service}-${var.sub_environment}"
+  short_prefix        = "${var.project_short_name}-${var.sub_environment}"
+  batch_prefix        = "immunisation-batch-${var.sub_environment}"
+  vpc_name            = "imms-${var.environment}-fhir-api-vpc"
+  root_domain_name    = "${var.environment}.vds.platform.nhs.uk"
+  project_domain_name = "imms.${local.root_domain_name}"
   service_domain_name = "${var.sub_environment}.${local.project_domain_name}"
-
-  config_bucket_arn  = aws_s3_bucket.batch_config_bucket.arn
-  config_bucket_name = aws_s3_bucket.batch_config_bucket.bucket
-  is_temp            = length(regexall("[a-z]{2,4}-?[0-9]+", var.sub_environment)) > 0
+  config_bucket_arn   = aws_s3_bucket.batch_config_bucket.arn
+  config_bucket_name  = aws_s3_bucket.batch_config_bucket.bucket
+  is_temp             = length(regexall("[a-z]{2,4}-?[0-9]+", var.sub_environment)) > 0
 
   # Public subnet - The subnet has a direct route to an internet gateway. Resources in a public subnet can access the public internet.
   # public_subnet_ids = [for k, v in data.aws_route.internet_traffic_route_by_subnet : k if length(v.gateway_id) > 0]
