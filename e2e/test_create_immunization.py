@@ -54,6 +54,7 @@ class TestCreateImmunization(ImmunizationBaseTest):
         # Check that duplice CREATE request is rejected after the event is updated then deleted then reinstated
         imms["id"] = imms_id  # Imms fhir resource should include the id for update
         self.default_imms_api.update_immunization(imms_id, imms)
+        res = self.default_imms_api.get_immunization_by_id(imms_id)
         self.assertEqual(res.status_code, 200)
         del imms["id"]  # Imms fhir resource should not include an id for create
         self.assert_operation_outcome(self.default_imms_api.create_immunization(imms, expected_status_code=422), 422)
