@@ -1,7 +1,16 @@
 # Only create MESH processor resources if MESH is configured for this environment
 locals {
   create_mesh_processor = var.mesh_mailbox_id != null 
+  vpc_default = aws_vpc.default.id
 }
+
+data "aws_subnets" "default" {
+  filter {
+    name   = "vpc-id"
+    values = [aws_vpc.default.id]
+  }
+}
+
 
 # MESH Client Module - conditionally created based on environment configuration
 module "mesh" {
@@ -148,8 +157,8 @@ resource "aws_iam_policy" "mesh_processor_lambda_exec_policy" {
           "s3:CopyObject"
         ]
         Resource = [
-          aws_s3_bucket.batch_data_source_bucket.arn,
-          "${aws_s3_bucket.batch_data_source_bucket.arn}/*"
+          aws_s3_bucket.batch_data_source_bucket[0].arn,
+          "${aws_s3_bucket.batch_data_source_bucket[0].arn}/*"
         ]
       },
       {
@@ -220,7 +229,7 @@ resource "aws_lambda_function" "mesh_file_converter_lambda" {
 
   environment {
     variables = {
-      Destination_BUCKET_NAME    = aws_s3_bucket.batch_data_source_bucket.bucket
+      Destination_BUCKET_NAME    = aws_s3_bucket.batch_data_source_bucket[0].bucket
       MESH_FILE_PROC_LAMBDA_NAME = "${local.mesh_processor_lambda_name}"
     }
   }
