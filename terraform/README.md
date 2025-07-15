@@ -1,5 +1,5 @@
 # About
-The terraform from this folder runs in each PR and sets up lambdas associated with the PR. Once the PR is merged, it will be used by the release pipeline to deploy to INT and REF. This is also run by the prod release pipeline to deploy the lambdas to the prod blue and green sub environments.
+The Terraform configuration in this folder is executed in each PR and sets up lambdas associated with the PR. Once the PR is merged, it will be used by the release pipeline to deploy to INT and REF. This is also run by the production release pipeline to deploy the lambdas to the prod blue and green sub environments.
 
 ## Environments Structure
 
@@ -21,7 +21,7 @@ SUB_ENVIRONMENT=pr-123 # Sub-environment (e.g., pr-57, internal-dev)
 AWS_REGION=eu-west-2
 AWS_PROFILE=your-aws-profile
 ```
-2. Run `make init` to download provisioners and dependencies
+2. Run `make init` to download providers and dependencies
 3. Run `make plan` to output plan with the changes that terraform will perform
 4. **WARNING**: Run `make apply` only after thoroughly reviewing the plan as this might destroy or modify existing infrastructure
 
