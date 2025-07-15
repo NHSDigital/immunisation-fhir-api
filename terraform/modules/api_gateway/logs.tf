@@ -1,5 +1,5 @@
 resource "aws_cloudwatch_log_group" "api_access_log" {
-  name              = "/aws/vendedlogs/${aws_apigatewayv2_api.service_api.id}/${var.environment}"
+  name              = "/aws/vendedlogs/${aws_apigatewayv2_api.service_api.id}/${var.sub_environment}"
   retention_in_days = 30
 }
 

@@ -30,6 +30,10 @@ variable "pds_environment" {
   default = "int"
 }
 
+variable "pds_check_enabled" {
+  default = true
+}
+
 variable "root_domain" {
   default = "imms.dev.vds.platform.nhs.uk"
 }

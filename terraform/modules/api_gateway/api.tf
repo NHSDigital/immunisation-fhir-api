@@ -1,7 +1,7 @@
 
 resource "aws_apigatewayv2_api" "service_api" {
   name                         = "${var.prefix}-api"
-  description                  = "Immunisation FHIR API - ${var.environment}"
+  description                  = "Immunisation FHIR API - ${var.sub_environment}"
   protocol_type                = "HTTP"
   disable_execute_api_endpoint = true
   body                         = var.oas
@@ -10,7 +10,7 @@ resource "aws_apigatewayv2_api" "service_api" {
 resource "aws_apigatewayv2_stage" "default" {
   depends_on  = [aws_cloudwatch_log_group.api_access_log]
   api_id      = aws_apigatewayv2_api.service_api.id
-  name        = var.environment
+  name        = var.sub_environment
   auto_deploy = true
 
   default_route_settings {
