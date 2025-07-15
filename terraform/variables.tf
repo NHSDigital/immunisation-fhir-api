@@ -1,5 +1,9 @@
 variable "environment" {}
-variable "sub_environment" {}
+
+variable "sub_environment" {
+  description = "The value is passed in the makefile"
+}
+
 variable "immunisation_account_id" {}
 variable "dspp_core_account_id" {}
 # For now, only create the config bucket in internal-dev and prod as we only have one Redis instance per account.
@@ -39,7 +43,6 @@ variable "root_domain" {
 }
 
 locals {
-  sub_environment     = can(regex("pr-", var.sub_environment)) ? terraform.workspace : var.sub_environment
   prefix              = "${var.project_name}-${var.service}-${var.sub_environment}"
   short_prefix        = "${var.project_short_name}-${var.sub_environment}"
   batch_prefix        = "immunisation-batch-${var.sub_environment}"
