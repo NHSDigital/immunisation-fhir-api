@@ -1,13 +1,13 @@
 variable "environment" {}
 
 variable "sub_environment" {
-  description = "The value is passed in the makefile"
+  description = "The value is set in the makefile"
 }
 
 variable "immunisation_account_id" {}
 variable "dspp_core_account_id" {}
-# For now, only create the config bucket in internal-dev and prod as we only have one Redis instance per account.
-variable "create_config_bucket" {
+
+variable "create_mesh_processor" {
   default = false
 }
 
@@ -36,10 +36,6 @@ variable "pds_environment" {
 
 variable "pds_check_enabled" {
   default = true
-}
-
-variable "root_domain" {
-  default = "imms.dev.vds.platform.nhs.uk"
 }
 
 locals {
