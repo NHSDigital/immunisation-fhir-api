@@ -45,7 +45,6 @@ See https://nhsd-confluence.digital.nhs.uk/display/APM/Glossary.
 | `terraform_old`        | Old tf code used to create INT to mimic prod. |
 | `terraform_sandbox`    | Sandbox environment for testing infrastructure changes. |
 | `terraform_aws_backup` | Streamlined backup processing with AWS. |
-| `mesh-infra`           | Infrastructure setup for Imms batch MESH integration. |
 | `proxies`              | Apigee API proxy definitions. |
 ---
 
