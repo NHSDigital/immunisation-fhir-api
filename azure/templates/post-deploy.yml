@@ -59,8 +59,7 @@ steps:
         cd terraform
 
         make init
-        make plan environment=${{ parameters.aws_account_type }} sub_environment=$workspace
-        # make apply environment=${{ parameters.aws_account_type }} sub_environment=$workspace
+        make apply environment=${{ parameters.aws_account_type }} sub_environment=$workspace
 
         AWS_DOMAIN_NAME=$(make -s output name=service_domain_name)
         IMMS_DELTA_TABLE_NAME=$(make -s output name=imms_delta_table_name)
