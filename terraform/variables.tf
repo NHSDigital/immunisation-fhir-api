@@ -38,6 +38,10 @@ variable "pds_check_enabled" {
   default = true
 }
 
+variable "has_sub_environment_scope" {
+  default = false
+}
+
 locals {
   prefix              = "${var.project_name}-${var.service}-${var.sub_environment}"
   short_prefix        = "${var.project_short_name}-${var.sub_environment}"
@@ -49,7 +53,7 @@ locals {
   config_bucket_arn   = aws_s3_bucket.batch_config_bucket.arn
   config_bucket_name  = aws_s3_bucket.batch_config_bucket.bucket
   is_temp             = length(regexall("[a-z]{2,4}-?[0-9]+", var.sub_environment)) > 0
-
+  resource_scope      = var.has_sub_environment_scope ? var.sub_environment : var.environment
   # Public subnet - The subnet has a direct route to an internet gateway. Resources in a public subnet can access the public internet.
   # public_subnet_ids = [for k, v in data.aws_route.internet_traffic_route_by_subnet : k if length(v.gateway_id) > 0]
   # Private subnet - The subnet does not have a direct route to an internet gateway. Resources in a private subnet require a NAT device to access the public internet.

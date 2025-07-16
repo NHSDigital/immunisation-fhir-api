@@ -1,5 +1,5 @@
 resource "aws_dynamodb_table" "audit-table" {
-  name         = "immunisation-batch-${var.sub_environment}-audit-table"
+  name         = "immunisation-batch-${local.resource_scope}-audit-table"
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "message_id"
 
@@ -47,7 +47,7 @@ resource "aws_dynamodb_table" "audit-table" {
 }
 
 resource "aws_dynamodb_table" "delta-dynamodb-table" {
-  name         = "imms-${var.sub_environment}-delta"
+  name         = "imms-${local.resource_scope}-delta"
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "PK"
 
@@ -106,7 +106,7 @@ resource "aws_dynamodb_table" "delta-dynamodb-table" {
 }
 
 resource "aws_dynamodb_table" "events-dynamodb-table" {
-  name             = "imms-${var.sub_environment}-imms-events"
+  name             = "imms-${local.resource_scope}-imms-events"
   billing_mode     = "PAY_PER_REQUEST"
   hash_key         = "PK"
   stream_enabled   = true
