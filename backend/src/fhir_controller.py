@@ -225,7 +225,7 @@ class FhirController:
 
         # Validate the imms id - start
         if id_error := self._validate_id(imms_id):
-            return FhirController.create_response(400, json.dumps(id_error))    
+            return FhirController.create_response(400, json.dumps(id_error))
         # Validate the imms id - end
 
         # Validate the body of the request - start
@@ -281,9 +281,13 @@ class FhirController:
         try:
             # Validate if the imms resource to be updated is a logically deleted resource - start
             if existing_record["DeletedAt"] == True:
-
                 outcome, resource, updated_version = self.fhir_service.reinstate_immunization(
-                    imms_id, imms, existing_resource_version, imms_vax_type_perms, supplier_system)
+                    imms_id,
+                    imms,
+                    existing_resource_version,
+                    imms_vax_type_perms,
+                    supplier_system
+                )
             # Validate if the imms resource to be updated is a logically deleted resource-end
             else:
                 # Validate if imms resource version is part of the request - start
@@ -332,7 +336,7 @@ class FhirController:
 
                 # Check if the record is reinstated record - start
                 if existing_record["Reinstated"] == True:
-                    outcome, resource = self.fhir_service.update_reinstated_immunization(
+                    outcome, resource, updated_version = self.fhir_service.update_reinstated_immunization(
                         imms_id,
                         imms,
                         existing_resource_version,
@@ -360,7 +364,7 @@ class FhirController:
                 )
                 return self.create_response(400, json.dumps(exp_error))
             if outcome == UpdateOutcome.UPDATE:
-                return self.create_response(200, {"E-Tag": updated_version}) #include e-tag here, is it not included in the response resource 
+                return self.create_response(200, {"E-Tag": updated_version}) #include e-tag here, is it not included in the response resource
         except ValidationError as error:
             return self.create_response(400, error.to_operation_outcome())
         except IdentifierDuplicationError as duplicate:
@@ -543,7 +547,7 @@ class FhirController:
         )
         return self.create_response(400, error)
 
-    
+
     def authorize_request(self, aws_event: dict) -> Optional[dict]:
         try:
             self.authorizer.authorize(aws_event)
