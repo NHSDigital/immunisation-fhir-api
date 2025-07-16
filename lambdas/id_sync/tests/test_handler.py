@@ -29,7 +29,7 @@ class TestHandler(unittest.TestCase):
         }
         self.mock_record_processor.return_value = {"file_key": "test-key", "status": "success"}
         response = id_sync.handler(mock_event, None)
-        self.assertEqual(response, {
-            "status": "success",
-            "message": "Successfully processed 1 records"
-        })
+
+        self.assertEqual(response["file_keys"], ["test-key"])
+        self.assertEqual(response["status"], "success")
+        self.assertEqual(response["message"], "Successfully processed 1 records")
