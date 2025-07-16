@@ -56,8 +56,7 @@ class TestCreateImmunization(ImmunizationBaseTest):
 
         # Check that duplice CREATE request is rejected after the event is updated then deleted then reinstated
         imms["id"] = imms_id  # Imms fhir resource should include the id for update
-        reinstated_res = self.default_imms_api.get_immunization_by_id(imms_id)
-        etag_version = int(reinstated_res.headers["E-Tag"])
+        etag_version = 2
         print("E-Tag being sent:", etag_version)
         self.default_imms_api.update_immunization(imms_id, imms, headers={"E-Tag": str(etag_version)})
         res = self.default_imms_api.get_immunization_by_id(imms_id)
