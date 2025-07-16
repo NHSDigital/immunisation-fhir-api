@@ -3,6 +3,7 @@ import os
 import uuid
 import datetime
 import unittest
+from unittest.mock import MagicMock
 from copy import deepcopy
 from unittest.mock import create_autospec, patch
 from unittest import skip
@@ -538,6 +539,64 @@ class TestUpdateImmunization(unittest.TestCase):
         # Then
         self.assertEqual(e.exception.patient_identifier, invalid_nhs_number)
         self.imms_repo.update_immunization.assert_not_called()
+    
+    def test_reinstate_immunization_returns_updated_version(self):
+        """it should return updated version from reinstate"""
+        imms_id = "an-id"
+        req_imms = create_covid_19_immunization_dict(imms_id)
+        self.fhir_service._validate_patient = MagicMock(return_value={})
+        self.imms_repo.reinstate_immunization.return_value = (req_imms, 5)
+
+        outcome, resource, version = self.fhir_service.reinstate_immunization(
+            imms_id, req_imms, 1, ["COVID19:CRUD"], "Test"
+        )
+
+        self.assertEqual(outcome, UpdateOutcome.UPDATE)
+        self.assertEqual(version, 5)
+
+    def test_update_reinstated_immunization_returns_updated_version(self):
+        """it should return updated version from update_reinstated"""
+        imms_id = "an-id"
+        req_imms = create_covid_19_immunization_dict(imms_id)
+        self.fhir_service._validate_patient = MagicMock(return_value={})
+        self.imms_repo.update_reinstated_immunization.return_value = (req_imms, 9)
+
+        outcome, resource, version = self.fhir_service.update_reinstated_immunization(
+            imms_id, req_imms, 1, ["COVID19:CRUD"], "Test"
+        )
+
+        self.assertEqual(outcome, UpdateOutcome.UPDATE)
+        self.assertEqual(version, 9)
+
+    def test_reinstate_immunization_with_diagnostics(self):
+        """it should return error if patient has diagnostics in reinstate"""
+        imms_id = "an-id"
+        req_imms = create_covid_19_immunization_dict(imms_id)
+        self.fhir_service._validate_patient = MagicMock(return_value={"diagnostics": "invalid patient"})
+
+        outcome, resource, version = self.fhir_service.reinstate_immunization(
+            imms_id, req_imms, 1, ["COVID19:CRUD"], "Test"
+        )
+
+        self.assertIsNone(outcome)
+        self.assertEqual(resource, {"diagnostics": "invalid patient"})
+        self.assertIsNone(version)
+        self.imms_repo.reinstate_immunization.assert_not_called()
+
+    def test_update_reinstated_immunization_with_diagnostics(self):
+        """it should return error if patient has diagnostics in update_reinstated"""
+        imms_id = "an-id"
+        req_imms = create_covid_19_immunization_dict(imms_id)
+        self.fhir_service._validate_patient = MagicMock(return_value={"diagnostics": "invalid patient"})
+
+        outcome, resource, version = self.fhir_service.update_reinstated_immunization(
+            imms_id, req_imms, 1, ["COVID19:CRUD"], "Test"
+        )
+
+        self.assertIsNone(outcome)
+        self.assertEqual(resource, {"diagnostics": "invalid patient"})
+        self.assertIsNone(version)
+        self.imms_repo.update_reinstated_immunization.assert_not_called()
 
 
 class TestDeleteImmunization(unittest.TestCase):

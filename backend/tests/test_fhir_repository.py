@@ -476,6 +476,50 @@ class TestUpdateImmunization(TestFhirRepositoryBase):
             self.repository.update_immunization(imms_id, imms, self.patient, 1, ["COVID19.CRUD"], "Test")
 
         self.assertEqual(str(e.exception), f"The provided identifier: {identifier} is duplicated")
+    
+    def test_reinstate_immunization_success(self):
+        """it should reinstate an immunization successfully"""
+        self.mock_redis_client.hget.return_value = "COVID19"
+        imms_id = "reinstate-id"
+        imms = create_covid_19_immunization_dict(imms_id)
+        imms["patient"] = self.patient
+        resource = {"reinstate": "ok"}
+        self.table.query.return_value = {}
+
+        self.table.update_item.return_value = {
+            "ResponseMetadata": {"HTTPStatusCode": 200},
+            "Attributes": {"Resource": json.dumps(resource)},
+        }
+
+        with patch("time.time", return_value=123456):
+            result, version = self.repository.reinstate_immunization(
+                imms_id, imms, self.patient, 1, ["COVID19.CRUD"], "Test"
+            )
+
+        self.assertEqual(result, resource)
+        self.assertEqual(version, 2)
+    
+    def test_update_reinstated_immunization_success(self):
+        """it should update a reinstated immunization successfully"""
+        self.mock_redis_client.hget.return_value = "COVID19"
+        imms_id = "reinstated-id"
+        imms = create_covid_19_immunization_dict(imms_id)
+        imms["patient"] = self.patient
+        resource = {"reinstated": "ok"}
+        self.table.query.return_value = {}
+
+        self.table.update_item.return_value = {
+            "ResponseMetadata": {"HTTPStatusCode": 200},
+            "Attributes": {"Resource": json.dumps(resource)},
+        }
+
+        with patch("time.time", return_value=123456):
+            result, version = self.repository.update_reinstated_immunization(
+                imms_id, imms, self.patient, 1, ["COVID19.CRUD"], "Test"
+            )
+
+        self.assertEqual(result, resource)
+        self.assertEqual(version, 2)
 
 
 class TestDeleteImmunization(unittest.TestCase):

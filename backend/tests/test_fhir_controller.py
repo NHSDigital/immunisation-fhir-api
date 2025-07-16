@@ -1518,6 +1518,34 @@ class TestUpdateImmunization(unittest.TestCase):
         }
         with self.assertRaises(KeyError):
             self.controller.update_immunization(aws_event)
+    
+    @patch("fhir_controller.get_supplier_permissions")
+    def test_update_reinstated_immunization_with_diagnostics_error(self, mock_get_permissions):
+        """it should return 400 if patient validation error is present"""
+        mock_get_permissions.return_value = ["COVID19.CRUD"]
+        imms_id = "valid-id"
+        imms = '{"id": "valid-id"}'
+        aws_event = {
+            "headers": {"E-Tag": 1, "SupplierSystem": "Test"},
+            "body": imms,
+            "pathParameters": {"id": imms_id},
+        }
+        # Simulate reinstated record
+        self.service.get_immunization_by_id_all.return_value = {
+            "resource": "existing",
+            "Version": 1,
+            "DeletedAt": True,
+            "Reinstated": False,
+            "VaccineType": "COVID19",
+        }
+        self.service.reinstate_immunization.return_value = (None, {
+            "diagnostics": "Patient NHS number has been superseded"
+        }, None)
+
+        response = self.controller.update_immunization(aws_event)
+
+        self.assertEqual(response["statusCode"], 400)
+        self.assertIn("superseded", json.loads(response["body"])["issue"][0]["diagnostics"])
 
 
 class TestDeleteImmunization(unittest.TestCase):
