@@ -250,7 +250,6 @@ resource "aws_cloudwatch_log_group" "redis_sync_log_group" {
   retention_in_days = 30
 }
 
-
 # S3 Bucket notification to trigger Lambda function for config bucket
 resource "aws_s3_bucket_notification" "config_lambda_notification" {
 
