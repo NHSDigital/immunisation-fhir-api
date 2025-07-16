@@ -40,8 +40,9 @@ class TestCreateImmunization(ImmunizationBaseTest):
 
         # Check that duplice CREATE request is rejected after the event is updated
         imms["id"] = imms_id  # Imms fhir resource should include the id for update
-        etag_version = int(res.headers.get("E-Tag", 1))
+        etag_version = int(res.headers["E-Tag"])
         print("E-Tag being sent:", etag_version)
+        print("Updating with headers:", self._update_headers())
         print("Update payload:", json.dumps(imms, indent=2, default=str))
         self.default_imms_api.update_immunization(imms_id, imms, headers={"E-Tag": str(etag_version)})
         self.assertEqual(res.status_code, 200)
@@ -56,7 +57,10 @@ class TestCreateImmunization(ImmunizationBaseTest):
 
         # Check that duplice CREATE request is rejected after the event is updated then deleted then reinstated
         imms["id"] = imms_id  # Imms fhir resource should include the id for update
-        self.default_imms_api.update_immunization(imms_id, imms)
+        reinstated_res = self.default_imms_api.get_immunization_by_id(imms_id)
+        etag_version = int(reinstated_res.headers["E-Tag"])
+        print("E-Tag being sent:", etag_version)
+        self.default_imms_api.update_immunization(imms_id, imms, headers={"E-Tag": str(etag_version)})
         res = self.default_imms_api.get_immunization_by_id(imms_id)
         self.assertEqual(res.status_code, 200)
         del imms["id"]  # Imms fhir resource should not include an id for create
