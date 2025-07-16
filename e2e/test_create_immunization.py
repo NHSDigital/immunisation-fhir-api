@@ -42,7 +42,6 @@ class TestCreateImmunization(ImmunizationBaseTest):
         imms["id"] = imms_id  # Imms fhir resource should include the id for update
         etag_version = int(res.headers["E-Tag"])
         print("E-Tag being sent:", etag_version)
-        print("Updating with headers:", self._update_headers())
         print("Update payload:", json.dumps(imms, indent=2, default=str))
         self.default_imms_api.update_immunization(imms_id, imms, headers={"E-Tag": str(etag_version)})
         self.assertEqual(res.status_code, 200)

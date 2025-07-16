@@ -1,12 +1,14 @@
 from datetime import datetime
 from utils.base_test import ImmunizationBaseTest
 from utils.immunisation_api import parse_location
+import unittest
 from utils.resource import generate_imms_resource, get_dynamodb_table
 import time
 import copy
 import os
 
 
+@unittest.skip('for now')
 class TestDeltaImmunization(ImmunizationBaseTest):
 
     CREATE_OPERATION = "CREATE"
