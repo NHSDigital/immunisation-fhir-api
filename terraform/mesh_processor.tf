@@ -4,19 +4,19 @@ locals {
   mesh_processor_lambda_files   = fileset(local.mesh_processor_lambda_dir, "**")
   mesh_processor_lambda_dir_sha = sha1(join("", [for f in local.mesh_processor_lambda_files : filesha1("${local.mesh_processor_lambda_dir}/${f}")]))
   # This should match the prefix used in the infra Terraform
-  mesh_s3_bucket_name = "imms-${var.environment}-mesh"
+  mesh_module_prefix = "imms-${var.environment}-mesh"
 }
 
 data "aws_s3_bucket" "mesh" {
   count = var.create_mesh_processor ? 1 : 0
 
-  bucket = local.mesh_s3_bucket_name
+  bucket = local.mesh_module_prefix
 }
 
 data "aws_kms_key" "mesh" {
   count = var.create_mesh_processor ? 1 : 0
 
-  key_id = "alias/${local.mesh_s3_bucket_name}"
+  key_id = "alias/${local.mesh_module_prefix}"
 }
 
 resource "aws_ecr_repository" "mesh_file_converter_lambda_repository" {
