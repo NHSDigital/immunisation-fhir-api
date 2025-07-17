@@ -44,7 +44,7 @@ jobs:
       - name: Terraform Plan
         working-directory: ./terraform_old
         run: |
-          make plan environment=green aws_account_no=int
+          make plan environment=green aws_account_name=int
 
       # - name: Set up Python
       #   id: setup_python

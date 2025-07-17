@@ -1,7 +1,7 @@
 -include .env
 
-environment = $(ENVIRONMENT)
-aws_profile = $(AWS_PROFILE) #apim-dev # Leave this here for pipeline
+environment ?= $(ENVIRONMENT)
+aws_profile ?= $(AWS_PROFILE) #apim-dev # Leave this here for pipeline
 tf_cmd = $(if $(AWS_PROFILE),AWS_PROFILE=$(AWS_PROFILE) ,)terraform
 
 project_name = immunisation
