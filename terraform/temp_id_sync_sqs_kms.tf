@@ -4,12 +4,12 @@
 locals {
 
   # from infra/environments/non-prod/variables.tfvars
+  # NOTE: this is only going to work in non-prod for now.
 
   imms_account_id          = "345594581768"
-  admin_role               = "root" # We shouldn't be using the root account. There should be an Admin role
+  admin_role               = "root"
   dev_ops_role             = "role/DevOps"
   auto_ops_role            = "role/auto-ops"
-  environment              = "internal-dev"
 
   # from infra/kms.tf
 
@@ -69,7 +69,7 @@ locals {
 
   # MNS id/role: ultimately these should go in infra/environments/<env>/variables.tfvars
 
-  mns_account_id    = local.environment == "prod" ? 758334270304 : 631615744739
+  mns_account_id    = "631615744739"
   mns_admin_role    = "role"
 
   policy_statement_allow_mns = {
