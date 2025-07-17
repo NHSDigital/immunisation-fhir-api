@@ -23,3 +23,32 @@ resource "aws_sqs_queue_redrive_allow_policy" "id_sync_queue_redrive_allow_polic
     sourceQueueArns   = [aws_sqs_queue.id_sync_queue.arn]
   })
 }
+
+# IAM policy.
+# TODO: this is currently a global allow policy.
+# Refine this to allow receive from our lambda, and send from MNS
+
+data "aws_iam_policy_document" "id_sync_sqs_policy" {
+  statement {
+    sid    = "id-sync-queue SQS statement"
+    effect = "Allow"
+
+    principals {
+      type        = "AWS"
+      identifiers = ["*"]
+    }
+
+    actions = [
+      "sqs:SendMessage",
+      "sqs:ReceiveMessage"
+    ]
+    resources = [
+      aws_sqs_queue.id_sync_queue.arn
+    ]
+  }
+}
+
+resource "aws_sqs_queue_policy" "id_sync_sqs_policy" {
+  queue_url = aws_sqs_queue.id_sync_queue.id
+  policy    = data.aws_iam_policy_document.id_sync_sqs_policy.json
+}
