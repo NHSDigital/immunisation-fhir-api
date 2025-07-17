@@ -1,6 +1,6 @@
 
 test:
-	@PYTHONPATH=src:tests python -m unittest
+	@PYTHONPATH=src:tests:../shared/src python -m unittest
 
 coverage-run:
 	coverage run -m unittest discover -v

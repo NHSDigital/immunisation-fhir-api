@@ -9,16 +9,11 @@ RUN mkdir -p /home/appuser && \
 # Install Poetry as root
 COPY poetry.lock pyproject.toml README.md ./
 RUN poetry config virtualenvs.create false && poetry install --no-interaction --no-ansi --no-root --only main
-# -----------------------------
-FROM base AS test
-COPY src src
-COPY tests tests
-RUN poetry install --no-interaction --no-ansi --no-root && \
-    pytest --disable-warnings tests
 
 # -----------------------------
 FROM base AS build
 COPY src .
+COPY ../shared/src/common ./common
 RUN chmod 644 $(find . -type f) && chmod 755 $(find . -type d)
 # Build as non-root user
 USER 1001:1001

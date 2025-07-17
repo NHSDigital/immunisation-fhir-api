@@ -1,5 +1,6 @@
-from clients import logger
-from log_decorator import logging_decorator
+from common.clients import logger
+from clients import STREAM_NAME
+from common.log_decorator import logging_decorator
 from record_processor import process_record
 
 '''
@@ -8,7 +9,7 @@ from record_processor import process_record
     This module processes S3 events and iterates through each record to process them individually.'''
 
 
-@logging_decorator(prefix="id_sync")
+@logging_decorator(prefix="id_sync", stream_name=STREAM_NAME)
 def handler(event, _):
 
     try:

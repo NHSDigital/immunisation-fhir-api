@@ -16,7 +16,7 @@ class TestHandler(unittest.TestCase):
         self.record_processor_patcher = patch("id_sync.process_record")
         self.mock_record_processor = self.record_processor_patcher.start()
         # patch log_decorator to pass through
-        self.mock_log_decorator = patch("log_decorator.logging_decorator", lambda prefix=None: (lambda f: f)).start()
+        self.mock_log_decorator = patch("common.log_decorator.logging_decorator", lambda prefix=None: (lambda f: f)).start()
 
     def tearDown(self):
         patch.stopall()
