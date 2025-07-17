@@ -9,7 +9,7 @@ project_short_name = imms
 state_bucket = immunisation-preprod-terraform-state-files
 tf_state= -backend-config="bucket=$(state_bucket)"
 
-tf_vars= -var="project_name=$(project_name)" -var="project_short_name=$(project_short_name)" -var="profile=$(aws_profile)" -var="aws_account_name=$(ENVIRONMENT)"
+tf_vars= -var="project_name=$(project_name)" -var="project_short_name=$(project_short_name)" -var="aws_account_name=$(environment)"
 
 .PHONY : lock-provider workspace init plan apply clean destroy output state-list lambda-zip catch-all-zip
 
@@ -19,7 +19,7 @@ lock-provider:
 	$(tf_cmd) providers lock -platform=darwin_arm64 -platform=darwin_amd64 -platform=linux_amd64 -platform=windows_amd64
 
 workspace:
-	$(tf_cmd) workspace new $(ENVIRONMENT) || $(tf_cmd) workspace select $(ENVIRONMENT) && echo "Switched to workspace/environment: $(ENVIRONMENT)"
+	$(tf_cmd) workspace new $(environment) || $(tf_cmd) workspace select $(environment) && echo "Switched to workspace/environment: $(environment)"
 
 init:
 	$(tf_cmd) init $(tf_state) -upgrade $(tf_vars)
@@ -43,7 +43,7 @@ clean:
 destroy: workspace
 	$(tf_cmd) destroy $(tf_vars) -auto-approve
 	$(tf_cmd) workspace select default
-	$(tf_cmd) workspace delete $(ENVIRONMENT)
+	$(tf_cmd) workspace delete $(environment)
 
 output:
 	$(tf_cmd) output -raw $(name)
