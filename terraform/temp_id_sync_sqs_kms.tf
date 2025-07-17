@@ -64,7 +64,7 @@ locals {
     Sid    = "AllowMNSLambdaDelivery",
     Effect = "Allow",
     Principal = {
-      AWS = "arn:aws:iam::${local.mns_account_id}:${local.mns_admin_role}"/nhs-mns-events-lambda-delivery"
+      AWS = "arn:aws:iam::${local.mns_account_id}:${local.mns_admin_role}/nhs-mns-events-lambda-delivery"
     },
     Action = "kms:GenerateDataKey",
     Resource = "*"
