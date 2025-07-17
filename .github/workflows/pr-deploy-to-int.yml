@@ -14,23 +14,18 @@ env:
   TF_CLI_ARGS_apply: --auto-approve
 
 jobs:
-  pr-build:
-    name: pr-build
+  test-oidc:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
       contents: read
-    concurrency:
-      group: ${{ github.ref }}-build
     steps:
-      - name: Configure AWS Credentials
+      - name: Debug OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: eu-west-2
           role-to-assume: arn:aws:iam::084828561157:role/auto-ops
           role-session-name: github-actions
 
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
+      - name: Whoami
+        run: aws sts get-caller-identity
