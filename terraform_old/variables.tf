@@ -19,7 +19,7 @@ variable "service" {
 data "aws_vpc" "default" {
   filter {
     name   = "tag:Name"
-    values = ["imms-${var.aws_account_name}-fhir-api-vpc"]
+    values = ["imms-int-fhir-api-vpc"]
   }
 }
 
@@ -28,10 +28,6 @@ data "aws_subnets" "default" {
     name   = "vpc-id"
     values = [data.aws_vpc.default.id]
   }
-}
-
-locals {
-  root_domain = "${local.config_env}.vds.platform.nhs.uk"
 }
 
 locals {
@@ -50,6 +46,7 @@ locals {
   service_domain_name     = "${local.env}.${local.project_domain_name}"
   immunisation_account_id = "084828561157"
   dspp_core_account_id    = "603871901111"
+  root_domain             = "${local.config_env}.vds.platform.nhs.uk"
 
   tags = {
     Project     = var.project_name
@@ -90,11 +87,11 @@ data "aws_s3_bucket" "existing_config_bucket" {
 }
 
 data "aws_s3_bucket" "existing_destination_bucket" {
-  bucket = "immunisation-batch-${var.aws_account_name}-preprod-data-destinations"
+  bucket = "immunisation-batch-int-preprod-data-destinations"
 }
 
 data "aws_s3_bucket" "existing_source_bucket" {
-  bucket = "immunisation-batch-${var.aws_account_name}-preprod-data-sources"
+  bucket = "immunisation-batch-int-preprod-data-sources"
 }
 
 data "aws_kms_key" "existing_lambda_encryption_key" {
@@ -106,15 +103,15 @@ data "aws_kms_key" "existing_kinesis_encryption_key" {
 }
 
 data "aws_dynamodb_table" "events-dynamodb-table" {
-  name = "imms-${var.aws_account_name}-imms-events"
+  name = "imms-int-imms-events"
 }
 
 data "aws_dynamodb_table" "audit-table" {
-  name = "immunisation-batch-${var.aws_account_name}-audit-table"
+  name = "immunisation-batch-int-audit-table"
 }
 
 data "aws_dynamodb_table" "delta-dynamodb-table" {
-  name = "imms-${var.aws_account_name}-delta"
+  name = "imms-int-delta"
 }
 
 data "aws_lambda_function" "existing_file_name_proc_lambda" {

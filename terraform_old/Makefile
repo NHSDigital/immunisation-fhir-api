@@ -6,10 +6,10 @@ tf_cmd = AWS_PROFILE=$(aws_profile) terraform
 
 project_name = immunisation
 project_short_name = imms
-state_bucket = $(BUCKET_NAME) #$(project_name)-$(APIGEE_ENVIRONMENT)-terraform-state-files
+state_bucket = immunisation-preprod-terraform-state-files
 tf_state= -backend-config="bucket=$(state_bucket)"
 
-tf_vars= -var="project_name=$(project_name)" -var="project_short_name=$(project_short_name)" -var="profile=$(aws_profile)" -var="aws_account_name=$(AWS_ACCOUNT)"
+tf_vars= -var="project_name=$(project_name)" -var="project_short_name=$(project_short_name)" -var="profile=$(aws_profile)" -var="aws_account_name=$(ENVIRONMENT)"
 
 .PHONY : lock-provider workspace init plan apply clean destroy output state-list lambda-zip catch-all-zip
 

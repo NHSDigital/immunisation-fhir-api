@@ -10,9 +10,6 @@ on:
         required: false
         default: ''
 
-env:
-  TF_CLI_ARGS_apply: --auto-approve
-
 jobs:
   test-oidc:
     runs-on: ubuntu-latest
@@ -29,3 +26,41 @@ jobs:
 
       - name: Whoami
         run: aws sts get-caller-identity
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.12.2"
+
+      - name: Terraform Init
+        working-directory: ./terraform_old
+        run: |
+          make init
+          
+
+      - name: Terraform Plan
+        working-directory: ./terraform_old
+        run: |
+          make plan environment=green aws_account_no=int
+
+      # - name: Set up Python
+      #   id: setup_python
+      #   uses: actions/setup-python@v5
+      #   with:
+      #     python-version: "3.10.16" # this is for e2e tests
+
+      # - name: cache virtualenv
+      #   uses: actions/cache@v4
+      #   id: cache-venv
+      #   with:
+      #     path: ./.venv/
+      #     key: ${{ hashFiles('**/*requirements.txt') }}
+      #     restore-keys: ${{ hashFiles('**/*requirements.txt') }}
+
+      # - name: Install dependencies
+      #   if: steps.cache-venv.outputs.cache-hit != 'true'
+      #   run: make install-dev-requirements
