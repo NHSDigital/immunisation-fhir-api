@@ -6,7 +6,8 @@ resource "aws_sqs_queue" "id_sync_queue" {
   redrive_policy = jsonencode({
     deadLetterTargetArn = aws_sqs_queue.id_sync_dlq.arn
     maxReceiveCount     = 4
-  })}
+  })
+}
 
 # DLQ for id-sync-queue
 
