@@ -2,11 +2,22 @@
 # Eventually the aws_kms_key "id_sync_sqs_key" will go into infra/kms.tf
 
 locals {
+
+  # from infra/environments/non-prod/variables.tfvars
+
+  imms_account_id          = "345594581768"
+  admin_role               = "root" # We shouldn't be using the root account. There should be an Admin role
+  dev_ops_role             = "role/DevOps"
+  auto_ops_role            = "role/auto-ops"
+  environment              = "internal-dev"
+
+  # from infra/kms.tf
+
   policy_statement_allow_administration = {
     Sid    = "AllowKeyAdministration",
     Effect = "Allow",
     Principal = {
-      AWS = "arn:aws:iam::${var.imms_account_id}:${var.admin_role}"
+      AWS = "arn:aws:iam::${local.imms_account_id}:${local.admin_role}"
     },
     Action = [
       "kms:Create*",
@@ -32,7 +43,7 @@ locals {
     Sid    = "KMSKeyUserAccess",
     Effect = "Allow",
     Principal = {
-      AWS = "arn:aws:iam::${var.imms_account_id}:${var.auto_ops_role}"
+      AWS = "arn:aws:iam::${local.imms_account_id}:${local.auto_ops_role}"
     },
     Action = [
       "kms:Encrypt",
@@ -45,7 +56,7 @@ locals {
     Sid    = "KMSKeyUserAccessForDevOps",
     Effect = "Allow",
     Principal = {
-      AWS = "arn:aws:iam::${var.imms_account_id}:${var.dev_ops_role}"
+      AWS = "arn:aws:iam::${local.imms_account_id}:${local.dev_ops_role}"
     },
     Action = [
       "kms:Encrypt",
@@ -54,9 +65,10 @@ locals {
     Resource = "*"
   }
 
-  # New elements relating to id_sync are below here
+  # -- New elements relating to id_sync are below here
 
-  # mns_account_id: ultimately these should go in infra/environments/<env>/variables.tfvars
+  # MNS id/role: ultimately these should go in infra/environments/<env>/variables.tfvars
+
   mns_account_id    = local.environment == "prod" ? 758334270304 : 631615744739
   mns_admin_role    = "role"
 
