@@ -70,13 +70,13 @@ locals {
   # MNS id/role: ultimately these should go in infra/environments/<env>/variables.tfvars
 
   mns_account_id    = "631615744739"
-  mns_admin_role    = "role"
+  mns_admin_role    = "role/nhs-mns-events-lambda-delivery"
 
   policy_statement_allow_mns = {
     Sid    = "AllowMNSLambdaDelivery",
     Effect = "Allow",
     Principal = {
-      AWS = "arn:aws:iam::${local.mns_account_id}:${local.mns_admin_role}/nhs-mns-events-lambda-delivery"
+      AWS = "arn:aws:iam::${local.mns_account_id}:${local.mns_admin_role}"
     },
     Action = "kms:GenerateDataKey",
     Resource = "*"
