@@ -1,8 +1,14 @@
 name: PR build and test
 
 on:
-  pull_request:
-    branches: [main]
+  push:
+    branches: [VED-358-github-actions-for-int]
+  workflow_dispatch:
+    inputs:
+      dummy:
+        description: 'Manual trigger (optional input)'
+        required: false
+        default: ''
 
 env:
   TF_CLI_ARGS_apply: --auto-approve
@@ -28,4 +34,3 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
-          
