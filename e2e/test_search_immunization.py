@@ -1,6 +1,5 @@
 import pprint
 import uuid
-import unittest
 from typing import NamedTuple, Literal, Optional, List
 from decimal import Decimal
 from utils.base_test import ImmunizationBaseTest
@@ -9,7 +8,6 @@ from utils.resource import generate_imms_resource, generate_filtered_imms_resour
 from utils.mappings import VaccineTypes
 
 
-@unittest.skip('skipping for now')
 class TestSearchImmunization(ImmunizationBaseTest):
     # NOTE: In each test, the result may contain more hits. We only assert if the resource that we created is
     #  in the result set and assert the one that we don't expect is not present.

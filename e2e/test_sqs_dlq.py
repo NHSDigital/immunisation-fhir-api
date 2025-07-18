@@ -7,7 +7,6 @@ from utils.get_sqs_url import get_queue_url
 from botocore.exceptions import ClientError  # Handle potential errors
 
 
-@unittest.skip('skipping for now')
 class TestSQS(unittest.TestCase):
 
     def setUp(self):
