@@ -61,13 +61,6 @@ steps:
 
           cd terraform
 
-        
-        aws ssm put-parameter \
-        --name "imms/apigee/non-prod/token" \
-        --value "$APIGEE_ACCESS_TOKEN" \
-        --type "SecureString" \
-        --region "eu-west-2"
-
         make init
         make apply aws_account_no=${aws_account_no} environment=$workspace
 
@@ -147,7 +140,24 @@ steps:
       export APIGEE_APP_ID=973b20ff-6e57-4248-b94f-200a18a03e37
       echo "api key- $STATUS_API_KEY"
 
+      aws ssm put-parameter \
+      --name "imms/apigee/non-prod/token" \
+      --value "$(secret.AccessToken)" \
+      --type "SecureString" \
+      --region "eu-west-2"
 
+      aws ssm put-parameter \
+      --name "imms/apigee/non-prod/int-client-id" \
+      --value "$(INT_CLIENT_ID)" \
+      --type "SecureString" \
+      --region "eu-west-2"
+      
+      aws ssm put-parameter \
+      --name "imms/apigee/non-prod/int-client-secret" \
+      --value "$(INT_CLIENT_SECRET)" \
+      --type "SecureString" \
+      --region "eu-west-2"
+      
       #Exporting the same profile with which Terraform got deployed
       export AWS_PROFILE=apim-dev
       aws_account_no="$(aws sts get-caller-identity --query Account --output text)"
