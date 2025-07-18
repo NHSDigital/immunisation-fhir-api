@@ -1,5 +1,6 @@
 import logging
 import os
+from typing import BinaryIO
 
 import boto3
 from smart_open import open
@@ -12,7 +13,7 @@ logger = logging.getLogger()
 s3_client = boto3.client('s3')
 
 
-def parse_headers(headers_str: str):
+def parse_headers(headers_str: str) -> dict[str, str]:
     headers = dict(
         header_str.split(":", 1)
         for header_str in headers_str.split("\r\n")
@@ -21,7 +22,7 @@ def parse_headers(headers_str: str):
     return {k.strip(): v.strip() for k, v in headers.items()}
 
 
-def parse_header_value(header_value: str):
+def parse_header_value(header_value: str) -> tuple[str, dict[str, str]]:
     main_value, *params = header_value.split(";")
     parsed_params = dict(
         param.strip().split("=", 1)
@@ -31,7 +32,7 @@ def parse_header_value(header_value: str):
     return main_value, parsed_params
 
 
-def read_until_part_start(input_file, boundary):
+def read_until_part_start(input_file: BinaryIO, boundary: bytes) -> None:
     while line := input_file.readline():
         if line == b"--" + boundary + b"\r\n":
             return
@@ -39,7 +40,7 @@ def read_until_part_start(input_file, boundary):
         raise ValueError(f"Unexpected EOF")
 
 
-def read_headers_bytes(input_file):
+def read_headers_bytes(input_file: BinaryIO) -> bytes:
     headers_bytes = b''
     while line := input_file.readline():
         if line == b"\r\n":
@@ -49,13 +50,13 @@ def read_headers_bytes(input_file):
         raise ValueError("Unexpected EOF")
 
 
-def read_part_headers(input_file):
+def read_part_headers(input_file: BinaryIO) -> dict[str, str]:
     headers_bytes = read_headers_bytes(input_file)
     headers_str = headers_bytes.decode("utf-8")
     return parse_headers(headers_str)
 
 
-def stream_part_body(input_file, boundary, output_file):
+def stream_part_body(input_file: BinaryIO, boundary: bytes, output_file: BinaryIO) -> None:
     previous_line = None
     found_part_end = False
     while not found_part_end:
@@ -78,7 +79,7 @@ def stream_part_body(input_file, boundary, output_file):
         previous_line = line
 
 
-def transfer_multipart_content(bucket_name, file_key, boundary, filename):
+def transfer_multipart_content(bucket_name: str, file_key: str, boundary: bytes, filename: str) -> None:
     with open(
         f"s3://{bucket_name}/{file_key}",
         "rb",
@@ -100,7 +101,7 @@ def transfer_multipart_content(bucket_name, file_key, boundary, filename):
             stream_part_body(input_file, boundary, output_file)
 
 
-def process_record(record):
+def process_record(record: dict) -> None:
     bucket_name = record["s3"]["bucket"]["name"]
     file_key = record["s3"]["object"]["key"]
     logger.info(f"Processing {file_key}")
@@ -125,7 +126,7 @@ def process_record(record):
     logger.info(f"Transfer complete for {file_key}")
 
 
-def lambda_handler(event, _):
+def lambda_handler(event: dict, _context: dict) -> dict:
     success = True
 
     for record in event["Records"]:
