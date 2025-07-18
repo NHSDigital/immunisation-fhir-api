@@ -212,11 +212,11 @@ resource "aws_lambda_function" "mesh_file_converter_lambda" {
   package_type  = "Image"
   image_uri     = module.mesh_processor_docker_image[0].image_uri
   architectures = ["x86_64"]
-  timeout       = 360
+  timeout       = 900
 
   environment {
     variables = {
-      Destination_BUCKET_NAME = aws_s3_bucket.batch_data_source_bucket.bucket
+      DESTINATION_BUCKET_NAME = aws_s3_bucket.batch_data_source_bucket.bucket
     }
   }
 }

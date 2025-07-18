@@ -36,8 +36,7 @@ def read_until_part_start(input_file: BinaryIO, boundary: bytes) -> None:
     while line := input_file.readline():
         if line == b"--" + boundary + b"\r\n":
             return
-    else:
-        raise ValueError(f"Unexpected EOF")
+    raise ValueError("Unexpected EOF")
 
 
 def read_headers_bytes(input_file: BinaryIO) -> bytes:
@@ -46,8 +45,7 @@ def read_headers_bytes(input_file: BinaryIO) -> bytes:
         if line == b"\r\n":
             return headers_bytes
         headers_bytes += line
-    else:
-        raise ValueError("Unexpected EOF")
+    raise ValueError("Unexpected EOF")
 
 
 def read_part_headers(input_file: BinaryIO) -> dict[str, str]:

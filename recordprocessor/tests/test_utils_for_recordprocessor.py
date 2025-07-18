@@ -19,7 +19,6 @@ with patch("os.environ", MOCK_ENVIRONMENT_DICT):
         get_environment,
         get_csv_content_dict_reader,
         create_diagnostics_dictionary,
-        extract_content,
     )
     from file_level_validation import move_file
 
@@ -80,19 +79,6 @@ class TestUtilsForRecordprocessor(unittest.TestCase):
                 "error_message": "test error message",
             },
         )
-
-    def test_extract_content_valid_input(self):
-        dat_file_content = (
-            "----------------------------1234567890\n"
-            'Content-Disposition: form-data; name="file";\n'
-            'filename="COVID19_Vaccinations_v5_YGM41_20250312T113455981.csv"\n'
-            "Content-Type: text/csv\n\n"
-            "NHS_NUMBER|PERSON_FORENAME|PERSON_SURNAME|PERSON_DOB|PERSON_GENDER_CODE|PERSON_POSTCODE\n"
-            "----------------------------1234567890\n"
-        )
-        expected_content = "NHS_NUMBER|PERSON_FORENAME|PERSON_SURNAME|PERSON_DOB|PERSON_GENDER_CODE|PERSON_POSTCODE"
-        result = extract_content(dat_file_content)
-        self.assertEqual(result, expected_content)
 
     def test_move_file(self):
         """Tests that move_file correctly moves a file from one location to another within a single S3 bucket"""
