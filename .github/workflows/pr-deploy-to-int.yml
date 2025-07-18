@@ -4,11 +4,6 @@ on:
   push:
     branches: [VED-358-github-actions-for-int]
   workflow_dispatch:
-    inputs:
-      dummy:
-        description: 'Manual trigger (optional input)'
-        required: false
-        default: ''
 
 jobs:
   test-oidc:
@@ -37,29 +32,32 @@ jobs:
           terraform_version: "1.12.2"
 
       - name: Terraform Init
-        working-directory: ./terraform_old
+        working-directory: ./terraform
         run: |
           make init
           
       - name: Terraform Plan
-        working-directory: ./terraform_old
+        working-directory: ./terraform
         run: |
           make plan environment=green aws_account_name=int
 
-      # - name: Set up Python
-      #   id: setup_python
-      #   uses: actions/setup-python@v5
-      #   with:
-      #     python-version: "3.10.16" # this is for e2e tests
 
-      # - name: cache virtualenv
-      #   uses: actions/cache@v4
-      #   id: cache-venv
-      #   with:
-      #     path: ./.venv/
-      #     key: ${{ hashFiles('**/*requirements.txt') }}
-      #     restore-keys: ${{ hashFiles('**/*requirements.txt') }}
+  # # --- APPROVAL REQUIRED HERE ---
+  # manual-approval:
+  #   needs: test-oidc
+  #   runs-on: ubuntu-latest
+  #   environment:
+  #     name: int-approval
+  #     # protection rules set in GitHub UI will pause here until approval
+  #   steps:
+  #     - name: Wait for approval
+  #       run: echo "Waiting for manual approval..."
 
-      # - name: Install dependencies
-      #   if: steps.cache-venv.outputs.cache-hit != 'true'
-      #   run: make install-dev-requirements
+  # terraform-apply:
+  #   needs: manual-approval
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Terraform Apply
+  #       working-directory: ./terraform_old
+  #       run: |
+  #         make plan environment=green aws_account_name=int
