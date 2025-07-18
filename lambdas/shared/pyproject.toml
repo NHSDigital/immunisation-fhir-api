@@ -1,20 +1,20 @@
 [project]
-name = "id-sync"
+name = "shared"
 version = "0.1.0"
-description = "Sync s3 to REDIS"
+description = "Shared utilities for NHS Immunisation FHIR API"
 authors = [
     {name = "nhsdevws",email = "stephen.wates1@nhs.net"}
 ]
 
 [tool.poetry]
-name = "id-sync"
+name = "shared"
 version = "0.1.0"
 description = ""
 authors = ["s.wates <stephen.wates1@nhs.net>"]
 readme = "README.md"
 packages = [
     {include = "src"},
-    {include = "common", from = "../shared/src"}
+    {include = "common", from = "src"}
 ]
 
 [tool.poetry.dependencies]

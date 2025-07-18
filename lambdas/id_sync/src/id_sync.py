@@ -1,5 +1,5 @@
 from common.clients import logger
-from clients import STREAM_NAME
+from common.clients import STREAM_NAME
 from common.log_decorator import logging_decorator
 from record_processor import process_record
 
