@@ -32,6 +32,9 @@
         },
         {
             "path": "lambdas/id_sync"
+        },
+        {
+            "path": "lambdas/shared"
         }
     ],
 	"settings": {},

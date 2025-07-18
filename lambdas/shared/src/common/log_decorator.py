@@ -8,7 +8,7 @@ import json
 import time
 from datetime import datetime
 from functools import wraps
-from clients import logger, firehose_client
+from common.clients import logger, firehose_client
 
 
 def send_log_to_firehose(stream_name, log_data: dict) -> None:
@@ -36,6 +36,7 @@ def logging_decorator(prefix: str, stream_name):
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
+            logger.info("Starting function: %s", func.__name__)
             base_log_data = {
                 "function_name": f"{prefix}_{func.__name__}",
                 "date_time": str(datetime.now())

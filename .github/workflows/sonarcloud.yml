@@ -124,6 +124,18 @@ jobs:
             poetry run coverage run -m unittest discover || echo "redis_sync tests failed" >> ../failed_tests.txt
             poetry run coverage xml -o ../redis_sync-coverage.xml
 
+      - name: Run unittest with shared
+        working-directory: lambdas/shared
+        id: shared
+        env:
+          PYTHONPATH: ${{ github.workspace }}/lambdas/shared/src:${{ github.workspace }}/lambdas/shared/tests
+        continue-on-error: true
+        run: |
+            poetry env use 3.11
+            poetry install
+            poetry run coverage run -m unittest discover || echo "shared tests failed" >> ../../failed_tests.txt
+            poetry run coverage xml -o ../../shared-coverage.xml
+
       - name: Run unittest with id_sync
         working-directory: lambdas/id_sync
         id: id_sync

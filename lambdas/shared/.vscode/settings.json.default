@@ -1,0 +1,18 @@
+{
+    "python.analysis.extraPaths": [
+        "./src"
+    ],
+    "python.testing.unittestArgs": [
+        "-v",
+        "-s",
+        "./",
+        "-p",
+        "test_*.py"
+    ],
+    "python.testing.pytestEnabled": false,
+    "python.testing.unittestEnabled": true,
+    "pylint.args": [
+        "--init-hook",
+        "import sys; sys.path.append('./src')"
+    ]
+}
