@@ -184,8 +184,9 @@ resource "aws_iam_policy" "id_sync_lambda_exec_policy" {
 
       # Notes: 
       #     - the SQS queue is defined in terraform/sqs_id_sync.tf in branch VED-80-id-sync-sqs
-      #     - the KMS key in terraform/temp_id_sync_sqs_kms.tf in the same branch; this will eventually be replaced by
-      #       the version of infra/kms.tf in branch VED-80-id-sync-sqs-infra
+      #     - the KMS key in terraform/temp_id_sync_sqs_kms.tf; this will eventually be replaced by
+      #         the version of infra/kms.tf in branch VED-80-id-sync-sqs-infra
+      #     - aws_kms_key.existing_id_sync_sqs_encryption_key defined in terraform/variables.tf
 
       {
         Effect = "Allow",
@@ -202,7 +203,7 @@ resource "aws_iam_policy" "id_sync_lambda_exec_policy" {
           "kms:Decrypt",
           "kms:GenerateDataKey"
         ],
-        Resource = data.aws_kms_key.existing_id_sync_encryption_key.arn
+        Resource = data.aws_kms_key.existing_id_sync_sqs_encryption_key.arn
       }
     ]
   })
