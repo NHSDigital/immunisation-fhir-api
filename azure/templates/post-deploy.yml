@@ -40,12 +40,6 @@ steps:
   - bash: |
       set -e
 
-      aws ssm put-parameter \
-      --name "imms/apigee/non-prod/token" \
-      --value "$APIGEE_ACCESS_TOKEN" \
-      --type "SecureString" \
-      --region "eu-west-2"
-
       if ! [[ $APIGEE_ENVIRONMENT =~ .*-*sandbox ]]; then
         export AWS_PROFILE=apim-dev
         aws_account_no="$(aws sts get-caller-identity --query Account --output text)"
@@ -66,6 +60,13 @@ steps:
         echo pr_no: $pr_no
 
           cd terraform
+
+        
+        aws ssm put-parameter \
+        --name "imms/apigee/non-prod/token" \
+        --value "$APIGEE_ACCESS_TOKEN" \
+        --type "SecureString" \
+        --region "eu-west-2"
 
         make init
         make apply aws_account_no=${aws_account_no} environment=$workspace
