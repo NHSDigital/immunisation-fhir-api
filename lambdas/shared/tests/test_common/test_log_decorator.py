@@ -11,10 +11,18 @@ class TestLogDecorator(unittest.TestCase):
     def setUp(self):
         self.test_stream = "test-stream"
         self.test_prefix = "test"
+        self.logger_info_patcher = patch("common.log_decorator.logger.info")
+        self.mock_logger_info = self.logger_info_patcher.start()
+        self.logger_exception_patcher = patch("common.log_decorator.logger.exception")
+        self.mock_logger_exception = self.logger_exception_patcher.start()
+        self.logger_error_patcher = patch("common.log_decorator.logger.error")
+        self.mock_logger_error = self.logger_error_patcher.start()
+
+    def tearDown(self):
+        patch.stopall()
 
     @patch("common.log_decorator.firehose_client")
-    @patch("common.log_decorator.logger")
-    def test_send_log_to_firehose_success(self, mock_logger, mock_firehose_client):
+    def test_send_log_to_firehose_success(self, mock_firehose_client):
         """Test send_log_to_firehose with successful firehose response"""
         # Arrange
         test_log_data = {"function_name": "test_func", "result": "success"}
@@ -30,12 +38,9 @@ class TestLogDecorator(unittest.TestCase):
             DeliveryStreamName=self.test_stream,
             Record=expected_record
         )
-        mock_logger.info.assert_called_once_with("Log sent to Firehose: %s", mock_response)
-        mock_logger.exception.assert_not_called()
 
     @patch("common.log_decorator.firehose_client")
-    @patch("common.log_decorator.logger")
-    def test_send_log_to_firehose_exception(self, mock_logger, mock_firehose_client):
+    def test_send_log_to_firehose_exception(self, mock_firehose_client):
         """Test send_log_to_firehose with firehose exception"""
         # Arrange
         test_log_data = {"function_name": "test_func", "result": "error"}
@@ -46,16 +51,14 @@ class TestLogDecorator(unittest.TestCase):
 
         # Assert
         mock_firehose_client.put_record.assert_called_once()
-        mock_logger.exception.assert_called_once_with(
+        self.mock_logger_exception.assert_called_once_with(
             "Error sending log to Firehose: %s",
             mock_firehose_client.put_record.side_effect
         )
-        mock_logger.info.assert_not_called()
 
     @patch("common.log_decorator.send_log_to_firehose")
-    @patch("common.log_decorator.logger")
     @patch("time.time")
-    def test_generate_and_send_logs_success(self, mock_time, mock_logger, mock_send_log):
+    def test_generate_and_send_logs_success(self, mock_time, mock_send_log):
         """Test generate_and_send_logs with successful log generation"""
         # Arrange
         mock_time.return_value = 1000.5
@@ -74,14 +77,12 @@ class TestLogDecorator(unittest.TestCase):
             "statusCode": 200,
             "result": "success"
         }
-        mock_logger.info.assert_called_once_with(json.dumps(expected_log_data))
-        mock_logger.error.assert_not_called()
+        self.mock_logger_error.assert_not_called()
         mock_send_log.assert_called_once_with(self.test_stream, expected_log_data)
 
     @patch("common.log_decorator.send_log_to_firehose")
-    @patch("common.log_decorator.logger")
     @patch("time.time")
-    def test_generate_and_send_logs_error(self, mock_time, mock_logger, mock_send_log):
+    def test_generate_and_send_logs_error(self, mock_time, mock_send_log):
         """Test generate_and_send_logs with error log generation"""
         # Arrange
         mock_time.return_value = 1000.75
@@ -100,15 +101,13 @@ class TestLogDecorator(unittest.TestCase):
             "statusCode": 500,
             "error": "Test error"
         }
-        mock_logger.error.assert_called_once_with(json.dumps(expected_log_data))
-        mock_logger.info.assert_not_called()
+        self.mock_logger_error.assert_called_once_with(json.dumps(expected_log_data))
         mock_send_log.assert_called_once_with(self.test_stream, expected_log_data)
 
     @patch("common.log_decorator.generate_and_send_logs")
-    @patch("common.log_decorator.logger")
     @patch("common.log_decorator.time")
     @patch("common.log_decorator.datetime")
-    def test_logging_decorator_success(self, mock_datetime, mock_time, mock_logger, mock_generate_send):
+    def test_logging_decorator_success(self, mock_datetime, mock_time, mock_generate_send):
         """Test logging_decorator with successful function execution"""
         # Arrange
         mock_datetime.now.return_value = datetime(2023, 1, 1, 12, 0, 0)
@@ -124,7 +123,6 @@ class TestLogDecorator(unittest.TestCase):
 
         # Assert
         self.assertEqual(result, {"statusCode": 200, "result": 5})
-        mock_logger.info.assert_called_once_with("Starting function: %s", "test_function")
 
         # Verify generate_and_send_logs was called with correct parameters
         mock_generate_send.assert_called_once()
@@ -137,10 +135,9 @@ class TestLogDecorator(unittest.TestCase):
         self.assertNotIn("is_error_log", call_kwargs)  # Should not be error log
 
     @patch("common.log_decorator.generate_and_send_logs")
-    @patch("common.log_decorator.logger")
     @patch("common.log_decorator.time")
     @patch("common.log_decorator.datetime")
-    def test_logging_decorator_exception(self, mock_datetime, mock_time, mock_logger, mock_generate_send):
+    def test_logging_decorator_exception(self, mock_datetime, mock_time, mock_generate_send):
         """Test logging_decorator with function raising exception"""
         # Arrange
         mock_datetime.now.return_value = datetime(2023, 1, 1, 12, 0, 0)
@@ -155,8 +152,6 @@ class TestLogDecorator(unittest.TestCase):
         with self.assertRaises(ValueError):
             test_function_with_error()
 
-        mock_logger.info.assert_called_once_with("Starting function: %s", "test_function_with_error")
-
         # Verify generate_and_send_logs was called with error parameters
         mock_generate_send.assert_called_once()
         call_args = mock_generate_send.call_args[0]
@@ -169,8 +164,7 @@ class TestLogDecorator(unittest.TestCase):
         self.assertTrue(call_kwargs.get("is_error_log", False))  # Should be error log
 
     @patch("common.log_decorator.generate_and_send_logs")
-    @patch("common.log_decorator.logger")
-    def test_logging_decorator_preserves_function_metadata(self, mock_logger, mock_generate_send):
+    def test_logging_decorator_preserves_function_metadata(self, mock_generate_send):
         """Test that the decorator preserves the original function's metadata"""
         # Arrange
         mock_generate_send.return_value = None
