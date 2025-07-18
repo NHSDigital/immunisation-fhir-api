@@ -1,5 +1,5 @@
 [project]
-name = "redis-sync"
+name = "id-sync"
 version = "0.1.0"
 description = "Sync s3 to REDIS"
 authors = [
@@ -7,7 +7,7 @@ authors = [
 ]
 
 [tool.poetry]
-name = "redis-sync"
+name = "id-sync"
 version = "0.1.0"
 description = ""
 authors = ["s.wates <stephen.wates1@nhs.net>"]
