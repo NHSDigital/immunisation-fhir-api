@@ -146,19 +146,19 @@ steps:
       echo aws_account_no: $aws_account_no
 
       aws ssm put-parameter \
-      --name "imms/apigee/non-prod/token" \
+      --name "/imms/apigee/non-prod/token" \
       --value "$(secret.AccessToken)" \
       --type "SecureString" \
       --region "eu-west-2"
 
       aws ssm put-parameter \
-      --name "imms/apigee/non-prod/int-client-id" \
+      --name "/imms/apigee/non-prod/int-client-id" \
       --value "$(INT_CLIENT_ID)" \
       --type "SecureString" \
       --region "eu-west-2"
       
       aws ssm put-parameter \
-      --name "imms/apigee/non-prod/int-client-secret" \
+      --name "/imms/apigee/non-prod/int-client-secret" \
       --value "$(INT_CLIENT_SECRET)" \
       --type "SecureString" \
       --region "eu-west-2"
