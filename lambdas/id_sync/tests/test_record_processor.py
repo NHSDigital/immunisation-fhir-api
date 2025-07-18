@@ -13,6 +13,5 @@ class TestRecordProcessor(unittest.TestCase):
 
     def test_record_processor_success(self):
         test_record = "abc1"
-        response = 
-        (test_record, None)
+        response = process_record(test_record, None)
         self.assertEqual(response, f"hello world {test_record}")
