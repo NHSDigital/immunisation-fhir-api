@@ -7,6 +7,10 @@ on:
   pull_request:
     types: [labeled, opened, synchronize, reopened, unlabeled]
 
+env:
+  SHARED_PATH: ${{ github.workspace }}/lambdas/shared/src:${{ github.workspace }}/lambdas/shared/tests
+  LAMBDA_PATH: ${{ github.workspace }}/lambdas
+
 jobs:
   sonarcloud:
     name: SonarCloud
@@ -128,7 +132,7 @@ jobs:
         working-directory: lambdas/shared
         id: shared
         env:
-          PYTHONPATH: ${{ github.workspace }}/lambdas/shared/src:${{ github.workspace }}/lambdas/shared/tests
+          PYTHONPATH: ${{ env.SHARED_PATH }}
         continue-on-error: true
         run: |
             poetry env use 3.11
@@ -140,7 +144,7 @@ jobs:
         working-directory: lambdas/id_sync
         id: id_sync
         env:
-          PYTHONPATH: ${{ github.workspace }}/lambdas/id_sync/src:${{ github.workspace }}/lambdas/id_sync/tests:${{ github.workspace }}/lambdas/shared/src:${{ github.workspace }}/lambdas/shared/tests
+          PYTHONPATH: ${{ env.LAMBDA_PATH }}/id_sync/src:${{ env.LAMBDA_PATH }}/id_sync/tests:${{ env.SHARED_PATH }}
         continue-on-error: true
         run: |
             poetry env use 3.11
