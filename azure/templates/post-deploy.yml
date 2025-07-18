@@ -39,7 +39,8 @@ steps:
 
   - bash: |
       set -e
-      aws secretsmanager create-secret \
+
+      aws ssm put-parameter \
       --name "imms/apigee/non-prod/token" \
       --value "$APIGEE_ACCESS_TOKEN" \
       --type "SecureString" \
