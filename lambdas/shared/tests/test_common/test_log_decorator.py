@@ -27,7 +27,7 @@ class TestLogDecorator(unittest.TestCase):
         # Assert
         expected_record = {"Data": json.dumps({"event": test_log_data}).encode("utf-8")}
         mock_firehose_client.put_record.assert_called_once_with(
-            DeliveryStreamName=self.test_stream, 
+            DeliveryStreamName=self.test_stream,
             Record=expected_record
         )
         mock_logger.info.assert_called_once_with("Log sent to Firehose: %s", mock_response)
@@ -47,7 +47,7 @@ class TestLogDecorator(unittest.TestCase):
         # Assert
         mock_firehose_client.put_record.assert_called_once()
         mock_logger.exception.assert_called_once_with(
-            "Error sending log to Firehose: %s", 
+            "Error sending log to Firehose: %s",
             mock_firehose_client.put_record.side_effect
         )
         mock_logger.info.assert_not_called()
@@ -183,4 +183,3 @@ class TestLogDecorator(unittest.TestCase):
         # Act & Assert
         self.assertEqual(documented_function.__name__, "documented_function")
         self.assertEqual(documented_function.__doc__, "This is a test function with documentation")
-
