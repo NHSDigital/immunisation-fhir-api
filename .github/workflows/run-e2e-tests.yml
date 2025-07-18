@@ -55,7 +55,7 @@ jobs:
       - name: Terraform Plan
         working-directory: ./terraform
         run: |
-          make plan environment=dev sub_environment=internal-dev
+          make plan environment=internal-dev
 
       - name: Run e2e
         working-directory: ./e2e
