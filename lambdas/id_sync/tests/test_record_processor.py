@@ -9,6 +9,6 @@ class TestRecordProcessor(unittest.TestCase):
         self.mock_logger_info = self.logger_info_patcher.start()
 
     def test_record_processor_success(self):
-        test_record = "abc"
+        test_record = "abc1"
         response = process_record(test_record, None)
         self.assertEqual(response, f"hello world {test_record}")
