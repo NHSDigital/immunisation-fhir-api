@@ -4,4 +4,4 @@
 
 
 def process_record(record, _):
-    return "hello world"
+    return f"hello world {record}"
