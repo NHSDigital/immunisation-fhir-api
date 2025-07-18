@@ -41,7 +41,7 @@ jobs:
       - name: Install dependencies with Poetry (from e2e folder)
         working-directory: ./e2e
         run: |
-          poetry install
+          poetry install --no-root
       
       - uses: hashicorp/setup-terraform@v3
         with:
