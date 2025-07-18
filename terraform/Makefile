@@ -3,7 +3,7 @@
 interactionId=$(environment)
 
 aws_profile = apim-dev
-tf_cmd = AWS_PROFILE=$(aws_profile) terraform
+tf_cmd = $(if $(AWS_PROFILE),AWS_PROFILE=$(AWS_PROFILE) ,)terraform
 
 project_name = immunisation
 project_short_name = imms
