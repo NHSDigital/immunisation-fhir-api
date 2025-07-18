@@ -145,21 +145,27 @@ steps:
       aws_account_no="$(aws sts get-caller-identity --query Account --output text)"
       echo aws_account_no: $aws_account_no
 
-      aws ssm put-parameter \
-      --name "/imms/apigee/non-prod/token" \
-      --value "$(secret.AccessToken)" \
-      --type "SecureString" \
-      --region "eu-west-2"
+      # aws ssm put-parameter \
+      # --name "/imms/apigee/non-prod/token" \
+      # --value "$(secret.AccessToken)" \
+      # --type "SecureString" \
+      # --region "eu-west-2"
+
+      # aws ssm put-parameter \
+      # --name "/imms/apigee/non-prod/int-client-id" \
+      # --value "$(INT_CLIENT_ID)" \
+      # --type "SecureString" \
+      # --region "eu-west-2"
+      
+      # aws ssm put-parameter \
+      # --name "/imms/apigee/non-prod/int-client-secret" \
+      # --value "$(INT_CLIENT_SECRET)" \
+      # --type "SecureString" \
+      # --region "eu-west-2"
 
       aws ssm put-parameter \
-      --name "/imms/apigee/non-prod/int-client-id" \
-      --value "$(INT_CLIENT_ID)" \
-      --type "SecureString" \
-      --region "eu-west-2"
-      
-      aws ssm put-parameter \
-      --name "/imms/apigee/non-prod/int-client-secret" \
-      --value "$(INT_CLIENT_SECRET)" \
+      --name "/imms/apigee/non-prod/status-api-key" \
+      --value "$(status-endpoint-api-key)" \
       --type "SecureString" \
       --region "eu-west-2"
 
