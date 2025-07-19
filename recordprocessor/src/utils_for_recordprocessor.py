@@ -3,7 +3,7 @@
 import os
 import json
 from csv import DictReader
-from io import StringIO, TextIOWrapper
+from io import TextIOWrapper
 from clients import s3_client, lambda_client, logger
 from constants import SOURCE_BUCKET_NAME, FILE_NAME_PROC_LAMBDA_NAME
 

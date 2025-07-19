@@ -92,7 +92,6 @@ class TestProcessCsvToFhir(unittest.TestCase):
             self.assertIn("diagnostics", message_body)
             self.assertNotIn("fhir_json", message_body)
 
-
     def test_process_csv_to_fhir_invalid_headers(self):
         """Tests that process_csv_to_fhir does not send a message to kinesis when the csv has invalid headers"""
         self.upload_source_file(
