@@ -229,7 +229,7 @@ resource "aws_lambda_permission" "mesh_s3_invoke_permission" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.mesh_file_converter_lambda[0].function_name
   principal     = "s3.amazonaws.com"
-  source_arn    = "arn:aws:s3:::local-immunisation-mesh"
+  source_arn    = data.aws_s3_bucket.mesh[0].arn
 }
 
 resource "aws_s3_bucket_notification" "mesh_datasources_lambda_notification" {
