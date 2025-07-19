@@ -3,7 +3,7 @@
 import os
 import json
 from csv import DictReader
-from io import StringIO
+from io import StringIO, TextIOWrapper
 from clients import s3_client, lambda_client, logger
 from constants import SOURCE_BUCKET_NAME, FILE_NAME_PROC_LAMBDA_NAME
 
@@ -15,12 +15,12 @@ def get_environment() -> str:
     return _env if _env in ["internal-dev", "int", "ref", "sandbox", "prod"] else "internal-dev"
 
 
-def get_csv_content_dict_reader(file_key: str) -> (DictReader, str):
+def get_csv_content_dict_reader(file_key: str) -> DictReader:
     """Returns the requested file contents from the source bucket in the form of a DictReader"""
     response = s3_client.get_object(Bucket=os.getenv("SOURCE_BUCKET_NAME"), Key=file_key)
-    # TODO - this reads everything into memory! Look into streaming instead
-    csv_data = response["Body"].read().decode("utf-8")
-    return DictReader(StringIO(csv_data), delimiter="|"), csv_data
+    binary_io = response["Body"]
+    text_io = TextIOWrapper(binary_io, encoding="utf-8")
+    return DictReader(text_io, delimiter="|")
 
 
 def create_diagnostics_dictionary(error_type, status_code, error_message) -> dict:

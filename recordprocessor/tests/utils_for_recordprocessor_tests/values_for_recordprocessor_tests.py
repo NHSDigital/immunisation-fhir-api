@@ -170,10 +170,12 @@ class FileDetails:
         self.event_create_permissions_only_dict = {**self.base_event, "permission": self.create_permissions_only}
         self.event_update_permissions_only_dict = {**self.base_event, "permission": self.update_permissions_only}
         self.event_delete_permissions_only_dict = {**self.base_event, "permission": self.delete_permissions_only}
+        self.event_no_permissions_dict = {**self.base_event, "permission": []}
         self.event_full_permissions = json.dumps(self.event_full_permissions_dict)
         self.event_create_permissions_only = json.dumps(self.event_create_permissions_only_dict)
         self.event_update_permissions_only = json.dumps(self.event_update_permissions_only_dict)
         self.event_delete_permissions_only = json.dumps(self.event_delete_permissions_only_dict)
+        self.event_no_permissions = json.dumps(self.event_no_permissions_dict)
 
         self.audit_table_entry = {
             AuditTableKeys.MESSAGE_ID: {"S": self.message_id_order},

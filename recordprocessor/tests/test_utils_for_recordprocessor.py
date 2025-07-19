@@ -48,9 +48,8 @@ class TestUtilsForRecordprocessor(unittest.TestCase):
         """Tests that get_csv_content_dict_reader returns the correct csv data"""
         self.upload_source_file(test_file.file_key, ValidMockFileContent.with_new_and_update)
         expected_output = csv.DictReader(StringIO(ValidMockFileContent.with_new_and_update), delimiter="|")
-        result, csv_data = get_csv_content_dict_reader(test_file.file_key)
+        result = get_csv_content_dict_reader(test_file.file_key)
         self.assertEqual(list(result), list(expected_output))
-        self.assertEqual(csv_data, ValidMockFileContent.with_new_and_update)
 
     def test_get_environment(self):
         """Tests that get_environment returns the correct environment"""
