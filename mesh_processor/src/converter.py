@@ -76,6 +76,15 @@ def stream_part_body(input_file: BinaryIO, boundary: bytes, output_file: BinaryI
     raise ValueError("Unexpected EOF")
 
 
+def move_file(source_bucket: str, source_key: str, destination_bucket: str, destination_key: str) -> None:
+    s3_client.copy_object(
+        CopySource={"Bucket": source_bucket, "Key": source_key},
+        Bucket=destination_bucket,
+        Key=destination_key
+    )
+    s3_client.delete_object(Bucket=source_bucket, Key=source_key)
+
+
 def transfer_multipart_content(bucket_name: str, file_key: str, boundary: bytes, filename: str) -> None:
     with open(
         f"s3://{bucket_name}/{file_key}",
@@ -91,11 +100,13 @@ def transfer_multipart_content(bucket_name: str, file_key: str, boundary: bytes,
             filename = content_disposition_params.get("filename") or filename
 
         with open(
-            f"s3://{DESTINATION_BUCKET_NAME}/{filename}",
+            f"s3://{DESTINATION_BUCKET_NAME}/streaming/{filename}",
             "wb",
             transport_params={"client": s3_client}
         ) as output_file:
             stream_part_body(input_file, boundary, output_file)
+
+        move_file(DESTINATION_BUCKET_NAME, f"streaming/{filename}", DESTINATION_BUCKET_NAME, filename)
 
 
 def process_record(record: dict) -> None:
