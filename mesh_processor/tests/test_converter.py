@@ -67,6 +67,7 @@ class TestLambdaHandler(TestCase):
 
     def test_multipart_content_type(self):
         body = "\r\n".join([
+            "",
             "--12345678",
             'Content-Disposition: form-data; name="File"; filename="test-csv-file.csv"',
             "Content-Type: text/csv",
@@ -91,6 +92,7 @@ class TestLambdaHandler(TestCase):
 
     def test_multipart_content_type_multiple_parts(self):
         body = "\r\n".join([
+            "",
             "--12345678",
             'Content-Disposition: form-data; name="File"; filename="test-csv-file.csv"',
             "Content-Type: text/csv",
@@ -120,6 +122,7 @@ class TestLambdaHandler(TestCase):
 
     def test_multipart_content_type_without_filename(self):
         body = "\r\n".join([
+            "",
             "--12345678",
             'Content-Disposition: form-data',
             "Content-Type: text/csv",
@@ -144,6 +147,7 @@ class TestLambdaHandler(TestCase):
 
     def test_multipart_content_type_without_headers(self):
         body = "\r\n".join([
+            "",
             "--12345678",
             "",
             "some CSV content",
@@ -166,6 +170,7 @@ class TestLambdaHandler(TestCase):
 
     def test_multipart_content_type_with_unix_line_endings(self):
         body = "\r\n".join([
+            "",
             "--12345678",
             'Content-Disposition: form-data; name="File"; filename="test-csv-file.csv"',
             "Content-Type: text/csv",
@@ -187,3 +192,51 @@ class TestLambdaHandler(TestCase):
         response = s3.get_object(Bucket="destination-bucket", Key="test-csv-file.csv")
         body = response["Body"].read().decode("utf-8")
         assert body == "some CSV content\nsplit across\nmultiple lines"
+
+    def test_multipart_content_type_missing_first_newline(self):
+        body = "\r\n".join([
+            "--12345678",
+            'Content-Disposition: form-data; name="File"; filename="test-csv-file.csv"',
+            "Content-Type: text/csv",
+            "",
+            "some CSV content",
+            "--12345678--",
+            ""
+        ])
+        s3 = boto3.client("s3", region_name="eu-west-2")
+        s3.put_object(
+            Bucket="source-bucket",
+            Key="test-dat-file.dat",
+            Body=body.encode("utf-8"),
+            ContentType="multipart/form-data; boundary=12345678",
+        )
+
+        invoke_lambda("test-dat-file.dat")
+
+        response = s3.get_object(Bucket="destination-bucket", Key="test-csv-file.csv")
+        body = response["Body"].read().decode("utf-8")
+        assert body == "some CSV content"
+
+    def test_multipart_content_type_missing_final_newline(self):
+        body = "\r\n".join([
+            "",
+            "--12345678",
+            'Content-Disposition: form-data; name="File"; filename="test-csv-file.csv"',
+            "Content-Type: text/csv",
+            "",
+            "some CSV content",
+            "--12345678--",
+        ])
+        s3 = boto3.client("s3", region_name="eu-west-2")
+        s3.put_object(
+            Bucket="source-bucket",
+            Key="test-dat-file.dat",
+            Body=body.encode("utf-8"),
+            ContentType="multipart/form-data; boundary=12345678",
+        )
+
+        invoke_lambda("test-dat-file.dat")
+
+        response = s3.get_object(Bucket="destination-bucket", Key="test-csv-file.csv")
+        body = response["Body"].read().decode("utf-8")
+        assert body == "some CSV content"

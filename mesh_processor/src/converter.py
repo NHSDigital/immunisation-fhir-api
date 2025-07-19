@@ -57,24 +57,23 @@ def read_part_headers(input_file: BinaryIO) -> dict[str, str]:
 def stream_part_body(input_file: BinaryIO, boundary: bytes, output_file: BinaryIO) -> None:
     previous_line = None
     found_part_end = False
-    while not found_part_end:
-        if (line := input_file.readline()) is None:
-            raise ValueError("Unexpected EOF")
-
+    while line := input_file.readline():
         if line == b"--" + boundary + b"\r\n":
             logger.warning("Found additional part which will not be processed")
             found_part_end = True
-        if line == b"--" + boundary + b"--\r\n":
+        if line.startswith(b"--" + boundary + b"--"):
             found_part_end = True
 
         if previous_line is not None:
             if found_part_end:
                 # The final \r\n is part of the encapsulation boundary, so should not be included
                 output_file.write(previous_line.rstrip(b'\r\n'))
+                return
             else:
                 output_file.write(previous_line)
 
         previous_line = line
+    raise ValueError("Unexpected EOF")
 
 
 def transfer_multipart_content(bucket_name: str, file_key: str, boundary: bytes, filename: str) -> None:
