@@ -37,6 +37,24 @@ output "debug_file_listing" {
   }
 }
 
+resource "null_resource" "debug_build_context" {
+  provisioner "local-exec" {
+    command = <<-EOT
+      echo "=== HOST SYSTEM PATHS ==="
+      echo "Terraform execution directory: $(pwd)"
+      echo "Host build context: ${local.lambdas_dir}"
+      echo "Host Dockerfile location: ${local.id_sync_lambda_dir}/Dockerfile"
+      echo ""
+      echo "Docker build command that will be executed:"
+      echo "docker build -f id_sync/Dockerfile ${local.lambdas_dir}"
+      echo ""
+      echo "=== HOST BUILD CONTEXT CONTENTS ==="
+      echo "What Docker can see from host:"
+      ls -la "${local.lambdas_dir}/"
+    EOT
+  }
+}
+
 # Reference the existing SQS queue
 data "aws_sqs_queue" "existing_sqs_queue" {
   name = "id_sync_test_queue"
@@ -77,6 +95,7 @@ module "id_sync_docker_image" {
   platform      = "linux/amd64"
   use_image_tag = false
   source_path   = local.lambdas_dir    # parent lambdas directory
+  docker_file_path = "id_sync/Dockerfile"  # Add this line
   triggers = {
     dir_sha = local.combined_sha       # Changed to combined SHA
   }
