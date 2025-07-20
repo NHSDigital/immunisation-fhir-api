@@ -1,8 +1,40 @@
 # Define the directory containing the Docker image and calculate its SHA-256 hash for triggering redeployments
 locals {
+  lambdas_dir            = abspath("${path.root}/../lambdas")
+  shared_dir             = abspath("${path.root}/../lambdas/shared")
   id_sync_lambda_dir     = abspath("${path.root}/../lambdas/id_sync")
+  
+  # Get files from both directories
+  shared_files           = fileset(local.shared_dir, "**")
   id_sync_lambda_files   = fileset(local.id_sync_lambda_dir, "**")
+  
+  # Calculate SHA for both directories
+  shared_dir_sha         = sha1(join("", [for f in local.shared_files : filesha1("${local.shared_dir}/${f}")]))
   id_sync_lambda_dir_sha = sha1(join("", [for f in local.id_sync_lambda_files : filesha1("${local.id_sync_lambda_dir}/${f}")]))
+  
+  # Combined SHA to trigger rebuild when either directory changes
+  combined_sha           = sha1("${local.shared_dir_sha}${local.id_sync_lambda_dir_sha}")
+}
+
+output "debug_build_paths" {
+  value = {
+    lambdas_dir            = local.lambdas_dir
+    shared_dir             = local.shared_dir
+    id_sync_lambda_dir     = local.id_sync_lambda_dir
+    shared_files_count     = length(local.shared_files)
+    id_sync_files_count    = length(local.id_sync_lambda_files)
+    combined_sha           = local.combined_sha
+    dockerfile_exists      = fileexists("${local.id_sync_lambda_dir}/Dockerfile")
+    shared_common_exists   = fileexists("${local.shared_dir}/src/common/__init__.py")
+  }
+}
+
+# Debug: List some files from each directory
+output "debug_file_listing" {
+  value = {
+    shared_files_sample    = slice(local.shared_files, 0, min(5, length(local.shared_files)))
+    id_sync_files_sample   = slice(local.id_sync_lambda_files, 0, min(5, length(local.id_sync_lambda_files)))
+  }
 }
 
 # Reference the existing SQS queue
@@ -44,9 +76,39 @@ module "id_sync_docker_image" {
 
   platform      = "linux/amd64"
   use_image_tag = false
-  source_path   = local.id_sync_lambda_dir
+  source_path   = local.lambdas_dir    # parent lambdas directory
   triggers = {
-    dir_sha = local.id_sync_lambda_dir_sha
+    dir_sha = local.combined_sha       # Changed to combined SHA
+  }
+}
+
+# Add a local provisioner to debug build context
+resource "null_resource" "debug_build_context" {
+  triggers = {
+    dir_sha = local.combined_sha
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      echo "=== BUILD CONTEXT DEBUG ==="
+      echo "Build context: ${local.lambdas_dir}"
+      echo "Dockerfile location: ${local.id_sync_lambda_dir}/Dockerfile"
+      echo ""
+      echo "Checking Dockerfile exists:"
+      ls -la "${local.id_sync_lambda_dir}/Dockerfile" || echo "Dockerfile NOT FOUND!"
+      echo ""
+      echo "Checking shared directory structure:"
+      ls -la "${local.shared_dir}/src/common/" || echo "Shared common directory NOT FOUND!"
+      echo ""
+      echo "Files in build context (lambdas dir):"
+      ls -la "${local.lambdas_dir}/"
+      echo ""
+      echo "Shared files structure:"
+      find "${local.shared_dir}" -type f -name "*.py" | head -10
+      echo ""
+      echo "ID Sync files structure:"
+      find "${local.id_sync_lambda_dir}" -type f -name "*.py" | head -10
+    EOT
   }
 }
 
