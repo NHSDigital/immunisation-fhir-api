@@ -40,7 +40,7 @@ output "debug_file_listing" {
 resource "null_resource" "debug_build_context" {
   provisioner "local-exec" {
     command = <<-EOT
-      echo "=== HOST SYSTEM PATHS ==="
+      echo "SAW === HOST SYSTEM PATHS ==="
       echo "Terraform execution directory: $(pwd)"
       echo "Host build context: ${local.lambdas_dir}"
       echo "Host Dockerfile location: ${local.id_sync_lambda_dir}/Dockerfile"
@@ -102,14 +102,14 @@ module "id_sync_docker_image" {
 }
 
 # Add a local provisioner to debug build context
-resource "null_resource" "debug_build_context" {
+resource "null_resource" "debug_build_context2" {
   triggers = {
     dir_sha = local.combined_sha
   }
 
   provisioner "local-exec" {
     command = <<-EOT
-      echo "=== BUILD CONTEXT DEBUG ==="
+      echo "SAW === BUILD CONTEXT DEBUG ==="
       echo "Build context: ${local.lambdas_dir}"
       echo "Dockerfile location: ${local.id_sync_lambda_dir}/Dockerfile"
       echo ""
