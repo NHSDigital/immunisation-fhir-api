@@ -1066,7 +1066,7 @@ class TestUpdateImmunization(unittest.TestCase):
         )
         mock_get_permissions.assert_called_once_with("Test")
         self.assertEqual(response["statusCode"], 200)
-        self.assertEqual( response["headers"]["E-Tag"], 2)
+        self.assertEqual(response["headers"]["E-Tag"], 2)
 
     @patch("fhir_controller.get_supplier_permissions")
     def test_update_immunization_etag_missing(self, mock_get_supplier_permissions):
