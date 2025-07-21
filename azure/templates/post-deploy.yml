@@ -115,11 +115,10 @@ steps:
     workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)"
 
   - bash: |
-      pyenv install -s 3.10.8
       pyenv install -s 3.11.11
-      pyenv global 3.10.8
+      pyenv global 3.11.11
       python --version
-    displayName: Install python 3.10 and 3.11
+    displayName: Install python 3.11
 
   - bash: |
       set -e
