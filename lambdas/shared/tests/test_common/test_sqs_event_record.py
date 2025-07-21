@@ -42,6 +42,28 @@ class TestSQSEventRecord(unittest.TestCase):
         self.assertIn("abc-123", repr(record))
         self.assertTrue(repr(record).startswith("<SQSEventRecord"))
 
+    def test_initialization(self):
+        record = SQSEventRecord(
+            message_id="test-id",
+            receipt_handle="test-handle",
+            body="{}",
+            attributes={},
+            message_attributes={},
+            md5_of_body="test-md5",
+            event_source="aws:sqs",
+            event_source_arn="my-arn",
+            aws_region="us-east-1"
+        )
+        self.assertEqual(record.message_id, "test-id")
+        self.assertEqual(record.receipt_handle, "test-handle")
+        self.assertEqual(record.body, "{}")
+        self.assertEqual(record.attributes, {})
+        self.assertEqual(record.message_attributes, {})
+        self.assertEqual(record.md5_of_body, "test-md5")
+        self.assertEqual(record.event_source, "aws:sqs")
+        self.assertEqual(record.event_source_arn, "my-arn")
+        self.assertEqual(record.aws_region, "us-east-1")
+
 
 if __name__ == '__main__':
     unittest.main()
