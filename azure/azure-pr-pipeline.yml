@@ -40,6 +40,10 @@ extends:
           - template: ./templates/post-deploy.yml
             parameters:
               aws_account_type: 'dev'
+          - script: |
+              echo "Creating MNS subscription..."
+              python3 backend/src/mns/subscribe.py
+            displayName: "Subscribe SQS to MNS signal"
       - environment: internal-dev-sandbox
         proxy_path: sandbox
         jinja_templates:
