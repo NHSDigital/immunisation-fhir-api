@@ -167,7 +167,7 @@ class FhirController:
         try:
             if aws_event.get("headers"):
                 if response := self.authorize_request(aws_event):
-                        return response
+                    return response
             else:
                 raise UnauthorizedError()
         except UnauthorizedError as unauthorized:
