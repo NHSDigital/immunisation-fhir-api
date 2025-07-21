@@ -1,4 +1,4 @@
-name: PR build and test
+name: E2E Tests
 
 on:
   push:
