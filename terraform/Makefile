@@ -59,3 +59,4 @@ catch-all-zip:
 
 tf-%:
 	$(tf_cmd) $*
+
