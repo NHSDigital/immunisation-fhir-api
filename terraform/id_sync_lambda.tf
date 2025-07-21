@@ -1,15 +1,58 @@
-# Prototype of id_sync_lambda.tf
-
-# This is a WIP.
-# This is an attempt to define the terraform for the new NHS MNS id sync lambda.
-# Some resources may be unnecessary.
-# The ones we do require for SQS queue and its KMS key are at the bottom of the lambda execution policy.
-
 # Define the directory containing the Docker image and calculate its SHA-256 hash for triggering redeployments
 locals {
-  id_sync_lambda_dir     = abspath("${path.root}/../id_sync")
+  lambdas_dir            = abspath("${path.root}/../lambdas")
+  shared_dir             = abspath("${path.root}/../lambdas/shared")
+  id_sync_lambda_dir     = abspath("${path.root}/../lambdas/id_sync")
+  
+  # Get files from both directories
+  shared_files           = fileset(local.shared_dir, "**")
   id_sync_lambda_files   = fileset(local.id_sync_lambda_dir, "**")
+  
+  # Calculate SHA for both directories
+  shared_dir_sha         = sha1(join("", [for f in local.shared_files : filesha1("${local.shared_dir}/${f}")]))
   id_sync_lambda_dir_sha = sha1(join("", [for f in local.id_sync_lambda_files : filesha1("${local.id_sync_lambda_dir}/${f}")]))
+  
+  # Combined SHA to trigger rebuild when either directory changes
+  combined_sha           = sha1("${local.shared_dir_sha}${local.id_sync_lambda_dir_sha}")
+}
+
+output "debug_build_paths" {
+  value = {
+    lambdas_dir            = local.lambdas_dir
+    shared_dir             = local.shared_dir
+    id_sync_lambda_dir     = local.id_sync_lambda_dir
+    shared_files_count     = length(local.shared_files)
+    id_sync_files_count    = length(local.id_sync_lambda_files)
+    combined_sha           = local.combined_sha
+    dockerfile_exists      = fileexists("${local.id_sync_lambda_dir}/Dockerfile")
+    shared_common_exists   = fileexists("${local.shared_dir}/src/common/__init__.py")
+  }
+}
+
+# Debug: List some files from each directory
+output "debug_file_listing" {
+  value = {
+    shared_files_sample    = slice(local.shared_files, 0, min(5, length(local.shared_files)))
+    id_sync_files_sample   = slice(local.id_sync_lambda_files, 0, min(5, length(local.id_sync_lambda_files)))
+  }
+}
+
+resource "null_resource" "debug_build_context" {
+  provisioner "local-exec" {
+    command = <<-EOT
+      echo "SAW === HOST SYSTEM PATHS ==="
+      echo "Terraform execution directory: $(pwd)"
+      echo "Host build context: ${local.lambdas_dir}"
+      echo "Host Dockerfile location: ${local.id_sync_lambda_dir}/Dockerfile"
+      echo ""
+      echo "Docker build command that will be executed:"
+      echo "docker build -f id_sync/Dockerfile ${local.lambdas_dir}"
+      echo ""
+      echo "=== HOST BUILD CONTEXT CONTENTS ==="
+      echo "What Docker can see from host:"
+      ls -la "${local.lambdas_dir}/"
+    EOT
+  }
 }
 
 resource "aws_ecr_repository" "id_sync_lambda_repository" {
@@ -46,9 +89,40 @@ module "id_sync_docker_image" {
 
   platform      = "linux/amd64"
   use_image_tag = false
-  source_path   = local.id_sync_lambda_dir
+  source_path   = local.lambdas_dir    # parent lambdas directory
+  docker_file_path = "id_sync/Dockerfile"  # Add this line
   triggers = {
-    dir_sha = local.id_sync_lambda_dir_sha
+    dir_sha = local.combined_sha       # Changed to combined SHA
+  }
+}
+
+# Add a local provisioner to debug build context
+resource "null_resource" "debug_build_context2" {
+  triggers = {
+    dir_sha = local.combined_sha
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      echo "SAW === BUILD CONTEXT DEBUG ==="
+      echo "Build context: ${local.lambdas_dir}"
+      echo "Dockerfile location: ${local.id_sync_lambda_dir}/Dockerfile"
+      echo ""
+      echo "Checking Dockerfile exists:"
+      ls -la "${local.id_sync_lambda_dir}/Dockerfile" || echo "Dockerfile NOT FOUND!"
+      echo ""
+      echo "Checking shared directory structure:"
+      ls -la "${local.shared_dir}/src/common/" || echo "Shared common directory NOT FOUND!"
+      echo ""
+      echo "Files in build context (lambdas dir):"
+      ls -la "${local.lambdas_dir}/"
+      echo ""
+      echo "Shared files structure:"
+      find "${local.shared_dir}" -type f -name "*.py" | head -10
+      echo ""
+      echo "ID Sync files structure:"
+      find "${local.id_sync_lambda_dir}" -type f -name "*.py" | head -10
+    EOT
   }
 }
 
@@ -74,7 +148,6 @@ resource "aws_ecr_repository_policy" "id_sync_lambda_ECRImageRetreival_policy" {
         ],
         Condition : {
           StringLike : {
-            # "aws:sourceArn" : "arn:aws:lambda:eu-west-2:${local.immunisation_account_id}:function:${local.short_prefix}-id_sync_lambda"
             "aws:sourceArn" : aws_lambda_function.id_sync_lambda.arn
           }
         }
@@ -99,7 +172,6 @@ resource "aws_iam_role" "id_sync_lambda_exec_role" {
   })
 }
 
-# Policy for Lambda execution role
 resource "aws_iam_policy" "id_sync_lambda_exec_policy" {
   name = "${local.short_prefix}-id-sync-lambda-exec-policy"
   policy = jsonencode({
@@ -114,20 +186,21 @@ resource "aws_iam_policy" "id_sync_lambda_exec_policy" {
         ]
         Resource = "arn:aws:logs:${var.aws_region}:${local.immunisation_account_id}:log-group:/aws/lambda/${local.short_prefix}-id_sync_lambda:*"
       },
-      # ** TODO need to ascertain whether we need these S3 policies. possibly not. we WILL need an SQS policy though.
       {
         Effect = "Allow"
         Action = [
-          "s3:GetObject",
-          "s3:ListBucket",
-          "s3:PutObject",
-          "s3:CopyObject",
-          "s3:DeleteObject"
+          "ecr:GetAuthorizationToken"
         ]
-        Resource = [
-          aws_s3_bucket.batch_data_source_bucket.arn,
-          "${aws_s3_bucket.batch_data_source_bucket.arn}/*"
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage"
         ]
+        Resource = aws_ecr_repository.id_sync_lambda_repository.arn
       },
       {
         Effect = "Allow"
@@ -141,7 +214,6 @@ resource "aws_iam_policy" "id_sync_lambda_exec_policy" {
           "${aws_s3_bucket.batch_data_destination_bucket.arn}/*"
         ]
       },
-      # ** TODO: do we need these ec2 policies? I think they're to do with VPCs
       {
         Effect = "Allow",
         Action = [
@@ -150,20 +222,6 @@ resource "aws_iam_policy" "id_sync_lambda_exec_policy" {
           "ec2:DeleteNetworkInterface"
         ],
         Resource = "*"
-      },
-      # ** TODO: ditto. The bucket is imms-${local.environment}-fhir-config
-      # Examine it.
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:GetObject",
-          "s3:PutObject",
-          "s3:ListBucket"
-        ]
-        Resource = [
-          local.config_bucket_arn,
-          "${local.config_bucket_arn}/*"
-        ]
       },
       {
         Effect : "Allow",
@@ -196,7 +254,7 @@ resource "aws_iam_policy" "id_sync_lambda_exec_policy" {
           "sqs:GetQueueAttributes"
         ],
         Resource = "arn:aws:sqs:eu-west-2:${local.immunisation_account_id}:${local.short_prefix}-id-sync-queue"
-      }
+      },
       {
         Effect = "Allow",
         Action = [
@@ -222,17 +280,6 @@ resource "aws_iam_policy" "id_sync_lambda_kms_access_policy" {
           "kms:Decrypt"
         ]
         Resource = data.aws_kms_key.existing_lambda_encryption_key.arn
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "kms:Encrypt",
-          "kms:Decrypt",
-          "kms:GenerateDataKey*"
-        ]
-        Resource = [
-          data.aws_kms_key.existing_s3_encryption_key.arn,
-        ]
       }
     ]
   })
@@ -264,13 +311,9 @@ resource "aws_lambda_function" "id_sync_lambda" {
     security_group_ids = [data.aws_security_group.existing_securitygroup.id]
   }
 
-  # ** TODO: we're likely to not need any of the REDIS_ variables
   environment {
     variables = {
-      CONFIG_BUCKET_NAME          = local.config_bucket_name
-      REDIS_HOST                  = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].address
-      REDIS_PORT                  = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].port
-      ID_SYNC_PROC_LAMBDA_NAME    = "imms-${local.env}-id_sync_lambda"
+      ID_SYNC_PROC_LAMBDA_NAME = "imms-${local.env}-id_sync_lambda"
       SPLUNK_FIREHOSE_NAME        = module.splunk.firehose_stream_name
     }
   }
@@ -287,24 +330,15 @@ resource "aws_cloudwatch_log_group" "id_sync_log_group" {
   retention_in_days = 30
 }
 
-
-# S3 Bucket notification to trigger Lambda function for config bucket
-resource "aws_s3_bucket_notification" "config_lambda_notification" {
-
-  bucket = aws_s3_bucket.batch_config_bucket.bucket
-
-  lambda_function {
-    lambda_function_arn = aws_lambda_function.id_sync_lambda.arn
-    events              = ["s3:ObjectCreated:*"]
-  }
-}
-
-# Permission for the new S3 bucket to invoke the Lambda function
-resource "aws_lambda_permission" "new_s3_invoke_permission" {
-
-  statement_id  = "AllowExecutionFromNewS3"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.id_sync_lambda.function_name
-  principal     = "s3.amazonaws.com"
-  source_arn    = local.config_bucket_arn
+# SQS Event Source Mapping for Lambda
+resource "aws_lambda_event_source_mapping" "id_sync_sqs_trigger" {
+  event_source_arn = "arn:aws:sqs:eu-west-2:${local.immunisation_account_id}:${local.short_prefix}-id-sync-queue"
+  function_name    = aws_lambda_function.id_sync_lambda.arn
+  
+  # Optional: Configure batch size and other settings
+  batch_size                         = 10
+  maximum_batching_window_in_seconds = 5
+  
+  # Optional: Configure error handling
+  function_response_types = ["ReportBatchItemFailures"]
 }

@@ -14,7 +14,7 @@ authors = ["s.wates <stephen.wates1@nhs.net>"]
 readme = "README.md"
 packages = [
     {include = "src"},
-    {include = "common", from = "../shared/src/common"}
+    {include = "common", from = "../shared/src"}
 ]
 
 [tool.poetry.dependencies]

@@ -20,7 +20,8 @@ locals {
   prefix       = "${var.project_name}-${var.service}-${local.env}"
   short_prefix = "${var.project_short_name}-${local.env}"
   batch_prefix = "immunisation-batch-${local.env}"
-  config_env   = local.environment == "prod" ? "prod" : "dev"
+  # TODO - add int when we switch to the new account
+  config_env = local.environment == "prod" ? "prod" : "dev"
 
   root_domain         = "${local.config_env}.vds.platform.nhs.uk"
   project_domain_name = data.aws_route53_zone.project_zone.name
@@ -92,8 +93,4 @@ data "aws_kms_key" "existing_lambda_encryption_key" {
 
 data "aws_kms_key" "existing_kinesis_encryption_key" {
   key_id = "alias/imms-batch-kinesis-stream-encryption"
-}
-
-data "aws_kms_key" "mesh_s3_encryption_key" {
-  key_id = "alias/local-immunisation-mesh"
 }

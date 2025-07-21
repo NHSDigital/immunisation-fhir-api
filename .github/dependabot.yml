@@ -73,7 +73,6 @@ updates:
     directories:
       - "/grafana/non-prod/terraform"
       - "/infra"
-      - "/mesh-infra"
       - "/terraform"
       - "/terraform_aws_backup/**"
     schedule:
