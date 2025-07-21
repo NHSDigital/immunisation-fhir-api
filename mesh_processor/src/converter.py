@@ -133,6 +133,10 @@ def process_record(record: dict) -> None:
 
     logger.info(f"Transfer complete for {file_key}")
 
+    move_file(bucket_name, file_key, bucket_name, f"archive/{file_key}")
+
+    logger.info(f"Archived {file_key}")
+
 
 def lambda_handler(event: dict, _context: dict) -> dict:
     success = True

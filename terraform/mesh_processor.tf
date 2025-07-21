@@ -137,7 +137,8 @@ resource "aws_iam_policy" "mesh_processor_lambda_exec_policy" {
           "s3:GetObject",
           "s3:ListBucket",
           "s3:PutObject",
-          "s3:CopyObject"
+          "s3:CopyObject",
+          "s3:DeleteObject"
         ]
         Resource = [
           aws_s3_bucket.batch_data_source_bucket.arn,

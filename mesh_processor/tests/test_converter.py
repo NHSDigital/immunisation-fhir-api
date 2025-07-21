@@ -48,9 +48,16 @@ class TestLambdaHandler(TestCase):
         result = invoke_lambda("test-csv-file.csv")
         self.assertEqual(result["statusCode"], 200)
 
-        response = s3.get_object(Bucket="destination-bucket", Key="overridden-filename.csv")
-        body = response["Body"].read().decode("utf-8")
+        get_target_response = s3.get_object(Bucket="destination-bucket", Key="overridden-filename.csv")
+        body = get_target_response["Body"].read().decode("utf-8")
         assert body == "some CSV content"
+
+        with self.assertRaises(ClientError) as e:
+            s3.head_object(Bucket="source-bucket", Key="test-csv-file.csv")
+        self.assertEqual(e.exception.response["Error"]["Code"], "404")
+
+        head_archive_response = s3.head_object(Bucket="source-bucket", Key="archive/test-csv-file.csv")
+        assert head_archive_response["ResponseMetadata"]["HTTPStatusCode"] == 200
 
     def test_non_multipart_content_type_no_mesh_metadata(self):
         s3 = boto3.client("s3", region_name="eu-west-2")
