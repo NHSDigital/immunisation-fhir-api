@@ -170,6 +170,7 @@ jobs:
         run: |
           echo "Checking for test failures..."
           ls *-coverage.xml
+          cat shared-coverage.xml || echo "shared-coverage.xml not found"
           if [ -s failed_tests.txt ]; then
             echo "The following tests failed:"
             cat failed_tests.txt
