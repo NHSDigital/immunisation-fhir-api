@@ -1051,7 +1051,7 @@ class TestUpdateImmunization(unittest.TestCase):
             "body": imms,
             "pathParameters": {"id": imms_id},
         }
-        self.service.update_immunization.return_value = UpdateOutcome.UPDATE, "value doesn't matter"
+        self.service.update_immunization.return_value = UpdateOutcome.UPDATE, "value doesn't matter", 2
         self.service.get_immunization_by_id_all.return_value = {
             "resource": "new_value",
             "Version": 1,
@@ -1066,7 +1066,7 @@ class TestUpdateImmunization(unittest.TestCase):
         )
         mock_get_permissions.assert_called_once_with("Test")
         self.assertEqual(response["statusCode"], 200)
-        self.assertTrue("body" not in response)
+        self.assertEqual(json.loads(response["body"]), {"E-Tag": 2})
 
     @patch("fhir_controller.get_supplier_permissions")
     def test_update_immunization_etag_missing(self, mock_get_supplier_permissions):
@@ -1149,6 +1149,7 @@ class TestUpdateImmunization(unittest.TestCase):
         response = self.controller.update_immunization(aws_event)
         mock_get_supplier_permissions.assert_called_once_with("Test")
         self.assertEqual(response["statusCode"], 403)
+
     @patch("fhir_controller.get_supplier_permissions")
     def test_update_immunization_UnauthorizedVaxError_check_for_non_batch(self, mock_get_supplier_permissions):
         """it should not update the Immunization record"""
@@ -1247,7 +1248,7 @@ class TestUpdateImmunization(unittest.TestCase):
             "body": imms,
             "pathParameters": {"id": imms_id},
         }
-        self.service.reinstate_immunization.return_value = UpdateOutcome.UPDATE, "value doesn't matter"
+        self.service.reinstate_immunization.return_value = UpdateOutcome.UPDATE, {}, 2
         self.service.get_immunization_by_id_all.return_value = {
             "resource": "new_value",
             "Version": 1,
@@ -1261,7 +1262,7 @@ class TestUpdateImmunization(unittest.TestCase):
             imms_id, json.loads(imms), 1, ["COVID19.CRUDS"], "Test"
         )
         self.assertEqual(response["statusCode"], 200)
-        self.assertTrue("body" not in response)
+        self.assertEqual(json.loads(response["body"]), {"E-Tag": 2})
 
     @patch("fhir_controller.get_supplier_permissions")
     def test_update_deletedat_immunization_without_version(self, mock_get_supplier_permissions):
@@ -1271,11 +1272,11 @@ class TestUpdateImmunization(unittest.TestCase):
         imms = '{"id": "valid-id"}'
         imms_id = "valid-id"
         aws_event = {
-            "headers": {"SupplierSystem": "Test"},
+            "headers": {"SupplierSystem": "Test", "E-tag":1},
             "body": imms,
             "pathParameters": {"id": imms_id},
         }
-        self.service.reinstate_immunization.return_value = UpdateOutcome.UPDATE, "value doesn't matter"
+        self.service.reinstate_immunization.return_value = UpdateOutcome.UPDATE, {}, 2
         self.service.get_immunization_by_id_all.return_value = {
             "resource": "new_value",
             "Version": 1,
@@ -1290,7 +1291,7 @@ class TestUpdateImmunization(unittest.TestCase):
         )
         mock_get_supplier_permissions.assert_called_once_with("Test")
         self.assertEqual(response["statusCode"], 200)
-        self.assertTrue("body" not in response)
+        self.assertEqual(json.loads(response["body"]), {"E-Tag": 2})
 
     @patch("fhir_controller.get_supplier_permissions")
     def test_update_record_exists(self, mock_get_supplier_permissions):
@@ -1376,7 +1377,7 @@ class TestUpdateImmunization(unittest.TestCase):
         update_result = {
             "diagnostics": "Validation errors: contained[?(@.resourceType=='Patient')].identifier[0].value does not exists"
         }
-        self.service.update_immunization.return_value = None, update_result
+        self.service.update_immunization.return_value = None, update_result, 2
         req_imms = '{"id": "valid-id"}'
         path_id = "valid-id"
         aws_event = {
@@ -1396,7 +1397,7 @@ class TestUpdateImmunization(unittest.TestCase):
 
         self.assertEqual(response["statusCode"], 400)
         body = json.loads(response["body"])
-        self.assertEqual(body["resourceType"], "OperationOutcome")
+        self.assertEqual(body["resourceType"], "OperationOutcome", 2)
 
     @patch("fhir_controller.get_supplier_permissions")
     def test_validation_identifier_to_give_bad_request_for_update_immunization(self, mock_get_supplier_permissions):
@@ -1479,6 +1480,72 @@ class TestUpdateImmunization(unittest.TestCase):
         self.assertEqual(response["statusCode"], 400)
         outcome = json.loads(response["body"])
         self.assertEqual(outcome["resourceType"], "OperationOutcome")
+    
+    @patch("fhir_controller.get_supplier_permissions")
+    def test_update_immunization_when_reinstated_true(self, mock_get_permissions):
+        """it should update reinstated Immunization"""
+        mock_get_permissions.return_value = ["COVID19.CRUD"]
+        imms_id = "valid-id"
+        imms = '{"id": "valid-id"}'
+        aws_event = {
+            "headers": {"E-Tag": 1, "SupplierSystem": "Test"},
+            "body": imms,
+            "pathParameters": {"id": imms_id},
+        }
+        self.service.update_reinstated_immunization.return_value = UpdateOutcome.UPDATE, {}, 3
+        self.service.get_immunization_by_id_all.return_value = {
+            "resource": "existing",
+            "Version": 1,
+            "DeletedAt": False,
+            "Reinstated": True,
+            "VaccineType": "COVID19",
+        }
+
+        response = self.controller.update_immunization(aws_event)
+
+        self.service.update_reinstated_immunization.assert_called_once_with(
+            imms_id, json.loads(imms), 1, ["COVID19.CRUD"], "Test"
+        )
+        self.assertEqual(response["statusCode"], 200)
+        self.assertEqual(json.loads(response["body"]), {"E-Tag": 3})
+
+    def test_update_immunization_missing_id(self):
+        """it should raise KeyError if pathParameters['id'] is missing"""
+        aws_event = {
+            "headers": {"E-Tag": 1, "SupplierSystem": "Test"},
+            "body": '{"id": "valid-id"}',
+            "pathParameters": {},  # 'id' is missing
+        }
+        with self.assertRaises(KeyError):
+            self.controller.update_immunization(aws_event)
+    
+    @patch("fhir_controller.get_supplier_permissions")
+    def test_update_reinstated_immunization_with_diagnostics_error(self, mock_get_permissions):
+        """it should return 400 if patient validation error is present"""
+        mock_get_permissions.return_value = ["COVID19.CRUD"]
+        imms_id = "valid-id"
+        imms = '{"id": "valid-id"}'
+        aws_event = {
+            "headers": {"E-Tag": 1, "SupplierSystem": "Test"},
+            "body": imms,
+            "pathParameters": {"id": imms_id},
+        }
+        # Simulate reinstated record
+        self.service.get_immunization_by_id_all.return_value = {
+            "resource": "existing",
+            "Version": 1,
+            "DeletedAt": True,
+            "Reinstated": False,
+            "VaccineType": "COVID19",
+        }
+        self.service.reinstate_immunization.return_value = (None, {
+            "diagnostics": "Patient NHS number has been superseded"
+        }, None)
+
+        response = self.controller.update_immunization(aws_event)
+
+        self.assertEqual(response["statusCode"], 400)
+        self.assertIn("superseded", json.loads(response["body"])["issue"][0]["diagnostics"])
 
 
 class TestDeleteImmunization(unittest.TestCase):

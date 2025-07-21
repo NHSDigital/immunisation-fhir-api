@@ -197,7 +197,8 @@ class FhirController:
                 return self.create_response(400, json.dumps(exp_error))
             else:
                 location = f"{get_service_url()}/Immunization/{resource.id}"
-                return self.create_response(201, None, {"Location": location})
+                version = "1"
+                return self.create_response(201, None, {"Location": location, "E-Tag": version})
         except ValidationError as error:
             return self.create_response(400, error.to_operation_outcome())
         except IdentifierDuplicationError as duplicate:
@@ -224,7 +225,7 @@ class FhirController:
 
         # Validate the imms id - start
         if id_error := self._validate_id(imms_id):
-            return FhirController.create_response(400, json.dumps(id_error))    
+            return FhirController.create_response(400, json.dumps(id_error))
         # Validate the imms id - end
 
         # Validate the body of the request - start
@@ -276,12 +277,17 @@ class FhirController:
         # Check vaccine type permissions on the existing record - end
 
         existing_resource_version = int(existing_record["Version"])
+
         try:
             # Validate if the imms resource to be updated is a logically deleted resource - start
             if existing_record["DeletedAt"] == True:
-
-                outcome, resource = self.fhir_service.reinstate_immunization(
-                    imms_id, imms, existing_resource_version, imms_vax_type_perms, supplier_system)
+                outcome, resource, updated_version = self.fhir_service.reinstate_immunization(
+                    imms_id,
+                    imms,
+                    existing_resource_version,
+                    imms_vax_type_perms,
+                    supplier_system
+                )
             # Validate if the imms resource to be updated is a logically deleted resource-end
             else:
                 # Validate if imms resource version is part of the request - start
@@ -330,7 +336,7 @@ class FhirController:
 
                 # Check if the record is reinstated record - start
                 if existing_record["Reinstated"] == True:
-                    outcome, resource = self.fhir_service.update_reinstated_immunization(
+                    outcome, resource, updated_version = self.fhir_service.update_reinstated_immunization(
                         imms_id,
                         imms,
                         existing_resource_version,
@@ -338,7 +344,7 @@ class FhirController:
                         supplier_system
                     )
                 else:
-                    outcome, resource = self.fhir_service.update_immunization(
+                    outcome, resource, updated_version = self.fhir_service.update_immunization(
                         imms_id,
                         imms,
                         existing_resource_version,
@@ -358,7 +364,7 @@ class FhirController:
                 )
                 return self.create_response(400, json.dumps(exp_error))
             if outcome == UpdateOutcome.UPDATE:
-                return self.create_response(200)
+                return self.create_response(200, {"E-Tag": updated_version}) #include e-tag here, is it not included in the response resource
         except ValidationError as error:
             return self.create_response(400, error.to_operation_outcome())
         except IdentifierDuplicationError as duplicate:
@@ -541,7 +547,7 @@ class FhirController:
         )
         return self.create_response(400, error)
 
-    
+
     def authorize_request(self, aws_event: dict) -> Optional[dict]:
         try:
             self.authorizer.authorize(aws_event)
@@ -667,5 +673,5 @@ class FhirController:
     def _identify_supplier_system(aws_event):
         supplier_system = aws_event["headers"]["SupplierSystem"]
         if not supplier_system:
-            return self.create_response(403, unauthorized.to_operation_outcome())
+            raise UnauthorizedError("SupplierSystem header is missing")
         return supplier_system

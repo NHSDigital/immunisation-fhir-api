@@ -31,7 +31,7 @@ class TestUpdateImmunization(ImmunizationBaseTest):
 
                     # Then
                     self.assertEqual(response.status_code, 200, response.text)
-                    self.assertEqual(response.text, "")
+                    self.assertEqual(response.json(), {"E-Tag": 2})
                     self.assertNotIn("Location", response.headers)
 
     def test_update_non_existent_identifier(self):
