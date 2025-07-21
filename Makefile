@@ -117,3 +117,10 @@ run-all-python-unit-tests:
 		poetry run make test && \
 		deactivate \
 	); done
+
+build-all-docker-images:
+	for dir in $(PYTHON_PROJECT_DIRS_WITH_UNIT_TESTS); do \
+		for dockerfile in $$(ls $$dir/*Dockerfile); do \
+			echo $$dockerfile && docker build --file $$dockerfile $$dir; \
+		done; \
+	done
