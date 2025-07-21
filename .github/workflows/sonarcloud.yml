@@ -135,10 +135,11 @@ jobs:
           PYTHONPATH: ${{ env.SHARED_PATH }}
         continue-on-error: true
         run: |
+            echo "shared coverage - Current directory: $(pwd)"
             poetry env use 3.11
             poetry install
-            poetry run coverage run -m unittest discover || echo "shared tests failed" >> ../../failed_tests.txt
-            poetry run coverage xml -o ../../shared-coverage.xml
+            poetry run coverage run -m unittest discover || echo "shared tests failed" >> ../failed_tests.txt
+            poetry run coverage xml -o ../shared-coverage.xml
 
       - name: Run unittest with id_sync
         working-directory: lambdas/id_sync
@@ -147,10 +148,11 @@ jobs:
           PYTHONPATH: ${{ env.LAMBDA_PATH }}/id_sync/src:${{ env.LAMBDA_PATH }}/id_sync/tests:${{ env.SHARED_PATH }}
         continue-on-error: true
         run: |
+            echo "id_sync coverage - Current directory: $(pwd)"
             poetry env use 3.11
             poetry install
-            poetry run coverage run -m unittest discover || echo "id_sync tests failed" >> ../../failed_tests.txt
-            poetry run coverage xml -o ../../id_sync-coverage.xml
+            poetry run coverage run -m unittest discover || echo "id_sync tests failed" >> ../failed_tests.txt
+            poetry run coverage xml -o ../id_sync-coverage.xml
 
       - name: Run Test Failure Summary
         id: check_failure
