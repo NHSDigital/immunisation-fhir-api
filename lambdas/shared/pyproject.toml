@@ -13,8 +13,7 @@ description = ""
 authors = ["s.wates <stephen.wates1@nhs.net>"]
 readme = "README.md"
 packages = [
-    {include = "common", from = "src"},
-    {include = "aws", from = "src"}
+    {include = "common", from = "src"}
 ]
 
 [tool.poetry.dependencies]
