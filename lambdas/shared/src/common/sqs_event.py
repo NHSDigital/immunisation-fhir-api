@@ -1,5 +1,5 @@
 from typing import List, Dict, Any
-from sqs_event_record import SQSEventRecord
+from common.sqs_event_record import SQSEventRecord
 
 
 class SQSEvent:

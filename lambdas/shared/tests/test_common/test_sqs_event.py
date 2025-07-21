@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import patch, MagicMock
-from aws.sqs_event import SQSEvent
+from common.sqs_event import SQSEvent
 
 
 class TestSQSEvent(unittest.TestCase):
@@ -22,7 +22,7 @@ class TestSQSEvent(unittest.TestCase):
             ]
         }
 
-    @patch('sqs_event.SQSEventRecord')
+    @patch('common.sqs_event.SQSEventRecord')
     def test_from_event_creates_correct_number_of_records(self, mock_record_class):
         # Arrange
         mock_record_instance = MagicMock()
@@ -36,7 +36,7 @@ class TestSQSEvent(unittest.TestCase):
         self.assertIs(event.records[0], mock_record_instance)
         mock_record_class.from_dict.assert_called_once_with(self.sample_event["Records"][0])
 
-    @patch('sqs_event.SQSEventRecord')
+    @patch('common.sqs_event.SQSEventRecord')
     def test_from_event_handles_empty_records(self, mock_record_class):
         # Act
         event = SQSEvent.from_event({"Records": []})

@@ -1,5 +1,5 @@
 import unittest
-from sqs_event_record import SQSEventRecord
+from common.sqs_event_record import SQSEventRecord
 
 
 class TestSQSEventRecord(unittest.TestCase):
