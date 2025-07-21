@@ -1066,7 +1066,7 @@ class TestUpdateImmunization(unittest.TestCase):
         )
         mock_get_permissions.assert_called_once_with("Test")
         self.assertEqual(response["statusCode"], 200)
-        self.assertEqual(json.loads(response["body"]), {"E-Tag": 2})
+        self.assertEqual( response["headers"]["E-Tag"], 2)
 
     @patch("fhir_controller.get_supplier_permissions")
     def test_update_immunization_etag_missing(self, mock_get_supplier_permissions):
@@ -1262,7 +1262,7 @@ class TestUpdateImmunization(unittest.TestCase):
             imms_id, json.loads(imms), 1, ["COVID19.CRUDS"], "Test"
         )
         self.assertEqual(response["statusCode"], 200)
-        self.assertEqual(json.loads(response["body"]), {"E-Tag": 2})
+        self.assertEqual(response["headers"]["E-Tag"], 2)
 
     @patch("fhir_controller.get_supplier_permissions")
     def test_update_deletedat_immunization_without_version(self, mock_get_supplier_permissions):
@@ -1291,7 +1291,7 @@ class TestUpdateImmunization(unittest.TestCase):
         )
         mock_get_supplier_permissions.assert_called_once_with("Test")
         self.assertEqual(response["statusCode"], 200)
-        self.assertEqual(json.loads(response["body"]), {"E-Tag": 2})
+        self.assertEqual(response["headers"]["E-Tag"],  2)
 
     @patch("fhir_controller.get_supplier_permissions")
     def test_update_record_exists(self, mock_get_supplier_permissions):
@@ -1507,7 +1507,7 @@ class TestUpdateImmunization(unittest.TestCase):
             imms_id, json.loads(imms), 1, ["COVID19.CRUD"], "Test"
         )
         self.assertEqual(response["statusCode"], 200)
-        self.assertEqual(json.loads(response["body"]), {"E-Tag": 3})
+        self.assertEqual(response["headers"]["E-Tag"], int("3"))
 
     def test_update_immunization_missing_id(self):
         """it should raise KeyError if pathParameters['id'] is missing"""
