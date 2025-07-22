@@ -77,6 +77,10 @@ steps:
     displayName: Apply Terraform
     workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)"
     retryCountOnTaskFailure: 2
+  - bash: |
+      echo "Creating MNS subscription..."
+      python3 mns_subscription/src/subscribe_mns.py
+      displayName: "Subscribe SQS to MNS signal"
 
   - bash: |
       set -ex

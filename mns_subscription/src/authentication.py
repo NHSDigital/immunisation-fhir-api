@@ -11,7 +11,7 @@ from models.errors import UnhandledResponseError
 
 
 class Service(Enum):
-    PDS = "pds"
+    MNS = "mns"
     IMMUNIZATION = "imms"
 
 
@@ -22,7 +22,7 @@ class AppRestrictedAuth:
         self.cache_key = f"{service.value}_access_token"
 
         self.expiry = 30
-        self.secret_name = f"imms/pds/{environment}/jwt-secrets" if service == Service.PDS else \
+        self.secret_name = f"imms/mns/{environment}/jwt-secrets" if service == Service.MNS else \
             f"imms/immunization/{environment}/jwt-secrets"
 
         self.token_url = f"https://{environment}.api.service.nhs.uk/oauth2/token" \

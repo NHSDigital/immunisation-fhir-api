@@ -1,32 +1,34 @@
 import unittest
-from unittest.mock import patch, MagicMock, create_autospec
-from subscribe_mns import MnsService, AppRestrictedAuth
+from unittest.mock import patch, MagicMock
+from subscribe_mns import run_subscription
 
 
-class TestMainSubscriptionCall(unittest.TestCase):
-    
-    def setUp(self):
-        # Common mock setup
-        self.authenticator = create_autospec(AppRestrictedAuth)
-        self.authenticator.get_access_token.return_value = "mocked_token"
-    
+class TestRunSubscription(unittest.TestCase):
+
     @patch("subscribe_mns.MnsService")
-    def test_main_subscription_call(self, mock_post):
+    @patch("subscribe_mns.AppRestrictedAuth")
+    @patch("subscribe_mns.boto3.client")
+    def test_run_subscription_success(self, mock_boto_client, mock_auth_class, mock_mns_service):
         # Arrange
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {"subscriptionId": "abc123"}
-        mock_post.return_value = mock_response
+        mock_secrets_client = MagicMock()
+        mock_boto_client.return_value = mock_secrets_client
 
-        mns = MnsService(authenticator=self.authenticator)
+        mock_auth_instance = MagicMock()
+        mock_auth_class.return_value = mock_auth_instance
+
+        mock_mns_instance = MagicMock()
+        mock_mns_instance.subscribeNotification.return_value = {"subscriptionId": "abc123"}
+        mock_mns_service.return_value = mock_mns_instance
 
         # Act
-        result = mns.subscribeNotification()
+        result = run_subscription()
 
         # Assert
         self.assertEqual(result, {"subscriptionId": "abc123"})
-        mock_post.assert_called_once()
-        self.authenticator.get_access_token.assert_called_once()
+        mock_auth_class.assert_called_once()
+        mock_mns_service.assert_called_once_with(mock_auth_instance, "int")
+        mock_mns_instance.subscribeNotification.assert_called_once()
+
 
 if __name__ == "__main__":
     unittest.main()
