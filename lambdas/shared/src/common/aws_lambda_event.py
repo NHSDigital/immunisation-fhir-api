@@ -13,7 +13,12 @@ class AwsEventType(Enum):
 
 class AwsLambdaEvent:
 
-    def __init__(self, event: Dict[str, Any]):
+    def __init__(self):
+        self.event_source = None
+        self.records = []
+        self.event_type = AwsEventType.UNKNOWN
+
+    def load_event(self, event: Dict[str, Any]) -> None:
         self.event_source = event.get('eventSource')
         if self.event_source in [e.value for e in AwsEventType]:
             self.event_type = AwsEventType(self.event_source)

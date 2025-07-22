@@ -51,7 +51,8 @@ class TestAwsLambdaEvent(unittest.TestCase):
             'eventSource': 'aws:sqs'
         }
 
-        lambda_event = AwsLambdaEvent(event)
+        lambda_event = AwsLambdaEvent()
+        lambda_event.load_event(event)
 
         self.assertEqual(lambda_event.event_type, AwsEventType.SQS)
         self.assertEqual(len(lambda_event.records), 1)
@@ -65,7 +66,8 @@ class TestAwsLambdaEvent(unittest.TestCase):
             'eventSource': 'aws:s3'
         }
 
-        lambda_event = AwsLambdaEvent(event)
+        lambda_event = AwsLambdaEvent()
+        lambda_event.load_event(event)
 
         self.assertEqual(lambda_event.event_type, AwsEventType.S3)
         self.assertEqual(len(lambda_event.records), 1)
@@ -79,7 +81,8 @@ class TestAwsLambdaEvent(unittest.TestCase):
             'eventSource': 'aws:sns'
         }
 
-        lambda_event = AwsLambdaEvent(event)
+        lambda_event = AwsLambdaEvent()
+        lambda_event.load_event(event)
 
         self.assertEqual(lambda_event.event_type, AwsEventType.SNS)
         self.assertEqual(len(lambda_event.records), 1)
@@ -96,7 +99,8 @@ class TestAwsLambdaEvent(unittest.TestCase):
             'eventSource': 'aws:sqs'
         }
 
-        lambda_event = AwsLambdaEvent(event)
+        lambda_event = AwsLambdaEvent()
+        lambda_event.load_event(event)
 
         self.assertEqual(lambda_event.event_type, AwsEventType.SQS)
         self.assertEqual(len(lambda_event.records), 2)
@@ -111,7 +115,8 @@ class TestAwsLambdaEvent(unittest.TestCase):
             'Records': []
         }
 
-        lambda_event = AwsLambdaEvent(event)
+        lambda_event = AwsLambdaEvent()
+        lambda_event.load_event(event)
 
         self.assertEqual(lambda_event.event_type, AwsEventType.UNKNOWN)
         self.assertEqual(len(lambda_event.records), 0)
@@ -123,7 +128,8 @@ class TestAwsLambdaEvent(unittest.TestCase):
             'some_other_key': 'value'
         }
 
-        lambda_event = AwsLambdaEvent(event)
+        lambda_event = AwsLambdaEvent()
+        lambda_event.load_event(event)
 
         self.assertEqual(lambda_event.event_type, AwsEventType.UNKNOWN)
         self.assertEqual(len(lambda_event.records), 0)
@@ -135,7 +141,8 @@ class TestAwsLambdaEvent(unittest.TestCase):
             'Records': [self.s3_record_dict]
         }
 
-        lambda_event = AwsLambdaEvent(event)
+        lambda_event = AwsLambdaEvent()
+        lambda_event.load_event(event)
 
         self.assertEqual(lambda_event.event_type, AwsEventType.S3)
 
@@ -150,7 +157,8 @@ class TestAwsLambdaEvent(unittest.TestCase):
             'Records': [unknown_record]
         }
 
-        lambda_event = AwsLambdaEvent(event)
+        lambda_event = AwsLambdaEvent()
+        lambda_event.load_event(event)
 
         self.assertEqual(lambda_event.event_type, AwsEventType.UNKNOWN)
         self.assertEqual(len(lambda_event.records), 1)
@@ -165,7 +173,8 @@ class TestAwsLambdaEvent(unittest.TestCase):
             'Records': [record_without_source]
         }
 
-        lambda_event = AwsLambdaEvent(event)
+        lambda_event = AwsLambdaEvent()
+        lambda_event.load_event(event)
 
         self.assertEqual(lambda_event.event_type, AwsEventType.UNKNOWN)
 
@@ -181,7 +190,8 @@ class TestAwsLambdaEvent(unittest.TestCase):
         mixed_records = [self.sqs_record_dict, self.s3_record_dict]
         event = {'Records': mixed_records, 'eventSource': 'aws:sqs'}
 
-        lambda_event = AwsLambdaEvent(event)
+        lambda_event = AwsLambdaEvent()
+        lambda_event.load_event(event)
 
         self.assertEqual(lambda_event.event_type, AwsEventType.SQS)
         self.assertEqual(len(lambda_event.records), 2)
@@ -190,7 +200,8 @@ class TestAwsLambdaEvent(unittest.TestCase):
         """Test empty records"""
         event = {'Records': []}
 
-        lambda_event = AwsLambdaEvent(event)
+        lambda_event = AwsLambdaEvent()
+        lambda_event.load_event(event)
 
         self.assertEqual(lambda_event.event_type, AwsEventType.UNKNOWN)
         self.assertEqual(len(lambda_event.records), 0)
