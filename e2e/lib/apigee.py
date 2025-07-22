@@ -1,17 +1,17 @@
 import inspect
 from dataclasses import dataclass, field, asdict
-from enum import Enum
+from enum import StrEnum
 from typing import List
 
 import requests
 
 
-class ApigeeOrg(str, Enum):
+class ApigeeOrg(StrEnum):
     PROD = "nhsd-prod"
     NON_PROD = "nhsd-nonprod"
 
 
-class ApigeeEnv(str, Enum):
+class ApigeeEnv(StrEnum):
     INTERNAL_DEV = "internal-dev"
     INTERNAL_DEV_SANDBOX = "internal-dev-sandbox"
     SANDBOX = "sandbox"
