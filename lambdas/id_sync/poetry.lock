@@ -54,6 +54,17 @@ urllib3 = {version = ">=1.25.4,<2.2.0 || >2.2.0,<3", markers = "python_version >
 crt = ["awscrt (==0.23.8)"]
 
 [[package]]
+name = "cache"
+version = "1.0.3"
+description = "caching for humans"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "cache-1.0.3.tar.gz", hash = "sha256:ac063f2490c0794d5cf482bfff10b6339c441a6658f8f00fe653bd65b3ce85fb"},
+]
+
+[[package]]
 name = "certifi"
 version = "2025.7.14"
 description = "Python package for providing Mozilla's CA Bundle."
@@ -434,6 +445,25 @@ files = [
 ]
 
 [[package]]
+name = "jwt"
+version = "1.4.0"
+description = "JSON Web Token library for Python 3."
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "jwt-1.4.0-py3-none-any.whl", hash = "sha256:7560a7f1de4f90de94ac645ee0303ac60c95b9e08e058fb69f6c330f71d71b11"},
+    {file = "jwt-1.4.0.tar.gz", hash = "sha256:f6f789128ac247142c79ee10f3dba6e366ec4e77c9920d18c1592e28aa0a7952"},
+]
+
+[package.dependencies]
+cryptography = ">=3.1,<3.4.0 || >3.4.0"
+
+[package.extras]
+dev = ["black", "isort", "mypy", "types-freezegun"]
+test = ["freezegun", "pytest (>=6.0,<7.0)", "pytest-cov"]
+
+[[package]]
 name = "markupsafe"
 version = "3.0.2"
 description = "Safely add untrusted strings to HTML/XML markup."
@@ -734,14 +764,14 @@ tests = ["coverage (>=6.0.0)", "flake8", "mypy", "pytest (>=7.0.0)", "pytest-asy
 
 [[package]]
 name = "s3transfer"
-version = "0.13.0"
+version = "0.13.1"
 description = "An Amazon S3 Transfer Manager"
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "s3transfer-0.13.0-py3-none-any.whl", hash = "sha256:0148ef34d6dd964d0d8cf4311b2b21c474693e57c2e069ec708ce043d2b527be"},
-    {file = "s3transfer-0.13.0.tar.gz", hash = "sha256:f5e6db74eb7776a37208001113ea7aa97695368242b364d73e91c981ac522177"},
+    {file = "s3transfer-0.13.1-py3-none-any.whl", hash = "sha256:a981aa7429be23fe6dfc13e80e4020057cbab622b08c0315288758d67cabc724"},
+    {file = "s3transfer-0.13.1.tar.gz", hash = "sha256:c3fdba22ba1bd367922f27ec8032d6a1cf5f10c934fb5d68cf60fd5a23d936cf"},
 ]
 
 [package.dependencies]
@@ -826,4 +856,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11"
-content-hash = "fa4f5800186cada842de5add1c388f8f153cdb0aeea6844c058cb60b8d835b88"
+content-hash = "99fa2dee5351ab3ef7175637acc6d12d4ee55708509fab3d83b56191ec375f2b"

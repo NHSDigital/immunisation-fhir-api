@@ -1,41 +1,41 @@
 {
 	"folders": [
-        {
-            "path": "."
-        },
-        {
-            "path": "backend"
-        },
-        {
-            "path": "filenameprocessor"
-        },
-        {
-            "path": "recordprocessor"
-        },
-        {
-            "path": "ack_backend"
-        },
-        {
-            "path": "delta_backend"
-        },
-        {
-            "path": "mesh_processor"
-        },
-        {
-            "path": "e2e"
-        },
-        {
-            "path": "e2e_batch"
-        },
-        {
-            "path": "redis_sync"
-        },
-        {
-            "path": "lambdas/id_sync"
-        },
-        {
-            "path": "lambdas/shared"
-        }
-    ],
-	"settings": {},
+		{
+			"path": "."
+		},
+		{
+			"path": "backend"
+		},
+		{
+			"path": "filenameprocessor"
+		},
+		{
+			"path": "recordprocessor"
+		},
+		{
+			"path": "ack_backend"
+		},
+		{
+			"path": "delta_backend"
+		},
+		{
+			"path": "mesh_processor"
+		},
+		{
+			"path": "e2e"
+		},
+		{
+			"path": "e2e_batch"
+		},
+		{
+			"path": "redis_sync"
+		},
+		{
+			"path": "lambdas/id_sync"
+		},
+		{
+			"path": "lambdas/shared"
+		}
+	],
+	"settings": {}
 }

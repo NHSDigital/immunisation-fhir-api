@@ -1,5 +1,5 @@
 test:
-	@PYTHONPATH=src python -m unittest discover -s tests -p "test_*.py" -v
+	@PYTHONPATH=src:../ python -m unittest discover -s tests -p "test_*.py" -v
 
 test-list:
 	@PYTHONPATH=src:tests python -m unittest discover -s tests -p "test_*.py" --verbose | grep test_

@@ -1,6 +1,7 @@
 import os
 import logging
 from boto3 import client as boto3_client
+# from botocore.config import Config
 
 
 logging.basicConfig(level="INFO")
@@ -14,3 +15,7 @@ REGION_NAME = os.getenv("AWS_REGION", "eu-west-2")
 
 s3_client = boto3_client("s3", region_name=REGION_NAME)
 firehose_client = boto3_client("firehose", region_name=REGION_NAME)
+
+# boto_config = Config(region_name=REGION_NAME)
+# secretsmanager_client = boto3_client("secretsmanager", config=boto_config)
+secrets_manager_client = boto3_client("secretsmanager", region_name=REGION_NAME)

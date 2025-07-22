@@ -29,6 +29,4 @@ openapi.json
 !**/.vscode/settings.json.default
 
 devtools/volume/
-backend/tests/.coverage
-redis_sync/.vscode/settings.json.default
-lambdas/shared/.coverage
+**/.coverage

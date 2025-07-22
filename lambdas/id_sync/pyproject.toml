@@ -25,6 +25,8 @@ moto = "~5.1.5"
 python-stdnum = "^2.1"
 coverage = "^7.8.0"
 redis = "^4.6.0"
+jwt = "^1.4.0"
+cache = "^1.0.3"
 
 [tool.poetry.group.dev.dependencies]
 coverage = "^7.8.0"

@@ -4,11 +4,9 @@ from common.log_decorator import logging_decorator
 from common.aws_lambda_event import AwsLambdaEvent
 from common.aws_lambda_sqs_event_record import AwsLambdaSqsEventRecord
 from record_processor import process_record
-
 '''
-    Event Processor
-    The Business Logic for the Redis Sync Lambda Function.
-    This module processes S3 events and iterates through each record to process them individually.'''
+Lambda function handler for processing SQS events.Lambda for ID Sync. Fired by SQS
+'''
 
 
 @logging_decorator(prefix="id_sync", stream_name=STREAM_NAME)
@@ -18,7 +16,7 @@ def handler(event_data, _):
         event = AwsLambdaEvent(event_data)
         record_count = len(event.records)
         if record_count > 0:
-            logger.info("Processing SQS event with %d records", record_count)
+            logger.info("id_sync processing event with %d records", record_count)
             error_count = 0
             file_keys = []
             for record in event.records:
@@ -28,11 +26,11 @@ def handler(event_data, _):
                 if record_result["status"] == "error":
                     error_count += 1
             if error_count > 0:
-                logger.error("Processed %d records with %d errors", record_count, error_count)
+                logger.error("id_sync processed %d records with %d errors", record_count, error_count)
                 return {"status": "error", "message": f"Processed {record_count} records with {error_count} errors",
                         "file_keys": file_keys}
             else:
-                logger.info("Successfully processed all %d records", record_count)
+                logger.info("id_sync successfully processed all %d records", record_count)
                 return {"status": "success", "message": f"Successfully processed {record_count} records",
                         "file_keys": file_keys}
         else:
@@ -40,5 +38,6 @@ def handler(event_data, _):
             return {"status": "success", "message": "No records found in event"}
 
     except Exception:
-        logger.exception("Error processing S3 event")
-        return {"status": "error", "message": "Error processing S3 event"}
+        msg = "Error processing id_sync event"
+        logger.exception(msg)
+        return {"status": "error", "message": msg}

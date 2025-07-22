@@ -3,15 +3,15 @@ locals {
   lambdas_dir            = abspath("${path.root}/../lambdas")
   shared_dir             = abspath("${path.root}/../lambdas/shared")
   id_sync_lambda_dir     = abspath("${path.root}/../lambdas/id_sync")
-  
+
   # Get files from both directories
   shared_files           = fileset(local.shared_dir, "**")
   id_sync_lambda_files   = fileset(local.id_sync_lambda_dir, "**")
-  
+
   # Calculate SHA for both directories
   shared_dir_sha         = sha1(join("", [for f in local.shared_files : filesha1("${local.shared_dir}/${f}")]))
   id_sync_lambda_dir_sha = sha1(join("", [for f in local.id_sync_lambda_files : filesha1("${local.id_sync_lambda_dir}/${f}")]))
-  
+
   # Combined SHA to trigger rebuild when either directory changes
   combined_sha           = sha1("${local.shared_dir_sha}${local.id_sync_lambda_dir_sha}")
 }
@@ -33,7 +33,6 @@ output "debug_build_paths" {
 output "debug_file_listing" {
   value = {
     shared_files_sample    = slice(local.shared_files, 0, min(5, length(local.shared_files)))
-    id_sync_files_sample   = slice(local.id_sync_lambda_files, 0, min(5, length(local.id_sync_lambda_files)))
   }
 }
 
@@ -304,6 +303,7 @@ resource "aws_lambda_function" "id_sync_lambda" {
     variables = {
       ID_SYNC_PROC_LAMBDA_NAME = "imms-${local.env}-id_sync_lambda"
       SPLUNK_FIREHOSE_NAME        = module.splunk.firehose_stream_name
+      PDS_ENV                     = local.environment == "prod" ? "prod" : local.environment == "ref" ? "ref" : "int"
     }
   }
   kms_key_arn = data.aws_kms_key.existing_lambda_encryption_key.arn
@@ -323,11 +323,11 @@ resource "aws_cloudwatch_log_group" "id_sync_log_group" {
 resource "aws_lambda_event_source_mapping" "id_sync_sqs_trigger" {
   event_source_arn = data.aws_sqs_queue.existing_sqs_queue.arn
   function_name    = aws_lambda_function.id_sync_lambda.arn
-  
+
   # Optional: Configure batch size and other settings
   batch_size                         = 10
   maximum_batching_window_in_seconds = 5
-  
+
   # Optional: Configure error handling
   function_response_types = ["ReportBatchItemFailures"]
 }
