@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch, ANY
 from authentication import AppRestrictedAuth, Service
 from models.errors import UnhandledResponseError
 
-"test"
+
 class TestAuthenticator(unittest.TestCase):
     def setUp(self):
         self.kid = "a_kid"

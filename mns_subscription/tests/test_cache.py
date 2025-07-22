@@ -4,7 +4,7 @@ import unittest
 
 from cache import Cache
 
-"test"
+
 class TestCache(unittest.TestCase):
     def setUp(self):
         self.cache = Cache(tempfile.gettempdir())

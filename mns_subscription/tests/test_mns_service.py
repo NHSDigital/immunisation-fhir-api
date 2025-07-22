@@ -6,14 +6,13 @@ from models.errors import UnhandledResponseError
 
 
 class TestMnsService(unittest.TestCase):
-    
     def setUp(self):
         # Common mock setup
         self.authenticator = create_autospec(AppRestrictedAuth)
         self.authenticator.get_access_token.return_value = "mocked_token"
         self.mock_secret_manager = Mock()
         self.mock_cache = Mock()
-    
+
     @patch("mns_service.requests.post")
     def test_successful_subscription(self, mock_post):
         # Arrange
@@ -56,6 +55,7 @@ class TestMnsService(unittest.TestCase):
             service.subscribeNotification()
 
         self.assertIn("Please provide the correct resource type", str(context.exception))
+
 
 if __name__ == "__main__":
     unittest.main()
