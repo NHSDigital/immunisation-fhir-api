@@ -25,7 +25,7 @@ class TestLogDecorator(unittest.TestCase):
     def tearDown(self):
         patch.stopall()
 
-    def test_send_log_to_firehose_success(self, mock_firehose_client):
+    def test_send_log_to_firehose_success(self):
         """Test send_log_to_firehose with successful firehose response"""
         # Arrange
         test_log_data = {"function_name": "test_func", "result": "success"}
@@ -38,16 +38,6 @@ class TestLogDecorator(unittest.TestCase):
         # Assert
         expected_record = {"Data": json.dumps({"event": test_log_data}).encode("utf-8")}
         self.mock_firehose_client.put_record.assert_called_once_with(
-            DeliveryStreamName=self.test_stream,
-            Record=expected_record
-        )
-
-        # Act
-        send_log_to_firehose(self.test_stream, test_log_data)
-
-        # Assert
-        expected_record = {"Data": json.dumps({"event": test_log_data}).encode("utf-8")}
-        mock_firehose_client.put_record.assert_called_once_with(
             DeliveryStreamName=self.test_stream,
             Record=expected_record
         )
@@ -69,7 +59,8 @@ class TestLogDecorator(unittest.TestCase):
         )
 
     @patch("time.time")
-    def test_generate_and_send_logs_success(self, mock_time):
+    @patch("common.log_decorator.send_log_to_firehose")
+    def test_generate_and_send_logs_success(self, mock_send_log, mock_time):
         """Test generate_and_send_logs with successful log generation"""
         # Arrange
         mock_time.return_value = 1000.5
@@ -89,10 +80,11 @@ class TestLogDecorator(unittest.TestCase):
             "result": "success"
         }
         self.mock_logger_error.assert_not_called()
-        self.mock_send_log.assert_called_once_with(self.test_stream, expected_log_data)
+        mock_send_log.assert_called_once_with(self.test_stream, expected_log_data)
 
     @patch("time.time")
-    def test_generate_and_send_logs_error(self, mock_time):
+    @patch("common.log_decorator.send_log_to_firehose")
+    def test_generate_and_send_logs_error(self, mock_send_log, mock_time):
         """Test generate_and_send_logs with error log generation"""
         # Arrange
         mock_time.return_value = 1000.75
@@ -112,7 +104,7 @@ class TestLogDecorator(unittest.TestCase):
             "error": "Test error"
         }
         self.mock_logger_error.assert_called_once_with(json.dumps(expected_log_data))
-        self.mock_send_log.assert_called_once_with(self.test_stream, expected_log_data)
+        mock_send_log.assert_called_once_with(self.test_stream, expected_log_data)
 
     @patch("common.log_decorator.time")
     @patch("common.log_decorator.datetime")
@@ -208,4 +200,3 @@ class TestLogDecorator(unittest.TestCase):
             "Error sending log to Firehose: %s",
             test_error
         )
-
