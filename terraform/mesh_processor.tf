@@ -214,6 +214,7 @@ resource "aws_lambda_function" "mesh_file_converter_lambda" {
   image_uri     = module.mesh_processor_docker_image[0].image_uri
   architectures = ["x86_64"]
   timeout       = 900
+  memory_size   = 1024
 
   environment {
     variables = {
@@ -241,6 +242,7 @@ resource "aws_s3_bucket_notification" "mesh_datasources_lambda_notification" {
   lambda_function {
     lambda_function_arn = aws_lambda_function.mesh_file_converter_lambda[0].arn
     events              = ["s3:ObjectCreated:*"]
+    filter_prefix       = "inbound/"
   }
 }
 

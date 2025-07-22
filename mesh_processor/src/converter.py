@@ -98,11 +98,19 @@ def transfer_multipart_content(bucket_name: str, file_key: str, boundary: bytes,
         if content_disposition:
             _, content_disposition_params = parse_header_value(content_disposition)
             filename = content_disposition_params.get("filename") or filename
+        content_type = headers.get("Content-Type") or "application/octet-stream"
 
         with open(
             f"s3://{DESTINATION_BUCKET_NAME}/streaming/{filename}",
             "wb",
-            transport_params={"client": s3_client}
+            transport_params={
+                "client": s3_client,
+                "client_kwargs": {
+                    "S3.Client.create_multipart_upload": {
+                        "ContentType": content_type
+                    }
+                }
+            }
         ) as output_file:
             stream_part_body(input_file, boundary, output_file)
 
