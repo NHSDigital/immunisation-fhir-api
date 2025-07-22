@@ -72,6 +72,7 @@ class Constants:
         "YA7": "SCOTLAND_DA",
         "N2N9I": "COVID19_VACCINE_RESOLUTION_SERVICEDESK",
         "YGJ": "EMIS",
+        "YGMYW": "MEDICUS",
         "DPSREDUCED": "DPSREDUCED",
         "DPSFULL": "DPSFULL",
     }
