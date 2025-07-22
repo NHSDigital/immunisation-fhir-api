@@ -33,7 +33,6 @@ output "debug_build_paths" {
 output "debug_file_listing" {
   value = {
     shared_files_sample    = slice(local.shared_files, 0, min(5, length(local.shared_files)))
-    id_sync_files_sample   = slice(local.id_sync_lambda_files, 0, min(5, length(local.id_sync_lambda_files)))
   }
 }
 

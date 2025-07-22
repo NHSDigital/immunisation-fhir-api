@@ -86,6 +86,7 @@ jobs:
           poetry install
           poetry run coverage run -m unittest discover || echo "delta tests failed" >> ../failed_tests.txt
           poetry run coverage xml -o ../delta-coverage.xml
+          cat ../delta-coverage.xml
 
       - name: Run unittest with coverage-fhir-api
         working-directory: backend
@@ -125,18 +126,10 @@ jobs:
           PYTHONPATH: ${{ env.SHARED_PATH }}
         continue-on-error: true
         run: |
-            echo "shared coverage - Current directory: $(pwd)"
             poetry env use 3.11
             poetry install
-            poetry run coverage run -m unittest discover || echo "shared tests failed" >> ../../failed_tests.txt
+            poetry run coverage run --source=src -m unittest discover -s tests -p "test_*.py" -v || echo "shared tests failed" >> ../../failed_tests.txt
             poetry run coverage xml -o ../../shared-coverage.xml
-            ls ../../shared-coverage.xml
-            # show director of ../.. as absolute path
-            echo "Parent directory of shared-coverage.xml: $(pwd)/../../"
-            #check files created
-            if [ ! -f ../../shared-coverage.xml ]; then
-              echo "shared-coverage.xml not found"
-            fi
 
       - name: Run unittest with id_sync
         working-directory: lambdas/id_sync
@@ -145,15 +138,10 @@ jobs:
           PYTHONPATH: ${{ env.LAMBDA_PATH }}/id_sync/src:${{ env.LAMBDA_PATH }}/id_sync/tests:${{ env.SHARED_PATH }}
         continue-on-error: true
         run: |
-            echo "id_sync coverage - Current directory: $(pwd)"
             poetry env use 3.11
             poetry install
             poetry run coverage run -m unittest discover || echo "id_sync tests failed" >> ../../failed_tests.txt
             poetry run coverage xml -o ../../id_sync-coverage.xml
-            #check files created
-            if [ ! -f ../../id_sync-coverage.xml ]; then
-              echo "id_sync-coverage.xml not found, exiting with error"
-            fi
 
       - name: Run Test Failure Summary
         id: check_failure
