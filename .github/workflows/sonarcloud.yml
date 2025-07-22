@@ -105,6 +105,8 @@ jobs:
 
       - name: Run unittest with coverage-mns-subscription
         working-directory: mns_subscription
+        env:
+          PYTHONPATH: ${{ github.workspace }}/mns_subscription/src:${{ github.workspace }}/mns_subscription/tests
         id: mns_subscription
         continue-on-error: true
         run: |
