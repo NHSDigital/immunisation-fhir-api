@@ -136,13 +136,13 @@ class FhirService:
         existing_resource_version: int,
         imms_vax_type_perms: list[str],
         supplier_system: str,
-    ) -> tuple[UpdateOutcome, Immunization]:
+    ) -> tuple[UpdateOutcome, Immunization, int]:
         immunization["id"] = imms_id
 
         patient = self._validate_patient(immunization)
         if "diagnostics" in patient:
-            return (None, patient)
-        imms = self.immunization_repo.update_immunization(
+            return (None, patient, None)
+        imms, updated_version = self.immunization_repo.update_immunization(
             imms_id,
             immunization,
             patient,
@@ -151,7 +151,7 @@ class FhirService:
             supplier_system
         )
 
-        return UpdateOutcome.UPDATE, Immunization.parse_obj(imms)
+        return UpdateOutcome.UPDATE, Immunization.parse_obj(imms), updated_version
 
     def reinstate_immunization(
         self,
@@ -160,12 +160,12 @@ class FhirService:
         existing_resource_version: int,
         imms_vax_type_perms: list[str],
         supplier_system: str,
-    ) -> tuple[UpdateOutcome, Immunization]:
+    ) -> tuple[UpdateOutcome, Immunization, int]:
         immunization["id"] = imms_id
         patient = self._validate_patient(immunization)
         if "diagnostics" in patient:
-            return (None, patient)
-        imms = self.immunization_repo.reinstate_immunization(
+            return (None, patient, None)
+        imms, updated_version = self.immunization_repo.reinstate_immunization(
             imms_id,
             immunization,
             patient,
@@ -174,7 +174,7 @@ class FhirService:
             supplier_system,
         )
 
-        return UpdateOutcome.UPDATE, Immunization.parse_obj(imms)
+        return UpdateOutcome.UPDATE, Immunization.parse_obj(imms), updated_version
 
     def update_reinstated_immunization(
         self,
@@ -183,14 +183,12 @@ class FhirService:
         existing_resource_version: int,
         imms_vax_type_perms: list[str],
         supplier_system: str,
-    ) -> tuple[UpdateOutcome, Immunization]:
+    ) -> tuple[UpdateOutcome, Immunization, int]:
         immunization["id"] = imms_id
-
-        patient = None
         patient = self._validate_patient(immunization)
         if "diagnostics" in patient:
-            return (None, patient)
-        imms = self.immunization_repo.update_reinstated_immunization(
+            return (None, patient, None)
+        imms, updated_version = self.immunization_repo.update_reinstated_immunization(
             imms_id,
             immunization,
             patient,
@@ -199,7 +197,7 @@ class FhirService:
             supplier_system,
         )
 
-        return UpdateOutcome.UPDATE, Immunization.parse_obj(imms)
+        return UpdateOutcome.UPDATE, Immunization.parse_obj(imms), updated_version
 
     def delete_immunization(self, imms_id, imms_vax_type_perms, supplier_system) -> Immunization:
         """

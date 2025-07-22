@@ -87,8 +87,8 @@ class Urls:
     VACCINATION_PROCEDURE = "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure"
 
 
-class ActionFlag(StrEnum):
-    CREATE = "NEW"
+class Operation(StrEnum):
+    CREATE = "CREATE"
     UPDATE = "UPDATE"
     DELETE = "DELETE"
 
@@ -99,8 +99,8 @@ class Permission(StrEnum):
     DELETE = "D"
 
 
-permission_to_action_flag_map = {
-    Permission.CREATE: ActionFlag.CREATE,
-    Permission.UPDATE: ActionFlag.UPDATE,
-    Permission.DELETE: ActionFlag.DELETE
-    }
+permission_to_operation_map = {
+    Permission.CREATE: Operation.CREATE,
+    Permission.UPDATE: Operation.UPDATE,
+    Permission.DELETE: Operation.DELETE
+}
