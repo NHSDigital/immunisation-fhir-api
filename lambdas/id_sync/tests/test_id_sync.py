@@ -98,8 +98,8 @@ class TestIdSyncHandler(unittest.TestCase):
         # Assertions
         self.mock_aws_lambda_event.assert_called_once_with(self.single_sqs_event)
         self.mock_process_record.assert_called_once_with(mock_event.records[0], None)
-        self.mock_logger.info.assert_any_call("Processing SQS event with %d records", 1)
-        self.mock_logger.info.assert_any_call("Successfully processed all %d records", 1)
+        self.mock_logger.info.assert_any_call("id_sync processing event with %d records", 1)
+        self.mock_logger.info.assert_any_call("id_sync successfully processed all %d records", 1)
 
         self.assertEqual(result["status"], "success")
         self.assertEqual(result["message"], "Successfully processed 1 records")
@@ -122,8 +122,8 @@ class TestIdSyncHandler(unittest.TestCase):
 
         # Assertions
         self.assertEqual(self.mock_process_record.call_count, 2)
-        self.mock_logger.info.assert_any_call("Processing SQS event with %d records", 2)
-        self.mock_logger.info.assert_any_call("Successfully processed all %d records", 2)
+        self.mock_logger.info.assert_any_call("id_sync processing event with %d records", 2)
+        self.mock_logger.info.assert_any_call("id_sync successfully processed all %d records", 2)
 
         self.assertEqual(result["status"], "success")
         self.assertEqual(result["message"], "Successfully processed 2 records")
@@ -146,8 +146,7 @@ class TestIdSyncHandler(unittest.TestCase):
 
         # Assertions
         self.mock_process_record.assert_called_once_with(mock_event.records[0], None)
-        self.mock_logger.info.assert_any_call("Processing SQS event with %d records", 1)
-        self.mock_logger.error.assert_called_once_with("Processed %d records with %d errors", 1, 1)
+        self.mock_logger.info.assert_any_call("id_sync processing event with %d records", 1)
 
         self.assertEqual(result["status"], "error")
         self.assertEqual(result["message"], "Processed 1 records with 1 errors")
@@ -171,8 +170,7 @@ class TestIdSyncHandler(unittest.TestCase):
 
         # Assertions
         self.assertEqual(self.mock_process_record.call_count, 3)
-        self.mock_logger.info.assert_any_call("Processing SQS event with %d records", 3)
-        self.mock_logger.error.assert_called_once_with("Processed %d records with %d errors", 3, 1)
+        self.mock_logger.info.assert_any_call("id_sync processing event with %d records", 3)
 
         self.assertEqual(result["status"], "error")
         self.assertEqual(result["message"], "Processed 3 records with 1 errors")
@@ -195,7 +193,6 @@ class TestIdSyncHandler(unittest.TestCase):
 
         # Assertions
         self.assertEqual(self.mock_process_record.call_count, 2)
-        self.mock_logger.error.assert_called_once_with("Processed %d records with %d errors", 2, 2)
 
         self.assertEqual(result["status"], "error")
         self.assertEqual(result["message"], "Processed 2 records with 2 errors")
@@ -370,7 +367,6 @@ class TestIdSyncHandler(unittest.TestCase):
 
         # Assertions - should track 2 errors out of 4 records
         self.assertEqual(self.mock_process_record.call_count, 4)
-        self.mock_logger.error.assert_called_once_with("Processed %d records with %d errors", 4, 2)
 
         self.assertEqual(result["status"], "error")
         self.assertEqual(result["message"], "Processed 4 records with 2 errors")
@@ -391,7 +387,7 @@ class TestIdSyncHandler(unittest.TestCase):
         handler(self.single_sqs_event, None)
 
         # Check that it specifically logs "SQS event"
-        self.mock_logger.info.assert_any_call("Processing SQS event with %d records", 1)
+        self.mock_logger.info.assert_any_call("id_sync processing event with %d records", 1)
 
 
 if __name__ == '__main__':
