@@ -14,5 +14,14 @@
     "pylint.args": [
         "--init-hook",
         "import sys; sys.path.append('./src')"
-    ]
+    ],
+    "[makefile]": {
+        "editor.insertSpaces": false,
+        "editor.detectIndentation": false
+    },
+    "files.trimTrailingWhitespace": true,
+    "[python]": {
+        "files.trimTrailingWhitespace": true
+    },
+    "files.insertFinalNewline": true
 }

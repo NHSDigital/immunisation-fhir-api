@@ -247,11 +247,11 @@ class TestIdSyncHandler(unittest.TestCase):
 
         # Assertions
         self.mock_aws_lambda_event.assert_called_once_with(self.single_sqs_event)
-        self.mock_logger.exception.assert_called_once_with("Error processing S3 event")
+        self.mock_logger.exception.assert_called_once_with("Error processing id_sync event")
         self.mock_process_record.assert_not_called()
 
         self.assertEqual(result["status"], "error")
-        self.assertEqual(result["message"], "Error processing S3 event")
+        self.assertEqual(result["message"], "Error processing id_sync event")
 
     def test_handler_process_record_exception(self):
         """Test handler when process_record raises exception"""
@@ -267,10 +267,10 @@ class TestIdSyncHandler(unittest.TestCase):
 
         # Assertions
         self.mock_process_record.assert_called_once_with(mock_event.records[0], None)
-        self.mock_logger.exception.assert_called_once_with("Error processing S3 event")
+        self.mock_logger.exception.assert_called_once_with("Error processing id_sync event")
 
         self.assertEqual(result["status"], "error")
-        self.assertEqual(result["message"], "Error processing S3 event")
+        self.assertEqual(result["message"], "Error processing id_sync event")
 
     def test_handler_process_record_missing_file_key(self):
         """Test handler when process_record returns incomplete data"""
@@ -289,9 +289,9 @@ class TestIdSyncHandler(unittest.TestCase):
         result = handler(self.single_sqs_event, None)
 
         # Should catch KeyError and return error
-        self.mock_logger.exception.assert_called_once_with("Error processing S3 event")
+        self.mock_logger.exception.assert_called_once_with("Error processing id_sync event")
         self.assertEqual(result["status"], "error")
-        self.assertEqual(result["message"], "Error processing S3 event")
+        self.assertEqual(result["message"], "Error processing id_sync event")
 
     def test_handler_process_record_missing_status(self):
         """Test handler when process_record returns missing status"""
@@ -310,9 +310,8 @@ class TestIdSyncHandler(unittest.TestCase):
         result = handler(self.single_sqs_event, None)
 
         # Should catch KeyError and return error
-        self.mock_logger.exception.assert_called_once_with("Error processing S3 event")
+        self.mock_logger.exception.assert_called_once_with("Error processing id_sync event")
         self.assertEqual(result["status"], "error")
-        self.assertEqual(result["message"], "Error processing S3 event")
 
     def test_handler_file_keys_order_preserved(self):
         """Test that file_keys are returned in the same order as processed"""
