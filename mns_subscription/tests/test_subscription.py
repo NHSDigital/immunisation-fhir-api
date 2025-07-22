@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch, MagicMock, create_autospec
-from mns_service import MnsService
-from authentication import AppRestrictedAuth
+from subscribe_mns import MnsService, AppRestrictedAuth
+
 
 class TestMainSubscriptionCall(unittest.TestCase):
     
@@ -10,7 +10,7 @@ class TestMainSubscriptionCall(unittest.TestCase):
         self.authenticator = create_autospec(AppRestrictedAuth)
         self.authenticator.get_access_token.return_value = "mocked_token"
     
-    @patch("mns_service.requests.post")
+    @patch("subscribe_mns.MnsService")
     def test_main_subscription_call(self, mock_post):
         # Arrange
         mock_response = MagicMock()
@@ -18,7 +18,7 @@ class TestMainSubscriptionCall(unittest.TestCase):
         mock_response.json.return_value = {"subscriptionId": "abc123"}
         mock_post.return_value = mock_response
 
-        mns = MnsService(self.authenticator)
+        mns = MnsService(authenticator=self.authenticator)
 
         # Act
         result = mns.subscribeNotification()
