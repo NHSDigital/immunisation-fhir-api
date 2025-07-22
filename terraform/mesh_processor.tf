@@ -137,7 +137,8 @@ resource "aws_iam_policy" "mesh_processor_lambda_exec_policy" {
           "s3:GetObject",
           "s3:ListBucket",
           "s3:PutObject",
-          "s3:CopyObject"
+          "s3:CopyObject",
+          "s3:DeleteObject"
         ]
         Resource = [
           aws_s3_bucket.batch_data_source_bucket.arn,
@@ -213,6 +214,7 @@ resource "aws_lambda_function" "mesh_file_converter_lambda" {
   image_uri     = module.mesh_processor_docker_image[0].image_uri
   architectures = ["x86_64"]
   timeout       = 900
+  memory_size   = 1024
 
   environment {
     variables = {
@@ -240,6 +242,7 @@ resource "aws_s3_bucket_notification" "mesh_datasources_lambda_notification" {
   lambda_function {
     lambda_function_arn = aws_lambda_function.mesh_file_converter_lambda[0].arn
     events              = ["s3:ObjectCreated:*"]
+    filter_prefix       = "inbound/"
   }
 }
 
