@@ -1,5 +1,8 @@
 SHELL=/usr/bin/env bash -euo pipefail
 
+PYTHON_PROJECT_DIRS_WITH_UNIT_TESTS = ack_backend backend delta_backend filenameprocessor mesh_processor recordprocessor redis_sync
+PYTHON_PROJECT_DIRS = e2e e2e_batch $(PYTHON_PROJECT_DIRS_WITH_UNIT_TESTS)
+
 #Installs dependencies using poetry.
 install-python:
 	poetry lock --no-update
@@ -38,7 +41,7 @@ build-proxy:
 	scripts/build_proxy.sh
 
 #Files to loop over in release
-_dist_include="pytest.ini poetry.lock poetry.toml pyproject.toml Makefile build/. e2e e2e_batch specification sandbox terraform scripts backend delta_backend ack_backend filenameprocessor recordprocessor mesh_processor redis_sync"
+_dist_include="pytest.ini poetry.lock poetry.toml pyproject.toml Makefile build/. specification sandbox terraform scripts $(PYTHON_PROJECT_DIRS)"
 
 
 #Create /dist/ sub-directory and copy files into directory
@@ -85,3 +88,39 @@ test-prod:
 
 setup-python-envs:
 	scripts/setup-python-envs.sh
+
+initialise-all-python-venvs:
+	for dir in $(PYTHON_PROJECT_DIRS); do ( \
+		cd $$dir && \
+		pwd && \
+		rm -rf .venv && \
+		python -m venv .venv && \
+		source .venv/bin/activate && \
+		poetry install --no-root && \
+		deactivate \
+	); done
+
+update-all-python-dependencies:
+	for dir in $(PYTHON_PROJECT_DIRS); do ( \
+		cd $$dir && \
+		pwd && \
+		source .venv/bin/activate && \
+		poetry update && \
+		deactivate \
+	); done
+
+run-all-python-unit-tests:
+	for dir in $(PYTHON_PROJECT_DIRS_WITH_UNIT_TESTS); do ( \
+		cd $$dir && \
+		pwd && \
+		source .venv/bin/activate && \
+		poetry run make test && \
+		deactivate \
+	); done
+
+build-all-docker-images:
+	for dir in $(PYTHON_PROJECT_DIRS_WITH_UNIT_TESTS); do \
+		for dockerfile in $$(ls $$dir/*Dockerfile); do \
+			echo $$dockerfile && docker build --file $$dockerfile $$dir; \
+		done; \
+	done

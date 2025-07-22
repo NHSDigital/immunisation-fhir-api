@@ -20,7 +20,7 @@ def process_csv_to_fhir(incoming_message_body: dict) -> None:
         interim_message_body = file_level_validation(incoming_message_body=incoming_message_body)
     except (InvalidHeaders, NoOperationPermissions, Exception):  # pylint: disable=broad-exception-caught
         # If the file is invalid, processing should cease immediately
-        return None
+        return
 
     file_id = interim_message_body.get("message_id")
     vaccine = interim_message_body.get("vaccine")
