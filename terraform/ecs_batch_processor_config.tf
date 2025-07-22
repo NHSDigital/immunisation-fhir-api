@@ -184,8 +184,8 @@ resource "aws_ecs_task_definition" "ecs_task" {
   family                   = "${local.short_prefix}-processor-task"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  cpu                      = "8192"
-  memory                   = "24576"
+  cpu                      = 4096
+  memory                   = 16384
   runtime_platform {
     operating_system_family = "LINUX"
     cpu_architecture        = "X86_64"
@@ -196,6 +196,8 @@ resource "aws_ecs_task_definition" "ecs_task" {
   container_definitions = jsonencode([{
     name      = "${local.short_prefix}-process-records-container"
     image     = "${aws_ecr_repository.processing_repository.repository_url}:${local.image_tag}"
+    cpu       = 4096
+    memory    = 16384
     essential = true
     environment = [
       {
@@ -263,6 +265,7 @@ resource "aws_iam_role" "fifo_pipe_role" {
     ]
   })
 }
+
 resource "aws_iam_policy" "fifo_pipe_policy" {
   name = "${local.short_prefix}-fifo-pipe-policy"
   policy = jsonencode({
@@ -320,7 +323,6 @@ resource "aws_iam_role_policy_attachment" "fifo_pipe_policy_attachment" {
   policy_arn = aws_iam_policy.fifo_pipe_policy.arn
 }
 
-
 # EventBridge Pipe
 resource "aws_pipes_pipe" "fifo_pipe" {
   name     = "${local.short_prefix}-pipe"
@@ -340,20 +342,17 @@ resource "aws_pipes_pipe" "fifo_pipe" {
       }
       overrides {
         container_override {
-          cpu  = 2048
           name = "${local.short_prefix}-process-records-container"
           environment {
             name  = "EVENT_DETAILS"
             value = "$.body"
           }
-          memory             = 8192
-          memory_reservation = 1024
         }
       }
       task_count = 1
     }
-
   }
+
   log_configuration {
     include_execution_data = ["ALL"]
     level                  = "ERROR"
