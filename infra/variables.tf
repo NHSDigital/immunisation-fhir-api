@@ -22,3 +22,5 @@ variable "mesh_mailbox_id" {
 variable "mesh_dlq_mailbox_id" {
   default = null
 }
+variable "mns_account_id" {}
+variable "mns_admin_role" {}
