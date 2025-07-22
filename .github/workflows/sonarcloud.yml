@@ -145,6 +145,13 @@ jobs:
             poetry install
             poetry run coverage run -m unittest discover || echo "shared tests failed" >> ../../failed_tests.txt
             poetry run coverage xml -o ../../shared-coverage.xml
+            ls ../../shared-coverage.xml
+            # show director of ../.. as absolute path
+            echo "Parent directory of shared-coverage.xml: $(pwd)/../../"
+            #check files created
+            if [ ! -f ../../shared-coverage.xml ]; then
+              echo "shared-coverage.xml not found"
+            fi
 
       - name: Run unittest with id_sync
         working-directory: lambdas/id_sync
@@ -168,6 +175,7 @@ jobs:
         run: |
           echo "Checking for test failures..."
           ls *-coverage.xml
+          cat shared-coverage.xml || echo "shared-coverage.xml not found"
           if [ -s failed_tests.txt ]; then
             echo "The following tests failed:"
             cat failed_tests.txt

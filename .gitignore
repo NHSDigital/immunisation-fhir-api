@@ -31,3 +31,4 @@ openapi.json
 devtools/volume/
 backend/tests/.coverage
 redis_sync/.vscode/settings.json.default
+lambdas/shared/.coverage

@@ -1,17 +1,20 @@
-
 test:
-	@PYTHONPATH=src python -m unittest discover -s tests -p "test_*.py" -v
+    @PYTHONPATH=src python -m unittest discover -s tests -p "test_*.py" -v
 
 test-list:
-	@PYTHONPATH=src:tests:tests python -m unittest discover -s tests/common -p "test_*.py" --verbose | grep test_
+    @PYTHONPATH=src:tests python -m unittest discover -s tests -p "test_*.py" --verbose | grep test_
 
 coverage-run:
-	@PYTHONPATH=src:tests coverage run -m unittest discover -v
+    @PYTHONPATH=src coverage run --source=src -m unittest discover -s tests -p "test_*.py" -v
 
 coverage-report:
-	coverage report -m
+    @PYTHONPATH=src coverage report -m
 
 coverage-html:
-	coverage html
+    @PYTHONPATH=src coverage html
 
-.PHONY: build package test
+coverage: coverage-run coverage-report
+
+coverage-full: coverage-run coverage-report coverage-html
+
+.PHONY: build package test test-list coverage-run coverage-report coverage-html coverage coverage-full
