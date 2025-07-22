@@ -1,5 +1,4 @@
 import unittest
-from unittest.mock import patch
 from common.aws_lambda_event import AwsLambdaEvent, AwsEventType
 from common.aws_lambda_sqs_event_record import AwsLambdaSqsEventRecord
 
@@ -23,27 +22,6 @@ class TestAwsLambdaEvent(unittest.TestCase):
             'awsRegion': 'us-east-1'
         }
 
-        self.s3_record_dict = {
-            'eventVersion': '2.1',
-            'eventSource': 'aws:s3',
-            'eventName': 'ObjectCreated:Put',
-            'eventTime': '2023-01-01T12:00:00.000Z',
-            's3': {
-                'bucket': {'name': 'test-bucket'},
-                'object': {'key': 'test-file.txt'}
-            }
-        }
-
-        self.sns_record_dict = {
-            'eventSource': 'aws:sns',
-            'eventVersion': '1.0',
-            'eventSubscriptionArn': 'arn:aws:sns:us-east-1:123456789012:test-topic',
-            'Sns': {
-                'Message': 'Test message',
-                'Subject': 'Test subject'
-            }
-        }
-
     def test_init_with_sqs_event(self):
         """Test initialization with SQS event"""
         event = {
@@ -51,43 +29,12 @@ class TestAwsLambdaEvent(unittest.TestCase):
             'eventSource': 'aws:sqs'
         }
 
-        lambda_event = AwsLambdaEvent()
-        lambda_event.load_event(event)
+        lambda_event = AwsLambdaEvent(event)
 
         self.assertEqual(lambda_event.event_type, AwsEventType.SQS)
         self.assertEqual(len(lambda_event.records), 1)
         self.assertIsInstance(lambda_event.records[0], AwsLambdaSqsEventRecord)
         self.assertEqual(lambda_event.records[0].message_id, '12345-abcde-67890')
-
-    def test_init_with_s3_event(self):
-        """Test initialization with S3 event"""
-        event = {
-            'Records': [self.s3_record_dict],
-            'eventSource': 'aws:s3'
-        }
-
-        lambda_event = AwsLambdaEvent()
-        lambda_event.load_event(event)
-
-        self.assertEqual(lambda_event.event_type, AwsEventType.S3)
-        self.assertEqual(len(lambda_event.records), 1)
-        self.assertIsInstance(lambda_event.records[0], dict)
-        self.assertEqual(lambda_event.records[0]['eventSource'], 'aws:s3')
-
-    def test_init_with_sns_event(self):
-        """Test initialization with SNS event"""
-        event = {
-            'Records': [self.sns_record_dict],
-            'eventSource': 'aws:sns'
-        }
-
-        lambda_event = AwsLambdaEvent()
-        lambda_event.load_event(event)
-
-        self.assertEqual(lambda_event.event_type, AwsEventType.SNS)
-        self.assertEqual(len(lambda_event.records), 1)
-        self.assertIsInstance(lambda_event.records[0], dict)
-        self.assertEqual(lambda_event.records[0]['eventSource'], 'aws:sns')
 
     def test_init_with_multiple_sqs_records(self):
         """Test initialization with multiple SQS records"""
@@ -99,8 +46,7 @@ class TestAwsLambdaEvent(unittest.TestCase):
             'eventSource': 'aws:sqs'
         }
 
-        lambda_event = AwsLambdaEvent()
-        lambda_event.load_event(event)
+        lambda_event = AwsLambdaEvent(event)
 
         self.assertEqual(lambda_event.event_type, AwsEventType.SQS)
         self.assertEqual(len(lambda_event.records), 2)
@@ -115,39 +61,23 @@ class TestAwsLambdaEvent(unittest.TestCase):
             'Records': []
         }
 
-        lambda_event = AwsLambdaEvent()
-        lambda_event.load_event(event)
+        lambda_event = AwsLambdaEvent(event)
 
         self.assertEqual(lambda_event.event_type, AwsEventType.UNKNOWN)
         self.assertEqual(len(lambda_event.records), 0)
 
-    @patch('common.aws_lambda_event.logger')
-    def test_init_without_records(self, mock_logger):
+    def test_init_without_records(self):
         """Test initialization without Records key"""
         event = {
             'some_other_key': 'value'
         }
 
-        lambda_event = AwsLambdaEvent()
-        lambda_event.load_event(event)
+        lambda_event = AwsLambdaEvent(event)
 
         self.assertEqual(lambda_event.event_type, AwsEventType.UNKNOWN)
         self.assertEqual(len(lambda_event.records), 0)
 
-    def test_init_with_top_level_event_source(self):
-        """Test initialization with eventSource at top level"""
-        event = {
-            'eventSource': 'aws:s3',
-            'Records': [self.s3_record_dict]
-        }
-
-        lambda_event = AwsLambdaEvent()
-        lambda_event.load_event(event)
-
-        self.assertEqual(lambda_event.event_type, AwsEventType.S3)
-
-    @patch('common.aws_lambda_event.logger')
-    def test_init_with_unknown_event_source(self, mock_logger):
+    def test_init_with_unknown_event_source(self):
         """Test initialization with unknown event source"""
         unknown_record = {
             'eventSource': 'aws:unknown-service',
@@ -157,8 +87,7 @@ class TestAwsLambdaEvent(unittest.TestCase):
             'Records': [unknown_record]
         }
 
-        lambda_event = AwsLambdaEvent()
-        lambda_event.load_event(event)
+        lambda_event = AwsLambdaEvent(event)
 
         self.assertEqual(lambda_event.event_type, AwsEventType.UNKNOWN)
         self.assertEqual(len(lambda_event.records), 1)
@@ -173,8 +102,7 @@ class TestAwsLambdaEvent(unittest.TestCase):
             'Records': [record_without_source]
         }
 
-        lambda_event = AwsLambdaEvent()
-        lambda_event.load_event(event)
+        lambda_event = AwsLambdaEvent(event)
 
         self.assertEqual(lambda_event.event_type, AwsEventType.UNKNOWN)
 
@@ -187,11 +115,10 @@ class TestAwsLambdaEvent(unittest.TestCase):
 
     def test_mixed_multiple_records(self):
         """Test that mixed event sources uses the first record's type"""
-        mixed_records = [self.sqs_record_dict, self.s3_record_dict]
+        mixed_records = [self.sqs_record_dict, {}]
         event = {'Records': mixed_records, 'eventSource': 'aws:sqs'}
 
-        lambda_event = AwsLambdaEvent()
-        lambda_event.load_event(event)
+        lambda_event = AwsLambdaEvent(event)
 
         self.assertEqual(lambda_event.event_type, AwsEventType.SQS)
         self.assertEqual(len(lambda_event.records), 2)
@@ -200,8 +127,7 @@ class TestAwsLambdaEvent(unittest.TestCase):
         """Test empty records"""
         event = {'Records': []}
 
-        lambda_event = AwsLambdaEvent()
-        lambda_event.load_event(event)
+        lambda_event = AwsLambdaEvent(event)
 
         self.assertEqual(lambda_event.event_type, AwsEventType.UNKNOWN)
         self.assertEqual(len(lambda_event.records), 0)
