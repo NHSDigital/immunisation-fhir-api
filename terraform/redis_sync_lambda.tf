@@ -67,7 +67,6 @@ resource "aws_ecr_repository_policy" "redis_sync_lambda_ECRImageRetreival_policy
         ],
         Condition : {
           StringLike : {
-            # "aws:sourceArn" : "arn:aws:lambda:eu-west-2:${var.immunisation_account_id}:function:${local.short_prefix}-redis_sync_lambda"
             "aws:sourceArn" : aws_lambda_function.redis_sync_lambda.arn
           }
         }

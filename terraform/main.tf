@@ -21,7 +21,7 @@ provider "aws" {
   default_tags {
     tags = {
       Project     = var.project_name
-      Environment = var.has_sub_environment_scope ? var.sub_environment : var.environment
+      Environment = local.resource_scope
       Service     = var.service
     }
   }
