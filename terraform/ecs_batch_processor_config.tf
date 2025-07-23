@@ -194,11 +194,12 @@ resource "aws_ecs_task_definition" "ecs_task" {
   execution_role_arn = aws_iam_role.ecs_task_exec_role.arn
 
   container_definitions = jsonencode([{
-    name      = "${local.short_prefix}-process-records-container"
-    image     = "${aws_ecr_repository.processing_repository.repository_url}:${local.image_tag}"
-    cpu       = 4096
-    memory    = 16384
-    essential = true
+    name              = "${local.short_prefix}-process-records-container"
+    image             = "${aws_ecr_repository.processing_repository.repository_url}:${local.image_tag}"
+    cpu               = 4096
+    memory            = 16384
+    memoryReservation = 16384
+    essential         = true
     environment = [
       {
         name  = "SOURCE_BUCKET_NAME"
