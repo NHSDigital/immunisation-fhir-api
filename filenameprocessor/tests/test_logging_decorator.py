@@ -141,11 +141,9 @@ class TestLoggingDecorator(unittest.TestCase):
     def test_logging_successful_validation(self):
         """Tests that the correct logs are sent to cloudwatch and splunk when file validation is successful"""
         # Mock full permissions so that validation will pass
-        mock_hget = lambda key, field: create_mock_hget(
-            key,
-            field,
-            {"EMIS": json.dumps(["FLU.CRUDS"])},
-            {"YGM41": "EMIS"}
+        mock_hget = create_mock_hget(
+            {"YGM41": "EMIS"},
+            {"EMIS": json.dumps(["FLU.CRUDS"])}
         )
         with (  # noqa: E999
             patch("file_name_processor.uuid4", return_value=FILE_DETAILS.message_id),  # noqa: E999
@@ -175,11 +173,9 @@ class TestLoggingDecorator(unittest.TestCase):
     def test_logging_failed_validation(self):
         """Tests that the correct logs are sent to cloudwatch and splunk when file validation fails"""
         # Set up permissions for COVID19 only (file is for FLU), so that validation will fail
-        mock_hget = lambda key, field: create_mock_hget(
-            key,
-            field,
-            {"EMIS": json.dumps(["COVID19.CRUDS"])},
-            {"YGM41": "EMIS"}
+        mock_hget = create_mock_hget(
+            {"YGM41": "EMIS"},
+            {"EMIS": json.dumps(["COVID19.CRUDS"])}
         )
         with (  # noqa: E999
             patch("file_name_processor.uuid4", return_value=FILE_DETAILS.message_id),  # noqa: E999
@@ -214,11 +210,9 @@ class TestLoggingDecorator(unittest.TestCase):
             operation_name="PutRecord"
         )
 
-        mock_hget = lambda key, field: create_mock_hget(
-            key,
-            field,
-            {"EMIS": json.dumps(["FLU.CRUDS"])},
-            {"YGM41": "EMIS"}
+        mock_hget = create_mock_hget(
+            {"YGM41": "EMIS"},
+            {"EMIS": json.dumps(["FLU.CRUDS"])}
         )
         with (
             patch("file_name_processor.uuid4", return_value=FILE_DETAILS.message_id),

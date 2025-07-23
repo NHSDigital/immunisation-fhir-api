@@ -39,10 +39,6 @@ all_permissions_in_this_test_file = [
     f"{vaccine_type}.CRUDS" for vaccine_type in all_vaccine_types_in_this_test_file
 ]
 
-mock_permissions_map = {
-    supplier: json.dumps(all_permissions_in_this_test_file)
-    for supplier in all_suppliers_in_this_test_file
-}
 
 @patch.dict("os.environ", MOCK_ENVIRONMENT_DICT)
 @mock_s3
@@ -58,7 +54,11 @@ class TestLambdaHandlerDataSource(TestCase):
         class. Using ExitStack allows multiple patches to be applied, whilst ensuring that the mocks are cleaned up
         after the test has run.
         """
-        mock_hget = lambda key, field: create_mock_hget(key, field, mock_permissions_map, MOCK_ODS_CODE_TO_SUPPLIER)
+        mock_permissions_map = {
+            supplier: json.dumps(all_permissions_in_this_test_file)
+            for supplier in all_suppliers_in_this_test_file
+        }
+        mock_hget = create_mock_hget(MOCK_ODS_CODE_TO_SUPPLIER, mock_permissions_map)
 
         # Set up common patches to be applied to all tests in the class (these can be overridden in individual tests.)
         common_patches = [
@@ -357,12 +357,7 @@ class TestLambdaHandlerDataSource(TestCase):
         add_entry_to_table(queued_file_details, FileStatus.QUEUED)
 
         # Mock the supplier permissions with a value which doesn't include the requested Flu permissions
-        mock_hget = lambda key, field: create_mock_hget(
-            key,
-            field,
-            {},
-            {"X8E5B": "RAVS"}
-        )
+        mock_hget = create_mock_hget({"X8E5B": "RAVS"}, {})
         with (  # noqa: E999
             patch("file_name_processor.uuid4", return_value=file_details.message_id),  # noqa: E999
             patch("elasticache.redis_client.hget", side_effect=mock_hget),  # noqa: E999
@@ -472,7 +467,7 @@ class TestUnexpectedBucket(TestCase):
         self.addCleanup(hkeys_patcher.stop)
         hkeys_patcher.start()
 
-        mock_hget = lambda key, field: create_mock_hget(key, field, {}, {"X8E5B": "RAVS"})
+        mock_hget = create_mock_hget({"X8E5B": "RAVS"}, {})
         hget_patcher = patch("elasticache.redis_client.hget", side_effect=mock_hget)
         self.addCleanup(hget_patcher.stop)
         hget_patcher.start()

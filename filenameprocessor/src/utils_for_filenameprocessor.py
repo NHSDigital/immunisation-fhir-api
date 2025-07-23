@@ -1,7 +1,7 @@
 """Utils for filenameprocessor lambda"""
 
 import json
-from constants import Constants, SOURCE_BUCKET_NAME, FILE_NAME_PROC_LAMBDA_NAME
+from constants import SOURCE_BUCKET_NAME, FILE_NAME_PROC_LAMBDA_NAME
 from clients import s3_client, logger, lambda_client
 
 
