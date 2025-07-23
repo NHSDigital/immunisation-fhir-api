@@ -59,6 +59,22 @@ resource "aws_iam_role" "auto_ops" {
           AWS = "arn:aws:iam::${var.build_agent_account_id}:role/build-agent"
         },
         Action = "sts:AssumeRole"
+      },
+      {
+        Sid    = "",
+        Effect = "Allow",
+        Principal = {
+          Federated = "arn:aws:iam::${var.imms_account_id}:oidc-provider/token.actions.githubusercontent.com"
+        },
+        Action = "sts:AssumeRoleWithWebIdentity",
+        Condition = {
+          StringEquals = {
+            "token.actions.githubusercontent.com:aud" : "sts.amazonaws.com"
+          },
+          StringLike = {
+            "token.actions.githubusercontent.com:sub" : "repo:NHSDigital/immunisation-fhir-api:*"
+          }
+        }
       }
     ]
   })
@@ -77,4 +93,16 @@ resource "aws_iam_role_policy_attachment" "ssm_core" {
 resource "aws_iam_role_policy_attachment" "custom_auto_ops" {
   role       = aws_iam_role.auto_ops.name
   policy_arn = aws_iam_policy.auto_ops.arn
+}
+
+resource "aws_iam_openid_connect_provider" "github" {
+  url = "https://token.actions.githubusercontent.com"
+
+  client_id_list = [
+    "sts.amazonaws.com"
+  ]
+
+  thumbprint_list = [
+    "2b18947a6a9fc7764fd8b5fb18a863b0c6dac24f"
+  ]
 }
