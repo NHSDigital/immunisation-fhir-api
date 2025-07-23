@@ -6,7 +6,8 @@
       "FLU.CRUDS",
       "MMR.CRUDS",
       "RSV.CRUDS"
-    ]
+    ],
+    "ods_codes": ["DPSFULL"]
   },
   {
     "supplier": "DPSREDUCED",
@@ -15,7 +16,8 @@
       "FLU.CRUDS",
       "MMR.CRUDS",
       "RSV.CRUDS"
-    ]
+    ],
+    "ods_codes": ["DPSREDUCED"]
   },
   {
     "supplier": "MAVIS",
@@ -25,14 +27,16 @@
       "MENACWY.CRUDS",
       "MMR.CRUDS",
       "FLU.CRUDS"
-    ]
+    ],
+    "ods_codes": ["V0V8L"]
   },
   {
     "supplier": "RAVS",
     "permissions": [
       "RSV.CRUDS",
       "MMR.CRUDS"
-    ]
+    ],
+    "ods_codes": ["X8E5B"]
   },
   {
     "supplier": "AGEM-RAVS-Integration",
@@ -49,7 +53,8 @@
       "HPV.CRUDS",
       "3IN1.CRUDS",
       "MENACWY.CRUDS"
-    ]
+    ],
+    "ods_codes": ["YGM41", "YGJ"]
   },
   {
     "supplier": "TPP",
@@ -59,7 +64,8 @@
       "HPV.CRUDS",
       "3IN1.CRUDS",
       "MENACWY.CRUDS"
-    ]
+    ],
+    "ods_codes": ["YGA"]
   },
   {
     "supplier": "MEDICUS",
@@ -69,7 +75,8 @@
       "HPV.CRUDS",
       "3IN1.CRUDS",
       "MENACWY.CRUDS"
-    ]
+    ],
+    "ods_codes": ["YGMYW"]
   },
   {
     "supplier": "Test_App",
