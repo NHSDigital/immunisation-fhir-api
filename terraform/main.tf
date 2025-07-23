@@ -97,6 +97,10 @@ data "aws_kms_key" "existing_kinesis_encryption_key" {
   key_id = "alias/imms-batch-kinesis-stream-encryption"
 }
 
+data "aws_kms_key" "existing_id_sync_sqs_encryption_key" {
+  key_id = "alias/imms-event-id-sync-encryption"
+}
+
 data "aws_kms_key" "mesh_s3_encryption_key" {
   key_id = "alias/local-immunisation-mesh"
 }
