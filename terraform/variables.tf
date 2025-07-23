@@ -119,5 +119,5 @@ data "aws_kms_key" "existing_kinesis_encryption_key" {
 }
 
 data "aws_kms_key" "existing_id_sync_sqs_encryption_key" {
-  key_id = "alias/imms-event-id-sync-sqs-encryption"
+  key_id = "alias/imms-event-id-sync-encryption"
 }

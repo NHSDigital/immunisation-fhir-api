@@ -175,7 +175,7 @@ resource "aws_kms_key" "id_sync_sqs_encryption" {
 }
 
 resource "aws_kms_alias" "id_sync_sqs_encryption" {
-  name          = "alias/imms-event-id-sync-sqs-encryption"
+  name          = "alias/imms-event-id-sync-encryption"
   target_key_id = aws_kms_key.id_sync_sqs_encryption.key_id
 }
 
