@@ -22,13 +22,11 @@ jobs:
           fetch-depth: 0
 
       - name: Install poetry
-        run: pip install poetry==1.8.4
+        run: pip install poetry==2.1.2
 
       - uses: actions/setup-python@v5
         with:
-          python-version: |
-            3.10
-            3.11
+          python-version: 3.11
           cache: 'poetry'
       - name: Debug shared folder
         run: |
@@ -49,7 +47,6 @@ jobs:
         id: filenameprocessor
         continue-on-error: true
         run: |
-          poetry env use 3.11
           poetry install
           poetry run coverage run -m unittest discover || echo "filenameprocessor tests failed" >> ../failed_tests.txt
           poetry run coverage xml -o ../filenameprocessor-coverage.xml
@@ -59,7 +56,6 @@ jobs:
         id: recordprocessor
         continue-on-error: true
         run: |
-          poetry env use 3.11
           poetry install
           poetry run coverage run -m unittest discover || echo "recordprocessor tests failed" >> ../failed_tests.txt
           poetry run coverage xml -o ../recordprocessor-coverage.xml
@@ -72,7 +68,6 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}/backend/src:${{ github.workspace }}/backend/tests
         continue-on-error: true
         run: |
-          poetry env use 3.11
           poetry install
           poetry run coverage run -m unittest discover -s "./tests" -p "*batch*.py" || echo "recordforwarder tests failed" >> ../failed_tests.txt
           poetry run coverage xml -o ../recordforwarder-coverage.xml
@@ -82,7 +77,6 @@ jobs:
         id: acklambda
         continue-on-error: true
         run: |
-          poetry env use 3.10
           poetry install
           poetry run coverage run -m unittest discover || echo "ack-lambda tests failed" >> ../failed_tests.txt
           poetry run coverage xml -o ../ack-lambda-coverage.xml
@@ -94,10 +88,10 @@ jobs:
             PYTHONPATH: delta_backend/src:delta_backend/tests
         continue-on-error: true
         run: |
-          poetry env use 3.11
           poetry install
           poetry run coverage run -m unittest discover || echo "delta tests failed" >> ../failed_tests.txt
           poetry run coverage xml -o ../delta-coverage.xml
+          cat ../delta-coverage.xml
 
       - name: Run unittest with coverage-fhir-api
         working-directory: backend
@@ -106,7 +100,6 @@ jobs:
         id: fhirapi
         continue-on-error: true
         run: |
-          poetry env use 3.11
           poetry install
           poetry run coverage run -m unittest discover || echo "fhir-api tests failed" >> ../failed_tests.txt
           poetry run coverage xml -o ../backend-coverage.xml
@@ -116,7 +109,6 @@ jobs:
         id: meshprocessor
         continue-on-error: true
         run: |
-          poetry env use 3.10
           poetry install
           poetry run coverage run -m unittest discover || echo "mesh_processor tests failed" >> ../failed_tests.txt
           poetry run coverage xml -o ../mesh_processor-coverage.xml
@@ -128,7 +120,6 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}/redis_sync/src:${{ github.workspace }}/redis_sync/tests
         continue-on-error: true
         run: |
-            poetry env use 3.11
             poetry install
             poetry run coverage run -m unittest discover || echo "redis_sync tests failed" >> ../failed_tests.txt
             poetry run coverage xml -o ../redis_sync-coverage.xml
@@ -140,18 +131,10 @@ jobs:
           PYTHONPATH: ${{ env.SHARED_PATH }}
         continue-on-error: true
         run: |
-            echo "shared coverage - Current directory: $(pwd)"
             poetry env use 3.11
             poetry install
-            poetry run coverage run -m unittest discover || echo "shared tests failed" >> ../../failed_tests.txt
+            poetry run coverage run --source=src -m unittest discover -s tests -p "test_*.py" -v || echo "shared tests failed" >> ../../failed_tests.txt
             poetry run coverage xml -o ../../shared-coverage.xml
-            ls ../../shared-coverage.xml
-            # show director of ../.. as absolute path
-            echo "Parent directory of shared-coverage.xml: $(pwd)/../../"
-            #check files created
-            if [ ! -f ../../shared-coverage.xml ]; then
-              echo "shared-coverage.xml not found"
-            fi
 
       - name: Run unittest with id_sync
         working-directory: lambdas/id_sync
@@ -160,22 +143,14 @@ jobs:
           PYTHONPATH: ${{ env.LAMBDA_PATH }}/id_sync/src:${{ env.LAMBDA_PATH }}/id_sync/tests:${{ env.SHARED_PATH }}
         continue-on-error: true
         run: |
-            echo "id_sync coverage - Current directory: $(pwd)"
             poetry env use 3.11
             poetry install
             poetry run coverage run -m unittest discover || echo "id_sync tests failed" >> ../../failed_tests.txt
             poetry run coverage xml -o ../../id_sync-coverage.xml
-            #check files created
-            if [ ! -f ../../id_sync-coverage.xml ]; then
-              echo "id_sync-coverage.xml not found, exiting with error"
-            fi
 
       - name: Run Test Failure Summary
         id: check_failure
         run: |
-          echo "Checking for test failures..."
-          ls *-coverage.xml
-          cat shared-coverage.xml || echo "shared-coverage.xml not found"
           if [ -s failed_tests.txt ]; then
             echo "The following tests failed:"
             cat failed_tests.txt

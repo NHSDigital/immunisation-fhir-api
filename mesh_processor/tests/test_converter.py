@@ -1,60 +1,236 @@
+import os
 from unittest import TestCase
-from unittest.mock import patch, MagicMock
-from converter import lambda_handler, ensure_dat_extension
+from unittest.mock import patch
+
+import boto3
+from botocore.exceptions import ClientError
+from moto import mock_aws
 
 
-class TestLambdaHandler(TestCase):
-
-    @patch('boto3.client')
-    @patch('os.getenv')
-    def test_lambda_handler_success(self, mock_getenv, mock_boto_client):
-        # Mock environment variable
-        mock_getenv.return_value = "destination-bucket"
-
-        # Mock boto3 S3 client
-        mock_s3 = MagicMock()
-        mock_boto_client.return_value = mock_s3
-        mock_s3.get_object.return_value = {
-            'Metadata': {'mex-filename': '20250320121710483244_2DB240.txt'}
-        }
-
-        # Define the event
-        event = {
+def invoke_lambda(file_key: str):
+    # Local import so that globals can be mocked
+    from converter import lambda_handler
+    return lambda_handler(
+        {
             "Records": [
                 {
                     "s3": {
                         "bucket": {"name": "source-bucket"},
-                        "object": {"key": "20250320121710483244_2DB240.dat"}
+                        "object": {"key": file_key}
                     }
                 }
             ]
-        }
-        context = {}
+        },
+        {}
+    )
 
-        # Call the lambda_handler function
-        response = lambda_handler(event, context)
 
-        # Assertions
-        mock_s3.get_object.assert_called_with(Bucket="source-bucket", Key="20250320121710483244_2DB240.dat")
-        mock_s3.copy_object.assert_called_with(
-            CopySource={'Bucket': "source-bucket", 'Key': "20250320121710483244_2DB240.dat"},
-            Bucket="destination-bucket",
-            Key="20250320121710483244_2DB240.dat"
+@mock_aws
+@patch.dict(os.environ, {"DESTINATION_BUCKET_NAME": "destination-bucket"})
+class TestLambdaHandler(TestCase):
+    def setUp(self):
+        s3 = boto3.client("s3", region_name="eu-west-2")
+        s3.create_bucket(Bucket="source-bucket", CreateBucketConfiguration={"LocationConstraint": "eu-west-2"})
+        s3.create_bucket(Bucket="destination-bucket", CreateBucketConfiguration={"LocationConstraint": "eu-west-2"})
+
+    def test_non_multipart_content_type(self):
+        s3 = boto3.client("s3", region_name="eu-west-2")
+        s3.put_object(
+            Bucket="source-bucket",
+            Key="test-csv-file.csv",
+            Body="some CSV content".encode("utf-8"),
+            ContentType="text/csv",
+            Metadata={
+                "mex-filename": "overridden-filename.csv",
+            }
         )
-        self.assertEqual(response['statusCode'], 200)
-        self.assertEqual(response['body'], 'Files converted and uploaded successfully!')
 
-    def test_ensure_dat_extension_with_other_extension(self):
-        # Test case where file has an extension other than 'dat'
-        result = ensure_dat_extension("COVID19_Vaccinations_v5_YGM41_20240927T13005921.txt")
-        self.assertEqual(result, "COVID19_Vaccinations_v5_YGM41_20240927T13005921.dat")
+        result = invoke_lambda("test-csv-file.csv")
+        self.assertEqual(result["statusCode"], 200)
 
-    def test_ensure_dat_extension_with_dat_extension(self):
-        # Test case where file already has a 'dat' extension
-        result = ensure_dat_extension("COVID19_Vaccinations_v5_YGM41_20240927T13005921.dat")
-        self.assertEqual(result, "COVID19_Vaccinations_v5_YGM41_20240927T13005921.dat")
+        response = s3.get_object(Bucket="destination-bucket", Key="overridden-filename.csv")
+        body = response["Body"].read().decode("utf-8")
+        assert body == "some CSV content"
 
-    def test_ensure_dat_extension_without_extension(self):
-        # Test case where file has no extension
-        result = ensure_dat_extension("COVID19_Vaccinations_v5_YGM41_20240927T13005921")
-        self.assertEqual(result, "COVID19_Vaccinations_v5_YGM41_20240927T13005921.dat")
+    def test_non_multipart_content_type_no_mesh_metadata(self):
+        s3 = boto3.client("s3", region_name="eu-west-2")
+        s3.put_object(
+            Bucket="source-bucket",
+            Key="test-csv-file.csv",
+            Body="some CSV content".encode("utf-8"),
+            ContentType="text/csv",
+        )
+
+        result = invoke_lambda("test-csv-file.csv")
+        self.assertEqual(result["statusCode"], 200)
+
+        response = s3.get_object(Bucket="destination-bucket", Key="test-csv-file.csv")
+        body = response["Body"].read().decode("utf-8")
+        assert body == "some CSV content"
+
+    def test_multipart_content_type(self):
+        cases = [
+            (
+                "standard",
+                "\r\n".join([
+                    "",
+                    "--12345678",
+                    'Content-Disposition: form-data; name="File"; filename="test-csv-file.csv"',
+                    "Content-Type: text/csv",
+                    "",
+                    "some CSV content",
+                    "--12345678--",
+                    ""
+                ])
+            ),
+            (
+                "missing initial newline",
+                "\r\n".join([
+                    "--12345678",
+                    'Content-Disposition: form-data; name="File"; filename="test-csv-file.csv"',
+                    "Content-Type: text/csv",
+                    "",
+                    "some CSV content",
+                    "--12345678--",
+                    ""
+                ])
+            ),
+            (
+                "missing final newline",
+                "\r\n".join([
+                    "",
+                    "--12345678",
+                    'Content-Disposition: form-data; name="File"; filename="test-csv-file.csv"',
+                    "Content-Type: text/csv",
+                    "",
+                    "some CSV content",
+                    "--12345678--",
+                ])
+            ),
+            (
+                "multiple parts",
+                "\r\n".join([
+                    "",
+                    "--12345678",
+                    'Content-Disposition: form-data; name="File"; filename="test-csv-file.csv"',
+                    "Content-Type: text/csv",
+                    "",
+                    "some CSV content",
+                    "--12345678",
+                    'Content-Disposition: form-data; name="File"; filename="test-ignored-file"',
+                    "Content-Type: text/plain",
+                    "",
+                    "some ignored content",
+                    "--12345678--",
+                    ""
+                ])
+            )
+        ]
+        for msg, body in cases:
+            with self.subTest(msg=msg, body=body):
+                s3 = boto3.client("s3", region_name="eu-west-2")
+                s3.put_object(
+                    Bucket="source-bucket",
+                    Key="test-dat-file.dat",
+                    Body=body.encode("utf-8"),
+                    ContentType="multipart/form-data; boundary=12345678",
+                )
+
+                result = invoke_lambda("test-dat-file.dat")
+                self.assertEqual(result["statusCode"], 200)
+
+                response = s3.get_object(Bucket="destination-bucket", Key="test-csv-file.csv")
+                body = response["Body"].read().decode("utf-8")
+                assert body == "some CSV content"
+
+    def test_multipart_content_type_without_filename_from_headers(self):
+        cases = [
+            (
+                "no filename in header",
+                "\r\n".join([
+                    "",
+                    "--12345678",
+                    'Content-Disposition: form-data',
+                    "Content-Type: text/csv",
+                    "",
+                    "some CSV content",
+                    "--12345678--",
+                    ""
+                ])
+            ),
+            (
+                "no header",
+                "\r\n".join([
+                    "",
+                    "--12345678",
+                    "",
+                    "some CSV content",
+                    "--12345678--",
+                    ""
+                ])
+            )
+        ]
+        for msg, body in cases:
+            with self.subTest(msg=msg, body=body):
+                s3 = boto3.client("s3", region_name="eu-west-2")
+                s3.put_object(
+                    Bucket="source-bucket",
+                    Key="test-dat-file.dat",
+                    Body=body.encode("utf-8"),
+                    ContentType="multipart/form-data; boundary=12345678",
+                )
+
+                result = invoke_lambda("test-dat-file.dat")
+                self.assertEqual(result["statusCode"], 200)
+
+                response = s3.get_object(Bucket="destination-bucket", Key="test-dat-file.dat")
+                body = response["Body"].read().decode("utf-8")
+                assert body == "some CSV content"
+
+    def test_multipart_content_type_with_unix_line_endings(self):
+        body = "\r\n".join([
+            "",
+            "--12345678",
+            'Content-Disposition: form-data; name="File"; filename="test-csv-file.csv"',
+            "Content-Type: text/csv",
+            "",
+            "some CSV content\nsplit across\nmultiple lines",
+            "--12345678--",
+            ""
+        ])
+        s3 = boto3.client("s3", region_name="eu-west-2")
+        s3.put_object(
+            Bucket="source-bucket",
+            Key="test-dat-file.dat",
+            Body=body.encode("utf-8"),
+            ContentType="multipart/form-data; boundary=12345678",
+        )
+
+        result = invoke_lambda("test-dat-file.dat")
+        self.assertEqual(result["statusCode"], 200)
+
+        response = s3.get_object(Bucket="destination-bucket", Key="test-csv-file.csv")
+        body = response["Body"].read().decode("utf-8")
+        assert body == "some CSV content\nsplit across\nmultiple lines"
+
+    def test_unexpected_end_of_file(self):
+        for msg, body in [
+            ("before first part", ""),
+            ("in headers", "--12345678\r\n"),
+            ("in body", "--12345678\r\n\r\n"),
+        ]:
+            with self.subTest(msg=msg, body=body):
+                s3 = boto3.client("s3", region_name="eu-west-2")
+                s3.put_object(
+                    Bucket="source-bucket",
+                    Key="test-dat-file.dat",
+                    Body=body.encode("utf-8"),
+                    ContentType="multipart/form-data; boundary=12345678",
+                )
+
+                result = invoke_lambda("test-dat-file.dat")
+                self.assertEqual(result["statusCode"], 500)
+
+                with self.assertRaises(ClientError) as e:
+                    s3.head_object(Bucket="destination-bucket", Key="test-csv-file.csv")
+                self.assertEqual(e.exception.response["Error"]["Code"], "404")

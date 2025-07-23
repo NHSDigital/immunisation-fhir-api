@@ -2,15 +2,13 @@
 Functions for completing file-level validation
 (validating headers and ensuring that the supplier has permission to perform at least one of the requested operations)
 """
-
-from unique_permission import get_unique_action_flags_from_s3
 from clients import logger, s3_client
 from make_and_upload_ack_file import make_and_upload_ack_file
 from utils_for_recordprocessor import get_csv_content_dict_reader, invoke_filename_lambda
 from errors import InvalidHeaders, NoOperationPermissions
 from logging_decorator import file_level_validation_logging_decorator
 from audit_table import change_audit_table_status_to_processed, get_next_queued_file_details
-from constants import SOURCE_BUCKET_NAME, EXPECTED_CSV_HEADERS, permission_to_action_flag_map, ActionFlag, Permission
+from constants import SOURCE_BUCKET_NAME, EXPECTED_CSV_HEADERS, permission_to_operation_map, Permission
 
 
 def validate_content_headers(csv_content_reader) -> None:
@@ -19,25 +17,9 @@ def validate_content_headers(csv_content_reader) -> None:
         raise InvalidHeaders("File headers are invalid.")
 
 
-def validate_action_flag_permissions(
-    supplier: str, vaccine_type: str, allowed_permissions_list: list, csv_data: str
+def get_permitted_operations(
+    supplier: str, vaccine_type: str, allowed_permissions_list: list
 ) -> set:
-    """
-    Validates that the supplier has permission to perform at least one of the requested operations for the given
-    vaccine type and returns the set of allowed operations for that vaccine type.
-    Raises a NoPermissionsError if the supplier does not have permission to perform any of the requested operations.
-    """
-
-    # Get unique ACTION_FLAG values from the S3 file
-    required_action_flags = get_unique_action_flags_from_s3(csv_data)
-
-    valid_action_flag_values = {flag.value for flag in ActionFlag}
-    required_action_flags = required_action_flags & valid_action_flag_values  # intersection
-
-    if not required_action_flags:
-        logger.warning("No valid ACTION_FLAGs found in file. Skipping permission validation.")
-        return set()
-
     # Check if supplier has permission for the subject vaccine type and extract permissions
     permission_strs_for_vaccine_type = {
         permission_str
@@ -54,24 +36,17 @@ def validate_action_flag_permissions(
     }
 
     # Map Permission key to action flag
-    permitted_action_flags_for_vaccine_type = {
-        permission_to_action_flag_map[permission].value
+    permitted_operations_for_vaccine_type = {
+        permission_to_operation_map[permission].value
         for permission in permissions_for_vaccine_type
     }
 
-    if not required_action_flags.intersection(permitted_action_flags_for_vaccine_type):
+    if not permitted_operations_for_vaccine_type:
         raise NoOperationPermissions(
             f"{supplier} does not have permissions to perform any of the requested actions."
         )
 
-    logger.info(
-         "%s permissions %s match one of the requested permissions required to %s",
-         supplier,
-         allowed_permissions_list,
-         permitted_action_flags_for_vaccine_type,
-     )
-
-    return {permission.name for permission in permissions_for_vaccine_type}
+    return permitted_operations_for_vaccine_type
 
 
 def move_file(bucket_name: str, source_file_key: str, destination_file_key: str) -> None:
@@ -103,12 +78,12 @@ def file_level_validation(incoming_message_body: dict) -> dict:
         created_at_formatted_string = incoming_message_body.get("created_at_formatted_string")
 
         # Fetch the data
-        csv_reader, csv_data = get_csv_content_dict_reader(file_key)
+        csv_reader = get_csv_content_dict_reader(file_key)
 
         validate_content_headers(csv_reader)
 
         # Validate has permission to perform at least one of the requested actions
-        allowed_operations_set = validate_action_flag_permissions(supplier, vaccine, permission, csv_data)
+        allowed_operations_set = get_permitted_operations(supplier, vaccine, permission)
 
         make_and_upload_ack_file(message_id, file_key, True, True, created_at_formatted_string)
 
