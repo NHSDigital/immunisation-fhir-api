@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 from tests.utils_for_tests.values_for_tests import MockFileDetails
 from tests.utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT
-from tests.utils_for_tests.utils_for_filenameprocessor_tests import MOCK_ODS_CODE_TO_SUPPLIER
+from tests.utils_for_tests.utils_for_filenameprocessor_tests import MOCK_ODS_CODE_TO_SUPPLIER, create_mock_hget
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
@@ -39,7 +39,7 @@ class TestFileKeyValidation(TestCase):
             with self.subTest():
                 self.assertEqual(is_valid_datetime(date_time_string), expected_result)
 
-    @patch("elasticache.redis_client.hget", side_effect=lambda key, field: MOCK_ODS_CODE_TO_SUPPLIER.get(field))
+    @patch("elasticache.redis_client.hget", side_effect=create_mock_hget(MOCK_ODS_CODE_TO_SUPPLIER, {}))
     @patch("elasticache.redis_client.hkeys", return_value=["FLU", "RSV"])
     def test_validate_file_key(self, mock_hkeys, mock_hget):
         """Tests that file_key_validation returns True if all elements pass validation, and False otherwise"""
