@@ -9,5 +9,3 @@ mns_admin_role           = "role/nhs-mns-events-lambda-delivery"
 environment              = "prod"
 parent_route53_zone_name = "prod.vds.platform.nhs.uk"
 child_route53_zone_name  = "imms.prod.vds.platform.nhs.uk"
-mesh_mailbox_id          = "X26HC138"
-mesh_dlq_mailbox_id      = null
