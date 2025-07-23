@@ -8,7 +8,7 @@ data "aws_iam_policy_document" "logs_policy_document" {
   source_policy_documents = [templatefile("${local.policy_path}/log.json", {})]
 }
 module "get_status" {
-  source        = "./lambda"
+  source        = "./modules/lambda"
   prefix        = local.prefix
   short_prefix  = local.short_prefix
   function_name = "get_status"
@@ -23,13 +23,13 @@ locals {
   imms_table_name = aws_dynamodb_table.events-dynamodb-table.name
   imms_lambda_env_vars = {
     "DYNAMODB_TABLE_NAME"    = local.imms_table_name,
-    "IMMUNIZATION_ENV"       = local.environment,
-    "IMMUNIZATION_BASE_PATH" = strcontains(local.environment, "pr-") ? "immunisation-fhir-api-${local.environment}" : "immunisation-fhir-api"
+    "IMMUNIZATION_ENV"       = local.resource_scope,
+    "IMMUNIZATION_BASE_PATH" = strcontains(var.sub_environment, "pr-") ? "immunisation-fhir-api-${var.sub_environment}" : "immunisation-fhir-api"
     # except for prod and ref, any other env uses PDS int environment
-    "PDS_ENV"              = local.environment == "prod" ? "prod" : local.environment == "ref" ? "ref" : "int",
-    "PDS_CHECK_ENABLED"    = tostring(local.environment != "int")
+    "PDS_ENV"              = var.pds_environment
+    "PDS_CHECK_ENABLED"    = tostring(var.pds_check_enabled)
     "SPLUNK_FIREHOSE_NAME" = module.splunk.firehose_stream_name
-    "SQS_QUEUE_URL"        = "https://sqs.eu-west-2.amazonaws.com/${local.immunisation_account_id}/${local.short_prefix}-ack-metadata-queue.fifo"
+    "SQS_QUEUE_URL"        = "https://sqs.eu-west-2.amazonaws.com/${var.immunisation_account_id}/${local.short_prefix}-ack-metadata-queue.fifo"
     "REDIS_HOST"           = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].address
     "REDIS_PORT"           = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].port
   }
@@ -41,7 +41,7 @@ data "aws_iam_policy_document" "imms_policy_document" {
     }),
     templatefile("${local.policy_path}/log.json", {}),
     templatefile("${local.policy_path}/lambda_to_sqs.json", {
-      "local_account" : local.immunisation_account_id
+      "local_account" : var.immunisation_account_id
       "queue_prefix" : local.short_prefix
     }),
     templatefile("${local.policy_path}/dynamo_key_access.json", {
@@ -58,7 +58,7 @@ data "aws_iam_policy_document" "imms_policy_document" {
 }
 
 module "imms_event_endpoint_lambdas" {
-  source = "./lambda"
+  source = "./modules/lambda"
   count  = length(local.imms_endpoints)
 
   prefix                 = local.prefix
@@ -66,7 +66,7 @@ module "imms_event_endpoint_lambdas" {
   function_name          = local.imms_endpoints[count.index]
   image_uri              = module.docker_image.image_uri
   policy_json            = data.aws_iam_policy_document.imms_policy_document.json
-  environments           = local.imms_lambda_env_vars
+  environment_variables  = local.imms_lambda_env_vars
   vpc_subnet_ids         = local.private_subnet_ids
   vpc_security_group_ids = [data.aws_security_group.existing_securitygroup.id]
 }
@@ -106,13 +106,14 @@ output "oas" {
 }
 
 module "api_gateway" {
-  source = "./api_gateway"
+  source = "./modules/api_gateway"
 
   prefix          = local.prefix
   short_prefix    = local.short_prefix
   zone_id         = data.aws_route53_zone.project_zone.zone_id
   api_domain_name = local.service_domain_name
-  environment     = local.environment
+  environment     = var.environment
+  sub_environment = var.sub_environment
   oas             = local.oas
 }
 
