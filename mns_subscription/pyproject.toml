@@ -1,7 +1,13 @@
+[project]
+name = "mns-subscription"
+version = "0.1.0"
+description = "subscription to nhs number change event"
+
+
 [tool.poetry]
 name        = "mns-subscription"
 version     = "0.1.0"
-description = "subscription to nhs number change event"
+description = ""
 authors     = ["Your Name <you@example.com>"]
 license     = "MIT"
 packages    = [{include = "src"}]
