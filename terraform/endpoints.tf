@@ -23,7 +23,7 @@ locals {
   imms_table_name = aws_dynamodb_table.events-dynamodb-table.name
   imms_lambda_env_vars = {
     "DYNAMODB_TABLE_NAME"    = local.imms_table_name,
-    "IMMUNIZATION_ENV"       = var.sub_environment,
+    "IMMUNIZATION_ENV"       = local.resource_scope,
     "IMMUNIZATION_BASE_PATH" = strcontains(var.sub_environment, "pr-") ? "immunisation-fhir-api-${var.sub_environment}" : "immunisation-fhir-api"
     # except for prod and ref, any other env uses PDS int environment
     "PDS_ENV"              = var.pds_environment
