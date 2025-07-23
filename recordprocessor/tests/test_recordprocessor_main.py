@@ -227,7 +227,7 @@ class TestRecordProcessor(unittest.TestCase):
         self.make_inf_ack_assertions(file_details=mock_rsv_emis_file, passed_validation=True)
         self.make_kinesis_assertions(assertion_cases)
 
-    def test_e2e_no_permissions(self):
+    def test_e2e_no_required_permissions(self):
         """
         Tests that file containing UPDATE and DELETE is successfully processed when the supplier has CREATE permissions
         only.
@@ -235,6 +235,23 @@ class TestRecordProcessor(unittest.TestCase):
         self.upload_source_files(ValidMockFileContent.with_update_and_delete)
 
         main(mock_rsv_emis_file.event_create_permissions_only)
+
+        kinesis_records = kinesis_client.get_records(ShardIterator=self.get_shard_iterator(), Limit=10)["Records"]
+        self.assertEqual(len(kinesis_records), 2)
+        for record in kinesis_records:
+            data_bytes = record["Data"]
+            data_dict = json.loads(data_bytes)
+            self.assertIn("diagnostics", data_dict)
+            self.assertNotIn("fhir_json", data_dict)
+        self.make_inf_ack_assertions(file_details=mock_rsv_emis_file, passed_validation=True)
+
+    def test_e2e_no_permissions(self):
+        """
+        Tests that file containing UPDATE and DELETE is successfully processed when the supplier has no permissions.
+        """
+        self.upload_source_files(ValidMockFileContent.with_update_and_delete)
+
+        main(mock_rsv_emis_file.event_no_permissions)
 
         kinesis_records = kinesis_client.get_records(ShardIterator=self.get_shard_iterator(), Limit=10)["Records"]
         self.assertEqual(len(kinesis_records), 0)

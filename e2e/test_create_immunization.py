@@ -31,30 +31,34 @@ class TestCreateImmunization(ImmunizationBaseTest):
         # Set up
         imms = generate_imms_resource()
         imms_id = self.default_imms_api.create_immunization_resource(imms)
-        self.assertEqual(self.default_imms_api.get_immunization_by_id(imms_id).status_code, 200)
+        res = self.default_imms_api.get_immunization_by_id(imms_id)
+        self.assertEqual(res.status_code, 200)
 
         # Check that duplicate CREATE request is rejected
         self.assert_operation_outcome(self.default_imms_api.create_immunization(imms, expected_status_code=422), 422)
+        self.assertEqual(res.headers["E-Tag"], "1")
 
-        # Check that duplice CREATE request is rejected after the event is updated
+        # Check that duplicate CREATE request is rejected after the event is updated
         imms["id"] = imms_id  # Imms fhir resource should include the id for update
         self.default_imms_api.update_immunization(imms_id, imms)
-        self.assertEqual(self.default_imms_api.get_immunization_by_id(imms_id).status_code, 200)
+        self.assertEqual(res.status_code, 200)
         del imms["id"]  # Imms fhir resource should not include an id for create
         self.assert_operation_outcome(self.default_imms_api.create_immunization(imms, expected_status_code=422), 422)
 
-        # Check that duplice CREATE request is rejected after the event is updated then deleted
+        # Check that duplicate CREATE request is rejected after the event is updated then deleted
         self.default_imms_api.delete_immunization(imms_id)
         self.assertEqual(self.default_imms_api.get_immunization_by_id(
             imms_id, expected_status_code=404).status_code, 404)
         self.assert_operation_outcome(self.default_imms_api.create_immunization(imms, expected_status_code=422), 422)
 
-        # Check that duplice CREATE request is rejected after the event is updated then deleted then reinstated
+        # Check that duplicate CREATE request is rejected after the event is updated then deleted then reinstated
         imms["id"] = imms_id  # Imms fhir resource should include the id for update
-        self.default_imms_api.update_immunization(imms_id, imms)
-        self.assertEqual(self.default_imms_api.get_immunization_by_id(imms_id).status_code, 200)
+        self.default_imms_api.update_immunization(imms_id, imms, headers={"E-Tag": "2"})
+        res = self.default_imms_api.get_immunization_by_id(imms_id)
+        self.assertEqual(res.status_code, 200)
         del imms["id"]  # Imms fhir resource should not include an id for create
         self.assert_operation_outcome(self.default_imms_api.create_immunization(imms, expected_status_code=422), 422)
+        self.assertEqual(res.headers["E-Tag"], "3")
 
     def test_bad_nhs_number(self):
         """it should reject the request if nhs-number does not exist"""

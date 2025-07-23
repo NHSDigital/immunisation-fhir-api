@@ -7,8 +7,3 @@ dspp_admin_role          = "root"
 environment              = "dev"
 parent_route53_zone_name = "dev.vds.platform.nhs.uk"
 child_route53_zone_name  = "imms.dev.vds.platform.nhs.uk"
-# TODO - null these out once we're using the int account
-# mesh_mailbox_id          = null
-# mesh_dlq_mailbox_id      = null
-mesh_mailbox_id          = "X26OT303"
-mesh_dlq_mailbox_id      = "X26OT304"

@@ -150,11 +150,11 @@ class ImmunisationApi:
 
         return response
 
-    def update_immunization(self, imms_id, imms, expected_status_code: int = 200):
+    def update_immunization(self, imms_id, imms, expected_status_code: int = 200, headers=None):
         return self.make_request_with_backoff(
             http_method="PUT",
             url=f"{self.url}/Immunization/{imms_id}",
-            headers=self._update_headers(),
+            headers=self._update_headers(headers),
             expected_status_code=expected_status_code,
             json=imms
         )
@@ -202,7 +202,8 @@ class ImmunisationApi:
         updated = {**self.headers, **{
             "X-Correlation-ID": str(uuid.uuid4()),
             "X-Request-ID": str(uuid.uuid4()),
-            "E-Tag": "1"
+            "E-Tag": "1",
+            "Accept": "application/fhir+json"
         }}
         return {**updated, **headers}
 

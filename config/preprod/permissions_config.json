@@ -30,7 +30,45 @@
   {
     "supplier": "RAVS",
     "permissions": [
-      "RSV.CRUDS"
+      "RSV.CRUDS",
+      "MMR.CRUDS"
+    ]
+  },
+  {
+    "supplier": "AGEM-RAVS-Integration",
+    "permissions": [
+      "RSV.CRUDS",
+      "MMR.CRUDS"
+    ]
+  },
+  {
+    "supplier": "EMIS",
+    "permissions": [
+      "RSV.CRUDS",
+      "MMR.CRUDS",
+      "HPV.CRUDS",
+      "3IN1.CRUDS",
+      "MENACWY.CRUDS"
+    ]
+  },
+  {
+    "supplier": "TPP",
+    "permissions": [
+      "RSV.CRUDS",
+      "MMR.CRUDS",
+      "HPV.CRUDS",
+      "3IN1.CRUDS",
+      "MENACWY.CRUDS"
+    ]
+  },
+  {
+    "supplier": "MEDICUS",
+    "permissions": [
+      "RSV.CRUDS",
+      "MMR.CRUDS",
+      "HPV.CRUDS",
+      "3IN1.CRUDS",
+      "MENACWY.CRUDS"
     ]
   },
   {

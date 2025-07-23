@@ -41,8 +41,6 @@ steps:
       set -e
       if ! [[ $APIGEE_ENVIRONMENT =~ .*-*sandbox ]]; then
         export AWS_PROFILE=apim-dev
-        aws_account_no="$(aws sts get-caller-identity --query Account --output text)"
-
         service_name=$(FULLY_QUALIFIED_SERVICE_NAME)
 
         pr_no=$(echo $service_name | { grep -oE '[0-9]+$' || true; })
@@ -58,10 +56,10 @@ steps:
         echo Apigee environment: $APIGEE_ENVIRONMENT
         echo pr_no: $pr_no
 
-          cd terraform
+        cd terraform
 
         make init
-        make apply aws_account_no=${aws_account_no} environment=$workspace
+        make apply environment=${{ parameters.aws_account_type }} sub_environment=$workspace
 
         AWS_DOMAIN_NAME=$(make -s output name=service_domain_name)
         IMMS_DELTA_TABLE_NAME=$(make -s output name=imms_delta_table_name)
@@ -115,11 +113,10 @@ steps:
     workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)"
 
   - bash: |
-      pyenv install -s 3.10.8
       pyenv install -s 3.11.11
-      pyenv global 3.10.8
+      pyenv global 3.11.11
       python --version
-    displayName: Install python 3.10 and 3.11
+    displayName: Install python 3.11
 
   - bash: |
       set -e

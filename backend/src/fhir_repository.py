@@ -3,7 +3,7 @@ import os
 import time
 import uuid
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Tuple
 
 import boto3
 import botocore.exceptions
@@ -194,9 +194,9 @@ class ImmunizationRepository:
         immunization: dict,
         patient: any,
         existing_resource_version: int,
-        imms_vax_type_perms: str,
+        imms_vax_type_perms: list[str],
         supplier_system: str,
-    ) -> dict:
+    ) -> tuple[dict, int]:
         attr = RecordAttributes(immunization, patient)
         self._handle_permissions(imms_vax_type_perms, attr)
         update_exp = self._build_update_expression(is_reinstate=False)
@@ -219,10 +219,10 @@ class ImmunizationRepository:
         immunization: dict,
         patient: any,
         existing_resource_version: int,
-        imms_vax_type_perms: str,
+        imms_vax_type_perms: list[str],
         supplier_system: str,
 
-    ) -> dict:
+    ) -> tuple[dict, int]:
         attr = RecordAttributes(immunization, patient)
         self._handle_permissions(imms_vax_type_perms, attr)
         update_exp = self._build_update_expression(is_reinstate=True)
@@ -245,9 +245,9 @@ class ImmunizationRepository:
         immunization: dict,
         patient: any,
         existing_resource_version: int,
-        imms_vax_type_perms: str,
+        imms_vax_type_perms: list[str],
         supplier_system: str,
-    ) -> dict:
+    ) -> tuple[dict, int]:
         attr = RecordAttributes(immunization, patient)
         self._handle_permissions(imms_vax_type_perms, attr)
         update_exp = self._build_update_expression(is_reinstate=False)
@@ -299,8 +299,9 @@ class ImmunizationRepository:
         supplier_system: str,
         deleted_at_required: bool,
         update_reinstated: bool,
-    ) -> dict:
+    ) -> Tuple[dict, int]:
         try:
+            updated_version = existing_resource_version + 1
             condition_expression = Attr("PK").eq(attr.pk) & (
                 Attr("DeletedAt").exists()
                 if deleted_at_required
@@ -313,7 +314,7 @@ class ImmunizationRepository:
                     ":patient_sk": attr.patient_sk,
                     ":imms_resource_val": json.dumps(attr.resource, use_decimal=True),
                     ":operation": "UPDATE",
-                    ":version": existing_resource_version + 1,
+                    ":version": updated_version,
                     ":supplier_system": supplier_system,
                     ":respawn": "reinstated",
                 }
@@ -324,7 +325,7 @@ class ImmunizationRepository:
                     ":patient_sk": attr.patient_sk,
                     ":imms_resource_val": json.dumps(attr.resource, use_decimal=True),
                     ":operation": "UPDATE",
-                    ":version": existing_resource_version + 1,
+                    ":version": updated_version,
                     ":supplier_system": supplier_system,
                 }
 
@@ -338,7 +339,7 @@ class ImmunizationRepository:
                 ReturnValues="ALL_NEW",
                 ConditionExpression=condition_expression,
             )
-            return self._handle_dynamo_response(response)
+            return self._handle_dynamo_response(response), updated_version
         except botocore.exceptions.ClientError as error:
             # Either resource didn't exist or it has already been deleted. See ConditionExpression in the request
             if error.response["Error"]["Code"] == "ConditionalCheckFailedException":
@@ -352,12 +353,12 @@ class ImmunizationRepository:
     def delete_immunization(
             self, imms_id: str, imms_vax_type_perms: str, supplier_system: str) -> dict:
         now_timestamp = int(time.time())
-        
+
         try:
             item = self.table.get_item(Key={"PK": _make_immunization_pk(imms_id)}).get("Item")
             if not item:
                 raise ResourceNotFoundError(resource_type="Immunization", resource_id=imms_id)
-            
+
             if not item.get("DeletedAt") or item.get("DeletedAt") == "reinstated":
                 vaccine_type = self._vaccine_type(item["PatientSK"])
                 if not validate_permissions(imms_vax_type_perms, ApiOperationCode.DELETE, [vaccine_type]):
@@ -380,7 +381,7 @@ class ImmunizationRepository:
                     (Attr("DeletedAt").not_exists() | Attr("DeletedAt").eq("reinstated"))
                 ),
             )
-            
+
             return self._handle_dynamo_response(response)
         except botocore.exceptions.ClientError as error:
             if error.response["Error"]["Code"] == "ConditionalCheckFailedException":
