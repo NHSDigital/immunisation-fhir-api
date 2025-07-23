@@ -11,8 +11,11 @@ from tests.utils_for_tests.utils_for_filenameprocessor_tests import create_mock_
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
-    from elasticache import get_supplier_permissions_from_cache, get_valid_vaccine_types_from_cache, \
-    get_supplier_system_from_cache
+    from elasticache import (
+        get_supplier_permissions_from_cache,
+        get_valid_vaccine_types_from_cache,
+        get_supplier_system_from_cache
+    )
     from clients import REGION_NAME
 
 s3_client = boto3_client("s3", region_name=REGION_NAME)
