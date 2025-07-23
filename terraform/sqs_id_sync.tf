@@ -1,5 +1,3 @@
-# Standard SQS Queue
-
 resource "aws_sqs_queue" "id_sync_queue" {
   name                        = "${local.short_prefix}-id-sync-queue"
   kms_master_key_id           = data.aws_kms_key.existing_id_sync_sqs_encryption_key.arn
@@ -9,8 +7,6 @@ resource "aws_sqs_queue" "id_sync_queue" {
     maxReceiveCount     = 4
   })
 }
-
-# DLQ for id-sync-queue
 
 resource "aws_sqs_queue" "id_sync_dlq" {
   name = "${local.short_prefix}-id-sync-dlq"
@@ -24,10 +20,6 @@ resource "aws_sqs_queue_redrive_allow_policy" "id_sync_queue_redrive_allow_polic
     sourceQueueArns   = [aws_sqs_queue.id_sync_queue.arn]
   })
 }
-
-# IAM policy.
-# TODO: this is currently a global allow policy.
-# Refine this to allow receive from our lambda, and send from MNS
 
 data "aws_iam_policy_document" "id_sync_sqs_policy" {
   statement {
