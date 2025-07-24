@@ -68,15 +68,25 @@ steps:
         DYNAMODB_TABLE_NAME=$(make -s output name=dynamodb_table_name)
         AWS_SQS_QUEUE_NAME=$(make -s output name=aws_sqs_queue_name)
         AWS_SNS_TOPIC_NAME=$(make -s output name=aws_sns_topic_name)
+        SQS_QUEUE_ARN=$(make -s output name=id_sync_queue_arn)
         echo "##vso[task.setvariable variable=DYNAMODB_TABLE_NAME]$DYNAMODB_TABLE_NAME"
         echo "##vso[task.setvariable variable=AWS_DOMAIN_NAME]$AWS_DOMAIN_NAME"
         echo "##vso[task.setvariable variable=IMMS_DELTA_TABLE_NAME]$IMMS_DELTA_TABLE_NAME"
         echo "##vso[task.setvariable variable=AWS_SQS_QUEUE_NAME]$AWS_SQS_QUEUE_NAME"
         echo "##vso[task.setvariable variable=AWS_SNS_TOPIC_NAME]$AWS_SNS_TOPIC_NAME"
+        echo "##vso[task.setvariable variable=SQS_QUEUE_ARN]$SQS_QUEUE_ARN"
       fi
     displayName: Apply Terraform
     workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)"
     retryCountOnTaskFailure: 2
+
+  - bash: |
+      echo "Subscribing SQS to MNS via Lambda-compatible client..."
+      poetry run python mns_subscription/src/subscribe_mns.py
+    displayName: "Run MNS Subscription"
+    workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)"
+    env:
+      SQS_ARN: "$(SQS_ARN)"
 
   - bash: |
       set -ex

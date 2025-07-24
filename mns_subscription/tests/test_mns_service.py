@@ -24,7 +24,7 @@ class TestMnsService(unittest.TestCase):
         service = MnsService(self.authenticator)
 
         # Act
-        result = service.subscribeNotification()
+        result = service.subscribe_notification()
 
         # Assert
         self.assertEqual(result, {"subscriptionId": "abc123"})
@@ -38,7 +38,7 @@ class TestMnsService(unittest.TestCase):
         mock_post.return_value = mock_response
 
         service = MnsService(self.authenticator)
-        result = service.subscribeNotification()
+        result = service.subscribe_notification()
 
         self.assertIsNone(result)
 
@@ -52,7 +52,7 @@ class TestMnsService(unittest.TestCase):
         service = MnsService(self.authenticator)
 
         with self.assertRaises(UnhandledResponseError) as context:
-            service.subscribeNotification()
+            service.subscribe_notification()
 
         self.assertIn("Please provide the correct resource type", str(context.exception))
 

@@ -1,10 +1,11 @@
 import requests
+import os
 import uuid
 import json
 from authentication import AppRestrictedAuth
 from models.errors import UnhandledResponseError
 
-SQS_ARN = "arn:aws:sqs:eu-west-2:345594581768:imms-pr-655-id-sync-queue"
+SQS_ARN = os.getenv("SQS_QUEUE_ARN")
 MNS_URL = "https://int.api.service.nhs.uk/multicast-notification-service/subscriptions"
 
 
@@ -12,7 +13,7 @@ class MnsService:
     def __init__(self, authenticator: AppRestrictedAuth):
         self.authenticator = authenticator
 
-    def subscribeNotification(self) -> dict | None:
+    def subscribe_notification(self) -> dict | None:
         access_token = self.authenticator.get_access_token()
         request_headers = {
             'Authorization': f'Bearer {access_token}',
