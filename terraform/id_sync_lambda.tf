@@ -276,7 +276,7 @@ resource "aws_cloudwatch_log_group" "id_sync_log_group" {
 
 # NEW
 resource "aws_lambda_event_source_mapping" "id_sync_sqs_trigger" {
-  event_source_arn = "arn:aws:sqs:eu-west-2:${local.immunisation_account_id}:${local.short_prefix}-id-sync-queue"
+  event_source_arn = "arn:aws:sqs:eu-west-2:${var.immunisation_account_id}:${local.short_prefix}-id-sync-queue"
   function_name    = aws_lambda_function.id_sync_lambda.arn # TODO
   
   # Optional: Configure batch size and other settings
