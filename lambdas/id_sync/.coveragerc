@@ -3,6 +3,9 @@ omit =
     tests/*
     tests/*/*
     tests/*/*/*
+    tests/test_*.py
+    tests/*/test_*.py
+    tests/*/*/test_*.py
     id_sync/tests/*
     id_sync/tests/*/*
     id_sync/tests/*/*/*
