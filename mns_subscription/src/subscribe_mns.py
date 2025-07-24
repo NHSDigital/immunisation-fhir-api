@@ -25,7 +25,7 @@ def run_subscription():
         )
 
         logging.info("Creating MNS service...")
-        mns = MnsService(authenticator, mns_env)
+        mns = MnsService(authenticator)
 
         logging.info("Subscribing to MNS...")
         result = mns.subscribe_notification()
