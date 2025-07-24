@@ -1,5 +1,4 @@
 """Utils functions for filenameprocessor tests"""
-
 from unittest.mock import patch
 from io import StringIO
 from boto3.dynamodb.types import TypeDeserializer
@@ -12,7 +11,18 @@ from tests.utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DI
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from clients import REGION_NAME
     from csv import DictReader
-    from constants import AuditTableKeys, AUDIT_TABLE_NAME, FileStatus
+    from constants import (
+        AuditTableKeys,
+        AUDIT_TABLE_NAME,
+        FileStatus,
+        SUPPLIER_PERMISSIONS_HASH_KEY,
+        ODS_CODE_TO_SUPPLIER_SYSTEM_HASH_KEY
+    )
+
+MOCK_ODS_CODE_TO_SUPPLIER = {
+    "YGM41": "EMIS",
+    "X8E5B": "RAVS"
+}
 
 dynamodb_client = boto3_client("dynamodb", region_name=REGION_NAME)
 
@@ -44,3 +54,16 @@ def assert_audit_table_entry(file_details: FileDetails, expected_status: FileSta
         TableName=AUDIT_TABLE_NAME, Key={AuditTableKeys.MESSAGE_ID: {"S": file_details.message_id}}
     ).get("Item")
     assert table_entry == {**file_details.audit_table_entry, "status": {"S": expected_status}}
+
+
+def create_mock_hget(
+    mock_ods_code_to_supplier: dict[str, str],
+    mock_supplier_permissions: dict[str, str],
+):
+    def mock_hget(key, field):
+        if key == ODS_CODE_TO_SUPPLIER_SYSTEM_HASH_KEY:
+            return mock_ods_code_to_supplier.get(field)
+        if key == SUPPLIER_PERMISSIONS_HASH_KEY:
+            return mock_supplier_permissions.get(field)
+        return None
+    return mock_hget

@@ -1,51 +1,55 @@
-
 [
   {
     "supplier": "DPSFULL",
-    "permissions": ["COVID19.CRUDS", "FLU.CRUDS", "MMR.CRUDS", "RSV.CRUDS"]
+    "permissions": ["COVID19.CRUDS", "FLU.CRUDS", "MMR.CRUDS", "RSV.CRUDS"],
+    "ods_codes": ["DPSFULL"]
   },
   {
     "supplier": "DPSREDUCED",
-    "permissions": ["COVID19.CRUDS", "FLU.CRUDS", "MMR.CRUDS", "RSV.CRUDS"]
+    "permissions": ["COVID19.CRUDS", "FLU.CRUDS", "MMR.CRUDS", "RSV.CRUDS"],
+    "ods_codes": ["DPSREDUCED"]
   },
   {
     "supplier": "EMIS",
-    "permissions": ["RSV.U"]
+    "permissions": ["RSV.U"],
+    "ods_codes": ["YGM41", "YGJ"]
   },
   {
     "supplier": "PINNACLE",
-    "permissions": [""]
+    "ods_codes": ["8J1100001"]
   },
   {
     "supplier": "SONAR",
-    "permissions": ["FLU.CD"]
+    "permissions": ["FLU.CD"],
+    "ods_codes": ["8HK48"]
   },
   {
     "supplier": "TPP",
-    "permissions": [""]
+    "ods_codes": ["YGA"]
   },
   {
     "supplier": "AGEM-NIVS",
-    "permissions": [""]
+    "ods_codes": ["0DE"]
   },
   {
     "supplier": "NIMS",
-    "permissions": [""]
+    "ods_codes": ["0DF"]
   },
   {
     "supplier": "EVA",
-    "permissions": ["COVID19.CUD"]
+    "permissions": ["COVID19.CUD"],
+    "ods_codes": ["8HA94"]
   },
   {
     "supplier": "RAVS",
-    "permissions": [""]
+    "ods_codes": ["X8E5B"]
   },
   {
     "supplier": "MEDICAL_DIRECTOR",
-    "permissions": [""]
+    "ods_codes": ["YGMYH"]
   },
   {
     "supplier": "COVID19_VACCINE_RESOLUTION_SERVICEDESK",
-    "permissions": [""]
+    "ods_codes": ["N2N9I"]
   }
 ]
