@@ -10,7 +10,6 @@ authors = [
 name = "shared"
 version = "0.1.0"
 description = ""
-authors = ["s.wates <stephen.wates1@nhs.net>"]
 readme = "README.md"
 packages = [
     {include = "common", from = "src"}

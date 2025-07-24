@@ -8,7 +8,7 @@ on:
     types: [labeled, opened, synchronize, reopened, unlabeled]
 
 env:
-  SHARED_PATH: ${{ github.workspace }}/lambdas/shared/src:${{ github.workspace }}/lambdas/shared/tests
+  SHARED_PATH: ${{ github.workspace }}/lambdas/shared/src
   LAMBDA_PATH: ${{ github.workspace }}/lambdas
 
 jobs:
