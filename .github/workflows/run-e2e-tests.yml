@@ -33,6 +33,11 @@ jobs:
         with:
           python-version: "3.11"
       
+      - name: Set Poetry to use Python 3.11
+        working-directory: ./e2e
+        run: |
+          poetry env use $(which python3.11)
+
       - name: Install Poetry
         run: |
           curl -sSL https://install.python-poetry.org | python3 -
