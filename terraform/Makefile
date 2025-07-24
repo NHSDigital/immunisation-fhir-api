@@ -1,18 +1,18 @@
 -include .env
 
-interactionId=$(environment)
+environment        ?= $(ENVIRONMENT)
+sub_environment    ?= $(SUB_ENVIRONMENT)
+sub_environment_dir := $(if $(findstring pr-,$(sub_environment)),pr,$(sub_environment))
 
-aws_profile = apim-dev
-tf_cmd = AWS_PROFILE=$(aws_profile) terraform
+tf_cmd = AWS_PROFILE=$(AWS_PROFILE) terraform
 
-project_name = immunisation
-project_short_name = imms
-state_bucket = $(project_name)-$(APIGEE_ENVIRONMENT)-terraform-state-files
-tf_state= -backend-config="bucket=$(state_bucket)"
+bucket_name = $(if $(filter dev,$(environment)),immunisation-$(sub_environment),immunisation-$(environment))-terraform-state-files
 
-tf_vars= -var="project_name=$(project_name)" -var="project_short_name=$(project_short_name)"
+tf_state = -backend-config="bucket=$(bucket_name)"
 
-.PHONY : lock-provider workspace init plan apply clean destroy output state-list lambda-zip catch-all-zip
+tf_vars = \
+  -var="sub_environment=$(sub_environment)" \
+  -var-file="./environments/$(environment)/$(sub_environment_dir)/variables.tfvars"
 
 lock-provider:
 	# Run this only when you install a new terraform provider. This will generate sha code in lock file for all platform
@@ -20,10 +20,13 @@ lock-provider:
 	$(tf_cmd) providers lock -platform=darwin_arm64 -platform=darwin_amd64 -platform=linux_amd64 -platform=windows_amd64
 
 workspace:
-	$(tf_cmd) workspace new $(environment) || $(tf_cmd) workspace select $(environment) && echo "Switched to workspace/environment: $(environment)"
+	$(tf_cmd) workspace new $(sub_environment) || $(tf_cmd) workspace select $(sub_environment) && echo "Switched to workspace/environment: $(sub_environment)"
 
 init:
 	$(tf_cmd) init $(tf_state) -upgrade  $(tf_vars)
+
+init-reconfigure:
+	$(tf_cmd) init $(tf_state) -upgrade $(tf_vars) -reconfigure
 
 plan: workspace
 	 $(tf_cmd) plan $(tf_vars)
@@ -40,7 +43,7 @@ clean:
 destroy: workspace
 	$(tf_cmd) destroy $(tf_vars) -auto-approve
 	$(tf_cmd) workspace select default
-	$(tf_cmd) workspace delete $(environment)
+	$(tf_cmd) workspace delete $(sub_environment)
 
 output:
 	$(tf_cmd) output -raw $(name)
@@ -59,3 +62,5 @@ catch-all-zip:
 
 tf-%:
 	$(tf_cmd) $*
+
+.PHONY : lock-provider workspace init plan apply clean destroy output state-list lambda-zip catch-all-zip

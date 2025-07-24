@@ -6,7 +6,7 @@ resource "aws_iam_role" "dynamo_s3_access_role" {
       {
         Effect : "Allow",
         Principal : {
-          AWS : "arn:aws:iam::${local.dspp_core_account_id}:root"
+          AWS : "arn:aws:iam::${var.dspp_core_account_id}:root"
         },
         Action : "sts:AssumeRole"
       }
@@ -22,7 +22,7 @@ resource "aws_iam_role_policy" "dynamo_s3_access_policy" {
     Statement = [
       {
         Effect = "Allow",
-        Action = local.environment == "prod" ? [
+        Action = var.environment == "prod" ? [
           "dynamodb:GetItem",
           "dynamodb:Query"
           ] : [

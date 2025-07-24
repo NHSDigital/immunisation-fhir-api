@@ -20,9 +20,9 @@ resource "aws_s3_bucket_policy" "batch_data_source_bucket_policy" {
       {
         Effect : "Allow",
         Principal : {
-          AWS : "arn:aws:iam::${local.dspp_core_account_id}:root"
+          AWS : "arn:aws:iam::${var.dspp_core_account_id}:root"
         },
-        Action : local.environment == "prod" ? [
+        Action : var.environment == "prod" ? [
           "s3:PutObject"
           ] : [
           "s3:ListBucket",
@@ -93,7 +93,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "datasources_lifecycle" {
 
 resource "aws_s3_bucket" "batch_data_destination_bucket" {
   # Deliberately not using `local.batch_prefix` as we don't want separate blue / green destinations in prod.
-  bucket        = "immunisation-batch-${local.environment}-data-destinations"
+  bucket        = "immunisation-batch-${local.resource_scope}-data-destinations"
   force_destroy = local.is_temp
 }
 
@@ -114,9 +114,9 @@ resource "aws_s3_bucket_policy" "batch_data_destination_bucket_policy" {
       {
         Effect : "Allow",
         Principal : {
-          AWS : "arn:aws:iam::${local.dspp_core_account_id}:root"
+          AWS : "arn:aws:iam::${var.dspp_core_account_id}:root"
         },
-        Action : local.environment == "prod" ? [
+        Action : var.environment == "prod" ? [
           "s3:ListBucket",
           "s3:GetObject",
           ] : [
@@ -192,7 +192,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "data_destinations" {
 }
 
 resource "aws_s3_bucket" "batch_config_bucket" {
-  bucket = "imms-${local.environment}-fhir-config"
+  bucket = "imms-${local.resource_scope}-fhir-config"
 }
 
 resource "aws_s3_bucket_public_access_block" "batch_config_bucket_public_access_block" {
