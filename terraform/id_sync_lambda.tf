@@ -272,26 +272,7 @@ resource "aws_cloudwatch_log_group" "id_sync_log_group" {
   retention_in_days = 30
 }
 
-# S3 Bucket notification to trigger Lambda function for config bucket
-resource "aws_s3_bucket_notification" "config_lambda_notification" {
-
-  bucket = aws_s3_bucket.batch_config_bucket.bucket
-
-  lambda_function {
-    lambda_function_arn = aws_lambda_function.id_sync_lambda.arn
-    events              = ["s3:ObjectCreated:*"]
-  }
-}
-
-# Permission for the new S3 bucket to invoke the Lambda function
-resource "aws_lambda_permission" "new_s3_invoke_permission" {
-
-  statement_id  = "AllowExecutionFromNewS3"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.id_sync_lambda.function_name
-  principal     = "s3.amazonaws.com"
-  source_arn    = local.config_bucket_arn
-}
+# delete config_lambda_notification / new_s3_invoke_permission - not required; duplicate
 
 # NEW
 resource "aws_lambda_event_source_mapping" "id_sync_sqs_trigger" {
