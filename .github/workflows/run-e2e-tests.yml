@@ -55,6 +55,7 @@ jobs:
       - name: Terraform Init
         working-directory: ./terraform
         run: |
+          export ENVIRONMENT=dev
           make init
           
       - name: Terraform Plan
