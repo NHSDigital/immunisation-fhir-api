@@ -8,7 +8,7 @@ on:
     types: [labeled, opened, synchronize, reopened, unlabeled]
 
 env:
-  SHARED_PATH: ${{ github.workspace }}/lambdas/shared/src
+  SHARED_PATH: ${{ github.workspace }}/lambdas/shared
   LAMBDA_PATH: ${{ github.workspace }}/lambdas
 
 jobs:
@@ -123,7 +123,7 @@ jobs:
         working-directory: lambdas/shared
         id: shared
         env:
-          PYTHONPATH: ${{ env.SHARED_PATH }}
+          PYTHONPATH: ${{ env.SHARED_PATH }}/src
         continue-on-error: true
         run: |
             poetry env use 3.11
@@ -135,7 +135,7 @@ jobs:
         working-directory: lambdas/id_sync
         id: id_sync
         env:
-          PYTHONPATH: ${{ env.LAMBDA_PATH }}/id_sync/src:${{ env.LAMBDA_PATH }}/id_sync/tests:${{ env.SHARED_PATH }}
+          PYTHONPATH: ${{ env.LAMBDA_PATH }}/id_sync/src:${{ env.SHARED_PATH }}/src
         continue-on-error: true
         run: |
             poetry env use 3.11
