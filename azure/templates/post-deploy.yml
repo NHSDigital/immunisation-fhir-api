@@ -81,10 +81,10 @@ steps:
     retryCountOnTaskFailure: 2
 
   - bash: |
-      echo "Subscribing SQS to MNS via Lambda-compatible client..."
+      echo "Subscribing SQS to MNS for notifications."
       poetry run python mns_subscription/src/subscribe_mns.py
     displayName: "Run MNS Subscription"
-    workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)"
+    workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/mns_subscription"
     env:
       SQS_ARN: "$(SQS_ARN)"
 
