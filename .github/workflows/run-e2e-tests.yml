@@ -46,6 +46,9 @@ jobs:
   terraform-apply:
     needs: terraform-plan
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     environment:
       name: int
     steps:
@@ -71,6 +74,9 @@ jobs:
   e2e-tests:
     needs: terraform-apply
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
