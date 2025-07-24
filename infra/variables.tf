@@ -16,3 +16,6 @@ variable "build_agent_account_id" {
 variable "environment" {
   default = "non-prod"
 }
+
+variable "mns_account_id" {}
+variable "mns_admin_role" {}
