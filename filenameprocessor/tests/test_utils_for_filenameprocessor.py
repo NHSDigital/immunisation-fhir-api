@@ -15,7 +15,6 @@ with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from clients import REGION_NAME
     from utils_for_filenameprocessor import (
         get_created_at_formatted_string,
-        identify_supplier,
         move_file,
         invoke_filename_lambda,
     )
@@ -50,34 +49,6 @@ class TestUtilsForFilenameprocessor(TestCase):
             created_at_formatted_string = get_created_at_formatted_string(bucket_name, file_key)
 
         self.assertEqual(created_at_formatted_string, expected_result)
-
-    def test_identify_supplier(self):
-        """Test that identify_supplier correctly identifies supplier using ods_to_supplier_mappings"""
-        # Each test case tuple has the structure (ods_code, expected_result)
-        test_cases = (
-            ("YGM41", "EMIS"),
-            ("8J1100001", "PINNACLE"),
-            ("8HK48", "SONAR"),
-            ("YGA", "TPP"),
-            ("0DE", "AGEM-NIVS"),
-            ("0DF", "NIMS"),
-            ("8HA94", "EVA"),
-            ("X8E5B", "RAVS"),
-            ("YGMYH", "MEDICAL_DIRECTOR"),
-            ("W00", "WELSH_DA_1"),
-            ("W000", "WELSH_DA_2"),
-            ("ZT001", "NORTHERN_IRELAND_DA"),
-            ("YA7", "SCOTLAND_DA"),
-            ("N2N9I", "COVID19_VACCINE_RESOLUTION_SERVICEDESK"),
-            ("YGJ", "EMIS"),
-            ("DPSREDUCED", "DPSREDUCED"),
-            ("DPSFULL", "DPSFULL"),
-            ("NOT_A_VALID_ODS_CODE", ""),  # Should default to empty string if ods code isn't in the mappings
-        )
-
-        for ods_code, expected_result in test_cases:
-            with self.subTest(f"SubTest for ODS code: {ods_code}"):
-                self.assertEqual(identify_supplier(ods_code), expected_result)
 
     def test_move_file(self):
         """Tests that move_file correctly moves a file from one location to another within a single S3 bucket"""

@@ -3,8 +3,7 @@
 from re import match
 from datetime import datetime
 from constants import Constants
-from elasticache import get_valid_vaccine_types_from_cache
-from utils_for_filenameprocessor import identify_supplier
+from elasticache import get_valid_vaccine_types_from_cache, get_supplier_system_from_cache
 from errors import InvalidFileKeyError
 
 
@@ -46,7 +45,7 @@ def validate_file_key(file_key: str) -> tuple[str, str]:
     ods_code = file_key_parts_without_extension[3]
     timestamp = file_key_parts_without_extension[4]
     extension = file_key.split(".")[1]
-    supplier = identify_supplier(ods_code)
+    supplier = get_supplier_system_from_cache(ods_code)
 
     valid_vaccine_types = get_valid_vaccine_types_from_cache()
 
