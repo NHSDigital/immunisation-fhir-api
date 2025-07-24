@@ -128,7 +128,7 @@ jobs:
         run: |
             poetry env use 3.11
             poetry install
-            poetry run coverage run --source=src -m unittest discover -s tests -p "test_*.py" -v || echo "shared tests failed" >> ../../failed_tests.txt
+            poetry run coverage run --rcfile=.coveragerc --source=src -m unittest discover -s tests -p "test_*.py" -v || echo "shared tests failed" >> ../../failed_tests.txt
             poetry run coverage xml -o ../../shared-coverage.xml
 
       - name: Run unittest with id_sync
@@ -140,7 +140,7 @@ jobs:
         run: |
             poetry env use 3.11
             poetry install
-            poetry run coverage run --source=src -m unittest discover || echo "id_sync tests failed" >> ../../failed_tests.txt
+            poetry run coverage run --rcfile=.coveragerc --source=src -m unittest discover || echo "id_sync tests failed" >> ../../failed_tests.txt
             poetry run coverage xml -o ../../id_sync-coverage.xml
 
       - name: Run Test Failure Summary
