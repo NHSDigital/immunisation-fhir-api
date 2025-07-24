@@ -56,6 +56,7 @@ jobs:
         working-directory: ./terraform
         run: |
           export ENVIRONMENT=dev
+          export SUB_ENVIRONMENT=internal-dev
           make init
           
       - name: Terraform Plan
