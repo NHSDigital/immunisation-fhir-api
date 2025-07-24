@@ -3,18 +3,21 @@
     "supplier": "DPSFULL",
     "permissions": [
       "RSV.CRUDS"
-    ]
+    ],
+    "ods_codes": ["DPSFULL"]
   },
   {
     "supplier": "DPSREDUCED",
     "permissions": [
       "RSV.CRUDS"
-    ]
+    ],
+    "ods_codes": ["DPSREDUCED"]
   },
   {
     "supplier": "RAVS",
     "permissions": [
       "RSV.RS"
-    ]
+    ],
+    "ods_codes": ["X8E5B"]
   }
 ]
