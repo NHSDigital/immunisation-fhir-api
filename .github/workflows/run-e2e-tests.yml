@@ -87,4 +87,4 @@ jobs:
           export SERVICE_BASE_PATH=immunisation-fhir-api/FHIR/R4
           export SSO_LOGIN_URL=https://login.apigee.com
 
-          make run
+          make run-immunization
