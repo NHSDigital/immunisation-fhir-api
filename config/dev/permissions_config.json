@@ -6,7 +6,8 @@
       "FLU.CRUDS",
       "MMR.CRUDS",
       "RSV.CRUDS"
-    ]
+    ],
+    "ods_codes": ["DPSFULL"]
   },
   {
     "supplier": "DPSREDUCED",
@@ -15,7 +16,8 @@
       "FLU.CRUD",
       "MMR.CRUD",
       "RSV.CRUD"
-    ]
+    ],
+    "ods_codes": ["DPSREDUCED"]
   },
   {
     "supplier": "MAVIS",
@@ -25,61 +27,70 @@
       "MENACWY.CRUDS",
       "MMR.CRUDS",
       "FLU.CRUDS"
-    ]
-  },
-  {
-    "supplier": "EMIS",
-    "permissions": [
-      "RSV.U"
-    ]
-  },
-  {
-    "supplier": "PINNACLE",
-    "permissions": []
+    ],
+    "ods_codes": ["V0V8L"]
   },
   {
     "supplier": "SONAR",
     "permissions": [
       "FLU.CD"
-    ]
-  },
-  {
-    "supplier": "TPP",
-    "permissions": []
-  },
-  {
-    "supplier": "AGEM-NIVS",
-    "permissions": []
-  },
-  {
-    "supplier": "NIMS",
-    "permissions": []
+    ],
+    "ods_codes": ["8HK48"]
   },
   {
     "supplier": "EVA",
     "permissions": [
       "COVID19.CUD"
-    ]
+    ],
+    "ods_codes": ["8HA94"]
   },
   {
     "supplier": "RAVS",
     "permissions": [
-      "RSV.CRUDS"
-    ]
+      "RSV.CRUDS",
+      "MMR.CRUDS"
+    ],
+    "ods_codes": ["X8E5B"]
   },
   {
     "supplier": "AGEM-RAVS-Integration",
     "permissions": [
-      "RSV.CRUDS"
+      "RSV.CRUDS",
+      "MMR.CRUDS"
     ]
   },
   {
-    "supplier": "MEDICAL_DIRECTOR",
-    "permissions": []
+    "supplier": "EMIS",
+    "permissions": [
+      "RSV.CRUDS",
+      "MMR.CRUDS",
+      "HPV.CRUDS",
+      "3IN1.CRUDS",
+      "MENACWY.CRUDS"
+    ],
+    "ods_codes": ["YGM41", "YGJ"]
   },
   {
-    "supplier": "COVID19_VACCINE_RESOLUTION_SERVICEDESK",
-    "permissions": []
+    "supplier": "TPP",
+    "permissions": [
+      "RSV.CRUDS",
+      "MMR.CRUDS",
+      "HPV.CRUDS",
+      "3IN1.CRUDS",
+      "MENACWY.CRUDS"
+    ],
+    "ods_codes": ["YGA"]
+  },
+  {
+    "supplier": "MEDICUS",
+    "permissions": [
+      "RSV.CRUDS",
+      "MMR.CRUDS",
+      "HPV.CRUDS",
+      "3IN1.CRUDS",
+      "MENACWY.CRUDS"
+    ],
+    "ods_codes": ["YGMYW"]
   },
   {
     "supplier": "Test_App",

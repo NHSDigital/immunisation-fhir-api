@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 from tests.utils_for_tests.values_for_tests import MockFileDetails
 from tests.utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT
+from tests.utils_for_tests.utils_for_filenameprocessor_tests import MOCK_ODS_CODE_TO_SUPPLIER, create_mock_hget
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
@@ -38,25 +39,27 @@ class TestFileKeyValidation(TestCase):
             with self.subTest():
                 self.assertEqual(is_valid_datetime(date_time_string), expected_result)
 
+    @patch("elasticache.redis_client.hget", side_effect=create_mock_hget(MOCK_ODS_CODE_TO_SUPPLIER, {}))
     @patch("elasticache.redis_client.hkeys", return_value=["FLU", "RSV"])
-    def test_validate_file_key(self, _mock_hkeys):
+    def test_validate_file_key(self, mock_hkeys, mock_hget):
         """Tests that file_key_validation returns True if all elements pass validation, and False otherwise"""
         # Test case tuples are structured as (file_key, expected_result)
         test_cases_for_success_scenarios = [
             # Valid FLU/ EMIS file key (mixed case)
-            (VALID_FLU_EMIS_FILE_KEY, ("FLU", "EMIS")),
+            (VALID_FLU_EMIS_FILE_KEY, "YGM41", ("FLU", "EMIS")),
             # Valid FLU/ EMIS (all lowercase)
-            (VALID_FLU_EMIS_FILE_KEY.lower(), ("FLU", "EMIS")),
+            (VALID_FLU_EMIS_FILE_KEY.lower(), "YGM41", ("FLU", "EMIS")),
             # Valid FLU/ EMIS (all uppercase)
-            (VALID_FLU_EMIS_FILE_KEY.upper(), ("FLU", "EMIS")),
+            (VALID_FLU_EMIS_FILE_KEY.upper(), "YGM41", ("FLU", "EMIS")),
             # Valid RSV/ RAVS file key
-            (VALID_RSV_RAVS_FILE_KEY, ("RSV", "RAVS")),
+            (VALID_RSV_RAVS_FILE_KEY, "X8E5B", ("RSV", "RAVS")),
         ]
 
-        for file_key, expected_result in test_cases_for_success_scenarios:
+        for file_key, ods_code, expected_result in test_cases_for_success_scenarios:
             with self.subTest(f"SubTest for file key: {file_key}"):
                 self.assertEqual(validate_file_key(file_key), expected_result)
-                _mock_hkeys.assert_called_with("vacc_to_diseases")
+                mock_hkeys.assert_called_with("vacc_to_diseases")
+                mock_hget.assert_called_with("ods_code_to_supplier", ods_code)
 
         key_format_error_message = "Initial file validation failed: invalid file key format"
         invalid_file_key_error_message = "Initial file validation failed: invalid file key"
@@ -102,4 +105,4 @@ class TestFileKeyValidation(TestCase):
                 with self.assertRaises(InvalidFileKeyError) as context:
                     validate_file_key(file_key)
                 self.assertEqual(str(context.exception), expected_result)
-                _mock_hkeys.assert_called_with("vacc_to_diseases")
+                mock_hkeys.assert_called_with("vacc_to_diseases")

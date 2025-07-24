@@ -19,7 +19,7 @@ def get_csv_content_dict_reader(file_key: str) -> DictReader:
     """Returns the requested file contents from the source bucket in the form of a DictReader"""
     response = s3_client.get_object(Bucket=os.getenv("SOURCE_BUCKET_NAME"), Key=file_key)
     binary_io = response["Body"]
-    text_io = TextIOWrapper(binary_io, encoding="utf-8")
+    text_io = TextIOWrapper(binary_io, encoding="utf-8", newline="")
     return DictReader(text_io, delimiter="|")
 
 

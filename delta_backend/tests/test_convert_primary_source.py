@@ -6,28 +6,27 @@ from converter import Converter
 from common.mappings import ConversionFieldName
 
 class TestPrimarySourceFlatJson(unittest.TestCase):
-    
+
     def setUp(self):
         self.request_json_data = copy.deepcopy(ValuesForTests.json_data)
-        
+
     def _run_primary_source_test(self, expected_result):
         """Helper function to run the test"""
         self.converter = Converter(json.dumps(self.request_json_data))
         flat_json = self.converter.run_conversion()
         self.assertEqual(flat_json.get(ConversionFieldName.PRIMARY_SOURCE), expected_result)
-    
+
     def test_primary_source_true(self):
         """Should return True when primarySource is true"""
         self.request_json_data["primarySource"] = True
-        self._run_primary_source_test(expected_result=True)
+        self._run_primary_source_test(expected_result="TRUE")
 
     def test_primary_source_false(self):
         """Should return False when primarySource is false"""
         self.request_json_data["primarySource"] = False
-        self._run_primary_source_test(expected_result=False)
-        
+        self._run_primary_source_test(expected_result="FALSE")
+
     def test_primary_source_missing(self):
         """Should return None when primarySource is missing"""
         self.request_json_data.pop("primarySource", None)
         self._run_primary_source_test(expected_result="")
-    
