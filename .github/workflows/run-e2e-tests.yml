@@ -65,6 +65,12 @@ jobs:
         with:
           terraform_version: "1.12.2"
 
+      - name: Terraform Init
+        working-directory: ./terraform_old
+        run: |
+          export ENVIRONMENT=green
+          make init
+
       - name: Terraform Apply
         working-directory: ./terraform_old
         run: |
