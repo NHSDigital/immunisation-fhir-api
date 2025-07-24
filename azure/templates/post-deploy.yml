@@ -41,8 +41,6 @@ steps:
       set -e
       if ! [[ $APIGEE_ENVIRONMENT =~ .*-*sandbox ]]; then
         export AWS_PROFILE=apim-dev
-        aws_account_no="$(aws sts get-caller-identity --query Account --output text)"
-
         service_name=$(FULLY_QUALIFIED_SERVICE_NAME)
 
         pr_no=$(echo $service_name | { grep -oE '[0-9]+$' || true; })
@@ -58,10 +56,10 @@ steps:
         echo Apigee environment: $APIGEE_ENVIRONMENT
         echo pr_no: $pr_no
 
-          cd terraform
+        cd terraform
 
         make init
-        make apply aws_account_no=${aws_account_no} environment=$workspace
+        make apply environment=${{ parameters.aws_account_type }} sub_environment=$workspace
 
         AWS_DOMAIN_NAME=$(make -s output name=service_domain_name)
         IMMS_DELTA_TABLE_NAME=$(make -s output name=imms_delta_table_name)

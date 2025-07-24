@@ -1,7 +1,7 @@
 """Utils for filenameprocessor lambda"""
 
 import json
-from constants import Constants, SOURCE_BUCKET_NAME, FILE_NAME_PROC_LAMBDA_NAME
+from constants import SOURCE_BUCKET_NAME, FILE_NAME_PROC_LAMBDA_NAME
 from clients import s3_client, logger, lambda_client
 
 
@@ -9,14 +9,6 @@ def get_created_at_formatted_string(bucket_name: str, file_key: str) -> str:
     """Get the created_at_formatted_string from the response"""
     response = s3_client.get_object(Bucket=bucket_name, Key=file_key)
     return response["LastModified"].strftime("%Y%m%dT%H%M%S00")
-
-
-def identify_supplier(ods_code: str) -> str:
-    """
-    Identifies the supplier from the ods code using the mapping.
-    Defaults to empty string if ODS code isn't found in the mappings.
-    """
-    return Constants.ODS_TO_SUPPLIER_MAPPINGS.get(ods_code, "")
 
 
 def move_file(bucket_name: str, source_file_key: str, destination_file_key: str) -> None:
