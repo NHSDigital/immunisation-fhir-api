@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  test-oidc:
+  terraform-plan:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -16,7 +16,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: eu-west-2
-          role-to-assume: arn:aws:iam::345594581768:role/auto-ops
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/auto-ops
           role-session-name: github-actions
 
       - name: Whoami
@@ -27,27 +27,6 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Set up Python
-        id: setup_python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install Poetry
-        run: |
-          curl -sSL https://install.python-poetry.org | python3 -
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-     
-      - name: Set Poetry to use Python 3.11
-        working-directory: ./e2e
-        run: |
-          poetry env use $(which python3.11)
-
-      - name: Install dependencies with Poetry (from e2e folder)
-        working-directory: ./e2e
-        run: |
-          poetry install --no-root
-      
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: "1.12.2"
@@ -58,13 +37,72 @@ jobs:
           export ENVIRONMENT=dev
           export SUB_ENVIRONMENT=internal-dev
           make init
-          
-      - name: Terraform Plan
-        working-directory: ./terraform
-        run: |
-          make plan environment=dev sub_environment=internal-dev
 
-      - name: Run e2e
+      - name: Terraform Plan
+        working-directory: ./terraform_old
+        run: |
+          make plan environment=green
+          # make plan environment=dev sub_environment=internal-dev
+
+  terraform-apply:
+    needs: terraform-plan
+    runs-on: ubuntu-latest
+    environment:
+      name: int
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: eu-west-2
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/auto-ops
+          role-session-name: github-actions
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.12.2"
+
+      - name: Terraform Apply
+        working-directory: ./terraform_old
+        run: |
+          make plan environment=green
+          # make plan environment=green sub_environment=internal-dev
+
+  e2e-tests:
+    needs: terraform-apply
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: eu-west-2
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/auto-ops
+          role-session-name: github-actions
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Set Poetry to use Python 3.11
+        working-directory: ./e2e
+        run: |
+          poetry env use $(which python3.11)
+
+      - name: Install dependencies with Poetry
+        working-directory: ./e2e
+        run: |
+          poetry install --no-root
+
+      - name: Run e2e tests
         working-directory: ./e2e
         run: |
           apigee_token=$(aws ssm get-parameter \
@@ -78,7 +116,7 @@ jobs:
             --with-decryption \
             --query "Parameter.Value" \
             --output text)
-          
+
           export APIGEE_ACCESS_TOKEN=$apigee_token
           export APIGEE_USERNAME=apm-testing-internal-dev@nhs.net
           export APIGEE_ENVIRONMENT=internal-dev
