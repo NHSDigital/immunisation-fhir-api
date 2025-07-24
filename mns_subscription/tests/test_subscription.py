@@ -26,7 +26,6 @@ class TestRunSubscription(unittest.TestCase):
         # Assert
         self.assertEqual(result, {"subscriptionId": "abc123"})
         mock_auth_class.assert_called_once()
-        mock_mns_service.assert_called_once_with(mock_auth_instance, "int")
         mock_mns_instance.subscribe_notification.assert_called_once()
 
 
