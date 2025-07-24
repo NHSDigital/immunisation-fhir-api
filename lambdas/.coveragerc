@@ -1,0 +1,8 @@
+[report]
+omit =
+    shared/tests/*
+    shared/tests/*/*
+    shared/tests/*/*/*
+    id_sync/tests/*
+    id_sync/tests/*/*
+    id_sync/tests/*/*/*
