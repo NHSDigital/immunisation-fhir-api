@@ -29,7 +29,7 @@ class Extractor:
         return next((c for c in contained if isinstance(c, dict) and c.get("resourceType") == "Patient"), "")
 
     def _get_valid_names(self, names, occurrence_time):
-        
+
         official_names = [n for n in names if n.get("use") == "official" and self._is_current_period(n, occurrence_time)]
         if official_names:
             return official_names[0]
@@ -37,9 +37,9 @@ class Extractor:
         valid_names = [n for n in names if self._is_current_period(n, occurrence_time) and n.get("use") != "old"]
         if valid_names:
             return valid_names[0]
-        
-        return names[0] 
-            
+
+        return names[0]
+
 
 
     def _get_person_names(self):
@@ -56,9 +56,9 @@ class Extractor:
 
         if person_forename and person_surname:
             return person_forename, person_surname
-        
+
         return "", ""
-    
+
     def _get_practitioner_names(self):
         contained = self.fhir_json_data.get("contained", [])
         occurrence_time = self._get_occurance_date_time()
@@ -282,8 +282,8 @@ class Extractor:
         )
 
         return selected_address.get("postalCode") or self.DEFAULT_POSTCODE
-    
-    def extract_date_time(self) -> str: 
+
+    def extract_date_time(self) -> str:
         date = self.fhir_json_data.get("occurrenceDateTime","")
         if date:
             return self._convert_date_to_safe_format(ConversionFieldName.DATE_AND_TIME, date)
@@ -321,7 +321,7 @@ class Extractor:
         primary_source = self.fhir_json_data.get("primarySource")
 
         if isinstance(primary_source, bool):
-            return primary_source
+            return str(primary_source).upper()
         return ""
 
     def extract_vaccination_procedure_code(self) -> str:
