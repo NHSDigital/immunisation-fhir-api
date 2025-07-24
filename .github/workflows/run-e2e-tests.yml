@@ -32,10 +32,9 @@ jobs:
           terraform_version: "1.12.2"
 
       - name: Terraform Init
-        working-directory: ./terraform
+        working-directory: ./terraform_old
         run: |
-          export ENVIRONMENT=dev
-          export SUB_ENVIRONMENT=internal-dev
+          export ENVIRONMENT=green
           make init
 
       - name: Terraform Plan
