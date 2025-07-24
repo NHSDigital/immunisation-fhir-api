@@ -82,9 +82,11 @@ steps:
 
   - bash: |
       echo "Subscribing SQS to MNS for notifications."
-      poetry run python mns_subscription/src/subscribe_mns.py
+      poetry run python src/subscribe_mns.py
+      echo "Showing folder structure under pipeline workspace:"
+      find $(Pipeline.Workspace)/s -type d | sort
     displayName: "Run MNS Subscription"
-    workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/mns_subscription"
+    workingDirectory: "$(Pipeline.Workspace)/s/immunisation-fhir-api/mns_subscription"
     env:
       SQS_ARN: "$(SQS_ARN)"
 
