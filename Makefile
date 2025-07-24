@@ -1,6 +1,6 @@
 SHELL=/usr/bin/env bash -euo pipefail
 
-PYTHON_PROJECT_DIRS_WITH_UNIT_TESTS = ack_backend backend delta_backend filenameprocessor mesh_processor recordprocessor redis_sync
+PYTHON_PROJECT_DIRS_WITH_UNIT_TESTS = ack_backend backend delta_backend filenameprocessor mesh_processor recordprocessor redis_sync mns_subscription
 PYTHON_PROJECT_DIRS = e2e e2e_batch $(PYTHON_PROJECT_DIRS_WITH_UNIT_TESTS)
 
 #Installs dependencies using poetry.
