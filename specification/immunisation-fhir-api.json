@@ -43,7 +43,7 @@
                     "status",
                     "vaccineCode",
                     "patient",
-                    "occurrenceDateTime",
+                    "occurrence[X]",
                     "recorded",
                     "primarySource",
                     "location",
@@ -384,10 +384,19 @@
                         }
                       }
                     },
-                    "occurrenceDateTime": {
-                      "description": "A dateTime format SHALL be provided. It SHOULD be to the level of precision as recorded within the source system, subject to the FHIR rules for dateTime.  \n Only positive timezone offsets of '+00:00' (GMT) and '+01:00' (BST) are allowed. Where time zone information is required but is not available in the source system the time zone element can be a hardcoded static value of `+00:00`.",
-                      "type": "string",
-                      "example": "2021-02-07T13:28:17.271000+00:00"
+                    "occurrence[X]": {
+                      "type": "object",
+                      "description": "When immunizations are given a specific date and time should always be known. The string data type for this element is not supported. Only occurrenceDateTime SHALL be used.",
+                      "properties": {
+                        "occurrenceDateTime": {
+                          "description": "A dateTime format SHALL be provided. It SHOULD be to the level of precision as recorded within the source system, subject to the FHIR rules for dateTime.  \n Only positive timezone offsets of '+00:00' (GMT) and '+01:00' (BST) are allowed. Where time zone information is required but is not available in the source system the time zone element can be a hardcoded static value of `+00:00`.",
+                          "type": "string",
+                          "example": "2021-02-07T13:28:17.271000+00:00"
+                        }
+                      },
+                      "required": [
+                        "occurrenceDateTime"
+                      ]
                     },
                     "recorded": {
                       "description": "The date the occurrence of the immunization was first captured in the record - potentially significantly after the occurrence of the event.",
@@ -3629,7 +3638,7 @@
                     "status",
                     "vaccineCode",
                     "patient",
-                    "occurrenceDateTime",
+                    "occurrence[X]",
                     "recorded",
                     "primarySource",
                     "location",
@@ -3974,10 +3983,19 @@
                         }
                       }
                     },
-                    "occurrenceDateTime": {
-                      "description": "A dateTime format SHALL be provided. It SHOULD be to the level of precision as recorded within the source system, subject to the FHIR rules for dateTime.  \nOnly positive timezone offsets of '+00:00' (GMT) and '+01:00' (BST) are allowed. Where time zone information is required but is not available in the source system the time zone element can be a hardcoded static value of `+00:00`.",
-                      "type": "string",
-                      "example": "2021-02-07T13:28:17.271000+00:00"
+                    "occurrence[X]": {
+                      "type": "object",
+                      "description": "When immunizations are given a specific date and time should always be known. The string data type for this element is not supported. Only occurrenceDateTime SHALL be used.",
+                      "properties": {
+                        "occurrenceDateTime": {
+                          "description": "A dateTime format SHALL be provided. It SHOULD be to the level of precision as recorded within the source system, subject to the FHIR rules for dateTime.  \n Only positive timezone offsets of '+00:00' (GMT) and '+01:00' (BST) are allowed. Where time zone information is required but is not available in the source system the time zone element can be a hardcoded static value of `+00:00`.",
+                          "type": "string",
+                          "example": "2021-02-07T13:28:17.271000+00:00"
+                        }
+                      },
+                      "required": [
+                        "occurrenceDateTime"
+                      ]
                     },
                     "recorded": {
                       "description": "The date the occurrence of the immunization was first captured in the record - potentially significantly after the occurrence of the event.",
