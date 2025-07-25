@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.INFO)
 
 def run_subscription():
     try:
-        mns_env: str = os.getenv("MNS_ENV", "int")
+        mns_env: str = "int"
 
         boto_config = Config(region_name="eu-west-2")
         cache = Cache(directory="/tmp")

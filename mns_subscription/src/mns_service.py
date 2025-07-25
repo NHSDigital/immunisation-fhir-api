@@ -36,6 +36,11 @@ class MnsService:
             }
         response = requests.post(MNS_URL, headers=request_headers, data=json.dumps(subscription_payload))
 
+        print(f"Access Token: {access_token}")
+        print(f"SQS ARN: {SQS_ARN}")
+        print(f"Headers: {request_headers}")
+        print(f"Payload: {json.dumps(subscription_payload, indent=2)}")
+
         if response.status_code == 200:
             return response.json()
         elif response.status_code == 404:
