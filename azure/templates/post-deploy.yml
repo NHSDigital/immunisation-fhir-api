@@ -77,13 +77,6 @@ steps:
     displayName: Apply Terraform
     workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)"
     retryCountOnTaskFailure: 2
-  - bash: |
-      echo "Current working directory: $(pwd)"
-      echo "Directory structure:"
-      find . -type d -name "*mns*" || echo "No mns directories found"
-      ls -la
-    displayName: "Debug Directory Structure"
-    workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)"
 
   - bash: |
       echo "Subscribing SQS to MNS for notifications."
