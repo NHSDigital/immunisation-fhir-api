@@ -244,6 +244,25 @@ resource "aws_iam_role_policy_attachment" "id_sync_lambda_kms_policy_attachment"
   policy_arn = aws_iam_policy.id_sync_lambda_kms_access_policy.arn
 }
 
+data "aws_iam_policy_document" "id_sync_policy_document" {
+  source_policy_documents = [
+    templatefile("${local.policy_path}/dynamodb.json", {
+      "dynamodb_table_name" : aws_dynamodb_table.delta-dynamodb-table.name
+    }),
+    templatefile("${local.policy_path}/dynamodb_stream.json", {
+      "dynamodb_table_name" : aws_dynamodb_table.events-dynamodb-table.name
+    })
+  ]
+}
+
+# Attach the dynamodb policy to the Lambda role
+# TODO: attach a policy rather than a policy_arn?
+resource "aws_iam_role_policy_attachment" "id_sync_lambda_dynamodb_policy_attachment" {
+  role       = aws_iam_role.id_sync_lambda_exec_role.name
+  policy     = data.aws_iam_policy_document.id_sync_policy_document.json
+}
+
+
 # Lambda Function with Security Group and VPC.
 resource "aws_lambda_function" "id_sync_lambda" {
   function_name = "${local.short_prefix}-id_sync_lambda"
@@ -276,17 +295,6 @@ resource "aws_lambda_function" "id_sync_lambda" {
   depends_on = [
     aws_cloudwatch_log_group.id_sync_log_group,
     aws_iam_policy.id_sync_lambda_exec_policy
-  ]
-}
-
-data "aws_iam_policy_document" "delta_policy_document" {
-  source_policy_documents = [
-    templatefile("${local.policy_path}/dynamodb.json", {
-      "dynamodb_table_name" : aws_dynamodb_table.delta-dynamodb-table.name
-    }),
-    templatefile("${local.policy_path}/dynamodb_stream.json", {
-      "dynamodb_table_name" : aws_dynamodb_table.events-dynamodb-table.name
-    })
   ]
 }
 
