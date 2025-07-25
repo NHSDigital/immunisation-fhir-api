@@ -1,0 +1,18 @@
+name: Deploy Blue Green - INT
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [master]
+
+jobs:
+  deploy-green:
+    uses: ./.github/workflows/deploy-template.yml
+    with:
+      environment: green
+
+  deploy-blue:
+    needs: deploy-green
+    uses: ./.github/workflows/deploy-template.yml
+    with:
+      environment: blue
