@@ -78,7 +78,7 @@ jobs:
 
   e2e-tests:
     needs: terraform-apply
-    if: 1 == 2 # skip e2e tests running in this workflow until we have we have a working automation account for apigee
+    if: ${{ vars.RUN_E2E == 'true' || inputs.environment == vars.ACTIVE_ENVIRONMENT }}
     runs-on: ubuntu-latest
     permissions:
       id-token: write
