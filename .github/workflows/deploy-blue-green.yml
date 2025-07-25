@@ -1,5 +1,5 @@
 # .github/workflows/deploy-green-then-blue.yml
-name: Deploy Blue Green INT
+name: Deploy Blue Green - INT
 
 on:
   pull_request:
