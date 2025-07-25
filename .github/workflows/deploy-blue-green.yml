@@ -1,0 +1,21 @@
+# .github/workflows/deploy-green-then-blue.yml
+name: Deploy Blue Green
+
+on:
+  push:
+    branches: [VED-358-github-actions-for-int]
+  workflow_dispatch:
+
+jobs:
+  deploy-green:
+    uses: ./.github/workflows/deploy-template.yml
+    with:
+      environment: green
+
+  deploy-blue:
+    needs: deploy-green
+    uses: ./.github/workflows/deploy-template.yml
+    with:
+      environment: blue
+    environment:
+      name: int

@@ -1,9 +1,10 @@
-name: E2E Tests
-
+name: Deploy to INT and run E2e test
 on:
-  push:
-    branches: [VED-358-github-actions-for-int]
-  workflow_dispatch:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
 
 jobs:
   terraform-plan:
@@ -32,16 +33,15 @@ jobs:
           terraform_version: "1.12.2"
 
       - name: Terraform Init
-        working-directory: ./terraform_old
+        working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
         run: |
-          export ENVIRONMENT=green
+          export ENVIRONMENT=${{ inputs.environment }}
           make init
 
       - name: Terraform Plan
-        working-directory: ./terraform_old
+        working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
         run: |
-          make plan environment=green
-          # make plan environment=dev sub_environment=internal-dev
+          make plan environment=${{ inputs.environment }}
 
   terraform-apply:
     needs: terraform-plan
@@ -66,19 +66,19 @@ jobs:
           terraform_version: "1.12.2"
 
       - name: Terraform Init
-        working-directory: ./terraform_old
+        working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
         run: |
-          export ENVIRONMENT=green
+          export ENVIRONMENT=${{ inputs.environment }}
           make init
 
       - name: Terraform Apply
-        working-directory: ./terraform_old
+        working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
         run: |
-          make plan environment=green
-          # make plan environment=green sub_environment=internal-dev
+          make plan environment=${{ inputs.environment }}
 
   e2e-tests:
     needs: terraform-apply
+    if: 1 == 2 # skip e2e tests running in this workflow until we have we have a working automation account for apigee
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -104,17 +104,17 @@ jobs:
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Set Poetry to use Python 3.11
-        working-directory: ./e2e
+        working-directory: ${{ vars.E2E_DIR_PATH }}
         run: |
           poetry env use $(which python3.11)
 
       - name: Install dependencies with Poetry
-        working-directory: ./e2e
+        working-directory: ${{ vars.E2E_DIR_PATH }}
         run: |
           poetry install --no-root
 
       - name: Run e2e tests
-        working-directory: ./e2e
+        working-directory: ${{ vars.E2E_DIR_PATH }}
         run: |
           apigee_token=$(aws ssm get-parameter \
             --name "/imms/apigee/non-prod/token" \
