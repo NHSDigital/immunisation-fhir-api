@@ -110,11 +110,11 @@ data "aws_dynamodb_table" "events-dynamodb-table" {
 }
 
 data "aws_dynamodb_table" "audit-table" {
-  name = "immunisation-batch-int-audit-table"
+  name = "immunisation-batch-${var.aws_account_name}-audit-table"
 }
 
 data "aws_dynamodb_table" "delta-dynamodb-table" {
-  name = "imms-int-delta"
+  name = "imms-${var.aws_account_name}-delta"
 }
 
 data "aws_lambda_function" "existing_file_name_proc_lambda" {
