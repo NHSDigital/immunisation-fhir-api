@@ -29,6 +29,9 @@
 		},
         {
             "path": "redis_sync"
+        },
+		{
+            "path": "mns_subscription"
         }
 	],
 	"settings": {},

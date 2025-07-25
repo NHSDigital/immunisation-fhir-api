@@ -103,6 +103,18 @@ jobs:
           poetry run coverage run -m unittest discover || echo "mesh_processor tests failed" >> ../failed_tests.txt
           poetry run coverage xml -o ../mesh_processor-coverage.xml
 
+      - name: Run unittest with coverage-mns-subscription
+        working-directory: mns_subscription
+        env:
+          PYTHONPATH: ${{ github.workspace }}/mns_subscription/src:${{ github.workspace }}/mns_subscription/tests
+        id: mns_subscription
+        continue-on-error: true
+        run: |
+          poetry install
+          poetry run coverage run -m unittest discover || echo "mns_subscription tests failed" >> ../failed_tests.txt
+          poetry run coverage report -m
+          poetry run coverage xml -o ../mns_subscription-coverage.xml
+
       - name: Run unittest with redis_sync
         working-directory: redis_sync
         id: redis_sync
