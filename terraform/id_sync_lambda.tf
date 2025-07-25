@@ -1,8 +1,19 @@
 # Define the directory containing the Docker image and calculate its SHA-256 hash for triggering redeployments
 locals {
-  id_sync_lambda_dir     = abspath("${path.root}/../redis_sync")
+  lambdas_dir            = abspath("${path.root}/../lambdas")
+  shared_dir             = abspath("${path.root}/../lambdas/shared")
+  id_sync_lambda_dir     = abspath("${path.root}/../lambdas/id_sync")
+
+  # Get files from both directories
+  shared_files           = fileset(local.shared_dir, "**")
   id_sync_lambda_files   = fileset(local.id_sync_lambda_dir, "**")
+
+  # Calculate SHA for both directories
+  shared_dir_sha         = sha1(join("", [for f in local.shared_files : filesha1("${local.shared_dir}/${f}")]))
   id_sync_lambda_dir_sha = sha1(join("", [for f in local.id_sync_lambda_files : filesha1("${local.id_sync_lambda_dir}/${f}")]))
+
+  # Combined SHA to trigger rebuild when either directory changes
+  combined_sha           = sha1("${local.shared_dir_sha}${local.id_sync_lambda_dir_sha}")
 }
 
 resource "aws_ecr_repository" "id_sync_lambda_repository" {
