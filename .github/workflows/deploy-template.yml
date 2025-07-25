@@ -130,7 +130,7 @@ jobs:
 
           export APIGEE_ACCESS_TOKEN=$apigee_token
           export APIGEE_USERNAME=apm-testing-internal-dev@nhs.net
-          export APIGEE_ENVIRONMENT=internal-dev
+          export APIGEE_ENVIRONMENT=int
           export STATUS_API_KEY=$status_api_key
           export PROXY_NAME=immunisation-fhir-api-internal-dev
           export SERVICE_BASE_PATH=immunisation-fhir-api/FHIR/R4
