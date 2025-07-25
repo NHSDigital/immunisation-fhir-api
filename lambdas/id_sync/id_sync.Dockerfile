@@ -12,10 +12,6 @@ COPY shared/poetry.lock shared/pyproject.toml shared/README.md ./shared/
 # Copy id_sync Poetry files
 COPY id_sync/poetry.lock id_sync/pyproject.toml id_sync/README.md ./
 
-# Install shared dependencies first
-WORKDIR /var/task/shared
-RUN poetry config virtualenvs.create false && poetry install --no-interaction --no-ansi --no-root --only main
-
 # Install id_sync dependencies
 WORKDIR /var/task
 RUN poetry config virtualenvs.create false && poetry install --no-interaction --no-ansi --no-root --only main
