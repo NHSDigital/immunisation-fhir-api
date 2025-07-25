@@ -1,11 +1,15 @@
+locals {
+  bucket_name = local.immunisation_account_id == "084828561157" ? "immunisation-batch-${local.account}-preprod-data-sources" : "immunisation-batch-${local.account}-data-sources"
+}
+
 # Overall entry point into batch in prod. Files are forwarded into the appropriate blue / green bucket.
 resource "aws_s3_bucket" "batch_data_source_bucket" {
-  count  = local.account == "prod" ? 1 : 0
-  bucket = "immunisation-batch-${local.account}-data-sources"
+  count  = 1
+  bucket = local.bucket_name
 }
 
 resource "aws_s3_bucket_public_access_block" "batch_data_source_bucket_public_access_block" {
-  count  = local.account == "prod" ? 1 : 0
+  count  = 1
   bucket = aws_s3_bucket.batch_data_source_bucket[0].id
 
   block_public_acls       = true
@@ -15,7 +19,7 @@ resource "aws_s3_bucket_public_access_block" "batch_data_source_bucket_public_ac
 }
 
 resource "aws_s3_bucket_policy" "batch_data_source_bucket_policy" {
-  count  = local.account == "prod" ? 1 : 0
+  count  = 1
   bucket = aws_s3_bucket.batch_data_source_bucket[0].bucket
   policy = jsonencode({
     Version : "2012-10-17",
@@ -67,7 +71,7 @@ resource "aws_s3_bucket_policy" "batch_data_source_bucket_policy" {
 # }
 
 resource "aws_s3_bucket_lifecycle_configuration" "datasources_lifecycle" {
-  count  = local.account == "prod" ? 1 : 0
+  count  = 1
   bucket = aws_s3_bucket.batch_data_source_bucket[0].bucket
 
   rule {

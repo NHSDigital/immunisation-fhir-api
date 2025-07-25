@@ -1,5 +1,5 @@
 data "aws_vpc" "default" {
-  default = true
+  id = "vpc-0c87d4383f6f013c3"
 }
 
 data "aws_subnets" "default" {
@@ -19,8 +19,8 @@ variable "aws_region" {
 
 locals {
   account                 = terraform.workspace # non-prod or prod
-  dspp_core_account_id    = local.account == "prod" ? 232116723729 : 603871901111
-  immunisation_account_id = local.account == "prod" ? 664418956997 : 084828561157
+  dspp_core_account_id    = local.account == "prod" ? "232116723729" : "603871901111"
+  immunisation_account_id = local.account == "prod" ? "664418956997" : "084828561157"
   # TODO - add new accounts for CDP migration
 }
 
