@@ -255,13 +255,17 @@ data "aws_iam_policy_document" "id_sync_policy_document" {
   ]
 }
 
-# Attach the dynamodb policy to the Lambda role
-# TODO: attach a policy rather than a policy_arn?
-resource "aws_iam_role_policy_attachment" "id_sync_lambda_dynamodb_policy_attachment" {
-  role       = aws_iam_role.id_sync_lambda_exec_role.name
+resource "aws_iam_policy" "id_sync_lambda_dynamodb_access_policy" {
+  name        = "${local.short_prefix}-id-sync-lambda-dynamodb-access-policy"
+  description = "Allow Lambda to access DynamoDB"
   policy     = data.aws_iam_policy_document.id_sync_policy_document.json
 }
 
+# Attach the dynamodb policy to the Lambda role
+resource "aws_iam_role_policy_attachment" "id_sync_lambda_dynamodb_policy_attachment" {
+  role       = aws_iam_role.id_sync_lambda_exec_role.name
+  policy_arn = aws_iam_policy.id_sync_lambda_dynamodb_access_policy.arn
+}
 
 # Lambda Function with Security Group and VPC.
 resource "aws_lambda_function" "id_sync_lambda" {
