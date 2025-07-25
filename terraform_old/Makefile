@@ -1,6 +1,7 @@
 -include .env
 
 environment ?= $(ENVIRONMENT)
+aws_account_name ?= $(AWS_ACCOUNT_NAME)
 aws_profile ?= $(AWS_PROFILE) #apim-dev # Leave this here for pipeline
 tf_cmd = $(if $(AWS_PROFILE),AWS_PROFILE=$(AWS_PROFILE) ,)terraform
 
@@ -9,7 +10,7 @@ project_short_name = imms
 state_bucket = immunisation-preprod-terraform-state-files
 tf_state= -backend-config="bucket=$(state_bucket)"
 
-tf_vars= -var="project_name=$(project_name)" -var="project_short_name=$(project_short_name)" -var="aws_account_name=$(environment)"
+tf_vars= -var="project_name=$(project_name)" -var="project_short_name=$(project_short_name)" -var="aws_account_name=$(aws_account_name)"
 
 .PHONY : lock-provider workspace init plan apply clean destroy output state-list lambda-zip catch-all-zip
 

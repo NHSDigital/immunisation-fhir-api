@@ -41,7 +41,7 @@ jobs:
       - name: Terraform Plan
         working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
         run: |
-          make plan environment=${{ inputs.environment }}
+          make plan environment=${{ inputs.environment }} aws_account_name=int
 
   terraform-apply:
     needs: terraform-plan
@@ -74,7 +74,7 @@ jobs:
       - name: Terraform Apply
         working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
         run: |
-          make plan environment=${{ inputs.environment }}
+          make apply environment=${{ inputs.environment }} aws_account_name=int
 
   e2e-tests:
     needs: terraform-apply

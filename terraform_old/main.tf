@@ -21,7 +21,7 @@ provider "aws" {
   default_tags {
     tags = {
       Project     = var.project_name
-      Environment = "int"
+      Environment = var.aws_account_name
       Service     = var.service
     }
   }

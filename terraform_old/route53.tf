@@ -3,5 +3,5 @@ locals {
 }
 
 data "aws_route53_zone" "project_zone" {
-  name = "imms.int.vds.platform.nhs.uk"
+  name = "imms.${var.aws_account_name}.vds.platform.nhs.uk"
 }

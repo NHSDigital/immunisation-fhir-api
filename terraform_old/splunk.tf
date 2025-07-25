@@ -1,5 +1,5 @@
 data "aws_secretsmanager_secret" "splunk_token" {
-  name = "imms/splunk/int/hec"
+  name = "imms/splunk/${var.aws_account_name}/hec"
 }
 data "aws_secretsmanager_secret_version" "splunk_token_id" {
   secret_id = data.aws_secretsmanager_secret.splunk_token.id

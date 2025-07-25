@@ -1,10 +1,10 @@
 locals {
   # NHSD cert file
-  truststore_file_name = "server-renewed-cert-v2.pem"
+  truststore_file_name = "server-renewed-cert.pem"
 }
 
 data "aws_s3_bucket" "cert_storage" {
-  bucket = "imms-fhir-int-cert-storage"
+  bucket = "imms-fhir-${var.aws_account_name}-cert-storage"
 }
 
 data "aws_s3_object" "cert" {

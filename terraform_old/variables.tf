@@ -19,7 +19,7 @@ variable "service" {
 data "aws_vpc" "default" {
   filter {
     name   = "tag:Name"
-    values = ["imms-int-fhir-api-vpc"]
+    values = ["imms-${var.aws_account_name}-fhir-api-vpc"]
   }
 }
 
