@@ -17,6 +17,15 @@
     ]
   },
   {
+    "vacc_type": "COVID19",
+    "diseases": [
+      {
+        "code": "840539006",
+        "term": "Disease caused by severe acute respiratory syndrome coronavirus 2"
+      }
+    ]
+  },
+  {
     "vacc_type": "FLU",
     "diseases": [
       {
