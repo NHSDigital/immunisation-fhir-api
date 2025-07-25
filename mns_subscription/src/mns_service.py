@@ -1,6 +1,7 @@
 import requests
 import os
 import uuid
+import logging
 import json
 from authentication import AppRestrictedAuth
 from models.errors import UnhandledResponseError
@@ -13,6 +14,8 @@ class MnsService:
     def __init__(self, authenticator: AppRestrictedAuth):
         self.authenticator = authenticator
 
+        logging.info(f"Using SQS ARN for subscription: {SQS_ARN}")
+
     def subscribe_notification(self) -> dict | None:
         access_token = self.authenticator.get_access_token()
         request_headers = {
@@ -24,7 +27,7 @@ class MnsService:
             "resourceType": "Subscription",
             "status": "requested",
             "reason": "Subscribe SQS to MNS test-signal",
-            "criteria": "eventType=mns-test-signal-1",
+            "criteria": "eventType=mns-test-signal-2",
             "channel": {
                 "type": "message",
                 "endpoint": SQS_ARN,
