@@ -973,7 +973,7 @@
                                     "status",
                                     "vaccineCode",
                                     "patient",
-                                    "occurrenceDateTime",
+                                    "occurrence[X]",
                                     "recorded",
                                     "primarySource",
                                     "location",
@@ -1216,10 +1216,19 @@
                                         }
                                       }
                                     },
-                                    "occurrenceDateTime": {
-                                      "description": "Date and time of immunisation.",
-                                      "type": "string",
-                                      "example": "2021-02-07T13:28:17.271000+00:00"
+                                    "occurrence[X]": {
+                                      "type": "object",
+                                      "description": "When immunizations are given a specific date and time should always be known. The string data type for this element is not supported. Only occurrenceDateTime SHALL be used.",
+                                      "properties": {
+                                        "occurrenceDateTime": {
+                                          "description": "Date and time of immunisation.",
+                                          "type": "string",
+                                          "example": "2021-02-07T13:28:17.271000+00:00"
+                                        }
+                                      },
+                                      "required": [
+                                        "occurrenceDateTime"
+                                      ]
                                     },
                                     "recorded": {
                                       "description": "The date the occurrence of the immunization was first captured in the record - potentially significantly after the occurrence of the event.",
@@ -1885,7 +1894,7 @@
                                     "status",
                                     "vaccineCode",
                                     "patient",
-                                    "occurrenceDateTime",
+                                    "occurrence[X]",
                                     "recorded",
                                     "primarySource",
                                     "location",
@@ -2128,10 +2137,19 @@
                                         }
                                       }
                                     },
-                                    "occurrenceDateTime": {
-                                      "description": "Date and time of immunisation.",
-                                      "type": "string",
-                                      "example": "2021-02-07T13:28:17.271000+00:00"
+                                    "occurrence[X]": {
+                                      "type": "object",
+                                      "description": "When immunizations are given a specific date and time should always be known. The string data type for this element is not supported. Only occurrenceDateTime SHALL be used.",
+                                      "properties": {
+                                        "occurrenceDateTime": {
+                                          "description": "Date and time of immunisation.",
+                                          "type": "string",
+                                          "example": "2021-02-07T13:28:17.271000+00:00"
+                                        }
+                                      },
+                                      "required": [
+                                        "occurrenceDateTime"
+                                      ]
                                     },
                                     "recorded": {
                                       "description": "The date the occurrence of the immunization was first captured in the record - potentially significantly after the occurrence of the event.",
@@ -2735,7 +2753,7 @@
                       "status",
                       "vaccineCode",
                       "patient",
-                      "occurrenceDateTime",
+                      "occurrence[X]",
                       "recorded",
                       "primarySource",
                       "location",
@@ -3093,10 +3111,19 @@
                           }
                         }
                       },
-                      "occurrenceDateTime": {
-                        "description": "Date and time of immunisation.",
-                        "type": "string",
-                        "example": "2021-02-07T13:28:17.271000+00:00"
+                      "occurrence[X]": {
+                        "type": "object",
+                        "description": "When immunizations are given a specific date and time should always be known. The string data type for this element is not supported. Only occurrenceDateTime SHALL be used.",
+                        "properties": {
+                          "occurrenceDateTime": {
+                            "description": "Date and time of immunisation.",
+                            "type": "string",
+                            "example": "2021-02-07T13:28:17.271000+00:00"
+                          }
+                        },
+                        "required": [
+                          "occurrenceDateTime"
+                        ]
                       },
                       "recorded": {
                         "description": "The date the occurrence of the immunization was first captured in the record - potentially significantly after the occurrence of the event.",
