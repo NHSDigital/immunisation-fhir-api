@@ -19,6 +19,7 @@ class MnsService:
     def subscribe_notification(self) -> dict | None:
         access_token = self.authenticator.get_access_token()
         request_headers = {
+            'Content-Type': 'application/fhir+json',
             'Authorization': f'Bearer {access_token}',
             'X-Correlation-ID': str(uuid.uuid4())
         }
