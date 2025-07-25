@@ -1,4 +1,3 @@
-# .github/workflows/deploy-green-then-blue.yml
 name: Deploy Blue Green - INT
 
 on:
