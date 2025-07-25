@@ -1,4 +1,3 @@
-from authentication import AppRestrictedAuth
 import logging
 from cache import Cache
 from mns_service import MnsService
