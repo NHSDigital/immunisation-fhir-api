@@ -1,10 +1,10 @@
 # .github/workflows/deploy-green-then-blue.yml
-name: Deploy Blue Green
+name: Deploy Blue Green INT
 
 on:
-  push:
-    branches: [VED-358-github-actions-for-int]
-  workflow_dispatch:
+  pull_request:
+    types: [closed]
+    branches: [master]
 
 jobs:
   deploy-green:
