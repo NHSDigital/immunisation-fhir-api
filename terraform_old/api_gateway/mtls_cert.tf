@@ -1,6 +1,6 @@
 locals {
   # NHSD cert file
-  truststore_file_name = "server-renewed-cert.pem"
+  truststore_file_name = "server-renewed-cert-v2.pem"
 }
 
 data "aws_s3_bucket" "cert_storage" {
@@ -15,6 +15,14 @@ data "aws_s3_object" "cert" {
 resource "aws_s3_bucket" "truststore_bucket" {
   bucket        = "${var.prefix}-truststores"
   force_destroy = true
+
+}
+
+resource "aws_s3_bucket_versioning" "versioning" {
+  bucket = aws_s3_bucket.truststore_bucket.id
+  versioning_configuration {
+    status = "Enabled"
+  }
 }
 
 resource "aws_s3_object_copy" "copy_cert_from_storage" {

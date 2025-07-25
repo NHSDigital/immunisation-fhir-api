@@ -1,6 +1,9 @@
 variable "profile" {
   default = "apim-dev"
 }
+
+variable "environment" {}
+
 variable "aws_account_name" {
   default = "int"
 }
@@ -83,15 +86,15 @@ data "aws_security_group" "existing_securitygroup" {
 }
 
 data "aws_s3_bucket" "existing_config_bucket" {
-  bucket = "imms-int-supplier-config"
+  bucket = "imms-${var.aws_account_name}-supplier-config"
 }
 
 data "aws_s3_bucket" "existing_destination_bucket" {
-  bucket = "immunisation-batch-int-preprod-data-destinations"
+  bucket = "immunisation-batch-${var.aws_account_name}-preprod-data-destinations"
 }
 
 data "aws_s3_bucket" "existing_source_bucket" {
-  bucket = "immunisation-batch-int-preprod-data-sources"
+  bucket = "immunisation-batch-${var.aws_account_name}-preprod-data-sources"
 }
 
 data "aws_kms_key" "existing_lambda_encryption_key" {
@@ -103,7 +106,7 @@ data "aws_kms_key" "existing_kinesis_encryption_key" {
 }
 
 data "aws_dynamodb_table" "events-dynamodb-table" {
-  name = "imms-int-imms-events"
+  name = "imms-${var.aws_account_name}-imms-events"
 }
 
 data "aws_dynamodb_table" "audit-table" {
