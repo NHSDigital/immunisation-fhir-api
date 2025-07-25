@@ -1,16 +1,14 @@
 -include .env
 
-interactionId=$(environment)
-
-aws_profile = apim-dev
-tf_cmd = AWS_PROFILE=$(aws_profile) terraform
+environment ?= $(ENVIRONMENT)
+aws_account_name ?= $(AWS_ACCOUNT_NAME)
+tf_cmd = AWS_PROFILE=$(AWS_PROFILE) terraform
 
 project_name = immunisation
 project_short_name = imms
-state_bucket = $(project_name)-$(APIGEE_ENVIRONMENT)-terraform-state-files
-tf_state= -backend-config="bucket=$(state_bucket)"
+tf_state= -backend-config="bucket=$(BUCKET_NAME)"
 
-tf_vars= -var="project_name=$(project_name)" -var="project_short_name=$(project_short_name)"
+tf_vars= -var="project_name=$(project_name)" -var="project_short_name=$(project_short_name)" -var="aws_account_name=$(aws_account_name)"
 
 .PHONY : lock-provider workspace init plan apply clean destroy output state-list lambda-zip catch-all-zip
 
@@ -25,7 +23,10 @@ workspace:
 init:
 	$(tf_cmd) init $(tf_state) -upgrade  $(tf_vars)
 
-plan: workspace
+init-reconfigure:
+	$(tf_cmd) init $(tf_state) -upgrade  $(tf_vars) -reconfigure
+
+plan:
 	 $(tf_cmd) plan $(tf_vars)
 
 plan-changes: workspace

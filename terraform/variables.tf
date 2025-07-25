@@ -14,27 +14,29 @@ variable "aws_region" {
   default = "eu-west-2"
 }
 
+variable "aws_account_name" {}
+
 locals {
-  environment       = terraform.workspace == "green" ? "prod" : terraform.workspace == "blue" ? "prod" : terraform.workspace
+  environment       = var.aws_account_name
   env               = terraform.workspace
-  prefix            = "${var.project_name}-${var.service}-${local.env}"
-  short_prefix      = "${var.project_short_name}-${local.env}"
+  prefix            = var.aws_account_name == "int" ? "${var.project_name}-${var.service}-${local.env}-int" : "${var.project_name}-${var.service}-${local.env}"
+  short_prefix      = var.aws_account_name == "int" ? "${var.project_short_name}-${local.env}-int" : "${var.project_short_name}-${local.env}"
   batch_prefix      = "immunisation-batch-${local.env}"
-  config_env        = local.environment == "prod" ? "prod" : "dev"
+  config_env        = var.aws_account_name
   config_bucket_env = local.environment == "prod" ? "prod" : "internal-dev"
 
-  root_domain         = "${local.config_env}.vds.platform.nhs.uk"
+  root_domain         = "${var.aws_account_name}.vds.platform.nhs.uk"
   project_domain_name = data.aws_route53_zone.project_zone.name
   service_domain_name = "${local.env}.${local.project_domain_name}"
 
   # For now, only create the config bucket in internal-dev and prod as we only have one Redis instance per account.
-  create_config_bucket = local.environment == local.config_bucket_env
+  create_config_bucket = true
   config_bucket_arn    = local.create_config_bucket ? aws_s3_bucket.batch_config_bucket[0].arn : data.aws_s3_bucket.existing_config_bucket[0].arn
   config_bucket_name   = local.create_config_bucket ? aws_s3_bucket.batch_config_bucket[0].bucket : data.aws_s3_bucket.existing_config_bucket[0].bucket
 }
 
 data "aws_vpc" "default" {
-  default = true
+  id = "vpc-0c87d4383f6f013c3"
 }
 
 data "aws_subnets" "default" {
@@ -78,6 +80,6 @@ data "aws_kms_key" "existing_kinesis_encryption_key" {
   key_id = "alias/imms-batch-kinesis-stream-encryption"
 }
 
-data "aws_kms_key" "mesh_s3_encryption_key" {
-  key_id = "alias/local-immunisation-mesh"
-}
+# data "aws_kms_key" "mesh_s3_encryption_key" {
+#   key_id = "alias/local-immunisation-mesh"
+# }
