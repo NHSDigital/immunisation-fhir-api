@@ -27,7 +27,7 @@ class MnsService:
             "resourceType": "Subscription",
             "status": "requested",
             "reason": "Subscribe SQS to MNS test-signal",
-            "criteria": "eventType=mns-test-signal-2",
+            "criteria": "eventType=nhs-number-change-2",
             "channel": {
                 "type": "message",
                 "endpoint": SQS_ARN,
