@@ -21,7 +21,7 @@ class AppRestrictedAuth:
         self.cache = cache
         self.cache_key = f"{service.value}_access_token"
 
-        self.expiry = 540
+        self.expiry = 40
         self.secret_name = f"imms/pds/{environment}/jwt-secrets" if service == Service.MNS else \
             f"imms/immunization/{environment}/jwt-secrets"
 
