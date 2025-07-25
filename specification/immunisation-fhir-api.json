@@ -676,7 +676,7 @@
                           },
                           "doseNumber[X]": {
                             "type": "object",
-                            "description": "Nominal position in a series. The use of an integer is preferred if known. A string should only be used in cases where an integer is not available.",
+                            "description": "Nominal position in a series. This SHALL be provided but may be populated using either of the dataTypes available: PositiveInt or String. The use of an integer is preferred.",
                             "properties": {
                               "doseNumberPositiveInt": {
                                 "description": "Nominal position in a course of vaccines. This `SHOULD be populated` where the data is available.",
@@ -1489,7 +1489,8 @@
                                       "items": {
                                         "type": "object",
                                         "required": [
-                                          "targetDisease"
+                                          "targetDisease",
+                                          "doseNumber[X]"
                                         ],
                                         "properties": {
                                           "targetDisease": {
@@ -1532,21 +1533,18 @@
                                           },
                                           "doseNumber[X]": {
                                             "type": "object",
-                                            "description": "Dose number within series. Can be an integer or string. Kindly, refer below elements",
+                                            "description": "Nominal position in a series. This SHALL be provided but may be populated using either of the dataTypes available: PositiveInt or String. The use of an integer is preferred.",
                                             "properties": {
                                               "doseNumberPositiveInt": {
-                                                "description": "Dose number within a series of doses.",
+                                                "description": "Nominal position in a course of vaccines. This `SHOULD be populated` where the data is available.",
                                                 "type": "integer",
                                                 "example": 1
                                               },
                                               "doseNumberString": {
-                                                "description": "A string should only be used in cases where an integer is not available.",
+                                                "description": "Description of the dose sequence where it is not a numeric or a reason a dose number cannot be provided.  \nA string should only be used in cases where an integer is not available.",
                                                 "type": "string"
                                               }
-                                            },
-                                            "required": [
-                                              "doseNumberPositiveInt"
-                                            ]
+                                            }
                                           }
                                         }
                                       }
@@ -2410,7 +2408,8 @@
                                       "items": {
                                         "type": "object",
                                         "required": [
-                                          "targetDisease"
+                                          "targetDisease",
+                                          "doseNumber[X]"
                                         ],
                                         "properties": {
                                           "targetDisease": {
@@ -2453,21 +2452,18 @@
                                           },
                                           "doseNumber[X]": {
                                             "type": "object",
-                                            "description": "Dose number within series. Can be an integer or string. Kindly, refer below elements",
+                                            "description": "Nominal position in a series. This SHALL be provided but may be populated using either of the dataTypes available: PositiveInt or String. The use of an integer is preferred.",
                                             "properties": {
                                               "doseNumberPositiveInt": {
-                                                "description": "Dose number within a series of doses.",
+                                                "description": "Nominal position in a course of vaccines. This `SHOULD be populated` where the data is available.",
                                                 "type": "integer",
                                                 "example": 1
                                               },
                                               "doseNumberString": {
-                                                "description": "A string should only be used in cases where an integer is not available.",
+                                                "description": "Description of the dose sequence where it is not a numeric or a reason a dose number cannot be provided.  \nA string should only be used in cases where an integer is not available.",
                                                 "type": "string"
                                               }
-                                            },
-                                            "required": [
-                                              "doseNumberPositiveInt"
-                                            ]
+                                            }
                                           }
                                         }
                                       }
@@ -3384,7 +3380,8 @@
                         "items": {
                           "type": "object",
                           "required": [
-                            "targetDisease"
+                            "targetDisease",
+                            "doseNumber[X]"
                           ],
                           "properties": {
                             "targetDisease": {
@@ -3427,21 +3424,18 @@
                             },
                             "doseNumber[X]": {
                               "type": "object",
-                              "description": "Dose number within series. Can be an integer or string. Kindly, refer below elements",
+                              "description": "Nominal position in a series. This SHALL be provided but may be populated using either of the dataTypes available: PositiveInt or String. The use of an integer is preferred.",
                               "properties": {
                                 "doseNumberPositiveInt": {
-                                  "description": "Dose number within a series of doses.",
+                                  "description": "Nominal position in a course of vaccines. This `SHOULD be populated` where the data is available.",
                                   "type": "integer",
                                   "example": 1
                                 },
                                 "doseNumberString": {
-                                  "description": "A string should only be used in cases where an integer is not available.",
+                                  "description": "Description of the dose sequence where it is not a numeric or a reason a dose number cannot be provided.  \nA string should only be used in cases where an integer is not available.",
                                   "type": "string"
                                 }
-                              },
-                              "required": [
-                                "doseNumberPositiveInt"
-                              ]
+                              }
                             }
                           }
                         }
@@ -4302,7 +4296,7 @@
                           },
                           "doseNumber[X]": {
                             "type": "object",
-                            "description": "Nominal position in a series. The use of an integer is preferred if known. A string should only be used in cases where an integer is not available.",
+                            "description": "Nominal position in a series. This SHALL be provided but may be populated using either of the dataTypes available: PositiveInt or String. The use of an integer is preferred.",
                             "properties": {
                               "doseNumberPositiveInt": {
                                 "description": "Nominal position in a course of vaccines. This `SHOULD be populated` where the data is available.",
