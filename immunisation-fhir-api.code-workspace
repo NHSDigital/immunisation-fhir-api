@@ -27,9 +27,15 @@
 		{
 			"path": "e2e_batch"
 		},
-        {
-            "path": "redis_sync"
-        }
+		{
+			"path": "redis_sync"
+		},
+		{
+			"path": "lambdas/id_sync"
+		},
+		{
+			"path": "lambdas/shared"
+		}
 	],
-	"settings": {},
+	"settings": {}
 }
