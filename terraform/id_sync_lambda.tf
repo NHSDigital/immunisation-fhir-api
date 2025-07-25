@@ -255,6 +255,7 @@ resource "aws_lambda_function" "id_sync_lambda" {
       ID_SYNC_PROC_LAMBDA_NAME    = "imms-${var.sub_environment}-id_sync_lambda"
       # NEW
       DELTA_TABLE_NAME            = aws_dynamodb_table.delta-dynamodb-table.name
+      IEDS_TABLE_NAME             = aws_dynamodb_table.events-dynamodb-table.name
       PDS_ENV                     = var.pds_environment
       SPLUNK_FIREHOSE_NAME        = module.splunk.firehose_stream_name
     }
@@ -264,6 +265,17 @@ resource "aws_lambda_function" "id_sync_lambda" {
   depends_on = [
     aws_cloudwatch_log_group.id_sync_log_group,
     aws_iam_policy.id_sync_lambda_exec_policy
+  ]
+}
+
+data "aws_iam_policy_document" "delta_policy_document" {
+  source_policy_documents = [
+    templatefile("${local.policy_path}/dynamodb.json", {
+      "dynamodb_table_name" : aws_dynamodb_table.delta-dynamodb-table.name
+    }),
+    templatefile("${local.policy_path}/dynamodb_stream.json", {
+      "dynamodb_table_name" : aws_dynamodb_table.events-dynamodb-table.name
+    })
   ]
 }
 
