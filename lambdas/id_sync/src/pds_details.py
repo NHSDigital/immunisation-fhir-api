@@ -3,9 +3,11 @@
 '''
 from common.clients import logger, secrets_manager_client
 from common.cache import Cache
-from clients import pds_env
+from os_vars import get_pds_env
 from common.pds_service import PdsService
 from common.authentication import AppRestrictedAuth, Service
+
+pds_env = get_pds_env()
 
 
 def get_pds_patient_details(nhs_number: str) -> dict:

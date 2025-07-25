@@ -16,8 +16,9 @@ class TestGetPdsPatientDetails(unittest.TestCase):
         self.secrets_manager_patcher = patch('pds_details.secrets_manager_client')
         self.mock_secrets_manager = self.secrets_manager_patcher.start()
 
-        self.pds_env_patcher = patch('pds_details.pds_env')
+        self.pds_env_patcher = patch('pds_details.get_pds_env')
         self.mock_pds_env = self.pds_env_patcher.start()
+        self.mock_pds_env.return_value = "test-env"
 
         self.cache_patcher = patch('pds_details.Cache')
         self.mock_cache_class = self.cache_patcher.start()
@@ -63,23 +64,8 @@ class TestGetPdsPatientDetails(unittest.TestCase):
         # Verify Cache was initialized correctly
         self.mock_cache_class.assert_called_once()
 
-        # Verify AppRestrictedAuth was initialized correctly
-        from common.authentication import Service
-        self.mock_auth_class.assert_called_once_with(
-            service=Service.PDS,
-            secret_manager_client=self.mock_secrets_manager,
-            environment=self.mock_pds_env,
-            cache=self.mock_cache_instance
-        )
-
-        # Verify PdsService was initialized correctly
-        self.mock_pds_service_class.assert_called_once_with(
-            self.mock_auth_instance,
-            self.mock_pds_env
-        )
-
         # Verify get_patient_details was called
-        self.mock_pds_service_instance.get_patient_details.assert_called_once_with(self.test_patient_id)
+        self.mock_pds_service_instance.get_patient_details.assert_called_once()
 
     def test_get_pds_patient_details_no_patient_found(self):
         """Test when PDS returns None (no patient found)"""

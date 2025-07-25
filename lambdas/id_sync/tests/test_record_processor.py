@@ -1,8 +1,7 @@
 import unittest
 from unittest.mock import patch, MagicMock
 import json
-
-from record_processor import process_record, check_records_exist, update_patient_index, get_id
+from record_processor import process_record, update_patient_id, get_id
 from common.aws_lambda_sqs_event_record import AwsLambdaSqsEventRecord
 
 
@@ -34,6 +33,14 @@ class TestRecordProcessor(unittest.TestCase):
 
 class TestProcessRecord(TestRecordProcessor):
 
+    def setUp(self):
+        # mock record_processor.check_record_exist_in_IEDS
+        self.check_record_exist_in_IEDS_patcher = patch('record_processor.check_record_exist_in_IEDS')
+        self.mock_check_record_exist_in_IEDS = self.check_record_exist_in_IEDS_patcher.start()
+
+    def tearDown(self):
+        patch.stopall()
+
     def test_process_record_success_no_update_required(self):
         """Test successful processing when patient ID matches"""
         # Arrange
@@ -58,24 +65,20 @@ class TestProcessRecord(TestRecordProcessor):
         # Arrange
         new_id = "9912003999"
 
-        with patch('record_processor.get_id', return_value=self.test_id), \
-             patch('record_processor.check_records_exist', return_value=True), \
-             patch('record_processor.update_patient_index') as mock_update:
+        self.mock_get_pds_patient_details.return_value = {"id": new_id}
+        mock_update.return_value = {"status": "success",
+                                    "message": f"Updated patient {self.test_id} to {new_id}"}
 
-            self.mock_get_pds_patient_details.return_value = {"id": new_id}
-            mock_update.return_value = {"status": "success",
-                                        "message": f"Updated patient idx from {self.test_id} to {new_id}"}
+        # Act
+        result = process_record(self.test_sqs_record)
 
-            # Act
-            result = process_record(self.test_sqs_record)
+        # Assert
+        expected_result = {"status": "success", "message": f"Updated patient {self.test_id} to {new_id}"}
+        self.assertEqual(result, expected_result)
 
-            # Assert
-            expected_result = {"status": "success", "message": f"Updated patient idx from {self.test_id} to {new_id}"}
-            self.assertEqual(result, expected_result)
-
-            # Verify calls
-            mock_update.assert_called_once_with(self.test_id, new_id)
-            self.mock_get_pds_patient_details.assert_called_once_with(self.test_id)
+        # Verify calls
+        mock_update.assert_called_once_with(self.test_id, new_id)
+        self.mock_get_pds_patient_details.assert_called_once_with(self.test_id)
 
     def test_process_record_no_records_exist(self):
         """Test when no records exist for the patient ID"""
@@ -182,46 +185,63 @@ class TestGetId(TestRecordProcessor):
         self.assertIsNone(result)
 
 
-class TestCheckRecordsExist(TestRecordProcessor):
+class TestCheckRecordsExist(unittest.TestCase):
+    def test_records_exist(self):
+        mock_table = MagicMock()
+        mock_table.query.return_value = {"Count": 2}
 
-    def test_check_records_exist_always_returns_false(self):
-        ''' TODO placeholder test for check_records_exist '''
-        # Act
-        result = check_records_exist(self.test_id)
+        result = check_records_exist(mock_table, "12345")
 
-        # Assert
+        mock_table.query.assert_called_once()
         self.assertTrue(result)
+
+    def test_no_records_exist(self):
+        mock_table = MagicMock()
+        mock_table.query.return_value = {"Count": 0}
+
+        result = check_records_exist(mock_table, "12345")
+
+        mock_table.query.assert_called_once()
+        self.assertFalse(result)
+
+    def test_query_response_missing_count_key(self):
+        mock_table = MagicMock()
+        mock_table.query.return_value = {}  # No "Count" key
+
+        result = check_records_exist(mock_table, "12345")
+
+        mock_table.query.assert_called_once()
+        self.assertFalse(result)
 
 
 class TestUpdatePatientIndex(TestRecordProcessor):
 
-    def test_update_patient_index_success(self):
-        """ TODO placeholder test for update_patient_index """
+    def test_update_patient_id_success(self):
+        """ TODO placeholder test for update_patient_id """
         # Arrange
         old_id = "9912003888"
         new_id = "9912003999"
 
         # Act
-        result = update_patient_index(old_id, new_id)
+        result = update_patient_id(old_id, new_id)
 
         # Assert
         expected_result = {
             "status": "success",
-            "message": f"Updated patient idx from {old_id} to {new_id}",
+            "message": f"Updated patient {old_id} to {new_id}",
             "TODO": "Implement logic"
         }
         self.assertEqual(result, expected_result)
 
-    def test_update_patient_index_with_empty_strings(self):
+    def test_update_patient_id_with_empty_strings(self):
         """Test update with empty string IDs"""
         # Act
-        result = update_patient_index("", "")
+        result = update_patient_id("", "")
 
         # Assert
         expected_result = {
-            "status": "success",
-            "message": "Updated patient idx from  to ",
-            "TODO": "Implement logic"
+            "status": "error",
+            "message": "Old ID and New ID cannot be empty"
         }
         self.assertEqual(result, expected_result)
 
@@ -235,7 +255,7 @@ class TestIntegration(TestRecordProcessor):
 
         with patch('record_processor.get_id') as mock_get_id, \
              patch('record_processor.check_records_exist') as mock_check, \
-             patch('record_processor.update_patient_index') as mock_update:
+             patch('record_processor.update_patient_id') as mock_update:
 
             mock_get_id.return_value = self.test_id
             mock_check.return_value = True

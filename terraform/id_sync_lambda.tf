@@ -304,6 +304,8 @@ resource "aws_lambda_function" "id_sync_lambda" {
       ID_SYNC_PROC_LAMBDA_NAME = "imms-${local.env}-id_sync_lambda"
       SPLUNK_FIREHOSE_NAME        = module.splunk.firehose_stream_name
       PDS_ENV                     = local.environment == "prod" ? "prod" : local.environment == "ref" ? "ref" : "int"
+	  DELTA_TABLE_NAME 		= aws_dynamodb_table.delta-dynamodb-table.name
+	  IEDS_TABLE_NAME 		= aws_dynamodb_table.events-dynamodb-table.name
     }
   }
   kms_key_arn = data.aws_kms_key.existing_lambda_encryption_key.arn

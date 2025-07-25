@@ -1,6 +1,5 @@
 import unittest
 from common.aws_lambda_event import AwsLambdaEvent, AwsEventType
-from common.aws_lambda_sqs_event_record import AwsLambdaSqsEventRecord
 
 
 class TestAwsLambdaEvent(unittest.TestCase):
@@ -33,8 +32,7 @@ class TestAwsLambdaEvent(unittest.TestCase):
 
         self.assertEqual(lambda_event.event_type, AwsEventType.SQS)
         self.assertEqual(len(lambda_event.records), 1)
-        self.assertIsInstance(lambda_event.records[0], AwsLambdaSqsEventRecord)
-        self.assertEqual(lambda_event.records[0].message_id, '12345-abcde-67890')
+        self.assertEqual(lambda_event.records[0]['messageId'], '12345-abcde-67890')
 
     def test_init_with_multiple_sqs_records(self):
         """Test initialization with multiple SQS records"""
@@ -50,10 +48,8 @@ class TestAwsLambdaEvent(unittest.TestCase):
 
         self.assertEqual(lambda_event.event_type, AwsEventType.SQS)
         self.assertEqual(len(lambda_event.records), 2)
-        self.assertIsInstance(lambda_event.records[0], AwsLambdaSqsEventRecord)
-        self.assertIsInstance(lambda_event.records[1], AwsLambdaSqsEventRecord)
-        self.assertEqual(lambda_event.records[0].message_id, '12345-abcde-67890')
-        self.assertEqual(lambda_event.records[1].message_id, 'second-message-id')
+        self.assertEqual(lambda_event.records[0]['messageId'], '12345-abcde-67890')
+        self.assertEqual(lambda_event.records[1]['messageId'], 'second-message-id')
 
     def test_init_with_empty_records(self):
         """Test initialization with empty records array"""

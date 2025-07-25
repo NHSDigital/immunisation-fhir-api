@@ -1,6 +1,5 @@
 from typing import Dict, Any
 from enum import Enum
-from common.aws_lambda_sqs_event_record import AwsLambdaSqsEventRecord
 
 
 class AwsEventType(Enum):
@@ -21,8 +20,4 @@ class AwsLambdaEvent:
 
         self.records = []
         if "Records" in event:
-            records_dict = event.get('Records', [])
-            if self.event_type == AwsEventType.SQS:
-                self.records = [AwsLambdaSqsEventRecord(record) for record in records_dict]
-            else:
-                self.records = records_dict
+            self.records = event.get('Records', [])

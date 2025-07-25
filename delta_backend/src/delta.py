@@ -15,6 +15,7 @@ from converter import Converter
 from log_firehose import FirehoseLogger
 
 failure_queue_url = os.environ["AWS_SQS_QUEUE_URL"]
+ieds_table_name = os.environ["IEDS_TABLE_NAME"]
 delta_table_name = os.environ["DELTA_TABLE_NAME"]
 delta_source = os.environ["SOURCE"]
 region_name = "eu-west-2"
