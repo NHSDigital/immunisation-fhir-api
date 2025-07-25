@@ -20,7 +20,7 @@ variable "aws_region" {
 locals {
   account                 = terraform.workspace # non-prod or prod
   dspp_core_account_id    = local.account == "prod" ? 232116723729 : 603871901111
-  immunisation_account_id = local.account == "prod" ? 664418956997 : 345594581768
+  immunisation_account_id = local.account == "prod" ? 664418956997 : 084828561157
   # TODO - add new accounts for CDP migration
 }
 
