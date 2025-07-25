@@ -6,7 +6,7 @@ import json
 from authentication import AppRestrictedAuth
 from models.errors import UnhandledResponseError
 
-SQS_ARN = os.getenv("SQS_QUEUE_ARN")
+SQS_ARN = os.getenv("SQS_ARN")
 MNS_URL = "https://int.api.service.nhs.uk/multicast-notification-service/subscriptions"
 
 
