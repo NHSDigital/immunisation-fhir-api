@@ -54,7 +54,7 @@ class TestMnsService(unittest.TestCase):
         with self.assertRaises(UnhandledResponseError) as context:
             service.subscribe_notification()
 
-        self.assertIn("Please provide the correct resource type", str(context.exception))
+        self.assertIn("MNS subscription failed with status", str(context.exception))
 
 
 if __name__ == "__main__":
