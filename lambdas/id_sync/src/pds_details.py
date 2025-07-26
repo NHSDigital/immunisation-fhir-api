@@ -10,7 +10,7 @@ from common.authentication import AppRestrictedAuth, Service
 pds_env = get_pds_env()
 
 
-def get_pds_patient_details(nhs_number: str) -> dict:
+def pds_get_patient_details(nhs_number: str) -> dict:
     try:
         logger.info(f"Get PDS patient details for {nhs_number}")
 

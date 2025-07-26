@@ -2,7 +2,6 @@ from common.clients import logger
 from common.clients import STREAM_NAME
 from common.log_decorator import logging_decorator
 from common.aws_lambda_event import AwsLambdaEvent
-from common.aws_lambda_sqs_event_record import AwsLambdaSqsEventRecord
 from record_processor import process_record
 '''
 Lambda function handler for processing SQS events.Lambda for ID Sync. Fired by SQS
@@ -20,7 +19,6 @@ def handler(event_data, _):
             error_count = 0
             file_keys = []
             for record in event.records:
-                record: AwsLambdaSqsEventRecord
                 record_result = process_record(record, None)
                 file_keys.append(record_result["file_key"])
                 if record_result["status"] == "error":
