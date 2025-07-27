@@ -3,6 +3,7 @@ locals {
   lambdas_dir            = abspath("${path.root}/../lambdas")
   shared_dir             = "${local.lambdas_dir}/shared"
   id_sync_lambda_dir     = "${local.lambdas_dir}/id_sync"
+  id_sync_dockerfile     = "${local.lambdas_dir}/id_sync.Dockerfile"
 
   # Get files from both directories
   shared_files           = fileset(local.shared_dir, "**")
@@ -14,6 +15,25 @@ locals {
 
   # Combined SHA to trigger rebuild when either directory changes
   combined_sha           = sha1("${local.shared_dir_sha}${local.id_sync_lambda_dir_sha}")
+  debug_paths = {
+    terraform_root     = path.root
+    lambdas_dir       = local.lambdas_dir
+    id_sync_dir       = local.id_sync_lambda_dir
+    dockerfile_path   = "${local.lambdas_dir}/id_sync.Dockerfile"
+  }
+}
+
+output "debug_docker_paths" {
+  value = local.debug_paths
+}
+
+# ✅ Check if files exist
+data "local_file" "dockerfile_check" {
+  filename = "${local.lambdas_dir}/id_sync.Dockerfile"
+}
+
+output "dockerfile_exists" {
+  value = "Dockerfile found at: ${data.local_file.dockerfile_check.filename}"
 }
 
 resource "aws_ecr_repository" "id_sync_lambda_repository" {
@@ -23,7 +43,27 @@ resource "aws_ecr_repository" "id_sync_lambda_repository" {
   name         = "${local.short_prefix}-id-sync-repo"
   force_delete = local.is_temp
 }
+resource "null_resource" "validate_dockerfile" {
+  triggers = {
+    dockerfile_path = "${local.lambdas_dir}/id_sync.Dockerfile"
+  }
 
+  provisioner "local-exec" {
+    command = <<-EOT
+      echo "Checking for Dockerfile at: ${local.lambdas_dir}/id_sync.Dockerfile"
+      if [ ! -f "${local.lambdas_dir}/id_sync.Dockerfile" ]; then
+        echo "ERROR: Dockerfile not found!"
+        echo "Current directory: $(pwd)"
+        echo "Looking for: ${local.lambdas_dir}/id_sync.Dockerfile"
+        echo "Files in lambdas directory:"
+        ls -la "${local.lambdas_dir}/" || echo "lambdas directory not found"
+        exit 1
+      else
+        echo "✅ Dockerfile found!"
+      fi
+    EOT
+  }
+}
 # Module for building and pushing Docker image to ECR
 module "id_sync_docker_image" {
   source  = "terraform-aws-modules/lambda/aws//modules/docker-build"
@@ -51,7 +91,7 @@ module "id_sync_docker_image" {
 
   platform      = "linux/amd64"
   use_image_tag = false
-  source_path   = local.id_sync_lambda_dir
+  source_path      = local.lambdas_dir
   triggers = {
     dir_sha = local.id_sync_lambda_dir_sha
   }
