@@ -7,10 +7,12 @@ RUN mkdir -p /home/appuser && \
     chown -R 1001:1001 /home/appuser && pip install "poetry~=1.5.0"
 
 # Install Poetry dependencies
-# Copy shared Poetry files first
-COPY shared/poetry.lock shared/pyproject.toml shared/README.md ./shared/
 # Copy id_sync Poetry files
 COPY id_sync/poetry.lock id_sync/pyproject.toml id_sync/README.md ./
+# Copy shared/src/common to ./src/common
+COPY shared/src/common ./src/common
+
+RUN echo "Listing /var/task after source code copy:" && ls -R /var/task
 
 # Install id_sync dependencies
 WORKDIR /var/task

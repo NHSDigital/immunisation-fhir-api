@@ -1,8 +1,9 @@
 # Define the directory containing the Docker image and calculate its SHA-256 hash for triggering redeployments
 locals {
   lambdas_dir            = abspath("${path.root}/../lambdas")
-  shared_dir             = abspath("${path.root}/../lambdas/shared")
-  id_sync_lambda_dir     = abspath("${path.root}/../lambdas/id_sync")
+  shared_dir             = "${local.lambdas_dir}/shared"
+  id_sync_lambda_dir     = "${local.lambdas_dir}/id_sync"
+  id_sync_dockerfile     = "${local.lambdas_dir}/id_sync.Dockerfile"
 
   # Get files from both directories
   shared_files           = fileset(local.shared_dir, "**")
@@ -14,6 +15,61 @@ locals {
 
   # Combined SHA to trigger rebuild when either directory changes
   combined_sha           = sha1("${local.shared_dir_sha}${local.id_sync_lambda_dir_sha}")
+	repo_root = abspath("${path.root}/..")
+	is_azure_devops = can(regex("^/agent/_work", path.root))
+
+  debug_paths = {
+    terraform_root   = path.root
+    repo_root       = local.repo_root
+    lambdas_dir     = local.lambdas_dir
+    dockerfile_path = local.id_sync_dockerfile
+    is_azure        = local.is_azure_devops
+  }
+}
+
+resource "null_resource" "find_dockerfile" {
+  provisioner "local-exec" {
+    command = <<-EOT
+      echo "=== FINDING DOCKERFILE ==="
+
+	  ls -la "${local.lambdas_dir}/" || echo "lambdas directory not found"
+	  ls -la .. || echo "parent directory not found"
+	  ls -la ${path.root}/.. || echo "grandparent directory not found"
+
+    EOT
+  }
+}
+
+resource "null_resource" "debug_directory_structure" {
+  provisioner "local-exec" {
+    command = <<-EOT
+      echo "=== AZURE DEVOPS DIRECTORY DEBUG ==="
+      echo "Current working directory: $(pwd)"
+      echo "Terraform root: ${path.root}"
+      echo ""
+      echo "=== DIRECTORY CONTENTS ==="
+      echo "Contents of current directory:"
+      ls -la
+      echo ""
+      echo "Contents of parent directory:"
+      ls -la ..
+      echo ""
+      echo "Contents of grandparent directory:"
+      ls -la ../..
+      echo ""
+      echo "Looking for lambdas directory at various levels:"
+      echo "Level 1 (../lambdas):"
+      ls -la ../lambdas 2>/dev/null || echo "Not found at ../lambdas"
+      echo "Level 2 (../../lambdas):"
+      ls -la ../../lambdas 2>/dev/null || echo "Not found at ../../lambdas"
+      echo "Level 3 (../../../lambdas):"
+      ls -la ../../../lambdas 2>/dev/null || echo "Not found at ../../../lambdas"
+      echo ""
+      echo "Looking for Dockerfiles:"
+      find .. -name "*.Dockerfile" -type f 2>/dev/null || echo "No Dockerfiles found"
+      echo "=== END DEBUG ==="
+    EOT
+  }
 }
 
 resource "aws_ecr_repository" "id_sync_lambda_repository" {
@@ -23,7 +79,27 @@ resource "aws_ecr_repository" "id_sync_lambda_repository" {
   name         = "${local.short_prefix}-id-sync-repo"
   force_delete = local.is_temp
 }
+resource "null_resource" "validate_dockerfile" {
+  triggers = {
+    dockerfile_path = "${local.lambdas_dir}/id_sync.Dockerfile"
+  }
 
+  provisioner "local-exec" {
+    command = <<-EOT
+      echo "Checking for Dockerfile at: ${local.lambdas_dir}/id_sync.Dockerfile"
+      if [ ! -f "${local.lambdas_dir}/id_sync.Dockerfile" ]; then
+        echo "ERROR: Dockerfile not found!"
+        echo "Current directory: $(pwd)"
+        echo "Looking for: ${local.lambdas_dir}/id_sync.Dockerfile"
+        echo "Files in lambdas directory:"
+        ls -la "${local.lambdas_dir}/" || echo "lambdas directory not found"
+        exit 1
+      else
+        echo "✅ Dockerfile found!"
+      fi
+    EOT
+  }
+}
 # Module for building and pushing Docker image to ECR
 module "id_sync_docker_image" {
   source  = "terraform-aws-modules/lambda/aws//modules/docker-build"
@@ -31,7 +107,7 @@ module "id_sync_docker_image" {
 
   create_ecr_repo = false
   ecr_repo        = aws_ecr_repository.id_sync_lambda_repository.name
-  docker_file_path = "../id_sync.Dockerfile"
+  docker_file_path = "id_sync.Dockerfile"
   ecr_repo_lifecycle_policy = jsonencode({
     "rules" : [
       {
@@ -51,7 +127,7 @@ module "id_sync_docker_image" {
 
   platform      = "linux/amd64"
   use_image_tag = false
-  source_path   = local.id_sync_lambda_dir
+  source_path      = local.lambdas_dir
   triggers = {
     dir_sha = local.id_sync_lambda_dir_sha
   }
@@ -314,11 +390,11 @@ resource "aws_cloudwatch_log_group" "id_sync_log_group" {
 resource "aws_lambda_event_source_mapping" "id_sync_sqs_trigger" {
   event_source_arn = "arn:aws:sqs:eu-west-2:${var.immunisation_account_id}:${local.short_prefix}-id-sync-queue"
   function_name    = aws_lambda_function.id_sync_lambda.arn # TODO
-  
+
   # Optional: Configure batch size and other settings
   batch_size                         = 10
   maximum_batching_window_in_seconds = 5
-  
+
   # Optional: Configure error handling
   function_response_types = ["ReportBatchItemFailures"]
 }
