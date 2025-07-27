@@ -21,10 +21,80 @@ locals {
     id_sync_dir       = local.id_sync_lambda_dir
     dockerfile_path   = "${local.lambdas_dir}/id_sync.Dockerfile"
   }
+    alt_dockerfile_paths = [
+    "${path.root}/../lambdas/id_sync.Dockerfile",
+    "${path.root}/../../lambdas/id_sync.Dockerfile",
+    "${path.root}/../id_sync.Dockerfile",
+    "${path.root}/id_sync.Dockerfile"
+  ]
+}
+resource "null_resource" "find_dockerfile" {
+  provisioner "local-exec" {
+    command = <<-EOT
+      echo "=== FINDING DOCKERFILE ==="
+
+      # Check multiple possible locations
+      DOCKERFILE_PATHS=(
+        "${path.root}/../lambdas/id_sync.Dockerfile"
+        "${path.root}/../../lambdas/id_sync.Dockerfile"
+        "${path.root}/../id_sync.Dockerfile"
+        "${path.root}/id_sync.Dockerfile"
+      )
+
+      FOUND_PATH=""
+      for path in "$${DOCKERFILE_PATHS[@]}"; do
+        echo "Checking: $path"
+        if [ -f "$path" ]; then
+          echo "✅ Found Dockerfile at: $path"
+          FOUND_PATH="$path"
+          break
+        else
+          echo "❌ Not found at: $path"
+        fi
+      done
+
+      if [ -z "$FOUND_PATH" ]; then
+        echo "ERROR: Dockerfile not found in any expected location!"
+        echo "Current structure:"
+        find ${path.root}/.. -name "*.Dockerfile" -type f || echo "No Dockerfiles found"
+        exit 1
+      fi
+
+      echo "=== DOCKERFILE FOUND AT: $FOUND_PATH ==="
+    EOT
+  }
 }
 
-output "debug_docker_paths" {
-  value = local.debug_paths
+resource "null_resource" "debug_directory_structure" {
+  provisioner "local-exec" {
+    command = <<-EOT
+      echo "=== AZURE DEVOPS DIRECTORY DEBUG ==="
+      echo "Current working directory: $(pwd)"
+      echo "Terraform root: ${path.root}"
+      echo ""
+      echo "=== DIRECTORY CONTENTS ==="
+      echo "Contents of current directory:"
+      ls -la
+      echo ""
+      echo "Contents of parent directory:"
+      ls -la ..
+      echo ""
+      echo "Contents of grandparent directory:"
+      ls -la ../..
+      echo ""
+      echo "Looking for lambdas directory at various levels:"
+      echo "Level 1 (../lambdas):"
+      ls -la ../lambdas 2>/dev/null || echo "Not found at ../lambdas"
+      echo "Level 2 (../../lambdas):"
+      ls -la ../../lambdas 2>/dev/null || echo "Not found at ../../lambdas"
+      echo "Level 3 (../../../lambdas):"
+      ls -la ../../../lambdas 2>/dev/null || echo "Not found at ../../../lambdas"
+      echo ""
+      echo "Looking for Dockerfiles:"
+      find .. -name "*.Dockerfile" -type f 2>/dev/null || echo "No Dockerfiles found"
+      echo "=== END DEBUG ==="
+    EOT
+  }
 }
 
 resource "aws_ecr_repository" "id_sync_lambda_repository" {
