@@ -9,6 +9,6 @@ def get_delta_table(table_name):
         logger.info("Initializing table: %s", table_name)
         delta_table = dynamodb_client.Table(table_name)
     except Exception as e:
-        logger.exception("Error initializing Delta Table")
+        logger.exception("Error initializing DynamoDB table: %s", table_name)
         raise e
     return delta_table
