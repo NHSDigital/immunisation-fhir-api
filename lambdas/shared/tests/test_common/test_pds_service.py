@@ -73,5 +73,3 @@ class TestPdsService(unittest.TestCase):
         env = "prod"
         service = PdsService(None, env)
         self.assertTrue(env not in service.base_url)
-
-
