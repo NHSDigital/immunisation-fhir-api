@@ -32,60 +32,10 @@ resource "null_resource" "find_dockerfile" {
     command = <<-EOT
       echo "=== FINDING DOCKERFILE ==="
 
-      # ✅ Use simple variable assignments instead of arrays
-      PATH1="${path.root}/../lambdas/id_sync.Dockerfile"
-      PATH2="${path.root}/../../lambdas/id_sync.Dockerfile"
-      PATH3="${path.root}/../id_sync.Dockerfile"
-      PATH4="${path.root}/id_sync.Dockerfile"
+	  ls -la "${local.lambdas_dir}/" || echo "lambdas directory not found"
+	  ls -la .. || echo "parent directory not found"
+	  ls -la ${path.root}/.. || echo "grandparent directory not found"
 
-      FOUND_PATH=""
-
-      echo "Checking: $PATH1"
-      if [ -f "$PATH1" ]; then
-        echo "✅ Found Dockerfile at: $PATH1"
-        FOUND_PATH="$PATH1"
-      else
-        echo "❌ Not found at: $PATH1"
-      fi
-
-      if [ -z "$FOUND_PATH" ]; then
-        echo "Checking: $PATH2"
-        if [ -f "$PATH2" ]; then
-          echo "✅ Found Dockerfile at: $PATH2"
-          FOUND_PATH="$PATH2"
-        else
-          echo "❌ Not found at: $PATH2"
-        fi
-      fi
-
-      if [ -z "$FOUND_PATH" ]; then
-        echo "Checking: $PATH3"
-        if [ -f "$PATH3" ]; then
-          echo "✅ Found Dockerfile at: $PATH3"
-          FOUND_PATH="$PATH3"
-        else
-          echo "❌ Not found at: $PATH3"
-        fi
-      fi
-
-      if [ -z "$FOUND_PATH" ]; then
-        echo "Checking: $PATH4"
-        if [ -f "$PATH4" ]; then
-          echo "✅ Found Dockerfile at: $PATH4"
-          FOUND_PATH="$PATH4"
-        else
-          echo "❌ Not found at: $PATH4"
-        fi
-      fi
-
-      if [ -z "$FOUND_PATH" ]; then
-        echo "ERROR: Dockerfile not found in any expected location!"
-        echo "Current structure:"
-        find ${path.root}/.. -name "*.Dockerfile" -type f 2>/dev/null || echo "No Dockerfiles found"
-        exit 1
-      fi
-
-      echo "=== DOCKERFILE FOUND AT: $FOUND_PATH ==="
     EOT
   }
 }
