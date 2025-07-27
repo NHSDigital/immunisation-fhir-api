@@ -1,8 +1,8 @@
 # Define the directory containing the Docker image and calculate its SHA-256 hash for triggering redeployments
 locals {
   lambdas_dir            = abspath("${path.root}/../lambdas")
-  shared_dir             = abspath("${path.root}/../lambdas/shared")
-  id_sync_lambda_dir     = abspath("${path.root}/../lambdas/id_sync")
+  shared_dir             = "${local.lambdas_dir}/shared"
+  id_sync_lambda_dir     = "${local.lambdas_dir}/id_sync"
 
   # Get files from both directories
   shared_files           = fileset(local.shared_dir, "**")
@@ -314,11 +314,11 @@ resource "aws_cloudwatch_log_group" "id_sync_log_group" {
 resource "aws_lambda_event_source_mapping" "id_sync_sqs_trigger" {
   event_source_arn = "arn:aws:sqs:eu-west-2:${var.immunisation_account_id}:${local.short_prefix}-id-sync-queue"
   function_name    = aws_lambda_function.id_sync_lambda.arn # TODO
-  
+
   # Optional: Configure batch size and other settings
   batch_size                         = 10
   maximum_batching_window_in_seconds = 5
-  
+
   # Optional: Configure error handling
   function_response_types = ["ReportBatchItemFailures"]
 }
