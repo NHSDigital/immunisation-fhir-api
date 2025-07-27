@@ -1,10 +1,8 @@
 '''
     record Processor
 '''
-# from common.clients import get_delta_table
 from boto3.dynamodb.conditions import Key
 from os_vars import get_ieds_table_name, get_delta_table_name
-from common.clients import get_delta_table
 
 ieds_tablename = get_ieds_table_name()
 delta_tablename = get_delta_table_name()
