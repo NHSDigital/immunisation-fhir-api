@@ -15,19 +15,21 @@ locals {
 
   # Combined SHA to trigger rebuild when either directory changes
   combined_sha           = sha1("${local.shared_dir_sha}${local.id_sync_lambda_dir_sha}")
+	repo_root = abspath("${path.root}/..")
+	is_azure_devops = can(regex("^/agent/_work", path.root))
+
   debug_paths = {
-    terraform_root     = path.root
-    lambdas_dir       = local.lambdas_dir
-    id_sync_dir       = local.id_sync_lambda_dir
-    dockerfile_path   = "${local.lambdas_dir}/id_sync.Dockerfile"
+    terraform_root   = path.root
+    repo_root       = local.repo_root
+    lambdas_dir     = local.lambdas_dir
+    dockerfile_path = local.id_sync_dockerfile
+    is_azure        = local.is_azure_devops
   }
-    alt_dockerfile_paths = [
-    "${path.root}/../lambdas/id_sync.Dockerfile",
-    "${path.root}/../../lambdas/id_sync.Dockerfile",
-    "${path.root}/../id_sync.Dockerfile",
-    "${path.root}/id_sync.Dockerfile"
-  ]
 }
+output "debug_terraform_paths" {
+  value = local.debug_paths
+}
+
 resource "null_resource" "find_dockerfile" {
   provisioner "local-exec" {
     command = <<-EOT

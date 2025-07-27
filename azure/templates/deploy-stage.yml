@@ -16,7 +16,7 @@ parameters:
     default: ''
   - name: proxy_path
     type: string
-    default: 'internal-dev'    
+    default: 'internal-dev'
   - name: secret_file_ids
     type: object
     default: []
@@ -150,7 +150,39 @@ jobs:
               echo "##vso[task.setvariable variable=FULLY_QUALIFIED_SERVICE_NAME]${FULLY_QUALIFIED_SERVICE_NAME}"
             fi
           displayName: Override FULLY_QUALIFIED_SERVICE_NAME
-        
+        # Add this step after checkout and before terraform
+      - task: Bash@3
+        displayName: 'Debug Azure DevOps Structure'
+        inputs:
+          targetType: 'inline'
+          script: |
+            echo "=== SAW AZURE DEVOPS WORKSPACE DEBUG ==="
+            echo "Pipeline.Workspace: $(Pipeline.Workspace)"
+            echo "Build.SourcesDirectory: $(Build.SourcesDirectory)"
+            echo "System.DefaultWorkingDirectory: $(System.DefaultWorkingDirectory)"
+            echo "Agent.BuildDirectory: $(Agent.BuildDirectory)"
+            echo "Current directory: $(pwd)"
+            echo ""
+            echo "=== WORKSPACE CONTENTS ==="
+            echo "Pipeline workspace contents:"
+            find $(Pipeline.Workspace) -maxdepth 3 -type d 2>/dev/null | head -20
+            echo ""
+            echo "=== SOURCE DIRECTORY CONTENTS ==="
+            echo "Build sources directory contents:"
+            ls -la $(Build.SourcesDirectory) 2>/dev/null || echo "Build.SourcesDirectory not accessible"
+            echo ""
+            echo "=== CURRENT DIRECTORY TREE ==="
+            echo "Current directory tree:"
+            find . -maxdepth 3 -type d 2>/dev/null || echo "Cannot access current directory"
+            echo ""
+            echo "=== SEARCH FOR LAMBDAS ==="
+            echo "Searching for lambdas directory:"
+            find $(Pipeline.Workspace) -name "lambdas" -type d 2>/dev/null || echo "No lambdas directory found"
+            echo ""
+            echo "=== SEARCH FOR DOCKERFILES ==="
+            echo "Searching for Dockerfiles:"
+            find $(Pipeline.Workspace) -name "*.Dockerfile" -type f 2>/dev/null || echo "No Dockerfiles found"
+            echo "=== END DEBUG ==="
       - checkout: self
         path: "s/${{ parameters.service_name }}"
         submodules: true
