@@ -27,15 +27,6 @@ output "debug_docker_paths" {
   value = local.debug_paths
 }
 
-# ✅ Check if files exist
-data "local_file" "dockerfile_check" {
-  filename = "${local.lambdas_dir}/id_sync.Dockerfile"
-}
-
-output "dockerfile_exists" {
-  value = "Dockerfile found at: ${data.local_file.dockerfile_check.filename}"
-}
-
 resource "aws_ecr_repository" "id_sync_lambda_repository" {
   image_scanning_configuration {
     scan_on_push = true
