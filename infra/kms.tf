@@ -66,6 +66,16 @@ locals {
     ],
     Resource = "*"
   }
+
+  policy_statement_allow_mns = {
+    Sid    = "AllowMNSLambdaDelivery",
+    Effect = "Allow",
+    Principal = {
+      AWS = "arn:aws:iam::${var.mns_account_id}:${var.mns_admin_role}"
+    },
+    Action = "kms:GenerateDataKey",
+    Resource = "*"
+  }
 }
 
 
@@ -147,3 +157,25 @@ resource "aws_kms_alias" "s3_shared_key" {
   name          = "alias/imms-batch-s3-shared-key"
   target_key_id = aws_kms_key.s3_shared_key.key_id
 }
+
+resource "aws_kms_key" "id_sync_sqs_encryption" {
+  description         = "KMS key for MNS service access"
+  key_usage           = "ENCRYPT_DECRYPT"
+  enable_key_rotation = true
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Id      = "key-consolepolicy-3",
+    Statement = [
+      local.policy_statement_allow_administration,
+      local.policy_statement_allow_auto_ops,
+      local.policy_statement_allow_devops,
+      local.policy_statement_allow_mns
+    ]
+  })
+}
+
+resource "aws_kms_alias" "id_sync_sqs_encryption" {
+  name          = "alias/imms-event-id-sync-encryption"
+  target_key_id = aws_kms_key.id_sync_sqs_encryption.key_id
+}
+
