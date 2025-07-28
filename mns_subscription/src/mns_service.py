@@ -27,7 +27,6 @@ class MnsService:
         subscription_payload = {
             "resourceType": "Subscription",
             "status": "requested",
-            "end": "2025-07-25T00:00:00.000Z",
             "reason": "Subscribe SQS to MNS test-signal",
             "criteria": "eventType=nhs-number-change-2",
             "channel": {
