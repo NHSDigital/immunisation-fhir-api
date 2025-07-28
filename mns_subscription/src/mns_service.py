@@ -42,14 +42,10 @@ class MnsService:
         print(f"Headers: {request_headers}")
         print(f"Payload: {json.dumps(subscription_payload, indent=2)}")
 
-        if response.status_code == 200:
+        if response.status_code == 201:
             return response.json()
         elif response.status_code == 404:
             return None
         else:
-            try:
-                api_error = response.json()
-            except Exception:
-                api_error = response.text
-            msg = f"MNS subscription failed with status {response.status_code}: {api_error}"
-            raise UnhandledResponseError(response=api_error, message=msg)
+            msg = "Please provide the correct resource type for this endpoint"
+            raise UnhandledResponseError(response=response.json(), message=msg)
