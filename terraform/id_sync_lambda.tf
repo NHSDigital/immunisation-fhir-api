@@ -1,74 +1,29 @@
 # Define the directory containing the Docker image and calculate its SHA-256 hash for triggering redeployments
 locals {
-  lambdas_dir            = abspath("${path.root}/../lambdas")
-  shared_dir             = "${local.lambdas_dir}/shared"
-  id_sync_lambda_dir     = "${local.lambdas_dir}/id_sync"
-  id_sync_dockerfile     = "${local.lambdas_dir}/id_sync.Dockerfile"
+  lambdas_dir        = abspath("${path.root}/../lambdas")
+  shared_dir         = "${local.lambdas_dir}/shared"
+  id_sync_lambda_dir = "${local.lambdas_dir}/id_sync"
+  id_sync_dockerfile = "${local.lambdas_dir}/id_sync.Dockerfile"
 
   # Get files from both directories
-  shared_files           = fileset(local.shared_dir, "**")
-  id_sync_lambda_files   = fileset(local.id_sync_lambda_dir, "**")
+  shared_files         = fileset(local.shared_dir, "**")
+  id_sync_lambda_files = fileset(local.id_sync_lambda_dir, "**")
 
   # Calculate SHA for both directories
   shared_dir_sha         = sha1(join("", [for f in local.shared_files : filesha1("${local.shared_dir}/${f}")]))
   id_sync_lambda_dir_sha = sha1(join("", [for f in local.id_sync_lambda_files : filesha1("${local.id_sync_lambda_dir}/${f}")]))
 
   # Combined SHA to trigger rebuild when either directory changes
-  combined_sha           = sha1("${local.shared_dir_sha}${local.id_sync_lambda_dir_sha}")
-	repo_root = abspath("${path.root}/..")
-	is_azure_devops = can(regex("^/agent/_work", path.root))
+  combined_sha    = sha1("${local.shared_dir_sha}${local.id_sync_lambda_dir_sha}")
+  repo_root       = abspath("${path.root}/..")
+  is_azure_devops = can(regex("^/agent/_work", path.root))
 
   debug_paths = {
-    terraform_root   = path.root
+    terraform_root  = path.root
     repo_root       = local.repo_root
     lambdas_dir     = local.lambdas_dir
     dockerfile_path = local.id_sync_dockerfile
     is_azure        = local.is_azure_devops
-  }
-}
-
-resource "null_resource" "find_dockerfile" {
-  provisioner "local-exec" {
-    command = <<-EOT
-      echo "=== FINDING DOCKERFILE ==="
-
-	  ls -la "${local.lambdas_dir}/" || echo "lambdas directory not found"
-	  ls -la .. || echo "parent directory not found"
-	  ls -la ${path.root}/.. || echo "grandparent directory not found"
-
-    EOT
-  }
-}
-
-resource "null_resource" "debug_directory_structure" {
-  provisioner "local-exec" {
-    command = <<-EOT
-      echo "=== AZURE DEVOPS DIRECTORY DEBUG ==="
-      echo "Current working directory: $(pwd)"
-      echo "Terraform root: ${path.root}"
-      echo ""
-      echo "=== DIRECTORY CONTENTS ==="
-      echo "Contents of current directory:"
-      ls -la
-      echo ""
-      echo "Contents of parent directory:"
-      ls -la ..
-      echo ""
-      echo "Contents of grandparent directory:"
-      ls -la ../..
-      echo ""
-      echo "Looking for lambdas directory at various levels:"
-      echo "Level 1 (../lambdas):"
-      ls -la ../lambdas 2>/dev/null || echo "Not found at ../lambdas"
-      echo "Level 2 (../../lambdas):"
-      ls -la ../../lambdas 2>/dev/null || echo "Not found at ../../lambdas"
-      echo "Level 3 (../../../lambdas):"
-      ls -la ../../../lambdas 2>/dev/null || echo "Not found at ../../../lambdas"
-      echo ""
-      echo "Looking for Dockerfiles:"
-      find .. -name "*.Dockerfile" -type f 2>/dev/null || echo "No Dockerfiles found"
-      echo "=== END DEBUG ==="
-    EOT
   }
 }
 
@@ -79,34 +34,14 @@ resource "aws_ecr_repository" "id_sync_lambda_repository" {
   name         = "${local.short_prefix}-id-sync-repo"
   force_delete = local.is_temp
 }
-resource "null_resource" "validate_dockerfile" {
-  triggers = {
-    dockerfile_path = "${local.lambdas_dir}/id_sync.Dockerfile"
-  }
 
-  provisioner "local-exec" {
-    command = <<-EOT
-      echo "Checking for Dockerfile at: ${local.lambdas_dir}/id_sync.Dockerfile"
-      if [ ! -f "${local.lambdas_dir}/id_sync.Dockerfile" ]; then
-        echo "ERROR: Dockerfile not found!"
-        echo "Current directory: $(pwd)"
-        echo "Looking for: ${local.lambdas_dir}/id_sync.Dockerfile"
-        echo "Files in lambdas directory:"
-        ls -la "${local.lambdas_dir}/" || echo "lambdas directory not found"
-        exit 1
-      else
-        echo "✅ Dockerfile found!"
-      fi
-    EOT
-  }
-}
 # Module for building and pushing Docker image to ECR
 module "id_sync_docker_image" {
   source  = "terraform-aws-modules/lambda/aws//modules/docker-build"
   version = "8.0.1"
 
-  create_ecr_repo = false
-  ecr_repo        = aws_ecr_repository.id_sync_lambda_repository.name
+  create_ecr_repo  = false
+  ecr_repo         = aws_ecr_repository.id_sync_lambda_repository.name
   docker_file_path = "id_sync.Dockerfile"
   ecr_repo_lifecycle_policy = jsonencode({
     "rules" : [
@@ -127,7 +62,7 @@ module "id_sync_docker_image" {
 
   platform      = "linux/amd64"
   use_image_tag = false
-  source_path      = local.lambdas_dir
+  source_path   = local.id_sync_lambda_dir
   triggers = {
     dir_sha = local.id_sync_lambda_dir_sha
   }
@@ -335,7 +270,7 @@ data "aws_iam_policy_document" "id_sync_policy_document" {
 resource "aws_iam_policy" "id_sync_lambda_dynamodb_access_policy" {
   name        = "${local.short_prefix}-id-sync-lambda-dynamodb-access-policy"
   description = "Allow Lambda to access DynamoDB"
-  policy     = data.aws_iam_policy_document.id_sync_policy_document.json
+  policy      = data.aws_iam_policy_document.id_sync_policy_document.json
 }
 
 # Attach the dynamodb policy to the Lambda role
@@ -360,15 +295,15 @@ resource "aws_lambda_function" "id_sync_lambda" {
 
   environment {
     variables = {
-      CONFIG_BUCKET_NAME          = local.config_bucket_name
-      REDIS_HOST                  = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].address
-      REDIS_PORT                  = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].port
-      ID_SYNC_PROC_LAMBDA_NAME    = "imms-${var.sub_environment}-id_sync_lambda"
+      CONFIG_BUCKET_NAME       = local.config_bucket_name
+      REDIS_HOST               = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].address
+      REDIS_PORT               = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].port
+      ID_SYNC_PROC_LAMBDA_NAME = "imms-${var.sub_environment}-id_sync_lambda"
       # NEW
-      DELTA_TABLE_NAME            = aws_dynamodb_table.delta-dynamodb-table.name
-      IEDS_TABLE_NAME             = aws_dynamodb_table.events-dynamodb-table.name
-      PDS_ENV                     = var.pds_environment
-      SPLUNK_FIREHOSE_NAME        = module.splunk.firehose_stream_name
+      DELTA_TABLE_NAME     = aws_dynamodb_table.delta-dynamodb-table.name
+      IEDS_TABLE_NAME      = aws_dynamodb_table.events-dynamodb-table.name
+      PDS_ENV              = var.pds_environment
+      SPLUNK_FIREHOSE_NAME = module.splunk.firehose_stream_name
     }
   }
   kms_key_arn = data.aws_kms_key.existing_lambda_encryption_key.arn
