@@ -40,9 +40,8 @@ module "id_sync_docker_image" {
   source  = "terraform-aws-modules/lambda/aws//modules/docker-build"
   version = "8.0.1"
 
-  create_ecr_repo  = false
-  ecr_repo         = aws_ecr_repository.id_sync_lambda_repository.name
-  docker_file_path = "id_sync.Dockerfile"
+  create_ecr_repo = false
+  ecr_repo        = aws_ecr_repository.id_sync_lambda_repository.name
   ecr_repo_lifecycle_policy = jsonencode({
     "rules" : [
       {

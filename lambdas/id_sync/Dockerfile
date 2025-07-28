@@ -25,10 +25,10 @@ FROM base AS build
 WORKDIR /var/task
 
 # Copy shared source code
-COPY shared/src/common ./common
+COPY ../shared/src/common ./common
 
 # Copy id_sync source code
-COPY id_sync/src .
+COPY src .
 
 # Set correct permissions
 RUN chmod 644 $(find . -type f) && chmod 755 $(find . -type d)
