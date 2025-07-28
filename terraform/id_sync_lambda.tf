@@ -177,12 +177,12 @@ resource "aws_iam_policy" "id_sync_lambda_exec_policy" {
         ]
       },
       {
-        Effect : "Allow",
-        Action : [
+        Effect = "Allow",
+        Action = [
           "firehose:PutRecord",
           "firehose:PutRecordBatch"
         ],
-        Resource : "arn:aws:firehose:*:*:deliverystream/${module.splunk.firehose_stream_name}"
+        Resource = "arn:aws:firehose:*:*:deliverystream/${module.splunk.firehose_stream_name}"
       },
       {
         Effect = "Allow"
