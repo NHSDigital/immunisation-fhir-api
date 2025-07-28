@@ -47,5 +47,5 @@ class MnsService:
         elif response.status_code == 404:
             return None
         else:
-            msg = "Please provide the correct resource type for this endpoint"
+            msg = f"MNS subscription failed"
             raise UnhandledResponseError(response=response.json(), message=msg)

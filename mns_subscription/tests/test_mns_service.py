@@ -17,7 +17,7 @@ class TestMnsService(unittest.TestCase):
     def test_successful_subscription(self, mock_post):
         # Arrange
         mock_response = MagicMock()
-        mock_response.status_code = 200
+        mock_response.status_code = 201
         mock_response.json.return_value = {"subscriptionId": "abc123"}
         mock_post.return_value = mock_response
 
@@ -54,7 +54,7 @@ class TestMnsService(unittest.TestCase):
         with self.assertRaises(UnhandledResponseError) as context:
             service.subscribe_notification()
 
-        self.assertIn("MNS subscription failed with status", str(context.exception))
+        self.assertIn("MNS subscription failed", str(context.exception))
 
 
 if __name__ == "__main__":
