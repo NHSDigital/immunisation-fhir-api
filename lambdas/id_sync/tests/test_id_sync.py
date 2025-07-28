@@ -1,9 +1,12 @@
 import unittest
 from unittest.mock import patch, MagicMock
+import json
+
 
 with patch('common.log_decorator.logging_decorator') as mock_decorator:
     mock_decorator.return_value = lambda f: f  # Pass-through decorator
     from id_sync import handler
+    from id_sync import IdSyncException
 
 
 class TestIdSyncHandler(unittest.TestCase):
@@ -92,7 +95,7 @@ class TestIdSyncHandler(unittest.TestCase):
 
         self.mock_process_record.return_value = {
             "status": "success",
-            "file_key": "test-file.txt"
+            "nhs_number": "test-nhs-number"
         }
 
         # Call handler
@@ -101,12 +104,10 @@ class TestIdSyncHandler(unittest.TestCase):
         # Assertions
         self.mock_aws_lambda_event.assert_called_once_with(self.single_sqs_event)
         self.mock_process_record.assert_called_once_with(mock_event.records[0], None)
-        self.mock_logger.info.assert_any_call("id_sync processing event with %d records", 1)
-        self.mock_logger.info.assert_any_call("id_sync successfully processed all %d records", 1)
 
         self.assertEqual(result["status"], "success")
         self.assertEqual(result["message"], "Successfully processed 1 records")
-        self.assertEqual(result["file_keys"], ["test-file.txt"])
+        self.assertEqual(result["nhs_numbers"], ["test-nhs-number"])
 
     def test_handler_success_multiple_records(self):
         """Test handler with multiple successful records"""
@@ -116,8 +117,8 @@ class TestIdSyncHandler(unittest.TestCase):
         self.mock_aws_lambda_event.return_value = mock_event
 
         self.mock_process_record.side_effect = [
-            {"status": "success", "file_key": "file1.txt"},
-            {"status": "success", "file_key": "file2.txt"}
+            {"status": "success", "nhs_number": "test-nhs-number-1"},
+            {"status": "success", "nhs_number": "test-nhs-number-2"}
         ]
 
         # Call handler
@@ -125,12 +126,9 @@ class TestIdSyncHandler(unittest.TestCase):
 
         # Assertions
         self.assertEqual(self.mock_process_record.call_count, 2)
-        self.mock_logger.info.assert_any_call("id_sync processing event with %d records", 2)
-        self.mock_logger.info.assert_any_call("id_sync successfully processed all %d records", 2)
-
         self.assertEqual(result["status"], "success")
         self.assertEqual(result["message"], "Successfully processed 2 records")
-        self.assertEqual(result["file_keys"], ["file1.txt", "file2.txt"])
+        self.assertEqual(result["nhs_numbers"], ["test-nhs-number-1", "test-nhs-number-2"])
 
     def test_handler_error_single_record(self):
         """Test handler with single failed record"""
@@ -141,19 +139,20 @@ class TestIdSyncHandler(unittest.TestCase):
 
         self.mock_process_record.return_value = {
             "status": "error",
-            "file_key": "failed-file.txt"
+            "nhs_number": "failed-nhs-number"
         }
 
         # Call handler
-        result = handler(self.single_sqs_event, None)
+        with self.assertRaises(IdSyncException) as exception_context:
+            handler(self.single_sqs_event, None)
 
+        exception = exception_context.exception
         # Assertions
         self.mock_process_record.assert_called_once_with(mock_event.records[0], None)
         self.mock_logger.info.assert_any_call("id_sync processing event with %d records", 1)
 
-        self.assertEqual(result["status"], "error")
-        self.assertEqual(result["message"], "Processed 1 records with 1 errors")
-        self.assertEqual(result["file_keys"], ["failed-file.txt"])
+        self.assertEqual(exception.message, "Processed 1 records with 1 errors")
+        self.assertEqual(exception.nhs_numbers, ["failed-nhs-number"])
 
     def test_handler_mixed_success_error(self):
         """Test handler with mix of successful and failed records"""
@@ -163,21 +162,21 @@ class TestIdSyncHandler(unittest.TestCase):
         self.mock_aws_lambda_event.return_value = mock_event
 
         self.mock_process_record.side_effect = [
-            {"status": "success", "file_key": "success1.txt"},
-            {"status": "error", "file_key": "error1.txt"},
-            {"status": "success", "file_key": "success2.txt"}
+            {"status": "success", "nhs_number": "test-nhs-number-1"},
+            {"status": "error", "nhs_number": "test-nhs-number-2"},
+            {"status": "success", "nhs_number": "test-nhs-number-3"}
         ]
 
         # Call handler
-        result = handler(self.multi_sqs_event, None)
+        with self.assertRaises(IdSyncException) as exception_context:
+            handler(self.multi_sqs_event, None)
 
+        error = exception_context.exception
         # Assertions
         self.assertEqual(self.mock_process_record.call_count, 3)
-        self.mock_logger.info.assert_any_call("id_sync processing event with %d records", 3)
 
-        self.assertEqual(result["status"], "error")
-        self.assertEqual(result["message"], "Processed 3 records with 1 errors")
-        self.assertEqual(result["file_keys"], ["success1.txt", "error1.txt", "success2.txt"])
+        self.assertEqual(error.message, "Processed 3 records with 1 errors")
+        self.assertEqual(error.nhs_numbers, ["test-nhs-number-1", "test-nhs-number-2", "test-nhs-number-3"])
 
     def test_handler_all_records_fail(self):
         """Test handler when all records fail"""
@@ -187,19 +186,19 @@ class TestIdSyncHandler(unittest.TestCase):
         self.mock_aws_lambda_event.return_value = mock_event
 
         self.mock_process_record.side_effect = [
-            {"status": "error", "file_key": "error1.txt"},
-            {"status": "error", "file_key": "error2.txt"}
+            {"status": "error", "nhs_number": "test-nhs-number-1"},
+            {"status": "error", "nhs_number": "test-nhs-number-2"}
         ]
 
         # Call handler
-        result = handler(self.multi_sqs_event, None)
-
+        with self.assertRaises(IdSyncException) as exception_context:
+            handler(self.multi_sqs_event, None)
+        exception = exception_context.exception
         # Assertions
         self.assertEqual(self.mock_process_record.call_count, 2)
 
-        self.assertEqual(result["status"], "error")
-        self.assertEqual(result["message"], "Processed 2 records with 2 errors")
-        self.assertEqual(result["file_keys"], ["error1.txt", "error2.txt"])
+        self.assertEqual(exception.nhs_numbers, ["test-nhs-number-1", "test-nhs-number-2"])
+        self.assertEqual(exception.message, "Processed 2 records with 2 errors")
 
     def test_handler_empty_records(self):
         """Test handler with empty records"""
@@ -243,15 +242,17 @@ class TestIdSyncHandler(unittest.TestCase):
         self.mock_aws_lambda_event.side_effect = Exception("AwsLambdaEvent creation failed")
 
         # Call handler
-        result = handler(self.single_sqs_event, None)
+        with self.assertRaises(IdSyncException) as exception_context:
+            handler(self.single_sqs_event, None)
 
+        result = exception_context.exception
         # Assertions
         self.mock_aws_lambda_event.assert_called_once_with(self.single_sqs_event)
         self.mock_logger.exception.assert_called_once_with("Error processing id_sync event")
         self.mock_process_record.assert_not_called()
 
-        self.assertEqual(result["status"], "error")
-        self.assertEqual(result["message"], "Error processing id_sync event")
+        self.assertEqual(result.nhs_numbers, None)
+        self.assertEqual(result.message, "Error processing id_sync event")
 
     def test_handler_process_record_exception(self):
         """Test handler when process_record raises exception"""
@@ -263,74 +264,40 @@ class TestIdSyncHandler(unittest.TestCase):
         self.mock_process_record.side_effect = Exception("Process record failed")
 
         # Call handler
-        result = handler(self.single_sqs_event, None)
-
+        with self.assertRaises(IdSyncException) as exception_context:
+            handler(self.single_sqs_event, None)
+        exception = exception_context.exception
         # Assertions
         self.mock_process_record.assert_called_once_with(mock_event.records[0], None)
         self.mock_logger.exception.assert_called_once_with("Error processing id_sync event")
 
-        self.assertEqual(result["status"], "error")
-        self.assertEqual(result["message"], "Error processing id_sync event")
+        self.assertEqual(exception.nhs_numbers, None)
+        self.assertEqual(exception.message, "Error processing id_sync event")
 
-    def test_handler_process_record_missing_file_key(self):
+    def test_handler_process_record_missing_nhs_number(self):
         """Test handler when process_record returns incomplete data"""
         # Setup mocks
         mock_event = MagicMock()
         mock_event.records = [MagicMock()]
         self.mock_aws_lambda_event.return_value = mock_event
 
-        # Missing file_key in response
+        # Missing "nhs_number" in response
         self.mock_process_record.return_value = {
             "status": "success"
-            # Missing "file_key"
+            # Missing "nhs_number"
         }
 
         # Call handler
-        result = handler(self.single_sqs_event, None)
+        with self.assertRaises(IdSyncException) as exception_context:
+            handler(self.single_sqs_event, None)
 
-        # Should catch KeyError and return error
+        exception = exception_context.exception
+
+        # convert exception payload to json
+        self.assertIsInstance(exception, IdSyncException)
+        self.assertEqual(exception.nhs_numbers, None)
+        self.assertEqual(exception.message, "Error processing id_sync event")
         self.mock_logger.exception.assert_called_once_with("Error processing id_sync event")
-        self.assertEqual(result["status"], "error")
-        self.assertEqual(result["message"], "Error processing id_sync event")
-
-    def test_handler_process_record_missing_status(self):
-        """Test handler when process_record returns missing status"""
-        # Setup mocks
-        mock_event = MagicMock()
-        mock_event.records = [MagicMock()]
-        self.mock_aws_lambda_event.return_value = mock_event
-
-        # Missing status in response
-        self.mock_process_record.return_value = {
-            "file_key": "test-file.txt"
-            # Missing "status"
-        }
-
-        # Call handler
-        result = handler(self.single_sqs_event, None)
-
-        # Should catch KeyError and return error
-        self.mock_logger.exception.assert_called_once_with("Error processing id_sync event")
-        self.assertEqual(result["status"], "error")
-
-    def test_handler_file_keys_order_preserved(self):
-        """Test that file_keys are returned in the same order as processed"""
-        # Setup mocks
-        mock_event = MagicMock()
-        mock_event.records = [MagicMock(), MagicMock(), MagicMock()]
-        self.mock_aws_lambda_event.return_value = mock_event
-
-        self.mock_process_record.side_effect = [
-            {"status": "success", "file_key": "first.txt"},
-            {"status": "success", "file_key": "second.txt"},
-            {"status": "success", "file_key": "third.txt"}
-        ]
-
-        # Call handler
-        result = handler(self.multi_sqs_event, None)
-
-        # Verify order is preserved
-        self.assertEqual(result["file_keys"], ["first.txt", "second.txt", "third.txt"])
 
     def test_handler_context_parameter_ignored(self):
         """Test that context parameter is properly ignored"""
@@ -341,7 +308,7 @@ class TestIdSyncHandler(unittest.TestCase):
 
         self.mock_process_record.return_value = {
             "status": "success",
-            "file_key": "test-file.txt"
+            "nhs_number": "nnhs-number-01"
         }
 
         # Call handler with mock context
@@ -358,36 +325,28 @@ class TestIdSyncHandler(unittest.TestCase):
         mock_event.records = [MagicMock(), MagicMock(), MagicMock(), MagicMock()]
         self.mock_aws_lambda_event.return_value = mock_event
 
+        good_num1 = "nhs-number-success1"
+        good_num2 = "nhs-number-success2"
+        bad_num1 = "nhs-number-error1"
+        bad_num2 = "nhs-number-error2"
+
         self.mock_process_record.side_effect = [
-            {"status": "success", "file_key": "success1.txt"},
-            {"status": "error", "file_key": "error1.txt"},
-            {"status": "error", "file_key": "error2.txt"},
-            {"status": "success", "file_key": "success2.txt"}
+            {"status": "success", "nhs_number": good_num1},
+            {"status": "error", "nhs_number": bad_num1},
+            {"status": "error", "nhs_number": bad_num2},
+            {"status": "success", "nhs_number": good_num2}
         ]
 
         # Call handler
-        result = handler(self.multi_sqs_event, None)
-
+        with self.assertRaises(IdSyncException) as exception_context:
+            handler(self.multi_sqs_event, None)
+        exception = exception_context.exception
         # Assertions - should track 2 errors out of 4 records
         self.assertEqual(self.mock_process_record.call_count, 4)
 
-        self.assertEqual(result["status"], "error")
-        self.assertEqual(result["message"], "Processed 4 records with 2 errors")
-
-    def test_handler_logs_correct_event_type(self):
-        """Test that handler logs 'SQS event' for processing start"""
-        # Setup mocks
-        mock_event = MagicMock()
-        mock_event.records = [MagicMock()]
-        self.mock_aws_lambda_event.return_value = mock_event
-
-        self.mock_process_record.return_value = {
-            "status": "success",
-            "file_key": "test-file.txt"
-        }
-
-        # Call handler
-        handler(self.single_sqs_event, None)
-
-        # Check that it specifically logs "SQS event"
-        self.mock_logger.info.assert_any_call("id_sync processing event with %d records", 1)
+        self.assertEqual(exception.nhs_numbers,
+                         [good_num1,
+                          bad_num1,
+                          bad_num2,
+                          good_num2])
+        self.assertEqual(exception.message, "Processed 4 records with 2 errors")

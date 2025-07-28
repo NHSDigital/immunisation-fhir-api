@@ -26,14 +26,17 @@ def process_nhs_number(nhs_number: str) -> Optional[str]:
 
     patient_details_id = patient_details.get("id")
 
+    base_log_data = {"nhs_number": nhs_number}
     if patient_details_id:
         # if patient NHS != id, update patient index of vax events to new number
         if patient_details_id != nhs_number and patient_details_id:
             if ieds_check_exist(patient_details_id):
-                return ieds_update_patient_id(patient_details_id, nhs_number)
+                response = ieds_update_patient_id(patient_details_id, nhs_number)
             else:
-                return {"status": "error", "message": f"No records returned for ID: {nhs_number}"}
+                response = {"status": "error", "message": f"No records returned for ID: {nhs_number}"}
         else:
             return {"status": "success", "message": "No update required"}
     else:
-        return {"status": "error", "message": f"No patient ID found for NHS number: {nhs_number}"}
+        response = {"status": "error", "message": f"No patient ID found for NHS number: {nhs_number}"}
+    response.update(base_log_data)
+    return response
