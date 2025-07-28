@@ -43,7 +43,7 @@
                     "status",
                     "vaccineCode",
                     "patient",
-                    "occurrenceDateTime",
+                    "occurrence[X]",
                     "recorded",
                     "primarySource",
                     "location",
@@ -229,7 +229,6 @@
                             "required": [
                               "resourceType",
                               "id",
-                              "identifier",
                               "name",
                               "gender",
                               "birthDate",
@@ -307,10 +306,6 @@
                       "maxItems": 1,
                       "items": {
                         "type": "object",
-                        "required": [
-                          "system",
-                          "value"
-                        ],
                         "properties": {
                           "use": {
                             "description": "Identifier use as defined by https://www.hl7.org/fhir/valueset-identifier-use.html.",
@@ -330,7 +325,7 @@
                             "example": "https://supplierABC/identifiers/vacc `or` https://supplierABC/ODSCode_NKO41/identifiers/vacc"
                           },
                           "value": {
-                            "description": "A unique identifier value within `system`. Ideally this would be a GUID / UUID.  \nThe value in combination with the system SHALL be globally unique.",
+                            "description": "A unique identifier value within `system`. Ideally this would be a GUID / UUID.  \nThe value in combination with the system SHALL be globally unique.  \nThis SHALL be populated if `system` is https://fhir.nhs.uk/Id/nhs-number.",
                             "type": "string",
                             "example": "e2154d29-1ead-4830-a513-0d59705078fa"
                           }
@@ -389,10 +384,19 @@
                         }
                       }
                     },
-                    "occurrenceDateTime": {
-                      "description": "A dateTime format SHALL be provided. It SHOULD be to the level of precision as recorded within the source system, subject to the FHIR rules for dateTime.  \n Only positive timezone offsets of '+00:00' (GMT) and '+01:00' (BST) are allowed. Where time zone information is required but is not available in the source system the time zone element can be a hardcoded static value of `+00:00`.",
-                      "type": "string",
-                      "example": "2021-02-07T13:28:17.271000+00:00"
+                    "occurrence[X]": {
+                      "type": "object",
+                      "description": "When immunizations are given a specific date and time should always be known. The string data type for this element is not supported. Only occurrenceDateTime SHALL be used.",
+                      "properties": {
+                        "occurrenceDateTime": {
+                          "description": "A dateTime format SHALL be provided. It SHOULD be to the level of precision as recorded within the source system, subject to the FHIR rules for dateTime.  \n Only positive timezone offsets of '+00:00' (GMT) and '+01:00' (BST) are allowed. Where time zone information is required but is not available in the source system the time zone element can be a hardcoded static value of `+00:00`.",
+                          "type": "string",
+                          "example": "2021-02-07T13:28:17.271000+00:00"
+                        }
+                      },
+                      "required": [
+                        "occurrenceDateTime"
+                      ]
                     },
                     "recorded": {
                       "description": "The date the occurrence of the immunization was first captured in the record - potentially significantly after the occurrence of the event.",
@@ -672,7 +676,7 @@
                           },
                           "doseNumber[X]": {
                             "type": "object",
-                            "description": "Nominal position in a series. The use of an integer is preferred if known. A string should only be used in cases where an integer is not available.",
+                            "description": "Nominal position in a series. This SHALL be provided but may be populated using either of the dataTypes available: PositiveInt or String. The use of an integer is preferred.",
                             "properties": {
                               "doseNumberPositiveInt": {
                                 "description": "Nominal position in a course of vaccines. This `SHOULD be populated` where the data is available.",
@@ -969,7 +973,7 @@
                                     "status",
                                     "vaccineCode",
                                     "patient",
-                                    "occurrenceDateTime",
+                                    "occurrence[X]",
                                     "recorded",
                                     "primarySource",
                                     "location",
@@ -1212,10 +1216,19 @@
                                         }
                                       }
                                     },
-                                    "occurrenceDateTime": {
-                                      "description": "Date and time of immunisation.",
-                                      "type": "string",
-                                      "example": "2021-02-07T13:28:17.271000+00:00"
+                                    "occurrence[X]": {
+                                      "type": "object",
+                                      "description": "When immunizations are given a specific date and time should always be known. The string data type for this element is not supported. Only occurrenceDateTime SHALL be used.",
+                                      "properties": {
+                                        "occurrenceDateTime": {
+                                          "description": "Date and time of immunisation.",
+                                          "type": "string",
+                                          "example": "2021-02-07T13:28:17.271000+00:00"
+                                        }
+                                      },
+                                      "required": [
+                                        "occurrenceDateTime"
+                                      ]
                                     },
                                     "recorded": {
                                       "description": "The date the occurrence of the immunization was first captured in the record - potentially significantly after the occurrence of the event.",
@@ -1476,7 +1489,8 @@
                                       "items": {
                                         "type": "object",
                                         "required": [
-                                          "targetDisease"
+                                          "targetDisease",
+                                          "doseNumber[X]"
                                         ],
                                         "properties": {
                                           "targetDisease": {
@@ -1519,21 +1533,18 @@
                                           },
                                           "doseNumber[X]": {
                                             "type": "object",
-                                            "description": "Dose number within series. Can be an integer or string. Kindly, refer below elements",
+                                            "description": "Nominal position in a series. This SHALL be provided but may be populated using either of the dataTypes available: PositiveInt or String. The use of an integer is preferred.",
                                             "properties": {
                                               "doseNumberPositiveInt": {
-                                                "description": "Dose number within a series of doses.",
+                                                "description": "Nominal position in a course of vaccines. This `SHOULD be populated` where the data is available.",
                                                 "type": "integer",
                                                 "example": 1
                                               },
                                               "doseNumberString": {
-                                                "description": "A string should only be used in cases where an integer is not available.",
+                                                "description": "Description of the dose sequence where it is not a numeric or a reason a dose number cannot be provided.  \nA string should only be used in cases where an integer is not available.",
                                                 "type": "string"
                                               }
-                                            },
-                                            "required": [
-                                              "doseNumberPositiveInt"
-                                            ]
+                                            }
                                           }
                                         }
                                       }
@@ -1881,7 +1892,7 @@
                                     "status",
                                     "vaccineCode",
                                     "patient",
-                                    "occurrenceDateTime",
+                                    "occurrence[X]",
                                     "recorded",
                                     "primarySource",
                                     "location",
@@ -2124,10 +2135,19 @@
                                         }
                                       }
                                     },
-                                    "occurrenceDateTime": {
-                                      "description": "Date and time of immunisation.",
-                                      "type": "string",
-                                      "example": "2021-02-07T13:28:17.271000+00:00"
+                                    "occurrence[X]": {
+                                      "type": "object",
+                                      "description": "When immunizations are given a specific date and time should always be known. The string data type for this element is not supported. Only occurrenceDateTime SHALL be used.",
+                                      "properties": {
+                                        "occurrenceDateTime": {
+                                          "description": "Date and time of immunisation.",
+                                          "type": "string",
+                                          "example": "2021-02-07T13:28:17.271000+00:00"
+                                        }
+                                      },
+                                      "required": [
+                                        "occurrenceDateTime"
+                                      ]
                                     },
                                     "recorded": {
                                       "description": "The date the occurrence of the immunization was first captured in the record - potentially significantly after the occurrence of the event.",
@@ -2388,7 +2408,8 @@
                                       "items": {
                                         "type": "object",
                                         "required": [
-                                          "targetDisease"
+                                          "targetDisease",
+                                          "doseNumber[X]"
                                         ],
                                         "properties": {
                                           "targetDisease": {
@@ -2431,21 +2452,18 @@
                                           },
                                           "doseNumber[X]": {
                                             "type": "object",
-                                            "description": "Dose number within series. Can be an integer or string. Kindly, refer below elements",
+                                            "description": "Nominal position in a series. This SHALL be provided but may be populated using either of the dataTypes available: PositiveInt or String. The use of an integer is preferred.",
                                             "properties": {
                                               "doseNumberPositiveInt": {
-                                                "description": "Dose number within a series of doses.",
+                                                "description": "Nominal position in a course of vaccines. This `SHOULD be populated` where the data is available.",
                                                 "type": "integer",
                                                 "example": 1
                                               },
                                               "doseNumberString": {
-                                                "description": "A string should only be used in cases where an integer is not available.",
+                                                "description": "Description of the dose sequence where it is not a numeric or a reason a dose number cannot be provided.  \nA string should only be used in cases where an integer is not available.",
                                                 "type": "string"
                                               }
-                                            },
-                                            "required": [
-                                              "doseNumberPositiveInt"
-                                            ]
+                                            }
                                           }
                                         }
                                       }
@@ -2731,7 +2749,7 @@
                       "status",
                       "vaccineCode",
                       "patient",
-                      "occurrenceDateTime",
+                      "occurrence[X]",
                       "recorded",
                       "primarySource",
                       "location",
@@ -3089,10 +3107,19 @@
                           }
                         }
                       },
-                      "occurrenceDateTime": {
-                        "description": "Date and time of immunisation.",
-                        "type": "string",
-                        "example": "2021-02-07T13:28:17.271000+00:00"
+                      "occurrence[X]": {
+                        "type": "object",
+                        "description": "When immunizations are given a specific date and time should always be known. The string data type for this element is not supported. Only occurrenceDateTime SHALL be used.",
+                        "properties": {
+                          "occurrenceDateTime": {
+                            "description": "Date and time of immunisation.",
+                            "type": "string",
+                            "example": "2021-02-07T13:28:17.271000+00:00"
+                          }
+                        },
+                        "required": [
+                          "occurrenceDateTime"
+                        ]
                       },
                       "recorded": {
                         "description": "The date the occurrence of the immunization was first captured in the record - potentially significantly after the occurrence of the event.",
@@ -3353,7 +3380,8 @@
                         "items": {
                           "type": "object",
                           "required": [
-                            "targetDisease"
+                            "targetDisease",
+                            "doseNumber[X]"
                           ],
                           "properties": {
                             "targetDisease": {
@@ -3396,21 +3424,18 @@
                             },
                             "doseNumber[X]": {
                               "type": "object",
-                              "description": "Dose number within series. Can be an integer or string. Kindly, refer below elements",
+                              "description": "Nominal position in a series. This SHALL be provided but may be populated using either of the dataTypes available: PositiveInt or String. The use of an integer is preferred.",
                               "properties": {
                                 "doseNumberPositiveInt": {
-                                  "description": "Dose number within a series of doses.",
+                                  "description": "Nominal position in a course of vaccines. This `SHOULD be populated` where the data is available.",
                                   "type": "integer",
                                   "example": 1
                                 },
                                 "doseNumberString": {
-                                  "description": "A string should only be used in cases where an integer is not available.",
+                                  "description": "Description of the dose sequence where it is not a numeric or a reason a dose number cannot be provided.  \nA string should only be used in cases where an integer is not available.",
                                   "type": "string"
                                 }
-                              },
-                              "required": [
-                                "doseNumberPositiveInt"
-                              ]
+                              }
                             }
                           }
                         }
@@ -3634,7 +3659,7 @@
                     "status",
                     "vaccineCode",
                     "patient",
-                    "occurrenceDateTime",
+                    "occurrence[X]",
                     "recorded",
                     "primarySource",
                     "location",
@@ -3824,7 +3849,6 @@
                             "required": [
                               "resourceType",
                               "id",
-                              "identifier",
                               "name",
                               "gender",
                               "birthDate",
@@ -3902,10 +3926,6 @@
                       "maxItems": 1,
                       "items": {
                         "type": "object",
-                        "required": [
-                          "system",
-                          "value"
-                        ],
                         "properties": {
                           "use": {
                             "description": "Identifier use as defined by https://www.hl7.org/fhir/valueset-identifier-use.html.",
@@ -3925,7 +3945,7 @@
                             "example": "https://supplierABC/identifiers/vacc `or` https://supplierABC/ODSCode_NKO41/identifiers/vacc"
                           },
                           "value": {
-                            "description": "A unique identifier value within `system`. Ideally this would be a GUID / UUID.  \nThe value in combination with the system SHALL be globally unique.",
+                            "description": "A unique identifier value within `system`. Ideally this would be a GUID / UUID.  \nThe value in combination with the system SHALL be globally unique.  \nThis SHALL be populated if `system` is https://fhir.nhs.uk/Id/nhs-number.",
                             "type": "string",
                             "example": "e2154d29-1ead-4830-a513-0d59705078fa"
                           }
@@ -3984,10 +4004,19 @@
                         }
                       }
                     },
-                    "occurrenceDateTime": {
-                      "description": "A dateTime format SHALL be provided. It SHOULD be to the level of precision as recorded within the source system, subject to the FHIR rules for dateTime.  \nOnly positive timezone offsets of '+00:00' (GMT) and '+01:00' (BST) are allowed. Where time zone information is required but is not available in the source system the time zone element can be a hardcoded static value of `+00:00`.",
-                      "type": "string",
-                      "example": "2021-02-07T13:28:17.271000+00:00"
+                    "occurrence[X]": {
+                      "type": "object",
+                      "description": "When immunizations are given a specific date and time should always be known. The string data type for this element is not supported. Only occurrenceDateTime SHALL be used.",
+                      "properties": {
+                        "occurrenceDateTime": {
+                          "description": "A dateTime format SHALL be provided. It SHOULD be to the level of precision as recorded within the source system, subject to the FHIR rules for dateTime.  \n Only positive timezone offsets of '+00:00' (GMT) and '+01:00' (BST) are allowed. Where time zone information is required but is not available in the source system the time zone element can be a hardcoded static value of `+00:00`.",
+                          "type": "string",
+                          "example": "2021-02-07T13:28:17.271000+00:00"
+                        }
+                      },
+                      "required": [
+                        "occurrenceDateTime"
+                      ]
                     },
                     "recorded": {
                       "description": "The date the occurrence of the immunization was first captured in the record - potentially significantly after the occurrence of the event.",
@@ -4267,7 +4296,7 @@
                           },
                           "doseNumber[X]": {
                             "type": "object",
-                            "description": "Nominal position in a series. The use of an integer is preferred if known. A string should only be used in cases where an integer is not available.",
+                            "description": "Nominal position in a series. This SHALL be provided but may be populated using either of the dataTypes available: PositiveInt or String. The use of an integer is preferred.",
                             "properties": {
                               "doseNumberPositiveInt": {
                                 "description": "Nominal position in a course of vaccines. This `SHOULD be populated` where the data is available.",
