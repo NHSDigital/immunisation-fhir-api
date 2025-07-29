@@ -31,10 +31,7 @@
 			"path": "redis_sync"
 		},
 		{
-			"path": "lambdas/id_sync"
-		},
-		{
-			"path": "lambdas/shared"
+			"path": "id_sync"
 		}
 	],
 	"settings": {}

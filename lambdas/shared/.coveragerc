@@ -1,6 +1,0 @@
-[report]
-omit =
-    tests/*
-    tests/*/*
-    tests/*/*/*
-    tests/test_common/*

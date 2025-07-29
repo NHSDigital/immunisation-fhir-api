@@ -1,4 +1,4 @@
-TEST_ENV := @PYTHONPATH=src:tests:../shared/src
+TEST_ENV := @PYTHONPATH=src:tests:tests/test_common
 
 test:
 	$(TEST_ENV) python -m unittest
