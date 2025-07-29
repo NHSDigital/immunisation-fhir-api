@@ -5,7 +5,7 @@ parameters:
     default: true
   - name: 'aws_account_type'
     type: string
-  - name: subscribe_mns
+  - name: subscribe_to_mns
     type: boolean
     default: true
 
@@ -81,7 +81,7 @@ steps:
     workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)"
     retryCountOnTaskFailure: 2
 
-  - ${{ if eq(parameters.subscribe_mns, true) }}:
+  - ${{ if eq(parameters.subscribe_to_mns, true) }}:
     - bash: |
           export AWS_PROFILE=apim-dev
           echo "Subscribing SQS to MNS for notifications."
