@@ -78,7 +78,9 @@ class MnsService:
             bundle = response.json()
             # Assume a FHIR Bundle with 'entry' list
             for entry in bundle.get("entry", []):
-                resource = entry.get("channel", {})
+                resource = entry.get("resource", entry)
+                print(f"get resource sub: {resource}")
+                logging.debug(f"get resource sub: {resource}")
                 channel = resource.get("channel", {})
                 if channel.get("endpoint") == SQS_ARN:
                     return resource  # Found a matching subscription
