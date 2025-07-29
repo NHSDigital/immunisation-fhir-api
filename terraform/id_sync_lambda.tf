@@ -25,7 +25,7 @@ resource "aws_ecr_repository" "id_sync_lambda_repository" {
 module "id_sync_docker_image" {
   source           = "terraform-aws-modules/lambda/aws//modules/docker-build"
   version          = "8.0.1"
-  docker_file_path = "Dockerfile"
+  docker_file_path = "./id_sync/Dockerfile"
   create_ecr_repo  = false
   ecr_repo         = aws_ecr_repository.id_sync_lambda_repository.name
   ecr_repo_lifecycle_policy = jsonencode({
@@ -47,7 +47,7 @@ module "id_sync_docker_image" {
 
   platform      = "linux/amd64"
   use_image_tag = false
-  source_path   = local.id_sync_lambda_dir
+  source_path   = abspath("${path.root}/..")
   triggers = {
     dir_sha = local.id_sync_lambda_dir_sha
   }

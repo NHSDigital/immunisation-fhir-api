@@ -10,7 +10,7 @@ RUN mkdir -p /home/appuser && \
 # Copy id_sync Poetry files
 COPY poetry.lock pyproject.toml README.md ./
 # Copy shared/src/common to ./src/common
-COPY ../shared/src/common ./src/common
+COPY ./shared/src/common ./src/common
 
 RUN echo "Listing /var/task after source code copy:" && ls -R /var/task
 
@@ -25,10 +25,10 @@ FROM base AS build
 WORKDIR /var/task
 
 # Copy shared source code
-COPY ./src/common ./common
+COPY ./shared/src/common ./common
 
 # Copy id_sync source code
-COPY src .
+COPY ./id_sync/src .
 
 # Set correct permissions
 RUN chmod 644 $(find . -type f) && chmod 755 $(find . -type d)
