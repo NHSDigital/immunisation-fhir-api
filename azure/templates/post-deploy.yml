@@ -56,13 +56,8 @@ steps:
         echo Apigee environment: $APIGEE_ENVIRONMENT
         echo pr_no: $pr_no
 
+        echo "Output dirs"
         ls
-        cd lambdas
-        ls 
-        cd id_sync
-        ls
-        cd ..
-        cd ..
         cd terraform
 
         make init
