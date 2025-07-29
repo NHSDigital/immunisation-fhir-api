@@ -1,8 +1,7 @@
 SHELL=/usr/bin/env bash -euo pipefail
 
-PYTHON_PROJECT_DIRS_WITH_UNIT_TESTS = ack_backend backend delta_backend filenameprocessor mesh_processor recordprocessor redis_sync lambdas/id_sync
+PYTHON_PROJECT_DIRS_WITH_UNIT_TESTS = ack_backend backend delta_backend filenameprocessor mesh_processor recordprocessor redis_sync lambdas/id_sync lambdas/shared
 PYTHON_PROJECT_DIRS = e2e e2e_batch $(PYTHON_PROJECT_DIRS_WITH_UNIT_TESTS)
-PYTHON_LAMBDA_DEPENDENCIES = lambdas/shared
 
 #Installs dependencies using poetry.
 install-python:
@@ -48,7 +47,7 @@ _dist_include="pytest.ini poetry.lock poetry.toml pyproject.toml Makefile build/
 #Create /dist/ sub-directory and copy files into directory
 release: clean publish build-proxy
 	mkdir -p dist
-	for f in $(_dist_include); do cp -r $$f dist; done
+	for f in $(_dist_include); do cp --parents -r $$f dist; done
 	cp ecs-proxies-deploy.yml dist/ecs-deploy-sandbox.yml
 	cp ecs-proxies-deploy.yml dist/ecs-deploy-internal-qa-sandbox.yml
 	cp ecs-proxies-deploy.yml dist/ecs-deploy-internal-dev-sandbox.yml
