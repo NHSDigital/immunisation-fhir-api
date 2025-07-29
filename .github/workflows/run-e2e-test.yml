@@ -1,0 +1,98 @@
+name: Run e2e tests
+on:
+  push:
+    branches:
+      - VED-358-github-actions-for-int
+
+jobs:
+  e2e-tests:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: eu-west-2
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/auto-ops
+          role-session-name: github-actions
+
+      - name: Whoami
+        run: aws sts get-caller-identity
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.12.2"
+
+      - name: Terraform Init
+        working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
+        run: |
+          export ENVIRONMENT=internal-dev
+          export SUB_ENVIRONMENT=dev
+          make init
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Set Poetry to use Python 3.11
+        working-directory: ${{ vars.E2E_DIR_PATH }}
+        run: |
+          poetry env use $(which python3.11)
+
+      - name: Install dependencies with Poetry
+        working-directory: ${{ vars.E2E_DIR_PATH }}
+        run: |
+          poetry install --no-root
+
+      - name: Install oathtool
+        run: sudo apt-get update && sudo apt-get install -y oathtool
+
+      - name: Get JWT token for apigee
+        env:
+          APIGEE_USERNAME: ${{ vars.APIGEE_USERNAME }}
+          APIGEE_PASSWORD: ${{ secrets.APIGEE_PASSWORD }}
+          MFA_CODE: ${{ env.MFA_CODE }}
+          APIGEE_OAUTH_TOKEN: ${{ secrets.APIGEE_OAUTH_TOKEN }}
+          OTP_SECRET: ${{ secrets.APIGEE_OTP_KEY }}
+        run: |
+          CODE=$(oathtool --totp -b "$OTP_SECRET")
+          echo "::add-mask::$CODE"
+
+          echo "Requesting access token from Apigee..."
+
+          response=$(curl -s -X POST "https://login.apigee.com/oauth/token" \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            -H "Accept: application/json;charset=utf-8" \
+            -H "Authorization: Basic $APIGEE_OAUTH_TOKEN" \
+            -d "username=$APIGEE_USERNAME&password=$APIGEE_PASSWORD&mfa_token=$CODE&grant_type=password")
+
+          token=$(echo "$response" | jq -r '.access_token // empty')
+
+          if [[ -z "$token" ]]; then
+            echo "Failed to retrieve access token"
+            exit 1
+          fi
+
+          echo "::add-mask::$token"
+          echo "APIGEE_ACCESS_TOKEN=$token" >> $GITHUB_ENV
+
+      - name: Run e2e tests
+        working-directory: ${{ vars.E2E_DIR_PATH }}
+        env:
+          APIGEE_ACCESS_TOKEN: ${{ env.APIGEE_ACCESS_TOKEN }}
+        run: |
+          export APIGEE_ENVIRONMENT=internal-dev
+          export PROXY_NAME=immunisation-fhir-api-internal-dev
+          export SERVICE_BASE_PATH=immunisation-fhir-api/FHIR/R4
+
+          make run-immunization
