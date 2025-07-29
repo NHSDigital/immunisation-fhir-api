@@ -2,7 +2,7 @@
 locals {
   lambdas_dir        = abspath("${path.root}/../lambdas")
   shared_dir         = "${local.lambdas_dir}/shared"
-  id_sync_lambda_dir = "${local.lambdas_dir}/id_sync"
+  id_sync_lambda_dir = abspath("${path.root}/../lambdas/id_sync")
   id_sync_dockerfile = "${local.lambdas_dir}/id_sync.Dockerfile"
 
   # Get files from both directories
@@ -13,18 +13,6 @@ locals {
   shared_dir_sha         = sha1(join("", [for f in local.shared_files : filesha1("${local.shared_dir}/${f}")]))
   id_sync_lambda_dir_sha = sha1(join("", [for f in local.id_sync_lambda_files : filesha1("${local.id_sync_lambda_dir}/${f}")]))
 
-  # Combined SHA to trigger rebuild when either directory changes
-  combined_sha    = sha1("${local.shared_dir_sha}${local.id_sync_lambda_dir_sha}")
-  repo_root       = abspath("${path.root}/..")
-  is_azure_devops = can(regex("^/agent/_work", path.root))
-
-  debug_paths = {
-    terraform_root  = path.root
-    repo_root       = local.repo_root
-    lambdas_dir     = local.lambdas_dir
-    dockerfile_path = local.id_sync_dockerfile
-    is_azure        = local.is_azure_devops
-  }
 }
 
 resource "aws_ecr_repository" "id_sync_lambda_repository" {
@@ -37,11 +25,11 @@ resource "aws_ecr_repository" "id_sync_lambda_repository" {
 
 # Module for building and pushing Docker image to ECR
 module "id_sync_docker_image" {
-  source  = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version = "8.0.1"
-
-  create_ecr_repo = false
-  ecr_repo        = aws_ecr_repository.id_sync_lambda_repository.name
+  source           = "terraform-aws-modules/lambda/aws//modules/docker-build"
+  version          = "8.0.1"
+  docker_file_path = "Dockerfile"
+  create_ecr_repo  = false
+  ecr_repo         = aws_ecr_repository.id_sync_lambda_repository.name
   ecr_repo_lifecycle_policy = jsonencode({
     "rules" : [
       {
