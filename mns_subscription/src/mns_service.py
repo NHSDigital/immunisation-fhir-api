@@ -48,7 +48,7 @@ class MnsService:
         print(f"Headers: {self.request_headers}")
         print(f"Payload: {json.dumps(self.subscription_payload, indent=2)}")
 
-        if response.status_code == 200:
+        if response.status_code in (200, 201):
             return response.json()
         elif response.status_code == 409:
             msg = "SQS Queue Already Subscribed, can't re-subscribe"
@@ -83,8 +83,6 @@ class MnsService:
                 if channel.get("endpoint") == SQS_ARN:
                     return resource  # Found a matching subscription
             return None  # No subscription for this SQS ARN
-        elif response.status_code == 404:
-            return None
         elif response.status_code == 401:
             msg = "Token validation failed for the request"
             raise TokenValidationError(response=response.json(), message=msg)

@@ -17,7 +17,7 @@ class TestRunSubscription(unittest.TestCase):
         mock_auth_class.return_value = mock_auth_instance
 
         mock_mns_instance = MagicMock()
-        mock_mns_instance.subscribe_notification.return_value = {"subscriptionId": "abc123"}
+        mock_mns_instance.check_subscription.return_value = {"subscriptionId": "abc123"}
         mock_mns_service.return_value = mock_mns_instance
 
         # Act
@@ -26,7 +26,7 @@ class TestRunSubscription(unittest.TestCase):
         # Assert
         self.assertEqual(result, {"subscriptionId": "abc123"})
         mock_auth_class.assert_called_once()
-        mock_mns_instance.subscribe_notification.assert_called_once()
+        mock_mns_instance.check_subscription.assert_called_once()
 
 
 if __name__ == "__main__":

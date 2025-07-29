@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch, MagicMock, Mock, create_autospec
 from mns_service import MnsService
 from authentication import AppRestrictedAuth
-from models.errors import UnhandledResponseError
+from models.errors import ServerError, UnhandledResponseError
 
 
 class TestMnsService(unittest.TestCase):
@@ -14,7 +14,15 @@ class TestMnsService(unittest.TestCase):
         self.mock_cache = Mock()
 
     @patch("mns_service.requests.post")
-    def test_successful_subscription(self, mock_post):
+    @patch("mns_service.requests.get")
+    def test_successful_subscription(self, mock_get, mock_post):
+
+        # Arrange GET to return no subscription found
+        mock_get_response = MagicMock()
+        mock_get_response.status_code = 200
+        mock_get_response.json.return_value = {"entry": []}  # No entries!
+        mock_get.return_value = mock_get_response
+
         # Arrange
         mock_response = MagicMock()
         mock_response.status_code = 201
@@ -24,11 +32,12 @@ class TestMnsService(unittest.TestCase):
         service = MnsService(self.authenticator)
 
         # Act
-        result = service.subscribe_notification()
+        result = service.check_subscription()
 
         # Assert
         self.assertEqual(result, {"subscriptionId": "abc123"})
         mock_post.assert_called_once()
+        mock_get.assert_called_once()
         self.authenticator.get_access_token.assert_called_once()
 
     @patch("mns_service.requests.post")
@@ -38,9 +47,11 @@ class TestMnsService(unittest.TestCase):
         mock_post.return_value = mock_response
 
         service = MnsService(self.authenticator)
-        result = service.subscribe_notification()
 
-        self.assertIsNone(result)
+        with self.assertRaises(UnhandledResponseError) as context:
+            service.subscribe_notification()
+        self.assertIn("404", str(context.exception))
+        self.assertIn("Unhandled error", str(context.exception))
 
     @patch("mns_service.requests.post")
     def test_unhandled_error(self, mock_post):
@@ -51,10 +62,10 @@ class TestMnsService(unittest.TestCase):
 
         service = MnsService(self.authenticator)
 
-        with self.assertRaises(UnhandledResponseError) as context:
+        with self.assertRaises(ServerError) as context:
             service.subscribe_notification()
 
-        self.assertIn("MNS subscription failed", str(context.exception))
+        self.assertIn("Internal Server Error", str(context.exception))
 
 
 if __name__ == "__main__":

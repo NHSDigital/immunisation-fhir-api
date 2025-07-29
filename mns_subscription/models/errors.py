@@ -22,6 +22,12 @@ class Code(str, Enum):
 
 @dataclass
 class UnauthorizedError(RuntimeError):
+    response: dict | str
+    message: str
+
+    def __str__(self):
+        return f"{self.message}\n{self.response}"
+
     @staticmethod
     def to_operation_outcome() -> dict:
         msg = "Unauthorized request"
@@ -35,6 +41,12 @@ class UnauthorizedError(RuntimeError):
 
 @dataclass
 class TokenValidationError(RuntimeError):
+    response: dict | str
+    message: str
+
+    def __str__(self):
+        return f"{self.message}\n{self.response}"
+
     @staticmethod
     def to_operation_outcome() -> dict:
         msg = "Missing/Invalid Token"
@@ -48,6 +60,12 @@ class TokenValidationError(RuntimeError):
 
 @dataclass
 class ConflictError(RuntimeError):
+    response: dict | str
+    message: str
+
+    def __str__(self):
+        return f"{self.message}\n{self.response}"
+
     @staticmethod
     def to_operation_outcome() -> dict:
         msg = "Conflict"
