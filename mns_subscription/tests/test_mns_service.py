@@ -1,9 +1,14 @@
 import unittest
 import os
 from unittest.mock import patch, MagicMock, Mock, create_autospec
-from mns_service import MnsService
+from mns_service import MnsService, MNS_URL
 from authentication import AppRestrictedAuth
-from models.errors import ServerError, UnhandledResponseError, TokenValidationError
+from models.errors import (
+    ServerError,
+    UnhandledResponseError,
+    TokenValidationError,
+    UnauthorizedError,
+    ResourceFoundError)
 
 
 SQS_ARN = "arn:aws:sqs:eu-west-2:123456789012:my-queue"
@@ -142,6 +147,77 @@ class TestMnsService(unittest.TestCase):
         self.assertEqual(result, {"subscriptionId": "abc123"})
         mock_get.assert_called_once()
         mock_post.assert_called_once()
+
+    @patch("mns_service.requests.delete")
+    def test_delete_subscription_success(self, mock_delete):
+        # Test for both 200 and 204 (use a loop)
+        for code in (200, 204):
+            mock_response = MagicMock()
+            mock_response.status_code = code
+            mock_delete.return_value = mock_response
+
+            service = MnsService(self.authenticator)
+            result = service.delete_subscription("sub-id-123")
+            self.assertTrue(result)
+            mock_delete.assert_called_with(
+                f"{MNS_URL}/sub-id-123",
+                headers=service.request_headers
+            )
+
+    @patch("mns_service.requests.delete")
+    def test_delete_subscription_401(self, mock_delete):
+        mock_response = MagicMock()
+        mock_response.status_code = 401
+        mock_response.json.return_value = {"error": "token"}
+        mock_delete.return_value = mock_response
+
+        service = MnsService(self.authenticator)
+        with self.assertRaises(TokenValidationError):
+            service.delete_subscription("sub-id-123")
+
+    @patch("mns_service.requests.delete")
+    def test_delete_subscription_403(self, mock_delete):
+        mock_response = MagicMock()
+        mock_response.status_code = 403
+        mock_response.json.return_value = {"error": "forbidden"}
+        mock_delete.return_value = mock_response
+
+        service = MnsService(self.authenticator)
+        with self.assertRaises(UnauthorizedError):
+            service.delete_subscription("sub-id-123")
+
+    @patch("mns_service.requests.delete")
+    def test_delete_subscription_404(self, mock_delete):
+        mock_response = MagicMock()
+        mock_response.status_code = 404
+        mock_response.json.return_value = {"error": "not found"}
+        mock_delete.return_value = mock_response
+
+        service = MnsService(self.authenticator)
+        with self.assertRaises(ResourceFoundError):
+            service.delete_subscription("sub-id-123")
+
+    @patch("mns_service.requests.delete")
+    def test_delete_subscription_500(self, mock_delete):
+        mock_response = MagicMock()
+        mock_response.status_code = 500
+        mock_response.json.return_value = {"error": "server"}
+        mock_delete.return_value = mock_response
+
+        service = MnsService(self.authenticator)
+        with self.assertRaises(ServerError):
+            service.delete_subscription("sub-id-123")
+
+    @patch("mns_service.requests.delete")
+    def test_delete_subscription_unhandled(self, mock_delete):
+        mock_response = MagicMock()
+        mock_response.status_code = 418  # Unhandled status code
+        mock_response.json.return_value = {"error": "teapot"}
+        mock_delete.return_value = mock_response
+
+        service = MnsService(self.authenticator)
+        with self.assertRaises(UnhandledResponseError):
+            service.delete_subscription("sub-id-123")
 
     @patch.object(MnsService, "delete_subscription")
     @patch.object(MnsService, "get_subscription")

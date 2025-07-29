@@ -81,11 +81,11 @@ class ConflictError(RuntimeError):
 class ResourceFoundError(RuntimeError):
     """Return this error when the requested resource does not exist or not complete"""
 
-    resource_type: str
-    resource_id: str
+    response: None
+    message: str
 
     def __str__(self):
-        return f"{self.resource_type} resource does exist. ID: {self.resource_id}"
+        return f"{self.message}\n{self.response}"
 
     def to_operation_outcome(self) -> dict:
         return create_operation_outcome(
