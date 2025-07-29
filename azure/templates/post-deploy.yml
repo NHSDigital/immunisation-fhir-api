@@ -173,6 +173,34 @@ steps:
       --region "eu-west-2" \
       --overwrite
 
+      aws ssm put-parameter \
+      --name "/imms/apigee/non-prod/apigee-password" \
+      --value "$(APIGEE_PASSWORD)" \
+      --type "SecureString" \
+      --region "eu-west-2" \
+      --overwrite
+
+      aws ssm put-parameter \
+      --name "/imms/apigee/non-prod/apigee-username" \
+      --value "$(APIGEE_USERNAME)" \
+      --type "SecureString" \
+      --region "eu-west-2" \
+      --overwrite
+
+      aws ssm put-parameter \
+      --name "/imms/apigee/non-prod/apigee-password" \
+      --value "$(APIGEE_PASSWORD)" \
+      --type "SecureString" \
+      --region "eu-west-2" \
+      --overwrite
+
+      aws ssm put-parameter \
+      --name "/imms/apigee/non-prod/apigee-otp-key" \
+      --value "$(APIGEE_OTP_KEY)" \
+      --type "SecureString" \
+      --region "eu-west-2" \
+      --overwrite
+
       poetry lock --no-update
       poetry install
 
