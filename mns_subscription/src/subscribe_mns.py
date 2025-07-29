@@ -26,7 +26,7 @@ def run_subscription():
         mns = MnsService(authenticator)
 
         logging.info("Subscribing to MNS...")
-        result = mns.subscribe_notification()
+        result = mns.check_subscription()
         logging.info(f"Subscription Result: {result}")
         return result
     except Exception:
