@@ -143,6 +143,45 @@ class TestMnsService(unittest.TestCase):
         mock_get.assert_called_once()
         mock_post.assert_called_once()
 
+    @patch.object(MnsService, "delete_subscription")
+    @patch.object(MnsService, "get_subscription")
+    def test_check_delete_subscription_success(self, mock_get_subscription, mock_delete_subscription):
+        # Mock get_subscription returns a resource with id
+        mock_get_subscription.return_value = {"id": "sub-123"}
+        # Mock delete_subscription returns True
+        mock_delete_subscription.return_value = True
+
+        service = MnsService(self.authenticator)
+        result = service.check_delete_subcription()
+        self.assertEqual(result, "Subscription successfully deleted")
+        mock_get_subscription.assert_called_once()
+        mock_delete_subscription.assert_called_once_with("sub-123")
+
+    @patch.object(MnsService, "get_subscription")
+    def test_check_delete_subscription_no_resource(self, mock_get_subscription):
+        # No subscription found
+        mock_get_subscription.return_value = None
+        service = MnsService(self.authenticator)
+        result = service.check_delete_subcription()
+        self.assertEqual(result, "No matching subscription found to delete.")
+
+    @patch.object(MnsService, "get_subscription")
+    def test_check_delete_subscription_missing_id(self, mock_get_subscription):
+        # Resource with no id field
+        mock_get_subscription.return_value = {"not_id": "nope"}
+        service = MnsService(self.authenticator)
+        result = service.check_delete_subcription()
+        self.assertEqual(result, "Subscription resource missing 'id' field.")
+
+    @patch.object(MnsService, "delete_subscription")
+    @patch.object(MnsService, "get_subscription")
+    def test_check_delete_subscription_raises(self, mock_get_subscription, mock_delete_subscription):
+        mock_get_subscription.return_value = {"id": "sub-123"}
+        mock_delete_subscription.side_effect = Exception("Error!")
+        service = MnsService(self.authenticator)
+        result = service.check_delete_subcription()
+        self.assertTrue(result.startswith("Error deleting subscription: Error!"))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -118,3 +118,37 @@ class MnsService:
         except Exception as e:
             logging.error(f"Error ensuring subscription: {e}")
             raise
+
+    def delete_subscription(self, subscription_id: str) -> bool:
+        """Delete the subscription by ID."""
+        url = f"{MNS_URL}/{subscription_id}"
+        response = requests.delete(url, headers=self.request_headers)
+        if response.status_code in (200, 204):
+            logging.info(f"Deleted subscription {subscription_id}")
+            return True
+        elif response.status_code == 401:
+            raise TokenValidationError(response=response.json(), message="Token validation failed for the request")
+        elif response.status_code == 404:
+            raise ResourceFoundError(response=response.json(), message=f"Subscription {subscription_id} not found")
+        elif response.status_code == 403:
+            raise UnauthorizedError(response=response.json(), message="No permission to delete subscription")
+        elif response.status_code == 500:
+            raise ServerError(response=response.json(), message="Internal Server Error")
+        else:
+            raise UnhandledResponseError(response=response.json(), message=f"Unhandled error: {response.status_code}")
+
+    def check_delete_subcription(self):
+        try:
+            resource = self.get_subscription()  # Get the full resource dict
+            if not resource:
+                return "No matching subscription found to delete."
+
+            subscription_id = resource.get("id")
+            if not subscription_id:
+                return "Subscription resource missing 'id' field."
+
+            self.delete_subscription(subscription_id)
+            return "Subscription successfully deleted"
+        except Exception as e:
+            # Optionally log the exception here
+            return f"Error deleting subscription: {str(e)}"
