@@ -1,6 +1,5 @@
 import unittest
 from unittest.mock import patch, MagicMock
-import json
 
 
 with patch('common.log_decorator.logging_decorator') as mock_decorator:
