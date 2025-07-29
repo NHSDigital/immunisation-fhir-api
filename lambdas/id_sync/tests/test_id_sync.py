@@ -21,30 +21,11 @@ class TestIdSyncHandler(unittest.TestCase):
 
         self.logger_patcher = patch('id_sync.logger')
         self.mock_logger = self.logger_patcher.start()
-
-        # Patch the logging decorator to pass through
-        # self.log_decorator_patcher = patch('id_sync.logging_decorator')
-        # self.mock_log_decorator = self.log_decorator_patcher.start()
-        # self.mock_log_decorator.return_value = lambda f: f  # Pass-through decorator
-
         # Set up test data
         self.single_sqs_event = {
             'Records': [
                 {
-                    'messageId': '12345-abcde-67890',
-                    'receiptHandle': 'AQEBwJnKyrHigUMZj6rYigCgxlaS3SLy0a...',
-                    'body':
-                        ('{"Records":[{"eventSource":"aws:s3","s3":{"bucket":{"name":"test-bucket"},'
-                         '"object":{"key":"test-file.txt"}}}]}'),
-                    'attributes': {
-                        'ApproximateReceiveCount': '1',
-                        'SentTimestamp': '1545082649183'
-                        },
-                    'messageAttributes': {},
-                    'md5OfBody': 'e4e68fb7bd0e697a0ae8f1bb342846b3',
-                    'eventSource': 'aws:sqs',
-                    'eventSourceARN': 'arn:aws:sqs:us-east-1:123456789012:my-queue',
-                    'awsRegion': 'us-east-1'
+                    'body': '{"Records":[{"source":"aws:sqs","data":"test-data"}]}'
                 }
             ]
         }
@@ -52,28 +33,10 @@ class TestIdSyncHandler(unittest.TestCase):
         self.multi_sqs_event = {
             'Records': [
                 {
-                    'messageId': 'message-1',
-                    'receiptHandle': 'receipt-1',
-                    'body': ('{"Records":[{"eventSource":"aws:s3","s3":{"bucket":{"name":"test-bucket"},'
-                             '"object":{"key":"file1.txt"}}}]}'),
-                    'attributes': {},
-                    'messageAttributes': {},
-                    'md5OfBody': 'md5-1',
-                    'eventSource': 'aws:sqs',
-                    'eventSourceARN': 'arn:aws:sqs:us-east-1:123456789012:my-queue',
-                    'awsRegion': 'us-east-1'
+                    'body': ('{"Records":[{"source":"aws:sqs"],"data":"a"}'),
                 },
                 {
-                    'messageId': 'message-2',
-                    'receiptHandle': 'receipt-2',
-                    'body': ('{"Records":[{"eventSource":"aws:s3","s3":{"bucket":{"name":"test-bucket"},'
-                             '"object":{"key":"file2.txt"}}}]}'),
-                    'attributes': {},
-                    'messageAttributes': {},
-                    'md5OfBody': 'md5-2',
-                    'eventSource': 'aws:sqs',
-                    'eventSourceARN': 'arn:aws:sqs:us-east-1:123456789012:my-queue',
-                    'awsRegion': 'us-east-1'
+                    'body': ('{"Records":[{"source":"aws:sqs"],"data":"b"}'),
                 }
             ]
         }
@@ -102,7 +65,7 @@ class TestIdSyncHandler(unittest.TestCase):
 
         # Assertions
         self.mock_aws_lambda_event.assert_called_once_with(self.single_sqs_event)
-        self.mock_process_record.assert_called_once_with(mock_event.records[0], None)
+        self.mock_process_record.assert_called_once_with(mock_event.records[0])
 
         self.assertEqual(result["status"], "success")
         self.assertEqual(result["message"], "Successfully processed 1 records")
@@ -147,7 +110,7 @@ class TestIdSyncHandler(unittest.TestCase):
 
         exception = exception_context.exception
         # Assertions
-        self.mock_process_record.assert_called_once_with(mock_event.records[0], None)
+        self.mock_process_record.assert_called_once_with(mock_event.records[0])
         self.mock_logger.info.assert_any_call("id_sync processing event with %d records", 1)
 
         self.assertEqual(exception.message, "Processed 1 records with 1 errors")
@@ -267,7 +230,7 @@ class TestIdSyncHandler(unittest.TestCase):
             handler(self.single_sqs_event, None)
         exception = exception_context.exception
         # Assertions
-        self.mock_process_record.assert_called_once_with(mock_event.records[0], None)
+        self.mock_process_record.assert_called_once_with(mock_event.records[0])
         self.mock_logger.exception.assert_called_once_with("Error processing id_sync event")
 
         self.assertEqual(exception.nhs_numbers, None)

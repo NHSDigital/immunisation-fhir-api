@@ -28,7 +28,7 @@ def handler(event_data, _):
             error_count = 0
             nhs_numbers = []
             for record in event.records:
-                record_result = process_record(record, None)
+                record_result = process_record(record)
                 nhs_numbers.append(record_result["nhs_number"])
                 if record_result["status"] == "error":
                     error_count += 1
