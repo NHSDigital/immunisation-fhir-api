@@ -58,14 +58,6 @@ steps:
 
         echo "Output dirs"
         ls
-        cd id_sync
-        echo "Output id_sync"
-        ls
-        cd ..
-        cd shared
-        echo "Output id_sync"
-        ls
-        cd ..
         cd terraform
 
         make init
