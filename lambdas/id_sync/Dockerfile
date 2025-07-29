@@ -25,7 +25,7 @@ FROM base AS build
 WORKDIR /var/task
 
 # Copy shared source code
-COPY ../shared/src/common ./common
+COPY ./src/common ./common
 
 # Copy id_sync source code
 COPY src .
