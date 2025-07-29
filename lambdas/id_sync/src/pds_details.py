@@ -14,7 +14,7 @@ def pds_get_patient_details(nhs_number: str) -> dict:
     try:
         logger.info(f"Get PDS patient details for {nhs_number}")
 
-        cache = Cache("/tmp")
+        cache = Cache(directory="/tmp")
         authenticator = AppRestrictedAuth(
             service=Service.PDS,
             secret_manager_client=secrets_manager_client,
