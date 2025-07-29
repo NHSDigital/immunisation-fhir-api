@@ -1,9 +1,7 @@
 # Define the directory containing the Docker image and calculate its SHA-256 hash for triggering redeployments
 locals {
-  lambdas_dir        = abspath("${path.root}/../lambdas")
-  shared_dir         = "${local.lambdas_dir}/shared"
-  id_sync_lambda_dir = abspath("${path.root}/../lambdas/id_sync")
-  id_sync_dockerfile = "${local.lambdas_dir}/id_sync.Dockerfile"
+  shared_dir         = abspath("${path.root}/../shared")
+  id_sync_lambda_dir = abspath("${path.root}/../id_sync")
 
   # Get files from both directories
   shared_files         = fileset(local.shared_dir, "**")
