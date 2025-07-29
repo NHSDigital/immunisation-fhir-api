@@ -9,7 +9,7 @@ from common.pds_service import PdsService
 from common.authentication import AppRestrictedAuth, Service
 
 pds_env = get_pds_env()
-safe_tmp_dir = tempfile.mkdtemp(dir="/tmp")
+safe_tmp_dir = tempfile.mkdtemp(dir="/tmp")  # NOSONAR
 
 
 def pds_get_patient_details(nhs_number: str) -> dict:
