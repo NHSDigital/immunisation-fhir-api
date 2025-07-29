@@ -7,9 +7,6 @@ on:
   pull_request:
     types: [labeled, opened, synchronize, reopened, unlabeled]
 
-env:
-  SHARED_PATH: ${{ github.workspace }}/lambdas/shared
-  LAMBDA_PATH: ${{ github.workspace }}/lambdas
 
 jobs:
   sonarcloud:
@@ -119,31 +116,19 @@ jobs:
             poetry run coverage run -m unittest discover || echo "redis_sync tests failed" >> ../failed_tests.txt
             poetry run coverage xml -o ../redis_sync-coverage.xml
 
-      - name: Run unittest with shared
-        working-directory: lambdas/shared
-        id: shared
-        env:
-          PYTHONPATH: ${{ env.SHARED_PATH }}/src
-        continue-on-error: true
-        run: |
-            poetry env use 3.11
-            poetry install
-            poetry run coverage run --rcfile=.coveragerc --source=src -m unittest discover -s tests -p "test_*.py" -v || echo "shared tests failed" >> ../../failed_tests.txt
-            poetry run coverage xml -o ../../shared-coverage.xml
-            cat ../../shared-coverage.xml
 
       - name: Run unittest with id_sync
-        working-directory: lambdas/id_sync
+        working-directory: id_sync
         id: id_sync
         env:
-          PYTHONPATH: ${{ env.LAMBDA_PATH }}/id_sync/src:${{ env.SHARED_PATH }}/src
+          PYTHONPATH: ${{ github.workspace }}/id_sync/src:${{ github.workspace }}/id_sync/tests
         continue-on-error: true
         run: |
             poetry env use 3.11
             poetry install
             poetry run coverage run --rcfile=.coveragerc --source=src -m unittest discover || echo "id_sync tests failed" >> ../../failed_tests.txt
-            poetry run coverage xml -o ../../id_sync-coverage.xml
-            cat ../../id_sync-coverage.xml
+            poetry run coverage xml -o ../id_sync-coverage.xml
+            cat ../id_sync-coverage.xml
 
       - name: Run Test Failure Summary
         id: check_failure
