@@ -1,6 +1,6 @@
 SHELL=/usr/bin/env bash -euo pipefail
 
-PYTHON_PROJECT_DIRS_WITH_UNIT_TESTS = ack_backend backend delta_backend filenameprocessor mesh_processor recordprocessor redis_sync lamdas/id_sync
+PYTHON_PROJECT_DIRS_WITH_UNIT_TESTS = ack_backend backend delta_backend filenameprocessor mesh_processor recordprocessor redis_sync lambdas/id_sync lambdas/shared
 PYTHON_PROJECT_DIRS = e2e e2e_batch $(PYTHON_PROJECT_DIRS_WITH_UNIT_TESTS)
 
 #Installs dependencies using poetry.
@@ -41,7 +41,7 @@ build-proxy:
 	scripts/build_proxy.sh
 
 #Files to loop over in release
-_dist_include="pytest.ini poetry.lock poetry.toml pyproject.toml Makefile build/. specification sandbox terraform scripts $(PYTHON_PROJECT_DIRS)"
+_dist_include="pytest.ini poetry.lock poetry.toml pyproject.toml Makefile build/. specification sandbox terraform scripts $(PYTHON_PROJECT_DIRS) $(PYTHON_LAMBDA_DEPENDENCIES)"
 
 
 #Create /dist/ sub-directory and copy files into directory

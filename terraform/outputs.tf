@@ -17,3 +17,11 @@ output "aws_sqs_queue_name" {
 output "aws_sns_topic_name" {
   value = aws_sns_topic.delta_sns.name
 }
+
+output "lambdas_dir_abs_path" {
+  value = local.id_sync_lambda_dir
+}
+
+output "lambdas_dir_normal" {
+  value = "${local.id_sync_lambda_dir}/id_sync"
+}
