@@ -41,9 +41,10 @@ jobs:
 
       - name: Install Poetry
         run: |
-          curl -sSL https://install.python-poetry.org | python3 -
+          curl -sSL https://install.python-poetry.org | python3 - --version 2.1.2
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-
+          poetry --version
+          
       - name: Set Poetry to use Python 3.11
         working-directory: ${{ vars.E2E_DIR_PATH }}
         run: |
