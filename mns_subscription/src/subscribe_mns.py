@@ -1,39 +1,14 @@
 import logging
-from cache import Cache
-from mns_service import MnsService
-import boto3
-from authentication import AppRestrictedAuth, Service
-from botocore.config import Config
-
-logging.basicConfig(level=logging.INFO)
+from mns_setup import get_mns_service
 
 
 def run_subscription():
-    try:
-        mns_env: str = "int"
-
-        boto_config = Config(region_name="eu-west-2")
-        cache = Cache(directory="/tmp")
-        logging.info("Creating authenticator...")
-        authenticator = AppRestrictedAuth(
-            service=Service.MNS,
-            secret_manager_client=boto3.client("secretsmanager", config=boto_config),
-            environment=mns_env,
-            cache=cache,
-        )
-
-        logging.info("Creating MNS service...")
-        mns = MnsService(authenticator)
-
-        logging.info("Subscribing to MNS...")
-        result = mns.check_subscription()
-        logging.info(f"Subscription Result: {result}")
-        return result
-    except Exception:
-        logging.exception("Failed to complete MNS subscription process")
-        raise
+    mns = get_mns_service()
+    result = mns.check_subscription()
+    return result
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     result = run_subscription()
-    print("Subscription Result:", result)
+    logging.info(f"Subscription Result: {result}")

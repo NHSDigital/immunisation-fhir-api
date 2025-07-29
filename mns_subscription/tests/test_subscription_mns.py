@@ -5,27 +5,16 @@ from subscribe_mns import run_subscription
 
 class TestRunSubscription(unittest.TestCase):
 
-    @patch("subscribe_mns.MnsService")
-    @patch("subscribe_mns.AppRestrictedAuth")
-    @patch("subscribe_mns.boto3.client")
-    def test_run_subscription_success(self, mock_boto_client, mock_auth_class, mock_mns_service):
-        # Arrange
-        mock_secrets_client = MagicMock()
-        mock_boto_client.return_value = mock_secrets_client
-
-        mock_auth_instance = MagicMock()
-        mock_auth_class.return_value = mock_auth_instance
-
+    @patch("subscribe_mns.get_mns_service")  # patch where it's imported/used!
+    def test_run_subscription_success(self, mock_get_mns_service):
         mock_mns_instance = MagicMock()
-        mock_mns_instance.check_subscription.return_value = {"subscriptionId": "abc123"}
-        mock_mns_service.return_value = mock_mns_instance
+        mock_mns_instance.check_subscription.return_value = "Subscription Result: abc123"
+        mock_get_mns_service.return_value = mock_mns_instance
 
-        # Act
         result = run_subscription()
 
-        # Assert
-        self.assertEqual(result, {"subscriptionId": "abc123"})
-        mock_auth_class.assert_called_once()
+        self.assertEqual(result, "Subscription Result: abc123")
+        mock_get_mns_service.assert_called_once()
         mock_mns_instance.check_subscription.assert_called_once()
 
 
