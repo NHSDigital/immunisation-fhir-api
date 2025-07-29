@@ -8,6 +8,7 @@ from models.errors import ServerError, UnhandledResponseError, TokenValidationEr
 
 SQS_ARN = "arn:aws:sqs:eu-west-2:123456789012:my-queue"
 
+
 @patch("mns_service.SQS_ARN", SQS_ARN)
 class TestMnsService(unittest.TestCase):
     def setUp(self):
@@ -79,14 +80,14 @@ class TestMnsService(unittest.TestCase):
         # Arrange a bundle with a matching entry
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {
-            "entry": [
+        mock_response.json.return_value = {"entry": [
                 {
-                    "channel": {"endpoint": SQS_ARN},
+                    "channel": {
+                        "endpoint": SQS_ARN
+                    },
                     "id": "123"
+                    }]
                 }
-            ]
-    }
         mock_get.return_value = mock_response
 
         service = MnsService(self.authenticator)
