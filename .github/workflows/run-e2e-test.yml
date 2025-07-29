@@ -91,7 +91,7 @@ jobs:
         working-directory: ${{ vars.E2E_DIR_PATH }}
         env:
           APIGEE_ACCESS_TOKEN: ${{ env.APIGEE_ACCESS_TOKEN }}
-          APIGEE_USERNAME: ${{ vars.APIGEE_USERNAME }}
+          APIGEE_USERNAME: apm-testing-internal-dev@nhs.net
         run: |
           export APIGEE_ENVIRONMENT=internal-dev
           export PROXY_NAME=immunisation-fhir-api-internal-dev
