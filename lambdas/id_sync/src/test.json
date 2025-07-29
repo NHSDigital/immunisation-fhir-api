@@ -1,0 +1,5 @@
+{"messageId": "006d6d1e-505d-41b9-a49a-f312b0d4783c",
+"receiptHandle": "AQ07",
+"body": "{\"subject\": \"nhs-number-2\"}"\n", "attributes": {"ApproximateReceiveCount": "1", "SentTimestamp": "1753801558955", "SenderId": "AROAVA5YK2MEBRIFRJLOJ:STWA21@hscic.gov.uk", "ApproximateFirstReceiveTimestamp": "1753801558960"}, "messageAttributes": {}, "md5OfMessageAttributes": None, "md5OfBody": "1a34ed22b6732e07ba30d641f0e97471", "eventSource": "aws:sqs", "eventSourceARN": "arn:aws:sqs:eu-west-2:345594581768:imms-pr-653-id-sync-queue",
+"awsRegion": "eu-west-2"
+}

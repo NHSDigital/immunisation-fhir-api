@@ -5,12 +5,29 @@ from common.clients import logger
 from typing import Optional
 from pds_details import pds_get_patient_details
 from ieds_db_operations import ieds_check_exist, ieds_update_patient_id
+import json
+import ast
 
 
 def process_record(event_record):
 
     logger.info("Processing record: %s", event_record)
-    body = event_record.get('body', {})
+    body_text = event_record.get('body', '')
+
+    # convert body to json
+    if isinstance(body_text, str):
+        try:
+            # Try JSON first
+            body = json.loads(body_text)
+        except json.JSONDecodeError:
+            try:
+                # Fall back to Python dict syntax
+                body = ast.literal_eval(body_text)
+            except (ValueError, SyntaxError):
+                logger.error("Failed to parse body: %s", body_text)
+                return {"status": "error", "message": "Invalid body format"}
+    else:
+        body = body_text
     nhs_number = body.get("subject")
     if nhs_number:
         return process_nhs_number(nhs_number)

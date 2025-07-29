@@ -107,3 +107,17 @@ class TestRecordProcessor(unittest.TestCase):
         result = process_record({"body": {"subject": test_id}})
         self.assertEqual(result["status"], "error")
         self.assertEqual(result["message"], f"No records returned for ID: {test_id}")
+
+    def test_body_is_string(self):
+        """Test processing a simple record"""
+        # Arrange
+        test_record = {"body": "{'subject': 'nhs-number-1'}"}
+        new_test_id = "nhs-number-2"
+
+        self.mock_pds_get_patient_details.return_value = {"id": new_test_id}
+        self.mock_ieds_update_patient_id.return_value = {"status": "success"}
+        # Act
+        result = process_record(test_record)
+
+        # Assert
+        self.assertEqual(result["status"], "success")
