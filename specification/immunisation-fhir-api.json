@@ -302,6 +302,10 @@
                       "maxItems": 1,
                       "items": {
                         "type": "object",
+                        "required": [
+                          "system",
+                          "value"
+                        ],
                         "properties": {
                           "use": {
                             "description": "Identifier use as defined by https://www.hl7.org/fhir/valueset-identifier-use.html.",
@@ -3913,6 +3917,10 @@
                       "maxItems": 1,
                       "items": {
                         "type": "object",
+                        "required": [
+                          "system",
+                          "value"
+                        ],
                         "properties": {
                           "use": {
                             "description": "Identifier use as defined by https://www.hl7.org/fhir/valueset-identifier-use.html.",
