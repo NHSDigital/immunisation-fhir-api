@@ -248,6 +248,10 @@ data "aws_iam_policy_document" "id_sync_policy_document" {
     }),
     templatefile("${local.policy_path}/dynamodb_stream.json", {
       "dynamodb_table_name" : aws_dynamodb_table.events-dynamodb-table.name
+    }),
+    templatefile("${local.policy_path}/secret_manager.json", {
+      "account_id" : data.aws_caller_identity.current.account_id,
+      "pds_environment" : var.pds_environment
     })
   ]
 }
