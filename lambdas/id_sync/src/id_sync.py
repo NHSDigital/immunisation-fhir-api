@@ -2,25 +2,18 @@ from common.clients import logger
 from common.clients import STREAM_NAME
 from common.log_decorator import logging_decorator
 from common.aws_lambda_event import AwsLambdaEvent
+from models.id_sync_exception import IdSyncException
 from record_processor import process_record
 '''
 Lambda function handler for processing SQS events.Lambda for ID Sync. Fired by SQS
 '''
 
 
-class IdSyncException(Exception):
-    """Custom exception for ID Sync errors."""
-    def __init__(self, message: str, nhs_numbers: list = None, exception=None):
-        self.message = message
-        self.nhs_numbers = nhs_numbers
-        self.exception = exception
-        super().__init__(message)
-
-
 @logging_decorator(prefix="id_sync", stream_name=STREAM_NAME)
 def handler(event_data, _):
 
     try:
+        logger.info("id_sync handler invoked")
         event = AwsLambdaEvent(event_data)
         record_count = len(event.records)
         if record_count > 0:

@@ -11,7 +11,7 @@ import ast
 
 def process_record(event_record):
 
-    logger.info("Processing record: %s", event_record)
+    logger.info("process_record. Processing record: %s", event_record)
     body_text = event_record.get('body', '')
 
     # convert body to json
@@ -37,6 +37,7 @@ def process_record(event_record):
 
 def process_nhs_number(nhs_number: str) -> Optional[str]:
     # get patient details from PDS
+    logger.debug(f"process_nhs_number. Processing NHS number: {nhs_number}")
     patient_details = pds_get_patient_details(nhs_number)
     if not patient_details:
         return {"status": "error", "message": f"No records returned for ID: {nhs_number}"}
