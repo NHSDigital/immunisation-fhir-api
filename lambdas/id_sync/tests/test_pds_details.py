@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import patch, MagicMock
-from pds_details import pds_get_patient_details
+from pds_details import pds_get_patient_details, pds_get_patient_id
 from models.id_sync_exception import IdSyncException
 
 
@@ -57,7 +57,7 @@ class TestGetPdsPatientDetails(unittest.TestCase):
         result = pds_get_patient_details(self.test_patient_id)
 
         # Assert
-        self.assertEqual(result, "9912003888")
+        self.assertEqual(result["identifier"][0]["value"], "9912003888")
 
         # Verify Cache was initialized correctly
         self.mock_cache_class.assert_called_once()
@@ -76,113 +76,18 @@ class TestGetPdsPatientDetails(unittest.TestCase):
         # Assert
         self.assertIsNone(result)
 
-        # Verify both logger calls
-        self.mock_logger.info.assert_any_call(f"No patient details found for ID: {self.test_patient_id}")
-
         self.mock_pds_service_instance.get_patient_details.assert_called_once_with(self.test_patient_id)
 
     def test_pds_get_patient_details_empty_response(self):
         """Test when PDS returns empty dict (falsy)"""
         # Arrange
-        self.mock_pds_service_instance.get_patient_details.return_value = {}
+        self.mock_pds_service_instance.get_patient_details.return_value = None
 
         # Act
         result = pds_get_patient_details(self.test_patient_id)
 
         # Assert
         self.assertIsNone(result)
-
-        # Verify both logger calls
-        self.mock_logger.info.assert_any_call(f"No patient details found for ID: {self.test_patient_id}")
-
-    def test_pds_get_patient_details_missing_identifier_field(self):
-        """Test when PDS response doesn't contain 'identifier' field"""
-        # Arrange
-        test_nhs_number = "my-nhs-number"
-        patient_data_without_identifier = {
-            "name": "John Doe",
-            "birthDate": "1990-01-01",
-            "gender": "male"
-            # Missing 'identifier' field
-        }
-        self.mock_pds_service_instance.get_patient_details.return_value = patient_data_without_identifier
-
-        # Act
-        with self.assertRaises(IdSyncException) as context:
-            pds_get_patient_details(test_nhs_number)
-
-        exception = context.exception
-
-        # Assert
-        self.assertEqual(exception.message, f"Error getting PDS patient details for {test_nhs_number}")
-        self.assertEqual(exception.nhs_numbers, None)
-
-        # Verify exception was logged
-        self.mock_logger.exception.assert_called_once_with(
-            f"Error getting PDS patient details for {test_nhs_number}")
-
-    def test_pds_get_patient_details_empty_identifier_array(self):
-        """Test when identifier array is empty"""
-        # Arrange
-        patient_data_empty_identifier = {
-            "identifier": [],  # Empty array
-            "name": "John Doe"
-        }
-        self.mock_pds_service_instance.get_patient_details.return_value = patient_data_empty_identifier
-
-        # Act
-        with self.assertRaises(IdSyncException) as context:
-            pds_get_patient_details(self.test_patient_id)
-
-        # Assert
-        exception = context.exception
-        self.assertEqual(exception.message, f"Error getting PDS patient details for {self.test_patient_id}")
-        self.assertEqual(exception.nhs_numbers, None)
-
-        # Verify exception was logged due to IndexError
-        self.mock_logger.exception.assert_called_once_with(
-            f"Error getting PDS patient details for {self.test_patient_id}")
-
-    def test_pds_get_patient_details_identifier_missing_value(self):
-        """Test when identifier object doesn't have 'value' field"""
-        # Arrange
-        patient_data_missing_value = {
-            "identifier": [
-                {"system": "https://fhir.nhs.uk/Id/nhs-number"}  # Missing 'value'
-            ]
-        }
-        self.mock_pds_service_instance.get_patient_details.return_value = patient_data_missing_value
-
-        # Act
-        with self.assertRaises(IdSyncException) as context:
-            pds_get_patient_details(self.test_patient_id)
-
-        exception = context.exception
-
-        # Assert
-        self.assertEqual(exception.message, f"Error getting PDS patient details for {self.test_patient_id}")
-        self.assertEqual(exception.nhs_numbers, None)
-
-        # Verify exception was logged due to KeyError
-        self.mock_logger.exception.assert_called_once_with(
-            f"Error getting PDS patient details for {self.test_patient_id}")
-
-    def test_pds_get_patient_details_multiple_identifiers(self):
-        """Test when patient has multiple identifiers - should return first one"""
-        # Arrange
-        patient_data_multiple_identifiers = {
-            "identifier": [
-                {"value": "9912003888"},  # First identifier
-                {"value": "9912003999"}   # Second identifier
-            ]
-        }
-        self.mock_pds_service_instance.get_patient_details.return_value = patient_data_multiple_identifiers
-
-        # Act
-        result = pds_get_patient_details(self.test_patient_id)
-
-        # Assert
-        self.assertEqual(result, "9912003888")  # Should return first identifier
 
     def test_pds_get_patient_details_pds_service_exception(self):
         """Test when PdsService.get_patient_details raises an exception"""
@@ -286,7 +191,7 @@ class TestGetPdsPatientDetails(unittest.TestCase):
                 result = pds_get_patient_details(patient_id)
 
                 # Assert
-                self.assertEqual(result, patient_id)
+                self.assertEqual(result, test_cases[patient_id])
                 self.mock_pds_service_instance.get_patient_details.assert_called_once_with(patient_id)
 
     def test_pds_get_patient_details_service_dependencies(self):
@@ -299,7 +204,7 @@ class TestGetPdsPatientDetails(unittest.TestCase):
         result = pds_get_patient_details(self.test_patient_id)
 
         # Assert service initialization order and parameters
-        self.assertEqual(result, "9912003888")
+        self.assertEqual(result["identifier"][0]["value"], "9912003888")
 
         # Verify initialization order by checking call counts
         self.assertEqual(self.mock_cache_class.call_count, 1)
@@ -315,15 +220,60 @@ class TestGetPdsPatientDetails(unittest.TestCase):
         # Arrange
         test_nhs_number = "9912003888"
         pds_id = "abcefghijkl"
-        self.mock_pds_service_instance.get_patient_details.return_value = {"identifier": [{"value": pds_id}]}
-
+        mock_pds_response = {"identifier": [{"value": pds_id}]}
+        self.mock_pds_service_instance.get_patient_details.return_value = mock_pds_response
         # Act
         result = pds_get_patient_details(test_nhs_number)
 
         # Assert - function should extract the value from first identifier
-        self.assertEqual(result, pds_id)
+        self.assertEqual(result, mock_pds_response)
         self.mock_pds_service_instance.get_patient_details.assert_called_once_with(test_nhs_number)
 
 
-if __name__ == '__main__':
-    unittest.main()
+# test pds_get_patient_id function
+class TestGetPdsPatientId(unittest.TestCase):
+    def setUp(self):
+        """Set up test fixtures and mocks"""
+        self.test_nhs_number = "9912003888"
+
+        # Patch all external dependencies
+        self.logger_patcher = patch('pds_details.logger')
+        self.mock_logger = self.logger_patcher.start()
+
+        self.pds_get_patient_details_patcher = patch('pds_details.pds_get_patient_details')
+        self.mock_pds_get_patient_details = self.pds_get_patient_details_patcher.start()
+
+    def tearDown(self):
+        """Clean up patches"""
+        patch.stopall()
+
+    def test_pds_get_patient_id_success(self):
+        """Test successful retrieval of PDS patient ID"""
+        # Arrange
+        expected_id = "1234567890"
+        self.mock_pds_get_patient_details.return_value = {"identifier": [{"value": expected_id}]}
+
+        # Act
+        result = pds_get_patient_id(self.test_nhs_number)
+
+        # Assert
+        self.assertEqual(result, expected_id)
+
+    def test_pds_get_patient_id_empty_identifier_array(self):
+        """Test when identifier array is empty"""
+        # Arrange
+        patient_data_empty_identifier = {
+            "identifier": [],  # Empty array
+            "name": "John Doe"
+        }
+        self.mock_pds_get_patient_details.return_value = patient_data_empty_identifier
+
+        # Act
+        with self.assertRaises(IdSyncException) as context:
+            pds_get_patient_id(self.test_nhs_number)
+
+        # Assert
+        exception = context.exception
+        self.assertEqual(exception.message, f"Error getting PDS patient ID for {self.test_nhs_number}")
+        self.assertEqual(exception.nhs_numbers, None)
+

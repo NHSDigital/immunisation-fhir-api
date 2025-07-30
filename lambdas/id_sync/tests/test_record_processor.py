@@ -12,8 +12,8 @@ class TestRecordProcessor(unittest.TestCase):
         self.mock_logger = self.logger_patcher.start()
 
         # Mock external dependencies
-        self.pds_get_patient_details_patcher = patch('record_processor.pds_get_patient_details')
-        self.mock_pds_get_patient_details = self.pds_get_patient_details_patcher.start()
+        self.pds_get_patient_id_patcher = patch('record_processor.pds_get_patient_id')
+        self.mock_pds_get_patient_id = self.pds_get_patient_id_patcher.start()
 
         # mock record_processor.ieds_check_exist
         self.ieds_check_exist_patcher = patch('record_processor.ieds_check_exist')
@@ -33,7 +33,7 @@ class TestRecordProcessor(unittest.TestCase):
         with patch('record_processor.ieds_check_exist', return_value=True):
 
             test_record = {"body": {"subject": test_id}}
-            self.mock_pds_get_patient_details.return_value = {"identifier": [{"value": test_id}]}
+            self.mock_pds_get_patient_id.return_value = test_id
 
             # Act
             result = process_record(test_record)
@@ -43,7 +43,7 @@ class TestRecordProcessor(unittest.TestCase):
             self.assertEqual(result, expected_result)
 
             # Verify calls
-            self.mock_pds_get_patient_details.assert_called_once_with(test_id)
+            self.mock_pds_get_patient_id.assert_called_once_with(test_id)
 
     def test_process_record_success_update_required(self):
         """Test successful processing when patient ID differs"""
@@ -52,7 +52,7 @@ class TestRecordProcessor(unittest.TestCase):
         nhs_number = "nhs-number-1"
 
         test_sqs_record = {"body": {"subject": nhs_number}}
-        self.mock_pds_get_patient_details.return_value = {"identifier": [{"value": pds_id}]}
+        self.mock_pds_get_patient_id.return_value = pds_id
         success_response = {"status": "success"}
         self.mock_ieds_update_patient_id.return_value = success_response
         # Act
@@ -63,7 +63,7 @@ class TestRecordProcessor(unittest.TestCase):
         self.assertEqual(result, expected_result)
 
         # Verify calls
-        self.mock_pds_get_patient_details.assert_called_once_with(nhs_number)
+        self.mock_pds_get_patient_id.assert_called_once_with(nhs_number)
 
     def test_process_record_no_records_exist(self):
         """Test when no records exist for the patient ID"""
@@ -81,18 +81,18 @@ class TestRecordProcessor(unittest.TestCase):
             self.assertEqual(result["message"], f"No records returned for ID: {test_id}")
 
             # Verify PDS was not called
-            self.mock_pds_get_patient_details.assert_called_once()
+            self.mock_pds_get_patient_id.assert_called_once()
 
     def test_process_record_pds_returns_none_id(self):
         """Test when PDS returns none """
         # Arrange
         test_id = "12345a"
-        self.mock_pds_get_patient_details.return_value = {}
+        self.mock_pds_get_patient_id.return_value = None
         test_record = {"body": {"subject": test_id}}
         # Act & Assert
         result = process_record(test_record)
-        expected_result = {"status": "error", "message": f"No records returned for ID: {test_id}"}
-        self.assertEqual(result, expected_result)
+        self.assertEqual(result["status"], "success")
+        self.assertEqual(result["message"], f"No patient ID found for NHS number: {test_id}")
         self.mock_ieds_check_exist.assert_not_called()
         self.mock_ieds_update_patient_id.assert_not_called()
 
@@ -101,7 +101,7 @@ class TestRecordProcessor(unittest.TestCase):
         # Arrange
         test_id = "12345a"
         pds_id = "pds-id-1"
-        self.mock_pds_get_patient_details.return_value = {"id": pds_id}
+        self.mock_pds_get_patient_id.return_value = pds_id
         self.mock_ieds_check_exist.return_value = False
         # Act & Assert
         result = process_record({"body": {"subject": test_id}})
@@ -114,7 +114,7 @@ class TestRecordProcessor(unittest.TestCase):
         test_record = {"body": "{'subject': 'nhs-number-1'}"}
         new_test_id = "nhs-number-2"
 
-        self.mock_pds_get_patient_details.return_value = {"identifier": [{"value": new_test_id}]}
+        self.mock_pds_get_patient_id.return_value = new_test_id
         self.mock_ieds_update_patient_id.return_value = {"status": "success"}
         # Act
         result = process_record(test_record)

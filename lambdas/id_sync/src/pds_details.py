@@ -31,16 +31,29 @@ def pds_get_patient_details(nhs_number: str) -> dict:
         logger.info("SAW...4")
         patient = pds_service.get_patient_details(nhs_number)
         logger.info("SAW...5")
-        logger.info("SAW...5.1 check Patient details")
-        if patient:
-            logger.info(f"Patient details found for NHS number: {nhs_number}")
-            logger.info(f"Patient details: {patient}")
-            pds_nhs_number = patient["identifier"][0]["value"]
-            return pds_nhs_number
-        else:
-            logger.info(f"No patient details found for ID: {nhs_number}")
-            return None
+        return patient
     except Exception as e:
         msg = f"Error getting PDS patient details for {nhs_number}"
+        logger.exception(msg)
+        raise IdSyncException(message=msg, exception=e)
+
+
+def pds_get_patient_id(nhs_number: str) -> str:
+    """
+    Get PDS patient ID from NHS number.
+    :param nhs_number: NHS number of the patient
+    :return: PDS patient ID
+    """
+    try:
+        logger.info(f"get_pds_patient_id. nhs_number: {nhs_number}")
+        patient_details = pds_get_patient_details(nhs_number)
+        if not patient_details:
+            return None
+
+        return patient_details["identifier"][0]["value"]
+
+    # ✅ Remove the IdSyncException catch since you're just re-raising
+    except Exception as e:
+        msg = f"Error getting PDS patient ID for {nhs_number}"
         logger.exception(msg)
         raise IdSyncException(message=msg, exception=e)
