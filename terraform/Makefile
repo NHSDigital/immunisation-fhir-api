@@ -4,7 +4,6 @@ environment        ?= $(ENVIRONMENT)
 sub_environment    ?= $(SUB_ENVIRONMENT)
 sub_environment_dir := $(if $(findstring pr-,$(sub_environment)),pr,$(sub_environment))
 
-aws_profile = apim-dev
 tf_cmd = AWS_PROFILE=$(AWS_PROFILE) terraform
 
 bucket_name = $(if $(filter dev,$(environment)),immunisation-$(sub_environment),immunisation-$(environment))-terraform-state-files
