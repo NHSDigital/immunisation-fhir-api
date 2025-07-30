@@ -15,19 +15,22 @@ safe_tmp_dir = tempfile.mkdtemp(dir="/tmp")  # NOSONAR
 
 def pds_get_patient_details(nhs_number: str) -> dict:
     try:
-        logger.debug(f"pds_get_patient_details. nhs_number: {nhs_number}")
+        logger.info(f"pds_get_patient_details. nhs_number: {nhs_number}")
 
+        logger.info("SAW...1")
         cache = Cache(directory=safe_tmp_dir)
+        logger.info("SAW...2")
         authenticator = AppRestrictedAuth(
             service=Service.PDS,
             secret_manager_client=secrets_manager_client,
             environment=pds_env,
             cache=cache,
         )
+        logger.info("SAW...3")
         pds_service = PdsService(authenticator, pds_env)
-
+        logger.info("SAW...4")
         patient = pds_service.get_patient_details(nhs_number)
-
+        logger.info("SAW...5")
         if patient:
             pds_nhs_number = patient["identifier"][0]["value"]
             return pds_nhs_number
