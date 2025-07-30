@@ -1,10 +1,11 @@
 -include .env
 
-AWS_DOMAIN_NAME=https://internal-dev.imms.dev.vds.platform.nhs.uk
-DYNAMODB_TABLE_NAME=imms-internal-dev-imms-events
-IMMS_DELTA_TABLE_NAME=imms-internal-dev-delta
-AWS_SQS_QUEUE_NAME=imms-internal-dev-delta-dlq
-AWS_SNS_TOPIC_NAME=imms-internal-dev-delta-sns
+APIGEE_ACCESS_TOKEN ?= $(shell export SSO_LOGIN_URL=https://login.apigee.com && eval get_token -u $(APIGEE_USERNAME))
+AWS_DOMAIN_NAME=https://$(shell make -C ../terraform -s output name=service_domain_name || true)
+DYNAMODB_TABLE_NAME=$(shell make -C ../terraform -s output name=dynamodb_table_name || true)
+IMMS_DELTA_TABLE_NAME=$(shell make -C ../terraform -s output name=imms_delta_table_name || true)
+AWS_SQS_QUEUE_NAME=$(shell make -C ../terraform -s output name=aws_sqs_queue_name || true)
+AWS_SNS_TOPIC_NAME=$(shell make -C ../terraform -s output name=aws_sns_topic_name || true)
 
 cmd = APIGEE_ACCESS_TOKEN=$(APIGEE_ACCESS_TOKEN) APIGEE_USERNAME=$(APIGEE_USERNAME) IMMS_DELTA_TABLE_NAME=$(IMMS_DELTA_TABLE_NAME) AWS_DOMAIN_NAME=$(AWS_DOMAIN_NAME) DYNAMODB_TABLE_NAME=$(DYNAMODB_TABLE_NAME) AWS_SQS_QUEUE_NAME=$(AWS_SQS_QUEUE_NAME) AWS_SNS_TOPIC_NAME=$(AWS_SNS_TOPIC_NAME) poetry run python -m unittest
 
