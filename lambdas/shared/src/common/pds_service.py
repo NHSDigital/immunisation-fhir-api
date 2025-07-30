@@ -8,6 +8,7 @@ from common.clients import logger
 
 class PdsService:
     def __init__(self, authenticator: AppRestrictedAuth, environment):
+        logger.info(f"PdsService init: {environment}")
         self.authenticator = authenticator
 
         self.base_url = f"https://{environment}.api.service.nhs.uk/personal-demographics/FHIR/R4/Patient" \
@@ -17,6 +18,7 @@ class PdsService:
 
     def get_patient_details(self, patient_id) -> dict | None:
         logger.info(f"PDS. Get patient details for ID: {patient_id}")
+        logger.info("PDS. Getting access token")
         access_token = self.authenticator.get_access_token()
         logger.info(f"PDS. Access token: {access_token}")
         request_headers = {

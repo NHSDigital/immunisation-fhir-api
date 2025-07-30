@@ -8,6 +8,7 @@ from enum import Enum
 
 from .cache import Cache
 from common.models.errors import UnhandledResponseError
+from common.clients import logger
 
 
 class Service(Enum):
@@ -37,7 +38,9 @@ class AppRestrictedAuth:
         return secret_object
 
     def create_jwt(self, now: int):
+        logger.info("create_jwt")
         secret_object = self.get_service_secrets()
+        logger.info(f"Secret object: {secret_object}")
         claims = {
             "iss": secret_object['api_key'],
             "sub": secret_object['api_key'],
@@ -46,16 +49,44 @@ class AppRestrictedAuth:
             "exp": now + self.expiry,
             "jti": str(uuid.uuid4())
         }
-        return jwt.encode(claims, secret_object['private_key'], algorithm='RS512',
-                          headers={"kid": secret_object['kid']})
+        logger.info(f"JWT claims: {claims}")
+        # ✅ Version-compatible JWT encoding
+        try:
+            # PyJWT 2.x
+            return jwt.encode(
+                claims,
+                secret_object['private_key'],
+                algorithm='RS512',
+                headers={"kid": secret_object['kid']}
+            )
+        except TypeError:
+            # PyJWT 1.x (older versions return bytes)
+            token = jwt.encode(
+                claims,
+                secret_object['private_key'],
+                algorithm='RS512',
+                headers={"kid": secret_object['kid']}
+            )
+            # Convert bytes to string if needed
+            return token.decode('utf-8') if isinstance(token, bytes) else token
 
     def get_access_token(self):
+        logger.info("get_access_token")
         now = int(time.time())
+        logger.info(f"Current time: {now}, Expiry time: {now + self.expiry}")
+        # Check if token is cached and not expired
+        logger.info(f"Cache key: {self.cache_key}")
+        logger.info("Checking cache for access token")
         cached = self.cache.get(self.cache_key)
+        logger.info(f"Cached token: {cached}")
         if cached and cached["expires_at"] > now:
+            logger.info("Returning cached access token")
             return cached["token"]
 
+        logger.info("No valid cached token found, creating new token")
         _jwt = self.create_jwt(now)
+
+        logger.info(f"JWT created: {_jwt}")
 
         headers = {
             'Content-Type': 'application/x-www-form-urlencoded'
