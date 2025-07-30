@@ -241,7 +241,7 @@ class TestMnsService(unittest.TestCase):
     @patch.object(MnsService, "get_subscription")
     def test_check_delete_subscription_missing_id(self, mock_get_subscription):
         # Resource with no id field
-        mock_get_subscription.return_value = {"not_id": "nope"}
+        mock_get_subscription.return_value = {"not_id": "not-id"}
         service = MnsService(self.authenticator)
         result = service.check_delete_subcription()
         self.assertEqual(result, "Subscription resource missing 'id' field.")

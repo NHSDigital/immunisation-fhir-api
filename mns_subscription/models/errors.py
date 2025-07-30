@@ -14,7 +14,7 @@ class Code(str, Enum):
     invalid = "invalid or missing access token"
     server_error = "internal server error"
     invariant = "invariant"
-    not_supported = "not-supported"
+    incomplete = "parameter-incomplete"
     duplicate = "duplicate"
     # Added an unauthorized code its used when returning a response for an unauthorized vaccine type search.
     unauthorized = "unauthorized"
@@ -129,7 +129,7 @@ class BadRequestError(RuntimeError):
         return create_operation_outcome(
             resource_id=str(uuid.uuid4()),
             severity=Severity.error,
-            code=Code.server_error,
+            code=Code.incomplete,
             diagnostics=self.__str__(),
         )
 
