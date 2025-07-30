@@ -35,7 +35,7 @@ def pds_get_patient_details(nhs_number: str) -> dict:
         if patient:
             logger.info(f"Patient details found for NHS number: {nhs_number}")
             logger.info(f"Patient details: {patient}")
-            pds_nhs_number = patient["id"]
+            pds_nhs_number = patient["identifier"][0]["value"]
             return pds_nhs_number
         else:
             logger.info(f"No patient details found for ID: {nhs_number}")

@@ -42,8 +42,12 @@ def process_nhs_number(nhs_number: str) -> Optional[str]:
     logger.info(f"process_nhs_number. Patient details: {patient_details}")
     if not patient_details:
         return {"status": "error", "message": f"No records returned for ID: {nhs_number}"}
-    logger.info(f"process_nhs_number.get ID: from {patient_details}")
-    patient_details_id = patient_details.get("id")
+
+    logger.info(f"process_nhs_number.get ID: from {patient_details.get('id')}")
+    if patient_details and "identifier" in patient_details and patient_details["identifier"]:
+        patient_details_id = patient_details["identifier"][0]["value"]
+    else:
+        return {"status": "error", "message": f"No records returned for ID: {nhs_number}"}
 
     base_log_data = {"nhs_number": nhs_number}
     if patient_details_id:
