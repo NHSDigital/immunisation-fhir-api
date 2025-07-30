@@ -9,7 +9,7 @@ from models.errors import (
     TokenValidationError,
     BadRequestError,
     UnauthorizedError,
-    ResourceFoundError)
+    ResourceNotFoundError)
 
 
 SQS_ARN = "arn:aws:sqs:eu-west-2:123456789012:my-queue"
@@ -60,7 +60,7 @@ class TestMnsService(unittest.TestCase):
 
         service = MnsService(self.authenticator)
 
-        with self.assertRaises(ResourceFoundError) as context:
+        with self.assertRaises(ResourceNotFoundError) as context:
             service.subscribe_notification()
         self.assertIn("Subscription or Resource not found", str(context.exception))
 
@@ -191,7 +191,7 @@ class TestMnsService(unittest.TestCase):
         mock_delete.return_value = mock_response
 
         service = MnsService(self.authenticator)
-        with self.assertRaises(ResourceFoundError):
+        with self.assertRaises(ResourceNotFoundError):
             service.delete_subscription("sub-id-123")
 
     @patch("mns_service.requests.delete")
@@ -263,7 +263,7 @@ class TestMnsService(unittest.TestCase):
 
     def test_404_resource_found_error(self):
         resp = self.mock_response(404, {"resource": "Not found"})
-        with self.assertRaises(ResourceFoundError) as context:
+        with self.assertRaises(ResourceNotFoundError) as context:
             MnsService.handle_response(resp)
         self.assertIn("Subscription or Resource not found", str(context.exception))
         self.assertEqual(context.exception.message, "Subscription or Resource not found")

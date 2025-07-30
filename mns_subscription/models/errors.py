@@ -78,7 +78,7 @@ class ConflictError(RuntimeError):
 
 
 @dataclass
-class ResourceFoundError(RuntimeError):
+class ResourceNotFoundError(RuntimeError):
     """Return this error when the requested resource does not exist or not complete"""
 
     response: None
