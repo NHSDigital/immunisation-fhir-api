@@ -20,7 +20,7 @@
         <SSLInfo>
             <Enabled>true</Enabled>
             <ClientAuthEnabled>true</ClientAuthEnabled>
-            <KeyStore>ref://{{ CLIENT_CERTIFICATE }}</KeyStore>
+            <KeyStore>ref://imms-client</KeyStore>
             <KeyAlias>cert</KeyAlias>
         </SSLInfo>
         <Properties>

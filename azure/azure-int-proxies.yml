@@ -44,5 +44,4 @@ extends:
     apigee_deployments:
       - environment: internal-dev
         jinja_templates:
-          DOMAIN_ENDPOINT: https://${{ parameters.environment }}.imms.dev.vds.platform.nhs.uk  
-          CLIENT_CERTIFICATE: imms-int-client
+          DOMAIN_ENDPOINT: https://${{ parameters.environment }}.imms.dev.vds.platform.nhs.uk
