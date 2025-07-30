@@ -44,9 +44,7 @@ class TestGetPdsPatientDetails(unittest.TestCase):
         """Test successful retrieval of patient details"""
         # Arrange
         expected_patient_data = {
-            "identifier": [
-                {"value": "9912003888"}
-            ],
+            "id": "9912003888",
             "name": "John Doe",
             "birthDate": "1990-01-01",
             "gender": "male"
@@ -167,23 +165,6 @@ class TestGetPdsPatientDetails(unittest.TestCase):
         self.mock_logger.exception.assert_called_once_with(
             f"Error getting PDS patient details for {self.test_patient_id}")
 
-    def test_pds_get_patient_details_multiple_identifiers(self):
-        """Test when patient has multiple identifiers - should return first one"""
-        # Arrange
-        patient_data_multiple_identifiers = {
-            "identifier": [
-                {"value": "9912003888"},  # First identifier
-                {"value": "9912003999"}   # Second identifier
-            ]
-        }
-        self.mock_pds_service_instance.get_patient_details.return_value = patient_data_multiple_identifiers
-
-        # Act
-        result = pds_get_patient_details(self.test_patient_id)
-
-        # Assert
-        self.assertEqual(result, "9912003888")  # Should return first identifier
-
     def test_pds_get_patient_details_pds_service_exception(self):
         """Test when PdsService.get_patient_details raises an exception"""
         # Arrange
@@ -268,9 +249,9 @@ class TestGetPdsPatientDetails(unittest.TestCase):
     def test_pds_get_patient_details_different_patient_ids(self):
         """Test with different patient ID formats"""
         test_cases = [
-            ("9912003888", {"identifier": [{"value": "9912003888"}]}),
-            ("1234567890", {"identifier": [{"value": "1234567890"}]}),
-            ("0000000000", {"identifier": [{"value": "0000000000"}]}),
+            ("9912003888", {"id": "9912003888"}),
+            ("1234567890", {"id": "1234567890"}),
+            ("0000000000", {"id": "0000000000"}),
         ]
 
         for patient_id, expected_response in test_cases:
@@ -292,7 +273,7 @@ class TestGetPdsPatientDetails(unittest.TestCase):
     def test_pds_get_patient_details_service_dependencies(self):
         """Test that all required services are initialized with correct parameters"""
         # Arrange
-        expected_patient_data = {"identifier": [{"value": "9912003888"}]}
+        expected_patient_data = {"id": "9912003888"}
         self.mock_pds_service_instance.get_patient_details.return_value = expected_patient_data
 
         # Act
@@ -310,33 +291,19 @@ class TestGetPdsPatientDetails(unittest.TestCase):
         auth_call_args = self.mock_auth_class.call_args
         self.assertEqual(auth_call_args[1]['cache'], self.mock_cache_instance)
 
-    def test_pds_get_patient_details_with_complex_identifier_structure(self):
+    def test_pds_get_patient_details(self):
         """Test with complex identifier structure"""
         # Arrange
-        complex_patient_data = {
-            "identifier": [
-                {
-                    "use": "official",
-                    "system": "https://fhir.nhs.uk/Id/nhs-number",
-                    "value": "9912003888"
-                }
-            ],
-            "name": [
-                {
-                    "use": "official",
-                    "family": "Doe",
-                    "given": ["John", "Michael"]
-                }
-            ]
-        }
-        self.mock_pds_service_instance.get_patient_details.return_value = complex_patient_data
+        test_nhs_number = "9912003888"
+        pds_id = "abcefghijkl"
+        self.mock_pds_service_instance.get_patient_details.return_value = {"id": pds_id}
 
         # Act
-        result = pds_get_patient_details(self.test_patient_id)
+        result = pds_get_patient_details(test_nhs_number)
 
         # Assert - function should extract the value from first identifier
-        self.assertEqual(result, "9912003888")
-        self.mock_pds_service_instance.get_patient_details.assert_called_once_with(self.test_patient_id)
+        self.assertEqual(result, pds_id)
+        self.mock_pds_service_instance.get_patient_details.assert_called_once_with(test_nhs_number)
 
 
 if __name__ == '__main__':
