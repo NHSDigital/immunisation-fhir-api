@@ -39,9 +39,10 @@ def process_nhs_number(nhs_number: str) -> Optional[str]:
     # get patient details from PDS
     logger.debug(f"process_nhs_number. Processing NHS number: {nhs_number}")
     patient_details = pds_get_patient_details(nhs_number)
+    logger.info(f"process_nhs_number. Patient details: {patient_details}")
     if not patient_details:
         return {"status": "error", "message": f"No records returned for ID: {nhs_number}"}
-
+    logger.info(f"process_nhs_number.get ID: from {patient_details}")
     patient_details_id = patient_details.get("id")
 
     base_log_data = {"nhs_number": nhs_number}
