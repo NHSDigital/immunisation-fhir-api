@@ -13,7 +13,10 @@ from models.errors import (
 )
 
 SQS_ARN = os.getenv("SQS_ARN")
-MNS_URL = "https://int.api.service.nhs.uk/multicast-notification-service/subscriptions"
+
+apigee_env = os.getenv("APIGEE_ENVIRONMENT", "int")
+MNS_URL = "https://api.service.nhs.uk/multicast-notification-service/subscriptions" \
+    if apigee_env == "prod" else "https://int.api.service.nhs.uk/multicast-notification-service/subscriptions"
 
 
 class MnsService:
@@ -45,6 +48,7 @@ class MnsService:
 
         print(f"Access Token: {self.access_token}")
         print(f"SQS ARN: {SQS_ARN}")
+        print(f"MNS_URL: {MNS_URL}")
         print(f"Headers: {self.request_headers}")
         print(f"Payload: {json.dumps(self.subscription_payload, indent=2)}")
 
