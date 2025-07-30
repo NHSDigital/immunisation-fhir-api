@@ -31,7 +31,7 @@ class PdsService:
 
         if response.status_code == 200:
             logger.info("PDS. Request successful")
-            logger.debug(f"PDS. Response: {response.json()}")
+            logger.info(f"PDS. Response: {response.json()}")
             return response.json()
         elif response.status_code == 404:
             logger.info(f"PDS. Patient not found for ID: {patient_id}")
