@@ -116,6 +116,25 @@ class UnhandledResponseError(RuntimeError):
 
 
 @dataclass
+class BadRequestError(RuntimeError):
+    """Use when payload is missing required parameters"""
+
+    response: dict | str
+    message: str
+
+    def __str__(self):
+        return f"{self.message}\n{self.response}"
+
+    def to_operation_outcome(self) -> dict:
+        return create_operation_outcome(
+            resource_id=str(uuid.uuid4()),
+            severity=Severity.error,
+            code=Code.server_error,
+            diagnostics=self.__str__(),
+        )
+
+
+@dataclass
 class ServerError(RuntimeError):
     """Use when there is a server error"""
 

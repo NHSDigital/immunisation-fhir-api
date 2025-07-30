@@ -7,6 +7,7 @@ from models.errors import (
     ServerError,
     UnhandledResponseError,
     TokenValidationError,
+    BadRequestError,
     UnauthorizedError,
     ResourceFoundError)
 
@@ -31,7 +32,7 @@ class TestMnsService(unittest.TestCase):
         # Arrange GET to return no subscription found
         mock_get_response = MagicMock()
         mock_get_response.status_code = 200
-        mock_get_response.json.return_value = {"entry": []}  # No entries!
+        mock_get_response.json.return_value = {"entry": []}
         mock_get.return_value = mock_get_response
 
         # Arrange
@@ -59,10 +60,9 @@ class TestMnsService(unittest.TestCase):
 
         service = MnsService(self.authenticator)
 
-        with self.assertRaises(UnhandledResponseError) as context:
+        with self.assertRaises(ResourceFoundError) as context:
             service.subscribe_notification()
-        self.assertIn("404", str(context.exception))
-        self.assertIn("Unhandled error", str(context.exception))
+        self.assertIn("Subscription or Resource not found", str(context.exception))
 
     @patch("mns_service.requests.post")
     def test_unhandled_error(self, mock_post):
@@ -105,7 +105,7 @@ class TestMnsService(unittest.TestCase):
         """Should return None when no subscription matches."""
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {"entry": []}  # No matches
+        mock_response.json.return_value = {"entry": []}
         mock_get.return_value = mock_response
 
         service = MnsService(self.authenticator)
@@ -123,8 +123,6 @@ class TestMnsService(unittest.TestCase):
         service = MnsService(self.authenticator)
         with self.assertRaises(TokenValidationError):
             service.get_subscription()
-
-    # Similarly, you can add tests for 400, 403, 500, etc.
 
     @patch("mns_service.requests.post")
     @patch("mns_service.requests.get")
@@ -150,7 +148,6 @@ class TestMnsService(unittest.TestCase):
 
     @patch("mns_service.requests.delete")
     def test_delete_subscription_success(self, mock_delete):
-        # Test for both 200 and 204 (use a loop)
         for code in (200, 204):
             mock_response = MagicMock()
             mock_response.status_code = code
@@ -257,6 +254,35 @@ class TestMnsService(unittest.TestCase):
         service = MnsService(self.authenticator)
         result = service.check_delete_subcription()
         self.assertTrue(result.startswith("Error deleting subscription: Error!"))
+
+    def mock_response(self, status_code, json_data=None):
+        mock_resp = MagicMock()
+        mock_resp.status_code = status_code
+        mock_resp.json.return_value = json_data or {"resource": "mock"}
+        return mock_resp
+
+    def test_404_resource_found_error(self):
+        resp = self.mock_response(404, {"resource": "Not found"})
+        with self.assertRaises(ResourceFoundError) as context:
+            MnsService.handle_response(resp)
+        self.assertIn("Subscription or Resource not found", str(context.exception))
+        self.assertEqual(context.exception.message, "Subscription or Resource not found")
+        self.assertEqual(context.exception.response, {"resource": "Not found"})
+
+    def test_400_bad_request_error(self):
+        resp = self.mock_response(400, {"resource": "Invalid"})
+        with self.assertRaises(BadRequestError) as context:
+            MnsService.handle_response(resp)
+        self.assertIn("Bad request: Resource type or parameters incorrect", str(context.exception))
+        self.assertEqual(context.exception.message, "Bad request: Resource type or parameters incorrect")
+        self.assertEqual(context.exception.response, {"resource": "Invalid"})
+
+    def test_unhandled_status_code(self):
+        resp = self.mock_response(418, {"resource": 1234})
+        with self.assertRaises(UnhandledResponseError) as context:
+            MnsService.handle_response(resp)
+        self.assertIn("Unhandled error: 418", str(context.exception))
+        self.assertEqual(context.exception.response, {"resource": 1234})
 
 
 if __name__ == "__main__":

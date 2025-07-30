@@ -9,7 +9,9 @@ from models.errors import (
     ResourceFoundError,
     UnauthorizedError,
     ServerError,
-    TokenValidationError
+    BadRequestError,
+    TokenValidationError,
+    ConflictError
 )
 
 SQS_ARN = os.getenv("SQS_ARN")
@@ -54,24 +56,8 @@ class MnsService:
 
         if response.status_code in (200, 201):
             return response.json()
-        elif response.status_code == 409:
-            msg = "SQS Queue Already Subscribed, can't re-subscribe"
-            raise UnhandledResponseError(response=response.json(), message=msg)
-        elif response.status_code == 401:
-            msg = "SQS Queue Already Subscribed, can't re-subscribe"
-            raise TokenValidationError(response=response.json(), message=msg)
-        elif response.status_code == 400:
-            msg = "Resource Type provided for this is not correct"
-            raise ResourceFoundError(response=response.json(), message=msg)
-        elif response.status_code == 403:
-            msg = "You don't have the right permissions for this request"
-            raise UnauthorizedError(response=response.json(), message=msg)
-        elif response.status_code == 500:
-            msg = "Internal Server Error"
-            raise ServerError(response=response.json(), message=msg)
         else:
-            msg = f"Unhandled error: {response.status_code} - {response.text}"
-            raise UnhandledResponseError(response=response.json(), message=msg)
+            MnsService.handle_response(response)
 
     def get_subscription(self) -> dict | None:
         response = requests.get(MNS_URL, headers=self.request_headers)
@@ -80,30 +66,16 @@ class MnsService:
 
         if response.status_code == 200:
             bundle = response.json()
-            # Assume a FHIR Bundle with 'entry' list
             for entry in bundle.get("entry", []):
                 resource = entry.get("resource", entry)
                 print(f"get resource sub: {resource}")
                 logging.debug(f"get resource sub: {resource}")
                 channel = resource.get("channel", {})
                 if channel.get("endpoint") == SQS_ARN:
-                    return resource  # Found a matching subscription
-            return None  # No subscription for this SQS ARN
-        elif response.status_code == 401:
-            msg = "Token validation failed for the request"
-            raise TokenValidationError(response=response.json(), message=msg)
-        elif response.status_code == 400:
-            msg = "Bad request: Resource type or parameters incorrect"
-            raise ResourceFoundError(response=response.json(), message=msg)
-        elif response.status_code == 403:
-            msg = "You don't have the right permissions for this request"
-            raise UnauthorizedError(response=response.json(), message=msg)
-        elif response.status_code == 500:
-            msg = "Internal Server Error"
-            raise ServerError(response=response.json(), message=msg)
+                    return resource
+            return None
         else:
-            msg = f"Unhandled error: {response.status_code} - {response.text}"
-            raise UnhandledResponseError(response=response.json(), message=msg)
+            MnsService.handle_response(response)
 
     def check_subscription(self) -> dict:
         """
@@ -130,20 +102,12 @@ class MnsService:
         if response.status_code in (200, 204):
             logging.info(f"Deleted subscription {subscription_id}")
             return True
-        elif response.status_code == 401:
-            raise TokenValidationError(response=response.json(), message="Token validation failed for the request")
-        elif response.status_code == 404:
-            raise ResourceFoundError(response=response.json(), message=f"Subscription {subscription_id} not found")
-        elif response.status_code == 403:
-            raise UnauthorizedError(response=response.json(), message="No permission to delete subscription")
-        elif response.status_code == 500:
-            raise ServerError(response=response.json(), message="Internal Server Error")
         else:
-            raise UnhandledResponseError(response=response.json(), message=f"Unhandled error: {response.status_code}")
+            MnsService.handle_response(response)
 
     def check_delete_subcription(self):
         try:
-            resource = self.get_subscription()  # Get the full resource dict
+            resource = self.get_subscription()
             if not resource:
                 return "No matching subscription found to delete."
 
@@ -154,5 +118,20 @@ class MnsService:
             self.delete_subscription(subscription_id)
             return "Subscription successfully deleted"
         except Exception as e:
-            # Optionally log the exception here
             return f"Error deleting subscription: {str(e)}"
+
+    @staticmethod
+    def handle_response(response):
+        error_mapping = {
+            401: (TokenValidationError, "Token validation failed for the request"),
+            400: (BadRequestError, "Bad request: Resource type or parameters incorrect"),
+            403: (UnauthorizedError, "You don't have the right permissions for this request"),
+            500: (ServerError, "Internal Server Error"),
+            404: (ResourceFoundError, "Subscription or Resource not found"),
+            409: (ConflictError, "SQS Queue Already Subscribed, can't re-subscribe")
+        }
+        exception_class, error_message = error_mapping.get(
+            response.status_code,
+            (UnhandledResponseError, f"Unhandled error: {response.status_code}"))
+
+        raise exception_class(response=response.json(), message=error_message)
