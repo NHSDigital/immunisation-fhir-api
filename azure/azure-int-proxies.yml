@@ -3,6 +3,15 @@ name: "$(SourceBranchName)+$(BuildID)"
 trigger: none
 pr: none
 
+parameters:
+  - name: environment
+    displayName: Which environment to deploy to?
+    type: string
+    default: green
+    values:
+      - blue
+      - green
+
 resources:
   repositories:
     - repository: common
@@ -35,9 +44,5 @@ extends:
     apigee_deployments:
       - environment: internal-dev
         jinja_templates:
-          DOMAIN_ENDPOINT: https://green.imms.dev.vds.platform.nhs.uk  
-          CLIENT_CERTIFICATE: imms-int-client
-      - environment: internal-dev
-        jinja_templates:
-          DOMAIN_ENDPOINT: https://blue.imms.dev.vds.platform.nhs.uk
+          DOMAIN_ENDPOINT: https://${{ parameters.environment }}.imms.dev.vds.platform.nhs.uk  
           CLIENT_CERTIFICATE: imms-int-client
