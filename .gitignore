@@ -29,4 +29,4 @@ openapi.json
 !**/.vscode/settings.json.default
 
 devtools/volume/
-backend/tests/.coverage
+**/.coverage

@@ -7,6 +7,7 @@ on:
   pull_request:
     types: [labeled, opened, synchronize, reopened, unlabeled]
 
+
 jobs:
   sonarcloud:
     name: SonarCloud
@@ -82,6 +83,7 @@ jobs:
           poetry install
           poetry run coverage run -m unittest discover || echo "delta tests failed" >> ../failed_tests.txt
           poetry run coverage xml -o ../delta-coverage.xml
+          cat ../delta-coverage.xml
 
       - name: Run unittest with coverage-fhir-api
         working-directory: backend
@@ -113,6 +115,20 @@ jobs:
             poetry install
             poetry run coverage run -m unittest discover || echo "redis_sync tests failed" >> ../failed_tests.txt
             poetry run coverage xml -o ../redis_sync-coverage.xml
+
+
+      - name: Run unittest with id_sync
+        working-directory: id_sync
+        id: id_sync
+        env:
+          PYTHONPATH: ${{ github.workspace }}/id_sync/src:${{ github.workspace }}/id_sync/tests
+        continue-on-error: true
+        run: |
+            poetry env use 3.11
+            poetry install
+            poetry run coverage run --rcfile=.coveragerc --source=src -m unittest discover || echo "id_sync tests failed" >> ../../failed_tests.txt
+            poetry run coverage xml -o ../id_sync-coverage.xml
+            cat ../id_sync-coverage.xml
 
       - name: Run Test Failure Summary
         id: check_failure
