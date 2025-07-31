@@ -37,6 +37,7 @@ jobs:
         working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
         run: |
           export ENVIRONMENT=${{ inputs.environment }}
+          export BUCKET_NAME=${{ vars.TERRAFORM_STATE_BUCKET_NAME_INT }}
           make init
 
       - name: Terraform Plan
@@ -71,6 +72,7 @@ jobs:
         working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
         run: |
           export ENVIRONMENT=${{ inputs.environment }}
+          export BUCKET_NAME=${{ vars.TERRAFORM_STATE_BUCKET_NAME_INT }}
           make init
 
       - name: Terraform Apply
