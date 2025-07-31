@@ -39,8 +39,9 @@ class TestRecordProcessor(unittest.TestCase):
             result = process_record(test_record)
 
             # Assert
-            expected_result = {"status": "success", "message": "No update required"}
-            self.assertEqual(result, expected_result)
+            self.assertEqual(result["nhs_number"], test_id)
+            self.assertEqual(result["message"], "No update required")
+            self.assertEqual(result["status"], "success")
 
             # Verify calls
             self.mock_pds_get_patient_id.assert_called_once_with(test_id)
