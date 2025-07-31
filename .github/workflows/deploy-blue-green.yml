@@ -7,12 +7,6 @@ on:
 
 jobs:
   deploy-green:
-    uses: ./.github/workflows/deploy-template.yml
+    uses: ./.github/workflows/deploy-template.yml@release-2025-07-25
     with:
       environment: green
-
-  # deploy-blue:
-  #   needs: deploy-green
-  #   uses: ./.github/workflows/deploy-template.yml
-  #   with:
-  #     environment: blue
