@@ -168,13 +168,9 @@
                                     },
                                     "value": {
                                       "type": "string",
-                                      "description": "The value that is unique"
+                                      "description": "The value that is unique.  \nThis SHALL be populated if `system` is https://fhir.nhs.uk/Id/nhs-number."
                                     }
-                                  },
-                                  "required": [
-                                    "system",
-                                    "value"
-                                  ]
+                                  }
                                 }
                               },
                               "name": {
@@ -2881,13 +2877,9 @@
                                       },
                                       "value": {
                                         "type": "string",
-                                        "description": "The value that is unique"
+                                        "description": "The value that is unique.  \nThis SHALL be populated if `system` is https://fhir.nhs.uk/Id/nhs-number."
                                       }
-                                    },
-                                    "required": [
-                                      "system",
-                                      "value"
-                                    ]
+                                    }
                                   }
                                 },
                                 "name": {
@@ -2942,7 +2934,6 @@
                               "required": [
                                 "resourceType",
                                 "id",
-                                "identifier",
                                 "name",
                                 "gender",
                                 "address"
@@ -3788,13 +3779,9 @@
                                     },
                                     "value": {
                                       "type": "string",
-                                      "description": "The value that is unique"
+                                      "description": "The value that is unique.  \nThis SHALL be populated if `system` is https://fhir.nhs.uk/Id/nhs-number."
                                     }
-                                  },
-                                  "required": [
-                                    "system",
-                                    "value"
-                                  ]
+                                  }
                                 }
                               },
                               "name": {
