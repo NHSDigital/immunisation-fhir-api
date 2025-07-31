@@ -50,6 +50,11 @@ class MnsService:
             MNS_URL, headers=self.request_headers,
             data=json.dumps(self.subscription_payload))
         if response.status_code in (200, 201):
+
+            print(f"MNS_URL: {MNS_URL}")
+            print(f"ACCESS_TOKEN: {self.access_token}")
+            print(f"PAYLOAD: {self.subscription_payload}")
+            print(f"HEADERS: {self.request_headers}")
             return response.json()
         else:
             MnsService.handle_response(response)
