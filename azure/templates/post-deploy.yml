@@ -83,19 +83,15 @@ steps:
 
   - ${{ if eq(parameters.subscribe_to_mns, true) }}:
     - bash: |
-          export AWS_PROFILE=apim-dev
-          echo "Subscribing SQS to MNS for notifications."
-          pyenv install -s 3.11.11
-          pyenv local 3.11.11
-          echo "Setting up poetry environment..."
-          poetry env use 3.11
-          poetry install --no-root
-
-          echo "Setting PYTHONPATH..."
-          export PYTHONPATH=$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/mns_subscription
-
-          echo "Subscribing SQS to MNS for notifications..."
-          poetry run python src/subscribe_mns.py
+        export AWS_PROFILE=apim-dev
+        echo "Subscribing SQS to MNS for notifications."
+        pyenv install -s 3.11.11
+        pyenv local 3.11.11
+        echo "Setting up poetry environment..."
+        poetry env use 3.11
+        poetry install --no-root
+        echo "Subscribing SQS to MNS for notifications..."
+        poetry run python src/subscribe_mns.py
       displayName: "Run MNS Subscription"
       workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/mns_subscription"
       env:
