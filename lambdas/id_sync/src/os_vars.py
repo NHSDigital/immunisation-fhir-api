@@ -8,11 +8,6 @@ def get_ieds_table_name() -> str:
     return os.environ["IEDS_TABLE_NAME"]
 
 
-def get_delta_table_name() -> str:
-    """Get the Delta table name from environment variables."""
-    return os.environ["DELTA_TABLE_NAME"]
-
-
 def get_pds_env() -> str:
     """Get the PDS environment from environment variables."""
     return os.getenv("PDS_ENV", "int")
@@ -20,7 +15,6 @@ def get_pds_env() -> str:
 
 # Optional: Cached versions for performance
 _ieds_table_name: Optional[str] = None
-_delta_table_name: Optional[str] = None
 _pds_env: Optional[str] = None
 
 
@@ -30,14 +24,6 @@ def get_ieds_table_name_cached() -> str:
     if _ieds_table_name is None:
         _ieds_table_name = os.environ["IEDS_TABLE_NAME"]
     return _ieds_table_name
-
-
-def get_delta_table_name_cached() -> str:
-    """Get the Delta table name (cached version)."""
-    global _delta_table_name
-    if _delta_table_name is None:
-        _delta_table_name = os.environ["DELTA_TABLE_NAME"]
-    return _delta_table_name
 
 
 def get_pds_env_cached() -> str:

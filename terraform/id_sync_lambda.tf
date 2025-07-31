@@ -284,12 +284,8 @@ resource "aws_lambda_function" "id_sync_lambda" {
 
   environment {
     variables = {
-      CONFIG_BUCKET_NAME       = local.config_bucket_name
       REDIS_HOST               = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].address
       REDIS_PORT               = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].port
-      ID_SYNC_PROC_LAMBDA_NAME = "imms-${var.sub_environment}-id_sync_lambda"
-      # NEW
-      DELTA_TABLE_NAME     = aws_dynamodb_table.delta-dynamodb-table.name
       IEDS_TABLE_NAME      = aws_dynamodb_table.events-dynamodb-table.name
       PDS_ENV              = var.pds_environment
       SPLUNK_FIREHOSE_NAME = module.splunk.firehose_stream_name
