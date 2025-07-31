@@ -244,7 +244,7 @@ resource "aws_iam_role_policy_attachment" "id_sync_lambda_kms_policy_attachment"
 data "aws_iam_policy_document" "id_sync_policy_document" {
   source_policy_documents = [
     templatefile("${local.policy_path}/dynamodb.json", {
-      "dynamodb_table_name" : aws_dynamodb_table.delta-dynamodb-table.name
+      "dynamodb_table_name" : aws_dynamodb_table.events-dynamodb-table.name
     }),
     templatefile("${local.policy_path}/dynamodb_stream.json", {
       "dynamodb_table_name" : aws_dynamodb_table.events-dynamodb-table.name
