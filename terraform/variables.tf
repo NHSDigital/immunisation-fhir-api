@@ -21,7 +21,7 @@ locals {
   env               = terraform.workspace
   prefix            = var.aws_account_name == "int" ? "${var.project_name}-${var.service}-${local.env}-int" : "${var.project_name}-${var.service}-${local.env}"
   short_prefix      = var.aws_account_name == "int" ? "${var.project_short_name}-${local.env}-int" : "${var.project_short_name}-${local.env}"
-  batch_prefix      = "immunisation-batch-${local.env}"
+  batch_prefix      = var.aws_account_name == "int" ? "immunisation-batch-${local.env}-int" : "immunisation-batch-${local.env}"
   config_env        = var.aws_account_name
   config_bucket_env = local.environment == "prod" ? "prod" : "internal-dev"
 
@@ -33,6 +33,7 @@ locals {
   create_config_bucket = true
   config_bucket_arn    = local.create_config_bucket ? aws_s3_bucket.batch_config_bucket[0].arn : data.aws_s3_bucket.existing_config_bucket[0].arn
   config_bucket_name   = local.create_config_bucket ? aws_s3_bucket.batch_config_bucket[0].bucket : data.aws_s3_bucket.existing_config_bucket[0].bucket
+  unique_name          = var.aws_account_name == "int" ? "preprod-${var.aws_account_name}" : var.aws_account_name # Because some dbs already exist with that name
 }
 
 data "aws_vpc" "default" {

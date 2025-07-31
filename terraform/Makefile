@@ -26,7 +26,7 @@ init:
 init-reconfigure:
 	$(tf_cmd) init $(tf_state) -upgrade  $(tf_vars) -reconfigure
 
-plan:
+plan: workspace
 	 $(tf_cmd) plan $(tf_vars)
 
 plan-changes: workspace

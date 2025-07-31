@@ -1,3 +1,4 @@
+
 resource "aws_s3_bucket" "batch_data_source_bucket" {
   bucket        = "${local.batch_prefix}-data-sources"
   force_destroy = local.is_temp
@@ -93,7 +94,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "datasources_lifecycle" {
 
 resource "aws_s3_bucket" "batch_data_destination_bucket" {
   # Deliberately not using `local.batch_prefix` as we don't want separate blue / green destinations in prod.
-  bucket        = "immunisation-batch-${local.environment}-data-destinations"
+  bucket        = "immunisation-batch-${local.unique_name}-data-destinations"
   force_destroy = local.is_temp
 }
 
@@ -195,7 +196,7 @@ resource "aws_s3_bucket" "batch_config_bucket" {
   # For now, only create in internal-dev and prod as we only have one shared Redis instance per account.
   count = local.create_config_bucket ? 1 : 0
 
-  bucket = "imms-${local.environment}-supplier-config"
+  bucket = "imms-${local.unique_name}-supplier-config"
 }
 
 resource "aws_s3_bucket_public_access_block" "batch_config_bucket_public_access_block" {
