@@ -4,17 +4,14 @@ import json
 import os
 import re
 import uuid
-from botocore.config import Config
 from decimal import Decimal
 from typing import Optional
 import boto3
 from aws_lambda_typing.events import APIGatewayProxyEventV1
-from botocore.config import Config
 from fhir.resources.R4B.immunization import Immunization
 from boto3 import client as boto3_client
 
 from authorization import Authorization, UnknownPermission
-from cache import Cache
 from fhir_repository import ImmunizationRepository, create_table
 from fhir_service import FhirService, UpdateOutcome, get_service_url
 from models.errors import (
@@ -47,8 +44,6 @@ def make_controller(
 ):
     endpoint_url = "http://localhost:4566" if immunization_env == "local" else None
     imms_repo = ImmunizationRepository(create_table(endpoint_url=endpoint_url))
-    boto_config = Config(region_name="eu-west-2")
-    cache = Cache(directory="/tmp")
 
     authorizer = Authorization()
     service = FhirService(imms_repo=imms_repo)
