@@ -79,7 +79,6 @@ jobs:
           make plan environment=${{ inputs.environment }} aws_account_name=int
 
   e2e-tests:
-    # needs: terraform-apply
     if: ${{ vars.RUN_E2E == 'true' && inputs.environment == vars.ACTIVE_ENVIRONMENT }}
     runs-on: ubuntu-latest
     permissions:
