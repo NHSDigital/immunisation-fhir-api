@@ -14,7 +14,7 @@ jobs:
       id-token: write
       contents: read
     steps:
-      - name: Debug OIDC
+      - name: Connect to AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: eu-west-2
