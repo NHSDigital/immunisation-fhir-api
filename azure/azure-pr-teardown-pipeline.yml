@@ -45,16 +45,6 @@ jobs:
 
       - bash: |
           export AWS_PROFILE=apim-dev
-          account_id="$(aws sts get-caller-identity --query Account --output text)"
-
-          cd terraform
-          terraform workspace select $(WORKSPACE)
-          make init && make destroy aws_account_no=${account_id} environment=$(WORKSPACE)
-        displayName: Destroy terraform PR workspace and linked resources
-        retryCountOnTaskFailure: 2
-
-      - bash: |
-          export AWS_PROFILE=apim-dev
           pyenv install -s 3.11.11
           pyenv local 3.11.11
           poetry env use 3.11
@@ -68,3 +58,13 @@ jobs:
         workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/mns_subscription"
         env:
           SQS_ARN: "$(ID_SYNC_QUEUE_ARN)"
+
+      - bash: |
+          export AWS_PROFILE=apim-dev
+          account_id="$(aws sts get-caller-identity --query Account --output text)"
+
+          cd terraform
+          terraform workspace select $(WORKSPACE)
+          make init && make destroy aws_account_no=${account_id} environment=$(WORKSPACE)
+        displayName: Destroy terraform PR workspace and linked resources
+        retryCountOnTaskFailure: 2
