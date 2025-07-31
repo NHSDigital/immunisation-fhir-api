@@ -191,31 +191,6 @@ class TestGetPdsPatientDetails(unittest.TestCase):
                 result = pds_get_patient_details(patient_id)
 
                 # Assert
-                self.assertEqual(result, test_cases[patient_id])
-                self.mock_pds_service_instance.get_patient_details.assert_called_once_with(patient_id)
-
-    def test_pds_get_patient_details_different_patient_ids(self):
-        """Test with different patient ID formats"""
-        test_cases = [
-            ("9912003888", {"identifier": [{"value": "9912003888"}]}),
-            ("1234567890", {"identifier": [{"value": "1234567890"}]}),
-            ("0000000000", {"identifier": [{"value": "0000000000"}]}),
-        ]
-
-        for patient_id, expected_response in test_cases:
-            with self.subTest(patient_id=patient_id):
-                # Reset mocks
-                self.mock_pds_service_instance.reset_mock()
-                self.mock_logger.reset_mock()
-
-                # Arrange
-                self.mock_pds_service_instance.get_patient_details.return_value = expected_response
-
-                # Act
-                result = pds_get_patient_details(patient_id)
-
-                # Assert
-                # ✅ Fix: Use expected_response instead of test_cases[patient_id]
                 self.assertEqual(result, expected_response)
                 self.mock_pds_service_instance.get_patient_details.assert_called_once_with(patient_id)
 
