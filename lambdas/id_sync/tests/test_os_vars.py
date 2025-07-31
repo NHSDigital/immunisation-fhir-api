@@ -24,16 +24,6 @@ class TestOsVars(unittest.TestCase):
         del os.environ["IEDS_TABLE_NAME"]
         self.assertEqual(os_vars.get_ieds_table_name_cached(), "ieds-table")
 
-    @patch.dict(os.environ, {"DELTA_TABLE_NAME": "delta-table"})
-    def test_get_delta_table_name(self):
-        self.assertEqual(os_vars.get_delta_table_name(), "delta-table")
-
-    @patch.dict(os.environ, {"DELTA_TABLE_NAME": "delta-table"})
-    def test_get_delta_table_name_cached(self):
-        self.assertEqual(os_vars.get_delta_table_name_cached(), "delta-table")
-        del os.environ["DELTA_TABLE_NAME"]
-        self.assertEqual(os_vars.get_delta_table_name_cached(), "delta-table")
-
     @patch.dict(os.environ, {"PDS_ENV": "prod"})
     def test_get_pds_env_with_value(self):
         self.assertEqual(os_vars.get_pds_env(), "prod")
