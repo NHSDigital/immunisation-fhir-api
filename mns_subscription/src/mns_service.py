@@ -48,7 +48,7 @@ class MnsService:
 
         response = requests.post(
             MNS_URL, headers=self.request_headers,
-            data=json.dumps(self.subscription_payload), timeout=15)
+            data=json.dumps(self.subscription_payload))
         if response.status_code in (200, 201):
             return response.json()
         else:
