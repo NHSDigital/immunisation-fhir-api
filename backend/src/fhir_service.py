@@ -362,6 +362,15 @@ class FhirService:
             logger.warning("Skipping PDS check")
             return contained_patient
 
+        # JW: PoC
+        # the above pre-validation code is valid I think, it's just a question of
+        # removing the PDS call below
+        # TODO: we then have to tweak the tests, possibly write new ones
+        # - 
+        if nhs_number_mod11_check(nhs_number):
+            return contained_patient
+
+        '''
         patient = self.pds_service.get_patient_details(nhs_number)
         # To check whether the Superseded NHS number present in PDS
         if patient:
@@ -371,5 +380,6 @@ class FhirService:
                 return diagnostics_error
 
             return patient
+        '''
 
         raise InvalidPatientId(patient_identifier=nhs_number)

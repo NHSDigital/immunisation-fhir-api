@@ -16,6 +16,7 @@ from fhir_repository import ImmunizationRepository
 from fhir_service import FhirService, UpdateOutcome, get_service_url
 from models.errors import InvalidPatientId, CustomValidationError
 from models.fhir_immunization import ImmunizationValidator
+from models.utils.generic_utils import get_contained_patient
 from pds_service import PdsService
 from pydantic import ValidationError
 from pydantic.error_wrappers import ErrorWrapper
@@ -25,7 +26,7 @@ from tests.utils.immunization_utils import (
     create_covid_19_immunization_dict_no_id,
     VALID_NHS_NUMBER,
 )
-from utils.generic_utils import load_json_data
+from tests.utils.generic_utils import load_json_data
 from constants import NHS_NUMBER_USED_IN_SAMPLE_DATA
 
 class TestFhirServiceBase(unittest.TestCase):
@@ -372,17 +373,15 @@ class TestCreateImmunization(TestFhirServiceBase):
 
         nhs_number = VALID_NHS_NUMBER
         req_imms = create_covid_19_immunization_dict_no_id(nhs_number)
-
+        req_patient = get_contained_patient(req_imms)
         # When
         stored_imms = self.fhir_service.create_immunization(req_imms, ["COVID19:create"], "Test")
 
         # Then
-        self.imms_repo.create_immunization.assert_called_once_with(req_imms, pds_patient, ["COVID19:create"], "Test")
+        self.imms_repo.create_immunization.assert_called_once_with(req_imms, req_patient, ["COVID19:create"], "Test")
 
         self.validator.validate.assert_called_once_with(req_imms)
-        self.fhir_service.pds_service.get_patient_details.assert_called_once_with(
-            nhs_number
-        )
+        self.fhir_service.pds_service.get_patient_details.assert_not_called()
         self.assertIsInstance(stored_imms, Immunization)
 
     def test_create_immunization_with_id(self):
@@ -469,6 +468,20 @@ class TestCreateImmunization(TestFhirServiceBase):
         self.assertEqual(e.exception.patient_identifier, invalid_nhs_number)
         self.imms_repo.create_immunization.assert_not_called()
 
+    def test_patient_error_invalid_nhs_number(self):
+        """it should throw error when NHS number checksum is incorrect"""
+        self.fhir_service.pds_service.get_patient_details.return_value = None
+        invalid_nhs_number = "9434765911"  # check digit 1 doesn't match result (9)
+        bad_patient_imms = create_covid_19_immunization_dict_no_id(invalid_nhs_number)
+
+        with self.assertRaises(InvalidPatientId) as e:
+            # When
+            self.fhir_service.create_immunization(bad_patient_imms, "COVID19:create", "Test")
+
+        # Then
+        self.assertEqual(e.exception.patient_identifier, invalid_nhs_number)
+        self.imms_repo.create_immunization.assert_not_called()
+
     @patch.dict(os.environ, {"PDS_CHECK_ENABLED": "false"}, False)
     def test_pds_check_skipped(self):
         bad_patient_imms = create_covid_19_immunization_dict_no_id("a-bad-patient-id")
@@ -500,14 +513,15 @@ class TestUpdateImmunization(unittest.TestCase):
 
         nhs_number = VALID_NHS_NUMBER
         req_imms = create_covid_19_immunization_dict(imms_id, nhs_number)
+        req_patient = get_contained_patient(req_imms)
 
         # When
         outcome, _, _ = self.fhir_service.update_immunization(imms_id, req_imms, 1, ["COVID19.CRUD"], "Test")
 
         # Then
         self.assertEqual(outcome, UpdateOutcome.UPDATE)
-        self.imms_repo.update_immunization.assert_called_once_with(imms_id, req_imms, pds_patient, 1,["COVID19.CRUD"], "Test")
-        self.fhir_service.pds_service.get_patient_details.assert_called_once_with(nhs_number)
+        self.imms_repo.update_immunization.assert_called_once_with(imms_id, req_imms, req_patient, 1,["COVID19.CRUD"], "Test")
+        self.fhir_service.pds_service.get_patient_details.assert_not_called()
 
     def test_id_not_present(self):
         """it should populate id in the message if it is not present"""
@@ -539,7 +553,22 @@ class TestUpdateImmunization(unittest.TestCase):
         # Then
         self.assertEqual(e.exception.patient_identifier, invalid_nhs_number)
         self.imms_repo.update_immunization.assert_not_called()
-    
+
+    def test_patient_error_invalid_nhs_number(self):
+        """it should throw error when NHS number checksum is incorrect"""
+        self.fhir_service.pds_service.get_patient_details.return_value = None
+        imms_id = "an-id"
+        invalid_nhs_number = "9434765911"  # check digit 1 doesn't match result (9)
+        bad_patient_imms = create_covid_19_immunization_dict(imms_id, invalid_nhs_number)
+
+        with self.assertRaises(InvalidPatientId) as e:
+            # When
+            self.fhir_service.update_immunization(imms_id, bad_patient_imms, 1, ["COVID19:update"], "Test")
+
+        # Then
+        self.assertEqual(e.exception.patient_identifier, invalid_nhs_number)
+        self.imms_repo.update_immunization.assert_not_called()
+
     def test_reinstate_immunization_returns_updated_version(self):
         """it should return updated version from reinstate"""
         imms_id = "an-id"
