@@ -7,7 +7,7 @@ from common.cache import Cache
 from os_vars import get_pds_env
 from common.pds_service import PdsService
 from common.authentication import AppRestrictedAuth, Service
-from models.id_sync_exception import IdSyncException
+from exceptions.id_sync_exception import IdSyncException
 
 pds_env = get_pds_env()
 safe_tmp_dir = tempfile.mkdtemp(dir="/tmp")  # NOSONAR

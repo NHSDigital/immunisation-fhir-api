@@ -5,7 +5,7 @@ from unittest.mock import patch, MagicMock
 with patch('common.log_decorator.logging_decorator') as mock_decorator:
     mock_decorator.return_value = lambda f: f  # Pass-through decorator
     from id_sync import handler
-    from models.id_sync_exception import IdSyncException
+    from exceptions.id_sync_exception import IdSyncException
 
 
 class TestIdSyncHandler(unittest.TestCase):

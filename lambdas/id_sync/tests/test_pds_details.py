@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch, MagicMock
 from pds_details import pds_get_patient_details, pds_get_patient_id
-from models.id_sync_exception import IdSyncException
+from exceptions.id_sync_exception import IdSyncException
 
 
 class TestGetPdsPatientDetails(unittest.TestCase):

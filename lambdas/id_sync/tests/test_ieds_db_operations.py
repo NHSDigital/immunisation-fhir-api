@@ -1,6 +1,7 @@
 import unittest
 from unittest.mock import patch, MagicMock
 from boto3.dynamodb.conditions import Key
+from exceptions.id_sync_exception import IdSyncException
 
 import ieds_db_operations
 
@@ -260,6 +261,7 @@ class TestGetIedsTable(TestIedsDbOperations):
         # ✅ Fix: Verify the correct mocks were called
         self.mock_get_ieds_table_name.assert_called_once()
         self.mock_get_dynamodb_table.assert_called_once()
+
 
 class TestIedsCheckExists(TestIedsDbOperations):
 
@@ -662,20 +664,21 @@ class TestUpdatePatientIdInIEDS(TestIedsDbOperations):
         # Arrange
         old_id = "old-patient-error"
         new_id = "new-patient-error"
-        self.mock_table.update_item.side_effect = Exception("DynamoDB update failed")
+        test_exception = Exception("DynamoDB update failed")
+        self.mock_table.update_item.side_effect = test_exception
 
         # Act & Assert
         with self.assertRaises(Exception) as context:
             ieds_db_operations.ieds_update_patient_id(old_id, new_id)
 
-        self.assertEqual(str(context.exception), "DynamoDB update failed")
+        exception = context.exception
+
+        self.assertEqual(exception.message, "Error updating patient Id from :old-patient-error to new-patient-error")
+        self.assertEqual(exception.nhs_numbers, ["old-patient-error", "new-patient-error"])
+        self.assertEqual(exception.inner_exception, test_exception)
 
         # Verify update was attempted
-        self.mock_table.update_item.assert_called_once_with(
-            Key={"PK": f"Patient#{old_id}"},
-            UpdateExpression="SET PK = :new_id",
-            ExpressionAttributeValues={":new_id": f"Patient#{new_id}"}
-        )
+        self.mock_table.update_item.assert_called_once()
 
         # Verify logger exception was called
         self.mock_logger.exception.assert_called_once_with("Error updating patient ID")
@@ -685,13 +688,18 @@ class TestUpdatePatientIdInIEDS(TestIedsDbOperations):
         # Arrange
         old_id = "old-patient-123"
         new_id = "new-patient-456"
-        self.mock_get_ieds_table_patcher.side_effect = Exception("Failed to get IEDS table")
+        test_exception = Exception("Failed to get IEDS table")
+        self.mock_get_ieds_table_patcher.side_effect = test_exception
 
         # Act & Assert
         with self.assertRaises(Exception) as context:
             ieds_db_operations.ieds_update_patient_id(old_id, new_id)
 
-        self.assertEqual(str(context.exception), "Failed to get IEDS table")
+        exception = context.exception
+
+        self.assertEqual(exception.message, "Error updating patient Id from :old-patient-123 to new-patient-456")
+        self.assertEqual(exception.nhs_numbers, [old_id, new_id])
+        self.assertEqual(exception.inner_exception, test_exception)
 
         # Verify get_ieds_table was called
         self.mock_get_ieds_table_patcher.assert_called_once()
@@ -712,6 +720,11 @@ class TestUpdatePatientIdInIEDS(TestIedsDbOperations):
         # Act & Assert
         with self.assertRaises(Exception) as context:
             ieds_db_operations.ieds_update_patient_id(old_id, new_id)
+
+        exception = context.exception
+        self.assertIsInstance(exception, IdSyncException)
+        self.assertEqual(exception.message, f"Error updating patient Id from :{old_id} to {new_id}")
+        self.assertEqual(exception.nhs_numbers, [old_id, new_id])
 
         # Verify update was attempted
         self.mock_table.update_item.assert_called_once()

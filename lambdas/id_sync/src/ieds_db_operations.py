@@ -2,6 +2,7 @@ from boto3.dynamodb.conditions import Key
 from os_vars import get_ieds_table_name
 from common.aws_dynamodb import get_dynamodb_table
 from common.clients import logger
+from exceptions.id_sync_exception import IdSyncException
 
 ieds_table = None
 
@@ -58,5 +59,9 @@ def ieds_update_patient_id(old_id: str, new_id: str) -> dict:
 
     except Exception as e:
         logger.exception("Error updating patient ID")
-        # Handle any exceptions that occur during the update
+        raise IdSyncException(
+            message=f"Error updating patient Id from :{old_id} to {new_id}",
+            nhs_numbers=[old_id, new_id],
+            exception=e
+        )
         raise e

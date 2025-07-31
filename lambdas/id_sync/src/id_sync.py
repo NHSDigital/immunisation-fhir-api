@@ -2,7 +2,7 @@ from common.clients import logger
 from common.clients import STREAM_NAME
 from common.log_decorator import logging_decorator
 from common.aws_lambda_event import AwsLambdaEvent
-from models.id_sync_exception import IdSyncException
+from exceptions.id_sync_exception import IdSyncException
 from record_processor import process_record
 '''
 Lambda function handler for processing SQS events.Lambda for ID Sync. Fired by SQS
