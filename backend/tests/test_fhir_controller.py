@@ -1015,8 +1015,8 @@ class TestCreateImmunization(unittest.TestCase):
         self.assertTrue(invalid_nhs_num in body["issue"][0]["diagnostics"])
 
     @patch("fhir_controller.get_supplier_permissions")
-    def test_pds_unhandled_error(self,mock_get_permissions):
-        """it should respond with 500 if PDS returns error"""
+    def test_unhandled_error(self,mock_get_permissions):
+        """it should respond with 500 on UnhandledResponseError"""
         mock_get_permissions.return_value = ["COVID19.CRUDS"]
         imms = Immunization.construct()
         aws_event = {

@@ -7,7 +7,6 @@ import uuid
 from botocore.config import Config
 from decimal import Decimal
 from typing import Optional
-from authentication import AppRestrictedAuth, Service
 import boto3
 from aws_lambda_typing.events import APIGatewayProxyEventV1
 from botocore.config import Config
@@ -36,7 +35,6 @@ from models.errors import (
 from models.utils.generic_utils import check_keys_in_sources
 from models.utils.permissions import get_supplier_permissions
 from models.utils.permission_checker import ApiOperationCode, validate_permissions, _expand_permissions
-from pds_service import PdsService
 from parameter_parser import process_params, process_search_params, create_query_string
 import urllib.parse
 
@@ -45,23 +43,15 @@ queue_url = os.getenv("SQS_QUEUE_URL", "Queue_url")
 
 
 def make_controller(
-    pds_env: str = os.getenv("PDS_ENV", "int"),
     immunization_env: str = os.getenv("IMMUNIZATION_ENV"),
 ):
     endpoint_url = "http://localhost:4566" if immunization_env == "local" else None
     imms_repo = ImmunizationRepository(create_table(endpoint_url=endpoint_url))
     boto_config = Config(region_name="eu-west-2")
     cache = Cache(directory="/tmp")
-    authenticator = AppRestrictedAuth(
-        service=Service.PDS,
-        secret_manager_client=boto3.client("secretsmanager", config=boto_config),
-        environment=pds_env,
-        cache=cache,
-    )
-    pds_service = PdsService(authenticator, pds_env)
 
     authorizer = Authorization()
-    service = FhirService(imms_repo=imms_repo, pds_service=pds_service)
+    service = FhirService(imms_repo=imms_repo)
 
     return FhirController(authorizer=authorizer, fhir_service=service)
 
