@@ -260,6 +260,9 @@ data "aws_iam_policy_document" "id_sync_policy_document" {
     templatefile("${local.policy_path}/secret_manager.json", {
       "account_id" : data.aws_caller_identity.current.account_id,
       "pds_environment" : var.pds_environment
+    }),
+    templatefile("${local.policy_path}/dynamo_key_access.json", {
+      "dynamo_encryption_key" : data.aws_kms_key.existing_dynamo_encryption_key.arn
     })
   ]
 }
