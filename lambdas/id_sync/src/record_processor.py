@@ -37,7 +37,7 @@ def process_record(event_record):
 
 def process_nhs_number(nhs_number: str) -> Optional[str]:
     # get patient details from PDS
-    logger.debug(f"process_nhs_number. Processing NHS number: {nhs_number}")
+    logger.info(f"process_nhs_number. Processing NHS number: {nhs_number}")
     patient_details_id = pds_get_patient_id(nhs_number)
 
     base_log_data = {"nhs_number": nhs_number}
@@ -45,9 +45,11 @@ def process_nhs_number(nhs_number: str) -> Optional[str]:
         logger.info(f"process_nhs_number. Patient details ID: {patient_details_id}")
         # if patient NHS != id, update patient index of vax events to new number
         if patient_details_id != nhs_number and patient_details_id:
+            logger.info(f"process_nhs_number. Update patient ID from {nhs_number} to {patient_details_id}")
             if ieds_check_exist(patient_details_id):
                 response = ieds_update_patient_id(patient_details_id, nhs_number)
             else:
+                logger.info("process_nhs_number. No ieds record found for: %s", nhs_number)
                 response = {"status": "error", "message": f"No records returned for ID: {nhs_number}"}
         else:
             return {"status": "success", "message": "No update required"}

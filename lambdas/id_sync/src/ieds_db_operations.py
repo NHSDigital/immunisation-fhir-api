@@ -29,6 +29,7 @@ def ieds_check_exist(id: str) -> bool:
 
 def ieds_update_patient_id(old_id: str, new_id: str) -> dict:
     """Update the patient ID in the IEDS table."""
+    logger.info(f"ieds_update_patient_id. Update patient ID from {old_id} to {new_id}")
     if not old_id or not new_id or not old_id.strip() or not new_id.strip():
         return {"status": "error", "message": "Old ID and New ID cannot be empty"}
 
