@@ -150,7 +150,7 @@ jobs:
             -H "Authorization: Basic $APIGEE_OAUTH_TOKEN" \
             -d "username=$APIGEE_USERNAME&password=$APIGEE_PASSWORD&mfa_token=$CODE&grant_type=password")
 
-          token=$(echo "$response" | jq -r '.access_token // empty')
+          token=$(echo "$response" | jq -e -r '.access_token')
 
           if [[ -z "$token" ]]; then
             echo "Failed to retrieve access token"
