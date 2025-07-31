@@ -4,7 +4,7 @@ from mns_setup import get_mns_service
 
 def run_subscription():
     mns = get_mns_service()
-    result = mns.check_subscription()
+    result = mns.subscribe_notification()
     return result
 
 
