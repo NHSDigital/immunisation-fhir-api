@@ -35,8 +35,8 @@
     ],
     "ods_codes": ["YGMYW"]
   },
-  {
-    "supplier": "OPTUM",
+    {
+    "supplier": "EMIS",
     "permissions": [
       "RSV.CRUDS",
       "MMR.CRUDS",
@@ -44,7 +44,7 @@
       "3IN1.CRUDS",
       "MENACWY.CRUDS"
     ],
-    "ods_codes": [""]
+    "ods_codes": ["YGM41", "YGJ"]
   },
   {
     "supplier": "RAVS",

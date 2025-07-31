@@ -79,17 +79,6 @@
     "ods_codes": ["YGMYW"]
   },
   {
-    "supplier": "OPTUM",
-    "permissions": [
-      "RSV.CRUDS",
-      "MMR.CRUDS",
-      "HPV.CRUDS",
-      "3IN1.CRUDS",
-      "MENACWY.CRUDS"
-    ],
-    "ods_codes": [""]
-  },
-  {
     "supplier": "Test_App",
     "permissions": [
       "COVID19.CRUDS",
