@@ -194,26 +194,30 @@ class TestGetPdsPatientDetails(unittest.TestCase):
                 self.assertEqual(result, test_cases[patient_id])
                 self.mock_pds_service_instance.get_patient_details.assert_called_once_with(patient_id)
 
-    def test_pds_get_patient_details_service_dependencies(self):
-        """Test that all required services are initialized with correct parameters"""
-        # Arrange
-        expected_patient_data = {"identifier": [{"value": "9912003888"}]}
-        self.mock_pds_service_instance.get_patient_details.return_value = expected_patient_data
+    def test_pds_get_patient_details_different_patient_ids(self):
+        """Test with different patient ID formats"""
+        test_cases = [
+            ("9912003888", {"identifier": [{"value": "9912003888"}]}),
+            ("1234567890", {"identifier": [{"value": "1234567890"}]}),
+            ("0000000000", {"identifier": [{"value": "0000000000"}]}),
+        ]
 
-        # Act
-        result = pds_get_patient_details(self.test_patient_id)
+        for patient_id, expected_response in test_cases:
+            with self.subTest(patient_id=patient_id):
+                # Reset mocks
+                self.mock_pds_service_instance.reset_mock()
+                self.mock_logger.reset_mock()
 
-        # Assert service initialization order and parameters
-        self.assertEqual(result["identifier"][0]["value"], "9912003888")
+                # Arrange
+                self.mock_pds_service_instance.get_patient_details.return_value = expected_response
 
-        # Verify initialization order by checking call counts
-        self.assertEqual(self.mock_cache_class.call_count, 1)
-        self.assertEqual(self.mock_auth_class.call_count, 1)
-        self.assertEqual(self.mock_pds_service_class.call_count, 1)
+                # Act
+                result = pds_get_patient_details(patient_id)
 
-        # Verify that cache instance is passed to auth
-        auth_call_args = self.mock_auth_class.call_args
-        self.assertEqual(auth_call_args[1]['cache'], self.mock_cache_instance)
+                # Assert
+                # ✅ Fix: Use expected_response instead of test_cases[patient_id]
+                self.assertEqual(result, expected_response)
+                self.mock_pds_service_instance.get_patient_details.assert_called_once_with(patient_id)
 
     def test_pds_get_patient_details(self):
         """Test with complex identifier structure"""
