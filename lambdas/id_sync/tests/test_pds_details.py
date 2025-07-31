@@ -255,4 +255,3 @@ class TestGetPdsPatientId(unittest.TestCase):
         exception = context.exception
         self.assertEqual(exception.message, f"Error getting PDS patient ID for {self.test_nhs_number}")
         self.assertEqual(exception.nhs_numbers, None)
-
