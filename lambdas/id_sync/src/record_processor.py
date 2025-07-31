@@ -33,8 +33,10 @@ def process_record(event_record):
     nhs_number = body.get("subject")
     logger.info("process_record. NHS number: %s", nhs_number)
     if nhs_number:
+        logger.info("process_record. Process NHS number: %s", nhs_number)
         return process_nhs_number(nhs_number)
     else:
+        logger.error("process_record. No NHS number found in event record")
         return {"status": "error", "message": "No NHS number found in event record"}
 
 
@@ -55,7 +57,7 @@ def process_nhs_number(nhs_number: str) -> Optional[str]:
                 logger.info("process_nhs_number. No ieds record found for: %s", nhs_number)
                 response = {"status": "error", "message": f"No records returned for ID: {nhs_number}"}
         else:
-            return {"status": "success", "message": "No update required"}
+            response = {"status": "success", "message": "No update required"}
     else:
         response = {"status": "success", "message": f"No patient ID found for NHS number: {nhs_number}"}
     response.update(base_log_data)
