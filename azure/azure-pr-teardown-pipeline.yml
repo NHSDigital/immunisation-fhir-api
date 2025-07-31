@@ -45,22 +45,6 @@ jobs:
 
       - bash: |
           export AWS_PROFILE=apim-dev
-          pyenv install -s 3.11.11
-          pyenv local 3.11.11
-          poetry env use 3.11
-          poetry install --no-root
-
-          export PYTHONPATH=$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/mns_subscription
-
-          echo "Deleting SQS Subscription from MNS..."
-          poetry run python src/unsubscribe_mns.py
-        displayName: "Delete MNS Subscription"
-        workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/mns_subscription"
-        env:
-          SQS_ARN: "$(ID_SYNC_QUEUE_ARN)"
-
-      - bash: |
-          export AWS_PROFILE=apim-dev
           account_id="$(aws sts get-caller-identity --query Account --output text)"
 
           cd terraform
