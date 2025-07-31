@@ -11,6 +11,7 @@ from moto import mock_s3, mock_firehose, mock_sqs, mock_dynamodb
 from tests.utils_for_tests.generic_setup_and_teardown import GenericSetUp, GenericTearDown
 from tests.utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT, BucketNames, Firehose
 from tests.utils_for_tests.values_for_tests import MockFileDetails, fixed_datetime
+from tests.utils_for_tests.utils_for_filenameprocessor_tests import create_mock_hget
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
@@ -140,9 +141,13 @@ class TestLoggingDecorator(unittest.TestCase):
     def test_logging_successful_validation(self):
         """Tests that the correct logs are sent to cloudwatch and splunk when file validation is successful"""
         # Mock full permissions so that validation will pass
+        mock_hget = create_mock_hget(
+            {"YGM41": "EMIS"},
+            {"EMIS": json.dumps(["FLU.CRUDS"])}
+        )
         with (  # noqa: E999
             patch("file_name_processor.uuid4", return_value=FILE_DETAILS.message_id),  # noqa: E999
-            patch("elasticache.redis_client.hget", return_value=json.dumps(["FLU.CRUDS"])),  # noqa: E999
+            patch("elasticache.redis_client.hget", side_effect=mock_hget),  # noqa: E999
             patch("logging_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
             patch("logging_decorator.logger") as mock_logger,  # noqa: E999
         ):  # noqa: E999
@@ -168,9 +173,13 @@ class TestLoggingDecorator(unittest.TestCase):
     def test_logging_failed_validation(self):
         """Tests that the correct logs are sent to cloudwatch and splunk when file validation fails"""
         # Set up permissions for COVID19 only (file is for FLU), so that validation will fail
+        mock_hget = create_mock_hget(
+            {"YGM41": "EMIS"},
+            {"EMIS": json.dumps(["COVID19.CRUDS"])}
+        )
         with (  # noqa: E999
             patch("file_name_processor.uuid4", return_value=FILE_DETAILS.message_id),  # noqa: E999
-            patch("elasticache.redis_client.hget", return_value=json.dumps(["COVID19.CRUDS"])),  # noqa: E999
+            patch("elasticache.redis_client.hget", side_effect=mock_hget),  # noqa: E999
             patch("logging_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
             patch("logging_decorator.logger") as mock_logger,  # noqa: E999
         ):  # noqa: E999
@@ -201,9 +210,13 @@ class TestLoggingDecorator(unittest.TestCase):
             operation_name="PutRecord"
         )
 
+        mock_hget = create_mock_hget(
+            {"YGM41": "EMIS"},
+            {"EMIS": json.dumps(["FLU.CRUDS"])}
+        )
         with (
             patch("file_name_processor.uuid4", return_value=FILE_DETAILS.message_id),
-            patch("elasticache.redis_client.hget", return_value=json.dumps(["FLU.CRUDS"])),
+            patch("elasticache.redis_client.hget", side_effect=mock_hget),
             patch("logging_decorator.firehose_client.put_record", side_effect=firehose_exception),
             patch("logging_decorator.logger") as mock_logger,
         ):

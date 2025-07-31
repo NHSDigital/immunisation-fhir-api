@@ -14,6 +14,8 @@ from tests.utils_for_tests.generic_setup_and_teardown import GenericSetUp, Gener
 from tests.utils_for_tests.utils_for_filenameprocessor_tests import (
     add_entry_to_table,
     assert_audit_table_entry,
+    create_mock_hget,
+    MOCK_ODS_CODE_TO_SUPPLIER
 )
 from tests.utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT, BucketNames, Sqs
 from tests.utils_for_tests.values_for_tests import MOCK_CREATED_AT_FORMATTED_STRING, MockFileDetails
@@ -23,7 +25,6 @@ with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from file_name_processor import lambda_handler, handle_record
     from clients import REGION_NAME
     from constants import AUDIT_TABLE_NAME, FileStatus, AuditTableKeys
-
 
 s3_client = boto3_client("s3", region_name=REGION_NAME)
 sqs_client = boto3_client("sqs", region_name=REGION_NAME)
@@ -53,6 +54,11 @@ class TestLambdaHandlerDataSource(TestCase):
         class. Using ExitStack allows multiple patches to be applied, whilst ensuring that the mocks are cleaned up
         after the test has run.
         """
+        mock_permissions_map = {
+            supplier: json.dumps(all_permissions_in_this_test_file)
+            for supplier in all_suppliers_in_this_test_file
+        }
+        mock_hget = create_mock_hget(MOCK_ODS_CODE_TO_SUPPLIER, mock_permissions_map)
 
         # Set up common patches to be applied to all tests in the class (these can be overridden in individual tests.)
         common_patches = [
@@ -63,7 +69,7 @@ class TestLambdaHandlerDataSource(TestCase):
             # Patch redis_client to use a fake redis client.
             patch("elasticache.redis_client", new=fakeredis.FakeStrictRedis()),
             # Patch the permissions config to allow all suppliers full permissions for all vaccine types.
-            patch("elasticache.redis_client.hget", return_value=json.dumps(all_permissions_in_this_test_file)),
+            patch("elasticache.redis_client.hget", side_effect=mock_hget),
             patch("elasticache.redis_client.hkeys", return_value=all_vaccine_types_in_this_test_file),
         ]
 
@@ -351,9 +357,10 @@ class TestLambdaHandlerDataSource(TestCase):
         add_entry_to_table(queued_file_details, FileStatus.QUEUED)
 
         # Mock the supplier permissions with a value which doesn't include the requested Flu permissions
+        mock_hget = create_mock_hget({"X8E5B": "RAVS"}, {})
         with (  # noqa: E999
             patch("file_name_processor.uuid4", return_value=file_details.message_id),  # noqa: E999
-            patch("elasticache.redis_client.hget", return_value=None),  # noqa: E999
+            patch("elasticache.redis_client.hget", side_effect=mock_hget),  # noqa: E999
             patch("file_name_processor.invoke_filename_lambda") as mock_invoke_filename_lambda,  # noqa: E999
         ):  # noqa: E999
             lambda_handler(self.make_event([self.make_record(file_details.file_key)]), None)
@@ -456,9 +463,14 @@ class TestUnexpectedBucket(TestCase):
     def setUp(self):
         GenericSetUp(s3_client, firehose_client, sqs_client, dynamodb_client)
 
-        redis_patcher = patch("elasticache.redis_client.hkeys", return_value=all_vaccine_types_in_this_test_file)
-        self.addCleanup(redis_patcher.stop)
-        redis_patcher.start()
+        hkeys_patcher = patch("elasticache.redis_client.hkeys", return_value=all_vaccine_types_in_this_test_file)
+        self.addCleanup(hkeys_patcher.stop)
+        hkeys_patcher.start()
+
+        mock_hget = create_mock_hget({"X8E5B": "RAVS"}, {})
+        hget_patcher = patch("elasticache.redis_client.hget", side_effect=mock_hget)
+        self.addCleanup(hget_patcher.stop)
+        hget_patcher.start()
 
     def tearDown(self):
         GenericTearDown(s3_client, firehose_client, sqs_client, dynamodb_client)

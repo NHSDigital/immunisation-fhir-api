@@ -24,7 +24,7 @@ locals {
   imms_table_name = data.aws_dynamodb_table.events-dynamodb-table.name
   imms_lambda_env_vars = {
     "DYNAMODB_TABLE_NAME"    = local.imms_table_name,
-    "IMMUNIZATION_ENV"       = local.environment,
+    "IMMUNIZATION_ENV"       = var.aws_account_name,
     "IMMUNIZATION_BASE_PATH" = strcontains(local.environment, "pr-") ? "immunisation-fhir-api-${local.environment}" : "immunisation-fhir-api"
     # except for prod and ref, any other env uses PDS int environment
     "PDS_ENV"              = local.environment == "prod" ? "prod" : local.environment == "ref" ? "ref" : "int",
@@ -101,14 +101,14 @@ output "oas" {
 }
 
 module "api_gateway" {
-  source          = "./api_gateway"
-  prefix          = local.prefix
-  short_prefix    = local.short_prefix
-  zone_id         = data.aws_route53_zone.project_zone.zone_id
-  api_domain_name = local.service_domain_name
-  environment     = local.environment
-  oas             = local.oas
-  config_env      = local.config_env
+  source           = "./api_gateway"
+  prefix           = local.prefix
+  short_prefix     = local.short_prefix
+  zone_id          = data.aws_route53_zone.project_zone.zone_id
+  api_domain_name  = local.service_domain_name
+  environment      = local.environment
+  oas              = local.oas
+  aws_account_name = var.aws_account_name
 }
 
 
