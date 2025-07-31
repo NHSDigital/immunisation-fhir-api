@@ -302,6 +302,10 @@
                       "maxItems": 1,
                       "items": {
                         "type": "object",
+                        "required": [
+                          "system",
+                          "value"
+                        ],
                         "properties": {
                           "use": {
                             "description": "Identifier use as defined by https://www.hl7.org/fhir/valueset-identifier-use.html.",
@@ -321,7 +325,7 @@
                             "example": "https://supplierABC/identifiers/vacc `or` https://supplierABC/ODSCode_NKO41/identifiers/vacc"
                           },
                           "value": {
-                            "description": "A unique identifier value within `system`. Ideally this would be a GUID / UUID.  \nThe value in combination with the system SHALL be globally unique.  \nThis SHALL be populated if `system` is https://fhir.nhs.uk/Id/nhs-number.",
+                            "description": "A unique identifier value within `system`. Ideally this would be a GUID / UUID.  \nThe value in combination with the system SHALL be globally unique.",
                             "type": "string",
                             "example": "e2154d29-1ead-4830-a513-0d59705078fa"
                           }
@@ -3913,6 +3917,10 @@
                       "maxItems": 1,
                       "items": {
                         "type": "object",
+                        "required": [
+                          "system",
+                          "value"
+                        ],
                         "properties": {
                           "use": {
                             "description": "Identifier use as defined by https://www.hl7.org/fhir/valueset-identifier-use.html.",
@@ -3932,7 +3940,7 @@
                             "example": "https://supplierABC/identifiers/vacc `or` https://supplierABC/ODSCode_NKO41/identifiers/vacc"
                           },
                           "value": {
-                            "description": "A unique identifier value within `system`. Ideally this would be a GUID / UUID.  \nThe value in combination with the system SHALL be globally unique.  \nThis SHALL be populated if `system` is https://fhir.nhs.uk/Id/nhs-number.",
+                            "description": "A unique identifier value within `system`. Ideally this would be a GUID / UUID.  \nThe value in combination with the system SHALL be globally unique.",
                             "type": "string",
                             "example": "e2154d29-1ead-4830-a513-0d59705078fa"
                           }
