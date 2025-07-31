@@ -24,7 +24,8 @@ See https://nhsd-confluence.digital.nhs.uk/display/APM/Glossary.
 | `mesh_processor`    | **Imms Batch** – MESH-specific batch processing functionality. |
 | `recordprocessor`   | **Imms Batch** – Handles batch record processing. |
 | `redis_sync`        | **Imms Redis** – Handles sync s3 to REDIS. |
-| `id_sync`        | **Imms Redis** – Handles sync SQS to IEDS. |
+| `id_sync`           | **Imms Redis** – Handles sync SQS to IEDS. |
+| `id_sync`           | **Imms Redis** – Not a lambda but Shared Code for lambdas |
 ---
 
 ### Pipelines
@@ -73,22 +74,22 @@ See https://nhsd-confluence.digital.nhs.uk/display/APM/Glossary.
 - `pyenv` manages multiple Python versions at the system level, allowing you to install and switch between different Python versions for different projects.
 - `direnv` automates the loading of environment variables and can auto-activate virtual environments (.venv) when entering a project directory, making workflows smoother.
 - `.venv` (created via python -m venv or poetry) is Python’s built-in tool for isolating dependencies per project, ensuring that packages don’t interfere with global Python packages.
-- `Poetry` is an all-in-one dependency and virtual environment manager that automatically creates a virtual environment (.venv), manages package installations, and locks dependencies (poetry.lock) for reproducibility, making it superior to using pip manually and it is used in all the lambda projects. 
+- `Poetry` is an all-in-one dependency and virtual environment manager that automatically creates a virtual environment (.venv), manages package installations, and locks dependencies (poetry.lock) for reproducibility, making it superior to using pip manually and it is used in all the lambda projects.
 
-## Project structure 
-To support a modular and maintainable architecture, each Lambda function in this project is structured as a self-contained folder with its own dependencies, configuration, and environment. 
+## Project structure
+To support a modular and maintainable architecture, each Lambda function in this project is structured as a self-contained folder with its own dependencies, configuration, and environment.
 
-We use Poetry to manage dependencies and virtual environments, with the virtualenvs.in-project setting enabled to ensure each Lambda has an isolated `.venv` created within its folder. 
+We use Poetry to manage dependencies and virtual environments, with the virtualenvs.in-project setting enabled to ensure each Lambda has an isolated `.venv` created within its folder.
 
-Additionally, direnv is used alongside `.envrc` and `.env` files to automatically activate the appropriate virtual environment and load environment-specific variables when entering a folder. 
+Additionally, direnv is used alongside `.envrc` and `.env` files to automatically activate the appropriate virtual environment and load environment-specific variables when entering a folder.
 
 Each Lambda folder includes its own `.env` file for Lambda-specific settings, while the project root contains a separate `.env` and `.venv` for managing shared tooling, scripts, or infrastructure-related configurations. This setup promotes clear separation of concerns, reproducibility across environments, and simplifies local development, testing, and packaging for deployment.
 
 ## Environment setup
 These dependencies are required for running and debugging the Lambda functions and end-to-end (E2E) tests.
 
-### Install dependencies 
-Steps: 
+### Install dependencies
+Steps:
 1. Install [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) if running on Windows and install [Docker](https://docs.docker.com/engine/install/).
 2. Install the following tools inside WSL. These will be used by the lambda and infrastructure code:
 - [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
@@ -118,7 +119,7 @@ Once connected, you should see the path as something similar to: `/mnt/d/Source/
     echo 'eval "$(direnv hook bash)"' >> ~/.bashrc
     ```
 
-7. Install poetry 
+7. Install poetry
     ```
     pip install poetry
     ```
@@ -128,7 +129,7 @@ The steps below must be performed in each Lambda function folder and e2e folder 
 
 For detailed instructions on running individual Lambdas, refer to the README.md files located inside each respective Lambda folder.
 
-Steps: 
+Steps:
 1. Set the python version in the folder with the code used by lambda for example `./backend` (see [lambdas](#lambdas)) folder.
     ```
     pyenv local 3.11.13 # Set version in backend (this creates a .python-version file)
@@ -157,7 +158,7 @@ Steps:
     dotenv
     ```
 
-5. Restart bash and run `direnv allow`. You should see something similar like: 
+5. Restart bash and run `direnv allow`. You should see something similar like:
     ```
     direnv: loading /mnt/d/Source/immunisation-fhir-api/.envrc
     direnv: export +AWS_PROFILE +IMMUNIZATION_ENV +VIRTUAL_ENV ~PATH
@@ -166,15 +167,15 @@ Steps:
 
 ### Setting up the root level environment
 The root-level virtual environment is primarily used for linting, as we create separate virtual environments for each folder that contains Lambda functions.
-Steps: 
-1. Follow instructions above to [install dependencies](#install-dependencies) & [set up a virtual environment](#setting-up-a-virtual-environment-with-poetry). 
+Steps:
+1. Follow instructions above to [install dependencies](#install-dependencies) & [set up a virtual environment](#setting-up-a-virtual-environment-with-poetry).
 **Note: While this project uses Python 3.10 (e.g. for Lambdas), the NHSDigital/api-management-utils repository — which orchestrates setup and linting — defaults to Python 3.8.
 The linting command is executed from within that repo but calls the Makefile in this project, so be aware of potential Python version mismatches when running or debugging locally or in the pipeline.**
 2. Run `make lint`. This will:
     - Check the linting of the API specification yaml.
     - Run Flake8 on all Python files in the repository, excluding files inside .venv and .terraform directories.
 
-## IDE setup 
+## IDE setup
 The current team uses VS Code mainly. So this setup is targeted towards VS code. If you use another IDE please add the documentation to set up workspaces here.
 
 ### VS Code
@@ -208,7 +209,7 @@ The root (`immunisation-fhir-api`) should point to `/mnt/d/Source/immunisation-f
 
 
 ## Verified commits
-Please note that this project requires that all commits are verified using a GPG key. 
+Please note that this project requires that all commits are verified using a GPG key.
 To set up a GPG key please follow the instructions specified here:
 https://docs.github.com/en/authentication/managing-commit-signature-verification
 

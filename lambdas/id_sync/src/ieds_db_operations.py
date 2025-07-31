@@ -1,6 +1,6 @@
 from boto3.dynamodb.conditions import Key
 from os_vars import get_ieds_table_name
-from common.aws_dynamodb import get_delta_table
+from common.aws_dynamodb import get_dynamodb_table
 from common.clients import logger
 
 ieds_table = None
@@ -11,7 +11,7 @@ def get_ieds_table():
     global ieds_table
     if ieds_table is None:
         ieds_tablename = get_ieds_table_name()
-        ieds_table = get_delta_table(ieds_tablename)
+        ieds_table = get_dynamodb_table(ieds_tablename)
     return ieds_table
 
 
