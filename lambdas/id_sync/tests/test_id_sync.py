@@ -25,7 +25,7 @@ class TestIdSyncHandler(unittest.TestCase):
         self.single_sqs_event = {
             'Records': [
                 {
-                    'body': '{"Records":[{"source":"aws:sqs","data":"test-data"}]}'
+                    'body': '{"source":"aws:sqs","data":"test-data"}'
                 }
             ]
         }
@@ -33,10 +33,10 @@ class TestIdSyncHandler(unittest.TestCase):
         self.multi_sqs_event = {
             'Records': [
                 {
-                    'body': ('{"Records":[{"source":"aws:sqs"],"data":"a"}'),
+                    'body': ('{"source":"aws:sqs","data":"a"}'),
                 },
                 {
-                    'body': ('{"Records":[{"source":"aws:sqs"],"data":"b"}'),
+                    'body': ('{"source":"aws:sqs","data":"b"}'),
                 }
             ]
         }
