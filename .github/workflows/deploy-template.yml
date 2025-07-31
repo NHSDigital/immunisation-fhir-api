@@ -125,7 +125,7 @@ jobs:
           MFA_CODE: ${{ env.MFA_CODE }}
           APIGEE_OAUTH_TOKEN: ${{ secrets.APIGEE_OAUTH_TOKEN }}
           OTP_SECRET: ${{ secrets.APIGEE_OTP_KEY }}
-          run: |
+        run: |
             CODE=$(oathtool --totp -b "$OTP_SECRET")
             echo "::add-mask::$CODE"
 
