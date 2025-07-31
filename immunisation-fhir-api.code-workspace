@@ -27,9 +27,12 @@
 		{
 			"path": "e2e_batch"
 		},
+        {
+            "path": "redis_sync"
+        },
 		{
-			"path": "redis_sync"
-		},
+            "path": "mns_subscription"
+        },
 		{
 			"path": "lambdas/id_sync"
 		},

@@ -18,6 +18,11 @@ output "aws_sns_topic_name" {
   value = aws_sns_topic.delta_sns.name
 }
 
+output "id_sync_queue_arn" {
+  description = "The ARN of the created SQS queue"
+  value       = aws_sqs_queue.id_sync_queue.arn
+}
+
 output "lambdas_dir_abs_path" {
   value = local.id_sync_lambda_dir
 }
