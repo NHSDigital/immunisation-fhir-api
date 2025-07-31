@@ -6,6 +6,9 @@ on:
       environment:
         required: true
         type: string
+      aws_account_name:
+        required: true
+        type: string
 
 jobs:
   terraform-plan:
@@ -35,15 +38,14 @@ jobs:
 
       - name: Terraform Init
         working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
-        run: |
-          export ENVIRONMENT=${{ inputs.environment }}
+        run: |   
           export BUCKET_NAME=${{ vars.TERRAFORM_STATE_BUCKET_NAME_INT }}
-          make init
+          make init environment=${{ inputs.environment }} aws_account_name=${{ inputs.aws_account_name }}
 
       - name: Terraform Plan
         working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
         run: |
-          make plan environment=${{ inputs.environment }} aws_account_name=int
+          make plan environment=${{ inputs.environment }} aws_account_name=${{ inputs.aws_account_name }}
 
   terraform-apply:
     if: ${{ vars.SKIP_APPLY != 'true' }}
@@ -71,14 +73,13 @@ jobs:
       - name: Terraform Init
         working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
         run: |
-          export ENVIRONMENT=${{ inputs.environment }}
           export BUCKET_NAME=${{ vars.TERRAFORM_STATE_BUCKET_NAME_INT }}
-          make init
+          make init environment=${{ inputs.environment }} aws_account_name=${{ inputs.aws_account_name }}
 
       - name: Terraform Apply
         working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
         run: |
-          make plan environment=${{ inputs.environment }} aws_account_name=int
+          make plan environment=${{ inputs.environment }} aws_account_name=${{ inputs.aws_account_name }}
 
   e2e-tests:
     if: ${{ vars.RUN_E2E == 'true' && inputs.environment == vars.ACTIVE_ENVIRONMENT }}
