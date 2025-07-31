@@ -1,9 +1,9 @@
 import unittest
 from unittest.mock import patch, MagicMock
-from common.aws_dynamodb import get_delta_table
+from common.aws_dynamodb import get_dynamodb_table
 
 
-class TestGetDeltaTable(unittest.TestCase):
+class TestGetIedsTable(unittest.TestCase):
 
     AWS_REGION = "eu-west-2"  # Add this missing constant
 
@@ -21,34 +21,34 @@ class TestGetDeltaTable(unittest.TestCase):
             "AWS_REGION": self.AWS_REGION
         }.get(key, default)
 
-        self.dynamodb_client_patcher = patch('common.aws_dynamodb.dynamodb_client')
-        self.mock_dynamodb_client = self.dynamodb_client_patcher.start()
+        self.dynamodb_resource_patcher = patch('common.aws_dynamodb.dynamodb_resource')
+        self.mock_dynamodb_resource = self.dynamodb_resource_patcher.start()
 
     def tearDown(self):
         patch.stopall()
 
-    def test_get_delta_table_success(self):
+    def test_get_ieds_table_success(self):
         # Create a mock table object
         table_name = "abc"
         mock_table = MagicMock()
-        self.mock_dynamodb_client.Table.return_value = mock_table
+        self.mock_dynamodb_resource.Table.return_value = mock_table
 
         # Call the function
-        table = get_delta_table(table_name)
+        table = get_dynamodb_table(table_name)
 
-        self.mock_dynamodb_client.Table.assert_called_once_with(table_name)
+        self.mock_dynamodb_resource.Table.assert_called_once_with(table_name)
         self.assertEqual(table, mock_table)
         # Verify the success logging
         self.mock_logger_info.assert_called_once_with("Initializing table: %s", table_name)
 
-    def test_get_delta_table_failure(self):
+    def test_get_ieds_table_failure(self):
         # Simulate exception when accessing Table
         msg = "DynamoDB failure"
-        self.mock_dynamodb_client.Table.side_effect = Exception(msg)
+        self.mock_dynamodb_resource.Table.side_effect = Exception(msg)
         table_name = "abc"
 
         with self.assertRaises(Exception) as context:
-            get_delta_table(table_name)
+            get_dynamodb_table(table_name)
 
         self.assertEqual(str(context.exception), msg)
         # This should now work - mocking the instance method

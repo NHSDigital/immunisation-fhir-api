@@ -7,8 +7,7 @@ def get_dynamodb_table(table_name):
     """
     try:
         logger.info("Initializing table: %s", table_name)
-        delta_table = dynamodb_resource.Table(table_name)
+        return dynamodb_resource.Table(table_name)
     except Exception as e:
         logger.exception("Error initializing DynamoDB table: %s", table_name)
         raise e
-    return delta_table
