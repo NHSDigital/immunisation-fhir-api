@@ -174,7 +174,6 @@ class TestIdSyncHandler(unittest.TestCase):
 
         # Assertions
         self.mock_aws_lambda_event.assert_called_once_with(self.empty_event)
-        self.mock_logger.info.assert_any_call("No records found in event")
         self.mock_process_record.assert_not_called()
 
         self.assertEqual(result["status"], "success")
@@ -192,7 +191,6 @@ class TestIdSyncHandler(unittest.TestCase):
 
         # Assertions
         self.mock_aws_lambda_event.assert_called_once_with(self.no_records_event)
-        self.mock_logger.info.assert_any_call("No records found in event")
         self.mock_process_record.assert_not_called()
 
         self.assertEqual(result["status"], "success")

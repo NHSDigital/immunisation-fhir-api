@@ -30,13 +30,13 @@ def handler(event_data, _):
                                       nhs_numbers=nhs_numbers)
 
             else:
-                msg = f"Successfully processed {record_count} records"
-                logger.info(msg)
-                return {"status": "success", "message": msg, "nhs_numbers": nhs_numbers}
+                response = {"status": "success",
+                            "message": f"Successfully processed {record_count} records",
+                            "nhs_numbers": nhs_numbers}
         else:
-            logger.info("No records found in event")
-            return {"status": "success", "message": "No records found in event"}
-
+            response = {"status": "success", "message": "No records found in event"}
+        logger.info("id_sync handler completed: %s", response)
+        return response
     except IdSyncException as e:
         logger.exception(f"id_sync error: {e.message}")
         raise e

@@ -12,9 +12,7 @@ import ast
 def process_record(event_record):
 
     logger.info("process_record. Processing record: %s", event_record)
-    logger.info("process_record...1")
     body_text = event_record.get('body', '')
-    logger.info("process_record. Body text: %s", body_text)
     # convert body to json
     if isinstance(body_text, str):
         try:
@@ -29,14 +27,12 @@ def process_record(event_record):
                 return {"status": "error", "message": "Invalid body format"}
     else:
         body = body_text
-    logger.info("process_record. Parsed body: %s", body)
     nhs_number = body.get("subject")
-    logger.info("process_record. NHS number: %s", nhs_number)
+    logger.info("process record NHS number: %s", nhs_number)
     if nhs_number:
-        logger.info("process_record. Process NHS number: %s", nhs_number)
         return process_nhs_number(nhs_number)
     else:
-        logger.error("process_record. No NHS number found in event record")
+        logger.info("No NHS number found in event record")
         return {"status": "error", "message": "No NHS number found in event record"}
 
 
