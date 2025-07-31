@@ -44,6 +44,7 @@ jobs:
           make plan environment=${{ inputs.environment }} aws_account_name=int
 
   terraform-apply:
+    if: ${{ vars.SKIP_APPLY != 'true' }}
     needs: terraform-plan
     runs-on: ubuntu-latest
     permissions:
@@ -74,11 +75,11 @@ jobs:
       - name: Terraform Apply
         working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
         run: |
-          make apply environment=${{ inputs.environment }} aws_account_name=int
+          make plan environment=${{ inputs.environment }} aws_account_name=int
 
   e2e-tests:
-    needs: terraform-apply
-    if: ${{ vars.RUN_E2E == 'true' || inputs.environment == vars.ACTIVE_ENVIRONMENT }}
+    # needs: terraform-apply
+    if: ${{ vars.RUN_E2E == 'true' && inputs.environment == vars.ACTIVE_ENVIRONMENT }}
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -96,44 +97,64 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.10"
 
       - name: Install Poetry
         run: |
-          curl -sSL https://install.python-poetry.org | python3 -
+          curl -sSL https://install.python-poetry.org | python3 - --version 2.1.2
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+          poetry --version
 
-      - name: Set Poetry to use Python 3.11
+      - name: Set Poetry to use Python 3.10
         working-directory: ${{ vars.E2E_DIR_PATH }}
         run: |
-          poetry env use $(which python3.11)
+          poetry env use $(which python3.10)
 
       - name: Install dependencies with Poetry
         working-directory: ${{ vars.E2E_DIR_PATH }}
         run: |
           poetry install --no-root
 
+      - name: Install oathtool
+        run: sudo apt-get update && sudo apt-get install -y oathtool
+
+      - name: Get JWT token for apigee
+        env:
+          APIGEE_USERNAME: ${{ vars.APIGEE_USERNAME }}
+          APIGEE_PASSWORD: ${{ secrets.APIGEE_PASSWORD }}
+          MFA_CODE: ${{ env.MFA_CODE }}
+          APIGEE_OAUTH_TOKEN: ${{ secrets.APIGEE_OAUTH_TOKEN }}
+          OTP_SECRET: ${{ secrets.APIGEE_OTP_KEY }}
+          run: |
+            CODE=$(oathtool --totp -b "$OTP_SECRET")
+            echo "::add-mask::$CODE"
+
+            echo "Requesting access token from Apigee..."
+
+            response=$(curl -s -X POST "https://login.apigee.com/oauth/token" \
+              -H "Content-Type: application/x-www-form-urlencoded" \
+              -H "Accept: application/json;charset=utf-8" \
+              -H "Authorization: Basic $APIGEE_OAUTH_TOKEN" \
+              -d "username=$APIGEE_USERNAME&password=$APIGEE_PASSWORD&mfa_token=$CODE&grant_type=password")
+
+            token=$(echo "$response" | jq -r '.access_token // empty')
+
+            if [[ -z "$token" ]]; then
+              echo "Failed to retrieve access token"
+              exit 1
+            fi
+
+            echo "::add-mask::$token"
+            echo "APIGEE_ACCESS_TOKEN=$token" >> $GITHUB_ENV
+
       - name: Run e2e tests
         working-directory: ${{ vars.E2E_DIR_PATH }}
+        env:
+          APIGEE_ACCESS_TOKEN: ${{ env.APIGEE_ACCESS_TOKEN }}
+          APIGEE_USERNAME: apm-testing-internal-dev@nhs.net
         run: |
-          apigee_token=$(aws ssm get-parameter \
-            --name "/imms/apigee/non-prod/token" \
-            --with-decryption \
-            --query "Parameter.Value" \
-            --output text)
-
-          status_api_key=$(aws ssm get-parameter \
-            --name "/imms/apigee/non-prod/status-api-key" \
-            --with-decryption \
-            --query "Parameter.Value" \
-            --output text)
-
-          export APIGEE_ACCESS_TOKEN=$apigee_token
-          export APIGEE_USERNAME=apm-testing-internal-dev@nhs.net
-          export APIGEE_ENVIRONMENT=int
-          export STATUS_API_KEY=$status_api_key
-          export PROXY_NAME=immunisation-fhir-api-internal-dev
-          export SERVICE_BASE_PATH=immunisation-fhir-api/FHIR/R4
-          export SSO_LOGIN_URL=https://login.apigee.com
+          export APIGEE_ENVIRONMENT=internal-dev
+          export PROXY_NAME=immunisation-fhir-api-int-${{ inputs.environment }}
+          export SERVICE_BASE_PATH=immunisation-fhir-api/FHIR/R4-int-${{ inputs.environment }}
 
           make run-immunization

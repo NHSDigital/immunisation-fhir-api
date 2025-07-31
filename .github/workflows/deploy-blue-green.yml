@@ -1,9 +1,9 @@
 name: Deploy Blue Green - INT
 
 on:
-  pull_request:
-    types: [closed]
-    branches: [master]
+  push:
+    branches:
+      - release-2025-07-25
 
 jobs:
   deploy-green:
@@ -11,8 +11,8 @@ jobs:
     with:
       environment: green
 
-  deploy-blue:
-    needs: deploy-green
-    uses: ./.github/workflows/deploy-template.yml
-    with:
-      environment: blue
+  # deploy-blue:
+  #   needs: deploy-green
+  #   uses: ./.github/workflows/deploy-template.yml
+  #   with:
+  #     environment: blue
