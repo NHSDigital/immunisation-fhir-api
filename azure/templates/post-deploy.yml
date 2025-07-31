@@ -5,6 +5,9 @@ parameters:
     default: true
   - name: 'aws_account_type'
     type: string
+  - name: subscribe_to_mns
+    type: boolean
+    default: true
 
 steps:
   - ${{ if parameters.is_ptl }}:
@@ -66,15 +69,37 @@ steps:
         DYNAMODB_TABLE_NAME=$(make -s output name=dynamodb_table_name)
         AWS_SQS_QUEUE_NAME=$(make -s output name=aws_sqs_queue_name)
         AWS_SNS_TOPIC_NAME=$(make -s output name=aws_sns_topic_name)
+        ID_SYNC_QUEUE_ARN=$(make -s output name=id_sync_queue_arn)
         echo "##vso[task.setvariable variable=DYNAMODB_TABLE_NAME]$DYNAMODB_TABLE_NAME"
         echo "##vso[task.setvariable variable=AWS_DOMAIN_NAME]$AWS_DOMAIN_NAME"
         echo "##vso[task.setvariable variable=IMMS_DELTA_TABLE_NAME]$IMMS_DELTA_TABLE_NAME"
         echo "##vso[task.setvariable variable=AWS_SQS_QUEUE_NAME]$AWS_SQS_QUEUE_NAME"
         echo "##vso[task.setvariable variable=AWS_SNS_TOPIC_NAME]$AWS_SNS_TOPIC_NAME"
+        echo "##vso[task.setvariable variable=ID_SYNC_QUEUE_ARN]$ID_SYNC_QUEUE_ARN"
       fi
     displayName: Apply Terraform
     workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)"
     retryCountOnTaskFailure: 2
+
+  - ${{ if eq(parameters.subscribe_to_mns, true) }}:
+    - bash: |
+        export AWS_PROFILE=apim-dev
+        echo "Subscribing SQS to MNS for notifications."
+        pyenv install -s 3.11.11
+        pyenv local 3.11.11
+        echo "Setting up poetry environment..."
+        poetry env use 3.11
+        poetry install --no-root
+
+        echo "Setting PYTHONPATH..."
+        export PYTHONPATH=$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/mns_subscription
+
+        echo "Subscribing SQS to MNS for notifications..."
+        poetry run python src/subscribe_mns.py
+      displayName: "Run MNS Subscription"
+      workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/mns_subscription"
+      env:
+        SQS_ARN: "$(ID_SYNC_QUEUE_ARN)"
 
   - bash: |
       set -ex

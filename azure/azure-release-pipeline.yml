@@ -46,6 +46,7 @@ extends:
           - template: ./templates/post-deploy.yml
             parameters:
               aws_account_type: 'dev'
+              subscribe_to_mns: false
       - environment: sandbox
         proxy_path: sandbox
         jinja_templates:
