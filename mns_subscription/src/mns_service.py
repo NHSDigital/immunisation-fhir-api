@@ -48,6 +48,7 @@ class MnsService:
         response = requests.post(MNS_URL, headers=self.request_headers, data=json.dumps(self.subscription_payload))
         print(f"MNS_URL: {MNS_URL}")
         print(f"ACCESS_TOKEN: {self.access_token}")
+        print(f"SQS_ARN: {self.SQS_ARN}")
         print(f"PAYLOAD: {self.subscription_payload}")
         print(f"HEADERS: {self.request_headers}")
         if response.status_code == 201:
