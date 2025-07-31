@@ -10,7 +10,7 @@ locals {
   # Calculate SHA for both directories
   shared_dir_sha         = sha1(join("", [for f in local.shared_files : filesha1("${local.shared_dir}/${f}")]))
   id_sync_lambda_dir_sha = sha1(join("", [for f in local.id_sync_lambda_files : filesha1("${local.id_sync_lambda_dir}/${f}")]))
-
+  id_sync_lambda_name = "${local.short_prefix}-id_sync_lambda"
 }
 
 resource "aws_ecr_repository" "id_sync_lambda_repository" {
@@ -173,7 +173,7 @@ resource "aws_iam_policy" "id_sync_lambda_exec_policy" {
         Effect = "Allow"
         Action = "lambda:InvokeFunction"
         Resource = [
-          "arn:aws:lambda:${var.aws_region}:${var.immunisation_account_id}:function:imms-${var.sub_environment}-id_sync_lambda",
+          "arn:aws:lambda:${var.aws_region}:${var.immunisation_account_id}:function:${local.id_sync_lambda_name}",
         ]
       },
       # NEW
@@ -270,7 +270,7 @@ resource "aws_iam_role_policy_attachment" "id_sync_lambda_dynamodb_policy_attach
 
 # Lambda Function with Security Group and VPC.
 resource "aws_lambda_function" "id_sync_lambda" {
-  function_name = "${local.short_prefix}-id_sync_lambda"
+  function_name = local.id_sync_lambda_name
   role          = aws_iam_role.id_sync_lambda_exec_role.arn
   package_type  = "Image"
   image_uri     = module.id_sync_docker_image.image_uri
@@ -300,7 +300,7 @@ resource "aws_lambda_function" "id_sync_lambda" {
 }
 
 resource "aws_cloudwatch_log_group" "id_sync_log_group" {
-  name              = "/aws/lambda/${local.short_prefix}-id_sync_lambda"
+  name              = "/aws/lambda/${local.id_sync_lambda_name}"
   retention_in_days = 30
 }
 
