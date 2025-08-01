@@ -152,6 +152,7 @@ def get_items_to_update(old_patient_pk: str) -> list:
     logger.info(f"Getting items to update for old patient PK: {old_patient_pk}")
     try:
         response = get_ieds_table().query(
+            IndexName='PatientGSI',  # query the GSI
             KeyConditionExpression=Key('PatientPK').eq(old_patient_pk),
             Limit=BATCH_SIZE
         )
