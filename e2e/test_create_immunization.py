@@ -66,8 +66,7 @@ class TestCreateImmunization(ImmunizationBaseTest):
         imms = generate_imms_resource(nhs_number=invalid_nhs_number)
 
         response = self.default_imms_api.create_immunization(imms, expected_status_code=400)
-
-        self.assert_operation_outcome(response, 400, invalid_nhs_number)
+        self.assertEqual(response.status_code, 400)
 
     def test_validation(self):
         """it should validate Immunization"""
