@@ -245,7 +245,7 @@ class TestGetIedsTable(TestIedsDbOperations):
     def test_get_ieds_table_exception_handling(self):
         """Test exception handling when table initialization fails"""
         # Arrange
-        # ✅ Fix: Use the correct mock that exists in this test class
+        # Use the correct mock that exists in this test class
         self.mock_get_dynamodb_table.side_effect = Exception("Table initialization failed")
 
         # Act & Assert
@@ -257,152 +257,9 @@ class TestGetIedsTable(TestIedsDbOperations):
         # Verify global variable remains None after failure
         self.assertIsNone(ieds_db_operations.ieds_table)
 
-        # ✅ Fix: Verify the correct mocks were called
+        # Verify the correct mocks were called
         self.mock_get_ieds_table_name.assert_called_once()
         self.mock_get_dynamodb_table.assert_called_once()
-
-
-class TestIedsCheckExists(TestIedsDbOperations):
-
-    def setUp(self):
-        """Set up test fixtures"""
-        # Reset global table variable for each test
-        ieds_db_operations.ieds_table = None
-
-        # Mock get_ieds_table
-        self.get_ieds_table_patcher = patch('ieds_db_operations.get_ieds_table')
-        self.mock_get_ieds_table = self.get_ieds_table_patcher.start()
-
-        # Create mock table
-        self.mock_table = MagicMock()
-        self.mock_get_ieds_table.return_value = self.mock_table
-
-        # Mock get_ieds_table
-        self.get_ieds_table_patcher = patch('ieds_db_operations.get_ieds_table')
-        self.mock_get_ieds_table = self.get_ieds_table_patcher.start()
-        self.mock_get_ieds_table.return_value = self.mock_table
-
-    def tearDown(self):
-        """Clean up patches"""
-        patch.stopall()
-
-    """Test ieds_check_exist function"""
-    def test_ieds_check_exist_record_exists(self):
-        """Test when record exists in IEDS table"""
-        # Arrange
-        patient_id = "test-patient-123"
-        mock_response = {
-            'Items': [{'PK': 'Patient#test-patient-123', 'SK': 'RECORD#1'}],
-            'Count': 1
-        }
-        self.mock_table.query.return_value = mock_response
-
-        # Act
-        result = ieds_db_operations.ieds_check_exist(patient_id)
-
-        # Assert
-        self.assertTrue(result)
-
-        self.mock_table.query.assert_called_once()
-
-    def test_ieds_check_exist_record_not_exists(self):
-        """Test when no record exists in IEDS table"""
-        # Arrange
-        patient_id = "test-patient-456"
-        mock_response = {
-            'Items': [],
-            'Count': 0
-        }
-        self.mock_table.query.return_value = mock_response
-
-        # Act
-        result = ieds_db_operations.ieds_check_exist(patient_id)
-
-        # Assert
-        self.assertFalse(result)
-
-        self.mock_table.query.assert_called_once()
-
-    def test_ieds_check_exist_empty_id(self):
-        """Test with empty patient ID"""
-        # Arrange
-        patient_id = ""
-        mock_response = {'some_key': 'some_value'}
-        self.mock_table.query.return_value = mock_response
-
-        # Act
-        result = ieds_db_operations.ieds_check_exist(patient_id)
-
-        # Assert
-        self.assertFalse(result)
-
-        # Verify query with empty ID
-        self.mock_table.query.assert_called_once()
-
-    def test_ieds_check_exist_none_id(self):
-        """Test with None patient ID"""
-        # Arrange
-        patient_id = None
-        mock_response = {'Items': [], 'Count': 0}
-        self.mock_table.query.return_value = mock_response
-
-        # Act
-        result = ieds_db_operations.ieds_check_exist(patient_id)
-
-        # Assert
-        self.assertFalse(result)
-
-        # Verify query with None ID
-        self.mock_table.query.assert_called_once()
-
-    def test_ieds_check_exist_query_exception(self):
-        """Test exception handling during query"""
-        # Arrange
-        patient_id = "test-patient-error"
-        self.mock_table.query.side_effect = Exception("DynamoDB query failed")
-
-        # Act & Assert
-        with self.assertRaises(Exception) as context:
-            ieds_db_operations.ieds_check_exist(patient_id)
-
-        self.assertEqual(str(context.exception), "DynamoDB query failed")
-
-        # Verify query was attempted
-        self.mock_table.query.assert_called_once()
-
-    def test_ieds_check_exist_missing_count_field(self):
-        """Test when response doesn't have Count field"""
-        # Arrange
-        patient_id = "test-patient-no-count"
-        mock_response = {'Items': []}  # Missing Count field
-        self.mock_table.query.return_value = mock_response
-
-        # Act
-        result = ieds_db_operations.ieds_check_exist(patient_id)
-
-        # Assert
-        self.assertFalse(result)  # Should default to 0 when Count is missing
-
-    def test_ieds_check_exist_count_greater_than_one(self):
-        """Test when Count is greater than 1 (should still return True)"""
-        # Arrange
-        patient_id = "test-patient-multiple"
-        mock_response = {
-            'Items': [
-                {
-                    'PK': 'Patient#test-patient-multiple',
-                    'SK': 'RECORD#1'
-                }
-            ],
-            'Count': 2  # Even though Limit=1, Count could theoretically be higher
-        }
-        self.mock_table.query.return_value = mock_response
-
-        # Act
-        result = ieds_db_operations.ieds_check_exist(patient_id)
-
-        # Assert
-        self.assertTrue(result)
 
 
 class TestUpdatePatientIdInIEDS(TestIedsDbOperations):
@@ -415,12 +272,15 @@ class TestUpdatePatientIdInIEDS(TestIedsDbOperations):
         self.mock_table = MagicMock()
         self.mock_get_ieds_table_patcher.return_value = self.mock_table
 
-        # Mock transact_write_items (not update_item)
-        self.mock_table.transact_write_items = MagicMock()
+        self.mock_dynamodb_client = patch('ieds_db_operations.dynamodb_client')
+        self.mock_dynamodb_client_patcher = self.mock_dynamodb_client.start()
 
-        # Mock get_items_to_update
-        self.get_items_to_update_patcher = patch('ieds_db_operations.get_items_to_update')
-        self.mock_get_items_to_update = self.get_items_to_update_patcher.start()
+        # Mock transact_write_items (not update_item)
+        self.mock_dynamodb_client_patcher.transact_write_items = MagicMock()
+
+        # Mock get_items_from_patient_id
+        self.get_items_from_patient_id_patcher = patch('ieds_db_operations.get_items_from_patient_id')
+        self.mock_get_items_from_patient_id = self.get_items_from_patient_id_patcher.start()
 
         # Mock get_ieds_table_name
         self.get_ieds_table_name_patcher = patch('ieds_db_operations.get_ieds_table_name')
@@ -438,30 +298,27 @@ class TestUpdatePatientIdInIEDS(TestIedsDbOperations):
             {'PK': 'Patient#old-patient-123', 'PatientPK': 'Patient#old-patient-123'},
             {'PK': 'Patient#old-patient-123#record1', 'PatientPK': 'Patient#old-patient-123'}
         ]
-        self.mock_get_items_to_update.return_value = mock_items
+        self.mock_get_items_from_patient_id.return_value = mock_items
 
         # Mock successful transact_write_items response
         mock_transact_response = {'ResponseMetadata': {'HTTPStatusCode': 200}}
-        self.mock_table.transact_write_items.return_value = mock_transact_response
+        self.mock_dynamodb_client_patcher.transact_write_items.return_value = mock_transact_response
 
         # Act
         result = ieds_db_operations.ieds_update_patient_id(old_id, new_id)
 
-        # Assert - ✅ Fix: Update expected message to match actual implementation
+        # Assert - Update expected message to match actual implementation
         expected_result = {
             "status": "success",
             "message": f"IEDS update, patient ID: {old_id}=>{new_id}. {len(mock_items)} updated 1."
         }
         self.assertEqual(result, expected_result)
 
-        # Verify get_items_to_update was called
-        self.mock_get_items_to_update.assert_called_once_with(f"Patient#{old_id}")
+        # Verify get_items_from_patient_id was called
+        self.mock_get_items_from_patient_id.assert_called_once_with(old_id)
 
         # Verify transact_write_items was called
-        self.mock_table.transact_write_items.assert_called_once()
-
-        # Verify table was retrieved
-        self.mock_get_ieds_table_patcher.assert_called_once()
+        self.mock_dynamodb_client_patcher.transact_write_items.assert_called_once()
 
     def test_ieds_update_patient_id_non_200_response(self):
         """Test update with non-200 HTTP status code"""
@@ -471,11 +328,11 @@ class TestUpdatePatientIdInIEDS(TestIedsDbOperations):
 
         # Mock items to update
         mock_items = [{'PK': 'Patient#old-patient-123', 'PatientPK': 'Patient#old-patient-123'}]
-        self.mock_get_items_to_update.return_value = mock_items
+        self.mock_get_items_from_patient_id.return_value = mock_items
 
-        # ✅ Fix: Mock failed transact_write_items response (not update_item)
+        # Mock failed transact_write_items response (not update_item)
         mock_transact_response = {'ResponseMetadata': {'HTTPStatusCode': 400}}
-        self.mock_table.transact_write_items.return_value = mock_transact_response
+        self.mock_dynamodb_client_patcher.transact_write_items.return_value = mock_transact_response
 
         # Act
         result = ieds_db_operations.ieds_update_patient_id(old_id, new_id)
@@ -487,8 +344,8 @@ class TestUpdatePatientIdInIEDS(TestIedsDbOperations):
         }
         self.assertEqual(result, expected_result)
 
-        # ✅ Fix: Verify transact_write_items was called (not update_item)
-        self.mock_table.transact_write_items.assert_called_once()
+        # Verify transact_write_items was called (not update_item)
+        self.mock_dynamodb_client_patcher.transact_write_items.assert_called_once()
 
     def test_ieds_update_patient_id_no_items_found(self):
         """Test when no items are found to update"""
@@ -497,7 +354,7 @@ class TestUpdatePatientIdInIEDS(TestIedsDbOperations):
         new_id = "new-patient-456"
 
         # Mock empty items list
-        self.mock_get_items_to_update.return_value = []
+        self.mock_get_items_from_patient_id.return_value = []
 
         # Act
         result = ieds_db_operations.ieds_update_patient_id(old_id, new_id)
@@ -509,8 +366,8 @@ class TestUpdatePatientIdInIEDS(TestIedsDbOperations):
         }
         self.assertEqual(result, expected_result)
 
-        # Verify get_items_to_update was called
-        self.mock_get_items_to_update.assert_called_once_with(f"Patient#{old_id}")
+        # Verify get_items_from_patient_id was called
+        self.mock_get_items_from_patient_id.assert_called_once_with(old_id)
 
         # Verify no transact operation was attempted
         self.mock_table.transact_write_items.assert_not_called()
@@ -582,10 +439,10 @@ class TestUpdatePatientIdInIEDS(TestIedsDbOperations):
 
         # Mock items to update
         mock_items = [{'PK': 'Patient#old-patient-error', 'PatientPK': 'Patient#old-patient-error'}]
-        self.mock_get_items_to_update.return_value = mock_items
+        self.mock_get_items_from_patient_id.return_value = mock_items
 
         test_exception = Exception("DynamoDB transact failed")
-        self.mock_table.transact_write_items.side_effect = test_exception
+        self.mock_dynamodb_client_patcher.transact_write_items.side_effect = test_exception
 
         # Act & Assert
         with self.assertRaises(Exception) as context:
@@ -598,7 +455,7 @@ class TestUpdatePatientIdInIEDS(TestIedsDbOperations):
         self.assertEqual(exception.inner_exception, test_exception)
 
         # Verify transact was attempted
-        self.mock_table.transact_write_items.assert_called_once()
+        self.mock_dynamodb_client_patcher.transact_write_items.assert_called_once()
 
         # Verify logger exception was called
         self.mock_logger.exception.assert_called_once_with("Error updating patient ID")
@@ -611,10 +468,10 @@ class TestUpdatePatientIdInIEDS(TestIedsDbOperations):
 
         # Mock items to update
         mock_items = [{'PK': f'Patient#{old_id}', 'PatientPK': f'Patient#{old_id}'}]
-        self.mock_get_items_to_update.return_value = mock_items
+        self.mock_get_items_from_patient_id.return_value = mock_items
 
         mock_transact_response = {'ResponseMetadata': {'HTTPStatusCode': 200}}
-        self.mock_table.transact_write_items.return_value = mock_transact_response
+        self.mock_dynamodb_client_patcher.transact_write_items.return_value = mock_transact_response
 
         # Act
         result = ieds_db_operations.ieds_update_patient_id(old_id, new_id)
@@ -624,7 +481,7 @@ class TestUpdatePatientIdInIEDS(TestIedsDbOperations):
         self.assertEqual(result["message"], f"IEDS update, patient ID: {old_id}=>{new_id}. {len(mock_items)} updated 1.")
 
         # Verify transact_write_items was called with special characters
-        self.mock_table.transact_write_items.assert_called_once()
+        self.mock_dynamodb_client_patcher.transact_write_items.assert_called_once()
 
 
 class TestGetItemsToUpdate(TestIedsDbOperations):
@@ -640,7 +497,7 @@ class TestGetItemsToUpdate(TestIedsDbOperations):
     def tearDown(self):
         patch.stopall()
 
-    def test_get_items_to_update_success(self):
+    def test_get_items_from_patient_id_success(self):
         """Test successful retrieval of items to update"""
         # Arrange
         patient_id = "test-patient-123"
@@ -654,7 +511,7 @@ class TestGetItemsToUpdate(TestIedsDbOperations):
         }
 
         # Act
-        result = ieds_db_operations.get_items_to_update(f"Patient#{patient_id}")
+        result = ieds_db_operations.get_items_from_patient_id(patient_id)
 
         # Assert
         self.assertEqual(result, expected_items)
@@ -662,7 +519,7 @@ class TestGetItemsToUpdate(TestIedsDbOperations):
         # Verify query was called with correct parameters
         self.mock_table.query.assert_called_once()
 
-    def test_get_items_to_update_no_records(self):
+    def test_get_items_from_patient_id_no_records(self):
         """Test when no records are found for the patient ID"""
         # Arrange
         patient_id = "test-patient-no-records"
@@ -672,7 +529,150 @@ class TestGetItemsToUpdate(TestIedsDbOperations):
         }
 
         # Act
-        result = ieds_db_operations.get_items_to_update(f"Patient#{patient_id}")
+        result = ieds_db_operations.get_items_from_patient_id(patient_id)
 
         # Assert
         self.assertEqual(result, [])
+
+
+class TestIedsCheckExists(TestIedsDbOperations):
+
+    def setUp(self):
+        """Set up test fixtures"""
+        super().setUp()
+
+        # ✅ Fix: Mock get_items_from_patient_id instead of table.query
+        self.get_items_from_patient_id_patcher = patch('ieds_db_operations.get_items_from_patient_id')
+        self.mock_get_items_from_patient_id = self.get_items_from_patient_id_patcher.start()
+
+    def tearDown(self):
+        """Clean up patches"""
+        super().tearDown()
+
+    def test_ieds_check_exist_record_exists(self):
+        """Test when record exists in IEDS table"""
+        # Arrange
+        patient_id = "test-patient-123"
+        mock_items = [{'PK': 'Patient#test-patient-123', 'PatientPK': 'Patient#test-patient-123'}]
+        self.mock_get_items_from_patient_id.return_value = mock_items
+
+        # Act
+        result = ieds_db_operations.ieds_check_exist(patient_id)
+
+        # Assert
+        self.assertTrue(result)
+
+        # ✅ Fix: Verify get_items_from_patient_id was called with correct parameters
+        self.mock_get_items_from_patient_id.assert_called_once_with(patient_id, 1)
+
+    def test_ieds_check_exist_record_not_exists(self):
+        """Test when no record exists in IEDS table"""
+        # Arrange
+        patient_id = "test-patient-456"
+        self.mock_get_items_from_patient_id.return_value = []
+
+        # Act
+        result = ieds_db_operations.ieds_check_exist(patient_id)
+
+        # Assert
+        self.assertFalse(result)
+
+        # ✅ Fix: Verify get_items_from_patient_id was called
+        self.mock_get_items_from_patient_id.assert_called_once_with(patient_id, 1)
+
+    def test_ieds_check_exist_empty_id(self):
+        """Test with empty patient ID"""
+        # Arrange
+        patient_id = ""
+        self.mock_get_items_from_patient_id.return_value = []
+
+        # Act
+        result = ieds_db_operations.ieds_check_exist(patient_id)
+
+        # Assert
+        self.assertFalse(result)
+
+        # ✅ Fix: Verify get_items_from_patient_id was called with empty ID
+        self.mock_get_items_from_patient_id.assert_called_once_with(patient_id, 1)
+
+    def test_ieds_check_exist_none_id(self):
+        """Test with None patient ID"""
+        # Arrange
+        patient_id = None
+        self.mock_get_items_from_patient_id.return_value = []
+
+        # Act
+        result = ieds_db_operations.ieds_check_exist(patient_id)
+
+        # Assert
+        self.assertFalse(result)
+
+        # ✅ Fix: Verify get_items_from_patient_id was called with None ID
+        self.mock_get_items_from_patient_id.assert_called_once_with(patient_id, 1)
+
+    def test_ieds_check_exist_query_exception(self):
+        """Test exception handling during get_items_from_patient_id"""
+        # Arrange
+        patient_id = "test-patient-error"
+        test_exception = Exception("DynamoDB query failed")
+        self.mock_get_items_from_patient_id.side_effect = test_exception
+
+        # Act & Assert
+        with self.assertRaises(Exception) as context:
+            ieds_db_operations.ieds_check_exist(patient_id)
+
+        self.assertEqual(str(context.exception), "DynamoDB query failed")
+
+        # ✅ Fix: Verify get_items_from_patient_id was attempted
+        self.mock_get_items_from_patient_id.assert_called_once_with(patient_id, 1)
+
+    def test_ieds_check_exist_multiple_items_found(self):
+        """Test when multiple items are found (should still return True)"""
+        # Arrange
+        patient_id = "test-patient-multiple"
+        mock_items = [
+            {'PK': 'Patient#test-patient-multiple', 'PatientPK': 'Patient#test-patient-multiple'},
+            {'PK': 'Patient#test-patient-multiple#record1', 'PatientPK': 'Patient#test-patient-multiple'}
+        ]
+        self.mock_get_items_from_patient_id.return_value = mock_items
+
+        # Act
+        result = ieds_db_operations.ieds_check_exist(patient_id)
+
+        # Assert
+        self.assertTrue(result)
+
+        # ✅ Fix: Verify get_items_from_patient_id was called with limit=1
+        self.mock_get_items_from_patient_id.assert_called_once_with(patient_id, 1)
+
+    def test_ieds_check_exist_single_item_found(self):
+        """Test when exactly one item is found"""
+        # Arrange
+        patient_id = "test-patient-single"
+        mock_items = [{'PK': 'Patient#test-patient-single', 'PatientPK': 'Patient#test-patient-single'}]
+        self.mock_get_items_from_patient_id.return_value = mock_items
+
+        # Act
+        result = ieds_db_operations.ieds_check_exist(patient_id)
+
+        # Assert
+        self.assertTrue(result)
+
+        # ✅ Fix: Verify get_items_from_patient_id was called
+        self.mock_get_items_from_patient_id.assert_called_once_with(patient_id, 1)
+
+    def test_ieds_check_exist_limit_parameter(self):
+        """Test that the function passes limit=1 to get_items_from_patient_id"""
+        # Arrange
+        patient_id = "test-patient-limit"
+        self.mock_get_items_from_patient_id.return_value = []
+
+        # Act
+        ieds_db_operations.ieds_check_exist(patient_id)
+
+        # Assert - ✅ Fix: Verify the limit parameter is correctly passed
+        self.mock_get_items_from_patient_id.assert_called_once_with(patient_id, 1)
+
+    # ✅ Remove tests that are no longer relevant:
+    # - test_ieds_check_exist_missing_count_field (no longer uses Count)
+    # - test_ieds_check_exist_count_greater_than_one (no longer uses Count)

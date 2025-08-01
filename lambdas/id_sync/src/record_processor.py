@@ -47,13 +47,12 @@ def process_nhs_number(nhs_number: str) -> Optional[str]:
         # if patient NHS != id, update patient index of vax events to new number
         if patient_details_id != nhs_number and patient_details_id:
             logger.info(f"process_nhs_number. Update patient ID from {nhs_number} to {patient_details_id}")
-            # test_ieds_insert_patient(patient_details_id)  # NOSONAR
-            if ieds_check_exist(patient_details_id):
+            if ieds_check_exist(nhs_number):
                 logger.info("process_nhs_number. IEDS record found, updating patient ID")
-                response = ieds_update_patient_id(patient_details_id, nhs_number)
+                response = ieds_update_patient_id(nhs_number, patient_details_id)
             else:
                 logger.info("process_nhs_number. No ieds record found for: %s", nhs_number)
-                response = {"status": "error", "message": f"No records returned for ID: {nhs_number}"}
+                response = {"status": "success", "message": f"No records returned for ID: {nhs_number}"}
         else:
             response = {"status": "success", "message": "No update required"}
     else:

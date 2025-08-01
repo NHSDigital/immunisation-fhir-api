@@ -82,7 +82,7 @@ class TestRecordProcessor(unittest.TestCase):
             result = process_record(test_record)
 
             # Assert
-            self.assertEqual(result["status"], "error")
+            self.assertEqual(result["status"], "success")
             self.assertEqual(result["message"], f"No records returned for ID: {test_id}")
 
             # Verify PDS was not called
@@ -110,7 +110,7 @@ class TestRecordProcessor(unittest.TestCase):
         self.mock_ieds_check_exist.return_value = False
         # Act & Assert
         result = process_record({"body": {"subject": test_id}})
-        self.assertEqual(result["status"], "error")
+        self.assertEqual(result["status"], "success")
         self.assertEqual(result["message"], f"No records returned for ID: {test_id}")
 
     def test_body_is_string(self):

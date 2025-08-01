@@ -18,19 +18,15 @@ class PdsService:
 
     def get_patient_details(self, patient_id) -> dict | None:
         logger.info(f"PDS. Get patient details for ID: {patient_id}")
-        logger.info("PDS. Getting access token")
         access_token = self.authenticator.get_access_token()
-        logger.info(f"PDS. Access token: {access_token}")
         request_headers = {
             'Authorization': f'Bearer {access_token}',
             'X-Request-ID': str(uuid.uuid4()),
             'X-Correlation-ID': str(uuid.uuid4())
         }
-        logger.info("PDS. Request get")
         response = requests.get(f"{self.base_url}/{patient_id}", headers=request_headers, timeout=5)
 
         if response.status_code == 200:
-            logger.info("PDS. Request successful")
             logger.info(f"PDS. Response: {response.json()}")
             return response.json()
         elif response.status_code == 404:
