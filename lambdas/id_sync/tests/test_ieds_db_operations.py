@@ -1,6 +1,5 @@
 import unittest
 from unittest.mock import patch, MagicMock
-from boto3.dynamodb.conditions import Key
 from exceptions.id_sync_exception import IdSyncException
 
 import ieds_db_operations
