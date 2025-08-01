@@ -21,10 +21,19 @@ def ieds_check_exist(id: str) -> bool:
     logger.info(f"ieds_check_exist. Get ID: {id}")
     search_patient_pk = f"Patient#{id}"
 
-    response = get_ieds_table().get_item(Key={'PatientPk': search_patient_pk})
-    found = 'Item' in response
+    response = get_ieds_table().query(
+        IndexName='PatientGSI',
+        KeyConditionExpression=Key('PatientPK').eq(search_patient_pk),
+        Limit=1
+    )
+
+    items = response.get('Items', [])
+    found = len(items) > 0
     logger.info(f"ieds_check_exist. Record found: {found} for ID: {id}")
     return found
+
+
+BATCH_SIZE = 25
 
 
 def ieds_update_patient_id(old_id: str, new_id: str) -> dict:
@@ -73,26 +82,26 @@ def ieds_update_patient_id(old_id: str, new_id: str) -> dict:
             })
 
         logger.info("Transacting items in IEDS table...")
-        # ✅ Fix: Initialize success tracking
+        # success tracking
         all_batches_successful = True
         total_batches = 0
 
-        # Batch transact in chunks of 25
-        for i in range(0, len(transact_items), 25):
-            batch = transact_items[i:i+25]
+        # Batch transact in chunks of BATCH_SIZE
+        for i in range(0, len(transact_items), BATCH_SIZE):
+            batch = transact_items[i:i+BATCH_SIZE]
             total_batches += 1
             logger.info(f"Transacting batch {total_batches} of size: {len(batch)}")
 
             response = ieds_table.transact_write_items(TransactItems=batch)
             logger.info("Batch update complete. Response: %s", response)
 
-            # ✅ Fix: Check each batch response
+            # Check each batch response
             if response['ResponseMetadata']['HTTPStatusCode'] != 200:
                 all_batches_successful = False
                 logger.error(
                     f"Batch {total_batches} failed with status: {response['ResponseMetadata']['HTTPStatusCode']}")
 
-        # ✅ Fix: Consolidated response handling outside the loop
+        # Consolidated response handling
         logger.info(
             f"All batches complete. Total batches: {total_batches}, All successful: {all_batches_successful}")
 
@@ -143,7 +152,7 @@ def get_items_to_update(old_patient_pk: str) -> list:
     logger.info(f"Getting items to update for old patient PK: {old_patient_pk}")
     response = get_ieds_table().query(
         KeyConditionExpression=Key('PatientPK').eq(old_patient_pk),
-        Limit=25  # Adjust limit as needed
+        Limit=BATCH_SIZE
     )
 
     if 'Items' not in response or not response['Items']:
