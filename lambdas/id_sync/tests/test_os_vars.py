@@ -8,7 +8,6 @@ import os_vars
 class TestOsVars(unittest.TestCase):
 
     def setUp(self):
-        # Clear module-level cached values before each test
         os_vars._ieds_table_name = None
         os_vars._delta_table_name = None
         os_vars._pds_env = None
@@ -20,7 +19,6 @@ class TestOsVars(unittest.TestCase):
     @patch.dict(os.environ, {"IEDS_TABLE_NAME": "ieds-table"})
     def test_get_ieds_table_name_cached(self):
         self.assertEqual(os_vars.get_ieds_table_name_cached(), "ieds-table")
-        # Confirm it's cached by clearing env and calling again
         del os.environ["IEDS_TABLE_NAME"]
         self.assertEqual(os_vars.get_ieds_table_name_cached(), "ieds-table")
 

@@ -150,6 +150,7 @@ jobs:
               echo "##vso[task.setvariable variable=FULLY_QUALIFIED_SERVICE_NAME]${FULLY_QUALIFIED_SERVICE_NAME}"
             fi
           displayName: Override FULLY_QUALIFIED_SERVICE_NAME
+
       - checkout: self
         path: "s/${{ parameters.service_name }}"
 

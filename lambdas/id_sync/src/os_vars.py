@@ -1,4 +1,3 @@
-# os_vars.py - Improved approach (✅ Better)
 import os
 from typing import Optional
 

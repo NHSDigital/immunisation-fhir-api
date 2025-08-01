@@ -541,7 +541,7 @@ class TestIedsCheckExists(TestIedsDbOperations):
         """Set up test fixtures"""
         super().setUp()
 
-        # ✅ Fix: Mock get_items_from_patient_id instead of table.query
+        # Mock get_items_from_patient_id instead of table.query
         self.get_items_from_patient_id_patcher = patch('ieds_db_operations.get_items_from_patient_id')
         self.mock_get_items_from_patient_id = self.get_items_from_patient_id_patcher.start()
 
@@ -562,7 +562,7 @@ class TestIedsCheckExists(TestIedsDbOperations):
         # Assert
         self.assertTrue(result)
 
-        # ✅ Fix: Verify get_items_from_patient_id was called with correct parameters
+        # Verify get_items_from_patient_id was called with correct parameters
         self.mock_get_items_from_patient_id.assert_called_once_with(patient_id, 1)
 
     def test_ieds_check_exist_record_not_exists(self):
@@ -577,7 +577,7 @@ class TestIedsCheckExists(TestIedsDbOperations):
         # Assert
         self.assertFalse(result)
 
-        # ✅ Fix: Verify get_items_from_patient_id was called
+        # Verify get_items_from_patient_id was called
         self.mock_get_items_from_patient_id.assert_called_once_with(patient_id, 1)
 
     def test_ieds_check_exist_empty_id(self):
@@ -592,7 +592,7 @@ class TestIedsCheckExists(TestIedsDbOperations):
         # Assert
         self.assertFalse(result)
 
-        # ✅ Fix: Verify get_items_from_patient_id was called with empty ID
+        # Verify get_items_from_patient_id was called with empty ID
         self.mock_get_items_from_patient_id.assert_called_once_with(patient_id, 1)
 
     def test_ieds_check_exist_none_id(self):
@@ -607,7 +607,7 @@ class TestIedsCheckExists(TestIedsDbOperations):
         # Assert
         self.assertFalse(result)
 
-        # ✅ Fix: Verify get_items_from_patient_id was called with None ID
+        # Verify get_items_from_patient_id was called with None ID
         self.mock_get_items_from_patient_id.assert_called_once_with(patient_id, 1)
 
     def test_ieds_check_exist_query_exception(self):
@@ -623,7 +623,7 @@ class TestIedsCheckExists(TestIedsDbOperations):
 
         self.assertEqual(str(context.exception), "DynamoDB query failed")
 
-        # ✅ Fix: Verify get_items_from_patient_id was attempted
+        # Verify get_items_from_patient_id was attempted
         self.mock_get_items_from_patient_id.assert_called_once_with(patient_id, 1)
 
     def test_ieds_check_exist_multiple_items_found(self):
@@ -642,7 +642,7 @@ class TestIedsCheckExists(TestIedsDbOperations):
         # Assert
         self.assertTrue(result)
 
-        # ✅ Fix: Verify get_items_from_patient_id was called with limit=1
+        # Verify get_items_from_patient_id was called with limit=1
         self.mock_get_items_from_patient_id.assert_called_once_with(patient_id, 1)
 
     def test_ieds_check_exist_single_item_found(self):
@@ -658,7 +658,7 @@ class TestIedsCheckExists(TestIedsDbOperations):
         # Assert
         self.assertTrue(result)
 
-        # ✅ Fix: Verify get_items_from_patient_id was called
+        # Verify get_items_from_patient_id was called
         self.mock_get_items_from_patient_id.assert_called_once_with(patient_id, 1)
 
     def test_ieds_check_exist_limit_parameter(self):
@@ -670,7 +670,7 @@ class TestIedsCheckExists(TestIedsDbOperations):
         # Act
         ieds_db_operations.ieds_check_exist(patient_id)
 
-        # Assert - ✅ Fix: Verify the limit parameter is correctly passed
+        # Assert - Verify the limit parameter is correctly passed
         self.mock_get_items_from_patient_id.assert_called_once_with(patient_id, 1)
 
     # ✅ Remove tests that are no longer relevant:
