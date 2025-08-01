@@ -1,5 +1,5 @@
 locals {
-  bucket_name = local.immunisation_account_id == "084828561157" ? "immunisation-batch-${local.account}-preprod-data-sources" : "immunisation-batch-${local.account}-data-sources"
+  bucket_name = local.immunisation_account_id == "084828561157" ? "immunisation-batch-preprod-${local.account}-data-sources" : "immunisation-batch-${local.account}-data-sources"
 }
 
 # Overall entry point into batch in prod. Files are forwarded into the appropriate blue / green bucket.

@@ -291,7 +291,7 @@ resource "aws_lambda_function" "file_processor_lambda" {
       SPLUNK_FIREHOSE_NAME       = module.splunk.firehose_stream_name
       AUDIT_TABLE_NAME           = aws_dynamodb_table.audit-table.name
       FILE_NAME_GSI              = "filename_index"
-      FILE_NAME_PROC_LAMBDA_NAME = "imms-${local.env}-filenameproc_lambda"
+      FILE_NAME_PROC_LAMBDA_NAME = "${local.short_prefix}-filenameproc_lambda"
 
     }
   }

@@ -92,12 +92,14 @@ resource "aws_s3_bucket_lifecycle_configuration" "datasources_lifecycle" {
   }
 }
 
+# REQUIRES IMPORTING: Once deployed to green this needs to be imported to blue because resource exists after first run
 resource "aws_s3_bucket" "batch_data_destination_bucket" {
   # Deliberately not using `local.batch_prefix` as we don't want separate blue / green destinations in prod.
   bucket        = "immunisation-batch-${local.unique_name}-data-destinations"
   force_destroy = local.is_temp
 }
 
+# REQUIRES IMPORTING: Once deployed to green this needs to be imported to blue because resource exists after first run
 resource "aws_s3_bucket_public_access_block" "batch_data_destination_bucket_public_access_block" {
   bucket = aws_s3_bucket.batch_data_destination_bucket.id
 
@@ -107,6 +109,7 @@ resource "aws_s3_bucket_public_access_block" "batch_data_destination_bucket_publ
   restrict_public_buckets = true
 }
 
+# REQUIRES IMPORTING: Once deployed to green this needs to be imported to blue because resource exists after first run
 resource "aws_s3_bucket_policy" "batch_data_destination_bucket_policy" {
   bucket = aws_s3_bucket.batch_data_destination_bucket.id
   policy = jsonencode({
@@ -151,6 +154,7 @@ resource "aws_s3_bucket_policy" "batch_data_destination_bucket_policy" {
   })
 }
 
+# REQUIRES IMPORTING: Once deployed to green this needs to be imported to blue because resource exists after first run
 resource "aws_s3_bucket_server_side_encryption_configuration" "s3_batch_destination_encryption" {
   bucket = aws_s3_bucket.batch_data_destination_bucket.id
 
@@ -162,6 +166,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "s3_batch_destinat
   }
 }
 
+# REQUIRES IMPORTING: Once deployed to green this needs to be imported to blue because resource exists after first run
 resource "aws_s3_bucket_lifecycle_configuration" "data_destinations" {
   bucket = aws_s3_bucket.batch_data_destination_bucket.id
 
@@ -192,6 +197,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "data_destinations" {
   }
 }
 
+# REQUIRES IMPORTING: Once deployed to green this needs to be imported to blue because resource exists after first run
 resource "aws_s3_bucket" "batch_config_bucket" {
   # For now, only create in internal-dev and prod as we only have one shared Redis instance per account.
   count = local.create_config_bucket ? 1 : 0
@@ -199,6 +205,7 @@ resource "aws_s3_bucket" "batch_config_bucket" {
   bucket = "imms-${local.unique_name}-supplier-config"
 }
 
+# REQUIRES IMPORTING: Once deployed to green this needs to be imported to blue because resource exists after first run
 resource "aws_s3_bucket_public_access_block" "batch_config_bucket_public_access_block" {
   count = local.create_config_bucket ? 1 : 0
 
@@ -210,6 +217,7 @@ resource "aws_s3_bucket_public_access_block" "batch_config_bucket_public_access_
   restrict_public_buckets = true
 }
 
+# REQUIRES IMPORTING: Once deployed to green this needs to be imported to blue because resource exists after first run
 resource "aws_s3_bucket_policy" "batch_config_bucket_policy" {
   count = local.create_config_bucket ? 1 : 0
 
