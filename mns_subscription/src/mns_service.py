@@ -51,7 +51,9 @@ class MnsService:
         if response.status_code == 201:
             return response.json()
         else:
-            raise UnauthorizedError(response=response.json, messag="You don't have the right permissions for this request")
+            raise UnauthorizedError(
+                response=response.json,
+                message="You don't have the right permissions for this request")
 
     def get_subscription(self) -> dict | None:
         response = requests.get(MNS_URL, headers=self.request_headers, timeout=10)
