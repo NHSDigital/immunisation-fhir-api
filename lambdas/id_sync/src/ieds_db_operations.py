@@ -150,13 +150,21 @@ def ieds_update_patient_id(old_id: str, new_id: str) -> dict:
 def get_items_to_update(old_patient_pk: str) -> list:
     """Get items that need to be updated in the IEDS table."""
     logger.info(f"Getting items to update for old patient PK: {old_patient_pk}")
-    response = get_ieds_table().query(
-        KeyConditionExpression=Key('PatientPK').eq(old_patient_pk),
-        Limit=BATCH_SIZE
-    )
+    try:
+        response = get_ieds_table().query(
+            KeyConditionExpression=Key('PatientPK').eq(old_patient_pk),
+            Limit=BATCH_SIZE
+        )
 
-    if 'Items' not in response or not response['Items']:
-        logger.warning(f"No items found for old patient PK: {old_patient_pk}")
-        return []
+        if 'Items' not in response or not response['Items']:
+            logger.warning(f"No items found for old patient PK: {old_patient_pk}")
+            return []
 
-    return response['Items']
+        return response['Items']
+    except Exception as e:
+        logger.exception(f"Error querying items for old patient PK: {old_patient_pk}")
+        raise IdSyncException(
+            message=f"Error querying items for old patient PK: {old_patient_pk}",
+            nhs_numbers=[old_patient_pk],
+            exception=e
+        )

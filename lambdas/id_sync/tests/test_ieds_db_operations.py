@@ -625,3 +625,54 @@ class TestUpdatePatientIdInIEDS(TestIedsDbOperations):
 
         # Verify transact_write_items was called with special characters
         self.mock_table.transact_write_items.assert_called_once()
+
+
+class TestGetItemsToUpdate(TestIedsDbOperations):
+
+    def setUp(self):
+        super().setUp()
+        # Mock get_ieds_table()
+        self.mock_get_ieds_table = patch('ieds_db_operations.get_ieds_table')
+        self.mock_get_ieds_table_patcher = self.mock_get_ieds_table.start()
+        self.mock_table = MagicMock()
+        self.mock_get_ieds_table_patcher.return_value = self.mock_table
+
+    def tearDown(self):
+        patch.stopall()
+
+    def test_get_items_to_update_success(self):
+        """Test successful retrieval of items to update"""
+        # Arrange
+        patient_id = "test-patient-123"
+        expected_items = [
+            {'PK': f'Patient#{patient_id}', 'PatientPK': f'Patient#{patient_id}'},
+            {'PK': f'Patient#{patient_id}#record1', 'PatientPK': f'Patient#{patient_id}'}
+        ]
+        self.mock_table.query.return_value = {
+            'Items': expected_items,
+            'Count': len(expected_items)
+        }
+
+        # Act
+        result = ieds_db_operations.get_items_to_update(f"Patient#{patient_id}")
+
+        # Assert
+        self.assertEqual(result, expected_items)
+
+        # Verify query was called with correct parameters
+        self.mock_table.query.assert_called_once()
+
+    def test_get_items_to_update_no_records(self):
+        """Test when no records are found for the patient ID"""
+        # Arrange
+        patient_id = "test-patient-no-records"
+        self.mock_table.query.return_value = {
+            'Items': [],
+            'Count': 0
+        }
+
+        # Act
+        result = ieds_db_operations.get_items_to_update(f"Patient#{patient_id}")
+
+        # Assert
+        self.assertEqual(result, [])
