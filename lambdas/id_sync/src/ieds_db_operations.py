@@ -89,15 +89,18 @@ def ieds_update_patient_id(old_id: str, new_id: str) -> dict:
             # ✅ Fix: Check each batch response
             if response['ResponseMetadata']['HTTPStatusCode'] != 200:
                 all_batches_successful = False
-                logger.error(f"Batch {total_batches} failed with status: {response['ResponseMetadata']['HTTPStatusCode']}")
+                logger.error(
+                    f"Batch {total_batches} failed with status: {response['ResponseMetadata']['HTTPStatusCode']}")
 
         # ✅ Fix: Consolidated response handling outside the loop
-        logger.info(f"All batches complete. Total batches: {total_batches}, All successful: {all_batches_successful}")
+        logger.info(
+            f"All batches complete. Total batches: {total_batches}, All successful: {all_batches_successful}")
 
         if all_batches_successful:
             return {
                 "status": "success",
-                "message": f"Updated IEDS, patient ID: {old_id} to {new_id}. {len(items_to_update)} items updated in {total_batches} batches."
+                "message":
+                    f"IEDS update, patient ID: {old_id}=>{new_id}. {len(items_to_update)} updated {total_batches}."
             }
         else:
             return {
