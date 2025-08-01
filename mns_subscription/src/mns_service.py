@@ -38,7 +38,7 @@ class MnsService:
             "channel": {
                 "type": "message",
                 "endpoint": SQS_ARN,
-                "payload": "application/json"
+                "payload": "application/fhir+json"
                 }
             }
 
