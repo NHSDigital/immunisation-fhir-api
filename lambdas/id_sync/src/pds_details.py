@@ -1,5 +1,5 @@
 '''
-    record Processor
+    Operations related to PDS (Patient Demographic Service)
 '''
 import tempfile
 from common.clients import logger, secrets_manager_client
