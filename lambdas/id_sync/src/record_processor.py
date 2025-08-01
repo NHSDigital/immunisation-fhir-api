@@ -4,7 +4,7 @@
 from common.clients import logger
 from typing import Optional
 from pds_details import pds_get_patient_id
-from ieds_db_operations import ieds_check_exist, ieds_update_patient_id
+from ieds_db_operations import ieds_check_exist, ieds_update_patient_id, test_ieds_insert_patient
 import json
 import ast
 
@@ -47,6 +47,7 @@ def process_nhs_number(nhs_number: str) -> Optional[str]:
         # if patient NHS != id, update patient index of vax events to new number
         if patient_details_id != nhs_number and patient_details_id:
             logger.info(f"process_nhs_number. Update patient ID from {nhs_number} to {patient_details_id}")
+            test_ieds_insert_patient(patient_details_id)  # NOSONAR
             if ieds_check_exist(patient_details_id):
                 response = ieds_update_patient_id(patient_details_id, nhs_number)
             else:
