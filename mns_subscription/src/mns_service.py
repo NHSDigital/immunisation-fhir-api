@@ -15,8 +15,8 @@ from models.errors import (
 )
 
 SQS_ARN = os.getenv("SQS_ARN")
+MNS_URL = "https://int.api.service.nhs.uk/multicast-notification-service/subscriptions"
 
-MNS_URL = "https://int.api.service.nhs.uk/multicast-notification-service/subscriptions" 
 
 class MnsService:
     def __init__(self, authenticator: AppRestrictedAuth):
