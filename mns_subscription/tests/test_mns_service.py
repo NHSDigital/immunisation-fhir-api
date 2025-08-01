@@ -58,16 +58,12 @@ class TestMnsService(unittest.TestCase):
         mock_response.status_code = 404
         mock_post.return_value = mock_response
 
-        service = MnsService(self.authenticator)
-
     @patch("mns_service.requests.post")
     def test_unhandled_error(self, mock_post):
         mock_response = MagicMock()
         mock_response.status_code = 500
         mock_response.json.return_value = {"error": "Server error"}
         mock_post.return_value = mock_response
-
-
 
     @patch.dict(os.environ, {"SQS_ARN": "arn:aws:sqs:eu-west-2:123456789012:my-queue"})
     @patch("mns_service.requests.get")
