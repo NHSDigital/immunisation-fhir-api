@@ -50,8 +50,8 @@ class MnsService:
         print(f"HEADERS: {self.request_headers}")
         if response.status_code == 201:
             return response.json()
-        elif response.status_code == 403:
-            return response.json()
+        else:
+            raise Exception(f"Subscription failed: {response.status_code} - {response.text}")
 
     def get_subscription(self) -> dict | None:
         response = requests.get(MNS_URL, headers=self.request_headers, timeout=10)
