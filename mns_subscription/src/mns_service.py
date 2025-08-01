@@ -16,10 +16,7 @@ from models.errors import (
 
 SQS_ARN = os.getenv("SQS_ARN")
 
-apigee_env = os.getenv("APIGEE_ENVIRONMENT", "int")
-MNS_URL = "https://api.service.nhs.uk/multicast-notification-service/subscriptions" \
-    if apigee_env == "prod" else "https://int.api.service.nhs.uk/multicast-notification-service/subscriptions"
-
+MNS_URL = "https://int.api.service.nhs.uk/multicast-notification-service/subscriptions" 
 
 class MnsService:
     def __init__(self, authenticator: AppRestrictedAuth):
