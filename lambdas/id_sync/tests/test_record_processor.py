@@ -23,9 +23,9 @@ class TestRecordProcessor(unittest.TestCase):
         self.ieds_update_patient_id_patcher = patch('record_processor.ieds_update_patient_id')
         self.mock_ieds_update_patient_id = self.ieds_update_patient_id_patcher.start()
 
-        # mock out test_ieds_insert_patient
-        self.ieds_test_insert_patcher = patch('record_processor.test_ieds_insert_patient')  # TODO  TEST code
-        self.mock_ieds_test_insert = self.ieds_test_insert_patcher.start()
+        # # mock out test_ieds_insert_patient
+        # self.ieds_test_insert_patcher = patch('record_processor.test_ieds_insert_patient')  # TODO  TEST code
+        # self.mock_ieds_test_insert = self.ieds_test_insert_patcher.start()
 
     def tearDown(self):
         patch.stopall()
