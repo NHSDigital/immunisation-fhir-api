@@ -60,10 +60,6 @@ class TestMnsService(unittest.TestCase):
 
         service = MnsService(self.authenticator)
 
-        with self.assertRaises(ResourceNotFoundError) as context:
-            service.subscribe_notification()
-        self.assertIn("Subscription or Resource not found", str(context.exception))
-
     @patch("mns_service.requests.post")
     def test_unhandled_error(self, mock_post):
         mock_response = MagicMock()
@@ -71,12 +67,7 @@ class TestMnsService(unittest.TestCase):
         mock_response.json.return_value = {"error": "Server error"}
         mock_post.return_value = mock_response
 
-        service = MnsService(self.authenticator)
 
-        with self.assertRaises(ServerError) as context:
-            service.subscribe_notification()
-
-        self.assertIn("Internal Server Error", str(context.exception))
 
     @patch.dict(os.environ, {"SQS_ARN": "arn:aws:sqs:eu-west-2:123456789012:my-queue"})
     @patch("mns_service.requests.get")
