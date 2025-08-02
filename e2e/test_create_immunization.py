@@ -60,14 +60,13 @@ class TestCreateImmunization(ImmunizationBaseTest):
         self.assert_operation_outcome(self.default_imms_api.create_immunization(imms, expected_status_code=422), 422)
         self.assertEqual(res.headers["E-Tag"], "3")
 
-    def test_bad_nhs_number(self):
-        """it should reject the request if nhs-number does not exist"""
-        bad_nhs_number = "7463384756"
-        imms = generate_imms_resource(nhs_number=bad_nhs_number)
+    def test_invalid_nhs_number(self):
+        """it should reject the request if nhs-number does not conform to MOD11"""
+        invalid_nhs_number = "9434765911"  # check digit 1 doesn't match result (9)
+        imms = generate_imms_resource(nhs_number=invalid_nhs_number)
 
         response = self.default_imms_api.create_immunization(imms, expected_status_code=400)
-
-        self.assert_operation_outcome(response, 400, bad_nhs_number)
+        self.assertEqual(response.status_code, 400)
 
     def test_validation(self):
         """it should validate Immunization"""

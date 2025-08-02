@@ -23,7 +23,6 @@ from models.fhir_immunization import ImmunizationValidator
 from models.utils.generic_utils import nhs_number_mod11_check, get_occurrence_datetime, create_diagnostics, form_json, get_contained_patient
 from models.constants import Constants
 from models.errors import MandatoryError
-from pds_service import PdsService
 from timer import timed
 from filter import Filter
 
@@ -53,11 +52,9 @@ class FhirService:
     def __init__(
         self,
         imms_repo: ImmunizationRepository,
-        pds_service: PdsService,
         validator: ImmunizationValidator = ImmunizationValidator(),
     ):
         self.immunization_repo = imms_repo
-        self.pds_service = pds_service
         self.validator = validator
 
     def get_immunization_by_identifier(
@@ -344,10 +341,10 @@ class FhirService:
     @timed
     def _validate_patient(self, imms: dict) -> dict:
         """
-        Get the NHS number from the contained Patient resource and validate it with PDS.
+        Get the NHS number from the contained Patient resource and validate it.
 
         If the NHS number doesn't exist, return an empty dict.
-        If the NHS number exists, get the patient details from PDS and return the patient details.
+        If the NHS number exists, check it's valid, and return the patient details.
         """
         try:
             contained_patient = get_contained_patient(imms)
@@ -358,18 +355,7 @@ class FhirService:
         if not nhs_number:
             return {}
 
-        if os.getenv("PDS_CHECK_ENABLED") == "false":
-            logger.warning("Skipping PDS check")
+        if nhs_number_mod11_check(nhs_number):
             return contained_patient
-
-        patient = self.pds_service.get_patient_details(nhs_number)
-        # To check whether the Superseded NHS number present in PDS
-        if patient:
-            pds_nhs_number = patient["identifier"][0]["value"]
-            if pds_nhs_number != nhs_number:
-                diagnostics_error = create_diagnostics()
-                return diagnostics_error
-
-            return patient
 
         raise InvalidPatientId(patient_identifier=nhs_number)
