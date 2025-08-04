@@ -48,25 +48,8 @@ jobs:
           account_id="$(aws sts get-caller-identity --query Account --output text)"
 
           cd terraform
-          export WORKSPACE="pr-${ACTION_PR_NUMBER}"
-          export ENVIRONMENT="$WORKSPACE"
-          export BUCKET_NAME="immunisation-${WORKSPACE}-terraform-state-files"
-
-          # Check if PR state bucket exists
-          echo "Checking for existence of: s3://${BUCKET_NAME}"
-          if aws s3api head-bucket --bucket "$BUCKET_NAME" 2>/dev/null; then
-            echo "Bucket exists. Proceeding with init..."
-            make init
-          else
-            echo "Bucket does NOT exist. Using fallback environment 'internal-dev' for init only.."
-            export ENVIRONMENT="internal-dev"
-            export BUCKET_NAME="immunisation-internal-dev-terraform-state-files"
-            make init
-
-            # Restore ENVIRONMENT to PR
-            export ENVIRONMENT="$WORKSPACE"
-            export BUCKET_NAME="immunisation-${WORKSPACE}-terraform-state-files"
-          fi
-          make destroy aws_account_no=${account_id} environment=$(WORKSPACE)
+          terraform workspace select $(WORKSPACE)
+          export ENVIRONMENT=$(WORKSPACE)
+          make init-reconfigure && make destroy aws_account_no=${account_id} environment=$(WORKSPACE)
         displayName: Destroy terraform PR workspace and linked resources
         retryCountOnTaskFailure: 2
