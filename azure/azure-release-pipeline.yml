@@ -30,6 +30,9 @@ extends:
     service_name: ${{ variables.service_name }}
     short_service_name: ${{ variables.short_service_name }}
     service_base_path: ${{ variables.service_base_path }}
+    prod_requires_approval: false
+    # prod_requires_approval: true
+    # prod_producer_approval: true
     apigee_deployments:
       # - environment: internal-dev
       #   jinja_templates:
@@ -73,8 +76,5 @@ extends:
       #           aws_account_type: 'dev'
       - environment: prod
         depends_on: []
-        prod_requires_approval: false
-        # prod_producer_approval: true
         jinja_templates:
           DOMAIN_ENDPOINT: https://green.imms.prod.vds.platform.nhs.uk
-
