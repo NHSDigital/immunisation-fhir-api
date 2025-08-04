@@ -6,7 +6,7 @@ tf_cmd = AWS_PROFILE=$(AWS_PROFILE) terraform
 
 project_name = immunisation
 project_short_name = imms
-tf_state=-backend-config="bucket=immunisation-preprod-infra-terraform-state-files"
+tf_state=-backend-config="$(BUCKET_NAME)"
 
 
 .PHONY : lock-provider workspace init plan apply clean destroy output state-list lambda-zip catch-all-zip
