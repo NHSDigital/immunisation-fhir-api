@@ -73,6 +73,8 @@ extends:
       #           aws_account_type: 'dev'
       - environment: prod
         depends_on: []
+        prod_requires_approval: true
+        prod_producer_approval: true
         jinja_templates:
           DOMAIN_ENDPOINT: https://blue.imms.prod.vds.platform.nhs.uk
 
