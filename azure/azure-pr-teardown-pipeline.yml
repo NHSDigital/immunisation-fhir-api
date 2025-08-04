@@ -67,6 +67,6 @@ jobs:
             export ENVIRONMENT="$WORKSPACE"
             export BUCKET_NAME="immunisation-${WORKSPACE}-terraform-state-files"
           fi
-          make init-reconfigure && make destroy aws_account_no=${account_id} environment=$(WORKSPACE)
+          make destroy aws_account_no=${account_id} environment=$(WORKSPACE)
         displayName: Destroy terraform PR workspace and linked resources
         retryCountOnTaskFailure: 2
