@@ -59,9 +59,8 @@ steps:
         echo Apigee environment: $APIGEE_ENVIRONMENT
         echo pr_no: $pr_no
 
-          cd terraform
-        
-        aws s3 mb s3://immunisation-${workspace}-terraform-state-files --region eu-west-2 || true
+        cd terraform
+       
 
         make init
         make apply environment=${{ parameters.aws_account_type }} sub_environment=$workspace
