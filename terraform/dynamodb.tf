@@ -107,11 +107,12 @@ resource "aws_dynamodb_table" "delta-dynamodb-table" {
 }
 
 resource "aws_dynamodb_table" "events-dynamodb-table" {
-  name             = "imms-${local.unique_name}-imms-events"
-  billing_mode     = "PAY_PER_REQUEST"
-  hash_key         = "PK"
-  stream_enabled   = true
-  stream_view_type = "NEW_IMAGE"
+  name                        = "imms-${local.unique_name}-imms-events"
+  billing_mode                = "PAY_PER_REQUEST"
+  hash_key                    = "PK"
+  stream_enabled              = true
+  stream_view_type            = "NEW_IMAGE"
+  deletion_protection_enabled = true
 
   attribute {
     name = "PK"
