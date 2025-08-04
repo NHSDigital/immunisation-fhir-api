@@ -49,6 +49,6 @@ jobs:
 
           cd terraform
           terraform workspace select $(WORKSPACE)
-          make init-reconfigure && make destroy aws_account_no=${account_id} environment=$(WORKSPACE)
+          make init && make destroy aws_account_no=${account_id} environment=$(WORKSPACE)
         displayName: Destroy terraform PR workspace and linked resources
         retryCountOnTaskFailure: 2
