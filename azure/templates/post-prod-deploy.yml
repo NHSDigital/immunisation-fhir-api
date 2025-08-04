@@ -26,6 +26,8 @@ steps:
       set -e
       if ! [[ $APIGEE_ENVIRONMENT =~ .*-*sandbox ]]; then
         export AWS_PROFILE=apim-dev
+        export BUCKET_NAME=immunisation-prod-terraform-state-files
+
         aws_account_no="$(aws sts get-caller-identity --query Account --output text)"
 
         service_name=$(FULLY_QUALIFIED_SERVICE_NAME)
@@ -39,7 +41,6 @@ steps:
           cd terraform
 
         make init
-        export BUCKET_NAME=immunisation-prod-terraform-state-files
         make plan aws_account_name=prod environment=$workspace
       fi
     displayName: Plan Terraform
