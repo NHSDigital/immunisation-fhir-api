@@ -45,7 +45,6 @@ jobs:
 
       - bash: |
           export AWS_PROFILE=apim-dev
-          export BUCKET_NAME=immunisation--terraform-state-files
           account_id="$(aws sts get-caller-identity --query Account --output text)"
 
           cd terraform
