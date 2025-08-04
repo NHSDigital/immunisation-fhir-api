@@ -20,7 +20,7 @@ init:
 	$(tf_cmd) init $(tf_state) -upgrade $(tf_vars)
 
 init-reconfigure:
-	$(tf_cmd) init -reconfigure $(tf_state) -upgrade
+	$(tf_cmd) init $(tf_state) -upgrade $(tf_vars) -reconfigure
 
 plan: workspace
 	 $(tf_cmd) plan $(tf_vars)
