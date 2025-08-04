@@ -61,6 +61,6 @@ catch-all-zip:
 tf-%:
 	$(tf_cmd) $*
 
-import: 
+import: workspace
 	$(tf_cmd) import $(tf_vars) $(to) $(id)
 
