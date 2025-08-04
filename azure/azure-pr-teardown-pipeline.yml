@@ -45,11 +45,10 @@ jobs:
 
       - bash: |
           export AWS_PROFILE=apim-dev
-          export AWS_PROFILE=terraform
           account_id="$(aws sts get-caller-identity --query Account --output text)"
 
           cd terraform
           terraform workspace select $(WORKSPACE)
-          make init && make destroy aws_account_no=${account_id} environment=$(WORKSPACE)
+          make init-reconfigure && make destroy aws_account_no=${account_id} environment=$(WORKSPACE)
         displayName: Destroy terraform PR workspace and linked resources
         retryCountOnTaskFailure: 2
