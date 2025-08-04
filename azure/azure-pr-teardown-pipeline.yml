@@ -37,22 +37,6 @@ jobs:
             role: "auto-ops"
             profile: "apim-dev"
             aws_account: "dev"
-      - bash: |
-          export AWS_PROFILE=apim-dev
-          echo "Unsubscribing an SQS Queue from MNS."
-          pyenv install -s 3.11.11
-          pyenv local 3.11.11
-          echo "Setting up poetry environment..."
-          poetry env use 3.11
-          poetry install --no-root
-
-          echo "Setting PYTHONPATH..."
-          export PYTHONPATH=$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/mns_subscription
-
-          echo "Unsubscribing an MNS for notifications..."
-          poetry run python src/subscribe_mns.py
-        displayName: "Delete MNS Subscription"
-        workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/mns_subscription"
 
       - bash: |
           echo "##vso[task.setvariable variable=AWS_DEFAULT_REGION]eu-west-2"
@@ -61,6 +45,7 @@ jobs:
 
       - bash: |
           export AWS_PROFILE=apim-dev
+          export AWS_PROFILE=terraform
           account_id="$(aws sts get-caller-identity --query Account --output text)"
 
           cd terraform
