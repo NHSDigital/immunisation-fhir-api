@@ -136,7 +136,7 @@ jobs:
         env:
           APIGEE_USERNAME: ${{ vars.APIGEE_USERNAME }}
           APIGEE_PASSWORD: ${{ secrets.APIGEE_PASSWORD }}
-          APIGEE_OAUTH_TOKEN: ${{ secrets.APIGEE_OAUTH_TOKEN }}
+          APIGEE_OAUTH_TOKEN: ${{ secrets.APIGEE_BASIC_AUTH_TOKEN }}
           APIGEE_OTP_SECRET: ${{ secrets.APIGEE_OTP_KEY }}
         run: |
           CODE=$(oathtool --totp -b "$APIGEE_OTP_SECRET")
@@ -147,10 +147,9 @@ jobs:
           response=$(curl -s -X POST "https://login.apigee.com/oauth/token" \
             -H "Content-Type: application/x-www-form-urlencoded" \
             -H "Accept: application/json;charset=utf-8" \
-            -H "Authorization: Basic $APIGEE_OAUTH_TOKEN" \
+            -H "Authorization: Basic $APIGEE_BASIC_AUTH_TOKEN" \
             -d "username=$APIGEE_USERNAME&password=$APIGEE_PASSWORD&mfa_token=$CODE&grant_type=password")
 
-          echo $response
           token=$(echo "$response" | jq -e -r '.access_token')
 
           if [[ -z "$token" ]]; then
