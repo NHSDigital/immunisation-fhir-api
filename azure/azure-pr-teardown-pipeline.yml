@@ -58,7 +58,7 @@ jobs:
             echo "Bucket exists. Proceeding with init..."
             make init
           else
-            echo "Bucket does NOT exist. Using fallback environment 'internal-dev' for init only."
+            echo "Bucket does NOT exist. Using fallback environment 'internal-dev' for init only.."
             export ENVIRONMENT="internal-dev"
             export BUCKET_NAME="immunisation-internal-dev-terraform-state-files"
             make init
