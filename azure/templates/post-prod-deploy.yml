@@ -39,8 +39,8 @@ steps:
           cd terraform
 
         make init
-        make apply aws_account_no=${aws_account_no} environment=$workspace
+        make plan aws_account_no=${aws_account_no} environment=$workspace
       fi
-    displayName: Apply Terraform
+    displayName: Plan Terraform
     workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)"
     retryCountOnTaskFailure: 2
