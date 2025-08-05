@@ -23,6 +23,7 @@ jobs:
       vmImage: 'ubuntu-latest'
     steps:
       - checkout: self
+        path: "s/$(SERVICE_NAME)"
 
       - bash: |
           echo $(action_pr_number)
@@ -30,6 +31,7 @@ jobs:
           echo $WORKSPACE
           echo "##vso[task.setvariable variable=WORKSPACE]$WORKSPACE"
           echo "##vso[task.setvariable variable=ACTION_PR_NUMBER]$(ACTION_PR_NUMBER)"
+          echo $(SERVICE_NAME)
         displayName: Set workspace tag
 
       - template: ./templates/aws-assume-role.yml
@@ -45,7 +47,7 @@ jobs:
 
       - bash: |
           export AWS_PROFILE=apim-dev
-          echo "Unsubscribing SQS Queue from MNS notifications."
+          echo "unsubscribing SQS Queue from MNS notifications."
           pyenv install -s 3.11.11
           pyenv local 3.11.11
           echo "Setting up poetry environment..."
