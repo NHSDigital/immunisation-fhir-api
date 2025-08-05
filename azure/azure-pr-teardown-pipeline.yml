@@ -45,7 +45,7 @@ jobs:
 
       - bash: |
           export AWS_PROFILE=apim-dev
-          echo "Subscribing SQS to MNS for notifications."
+          echo "Unsubscribing SQS Queue from MNS notifications."
           pyenv install -s 3.11.11
           pyenv local 3.11.11
           echo "Setting up poetry environment..."
