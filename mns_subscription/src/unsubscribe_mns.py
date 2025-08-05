@@ -11,4 +11,4 @@ def run_unsubscribe():
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     result = run_unsubscribe()
-    logging.debug(f"Subscription Result: {result}")
+    logging.info(f"Subscription Result: {result}")

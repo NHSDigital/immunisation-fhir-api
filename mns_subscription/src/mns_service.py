@@ -96,6 +96,7 @@ class MnsService:
         response = requests.delete(url, headers=self.request_headers, timeout=10)
         if response.status_code == 204:
             logging.info(f"Deleted subscription {subscription_id}")
+            print(f"get resource sub: {response}")
             return True
         else:
             MnsService.handle_response(response)
