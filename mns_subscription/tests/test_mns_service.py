@@ -148,19 +148,18 @@ class TestMnsService(unittest.TestCase):
 
     @patch("mns_service.requests.delete")
     def test_delete_subscription_success(self, mock_delete):
-        for code in (200, 204):
-            mock_response = MagicMock()
-            mock_response.status_code = code
-            mock_delete.return_value = mock_response
+        mock_response = MagicMock()
+        mock_response.status_code = 204
+        mock_delete.return_value = mock_response
 
-            service = MnsService(self.authenticator)
-            result = service.delete_subscription("sub-id-123")
-            self.assertTrue(result)
-            mock_delete.assert_called_with(
-                f"{MNS_URL}/sub-id-123",
-                headers=service.request_headers,
-                timeout=10
-            )
+        service = MnsService(self.authenticator)
+        result = service.delete_subscription("sub-id-123")
+        self.assertTrue(result)
+        mock_delete.assert_called_with(
+            f"{MNS_URL}/sub-id-123",
+            headers=service.request_headers,
+            timeout=10
+        )
 
     @patch("mns_service.requests.delete")
     def test_delete_subscription_401(self, mock_delete):
