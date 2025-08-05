@@ -49,13 +49,14 @@ jobs:
 
           export ENVIRONMENT="internal-dev"
           export BUCKET_NAME="immunisation-internal-dev-terraform-state-files"
+          cd terraform
           make init
 
           export ENVIRONMENT="dev"
           export SUB_ENVIRONMENT="pr-711"
           export BUCKET_NAME="immunisation-pr-711-terraform-state-files"
 
-          cd terraform
+          
           terraform workspace select $(WORKSPACE)
           make destroy aws_account_no=${account_id} environment=$(WORKSPACE)
         displayName: Destroy terraform PR workspace and linked resources
