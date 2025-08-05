@@ -47,21 +47,17 @@ jobs:
           export AWS_PROFILE=apim-dev
           account_id="$(aws sts get-caller-identity --query Account --output text)"
 
-          export sub_environment="$(WORKSPACE)"
-
-          BUCKET_NAME="immunisation-${sub_environment}-terraform-state-files"
-          FALLBACK_BUCKET_NAME="immunisation-internal-dev-terraform-state-files"
-
           export ENVIRONMENT="internal-dev"
-          export BUCKET_NAME="$FALLBACK_BUCKET_NAME"
-          cd terraform
+          export BUCKET_NAME="immunisation-internal-dev-terraform-state-files"
+          make init
           make init
 
-          export ENVIRONMENT="$sub_environment"
-          export BUCKET_NAME="immunisation-${sub_environment}-terraform-state-files"
+          export ENVIRONMENT="dev"
+          export SUB_ENVIRONMENT="pr-711"
+          export BUCKET_NAME="immunisation-pr-711-terraform-state-files"
 
           cd terraform
-          make workspace sub_environment=$sub_environment
-          make destroy sub_environment=$sub_environment aws_account_no=${account_id}
+          terraform workspace select $(WORKSPACE)
+          make destroy aws_account_no=${account_id} environment=$(WORKSPACE)
         displayName: Destroy terraform PR workspace and linked resources
         retryCountOnTaskFailure: 2

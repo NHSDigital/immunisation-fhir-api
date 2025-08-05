@@ -12,7 +12,7 @@ tf_state = -backend-config="bucket=$(bucket_name)"
 
 tf_vars = \
   -var="sub_environment=$(sub_environment)" \
-  -var-file=./environments/$(sub_environment)/variables.tfvars
+  -var-file=./environments/$(environment)/$(sub_environment_dir)/variables.tfvars
 
 lock-provider:
 	# Run this only when you install a new terraform provider. This will generate sha code in lock file for all platform
