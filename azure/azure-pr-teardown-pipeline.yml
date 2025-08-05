@@ -50,7 +50,6 @@ jobs:
           export ENVIRONMENT="internal-dev"
           export BUCKET_NAME="immunisation-internal-dev-terraform-state-files"
           make init
-          make init
 
           export ENVIRONMENT="dev"
           export SUB_ENVIRONMENT="pr-711"
