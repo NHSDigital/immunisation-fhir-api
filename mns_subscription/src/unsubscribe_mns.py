@@ -4,7 +4,7 @@ from mns_setup import get_mns_service
 
 def run_unsubscribe():
     mns = get_mns_service()
-    result = mns.delete_subscription("0fc9c880-ac76-47c8-99e9-032b894c90b0")
+    result = mns.delete_subscription("7b598083-e54a-4db9-9d05-b11888454ec1")
     return result
 
 
