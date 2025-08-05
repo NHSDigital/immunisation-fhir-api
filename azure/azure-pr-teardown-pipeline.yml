@@ -47,20 +47,13 @@ jobs:
           export AWS_PROFILE=apim-dev
           account_id="$(aws sts get-caller-identity --query Account --output text)"
 
-          export environment="internal-dev"
           export sub_environment="$(WORKSPACE)"
 
-          echo "Checking if bucket immunisation-${sub_environment}-terraform-state-files exists..."
           BUCKET_NAME="immunisation-${sub_environment}-terraform-state-files"
           FALLBACK_BUCKET_NAME="immunisation-internal-dev-terraform-state-files"
 
-          if ! aws s3api head-bucket --bucket "$BUCKET_NAME" 2>/dev/null; then
-            echo "Bucket $BUCKET_NAME does NOT exist. Falling back to internal-dev for init only..."
-            export ENVIRONMENT="internal-dev"
-            export BUCKET_NAME="$FALLBACK_BUCKET_NAME"
-          else
-            export ENVIRONMENT="$environment"
-            export BUCKET_NAME="$BUCKET_NAME"
+          export ENVIRONMENT="internal-dev"
+          export BUCKET_NAME="$FALLBACK_BUCKET_NAME"
           cd terraform
           make init
 
