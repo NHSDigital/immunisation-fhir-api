@@ -57,7 +57,7 @@ jobs:
           export BUCKET_NAME="immunisation-pr-711-terraform-state-files"
 
           
-          terraform workspace select $($SUB_ENVIRONMENT)
-          make destroy aws_account_no=${account_id} environment=$($SUB_ENVIRONMENT)
+          terraform workspace select "$SUB_ENVIRONMENT"
+          make destroy aws_account_no=${account_id} environment="$SUB_ENVIRONMENT"
         displayName: Destroy terraform PR workspace and linked resources
         retryCountOnTaskFailure: 2
