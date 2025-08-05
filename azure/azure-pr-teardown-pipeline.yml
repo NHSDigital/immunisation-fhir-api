@@ -73,7 +73,7 @@ jobs:
           echo "Setting PYTHONPATH..."
           export PYTHONPATH=$(Pipeline.Workspace)/s/$(SERVICE_NAME)/mns_subscription
 
-          echo "unsubscribing SQS to MNS for notifications..."
+          echo "unsubscribing SQS to MNS for notifications.."
           poetry run python src/unsubscribe_mns.py
         displayName: "Unsubscribe MNS"
         workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/mns_subscription"
