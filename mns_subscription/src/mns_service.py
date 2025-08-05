@@ -97,7 +97,7 @@ class MnsService:
         if response.status_code == 204:
             logging.info(f"Deleted subscription {subscription_id}")
             print(f"{response.text}")
-            return True
+            return "Subscription Succesfully Deleted..."
         else:
             MnsService.handle_response(response)
 
