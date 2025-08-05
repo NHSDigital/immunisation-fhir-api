@@ -83,6 +83,7 @@ jobs:
           export ENVIRONMENT="dev"
           export SUB_ENVIRONMENT="$WORKSPACE"
           
+          cd terraform
           terraform workspace new "$SUB_ENVIRONMENT" || terraform workspace select "$SUB_ENVIRONMENT"
           make destroy aws_account_no=${account_id} environment="$ENVIRONMENT" sub_environment="$SUB_ENVIRONMENT"
         displayName: Destroy terraform PR workspace and linked resources
