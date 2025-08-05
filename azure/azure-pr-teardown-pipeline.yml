@@ -61,6 +61,7 @@ jobs:
           poetry run python src/unsubscribe_mns.py
         displayName: "UnSubcribe MNS"
         workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/mns_subscription"
+        condition: eq(1,2)
 
       - bash: |
           export AWS_PROFILE=apim-dev
