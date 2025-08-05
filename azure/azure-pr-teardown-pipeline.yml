@@ -53,7 +53,7 @@ jobs:
           make init
 
           export ENVIRONMENT="dev"
-          export SUB_ENVIRONMENT="pr-711"
+          export SUB_ENVIRONMENT="$WORKSPACE"
           export BUCKET_NAME="immunisation-pr-711-terraform-state-files"
 
           
