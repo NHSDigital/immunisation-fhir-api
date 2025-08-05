@@ -47,6 +47,14 @@ jobs:
           export AWS_PROFILE=apim-dev
           account_id="$(aws sts get-caller-identity --query Account --output text)"
 
+          export ENVIRONMENT="internal-dev"
+          export BUCKET_NAME="immunisation-internal-dev-terraform-state-files"
+          make init-reconfigure
+
+         
+          export ENVIRONMENT="pr-703"
+          export BUCKET_NAME="immunisation-pr-703-terraform-state-files"
+
           cd terraform
           terraform workspace select $(WORKSPACE)
           make init && make destroy aws_account_no=${account_id} environment=$(WORKSPACE)
