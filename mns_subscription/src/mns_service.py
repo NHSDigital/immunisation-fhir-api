@@ -92,7 +92,7 @@ class MnsService:
 
     def delete_subscription(self, subscription_id: str) -> bool:
         """Delete the subscription by ID."""
-        url = f"{MNS_URL}/{subscription_id}"
+        url = f"{MNS_URL}/27c13f3b-023d-4a55-a43b-e8b58960a315"
         response = requests.delete(url, headers=self.request_headers, timeout=10)
         if response.status_code == 204:
             logging.info(f"Deleted subscription {subscription_id}")
