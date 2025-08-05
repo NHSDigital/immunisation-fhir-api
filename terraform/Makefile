@@ -20,9 +20,6 @@ lock-provider:
 	$(tf_cmd) providers lock -platform=darwin_arm64 -platform=darwin_amd64 -platform=linux_amd64 -platform=windows_amd64
 
 workspace:
-ifndef sub_environment
-	$(error sub_environment is not set. Use 'make workspace sub_environment=your-env')
-endif
 	$(tf_cmd) workspace new $(sub_environment) || $(tf_cmd) workspace select $(sub_environment) && echo "Switched to workspace/environment: $(sub_environment)"
 
 init:
