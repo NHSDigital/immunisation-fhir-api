@@ -55,8 +55,8 @@ jobs:
           make init
 
           # Extract values from Terraform state before destroying
-          AWS_SQS_QUEUE_NAME=$(make -s output name=aws_sqs_queue_name)
-          echo "##vso[task.setvariable variable=AWS_SQS_QUEUE_NAME]$AWS_SQS_QUEUE_NAME" 
+          ID_SYNC_QUEUE_ARN=$(make -s output name=id_sync_queue_arn)
+          echo "##vso[task.setvariable variable=ID_SYNC_QUEUE_ARN]$ID_SYNC_QUEUE_ARN"
         displayName: "Init Terraform and extract MNS values"
 
       - bash: |
@@ -83,7 +83,7 @@ jobs:
           export ENVIRONMENT="dev"
           export SUB_ENVIRONMENT="$WORKSPACE"
           
-          terraform workspace select "$SUB_ENVIRONMENT"
+          terraform workspace new "$SUB_ENVIRONMENT" || terraform workspace select "$SUB_ENVIRONMENT"
           make destroy aws_account_no=${account_id} environment="$ENVIRONMENT" sub_environment="$SUB_ENVIRONMENT"
         displayName: Destroy terraform PR workspace and linked resources
         retryCountOnTaskFailure: 2
