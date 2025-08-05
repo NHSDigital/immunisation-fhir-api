@@ -100,7 +100,7 @@ class MnsService:
         else:
             MnsService.handle_response(response)
 
-    def check_delete_subcription(self):
+    def check_delete_subscription(self):
         try:
             resource = self.get_subscription()
             if not resource:

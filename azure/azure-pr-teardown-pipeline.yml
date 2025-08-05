@@ -59,9 +59,8 @@ jobs:
 
           echo "unsubscribing SQS to MNS for notifications..."
           poetry run python src/unsubscribe_mns.py
-        displayName: "UnSubcribe MNS"
+        displayName: "Unsubscribe MNS"
         workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/mns_subscription"
-        condition: eq(1,2)
 
       - bash: |
           export AWS_PROFILE=apim-dev
@@ -76,6 +75,6 @@ jobs:
           export SUB_ENVIRONMENT="$WORKSPACE"
           
           terraform workspace select "$SUB_ENVIRONMENT"
-          make plan aws_account_no=${account_id} environment="$ENVIRONMENT" sub_environment="$SUB_ENVIRONMENT"
+          make destroy aws_account_no=${account_id} environment="$ENVIRONMENT" sub_environment="$SUB_ENVIRONMENT"
         displayName: Destroy terraform PR workspace and linked resources
         retryCountOnTaskFailure: 2

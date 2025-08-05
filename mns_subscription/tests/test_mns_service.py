@@ -226,7 +226,7 @@ class TestMnsService(unittest.TestCase):
         mock_delete_subscription.return_value = True
 
         service = MnsService(self.authenticator)
-        result = service.check_delete_subcription()
+        result = service.check_delete_subscription()
         self.assertEqual(result, "Subscription successfully deleted")
         mock_get_subscription.assert_called_once()
         mock_delete_subscription.assert_called_once_with("sub-123")
@@ -236,7 +236,7 @@ class TestMnsService(unittest.TestCase):
         # No subscription found
         mock_get_subscription.return_value = None
         service = MnsService(self.authenticator)
-        result = service.check_delete_subcription()
+        result = service.check_delete_subscription()
         self.assertEqual(result, "No matching subscription found to delete.")
 
     @patch.object(MnsService, "get_subscription")
@@ -244,7 +244,7 @@ class TestMnsService(unittest.TestCase):
         # Resource with no id field
         mock_get_subscription.return_value = {"not_id": "not-id"}
         service = MnsService(self.authenticator)
-        result = service.check_delete_subcription()
+        result = service.check_delete_subscription()
         self.assertEqual(result, "Subscription resource missing 'id' field.")
 
     @patch.object(MnsService, "delete_subscription")
@@ -253,7 +253,7 @@ class TestMnsService(unittest.TestCase):
         mock_get_subscription.return_value = {"id": "sub-123"}
         mock_delete_subscription.side_effect = Exception("Error!")
         service = MnsService(self.authenticator)
-        result = service.check_delete_subcription()
+        result = service.check_delete_subscription()
         self.assertTrue(result.startswith("Error deleting subscription: Error!"))
 
     def mock_response(self, status_code, json_data=None):
