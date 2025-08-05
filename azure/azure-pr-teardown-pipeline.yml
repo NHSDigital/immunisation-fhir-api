@@ -45,6 +45,23 @@ jobs:
 
       - bash: |
           export AWS_PROFILE=apim-dev
+          echo "Subscribing SQS to MNS for notifications."
+          pyenv install -s 3.11.11
+          pyenv local 3.11.11
+          echo "Setting up poetry environment..."
+          poetry env use 3.11
+          poetry install --no-root
+
+          echo "Setting PYTHONPATH..."
+          export PYTHONPATH=$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/mns_subscription
+
+          echo "unsubscribing SQS to MNS for notifications..."
+          poetry run python src/unsubscribe_mns.py
+        displayName: "UnSubcribe MNS"
+        workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/mns_subscription"
+
+      - bash: |
+          export AWS_PROFILE=apim-dev
           account_id="$(aws sts get-caller-identity --query Account --output text)"
 
           export ENVIRONMENT="internal-dev"
