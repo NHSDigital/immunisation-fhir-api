@@ -64,12 +64,10 @@
   },
   {
     "supplier": "EVA",
-    "permissions": ["COVID19.CUD"],
     "ods_codes": ["8HA94"]
   },
   {
     "supplier": "SONAR",
-    "permissions": ["FLU.CD"],
     "ods_codes": ["8HK48"]
   },
   {
@@ -86,9 +84,6 @@
   },
   {
     "supplier": "MEDICUS",
-    "permissions": [
-      "RSV.RS"
-    ],
     "ods_codes": ["YGMYW"]
   }
 ]
