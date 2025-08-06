@@ -23,7 +23,6 @@ jobs:
       vmImage: 'ubuntu-latest'
     steps:
       - checkout: self
-        path: "s/$(SERVICE_NAME)"
 
       - bash: |
           echo $(action_pr_number)
@@ -31,7 +30,6 @@ jobs:
           echo $WORKSPACE
           echo "##vso[task.setvariable variable=WORKSPACE]$WORKSPACE"
           echo "##vso[task.setvariable variable=ACTION_PR_NUMBER]$(ACTION_PR_NUMBER)"
-          echo $(SERVICE_NAME)
         displayName: Set workspace tag
 
       - template: ./templates/aws-assume-role.yml
@@ -47,10 +45,9 @@ jobs:
 
       - bash: |
           export AWS_PROFILE=apim-dev
-          account_id="$(aws sts get-caller-identity --query Account --output text)"
 
           export ENVIRONMENT="internal-dev"
-          export BUCKET_NAME="immunisation-internal-dev-terraform-state-files"
+          export bucket_name="immunisation-internal-dev-terraform-state-files"
           cd terraform
           make init
 
@@ -84,9 +81,9 @@ jobs:
           export AWS_PROFILE=apim-dev
           export ENVIRONMENT="dev"
           export SUB_ENVIRONMENT="$WORKSPACE"
-          
+
           cd terraform
           make workspace sub_environment="$SUB_ENVIRONMENT"
-          make destroy aws_account_no=${account_id} environment="$ENVIRONMENT" sub_environment="$SUB_ENVIRONMENT"
+          make destroy environment="$ENVIRONMENT" sub_environment="$SUB_ENVIRONMENT"
         displayName: Destroy terraform PR workspace and linked resources
         retryCountOnTaskFailure: 2

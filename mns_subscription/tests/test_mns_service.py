@@ -264,7 +264,7 @@ class TestMnsService(unittest.TestCase):
     def test_404_resource_found_error(self):
         resp = self.mock_response(404, {"resource": "Not found"})
         with self.assertRaises(ResourceNotFoundError) as context:
-            MnsService.handle_response(resp)
+            MnsService.raise_error_response(resp)
         self.assertIn("Subscription or Resource not found", str(context.exception))
         self.assertEqual(context.exception.message, "Subscription or Resource not found")
         self.assertEqual(context.exception.response, {"resource": "Not found"})
@@ -272,7 +272,7 @@ class TestMnsService(unittest.TestCase):
     def test_400_bad_request_error(self):
         resp = self.mock_response(400, {"resource": "Invalid"})
         with self.assertRaises(BadRequestError) as context:
-            MnsService.handle_response(resp)
+            MnsService.raise_error_response(resp)
         self.assertIn("Bad request: Resource type or parameters incorrect", str(context.exception))
         self.assertEqual(context.exception.message, "Bad request: Resource type or parameters incorrect")
         self.assertEqual(context.exception.response, {"resource": "Invalid"})
@@ -280,7 +280,7 @@ class TestMnsService(unittest.TestCase):
     def test_unhandled_status_code(self):
         resp = self.mock_response(418, {"resource": 1234})
         with self.assertRaises(UnhandledResponseError) as context:
-            MnsService.handle_response(resp)
+            MnsService.raise_error_response(resp)
         self.assertIn("Unhandled error: 418", str(context.exception))
         self.assertEqual(context.exception.response, {"resource": 1234})
 
