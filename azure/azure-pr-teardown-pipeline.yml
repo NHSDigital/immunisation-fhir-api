@@ -23,7 +23,6 @@ jobs:
       vmImage: 'ubuntu-latest'
     steps:
       - checkout: self
-        path: s/$(SERVICE_NAME)
 
       - bash: |
           echo $(action_pr_number)
@@ -46,9 +45,10 @@ jobs:
 
       - bash: |
           export AWS_PROFILE=apim-dev
+          ls
 
           cd terraform
-          make init environment="dev" sub_environment="$WORKSPACE"
+          make init environment="dev" sub_environment="$WORKSPACE" bucket_name="immunisation-internal-dev-terraform-state-files"
           make workspace sub_environment="$WORKSPACE"
 
           # Extract values from Terraform state before destroying
@@ -80,6 +80,6 @@ jobs:
 
           cd terraform
           make workspace sub_environment="$SUB_ENVIRONMENT"
-          make destroy environment="dev" sub_environment="$WORKSPACE"
+          make plan environment="dev" sub_environment="$WORKSPACE" bucket_name="immunisation-internal-dev-terraform-state-files"
         displayName: Destroy terraform PR workspace and linked resources
         retryCountOnTaskFailure: 2

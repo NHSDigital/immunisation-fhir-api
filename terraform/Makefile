@@ -6,8 +6,8 @@ sub_environment_dir := $(if $(findstring pr-,$(sub_environment)),pr,$(sub_enviro
 
 tf_cmd = AWS_PROFILE=$(AWS_PROFILE) terraform
 
-is_pr := $(findstring pr-,$(sub_environment))
-bucket_name = $(if $(is_pr),immunisation-internal-dev,immunisation-$(environment))-terraform-state-files
+
+bucket_name ?= $(if $(filter dev,$(environment)),immunisation-$(sub_environment),immunisation-$(environment))-terraform-state-files
 
 tf_state = -backend-config="bucket=$(bucket_name)"
 
