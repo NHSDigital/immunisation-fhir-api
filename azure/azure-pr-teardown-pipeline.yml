@@ -58,6 +58,8 @@ jobs:
 
       - bash: |
           export AWS_PROFILE=apim-dev
+
+          ls
           echo "unsubscribing SQS Queue from MNS notifications."
           pyenv install -s 3.11.11
           pyenv local 3.11.11
@@ -66,9 +68,8 @@ jobs:
           poetry install --no-root
 
           echo "Setting PYTHONPATH..."
-          export PYTHONPATH=$(Pipeline.Workspace)/s/$(SERVICE_NAME)/mns_subscription
-
           echo "unsubscribing SQS to MNS for notifications.."
+          cd mns_subscription
           poetry run python src/unsubscribe_mns.py
         displayName: "Unsubscribe MNS"
         workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/mns_subscription"
