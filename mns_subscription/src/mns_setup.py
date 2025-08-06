@@ -19,5 +19,5 @@ def get_mns_service(mns_env: str = "int"):
         cache=cache,
     )
 
-    logging.info("Creating MNS service...")
+    logging.info("Authentication Initiated...")
     return MnsService(authenticator)
