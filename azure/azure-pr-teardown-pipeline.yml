@@ -47,11 +47,8 @@ jobs:
       - bash: |
           export AWS_PROFILE=apim-dev
 
-          export ENVIRONMENT="internal-dev"
-          export bucket_name="immunisation-internal-dev-terraform-state-files"
           cd terraform
-          make init
-
+          make init environment="dev" sub_environment="$WORKSPACE"
           make workspace sub_environment="$WORKSPACE"
 
           # Extract values from Terraform state before destroying
@@ -80,11 +77,9 @@ jobs:
 
       - bash: |
           export AWS_PROFILE=apim-dev
-          export ENVIRONMENT="dev"
-          export SUB_ENVIRONMENT="$WORKSPACE"
 
           cd terraform
           make workspace sub_environment="$SUB_ENVIRONMENT"
-          make destroy environment="$ENVIRONMENT" sub_environment="$SUB_ENVIRONMENT"
+          make destroy environment="dev" sub_environment="$WORKSPACE"
         displayName: Destroy terraform PR workspace and linked resources
         retryCountOnTaskFailure: 2
