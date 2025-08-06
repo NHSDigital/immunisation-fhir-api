@@ -94,6 +94,7 @@ jobs:
         id: fhirapi
         continue-on-error: true
         run: |
+          poetry env use 3.11
           poetry install
           poetry run coverage run -m unittest discover || echo "fhir-api tests failed" >> ../failed_tests.txt
           poetry run coverage xml -o ../backend-coverage.xml
