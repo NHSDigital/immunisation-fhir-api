@@ -43,6 +43,33 @@ class TestTransformConfigs(unittest.TestCase):
         result = transform_supplier_permissions(self.supplier_data)
         self.assertEqual(result["ods_code_to_supplier"], expected)
 
+    def test_dev_ods_code_to_supplier_dev(self):
+        self.ods_code_to_supplier_file_tester("dev")
+
+    def test_dev_ods_code_to_supplier_preprod(self):
+        self.ods_code_to_supplier_file_tester("preprod")
+
+    def test_dev_ods_code_to_supplier_prod(self):
+        self.ods_code_to_supplier_file_tester("prod")
+
+    def ods_code_to_supplier_file_tester(self, env):
+        with open("./tests/test_data/expected_ods_code_to_supplier.json") as expected_file:
+            expected = json.load(expected_file)
+            file_path = f"../config/{env}/permissions_config.json"
+
+            with open(file_path) as f:
+                supplier_data = json.load(f)
+                result = transform_supplier_permissions(supplier_data)
+                result_data = result["ods_code_to_supplier"]
+                if result_data != expected:
+                    # loop through all keys and values to find the mismatch
+                    for key in result_data:
+                        if key not in expected:
+                            print(f"Key: {key} not found")
+                        elif result_data[key] != expected[key]:
+                            print(f"Key: {key}, Result: {result_data[key]}, Expected: {expected[key]}")
+                    self.assertEqual(result_data, expected)
+
     def test_empty_input(self):
         result = transform_supplier_permissions([])
         self.assertEqual(result, {

@@ -1,22 +1,12 @@
 [
   {
     "supplier": "DPSFULL",
-    "permissions": [
-      "COVID19.CRUDS",
-      "FLU.CRUDS",
-      "MMR.CRUDS",
-      "RSV.CRUDS"
-    ],
+    "permissions": ["COVID19.CRUDS", "FLU.CRUDS", "MMR.CRUDS", "RSV.CRUDS"],
     "ods_codes": ["DPSFULL"]
   },
   {
     "supplier": "DPSREDUCED",
-    "permissions": [
-      "COVID19.CRUD",
-      "FLU.CRUD",
-      "MMR.CRUD",
-      "RSV.CRUD"
-    ],
+    "permissions": ["COVID19.CRUD", "FLU.CRUD", "MMR.CRUD", "RSV.CRUD"],
     "ods_codes": ["DPSREDUCED"]
   },
   {
@@ -32,32 +22,22 @@
   },
   {
     "supplier": "SONAR",
-    "permissions": [
-      "FLU.CD"
-    ],
+    "permissions": ["FLU.CD"],
     "ods_codes": ["8HK48"]
   },
   {
     "supplier": "EVA",
-    "permissions": [
-      "COVID19.CUD"
-    ],
+    "permissions": ["COVID19.CUD"],
     "ods_codes": ["8HA94"]
   },
   {
     "supplier": "RAVS",
-    "permissions": [
-      "RSV.CRUDS",
-      "MMR.CRUDS"
-    ],
-    "ods_codes": ["X8E5B"]
+    "permissions": ["RSV.CRUDS", "MMR.CRUDS"],
+    "ods_codes": ["X26"]
   },
   {
     "supplier": "AGEM-RAVS-Integration",
-    "permissions": [
-      "RSV.CRUDS",
-      "MMR.CRUDS"
-    ]
+    "permissions": ["RSV.CRUDS", "MMR.CRUDS"]
   },
   {
     "supplier": "EMIS",
@@ -93,6 +73,50 @@
     "ods_codes": ["YGMYW"]
   },
   {
+    "supplier": "PINNACLE",
+    "ods_codes": ["8J1100001"]
+  },
+  {
+    "supplier": "AGEM-NIVS",
+    "ods_codes": ["0DE"]
+  },
+  {
+    "supplier": "NIMS",
+    "ods_codes": ["0DF"]
+  },
+  {
+    "supplier": "POSITIVE-SOLUTIONS",
+    "ods_codes": ["YGM17"]
+  },
+  {
+    "supplier": "CEGEDIM",
+    "ods_codes": ["YGM04"]
+  },
+  {
+    "supplier": "MEDICAL_DIRECTOR",
+    "ods_codes": ["YGMYH"]
+  },
+  {
+    "supplier": "WELSH_DA_1",
+    "ods_codes": ["W00"]
+  },
+  {
+    "supplier": "WELSH_DA_2",
+    "ods_codes": ["W000"]
+  },
+  {
+    "supplier": "NORTHERN_IRELAND_DA",
+    "ods_codes": ["ZT001"]
+  },
+  {
+    "supplier": "SCOTLAND_DA",
+    "ods_codes": ["YA7"]
+  },
+  {
+    "supplier": "COVID19_VACCINE_RESOLUTION_SERVICEDESK",
+    "ods_codes": ["N2N9I"]
+  },
+  {
     "supplier": "Test_App",
     "permissions": [
       "COVID19.CRUDS",
@@ -117,5 +141,13 @@
       "PERTUSSIS.CRUDS",
       "3IN1.CRUDS"
     ]
+  },
+  {
+    "supplier": "EVA",
+    "ods_codes": ["8HA94"]
+  },
+  {
+    "supplier": "SONAR",
+    "ods_codes": ["8HK48"]
   }
 ]
