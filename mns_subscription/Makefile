@@ -1,3 +1,5 @@
+subscribe:
+	@PYTHONPATH=src poetry run python src/subscribe_mns.py
 
 unsubscribe:
 	@PYTHONPATH=src poetry run python src/unsubscribe_mns.py
