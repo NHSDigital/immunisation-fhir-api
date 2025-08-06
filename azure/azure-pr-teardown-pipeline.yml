@@ -67,12 +67,10 @@ jobs:
           poetry env use 3.11
           poetry install --no-root
 
-          echo "Setting PYTHONPATH..."
           echo "unsubscribing SQS to MNS for notifications.."
           cd mns_subscription
           poetry run python src/unsubscribe_mns.py
         displayName: "Unsubscribe MNS"
-        workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/mns_subscription"
         env:
           SQS_ARN: "$(ID_SYNC_QUEUE_ARN)"
 
