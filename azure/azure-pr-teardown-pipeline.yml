@@ -58,6 +58,7 @@ jobs:
 
       - bash: |
           export AWS_PROFILE=apim-dev
+          cd mns_subscription
 
           ls
           echo "unsubscribing SQS Queue from MNS notifications."
@@ -68,7 +69,6 @@ jobs:
           poetry install --no-root
 
           echo "unsubscribing SQS to MNS for notifications.."
-          cd mns_subscription
           poetry run python src/unsubscribe_mns.py
         displayName: "Unsubscribe MNS"
         env:
