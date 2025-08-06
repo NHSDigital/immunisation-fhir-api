@@ -42,7 +42,7 @@
   },
   {
     "supplier": "RAVS",
-    "ods_codes": ["X8E5B"]
+    "ods_codes": ["X26"]
   },
   {
     "supplier": "MEDICAL_DIRECTOR",
@@ -51,5 +51,37 @@
   {
     "supplier": "COVID19_VACCINE_RESOLUTION_SERVICEDESK",
     "ods_codes": ["N2N9I"]
+  },
+  {
+    "supplier": "MAVIS",
+    "ods_codes": ["V0V8L"]
+  },
+  {
+    "supplier": "MEDICUS",
+    "ods_codes": ["YGMYW"]
+  },
+  {
+    "supplier": "POSITIVE-SOLUTIONS",
+    "ods_codes": ["YGM17"]
+  },
+  {
+    "supplier": "CEGEDIM",
+    "ods_codes": ["YGM04"]
+  },
+  {
+    "supplier": "WELSH_DA_1",
+    "ods_codes": ["W00"]
+  },
+  {
+    "supplier": "WELSH_DA_2",
+    "ods_codes": ["W000"]
+  },
+  {
+    "supplier": "NORTHERN_IRELAND_DA",
+    "ods_codes": ["ZT001"]
+  },
+  {
+    "supplier": "SCOTLAND_DA",
+    "ods_codes": ["YA7"]
   }
 ]

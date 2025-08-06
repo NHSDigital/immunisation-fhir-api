@@ -15,9 +15,75 @@
   },
   {
     "supplier": "RAVS",
-    "permissions": [
-      "RSV.RS"
-    ],
-    "ods_codes": ["X8E5B"]
+    "permissions": ["RSV.RS"],
+    "ods_codes": ["X26"]
+  },
+  {
+    "supplier": "PINNACLE",
+    "ods_codes": ["8J1100001"]
+  },
+  {
+    "supplier": "AGEM-NIVS",
+    "ods_codes": ["0DE"]
+  },
+  {
+    "supplier": "NIMS",
+    "ods_codes": ["0DF"]
+  },
+  {
+    "supplier": "POSITIVE-SOLUTIONS",
+    "ods_codes": ["YGM17"]
+  },
+  {
+    "supplier": "CEGEDIM",
+    "ods_codes": ["YGM04"]
+  },
+  {
+    "supplier": "MEDICAL_DIRECTOR",
+    "ods_codes": ["YGMYH"]
+  },
+  {
+    "supplier": "WELSH_DA_1",
+    "ods_codes": ["W00"]
+  },
+  {
+    "supplier": "WELSH_DA_2",
+    "ods_codes": ["W000"]
+  },
+  {
+    "supplier": "NORTHERN_IRELAND_DA",
+    "ods_codes": ["ZT001"]
+  },
+  {
+    "supplier": "SCOTLAND_DA",
+    "ods_codes": ["YA7"]
+  },
+  {
+    "supplier": "COVID19_VACCINE_RESOLUTION_SERVICEDESK",
+    "ods_codes": ["N2N9I"]
+  },
+  {
+    "supplier": "EVA",
+    "ods_codes": ["8HA94"]
+  },
+  {
+    "supplier": "SONAR",
+    "ods_codes": ["8HK48"]
+  },
+  {
+    "supplier": "MAVIS",
+    "ods_codes": ["V0V8L"]
+  },
+  {
+    "supplier": "EMIS",
+    "ods_codes": ["YGM41", "YGJ"]
+  },
+  {
+    "supplier": "TPP",
+    "ods_codes": ["YGA"]
+  },
+  {
+    "supplier": "MEDICUS",
+    "ods_codes": ["YGMYW"]
   }
 ]
