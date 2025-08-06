@@ -81,13 +81,16 @@ class TestProcessCsvToFhir(unittest.TestCase):
         self.assertEqual(mock_send_to_kinesis.call_count, 3)
 
     def test_process_csv_to_fhir_no_permissions(self):
-        """Tests that process_csv_to_fhir does not send a message to kinesis when the supplier has no permissions"""
+        """Tests that process_csv_to_fhir does not send fhir_json to kinesis when the supplier has no permissions"""
         self.upload_source_file(file_key=test_file.file_key, file_content=ValidMockFileContent.with_update_and_delete)
 
         with patch("batch_processing.send_to_kinesis") as mock_send_to_kinesis:
             process_csv_to_fhir(deepcopy(test_file.event_create_permissions_only_dict))
 
-        self.assertEqual(mock_send_to_kinesis.call_count, 0)
+        self.assertEqual(mock_send_to_kinesis.call_count, 2)
+        for (_supplier, message_body, _vaccine), _kwargs in mock_send_to_kinesis.call_args_list:
+            self.assertIn("diagnostics", message_body)
+            self.assertNotIn("fhir_json", message_body)
 
     def test_process_csv_to_fhir_invalid_headers(self):
         """Tests that process_csv_to_fhir does not send a message to kinesis when the csv has invalid headers"""

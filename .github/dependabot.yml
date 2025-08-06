@@ -58,6 +58,9 @@ updates:
       - "/mesh_processor"
       - "/recordprocessor"
       - "/redis_sync"
+      - "/lambdas/id_sync"
+      - "/lambdas/shared"
+      - "/mns_subscription"
     schedule:
       interval: "daily"
     open-pull-requests-limit: 1
@@ -71,7 +74,6 @@ updates:
     directories:
       - "/grafana/non-prod/terraform"
       - "/infra"
-      - "/mesh-infra"
       - "/terraform"
       - "/terraform_aws_backup/**"
     schedule:

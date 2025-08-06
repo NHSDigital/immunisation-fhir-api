@@ -5,6 +5,9 @@ parameters:
     default: true
   - name: 'aws_account_type'
     type: string
+  - name: subscribe_to_mns
+    type: boolean
+    default: true
 
 steps:
   - ${{ if parameters.is_ptl }}:
@@ -41,8 +44,6 @@ steps:
       set -e
       if ! [[ $APIGEE_ENVIRONMENT =~ .*-*sandbox ]]; then
         export AWS_PROFILE=apim-dev
-        aws_account_no="$(aws sts get-caller-identity --query Account --output text)"
-
         service_name=$(FULLY_QUALIFIED_SERVICE_NAME)
 
         pr_no=$(echo $service_name | { grep -oE '[0-9]+$' || true; })
@@ -58,25 +59,43 @@ steps:
         echo Apigee environment: $APIGEE_ENVIRONMENT
         echo pr_no: $pr_no
 
-          cd terraform
-
+        cd terraform
         make init
-        make apply aws_account_no=${aws_account_no} environment=$workspace
+        make apply environment=${{ parameters.aws_account_type }} sub_environment=$workspace
 
         AWS_DOMAIN_NAME=$(make -s output name=service_domain_name)
         IMMS_DELTA_TABLE_NAME=$(make -s output name=imms_delta_table_name)
         DYNAMODB_TABLE_NAME=$(make -s output name=dynamodb_table_name)
         AWS_SQS_QUEUE_NAME=$(make -s output name=aws_sqs_queue_name)
         AWS_SNS_TOPIC_NAME=$(make -s output name=aws_sns_topic_name)
+        ID_SYNC_QUEUE_ARN=$(make -s output name=id_sync_queue_arn)
         echo "##vso[task.setvariable variable=DYNAMODB_TABLE_NAME]$DYNAMODB_TABLE_NAME"
         echo "##vso[task.setvariable variable=AWS_DOMAIN_NAME]$AWS_DOMAIN_NAME"
         echo "##vso[task.setvariable variable=IMMS_DELTA_TABLE_NAME]$IMMS_DELTA_TABLE_NAME"
         echo "##vso[task.setvariable variable=AWS_SQS_QUEUE_NAME]$AWS_SQS_QUEUE_NAME"
         echo "##vso[task.setvariable variable=AWS_SNS_TOPIC_NAME]$AWS_SNS_TOPIC_NAME"
+        echo "##vso[task.setvariable variable=ID_SYNC_QUEUE_ARN]$ID_SYNC_QUEUE_ARN"
       fi
     displayName: Apply Terraform
     workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)"
     retryCountOnTaskFailure: 2
+
+  - ${{ if eq(parameters.subscribe_to_mns, true) }}:
+    - bash: |
+        export AWS_PROFILE=apim-dev
+        echo "Subscribing SQS to MNS for notifications."
+        pyenv install -s 3.11.11
+        pyenv local 3.11.11
+        echo "Setting up poetry environment..."
+        poetry env use 3.11
+        poetry install --no-root
+
+        echo "Subscribing SQS to MNS for notifications..."
+        make subscribe
+      displayName: "Run MNS Subscription"
+      workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/mns_subscription"
+      env:
+        SQS_ARN: "$(ID_SYNC_QUEUE_ARN)"
 
   - bash: |
       set -ex
@@ -115,11 +134,10 @@ steps:
     workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)"
 
   - bash: |
-      pyenv install -s 3.10.8
       pyenv install -s 3.11.11
-      pyenv global 3.10.8
+      pyenv global 3.11.11
       python --version
-    displayName: Install python 3.10 and 3.11
+    displayName: Install python 3.11
 
   - bash: |
       set -e

@@ -1,22 +1,21 @@
 """Tests for lambda_handler"""
+import json
 import sys
 from unittest.mock import patch
 from unittest import TestCase
 from json import loads as json_loads
 from contextlib import ExitStack
 from copy import deepcopy
-from constants import VACCINE_TYPE_TO_DISEASES_HASH_KEY
-from elasticache import get_valid_vaccine_types_from_cache
 import fakeredis
 from boto3 import client as boto3_client
 from moto import mock_s3, mock_sqs, mock_firehose, mock_dynamodb
 
 from tests.utils_for_tests.generic_setup_and_teardown import GenericSetUp, GenericTearDown
 from tests.utils_for_tests.utils_for_filenameprocessor_tests import (
-    generate_permissions_config_content,
-    generate_dict_full_permissions_all_suppliers_and_vaccine_types,
     add_entry_to_table,
     assert_audit_table_entry,
+    create_mock_hget,
+    MOCK_ODS_CODE_TO_SUPPLIER
 )
 from tests.utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT, BucketNames, Sqs
 from tests.utils_for_tests.values_for_tests import MOCK_CREATED_AT_FORMATTED_STRING, MockFileDetails
@@ -25,8 +24,7 @@ from tests.utils_for_tests.values_for_tests import MOCK_CREATED_AT_FORMATTED_STR
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from file_name_processor import lambda_handler, handle_record
     from clients import REGION_NAME
-    from constants import PERMISSIONS_CONFIG_FILE_KEY, AUDIT_TABLE_NAME, FileStatus, AuditTableKeys
-
+    from constants import AUDIT_TABLE_NAME, FileStatus, AuditTableKeys
 
 s3_client = boto3_client("s3", region_name=REGION_NAME)
 sqs_client = boto3_client("sqs", region_name=REGION_NAME)
@@ -37,11 +35,9 @@ dynamodb_client = boto3_client("dynamodb", region_name=REGION_NAME)
 # for all vaccine types. This default is overridden for some specific tests.
 all_vaccine_types_in_this_test_file = ["RSV", "FLU"]
 all_suppliers_in_this_test_file = ["RAVS", "EMIS"]
-all_permissions_config_content = generate_permissions_config_content(
-    generate_dict_full_permissions_all_suppliers_and_vaccine_types(
-        all_suppliers_in_this_test_file, all_vaccine_types_in_this_test_file
-    )
-)
+all_permissions_in_this_test_file = [
+    f"{vaccine_type}.CRUDS" for vaccine_type in all_vaccine_types_in_this_test_file
+]
 
 
 @patch.dict("os.environ", MOCK_ENVIRONMENT_DICT)
@@ -58,6 +54,11 @@ class TestLambdaHandlerDataSource(TestCase):
         class. Using ExitStack allows multiple patches to be applied, whilst ensuring that the mocks are cleaned up
         after the test has run.
         """
+        mock_permissions_map = {
+            supplier: json.dumps(all_permissions_in_this_test_file)
+            for supplier in all_suppliers_in_this_test_file
+        }
+        mock_hget = create_mock_hget(MOCK_ODS_CODE_TO_SUPPLIER, mock_permissions_map)
 
         # Set up common patches to be applied to all tests in the class (these can be overridden in individual tests.)
         common_patches = [
@@ -68,7 +69,7 @@ class TestLambdaHandlerDataSource(TestCase):
             # Patch redis_client to use a fake redis client.
             patch("elasticache.redis_client", new=fakeredis.FakeStrictRedis()),
             # Patch the permissions config to allow all suppliers full permissions for all vaccine types.
-            patch("elasticache.redis_client.get", return_value=all_permissions_config_content),
+            patch("elasticache.redis_client.hget", side_effect=mock_hget),
             patch("elasticache.redis_client.hkeys", return_value=all_vaccine_types_in_this_test_file),
         ]
 
@@ -148,7 +149,7 @@ class TestLambdaHandlerDataSource(TestCase):
         self.assertEqual(len(received_messages), 1)
         expected_sqs_message = {
             **file_details.sqs_message_body,
-            "permission": [f"{vaccine_type.upper()}_FULL" for vaccine_type in all_vaccine_types_in_this_test_file],
+            "permission": all_permissions_in_this_test_file,
         }
         self.assertEqual(json_loads(received_messages[0]["Body"]), expected_sqs_message)
 
@@ -356,10 +357,10 @@ class TestLambdaHandlerDataSource(TestCase):
         add_entry_to_table(queued_file_details, FileStatus.QUEUED)
 
         # Mock the supplier permissions with a value which doesn't include the requested Flu permissions
-        permissions_config_content = generate_permissions_config_content({"EMIS": ["RSV_DELETE"]})
+        mock_hget = create_mock_hget({"X8E5B": "RAVS"}, {})
         with (  # noqa: E999
             patch("file_name_processor.uuid4", return_value=file_details.message_id),  # noqa: E999
-            patch("elasticache.redis_client.get", return_value=permissions_config_content),  # noqa: E999
+            patch("elasticache.redis_client.hget", side_effect=mock_hget),  # noqa: E999
             patch("file_name_processor.invoke_filename_lambda") as mock_invoke_filename_lambda,  # noqa: E999
         ):  # noqa: E999
             lambda_handler(self.make_event([self.make_record(file_details.file_key)]), None)
@@ -456,126 +457,20 @@ class TestLambdaHandlerDataSource(TestCase):
 @mock_dynamodb
 @mock_sqs
 @mock_firehose
-class TestLambdaHandlerConfig(TestCase):
-    """Tests for lambda_handler when a config file is uploaded."""
-
-    config_event = {
-        "Records": [{"s3": {"bucket": {"name": BucketNames.CONFIG}, "object": {"key": PERMISSIONS_CONFIG_FILE_KEY}}}]
-    }
-
-    def setUp(self):
-        GenericSetUp(s3_client, firehose_client, sqs_client, dynamodb_client)
-
-        self.fake_redis = fakeredis.FakeStrictRedis(decode_responses=True)
-        self.fake_redis.hmset(VACCINE_TYPE_TO_DISEASES_HASH_KEY, {"RSV": "[]"})
-        redis_patcher = patch("elasticache.redis_client", new=self.fake_redis)
-        self.addCleanup(redis_patcher.stop)
-        redis_patcher.start()
-
-    def tearDown(self):
-        GenericTearDown(s3_client, firehose_client, sqs_client, dynamodb_client)
-
-    def test_elasticcache_failure_handled(self):
-        "Tests if elastic cache failure is handled when service fails to send message"
-        event = {
-            "s3": {
-                "bucket": {"name": "my-config-bucket"},  # triggers 'config' branch
-                "object": {"key": "testfile.csv"}
-            }
-        }
-
-        with (
-            patch("file_name_processor.upload_to_elasticache", side_effect=Exception("Upload failed")),
-            patch("file_name_processor.logger") as mock_logger
-        ):
-
-            result = handle_record(event)
-
-            self.assertEqual(result["statusCode"], 500)
-            self.assertEqual(result["message"], "Failed to upload file content to cache")
-            self.assertEqual(result["file_key"], "testfile.csv")
-            self.assertIn("error", result)
-
-            mock_logger.error.assert_called_once()
-            logged_msg = mock_logger.error.call_args[0][0]
-            self.assertIn("Error uploading to cache", logged_msg)
-
-    def test_successful_processing_from_configs(self):
-        """Tests that the permissions config file content is uploaded to elasticache successfully"""
-        ravs_rsv_file_details_1 = MockFileDetails.ravs_rsv_1
-        ravs_rsv_file_details_2 = MockFileDetails.ravs_rsv_2
-        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=ravs_rsv_file_details_1.file_key)
-        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=ravs_rsv_file_details_2.file_key)
-        record_1 = {"s3": {"bucket": {"name": BucketNames.SOURCE}, "object": {"key": ravs_rsv_file_details_1.file_key}}}
-        record_2 = {"s3": {"bucket": {"name": BucketNames.SOURCE}, "object": {"key": ravs_rsv_file_details_2.file_key}}}
-
-        ravs_rsv_permissions = {"RAVS": ["RSV_FULL"], "EMIS": ["FLU_CREATE", "FLU_UPDATE"]}
-        ravs_no_rsv_permissions = {"RAVS": ["FLU_FULL"], "EMIS": ["RSV_CREATE", "RSV_UPDATE"], "TPP": ["RSV_DELETE"]}
-
-        # Test that the permissions config file content is uploaded to elasticache successfully
-        s3_client.put_object(
-            Bucket=BucketNames.CONFIG,
-            Key=PERMISSIONS_CONFIG_FILE_KEY,
-            Body=generate_permissions_config_content(ravs_rsv_permissions),
-        )
-        lambda_handler(self.config_event, None)
-        self.assertEqual(
-            json_loads(self.fake_redis.get(PERMISSIONS_CONFIG_FILE_KEY)), {"all_permissions": ravs_rsv_permissions}
-        )
-
-        # Check that a RAVS RSV file processes successfully (as RAVS has permissions for RSV)
-        with patch("file_name_processor.uuid4", return_value=ravs_rsv_file_details_1.message_id):
-            result = handle_record(record_1)
-        expected_result = {
-            "statusCode": 200,
-            "message": "Successfully sent to SQS for further processing",
-            "file_key": ravs_rsv_file_details_1.file_key,
-            "message_id": ravs_rsv_file_details_1.message_id,
-            "vaccine_type": ravs_rsv_file_details_1.vaccine_type,
-            "supplier": ravs_rsv_file_details_1.supplier
-        }
-        self.assertEqual(result, expected_result)
-
-        # Test that the elasticache is successfully updated when the lambda is invoked with a new permissions config
-        s3_client.put_object(
-            Bucket=BucketNames.CONFIG,
-            Key=PERMISSIONS_CONFIG_FILE_KEY,
-            Body=generate_permissions_config_content(ravs_no_rsv_permissions),
-        )
-        lambda_handler(self.config_event, None)
-        self.assertEqual(
-            json_loads(self.fake_redis.get(PERMISSIONS_CONFIG_FILE_KEY)), {"all_permissions": ravs_no_rsv_permissions}
-        )
-
-        # Check that a RAVS RSV file fails to process (as RAVS now does not have permissions for RSV)
-        with patch("file_name_processor.uuid4", return_value=ravs_rsv_file_details_2.message_id):
-            result = handle_record(record_2)
-        expected_result = {
-            "statusCode": 403,
-            "message": "Infrastructure Level Response Value - Processing Error",
-            "file_key": ravs_rsv_file_details_2.file_key,
-            "message_id": ravs_rsv_file_details_2.message_id,
-            "error": "Initial file validation failed: RAVS does not have permissions for RSV",
-            "vaccine_type": ravs_rsv_file_details_2.vaccine_type,
-            "supplier": ravs_rsv_file_details_2.supplier
-        }
-        self.assertEqual(result, expected_result)
-
-
-@patch.dict("os.environ", MOCK_ENVIRONMENT_DICT)
-@mock_s3
-@mock_dynamodb
-@mock_sqs
-@mock_firehose
 class TestUnexpectedBucket(TestCase):
     """Tests for lambda_handler when an unexpected bucket name is used"""
 
     def setUp(self):
         GenericSetUp(s3_client, firehose_client, sqs_client, dynamodb_client)
 
-        redis_patcher = patch("elasticache.redis_client.hkeys", return_value=all_vaccine_types_in_this_test_file)
-        self.addCleanup(redis_patcher.stop)
-        redis_patcher.start()
+        hkeys_patcher = patch("elasticache.redis_client.hkeys", return_value=all_vaccine_types_in_this_test_file)
+        self.addCleanup(hkeys_patcher.stop)
+        hkeys_patcher.start()
+
+        mock_hget = create_mock_hget({"X8E5B": "RAVS"}, {})
+        hget_patcher = patch("elasticache.redis_client.hget", side_effect=mock_hget)
+        self.addCleanup(hget_patcher.stop)
+        hget_patcher.start()
 
     def tearDown(self):
         GenericTearDown(s3_client, firehose_client, sqs_client, dynamodb_client)

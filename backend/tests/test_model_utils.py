@@ -12,8 +12,8 @@ class UtilsTests(unittest.TestCase):
         # All of these NHS numbers are valid
         valid_nhs_numbers = [
             "1345678940",  # check digit 11 is 0
-            "9990548609",  # PDS example with 0's in the middle
-            "9693821998",  # regular example from PDS
+            "9990548609",  # example with 0's in the middle
+            "9693821998",  # regular example
         ]
 
         for valid_nhs_number in valid_nhs_numbers:

@@ -171,7 +171,7 @@ class TestLoggingDecorator(unittest.TestCase):
             # CASE: No operation permissions
             (
                 ValidMockFileContent.with_new_and_update,
-                MOCK_FILE_DETAILS.event_delete_permissions_only_dict,  # No permission for NEW or UPDATE
+                MOCK_FILE_DETAILS.event_no_permissions_dict,  # No permission for NEW or UPDATE
                 NoOperationPermissions,
                 403,
                 f"{MOCK_FILE_DETAILS.supplier} does not have permissions to perform any of the requested actions.",

@@ -1,10 +1,10 @@
-FROM public.ecr.aws/lambda/python:3.10 AS base
+FROM public.ecr.aws/lambda/python:3.11 AS base
 
 RUN mkdir -p /home/appuser && \
     echo 'appuser:x:1001:1001::/home/appuser:/sbin/nologin' >> /etc/passwd && \
     echo 'appuser:x:1001:' >> /etc/group && \
-    chown -R 1001:1001 /home/appuser && pip install "poetry~=1.5.0"
-    
+    chown -R 1001:1001 /home/appuser && pip install "poetry~=2.1.2"
+
 COPY poetry.lock pyproject.toml README.md ./
 RUN poetry config virtualenvs.create false && poetry install --no-interaction --no-ansi --no-root --only main
 # -----------------------------

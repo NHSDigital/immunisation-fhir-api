@@ -16,8 +16,9 @@ AUDIT_TABLE_NAME = os.getenv("AUDIT_TABLE_NAME")
 AUDIT_TABLE_QUEUE_NAME_GSI = "queue_name_index"
 AUDIT_TABLE_FILENAME_GSI = "filename_index"
 
-PERMISSIONS_CONFIG_FILE_KEY = "permissions_config.json"
+SUPPLIER_PERMISSIONS_HASH_KEY = "supplier_permissions"
 VACCINE_TYPE_TO_DISEASES_HASH_KEY = "vacc_to_diseases"
+ODS_CODE_TO_SUPPLIER_SYSTEM_HASH_KEY = "ods_code_to_supplier"
 
 ERROR_TYPE_TO_STATUS_CODE_MAP = {
     VaccineTypePermissionsError: 403,
@@ -52,25 +53,3 @@ class AuditTableKeys:
 class Constants:
     """Constants for the filenameprocessor lambda"""
     VALID_VERSIONS = ["V5"]
-
-    # Mappings from ODS code to supplier name.
-    # NOTE: Any ODS code not found in this dictionary's keys is invalid for this service
-    ODS_TO_SUPPLIER_MAPPINGS = {
-        "YGM41": "EMIS",
-        "8J1100001": "PINNACLE",
-        "8HK48": "SONAR",
-        "YGA": "TPP",
-        "0DE": "AGEM-NIVS",
-        "0DF": "NIMS",
-        "8HA94": "EVA",
-        "X26": "RAVS",
-        "YGMYH": "MEDICAL_DIRECTOR",
-        "W00": "WELSH_DA_1",
-        "W000": "WELSH_DA_2",
-        "ZT001": "NORTHERN_IRELAND_DA",
-        "YA7": "SCOTLAND_DA",
-        "N2N9I": "COVID19_VACCINE_RESOLUTION_SERVICEDESK",
-        "YGJ": "EMIS",
-        "DPSREDUCED": "DPSREDUCED",
-        "DPSFULL": "DPSFULL",
-    }

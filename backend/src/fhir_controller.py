@@ -4,18 +4,14 @@ import json
 import os
 import re
 import uuid
-from botocore.config import Config
 from decimal import Decimal
 from typing import Optional
-from authentication import AppRestrictedAuth, Service
 import boto3
 from aws_lambda_typing.events import APIGatewayProxyEventV1
-from botocore.config import Config
 from fhir.resources.R4B.immunization import Immunization
 from boto3 import client as boto3_client
 
 from authorization import Authorization, UnknownPermission
-from cache import Cache
 from fhir_repository import ImmunizationRepository, create_table
 from fhir_service import FhirService, UpdateOutcome, get_service_url
 from models.errors import (
@@ -36,7 +32,6 @@ from models.errors import (
 from models.utils.generic_utils import check_keys_in_sources
 from models.utils.permissions import get_supplier_permissions
 from models.utils.permission_checker import ApiOperationCode, validate_permissions, _expand_permissions
-from pds_service import PdsService
 from parameter_parser import process_params, process_search_params, create_query_string
 import urllib.parse
 
@@ -45,23 +40,13 @@ queue_url = os.getenv("SQS_QUEUE_URL", "Queue_url")
 
 
 def make_controller(
-    pds_env: str = os.getenv("PDS_ENV", "int"),
     immunization_env: str = os.getenv("IMMUNIZATION_ENV"),
 ):
     endpoint_url = "http://localhost:4566" if immunization_env == "local" else None
     imms_repo = ImmunizationRepository(create_table(endpoint_url=endpoint_url))
-    boto_config = Config(region_name="eu-west-2")
-    cache = Cache(directory="/tmp")
-    authenticator = AppRestrictedAuth(
-        service=Service.PDS,
-        secret_manager_client=boto3.client("secretsmanager", config=boto_config),
-        environment=pds_env,
-        cache=cache,
-    )
-    pds_service = PdsService(authenticator, pds_env)
 
     authorizer = Authorization()
-    service = FhirService(imms_repo=imms_repo, pds_service=pds_service)
+    service = FhirService(imms_repo=imms_repo)
 
     return FhirController(authorizer=authorizer, fhir_service=service)
 
@@ -167,7 +152,7 @@ class FhirController:
         try:
             if aws_event.get("headers"):
                 if response := self.authorize_request(aws_event):
-                        return response
+                    return response
             else:
                 raise UnauthorizedError()
         except UnauthorizedError as unauthorized:
@@ -197,7 +182,8 @@ class FhirController:
                 return self.create_response(400, json.dumps(exp_error))
             else:
                 location = f"{get_service_url()}/Immunization/{resource.id}"
-                return self.create_response(201, None, {"Location": location})
+                version = "1"
+                return self.create_response(201, None, {"Location": location, "E-Tag": version})
         except ValidationError as error:
             return self.create_response(400, error.to_operation_outcome())
         except IdentifierDuplicationError as duplicate:
@@ -224,7 +210,7 @@ class FhirController:
 
         # Validate the imms id - start
         if id_error := self._validate_id(imms_id):
-            return FhirController.create_response(400, json.dumps(id_error))    
+            return FhirController.create_response(400, json.dumps(id_error))
         # Validate the imms id - end
 
         # Validate the body of the request - start
@@ -276,12 +262,17 @@ class FhirController:
         # Check vaccine type permissions on the existing record - end
 
         existing_resource_version = int(existing_record["Version"])
+
         try:
             # Validate if the imms resource to be updated is a logically deleted resource - start
             if existing_record["DeletedAt"] == True:
-
-                outcome, resource = self.fhir_service.reinstate_immunization(
-                    imms_id, imms, existing_resource_version, imms_vax_type_perms, supplier_system)
+                outcome, resource, updated_version = self.fhir_service.reinstate_immunization(
+                    imms_id,
+                    imms,
+                    existing_resource_version,
+                    imms_vax_type_perms,
+                    supplier_system
+                )
             # Validate if the imms resource to be updated is a logically deleted resource-end
             else:
                 # Validate if imms resource version is part of the request - start
@@ -330,7 +321,7 @@ class FhirController:
 
                 # Check if the record is reinstated record - start
                 if existing_record["Reinstated"] == True:
-                    outcome, resource = self.fhir_service.update_reinstated_immunization(
+                    outcome, resource, updated_version = self.fhir_service.update_reinstated_immunization(
                         imms_id,
                         imms,
                         existing_resource_version,
@@ -338,7 +329,7 @@ class FhirController:
                         supplier_system
                     )
                 else:
-                    outcome, resource = self.fhir_service.update_immunization(
+                    outcome, resource, updated_version = self.fhir_service.update_immunization(
                         imms_id,
                         imms,
                         existing_resource_version,
@@ -358,7 +349,7 @@ class FhirController:
                 )
                 return self.create_response(400, json.dumps(exp_error))
             if outcome == UpdateOutcome.UPDATE:
-                return self.create_response(200)
+                return self.create_response(200, None, {"E-Tag": updated_version}) #include e-tag here, is it not included in the response resource
         except ValidationError as error:
             return self.create_response(400, error.to_operation_outcome())
         except IdentifierDuplicationError as duplicate:
@@ -541,7 +532,7 @@ class FhirController:
         )
         return self.create_response(400, error)
 
-    
+
     def authorize_request(self, aws_event: dict) -> Optional[dict]:
         try:
             self.authorizer.authorize(aws_event)
@@ -667,5 +658,5 @@ class FhirController:
     def _identify_supplier_system(aws_event):
         supplier_system = aws_event["headers"]["SupplierSystem"]
         if not supplier_system:
-            return self.create_response(403, unauthorized.to_operation_outcome())
+            raise UnauthorizedError("SupplierSystem header is missing")
         return supplier_system

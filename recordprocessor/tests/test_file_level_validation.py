@@ -11,7 +11,7 @@ from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests impo
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
     from errors import NoOperationPermissions, InvalidHeaders
-    from file_level_validation import validate_content_headers, validate_action_flag_permissions
+    from file_level_validation import validate_content_headers, get_permitted_operations
 
 
 test_file = MockFileDetails.rsv_emis
@@ -43,70 +43,56 @@ class TestFileLevelValidation(unittest.TestCase):
                 with self.assertRaises(InvalidHeaders):
                     validate_content_headers(test_data)
 
-    def test_validate_action_flag_permissions(self):
-        """
-        Tests that validate_action_flag_permissions returns True if supplier has permissions to perform at least one
-        of the requested CRUD operations for the given vaccine type, and False otherwise
-        """
+    def test_get_permitted_operations(self):
         # Set up test file content. Note that ValidFileContent has action flags in lower case
-        valid_file_content = ValidMockFileContent.with_new_and_update
-        valid_content_new_and_update_lowercase = valid_file_content
-        valid_content_new_and_update_uppercase = valid_file_content.replace("new", "NEW").replace("update", "UPDATE")
-        valid_content_new_and_update_mixedcase = valid_file_content.replace("new", "New").replace("update", "uPdAte")
-        valid_content_new_and_delete_lowercase = valid_file_content.replace("update", "delete")
-        valid_content_update_and_delete_lowercase = valid_file_content.replace("new", "delete").replace(
-            "update", "UPDATE"
-        )
 
         # Case: Supplier has permissions to perform at least one of the requested operations
         # Test case tuples are stuctured as (vaccine_type, vaccine_permissions, file_content, expected_output)
         test_cases = [
             # FLU, full permissions, lowercase action flags
-            ("FLU", ["FLU_FULL"], valid_content_new_and_update_lowercase, {"CREATE", "UPDATE", "DELETE"}),
+            ("FLU", ["FLU.CRUD"], {"CREATE", "UPDATE", "DELETE"}),
             # FLU, partial permissions, uppercase action flags
-            ("FLU", ["FLU_CREATE"], valid_content_new_and_update_uppercase, {"CREATE"}),
+            ("FLU", ["FLU.C"], {"CREATE"}),
             # FLU, full permissions, mixed case action flags
-            ("FLU", ["FLU_FULL"], valid_content_new_and_update_mixedcase, {"CREATE", "UPDATE", "DELETE"}),
+            ("FLU", ["FLU.CRUD"], {"CREATE", "UPDATE", "DELETE"}),
             # FLU, partial permissions (create)
-            ("FLU", ["FLU_DELETE", "FLU_CREATE"], valid_content_new_and_update_lowercase, {"CREATE", "DELETE"}),
+            ("FLU", ["FLU.D", "FLU.C"], {"CREATE", "DELETE"}),
             # FLU, partial permissions (update)
-            ("FLU", ["FLU_UPDATE"], valid_content_new_and_update_lowercase, {"UPDATE"}),
+            ("FLU", ["FLU.U"], {"UPDATE"}),
             # FLU, partial permissions (delete)
-            ("FLU", ["FLU_DELETE"], valid_content_new_and_delete_lowercase, {"DELETE"}),
+            ("FLU", ["FLU.D"], {"DELETE"}),
             # COVID19, full permissions
-            ("COVID19", ["COVID19_FULL"], valid_content_new_and_delete_lowercase, {"CREATE", "UPDATE", "DELETE"}),
+            ("COVID19", ["COVID19.CRUD"], {"CREATE", "UPDATE", "DELETE"}),
             # COVID19, partial permissions
-            ("COVID19", ["COVID19_UPDATE"], valid_content_update_and_delete_lowercase, {"UPDATE"}),
+            ("COVID19", ["COVID19.U"], {"UPDATE"}),
             # RSV, full permissions
-            ("RSV", ["RSV_FULL"], valid_content_new_and_delete_lowercase, {"CREATE", "UPDATE", "DELETE"}),
+            ("RSV", ["RSV.CRUD"], {"CREATE", "UPDATE", "DELETE"}),
             # RSV, partial permissions
-            ("RSV", ["RSV_UPDATE"], valid_content_update_and_delete_lowercase, {"UPDATE"}),
+            ("RSV", ["RSV.U"], {"UPDATE"}),
             # RSV, full permissions, mixed case action flags
-            ("RSV", ["RSV_FULL"], valid_content_new_and_update_mixedcase, {"CREATE", "UPDATE", "DELETE"}),
+            ("RSV", ["RSV.CRUD"], {"CREATE", "UPDATE", "DELETE"}),
         ]
 
-        for vaccine_type, vaccine_permissions, file_content, expected_output in test_cases:
+        for vaccine_type, vaccine_permissions, expected_output in test_cases:
             with self.subTest(f"Vaccine_type {vaccine_type} - permissions {vaccine_permissions}"):
                 self.assertEqual(
-                    validate_action_flag_permissions("TEST_SUPPLIER", vaccine_type, vaccine_permissions, file_content),
+                    get_permitted_operations("TEST_SUPPLIER", vaccine_type, vaccine_permissions),
                     expected_output,
                 )
 
         # Case: Supplier has no permissions to perform any of the requested operations
         # Test case tuples are stuctured as (vaccine_type, vaccine_permissions, file_content)
-        test_cases = [
-            # FLU, no permissions
-            ("FLU", ["FLU_UPDATE", "COVID19_FULL"], valid_content_new_and_delete_lowercase),
+        invalid_cases = [
             # COVID19, no permissions
-            ("COVID19", ["FLU_CREATE", "FLU_UPDATE"], valid_content_update_and_delete_lowercase),
-            # RSV, no permissions
-            ("RSV", ["FLU_CREATE", "FLU_UPDATE"], valid_content_update_and_delete_lowercase),
+            ("COVID19", ["FLU.CRUDS", "RSV.CUD"]),
+            # RSV, no valid permissions
+            ("RSV", ["FLU.C", "RSV.XYZ"]),
         ]
 
-        for vaccine_type, vaccine_permissions, file_content in test_cases:
+        for vaccine_type, vaccine_permissions in invalid_cases:
             with self.subTest():
                 with self.assertRaises(NoOperationPermissions):
-                    validate_action_flag_permissions("TEST_SUPPLIER", vaccine_type, vaccine_permissions, file_content)
+                    get_permitted_operations("TEST_SUPPLIER", vaccine_type, vaccine_permissions)
 
 
 if __name__ == "__main__":

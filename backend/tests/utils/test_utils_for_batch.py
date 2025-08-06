@@ -148,8 +148,8 @@ class MockFhirImmsResources:
                         "coding": [
                             {
                                 "system": "http://snomed.info/sct",
-                                "code": "55735004",
-                                "display": "Respiratory syncytial virus infection (disorder)",
+                                "code": "398102009",
+                                "display": "Acute poliomyelitis",
                             }
                         ]
                     }

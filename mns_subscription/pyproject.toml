@@ -1,0 +1,20 @@
+[tool.poetry]
+name        = "mns-subscription"
+version     = "0.1.0"
+description = ""
+authors     = ["Your Name <you@example.com>"]
+packages    = [{include = "src"}]
+
+[tool.poetry.dependencies]
+python                  = "^3.11"
+boto3                   = "~1.38.42"
+pyjwt                   = "~2.10.1"
+moto                    = "^5.1.6"
+coverage                = "^7.9.1"
+requests                = "~2.32.4"
+responses               = "~0.25.7"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

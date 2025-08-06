@@ -31,17 +31,48 @@ class TestTransformConfigs(unittest.TestCase):
         result = transform_vaccine_map(self.sample_map)
         self.assertEqual(result["vacc_to_diseases"], expected)
 
-    def test_transform_supplier_permissions_against_expected_file(self):
-        with open("./tests/test_data/expected_perms.json") as f:
+    def test_supplier_permissions(self):
+        with open("./tests/test_data/expected_supplier_permissions.json") as f:
             expected = json.load(f)
         result = transform_supplier_permissions(self.supplier_data)
-        self.assertEqual(result, expected)
+        self.assertEqual(result["supplier_permissions"], expected)
+
+    def test_ods_code_to_supplier(self):
+        with open("./tests/test_data/expected_ods_code_to_supplier.json") as f:
+            expected = json.load(f)
+        result = transform_supplier_permissions(self.supplier_data)
+        self.assertEqual(result["ods_code_to_supplier"], expected)
+
+    def test_dev_ods_code_to_supplier_dev(self):
+        self.ods_code_to_supplier_file_tester("dev")
+
+    def test_dev_ods_code_to_supplier_preprod(self):
+        self.ods_code_to_supplier_file_tester("preprod")
+
+    def test_dev_ods_code_to_supplier_prod(self):
+        self.ods_code_to_supplier_file_tester("prod")
+
+    def ods_code_to_supplier_file_tester(self, env):
+        with open("./tests/test_data/expected_ods_code_to_supplier.json") as expected_file:
+            expected = json.load(expected_file)
+            file_path = f"../config/{env}/permissions_config.json"
+
+            with open(file_path) as f:
+                supplier_data = json.load(f)
+                result = transform_supplier_permissions(supplier_data)
+                result_data = result["ods_code_to_supplier"]
+                if result_data != expected:
+                    # loop through all keys and values to find the mismatch
+                    for key in result_data:
+                        if key not in expected:
+                            print(f"Key: {key} not found")
+                        elif result_data[key] != expected[key]:
+                            print(f"Key: {key}, Result: {result_data[key]}, Expected: {expected[key]}")
+                    self.assertEqual(result_data, expected)
 
     def test_empty_input(self):
         result = transform_supplier_permissions([])
-        self.assertEqual(result, {"supplier_permissions": {}})
-
-    def test_missing_keys_raises_error(self):
-        broken_input = [{"supplier": "X"}, {"permissions": ["read:vaccine"]}]
-        with self.assertRaises(KeyError):
-            transform_supplier_permissions(broken_input)
+        self.assertEqual(result, {
+            "supplier_permissions": {},
+            "ods_code_to_supplier": {},
+        })
