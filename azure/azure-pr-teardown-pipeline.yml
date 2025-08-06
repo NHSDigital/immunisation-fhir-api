@@ -23,6 +23,7 @@ jobs:
       vmImage: 'ubuntu-latest'
     steps:
       - checkout: self
+        path: s/$(SERVICE_NAME)
 
       - bash: |
           echo $(action_pr_number)
