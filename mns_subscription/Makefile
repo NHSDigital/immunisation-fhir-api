@@ -1,3 +1,7 @@
+
+unsubscribe:
+	@PYTHONPATH=src python src/unsubscribe_mns.py
+
 test:
 	@PYTHONPATH=src:tests python -m unittest
 
