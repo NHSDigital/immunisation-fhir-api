@@ -76,6 +76,6 @@ jobs:
           export AWS_PROFILE=apim-dev
 
           cd terraform
-          make plan environment="dev" sub_environment="$WORKSPACE" bucket_name="immunisation-internal-dev-terraform-state-files"
+          make destroy environment="dev" sub_environment="$WORKSPACE" bucket_name="immunisation-internal-dev-terraform-state-files"
         displayName: Destroy terraform PR workspace and linked resources
         retryCountOnTaskFailure: 2
