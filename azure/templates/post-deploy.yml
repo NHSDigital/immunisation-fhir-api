@@ -60,8 +60,6 @@ steps:
         echo pr_no: $pr_no
 
         cd terraform
-       
-
         make init
         make apply environment=${{ parameters.aws_account_type }} sub_environment=$workspace
 

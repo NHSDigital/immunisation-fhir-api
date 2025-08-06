@@ -44,7 +44,7 @@ jobs:
           echo "##vso[task.setvariable variable=AWS_DEFAULT_REGION]eu-west-2"
           echo "##vso[task.setvariable variable=APIGEE_ENVIRONMENT]internal-dev"
         displayName: Set AWS default region and Terraform state bucket
-      
+
       - bash: |
           export AWS_PROFILE=apim-dev
           account_id="$(aws sts get-caller-identity --query Account --output text)"
