@@ -1,6 +1,6 @@
 # immunisation-fhir-api
 
-See `README.specification.md` for details of the API specification's development.
+See `README.specification.md` for details of the API specification's development. 
 
 ## Spelling
 
