@@ -60,7 +60,6 @@ steps:
         echo pr_no: $pr_no
 
         cd terraform
-
         make init
         make apply environment=${{ parameters.aws_account_type }} sub_environment=$workspace
 
@@ -91,11 +90,8 @@ steps:
         poetry env use 3.11
         poetry install --no-root
 
-        echo "Setting PYTHONPATH..."
-        export PYTHONPATH=$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/mns_subscription
-
         echo "Subscribing SQS to MNS for notifications..."
-        poetry run python src/subscribe_mns.py
+        make subscribe
       displayName: "Run MNS Subscription"
       workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/mns_subscription"
       env:

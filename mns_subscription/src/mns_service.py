@@ -52,7 +52,7 @@ class MnsService:
         if response.status_code in (200, 201):
             return response.json()
         else:
-            MnsService.handle_response(response)
+            MnsService.raise_error_response(response)
 
     def get_subscription(self) -> dict | None:
         response = requests.get(MNS_URL, headers=self.request_headers, timeout=10)
@@ -70,7 +70,7 @@ class MnsService:
                     return resource
             return None
         else:
-            MnsService.handle_response(response)
+            MnsService.raise_error_response(response)
 
     def check_subscription(self) -> dict:
         """
@@ -90,17 +90,17 @@ class MnsService:
             logging.error(f"Error ensuring subscription: {e}")
             raise
 
-    def delete_subscription(self, subscription_id: str) -> bool:
+    def delete_subscription(self, subscription_id: str) -> str:
         """Delete the subscription by ID."""
         url = f"{MNS_URL}/{subscription_id}"
         response = requests.delete(url, headers=self.request_headers, timeout=10)
-        if response.status_code in (200, 204):
+        if response.status_code == 204:
             logging.info(f"Deleted subscription {subscription_id}")
-            return True
+            return "Subscription Successfully Deleted..."
         else:
-            MnsService.handle_response(response)
+            MnsService.raise_error_response(response)
 
-    def check_delete_subcription(self):
+    def check_delete_subscription(self):
         try:
             resource = self.get_subscription()
             if not resource:
@@ -116,7 +116,7 @@ class MnsService:
             return f"Error deleting subscription: {str(e)}"
 
     @staticmethod
-    def handle_response(response):
+    def raise_error_response(response):
         error_mapping = {
             401: (TokenValidationError, "Token validation failed for the request"),
             400: (BadRequestError, "Bad request: Resource type or parameters incorrect"),

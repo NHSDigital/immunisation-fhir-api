@@ -6,13 +6,14 @@ sub_environment_dir := $(if $(findstring pr-,$(sub_environment)),pr,$(sub_enviro
 
 tf_cmd = AWS_PROFILE=$(AWS_PROFILE) terraform
 
-bucket_name = $(if $(filter dev,$(environment)),immunisation-$(sub_environment),immunisation-$(environment))-terraform-state-files
+
+bucket_name ?= $(if $(filter dev,$(environment)),immunisation-$(sub_environment),immunisation-$(environment))-terraform-state-files
 
 tf_state = -backend-config="bucket=$(bucket_name)"
 
 tf_vars = \
   -var="sub_environment=$(sub_environment)" \
-  -var-file="./environments/$(environment)/$(sub_environment_dir)/variables.tfvars"
+  -var-file=./environments/$(environment)/$(sub_environment_dir)/variables.tfvars
 
 lock-provider:
 	# Run this only when you install a new terraform provider. This will generate sha code in lock file for all platform
