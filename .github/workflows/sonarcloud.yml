@@ -21,13 +21,13 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install poetry
-        run: pip install poetry==2.1.2
-
       - uses: actions/setup-python@v5
         with:
           python-version: 3.11
           cache: 'poetry'
+
+      - name: Install poetry
+        run: pip install poetry==2.1.2
 
       - name: Set up AWS credentials
         env:
