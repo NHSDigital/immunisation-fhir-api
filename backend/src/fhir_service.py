@@ -327,8 +327,7 @@ class FhirService:
                 fullUrl=f"https://api.service.nhs.uk/immunisation-fhir-api/Immunization/{imms['id']}",
             )
             # get imms and log for debug
-            for imms in resources_filtered_for_search:
-                logger.debug("SAW: filtered immunization resource: %s", imms)
+            for imms in resources_filtered_for_search
         ]
 
 
