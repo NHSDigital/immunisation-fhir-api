@@ -8,13 +8,13 @@ from io import StringIO
 from boto3 import client as boto3_client
 from moto import mock_s3, mock_firehose
 
-from tests.utils_for_ack_backend_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT, BucketNames, REGION_NAME
-from tests.utils_for_ack_backend_tests.generic_setup_and_teardown_for_ack_backend import GenericSetUp, GenericTearDown
-from tests.utils_for_ack_backend_tests.utils_for_ack_backend_tests import (
+from tests.utils.mock_environment_variables import MOCK_ENVIRONMENT_DICT, BucketNames, REGION_NAME
+from tests.utils.generic_setup_and_teardown_for_ack_backend import GenericSetUp, GenericTearDown
+from tests.utils.utils_for_ack_backend_tests import (
     setup_existing_ack_file,
     validate_ack_file_content,
 )
-from tests.utils_for_ack_backend_tests.values_for_ack_backend_tests import (
+from tests.utils.values_for_ack_backend_tests import (
     DiagnosticsDictionaries,
     MOCK_MESSAGE_DETAILS,
     ValidValues,
