@@ -25,14 +25,6 @@ jobs:
         with:
           python-version: 3.11
 
-      - name: Set up AWS credentials
-        env:
-          AWS_ACCESS_KEY_ID: "FOOBARKEY"
-          AWS_SECRET_ACCESS_KEY: "FOOBARSECRET"
-        run: |
-          aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
-          aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
-
       - name: Install poetry
         run: pip install poetry==2.1.2
 
