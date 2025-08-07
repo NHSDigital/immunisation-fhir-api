@@ -288,7 +288,8 @@ class FhirService:
         Finds all instances of Immunization(s) for a specified patient which are for the specified vaccine type(s).
         Bundles the resources with the relevant patient resource and returns the bundle.
         """
-        logger.info("SAW: search_immunizations for nhs_number: %s, vaccine_types: %s, date_from: %s, date_to: %s",)
+        logger.info("SAW: search_immunizations for nhs_number: %s, vaccine_types: %s, date_from: %s, date_to: %s", 
+                     nhs_number, vaccine_types, date_from, date_to)
         # TODO: is disease type a mandatory field? (I assumed it is)
         #  i.e. Should we provide a search option for getting Patient's entire imms history?
 
@@ -332,6 +333,10 @@ class FhirService:
 
 
         logger.info("SAW: entries created for bundle: %d", len(entries))
+        
+        for entry in entries:
+            logger.debug("SAW: entry: %s", entry.resource.json(indent=2))                       
+        
         # Add patient resource if there is at least one immunization resource
         if len(resources) > 0:
             entries.append(
