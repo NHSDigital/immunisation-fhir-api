@@ -644,8 +644,10 @@ class FhirController:
 
     @staticmethod
     def create_response(status_code, body=None, headers=None):
+        logger.info("SAW: Creating response with status code: %d", status_code)
         if body:
             if isinstance(body, dict):
+                logger.info("SAW: return body : %s", body)
                 body = json.dumps(body)
             if headers:
                 headers["Content-Type"] = "application/fhir+json"
