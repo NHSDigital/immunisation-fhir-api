@@ -25,7 +25,7 @@ def search_imms_handler(event: events.APIGatewayProxyEventV1, _context: context_
 
 def search_imms(event: events.APIGatewayProxyEventV1, controller: FhirController):
     try:
-        logger.info("SAW: Search event: %s", json.dumps(event, indent=2))
+        logger.info("SAW: Search event") #   %s", json.dumps(event, indent=2))
         query_params = event.get("queryStringParameters", {})
         body = event.get("body")
         logger.info("SAW: Query parameters: %s", query_params)

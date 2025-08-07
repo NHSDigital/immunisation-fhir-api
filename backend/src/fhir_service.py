@@ -288,11 +288,16 @@ class FhirService:
         Finds all instances of Immunization(s) for a specified patient which are for the specified vaccine type(s).
         Bundles the resources with the relevant patient resource and returns the bundle.
         """
+        logger.info("SAW: search_immunizations for nhs_number: %s, vaccine_types: %s, date_from: %s, date_to: %s",)
         # TODO: is disease type a mandatory field? (I assumed it is)
         #  i.e. Should we provide a search option for getting Patient's entire imms history?
+
+        logger.info("checking nhs_number_mod11_check for nhs_number: %s", nhs_number)
         if not nhs_number_mod11_check(nhs_number):
             return create_diagnostics()
 
+        logger.info("SAW:obtain resources for nhs_number: %s, vaccine_types: %s, date_from: %s, date_to: %s",
+                     nhs_number, vaccine_types, date_from, date_to)
         # Obtain all resources which are for the requested nhs number and vaccine type(s) and within the date range
         resources = [
             r
@@ -307,11 +312,13 @@ class FhirService:
         # patient resource. This is as agreed with VDS team for backwards compatibility with Immunisation History API.
         patient_full_url = f"urn:uuid:{str(uuid4())}"
 
+        logger.info("SAW: call get_contained_patient")
         imms_patient_record = get_contained_patient(resources[-1]) if resources else None
 
+        logger.info("SAW: filter resources for search")
         # Filter and amend the immunization resources for the SEARCH response
         resources_filtered_for_search = [Filter.search(imms, patient_full_url) for imms in resources]
-
+        logger.info("SAW: no of items in filtered resources: %d", len(resources_filtered_for_search))
         # Add bundle entries for each of the immunization resources
         entries = [
             BundleEntry(
@@ -319,9 +326,13 @@ class FhirService:
                 search=BundleEntrySearch(mode="match"),
                 fullUrl=f"https://api.service.nhs.uk/immunisation-fhir-api/Immunization/{imms['id']}",
             )
-            for imms in resources_filtered_for_search
+            # get imms and log for debug
+            for imms in resources_filtered_for_search:
+                logger.debug("SAW: filtered immunization resource: %s", imms)
         ]
 
+
+        logger.info("SAW: entries created for bundle: %d", len(entries))
         # Add patient resource if there is at least one immunization resource
         if len(resources) > 0:
             entries.append(
