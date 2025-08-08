@@ -392,7 +392,7 @@ class FhirController:
             return self.create_response(403, unauthorized.to_operation_outcome())
 
     def search_immunizations(self, aws_event: APIGatewayProxyEventV1) -> dict:
-        logger.info("SAW: search_immunizations")
+        logger.info("SAW: search_immunizations.")
         
         if response := self.authorize_request(aws_event):
             return response
