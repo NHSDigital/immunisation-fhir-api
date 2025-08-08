@@ -39,11 +39,18 @@ class TestFhirServiceBase(unittest.TestCase):
         self.mock_logger_info = self.logger_info_patcher.start()
 
     def tearDown(self):
-        self.redis_patcher.stop()
-        self.logger_info_patcher.stop()
         super().tearDown()
+        patch.stopall()
 
 class TestServiceUrl(unittest.TestCase):
+    
+    def setUp(self):
+        self.logger_info_patcher = patch("logging.Logger.info")
+        self.mock_logger_info = self.logger_info_patcher.start()
+        
+    def tearDown(self):
+        patch.stopall()
+    
     def test_get_service_url(self):
         """it should create service url"""
         env = "int"
@@ -74,6 +81,11 @@ class TestGetImmunizationByAll(TestFhirServiceBase):
         self.imms_repo = create_autospec(ImmunizationRepository)
         self.validator = create_autospec(ImmunizationValidator)
         self.fhir_service = FhirService(self.imms_repo, self.validator)
+        self.logger_info_patcher = patch("logging.Logger.info")
+        self.mock_logger_info = self.logger_info_patcher.start()
+
+    def tearDown(self):
+        patch.stopall()
 
     def test_get_immunization_by_id_by_all(self):
         """it should find an Immunization by id"""
@@ -179,10 +191,6 @@ class TestGetImmunization(TestFhirServiceBase):
         self.imms_repo = create_autospec(ImmunizationRepository)
         self.validator = create_autospec(ImmunizationValidator)
         self.fhir_service = FhirService(self.imms_repo, self.validator)
-        self.logger_info_patcher = patch("logging.Logger.info")
-        self.mock_logger_info = self.logger_info_patcher.start()
-    def tearDown(self):
-        patch.stopall()
 
     def test_get_immunization_by_id(self):
         """it should find an Immunization by id"""
@@ -630,9 +638,9 @@ class TestSearchImmunizations(unittest.TestCase):
     """Tests for FhirService.search_immunizations"""
 
     def setUp(self):
-        self.imms_repo = create_autospec(ImmunizationRepository)
+        self.imms_repo = MagicMock()
         self.validator = create_autospec(ImmunizationValidator)
-        self.fhir_service = FhirService(self.imms_repo, self.validator)
+        self.fhir_service = FhirService(self.imms_repo, self.validator)        
         self.nhs_search_param = "patient.identifier"
         self.vaccine_type_search_param = "-immunization.target"
         self.sample_patient_resource = load_json_data("bundle_patient_resource.json")
@@ -643,12 +651,17 @@ class TestSearchImmunizations(unittest.TestCase):
         vaccine_type = "COVID19"
         params = f"{self.nhs_search_param}={nhs_number}&{self.vaccine_type_search_param}={vaccine_type}"
 
+        self.imms_repo.find_immunizations.return_value = []
+
         # When
-        _ = self.fhir_service.search_immunizations(nhs_number, [vaccine_type], params)
+        result = self.fhir_service.search_immunizations(nhs_number, [vaccine_type], params)
 
         # Then
         self.imms_repo.find_immunizations.assert_called_once_with(nhs_number, [vaccine_type])
-
+        
+        self.assertEqual(result.type, "searchset")
+        self.assertEqual(len([e for e in result.entry if e.resource.resource_type == "Immunization"]), 0)
+        
     def test_make_fhir_bundle_from_search_result(self):
         """It should return a FHIR Bundle resource"""
         imms_ids = ["imms-1", "imms-2"]
