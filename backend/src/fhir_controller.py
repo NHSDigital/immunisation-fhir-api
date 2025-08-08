@@ -405,10 +405,13 @@ class FhirController:
         if search_params is None:
             raise Exception("Failed to parse parameters.")
 
+        logger.info("SAW: fhir_controller. search_params: %s", search_params)
         # Check vaxx type permissions- start
         try:
             if aws_event.get("headers"):
                 supplier_system = self._identify_supplier_system(aws_event)
+                logger.info("SAW: Supplier system identified: %s", supplier_system)
+                logger.info("SAW: Get supplier permissions for: %s", supplier_system)
                 imms_vax_type_perms = get_supplier_permissions(supplier_system)
                 if len(imms_vax_type_perms) == 0:
                     raise UnauthorizedVaxError()
