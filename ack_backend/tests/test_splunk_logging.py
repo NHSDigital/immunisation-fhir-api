@@ -8,15 +8,15 @@ from contextlib import ExitStack
 from moto import mock_s3
 from boto3 import client as boto3_client
 
-from tests.utils_for_ack_backend_tests.values_for_ack_backend_tests import (
+from tests.utils.values_for_ack_backend_tests import (
     ValidValues,
     InvalidValues,
     DiagnosticsDictionaries,
     EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS,
 )
-from tests.utils_for_ack_backend_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT, BucketNames
-from tests.utils_for_ack_backend_tests.generic_setup_and_teardown_for_ack_backend import GenericSetUp, GenericTearDown
-from tests.utils_for_ack_backend_tests.utils_for_ack_backend_tests import generate_event
+from tests.utils.mock_environment_variables import MOCK_ENVIRONMENT_DICT, BucketNames
+from tests.utils.generic_setup_and_teardown_for_ack_backend import GenericSetUp, GenericTearDown
+from tests.utils.utils_for_ack_backend_tests import generate_event
 
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from ack_processor import lambda_handler
