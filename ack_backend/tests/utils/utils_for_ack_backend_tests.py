@@ -2,8 +2,8 @@
 
 import json
 from boto3 import client as boto3_client
-from tests.utils_for_ack_backend_tests.values_for_ack_backend_tests import ValidValues, MOCK_MESSAGE_DETAILS
-from tests.utils_for_ack_backend_tests.mock_environment_variables import REGION_NAME, BucketNames
+from tests.utils.values_for_ack_backend_tests import ValidValues, MOCK_MESSAGE_DETAILS
+from tests.utils.mock_environment_variables import REGION_NAME, BucketNames
 
 s3_client = boto3_client("s3", region_name=REGION_NAME)
 firehose_client = boto3_client("firehose", region_name=REGION_NAME)
