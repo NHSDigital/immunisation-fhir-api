@@ -94,6 +94,7 @@ class PreValidators:
             self.pre_validate_value_codeable_concept,
             self.pre_validate_extension_length,
             self.pre_validate_vaccination_procedure_code,
+            self.pre_validate_vaccine_code,
         ]
 
         for method in validation_methods:
@@ -903,3 +904,21 @@ class PreValidators:
             PreValidation.for_string(field_value, "location.identifier.system")
         except KeyError:
             pass
+
+    def pre_validate_vaccine_code(self, values: dict) -> dict:
+        """
+        Pre-validate that, if vaccineCode.coding[?(@.system=='http://snomed.info/sct')].code
+        (legacy CSV field : VACCINE_PRODUCT_CODE) exists, then it is a valid snomed code
+
+        NOTE: vaccineCode is a mandatory FHIR field. A value of None will be rejected by the
+        FHIR model before pre-validators are run.
+        """
+        url = "http://snomed.info/sct"
+        field_location = f"vaccineCode.coding[?(@.system=='{url}')].code"
+        try:
+            field_value = [x for x in values["vaccineCode"]["coding"] if x.get("system") == url][0]["code"]
+            PreValidation.for_string(field_value, field_location)
+            PreValidation.for_snomed_code(field_value, field_location)
+        except (KeyError, IndexError):
+            pass
+
