@@ -749,7 +749,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         """Test test_pre_validate_extension_url accepts valid values and rejects invalid values for extension[0].url"""
         # Test case: missing "extension"
         invalid_json_data = deepcopy(self.json_data)
-        test_values = ["12345abc", "12345", "1234567890123456789", "12345671", "1324681000000111"]
+        test_values = ["12345abc", "12345", "1234567890123456789", "12345671", "1324681000000111", "0101291008"]
         for values in test_values:
             invalid_json_data["extension"][0]["valueCodeableConcept"]["coding"][0]["code"] = values
 
@@ -1200,6 +1200,20 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
             field_location,
             valid_strings_to_test=["https://fhir.hl7.org.uk/Id/140565"],
         )
+
+    def test_pre_validate_vaccine_code(self):
+        """Test pre_validate_vaccine_code accepts valid values and rejects invalid values for vaccineCode.coding[0].code"""
+        invalid_json_data = deepcopy(self.json_data)
+        test_values = ["12345abc", "12345", "1234567890123456789", "12345671", "1324681000000111", "0101291008"]
+        for values in test_values:
+            invalid_json_data["vaccineCode"]["coding"][0]["code"] = values
+
+            with self.assertRaises(Exception) as error:
+                self.validator.validate(invalid_json_data)
+
+            full_error_message = str(error.exception)
+            actual_error_messages = full_error_message.replace("Validation errors: ", "").split("; ")
+            self.assertIn("vaccineCode.coding[?(@.system=='http://snomed.info/sct')].code is not a valid snomed code", actual_error_messages)
 
 
 class TestImmunizationModelPreValidationRulesForReduceValidation(unittest.TestCase):
