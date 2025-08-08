@@ -1,6 +1,6 @@
 FROM public.ecr.aws/lambda/python:3.11 as base
 
-RUN pip install "poetry~=2.1.2"
+RUN pip install "poetry~=2.1.4"
 
 COPY poetry.lock pyproject.toml README.md ./
 RUN poetry config virtualenvs.create false && poetry install --no-interaction --no-ansi --no-root --only main
