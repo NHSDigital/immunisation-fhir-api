@@ -64,10 +64,6 @@ info:
     ## API status and roadmap
     This API is [in development](https://digital.nhs.uk/developer/guides-and-documentation/reference-guide#statuses).
      
-    To see our roadmap, or to suggest, comment or vote on features for this API, see our [interactive product backlog](https://nhs-digital-api-management.featureupvote.com/?tag=immunisation).
-     
-    If you have any other queries, [contact us](https://digital.nhs.uk/developer/help-and-support).
-     
     ## Service level
     This API will be a platinum service, meaning it is operational and supported 24 x 7 x 365.
      
@@ -137,9 +133,7 @@ info:
     | FHIR libraries and SDKs   | Various open source libraries for integrating with FHIR APIs.        | [FHIR libraries and SDKs](https://digital.nhs.uk/developer/guides-and-documentation/api-technologies-at-nhs-digital#fhir-libraries-and-sdks) |
     | nhs-number                | Python package containing utilities for NHS numbers including validity checks, normalisation and generation. | [GitHub repo](https://github.com/uk-fci/nhs-number) \| [Python Package index](https://pypi.org/project/nhs-number/) \| [Docs](https://nhs-number.uk-fci.tech/) |
 
-    We currently don't have any open source client libraries or sample code for this API. If you think this would be useful, you can [upvote the suggestion on our Interactive Product Backlog](https://nhs-digital-api-management.featureupvote.com/suggestions/107439/client-libraries-and-reference-implementations).
-
-    The source code for the Immunisation FHIR API is not currently in the open. If you think this would be useful, you can [upvote the suggestion on our Interactive Product Backlog](https://nhs-digital-api-management.featureupvote.com/suggestions/466692/open-source-core-spine-including-pds-eps-scr-and-more).
+    We currently don't have any open source client libraries or sample code and the source code for this API is not currently in the open. If you think this would be useful, [contact us](https://digital.nhs.uk/developer/help-and-support).
 
 
     ## Environments and Testing
@@ -181,6 +175,9 @@ info:
     Information on this page might impact the design of your software.
   
     To understand how our online digital onboarding process works, see [digital onboarding](https://digital.nhs.uk/developer/guides-and-documentation/digital-onboarding#using-the-digital-onboarding-portal).
+
+    ## Contact us
+    For help and support connecting to our APIs and to join our developer community, see [Help and support building healthcare software](https://digital.nhs.uk/developer/help-and-support).
 
 servers:
   - url: 'https://sandbox.api.service.nhs.uk/immunisation-fhir-api'
