@@ -317,6 +317,9 @@ class FhirService:
         imms_patient_record = get_contained_patient(resources[-1]) if resources else None
 
         logger.info("SAW: filter resources for search")
+        # log pretty resources for debug
+        logger.debug("SAW: resources: %s", [r.json(indent=2) for r in resources])
+        logger.info("SAW: filtered resources: %d", len(resources_filtered_for_search))
         # Filter and amend the immunization resources for the SEARCH response
         resources_filtered_for_search = [Filter.search(imms, patient_full_url) for imms in resources]
         logger.info("SAW: no of items in filtered resources: %d", len(resources_filtered_for_search))
