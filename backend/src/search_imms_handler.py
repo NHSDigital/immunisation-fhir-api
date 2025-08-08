@@ -25,8 +25,11 @@ def search_imms_handler(event: events.APIGatewayProxyEventV1, _context: context_
 
 def search_imms(event: events.APIGatewayProxyEventV1, controller: FhirController):
     try:
+        logger.info("SAW: Search event") #   %s", json.dumps(event, indent=2))
         query_params = event.get("queryStringParameters", {})
         body = event.get("body")
+        logger.info("SAW: Query parameters: %s", query_params)
+        logger.info("SAW: Body: %s", body)
         body_has_immunization_identifier = False
         query_string_has_immunization_identifier = False
         query_string_has_element = False
@@ -46,18 +49,24 @@ def search_imms(event: events.APIGatewayProxyEventV1, controller: FhirController
                 # Check for 'immunization.identifier' in body
                 body_has_immunization_identifier = "immunization.identifier" in parsed_body
                 body_has_immunization_element = "_element" in parsed_body
+            
+            logger.info("SAW: Query string has immunization identifier: %s", query_string_has_immunization_identifier)
             if (
                 query_string_has_immunization_identifier
                 or body_has_immunization_identifier
                 or query_string_has_element
                 or body_has_immunization_element
             ):
+                logger.info("SAW: Searching by immunization identifier")
                 return controller.get_immunization_by_identifier(event)
-            response = controller.search_immunizations(event)
-        else:
-            response = controller.search_immunizations(event)
+        logger.info("SAW: Searching by immunization")
+        response = controller.search_immunizations(event)
+
+        logger.info("SAW: Searched by immunization")
 
         result_json = json.dumps(response)
+        logger.info("SAW: Search result: %s", result_json)        
+        logger.info("SAW: Search result size: %d bytes", len(result_json.encode("utf-8")))
         result_size = len(result_json.encode("utf-8"))
 
         if result_size > 6 * 1024 * 1024:
@@ -68,6 +77,7 @@ def search_imms(event: events.APIGatewayProxyEventV1, controller: FhirController
                 diagnostics="Search returned too many results. Please narrow down the search",
             )
             return FhirController.create_response(400, exp_error)
+        logger.info("SAW: return response with size: %d bytes", result_size)
         return response
     except Exception:  # pylint: disable = broad-exception-caught
         logger.exception("Unhandled exception")

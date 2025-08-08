@@ -16,6 +16,8 @@ class TestSearchImmunizations(unittest.TestCase):
         self.controller = create_autospec(FhirController)
         self.logger_exception_patcher = patch("logging.Logger.exception")
         self.mock_logger_exception = self.logger_exception_patcher.start()
+        self.logger_info_patcher = patch("logging.Logger.info")
+        self.mock_logger_info = self.logger_info_patcher.start()
 
     def tearDown(self):
         patch.stopall()

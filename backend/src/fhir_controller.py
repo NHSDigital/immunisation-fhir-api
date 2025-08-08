@@ -10,6 +10,7 @@ import boto3
 from aws_lambda_typing.events import APIGatewayProxyEventV1
 from fhir.resources.R4B.immunization import Immunization
 from boto3 import client as boto3_client
+from clients import logger
 
 from authorization import Authorization, UnknownPermission
 from fhir_repository import ImmunizationRepository, create_table
@@ -391,20 +392,26 @@ class FhirController:
             return self.create_response(403, unauthorized.to_operation_outcome())
 
     def search_immunizations(self, aws_event: APIGatewayProxyEventV1) -> dict:
+        logger.info("SAW: search_immunizations.")
+        
         if response := self.authorize_request(aws_event):
             return response
-
+        logger.info("SAW: Authorised request")
         try:
+            logger.info("SAW: Processing search parameters")
             search_params = process_search_params(process_params(aws_event))
         except ParameterException as e:
             return self._create_bad_request(e.message)
         if search_params is None:
             raise Exception("Failed to parse parameters.")
 
+        logger.info("SAW: fhir_controller. search_params: %s", search_params)
         # Check vaxx type permissions- start
         try:
             if aws_event.get("headers"):
                 supplier_system = self._identify_supplier_system(aws_event)
+                logger.info("SAW: Supplier system identified: %s", supplier_system)
+                logger.info("SAW: Get supplier permissions for: %s", supplier_system)
                 imms_vax_type_perms = get_supplier_permissions(supplier_system)
                 if len(imms_vax_type_perms) == 0:
                     raise UnauthorizedVaxError()
@@ -427,7 +434,7 @@ class FhirController:
         except UnauthorizedVaxError as unauthorized:
             return self.create_response(403, unauthorized.to_operation_outcome())
         # Check vaxx type permissions on the existing record - end
-
+        logger.info("SAW: Searching immunizations...")
         result = self.fhir_service.search_immunizations(
             search_params.patient_identifier,
             vax_type_perm,
@@ -640,8 +647,10 @@ class FhirController:
 
     @staticmethod
     def create_response(status_code, body=None, headers=None):
+        logger.info("SAW: Creating response with status code: %d", status_code)
         if body:
             if isinstance(body, dict):
+                logger.info("SAW: return body : %s", body)
                 body = json.dumps(body)
             if headers:
                 headers["Content-Type"] = "application/fhir+json"
