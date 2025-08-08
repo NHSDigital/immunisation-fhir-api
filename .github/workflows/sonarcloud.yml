@@ -63,7 +63,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: 3.11
-          cache: 'poetry'
 
       - name: Set up AWS credentials
         env:
@@ -72,6 +71,9 @@ jobs:
         run: |
           aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
           aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+
+      - name: Install poetry
+        run: pip install poetry==2.1.2
 
       - name: Run unittest with filenameprocessor-coverage
         working-directory: filenameprocessor
@@ -106,6 +108,8 @@ jobs:
       - name: Run unittest with coverage-ack-lambda
         working-directory: ack_backend
         id: acklambda
+        env:
+          PYTHONPATH: ${{ github.workspace }}/ack_backend/src:${{ github.workspace }}/ack_backend/tests
         continue-on-error: true
         run: |
           poetry install
@@ -173,7 +177,6 @@ jobs:
           PYTHONPATH: ${{ env.SHARED_PATH }}/src
         continue-on-error: true
         run: |
-            poetry env use 3.11
             poetry install
             poetry run coverage run --rcfile=.coveragerc --source=src -m unittest discover -s tests -p "test_*.py" -v || echo "shared tests failed" >> ../../failed_tests.txt
             poetry run coverage xml -o ../../shared-coverage.xml
@@ -185,7 +188,6 @@ jobs:
           PYTHONPATH: ${{ env.LAMBDA_PATH }}/id_sync/src:${{ env.SHARED_PATH }}/src
         continue-on-error: true
         run: |
-            poetry env use 3.11
             poetry install
             poetry run coverage run --rcfile=.coveragerc --source=src -m unittest discover || echo "id_sync tests failed" >> ../../failed_tests.txt
             poetry run coverage xml -o ../../id_sync-coverage.xml
