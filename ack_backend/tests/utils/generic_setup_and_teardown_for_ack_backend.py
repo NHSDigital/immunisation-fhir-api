@@ -1,6 +1,6 @@
 """Generic setup and teardown for ACK backend tests"""
 
-from tests.utils_for_ack_backend_tests.mock_environment_variables import BucketNames, Firehose, REGION_NAME
+from tests.utils.mock_environment_variables import BucketNames, Firehose, REGION_NAME
 
 
 class GenericSetUp:
