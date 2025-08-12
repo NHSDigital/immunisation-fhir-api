@@ -31,9 +31,10 @@ def generate_and_send_logs(
     """Generates log data which includes the base_log_data, additional_log_data, and time taken (calculated using the
     current time and given start_time) and sends them to Cloudwatch and Firehose."""
     seconds_elapsed = time.time() - start_time
-    time_elapsed = f"{round(seconds_elapsed * 1000, 5)}ms" if use_ms_precision else f"{round(seconds_elapsed, 5)}s"
+    formatted_time_elapsed = f"{round(seconds_elapsed * 1000, 5)}ms" if use_ms_precision else \
+        f"{round(seconds_elapsed, 5)}s"
 
-    log_data = {**base_log_data, "time_taken": time_elapsed, **additional_log_data}
+    log_data = {**base_log_data, "time_taken": formatted_time_elapsed, **additional_log_data}
     log_function = logger.error if is_error_log else logger.info
     log_function(json.dumps(log_data))
     send_log_to_firehose(log_data)
