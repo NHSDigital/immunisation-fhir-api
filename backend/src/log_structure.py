@@ -40,10 +40,12 @@ def function_info(func):
 
         if event.get("body"):
             imms = json.loads(event["body"])
-            vaccine_type = get_vaccine_type(imms)
-            log_data["vaccine_type"] = vaccine_type
-            local_id = imms["identifier"][0]["value"] + "^" + imms["identifier"][0]["system"]
-            log_data["local_id"] = local_id
+            if imms.get("protocolApplied"):
+                vaccine_type = get_vaccine_type(imms)
+                log_data["vaccine_type"] = vaccine_type
+            if imms.get("identifier"):
+                local_id = imms["identifier"][0]["value"] + "^" + imms["identifier"][0]["system"]
+                log_data["local_id"] = local_id
 
         operation_outcome = dict()
         firehose_log = dict()
