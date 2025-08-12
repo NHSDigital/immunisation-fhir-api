@@ -111,6 +111,8 @@ def forward_lambda_handler(event, _):
     # Send to SQS
     sqs_message_body = json.dumps(array_of_messages)
     message_len = len(sqs_message_body)
+    print(len(array_of_messages))
+    print(message_len)
     logger.info(f"total message length:{message_len}")
     message_group_id = f"{file_key}_{created_at_formatted_string}"
     if message_len < 256 * 1024:

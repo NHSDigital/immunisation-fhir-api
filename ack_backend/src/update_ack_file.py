@@ -86,6 +86,7 @@ def upload_ack_file(
     row_count_destination = get_row_count(ACK_BUCKET_NAME, temp_ack_file_key)
     # TODO: Should we check for > and if so what handling is required
     if row_count_destination == row_count_source:
+        print("Count matched - archiving file and marking job as processed")
         move_file(ACK_BUCKET_NAME, temp_ack_file_key, archive_ack_file_key)
         move_file(SOURCE_BUCKET_NAME, f"processing/{file_key}", f"archive/{file_key}")
 

@@ -90,6 +90,7 @@ def upsert_audit_table(
             },
             ConditionExpression="attribute_not_exists(message_id)",  # Prevents accidental overwrites
         )
+        logger.info("job saved with status %s", file_status)
         logger.info("%s file, with message id %s, successfully added to audit table", file_key, message_id)
 
         # Return a bool indicating whether the file status is queued

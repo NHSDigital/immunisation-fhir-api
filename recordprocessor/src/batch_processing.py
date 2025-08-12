@@ -29,6 +29,7 @@ def process_csv_to_fhir(incoming_message_body: dict) -> None:
     allowed_operations = interim_message_body.get("allowed_operations")
     created_at_formatted_string = interim_message_body.get("created_at_formatted_string")
     csv_reader = interim_message_body.get("csv_dict_reader")
+    print("Processing ECS Task for %s", file_key)
 
     target_disease = map_target_disease(vaccine)
 
