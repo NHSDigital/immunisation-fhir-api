@@ -409,6 +409,7 @@ class FhirController:
         # Check vaxx type permissions- start
         try:
             logger.info("SAW: fhir_controller. search_immunizations...5")
+            logger.info("SAW: aws_event=%s", aws_event)
             if aws_event.get("headers"):
                 logger.info("SAW: fhir_controller. search_immunizations...6")
                 supplier_system = self._identify_supplier_system(aws_event)
