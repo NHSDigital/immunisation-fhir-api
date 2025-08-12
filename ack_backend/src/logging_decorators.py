@@ -22,22 +22,28 @@ def send_log_to_firehose(log_data: dict) -> None:
 
 
 def generate_and_send_logs(
-    start_time, base_log_data: dict, additional_log_data: dict, is_error_log: bool = False
+    start_time: float,
+    base_log_data: dict,
+    additional_log_data: dict,
+    use_ms_precision: bool = False,
+    is_error_log: bool = False
 ) -> None:
     """Generates log data which includes the base_log_data, additional_log_data, and time taken (calculated using the
     current time and given start_time) and sends them to Cloudwatch and Firehose."""
-    log_data = {**base_log_data, "time_taken": f"{round(time.time() - start_time, 5)}s", **additional_log_data}
+    seconds_elapsed = time.time() - start_time
+    time_elapsed = f"{round(seconds_elapsed * 1000, 5)}ms" if use_ms_precision else f"{round(seconds_elapsed, 5)}s"
+
+    log_data = {**base_log_data, "time_taken": time_elapsed, **additional_log_data}
     log_function = logger.error if is_error_log else logger.info
     log_function(json.dumps(log_data))
     send_log_to_firehose(log_data)
 
 
-def convert_messsage_to_ack_row_logging_decorator(func):
+def convert_message_to_ack_row_logging_decorator(func):
     """This decorator logs the information on the conversion of a single message to an ack data row"""
 
     @wraps(func)
     def wrapper(message, created_at_formatted_string):
-
         base_log_data = {"function_name": f"ack_processor_{func.__name__}", "date_time": str(datetime.now())}
         start_time = time.time()
 
@@ -57,13 +63,14 @@ def convert_messsage_to_ack_row_logging_decorator(func):
                 "operation_requested": message.get("operation_requested", "unknown"),
                 **process_diagnostics(diagnostics, file_key, message_id),
             }
-            generate_and_send_logs(start_time, base_log_data, additional_log_data)
+            generate_and_send_logs(start_time, base_log_data, additional_log_data, use_ms_precision=True)
 
             return result
 
         except Exception as error:
             additional_log_data = {"status": "fail", "statusCode": 500, "diagnostics": str(error)}
-            generate_and_send_logs(start_time, base_log_data, additional_log_data, is_error_log=True)
+            generate_and_send_logs(start_time, base_log_data, additional_log_data, use_ms_precision=True,
+                                   is_error_log=True)
             raise
 
     return wrapper

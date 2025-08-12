@@ -1,7 +1,7 @@
 """Functions for converting the incoming message body into a row of ack data"""
 
 from typing import Union
-from logging_decorators import convert_messsage_to_ack_row_logging_decorator
+from logging_decorators import convert_message_to_ack_row_logging_decorator
 from update_ack_file import create_ack_data
 
 
@@ -19,7 +19,7 @@ def get_error_message_for_ack_file(message_diagnostics) -> Union[None, str]:
     return message_diagnostics.get("error_message", "Unable to determine diagnostics issue")
 
 
-@convert_messsage_to_ack_row_logging_decorator
+@convert_message_to_ack_row_logging_decorator
 def convert_message_to_ack_row(message, created_at_formatted_string):
     """
     Takes a single message and returns the ack data row for that message.
