@@ -35,6 +35,12 @@ def function_info(func):
             "actual_path": actual_path,
             "resource_path": resource_path,
         }
+
+        if event.get("body"):
+            imms = json.loads(event["body"])
+            local_id = imms["identifier"][0]["value"] + "^" + imms["identifier"][0]["system"]
+            log_data["local_id"] = local_id
+
         operation_outcome = dict()
         firehose_log = dict()
         start = time.time()

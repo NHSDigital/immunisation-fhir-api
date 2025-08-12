@@ -25,7 +25,8 @@ class TestFunctionInfoWrapper(unittest.TestCase):
                 'X-Request-ID': 'test_request'
             },
             'path': '/test',
-            'requestContext': {'resourcePath': '/test'}
+            'requestContext': {'resourcePath': '/test'},
+            'body': "{\"identifier\": [{\"system\": \"http://test\", \"value\": \"12345\"}]}"
         }
 
         # Act
@@ -45,6 +46,7 @@ class TestFunctionInfoWrapper(unittest.TestCase):
         self.assertEqual(logged_info['X-Request-ID'], 'test_request')
         self.assertEqual(logged_info['actual_path'], '/test')
         self.assertEqual(logged_info['resource_path'], '/test')
+        self.assertEqual(logged_info['local_id'], '12345^http://test')
 
     def test_exception_handling(self, mock_logger, mock_firehose_logger):
 
@@ -57,7 +59,9 @@ class TestFunctionInfoWrapper(unittest.TestCase):
                 'X-Correlation-ID': 'failed_test_correlation',
                 'X-Request-ID': 'failed_test_request'
             },
-                'path': '/failed_test', 'requestContext': {'resourcePath': '/failed_test'}}
+                'path': '/failed_test', 'requestContext': {'resourcePath': '/failed_test'},
+                'body': "{\"identifier\": [{\"system\": \"http://test\", \"value\": \"12345\"}]}"}
+
             context = {}
             decorated_function_raises(event, context)
 
@@ -75,3 +79,4 @@ class TestFunctionInfoWrapper(unittest.TestCase):
         self.assertEqual(logged_info['actual_path'], '/failed_test')
         self.assertEqual(logged_info['resource_path'], '/failed_test')
         self.assertEqual(logged_info['error'], str(ValueError("Test error")))
+        self.assertEqual(logged_info['local_id'], '12345^http://test')
