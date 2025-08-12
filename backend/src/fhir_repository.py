@@ -409,6 +409,8 @@ class ImmunizationRepository:
         condition = Key("PatientPK").eq(patient_pk)
         is_not_deleted = Attr("DeletedAt").not_exists() | Attr("DeletedAt").eq("reinstated")
 
+        logger.info("SAW fi...2.1: is_not_deleted condition created: %s", is_not_deleted)
+
         logger.info("SAW fi...3: executing DynamoDB query on PatientGSI index")
 
         response = self.table.query(
