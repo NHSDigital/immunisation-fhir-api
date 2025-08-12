@@ -85,7 +85,7 @@ def process_search_params(params: ParamContainer) -> SearchParams:
 
     :raises ParameterException:
     """
-    logger.info("SAW: process_search_params: %s", params)
+
     # patient.identifier
     patient_identifiers = params.get(patient_identifier_key, [])
     patient_identifier = patient_identifiers[0] if len(patient_identifiers) == 1 else None
@@ -101,7 +101,6 @@ def process_search_params(params: ParamContainer) -> SearchParams:
                       f"e.g. \"{patient_identifier_system}|9000000009\"")
 
     patient_identifier = patient_identifier.split("|")[1]
-    logger.info("SAW: patient_identifier: %s", patient_identifier)
 
     # immunization.target
     params[immunization_target_key] = list(set(params.get(immunization_target_key, [])))
@@ -117,7 +116,6 @@ def process_search_params(params: ParamContainer) -> SearchParams:
 
     # date.from
     date_froms = params.get(date_from_key, [])
-    logger.info("SAW: date.from: %s", date_froms)
 
     if len(date_froms) > 1:
         raise ParameterException(f"Search parameter {date_from_key} may have one value at most.")
@@ -127,7 +125,7 @@ def process_search_params(params: ParamContainer) -> SearchParams:
             if len(date_froms) == 1 else date_from_default
     except ValueError:
         raise ParameterException(f"Search parameter {date_from_key} must be in format: YYYY-MM-DD")
-    logger.info("SAW: date.from: %s", date_from)
+
     # date.to
     date_tos = params.get(date_to_key, [])
 
@@ -139,7 +137,6 @@ def process_search_params(params: ParamContainer) -> SearchParams:
             if len(date_tos) == 1 else date_to_default
     except ValueError:
         raise ParameterException(f"Search parameter {date_to_key} must be in format: YYYY-MM-DD")
-    logger.info("SAW: date.to: %s", date_to)
 
     if date_from and date_to and date_from > date_to:
         raise ParameterException(f"Search parameter {date_from_key} must be before {date_to_key}")

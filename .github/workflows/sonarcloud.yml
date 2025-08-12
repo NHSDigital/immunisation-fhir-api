@@ -24,45 +24,6 @@ jobs:
       - name: Install poetry
         run: pip install poetry==2.1.4
 
-      - name: Debug PR Info
-        if: github.event_name == 'pull_request'
-        run: |
-          echo "PR Number: ${{ github.event.pull_request.number }}"
-          echo "PR Head SHA: ${{ github.event.pull_request.head.sha }}"
-          echo "PR Base SHA: ${{ github.event.pull_request.base.sha }}"
-          echo "Current SHA: ${{ github.sha }}"
-
-
-      - name: Debug Trigger Info
-        run: |
-          echo "=== WORKFLOW TRIGGER DEBUG ==="
-          echo "Event Name: ${{ github.event_name }}"
-          echo "Current SHA: ${{ github.sha }}"
-
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            echo "=== PULL REQUEST DETAILS ==="
-            echo "PR Number: ${{ github.event.pull_request.number }}"
-            echo "PR Head SHA: ${{ github.event.pull_request.head.sha }}"
-            echo "PR Base SHA: ${{ github.event.pull_request.base.sha }}"
-            echo "PR Head Ref: ${{ github.event.pull_request.head.ref }}"
-            echo "PR Base Ref: ${{ github.event.pull_request.base.ref }}"
-            echo "✅ Using PR HEAD commit for analysis"
-          elif [ "${{ github.event_name }}" = "push" ]; then
-            echo "=== PUSH DETAILS ==="
-            echo "Branch: ${{ github.ref_name }}"
-            echo "Pushed SHA: ${{ github.sha }}"
-            echo "Before SHA: ${{ github.event.before }}"
-            echo "After SHA: ${{ github.event.after }}"
-            echo "✅ Using pushed commit for analysis"
-          else
-            echo "=== OTHER EVENT ==="
-            echo "Unknown event type: ${{ github.event_name }}"
-          fi
-
-
-      - name: Install poetry
-        run: pip install poetry==2.1.2
-
       - uses: actions/setup-python@v5
         with:
           python-version: 3.11

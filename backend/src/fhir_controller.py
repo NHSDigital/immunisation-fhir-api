@@ -392,29 +392,20 @@ class FhirController:
             return self.create_response(403, unauthorized.to_operation_outcome())
 
     def search_immunizations(self, aws_event: APIGatewayProxyEventV1) -> dict:
-        logger.info("SAW: search_immunizations.")
-        
         if response := self.authorize_request(aws_event):
             return response
-        logger.info("SAW: Authorised request")
+
         try:
-            logger.info("SAW: Processing search parameters")
             search_params = process_search_params(process_params(aws_event))
         except ParameterException as e:
             return self._create_bad_request(e.message)
         if search_params is None:
             raise Exception("Failed to parse parameters.")
 
-        logger.info("SAW: fhir_controller. search_params: %s", search_params)
         # Check vaxx type permissions- start
         try:
-            logger.info("SAW: fhir_controller. search_immunizations...5")
-            logger.info("SAW: aws_event=%s", aws_event)
             if aws_event.get("headers"):
-                logger.info("SAW: fhir_controller. search_immunizations...6")
                 supplier_system = self._identify_supplier_system(aws_event)
-                logger.info("SAW: Supplier system identified: %s", supplier_system)
-                logger.info("SAW: Get supplier permissions for: %s", supplier_system)
                 imms_vax_type_perms = get_supplier_permissions(supplier_system)
                 if len(imms_vax_type_perms) == 0:
                     raise UnauthorizedVaxError()
@@ -437,7 +428,7 @@ class FhirController:
         except UnauthorizedVaxError as unauthorized:
             return self.create_response(403, unauthorized.to_operation_outcome())
         # Check vaxx type permissions on the existing record - end
-        logger.info("SAW: Searching immunizations...")
+
         result = self.fhir_service.search_immunizations(
             search_params.patient_identifier,
             vax_type_perm,
@@ -635,7 +626,7 @@ class FhirController:
             if len(supplier_system) == 0:
                 raise UnauthorizedSystemError()
             imms_vax_type_perms = get_supplier_permissions(supplier_system)
-            print(f" update imms = {imms_vax_type_perms}")
+            logger.info(f" update imms = {imms_vax_type_perms}")
             if len(imms_vax_type_perms) == 0:
                 raise UnauthorizedVaxError()
             # Return the values needed for later use
@@ -650,10 +641,8 @@ class FhirController:
 
     @staticmethod
     def create_response(status_code, body=None, headers=None):
-        logger.info("SAW: Creating response with status code: %d", status_code)
         if body:
             if isinstance(body, dict):
-                logger.info("SAW: return body : %s", body)
                 body = json.dumps(body)
             if headers:
                 headers["Content-Type"] = "application/fhir+json"
@@ -668,10 +657,7 @@ class FhirController:
 
     @staticmethod
     def _identify_supplier_system(aws_event):
-        logger.info("SAW: fhir_controller. _identify_supplier_system...1")
-        headers = aws_event.get("headers", {})
-        logger.info("SAW: headers=%s", headers)
-        supplier_system = headers.get("SupplierSystem")
+        supplier_system = aws_event["headers"]["SupplierSystem"]
         if not supplier_system:
             raise UnauthorizedError("SupplierSystem header is missing")
         return supplier_system

@@ -1,3 +1,5 @@
+from urllib import response
+from responses import logger
 import simplejson as json
 import os
 import time
@@ -394,70 +396,49 @@ class ImmunizationRepository:
 
     def find_immunizations(self, patient_identifier: str, vaccine_types: list):
         """it should find all of the specified patient's Immunization events for all of the specified vaccine_types"""
-        
-        # ✅ Add debug logging
-        import logging
-        logger = logging.getLogger(__name__)
-        
-        logger.info("SAW fi...1: find_immunizations called with patient_identifier: '%s', vaccine_types: %s", 
-                    patient_identifier, vaccine_types)
-        
-        # Create the patient PK and log it
-        patient_pk = _make_patient_pk(patient_identifier)
-        logger.info("SAW fi...2: patient_pk created: '%s'", patient_pk)
-
-        condition = Key("PatientPK").eq(patient_pk)
+        condition = Key("PatientPK").eq(_make_patient_pk(patient_identifier))
         is_not_deleted = Attr("DeletedAt").not_exists() | Attr("DeletedAt").eq("reinstated")
 
-        logger.info("SAW fi...2.1: is_not_deleted condition created: %s", is_not_deleted)
+        raw_items = self.get_all_items(condition, is_not_deleted)
 
-        logger.info("SAW fi...3: executing DynamoDB query on PatientGSI index")
-
-        response = self.table.query(
-            IndexName="PatientGSI",
-            KeyConditionExpression=condition,
-            FilterExpression=is_not_deleted,
-        )
-        
-        # ✅ Log the raw DynamoDB response
-        logger.info("SAW fi...4: DynamoDB query response - Count: %s, ScannedCount: %s", 
-                    response.get("Count", 0), response.get("ScannedCount", 0))
-        
-        if "Items" in response:
-            raw_items = response["Items"]
-            logger.info("SAW fi...5: total items returned from DynamoDB: %d", len(raw_items))
-            
-            # Log first few items for debugging
-            if raw_items:
-                logger.info("SAW fi...6: sample raw item keys: %s", list(raw_items[0].keys()))
-                logger.info("SAW fi...7: first few PatientSK values: %s",
-                        [item.get("PatientSK", "MISSING") for item in raw_items[:3]])
-            
+        if raw_items:    
             # Filter the response to contain only the requested vaccine types
             items = [x for x in raw_items if x["PatientSK"].split("#")[0] in vaccine_types]
 
-            logger.info("SAW fi...8: after vaccine_types filtering (%s): %d items", vaccine_types, len(items))
-
-            if items:
-                # Log the vaccine types found
-                found_vaccine_types = [item["PatientSK"].split("#")[0] for item in items]
-                logger.info("SAW fi...9: found vaccine types: %s", found_vaccine_types)
-            else:
-                # Debug why no items matched
-                all_vaccine_types = [item["PatientSK"].split("#")[0] for item in raw_items]
-                logger.warning("SAW fi...10: no items matched vaccine_types filter!")
-                logger.warning("SAW fi...11: requested vaccine_types: %s", vaccine_types)
-                logger.warning("SAW fi...12: available vaccine_types in data: %s", list(set(all_vaccine_types)))
-
             # Return a list of the FHIR immunization resource JSON items
             final_resources = [json.loads(item["Resource"]) for item in items]
-            logger.info("SAW fi...13: returning %d FHIR resources", len(final_resources))
 
             return final_resources
         else:
-            logger.error("SAW fi...14: No 'Items' key in DynamoDB response!")
-            logger.error("SAW fi...15: Response keys: %s", list(response.keys()))
-            raise UnhandledResponseError(message=f"Unhandled error. Query failed", response=response)
+            logger.warning("no items matched patient_identifier filter!")
+            return []
+
+    def get_all_items(self, condition, is_not_deleted):
+        """Query DynamoDB and paginate through all results."""
+        all_items = []
+        last_evaluated_key = None
+
+        while True:
+            query_args = {
+                "IndexName": "PatientGSI",
+                "KeyConditionExpression": condition,
+                "FilterExpression": is_not_deleted,
+            }
+            if last_evaluated_key:
+                query_args["ExclusiveStartKey"] = last_evaluated_key
+
+            response = self.table.query(**query_args)
+            if "Items" not in response:
+                raise UnhandledResponseError(message="No Items in DynamoDB response", response=response)
+  
+            items = response.get("Items", [])
+            all_items.extend(items)
+
+            last_evaluated_key = response.get("LastEvaluatedKey")
+            if not last_evaluated_key:
+                break
+
+        return all_items
 
     @staticmethod
     def _handle_dynamo_response(response):

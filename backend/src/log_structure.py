@@ -20,7 +20,7 @@ def function_info(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         event = args[0] if args else {}
-        print(f"Event: {event}")
+        logger.info(f"Event: {event}")
         headers = event.get("headers", {})
         correlation_id = headers.get("X-Correlation-ID", "X-Correlation-ID not passed")
         request_id = headers.get("X-Request-ID", "X-Request-ID not passed")
@@ -40,7 +40,7 @@ def function_info(func):
         start = time.time()
         try:
             result = func(*args, **kwargs)
-            print(f"Result:{result}")
+            logger.info(f"Result:{result}")
             end = time.time()
             log_data["time_taken"] = f"{round(end - start, 5)}s"
             status = "500"
@@ -56,7 +56,7 @@ def function_info(func):
                         record = result_headers["Location"]
                 if result.get("body"):
                     ops_outcome = json.loads(result["body"])
-                    print(f"ops_outcome: {ops_outcome}")
+                    logger.info(f"ops_outcome: {ops_outcome}")
                     if ops_outcome.get("issue"):
                         outcome_body = ops_outcome["issue"][0]
                         status_code = outcome_body["code"]
