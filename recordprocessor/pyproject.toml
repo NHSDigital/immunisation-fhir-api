@@ -9,12 +9,12 @@ packages    = [{include = "src"}]
 [tool.poetry.dependencies]
 python                  = "~3.11"
 "fhir.resources"        = "~7.0.2"
-boto3                   = "~1.38.42"
-boto3-stubs-lite        = {extras = ["dynamodb"], version = "~1.38.42"}
+boto3                   = "~1.40.7"
+boto3-stubs-lite        = {extras = ["dynamodb"], version = "~1.40.7"}
 aws-lambda-typing       = "~2.20.0"
 moto                    = "^4"
 requests                = "~2.32.4"
-responses               = "~0.25.7"
+responses               = "~0.25.8"
 pydantic                = "~1.10.13"
 pyjwt                   = "~2.10.1"
 cryptography            = "~42.0.4"
@@ -23,10 +23,10 @@ jsonpath-ng             = "^1.6.0"
 simplejson              = "^3.20.1"
 structlog               = "^24.1.0"
 pandas                  = "^2.3.0"
-freezegun               = "^1.5.2"
-coverage                = "^7.9.1"
-redis = "^6.2.0"
-numpy = "~2.2.6"
+freezegun               = "^1.5.5"
+coverage                = "^7.10.3"
+redis = "^6.4.0"
+numpy = "~2.3.2"
 
 [build-system]
 requires      = ["poetry-core ~= 1.5.0"]
