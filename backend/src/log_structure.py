@@ -6,6 +6,8 @@ from functools import wraps
 
 from log_firehose import FirehoseLogger
 
+from models.utils.validation_utils import get_vaccine_type
+
 logging.basicConfig()
 logger = logging.getLogger()
 logger.setLevel("INFO")
@@ -38,6 +40,8 @@ def function_info(func):
 
         if event.get("body"):
             imms = json.loads(event["body"])
+            vaccine_type = get_vaccine_type(imms)
+            log_data["vaccine_type"] = vaccine_type
             local_id = imms["identifier"][0]["value"] + "^" + imms["identifier"][0]["system"]
             log_data["local_id"] = local_id
 
