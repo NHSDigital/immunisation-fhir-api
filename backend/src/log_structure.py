@@ -6,8 +6,6 @@ from functools import wraps
 
 from log_firehose import FirehoseLogger
 
-from models.utils.validation_utils import get_vaccine_type
-
 logging.basicConfig()
 logger = logging.getLogger()
 logger.setLevel("INFO")
@@ -37,16 +35,6 @@ def function_info(func):
             "actual_path": actual_path,
             "resource_path": resource_path,
         }
-
-        if event.get("body"):
-            imms = json.loads(event["body"])
-            if imms.get("protocolApplied"):
-                vaccine_type = get_vaccine_type(imms)
-                log_data["vaccine_type"] = vaccine_type
-            if imms.get("identifier"):
-                local_id = imms["identifier"][0]["value"] + "^" + imms["identifier"][0]["system"]
-                log_data["local_id"] = local_id
-
         operation_outcome = dict()
         firehose_log = dict()
         start = time.time()
