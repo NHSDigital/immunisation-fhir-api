@@ -669,9 +669,9 @@ class FhirController:
     @staticmethod
     def _identify_supplier_system(aws_event):
         logger.info("SAW: fhir_controller. _identify_supplier_system...1")
-
-        logger.info("SAW: aws_event=%s", aws_event)
-        supplier_system = aws_event["headers"]["SupplierSystem"]
+        headers = aws_event.get("headers", {})
+        logger.info("SAW: headers=%s", headers)
+        supplier_system = headers.get("SupplierSystem")
         if not supplier_system:
             raise UnauthorizedError("SupplierSystem header is missing")
         return supplier_system
