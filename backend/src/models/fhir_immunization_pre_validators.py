@@ -799,9 +799,6 @@ class PreValidators:
         except (KeyError, IndexError):
             pass
 
-    # TODO: need to validate that doseQuantity.system is "http://unitsofmeasure.org"?
-    # Check with Martin
-
     def pre_validate_dose_quantity_value(self, values: dict) -> dict:
         """
         Pre-validate that, if doseQuantity.value (legacy CSV field name: DOSE_AMOUNT) exists,
@@ -817,7 +814,28 @@ class PreValidators:
             PreValidation.for_integer_or_decimal(field_value, "doseQuantity.value")
         except KeyError:
             pass
+    
+    def pre_validate_dose_quantity_system_and_code(self, values: dict) -> dict:
+        """
+        Pre-validate doseQuantity.code and doseQuantity.system:
+        1. If code exists, it must be a non-empty string (legacy CSV: DOSE_UNIT_CODE).
+        2. If system exists, it must be a non-empty string.
+        3. If code exists, system MUST also exist (FHIR SimpleQuantity rule).
+        """
+        field_value = values.get("doseQuantity", {})
+        code = field_value.get("code")
+        system = field_value.get("system")
 
+        if code is not None:
+            PreValidation.for_string(code, "doseQuantity.code")
+
+        if system is not None:
+            PreValidation.for_string(system, "doseQuantity.system")
+
+        PreValidation.require_system_when_code_present(
+        code, system, "doseQuantity.code", "doseQuantity.system"
+        )
+    
     def pre_validate_dose_quantity_code(self, values: dict) -> dict:
         """
         Pre-validate that, if doseQuantity.code (legacy CSV field name: DOSE_UNIT_CODE) exists,
