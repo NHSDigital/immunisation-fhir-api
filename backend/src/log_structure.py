@@ -6,12 +6,25 @@ from functools import wraps
 
 from log_firehose import FirehoseLogger
 
+from models.utils.validation_utils import get_vaccine_type
+
 logging.basicConfig()
 logger = logging.getLogger()
 logger.setLevel("INFO")
 
 
 firehose_logger = FirehoseLogger()
+
+def _log_data_from_body(event, log_data):
+    if event.get("body"):
+        imms = json.loads(event["body"])
+        if imms.get("protocolApplied"):
+            vaccine_type = get_vaccine_type(imms)
+            log_data["vaccine_type"] = vaccine_type
+        if imms.get("identifier"):
+            local_id = imms["identifier"][0]["value"] + "^" + imms["identifier"][0]["system"]
+            log_data["local_id"] = local_id
+    return log_data
 
 
 def function_info(func):
@@ -43,6 +56,7 @@ def function_info(func):
             print(f"Result:{result}")
             end = time.time()
             log_data["time_taken"] = f"{round(end - start, 5)}s"
+            log_data = _log_data_from_body(event, log_data)
             status = "500"
             status_code = "Exception"
             diagnostics = str()
@@ -78,6 +92,7 @@ def function_info(func):
             log_data["error"] = str(e)
             end = time.time()
             log_data["time_taken"] = f"{round(end - start, 5)}s"
+            log_data = _log_data_from_body(event, log_data)
             logger.exception(json.dumps(log_data))
             firehose_log["event"] = log_data
             firehose_logger.send_log(firehose_log)
