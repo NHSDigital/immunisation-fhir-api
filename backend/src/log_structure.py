@@ -24,7 +24,7 @@ def _log_data_from_body(event) -> dict:
             log_data["vaccine_type"] = vaccine_type
             local_id = imms["identifier"][0]["value"] + "^" + imms["identifier"][0]["system"]
             log_data["local_id"] = local_id
-        except Exception as e:
+        except Exception:
             # if there's no body, or it can't be parsed
             return {}
     return log_data
