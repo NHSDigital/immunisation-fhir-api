@@ -32,7 +32,8 @@ class TestFunctionInfoWrapper(unittest.TestCase):
         event = {
             'headers': {
                 'X-Correlation-ID': 'test_correlation',
-                'X-Request-ID': 'test_request'
+                'X-Request-ID': 'test_request',
+                'SupplierSystem': 'test_supplier'
             },
             'path': '/test',
             'requestContext': {'resourcePath': '/test'},
@@ -54,6 +55,7 @@ class TestFunctionInfoWrapper(unittest.TestCase):
         self.assertIn('time_taken', logged_info)
         self.assertEqual(logged_info['X-Correlation-ID'], 'test_correlation')
         self.assertEqual(logged_info['X-Request-ID'], 'test_request')
+        self.assertEqual(logged_info['supplier'], 'test_supplier')
         self.assertEqual(logged_info['actual_path'], '/test')
         self.assertEqual(logged_info['resource_path'], '/test')
         self.assertEqual(logged_info['local_id'], '12345^http://test')
@@ -70,7 +72,8 @@ class TestFunctionInfoWrapper(unittest.TestCase):
             #Assert
             event = {'headers': {
                 'X-Correlation-ID': 'failed_test_correlation',
-                'X-Request-ID': 'failed_test_request'
+                'X-Request-ID': 'failed_test_request',
+                'SupplierSystem': 'failed_test_supplier'
             },
                 'path': '/failed_test', 'requestContext': {'resourcePath': '/failed_test'},
                 'body': "{\"identifier\": [{\"system\": \"http://test\", \"value\": \"12345\"}], \"protocolApplied\": [{\"targetDisease\": [{\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"840539006\", \"display\": \"Disease caused by severe acute respiratory syndrome coronavirus 2\"}]}]}]}"}
@@ -89,6 +92,7 @@ class TestFunctionInfoWrapper(unittest.TestCase):
         self.assertIn('time_taken', logged_info)
         self.assertEqual(logged_info['X-Correlation-ID'], 'failed_test_correlation')
         self.assertEqual(logged_info['X-Request-ID'], 'failed_test_request')
+        self.assertEqual(logged_info['supplier'], 'failed_test_supplier')
         self.assertEqual(logged_info['actual_path'], '/failed_test')
         self.assertEqual(logged_info['resource_path'], '/failed_test')
         self.assertEqual(logged_info['error'], str(ValueError("Test error")))

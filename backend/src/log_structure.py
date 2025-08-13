@@ -41,6 +41,7 @@ def function_info(func):
         headers = event.get("headers", {})
         correlation_id = headers.get("X-Correlation-ID", "X-Correlation-ID not passed")
         request_id = headers.get("X-Request-ID", "X-Request-ID not passed")
+        supplier_system = headers.get("SupplierSystem", "SupplierSystem not passed")
         actual_path = event.get("path", "Unknown")
         resource_path = event.get("requestContext", {}).get("resourcePath", "Unknown")
         logger.info(f"Starting {func.__name__} with X-Correlation-ID: {correlation_id} and X-Request-ID: {request_id}")
@@ -49,6 +50,7 @@ def function_info(func):
             "date_time": str(datetime.now()),
             "X-Correlation-ID": correlation_id,
             "X-Request-ID": request_id,
+            "supplier": supplier_system,
             "actual_path": actual_path,
             "resource_path": resource_path,
         }
