@@ -17,7 +17,11 @@ firehose_logger = FirehoseLogger()
 
 def _log_data_from_body(event, log_data):
     if event.get("body"):
-        imms = json.loads(event["body"])
+        try:
+            imms = json.loads(event["body"])
+        except json.decoder.JSONDecodeError as e:
+            return log_data
+
         if imms.get("protocolApplied"):
             vaccine_type = get_vaccine_type(imms)
             log_data["vaccine_type"] = vaccine_type
