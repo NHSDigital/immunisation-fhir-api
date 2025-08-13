@@ -98,3 +98,61 @@ class TestFunctionInfoWrapper(unittest.TestCase):
         self.assertEqual(logged_info['error'], str(ValueError("Test error")))
         self.assertEqual(logged_info['local_id'], '12345^http://test')
         self.assertEqual(logged_info['vaccine_type'], 'FLU')
+
+    def test_invalid_body(self, mock_logger, mock_firehose_logger):
+        # Arrange
+        wrapped_function = function_info(self.mock_success_function)
+        event = {
+            'headers': {
+                'X-Correlation-ID': 'test_correlation',
+                'X-Request-ID': 'test_request',
+                'SupplierSystem': 'test_supplier'
+            },
+            'path': '/test',
+            'requestContext': {'resourcePath': '/test'},
+            'body': "{\"identifier\": [{\"system\": \"http://test\", \"value\": \"12345\"}], \"protocolApplied\": []}"
+        }
+
+        # Act
+        result = wrapped_function(event, {})
+
+        # Assert
+        args, kwargs = mock_logger.info.call_args
+        logged_info = json.loads(args[0])
+
+        self.assertEqual(logged_info['X-Correlation-ID'], 'test_correlation')
+        self.assertEqual(logged_info['X-Request-ID'], 'test_request')
+        self.assertEqual(logged_info['supplier'], 'test_supplier')
+        self.assertEqual(logged_info['actual_path'], '/test')
+        self.assertEqual(logged_info['resource_path'], '/test')
+        self.assertNotIn('local_id', logged_info)
+        self.assertNotIn('vaccine_type', logged_info)
+
+    def test_nonexistent_body(self, mock_logger, mock_firehose_logger):
+        # Arrange
+        wrapped_function = function_info(self.mock_success_function)
+        event = {
+            'headers': {
+                'X-Correlation-ID': 'test_correlation',
+                'X-Request-ID': 'test_request',
+                'SupplierSystem': 'test_supplier'
+            },
+            'path': '/test',
+            'requestContext': {'resourcePath': '/test'}
+        }
+
+        # Act
+        result = wrapped_function(event, {})
+
+        # Assert
+        args, kwargs = mock_logger.info.call_args
+        logged_info = json.loads(args[0])
+
+        self.assertEqual(logged_info['X-Correlation-ID'], 'test_correlation')
+        self.assertEqual(logged_info['X-Request-ID'], 'test_request')
+        self.assertEqual(logged_info['supplier'], 'test_supplier')
+        self.assertEqual(logged_info['actual_path'], '/test')
+        self.assertEqual(logged_info['resource_path'], '/test')
+        self.assertNotIn('local_id', logged_info)
+        self.assertNotIn('vaccine_type', logged_info)
+

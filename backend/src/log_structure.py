@@ -15,19 +15,18 @@ logger.setLevel("INFO")
 
 firehose_logger = FirehoseLogger()
 
-def _log_data_from_body(event, log_data):
+def _log_data_from_body(event) -> dict:
+    log_data = {}
     if event.get("body"):
         try:
             imms = json.loads(event["body"])
-        except json.decoder.JSONDecodeError as e:
-            return log_data
-
-        if imms.get("protocolApplied"):
             vaccine_type = get_vaccine_type(imms)
             log_data["vaccine_type"] = vaccine_type
-        if imms.get("identifier"):
             local_id = imms["identifier"][0]["value"] + "^" + imms["identifier"][0]["system"]
             log_data["local_id"] = local_id
+        except Exception as e:
+            # if there's no body, or it can't be parsed
+            return {}
     return log_data
 
 
@@ -62,7 +61,7 @@ def function_info(func):
             print(f"Result:{result}")
             end = time.time()
             log_data["time_taken"] = f"{round(end - start, 5)}s"
-            log_data = _log_data_from_body(event, log_data)
+            log_data.update(_log_data_from_body(event))
             status = "500"
             status_code = "Exception"
             diagnostics = str()
@@ -98,7 +97,7 @@ def function_info(func):
             log_data["error"] = str(e)
             end = time.time()
             log_data["time_taken"] = f"{round(end - start, 5)}s"
-            log_data = _log_data_from_body(event, log_data)
+            log_data.update(_log_data_from_body(event))
             logger.exception(json.dumps(log_data))
             firehose_log["event"] = log_data
             firehose_logger.send_log(firehose_log)
