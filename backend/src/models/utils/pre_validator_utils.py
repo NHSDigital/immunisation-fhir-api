@@ -194,6 +194,19 @@ class PreValidation:
             or type(field_value) is Decimal  # pylint: disable=unidiomatic-typecheck
         ):
             raise TypeError(f"{field_location} must be a number")
+    
+    @staticmethod
+    def require_system_when_code_present(
+        code_value:str, 
+        system_value:str,
+        code_location:str,
+        system_location:str,
+        ) -> None:
+        """
+        If code is present (non-empty), system must also be present (non-empty).
+        """
+        if code_value is not None and system_value is None:
+            raise ValueError(f"If {code_location} is present, {system_location} must also be present")
 
     @staticmethod
     def for_unique_list(

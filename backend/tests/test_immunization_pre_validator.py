@@ -1140,11 +1140,36 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
                 Decimal("1.123456789"),  # 9 decimal place
             ],
         )
+    def test_pre_validate_dose_quantity_system(self):
+        """Test pre_validate_dose_quantity_system accepts valid values and rejects invalid values"""
 
+        system_location = "doseQuantity.system"
+        ValidatorModelTests.test_string_value(self, system_location, valid_strings_to_test=["http://unitsofmeasure.org"])
+    
     def test_pre_validate_dose_quantity_code(self):
         """Test pre_validate_dose_quantity_code accepts valid values and rejects invalid values"""
-        field_location = "doseQuantity.code"
-        ValidatorModelTests.test_string_value(self, field_location, valid_strings_to_test=["ABC123"])
+
+        code_location = "doseQuantity.code"
+        ValidatorModelTests.test_string_value(self, code_location, valid_strings_to_test=["ABC123"])
+    
+    def test_pre_validate_dose_quantity_system_and_code(self):
+        """Test pre_validate_dose_quantity_system_and_code accepts valid values and rejects invalid values"""
+
+        field_location = "doseQuantity"
+        _test_valid_values_accepted(
+            self,
+            valid_json_data=deepcopy(self.json_data),
+            field_location=field_location,
+            valid_values_to_test=ValidValues.valid_dose_quantity,
+        )
+
+        _test_invalid_values_rejected(
+            self,
+            valid_json_data=deepcopy(self.json_data),
+            field_location=field_location,
+            invalid_value=InvalidValues.invalid_dose_quantity,
+            expected_error_message="If doseQuantity.code is present, doseQuantity.system must also be present"
+        )
 
     def test_pre_validate_dose_quantity_unit(self):
         """Test pre_validate_dose_quantity_unit accepts valid values and rejects invalid values"""
