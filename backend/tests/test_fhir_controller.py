@@ -83,6 +83,11 @@ class TestFhirControllerGetImmunizationByIdentifier(unittest.TestCase):
         self.service = create_autospec(FhirService)
         self.authorizer = create_autospec(Authorization)
         self.controller = FhirController(self.authorizer, self.service)
+        self.logger_info_patcher = patch("logging.Logger.info")
+        self.mock_logger_info = self.logger_info_patcher.start()
+
+    def tearDown(self):
+        self.logger_info_patcher.stop()
 
     @patch("fhir_controller.get_supplier_permissions")
     def test_get_imms_by_identifer(self, mock_get_permissions):
@@ -886,7 +891,12 @@ class TestCreateImmunization(unittest.TestCase):
         self.service = create_autospec(FhirService)
         self.authorizer = create_autospec(Authorization)
         self.controller = FhirController(self.authorizer, self.service)
-
+        self.logger_info_patcher = patch("logging.Logger.info")
+        self.mock_logger_info = self.logger_info_patcher.start()
+        
+    def tearDown(self):
+        patch.stopall()
+        
     @patch("fhir_controller.get_supplier_permissions")
     def test_create_immunization(self,mock_get_permissions):
         """it should create Immunization and return resource's location"""
@@ -1038,6 +1048,11 @@ class TestUpdateImmunization(unittest.TestCase):
         self.service = create_autospec(FhirService)
         self.authorizer = create_autospec(Authorization)
         self.controller = FhirController(self.authorizer, self.service)
+        self.logger_info_patcher = patch("logging.Logger.info")
+        self.mock_logger_info = self.logger_info_patcher.start()
+        
+    def tearDown(self):
+        patch.stopall()
 
     @patch("fhir_controller.get_supplier_permissions")
     def test_update_immunization(self,mock_get_permissions):
@@ -1553,7 +1568,12 @@ class TestDeleteImmunization(unittest.TestCase):
         self.service = create_autospec(FhirService)
         self.authorizer = create_autospec(Authorization)
         self.controller = FhirController(self.authorizer, self.service)
-
+        self.logger_info_patcher = patch("logging.Logger.info")
+        self.mock_logger_info = self.logger_info_patcher.start()
+        
+    def tearDown(self):
+        patch.stopall()
+        
     def test_validate_imms_id(self):
         """it should validate lambda's Immunization id"""
         invalid_id = {"pathParameters": {"id": "invalid %$ id"}, "headers": {"SupplierSystem": "Test"}}

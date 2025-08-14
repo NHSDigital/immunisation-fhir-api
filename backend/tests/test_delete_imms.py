@@ -1,6 +1,6 @@
 import json
 import unittest
-from unittest.mock import create_autospec
+from unittest.mock import create_autospec, patch
 
 from delete_imms_handler import delete_immunization
 from fhir_controller import FhirController
@@ -11,6 +11,11 @@ from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
 class TestDeleteImmunizationById(unittest.TestCase):
     def setUp(self):
         self.controller = create_autospec(FhirController)
+        self.logger_exception_patcher = patch("logging.Logger.exception")
+        self.mock_logger_exception = self.logger_exception_patcher.start()
+
+    def tearDown(self):
+        patch.stopall()
 
     def test_delete_immunization(self):
         """it should delete Immunization"""
@@ -26,7 +31,7 @@ class TestDeleteImmunizationById(unittest.TestCase):
         self.controller.delete_immunization.assert_called_once_with(lambda_event)
         self.assertDictEqual(exp_res, act_res)
 
-    def test_handle_exception(self):
+    def test_delete_handle_exception(self):
         """unhandled exceptions should result in 500"""
         lambda_event = {"pathParameters": {"id": "an-id"}}
         error_msg = "an unhandled error"
