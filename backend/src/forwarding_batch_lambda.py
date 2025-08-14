@@ -1,4 +1,4 @@
-"""Lambda Handler to send rows from batch files (forwarded by Kinesis) to the Imms FHIR API"""
+"""Lambda Handler which streams batch file entries from Kinesis and forwards to the Imms FHIR API"""
 
 import os
 import simplejson as json
