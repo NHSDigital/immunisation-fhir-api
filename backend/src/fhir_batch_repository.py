@@ -3,6 +3,7 @@ import uuid
 import boto3
 import time
 import simplejson as json
+from clients import logger
 from dataclasses import dataclass
 import botocore.exceptions
 from boto3.dynamodb.conditions import Key, Attr
@@ -34,7 +35,7 @@ def _query_identifier(table, index, pk, identifier, is_present):
                 return queryresponse
 
             if retries > 6:
-                print(f"{identifier}: Crossed {retries} retries")
+                logger.info(f"{identifier}: Crossed {retries} retries")
 
             retries += 1
             # Delay time in milliseconds

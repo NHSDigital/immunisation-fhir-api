@@ -1,3 +1,5 @@
+from urllib import response
+from responses import logger
 import simplejson as json
 import os
 import time
@@ -397,20 +399,46 @@ class ImmunizationRepository:
         condition = Key("PatientPK").eq(_make_patient_pk(patient_identifier))
         is_not_deleted = Attr("DeletedAt").not_exists() | Attr("DeletedAt").eq("reinstated")
 
-        response = self.table.query(
-            IndexName="PatientGSI",
-            KeyConditionExpression=condition,
-            FilterExpression=is_not_deleted,
-        )
+        raw_items = self.get_all_items(condition, is_not_deleted)
 
-        if "Items" in response:
+        if raw_items:    
             # Filter the response to contain only the requested vaccine types
-            items = [x for x in response["Items"] if x["PatientSK"].split("#")[0] in vaccine_types]
+            items = [x for x in raw_items if x["PatientSK"].split("#")[0] in vaccine_types]
 
             # Return a list of the FHIR immunization resource JSON items
-            return [json.loads(item["Resource"]) for item in items]
+            final_resources = [json.loads(item["Resource"]) for item in items]
+
+            return final_resources
         else:
-            raise UnhandledResponseError(message=f"Unhandled error. Query failed", response=response)
+            logger.warning("no items matched patient_identifier filter!")
+            return []
+
+    def get_all_items(self, condition, is_not_deleted):
+        """Query DynamoDB and paginate through all results."""
+        all_items = []
+        last_evaluated_key = None
+
+        while True:
+            query_args = {
+                "IndexName": "PatientGSI",
+                "KeyConditionExpression": condition,
+                "FilterExpression": is_not_deleted,
+            }
+            if last_evaluated_key:
+                query_args["ExclusiveStartKey"] = last_evaluated_key
+
+            response = self.table.query(**query_args)
+            if "Items" not in response:
+                raise UnhandledResponseError(message="No Items in DynamoDB response", response=response)
+  
+            items = response.get("Items", [])
+            all_items.extend(items)
+
+            last_evaluated_key = response.get("LastEvaluatedKey")
+            if not last_evaluated_key:
+                break
+
+        return all_items
 
     @staticmethod
     def _handle_dynamo_response(response):
