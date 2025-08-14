@@ -1,6 +1,6 @@
 import json
 import unittest
-from unittest.mock import create_autospec
+from unittest.mock import create_autospec, patch
 
 from create_imms_handler import create_immunization
 from fhir_controller import FhirController
@@ -11,6 +11,13 @@ from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
 class TestCreateImmunizationById(unittest.TestCase):
     def setUp(self):
         self.controller = create_autospec(FhirController)
+        self.logger_info_patcher = patch("logging.Logger.info")
+        self.mock_logger_info = self.logger_info_patcher.start()
+        self.logger_exception_patcher = patch("logging.Logger.exception")
+        self.mock_logger_exception = self.logger_exception_patcher.start()
+        
+    def tearDown(self):
+        patch.stopall()
 
     def test_create_immunization(self):
         """it should create Immunization"""
@@ -26,7 +33,7 @@ class TestCreateImmunizationById(unittest.TestCase):
         self.controller.create_immunization.assert_called_once_with(lambda_event)
         self.assertDictEqual(exp_res, act_res)
 
-    def test_handle_exception(self):
+    def test_create_handle_exception(self):
         """unhandled exceptions should result in 500"""
         lambda_event = {"aws": "event"}
         error_msg = "an unhandled error"
