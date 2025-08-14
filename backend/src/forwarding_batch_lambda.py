@@ -1,4 +1,4 @@
-"""Functions for forwarding each row to the Imms API"""
+"""Lambda Handler to send rows from batch files (forwarded by Kinesis) to the Imms FHIR API"""
 
 import os
 import simplejson as json
@@ -47,12 +47,12 @@ def create_diagnostics_dictionary(error: Exception) -> dict:
 
 
 def forward_request_to_dynamo(
-    message_body: any, table: any, is_present: bool, batchcontroller: ImmunizationBatchController
+    message_body: any, table: any, is_present: bool, batch_controller: ImmunizationBatchController
 ):
     """Forwards the request to the Imms API (where possible) and updates the ack file with the outcome"""
     row_id = message_body.get("row_id")
     logger.info("FORWARDED MESSAGE: ID %s", row_id)
-    return batchcontroller.send_request_to_dynamo(message_body, table, is_present)
+    return batch_controller.send_request_to_dynamo(message_body, table, is_present)
 
 
 def forward_lambda_handler(event, _):
@@ -62,6 +62,7 @@ def forward_lambda_handler(event, _):
     array_of_messages = []
     array_of_identifiers = []
     controller = make_batch_controller()
+
     for record in event["Records"]:
         try:
             kinesis_payload = record["kinesis"]["data"]
