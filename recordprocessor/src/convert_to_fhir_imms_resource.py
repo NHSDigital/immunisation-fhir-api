@@ -204,7 +204,7 @@ def _get_decorators_for_action_flag(action_flag: Operation) -> List[Immunization
     return all_decorators
 
 
-def convert_to_fhir_imms_resource(row: dict, target_disease: list, action_flag: Operation) -> dict:
+def convert_to_fhir_imms_resource(row: dict, target_disease: list, action_flag: Operation | str) -> dict:
     """Converts a row of data to a FHIR Immunization Resource"""
     # Prepare the imms_resource. Note that all data sent via this service is assumed to be for completed vaccinations.
     imms_resource = {
