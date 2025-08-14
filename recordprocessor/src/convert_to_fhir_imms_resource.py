@@ -195,6 +195,7 @@ all_decorators: List[ImmunizationDecorator] = [
     _decorate_performer,
 ]
 
+
 def _get_decorators_for_action_flag(action_flag: Operation) -> List[ImmunizationDecorator]:
     # VED-32 DELETE action only requires the immunisation decorator
     if action_flag == Operation.DELETE:
