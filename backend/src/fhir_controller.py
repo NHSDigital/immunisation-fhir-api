@@ -13,6 +13,7 @@ from aws_lambda_typing.events import APIGatewayProxyEventV1
 from botocore.config import Config
 from fhir.resources.R4B.immunization import Immunization
 from boto3 import client as boto3_client
+from clients import logger
 
 from authorization import Authorization, UnknownPermission
 from cache import Cache
@@ -640,7 +641,7 @@ class FhirController:
             if len(supplier_system) == 0:
                 raise UnauthorizedSystemError()
             imms_vax_type_perms = get_supplier_permissions(supplier_system)
-            print(f" update imms = {imms_vax_type_perms}")
+            logger.info(f" update imms = {imms_vax_type_perms}")
             if len(imms_vax_type_perms) == 0:
                 raise UnauthorizedVaxError()
             # Return the values needed for later use

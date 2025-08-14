@@ -31,10 +31,11 @@ class TestImmunizationBatchRepository(unittest.TestCase):
         self.table.update_item = MagicMock(return_value = {"ResponseMetadata": {"HTTPStatusCode": 200}})
         self.redis_patcher = patch("models.utils.validation_utils.redis_client")
         self.mock_redis_client = self.redis_patcher.start()
+        self.logger_info_patcher = patch("logging.Logger.info")
+        self.mock_logger_info = self.logger_info_patcher.start()
 
     def tearDown(self):
-        self.redis_patcher.stop()
-        return super().tearDown()
+        patch.stopall()
 
 class TestCreateImmunization(TestImmunizationBatchRepository): 
     
