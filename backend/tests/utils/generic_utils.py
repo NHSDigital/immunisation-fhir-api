@@ -72,7 +72,7 @@ def test_invalid_values_rejected(
     invalid_json_data = parse(field_location).update(valid_json_data, invalid_value)
 
     # Test that correct error type is raised
-    with test_instance.assertRaises(ValueError or TypeError) as error:
+    with test_instance.assertRaises((ValueError, TypeError)) as error:
         test_instance.validator.validate(invalid_json_data)
 
     full_error_message = str(error.exception)
