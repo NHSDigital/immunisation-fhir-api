@@ -27,7 +27,7 @@ class TestGetImmunisationById(unittest.TestCase):
         self.controller.get_immunization_by_id.assert_called_once_with(lambda_event)
         self.assertDictEqual(exp_res, act_res)
 
-    def test_handle_exception(self):
+    def test_get_handle_exception(self):
         """unhandled exceptions should result in 500"""
         lambda_event = {"headers": {"id": "an-id"}, "pathParameters": {"id": "an-id"}}
         error_msg = "an unhandled error"

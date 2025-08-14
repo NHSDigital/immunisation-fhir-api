@@ -57,10 +57,14 @@ class TestForwardLambdaHandler(TestCase):
         )
         self.redis_patcher = patch("models.utils.validation_utils.redis_client")
         self.mock_redis_client = self.redis_patcher.start()
+        self.logger_info_patcher = patch("logging.Logger.info")
+        self.mock_logger_info = self.logger_info_patcher.start()
+        self.logger_error_patcher = patch("logging.Logger.error")
+        self.mock_logger_error = self.logger_error_patcher.start()
 
     def tearDown(self):
         """Tear down after each test. This runs after every test"""
-        self.redis_patcher.stop()
+        patch.stopall()
 
     @staticmethod
     def generate_fhir_json(include_fhir_json=True, identifier_value=None):

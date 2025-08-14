@@ -35,9 +35,7 @@ class TestFhirRepositoryBase(unittest.TestCase):
         self.mock_logger_info = self.logger_info_patcher.start()
 
     def tearDown(self):
-        self.redis_patcher.stop()
-        self.logger_info_patcher.stop()
-        super().tearDown()
+        patch.stopall()
 
 
 class TestGetImmunizationByIdentifier(TestFhirRepositoryBase):
@@ -45,6 +43,11 @@ class TestGetImmunizationByIdentifier(TestFhirRepositoryBase):
         super().setUp()
         self.table = MagicMock()
         self.repository = ImmunizationRepository(table=self.table)
+        self.logger_info_patcher = patch("logging.Logger.info")
+        self.mock_logger_info = self.logger_info_patcher.start()
+        
+    def tearDown(self):
+        patch.stopall()
 
     def test_get_immunization_by_identifier(self):
         """it should find an Immunization by id"""
@@ -107,6 +110,11 @@ class TestGetImmunization(unittest.TestCase):
     def setUp(self):
         self.table = MagicMock()
         self.repository = ImmunizationRepository(table=self.table)
+        self.logger_info_patcher = patch("logging.Logger.info")
+        self.mock_logger_info = self.logger_info_patcher.start()
+        
+    def tearDown(self):
+        patch.stopall()
 
     def test_get_immunization_by_id(self):
         """it should find an Immunization by id"""
@@ -526,7 +534,12 @@ class TestDeleteImmunization(unittest.TestCase):
     def setUp(self):
         self.table = MagicMock()
         self.repository = ImmunizationRepository(table=self.table)
-
+        self.logger_info_patcher = patch("logging.Logger.info")
+        self.mock_logger_info = self.logger_info_patcher.start()
+        
+    def tearDown(self):
+        patch.stopall()
+        
     def test_get_deleted_immunization(self):
         """it should return None if Immunization is logically deleted"""
         imms_id = "a-deleted-id"
@@ -685,6 +698,13 @@ class TestFindImmunizations(unittest.TestCase):
     def setUp(self):
         self.table = MagicMock()
         self.repository = ImmunizationRepository(table=self.table)
+        self.logger_info_patcher = patch("logging.Logger.info")
+        self.mock_logger_info = self.logger_info_patcher.start()
+        self.logger_warning_patcher = patch("logging.Logger.warning")
+        self.mock_logger_warning = self.logger_warning_patcher.start()
+
+    def tearDown(self):
+        patch.stopall()
 
     def test_find_immunizations(self):
         """it should find events with patient_identifier"""

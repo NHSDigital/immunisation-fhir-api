@@ -539,7 +539,7 @@ class TestUpdateImmunization(unittest.TestCase):
         # Then
         self.assertEqual(e.exception.patient_identifier, invalid_nhs_number)
         self.imms_repo.update_immunization.assert_not_called()
-    
+
     def test_reinstate_immunization_returns_updated_version(self):
         """it should return updated version from reinstate"""
         imms_id = "an-id"

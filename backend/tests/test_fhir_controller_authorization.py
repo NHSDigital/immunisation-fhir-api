@@ -34,7 +34,12 @@ class TestFhirControllerAuthorization(unittest.TestCase):
         self.service = create_autospec(FhirService)
         self.authorizer = create_autospec(Authorization)
         self.controller = FhirController(self.authorizer, self.service)
-
+        self.logger_info_patcher = patch("logging.Logger.info")
+        self.mock_logger_info = self.logger_info_patcher.start()
+        
+    def tearDown(self):
+        patch.stopall()
+        
     def test_get_imms_by_id_authorized(self):
         aws_event = {"pathParameters": {"id": "an-id"}}
 

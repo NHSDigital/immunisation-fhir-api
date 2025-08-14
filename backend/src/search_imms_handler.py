@@ -2,7 +2,6 @@ import argparse
 import json
 import logging
 import pprint
-import traceback
 import uuid
 
 from aws_lambda_typing import context as context_, events
@@ -53,9 +52,7 @@ def search_imms(event: events.APIGatewayProxyEventV1, controller: FhirController
                 or body_has_immunization_element
             ):
                 return controller.get_immunization_by_identifier(event)
-            response = controller.search_immunizations(event)
-        else:
-            response = controller.search_immunizations(event)
+        response = controller.search_immunizations(event)
 
         result_json = json.dumps(response)
         result_size = len(result_json.encode("utf-8"))
