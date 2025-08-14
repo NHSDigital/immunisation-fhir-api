@@ -681,6 +681,7 @@
                               "doseNumberPositiveInt": {
                                 "description": "Nominal position in a course of vaccines. This `SHOULD be populated` where the data is available.",
                                 "type": "integer",
+                                "maximum": 9,
                                 "example": 1
                               },
                               "doseNumberString": {
@@ -1538,6 +1539,7 @@
                                               "doseNumberPositiveInt": {
                                                 "description": "Nominal position in a course of vaccines. This `SHOULD be populated` where the data is available.",
                                                 "type": "integer",
+                                                "maximum": 9,
                                                 "example": 1
                                               },
                                               "doseNumberString": {
@@ -2457,6 +2459,7 @@
                                               "doseNumberPositiveInt": {
                                                 "description": "Nominal position in a course of vaccines. This `SHOULD be populated` where the data is available.",
                                                 "type": "integer",
+                                                "maximum": 9,
                                                 "example": 1
                                               },
                                               "doseNumberString": {
@@ -3424,6 +3427,7 @@
                                 "doseNumberPositiveInt": {
                                   "description": "Nominal position in a course of vaccines. This `SHOULD be populated` where the data is available.",
                                   "type": "integer",
+                                  "maximum": 9,
                                   "example": 1
                                 },
                                 "doseNumberString": {
@@ -4296,6 +4300,7 @@
                               "doseNumberPositiveInt": {
                                 "description": "Nominal position in a course of vaccines. This `SHOULD be populated` where the data is available.",
                                 "type": "integer",
+                                "maximum": 9,
                                 "example": 1
                               },
                               "doseNumberString": {
