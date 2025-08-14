@@ -199,9 +199,9 @@ class PreValidation:
     def require_system_when_code_present(
         code_value:str, 
         system_value:str,
-        code_location,
-        system_location,
-        ):
+        code_location:str,
+        system_location:str,
+        ) -> None:
         """
         If code is present (non-empty), system must also be present (non-empty).
         """

@@ -60,7 +60,7 @@ class ValidValues:
         {"value": 2, "unit": "ml", "system": "http://snomed.info/sct", "code": "258773002"},
         {"value": 4, "unit": "ml", "system": "http://snomed.info/sct"},
         {"value": 5, "unit": "ml" }
-        ]
+    ]
 
     manufacturer_resource_id_Man1 = {"resourceType": "Manufacturer", "id": "Man1"}
 
@@ -386,4 +386,4 @@ class InvalidValues:
     ]
     
     invalid_dose_quantity = {"value": 2, "unit": "ml", "code": "258773002"}
-    
+ 
