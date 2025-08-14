@@ -198,7 +198,9 @@ class PreValidation:
     @staticmethod
     def require_system_when_code_present(
         code_value:str, 
-        system_value:str
+        system_value:str,
+        code_location,
+        system_location,
         ):
         """
         If code is present (non-empty), system must also be present (non-empty).

@@ -55,6 +55,13 @@ class ValidValues:
     # Not a valid snomed code, but is valid coding format for format testing
     snomed_coding_element = {"system": "http://snomed.info/sct", "code": "ABC123", "display": "test"}
 
+    valid_dose_quantity = [
+        {"value": 3, "unit": "milliliter", "system": "http://unitsofmeasure.org", "code": "ml"},
+        {"value": 2, "unit": "ml", "system": "http://snomed.info/sct", "code": "258773002"},
+        {"value": 4, "unit": "ml", "system": "http://snomed.info/sct"},
+        {"value": 5, "unit": "ml" }
+        ]
+
     manufacturer_resource_id_Man1 = {"resourceType": "Manufacturer", "id": "Man1"}
 
     practitioner_resource_id_Pract1 = {"resourceType": "Practitioner", "id": "Pract1"}
@@ -377,3 +384,6 @@ class InvalidValues:
         {"use": "official", "given": ["Florence"]},
         {"family": "Nightingale", "given": ""},
     ]
+    
+    invalid_dose_quantity = {"value": 2, "unit": "ml", "code": "258773002"}
+    

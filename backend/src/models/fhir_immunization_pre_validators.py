@@ -85,6 +85,8 @@ class PreValidators:
             self.pre_validate_route_coding_display,
             self.pre_validate_dose_quantity_value,
             self.pre_validate_dose_quantity_code,
+            self.pre_validate_dose_quantity_system,
+            self.pre_validate_dose_quantity_system_and_code,
             self.pre_validate_dose_quantity_unit,
             self.pre_validate_reason_code_codings,
             self.pre_validate_reason_code_coding_codes,
@@ -814,27 +816,17 @@ class PreValidators:
             PreValidation.for_integer_or_decimal(field_value, "doseQuantity.value")
         except KeyError:
             pass
-    
-    def pre_validate_dose_quantity_system_and_code(self, values: dict) -> dict:
+
+    def pre_validate_dose_quantity_system(self, values: dict) -> dict:
         """
-        Pre-validate doseQuantity.code and doseQuantity.system:
-        1. If code exists, it must be a non-empty string (legacy CSV: DOSE_UNIT_CODE).
-        2. If system exists, it must be a non-empty string.
-        3. If code exists, system MUST also exist (FHIR SimpleQuantity rule).
+        Pre-validate that if doseQuantity.system exists then it is a non-empty string:
+        If system exists, it must be a non-empty string.
         """
-        field_value = values.get("doseQuantity", {})
-        code = field_value.get("code")
-        system = field_value.get("system")
-
-        if code is not None:
-            PreValidation.for_string(code, "doseQuantity.code")
-
-        if system is not None:
-            PreValidation.for_string(system, "doseQuantity.system")
-
-        PreValidation.require_system_when_code_present(
-        code, system, "doseQuantity.code", "doseQuantity.system"
-        )
+        try:
+            field_value = values["doseQuantity"]["system"]
+            PreValidation.for_string(field_value, "doseQuantity.system")            
+        except KeyError:
+            pass
     
     def pre_validate_dose_quantity_code(self, values: dict) -> dict:
         """
@@ -846,6 +838,21 @@ class PreValidators:
             PreValidation.for_string(field_value, "doseQuantity.code")
         except KeyError:
             pass
+
+    def pre_validate_dose_quantity_system_and_code(self, values: dict) -> dict:
+        """
+        Pre-validate doseQuantity.code and doseQuantity.system:
+        1. If code exists, system MUST also exist (FHIR SimpleQuantity rule).
+        """
+        dose_quantity = values.get("doseQuantity", {})
+        code = dose_quantity.get("code")
+        system = dose_quantity.get("system")
+        
+        PreValidation.require_system_when_code_present(
+            code, system, "doseQuantity.code", "doseQuantity.system"
+            )
+    
+        return values
 
     def pre_validate_dose_quantity_unit(self, values: dict) -> dict:
         """
