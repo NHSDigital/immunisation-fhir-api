@@ -17,22 +17,22 @@ firehose_logger = FirehoseLogger()
 
 def _log_data_from_body(event) -> dict:
     log_data = {}
-    if event.get("body"):
-        try:
-            imms = json.loads(event["body"])
-        except json.decoder.JSONDecodeError:
-            # it can't be parsed
-            return log_data
-        try:
-            vaccine_type = get_vaccine_type(imms)
-            log_data["vaccine_type"] = vaccine_type
-        except Exception:
-            pass
-        try:
-            local_id = imms["identifier"][0]["value"] + "^" + imms["identifier"][0]["system"]
-            log_data["local_id"] = local_id
-        except Exception:
-            pass
+    if event.get("body") is None:
+        return log_data
+    try:
+        imms = json.loads(event["body"])
+    except json.decoder.JSONDecodeError:
+        return log_data
+    try:
+        vaccine_type = get_vaccine_type(imms)
+        log_data["vaccine_type"] = vaccine_type
+    except Exception:
+        pass
+    try:
+        local_id = imms["identifier"][0]["value"] + "^" + imms["identifier"][0]["system"]
+        log_data["local_id"] = local_id
+    except Exception:
+        pass
     return log_data
 
 

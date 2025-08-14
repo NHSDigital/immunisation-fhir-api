@@ -9,13 +9,11 @@ from log_structure import function_info
 class TestFunctionInfoWrapper(unittest.TestCase):
 
     def setUp(self):
-        super().setUp()
         self.redis_patcher = patch("models.utils.validation_utils.redis_client")
         self.mock_redis_client = self.redis_patcher.start()
 
     def tearDown(self):
-        self.redis_patcher.stop()
-        super().tearDown()
+        patch.stopall()
 
     @staticmethod
     def mock_success_function(_event, _context):
@@ -27,16 +25,22 @@ class TestFunctionInfoWrapper(unittest.TestCase):
 
     def test_successful_execution(self, mock_logger, mock_firehose_logger):
         # Arrange
+        test_correlation = "test_correlation"
+        test_request = "test_request"
+        test_supplier = "test_supplier"
+        test_actual_path = "/test"
+        test_resource_path = "/test"
+
         self.mock_redis_client.hget.return_value = "FLU"
         wrapped_function = function_info(self.mock_success_function)
         event = {
             'headers': {
-                'X-Correlation-ID': 'test_correlation',
-                'X-Request-ID': 'test_request',
-                'SupplierSystem': 'test_supplier'
+                'X-Correlation-ID': test_correlation,
+                'X-Request-ID': test_request,
+                'SupplierSystem': test_supplier
             },
-            'path': '/test',
-            'requestContext': {'resourcePath': '/test'},
+            'path': test_actual_path,
+            'requestContext': {'resourcePath': test_resource_path},
             'body': "{\"identifier\": [{\"system\": \"http://test\", \"value\": \"12345\"}], \"protocolApplied\": [{\"targetDisease\": [{\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"840539006\", \"display\": \"Disease caused by severe acute respiratory syndrome coronavirus 2\"}]}]}]}"
         }
 
@@ -53,16 +57,22 @@ class TestFunctionInfoWrapper(unittest.TestCase):
 
         self.assertIn('function_name', logged_info)
         self.assertIn('time_taken', logged_info)
-        self.assertEqual(logged_info['X-Correlation-ID'], 'test_correlation')
-        self.assertEqual(logged_info['X-Request-ID'], 'test_request')
-        self.assertEqual(logged_info['supplier'], 'test_supplier')
-        self.assertEqual(logged_info['actual_path'], '/test')
-        self.assertEqual(logged_info['resource_path'], '/test')
+        self.assertEqual(logged_info['X-Correlation-ID'], test_correlation)
+        self.assertEqual(logged_info['X-Request-ID'], test_request)
+        self.assertEqual(logged_info['supplier'], test_supplier)
+        self.assertEqual(logged_info['actual_path'], test_actual_path)
+        self.assertEqual(logged_info['resource_path'], test_resource_path)
         self.assertEqual(logged_info['local_id'], '12345^http://test')
         self.assertEqual(logged_info['vaccine_type'], 'FLU')
 
     def test_exception_handling(self, mock_logger, mock_firehose_logger):
         # Arrange
+        test_correlation = "failed_test_correlation"
+        test_request = "failed_test_request"
+        test_supplier = "failed_test_supplier"
+        test_actual_path = "/failed_test"
+        test_resource_path = "/failed_test"
+
         self.mock_redis_client.hget.return_value = "FLU"
 
         #Act
@@ -71,11 +81,11 @@ class TestFunctionInfoWrapper(unittest.TestCase):
         with self.assertRaises(ValueError):
             #Assert
             event = {'headers': {
-                'X-Correlation-ID': 'failed_test_correlation',
-                'X-Request-ID': 'failed_test_request',
-                'SupplierSystem': 'failed_test_supplier'
+                'X-Correlation-ID': test_correlation,
+                'X-Request-ID': test_request,
+                'SupplierSystem': test_supplier
             },
-                'path': '/failed_test', 'requestContext': {'resourcePath': '/failed_test'},
+                'path': test_actual_path, 'requestContext': {'resourcePath': test_resource_path},
                 'body': "{\"identifier\": [{\"system\": \"http://test\", \"value\": \"12345\"}], \"protocolApplied\": [{\"targetDisease\": [{\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"840539006\", \"display\": \"Disease caused by severe acute respiratory syndrome coronavirus 2\"}]}]}]}"}
 
             context = {}
@@ -90,26 +100,32 @@ class TestFunctionInfoWrapper(unittest.TestCase):
 
         self.assertIn('function_name', logged_info)
         self.assertIn('time_taken', logged_info)
-        self.assertEqual(logged_info['X-Correlation-ID'], 'failed_test_correlation')
-        self.assertEqual(logged_info['X-Request-ID'], 'failed_test_request')
-        self.assertEqual(logged_info['supplier'], 'failed_test_supplier')
-        self.assertEqual(logged_info['actual_path'], '/failed_test')
-        self.assertEqual(logged_info['resource_path'], '/failed_test')
+        self.assertEqual(logged_info['X-Correlation-ID'], test_correlation)
+        self.assertEqual(logged_info['X-Request-ID'], test_request)
+        self.assertEqual(logged_info['supplier'], test_supplier)
+        self.assertEqual(logged_info['actual_path'], test_actual_path)
+        self.assertEqual(logged_info['resource_path'], test_resource_path)
         self.assertEqual(logged_info['error'], str(ValueError("Test error")))
         self.assertEqual(logged_info['local_id'], '12345^http://test')
         self.assertEqual(logged_info['vaccine_type'], 'FLU')
 
     def test_body_missing(self, mock_logger, mock_firehose_logger):
         # Arrange
+        test_correlation = "failed_test_correlation_body_missing"
+        test_request = "failed_test_request_body_missing"
+        test_supplier = "failed_test_supplier_body_missing"
+        test_actual_path = "/failed_test_body_missing"
+        test_resource_path = "/failed_test_body_missing"
+
         wrapped_function = function_info(self.mock_success_function)
         event = {
             'headers': {
-                'X-Correlation-ID': 'test_correlation',
-                'X-Request-ID': 'test_request',
-                'SupplierSystem': 'test_supplier'
+                'X-Correlation-ID': test_correlation,
+                'X-Request-ID': test_request,
+                'SupplierSystem': test_supplier
             },
-            'path': '/test',
-            'requestContext': {'resourcePath': '/test'}
+            'path': test_actual_path,
+            'requestContext': {'resourcePath': test_resource_path},
         }
 
         # Act
@@ -119,26 +135,33 @@ class TestFunctionInfoWrapper(unittest.TestCase):
         args, kwargs = mock_logger.info.call_args
         logged_info = json.loads(args[0])
 
-        self.assertEqual(logged_info['X-Correlation-ID'], 'test_correlation')
-        self.assertEqual(logged_info['X-Request-ID'], 'test_request')
-        self.assertEqual(logged_info['supplier'], 'test_supplier')
-        self.assertEqual(logged_info['actual_path'], '/test')
-        self.assertEqual(logged_info['resource_path'], '/test')
+        self.assertEqual(logged_info['X-Correlation-ID'], test_correlation)
+        self.assertEqual(logged_info['X-Request-ID'], test_request)
+        self.assertEqual(logged_info['supplier'], test_supplier)
+        self.assertEqual(logged_info['actual_path'], test_actual_path)
+        self.assertEqual(logged_info['resource_path'], test_resource_path)
         self.assertNotIn('local_id', logged_info)
         self.assertNotIn('vaccine_type', logged_info)
 
     def test_body_not_json(self, mock_logger, mock_firehose_logger):
+        # Arrange
+        test_correlation = "failed_test_correlation_body_not_json"
+        test_request = "failed_test_request_body_not_json"
+        test_supplier = "failed_test_supplier_body_not_json"
+        test_actual_path = "/failed_test_body_not_json"
+        test_resource_path = "/failed_test_body_not_json"
+
         # Act
         decorated_function_raises = function_info(self.mock_function_raises)
 
         with self.assertRaises(ValueError):
             #Assert
             event = {'headers': {
-                'X-Correlation-ID': 'failed_test_correlation',
-                'X-Request-ID': 'failed_test_request',
-                'SupplierSystem': 'failed_test_supplier'
+                'X-Correlation-ID': test_correlation,
+                'X-Request-ID': test_request,
+                'SupplierSystem': test_supplier
             },
-                'path': '/failed_test', 'requestContext': {'resourcePath': '/failed_test'},
+                'path': test_actual_path, 'requestContext': {'resourcePath': test_resource_path},
                 'body': "invalid"}
 
             context = {}
@@ -148,16 +171,22 @@ class TestFunctionInfoWrapper(unittest.TestCase):
         args, kwargs = mock_logger.exception.call_args
         logged_info = json.loads(args[0])
 
-        self.assertEqual(logged_info['X-Correlation-ID'], 'failed_test_correlation')
-        self.assertEqual(logged_info['X-Request-ID'], 'failed_test_request')
-        self.assertEqual(logged_info['supplier'], 'failed_test_supplier')
-        self.assertEqual(logged_info['actual_path'], '/failed_test')
-        self.assertEqual(logged_info['resource_path'], '/failed_test')
+        self.assertEqual(logged_info['X-Correlation-ID'], test_correlation)
+        self.assertEqual(logged_info['X-Request-ID'], test_request)
+        self.assertEqual(logged_info['supplier'], test_supplier)
+        self.assertEqual(logged_info['actual_path'], test_actual_path)
+        self.assertEqual(logged_info['resource_path'], test_resource_path)
         self.assertNotIn('local_id', logged_info)
         self.assertNotIn('vaccine_type', logged_info)
 
     def test_body_invalid_identifier(self, mock_logger, mock_firehose_logger):
         # Arrange
+        test_correlation = "failed_test_correlation_invalid_identifier"
+        test_request = "failed_test_request_invalid_identifier"
+        test_supplier = "failed_test_supplier_invalid_identifier"
+        test_actual_path = "/failed_test_invalid_identifier"
+        test_resource_path = "/failed_test_invalid_identifier"
+
         self.mock_redis_client.hget.return_value = "FLU"
 
         # Act
@@ -166,11 +195,11 @@ class TestFunctionInfoWrapper(unittest.TestCase):
         with self.assertRaises(ValueError):
             #Assert
             event = {'headers': {
-                'X-Correlation-ID': 'failed_test_correlation',
-                'X-Request-ID': 'failed_test_request',
-                'SupplierSystem': 'failed_test_supplier'
+                'X-Correlation-ID': test_correlation,
+                'X-Request-ID': test_request,
+                'SupplierSystem': test_supplier
             },
-                'path': '/failed_test', 'requestContext': {'resourcePath': '/failed_test'},
+                'path': test_actual_path, 'requestContext': {'resourcePath': test_resource_path},
                 'body': "{\"identifier\": [], \"protocolApplied\": [{\"targetDisease\": [{\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"840539006\", \"display\": \"Disease caused by severe acute respiratory syndrome coronavirus 2\"}]}]}]}"}
 
             context = {}
@@ -180,16 +209,22 @@ class TestFunctionInfoWrapper(unittest.TestCase):
         args, kwargs = mock_logger.exception.call_args
         logged_info = json.loads(args[0])
 
-        self.assertEqual(logged_info['X-Correlation-ID'], 'failed_test_correlation')
-        self.assertEqual(logged_info['X-Request-ID'], 'failed_test_request')
-        self.assertEqual(logged_info['supplier'], 'failed_test_supplier')
-        self.assertEqual(logged_info['actual_path'], '/failed_test')
-        self.assertEqual(logged_info['resource_path'], '/failed_test')
+        self.assertEqual(logged_info['X-Correlation-ID'], test_correlation)
+        self.assertEqual(logged_info['X-Request-ID'], test_request)
+        self.assertEqual(logged_info['supplier'], test_supplier)
+        self.assertEqual(logged_info['actual_path'], test_actual_path)
+        self.assertEqual(logged_info['resource_path'], test_resource_path)
         self.assertNotIn('local_id', logged_info)
         self.assertEqual(logged_info['vaccine_type'], 'FLU')
 
     def test_body_invalid_protocol_applied(self, mock_logger, mock_firehose_logger):
         # Arrange
+        test_correlation = "failed_test_correlation_invalid_protocol"
+        test_request = "failed_test_request_invalid_protocol"
+        test_supplier = "failed_test_supplier_invalid_protocol"
+        test_actual_path = "/failed_test_invalid_protocol"
+        test_resource_path = "/failed_test_invalid_protocol"
+
         self.mock_redis_client.hget.return_value = "FLU"
 
         # Act
@@ -198,11 +233,11 @@ class TestFunctionInfoWrapper(unittest.TestCase):
         with self.assertRaises(ValueError):
             #Assert
             event = {'headers': {
-                'X-Correlation-ID': 'failed_test_correlation',
-                'X-Request-ID': 'failed_test_request',
-                'SupplierSystem': 'failed_test_supplier'
+                'X-Correlation-ID': test_correlation,
+                'X-Request-ID': test_request,
+                'SupplierSystem': test_supplier
             },
-                'path': '/failed_test', 'requestContext': {'resourcePath': '/failed_test'},
+                'path': test_actual_path, 'requestContext': {'resourcePath': test_resource_path},
                 'body': "{\"identifier\": [{\"system\": \"http://test\", \"value\": \"12345\"}], \"protocolApplied\": []}"}
 
             context = {}
@@ -212,10 +247,10 @@ class TestFunctionInfoWrapper(unittest.TestCase):
         args, kwargs = mock_logger.exception.call_args
         logged_info = json.loads(args[0])
 
-        self.assertEqual(logged_info['X-Correlation-ID'], 'failed_test_correlation')
-        self.assertEqual(logged_info['X-Request-ID'], 'failed_test_request')
-        self.assertEqual(logged_info['supplier'], 'failed_test_supplier')
-        self.assertEqual(logged_info['actual_path'], '/failed_test')
-        self.assertEqual(logged_info['resource_path'], '/failed_test')
+        self.assertEqual(logged_info['X-Correlation-ID'], test_correlation)
+        self.assertEqual(logged_info['X-Request-ID'], test_request)
+        self.assertEqual(logged_info['supplier'], test_supplier)
+        self.assertEqual(logged_info['actual_path'], test_actual_path)
+        self.assertEqual(logged_info['resource_path'], test_resource_path)
         self.assertEqual(logged_info['local_id'], '12345^http://test')
         self.assertNotIn('vaccine_type', logged_info)
