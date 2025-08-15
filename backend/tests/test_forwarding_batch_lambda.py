@@ -57,24 +57,28 @@ class TestForwardLambdaHandler(TestCase):
         )
         self.redis_patcher = patch("models.utils.validation_utils.redis_client")
         self.mock_redis_client = self.redis_patcher.start()
+        self.logger_info_patcher = patch("logging.Logger.info")
+        self.mock_logger_info = self.logger_info_patcher.start()
+        self.logger_error_patcher = patch("logging.Logger.error")
+        self.mock_logger_error = self.logger_error_patcher.start()
 
     def tearDown(self):
         """Tear down after each test. This runs after every test"""
-        self.redis_patcher.stop()
+        patch.stopall()
 
     @staticmethod
-    def generate_fhir_json(include_fhir_json=True, identifier_value=None):
+    def generate_fhir_json(include_fhir_json=True, identifier_value=None, operation_requested="CREATE"):
         """Generates the fhir json for cases where included and None if excluded"""
-        if include_fhir_json:
-            fhir_json = copy.deepcopy(MockFhirImmsResources.all_fields)
+        if not include_fhir_json:
+            return None
 
-            if "identifier" in fhir_json and fhir_json["identifier"]:
-                if identifier_value is not None:
-                    fhir_json["identifier"][0]["value"] = identifier_value
+        fhir_json = copy.deepcopy(MockFhirImmsResources.all_fields) if operation_requested != "DELETE" else (
+            copy.deepcopy(MockFhirImmsResources.delete_operation_fields))
 
-            return fhir_json
+        if fhir_json.get("identifier") and identifier_value is not None:
+            fhir_json["identifier"][0]["value"] = identifier_value
 
-        return None
+        return fhir_json
 
     @staticmethod
     def generate_details_from_processing(
@@ -86,7 +90,11 @@ class TestForwardLambdaHandler(TestCase):
             "local_id": local_id,
         }
         if include_fhir_json:
-            details["fhir_json"] = TestForwardLambdaHandler.generate_fhir_json(include_fhir_json, identifier_value)
+            details["fhir_json"] = TestForwardLambdaHandler.generate_fhir_json(
+                include_fhir_json,
+                identifier_value,
+                operation_requested
+            )
         return details
 
     @staticmethod

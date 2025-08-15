@@ -1,8 +1,9 @@
-""" "Decorators to add the relevant fields to the FHIR immunization resource from the batch stream"""
+"""Decorators to add the relevant fields to the FHIR immunization resource from the batch stream"""
 
 from typing import List, Callable, Dict
+
 from utils_for_fhir_conversion import _is_not_empty, Generate, Add, Convert
-from constants import Urls
+from constants import Operation, Urls
 
 
 ImmunizationDecorator = Callable[[Dict, Dict[str, str]], None]
@@ -125,7 +126,7 @@ def _decorate_vaccination(imms: dict, row: Dict[str, str]) -> None:
     Add.custom_item(imms, "doseQuantity", dose_quantity_values, Generate.dictionary(dose_quantity_dict))
 
     # If DOSE_SEQUENCE is empty, default FHIR "doseNumberString" to "Dose sequence not recorded",
-    # otherwise assume the sender's intentiion is to supply a positive integer
+    # otherwise assume the sender's intention is to supply a positive integer
     if _is_not_empty(dose_sequence := row.get("DOSE_SEQUENCE")):
         Add.item(imms["protocolApplied"][0], "doseNumberPositiveInt", dose_sequence, Convert.integer)
     else:
@@ -145,10 +146,10 @@ def _decorate_performer(imms: dict, row: Dict[str, str]) -> None:
         performing_prof_surname := row.get("PERFORMING_PROFESSIONAL_SURNAME"),
         performing_prof_forename := row.get("PERFORMING_PROFESSIONAL_FORENAME"),
     ]
-    peformer_values = organization_values + practitioner_values
+    performer_values = organization_values + practitioner_values
 
     # Add performer if there is at least one non-empty performer value
-    if any(_is_not_empty(value) for value in peformer_values):
+    if any(_is_not_empty(value) for value in performer_values):
         imms["performer"] = []
 
         # Add organization if there is at least one non-empty organization value
@@ -195,7 +196,15 @@ all_decorators: List[ImmunizationDecorator] = [
 ]
 
 
-def convert_to_fhir_imms_resource(row: dict, target_disease: list) -> dict:
+def _get_decorators_for_action_flag(action_flag: Operation) -> List[ImmunizationDecorator]:
+    # VED-32 DELETE action only requires the immunisation decorator
+    if action_flag == Operation.DELETE:
+        return [_decorate_immunization]
+
+    return all_decorators
+
+
+def convert_to_fhir_imms_resource(row: dict, target_disease: list, action_flag: Operation | str) -> dict:
     """Converts a row of data to a FHIR Immunization Resource"""
     # Prepare the imms_resource. Note that all data sent via this service is assumed to be for completed vaccinations.
     imms_resource = {
@@ -204,8 +213,9 @@ def convert_to_fhir_imms_resource(row: dict, target_disease: list) -> dict:
         "protocolApplied": [{"targetDisease": target_disease}]
     }
 
-    # Apply all decorators to add the relevant fields to the imms_resource
-    for decorator in all_decorators:
+    required_decorators = _get_decorators_for_action_flag(action_flag)
+
+    for decorator in required_decorators:
         decorator(imms_resource, row)
 
     return imms_resource

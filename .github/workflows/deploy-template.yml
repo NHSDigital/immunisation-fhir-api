@@ -24,7 +24,7 @@ jobs:
         run: aws sts get-caller-identity
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 1
 
@@ -53,7 +53,7 @@ jobs:
       name: int
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -85,7 +85,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - uses: aws-actions/configure-aws-credentials@v4
         with:

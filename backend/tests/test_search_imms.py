@@ -16,6 +16,10 @@ class TestSearchImmunizations(unittest.TestCase):
         self.controller = create_autospec(FhirController)
         self.logger_exception_patcher = patch("logging.Logger.exception")
         self.mock_logger_exception = self.logger_exception_patcher.start()
+        self.logger_info_patcher = patch("logging.Logger.info")
+        self.mock_logger_info = self.logger_info_patcher.start()
+        self.logger_exception_patcher = patch("logging.Logger.exception")
+        self.mock_logger_exception = self.logger_exception_patcher.start()
 
     def tearDown(self):
         patch.stopall()
@@ -140,7 +144,7 @@ class TestSearchImmunizations(unittest.TestCase):
         self.controller.search_immunizations.assert_called_once_with(lambda_event)
         self.assertEqual(act_res["statusCode"], 400)
 
-    def test_handle_exception(self):
+    def test_search_handle_exception(self):
         """unhandled exceptions should result in 500"""
         lambda_event = {"pathParameters": {"id": "an-id"}}
         error_msg = "an unhandled error"

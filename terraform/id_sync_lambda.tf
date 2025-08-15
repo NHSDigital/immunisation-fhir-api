@@ -10,7 +10,7 @@ locals {
   # Calculate SHA for both directories
   shared_dir_sha         = sha1(join("", [for f in local.shared_files : filesha1("${local.shared_dir}/${f}")]))
   id_sync_lambda_dir_sha = sha1(join("", [for f in local.id_sync_lambda_files : filesha1("${local.id_sync_lambda_dir}/${f}")]))
-  id_sync_lambda_name = "${local.short_prefix}-id_sync_lambda"
+  id_sync_lambda_name    = "${local.short_prefix}-id_sync_lambda"
 }
 
 resource "aws_ecr_repository" "id_sync_lambda_repository" {
@@ -225,14 +225,14 @@ resource "aws_iam_policy" "id_sync_lambda_kms_access_policy" {
           data.aws_kms_key.existing_s3_encryption_key.arn,
         ]
       },
-	  {
-		Effect = "Allow"
-		Action = [
-		  "kms:Decrypt",
-		  "kms:GenerateDataKey*"
-		]
-		Resource = data.aws_kms_key.existing_dynamo_encryption_key.arn
-	  }
+      {
+        Effect = "Allow"
+        Action = [
+          "kms:Decrypt",
+          "kms:GenerateDataKey*"
+        ]
+        Resource = data.aws_kms_key.existing_dynamo_encryption_key.arn
+      }
     ]
   })
 }
