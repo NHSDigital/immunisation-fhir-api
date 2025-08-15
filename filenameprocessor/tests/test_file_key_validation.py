@@ -30,7 +30,6 @@ class TestFileKeyValidation(TestCase):
             with self.subTest():
                 self.assertEqual(is_file_in_directory_root(test_file_key), expected)
 
-
     def test_is_valid_datetime(self):
         """Tests that is_valid_datetime returns True for valid datetimes, and false otherwise"""
         # Test case tuples are structured as (date_time_string, expected_result)

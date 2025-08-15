@@ -126,7 +126,7 @@ class TestLoggingDecorator(unittest.TestCase):
                     patch("logging_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
                     patch("logging_decorator.time") as mock_time,  # noqa: E999
                 ):  # noqa: E999
-                    mock_time.time.return_value = 1672531200.123456  # Mocks the end time to be 0.123456s after the start time
+                    mock_time.time.return_value = 1672531200.123456  # Mocks end time to be 0.123456s after start
                     generate_and_send_logs(start_time, base_log_data, additional_log_data, is_error_log=use_error_log,
                                            use_ms_precision=use_ms_precision)
 
