@@ -819,7 +819,6 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
             valid_list_element=valid_list_element,
         )
 
-    # SAW
     def test_pre_validate_protocol_applied_dose_number_positive_int(self):
         """
         Test pre_validate_protocol_applied_dose_number_positive_int accepts valid values and
