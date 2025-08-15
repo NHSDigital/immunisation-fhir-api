@@ -98,13 +98,13 @@ class TestFhirControllerGetImmunizationByIdentifier(unittest.TestCase):
         lambda_event = {
             "headers": {"SupplierSystem": "test"},
             "queryStringParameters": {
-                "immunization.identifier": "https://supplierABC/identifiers/vacc|f10b59b3-fc73-4616-99c9-9e882ab31184",
-                "_element": "id,meta",
+                "identifier": "https://supplierABC/identifiers/vacc|f10b59b3-fc73-4616-99c9-9e882ab31184",
+                "_elements": "id,meta",
             },
             "body": None,
         }
-        identifier = lambda_event.get("queryStringParameters", {}).get("immunization.identifier")
-        _element = lambda_event.get("queryStringParameters", {}).get("_element")
+        identifier = lambda_event.get("queryStringParameters", {}).get("identifier")
+        _element = lambda_event.get("queryStringParameters", {}).get("_elements")
 
         identifiers = identifier.replace("|", "#")
         # When
@@ -127,8 +127,8 @@ class TestFhirControllerGetImmunizationByIdentifier(unittest.TestCase):
         lambda_event = {
             "headers": {"SupplierSystem": "test"},
             "queryStringParameters": {
-                "immunization.identifier": "https://supplierABC/identifiers/vacc|f10b59b3-fc73-4616-99c9-9e882ab31184",
-                "_element": "id,meta",
+                "identifier": "https://supplierABC/identifiers/vacc|f10b59b3-fc73-4616-99c9-9e882ab31184",
+                "_elements": "id,meta",
             },
             "body": None,
         }
@@ -143,8 +143,8 @@ class TestFhirControllerGetImmunizationByIdentifier(unittest.TestCase):
         # Given
         lambda_event = {
             "queryStringParameters": {
-                "immunization.identifier": "https://supplierABC/identifiers/vacc|f10b59b3-fc73-4616-99c9-9e882ab31184",
-                "_element": "id,meta",
+                "identifier": "https://supplierABC/identifiers/vacc|f10b59b3-fc73-4616-99c9-9e882ab31184",
+                "_elements": "id,meta",
             },
             "body": None,
         }
@@ -171,14 +171,14 @@ class TestFhirControllerGetImmunizationByIdentifier(unittest.TestCase):
         lambda_event = {
             "headers": {"SupplierSystem": "test"},
             "queryStringParameters": {
-                "immunization.identifier": "https://supplierABC/identifiers/vacc|f10b59b3-fc73-4616-99c9-9e882ab31184",
-                "_element": "id,meta",
+                "identifier": "https://supplierABC/identifiers/vacc|f10b59b3-fc73-4616-99c9-9e882ab31184",
+                "_elements": "id,meta",
                 "SupplierSystem": "test",
             },
             "body": None,
         }
-        identifier = lambda_event.get("queryStringParameters", {}).get("immunization.identifier")
-        _element = lambda_event.get("queryStringParameters", {}).get("_element")
+        identifier = lambda_event.get("queryStringParameters", {}).get("identifier")
+        _element = lambda_event.get("queryStringParameters", {}).get("_elements")
 
         imms = identifier.replace("|", "#")
         # When
@@ -205,7 +205,7 @@ class TestFhirControllerGetImmunizationByIdentifier(unittest.TestCase):
         self.service.get_immunization_by_identifier.return_value = {"id": "test", "Version": 1}
         lambda_event = {
             "headers": {"SupplierSystem": "test"},
-            "queryStringParameters": {"patient.identifier": "test", "_element": "id,meta"},
+            "queryStringParameters": {"patient.identifier": "test", "_elements": "id,meta"},
             "body": None,
         }
         # When
@@ -226,8 +226,8 @@ class TestFhirControllerGetImmunizationByIdentifier(unittest.TestCase):
             "headers": {"SupplierSystem": "test"},
             "queryStringParameters": {
                 "patient.identifier": "test",
-                "immunization.identifier": "https://supplierABC/identifiers/vacc|f10b59b3-fc73-4616-99c9-9e882ab31184",
-                "_element": "id,meta",
+                "identifier": "https://supplierABC/identifiers/vacc|f10b59b3-fc73-4616-99c9-9e882ab31184",
+                "_elements": "id,meta",
             },
             "body": "aW1tdW5pemF0aW9uLmlkZW50aWZpZXI9aHR0cHMlM0ElMkYlMkZzdXBwbGllckFCQyUyRmlkZW50aWZpZXJzJTJGdmFjYyU3Q2YxMGI1OWIzLWZjNzMtNDYxNi05OWM5LTllODgyYWIzMTE4NCZfZWxlbWVudD1pZCUyQ21ldGEmaWQ9cw==",
         }
@@ -250,7 +250,7 @@ class TestFhirControllerGetImmunizationByIdentifier(unittest.TestCase):
             "headers": {"SupplierSystem": "test"},
             "queryStringParameters": {
                 "-immunization.target": "test",
-                "immunization.identifier": "https://supplierABC/identifiers/vacc|f10b59b3-fc73-4616-99c9-9e882ab31184",
+                "identifier": "https://supplierABC/identifiers/vacc|f10b59b3-fc73-4616-99c9-9e882ab31184",
             },
             "body": None,
         }
@@ -273,8 +273,8 @@ class TestFhirControllerGetImmunizationByIdentifier(unittest.TestCase):
             "headers": { "SupplierSystem": "test"},
             "queryStringParameters": {
                 "patient.identifier": "test",
-                "immunization.identifier": "https://supplierABC/identifiers/vacc|f10b59b3-fc73-4616-99c9-9e882ab31184",
-                "_element": "id,meta",
+                "identifier": "https://supplierABC/identifiers/vacc|f10b59b3-fc73-4616-99c9-9e882ab31184",
+                "_elements": "id,meta",
             },
             "body": None,
         }
@@ -296,8 +296,8 @@ class TestFhirControllerGetImmunizationByIdentifier(unittest.TestCase):
         lambda_event = {
             "headers": { "SupplierSystem": "test"},
             "queryStringParameters": {
-                "immunization.identifier": "https://supplierABC/identifiers/vacc|f10b59b3-fc73-4616-99c9-9e882ab31184",
-                "_element": "id,meta,name",
+                "identifier": "https://supplierABC/identifiers/vacc|f10b59b3-fc73-4616-99c9-9e882ab31184",
+                "_elements": "id,meta,name",
             },
             "body": None,
         }
@@ -329,7 +329,7 @@ class TestFhirControllerGetImmunizationByIdentifier(unittest.TestCase):
         }
         lambda_event = {
             "headers": {"SupplierSystem": "test"},
-            "queryStringParameters": {"immunization.identifier": "", "_element": "id"},
+            "queryStringParameters": {"identifier": "", "_elements": "id"},
             "body": None,
         }
         response = self.controller.get_immunization_by_identifier(lambda_event)
@@ -360,7 +360,7 @@ class TestFhirControllerGetImmunizationByIdentifier(unittest.TestCase):
         }
         lambda_event = {
             "headers": { "SupplierSystem": "test"},
-            "queryStringParameters": {"immunization.identifier": "test|123", "_element": ""},
+            "queryStringParameters": {"identifier": "test|123", "_elements": ""},
             "body": None,
         }
         response = self.controller.get_immunization_by_identifier(lambda_event)
@@ -392,8 +392,8 @@ class TestFhirControllerGetImmunizationByIdentifier(unittest.TestCase):
         lambda_event = {
             "headers": {"SupplierSystem": "test"},
             "queryStringParameters": {
-                "immunization.identifier": "https://supplierABC/identifiers/vaccf10b59b3-fc73-4616-99c9-9e882ab31184",
-                "_element": "id",
+                "identifier": "https://supplierABC/identifiers/vaccf10b59b3-fc73-4616-99c9-9e882ab31184",
+                "_elements": "id",
             },
             "body": None,
         }
@@ -426,8 +426,8 @@ class TestFhirControllerGetImmunizationByIdentifier(unittest.TestCase):
         lambda_event = {
             "headers": { "SupplierSystem": "test"},
             "queryStringParameters": {
-                "immunization.identifier": "https://supplierABC/identifiers/vacc  |   f10b59b3-fc73-4616-99c9-9e882ab31184",
-                "_element": "id",
+                "identifier": "https://supplierABC/identifiers/vacc  |   f10b59b3-fc73-4616-99c9-9e882ab31184",
+                "_elements": "id",
             },
             "body": None,
         }
@@ -446,13 +446,13 @@ class TestFhirControllerGetImmunizationByIdentifier(unittest.TestCase):
         lambda_event = {
             "headers": {"SupplierSystem": "test"},
             "queryStringParameters": {
-                "immunization.identifier": "https://supplierABC/identifiers/vacc|f10b59b3-fc73-4616-99c9-9e882ab31184",
-                "_element": "id",
+                "identifier": "https://supplierABC/identifiers/vacc|f10b59b3-fc73-4616-99c9-9e882ab31184",
+                "_elements": "id",
             },
             "body": None,
         }
-        identifier = lambda_event.get("queryStringParameters", {}).get("immunization.identifier")
-        _element = lambda_event.get("queryStringParameters", {}).get("_element")
+        identifier = lambda_event.get("queryStringParameters", {}).get("identifier")
+        _element = lambda_event.get("queryStringParameters", {}).get("_elements")
         identifiers = identifier.replace("|", "#")
         # When
         response = self.controller.get_immunization_by_identifier(lambda_event)
@@ -480,16 +480,16 @@ class TestFhirControllerGetImmunizationByIdentifierPost(unittest.TestCase):
         return {
             "headers": { "SupplierSystem": "test"},
             "queryStringParameters": None,
-            "body": "aW1tdW5pemF0aW9uLmlkZW50aWZpZXI9aHR0cHMlM0ElMkYlMkZzdXBwbGllckFCQyUyRmlkZW50aWZpZXJzJTJGdmFjYyU3Q2YxMGI1OWIzLWZjNzMtNDYxNi05OWM5LTllODgyYWIzMTE4NCZfZWxlbWVudD1pZCUyQ21ldGEmaWQ9cw==",
+            "body": "aWRlbnRpZmllcj1odHRwcyUzQSUyRiUyRnN1cHBsaWVyQUJDJTJGaWRlbnRpZmllcnMlMkZ2YWNjJTdDZjEwYjU5YjMtZmM3My00NjE2LTk5YzktOWU4ODJhYjMxMTg0Jl9lbGVtZW50cz1pZCUyQ21ldGEmaWQ9cw==",
         }
 
     def parse_lambda_body(self, lambda_event):
         """Helper to parse and decode lambda event body"""
         decoded_body = base64.b64decode(lambda_event["body"]).decode("utf-8")
         parsed_body = urllib.parse.parse_qs(decoded_body)
-        immunization_identifier = parsed_body.get("immunization.identifier", "")
+        immunization_identifier = parsed_body.get("identifier", "")
         converted_identifier = "".join(immunization_identifier)
-        element = parsed_body.get("_element", "")
+        element = parsed_body.get("_elements", "")
         converted_element = "".join(element)
         identifiers = converted_identifier.replace("|", "#")
         return identifiers, converted_identifier, converted_element
@@ -500,7 +500,7 @@ class TestFhirControllerGetImmunizationByIdentifierPost(unittest.TestCase):
         # Given
         mock_get_permissions.return_value = ["COVID19.CRUDS"]
         self.service.get_immunization_by_identifier.return_value = {"id": "test", "Version": 1}
-        body = "immunization.identifier=https://supplierABC/identifiers/vacc#f10b59b3-fc73-4616-99c9-9e882ab31184&_element=id|meta"
+        body = "identifier=https://supplierABC/identifiers/vacc#f10b59b3-fc73-4616-99c9-9e882ab31184&_elements=id|meta"
         lambda_event = self.set_up_lambda_event(body)
         identifiers, converted_identifier, converted_element = self.parse_lambda_body(lambda_event)
 
@@ -533,7 +533,7 @@ class TestFhirControllerGetImmunizationByIdentifierPost(unittest.TestCase):
             "entry": [],
             "total": 0,
         }
-        body = "immunization.identifier=https://supplierABC/identifiers/vacc#f10b59b3-fc73-4616-99c9-9e882ab31184&_element=id|meta"
+        body = "identifier=https://supplierABC/identifiers/vacc#f10b59b3-fc73-4616-99c9-9e882ab31184&_elements=id|meta"
         lambda_event = self.set_up_lambda_event(body)
         identifiers, converted_identifier, converted_element = self.parse_lambda_body(lambda_event)
 
@@ -560,7 +560,7 @@ class TestFhirControllerGetImmunizationByIdentifierPost(unittest.TestCase):
         lambda_event = {
             "headers": {"SupplierSystem": "test"},
             "queryStringParameters": None,
-            "body": "cGF0aWVudC5pZGVudGlmaWVyPWh0dHBzJTNBJTJGJTJGZmhpci5uaHMudWslMkZJZCUyRm5ocy1udW1iZXIlN0M5NjkzNjMyMTA5Jl9lbGVtZW50PWlkJTJDbWV0YQ==",
+            "body": "cGF0aWVudC5pZGVudGlmaWVyPWh0dHBzJTNBJTJGJTJGZmhpci5uaHMudWslMkZJZCUyRm5ocy1udW1iZXIlN0M5NjkzNjMyMTA5Jl9lbGVtZW50cz1pZCUyQ21ldGE=",
         }
         # When
         response = self.controller.get_immunization_by_identifier(lambda_event)
@@ -580,7 +580,7 @@ class TestFhirControllerGetImmunizationByIdentifierPost(unittest.TestCase):
         lambda_event = {
             "headers": { "SupplierSystem": "test"},
             "queryStringParameters": None,
-            "body": "LWltbXVuaXphdGlvbi50YXJnZXQ9Q09WSUQxOSZpbW11bml6YXRpb24uaWRlbnRpZmllcj1odHRwcyUzQSUyRiUyRnN1cHBsaWVyQUJDJTJGaWRlbnRpZmllcnMlMkZ2YWNjJTdDZjEwYjU5YjMtZmM3My00NjE2LTk5YzktOWU4ODJhYjMxMTg0",
+            "body": "aWRlbnRpZmllcj1odHRwcyUzQSUyRiUyRnN1cHBsaWVyQUJDJTJGaWRlbnRpZmllcnMlMkZ2YWNjJSAgN0NmMTBiNTliMy1mYzczLTQ2MTYtOTljOS05ZTg4MmFiMzExODQmX2VsZW1lbnRzPWlkJTJDbWV0YSZpZD1z",
         }
         # When
         response = self.controller.get_immunization_by_identifier(lambda_event)
@@ -664,7 +664,7 @@ class TestFhirControllerGetImmunizationByIdentifierPost(unittest.TestCase):
         lambda_event = {
             "headers": {"SupplierSystem": "test"},
             "queryStringParameters": None,
-            "body": "cGF0aWVudC5pZGVudGlmaWVyPWh0dHBzJTNBJTJGJTJGZmhpci5uaHMudWslMkZJZCUyRm5ocy1udW1iZXIlN0M5NjkzNjMyMTA5Ji1pbW11bml6YXRpb24udGFyZ2V0PUNPVklEMTkmX2luY2x1ZGU9SW1tdW5pemF0aW9uJTNBcGF0aWVudCZpbW11bml6YXRpb24uaWRlbnRpZmllcj1odHRwcyUzQSUyRiUyRnN1cHBsaWVyQUJDJTJGaWRlbnRpZmllcnMlMkZ2YWNjJTdDZjEwYjU5YjMtZmM3My00NjE2LTk5YzktOWU4ODJhYjMxMTg0Jl9lbGVtZW50PWlkJTJDbWV0YSZpZD1z",
+            "body": "cGF0aWVudC5pZGVudGlmaWVyPWh0dHBzJTNBJTJGJTJGZmhpci5uaHMudWslMkZJZCUyRm5ocy1udW1iZXIlN0M5NjkzNjMyMTA5Ji1pbW11bml6YXRpb24udGFyZ2V0PUNPVklEMTkmX2luY2x1ZGU9SW1tdW5pemF0aW9uJTNBcGF0aWVudCZpZGVudGlmaWVyPWh0dHBzJTNBJTJGJTJGc3VwcGxpZXJBQkMlMkZpZGVudGlmaWVycyUyRnZhY2MlN0NmMTBiNTliMy1mYzczLTQ2MTYtOTljOS05ZTg4MmFiMzExODQmX2VsZW1lbnRzPWlkJTJDbWV0YSZpZD1z",
         }
         # When
         response = self.controller.get_immunization_by_identifier(lambda_event)
@@ -683,7 +683,7 @@ class TestFhirControllerGetImmunizationByIdentifierPost(unittest.TestCase):
         lambda_event = {
             "headers": {"SupplierSystem": "test"},
             "queryStringParameters": None,
-            "body": "aW1tdW5pemF0aW9uLmlkZW50aWZpZXI9aHR0cHMlM0ElMkYlMkZzdXBwbGllckFCQyUyRmlkZW50aWZpZXJzJTJGdmFjYyU3Q2YxMGI1OWIzLWZjNzMtNDYxNi05OWM5LTllODgyYWIzMTE4NCZfZWxlbWVudD1pZCUyQ21ldGElMkNuYW1l",
+            "body": "aWRlbnRpZmllcj1odHRwcyUzQSUyRiUyRnN1cHBsaWVyQUJDJTJGaWRlbnRpZmllcnMlMkZ2YWNjJTdDZjEwYjU5YjMtZmM3My00NjE2LTk5YzktOWU4ODJhYjMxMTg0Jl9lbGVtZW50cz1pZCUyQ21ldGElMkNuYW1l",
         }
         # When
         response = self.controller.get_immunization_by_identifier(lambda_event)
@@ -714,7 +714,7 @@ class TestFhirControllerGetImmunizationByIdentifierPost(unittest.TestCase):
         lambda_event = {
             "headers": {"SupplierSystem": "test"},
             "queryStringParameters": None,
-            "body": "aW1tdW5pemF0aW9uLmlkZW50aWZpZXI9Jl9lbGVtZW50PWlkJTJDbWV0YQ==",
+            "body": "aWRlbnRpZmllcj0mX2VsZW1lbnRzPWlkJTJDbWV0YQ==",
         }
         response = self.controller.get_immunization_by_identifier(lambda_event)
 
@@ -744,7 +744,7 @@ class TestFhirControllerGetImmunizationByIdentifierPost(unittest.TestCase):
         lambda_event = {
             "headers": {"SupplierSystem": "test"},
             "queryStringParameters": None,
-            "body": "aW1tdW5pemF0aW9uLmlkZW50aWZpZXI9aHR0cHMlM0ElMkYlMkZzdXBwbGllckFCQyUyRmlkZW50aWZpZXJzJTJGdmFjYyUgIDdDZjEwYjU5YjMtZmM3My00NjE2LTk5YzktOWU4ODJhYjMxMTg0Jl9lbGVtZW50PWlkJTJDbWV0YSZpZD1z",
+            "body": "aWRlbnRpZmllcj1odHRwcyUzQSUyRiUyRnN1cHBsaWVyQUJDJTJGaWRlbnRpZmllcnMlMkZ2YWNjJSAgN0NmMTBiNTliMy1mYzczLTQ2MTYtOTljOS05ZTg4MmFiMzExODQmX2VsZW1lbnRzPWlkJTJDbWV0YSZpZD1z",
         }
         response = self.controller.get_immunization_by_identifier(lambda_event)
 
@@ -761,25 +761,25 @@ class TestFhirControllerGetImmunizationByIdentifierPost(unittest.TestCase):
         lambda_event = {
             "headers": {"SupplierSystem": "test"},
             "queryStringParameters": None,
-            "body": "aW1tdW5pemF0aW9uLmlkZW50aWZpZXI9aHR0cHMlM0ElMkYlMkZzdXBwbGllckFCQyUyRmlkZW50aWZpZXJzJTJGdmFjYyU3Q2YxMGI1OWIzLWZjNzMtNDYxNi05OWM5LTllODgyYWIzMTE4NCZfZWxlbWVudD1pZCUyQ21ldGEmaWQ9cw==",
+            "body": "aWRlbnRpZmllcj1odHRwcyUzQSUyRiUyRnN1cHBsaWVyQUJDJTJGaWRlbnRpZmllcnMlMkZ2YWNjJTdDZjEwYjU5YjMtZmM3My00NjE2LTk5YzktOWU4ODJhYjMxMTg0Jl9lbGVtZW50cz1pZCUyQ21ldGEmaWQ9cw==",
         }
         decoded_body = base64.b64decode(lambda_event["body"]).decode("utf-8")
         # Parse the URL encoded body
         parsed_body = urllib.parse.parse_qs(decoded_body)
 
-        immunization_identifier = parsed_body.get("immunization.identifier", "")
-        converted_identifer = "".join(immunization_identifier)
-        element = parsed_body.get("_element", "")
+        immunization_identifier = parsed_body.get("identifier", "")
+        converted_identifier = "".join(immunization_identifier)
+        element = parsed_body.get("_elements", "")
         converted_element = "".join(element)
 
-        identifiers = converted_identifer.replace("|", "#")
+        identifiers = converted_identifier.replace("|", "#")
         # When
         response = self.controller.get_immunization_by_identifier(lambda_event)
 
         # Then
         mock_get_permissions.assert_called_once_with("test")
         self.service.get_immunization_by_identifier.assert_called_once_with(
-            identifiers, ["COVID19.CRUDS"], converted_identifer, converted_element
+            identifiers, ["COVID19.CRUDS"], converted_identifier, converted_element
         )
 
         self.assertEqual(response["statusCode"], 403)

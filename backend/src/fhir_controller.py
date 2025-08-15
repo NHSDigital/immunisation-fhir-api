@@ -549,47 +549,64 @@ class FhirController:
             return self.create_response(500, id_error)
 
     def fetch_identifier_system_and_element(self, event: dict):
+        """
+        Extracts `identifier` and `_elements` from an incoming FHIR search request.
+
+        FHIR search supports two input formats:
+        1. GET search: parameters appear in the query string (e.g. ?identifier=abc123&_elements=id,meta)
+        2. POST search: parameters appear in the request body, form-encoded (e.g. identifier=abc123&_elements=id,meta)
+
+        This function handles both cases, returning:
+        - The extracted identifier value
+        - The extracted _elements value
+        - Any validation check result for disallowed keys
+        - Booleans indicating whether identifier/_elements were present
+        """
+
         query_params = event.get("queryStringParameters", {})
         body = event["body"]
         not_required_keys = ["-date.from", "-date.to", "-immunization.target", "_include", "patient.identifier"]
+
+        # Get Search Identifer Parameters
         if query_params and not body:
-            # Check for the presence of 'immunization.identifier' and '_element'
-            query_string_has_immunization_identifier = "immunization.identifier" in event.get(
+            query_string_has_immunization_identifier = "identifier" in event.get(
                 "queryStringParameters", {}
             )
-            query_string_has_element = "_element" in event.get("queryStringParameters", {})
-            immunization_identifier = query_params.get("immunization.identifier", "")
-            element = query_params.get("_element", "")
+            query_string_has_element = "_elements" in event.get("queryStringParameters", {})
+            identifier = query_params.get("identifier", "")
+            element = query_params.get("_elements", "")
             query_check = check_keys_in_sources(event, not_required_keys)
 
             return (
-                immunization_identifier,
+                identifier,
                 element,
                 query_check,
                 query_string_has_immunization_identifier,
                 query_string_has_element,
             )
+        
+        # Post Search Identifier by body form
         if body and not query_params:
             decoded_body = base64.b64decode(body).decode("utf-8")
             parsed_body = urllib.parse.parse_qs(decoded_body)
-            # Attempt to extract 'immunization.identifier' and '_element'
-            converted_identifer = ""
-            converted_element = ""
-            immunization_identifier = parsed_body.get("immunization.identifier", "")
-            if immunization_identifier:
-                converted_identifer = "".join(immunization_identifier)
-            _element = parsed_body.get("_element", "")
-            if _element:
-                converted_element = "".join(_element)
-            body_has_immunization_identifier = "immunization.identifier" in parsed_body
-            body_has_immunization_element = "_element" in parsed_body
+            # Attempt to extract 'identifier' and '_elements'
+            converted_identifier = ""
+            converted_elements = ""
+            identifier = parsed_body.get("identifier", "")
+            if identifier:
+                converted_identifier = "".join(identifier)
+            _elements = parsed_body.get("_elements", "")
+            if _elements:
+                converted_elements = "".join(_elements)
+            body_has_identifier = "identifier" in parsed_body
+            body_has_immunization_elements = "_elements" in parsed_body
             body_check = check_keys_in_sources(event, not_required_keys)
             return (
-                converted_identifer,
-                converted_element,
+                converted_identifier,
+                converted_elements,
                 body_check,
-                body_has_immunization_identifier,
-                body_has_immunization_element,
+                body_has_identifier,
+                body_has_immunization_elements,
             )
 
     def create_response_for_identifier(self, not_required, has_identifier, has_element):
@@ -598,7 +615,7 @@ class FhirController:
                 resource_id=str(uuid.uuid4()),
                 severity=Severity.error,
                 code=Code.server_error,
-                diagnostics="Search parameter should have either immunization.identifier or patient.identifier",
+                diagnostics="Search parameter should have either identifier or patient.identifier",
             )
             return self.create_response(400, error)
 
@@ -607,7 +624,7 @@ class FhirController:
                 resource_id=str(uuid.uuid4()),
                 severity=Severity.error,
                 code=Code.server_error,
-                diagnostics="Search parameter immunization.identifier must have the following parameter: _element",
+                diagnostics="Search parameter identifier must have the following parameter: _elements",
             )
             return self.create_response(400, error)
 
@@ -616,7 +633,7 @@ class FhirController:
                 resource_id=str(uuid.uuid4()),
                 severity=Severity.error,
                 code=Code.server_error,
-                diagnostics="Search parameter _element must have  the following parameter: immunization.identifier",
+                diagnostics="Search parameter _elements must have  the following parameter: identifier",
             )
             return self.create_response(400, error)
 
