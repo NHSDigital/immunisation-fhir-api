@@ -142,7 +142,7 @@ def form_json(response, _element, identifier, baseurl):
             "resourceType": "Bundle",
             "type": "searchset",
             "link": [
-                {"relation": "self", "url": f"{baseurl}?immunization.identifier={identifier}&_elements={_element}"}
+                {"relation": "self", "url": f"{baseurl}?identifier={identifier}&_elements={_element}"}
             ],
             "entry": [],
             "total": 0,
@@ -153,7 +153,7 @@ def form_json(response, _element, identifier, baseurl):
     json = {
         "resourceType": "Bundle",
         "type": "searchset",
-        "link": [{"relation": "self", "url": f"{baseurl}?immunization.identifier={identifier}&_elements={_element}"}],
+        "link": [{"relation": "self", "url": f"{baseurl}?identifier={identifier}&_elements={_element}"}],
         "entry": [
             {
                 "fullUrl": f"https://api.service.nhs.uk/immunisation-fhir-api/Immunization/{response['id']}",

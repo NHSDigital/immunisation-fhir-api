@@ -32,10 +32,10 @@ def search_imms(event: events.APIGatewayProxyEventV1, controller: FhirController
         body_has_immunization_element = False
         if not (query_params == None and body == None):
             if query_params:
-                query_string_has_immunization_identifier = "immunization.identifier" in event.get(
+                query_string_has_immunization_identifier = "identifier" in event.get(
                     "queryStringParameters", {}
                 )
-                query_string_has_element = "_element" in event.get("queryStringParameters", {})
+                query_string_has_element = "_elements" in event.get("queryStringParameters", {})
             # Decode body from base64
             if body:
                 decoded_body = base64.b64decode(body).decode("utf-8")
@@ -43,8 +43,8 @@ def search_imms(event: events.APIGatewayProxyEventV1, controller: FhirController
                 parsed_body = urllib.parse.parse_qs(decoded_body)
 
                 # Check for 'immunization.identifier' in body
-                body_has_immunization_identifier = "immunization.identifier" in parsed_body
-                body_has_immunization_element = "_element" in parsed_body
+                body_has_immunization_identifier = "identifier" in parsed_body
+                body_has_immunization_element = "_elements" in parsed_body
             if (
                 query_string_has_immunization_identifier
                 or body_has_immunization_identifier
@@ -97,13 +97,13 @@ if __name__ == "__main__":
     parser.add_argument("--date.from", type=str, required=False, dest="date_from")
     parser.add_argument("--date.to", type=str, required=False, dest="date_to")
     parser.add_argument(
-        "--immunization.identifier",
+        "--identifier",
         help="Identifier of System",
         type=str,
         required=False,
-        dest="immunization_identifier",
+        dest="identifier",
     )
-    parser.add_argument("--element", help="Identifier of System", type=str, required=False, dest="_element")
+    parser.add_argument("--elements", help="Identifier of System", type=str, required=False, dest="_elements")
     args = parser.parse_args()
 
     event: events.APIGatewayProxyEventV1 = {
@@ -113,8 +113,8 @@ if __name__ == "__main__":
             "-date.from": [args.date_from] if args.date_from else [],
             "-date.to": [args.date_to] if args.date_to else [],
             "_include": ["Immunization:patient"],
-            "immunization_identifier": [args.immunization_identifier] if args.immunization_identifier else [],
-            "_element": [args._element] if args._element else [],
+            "identifier": [args.immunization_identifier] if args.immunization_identifier else [],
+            "_elements": [args._element] if args._element else [],
         },
         "httpMethod": "POST",
         "headers": {
