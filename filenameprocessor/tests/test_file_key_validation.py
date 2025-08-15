@@ -9,7 +9,7 @@ from tests.utils_for_tests.utils_for_filenameprocessor_tests import MOCK_ODS_COD
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
-    from file_key_validation import is_valid_datetime, validate_file_key
+    from file_key_validation import is_file_in_directory_root, is_valid_datetime, validate_file_key
     from errors import InvalidFileKeyError
 
 VALID_FLU_EMIS_FILE_KEY = MockFileDetails.emis_flu.file_key
@@ -18,9 +18,22 @@ VALID_RSV_RAVS_FILE_KEY = MockFileDetails.ravs_rsv_1.file_key
 
 class TestFileKeyValidation(TestCase):
     """Tests for file_key_validation functions"""
+    def test_is_file_in_directory_root(self):
+        test_cases = [
+            ("test_file.csv", True),
+            ("archive/test_file.csv", False),
+            ("processing/test_file.csv", False),
+            ("lots/of/directories/init.py", False),
+        ]
+
+        for test_file_key, expected in test_cases:
+            with self.subTest():
+                self.assertEqual(is_file_in_directory_root(test_file_key), expected)
+
+
     def test_is_valid_datetime(self):
-        "Tests that is_valid_datetime returns True for valid datetimes, and false otherwise"
-        # Test case tuples are stuctured as (date_time_string, expected_result)
+        """Tests that is_valid_datetime returns True for valid datetimes, and false otherwise"""
+        # Test case tuples are structured as (date_time_string, expected_result)
         test_cases = [
             ("20200101T12345600", True),  # Valid datetime string with timezone
             ("20200101T123456", True),  # Valid datetime string without timezone

@@ -110,33 +110,33 @@ class TestLoggingDecorator(unittest.TestCase):
         additional_log_data = {"additional_key": "additional_value"}
         start_time = 1672531200
 
-        # CASE: Successful log - is_error_log arg set to False
-        with (  # noqa: E999
-            patch("logging_decorator.logger") as mock_logger,  # noqa: E999
-            patch("logging_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
-            patch("logging_decorator.time") as mock_time,  # noqa: E999
-        ):  # noqa: E999
-            mock_time.time.return_value = 1672531200.123456  # Mocks the end time to be 0.123456s after the start time
-            generate_and_send_logs(start_time, base_log_data, additional_log_data, is_error_log=False)
+        test_cases = [
+            ("Using standard log and seconds precision", False, False,
+             {"base_key": "base_value", "time_taken": "0.12346s", "additional_key": "additional_value"}),
+            ("Using error log and seconds precision", True, False,
+             {"base_key": "base_value", "time_taken": "0.12346s", "additional_key": "additional_value"}),
+            ("Using standard log and milliseconds precision", False, True,
+             {"base_key": "base_value", "time_taken": "123.456ms", "additional_key": "additional_value"})
+        ]
 
-        expected_log_data = {"base_key": "base_value", "time_taken": "0.12346s", "additional_key": "additional_value"}
-        log_data = json.loads(mock_logger.info.call_args[0][0])
-        self.assertEqual(log_data, expected_log_data)
-        mock_send_log_to_firehose.assert_called_once_with(expected_log_data)
+        for test_desc, use_error_log, use_ms_precision, expected_log_data in test_cases:
+            with self.subTest(test_desc):
+                with (  # noqa: E999
+                    patch("logging_decorator.logger") as mock_logger,  # noqa: E999
+                    patch("logging_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
+                    patch("logging_decorator.time") as mock_time,  # noqa: E999
+                ):  # noqa: E999
+                    mock_time.time.return_value = 1672531200.123456  # Mocks the end time to be 0.123456s after the start time
+                    generate_and_send_logs(start_time, base_log_data, additional_log_data, is_error_log=use_error_log,
+                                           use_ms_precision=use_ms_precision)
 
-        # CASE: Error log - is_error_log arg set to True
-        with (  # noqa: E999
-            patch("logging_decorator.logger") as mock_logger,  # noqa: E999
-            patch("logging_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
-            patch("logging_decorator.time") as mock_time,  # noqa: E999
-        ):  # noqa: E999
-            mock_time.time.return_value = 1672531200.123456  # Mocks the end time to be 0.123456s after the start time
-            generate_and_send_logs(start_time, base_log_data, additional_log_data, is_error_log=True)
+                    if use_error_log:
+                        log_data = json.loads(mock_logger.error.call_args[0][0])
+                    else:
+                        log_data = json.loads(mock_logger.info.call_args[0][0])
 
-        expected_log_data = {"base_key": "base_value", "time_taken": "0.12346s", "additional_key": "additional_value"}
-        log_data = json.loads(mock_logger.error.call_args[0][0])
-        self.assertEqual(log_data, expected_log_data)
-        mock_send_log_to_firehose.assert_called_once_with(expected_log_data)
+                    self.assertEqual(log_data, expected_log_data)
+                    mock_send_log_to_firehose.assert_called_once_with(expected_log_data)
 
     def test_logging_successful_validation(self):
         """Tests that the correct logs are sent to cloudwatch and splunk when file validation is successful"""
@@ -156,7 +156,7 @@ class TestLoggingDecorator(unittest.TestCase):
         expected_log_data = {
             "function_name": "filename_processor_handle_record",
             "date_time": fixed_datetime.strftime("%Y-%m-%d %H:%M:%S"),
-            "time_taken": "1.0s",
+            "time_taken": "1000.0ms",
             "statusCode": 200,
             "message": "Successfully sent to SQS for further processing",
             "file_key": FILE_DETAILS.file_key,
@@ -188,7 +188,7 @@ class TestLoggingDecorator(unittest.TestCase):
         expected_log_data = {
             "function_name": "filename_processor_handle_record",
             "date_time": fixed_datetime.strftime("%Y-%m-%d %H:%M:%S"),
-            "time_taken": "1.0s",
+            "time_taken": "1000.0ms",
             "statusCode": 403,
             "message": "Infrastructure Level Response Value - Processing Error",
             "file_key": FILE_DETAILS.file_key,
