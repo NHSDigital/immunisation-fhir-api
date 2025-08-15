@@ -1,6 +1,8 @@
 """Constants for the filenameprocessor lambda"""
 
 import os
+from enum import StrEnum
+
 from errors import (
     VaccineTypePermissionsError,
     InvalidFileKeyError,
@@ -15,6 +17,8 @@ FILE_NAME_PROC_LAMBDA_NAME = os.getenv("FILE_NAME_PROC_LAMBDA_NAME")
 AUDIT_TABLE_NAME = os.getenv("AUDIT_TABLE_NAME")
 AUDIT_TABLE_QUEUE_NAME_GSI = "queue_name_index"
 AUDIT_TABLE_FILENAME_GSI = "filename_index"
+DATA_SOURCES_BUCKET_SUFFIX = "data-sources"
+VALID_VERSIONS = ["V5"]
 
 SUPPLIER_PERMISSIONS_HASH_KEY = "supplier_permissions"
 VACCINE_TYPE_TO_DISEASES_HASH_KEY = "vacc_to_diseases"
@@ -31,7 +35,7 @@ ERROR_TYPE_TO_STATUS_CODE_MAP = {
 }
 
 
-class FileStatus:
+class FileStatus(StrEnum):
     """File status constants"""
 
     QUEUED = "Queued"
@@ -40,7 +44,7 @@ class FileStatus:
     DUPLICATE = "Not processed - duplicate"
 
 
-class AuditTableKeys:
+class AuditTableKeys(StrEnum):
     """Audit table keys"""
 
     FILENAME = "filename"
@@ -48,8 +52,3 @@ class AuditTableKeys:
     QUEUE_NAME = "queue_name"
     STATUS = "status"
     TIMESTAMP = "timestamp"
-
-
-class Constants:
-    """Constants for the filenameprocessor lambda"""
-    VALID_VERSIONS = ["V5"]
