@@ -40,7 +40,7 @@ def process_row(target_disease: list, allowed_operations: set, row: dict) -> dic
         }
 
     # Handle missing UNIQUE_ID or UNIQUE_ID_URI
-    if not (row.get("UNIQUE_ID_URI") and row.get("UNIQUE_ID")):
+    if not (unique_id_uri and unique_id):
         logger.error("Invalid row format: row is missing either UNIQUE_ID or UNIQUE_ID_URI")
         return {
             "diagnostics": create_diagnostics_dictionary("MISSING_UNIQUE_ID", 400, Diagnostics.MISSING_UNIQUE_ID),
@@ -50,7 +50,7 @@ def process_row(target_disease: list, allowed_operations: set, row: dict) -> dic
 
     # Handle success
     return {
-        "fhir_json": convert_to_fhir_imms_resource(row, target_disease),
+        "fhir_json": convert_to_fhir_imms_resource(row, target_disease, action_flag),
         "operation_requested": operation_requested,
         "local_id": local_id,
     }

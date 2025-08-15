@@ -26,7 +26,7 @@ from tests.utils_for_recordprocessor_tests.mock_environment_variables import MOC
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
     from constants import Diagnostics
-    from batch_processing import main
+    from batch_processor import main
 
 s3_client = boto3_client("s3", region_name=REGION_NAME)
 kinesis_client = boto3_client("kinesis", region_name=REGION_NAME)

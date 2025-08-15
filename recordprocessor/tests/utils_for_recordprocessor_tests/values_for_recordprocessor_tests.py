@@ -302,6 +302,7 @@ class MockFieldDictionaries:
     }
     mandatory_fields_only = {key: (UnorderedFieldDictionaries.mandatory_fields.get(key) or "") for key in field_order}
     critical_fields_only = {key: (UnorderedFieldDictionaries.critical_fields.get(key) or "") for key in field_order}
+    mandatory_fields_delete_action = {**mandatory_fields_only, "ACTION_FLAG": "DELETE"}
 
 
 class MockFhirImmsResources:
@@ -457,6 +458,34 @@ class MockFhirImmsResources:
                 "doseNumberString": "Dose sequence not recorded",
             }
         ],
+    }
+
+    # VED-32 DELETE action only requires the immunisation decorator
+    delete_operation_fields = {
+        "resourceType": "Immunization",
+        "status": "completed",
+        "protocolApplied": [
+            {
+                "targetDisease": [
+                    {
+                        "coding": [
+                            {
+                                "system": "http://snomed.info/sct",
+                                "code": "55735004",
+                                "display": "Respiratory syncytial virus infection (disorder)"
+                            }
+                        ]
+                    }
+                ]
+            }
+        ],
+        "recorded": "2024-09-04",
+        "identifier": [
+            {
+                "value": "RSV_002",
+                "system": "https://www.ravs.england.nhs.uk/"
+            }
+        ]
     }
 
 

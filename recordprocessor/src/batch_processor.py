@@ -1,4 +1,4 @@
-"""Functions for processing the file on a row-by-row basis"""
+"""Application to convert rows from batch files to FHIR and forward to Kinesis for further downstream processing"""
 
 import json
 import os
@@ -32,7 +32,7 @@ def process_csv_to_fhir(incoming_message_body: dict) -> None:
 
     target_disease = map_target_disease(vaccine)
 
-    row_count = 0  # Initialize a counter for rows
+    row_count = 0
     for row in csv_reader:
         row_count += 1
         row_id = f"{file_id}^{row_count}"
