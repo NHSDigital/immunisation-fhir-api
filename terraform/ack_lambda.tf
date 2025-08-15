@@ -216,7 +216,7 @@ resource "aws_lambda_function" "ack_processor_lambda" {
     variables = {
       ACK_BUCKET_NAME            = aws_s3_bucket.batch_data_destination_bucket.bucket
       SPLUNK_FIREHOSE_NAME       = module.splunk.firehose_stream_name
-      ENVIRONMENT                = var.sub_environment
+      SOURCE_BUCKET_NAME         = aws_s3_bucket.batch_data_source_bucket.bucket
       AUDIT_TABLE_NAME           = aws_dynamodb_table.audit-table.name
       FILE_NAME_PROC_LAMBDA_NAME = aws_lambda_function.file_processor_lambda.function_name
     }
