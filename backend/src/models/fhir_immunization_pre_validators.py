@@ -626,16 +626,16 @@ class PreValidators:
             PreValidation.for_list(field_value, "protocolApplied", defined_length=1)
         except KeyError:
             pass
-
+    DOSE_NUMBER_MAX_VALUE = 9
     def pre_validate_dose_number_positive_int(self, values: dict) -> dict:
         """
         Pre-validate that, if protocolApplied[0].doseNumberPositiveInt (legacy CSV field : dose_sequence)
-        exists, then it is an integer from 1 to 9
+        exists, then it is an integer from 1 to 9 (DOSE_NUMBER_MAX_VALUE)
         """
         field_location = "protocolApplied[0].doseNumberPositiveInt"
         try:
             field_value = values["protocolApplied"][0]["doseNumberPositiveInt"]
-            PreValidation.for_positive_integer(field_value, field_location)
+            PreValidation.for_positive_integer(field_value, field_location, self.DOSE_NUMBER_MAX_VALUE)
         except (KeyError, IndexError):
             pass
 

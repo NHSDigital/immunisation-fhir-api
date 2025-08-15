@@ -676,11 +676,12 @@
                           },
                           "doseNumber[X]": {
                             "type": "object",
-                            "description": "Nominal position in a series. This SHALL be provided but may be populated using either of the dataTypes available: PositiveInt or String. The use of an integer is preferred.",
+                            "description": "Nominal position in a series. This SHALL be provided but may be populated using either of the dataTypes available: PositiveInt or String. The use of an integer is preferred. Maximum value is 9.",
                             "properties": {
                               "doseNumberPositiveInt": {
-                                "description": "Nominal position in a course of vaccines. This `SHOULD be populated` where the data is available.",
+                                "description": "Nominal position in a course of vaccines. This `SHOULD be populated` where the data is available.. Maximum value is 9.",
                                 "type": "integer",
+                                "maximum": 9,
                                 "example": 1
                               },
                               "doseNumberString": {
@@ -1533,11 +1534,12 @@
                                           },
                                           "doseNumber[X]": {
                                             "type": "object",
-                                            "description": "Nominal position in a series. This SHALL be provided but may be populated using either of the dataTypes available: PositiveInt or String. The use of an integer is preferred.",
+                                            "description": "Nominal position in a series. This SHALL be provided but may be populated using either of the dataTypes available: PositiveInt or String. The use of an integer is preferred. Maximum value is 9.",
                                             "properties": {
                                               "doseNumberPositiveInt": {
-                                                "description": "Nominal position in a course of vaccines. This `SHOULD be populated` where the data is available.",
+                                                "description": "Nominal position in a course of vaccines. This `SHOULD be populated` where the data is available. Maximum value is 9.",
                                                 "type": "integer",
+                                                "maximum": 9,
                                                 "example": 1
                                               },
                                               "doseNumberString": {
@@ -2452,11 +2454,12 @@
                                           },
                                           "doseNumber[X]": {
                                             "type": "object",
-                                            "description": "Nominal position in a series. This SHALL be provided but may be populated using either of the dataTypes available: PositiveInt or String. The use of an integer is preferred.",
+                                            "description": "Nominal position in a series. This SHALL be provided but may be populated using either of the dataTypes available: PositiveInt or String. The use of an integer is preferred. Maximum value is 9.",
                                             "properties": {
                                               "doseNumberPositiveInt": {
-                                                "description": "Nominal position in a course of vaccines. This `SHOULD be populated` where the data is available.",
+                                                "description": "Nominal position in a course of vaccines. This `SHOULD be populated` where the data is available. Maximum value is 9.",
                                                 "type": "integer",
+                                                "maximum": 9,
                                                 "example": 1
                                               },
                                               "doseNumberString": {
@@ -3419,11 +3422,12 @@
                             },
                             "doseNumber[X]": {
                               "type": "object",
-                              "description": "Nominal position in a series. This SHALL be provided but may be populated using either of the dataTypes available: PositiveInt or String. The use of an integer is preferred.",
+                              "description": "Nominal position in a series. This SHALL be provided but may be populated using either of the dataTypes available: PositiveInt or String. The use of an integer is preferred. Maximum value is 9.",
                               "properties": {
                                 "doseNumberPositiveInt": {
-                                  "description": "Nominal position in a course of vaccines. This `SHOULD be populated` where the data is available.",
+                                  "description": "Nominal position in a course of vaccines. This `SHOULD be populated` where the data is available. Maximum value is 9.",
                                   "type": "integer",
+                                  "maximum": 9,
                                   "example": 1
                                 },
                                 "doseNumberString": {
@@ -4291,11 +4295,12 @@
                           },
                           "doseNumber[X]": {
                             "type": "object",
-                            "description": "Nominal position in a series. This SHALL be provided but may be populated using either of the dataTypes available: PositiveInt or String. The use of an integer is preferred.",
+                            "description": "Nominal position in a series. This SHALL be provided but may be populated using either of the dataTypes available: PositiveInt or String. The use of an integer is preferred. Maximum value is 9.",
                             "properties": {
                               "doseNumberPositiveInt": {
-                                "description": "Nominal position in a course of vaccines. This `SHOULD be populated` where the data is available.",
+                                "description": "Nominal position in a course of vaccines. This `SHOULD be populated` where the data is available. Maximum value is 9.",
                                 "type": "integer",
+                                "maximum": 9,
                                 "example": 1
                               },
                               "doseNumberString": {
