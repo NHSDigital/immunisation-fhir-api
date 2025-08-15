@@ -22,14 +22,9 @@ resource "aws_iam_role_policy" "dynamo_s3_access_policy" {
     Statement = [
       {
         Effect = "Allow",
-        Action = var.environment == "prod" ? [
-          "dynamodb:GetItem",
-          "dynamodb:Query"
-          ] : [
+        Action = [
           "dynamodb:BatchGetItem",
           "dynamodb:GetItem",
-          "dynamodb:PutItem",
-          "dynamodb:UpdateItem",
           "dynamodb:Query"
         ],
         Resource = [
