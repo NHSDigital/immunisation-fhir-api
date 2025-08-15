@@ -25,6 +25,7 @@ from models.utils.generic_utils import (
 from utils.pre_validation_test_utils import ValidatorModelTests
 from utils.values_for_tests import ValidValues, InvalidValues
 from models.constants import Constants
+from models.fhir_immunization_pre_validators import PreValidators
 
 class TestImmunizationModelPreValidationRules(unittest.TestCase):
     """Test immunization pre validation rules on the FHIR model using the covid sample data"""
@@ -818,7 +819,35 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
             valid_list_element=valid_list_element,
         )
 
+    # SAW
     def test_pre_validate_protocol_applied_dose_number_positive_int(self):
+        """
+        Test pre_validate_protocol_applied_dose_number_positive_int accepts valid values and
+        rejects invalid values
+        """
+        for value in range(1, PreValidators.DOSE_NUMBER_MAX_VALUE + 1):
+            data = {
+                "protocolApplied": [
+                    {"doseNumberPositiveInt": value}
+                ]
+            }
+            validator = PreValidators(data)
+            # Should not raise
+            validator.pre_validate_dose_number_positive_int(data)
+
+    def test_out_of_range_dose_number(self):
+        # Invalid: doseNumberPositiveInt < 1 or > 9
+        for value in [0, PreValidators.DOSE_NUMBER_MAX_VALUE + 1, -1]:
+            data = {
+                "protocolApplied": [
+                    {"doseNumberPositiveInt": value}
+                ]
+            }
+            validator = PreValidators(data)
+            with self.assertRaises(ValueError):
+                validator.pre_validate_dose_number_positive_int(data)
+
+    def test_test_positive_integer_value(self):
         """
         Test pre_validate_protocol_applied_dose_number_positive_int accepts valid values and
         rejects invalid values
