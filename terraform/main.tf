@@ -97,10 +97,6 @@ data "aws_kms_key" "existing_kinesis_encryption_key" {
   key_id = "alias/imms-batch-kinesis-stream-encryption"
 }
 
-data "aws_kms_key" "mesh_s3_encryption_key" {
-  key_id = "alias/local-immunisation-mesh"
-}
-
 data "aws_route53_zone" "project_zone" {
   name = local.project_domain_name
 }
