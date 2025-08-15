@@ -1,7 +1,7 @@
 resource "aws_sqs_queue" "id_sync_queue" {
-  name                        = "${local.short_prefix}-id-sync-queue"
-  kms_master_key_id           = data.aws_kms_key.existing_id_sync_sqs_encryption_key.arn
-  visibility_timeout_seconds  = 360
+  name                       = "${local.short_prefix}-id-sync-queue"
+  kms_master_key_id          = data.aws_kms_key.existing_id_sync_sqs_encryption_key.arn
+  visibility_timeout_seconds = 360
   redrive_policy = jsonencode({
     deadLetterTargetArn = aws_sqs_queue.id_sync_dlq.arn
     maxReceiveCount     = 4
