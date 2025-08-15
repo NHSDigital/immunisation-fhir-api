@@ -10,11 +10,11 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "~3.11"
-boto3 = "~1.38.42"
-mypy-boto3-dynamodb = "^1.38.4"
-freezegun      = "^1.5.2"
+boto3 = "~1.40.10"
+mypy-boto3-dynamodb = "^1.40.10"
+freezegun      = "^1.5.5"
 moto           = "^4"
-coverage = "^7.9.1"
+coverage = "^7.10.3"
 
 
 [build-system]
