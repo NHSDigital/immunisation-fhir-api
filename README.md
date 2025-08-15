@@ -167,6 +167,10 @@ Steps:
     ```
     Test if environment variables have been loaded into shell: `echo $IMMUNIZATION_ENV`.
 
+#### Running Unit Tests from the Command Line
+
+It is not necessary to activate the virtual environment (using `source .venv/bin/activate`) before running a unit test suite off the CLI; `direnv` will pick up the correct configurations for us. Run `pip list` to verify that the expected packages are installed. You should for example see that `recordprocessor` is specifically running `moto` v4, regardless of which if any `.venv` is active.
+
 ### Setting up the root level environment
 The root-level virtual environment is primarily used for linting, as we create separate virtual environments for each folder that contains Lambda functions.
 Steps: 
@@ -195,11 +199,13 @@ VS Code will automatically use the `backend` environment when you're editing a f
 Depending on your existing setup VS Code might automatically choose the wrong virtualenvs. Change it
 with `Python: Select Interpreter`.
 
-The root (`immunisation-fhir-api`) should point to the root .venv, e.g. `/mnt/d/Source/immunisation-fhir-api/.venv/bin/python`.
+The root (`immunisation-fhir-api`) should point to the root `.venv`, e.g. `/mnt/d/Source/immunisation-fhir-api/.venv/bin/python`.
 
 Meanwhile, `backend` should be pointing at (e.g.) `/mnt/d/Source/immunisation-fhir-api/backend/.venv/bin/python`
 
 #### Running Unit Tests
+
+Note that unit tests can be run from the command line without VSCode configuration.
 
 In order that VSCode can resolve modules in unit tests, it needs the PYTHONPATH. This should be setup in `backend/.vscode/launch.json` (see above).
 
@@ -208,9 +214,9 @@ run a different set of tests. To do this:
 - Show and Run Commands (Ctrl-Shift-P on Windows)
     - Python: Create Environment
     - Venv
-    - Select the .venv named for the test suite you wish to run, e.g. `backend`
+    - Select the `.venv` named for the test suite you wish to run, e.g. `backend`
     - Use Existing
-VSCode should display a toast saying that the following environment is selected: 
+- VSCode should now display a toast saying that the following environment is selected: 
     - (e.g.) `/mnt/d/Source/immunisation-fhir-api/backend/.venv/bin/python`
 
 ### IntelliJ
