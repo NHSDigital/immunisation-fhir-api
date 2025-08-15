@@ -195,21 +195,23 @@ VS Code will automatically use the `backend` environment when you're editing a f
 Depending on your existing setup VS Code might automatically choose the wrong virtualenvs. Change it
 with `Python: Select Interpreter`.
 
-The root (`immunisation-fhir-api`) should point to the root .venv, `/mnt/d/Source/immunisation-fhir-api/.venv/bin/python`.
+The root (`immunisation-fhir-api`) should point to the root .venv, e.g. `/mnt/d/Source/immunisation-fhir-api/.venv/bin/python`.
 
-Meanwhile, `backend` should be pointing at `/mnt/d/Source/immunisation-fhir-api/backend/.venv/bin/python`
+Meanwhile, `backend` should be pointing at (e.g.) `/mnt/d/Source/immunisation-fhir-api/backend/.venv/bin/python`
 
 #### Running Unit Tests
 
 In order that VSCode can resolve modules in unit tests, it needs the PYTHONPATH. This should be setup in `backend/.vscode/launch.json` (see above).
 
-*NOTE:* In order to run unit test suites, you may need to manually switch to the correct virtual environment each time you wish to
+**NOTE:** In order to run unit test suites, you may need to manually switch to the correct virtual environment each time you wish to
 run a different set of tests. To do this: 
 - Show and Run Commands (Ctrl-Shift-P on Windows)
-        -> Python: Create Environment
-        -> Venv
-        -> Select the venv named for the test suite you wish to run, e.g. `backend`
-        -> Use Existing
+    - Python: Create Environment
+    - Venv
+    - Select the .venv named for the test suite you wish to run, e.g. `backend`
+    - Use Existing
+VSCode should display a toast saying that the following environment is selected: 
+    - (e.g.) `/mnt/d/Source/immunisation-fhir-api/backend/.venv/bin/python`
 
 ### IntelliJ
 
