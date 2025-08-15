@@ -169,7 +169,7 @@ Steps:
 
 #### Running Unit Tests from the Command Line
 
-It is not necessary to activate the virtual environment (using `source .venv/bin/activate`) before running a unit test suite off the CLI; `direnv` will pick up the correct configurations for us. Run `pip list` to verify that the expected packages are installed. You should for example see that `recordprocessor` is specifically running `moto` v4, regardless of which if any `.venv` is active.
+It is not necessary to activate the virtual environment (using `source .venv/bin/activate`) before running a unit test suite from the command line; `direnv` will pick up the correct configurations for us. Run `pip list` to verify that the expected packages are installed. You should for example see that `recordprocessor` is specifically running `moto` v4, regardless of which if any `.venv` is active.
 
 ### Setting up the root level environment
 The root-level virtual environment is primarily used for linting, as we create separate virtual environments for each folder that contains Lambda functions.
