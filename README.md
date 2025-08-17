@@ -145,6 +145,10 @@ Steps:
     AWS_PROFILE={your_profile}
     IMMUNIZATION_ENV=local
     ```
+    For unit tests to run successfully, you may also need to add an environment variable for PYTHONPATH. This should be:
+    ```
+    PYTHONPATH=src:tests
+    ```
 
 4. Configure `direnv` by creating a `.envrc` file in the backend folder. This points direnv to the `.venv` created by poetry and loads env variables specified in the `.env` file
     ```
@@ -161,6 +165,10 @@ Steps:
     ```
     Test if environment variables have been loaded into shell: `echo $IMMUNIZATION_ENV`.
 
+#### Running Unit Tests from the Command Line
+
+It is not necessary to activate the virtual environment (using `source .venv/bin/activate`) before running a unit test suite from the command line; `direnv` will pick up the correct configurations for us. Run `pip list` to verify that the expected packages are installed. You should for example see that `recordprocessor` is specifically running `moto` v4, regardless of which if any `.venv` is active.
+
 ### Setting up the root level environment
 The root-level virtual environment is primarily used for linting, as we create separate virtual environments for each folder that contains Lambda functions.
 Steps: 
@@ -176,20 +184,38 @@ The current team uses VS Code mainly. So this setup is targeted towards VS code.
 
 ### VS Code
 
-The project must be opened as a multi-root workspace for VS Code to know that `backend` has its own environment.
+The project must be opened as a multi-root workspace for VS Code to know that specific lambdas (e.g. `backend`) have their own environment.
+This example is for `backend`; substitute another lambda name in where applicable.
 
 - Open the workspace `immunisation-fhir-api.code-workspace`.
 - Copy `backend/.vscode/settings.json.default` to `backend/.vscode/settings.json`, or merge the contents with
   your existing file.
+- Similarly, copy or merge `backend/.vscode/launch.json.default` to `backend/.vscode/launch.json`.
 
 VS Code will automatically use the `backend` environment when you're editing a file under `backend`.
 
 Depending on your existing setup VS Code might automatically choose the wrong virtualenvs. Change it
 with `Python: Select Interpreter`.
 
-The root (`immunisation-fhir-api`) should point to `/mnt/d/Source/immunisation-fhir-api/.venv/bin/python`.
+The root (`immunisation-fhir-api`) should point to the root `.venv`, e.g. `/mnt/d/Source/immunisation-fhir-api/.venv/bin/python`.
 
-`backend` should be pointing at `/mnt/d/Source/immunisation-fhir-api/backend/.venv/bin/python`
+Meanwhile, `backend` should be pointing at (e.g.) `/mnt/d/Source/immunisation-fhir-api/backend/.venv/bin/python`
+
+#### Running Unit Tests
+
+Note that unit tests can be run from the command line without VSCode configuration.
+
+In order that VSCode can resolve modules in unit tests, it needs the PYTHONPATH. This should be setup in `backend/.vscode/launch.json` (see above).
+
+**NOTE:** In order to run unit test suites, you may need to manually switch to the correct virtual environment each time you wish to
+run a different set of tests. To do this: 
+- Show and Run Commands (Ctrl-Shift-P on Windows)
+    - Python: Create Environment
+    - Venv
+    - Select the `.venv` named for the test suite you wish to run, e.g. `backend`
+    - Use Existing
+- VSCode should now display a toast saying that the following environment is selected: 
+    - (e.g.) `/mnt/d/Source/immunisation-fhir-api/backend/.venv/bin/python`
 
 ### IntelliJ
 
