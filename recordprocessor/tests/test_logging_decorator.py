@@ -253,3 +253,5 @@ class TestLoggingDecorator(unittest.TestCase):
         mock_firehose_client.put_record.assert_called_once_with(
             DeliveryStreamName=Firehose.STREAM_NAME, Record=expected_firehose_record
         )
+
+# TODO: unit tests for ingestion decorator

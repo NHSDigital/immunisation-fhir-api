@@ -8,8 +8,13 @@ from mappings import map_target_disease
 from send_to_kinesis import send_to_kinesis
 from clients import logger
 from file_level_validation import file_level_validation
+from logging_decorator import ingestion_logging_decorator
 from errors import NoOperationPermissions, InvalidHeaders
 
+
+@ingestion_logging_decorator
+def ingestion_progress(finished: bool, message_body: dict, row_count: int = 0, start_time: float = 0.0) -> str:
+    return("Ingestion finished" if finished else "Ingestion started")
 
 def process_csv_to_fhir(incoming_message_body: dict) -> None:
     """
@@ -31,8 +36,12 @@ def process_csv_to_fhir(incoming_message_body: dict) -> None:
     csv_reader = interim_message_body.get("csv_dict_reader")
 
     target_disease = map_target_disease(vaccine)
-
     row_count = 0
+    ingestion_start_time = time.time()
+    logger.info(ingestion_progress(
+                    finished=False,
+                    message_body=interim_message_body))
+
     for row in csv_reader:
         row_count += 1
         row_id = f"{file_id}^{row_count}"
@@ -54,6 +63,12 @@ def process_csv_to_fhir(incoming_message_body: dict) -> None:
         send_to_kinesis(supplier, outgoing_message_body, vaccine)
 
         logger.info("Total rows processed: %s", row_count)
+
+    logger.info(ingestion_progress(
+                    finished=True,
+                    message_body=interim_message_body,
+                    row_count=row_count,
+                    start_time=ingestion_start_time))
 
 
 def main(event: str) -> None:
