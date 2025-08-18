@@ -100,6 +100,7 @@ class ImmunizationRepository:
             if not validate_permissions(imms_vax_type_perms,ApiOperationCode.SEARCH, [vaccine_type]):
                 raise UnauthorizedVaxError()
             resource = json.loads(item["Resource"])
+            resp = dict(resource)
             resp["id"] = resource.get("id")
             resp["version"] = int(response["Items"][0]["Version"])
             return resp

@@ -53,7 +53,7 @@ class TestGetImmunizationByIdentifier(TestFhirRepositoryBase):
         """it should find an Immunization by id"""
         imms_id = "a-id#an-id"
         resource = dict()
-        resource["Resource"] = {"id": "test", "version": 1}
+        resource["Resource"] = {"foo": "bar", "id": "test", "version": 1}
         self.table.query = MagicMock(
             return_value={
                 "Items": [

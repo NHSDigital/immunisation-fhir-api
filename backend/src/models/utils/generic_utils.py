@@ -136,20 +136,40 @@ def create_diagnostics_error(value):
 
 
 def form_json(response, _element, identifier, baseurl):
-    # Elements to include, based on the '_element' parameter
+
+    resource = response
+    self_url = f"{baseurl}?identifier={identifier}"
+    if _element:
+        self_url += f"&_elements={_element}"
+
     if not response:
         json = {
             "resourceType": "Bundle",
             "type": "searchset",
             "link": [
-                {"relation": "self", "url": f"{baseurl}?identifier={identifier}&_elements={_element}"}
+                {"relation": "self", "url": f"{baseurl}?identifier={identifier}"}
             ],
             "entry": [],
             "total": 0,
         }
         return json
 
-    # Basic structure for the JSON output
+    # Full Immunization payload to be returned if only the identifier parameter was provided
+    if identifier and _element:
+        __elements = _element.lower()
+        element = __elements.split(",")
+
+        resource = {"resourceType": "Immunization"}
+
+        # Add 'id' if specified
+        if "id" in element:
+            json["entry"][0]["resource"]["id"] = response["id"]
+
+        # Add 'meta' if specified
+        if "meta" in element:
+            resource["id"] = response["id"]
+            resource["meta"] = {"versionId": response["version"]}
+
     json = {
         "resourceType": "Bundle",
         "type": "searchset",
@@ -157,30 +177,11 @@ def form_json(response, _element, identifier, baseurl):
         "entry": [
             {
                 "fullUrl": f"https://api.service.nhs.uk/immunisation-fhir-api/Immunization/{response['id']}",
-                "resource": {"resourceType": "Immunization"},
+                "resource": resource,
             }
         ],
         "total": 1,
     }
-
-    # Full Immunization payload to be returned if only the identifier parameter was provided
-    if identifier and (not _element):
-        json["entry"].append({
-            "fullUrl": f"https://api.service.nhs.uk/immunisation-fhir-api/Immunization/{response.get('id')}",
-            "resource": response,
-        })
-        return json
-
-    __elements = _element.lower()
-    element = __elements.split(",")
-    # Add 'id' if specified
-    if "id" in element:
-        json["entry"][0]["resource"]["id"] = response["id"]
-
-    # Add 'meta' if specified
-    if "meta" in element:
-        json["entry"][0]["resource"]["id"] = response["id"]
-        json["entry"][0]["resource"]["meta"] = {"versionId": response["version"]}
 
     return json
 
