@@ -16,7 +16,7 @@
   {
     "supplier": "RAVS",
     "permissions": ["RSV.RS"],
-    "ods_codes": ["X26"]
+    "ods_codes": ["X26", "X8E5B"]
   },
   {
     "supplier": "PINNACLE",
