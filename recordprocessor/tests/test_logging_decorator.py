@@ -21,6 +21,7 @@ with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from errors import InvalidHeaders, NoOperationPermissions
     from logging_decorator import send_log_to_firehose, generate_and_send_logs
     from file_level_validation import file_level_validation
+    from batch_processor import ingestion_progress
 
 
 from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import GenericSetUp, GenericTearDown
@@ -254,4 +255,55 @@ class TestLoggingDecorator(unittest.TestCase):
             DeliveryStreamName=Firehose.STREAM_NAME, Record=expected_firehose_record
         )
 
-# TODO: unit tests for ingestion decorator
+    def test_splunk_logger_ingestion_started(self):
+        """Tests the splunk logger is called with ingestion_progress(False, ...)"""
+
+        with (  # noqa: E999
+            patch("logging_decorator.datetime") as mock_datetime,  # noqa: E999
+            patch("logging_decorator.time") as mock_time,  # noqa: E999
+            patch("logging_decorator.logger") as mock_logger,  # noqa: E999
+            patch("logging_decorator.firehose_client") as mock_firehose_client,  # noqa: E999
+        ):  # noqa: E999
+            mock_time.time.side_effect = [1672531200, 1672531200.123456]
+            mock_datetime.now.return_value = datetime(2024, 1, 1, 12, 0, 0)
+            ingestion_progress(finished=False, message_body=deepcopy(MOCK_FILE_DETAILS.base_ingestion_event))
+
+        expected_message = "Ingestion started"
+        expected_log_data = {**COMMON_LOG_DATA, "statusCode": 200, "message": expected_message}
+        expected_log_data["function_name"] = "record_processor_ingestion_progress"
+
+        # Log data is the first positional argument of the first call to logger.info
+        log_data = json.loads(mock_logger.info.call_args_list[0][0][0])
+        self.assertEqual(log_data, expected_log_data)
+
+        expected_firehose_record = {"Data": json.dumps({"event": log_data}).encode("utf-8")}
+        mock_firehose_client.put_record.assert_called_once_with(
+            DeliveryStreamName=Firehose.STREAM_NAME, Record=expected_firehose_record
+        )
+
+    def test_splunk_logger_ingestion_finished(self):
+        """Tests the splunk logger is called with ingestion_progress(True, ...)"""
+
+        with (  # noqa: E999
+            patch("logging_decorator.datetime") as mock_datetime,  # noqa: E999
+            patch("logging_decorator.time") as mock_time,  # noqa: E999
+            patch("logging_decorator.logger") as mock_logger,  # noqa: E999
+            patch("logging_decorator.firehose_client") as mock_firehose_client,  # noqa: E999
+        ):  # noqa: E999
+            mock_time.time.side_effect = [1672531200.123456, 1672531200.123456]
+            mock_datetime.now.return_value = datetime(2024, 1, 1, 12, 0, 0)
+            ingestion_progress(finished=True, message_body=deepcopy(MOCK_FILE_DETAILS.base_ingestion_event),
+                               row_count=3, start_time=1672531200)
+
+        expected_message = "Ingestion finished"
+        expected_log_data = {**COMMON_LOG_DATA, "statusCode": 200, "message": expected_message, "row_count": 3}
+        expected_log_data["function_name"] = "record_processor_ingestion_progress"
+
+        # Log data is the first positional argument of the first call to logger.info
+        log_data = json.loads(mock_logger.info.call_args_list[0][0][0])
+        self.assertEqual(log_data, expected_log_data)
+
+        expected_firehose_record = {"Data": json.dumps({"event": log_data}).encode("utf-8")}
+        mock_firehose_client.put_record.assert_called_once_with(
+            DeliveryStreamName=Firehose.STREAM_NAME, Record=expected_firehose_record
+        )

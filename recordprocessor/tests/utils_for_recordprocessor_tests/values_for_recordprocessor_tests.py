@@ -184,6 +184,14 @@ class FileDetails:
             AuditTableKeys.TIMESTAMP: {"S": self.created_at_formatted_string},
         }
 
+        self.base_ingestion_event = {
+            "message_id": self.message_id,
+            "vaccine": vaccine_type,
+            "supplier": supplier,
+            "file_key": self.file_key,
+            "created_at_formatted_string": self.created_at_formatted_string,
+        }
+
 
 class MockFileDetails:
     """Class containing mock file details for use in tests"""
