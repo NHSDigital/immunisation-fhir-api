@@ -1138,7 +1138,7 @@ components:
             name:
               - family: Owl
                 given:
-                  - Barney
+                  - Test if changes get picked up
           - resourceType: Patient
             id: Pat1
             identifier:
