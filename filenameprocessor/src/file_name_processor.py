@@ -9,7 +9,7 @@ NOTE: The expected file format for incoming files from the data sources bucket i
 import argparse
 from uuid import uuid4
 from utils_for_filenameprocessor import get_created_at_formatted_string, move_file, invoke_filename_lambda
-from file_key_validation import validate_file_key
+from file_key_validation import validate_file_key, is_file_in_directory_root
 from send_sqs_message import make_and_send_sqs_message
 from make_and_upload_ack_file import make_and_upload_the_ack_file
 from audit_table import upsert_audit_table, get_next_queued_file_details, ensure_file_is_not_a_duplicate
@@ -24,7 +24,7 @@ from errors import (
     DuplicateFileError,
     UnhandledSqsError,
 )
-from constants import FileStatus, ERROR_TYPE_TO_STATUS_CODE_MAP
+from constants import FileStatus, DATA_SOURCES_BUCKET_SUFFIX, ERROR_TYPE_TO_STATUS_CODE_MAP
 
 
 # NOTE: logging_decorator is applied to handle_record function, rather than lambda_handler, because
@@ -47,13 +47,14 @@ def handle_record(record) -> dict:
     vaccine_type = "unknown"
     supplier = "unknown"
 
-    if "data-sources" in bucket_name:
+    if DATA_SOURCES_BUCKET_SUFFIX in bucket_name:
 
-        # The lambda is unintentionally invoked when a file is moved into a different folder in the source bucket.
-        # Excluding file keys containing a "/" is a workaround to prevent the lambda from processing files that
-        # are not in the root of the source bucket.
-        if "/" in file_key:
-            message = "File skipped due to duplicate lambda invoaction"
+        # In addition to when a batch file is added to the S3 bucket root for processing, this Lambda is also invoked
+        # when the file is moved to the processing/ directory and finally the /archive directory. We want to ignore
+        # those events. Unfortunately S3 event filtering does not support triggering for root files only. See VED-781
+        # for more info.
+        if not is_file_in_directory_root(file_key):
+            message = "Processing not required. Event was for a file moved to /archive or /processing"
             return {"statusCode": 200, "message": message, "file_key": file_key}
 
         # Set default values for file-specific variables

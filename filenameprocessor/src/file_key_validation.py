@@ -2,9 +2,16 @@
 
 from re import match
 from datetime import datetime
-from constants import Constants
+from constants import VALID_VERSIONS
 from elasticache import get_valid_vaccine_types_from_cache, get_supplier_system_from_cache
 from errors import InvalidFileKeyError
+
+
+def is_file_in_directory_root(file_key: str) -> bool:
+    """"
+    Checks that a given file is in the bucket root rather than a child directory e.g. archive/xyz.csv
+    """
+    return "/" not in file_key
 
 
 def is_valid_datetime(timestamp: str) -> bool:
@@ -53,7 +60,7 @@ def validate_file_key(file_key: str) -> tuple[str, str]:
     if not (
         vaccine_type in valid_vaccine_types
         and vaccination == "VACCINATIONS"
-        and version in Constants.VALID_VERSIONS
+        and version in VALID_VERSIONS
         and supplier  # Note that if supplier could be identified, this also implies that ODS code is valid
         and is_valid_datetime(timestamp)
         and ((extension == "CSV") or (extension == "DAT"))  # The DAT extension has been added for MESH file processing
