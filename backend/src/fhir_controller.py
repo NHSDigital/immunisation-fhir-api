@@ -506,11 +506,11 @@ class FhirController:
                     'e.g. "http://xyz.org/vaccs|2345-gh3s-r53h7-12ny"'
                 ),
             )
-        
+
         element_lower = _element.lower()
         result = element_lower.split(",")
         is_present = all(key in ["id", "meta"] for key in result)
-        if not is_present:
+        if _element and not is_present:
             return create_operation_outcome(
                 resource_id=str(uuid.uuid4()),
                 severity=Severity.error,

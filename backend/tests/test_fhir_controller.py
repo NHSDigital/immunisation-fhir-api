@@ -339,36 +339,6 @@ class TestFhirControllerGetImmunizationByIdentifier(unittest.TestCase):
         outcome = json.loads(response["body"])
         self.assertEqual(outcome["resourceType"], "OperationOutcome")
 
-    @patch("fhir_controller.get_supplier_permissions")
-    def test_validate_immunization_element_is_empty(self, mock_get_supplier_permissions):
-        """it should return 400 as element is missing"""
-        mock_get_supplier_permissions.return_value = ["COVID19.CRUDS"]
-        self.service.get_immunization_by_identifier.return_value = {
-            "resourceType": "OperationOutcome",
-            "id": "f6857e0e-40d0-4e5e-9e2f-463f87d357c6",
-            "meta": {"profile": ["https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"]},
-            "issue": [
-                {
-                    "severity": "error",
-                    "code": "invalid",
-                    "details": {
-                        "coding": [{"system": "https://fhir.nhs.uk/Codesystem/http-error-codes", "code": "INVALID"}]
-                    },
-                    "diagnostics": "The provided identifiervalue is either missing or not in the expected format.",
-                }
-            ],
-        }
-        lambda_event = {
-            "headers": { "SupplierSystem": "test"},
-            "queryStringParameters": {"identifier": "test|123", "_elements": ""},
-            "body": None,
-        }
-        response = self.controller.get_immunization_by_identifier(lambda_event)
-
-        self.assertEqual(self.service.get_immunization_by_identifier.call_count, 0)
-        self.assertEqual(response["statusCode"], 400)
-        outcome = json.loads(response["body"])
-        self.assertEqual(outcome["resourceType"], "OperationOutcome")
 
     @patch("fhir_controller.get_supplier_permissions")
     def test_validate_immunization_identifier_in_invalid_format(self,mock_get_supplier_permissions):
