@@ -70,6 +70,7 @@ def file_level_validation_logging_decorator(func):
 
     return wrapper
 
+
 def ingestion_logging_decorator(func):
     """
     Sends the appropriate logs to Cloudwatch and Firehose based on ingestion started/finished.

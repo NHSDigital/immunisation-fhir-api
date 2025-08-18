@@ -16,6 +16,7 @@ from errors import NoOperationPermissions, InvalidHeaders
 def ingestion_progress(finished: bool, message_body: dict, row_count: int = 0, start_time: float = 0.0) -> str:
     return("Ingestion finished" if finished else "Ingestion started")
 
+
 def process_csv_to_fhir(incoming_message_body: dict) -> None:
     """
     For each row of the csv, attempts to transform into FHIR format, sends a message to kinesis,
