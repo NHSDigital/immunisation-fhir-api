@@ -162,6 +162,15 @@ def form_json(response, _element, identifier, baseurl):
         ],
         "total": 1,
     }
+
+    # Full Immunization payload to be returned if only the identifier parameter was provided
+    if identifier and (not _element):
+        json["entry"].append({
+            "fullUrl": f"https://api.service.nhs.uk/immunisation-fhir-api/Immunization/{response.get('id')}",
+            "resource": response,
+        })
+        return json
+
     __elements = _element.lower()
     element = __elements.split(",")
     # Add 'id' if specified
