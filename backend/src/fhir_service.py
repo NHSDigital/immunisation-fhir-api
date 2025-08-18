@@ -62,7 +62,7 @@ class FhirService:
     ) -> Optional[dict]:
         """
         Get an Immunization by its ID. Return None if not found. If the patient doesn't have an NHS number,
-        return the Immunization without calling PDS or checking S flag.
+        return the Immunization.
         """
         imms_resp = self.immunization_repo.get_immunization_by_identifier(
             identifier_pk, imms_vax_type_perms
@@ -79,7 +79,7 @@ class FhirService:
     def get_immunization_by_id(self, imms_id: str, imms_vax_type_perms: list[str]) -> Optional[dict]:
         """
         Get an Immunization by its ID. Return None if it is not found. If the patient doesn't have an NHS number,
-        return the Immunization without calling PDS or checking S flag.
+        return the Immunization.
         """
         if not (imms_resp := self.immunization_repo.get_immunization_by_id(imms_id, imms_vax_type_perms)):
             return None
@@ -95,7 +95,7 @@ class FhirService:
     def get_immunization_by_id_all(self, imms_id: str, imms: dict) -> Optional[dict]:
         """
         Get an Immunization by its ID. Return None if not found. If the patient doesn't have an NHS number,
-        return the Immunization without calling PDS or checking S flag.
+        return the Immunization.
         """
         imms["id"] = imms_id
         try:

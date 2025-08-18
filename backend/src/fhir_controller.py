@@ -490,8 +490,8 @@ class FhirController:
                 severity=Severity.error,
                 code=Code.invalid,
                 diagnostics=(
-                    "Search parameter immunization.identifier must have one value and must be in the format of "
-                    '"immunization.identifier.system|immunization.identifier.value" '
+                    "Search parameter identifier must have one value and must be in the format of "
+                    '"identifier.system|identifier.value" '
                     'e.g. "http://xyz.org/vaccs|2345-gh3s-r53h7-12ny"'
                 ),
             )
@@ -501,18 +501,12 @@ class FhirController:
                 severity=Severity.error,
                 code=Code.invalid,
                 diagnostics=(
-                    "Search parameter immunization.identifier must be in the format of "
-                    '"immunization.identifier.system|immunization.identifier.value" '
+                    "Search parameter identifier must be in the format of "
+                    '"identifier.system|identifier.value" '
                     'e.g. "http://xyz.org/vaccs|2345-gh3s-r53h7-12ny"'
                 ),
             )
-        if not _element:
-            return create_operation_outcome(
-                resource_id=str(uuid.uuid4()),
-                severity=Severity.error,
-                code=Code.invalid,
-                diagnostics="_element must be one or more of the following: id,meta",
-            )
+        
         element_lower = _element.lower()
         result = element_lower.split(",")
         is_present = all(key in ["id", "meta"] for key in result)
@@ -521,7 +515,7 @@ class FhirController:
                 resource_id=str(uuid.uuid4()),
                 severity=Severity.error,
                 code=Code.invalid,
-                diagnostics="_element must be one or more of the following: id,meta",
+                diagnostics="_elements must be one or more of the following: id,meta",
             )
 
     def _create_bad_request(self, message):
