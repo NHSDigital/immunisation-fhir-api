@@ -2768,7 +2768,7 @@ paths:
                     name:
                       - family: Owler
                         given:
-                          - Ozzie
+                          - Test changing the value
                     gender: unknown
                     birthDate: '1965-02-28'
                     address:
