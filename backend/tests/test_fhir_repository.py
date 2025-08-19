@@ -45,7 +45,7 @@ class TestGetImmunizationByIdentifier(TestFhirRepositoryBase):
         self.repository = ImmunizationRepository(table=self.table)
         self.logger_info_patcher = patch("logging.Logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
-        
+
     def tearDown(self):
         patch.stopall()
 
@@ -66,44 +66,25 @@ class TestGetImmunizationByIdentifier(TestFhirRepositoryBase):
             }
         )
 
-        imms = self.repository.get_immunization_by_identifier(imms_id, ["COVID19.CRUDS"])
+        immunisation, immunisation_type = self.repository.get_immunization_by_identifier(imms_id)
 
         # Validate the results
-        self.assertDictEqual(resource["Resource"], imms)
-        # self.table.get_item.assert_called_once_with(Key={"PK": (imms_id)})
         self.table.query.assert_called_once_with(
             IndexName="IdentifierGSI",
             KeyConditionExpression=Key("IdentifierPK").eq(imms_id),
         )
-
-    def test_unauthorized_get_immunization_by_identifier(self):
-        """it should not get an Immunization by id if vax perms do not exist"""
-        imms_id = "a-id#an-id"
-        resource = dict()
-        resource["Resource"] = {"foo": "bar"}
-        resource["Version"] = 1
-        self.table.query = MagicMock(
-            return_value={
-                "Items": [
-                    {
-                        "Resource": json.dumps({"foo": "bar", "id": "test"}),
-                        "Version": 1,
-                        "PatientSK": "COVID19#2516525251",
-                    }
-                ]
-            }
-        )
-        with self.assertRaises(UnauthorizedVaxError) as e:
-            # When
-            self.repository.get_immunization_by_identifier(imms_id, ["FLU.CRUD"])
+        # TODO - update this when resolving conflicts
+        self.assertDictEqual(immunisation, resource["Resource"])
+        self.assertEqual(immunisation_type, "covid19")
 
     def test_immunization_not_found(self):
         """it should return None if Immunization doesn't exist"""
         imms_id = "non-existent-id"
         self.table.query = MagicMock(return_value={})
 
-        imms = self.repository.get_immunization_by_identifier(imms_id, ["COVID19.CRUD"])
-        self.assertIsNone(imms)
+        immunisation, immunisation_type = self.repository.get_immunization_by_identifier(imms_id)
+        self.assertIsNone(immunisation)
+        self.assertIsNone(immunisation_type)
 
 
 class TestGetImmunization(unittest.TestCase):
@@ -112,7 +93,7 @@ class TestGetImmunization(unittest.TestCase):
         self.repository = ImmunizationRepository(table=self.table)
         self.logger_info_patcher = patch("logging.Logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
-        
+
     def tearDown(self):
         patch.stopall()
 
@@ -382,7 +363,7 @@ class TestCreateImmunizationPatientIndex(TestFhirRepositoryBase):
         with self.assertRaises(UnauthorizedVaxError) as e:
             # When
             self.repository.create_immunization(imms, self.patient, ["COVID19.CRUD"], "Test")
-            
+
 
 
 class TestUpdateImmunization(TestFhirRepositoryBase):
@@ -484,7 +465,7 @@ class TestUpdateImmunization(TestFhirRepositoryBase):
             self.repository.update_immunization(imms_id, imms, self.patient, 1, ["COVID19.CRUD"], "Test")
 
         self.assertEqual(str(e.exception), f"The provided identifier: {identifier} is duplicated")
-    
+
     def test_reinstate_immunization_success(self):
         """it should reinstate an immunization successfully"""
         self.mock_redis_client.hget.return_value = "COVID19"
@@ -506,7 +487,7 @@ class TestUpdateImmunization(TestFhirRepositoryBase):
 
         self.assertEqual(result, resource)
         self.assertEqual(version, 2)
-    
+
     def test_update_reinstated_immunization_success(self):
         """it should update a reinstated immunization successfully"""
         self.mock_redis_client.hget.return_value = "COVID19"
@@ -536,10 +517,10 @@ class TestDeleteImmunization(unittest.TestCase):
         self.repository = ImmunizationRepository(table=self.table)
         self.logger_info_patcher = patch("logging.Logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
-        
+
     def tearDown(self):
         patch.stopall()
-        
+
     def test_get_deleted_immunization(self):
         """it should return None if Immunization is logically deleted"""
         imms_id = "a-deleted-id"

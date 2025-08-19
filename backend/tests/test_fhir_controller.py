@@ -112,7 +112,7 @@ class TestFhirControllerGetImmunizationByIdentifier(unittest.TestCase):
         # Then
         mock_get_permissions.assert_called_once_with("test")
         self.service.get_immunization_by_identifier.assert_called_once_with(
-            identifiers, ["COVID19.CUDS"], identifier, _element
+            identifiers, "test", identifier, _element
         )
 
         self.assertEqual(response["statusCode"], 200)
@@ -187,7 +187,7 @@ class TestFhirControllerGetImmunizationByIdentifier(unittest.TestCase):
         # Then
         mock_get_permissions.assert_called_once_with("test")
         self.service.get_immunization_by_identifier.assert_called_once_with(
-            imms, ["COVID19.S"], identifier, _element
+            imms, "test", identifier, _element
         )
 
         self.assertEqual(response["statusCode"], 200)
@@ -460,7 +460,7 @@ class TestFhirControllerGetImmunizationByIdentifier(unittest.TestCase):
         # Then
         mock_get_permissions.assert_called_once_with("test")
         self.service.get_immunization_by_identifier.assert_called_once_with(
-            identifiers, ["COVID19.CRUDS"], identifier, _element
+            identifiers, "test", identifier, _element
         )
 
         self.assertEqual(response["statusCode"], 403)
@@ -510,7 +510,7 @@ class TestFhirControllerGetImmunizationByIdentifierPost(unittest.TestCase):
         # Then
         mock_get_permissions.assert_called_once_with("test")
         self.service.get_immunization_by_identifier.assert_called_once_with(
-            identifiers, ["COVID19.CRUDS"], converted_identifier, converted_element
+            identifiers, "test", converted_identifier, converted_element
         )
         self.assertEqual(response["statusCode"], 200)
         body = json.loads(response["body"])
@@ -543,7 +543,7 @@ class TestFhirControllerGetImmunizationByIdentifierPost(unittest.TestCase):
         # Then
         mock_get_permissions.assert_called_once_with("test")
         self.service.get_immunization_by_identifier.assert_called_once_with(
-            identifiers, ["COVID19.CRUDS"], converted_identifier, converted_element
+            identifiers, "test", converted_identifier, converted_element
         )
         self.assertEqual(response["statusCode"], 200)
         body = json.loads(response["body"])
@@ -779,7 +779,7 @@ class TestFhirControllerGetImmunizationByIdentifierPost(unittest.TestCase):
         # Then
         mock_get_permissions.assert_called_once_with("test")
         self.service.get_immunization_by_identifier.assert_called_once_with(
-            identifiers, ["COVID19.CRUDS"], converted_identifer, converted_element
+            identifiers, "test", converted_identifer, converted_element
         )
 
         self.assertEqual(response["statusCode"], 403)
@@ -893,10 +893,10 @@ class TestCreateImmunization(unittest.TestCase):
         self.controller = FhirController(self.authorizer, self.service)
         self.logger_info_patcher = patch("logging.Logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
-        
+
     def tearDown(self):
         patch.stopall()
-        
+
     @patch("fhir_controller.get_supplier_permissions")
     def test_create_immunization(self,mock_get_permissions):
         """it should create Immunization and return resource's location"""
@@ -1050,7 +1050,7 @@ class TestUpdateImmunization(unittest.TestCase):
         self.controller = FhirController(self.authorizer, self.service)
         self.logger_info_patcher = patch("logging.Logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
-        
+
     def tearDown(self):
         patch.stopall()
 
@@ -1495,7 +1495,7 @@ class TestUpdateImmunization(unittest.TestCase):
         self.assertEqual(response["statusCode"], 400)
         outcome = json.loads(response["body"])
         self.assertEqual(outcome["resourceType"], "OperationOutcome")
-    
+
     @patch("fhir_controller.get_supplier_permissions")
     def test_update_immunization_when_reinstated_true(self, mock_get_permissions):
         """it should update reinstated Immunization"""
@@ -1533,7 +1533,7 @@ class TestUpdateImmunization(unittest.TestCase):
         }
         with self.assertRaises(KeyError):
             self.controller.update_immunization(aws_event)
-    
+
     @patch("fhir_controller.get_supplier_permissions")
     def test_update_reinstated_immunization_with_diagnostics_error(self, mock_get_permissions):
         """it should return 400 if patient validation error is present"""
@@ -1570,10 +1570,10 @@ class TestDeleteImmunization(unittest.TestCase):
         self.controller = FhirController(self.authorizer, self.service)
         self.logger_info_patcher = patch("logging.Logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
-        
+
     def tearDown(self):
         patch.stopall()
-        
+
     def test_validate_imms_id(self):
         """it should validate lambda's Immunization id"""
         invalid_id = {"pathParameters": {"id": "invalid %$ id"}, "headers": {"SupplierSystem": "Test"}}
