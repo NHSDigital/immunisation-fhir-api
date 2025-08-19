@@ -8,4 +8,10 @@ package: build
 test:
 	@PYTHONPATH=src:tests python -m unittest
 
+coverage-run:
+	@PYTHONPATH=src:tests coverage run -m unittest discover
+
+coverage-report:
+	coverage report -m 
+
 .PHONY: build package test
