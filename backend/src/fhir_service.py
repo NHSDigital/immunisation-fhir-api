@@ -12,6 +12,7 @@ from fhir.resources.R4B.bundle import (
     BundleEntrySearch,
 )
 from fhir.resources.R4B.immunization import Immunization
+from poetry.console.commands import self
 from pydantic import ValidationError
 
 import parameter_parser
@@ -51,9 +52,10 @@ class FhirService:
     def __init__(
         self,
         imms_repo: ImmunizationRepository,
+        authoriser: Authoriser = Authoriser(),
         validator: ImmunizationValidator = ImmunizationValidator(),
     ):
-        self.authoriser = Authoriser()
+        self.authoriser = authoriser
         self.immunization_repo = imms_repo
         self.validator = validator
 
@@ -71,7 +73,7 @@ class FhirService:
             return form_json(imms_resp, None, None, base_url)
         
         if not self.authoriser.authorise(supplier_name, ApiOperationCode.SEARCH, {vaccination_type}):
-            raise UnauthorizedVaxError
+            raise UnauthorizedVaxError()
 
         patient_full_url = f"urn:uuid:{str(uuid4())}"
         filtered_resource = Filter.search(imms_resp['resource'], patient_full_url)
