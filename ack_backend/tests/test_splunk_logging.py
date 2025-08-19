@@ -87,8 +87,9 @@ class TestLoggingDecorators(unittest.TestCase):
 
     def expected_lambda_handler_logs(self, success: bool, number_of_rows, diagnostics=None):
         """Returns the expected logs for the lambda handler function."""
-        # Mocking of timings is such that the time taken is 2 seconds for each row, plus 1 second for the handler
-        time_taken = f"{number_of_rows * 2 + 1}.0s"
+        # Mocking of timings is such that the time taken is 2 seconds for each row, 
+        # plus 2 seconds for the handler if it succeeds (i.e. it calls update_ack_file) or 1 second if it doesn't
+        time_taken = f"{number_of_rows * 2 + 2}.0s" if success else f"{number_of_rows * 2 + 1}.0s"
         base_log = (
             ValidValues.lambda_handler_success_expected_log
             if success
