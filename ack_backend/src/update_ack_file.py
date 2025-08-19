@@ -2,12 +2,13 @@
 
 import json
 from io import StringIO, BytesIO
-from typing import Union
+from typing import Union, Optional
 from botocore.exceptions import ClientError
 from constants import ACK_HEADERS, SOURCE_BUCKET_NAME, ACK_BUCKET_NAME, FILE_NAME_PROC_LAMBDA_NAME
 from audit_table import change_audit_table_status_to_processed, get_next_queued_file_details
 from clients import s3_client, logger, lambda_client
 from utils_for_ack_lambda import get_row_count
+from logging_decorators import upload_ack_file_logging_decorator
 
 
 def create_ack_data(
@@ -65,15 +66,17 @@ def obtain_current_ack_content(temp_ack_file_key: str) -> StringIO:
     return accumulated_csv_content
 
 
+@upload_ack_file_logging_decorator
 def upload_ack_file(
     temp_ack_file_key: str,
     message_id: str,
-    supplier_queue: str,
+    supplier: str,
+    vaccine_type: str,
     accumulated_csv_content: StringIO,
     ack_data_rows: list,
     archive_ack_file_key: str,
     file_key: str,
-) -> None:
+) -> Optional[dict]:
     """Adds the data row to the uploaded ack file"""
     for row in ack_data_rows:
         data_row_str = [str(item) for item in row.values()]
@@ -91,17 +94,30 @@ def upload_ack_file(
 
         # Update the audit table and invoke the filename lambda with next file in the queue (if one exists)
         change_audit_table_status_to_processed(file_key, message_id)
+        supplier_queue = f"{supplier}_{vaccine_type}"
         next_queued_file_details = get_next_queued_file_details(supplier_queue)
         if next_queued_file_details:
             invoke_filename_lambda(next_queued_file_details["filename"], next_queued_file_details["message_id"])
 
+        # Ingestion of this file is complete
+        result = {
+            "message_id": message_id,
+            "file_key": file_key,
+            "supplier": supplier,
+            "vaccine_type": vaccine_type,
+            "row_count": row_count_source,
+        }
+    else:
+        result = None
     logger.info("Ack file updated to %s: %s", ACK_BUCKET_NAME, archive_ack_file_key)
+    return result
 
 
 def update_ack_file(
     file_key: str,
     message_id: str,
-    supplier_queue: str,
+    supplier: str,
+    vaccine_type: str,
     created_at_formatted_string: str,
     ack_data_rows: list,
 ) -> None:
@@ -113,7 +129,8 @@ def update_ack_file(
     upload_ack_file(
         temp_ack_file_key,
         message_id,
-        supplier_queue,
+        supplier,
+        vaccine_type,
         accumulated_csv_content,
         ack_data_rows,
         archive_ack_file_key,
