@@ -2,7 +2,7 @@ import unittest
 from authorization import (
     Authorization,
     UnknownPermission,
-    AUTHENTICATION_HEADER,
+    AUTHENTICATION_TYPE_HEADER_NAME,
     authorize,
     AuthType
 )
@@ -12,7 +12,7 @@ from models.errors import UnauthorizedError
 def _make_aws_event(auth_type: AuthType):
     return {
         "headers": {
-            AUTHENTICATION_HEADER: auth_type.value
+            AUTHENTICATION_TYPE_HEADER_NAME: auth_type.value
         }
     }
 
@@ -35,7 +35,7 @@ class TestAuthorizeDecorator(unittest.TestCase):
         controller = TestAuthorizeDecorator.StubController()
         aws_event = {
             "headers": {
-                AUTHENTICATION_HEADER: "InvalidType"
+                AUTHENTICATION_TYPE_HEADER_NAME: "InvalidType"
             }
         }
         with self.assertRaises(UnknownPermission):
@@ -59,7 +59,7 @@ class TestAuthorization(unittest.TestCase):
     def test_unknown_authorization(self):
         aws_event = {
             "headers": {
-                AUTHENTICATION_HEADER: "unknown auth type"
+                AUTHENTICATION_TYPE_HEADER_NAME: "unknown auth type"
             }
         }
         with self.assertRaises(UnknownPermission):
@@ -80,7 +80,7 @@ class TestApplicationRestrictedAuthorization(unittest.TestCase):
     def test_invalid_auth_type_raises_unknown_permission(self):
         aws_event = {
             "headers": {
-                AUTHENTICATION_HEADER: "InvalidAuthType"
+                AUTHENTICATION_TYPE_HEADER_NAME: "InvalidAuthType"
             }
         }
         with self.assertRaises(UnknownPermission):
@@ -101,7 +101,7 @@ class TestCis2Authorization(unittest.TestCase):
     def test_invalid_auth_type_raises_unknown_permission(self):
         aws_event = {
             "headers": {
-                AUTHENTICATION_HEADER: "InvalidAuthType"
+                AUTHENTICATION_TYPE_HEADER_NAME: "InvalidAuthType"
             }
         }
         with self.assertRaises(UnknownPermission):
