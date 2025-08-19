@@ -22,6 +22,7 @@ terraform/zips
 *.pyc
 .python-version
 **/.terraform/
+sandbox/immunisation-fhir-api.json
 sandbox/specification/
 openapi.json
 
