@@ -6,7 +6,6 @@ import unittest
 from decimal import Decimal
 from typing import Literal, Any
 from jsonpath_ng.ext import parse
-from src.models.utils.generic_utils import form_json
 
 
 def load_json_data(filename: str):
