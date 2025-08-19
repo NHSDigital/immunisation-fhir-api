@@ -2,7 +2,7 @@
 
 import os
 
-SOURCE_BUCKET_NAME = f"immunisation-batch-{os.getenv('ENVIRONMENT')}-data-sources"
+SOURCE_BUCKET_NAME = os.getenv("SOURCE_BUCKET_NAME")
 ACK_BUCKET_NAME = os.getenv("ACK_BUCKET_NAME")
 AUDIT_TABLE_NAME = os.getenv("AUDIT_TABLE_NAME")
 AUDIT_TABLE_FILENAME_GSI = "filename_index"
