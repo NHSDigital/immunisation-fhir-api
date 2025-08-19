@@ -136,20 +136,17 @@ def create_diagnostics_error(value):
 
 
 def form_json(response, _element, identifier, baseurl):
-    self_url = f"{baseurl}?identifier={identifier}"
-    if _element:
-        self_url += f"&_elements={_element}"
-
-    if not response:
-        json = {
+    self_url = f"{baseurl}?identifier={identifier}" + (f"&_elements={_element}" if _element else "")
+    json = {
             "resourceType": "Bundle",
             "type": "searchset",
             "link": [
-                {"relation": "self", "url": f"{baseurl}?identifier={identifier}"}
-            ],
-            "entry": [],
-            "total": 0,
-        }
+                {"relation": "self", "url": self_url}
+            ]
+    }
+    if not response:
+        json["entry"] = []
+        json["total"] = 0
         return json
 
     # Full Immunization payload to be returned if only the identifier parameter was provided
@@ -157,9 +154,7 @@ def form_json(response, _element, identifier, baseurl):
         resource = response["resource"]
 
     elif identifier and _element:
-        __elements = _element.lower()
-        element = __elements.split(",")
-
+        element = {e.strip().lower() for e in _element.split(",") if e.strip()}
         resource = {"resourceType": "Immunization"}
 
         # Add 'id' if specified
@@ -171,19 +166,13 @@ def form_json(response, _element, identifier, baseurl):
             resource["id"] = response["id"]
             resource["meta"] = {"versionId": response["version"]}
 
-    json = {
-        "resourceType": "Bundle",
-        "type": "searchset",
-        "link": [{"relation": "self", "url": f"{baseurl}?identifier={identifier}&_elements={_element}"}],
-        "entry": [
-            {
-                "fullUrl": f"https://api.service.nhs.uk/immunisation-fhir-api/Immunization/{response['id']}",
-                "resource": resource,
+ 
+    json["entry"] = [{
+        "fullUrl": f"https://api.service.nhs.uk/immunisation-fhir-api/Immunization/{response['id']}",
+        "resource": resource,
             }
-        ],
-        "total": 1,
-    }
-
+        ]
+    json["total"] = 1
     return json
 
 
