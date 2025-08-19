@@ -1,12 +1,11 @@
 from dataclasses import dataclass
 from enum import Enum
 from functools import wraps
-from typing import Set
 
 from models.errors import UnauthorizedError
 
 
-AUTHENTICATION_HEADER = "AuthenticationType"
+AUTHENTICATION_TYPE_HEADER_NAME = "AuthenticationType"
 
 
 @dataclass
@@ -32,17 +31,17 @@ class Authorization:
     UnknownPermission is due to proxy bad configuration, and should result in 500. Any invalid value, either
     insufficient permissions or bad string, will result in UnauthorizedError if it comes from user.
     """
-   
+
     def authorize(self, aws_event: dict):
         auth_type = self._parse_auth_type(aws_event["headers"])
-        
+
         if auth_type not in {AuthType.APP_RESTRICTED, AuthType.CIS2, AuthType.NHS_LOGIN}:
             raise UnauthorizedError()
 
     @staticmethod
-    def _parse_auth_type(headers) -> AuthType:
+    def _parse_auth_type(headers: dict) -> AuthType:
         try:
-            auth_type = headers[AUTHENTICATION_HEADER]
+            auth_type = headers[AUTHENTICATION_TYPE_HEADER_NAME]
             return AuthType(auth_type)
         except ValueError:
             # The value of authentication type comes from apigee regardless of auth type. That's why
