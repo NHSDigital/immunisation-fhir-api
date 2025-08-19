@@ -53,7 +53,7 @@ class TestGetImmunizationByIdentifier(TestFhirRepositoryBase):
         """it should find an Immunization by id"""
         imms_id = "a-id#an-id"
         resource = dict()
-        resource["Resource"] = {"foo": "bar", "id": "test", "version": 1}
+        resource["Resource"] = {"foo": "bar", "id": "test"}
         self.table.query = MagicMock(
             return_value={
                 "Items": [
@@ -69,7 +69,9 @@ class TestGetImmunizationByIdentifier(TestFhirRepositoryBase):
         imms = self.repository.get_immunization_by_identifier(imms_id, ["COVID19.CRUDS"])
 
         # Validate the results
-        self.assertDictEqual(resource["Resource"], imms)
+        self.assertDictEqual(resource["Resource"], imms["resource"])
+        self.assertEqual(imms["version"], 1)
+        self.assertEqual(imms["id"], "test")
         # self.table.get_item.assert_called_once_with(Key={"PK": (imms_id)})
         self.table.query.assert_called_once_with(
             IndexName="IdentifierGSI",

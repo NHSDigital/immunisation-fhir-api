@@ -136,8 +136,6 @@ def create_diagnostics_error(value):
 
 
 def form_json(response, _element, identifier, baseurl):
-
-    resource = response
     self_url = f"{baseurl}?identifier={identifier}"
     if _element:
         self_url += f"&_elements={_element}"
@@ -155,7 +153,10 @@ def form_json(response, _element, identifier, baseurl):
         return json
 
     # Full Immunization payload to be returned if only the identifier parameter was provided
-    if identifier and _element:
+    if identifier and not _element:
+        resource = response["resource"]
+
+    elif identifier and _element:
         __elements = _element.lower()
         element = __elements.split(",")
 
@@ -163,7 +164,7 @@ def form_json(response, _element, identifier, baseurl):
 
         # Add 'id' if specified
         if "id" in element:
-            json["entry"][0]["resource"]["id"] = response["id"]
+            resource["id"] = response["id"]
 
         # Add 'meta' if specified
         if "meta" in element:

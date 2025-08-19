@@ -95,15 +95,16 @@ class ImmunizationRepository:
         )
         if "Items" in response and len(response["Items"]) > 0:
             item = response["Items"][0]
-            resp = dict()
             vaccine_type = self._vaccine_type(item["PatientSK"])
             if not validate_permissions(imms_vax_type_perms,ApiOperationCode.SEARCH, [vaccine_type]):
                 raise UnauthorizedVaxError()
             resource = json.loads(item["Resource"])
-            resp = dict(resource)
-            resp["id"] = resource.get("id")
-            resp["version"] = int(response["Items"][0]["Version"])
-            return resp
+            version = int(response["Items"][0]["Version"])
+            return {
+                "resource": resource,
+                "id": resource.get("id"),
+                "version": version
+            }
         else:
             return None
 
