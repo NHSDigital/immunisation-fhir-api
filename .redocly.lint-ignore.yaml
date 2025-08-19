@@ -1,0 +1,138 @@
+# This file instructs Redocly's linter to ignore the rules contained for specific parts of your API.
+# See https://redocly.com/docs/cli/ for more information.
+specification/immunisation-fhir-api.yaml:
+  info-license:
+    - '#/info'
+  no-invalid-media-type-examples:
+    - >-
+      #/paths/~1Immunization/get/responses/200/content/application~1fhir+json/example/entry/0/resource
+    - >-
+      #/paths/~1Immunization/get/responses/200/content/application~1fhir+json/example/entry/0/resource/protocolApplied/0
+    - >-
+      #/paths/~1Immunization/get/responses/200/content/application~1fhir+json/example/entry/0/resource/protocolApplied/0/doseNumberPositiveInt
+    - >-
+      #/paths/~1Immunization/get/responses/200/content/application~1fhir+json/example/entry/0/resource/occurrenceDateTime
+    - >-
+      #/paths/~1Immunization/get/responses/200/content/application~1fhir+json/example/entry/0/resource/identifier/0/use
+    - >-
+      #/paths/~1Immunization/get/responses/200/content/application~1fhir+json/example/entry/0/resource/extension
+    - >-
+      #/paths/~1Immunization/get/responses/200/content/application~1fhir+json/example/entry/0/resource/status
+    - >-
+      #/paths/~1Immunization/get/responses/200/content/application~1fhir+json/example/entry/0/resource/vaccineCode
+    - >-
+      #/paths/~1Immunization/get/responses/200/content/application~1fhir+json/example/entry/0/resource/patient
+    - >-
+      #/paths/~1Immunization/get/responses/200/content/application~1fhir+json/example/entry/0/resource/recorded
+    - >-
+      #/paths/~1Immunization/get/responses/200/content/application~1fhir+json/example/entry/0/resource/primarySource
+    - >-
+      #/paths/~1Immunization/get/responses/200/content/application~1fhir+json/example/entry/0/resource/location
+    - >-
+      #/paths/~1Immunization/get/responses/200/content/application~1fhir+json/example/entry/0/resource/manufacturer
+    - >-
+      #/paths/~1Immunization/get/responses/200/content/application~1fhir+json/example/entry/0/resource/lotNumber
+    - >-
+      #/paths/~1Immunization/get/responses/200/content/application~1fhir+json/example/entry/0/resource/expirationDate
+    - >-
+      #/paths/~1Immunization/get/responses/200/content/application~1fhir+json/example/entry/0/resource/site
+    - >-
+      #/paths/~1Immunization/get/responses/200/content/application~1fhir+json/example/entry/0/resource/route
+    - >-
+      #/paths/~1Immunization/get/responses/200/content/application~1fhir+json/example/entry/0/resource/doseQuantity
+    - >-
+      #/paths/~1Immunization/get/responses/200/content/application~1fhir+json/example/entry/0/resource/performer
+    - >-
+      #/paths/~1Immunization/get/responses/200/content/application~1fhir+json/example/entry/0/resource/reasonCode
+    - >-
+      #/paths/~1Immunization/get/responses/200/content/application~1fhir+json/example/entry/0/resource/protocolApplied
+    - >-
+      #/paths/~1Immunization/post/requestBody/content/application~1fhir+json/example
+    - >-
+      #/paths/~1Immunization/post/requestBody/content/application~1fhir+json/example/protocolApplied/0
+    - >-
+      #/paths/~1Immunization/post/requestBody/content/application~1fhir+json/example/protocolApplied/0/doseNumberPositiveInt
+    - >-
+      #/paths/~1Immunization/post/requestBody/content/application~1fhir+json/example/occurrenceDateTime
+    - >-
+      #/paths/~1Immunization~1_search/post/responses/200/content/application~1fhir+json/example/entry/0/resource
+    - >-
+      #/paths/~1Immunization~1_search/post/responses/200/content/application~1fhir+json/example/entry/0/resource/protocolApplied/0
+    - >-
+      #/paths/~1Immunization~1_search/post/responses/200/content/application~1fhir+json/example/entry/0/resource/protocolApplied/0/doseNumberPositiveInt
+    - >-
+      #/paths/~1Immunization~1_search/post/responses/200/content/application~1fhir+json/example/entry/0/resource/occurrenceDateTime
+    - >-
+      #/paths/~1Immunization~1_search/post/responses/200/content/application~1fhir+json/example/entry/0/resource/identifier/0/use
+    - >-
+      #/paths/~1Immunization~1_search/post/responses/200/content/application~1fhir+json/example/entry/0/resource/extension
+    - >-
+      #/paths/~1Immunization~1_search/post/responses/200/content/application~1fhir+json/example/entry/0/resource/status
+    - >-
+      #/paths/~1Immunization~1_search/post/responses/200/content/application~1fhir+json/example/entry/0/resource/vaccineCode
+    - >-
+      #/paths/~1Immunization~1_search/post/responses/200/content/application~1fhir+json/example/entry/0/resource/patient
+    - >-
+      #/paths/~1Immunization~1_search/post/responses/200/content/application~1fhir+json/example/entry/0/resource/recorded
+    - >-
+      #/paths/~1Immunization~1_search/post/responses/200/content/application~1fhir+json/example/entry/0/resource/primarySource
+    - >-
+      #/paths/~1Immunization~1_search/post/responses/200/content/application~1fhir+json/example/entry/0/resource/location
+    - >-
+      #/paths/~1Immunization~1_search/post/responses/200/content/application~1fhir+json/example/entry/0/resource/manufacturer
+    - >-
+      #/paths/~1Immunization~1_search/post/responses/200/content/application~1fhir+json/example/entry/0/resource/lotNumber
+    - >-
+      #/paths/~1Immunization~1_search/post/responses/200/content/application~1fhir+json/example/entry/0/resource/expirationDate
+    - >-
+      #/paths/~1Immunization~1_search/post/responses/200/content/application~1fhir+json/example/entry/0/resource/site
+    - >-
+      #/paths/~1Immunization~1_search/post/responses/200/content/application~1fhir+json/example/entry/0/resource/route
+    - >-
+      #/paths/~1Immunization~1_search/post/responses/200/content/application~1fhir+json/example/entry/0/resource/doseQuantity
+    - >-
+      #/paths/~1Immunization~1_search/post/responses/200/content/application~1fhir+json/example/entry/0/resource/performer
+    - >-
+      #/paths/~1Immunization~1_search/post/responses/200/content/application~1fhir+json/example/entry/0/resource/reasonCode
+    - >-
+      #/paths/~1Immunization~1_search/post/responses/200/content/application~1fhir+json/example/entry/0/resource/protocolApplied
+    - >-
+      #/paths/~1Immunization~1{id}/get/responses/200/content/application~1fhir+json/example
+    - >-
+      #/paths/~1Immunization~1{id}/get/responses/200/content/application~1fhir+json/example/performer
+    - >-
+      #/paths/~1Immunization~1{id}/get/responses/200/content/application~1fhir+json/example/performer/0/actor
+    - >-
+      #/paths/~1Immunization~1{id}/get/responses/200/content/application~1fhir+json/example/performer/0/actor/reference
+    - >-
+      #/paths/~1Immunization~1{id}/get/responses/200/content/application~1fhir+json/example/reasonCode/0/coding/0
+    - >-
+      #/paths/~1Immunization~1{id}/get/responses/200/content/application~1fhir+json/example/protocolApplied/0
+    - >-
+      #/paths/~1Immunization~1{id}/get/responses/200/content/application~1fhir+json/example/protocolApplied/0/doseNumberPositiveInt
+    - >-
+      #/paths/~1Immunization~1{id}/get/responses/200/content/application~1fhir+json/example/occurrenceDateTime
+    - >-
+      #/paths/~1Immunization~1{id}/put/requestBody/content/application~1fhir+json/example
+    - >-
+      #/paths/~1Immunization~1{id}/put/requestBody/content/application~1fhir+json/example/protocolApplied/0
+    - >-
+      #/paths/~1Immunization~1{id}/put/requestBody/content/application~1fhir+json/example/protocolApplied/0/doseNumberPositiveInt
+    - >-
+      #/paths/~1Immunization~1{id}/put/requestBody/content/application~1fhir+json/example/occurrenceDateTime
+  struct:
+    - '#/components/parameters/Location/in'
+    - '#/components/parameters/Location/name'
+    - '#/components/parameters/CorrelationID/in'
+    - '#/components/parameters/CorrelationID/name'
+    - '#/components/parameters/RequestID/in'
+    - '#/components/parameters/RequestID/name'
+    - '#/components/parameters/E-Tag/in'
+    - '#/components/parameters/E-Tag/name'
+    - '#/paths/~1Immunization~1{id}/delete/4XX'
+  operation-4xx-response:
+    - '#/paths/~1Immunization~1{id}/delete/responses'
+  no-unused-components:
+    - '#/components/schemas/DomainResource'
+    - '#/components/schemas/Immunization'
+    - '#/components/schemas/Bundle'
