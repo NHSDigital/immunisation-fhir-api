@@ -9,7 +9,7 @@ from authorization import (
     Authorization,
     UnknownPermission,
     AuthType,
-    AUTHENTICATION_HEADER,
+    AUTHENTICATION_TYPE_HEADER_NAME,
 )
 from fhir_controller import FhirController
 from fhir_repository import ImmunizationRepository
@@ -20,7 +20,7 @@ from tests.utils.immunization_utils import create_covid_19_immunization
 
 
 def make_aws_event(auth_type: AuthType, permissions=None) -> dict:
-    return {"headers": {AUTHENTICATION_HEADER: str(auth_type)}}
+    return {"headers": {AUTHENTICATION_TYPE_HEADER_NAME: str(auth_type)}}
 
 
 class TestFhirControllerAuthorization(unittest.TestCase):
@@ -36,10 +36,10 @@ class TestFhirControllerAuthorization(unittest.TestCase):
         self.controller = FhirController(self.authorizer, self.service)
         self.logger_info_patcher = patch("logging.Logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
-        
+
     def tearDown(self):
         patch.stopall()
-        
+
     def test_get_imms_by_id_authorized(self):
         aws_event = {"pathParameters": {"id": "an-id"}}
 
@@ -111,20 +111,20 @@ class TestFhirControllerAuthorization(unittest.TestCase):
         _ = self.controller.update_immunization(aws_event)
 
         self.authorizer.authorize.assert_called_once_with(aws_event)
-    
+
     @patch("fhir_controller.get_supplier_permissions")
     def test_update_imms_unauthorized_vaxx_in_record(self,mock_get_supplier_permissions):
         mock_get_supplier_permissions.return_value = ["Covid19.CRUDS"]
         imms_id = str(uuid.uuid4())
         aws_event = {"headers": {"E-Tag":1, "SupplierSystem" : "Test"},"pathParameters": {"id": imms_id}, "body": create_covid_19_immunization(imms_id).json()}
         self.service.get_immunization_by_id_all.return_value = {"resource":"new_value","Version":1,"DeletedAt": False, "VaccineType":"Flu"}
-        
+
         response = self.controller.update_immunization(aws_event)
         self.assertEqual(response["statusCode"], 403)
         body = json.loads(response["body"])
         self.assertEqual(body["resourceType"], "OperationOutcome")
-        self.assertEqual(body["issue"][0]["code"], "forbidden")            
-            
+        self.assertEqual(body["issue"][0]["code"], "forbidden")
+
         self.authorizer.authorize.assert_called_once_with(aws_event)
 
     def test_update_imms_unauthorized(self):

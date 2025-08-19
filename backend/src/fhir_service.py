@@ -15,13 +15,12 @@ from fhir.resources.R4B.immunization import Immunization
 from pydantic import ValidationError
 
 import parameter_parser
+from authorisation.ApiOperationCode import ApiOperationCode
+from authorisation.Authoriser import Authoriser
 from fhir_repository import ImmunizationRepository
-from base_utils.base_utils import obtain_field_value
-from models.field_names import FieldNames
-from models.errors import InvalidPatientId, CustomValidationError, UnhandledResponseError
+from models.errors import InvalidPatientId, CustomValidationError, UnauthorizedVaxError
 from models.fhir_immunization import ImmunizationValidator
 from models.utils.generic_utils import nhs_number_mod11_check, get_occurrence_datetime, create_diagnostics, form_json, get_contained_patient
-from models.constants import Constants
 from models.errors import MandatoryError
 from timer import timed
 from filter import Filter
@@ -54,31 +53,30 @@ class FhirService:
         imms_repo: ImmunizationRepository,
         validator: ImmunizationValidator = ImmunizationValidator(),
     ):
+        self.authoriser = Authoriser()
         self.immunization_repo = imms_repo
         self.validator = validator
 
     def get_immunization_by_identifier(
-        self, identifier_pk: str, imms_vax_type_perms: list[str], identifier: str, element: str
+        self, identifier_pk: str, supplier_name: str, identifier: str, element: str
     ) -> Optional[dict]:
         """
         Get an Immunization by its ID. Return None if not found. If the patient doesn't have an NHS number,
         return the Immunization.
         """
-        imms_resp = self.immunization_repo.get_immunization_by_identifier(
-            identifier_pk, imms_vax_type_perms
-        )
+        base_url = f"{get_service_url()}/Immunization"
+        imms_resp, vaccination_type = self.immunization_repo.get_immunization_by_identifier(identifier_pk)
 
         if not imms_resp:
-            base_url = f"{get_service_url()}/Immunization"
-            response = form_json(imms_resp, None, None, base_url)
-            return response
-        else:
-            base_url = f"{get_service_url()}/Immunization"
-            patient_full_url = f"urn:uuid:{str(uuid4())}"
-            filtered_resource = Filter.search(imms_resp['resource'], patient_full_url)
-            imms_resp['resource'] = filtered_resource
-            response = form_json(imms_resp, element, identifier, base_url)
-            return response
+            return form_json(imms_resp, None, None, base_url)
+        
+        if not self.authoriser.authorise(supplier_name, ApiOperationCode.SEARCH, {vaccination_type}):
+            raise UnauthorizedVaxError
+
+        patient_full_url = f"urn:uuid:{str(uuid4())}"
+        filtered_resource = Filter.search(imms_resp['resource'], patient_full_url)
+        imms_resp['resource'] = filtered_resource
+        return form_json(imms_resp, element, identifier, base_url)
 
     def get_immunization_by_id(self, imms_id: str, imms_vax_type_perms: list[str]) -> Optional[dict]:
         """

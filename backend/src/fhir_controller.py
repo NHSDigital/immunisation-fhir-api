@@ -1,12 +1,10 @@
 import base64
-import boto3
 import json
 import os
 import re
 import uuid
 from decimal import Decimal
 from typing import Optional
-import boto3
 from aws_lambda_typing.events import APIGatewayProxyEventV1
 from fhir.resources.R4B.immunization import Immunization
 from boto3 import client as boto3_client
@@ -25,7 +23,6 @@ from models.errors import (
     ValidationError,
     IdentifierDuplicationError,
     ParameterException,
-    InconsistentIdError,
     UnauthorizedVaxError,
     UnauthorizedVaxOnRecordError,
     UnauthorizedSystemError,
@@ -101,7 +98,7 @@ class FhirController:
 
         try:
             if resource := self.fhir_service.get_immunization_by_identifier(
-                identifiers, imms_vax_type_perms, identifier, element):
+                identifiers, supplier_system, identifier, element):
                 return FhirController.create_response(200, resource)
         except UnauthorizedVaxError as unauthorized:
             return self.create_response(403, unauthorized.to_operation_outcome())

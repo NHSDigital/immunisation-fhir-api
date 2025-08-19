@@ -1,4 +1,3 @@
-from urllib import response
 from responses import logger
 import simplejson as json
 import os
@@ -87,26 +86,23 @@ class ImmunizationRepository:
     def __init__(self, table: Table):
         self.table = table
 
-    def get_immunization_by_identifier(
-        self, identifier_pk: str, imms_vax_type_perms: list[str]
-    ) -> Optional[dict]:
+    def get_immunization_by_identifier(self, identifier_pk: str) -> tuple[Optional[dict], Optional[str]]:
         response = self.table.query(
             IndexName="IdentifierGSI", KeyConditionExpression=Key("IdentifierPK").eq(identifier_pk)
         )
+
         if "Items" in response and len(response["Items"]) > 0:
             item = response["Items"][0]
             vaccine_type = self._vaccine_type(item["PatientSK"])
-            if not validate_permissions(imms_vax_type_perms,ApiOperationCode.SEARCH, [vaccine_type]):
-                raise UnauthorizedVaxError()
             resource = json.loads(item["Resource"])
             version = int(response["Items"][0]["Version"])
             return {
                 "resource": resource,
                 "id": resource.get("id"),
                 "version": version
-            }
+            }, vaccine_type
         else:
-            return None
+            return None, None
 
     def get_immunization_by_id(self, imms_id: str, imms_vax_type_perms: str) -> Optional[dict]:
         response = self.table.get_item(Key={"PK": _make_immunization_pk(imms_id)})
@@ -403,7 +399,7 @@ class ImmunizationRepository:
 
         raw_items = self.get_all_items(condition, is_not_deleted)
 
-        if raw_items:    
+        if raw_items:
             # Filter the response to contain only the requested vaccine types
             items = [x for x in raw_items if x["PatientSK"].split("#")[0] in vaccine_types]
 
@@ -432,7 +428,7 @@ class ImmunizationRepository:
             response = self.table.query(**query_args)
             if "Items" not in response:
                 raise UnhandledResponseError(message="No Items in DynamoDB response", response=response)
-  
+
             items = response.get("Items", [])
             all_items.extend(items)
 
