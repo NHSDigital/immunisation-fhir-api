@@ -86,19 +86,14 @@ def upload_ack_file_logging_decorator(func):
         base_log_data = {"function_name": f"ack_processor_{func.__name__}", "date_time": str(datetime.now())}
         start_time = time.time()
 
-        try:
-            result = func(*args, **kwargs)
-            if result is not None:
-                message_for_logs = "Record processing complete"
-                base_log_data.update(result)
-                additional_log_data = {"status": "success", "statusCode": 200, "message": message_for_logs}
-                generate_and_send_logs(start_time, base_log_data, additional_log_data)
-            return result
-
-        except Exception as error:
-            additional_log_data = {"status": "fail", "statusCode": 500, "diagnostics": str(error)}
-            generate_and_send_logs(start_time, base_log_data, additional_log_data, is_error_log=True)
-            raise
+        # NB this doesn't require a try-catch block as the wrapped function never throws an exception
+        result = func(*args, **kwargs)
+        if result is not None:
+            message_for_logs = "Record processing complete"
+            base_log_data.update(result)
+            additional_log_data = {"status": "success", "statusCode": 200, "message": message_for_logs}
+            generate_and_send_logs(start_time, base_log_data, additional_log_data)
+        return result
 
     return wrapper
 
