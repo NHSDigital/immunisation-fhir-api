@@ -166,7 +166,6 @@ def form_json(response, _element, identifier, baseurl):
             resource["id"] = response["id"]
             resource["meta"] = {"versionId": response["version"]}
 
- 
     json["entry"] = [{
         "fullUrl": f"https://api.service.nhs.uk/immunisation-fhir-api/Immunization/{response['id']}",
         "resource": resource,

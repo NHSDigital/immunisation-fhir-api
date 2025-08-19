@@ -6,6 +6,7 @@ import unittest
 from decimal import Decimal
 from typing import Literal, Any
 from jsonpath_ng.ext import parse
+from src.models.utils.generic_utils import form_json
 
 
 def load_json_data(filename: str):
@@ -91,3 +92,50 @@ def update_contained_resource_field(
         {field_to_update: update_value}
     )
     return json_data
+
+
+class TestFormJson(unittest.TestCase):
+    def setUp(self):
+        self.baseurl = "https://api.service.nhs.uk/immunisation-fhir-api/Immunization"
+        self.identifier = "abc123"
+        self.response = {
+            "resource": {"resourceType": "Immunization", "id": "abc123"},
+            "id": "abc123",
+            "version": 1,
+        }
+
+    def test_no_response(self):
+        result = form_json(None, None, self.identifier, self.baseurl)
+        self.assertEqual(result["total"], 0)
+        self.assertEqual(result["entry"], [])
+        self.assertIn("link", result)
+
+    def test_identifier_only(self):
+        result = form_json(self.response, None, self.identifier, self.baseurl)
+        self.assertEqual(result["total"], 1)
+        self.assertEqual(result["entry"][0]["resource"], self.response["resource"])
+        self.assertEqual(result["entry"][0]["fullUrl"],
+                         f"{self.baseurl}/{self.response['id']}")
+
+    def test_identifier_with_id_element(self):
+        result = form_json(self.response, "id", self.identifier, self.baseurl)
+        resource = result["entry"][0]["resource"]
+        self.assertEqual(resource["resourceType"], "Immunization")
+        self.assertEqual(resource["id"], self.response["id"])
+        self.assertNotIn("meta", resource)
+
+    def test_identifier_with_meta_element(self):
+        result = form_json(self.response, "meta", self.identifier, self.baseurl)
+        resource = result["entry"][0]["resource"]
+        self.assertEqual(resource["resourceType"], "Immunization")
+        self.assertEqual(resource["id"], self.response["id"])
+        self.assertEqual(resource["meta"]["versionId"], str(self.response["version"]))
+
+    def test_identifier_with_id_and_meta_elements(self):
+        result = form_json(self.response, "id,meta", self.identifier, self.baseurl)
+        resource = result["entry"][0]["resource"]
+        self.assertEqual(resource["id"], self.response["id"])
+        self.assertEqual(resource["meta"]["versionId"], str(self.response["version"]))
+
+if __name__ == "__main__":
+    unittest.main()
