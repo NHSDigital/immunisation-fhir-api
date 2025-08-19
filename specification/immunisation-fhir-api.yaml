@@ -2768,11 +2768,11 @@ paths:
                     name:
                       - family: Owler
                         given:
-                          - Test changing the value
+                          - Test changing the value one more time
                     gender: unknown
                     birthDate: '1965-02-28'
                     address:
-                      - postalCode: EC1A 1BB
+                      - postalCode: EC1A 1BC
                 extension:
                   - url: https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure
                     valueCodeableConcept:
