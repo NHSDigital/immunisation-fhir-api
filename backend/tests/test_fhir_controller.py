@@ -5,13 +5,11 @@ import json
 import unittest
 import uuid
 
-from unittest.mock import patch
 from fhir.resources.R4B.bundle import Bundle
 from fhir.resources.R4B.immunization import Immunization
 from unittest.mock import create_autospec, ANY, patch, Mock
 from urllib.parse import urlencode
 import urllib.parse
-from moto import mock_aws
 from authorization import Authorization
 from fhir_controller import FhirController
 from fhir_repository import ImmunizationRepository
@@ -22,15 +20,12 @@ from models.errors import (
     InvalidPatientId,
     CustomValidationError,
     ParameterException,
-    InconsistentIdError,
     UnauthorizedVaxError,
-    UnauthorizedError,
     IdentifierDuplicationError,
 )
 from tests.utils.immunization_utils import create_covid_19_immunization
 from parameter_parser import patient_identifier_system, process_search_params
 from tests.utils.generic_utils import load_json_data
-from tests.utils.values_for_tests import ValidValues
 
 class TestFhirControllerBase(unittest.TestCase):
     """Base class for all tests to set up common fixtures"""
@@ -211,7 +206,7 @@ class TestFhirControllerGetImmunizationByIdentifier(unittest.TestCase):
         # When
         response = self.controller.get_immunization_by_identifier(lambda_event)
         # Then
-        self.service.get_immunization_by_identifier.assert_not_called
+        self.service.get_immunization_by_identifier.assert_not_called()
 
         self.assertEqual(response["statusCode"], 400)
         body = json.loads(response["body"])
@@ -234,7 +229,30 @@ class TestFhirControllerGetImmunizationByIdentifier(unittest.TestCase):
         # When
         response = self.controller.get_immunization_by_identifier(lambda_event)
         # Then
-        self.service.get_immunization_by_identifier.assert_not_called
+        self.service.get_immunization_by_identifier.assert_not_called()
+
+        self.assertEqual(response["statusCode"], 400)
+        body = json.loads(response["body"])
+        self.assertEqual(body["resourceType"], "OperationOutcome")
+
+    @patch("fhir_controller.get_supplier_permissions")
+    def test_get_imms_by_identifer_imms_identifier_and_element_not_present(self, mock_get_supplier_permissions):
+        """it should return Immunization Id if it exists"""
+        # Given
+        mock_get_supplier_permissions.return_value = ["COVID19.CRUDS"]
+        self.service.get_immunization_by_identifier.return_value = {"id": "test", "Version": 1}
+        lambda_event = {
+            "headers": {"SupplierSystem": "test"},
+            "queryStringParameters": {
+                "-immunization.target": "test",
+                "immunization.identifier": "https://supplierABC/identifiers/vacc|f10b59b3-fc73-4616-99c9-9e882ab31184",
+            },
+            "body": None,
+        }
+        # When
+        response = self.controller.get_immunization_by_identifier(lambda_event)
+        # Then
+        self.service.get_immunization_by_identifier.assert_not_called()
 
         self.assertEqual(response["statusCode"], 400)
         body = json.loads(response["body"])
@@ -258,7 +276,7 @@ class TestFhirControllerGetImmunizationByIdentifier(unittest.TestCase):
         # When
         response = self.controller.get_immunization_by_identifier(lambda_event)
         # Then
-        self.service.get_immunization_by_identifier.assert_not_called
+        self.service.get_immunization_by_identifier.assert_not_called()
 
         self.assertEqual(response["statusCode"], 400)
         body = json.loads(response["body"])
@@ -512,7 +530,7 @@ class TestFhirControllerGetImmunizationByIdentifierPost(unittest.TestCase):
         # When
         response = self.controller.get_immunization_by_identifier(lambda_event)
         # Then
-        self.service.get_immunization_by_identifier.assert_not_called
+        self.service.get_immunization_by_identifier.assert_not_called()
 
         self.assertEqual(response["statusCode"], 400)
         body = json.loads(response["body"])
@@ -532,7 +550,7 @@ class TestFhirControllerGetImmunizationByIdentifierPost(unittest.TestCase):
         # When
         response = self.controller.get_immunization_by_identifier(lambda_event)
         # Then
-        self.service.get_immunization_by_identifier.assert_not_called
+        self.service.get_immunization_by_identifier.assert_not_called()
 
         self.assertEqual(response["statusCode"], 400)
         body = json.loads(response["body"])
@@ -616,7 +634,7 @@ class TestFhirControllerGetImmunizationByIdentifierPost(unittest.TestCase):
         # When
         response = self.controller.get_immunization_by_identifier(lambda_event)
         # Then
-        self.service.get_immunization_by_identifier.assert_not_called
+        self.service.get_immunization_by_identifier.assert_not_called()
 
         self.assertEqual(response["statusCode"], 400)
         body = json.loads(response["body"])
@@ -757,7 +775,7 @@ class TestFhirControllerGetImmunizationById(unittest.TestCase):
         response = self.controller.get_immunization_by_id(lambda_event)
         # Then
         mock_permissions.assert_called_once_with("test")
-        self.service.get_immunization_by_id.assert_called_once_with(imms_id, ["COVID19.CRUDS"])
+        self.service.get_immunization_by_id.assert_called_once_with(imms_id, "test")
 
         self.assertEqual(response["statusCode"], 200)
         body = json.loads(response["body"])
@@ -780,6 +798,7 @@ class TestFhirControllerGetImmunizationById(unittest.TestCase):
         # Then
         mock_permissions.assert_called_once_with("test")
         self.assertEqual(response["statusCode"], 403)
+
     @patch("fhir_controller.get_supplier_permissions")
     def test_get_imms_by_id_no_vax_permission(self, mock_permissions):
         """it should return Immunization Id if it exists"""
@@ -814,7 +833,7 @@ class TestFhirControllerGetImmunizationById(unittest.TestCase):
 
         # Then
         mock_permissions.assert_called_once_with("test")
-        self.service.get_immunization_by_id.assert_called_once_with(imms_id, ["COVID19.CRUDS"])
+        self.service.get_immunization_by_id.assert_called_once_with(imms_id, "test")
 
         self.assertEqual(response["statusCode"], 404)
         body = json.loads(response["body"])
@@ -860,7 +879,7 @@ class TestCreateImmunization(unittest.TestCase):
 
         imms_obj = json.loads(aws_event["body"])
         mock_get_permissions.assert_called_once_with("Test")
-        self.service.create_immunization.assert_called_once_with(imms_obj, ["COVID19.CRUDS", "FLU.CRUDS"], "Test")
+        self.service.create_immunization.assert_called_once_with(imms_obj, "Test")
         self.assertEqual(response["statusCode"], 201)
         self.assertTrue("body" not in response)
         self.assertTrue(response["headers"]["Location"].endswith(f"Immunization/{imms_id}"))
@@ -1271,7 +1290,7 @@ class TestUpdateImmunization(unittest.TestCase):
         response = self.controller.get_immunization_by_id(lambda_event)
 
         # Then
-        self.service.get_immunization_by_id.assert_called_once_with(imms_id, ["COVID19.CRUDS"])
+        self.service.get_immunization_by_id.assert_called_once_with(imms_id, "Test")
 
         self.assertEqual(response["statusCode"], 404)
         body = json.loads(response["body"])

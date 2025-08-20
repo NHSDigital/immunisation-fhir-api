@@ -113,37 +113,18 @@ class TestGetImmunization(unittest.TestCase):
                 }
             }
         )
-        imms = self.repository.get_immunization_by_id(imms_id, ["COVID19.CRUDS"])
+        imms = self.repository.get_immunization_by_id(imms_id)
 
         # Validate the results
         self.assertDictEqual(resource, imms)
         self.table.get_item.assert_called_once_with(Key={"PK": _make_immunization_pk(imms_id)})
-
-    def test_unauthorized_get_immunization_by_id(self):
-        """it should not get an Immunization by id if vax perms do not exist"""
-        imms_id = "an-id"
-        resource = dict()
-        resource["Resource"] = {"foo": "bar"}
-        resource["Version"] = 1
-        self.table.get_item = MagicMock(
-            return_value={
-                "Item": {
-                    "Resource": json.dumps({"foo": "bar"}),
-                    "Version": 1,
-                    "PatientSK": "COVID19#2516525251",
-                }
-            }
-        )
-        with self.assertRaises(UnauthorizedVaxError) as e:
-            # When
-            self.repository.get_immunization_by_id(imms_id, ["FLU.CRUD"])
 
     def test_immunization_not_found(self):
         """it should return None if Immunization doesn't exist"""
         imms_id = "non-existent-id"
         self.table.get_item = MagicMock(return_value={})
 
-        imms = self.repository.get_immunization_by_id(imms_id, ["COVID19.CRUD"])
+        imms = self.repository.get_immunization_by_id(imms_id)
         self.assertIsNone(imms)
 
 
@@ -163,14 +144,12 @@ class TestCreateImmunizationMainIndex(TestFhirRepositoryBase):
 
     def test_create_immunization(self):
         """it should create Immunization, and return created object"""
-
-        self.mock_redis_client.hget.return_value = "COVID19"
         imms = create_covid_19_immunization_dict(imms_id="an-id")
 
         self.table.put_item = MagicMock(return_value={"ResponseMetadata": {"HTTPStatusCode": 200}})
         self.table.query = MagicMock(return_value={})
 
-        res_imms = self.repository.create_immunization(imms, self.patient, ["COVID19.CRUD"], "Test")
+        res_imms = self.repository.create_immunization(imms, self.patient, "Test")
 
         self.assertDictEqual(res_imms, imms)
         self.table.put_item.assert_called_once_with(
@@ -188,14 +167,12 @@ class TestCreateImmunizationMainIndex(TestFhirRepositoryBase):
 
     def test_create_immunization_batch(self):
         """it should create Immunization, and return created object"""
-
-        self.mock_redis_client.hget.return_value = "COVID19"
         imms = create_covid_19_immunization_dict(imms_id="an-id")
 
         self.table.put_item = MagicMock(return_value={"ResponseMetadata": {"HTTPStatusCode": 200}})
         self.table.query = MagicMock(return_value={})
 
-        res_imms = self.repository.create_immunization(imms, None, ["COVID19.CRUD"], "Test")
+        res_imms = self.repository.create_immunization(imms, None, "Test")
 
         self.assertDictEqual(res_imms, imms)
         self.table.put_item.assert_called_once_with(
@@ -213,13 +190,11 @@ class TestCreateImmunizationMainIndex(TestFhirRepositoryBase):
 
     def test_add_patient(self):
         """it should store patient along the Immunization resource"""
-
-        self.mock_redis_client.hget.return_value = "COVID19"
         imms = create_covid_19_immunization_dict("an-id")
         self.table.put_item = MagicMock(return_value={"ResponseMetadata": {"HTTPStatusCode": 200}})
         self.table.query = MagicMock(return_value={})
 
-        res_imms = self.repository.create_immunization(imms, self.patient, ["COVID19.CRUD"], "Test")
+        res_imms = self.repository.create_immunization(imms, self.patient, "Test")
 
         self.assertDictEqual(res_imms, imms)
         self.table.put_item.assert_called_once_with(
@@ -239,12 +214,11 @@ class TestCreateImmunizationMainIndex(TestFhirRepositoryBase):
         """create should create new Logical ID even if one is already provided"""
         imms_id = "original-id-from-request"
 
-        self.mock_redis_client.hget.return_value = "COVID19"
         imms = create_covid_19_immunization_dict(imms_id)
         self.table.put_item = MagicMock(return_value={"ResponseMetadata": {"HTTPStatusCode": 200}})
         self.table.query = MagicMock(return_value={})
 
-        _ = self.repository.create_immunization(imms, self.patient, ["COVID19.CRUD"], "Test")
+        _ = self.repository.create_immunization(imms, self.patient, "Test")
 
         item = self.table.put_item.call_args.kwargs["Item"]
         self.assertTrue(item["PK"].startswith("Immunization#"))
@@ -252,21 +226,17 @@ class TestCreateImmunizationMainIndex(TestFhirRepositoryBase):
 
     def test_create_immunization_returns_new_id(self):
         """create should return the persisted object i.e. with new id"""
-
-        self.mock_redis_client.hget.return_value = "COVID19"
         imms_id = "original-id-from-request"
         imms = create_covid_19_immunization_dict(imms_id)
         self.table.put_item = MagicMock(return_value={"ResponseMetadata": {"HTTPStatusCode": 200}})
         self.table.query = MagicMock(return_value={})
 
-        response = self.repository.create_immunization(imms, self.patient, ["COVID19.CRUD"], "Test")
+        response = self.repository.create_immunization(imms, self.patient, "Test")
 
         self.assertNotEqual(response["id"], imms_id)
 
     def test_create_should_catch_dynamo_error(self):
         """it should throw UnhandledResponse when the response from dynamodb can't be handled"""
-
-        self.mock_redis_client.hget.return_value = "COVID19"
         bad_request = 400
         response = {"ResponseMetadata": {"HTTPStatusCode": bad_request}}
         self.table.put_item = MagicMock(return_value=response)
@@ -275,7 +245,7 @@ class TestCreateImmunizationMainIndex(TestFhirRepositoryBase):
         with self.assertRaises(UnhandledResponseError) as e:
             # When
             self.repository.create_immunization(
-                create_covid_19_immunization_dict("an-id"), self.patient, ["COVID19.CRUD"], "Test"
+                create_covid_19_immunization_dict("an-id"), self.patient, "Test"
             )
 
         # Then
@@ -283,8 +253,6 @@ class TestCreateImmunizationMainIndex(TestFhirRepositoryBase):
 
     def test_create_throws_error_when_identifier_already_in_dynamodb(self):
         """it should throw UnhandledResponse when trying to update an immunization with an identfier that is already stored"""
-
-        self.mock_redis_client.hget.return_value = "COVID19"
         imms_id = "an-id"
         imms = create_covid_19_immunization_dict(imms_id)
         imms["patient"] = self.patient
@@ -293,7 +261,7 @@ class TestCreateImmunizationMainIndex(TestFhirRepositoryBase):
         identifier = f"{imms['identifier'][0]['system']}#{imms['identifier'][0]['value']}"
         with self.assertRaises(IdentifierDuplicationError) as e:
             # When
-            self.repository.create_immunization(imms, self.patient, ["COVID19.CRUD"], "Test")
+            self.repository.create_immunization(imms, self.patient, "Test")
 
         self.assertEqual(str(e.exception), f"The provided identifier: {identifier} is duplicated")
 
@@ -310,8 +278,6 @@ class TestCreateImmunizationPatientIndex(TestFhirRepositoryBase):
 
     def test_create_patient_gsi(self):
         """create Immunization method should create Patient index with nhs-number as ID and no system"""
-
-        self.mock_redis_client.hget.return_value = "COVID19"
         imms = create_covid_19_immunization_dict("an-id")
 
         nhs_number = "1234567890"
@@ -321,7 +287,7 @@ class TestCreateImmunizationPatientIndex(TestFhirRepositoryBase):
         self.table.query = MagicMock(return_value={})
 
         # When
-        _ = self.repository.create_immunization(imms, self.patient, ["COVID19.CRUD"], "Test")
+        _ = self.repository.create_immunization(imms, self.patient, "Test")
 
         # Then
         item = self.table.put_item.call_args.kwargs["Item"]
@@ -329,7 +295,6 @@ class TestCreateImmunizationPatientIndex(TestFhirRepositoryBase):
 
     def test_create_patient_with_vaccine_type(self):
         """Patient record should have a sort-key based on vaccine-type"""
-        self.mock_redis_client.hget.return_value = "FLU"
         imms = create_covid_19_immunization_dict("an-id")
 
         update_target_disease_code(imms, "FLU")
@@ -339,32 +304,11 @@ class TestCreateImmunizationPatientIndex(TestFhirRepositoryBase):
         self.table.put_item = MagicMock(return_value={"ResponseMetadata": {"HTTPStatusCode": 200}})
 
         # When
-        _ = self.repository.create_immunization(imms, self.patient, ["FLU.CRUD"], "Test")
+        _ = self.repository.create_immunization(imms, self.patient, "Test")
 
         # Then
         item = self.table.put_item.call_args.kwargs["Item"]
         self.assertTrue(item["PatientSK"].startswith(f"{vaccine_type}#"))
-
-    def test_create_patient_with_unauthorised_vaccine_type_permissions(self):
-        """Patient record should not be created"""
-        imms = create_covid_19_immunization_dict("an-id")
-
-        self.repository.table.query.return_value = {
-            "Count": 0,
-            "Items": []
-        }
-
-        self.repository.table.put_item.return_value = {
-            "ResponseMetadata": {
-                "HTTPStatusCode": 200
-            }
-        }
-
-        update_target_disease_code(imms, "FLU")
-        with self.assertRaises(UnauthorizedVaxError) as e:
-            # When
-            self.repository.create_immunization(imms, self.patient, ["COVID19.CRUD"], "Test")
-
 
 
 class TestUpdateImmunization(TestFhirRepositoryBase):
@@ -527,7 +471,7 @@ class TestDeleteImmunization(unittest.TestCase):
         imms_id = "a-deleted-id"
         self.table.get_item = MagicMock(return_value={"Item": {"Resource": "{}", "DeletedAt": time.time()}})
 
-        imms = self.repository.get_immunization_by_id(imms_id, ["COVID19.CRUD"])
+        imms = self.repository.get_immunization_by_id(imms_id)
         self.assertIsNone(imms)
 
     def test_delete_immunization(self):
@@ -771,15 +715,13 @@ class TestImmunizationDecimals(TestFhirRepositoryBase):
 
     def test_decimal_on_create(self):
         """it should create Immunization, and preserve decimal value"""
-
-        self.mock_redis_client.hget.return_value = "COVID19"
         imms = create_covid_19_immunization_dict(imms_id="an-id")
         imms["doseQuantity"] = 0.7477
 
         self.table.put_item = MagicMock(return_value={"ResponseMetadata": {"HTTPStatusCode": 200}})
         self.table.query = MagicMock(return_value={})
 
-        res_imms = self.repository.create_immunization(imms, self.patient, ["COVID19.CRUD"], "Test")
+        res_imms = self.repository.create_immunization(imms, self.patient, "Test")
 
         self.assertEqual(res_imms["doseQuantity"], imms["doseQuantity"])
         self.assertDictEqual(res_imms, imms)
