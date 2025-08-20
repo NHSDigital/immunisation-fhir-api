@@ -42,7 +42,7 @@ def search_imms(event: events.APIGatewayProxyEventV1, controller: FhirController
                 # Parse the URL encoded body
                 parsed_body = urllib.parse.parse_qs(decoded_body)
 
-                # Check for 'immunization.identifier' in body
+                # Check for 'identifier' in body
                 body_has_immunization_identifier = "identifier" in parsed_body
                 body_has_immunization_element = "_elements" in parsed_body
             if (

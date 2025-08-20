@@ -482,8 +482,7 @@ class FhirController:
         else:
             return None
 
-    def _validate_identifier_system(self, _id: str, _element: str) -> Optional[dict]:
-
+    def _validate_identifier_system(self, _id: str, _elements: str) -> Optional[dict]:
         if not _id:
             return create_operation_outcome(
                 resource_id=str(uuid.uuid4()),
@@ -506,11 +505,13 @@ class FhirController:
                     'e.g. "http://xyz.org/vaccs|2345-gh3s-r53h7-12ny"'
                 ),
             )
+        
+        if not _elements:
+            return None
 
-        element_lower = _element.lower()
-        result = element_lower.split(",")
-        is_present = all(key in ["id", "meta"] for key in result)
-        if _element and not is_present:
+        requested_elements = {e.strip().lower() for e in _elements.split(",") if e.strip()}
+        requested_elements_valid = requested_elements.issubset({"id", "meta"})
+        if _elements and not requested_elements_valid:
             return create_operation_outcome(
                 resource_id=str(uuid.uuid4()),
                 severity=Severity.error,
@@ -561,12 +562,10 @@ class FhirController:
         body = event["body"]
         not_required_keys = ["-date.from", "-date.to", "-immunization.target", "_include", "patient.identifier"]
 
-        # Get Search Identifer Parameters
+        # Get Search Query Parameters
         if query_params and not body:
-            query_string_has_immunization_identifier = "identifier" in event.get(
-                "queryStringParameters", {}
-            )
-            query_string_has_element = "_elements" in event.get("queryStringParameters", {})
+            query_string_has_immunization_identifier = "identifier" in query_params
+            query_string_has_element = "_elements" in query_params
             identifier = query_params.get("identifier", "")
             element = query_params.get("_elements", "")
             query_check = check_keys_in_sources(event, not_required_keys)
@@ -613,21 +612,12 @@ class FhirController:
             )
             return self.create_response(400, error)
 
-        if "patient.identifier" not in not_required and not_required and has_identifier:
-            error = create_operation_outcome(
-                resource_id=str(uuid.uuid4()),
-                severity=Severity.error,
-                code=Code.server_error,
-                diagnostics="Search parameter identifier must have the following parameter: _elements",
-            )
-            return self.create_response(400, error)
-
         if not_required and has_element:
             error = create_operation_outcome(
                 resource_id=str(uuid.uuid4()),
                 severity=Severity.error,
                 code=Code.server_error,
-                diagnostics="Search parameter _elements must have  the following parameter: identifier",
+                diagnostics="Search parameter _elements must have the following parameter: identifier",
             )
             return self.create_response(400, error)
 
