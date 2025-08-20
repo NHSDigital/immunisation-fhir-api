@@ -47,7 +47,9 @@ check "private_subnets" {
 }
 
 data "aws_vpc" "default" {
-  default = true
+  tags = {
+    Name = "imms-${var.environment}-fhir-api-vpc"
+  }
 }
 
 data "aws_subnets" "all" {
