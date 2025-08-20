@@ -1,11 +1,11 @@
 # Overall entry point into batch in prod. Files are forwarded into the appropriate blue / green bucket.
 resource "aws_s3_bucket" "batch_data_source_bucket" {
-  count  = var.environment == "prod" ? 1 : 0
+  count  = var.blue_green_split ? 1 : 0
   bucket = "immunisation-batch-${var.environment}-data-sources"
 }
 
 resource "aws_s3_bucket_public_access_block" "batch_data_source_bucket_public_access_block" {
-  count  = var.environment == "prod" ? 1 : 0
+  count  = var.blue_green_split ? 1 : 0
   bucket = aws_s3_bucket.batch_data_source_bucket[0].id
 
   block_public_acls       = true
@@ -15,7 +15,7 @@ resource "aws_s3_bucket_public_access_block" "batch_data_source_bucket_public_ac
 }
 
 resource "aws_s3_bucket_policy" "batch_data_source_bucket_policy" {
-  count  = var.environment == "prod" ? 1 : 0
+  count  = var.blue_green_split ? 1 : 0
   bucket = aws_s3_bucket.batch_data_source_bucket[0].bucket
   policy = jsonencode({
     Version : "2012-10-17",
@@ -55,7 +55,7 @@ resource "aws_s3_bucket_policy" "batch_data_source_bucket_policy" {
 }
 
 resource "aws_s3_bucket_lifecycle_configuration" "datasources_lifecycle" {
-  count  = var.environment == "prod" ? 1 : 0
+  count  = var.blue_green_split ? 1 : 0
   bucket = aws_s3_bucket.batch_data_source_bucket[0].bucket
 
   rule {

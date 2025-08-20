@@ -47,8 +47,8 @@ jobs:
           export AWS_PROFILE=apim-dev
 
           cd terraform
-          make init environment="dev" sub_environment="$WORKSPACE" bucket_name="immunisation-internal-dev-terraform-state-files"
-          make workspace sub_environment="$WORKSPACE"
+          make init apigee_environment=internal-dev environment=dev sub_environment=$workspace
+          make workspace apigee_environment=internal-dev environment=dev sub_environment="$WORKSPACE"
 
           # Extract values from Terraform state before destroying
           ID_SYNC_QUEUE_ARN=$(make -s output name=id_sync_queue_arn)
@@ -76,6 +76,6 @@ jobs:
           export AWS_PROFILE=apim-dev
 
           cd terraform
-          make destroy environment="dev" sub_environment="$WORKSPACE" bucket_name="immunisation-internal-dev-terraform-state-files"
+          make destroy apigee_environment=internal-dev environment=dev sub_environment=$workspace
         displayName: Destroy terraform PR workspace and linked resources
         retryCountOnTaskFailure: 2
