@@ -325,7 +325,9 @@ class TestLoggingDecorators(unittest.TestCase):
         with (
             patch("logging_decorators.send_log_to_firehose") as mock_send_log_to_firehose,
             patch("logging_decorators.logger") as mock_logger,
-            patch("update_ack_file.handle_ingestion_complete") as mock_handle_ingestion_complete,  # noqa: E999
+            patch("update_ack_file.change_audit_table_status_to_processed") as mock_change_audit_table_status_to_processed,  # noqa: E999
+            patch("update_ack_file.get_next_queued_file_details"),  # noqa: E999
+            patch("update_ack_file.invoke_filename_lambda"),  # noqa: E999
         ):
             result = lambda_handler(generate_event(messages), context={})
 
@@ -350,7 +352,8 @@ class TestLoggingDecorators(unittest.TestCase):
                 call(last_logger_info_call_args),
             ]
         )
-        mock_handle_ingestion_complete.assert_not_called()
+        mock_change_audit_table_status_to_processed.assert_not_called()
+
 
     def test_splunk_update_ack_file_logged(self):
         """Tests that update_ack_file is logged if we have sent acks for the whole file"""
@@ -363,7 +366,9 @@ class TestLoggingDecorators(unittest.TestCase):
         with (
             patch("logging_decorators.send_log_to_firehose") as mock_send_log_to_firehose,
             patch("logging_decorators.logger") as mock_logger,
-            patch("update_ack_file.handle_ingestion_complete") as mock_handle_ingestion_complete,  # noqa: E999
+            patch("update_ack_file.change_audit_table_status_to_processed") as mock_change_audit_table_status_to_processed,  # noqa: E999
+            patch("update_ack_file.get_next_queued_file_details"),  # noqa: E999
+            patch("update_ack_file.invoke_filename_lambda"),  # noqa: E999
         ):
             result = lambda_handler(generate_event(messages), context={})
 
@@ -395,7 +400,7 @@ class TestLoggingDecorators(unittest.TestCase):
                 call(last_logger_info_call_args),
             ]
         )
-        mock_handle_ingestion_complete.assert_called()
+        mock_change_audit_table_status_to_processed.assert_called()
 
 
 if __name__ == "__main__":

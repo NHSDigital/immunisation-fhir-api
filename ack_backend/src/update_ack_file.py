@@ -66,25 +66,6 @@ def obtain_current_ack_content(temp_ack_file_key: str) -> StringIO:
     return accumulated_csv_content
 
 
-def handle_ingestion_complete(
-    temp_ack_file_key: str,
-    message_id: str,
-    supplier: str,
-    vaccine_type: str,
-    archive_ack_file_key: str,
-    file_key: str,
-) -> None:
-    """Handles processing where the complete file has been ingested"""
-    move_file(ACK_BUCKET_NAME, temp_ack_file_key, archive_ack_file_key)
-    move_file(SOURCE_BUCKET_NAME, f"processing/{file_key}", f"archive/{file_key}")
-    # Update the audit table and invoke the filename lambda with next file in the queue (if one exists)
-    change_audit_table_status_to_processed(file_key, message_id)
-    supplier_queue = f"{supplier}_{vaccine_type}"
-    next_queued_file_details = get_next_queued_file_details(supplier_queue)
-    if next_queued_file_details:
-        invoke_filename_lambda(next_queued_file_details["filename"], next_queued_file_details["message_id"])
-
-
 @upload_ack_file_logging_decorator
 def upload_ack_file(
     temp_ack_file_key: str,
@@ -108,14 +89,14 @@ def upload_ack_file(
     row_count_destination = get_row_count(ACK_BUCKET_NAME, temp_ack_file_key)
     # TODO: Should we check for > and if so what handling is required
     if row_count_destination == row_count_source:
-        handle_ingestion_complete(
-            temp_ack_file_key,
-            message_id,
-            supplier,
-            vaccine_type,
-            archive_ack_file_key,
-            file_key,
-        )
+        move_file(ACK_BUCKET_NAME, temp_ack_file_key, archive_ack_file_key)
+        move_file(SOURCE_BUCKET_NAME, f"processing/{file_key}", f"archive/{file_key}")
+        # Update the audit table and invoke the filename lambda with next file in the queue (if one exists)
+        change_audit_table_status_to_processed(file_key, message_id)
+        supplier_queue = f"{supplier}_{vaccine_type}"
+        next_queued_file_details = get_next_queued_file_details(supplier_queue)
+        if next_queued_file_details:
+            invoke_filename_lambda(next_queued_file_details["filename"], next_queued_file_details["message_id"])
         # Ingestion of this file is complete
         result = {
             "message_id": message_id,
