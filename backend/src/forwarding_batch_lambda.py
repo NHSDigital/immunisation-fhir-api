@@ -62,10 +62,15 @@ def forward_lambda_handler(event, _):
     array_of_messages = []
     array_of_identifiers = []
     controller = make_batch_controller()
+    print("Entering record processing")
 
     for record in event["Records"]:
         try:
             kinesis_payload = record["kinesis"]["data"]
+            partition_key = record["kinesis"]["partitionKey"]
+
+            print(partition_key)
+
             decoded_payload = base64.b64decode(kinesis_payload).decode("utf-8")
             incoming_message_body = json.loads(decoded_payload, use_decimal=True)
 
@@ -114,6 +119,8 @@ def forward_lambda_handler(event, _):
     message_len = len(sqs_message_body)
     logger.info(f"total message length:{message_len}")
     message_group_id = f"{file_key}_{created_at_formatted_string}"
+
+    print(message_group_id)
     if message_len < 256 * 1024:
         sqs_client.send_message(QueueUrl=QUEUE_URL, MessageBody=sqs_message_body, MessageGroupId=message_group_id)
     else:
