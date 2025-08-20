@@ -6,4 +6,4 @@ dev_ops_role             = "role/DevOps"
 dspp_admin_role          = "root"
 mns_admin_role           = "role/nhs-mns-events-lambda-delivery"
 environment              = "dev"
-blue_green_split = false
+blue_green_split         = false
