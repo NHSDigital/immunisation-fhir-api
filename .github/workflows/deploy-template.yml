@@ -79,7 +79,7 @@ jobs:
         run: make apply apigee_environment=${{ inputs.apigee_environment }} environment=${{ inputs.environment }} sub_environment=${{ inputs.sub_environment }}
         # TODO - use a saved plan from the plan step
   e2e-tests:
-    if: ${{ vars.RUN_E2E == 'true' && inputs.environment == vars.ACTIVE_ENVIRONMENT }}
+    if: ${{ vars.RUN_E2E == 'true' && inputs.sub_environment == vars.ACTIVE_ENVIRONMENT }}
     needs: terraform-apply
     runs-on: ubuntu-latest
     permissions:

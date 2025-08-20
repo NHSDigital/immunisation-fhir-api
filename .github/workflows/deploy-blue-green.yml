@@ -12,3 +12,9 @@ jobs:
       apigee_environment: int
       environment: preprod
       sub_environment: int-green
+  deploy-blue:
+    uses: ./.github/workflows/deploy-template.yml
+    with:
+      apigee_environment: int
+      environment: preprod
+      sub_environment: int-blue
