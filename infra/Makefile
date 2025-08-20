@@ -2,7 +2,7 @@
 
 interactionId=$(ENVIRONMENT)
 
-tf_cmd = AWS_PROFILE=$(AWS_PROFILE) terraform
+tf_cmd = terraform
 tf_state= -backend-config="bucket=$(BUCKET_NAME)"
 tf_vars= -var-file=environments/$(ENVIRONMENT)/variables.tfvars
 
@@ -42,7 +42,7 @@ ifndef name
 endif
 	$(tf_cmd) output -raw $(name)
 
-import: 
+import:
 	$(tf_cmd) import $(tf_vars) $(to) $(id)
 
 tf-%:

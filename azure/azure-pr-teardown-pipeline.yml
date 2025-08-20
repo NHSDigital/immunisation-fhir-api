@@ -49,6 +49,7 @@ jobs:
 
           cd terraform
           terraform workspace select $(WORKSPACE)
-          make init && make destroy aws_account_no=${account_id} environment=$(WORKSPACE)
+          make init apigee_environment=internal-dev environment=dev sub_environment=$workspace
+          make destroy apigee_environment=internal-dev environment=dev sub_environment=$workspace
         displayName: Destroy terraform PR workspace and linked resources
         retryCountOnTaskFailure: 2
