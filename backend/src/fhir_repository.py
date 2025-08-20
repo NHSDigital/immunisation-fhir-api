@@ -104,7 +104,7 @@ class ImmunizationRepository:
         else:
             return None, None
 
-    def get_immunization_by_id(self, imms_id: str, imms_vax_type_perms: str) -> Optional[dict]:
+    def get_immunization_by_id(self, imms_id: str) -> Optional[dict]:
         response = self.table.get_item(Key={"PK": _make_immunization_pk(imms_id)})
         item = response.get("Item")
 
@@ -113,12 +113,6 @@ class ImmunizationRepository:
         if item.get("DeletedAt") and item["DeletedAt"] != "reinstated":
             return None
 
-        # Get vaccine type + validate permissions
-        vaccine_type = self._vaccine_type(item["PatientSK"])
-        if not validate_permissions(imms_vax_type_perms, ApiOperationCode.READ, [vaccine_type]):
-            raise UnauthorizedVaxError()
-
-        # Build response
         return {
             "Resource": json.loads(item["Resource"]),
             "Version": item["Version"]
@@ -157,14 +151,11 @@ class ImmunizationRepository:
         else:
             return None
 
-    def create_immunization(
-        self, immunization: dict, patient: any, imms_vax_type_perms, supplier_system
-    ) -> dict:
+    def create_immunization(self, immunization: dict, patient: any, supplier_system: str) -> dict:
         new_id = str(uuid.uuid4())
         immunization["id"] = new_id
         attr = RecordAttributes(immunization, patient)
-        if not validate_permissions(imms_vax_type_perms,ApiOperationCode.CREATE, [attr.vaccine_type]):
-            raise UnauthorizedVaxError()
+
         query_response = _query_identifier(self.table, "IdentifierGSI", "IdentifierPK", attr.identifier)
 
         if query_response is not None:

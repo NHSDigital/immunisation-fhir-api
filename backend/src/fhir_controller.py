@@ -125,7 +125,7 @@ class FhirController:
             return self.create_response(403, unauthorized.to_operation_outcome())
 
         try:
-            if resource := self.fhir_service.get_immunization_by_id(imms_id, imms_vax_type_perms):
+            if resource := self.fhir_service.get_immunization_by_id(imms_id, supplier_system):
                 version = str()
                 if isinstance(resource, Immunization):
                     resp = resource
@@ -157,6 +157,7 @@ class FhirController:
             return self.create_response(403, unauthorized.to_operation_outcome())
 
         # Call the common method and unpack the results
+        # TODO - can remove this and the block above. Only need supplier system
         response, imms_vax_type_perms, supplier_system = self.check_vaccine_type_permissions(
             aws_event
         )
@@ -164,12 +165,11 @@ class FhirController:
             return response
 
         try:
-            imms = json.loads(aws_event["body"], parse_float=Decimal)
+            immunisation = json.loads(aws_event["body"], parse_float=Decimal)
         except json.decoder.JSONDecodeError as e:
             return self._create_bad_request(f"Request's body contains malformed JSON: {e}")
         try:
-            resource = self.fhir_service.create_immunization(
-                imms, imms_vax_type_perms, supplier_system)
+            resource = self.fhir_service.create_immunization(immunisation, supplier_system)
             if "diagnostics" in resource:
                 exp_error = create_operation_outcome(
                     resource_id=str(uuid.uuid4()),
@@ -366,10 +366,9 @@ class FhirController:
         except UnauthorizedError as unauthorized:
             return self.create_response(403, unauthorized.to_operation_outcome())
 
-        # Validate the imms id - start
+        # Validate the imms id
         if id_error := self._validate_id(imms_id):
             return FhirController.create_response(400, json.dumps(id_error))
-        # Validate the imms id - end
 
         # Call the common method and unpack the results
         response, imms_vax_type_perms, supplier_system = self.check_vaccine_type_permissions(

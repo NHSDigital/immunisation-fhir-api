@@ -12,17 +12,17 @@ from fhir.resources.R4B.bundle import (
     BundleEntrySearch,
 )
 from fhir.resources.R4B.immunization import Immunization
-from poetry.console.commands import self
 from pydantic import ValidationError
 
 import parameter_parser
-from authorisation.ApiOperationCode import ApiOperationCode
-from authorisation.Authoriser import Authoriser
+from authorisation.api_operation_code import ApiOperationCode
+from authorisation.authoriser import Authoriser
 from fhir_repository import ImmunizationRepository
 from models.errors import InvalidPatientId, CustomValidationError, UnauthorizedVaxError
 from models.fhir_immunization import ImmunizationValidator
 from models.utils.generic_utils import nhs_number_mod11_check, get_occurrence_datetime, create_diagnostics, form_json, get_contained_patient
 from models.errors import MandatoryError
+from models.utils.validation_utils import get_vaccine_type
 from timer import timed
 from filter import Filter
 
@@ -80,16 +80,20 @@ class FhirService:
         imms_resp['resource'] = filtered_resource
         return form_json(imms_resp, element, identifier, base_url)
 
-    def get_immunization_by_id(self, imms_id: str, imms_vax_type_perms: list[str]) -> Optional[dict]:
+    def get_immunization_by_id(self, imms_id: str, supplier_system: str) -> Optional[dict]:
         """
         Get an Immunization by its ID. Return None if it is not found. If the patient doesn't have an NHS number,
         return the Immunization.
         """
-        if not (imms_resp := self.immunization_repo.get_immunization_by_id(imms_id, imms_vax_type_perms)):
+        if not (imms_resp := self.immunization_repo.get_immunization_by_id(imms_id)):
             return None
 
         # Returns the Immunisation full resource with no obfuscation
         resource = imms_resp.get("Resource", {})
+        vaccination_type = get_vaccine_type(resource)
+
+        if not self.authoriser.authorise(supplier_system, ApiOperationCode.READ, {vaccination_type}):
+            raise UnauthorizedVaxError()
 
         return {
             "Version": imms_resp.get("Version", ""),
@@ -109,10 +113,7 @@ class FhirService:
         imms_resp = self.immunization_repo.get_immunization_by_id_all(imms_id, imms)
         return imms_resp
 
-    def create_immunization(
-        self, immunization: dict, imms_vax_type_perms, supplier_system
-    ) -> Immunization:
-
+    def create_immunization(self, immunization: dict, supplier_system: str) -> dict | Immunization:
         if immunization.get("id") is not None:
             raise CustomValidationError("id field must not be present for CREATE operation")
 
@@ -121,14 +122,17 @@ class FhirService:
         except (ValidationError, ValueError, MandatoryError) as error:
             raise CustomValidationError(message=str(error)) from error
         patient = self._validate_patient(immunization)
+
         if "diagnostics" in patient:
             return patient
 
-        imms = self.immunization_repo.create_immunization(
-            immunization, patient, imms_vax_type_perms, supplier_system
-        )
+        vaccination_type = get_vaccine_type(immunization)
 
-        return Immunization.parse_obj(imms)
+        if not self.authoriser.authorise(supplier_system, ApiOperationCode.CREATE, {vaccination_type}):
+            raise UnauthorizedVaxError()
+
+        immunisation = self.immunization_repo.create_immunization(immunization, patient, supplier_system)
+        return Immunization.parse_obj(immunisation)
 
     def update_immunization(
         self,
@@ -200,7 +204,7 @@ class FhirService:
 
         return UpdateOutcome.UPDATE, Immunization.parse_obj(imms), updated_version
 
-    def delete_immunization(self, imms_id, imms_vax_type_perms, supplier_system) -> Immunization:
+    def delete_immunization(self, imms_id: str, imms_vax_type_perms, supplier_system: str) -> Immunization:
         """
         Delete an Immunization if it exits and return the ID back if successful.
         Exception will be raised if resource didn't exit. Multiple calls to this method won't change
