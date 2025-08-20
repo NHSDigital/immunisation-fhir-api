@@ -4,4 +4,4 @@ admin_role               = "root" # We shouldn't be using the root account. Ther
 dev_ops_role             = "role/DevOps"
 dspp_admin_role          = "root"
 environment              = "dev"
-blue_green_split = false
+blue_green_split         = false

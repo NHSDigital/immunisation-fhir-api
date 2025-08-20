@@ -1,7 +1,8 @@
 imms_account_id          = "664418956997"
 dspp_account_id          = "232116723729"
-admin_role               = "role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_PROD-IMMS-Admin_edd6691e4b74064e"
+# admin_role               = "role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_PROD-IMMS-Admin_edd6691e4b74064e"
+admin_role               = "root"
 dev_ops_role             = "role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_PROD-IMMS-Devops_8f32c62195d56b76"
 dspp_admin_role          = "root"
 environment              = "prod"
-blue_green_split = true
+blue_green_split         = true
