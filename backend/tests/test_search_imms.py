@@ -43,8 +43,8 @@ class TestSearchImmunizations(unittest.TestCase):
         lambda_event = {
             "pathParameters": {"id": "an-id"},
             "queryStringParameters": {
-                "immunization.identifier": "https://supplierABC/identifiers/vacc|f10b59b3-fc73-4616-99c9-9e882ab31184",
-                "_element": "id,meta",
+                "identifier": "https://supplierABC/identifiers/vacc|f10b59b3-fc73-4616-99c9-9e882ab31184",
+                "_elements": "id,meta",
             },
             "body": None,
         }
@@ -63,7 +63,7 @@ class TestSearchImmunizations(unittest.TestCase):
         """it should return a list of Immunizations"""
         lambda_event = {
             "pathParameters": {"id": "an-id"},
-            "body": "cGF0aWVudC5pZGVudGlmaWVyPWh0dHBzJTNBJTJGJTJGZmhpci5uaHMudWslMkZJZCUyRm5ocy1udW1iZXIlN0M5NjkzNjMyMTA5Ji1pbW11bml6YXRpb24udGFyZ2V0PUNPVklEMTkmX2luY2x1ZGU9SW1tdW5pemF0aW9uJTNBcGF0aWVudCZpbW11bml6YXRpb24uaWRlbnRpZmllcj1odHRwcyUzQSUyRiUyRnN1cHBsaWVyQUJDJTJGaWRlbnRpZmllcnMlMkZ2YWNjJTdDZjEwYjU5YjMtZmM3My00NjE2LTk5YzktOWU4ODJhYjMxMTg0Jl9lbGVtZW50PWlkJTJDbWV0YSZpZD1z",
+            "body": "cGF0aWVudC5pZGVudGlmaWVyPWh0dHBzJTNBJTJGJTJGZmhpci5uaHMudWslMkZJZCUyRm5ocy1udW1iZXIlN0M5NjkzNjMyMTA5Ji1pbW11bml6YXRpb24udGFyZ2V0PUNPVklEMTkmX2luY2x1ZGU9SW1tdW5pemF0aW9uJTNBcGF0aWVudCZpZGVudGlmaWVyPWh0dHBzJTNBJTJGJTJGc3VwcGxpZXJBQkMlMkZpZGVudGlmaWVycyUyRnZhY2MlN0NmMTBiNTliMy1mYzczLTQ2MTYtOTljOS05ZTg4MmFiMzExODQmX2VsZW1lbnRzPWlkJTJDbWV0YSZpZD1z",
             "queryStringParameters": None,
         }
         exp_res = {"a-key": "a-value"}
@@ -95,7 +95,7 @@ class TestSearchImmunizations(unittest.TestCase):
         """it should enter into  get_immunization_by_identifier  only _element paramter is present"""
         lambda_event = {
             "pathParameters": {"id": "an-id"},
-            "body": "X2VsZW1lbnQ9aWQlMkNtZXRh",
+            "body": "X2VsZW1lbnRzPWlkJTJDbWV0YQ==",
             "queryStringParameters": None,
         }
         exp_res = {"a-key": "a-value"}
@@ -110,10 +110,10 @@ class TestSearchImmunizations(unittest.TestCase):
         self.assertDictEqual(exp_res, act_res)
 
     def test_search_immunizations_get_id_from_body_imms_identifer(self):
-        """it should enter into  get_immunization_by_identifier  only immunization.identifier paramter is present"""
+        """it should enter into  get_immunization_by_identifier  only identifier paramter is present"""
         lambda_event = {
             "pathParameters": {"id": "an-id"},
-            "body": "aW1tdW5pemF0aW9uLmlkZW50aWZpZXI9aWQlMkNtZXRh",
+            "body": "aWRlbnRpZmllcj1pZCUyQ21ldGE=",
             "queryStringParameters": None,
         }
         exp_res = {"a-key": "a-value"}
