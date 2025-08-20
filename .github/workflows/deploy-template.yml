@@ -46,6 +46,7 @@ jobs:
       - name: Terraform Plan
         working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
         run: make plan apigee_environment=${{ inputs.apigee_environment }} environment=${{ inputs.environment }} sub_environment=${{ inputs.sub_environment }}
+        # TODO - save the plan and use it in the apply step
   terraform-apply:
     if: ${{ vars.SKIP_APPLY != 'true' }}
     needs: terraform-plan
@@ -75,7 +76,8 @@ jobs:
 
       - name: Terraform Apply
         working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
-        run: make plan apigee_environment=${{ inputs.apigee_environment }} environment=${{ inputs.environment }} sub_environment=${{ inputs.sub_environment }}
+        run: make apply apigee_environment=${{ inputs.apigee_environment }} environment=${{ inputs.environment }} sub_environment=${{ inputs.sub_environment }}
+        # TODO - use a saved plan from the plan step
   e2e-tests:
     if: ${{ vars.RUN_E2E == 'true' && inputs.environment == vars.ACTIVE_ENVIRONMENT }}
     needs: terraform-apply
@@ -155,6 +157,6 @@ jobs:
           APIGEE_USERNAME: apm-testing-internal-dev@nhs.net
         run: |
           export APIGEE_ENVIRONMENT=internal-dev
-          export PROXY_NAME=immunisation-fhir-api-int-${{ inputs.environment }}
-          export SERVICE_BASE_PATH=immunisation-fhir-api/FHIR/R4-int-${{ inputs.environment }}
+          export PROXY_NAME=immunisation-fhir-api-${{ inputs.sub_environment }}
+          export SERVICE_BASE_PATH=immunisation-fhir-api/FHIR/R4-${{ inputs.sub_environment }}
           make run-immunization
