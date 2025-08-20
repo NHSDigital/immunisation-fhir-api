@@ -4,9 +4,9 @@ import json
 from io import StringIO, BytesIO
 from typing import Union
 from botocore.exceptions import ClientError
-from constants import ACK_HEADERS, SOURCE_BUCKET_NAME, ACK_BUCKET_NAME, FILE_NAME_PROC_LAMBDA_NAME
+from constants import ACK_HEADERS, get_source_bucket_name, get_ack_bucket_name, FILE_NAME_PROC_LAMBDA_NAME
 from audit_table import change_audit_table_status_to_processed, get_next_queued_file_details
-from clients import s3_client, logger, lambda_client
+from clients import get_s3_client, logger, lambda_client
 from utils_for_ack_lambda import get_row_count
 
 
@@ -49,7 +49,7 @@ def obtain_current_ack_content(temp_ack_file_key: str) -> StringIO:
     """Returns the current ack file content if the file exists, or else initialises the content with the ack headers."""
     try:
         # If ack file exists in S3 download the contents
-        existing_ack_file = s3_client.get_object(Bucket=ACK_BUCKET_NAME, Key=temp_ack_file_key)
+        existing_ack_file = get_s3_client().get_object(Bucket=get_ack_bucket_name(), Key=temp_ack_file_key)
         existing_content = existing_ack_file["Body"].read().decode("utf-8")
     except ClientError as error:
         # If ack file does not exist in S3 create a new file containing the headers only
@@ -80,14 +80,18 @@ def upload_ack_file(
         cleaned_row = "|".join(data_row_str).replace(" |", "|").replace("| ", "|").strip()
         accumulated_csv_content.write(cleaned_row + "\n")
     csv_file_like_object = BytesIO(accumulated_csv_content.getvalue().encode("utf-8"))
-    s3_client.upload_fileobj(csv_file_like_object, ACK_BUCKET_NAME, temp_ack_file_key)
 
-    row_count_source = get_row_count(SOURCE_BUCKET_NAME, f"processing/{file_key}")
-    row_count_destination = get_row_count(ACK_BUCKET_NAME, temp_ack_file_key)
+    ack_bucket_name = get_ack_bucket_name()
+    source_bucket_name = get_source_bucket_name()
+
+    get_s3_client().upload_fileobj(csv_file_like_object, ack_bucket_name, temp_ack_file_key)
+
+    row_count_source = get_row_count(source_bucket_name, f"processing/{file_key}")
+    row_count_destination = get_row_count(ack_bucket_name, temp_ack_file_key)
     # TODO: Should we check for > and if so what handling is required
     if row_count_destination == row_count_source:
-        move_file(ACK_BUCKET_NAME, temp_ack_file_key, archive_ack_file_key)
-        move_file(SOURCE_BUCKET_NAME, f"processing/{file_key}", f"archive/{file_key}")
+        move_file(ack_bucket_name, temp_ack_file_key, archive_ack_file_key)
+        move_file(source_bucket_name, f"processing/{file_key}", f"archive/{file_key}")
 
         # Update the audit table and invoke the filename lambda with next file in the queue (if one exists)
         change_audit_table_status_to_processed(file_key, message_id)
@@ -95,7 +99,7 @@ def upload_ack_file(
         if next_queued_file_details:
             invoke_filename_lambda(next_queued_file_details["filename"], next_queued_file_details["message_id"])
 
-    logger.info("Ack file updated to %s: %s", ACK_BUCKET_NAME, archive_ack_file_key)
+    logger.info("Ack file updated to %s: %s", ack_bucket_name, archive_ack_file_key)
 
 
 def update_ack_file(
@@ -123,6 +127,7 @@ def update_ack_file(
 
 def move_file(bucket_name: str, source_file_key: str, destination_file_key: str) -> None:
     """Moves a file from one location to another within a single S3 bucket by copying and then deleting the file."""
+    s3_client = get_s3_client()
     s3_client.copy_object(
         Bucket=bucket_name, CopySource={"Bucket": bucket_name, "Key": source_file_key}, Key=destination_file_key
     )
@@ -135,7 +140,15 @@ def invoke_filename_lambda(file_key: str, message_id: str) -> None:
     try:
         lambda_payload = {
             "Records": [
-                {"s3": {"bucket": {"name": SOURCE_BUCKET_NAME}, "object": {"key": file_key}}, "message_id": message_id}
+                {"s3": 
+                    {
+                        "bucket": {
+                            "name": get_source_bucket_name()
+                        },
+                        "object": {"key": file_key}
+                    },
+                    "message_id": message_id
+                }
             ]
         }
         lambda_client.invoke(
