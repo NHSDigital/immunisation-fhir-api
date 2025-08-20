@@ -163,6 +163,7 @@ def lambda_handler(event: dict, context) -> None:  # pylint: disable=unused-argu
 
     logger.info("Filename processor lambda task started")
     for record in event["Records"]:
+        print(record)
         handle_record(record)
 
     logger.info("Filename processor lambda task completed")

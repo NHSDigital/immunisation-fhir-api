@@ -3,6 +3,11 @@ resource "aws_s3_bucket" "batch_data_source_bucket" {
   force_destroy = local.is_temp
 }
 
+resource "aws_s3_bucket_notification" "datasources_file_created" {
+  bucket      = aws_s3_bucket.batch_data_source_bucket.id
+  eventbridge = true
+}
+
 resource "aws_s3_bucket_public_access_block" "batch_data_source_bucket_public_access_block" {
   bucket = aws_s3_bucket.batch_data_source_bucket.id
 

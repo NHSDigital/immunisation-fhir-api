@@ -179,13 +179,24 @@ resource "aws_iam_policy" "filenameprocessor_lambda_sqs_policy" {
 
   policy = jsonencode({
     Version = "2012-10-17",
-    Statement = [{
-      Effect = "Allow",
-      Action = [
-        "sqs:SendMessage"
-      ],
-      Resource = aws_sqs_queue.supplier_fifo_queue.arn
-    }]
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "sqs:SendMessage"
+        ],
+        Resource = aws_sqs_queue.supplier_fifo_queue.arn
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "sqs:ReceiveMessage",
+          "sqs:DeleteMessage",
+          "sqs:GetQueueAttributes"
+        ],
+        Resource = aws_sqs_queue.batch_file_created_queue.arn
+      }
+    ]
   })
 }
 
@@ -266,6 +277,7 @@ resource "aws_iam_role_policy_attachment" "filenameprocessor_lambda_dynamo_acces
   role       = aws_iam_role.filenameprocessor_lambda_exec_role.name
   policy_arn = aws_iam_policy.filenameprocessor_dynamo_access_policy.arn
 }
+
 # Lambda Function with Security Group and VPC.
 resource "aws_lambda_function" "file_processor_lambda" {
   function_name = "${local.short_prefix}-filenameproc_lambda"
@@ -304,24 +316,11 @@ resource "aws_lambda_function" "file_processor_lambda" {
 
 }
 
-
-# Permission for S3 to invoke Lambda function
-resource "aws_lambda_permission" "s3_invoke_permission" {
-  statement_id  = "AllowExecutionFromS3"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.file_processor_lambda.function_name
-  principal     = "s3.amazonaws.com"
-  source_arn    = aws_s3_bucket.batch_data_source_bucket.arn
-}
-
-# S3 Bucket notification to trigger Lambda function
-resource "aws_s3_bucket_notification" "datasources_lambda_notification" {
-  bucket = aws_s3_bucket.batch_data_source_bucket.bucket
-
-  lambda_function {
-    lambda_function_arn = aws_lambda_function.file_processor_lambda.arn
-    events              = ["s3:ObjectCreated:*"]
-  }
+resource "aws_lambda_event_source_mapping" "batch_file_created_sqs_to_lambda" {
+  event_source_arn = aws_sqs_queue.batch_file_created_queue.arn
+  function_name    = aws_lambda_function.file_processor_lambda.arn
+  batch_size       = 1
+  enabled          = true
 }
 
 resource "aws_cloudwatch_log_group" "file_name_processor_log_group" {
