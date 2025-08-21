@@ -5,6 +5,8 @@ import simplejson as json
 import base64
 import time
 import logging
+
+from batch.batch_filename_to_events_mapper import BatchFilenameToEventsMapper
 from fhir_batch_repository import create_table
 from fhir_batch_controller import ImmunizationBatchController, make_batch_controller
 from clients import sqs_client
@@ -60,6 +62,7 @@ def forward_lambda_handler(event, _):
     logger.info("Processing started")
     table = create_table()
     array_of_messages = []
+    filename_to_events_mapper = BatchFilenameToEventsMapper()
     array_of_identifiers = []
     controller = make_batch_controller()
 
@@ -101,23 +104,26 @@ def forward_lambda_handler(event, _):
                 array_of_identifiers.append(identifier)
 
             imms_id = forward_request_to_dynamo(incoming_message_body, table, identifier_already_present, controller)
-            array_of_messages.append({**base_outgoing_message_body, "imms_id": imms_id})
+            filename_to_events_mapper.add_event({**base_outgoing_message_body, "imms_id": imms_id})
 
         except Exception as error:  # pylint: disable = broad-exception-caught
-            array_of_messages.append(
+            filename_to_events_mapper.add_event(
                 {**base_outgoing_message_body, "diagnostics": create_diagnostics_dictionary(error)}
             )
             logger.error("Error processing message: %s", error)
 
     # Send to SQS
-    sqs_message_body = json.dumps(array_of_messages)
-    message_len = len(sqs_message_body)
-    logger.info(f"total message length:{message_len}")
-    message_group_id = f"{file_key}_{created_at_formatted_string}"
-    if message_len < 256 * 1024:
-        sqs_client.send_message(QueueUrl=QUEUE_URL, MessageBody=sqs_message_body, MessageGroupId=message_group_id)
-    else:
-        logger.info("Message size exceeds 256 KB limit.Sending to sqs failed")
+    for filename_key, events in filename_to_events_mapper.get_map().items():
+        sqs_message_body = json.dumps(events)
+        message_len = len(sqs_message_body)
+        logger.info(f"total message length:{message_len}")
+
+        print(message_len)
+        # TODO - assess likelihood of condition and adjust Kinesis batch accordingly
+        if message_len < 256 * 1024:
+            sqs_client.send_message(QueueUrl=QUEUE_URL, MessageBody=sqs_message_body, MessageGroupId=filename_key)
+        else:
+            logger.info("Message size exceeds 256 KB limit.Sending to sqs failed")
 
 
 if __name__ == "__main__":
