@@ -27,10 +27,12 @@ class TestAckProcessor(unittest.TestCase):
     """Tests for the ack processor lambda handler."""
 
     def setUp(self) -> None:
-        GenericSetUp(s3_client, firehose_client)
+        self.s3_client = boto3_client("s3", region_name=REGION_NAME)
+        self.firehose_client = boto3_client("firehose", region_name=REGION_NAME)
+        GenericSetUp(self.s3_client, self.firehose_client)
 
     def tearDown(self) -> None:
-        GenericTearDown(s3_client, firehose_client)
+        GenericTearDown(self.s3_client, self.firehose_client)
 
     def test_get_error_message_for_ack_file(self):
         """Test the get_error_message_for_ack_file function."""

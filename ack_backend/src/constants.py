@@ -2,13 +2,18 @@
 
 import os
 
-SOURCE_BUCKET_NAME = os.getenv("SOURCE_BUCKET_NAME")
-ACK_BUCKET_NAME = os.getenv("ACK_BUCKET_NAME")
 AUDIT_TABLE_NAME = os.getenv("AUDIT_TABLE_NAME")
+FILE_NAME_PROC_LAMBDA_NAME = os.getenv("FILE_NAME_PROC_LAMBDA_NAME")
 AUDIT_TABLE_FILENAME_GSI = "filename_index"
 AUDIT_TABLE_QUEUE_NAME_GSI = "queue_name_index"
-FILE_NAME_PROC_LAMBDA_NAME = os.getenv("FILE_NAME_PROC_LAMBDA_NAME")
 
+def get_source_bucket_name() -> str:
+    """Get the SOURCE_BUCKET_NAME environment from environment variables."""
+    return os.getenv("SOURCE_BUCKET_NAME")
+
+def get_ack_bucket_name() -> str:
+    """Get the ACK_BUCKET_NAME environment from environment variables."""
+    return os.getenv("ACK_BUCKET_NAME")
 
 class FileStatus:
     """File status constants"""

@@ -19,10 +19,12 @@ from tests.utils.utils_for_ack_backend_tests import (
     MOCK_MESSAGE_DETAILS,
 )
 
+from unittest.mock import patch
+from io import StringIO
+
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from update_ack_file import obtain_current_ack_content, create_ack_data, update_ack_file
 
-s3_client = boto3_client("s3", region_name=REGION_NAME)
 firehose_client = boto3_client("firehose", region_name=REGION_NAME)
 
 
@@ -30,21 +32,23 @@ firehose_client = boto3_client("firehose", region_name=REGION_NAME)
 @mock_s3
 class TestUpdateAckFile(unittest.TestCase):
     """Tests for the functions in the update_ack_file module."""
-
     def setUp(self) -> None:
-        GenericSetUp(s3_client)
+        self.s3_client = boto3_client("s3", region_name=REGION_NAME)
+        GenericSetUp(self.s3_client)
 
         # MOCK SOURCE FILE WITH 100 ROWS TO SIMULATE THE SCENARIO WHERE THE ACK FILE IS NOT FULL.
         # TODO: Test all other scenarios.
         mock_source_file_with_100_rows = StringIO("\n".join(f"Row {i}" for i in range(1, 101)))
-        s3_client.put_object(
+        self.s3_client.put_object(
             Bucket=BucketNames.SOURCE,
             Key=f"processing/{MOCK_MESSAGE_DETAILS.file_key}",
             Body=mock_source_file_with_100_rows.getvalue(),
         )
+        self.logger_patcher = patch('update_ack_file.logger')
+        self.mock_logger = self.logger_patcher.start()
 
     def tearDown(self) -> None:
-        GenericTearDown(s3_client)
+        GenericTearDown(self.s3_client)
 
     def validate_ack_file_content(
         self, incoming_messages: list[dict], existing_file_content: str = ValidValues.ack_headers
@@ -53,7 +57,7 @@ class TestUpdateAckFile(unittest.TestCase):
         Obtains the ack file content and ensures that it matches the expected content (expected content is based
         on the incoming messages).
         """
-        actual_ack_file_content = obtain_current_ack_file_content()
+        actual_ack_file_content = obtain_current_ack_file_content(self.s3_client)
         expected_ack_file_content = generate_expected_ack_content(incoming_messages, existing_file_content)
         self.assertEqual(expected_ack_file_content, actual_ack_file_content)
 
@@ -108,17 +112,17 @@ class TestUpdateAckFile(unittest.TestCase):
                     ack_data_rows=test_case["input_rows"],
                 )
 
-                actual_ack_file_content = obtain_current_ack_file_content()
+                actual_ack_file_content = obtain_current_ack_file_content(self.s3_client)
                 expected_ack_file_content = ValidValues.ack_headers + "\n".join(test_case["expected_rows"]) + "\n"
                 self.assertEqual(expected_ack_file_content, actual_ack_file_content)
 
-                s3_client.delete_object(Bucket=BucketNames.DESTINATION, Key=MOCK_MESSAGE_DETAILS.temp_ack_file_key)
+                self.s3_client.delete_object(Bucket=BucketNames.DESTINATION, Key=MOCK_MESSAGE_DETAILS.temp_ack_file_key)
 
     def test_update_ack_file_existing(self):
         """Test that update_ack_file correctly updates the ack file when there was an existing ack file"""
         # Mock existing content in the ack file
         existing_content = generate_sample_existing_ack_content()
-        setup_existing_ack_file(MOCK_MESSAGE_DETAILS.temp_ack_file_key, existing_content)
+        setup_existing_ack_file(MOCK_MESSAGE_DETAILS.temp_ack_file_key, existing_content, self.s3_client)
 
         ack_data_rows = [ValidValues.ack_data_success_dict, ValidValues.ack_data_failure_dict]
         update_ack_file(
@@ -129,7 +133,7 @@ class TestUpdateAckFile(unittest.TestCase):
             ack_data_rows=ack_data_rows,
         )
 
-        actual_ack_file_content = obtain_current_ack_file_content()
+        actual_ack_file_content = obtain_current_ack_file_content(self.s3_client)
         expected_rows = [
             generate_expected_ack_file_row(success=True, imms_id=DefaultValues.imms_id),
             generate_expected_ack_file_row(success=False, imms_id="", diagnostics="DIAGNOSTICS"),
@@ -199,10 +203,9 @@ class TestUpdateAckFile(unittest.TestCase):
     def test_obtain_current_ack_content_file_exists(self):
         """Test that the existing ack file content is retrieved and new rows are added."""
         existing_content = generate_sample_existing_ack_content()
-        setup_existing_ack_file(MOCK_MESSAGE_DETAILS.temp_ack_file_key, existing_content)
+        setup_existing_ack_file(MOCK_MESSAGE_DETAILS.temp_ack_file_key, existing_content, self.s3_client)
         result = obtain_current_ack_content(MOCK_MESSAGE_DETAILS.temp_ack_file_key)
         self.assertEqual(result.getvalue(), existing_content)
-
 
 if __name__ == "__main__":
     unittest.main()
