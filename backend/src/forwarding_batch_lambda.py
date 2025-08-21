@@ -114,15 +114,9 @@ def forward_lambda_handler(event, _):
     # Send to SQS
     for filename_key, events in filename_to_events_mapper.get_map().items():
         sqs_message_body = json.dumps(events)
-        message_len = len(sqs_message_body)
-        logger.info(f"total message length:{message_len}")
+        logger.info(f"total message length:{len(sqs_message_body)}")
 
-        print(message_len)
-        # TODO - assess likelihood of condition and adjust Kinesis batch accordingly
-        if message_len < 256 * 1024:
-            sqs_client.send_message(QueueUrl=QUEUE_URL, MessageBody=sqs_message_body, MessageGroupId=filename_key)
-        else:
-            logger.info("Message size exceeds 256 KB limit.Sending to sqs failed")
+        sqs_client.send_message(QueueUrl=QUEUE_URL, MessageBody=sqs_message_body, MessageGroupId=filename_key)
 
 
 if __name__ == "__main__":
