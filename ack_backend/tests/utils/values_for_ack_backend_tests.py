@@ -227,7 +227,7 @@ class ValidValues:
         "file_key": MOCK_MESSAGE_DETAILS.file_key,
         "vaccine_type": MOCK_MESSAGE_DETAILS.vaccine_type,
         "message_id": MOCK_MESSAGE_DETAILS.row_id,
-        "row_count": 100,
+        "row_count": 99,
         "statusCode": 200,
         "message": "Record processing complete",
     }
