@@ -136,43 +136,42 @@ def create_diagnostics_error(value):
 
 
 def form_json(response, _element, identifier, baseurl):
-    # Elements to include, based on the '_element' parameter
-    if not response:
-        json = {
+    self_url = f"{baseurl}?identifier={identifier}" + (f"&_elements={_element}" if _element else "")
+    json = {
             "resourceType": "Bundle",
             "type": "searchset",
             "link": [
-                {"relation": "self", "url": f"{baseurl}?immunization.identifier={identifier}&_elements={_element}"}
-            ],
-            "entry": [],
-            "total": 0,
-        }
+                {"relation": "self", "url": self_url}
+            ]
+    }
+    if not response:
+        json["entry"] = []
+        json["total"] = 0
         return json
 
-    # Basic structure for the JSON output
-    json = {
-        "resourceType": "Bundle",
-        "type": "searchset",
-        "link": [{"relation": "self", "url": f"{baseurl}?immunization.identifier={identifier}&_elements={_element}"}],
-        "entry": [
-            {
-                "fullUrl": f"https://api.service.nhs.uk/immunisation-fhir-api/Immunization/{response['id']}",
-                "resource": {"resourceType": "Immunization"},
+    # Full Immunization payload to be returned if only the identifier parameter was provided
+    if identifier and not _element:
+        resource = response["resource"]
+
+    elif identifier and _element:
+        element = {e.strip().lower() for e in _element.split(",") if e.strip()}
+        resource = {"resourceType": "Immunization"}
+
+        # Add 'id' if specified
+        if "id" in element:
+            resource["id"] = response["id"]
+
+        # Add 'meta' if specified
+        if "meta" in element:
+            resource["id"] = response["id"]
+            resource["meta"] = {"versionId": response["version"]}
+
+    json["entry"] = [{
+        "fullUrl": f"https://api.service.nhs.uk/immunisation-fhir-api/Immunization/{response['id']}",
+        "resource": resource,
             }
-        ],
-        "total": 1,
-    }
-    __elements = _element.lower()
-    element = __elements.split(",")
-    # Add 'id' if specified
-    if "id" in element:
-        json["entry"][0]["resource"]["id"] = response["id"]
-
-    # Add 'meta' if specified
-    if "meta" in element:
-        json["entry"][0]["resource"]["id"] = response["id"]
-        json["entry"][0]["resource"]["meta"] = {"versionId": response["version"]}
-
+        ]
+    json["total"] = 1
     return json
 
 
