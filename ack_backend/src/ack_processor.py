@@ -20,7 +20,6 @@ def lambda_handler(event, context):
     file_key = None
     created_at_formatted_string = None
     message_id = None
-    supplier_queue = None
 
     ack_data_rows = []
 

@@ -321,9 +321,9 @@ class TestLoggingDecorators(unittest.TestCase):
         with (
             patch("logging_decorators.send_log_to_firehose") as mock_send_log_to_firehose,
             patch("logging_decorators.logger") as mock_logger,
-            patch("update_ack_file.change_audit_table_status_to_processed") as mock_change_audit_table_status_to_processed,  # noqa: E999
-            patch("update_ack_file.get_next_queued_file_details"),  # noqa: E999
-            patch("update_ack_file.invoke_filename_lambda"),  # noqa: E999
+            patch("update_ack_file.change_audit_table_status_to_processed") as mock_change_audit_table_status_to_processed,
+            patch("update_ack_file.get_next_queued_file_details"),
+            patch("update_ack_file.invoke_filename_lambda"),
         ):
             result = lambda_handler(generate_event(messages), context={})
 
@@ -362,9 +362,9 @@ class TestLoggingDecorators(unittest.TestCase):
         with (
             patch("logging_decorators.send_log_to_firehose") as mock_send_log_to_firehose,
             patch("logging_decorators.logger") as mock_logger,
-            patch("update_ack_file.change_audit_table_status_to_processed") as mock_change_audit_table_status_to_processed,  # noqa: E999
-            patch("update_ack_file.get_next_queued_file_details"),  # noqa: E999
-            patch("update_ack_file.invoke_filename_lambda"),  # noqa: E999
+            patch("update_ack_file.change_audit_table_status_to_processed") as mock_change_audit_table_status_to_processed,
+            patch("update_ack_file.get_next_queued_file_details"),
+            patch("update_ack_file.invoke_filename_lambda"),
         ):
             result = lambda_handler(generate_event(messages), context={})
 
