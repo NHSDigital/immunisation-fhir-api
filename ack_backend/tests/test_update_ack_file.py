@@ -107,7 +107,8 @@ class TestUpdateAckFile(unittest.TestCase):
                 update_ack_file(
                     file_key=MOCK_MESSAGE_DETAILS.file_key,
                     message_id=MOCK_MESSAGE_DETAILS.message_id,
-                    supplier_queue=MOCK_MESSAGE_DETAILS.queue_name,
+                    supplier=MOCK_MESSAGE_DETAILS.supplier,
+                    vaccine_type=MOCK_MESSAGE_DETAILS.vaccine_type,
                     created_at_formatted_string=MOCK_MESSAGE_DETAILS.created_at_formatted_string,
                     ack_data_rows=test_case["input_rows"],
                 )
@@ -128,7 +129,8 @@ class TestUpdateAckFile(unittest.TestCase):
         update_ack_file(
             file_key=MOCK_MESSAGE_DETAILS.file_key,
             message_id=MOCK_MESSAGE_DETAILS.message_id,
-            supplier_queue=MOCK_MESSAGE_DETAILS.queue_name,
+            supplier=MOCK_MESSAGE_DETAILS.supplier,
+            vaccine_type=MOCK_MESSAGE_DETAILS.vaccine_type,
             created_at_formatted_string=MOCK_MESSAGE_DETAILS.created_at_formatted_string,
             ack_data_rows=ack_data_rows,
         )

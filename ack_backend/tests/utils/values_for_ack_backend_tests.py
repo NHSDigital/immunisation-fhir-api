@@ -219,6 +219,20 @@ class ValidValues:
         "|MESSAGE_DELIVERY\n"
     )
 
+    upload_ack_file_expected_log = {
+        "function_name": "ack_processor_upload_ack_file",
+        "date_time": fixed_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+        "status": "success",
+        "supplier": MOCK_MESSAGE_DETAILS.supplier,
+        "file_key": MOCK_MESSAGE_DETAILS.file_key,
+        "vaccine_type": MOCK_MESSAGE_DETAILS.vaccine_type,
+        "message_id": MOCK_MESSAGE_DETAILS.row_id,
+        "row_count": 100,
+        "statusCode": 200,
+        "message": "Record processing complete",
+    }
+
+
 
 class InvalidValues:
     """Invalid values for use in tests"""

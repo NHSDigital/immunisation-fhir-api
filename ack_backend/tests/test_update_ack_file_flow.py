@@ -80,7 +80,8 @@ class TestUpdateAckFileFlow(unittest.TestCase):
         update_ack_file.upload_ack_file(
             temp_ack_file_key=f"TempAck/{file_key}",
             message_id=message_id,
-            supplier_queue="queue-audit-table",
+            supplier="queue-audit-table-supplier",
+            vaccine_type="vaccine-type",
             accumulated_csv_content=accumulated_csv_content,
             ack_data_rows=ack_data_rows,
             archive_ack_file_key=f"forwardedFile/{file_key}",
@@ -122,7 +123,9 @@ class TestUpdateAckFileFlow(unittest.TestCase):
         self.mock_get_row_count.side_effect = [3, 3]
         next_file = "next_for_lambda.csv"
         next_message_id = "msg-next-lambda"
-        queue_name = "queue-lambda-trigger"
+        supplier = "lambda-trigger-supplier"
+        vaccine_type = "vaccine-type"
+        queue_name = f"{supplier}_{vaccine_type}"
         self.mock_get_next_queued_file_details.return_value = {"filename": next_file, "message_id": next_message_id}
         accumulated_csv_content = StringIO("header1|header2\n")
         ack_data_rows = [
@@ -140,7 +143,8 @@ class TestUpdateAckFileFlow(unittest.TestCase):
         update_ack_file.upload_ack_file(
             temp_ack_file_key=f"TempAck/{next_key}",
             message_id="msg-lambda-trigger",
-            supplier_queue=queue_name,
+            supplier=supplier,
+            vaccine_type=vaccine_type,
             accumulated_csv_content=accumulated_csv_content,
             ack_data_rows=ack_data_rows,
             archive_ack_file_key=f"forwardedFile/{next_key}",
