@@ -61,7 +61,6 @@ def forward_lambda_handler(event, _):
     """Forward each row to the Imms API"""
     logger.info("Processing started")
     table = create_table()
-    array_of_messages = []
     filename_to_events_mapper = BatchFilenameToEventsMapper()
     array_of_identifiers = []
     controller = make_batch_controller()
