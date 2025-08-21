@@ -61,6 +61,9 @@ catch-all-zip:
 	chmod +x ./deploy.sh && \
 	./deploy.sh
 
+import:
+	$(tf_cmd) import $(tf_vars) $(to) $(id)
+
 tf-%:
 	$(tf_cmd) $*
 
