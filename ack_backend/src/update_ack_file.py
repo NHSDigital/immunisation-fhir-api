@@ -108,7 +108,7 @@ def upload_ack_file(
             "file_key": file_key,
             "supplier": supplier,
             "vaccine_type": vaccine_type,
-            "row_count": row_count_source,
+            "row_count": row_count_source - 1,
         }
     else:
         result = None
