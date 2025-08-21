@@ -20,8 +20,6 @@ from tests.utils.utils_for_ack_backend_tests import generate_event
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from ack_processor import lambda_handler
 
-s3_client = boto3_client("s3")
-
 
 @patch.dict("os.environ", MOCK_ENVIRONMENT_DICT)
 @mock_s3
@@ -29,19 +27,20 @@ class TestLoggingDecorators(unittest.TestCase):
     """Tests for the ack lambda logging decorators"""
 
     def setUp(self):
-        GenericSetUp(s3_client)
+        self.s3_client = boto3_client("s3", region_name="eu-west-2")
+        GenericSetUp(self.s3_client)
 
         # MOCK SOURCE FILE WITH 100 ROWS TO SIMULATE THE SCENARIO WHERE THE ACK FILE IS NO FULL.
         # TODO: Test all other scenarios.
         mock_source_file_with_100_rows = StringIO("\n".join(f"Row {i}" for i in range(1, 101)))
-        s3_client.put_object(
+        self.s3_client.put_object(
             Bucket=BucketNames.SOURCE,
             Key=f"processing/{ValidValues.mock_message_expected_log_value.get('file_key')}",
             Body=mock_source_file_with_100_rows.getvalue(),
         )
 
     def tearDown(self):
-        GenericTearDown(s3_client)
+        GenericTearDown(self.s3_client)
 
     def run(self, result=None):
         """

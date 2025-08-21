@@ -142,7 +142,7 @@ class PreValidation:
                 continue
 
         raise ValueError(error_message)
- 
+
     @staticmethod
     def for_snomed_code(field_value: str, field_location: str):
         """
