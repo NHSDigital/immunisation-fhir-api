@@ -125,13 +125,6 @@ resource "aws_iam_policy" "ack_lambda_exec_policy" {
       },
       {
         Effect = "Allow"
-        Action = "lambda:InvokeFunction"
-        Resource = [
-          aws_lambda_function.file_processor_lambda.arn,
-        ]
-      },
-      {
-        Effect = "Allow"
         Action = [
           "dynamodb:Query",
           "dynamodb:UpdateItem"
@@ -165,6 +158,7 @@ resource "aws_cloudwatch_log_group" "ack_lambda_log_group" {
   name              = "/aws/lambda/${local.short_prefix}-ack-lambda"
   retention_in_days = 30
 }
+
 resource "aws_iam_policy" "ack_s3_kms_access_policy" {
   name        = "${local.short_prefix}-ack-s3-kms-policy"
   description = "Allow Lambda to decrypt environment variables"
@@ -199,6 +193,7 @@ resource "aws_iam_role_policy_attachment" "lambda_kms_policy_attachment" {
   role       = aws_iam_role.ack_lambda_exec_role.name
   policy_arn = aws_iam_policy.ack_s3_kms_access_policy.arn
 }
+
 # Lambda Function with Security Group and VPC.
 resource "aws_lambda_function" "ack_processor_lambda" {
   function_name = "${local.short_prefix}-ack-lambda"
