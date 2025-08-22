@@ -47,7 +47,7 @@ jobs:
           export AWS_PROFILE=apim-dev
 
           cd terraform
-          make init apigee_environment=internal-dev environment=dev sub_environment=$workspace
+          make init apigee_environment=internal-dev environment=dev sub_environment="$WORKSPACE"
           make workspace apigee_environment=internal-dev environment=dev sub_environment="$WORKSPACE"
 
           # Extract values from Terraform state before destroying
@@ -76,6 +76,6 @@ jobs:
           export AWS_PROFILE=apim-dev
 
           cd terraform
-          make destroy apigee_environment=internal-dev environment=dev sub_environment=$workspace
+          make destroy apigee_environment=internal-dev environment=dev sub_environment="$WORKSPACE"
         displayName: Destroy terraform PR workspace and linked resources
         retryCountOnTaskFailure: 2
