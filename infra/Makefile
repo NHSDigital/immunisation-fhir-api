@@ -42,7 +42,7 @@ ifndef name
 endif
 	$(tf_cmd) output -raw $(name)
 
-import: 
+import:
 	$(tf_cmd) import $(tf_vars) $(to) $(id)
 
 tf-%:

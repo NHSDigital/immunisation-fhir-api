@@ -57,8 +57,7 @@ steps:
         echo pr_no: $pr_no
 
         cd terraform
-
-        make init
+        make init environment=${{ parameters.aws_account_type }} sub_environment=$workspace
         make apply environment=${{ parameters.aws_account_type }} sub_environment=$workspace
 
         AWS_DOMAIN_NAME=$(make -s output name=service_domain_name)

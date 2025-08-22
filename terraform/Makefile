@@ -1,12 +1,13 @@
 -include .env
 
+apigee_environment ?= $(APIGEE_ENVIRONMENT)
 environment        ?= $(ENVIRONMENT)
 sub_environment    ?= $(SUB_ENVIRONMENT)
 sub_environment_dir := $(if $(findstring pr-,$(sub_environment)),pr,$(sub_environment))
 
 tf_cmd = AWS_PROFILE=$(AWS_PROFILE) terraform
 
-bucket_name = $(if $(filter dev,$(environment)),immunisation-$(sub_environment),immunisation-$(environment))-terraform-state-files
+bucket_name = $(if $(filter dev,$(environment)),immunisation-$(apigee_environment),immunisation-$(environment))-terraform-state-files
 
 tf_state = -backend-config="bucket=$(bucket_name)"
 
@@ -59,6 +60,9 @@ catch-all-zip:
 	cd ../catch_all_lambda && \
 	chmod +x ./deploy.sh && \
 	./deploy.sh
+
+import:
+	$(tf_cmd) import $(tf_vars) $(to) $(id)
 
 tf-%:
 	$(tf_cmd) $*
