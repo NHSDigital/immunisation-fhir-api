@@ -518,7 +518,6 @@
                     "doseQuantity": {
                       "description": "The quantity of vaccine product that was administered. This `SHOULD be populated` where the data is available.  \nA SNOMED-CT Concept ID value representing the unit of measure used SHOULD be provided.",
                       "type": "object",
-                      "required": [],
                       "properties": {
                         "value": {
                           "description": "The actual value of the dose amount administered. This `SHOULD be populated` where the data is available.  \nFor Example,  \nComirnaty ® (Pfizer BioNTech):  \n  Full Dose (Primary Course or booster) = 0.3  \n  Fractional Dose (Primary Course) = 0.1",
@@ -1362,7 +1361,6 @@
                                     "doseQuantity": {
                                       "description": "The quantity of vaccine product that was administered.",
                                       "type": "object",
-                                      "required": [],
                                       "properties": {
                                         "value": {
                                           "description": "Number of units administered.",
@@ -2330,7 +2328,6 @@
                       "doseQuantity": {
                         "description": "The quantity of vaccine product that was administered.",
                         "type": "object",
-                        "required": [],
                         "properties": {
                           "value": {
                             "description": "Number of units administered.",
@@ -3217,7 +3214,6 @@
                     "doseQuantity": {
                       "description": "The quantity of vaccine product that was administered. This `SHOULD be populated` where the data is available.  \nA SNOMED-CT Concept ID value representing the unit of measure used SHOULD be provided.",
                       "type": "object",
-                      "required": [],
                       "properties": {
                         "value": {
                           "description": "The actual value of the dose amount administered. This `SHOULD be populated` where the data is available.  \nFor Example,  \nComirnaty ® (Pfizer BioNTech):  \n  Full Dose (Primary Course or booster) = 0.3  \n  Fractional Dose (Primary Course) = 0.1",
@@ -3588,10 +3584,10 @@
           "responses": {
             "204": {
               "description": "Delete Immunization operation successful"
+            },
+            "4XX": {
+              "$ref": "#/components/responses/4XX-imms"
             }
-          },
-          "4XX": {
-            "$ref": "#/components/responses/4XX-imms"
           }
         }
       }
