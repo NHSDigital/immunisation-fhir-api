@@ -129,7 +129,10 @@ class TestSearchImmunizations(unittest.TestCase):
 
     def test_search_immunizations_lambda_size_limit(self):
         """it should return 400 as search returned too many results."""
-        lambda_event = {"pathParameters": {"id": "an-id"}, "body": None}
+        lambda_event = {
+            "pathParameters": {"id": "an-id"},
+            "body": None,
+            }
         request_file = script_location / "sample_data" / "sample_input_search_imms.json"
         with open(request_file) as f:
             exp_res = json.load(f)
@@ -163,6 +166,42 @@ class TestSearchImmunizations(unittest.TestCase):
         # Then
         act_body = json.loads(act_res["body"])
 
-        self.assertEqual(exp_error["issue"][0]["code"], act_body["issue"][0]["code"])
-        self.assertEqual(exp_error["issue"][0]["severity"], act_body["issue"][0]["severity"])
+        exp_issue = exp_error["issue"][0]
+        act_issue = act_body["issue"][0]
+        self.assertEqual(exp_issue["code"], act_issue["code"])
+        self.assertEqual(exp_issue["severity"], act_issue["severity"])
         self.assertEqual(act_res["statusCode"], 500)
+
+    def test_search_immunizations_invalid_params(self):
+        """it should return 400 if invalid parameters are provided"""
+        lambda_event = {
+            "pathParameters": {"id": "an-id"},
+            "queryStringParameters": {
+                "identifier": "https://supplierABC/identifiers/vacc|f10b59b3-fc73-4616-99c9-9e882ab31184",
+                "_elephants": "id,meta",
+            },
+            "body": None,
+        }
+        # When
+        act_res = search_imms(lambda_event, self.controller)
+
+        # Then
+        self.assertEqual(act_res["statusCode"], 400)
+    
+
+    def test_search_immunizations_invalid_params(self):
+        """it should return 400 if only invalid parameters are provided"""
+        lambda_event = {
+            "pathParameters": {"id": "an-id"},
+            "queryStringParameters": {
+                "_elephants": "id,meta",
+            },
+            "body": None,
+        }
+
+        # When
+        act_res = search_imms(lambda_event, self.controller)
+
+        # Then
+        self.assertEqual(act_res["statusCode"], 400)
+    

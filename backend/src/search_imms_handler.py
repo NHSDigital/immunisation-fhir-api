@@ -11,8 +11,10 @@ from fhir_controller import FhirController, make_controller
 from models.errors import Severity, Code, create_operation_outcome
 from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
 from log_structure import function_info
-import base64
-import urllib.parse
+from search_parameter_validator import (
+    is_immunization_by_identifier,
+    get_parsed_body
+)
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger()
@@ -24,33 +26,13 @@ def search_imms_handler(event: events.APIGatewayProxyEventV1, _context: context_
 
 def search_imms(event: events.APIGatewayProxyEventV1, controller: FhirController):
     try:
+
         query_params = event.get("queryStringParameters", {})
         body = event.get("body")
-        body_has_immunization_identifier = False
-        query_string_has_immunization_identifier = False
-        query_string_has_element = False
-        body_has_immunization_element = False
-        if not (query_params == None and body == None):
-            if query_params:
-                query_string_has_immunization_identifier = "identifier" in event.get(
-                    "queryStringParameters", {}
-                )
-                query_string_has_element = "_elements" in event.get("queryStringParameters", {})
-            # Decode body from base64
-            if body:
-                decoded_body = base64.b64decode(body).decode("utf-8")
-                # Parse the URL encoded body
-                parsed_body = urllib.parse.parse_qs(decoded_body)
-
-                # Check for 'identifier' in body
-                body_has_immunization_identifier = "identifier" in parsed_body
-                body_has_immunization_element = "_elements" in parsed_body
-            if (
-                query_string_has_immunization_identifier
-                or body_has_immunization_identifier
-                or query_string_has_element
-                or body_has_immunization_element
-            ):
+        has_body = body is not None
+        has_query_params = query_params is not None and query_params != {}
+        if has_query_params or has_body:
+            if is_immunization_by_identifier(query_params, get_parsed_body(body)):
                 return controller.get_immunization_by_identifier(event)
         response = controller.search_immunizations(event)
 
@@ -66,6 +48,16 @@ def search_imms(event: events.APIGatewayProxyEventV1, controller: FhirController
             )
             return FhirController.create_response(400, exp_error)
         return response
+            
+    except ValueError as ve:
+        logger.exception("ValueError occurred")
+        exp_error = create_operation_outcome(
+            resource_id=str(uuid.uuid4()),
+            severity=Severity.error,
+            code=Code.invalid,
+            diagnostics=str(ve)
+        )
+        return FhirController.create_response(400, exp_error)
     except Exception:  # pylint: disable = broad-exception-caught
         logger.exception("Unhandled exception")
         exp_error = create_operation_outcome(
