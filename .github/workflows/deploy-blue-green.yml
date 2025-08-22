@@ -1,18 +1,20 @@
 name: Deploy Blue Green - INT
 
 on:
-  pull_request:
-    types: [closed]
-    branches: [master]
+  push:
+    branches:
+      - release-2025-08-12
 
 jobs:
   deploy-green:
     uses: ./.github/workflows/deploy-template.yml
     with:
-      environment: green
-
+      apigee_environment: int
+      environment: preprod
+      sub_environment: int-green
   deploy-blue:
-    needs: deploy-green
     uses: ./.github/workflows/deploy-template.yml
     with:
-      environment: blue
+      apigee_environment: int
+      environment: preprod
+      sub_environment: int-blue
