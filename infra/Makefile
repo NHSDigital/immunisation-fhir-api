@@ -2,7 +2,7 @@
 
 interactionId=$(ENVIRONMENT)
 
-tf_cmd = terraform
+tf_cmd = AWS_PROFILE=$(AWS_PROFILE) terraform
 tf_state= -backend-config="bucket=$(BUCKET_NAME)"
 tf_vars= -var-file=environments/$(ENVIRONMENT)/variables.tfvars
 
