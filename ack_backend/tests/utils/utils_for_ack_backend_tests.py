@@ -5,7 +5,6 @@ from boto3 import client as boto3_client
 from tests.utils.values_for_ack_backend_tests import ValidValues, MOCK_MESSAGE_DETAILS
 from tests.utils.mock_environment_variables import REGION_NAME, BucketNames
 
-s3_client = boto3_client("s3", region_name=REGION_NAME)
 firehose_client = boto3_client("firehose", region_name=REGION_NAME)
 
 
@@ -25,12 +24,13 @@ def generate_event(test_messages: list[dict]) -> dict:
     return {"Records": [{"body": json.dumps(incoming_message_body)}]}
 
 
-def setup_existing_ack_file(file_key, file_content):
+def setup_existing_ack_file(file_key, file_content, s3_client):
     """Uploads an existing file with the given content."""
     s3_client.put_object(Bucket=BucketNames.DESTINATION, Key=file_key, Body=file_content)
 
 
-def obtain_current_ack_file_content(temp_ack_file_key: str = MOCK_MESSAGE_DETAILS.temp_ack_file_key) -> str:
+def obtain_current_ack_file_content(s3_client,
+                                    temp_ack_file_key: str = MOCK_MESSAGE_DETAILS.temp_ack_file_key) -> str:
     """Obtains the ack file content from the destination bucket."""
     retrieved_object = s3_client.get_object(Bucket=BucketNames.DESTINATION, Key=temp_ack_file_key)
     return retrieved_object["Body"].read().decode("utf-8")
@@ -92,13 +92,13 @@ def generate_expected_ack_content(
     return existing_content
 
 
-def validate_ack_file_content(
+def validate_ack_file_content(s3_client,
     incoming_messages: list[dict], existing_file_content: str = ValidValues.ack_headers
 ) -> None:
     """
     Obtains the ack file content and ensures that it matches the expected content (expected content is based
     on the incoming messages).
     """
-    actual_ack_file_content = obtain_current_ack_file_content()
+    actual_ack_file_content = obtain_current_ack_file_content(s3_client)
     expected_ack_file_content = generate_expected_ack_content(incoming_messages, existing_file_content)
     assert expected_ack_file_content == actual_ack_file_content

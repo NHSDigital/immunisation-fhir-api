@@ -20,7 +20,6 @@ def lambda_handler(event, context):
     file_key = None
     created_at_formatted_string = None
     message_id = None
-    supplier_queue = None
 
     ack_data_rows = []
 
@@ -40,12 +39,11 @@ def lambda_handler(event, context):
             message_id = (incoming_message_body[0].get("row_id", "")).split("^")[0]
             vaccine_type = incoming_message_body[0].get("vaccine_type")
             supplier = incoming_message_body[0].get("supplier")
-            supplier_queue = f"{supplier}_{vaccine_type}"
             created_at_formatted_string = incoming_message_body[0].get("created_at_formatted_string")
 
         for message in incoming_message_body:
             ack_data_rows.append(convert_message_to_ack_row(message, created_at_formatted_string))
 
-    update_ack_file(file_key, message_id, supplier_queue, created_at_formatted_string, ack_data_rows)
+    update_ack_file(file_key, message_id, supplier, vaccine_type, created_at_formatted_string, ack_data_rows)
 
     return {"statusCode": 200, "body": json.dumps("Lambda function executed successfully!")}

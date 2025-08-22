@@ -1,5 +1,4 @@
 """Tests for ack lambda logging decorators"""
-
 import unittest
 from unittest.mock import patch, call
 import json
@@ -21,8 +20,6 @@ from tests.utils.utils_for_ack_backend_tests import generate_event
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from ack_processor import lambda_handler
 
-s3_client = boto3_client("s3")
-
 
 @patch.dict("os.environ", MOCK_ENVIRONMENT_DICT)
 @mock_s3
@@ -30,19 +27,20 @@ class TestLoggingDecorators(unittest.TestCase):
     """Tests for the ack lambda logging decorators"""
 
     def setUp(self):
-        GenericSetUp(s3_client)
+        self.s3_client = boto3_client("s3", region_name="eu-west-2")
+        GenericSetUp(self.s3_client)
 
         # MOCK SOURCE FILE WITH 100 ROWS TO SIMULATE THE SCENARIO WHERE THE ACK FILE IS NO FULL.
         # TODO: Test all other scenarios.
         mock_source_file_with_100_rows = StringIO("\n".join(f"Row {i}" for i in range(1, 101)))
-        s3_client.put_object(
+        self.s3_client.put_object(
             Bucket=BucketNames.SOURCE,
             Key=f"processing/{ValidValues.mock_message_expected_log_value.get('file_key')}",
             Body=mock_source_file_with_100_rows.getvalue(),
         )
 
     def tearDown(self):
-        GenericTearDown(s3_client)
+        GenericTearDown(self.s3_client)
 
     def run(self, result=None):
         """
@@ -59,8 +57,8 @@ class TestLoggingDecorators(unittest.TestCase):
             # Any uses of the logger in other files will confound the tests and should be patched here.
             patch("update_ack_file.logger"),
             # Time is incremented by 1.0 for each call to time.time for ease of testing.
-            # Range is set to a large number (100) due to many calls being made to time.time for some tests.
-            patch("logging_decorators.time.time", side_effect=[0.0 + i for i in range(100)]),
+            # Range is set to a large number (300) due to many calls being made to time.time for some tests.
+            patch("logging_decorators.time.time", side_effect=[0.0 + i for i in range(300)]),
         ]
 
         # Set up the ExitStack. Note that patches need to be explicitly started so that they will be applied even when
@@ -85,10 +83,16 @@ class TestLoggingDecorators(unittest.TestCase):
         """Extracts all arguments for logger.error."""
         return [args[0] for args, _ in mock_logger.error.call_args_list]
 
-    def expected_lambda_handler_logs(self, success: bool, number_of_rows, diagnostics=None):
+    def expected_lambda_handler_logs(self, success: bool, number_of_rows, ingestion_complete=False, diagnostics=None):
         """Returns the expected logs for the lambda handler function."""
-        # Mocking of timings is such that the time taken is 2 seconds for each row, plus 1 second for the handler
-        time_taken = f"{number_of_rows * 2 + 1}.0s"
+        # Mocking of timings is such that the time taken is 2 seconds for each row, 
+        # plus 2 seconds for the handler if it succeeds (i.e. it calls update_ack_file) or 1 second if it doesn't;
+        # plus an extra second if ingestion is complete
+        if success:
+            time_taken = f"{number_of_rows * 2 + 3}.0s" if ingestion_complete else f"{number_of_rows * 2 + 2}.0s"
+        else:
+            time_taken = f"{number_of_rows * 2 + 1}.0s"
+
         base_log = (
             ValidValues.lambda_handler_success_expected_log
             if success
@@ -138,7 +142,7 @@ class TestLoggingDecorators(unittest.TestCase):
             expected_first_logger_info_data = {**InvalidValues.Logging_with_no_values}
 
             expected_first_logger_error_data = self.expected_lambda_handler_logs(
-                success=False, number_of_rows=1, diagnostics="'NoneType' object has no attribute 'replace'"
+                success=False, number_of_rows=1, ingestion_complete=False, diagnostics="'NoneType' object has no attribute 'replace'"
             )
 
             first_logger_info_call_args = json.loads(self.extract_all_call_args_for_logger_info(mock_logger)[0])
@@ -303,6 +307,95 @@ class TestLoggingDecorators(unittest.TestCase):
                 call(expected_fourth_logger_info_data),
             ]
         )
+
+    def test_splunk_update_ack_file_not_logged(self):
+        self.maxDiff = None
+        """Tests that update_ack_file is not logged if we have sent acks for less than the whole file"""
+        # send 98 messages
+        messages = []
+        for i in range(1, 99):
+            message_value = "test" + str(i)
+            messages.append({"row_id": message_value})
+
+        with (
+            patch("logging_decorators.send_log_to_firehose") as mock_send_log_to_firehose,
+            patch("logging_decorators.logger") as mock_logger,
+            patch("update_ack_file.change_audit_table_status_to_processed") as mock_change_audit_table_status_to_processed,
+            patch("update_ack_file.get_next_queued_file_details"),
+            patch("update_ack_file.invoke_filename_lambda"),
+        ):
+            result = lambda_handler(generate_event(messages), context={})
+
+        self.assertEqual(result, EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS)
+
+        expected_secondlast_logger_info_data = {
+                **ValidValues.mock_message_expected_log_value,
+                "message_id": "test98",
+            }
+        expected_last_logger_info_data = self.expected_lambda_handler_logs(success=True, number_of_rows=98)
+
+        all_logger_info_call_args = self.extract_all_call_args_for_logger_info(mock_logger)
+        secondlast_logger_info_call_args = json.loads(all_logger_info_call_args[97])
+        last_logger_info_call_args = json.loads(all_logger_info_call_args[98])
+
+        self.assertEqual(secondlast_logger_info_call_args, expected_secondlast_logger_info_data)
+        self.assertEqual(last_logger_info_call_args, expected_last_logger_info_data)
+
+        mock_send_log_to_firehose.assert_has_calls(
+            [
+                call(secondlast_logger_info_call_args),
+                call(last_logger_info_call_args),
+            ]
+        )
+        mock_change_audit_table_status_to_processed.assert_not_called()
+
+
+    def test_splunk_update_ack_file_logged(self):
+        """Tests that update_ack_file is logged if we have sent acks for the whole file"""
+        # send 99 messages
+        messages = []
+        for i in range(1, 100):
+            message_value = "test" + str(i)
+            messages.append({"row_id": message_value})
+
+        with (
+            patch("logging_decorators.send_log_to_firehose") as mock_send_log_to_firehose,
+            patch("logging_decorators.logger") as mock_logger,
+            patch("update_ack_file.change_audit_table_status_to_processed") as mock_change_audit_table_status_to_processed,
+            patch("update_ack_file.get_next_queued_file_details"),
+            patch("update_ack_file.invoke_filename_lambda"),
+        ):
+            result = lambda_handler(generate_event(messages), context={})
+
+        self.assertEqual(result, EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS)
+
+        expected_thirdlast_logger_info_data = {
+                **ValidValues.mock_message_expected_log_value,
+                "message_id": "test99",
+            }
+        expected_secondlast_logger_info_data = {
+                **ValidValues.upload_ack_file_expected_log,
+                "message_id": "test1",
+                "time_taken": "1.0s"
+            }
+        expected_last_logger_info_data = self.expected_lambda_handler_logs(success=True, number_of_rows=99, ingestion_complete=True)
+
+        all_logger_info_call_args = self.extract_all_call_args_for_logger_info(mock_logger)
+        thirdlast_logger_info_call_args = json.loads(all_logger_info_call_args[98])
+        secondlast_logger_info_call_args = json.loads(all_logger_info_call_args[99])
+        last_logger_info_call_args = json.loads(all_logger_info_call_args[100])
+        self.assertEqual(thirdlast_logger_info_call_args, expected_thirdlast_logger_info_data)
+        self.assertEqual(secondlast_logger_info_call_args, expected_secondlast_logger_info_data)
+        self.assertEqual(last_logger_info_call_args, expected_last_logger_info_data)
+
+        mock_send_log_to_firehose.assert_has_calls(
+            [
+                call(thirdlast_logger_info_call_args),
+                call(secondlast_logger_info_call_args),
+                call(last_logger_info_call_args),
+            ]
+        )
+        mock_change_audit_table_status_to_processed.assert_called()
 
 
 if __name__ == "__main__":

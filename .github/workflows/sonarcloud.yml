@@ -64,7 +64,7 @@ jobs:
         continue-on-error: true
         run: |
           poetry install
-          poetry run coverage run -m unittest discover -s "./tests" -p "*batch*.py" || echo "recordforwarder tests failed" >> ../failed_tests.txt
+          poetry run coverage run -m unittest discover -p "*batch*.py" || echo "recordforwarder tests failed" >> ../failed_tests.txt
           poetry run coverage xml -o ../recordforwarder-coverage.xml
 
       - name: Run unittest with coverage-ack-lambda

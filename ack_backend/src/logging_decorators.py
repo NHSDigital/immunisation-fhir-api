@@ -77,6 +77,27 @@ def convert_message_to_ack_row_logging_decorator(func):
     return wrapper
 
 
+def upload_ack_file_logging_decorator(func):
+    """This decorator logs when record processing is complete."""
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+
+        base_log_data = {"function_name": f"ack_processor_{func.__name__}", "date_time": str(datetime.now())}
+        start_time = time.time()
+
+        # NB this doesn't require a try-catch block as the wrapped function never throws an exception
+        result = func(*args, **kwargs)
+        if result is not None:
+            message_for_logs = "Record processing complete"
+            base_log_data.update(result)
+            additional_log_data = {"status": "success", "statusCode": 200, "message": message_for_logs}
+            generate_and_send_logs(start_time, base_log_data, additional_log_data)
+        return result
+
+    return wrapper
+
+
 def ack_lambda_handler_logging_decorator(func):
     """This decorator logs the execution info for the ack lambda handler."""
 
