@@ -11,8 +11,9 @@ from fhir_controller import FhirController, make_controller
 from models.errors import Severity, Code, create_operation_outcome
 from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
 from log_structure import function_info
-from search_parameter_validator import (
+from parameter_parser import (
     is_immunization_by_identifier,
+    is_search_immunizations,
     get_parsed_body
 )
 
@@ -32,8 +33,14 @@ def search_imms(event: events.APIGatewayProxyEventV1, controller: FhirController
         has_body = body is not None
         has_query_params = query_params is not None and query_params != {}
         if has_query_params or has_body:
-            if is_immunization_by_identifier(query_params, get_parsed_body(body)):
+            parsed_body = get_parsed_body(body)
+            if is_immunization_by_identifier(query_params, parsed_body):
                 return controller.get_immunization_by_identifier(event)
+            elif is_search_immunizations(query_params, parsed_body):
+                return controller.search_immunizations(event)
+            else:
+                raise ValueError("Missing search parameters")
+
         response = controller.search_immunizations(event)
 
         result_json = json.dumps(response)
@@ -50,7 +57,7 @@ def search_imms(event: events.APIGatewayProxyEventV1, controller: FhirController
         return response
             
     except ValueError as ve:
-        logger.exception("ValueError occurred")
+        logger.exception("Invalid parameters")
         exp_error = create_operation_outcome(
             resource_id=str(uuid.uuid4()),
             severity=Severity.error,

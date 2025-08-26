@@ -1,5 +1,6 @@
 import base64
 import datetime
+import urllib.parse
 from dataclasses import dataclass
 
 from aws_lambda_typing.events import APIGatewayProxyEventV1
@@ -9,6 +10,8 @@ from urllib.parse import parse_qs, urlencode, quote
 from clients import redis_client, logger
 from models.errors import ParameterException
 from models.constants import Constants
+from constants import SEARCH_IMMUNIZATION_BY_IDENTIFIER_PARAMETERS, SEARCH_IMMUNIZATIONS_PARAMETERS
+
 
 ParamValue = list[str]
 ParamContainer = dict[str, ParamValue]
@@ -162,3 +165,53 @@ def create_query_string(search_params: SearchParams) -> str:
     ]
     search_params_qs = urlencode(sorted(params, key=lambda x: x[0]), safe=",")
     return search_params_qs
+
+def body_to_dict(body):
+    """
+    Converts a body array of {'key': ..., 'value': ...} to a dict.
+    """
+    if isinstance(body, list):
+        return {item['key']: item['value'] for item in body if 'key' in item and 'value' in item}
+    return body if isinstance(body, dict) else {}
+
+
+def check_route_parameters(query_params, body, valid_params: list):
+    try:
+
+        query_params = query_params or {}
+        body_dict = body_to_dict(body)
+        # merge query and body parameters
+        all_params = {**query_params, **body_dict}
+
+        found = False
+        for param in all_params:
+            if param in valid_params:
+                found = True
+                break
+        
+        # check if any params are not in the valid list
+        for param in all_params:
+            if param in valid_params:
+                continue
+            else:
+                raise ValueError(f"Invalid body parameter: {param}")
+        return found
+    except Exception as e:
+        raise ValueError(f"Error checking route parameters: {e}")
+
+
+def is_immunization_by_identifier(query_params, body):
+    # check the parameters indicate search by identifier
+    return check_route_parameters(query_params, body, SEARCH_IMMUNIZATION_BY_IDENTIFIER_PARAMETERS)
+
+
+def is_search_immunizations(query_params, body):
+    # check the parameters indicate search for immunizations
+    return check_route_parameters(query_params, body, SEARCH_IMMUNIZATIONS_PARAMETERS)
+
+def get_parsed_body(body):
+    if body:
+        decoded_body = base64.b64decode(body).decode("utf-8")
+        # Parse the URL encoded body
+        return urllib.parse.parse_qs(decoded_body)
+    return None

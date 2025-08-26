@@ -3,6 +3,7 @@
 import json
 import os
 import unittest
+import base64
 from decimal import Decimal
 from typing import Literal, Any
 from jsonpath_ng.ext import parse
@@ -91,3 +92,12 @@ def update_contained_resource_field(
         {field_to_update: update_value}
     )
     return json_data
+
+
+def encode_b64(data):
+
+    if isinstance(data, str):
+        data = data.encode('utf-8')
+
+    encoded = base64.b64encode(data)
+    return encoded.decode('utf-8') 
