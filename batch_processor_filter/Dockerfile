@@ -22,4 +22,4 @@ COPY src .
 RUN chmod 644 $(find . -type f) && chmod 755 $(find . -type d)
 # Build as non-root user
 USER 1001:1001
-CMD ["batch_processor_filter.lambda_handler"]
+CMD ["lambda_handler.lambda_handler"]
