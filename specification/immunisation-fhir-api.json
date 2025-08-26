@@ -3567,7 +3567,7 @@
               "description": "Delete Immunization operation successful"
             },
             "4XX": {
-              "$ref": "#/components/responses/4XX-imms"
+              "$ref": "#/components/responses/4XX-imms-delete"
             }
           }
         }
@@ -3708,6 +3708,40 @@
         },
         "4XX-imms-read": {
           "description": "Below are examples of potential HTTP status codes and their associated error codes, which could be returned in the event of a fault.\n\n| HTTP status | Error code                 | Description | Example      |\n| ----------- | -------------------------- | --------------------------------------------- |--------------------------------------------------------------------------------------|\n| 400         | Bad Request               | Missing immunization event identifier (id) |  {\"resourceType\": \"OperationOutcome\", \"id\": \"438f5c0d-f89d-46ec-b4ba-c08dc5a44ff3\", \"meta\": {\"profile\": [\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]}, \"issue\": [{\"severity\": \"error\", \"code\": \"invalid\", \"details\": {\"coding\": [{\"system\": \"https://fhir.nhs.uk/Codesystem/http-error-codes\", \"code\": \"INVALID\"}]}, \"diagnostics\": \"the provided event ID is either missing or not in the expected format.\"}]} |\n| 401         | Unauthorized               | Authorization is required for the interaction that was attempted |  {\"resourceType\":\"OperationOutcome\",\"id\":\"a5abca2a-4eda-41da-b2cc-95d48c6b791d\",\"meta\":{\"profile\":[\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]},\"issue\":[{\"severity\":\"error\",\"code\":\"expired\",\"details\":{\"coding\":[{\"system\":\"https://fhir.nhs.uk/Codesystem/http-error-codes\",\"code\":\"SEND_UNAUTHORIZED\"}]},\"diagnostics\":\"The sender has not provided a token or it has expired or is otherwise invalid.\"}]} |\n| 403         | Forbidden               | The sender does not have permissions to access this resource  | {\"resourceType\":\"OperationOutcome\",\"id\":\"a5abca2a-4eda-41da-b2cc-95d48c6b791d\",\"meta\":{\"profile\":[\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]},\"issue\":[{\"severity\":\"error\",\"code\":\"forbidden\",\"details\":{\"coding\":[{\"system\":\"https://fhir.nhs.uk/Codesystem/http-error-codes\",\"code\":\"SEND_UNAUTHORIZED\"}]},\"diagnostics\":\"The sender does not have permissions to access this resource. Please check your credentials and permissions.\"}]}  |\n| 403         | Forbidden               | The sender does not have permission for the specific operation or vaccine type  | {\"resourceType\": \"OperationOutcome\", \"id\": \"1b7eec0a-316f-4f6e-a342-4b37f6705050\", \"meta\": {\"profile\": [\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]}, \"issue\": [{\"severity\": \"error\", \"code\": \"forbidden\", \"details\": {\"coding\": [{\"system\": \"https://fhir.nhs.uk/Codesystem/http-error-codes\", \"code\": \"FORBIDDEN\"}]}, \"diagnostics\": \"Unauthorized request for vaccine type\"}]} |\n| 404         | Not Found               | Unrecognized immunization event identifier (id) |  {\"resourceType\": \"OperationOutcome\", \"id\": \"5b51e331-5f9c-442f-a4c3-b5f52a1ba83e\", \"meta\": {\"profile\": [\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]}, \"issue\": [{\"severity\": \"error\", \"code\": \"not-found\", \"details\": {\"coding\": [{\"system\": \"https://fhir.nhs.uk/Codesystem/http-error-codes\", \"code\": \"NOT-FOUND\"}]}, \"diagnostics\": \"The requested resource was not found.\"}]} |\n",
+          "content": {
+            "application/fhir+json": {
+              "schema": {
+                "$ref": "#/components/schemas/OperationOutcome"
+              },
+              "example": {
+                "resourceType":"OperationOutcome",
+                "id":"a5abca2a-4eda-41da-b2cc-95d48c6b791d",
+                "meta":{
+                  "profile":[
+                    "https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"
+                  ]
+                },
+                "issue":[
+                  {
+                    "severity":"error",
+                    "code":"expired",
+                    "details":{
+                      "coding":[
+                        {
+                          "system":"https://fhir.nhs.uk/Codesystem/http-error-codes",
+                          "code":"SEND_UNAUTHORIZED"
+                        }
+                      ]
+                    },
+                    "diagnostics":"The sender has not provided a token or it has expired or is otherwise invalid."
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "4XX-imms-delete": {
+          "description": "Below are examples of potential HTTP status codes and their associated error codes, which could be returned in the event of a fault.\n\n| HTTP status | Error code                 | Description | Example      |\n| ----------- | -------------------------- | --------------------------------------------- |--------------------------------------------------------------------------------------|\n| 400         | Bad Request               | Missing or invalid id |  {\"resourceType\": \"OperationOutcome\", \"id\": \"f400ad2c-62d9-4f98-bc35-a146caf14dee\", \"meta\": {\"profile\": [\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]}, \"issue\": [{\"severity\": \"error\", \"code\": \"invalid\", \"details\": {\"coding\": [{\"system\": \"https://fhir.nhs.uk/Codesystem/http-error-codes\", \"code\": \"INVALID\"}]}, \"diagnostics\": \"the provided event ID is either missing or not in the expected format.\"}]} |\n| 401         | Unauthorized               | Authorization is required for the interaction that was attempted |  {\"resourceType\":\"OperationOutcome\",\"id\":\"a5abca2a-4eda-41da-b2cc-95d48c6b791d\",\"meta\":{\"profile\":[\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]},\"issue\":[{\"severity\":\"error\",\"code\":\"expired\",\"details\":{\"coding\":[{\"system\":\"https://fhir.nhs.uk/Codesystem/http-error-codes\",\"code\":\"SEND_UNAUTHORIZED\"}]},\"diagnostics\":\"The sender has not provided a token or it has expired or is otherwise invalid.\"}]} |\n| 403         | Forbidden               | The sender does not have permissions to access this resource  | {\"resourceType\":\"OperationOutcome\",\"id\":\"a5abca2a-4eda-41da-b2cc-95d48c6b791d\",\"meta\":{\"profile\":[\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]},\"issue\":[{\"severity\":\"error\",\"code\":\"forbidden\",\"details\":{\"coding\":[{\"system\":\"https://fhir.nhs.uk/Codesystem/http-error-codes\",\"code\":\"SEND_UNAUTHORIZED\"}]},\"diagnostics\":\"The sender does not have permissions to access this resource. Please check your credentials and permissions.\"}]}  |\n| 403         | Forbidden               | The sender does not have permission for the specific operation or vaccine type  | {\"resourceType\": \"OperationOutcome\", \"id\": \"1b7eec0a-316f-4f6e-a342-4b37f6705050\", \"meta\": {\"profile\": [\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]}, \"issue\": [{\"severity\": \"error\", \"code\": \"forbidden\", \"details\": {\"coding\": [{\"system\": \"https://fhir.nhs.uk/Codesystem/http-error-codes\", \"code\": \"FORBIDDEN\"}]}, \"diagnostics\": \"Unauthorized request for vaccine type\"}]} |\n| 404         | Not Found               | Non existing id in query parameter<br>or<br>Trying to deleted an already deleted record |  {\"resourceType\": \"OperationOutcome\", \"id\": \"f772ee3e-3baf-4934-a07a-a13f70b1a50e\", \"meta\": {\"profile\": [\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]}, \"issue\": [{\"severity\": \"error\", \"code\": \"not-found\", \"details\": {\"coding\": [{\"system\": \"https://fhir.nhs.uk/Codesystem/http-error-codes\", \"code\": \"NOT-FOUND\"}]}, \"diagnostics\": \"Immunization resource does not exist. ID: 5a64fa79-9114-49bb-97c9-xxxxxxxx\"}]} |\n",
           "content": {
             "application/fhir+json": {
               "schema": {
