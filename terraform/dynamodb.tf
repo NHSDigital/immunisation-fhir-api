@@ -2,7 +2,7 @@ resource "aws_dynamodb_table" "audit-table" {
   name                        = "immunisation-batch-${local.resource_scope}-audit-table"
   billing_mode                = "PAY_PER_REQUEST"
   hash_key                    = "message_id"
-  deletion_protection_enabled = true
+  deletion_protection_enabled = !local.is_temp
 
   attribute {
     name = "message_id"
@@ -51,7 +51,7 @@ resource "aws_dynamodb_table" "delta-dynamodb-table" {
   name                        = "imms-${local.resource_scope}-delta"
   billing_mode                = "PAY_PER_REQUEST"
   hash_key                    = "PK"
-  deletion_protection_enabled = true
+  deletion_protection_enabled = !local.is_temp
 
   attribute {
     name = "PK"
@@ -113,7 +113,7 @@ resource "aws_dynamodb_table" "events-dynamodb-table" {
   hash_key                    = "PK"
   stream_enabled              = true
   stream_view_type            = "NEW_IMAGE"
-  deletion_protection_enabled = true
+  deletion_protection_enabled = !local.is_temp
 
   attribute {
     name = "PK"
