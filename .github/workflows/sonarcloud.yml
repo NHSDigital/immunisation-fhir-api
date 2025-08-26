@@ -49,6 +49,8 @@ jobs:
       - name: Run unittest with batchprocessorfilter-coverage
         working-directory: batch_processor_filter
         id: batchprocessorfilter
+        env:
+          PYTHONPATH: ${{ github.workspace }}/batch_processor_filter/src:${{ github.workspace }}/batch_processor_filter/tests
         continue-on-error: true
         run: |
           poetry install
