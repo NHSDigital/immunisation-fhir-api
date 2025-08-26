@@ -162,6 +162,7 @@ def lambda_handler(event: dict, context) -> None:  # pylint: disable=unused-argu
     """Lambda handler for filenameprocessor lambda. Processes each record in event records."""
 
     logger.info("Filename processor lambda task started")
+
     for record in event["Records"]:
         handle_record(record)
 
