@@ -19,6 +19,7 @@ module "batch_processor_filter_docker_image" {
   version = "8.0.1"
 
   create_ecr_repo = false
+  docker_file_path = "Dockerfile"
   ecr_repo        = aws_ecr_repository.batch_processor_filter_lambda_repository.name
   ecr_repo_lifecycle_policy = jsonencode({
     "rules" : [
