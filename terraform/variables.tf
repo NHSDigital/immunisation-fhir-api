@@ -19,9 +19,6 @@ variable "project_short_name" {
   default = "imms"
 }
 
-variable "use_new_aws_preprod_account" {
-  default = true
-}
 variable "service" {
   default = "fhir-api"
 }
@@ -46,7 +43,6 @@ locals {
   prefix              = "${var.project_name}-${var.service}-${var.sub_environment}"
   short_prefix        = "${var.project_short_name}-${var.sub_environment}"
   batch_prefix        = "immunisation-batch-${var.sub_environment}"
-  vpc_name            = "imms-${var.environment}-fhir-api-vpc"
   root_domain_name    = "${var.environment}.vds.platform.nhs.uk"
   project_domain_name = "imms.${local.root_domain_name}"
   service_domain_name = "${var.sub_environment}.${local.project_domain_name}"
