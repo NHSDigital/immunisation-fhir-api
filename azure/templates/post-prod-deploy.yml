@@ -38,7 +38,7 @@ steps:
           cd terraform
 
         make init environment=${{ parameters.aws_account_type }} sub_environment=$workspace
-        make apply environment=${{ parameters.aws_account_type }} sub_environment=$workspace
+        make plan environment=${{ parameters.aws_account_type }} sub_environment=$workspace
       fi
     displayName: Apply Terraform
     workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)"
