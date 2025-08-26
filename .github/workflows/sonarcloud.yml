@@ -46,6 +46,15 @@ jobs:
           poetry run coverage run -m unittest discover || echo "filenameprocessor tests failed" >> ../failed_tests.txt
           poetry run coverage xml -o ../filenameprocessor-coverage.xml
 
+      - name: Run unittest with batchprocessorfilter-coverage
+        working-directory: batch_processor_filter
+        id: batchprocessorfilter
+        continue-on-error: true
+        run: |
+          poetry install
+          poetry run coverage run -m unittest discover || echo "batchprocessorfilter tests failed" >> ../failed_tests.txt
+          poetry run coverage xml -o ../batchprocessorfilter-coverage.xml
+
       - name: Run unittest with recordprocessor-coverage
         working-directory: recordprocessor
         id: recordprocessor

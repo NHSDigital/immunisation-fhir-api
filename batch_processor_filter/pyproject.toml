@@ -1,0 +1,14 @@
+[tool.poetry]
+name        = "batch-processor-filter"
+version     = "1.0.0"
+description = "Lambda function to filter incoming batch file creation events"
+authors     = ["VED Team <you@example.com>"]
+readme      = "README.md"
+packages    = [{include = "src"}]
+
+[tool.poetry.dependencies]
+python                  = "~3.11"
+
+[build-system]
+requires      = ["poetry-core ~= 1.5.0"]
+build-backend = "poetry.core.masonry.api"
