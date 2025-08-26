@@ -75,4 +75,4 @@ extends:
       - environment: prod
         depends_on: []
         jinja_templates:
-          DOMAIN_ENDPOINT: https://green.imms.prod.vds.platform.nhs.uk
+          DOMAIN_ENDPOINT: https://blue.imms.prod.vds.platform.nhs.uk
