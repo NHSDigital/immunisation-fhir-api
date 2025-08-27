@@ -35,8 +35,10 @@ resource "aws_iam_policy" "cwlogs_subscription_policy" {
         Action = [
           "logs:PutSubscriptionFilter"
         ]
-        Resource = "arn:aws:logs:${var.aws_region}:${var.immunisation_account_id}:log-group:/aws/lambda/${local.short_prefix}-cwlogs-subscription-log-group:*",
-        "arn:aws:logs:eu-west-2:693466633220:destination:api_gateway_log_destination"
+        Resource = [
+          "arn:aws:logs:${var.aws_region}:${var.immunisation_account_id}:log-group:/aws/lambda/${local.short_prefix}-cwlogs-subscription-log-group:*",
+          "arn:aws:logs:eu-west-2:693466633220:destination:api_gateway_log_destination"
+        ]
       }
     ]
   })
