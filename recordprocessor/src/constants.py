@@ -53,7 +53,8 @@ class FileStatus:
 
     QUEUED = "Queued"
     PROCESSING = "Processing"
-    PROCESSED = "Processed"
+    PREPROCESSED = "Preprocessed"  # All entries in file converted to FHIR and forwarded to Kinesis
+    PROCESSED = "Processed"  # All entries processed and ack file created
     DUPLICATE = "Duplicate"
 
 

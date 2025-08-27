@@ -47,7 +47,7 @@ def handle_record(record) -> dict:
     supplier = "unknown"
 
     if bucket_name != SOURCE_BUCKET_NAME:
-        return handle_unexpected_bucket_name(bucket_name, file_key, vaccine_type, supplier)
+        return handle_unexpected_bucket_name(bucket_name, file_key)
 
     # In addition to when a batch file is added to the S3 bucket root for processing, this Lambda is also invoked
     # when the file is moved to the processing/ directory and finally the /archive directory. We want to ignore
@@ -122,7 +122,7 @@ def handle_record(record) -> dict:
         }
 
 
-def handle_unexpected_bucket_name(bucket_name: str, file_key: str, vaccine_type: str, supplier: str) -> dict:
+def handle_unexpected_bucket_name(bucket_name: str, file_key: str) -> dict:
     """Handles scenario where Lambda was not invoked by the data-sources bucket. Should not occur due to terraform
     config and overarching design"""
     try:
@@ -139,7 +139,7 @@ def handle_unexpected_bucket_name(bucket_name: str, file_key: str, vaccine_type:
         message = f"Failed to process file due to unexpected bucket name {bucket_name} and file key {file_key}"
 
         return {"statusCode": 500, "message": message, "file_key": file_key,
-                "vaccine_type": vaccine_type, "supplier": supplier, "error": str(error)}
+                "vaccine_type": "unknown", "supplier": "unknown", "error": str(error)}
 
 
 def lambda_handler(event: dict, context) -> None:  # pylint: disable=unused-argument
