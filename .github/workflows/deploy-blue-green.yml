@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - release-2025-08-27
+  workflow_dispatch:
 
 jobs:
   deploy-green:
