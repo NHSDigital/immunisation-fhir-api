@@ -2,7 +2,6 @@
 
 from unittest import TestCase
 from unittest.mock import patch
-import json
 from datetime import datetime, timezone
 from moto import mock_s3
 from boto3 import client as boto3_client
@@ -15,10 +14,8 @@ with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from clients import REGION_NAME
     from utils_for_filenameprocessor import (
         get_created_at_formatted_string,
-        move_file,
-        invoke_filename_lambda,
+        move_file
     )
-    from constants import SOURCE_BUCKET_NAME, FILE_NAME_PROC_LAMBDA_NAME
 
 s3_client = boto3_client("s3", region_name=REGION_NAME)
 
@@ -66,19 +63,3 @@ class TestUtilsForFilenameprocessor(TestCase):
         self.assertIn(destination_file_key, keys_of_objects_in_bucket)
         destination_file_content = s3_client.get_object(Bucket=BucketNames.SOURCE, Key=destination_file_key)
         self.assertEqual(destination_file_content["Body"].read().decode("utf-8"), source_file_content)
-
-    def test_invoke_filename_lambda(self):
-        """Tests that invoke_filename_lambda correctly invokes the filenameprocessor lambda"""
-        file_key = "test_file_key"
-        message_id = "test_message_id"
-
-        with patch("utils_for_filenameprocessor.lambda_client.invoke") as mock_lambda_client_invoke:
-            invoke_filename_lambda(file_key, message_id)
-
-        s3_details = {"bucket": {"name": SOURCE_BUCKET_NAME}, "object": {"key": file_key}}
-        payload = json.dumps({"Records": [{"s3": s3_details, "message_id": message_id}]})
-        # NOTE: Due to the limitations of MOTO it is not possible to check invocations of the
-        # filenameprocessor lambda to ensure that the invocation was successful
-        mock_lambda_client_invoke.assert_called_once_with(
-            FunctionName=FILE_NAME_PROC_LAMBDA_NAME, InvocationType="Event", Payload=payload
-        )
