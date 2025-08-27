@@ -3,7 +3,7 @@
     "info": {
       "title": "Immunization-fhir-api",
       "version": "Computed and injected at build time by `scripts/set_version.py`",
-      "description": "## Overview\n \nUse this API to access a patient's immunisation record. It is part of the [Vaccinations Data Flow Management](https://digital.nhs.uk/services/vaccinations-data-flow-management). It is intended to extend and replace [Immunisation History - FHIR API](https://digital.nhs.uk/developer/api-catalogue/immunisation-history-fhir) and existing [Vaccination](https://digital.nhs.uk/developer/api-catalogue/vaccination) flows. \n\n### You can:\n \n- create and record a patient immunisation \n- search for a patient's immunisation records\n- get the details of an immunisation record\n- update an immunisation record \n- identify an immunisation record as entered in error \n \n### You cannot use this API to:\n \n- retrieve the immunisation record of multiple patients at once\n- record or update a patient's demographic details\n> To get demographic details from the [Personal Demographics Service](https://digital.nhs.uk/services/personal-demographics-service), use the Personal Demographics FHIR API.\n- verify that an NHS number refers to an existing patient \n> This API checks only that an NHS number is in a valid format. To check that a patient with that NHS number exists in the [Personal Demographics Service](https://digital.nhs.uk/services/personal-demographics-service) and has not been invalidated, use the Personal Demographics FHIR API.\n \nYou can create, read, update and delete:\n \n- Vaccination events for the disease types found in this list {To be confirmed}\n  \n### Data availability, timing and quality\n\nThis is a real-time service, constrained by the time taken for providers to transfer vaccination events. In most cases a record will become available within 48 hours of the immunisation event.\n\nThe API search interaction will only return immunisation records based on a traced NHS number. Other interactions require the immunisation ID assigned by the API to interact with individual records for read, update and delete.\n\nThe vaccination events for all disease types are limited to vaccinations administered on behalf of NHS England.\n\nThere is a limited scope of data validation upon receipt of the data. Whilst the data is generally of a good, reliable quality, consumers must be aware data is shared as received and users should consider the risk of potential absences or inaccuracies of the data. \n\n  \n## Who can use this API \nThis API can only be used where there is a commercial, legal and clinical basis to do so. Make sure you have a valid use case before you go too far with your development.\n\nYou must demonstrate you have a valid use case as part of digital onboarding. As this service is disease type agnostic, there is also a shortened onboarding process for each disease type, to explain the legal, commercial and clinical justifications. \n\nThis must be done before going live. Refer to the [Onboarding](https://digital.nhs.uk/developer/api-catalogue/immunisation-fhir-api#overview--onboarding).\n\n## Who can access immunisation event records\n \nHealth and care organisations in England can access immunisation records.\n\nLegitimate direct care examples include NHS organisations delivering healthcare, local authorities delivering care, third sector and private sector health and care organisations, and developers delivering systems to health and care organisations.\n\nFuture enhancements will enable patients, receiving health and social care or using NHS England services, to access their vaccination records.\n\nThe immunisation event records captured via the API are used for a number of purposes including (some uses include distribution of the data by means other than this API)\n \n- supporting a patient getting a vaccination\n- supporting patient managing their immunisation health\n- identifying those to be invited to vaccination nationally\n- identifying those to be invited to vaccination locally\n- supporting the booking of a vaccination appointment\n- supporting the payment reconciliation process on behalf of NHS England / NHS Business Services Authority\n- supporting measuring the overall success of a vaccination campaign to help inform the success of the [NHS Vaccination Strategy](https://www.england.nhs.uk/long-read/nhs-vaccination-strategy/)\n\n## API status and roadmap\nThis API is [in development](https://digital.nhs.uk/developer/guides-and-documentation/reference-guide#statuses).\n \nTo see our roadmap, or to suggest, comment or vote on features for this API, see our [interactive product backlog](https://nhs-digital-api-management.featureupvote.com/?tag=immunisation).\n \nIf you have any other queries, [contact us](https://digital.nhs.uk/developer/help-and-support).\n \n## Service level\nThis API will be a platinum service, meaning it is operational and supported 24 x 7 x 365.\n \nFor more details, see [service levels](https://digital.nhs.uk/developer/guides-and-documentation/reference-guide#service-levels).\n \n## Technology\n \nThis API is [RESTful](https://digital.nhs.uk/developer/guides-and-documentation/our-api-technologies#basic-rest).\n \nIt conforms to the [FHIR](https://digital.nhs.uk/developer/guides-and-documentation/our-api-technologies#fhir) global standard for health care data exchange, specifically to [FHIR R4 (v4.0.1)](https://hl7.org/fhir/r4/), except that it does not support the [capabilities](http://hl7.org/fhir/R4/http.html#capabilities) interaction.\n \nIt includes some country-specific FHIR extensions, which conform to [FHIR UK Core](https://digital.nhs.uk/services/fhir-uk-core), specifically [fhir.r4.ukcore.stu2](https://simplifier.net/packages/fhir.r4.ukcore.stu2).\n \nYou do not need to know much about FHIR to use this API - FHIR APIs are just RESTful APIs that follow specific rules.\nIn particular:\n- resource names are capitalised and singular, and use US spellings, for example `/Immunization` not `/immunisations`\n- array names are singular, for example `entry` not `entries` for address lines\n- data items that are country-specific and thus not included in the FHIR global base resources are usually wrapped in an `extension` object\n \nThere are [libraries and SDKs available](https://digital.nhs.uk/developer/guides-and-documentation/api-technologies-at-nhs-digital#fhir-libraries-and-sdks) to help with FHIR API integration.\n \n## Network access\nThis API is available on the internet and, indirectly, on the [Health and Social Care Network (HSCN)](https://digital.nhs.uk/services/health-and-social-care-network).\n \nFor more details see [Network access for APIs](https://digital.nhs.uk/developer/guides-and-documentation/network-access-for-apis).\n \n## Security and authorisation\n \nThis API has a single access mode:\n- application-restricted access\n\nIn the future we intend to offer user-restricted access. \n \n### Application-restricted access\n \nThis access mode is [application-restricted](https://digital.nhs.uk/developer/guides-and-documentation/security-and-authorisation#application-restricted-apis), meaning we authenticate the calling application but not the end user.\n \nTo use this access mode, use the following security pattern:\n- [Application-restricted RESTful API - signed JWT authentication](https://digital.nhs.uk/developer/guides-and-documentation/security-and-authorisation/application-restricted-restful-apis-signed-jwt-authentication)\n\nAccess may be restricted to certain functionality based on your user need\n \ncontact:\n  \n  name: Immunization-fhir-api API Support\n  \n  url: 'https://digital.nhs.uk/developer/help-and-support'\n  \n  email: api.management@nhs.net\n\n## Errors\nWe use standard HTTP status codes to show whether an API request succeeded or not. They are usually in the range:\n\n* 200 to 299 if it succeeded, including code 202 if it was accepted by an API that needs to wait for further action\n* 400 to 499 if it failed because of a client error by your application\n* 500 to 599 if it failed because of an error on our server\n\nErrors specific to each API are shown in the Endpoints section, under Response. See our [reference guide](https://digital.nhs.uk/developer/guides-and-documentation/reference-guide#http-status-codes) for more on errors.\n\n## Open source\n\nYou might find the following [open source](https://digital.nhs.uk/developer/guides-and-documentation/reference-guide#open-source) resources useful:\n\n| Resource                  | Description                                                          | Links                                                                          |\n|---------------------------|----------------------------------------------------------------------|--------------------------------------------------------------------------------|\n| Immunisation FHIR API     | Source code for the API proxy, sandbox and specification.            | [GitHub repo](https://github.dev/NHSDigital/immunisation-fhir-api/) |\n| FHIR libraries and SDKs   | Various open source libraries for integrating with FHIR APIs.        | [FHIR libraries and SDKs](https://digital.nhs.uk/developer/guides-and-documentation/api-technologies-at-nhs-digital#fhir-libraries-and-sdks) |\n| nhs-number                | Python package containing utilities for NHS numbers including validity checks, normalisation and generation. | [GitHub repo](https://github.com/uk-fci/nhs-number) \\| [Python Package index](https://pypi.org/project/nhs-number/) \\| [Docs](https://nhs-number.uk-fci.tech/) |\n\nWe currently don't have any open source client libraries or sample code for this API. If you think this would be useful, you can [upvote the suggestion on our Interactive Product Backlog](https://nhs-digital-api-management.featureupvote.com/suggestions/107439/client-libraries-and-reference-implementations).\n\nThe source code for the Immunisation FHIR API is not currently in the open. If you think this would be useful, you can [upvote the suggestion on our Interactive Product Backlog](https://nhs-digital-api-management.featureupvote.com/suggestions/466692/open-source-core-spine-including-pds-eps-scr-and-more).\n\n\n## Environments and Testing\n| Environment       | Base URL                                                              |\n| ----------------- | --------------------------------------------------------------------- |\n|  Sandbox          | `https://sandbox.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4`            |\n|  Integration      | `https://int.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4`                |          \n|  Production       | `https://api.service.nhs.uk/immunisation-fhir-api/FHIR/R4`                    |\n\n### Sandbox testing\nOur [sandbox environment](https://digital.nhs.uk/developer/guides-and-documentation/testing#sandbox-testing):\n* is for early developer testing\n* only covers a limited set of scenarios\n* is stateless, so does not actually persist any updates\n* is open access, so does not allow you to test authorisation\n\nFor details of sandbox test scenarios, or to try out the sandbox using our 'Try this API' feature, see the documentation for each endpoint.\n\n### Integration testing\nOur [integration test environment](https://digital.nhs.uk/developer/guides-and-documentation/testing#integration-testing):\n* is for formal integration testing\n* is stateful, so persists updates\n* includes authorisation, with options for user-restricted access (with or without [smartcards](https://digital.nhs.uk/developer/guides-and-documentation/security-and-authorisation/nhs-smartcards-for-developers)) and application-restricted access     \n\nFor read-only testing, we will provide an Immunisation records test pack soon.\n\nTo test creating, updating and deleting patient vaccination events, you must set up your own test data.\n\nFor more details see [integration testing with our RESTful APIs](https://digital.nhs.uk/developer/guides-and-documentation/testing#integration-testing-with-our-restful-apis).\n\n## Onboarding\n  \nYou need to get your software approved by us before it can go live with this API.\nWe call this onboarding.\nThe onboarding process can sometimes be quite long, so it is worth planning well ahead.\n\nWhile this API is in Alpha, it is not possible to onboard to the API.\nAs part of this process, you need to demonstrate that you can manage risks and that your software conforms technically with the requirements for this API.\nInformation on this page might impact the design of your software.\n\nOnboarding will initially be to a first of type for search and read for RSV vaccination records only. A phased rollout will then release further interactions and types of vaccination records.\n\nTo understand how our online digital onboarding process works, see [digital onboarding](https://digital.nhs.uk/developer/guides-and-documentation/digital-onboarding#using-the-digital-onboarding-portal).\n"
+      "description": "## Overview\n \nUse this API to access a patient's immunisation record. It is part of the [Vaccinations Data Flow Management](https://digital.nhs.uk/services/vaccinations-data-flow-management). It is intended to extend and replace [Immunisation History - FHIR API](https://digital.nhs.uk/developer/api-catalogue/immunisation-history-fhir) and existing [Vaccination](https://digital.nhs.uk/developer/api-catalogue/vaccination) flows. \n\nYou can use this API to:\n \n- create and record a patient immunisation \n- search for a patient's immunisation records\n- get the details of an immunisation record\n- update an immunisation record \n- identify an immunisation record as entered in error \n \nYou cannot use this API to:\n \n- retrieve the immunisation record of multiple patients at once \n- record or update a patient's demographic details\n \nYou can create, read, update and delete events for the following vaccination types:\n \n- coronavirus (`COVID19`)\n- influenza (`FLU`)\n- measles, mumps and rubella (`MMR`)\n- human papillomavirus (`HPV`)\n- tetanus, diphtheria and polio (`3IN1`)\n- meningococcal infectious disease (`MENACWY`)\n- respiratory syncytial virus infection (`RSV`)\n  \n### Data availability, timing and quality\n\nThis is a real-time service, constrained by the time taken for providers to transfer vaccination events. In most cases, a record will become available within 48 hours of the immunisation event.\n\nThe API search interaction will only return immunisation records based on a traced NHS number. Other interactions require the use of the immunisation ID assigned by the API to interact with individual records for read, update and delete.\n\nThe vaccination events for all disease types are limited to vaccinations administered on behalf of NHS England.\n\nThere is a limited scope of data validation upon receipt of the data. Whilst the data is generally of a good, reliable quality, consumers must be aware that data is shared as received, and users should consider the risk of potential absences or inaccuracies of the data. \n\n  \n## Who can use this API \nThis API can only be used where there is a commercial, legal and clinical basis to do so. Make sure you have a valid use case before you go too far with your development.\n\nYou must demonstrate you have a valid use case as part of digital onboarding. \n\nYou must do this before you can go live (see [Onboarding](https://digital.nhs.uk/developer/api-catalogue/immunisation-fhir-api#overview--onboarding) below).\n\n### Who can access immunisation event records\n \nHealth and care organisations in England can access immunisation event records.\n\nLegitimate direct care examples include NHS organisations delivering healthcare, local authorities delivering care, third sector and private sector health and care organisations, and developers delivering systems to health and care organisations.\n\n## API status\nThis API is in [Beta](https://digital.nhs.uk/developer/guides-and-documentation/reference-guide#statuses).\n \nIf you have any queries, [contact us](https://digital.nhs.uk/developer/help-and-support).\n \n## Service level\nThis API will be a platinum service, meaning it is operational and supported 24 x 7 x 365.\n \nFor more details, see [service levels](https://digital.nhs.uk/developer/guides-and-documentation/reference-guide#service-levels).\n \n## Technology\n \nThis API is [RESTful](https://digital.nhs.uk/developer/guides-and-documentation/our-api-technologies#basic-rest).\n \nIt conforms to the [FHIR](https://digital.nhs.uk/developer/guides-and-documentation/our-api-technologies#fhir) global standard for health care data exchange, specifically to [FHIR R4 (v4.0.1)](https://hl7.org/fhir/r4/), except that it does not support the [capabilities](http://hl7.org/fhir/R4/http.html#capabilities) interaction.\n \nIt includes some country-specific FHIR extensions, which conform to [FHIR UK Core](https://digital.nhs.uk/services/fhir-uk-core), specifically [fhir.r4.ukcore.stu2](https://simplifier.net/packages/fhir.r4.ukcore.stu2).\n \nYou do not need to know much about FHIR to use this API - FHIR APIs are just RESTful APIs that follow specific rules.\nIn particular:\n- resource names are capitalised and singular, and use US spellings, for example `/Immunization` not `/immunisations`\n- array names are singular, for example `entry` not `entries` for address lines\n- data items that are country-specific and thus not included in the FHIR global base resources are usually wrapped in an `extension` object\n \nThere are [libraries and SDKs available](https://digital.nhs.uk/developer/guides-and-documentation/api-technologies-at-nhs-digital#fhir-libraries-and-sdks) to help with FHIR API integration.\n \n## Network access\nThis API is available on the internet and, indirectly, on the [Health and Social Care Network (HSCN)](https://digital.nhs.uk/services/health-and-social-care-network).\n \nFor more details see [Network access for APIs](https://digital.nhs.uk/developer/guides-and-documentation/network-access-for-apis).\n \n## Security and authorisation\n \nThis API currently has a single access mode: [application-restricted access](https://digital.nhs.uk/developer/guides-and-documentation/security-and-authorisation#application-restricted-apis), meaning we authenticate the calling application but not the end user.\n \nTo use this access mode, use the following security pattern:\n- [Application-restricted RESTful API - signed JWT authentication](https://digital.nhs.uk/developer/guides-and-documentation/security-and-authorisation/application-restricted-restful-apis-signed-jwt-authentication) \n\n## Errors\nWe use standard HTTP status codes to show whether an API request succeeded or not. They are usually in the range:\n\n* 200 to 299 if it succeeded, including code 202 if it was accepted by an API that needs to wait for further action\n* 400 to 499 if it failed because of a client error by your application\n* 500 to 599 if it failed because of an error on our server\n\nErrors specific to each API are shown in the Endpoints section, under Response. See our [reference guide](https://digital.nhs.uk/developer/guides-and-documentation/reference-guide#http-status-codes) for more on errors.\n\n## Open source\n\nYou might find the following [open source](https://digital.nhs.uk/developer/guides-and-documentation/reference-guide#open-source) resources useful:\n\n| Resource                  | Description                                                          | Links                                                                          |\n|---------------------------|----------------------------------------------------------------------|--------------------------------------------------------------------------------|\n| Immunisation FHIR API     | Source code for the API proxy, sandbox and specification.            | [GitHub repo](https://github.dev/NHSDigital/immunisation-fhir-api/) |\n| FHIR libraries and SDKs   | Various open source libraries for integrating with FHIR APIs.        | [FHIR libraries and SDKs](https://digital.nhs.uk/developer/guides-and-documentation/api-technologies-at-nhs-digital#fhir-libraries-and-sdks) |\n| nhs-number                | Python package containing utilities for NHS numbers including validity checks, normalisation and generation. | [GitHub repo](https://github.com/uk-fci/nhs-number) \\| [Python Package index](https://pypi.org/project/nhs-number/) \\| [Docs](https://nhs-number.uk-fci.tech/) |\n\n## Environments and Testing\n| Environment       | Base URL                                                              |\n| ----------------- | --------------------------------------------------------------------- |\n|  Sandbox          | `https://sandbox.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4`            |\n|  Integration      | `https://int.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4`                |          \n|  Production       | `https://api.service.nhs.uk/immunisation-fhir-api/FHIR/R4`                    |\n\n### Sandbox testing\nOur [sandbox environment](https://digital.nhs.uk/developer/guides-and-documentation/testing#sandbox-testing):\n* is for early developer testing\n* only covers a limited set of scenarios\n* is stateless, so does not actually persist any updates\n* is open access, so does not allow you to test authorisation\n\nFor details of sandbox test scenarios, or to try out the sandbox using our 'Try this API' feature, see the documentation for each endpoint.\n\n### Integration testing\nOur [integration test environment](https://digital.nhs.uk/developer/guides-and-documentation/testing#integration-testing):\n* is for formal integration testing\n* is stateful, so persists updates\n* includes authorisation, with options for application-restricted access     \n\nFor read-only testing, we will provide an Immunisation records test pack soon.\n\nTo test creating, updating and deleting patient vaccination events, you must set up your own test data.\n\nFor more details see [integration testing with our RESTful APIs](https://digital.nhs.uk/developer/guides-and-documentation/testing#integration-testing-with-our-restful-apis).\n\n## Onboarding\n  \nYou need to get your software approved by us before it can go live with this API.\nWe call this onboarding.\nThe onboarding process can sometimes be quite long, so it's worth planning well ahead.\n\nAs part of this process, you need to demonstrate that you can manage risks and that your software conforms technically with the requirements for this API.\nInformation on this page might impact the design of your software.\n\nWhile this API is in Beta, it is not possible to onboard to the API.\n\nTo understand how our online digital onboarding process works, see [digital onboarding](https://digital.nhs.uk/developer/guides-and-documentation/digital-onboarding#using-the-digital-onboarding-portal).\n\n## Related APIs\n\nThe following APIs are related to this API:\n\n### Immunisation History - FHIR API\nUse the [Immunisation History - FHIR API](https://digital.nhs.uk/developer/api-catalogue/immunisation-history-fhir) if you want to access vaccination records that are not yet available on this API.\n\n## Contact us\nFor help and support connecting to our APIs and to join our developer community, see [Help and support building healthcare software](https://digital.nhs.uk/developer/help-and-support). \n"
     },
     "servers": [
       {
@@ -20,7 +20,7 @@
         "post": {
           "summary": "Record a vaccination given to a patient",
           "operationId": "createImmunization",
-          "description": "## Overview\nUse this interaction to record the administration of a vaccination.  The immunization resource must include a targetDisease(s) matching the 'disease types' enabled in this interaction and represented by the correct SNOMED concept(s) for that 'disease type'. See another page for details and disease types and coding.  \nYou must be authorised for the create interaction and the disease type associated with the vaccination event in order to submit a new record. \n\n## Sandbox testing\nYou can test the following scenarios in our sandbox environment:\n\n| Scenario                                | Request                                                                                                                                                         | Response                                                                |\n| ----------------------------------------| ----------------------------------------------------------------------------------------------------------------------------------------------------------------| ------------------------------------------------------------------------|\n|                                         |                                                                                                                                                                 |                                                                         |\n |  Record a vaccination event            |  valid request as per schema                                                                                            | HTTP Status 201 with immunisation id in response header(location)                 |\n|  Bad Request(missing/invalid required element in request body)      | Didn't pass `resourceType`  in request body          |               HTTP Status   400 Bad Request               |\n",
+          "description": "## Overview\nUse this interaction to record the administration of a vaccination.  The immunization resource must include a targetDisease(s) matching the disease types enabled in this interaction and represented by the correct SNOMED concept(s) for that disease type. A code list will be provided for supported disease types.  \nYou must be authorised for the create interaction and the disease type associated with the vaccination event in order to submit a new record. \n\n## Sandbox testing\nYou can test the following scenarios in our sandbox environment:\n\n| Scenario                                | Request                                                                                                                                                         | Response                                                                |\n| ----------------------------------------| ----------------------------------------------------------------------------------------------------------------------------------------------------------------| ------------------------------------------------------------------------|\n|                                         |                                                                                                                                                                 |                                                                         |\n |  Record a vaccination event            |  Valid request as per schema                                                                                            | HTTP Status 201 with immunisation id in response header (location)                 |\n|  Bad Request (missing/invalid required element in request body)      | Didn't pass `resourceType`  in request body          |               HTTP Status   400 Bad Request               |\n",
           "parameters": [
             {
               "$ref": "#/components/parameters/CorrelationID"
@@ -175,7 +175,7 @@
                               },
                               "name": {
                                 "type": "array",
-                                "description": "Patient name as registered on PDS or as recorded by the user where the record cannot be traced on PDS.  \nThere SHOULD be only one instance of name. If more than one name instance is provided additional elements SHOULD be populated only so the current, official name can be determined or otherwise the current, official name SHALL be the first name instance. There SHALL be at least one name instance with both family and given elements populated.",
+                                "description": "Patient name as registered, or as recorded by the user where the patient record cannot be traced. \nThere SHOULD be only one instance of name. If more than one name instance is provided additional elements SHOULD be populated only so the current, official name can be determined or otherwise the current, official name SHALL be the first name instance. There SHALL be at least one name instance with both family and given elements populated.",
                                 "items": {
                                   "type": "object",
                                   "properties": {
@@ -518,7 +518,6 @@
                     "doseQuantity": {
                       "description": "The quantity of vaccine product that was administered. This `SHOULD be populated` where the data is available.  \nA SNOMED-CT Concept ID value representing the unit of measure used SHOULD be provided.",
                       "type": "object",
-                      "required": [],
                       "properties": {
                         "value": {
                           "description": "The actual value of the dose amount administered. This `SHOULD be populated` where the data is available.  \nFor Example,  \nComirnaty ® (Pfizer BioNTech):  \n  Full Dose (Primary Course or booster) = 0.3  \n  Fractional Dose (Primary Course) = 0.1",
@@ -858,25 +857,25 @@
               "description": "Create Immunization operation successful",
               "headers": {
                 "Location": {
-                  "$ref": "#/components/parameters/Location"
+                  "$ref": "#/components/headers/Location"
                 },
                 "CorrelationID": {
-                  "$ref": "#/components/parameters/CorrelationID"
+                  "$ref": "#/components/headers/CorrelationID"
                 },
                 "RequestID": {
-                  "$ref": "#/components/parameters/RequestID"
+                  "$ref": "#/components/headers/RequestID"
                 }
               }
             },
             "4XX": {
-              "$ref": "#/components/responses/4XX-imms"
+              "$ref": "#/components/responses/4XX-imms-create"
             }
           }
         },
         "get": {
-          "summary": "Search (GET) for a patient's immunisation records",
-          "operationId": "searchViaGetImmunization",
-          "description": "## Overview\nUse this interaction to search for a patient's vaccination records using their NHS number and DiseaseType. You can request the patient's vaccination history for one or more specified 'disease types'. You may limit the vaccination records by specifying date criteria, for example if you only need to know about vaccinations administered in the last 12 months. \n Location related data items are included. Patient location sensitivity indicators (such as flags for sensitive patient records) should be obtained by connecting systems from the [Personal Demographics Service (PDS)](https://digital.nhs.uk/services/personal-demographics-service) and used to apply data filtering as appropriate. The response will not include contained resources for patient or practitioner within each immunization resource it returns. A single, separate patient resource will be included in the bundle and referenced by each immunization. \nVaccination events submitted without an NHS Number will not be available for retrieval via this interaction. Also, where a patient has a change of NHS Number some or all records may be unavailable via this interaction for a short period of time while records are updated. \nYou must be authorised for the search interaction and the disease type(s) specified in your search in order to access the records. \n\n## Sandbox testing\nYou can test the following scenarios in our sandbox environment:\n\n| Scenario                                | Request                                                                                                                                                         | Response                                                                |\n| ----------------------------------------| ----------------------------------------------------------------------------------------------------------------------------------------------------------------| ------------------------------------------------------------------------|\n|                                         |                                                                                                                                                                 |                                                                         |\n|  Immunisation history found             | `patient.identifier`=`https://fhir.nhs.uk/Id/nhs-number\\|9000000009`                                                                                            | HTTP Status 200 with immunisation data in response body                 |\n|  Bad Request                            | Didn't pass Required fields `patient.identifier`  or  `-immunization.target`          | HTTP Status 400 Bad Request               |\n",
+          "summary": "Search for a patient's immunisation records",
+          "operationId": "searchImmunization",
+          "description": "## Overview\nUse this interaction to search for a patient's vaccination records using their NHS number and DiseaseType. You can request the patient's vaccination history for one or more specified 'disease types'. You may limit the vaccination records by specifying date criteria, for example if you only need to know about vaccinations administered in the last 12 months. \n Location related data items are included. Patient location sensitivity indicators (such as flags for sensitive patient records) should be used to apply data filtering as appropriate. The response will not include contained resources for patient or practitioner within each immunization resource it returns. A single, separate patient resource will be included in the bundle and referenced by each immunization. \nVaccination events submitted without an NHS Number will not be available for retrieval via this interaction. Also, where a patient has a change of NHS Number some or all records may be unavailable via this interaction for a short period of time while records are updated. \nYou must be authorised for the search interaction and the disease type(s) specified in your search in order to access the records. \n \n### Search using POST\n \nA POST search interaction is supported in accordance with [FHIR guidance](https://digital.nhs.uk/developer/guides-and-documentation/our-api-technologies#fhir) as an alternative to a search with the GET verb. A POST search allows you to supply some or all parameters in the body of the request should you need to do so. It offers the same search functionality as the GET search interaction.\n\n## Sandbox testing\nYou can test the following scenarios in our sandbox environment:\n\n| Scenario                                | Request                                                                                                                                                         | Response                                                                |\n| ----------------------------------------| ----------------------------------------------------------------------------------------------------------------------------------------------------------------| ------------------------------------------------------------------------|\n|                                         |                                                                                                                                                                 |                                                                         |\n|  Immunisation history found             | `patient.identifier`=`https://fhir.nhs.uk/Id/nhs-number|9000000009`                                                                                            | HTTP Status 200 with immunisation data in response body                 |\n|  Bad Request                            | Didn't pass required fields `patient.identifier`  or  `-immunization.target`          | HTTP Status 400 Bad Request               |\n",
           "parameters": [
             {
               "$ref": "#/components/parameters/CorrelationID"
@@ -1362,7 +1361,6 @@
                                     "doseQuantity": {
                                       "description": "The quantity of vaccine product that was administered.",
                                       "type": "object",
-                                      "required": [],
                                       "properties": {
                                         "value": {
                                           "description": "Number of units administered.",
@@ -1784,927 +1782,7 @@
               }
             },
             "4XX": {
-              "$ref": "#/components/responses/4XX-imms"
-            }
-          }
-        }
-      },
-      "/Immunization/_search": {
-        "post": {
-          "summary": "Search (POST) for a patient's immunisation records",
-          "operationId": "searchViaPOSTImmunization",
-          "description": "## Overview\nYou may use this interaction as an alternative to a search with the GET verb. A POST search allows you to supply some or all parameters in the body of the request should you need to do so. It offers the same search functionality, see Search (GET) interaction for details.\n\n## Sandbox testing\nYou can test the following scenarios in our sandbox environment:\n\n| Scenario                                | Request                                                                                                                                                         | Response                                                                |\n| ----------------------------------------| ----------------------------------------------------------------------------------------------------------------------------------------------------------------| ------------------------------------------------------------------------|\n|                                         |                                                                                                                                                                 |                                                                         |\n|  Immunisation history found             | `patient.identifier`=`https://fhir.nhs.uk/Id/nhs-number\\|9000000009`                                                                                            | HTTP Status 200 with immunisation data in response body                 |\n|  Bad Request                            | Didn't pass Required fields `patient.identifier`  or  -immunization.target  or  _include             | HTTP Status 400 Bad Request               |\n",
-          "parameters": [
-            {
-              "$ref": "#/components/parameters/CorrelationID"
-            },
-            {
-              "$ref": "#/components/parameters/RequestID"
-            },
-            {
-              "$ref": "#/components/parameters/PatientIdentifier"
-            },
-            {
-              "$ref": "#/components/parameters/ImmunizationTarget"
-            },
-            {
-              "$ref": "#/components/parameters/DateFrom"
-            },
-            {
-              "$ref": "#/components/parameters/DateTo"
-            },
-            {
-              "$ref": "#/components/parameters/Include"
-            }
-          ],
-          "requestBody": {
-            "$ref": "#/components/requestBodies/SearchImmunization"
-          },
-          "responses": {
-            "200": {
-              "description": "Search immunisation operation successful",
-              "content": {
-                "application/fhir+json": {
-                  "schema": {
-                    "description": "FHIR Bundle containing the query results - a list of matching immunisations and associated patients.",
-                    "type": "object",
-                    "required": [
-                      "resourceType",
-                      "type",
-                      "total",
-                      "entry"
-                    ],
-                    "properties": {
-                      "resourceType": {
-                        "description": "FHIR resource type. Always `Bundle`.",
-                        "type": "string",
-                        "example": "Bundle"
-                      },
-                      "type": {
-                        "description": "Indicates how the bundle is intended to be used. Always `searchset`.",
-                        "type": "string",
-                        "example": "searchset"
-                      },
-                      "link": {
-                        "type": "array",
-                        "items": {
-                          "type": "object",
-                          "properties": {
-                            "relation": {
-                              "description": "A name which details the functional use for this link - see [http://www.iana.org/assignments/link-relations/link-relations.xhtml#link-relations-1](http://www.iana.org/assignments/link-relations/link-relations.xhtml#link-relations-1). Always `Self`.",
-                              "type": "string"
-                            },
-                            "url": {
-                              "description": "A url representing the search applied by the API to generate the result which may differ from the request if unrecognised or unsupported parameters have been ignored.",
-                              "type": "string"
-                            }
-                          },
-                          "required": [
-                            "relation",
-                            "url"
-                          ]
-                        }
-                      },
-                      "entry": {
-                        "description": "List of matching immunisations and associated patient. If there were no matching immunisations, this is an empty list.",
-                        "type": "array",
-                        "items": {
-                          "type": "object",
-                          "required": [
-                            "fullUrl",
-                            "resource",
-                            "search"
-                          ],
-                          "properties": {
-                            "fullUrl": {
-                              "description": "URI for the Immunization or Patient resource.",
-                              "type": "string",
-                              "example": "https://sandbox.api.service.nhs.uk/immunisation-fhir-api/Immunization/191f288a-17f3-4cd5-a33c-a52aade6473c"
-                            },
-                            "resource": {
-                              "description": "The Immunization or Patient resource.",
-                              "oneOf": [
-                                {
-                                  "description": "A matching immunisation, formatted as a FHIR Immunization resource.",
-                                  "type": "object",
-                                  "required": [
-                                    "resourceType",
-                                    "extension",
-                                    "identifier",
-                                    "status",
-                                    "vaccineCode",
-                                    "patient",
-                                    "occurrence[X]",
-                                    "recorded",
-                                    "primarySource",
-                                    "location",
-                                    "performer",
-                                    "protocolApplied"
-                                  ],
-                                  "properties": {
-                                    "resourceType": {
-                                      "description": "FHIR resource type. Always `Immunization`.",
-                                      "type": "string",
-                                      "example": "Immunization"
-                                    },
-                                    "id": {
-                                      "description": "Immunization record Id.",
-                                      "type": "string",
-                                      "example": "191f288a-17f3-4cd5-a33c-a52aade6473c"
-                                    },
-                                    "meta": {
-                                      "type": "object",
-                                      "properties": {
-                                        "versionId": {
-                                          "type": "string",
-                                          "pattern": "[A-Za-z0-9\\-\\.]{1,64}",
-                                          "description": "The version specific identifier, as it appears in the version portion of the URL. This value changes when the resource is created, updated, or deleted."
-                                        },
-                                        "lastUpdated": {
-                                          "type": "string",
-                                          "pattern": "([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\\.[0-9]+)?(Z|(\\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))",
-                                          "description": "When the resource last changed - e.g. when the version changed.",
-                                          "example": "2017-01-01T00:00:00Z"
-                                        },
-                                        "source": {
-                                          "type": "string",
-                                          "description": "Identifies where the resource comes from."
-                                        },
-                                        "profile": {
-                                          "type": "array",
-                                          "items": {
-                                            "type": "string",
-                                            "pattern": "\\S*",
-                                            "description": "A list of profiles (references to [StructureDefinition](structuredefinition.html#) resources) that this resource claims to conform to. The URL is a reference to [StructureDefinition.url](structuredefinition-definitions.html#StructureDefinition.url)."
-                                          }
-                                        },
-                                        "security": {
-                                          "type": "array",
-                                          "items": {
-                                            "$ref": "#/components/schemas/Coding",
-                                            "description": "Security labels applied to this resource. These tags connect specific resources to the overall security policy and infrastructure."
-                                          }
-                                        },
-                                        "tag": {
-                                          "type": "array",
-                                          "items": {
-                                            "$ref": "#/components/schemas/Coding",
-                                            "description": "Tags applied to this resource. Tags are intended to be used to identify and relate resources to process and workflow, and applications are not required to consider the tags when interpreting the meaning of a resource."
-                                          }
-                                        }
-                                      }
-                                    },
-                                    "extension": {
-                                      "description": "FHIR extension wrapper for the vaccination procedure performed. Always contains exactly one object.",
-                                      "type": "array",
-                                      "minItems": 1,
-                                      "maxItems": 1,
-                                      "items": {
-                                        "type": "object",
-                                        "required": [
-                                          "url",
-                                          "valueCodeableConcept"
-                                        ],
-                                        "properties": {
-                                          "url": {
-                                            "description": "URI for the type of extension - https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure",
-                                            "type": "string",
-                                            "example": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure"
-                                          },
-                                          "valueCodeableConcept": {
-                                            "description": "Wrapper for the vaccination procedure coding.",
-                                            "type": "object",
-                                            "required": [
-                                              "coding"
-                                            ],
-                                            "properties": {
-                                              "coding": {
-                                                "description": "Wrapper for the vaccination procedure coding.",
-                                                "type": "array",
-                                                "items": {
-                                                  "type": "object",
-                                                  "required": [
-                                                    "system",
-                                                    "code",
-                                                    "display"
-                                                  ],
-                                                  "properties": {
-                                                    "system": {
-                                                      "description": "The identification of the code system that defines the meaning of the symbol in the code.",
-                                                      "type": "string",
-                                                      "example": "http://snomed.info/sct"
-                                                    },
-                                                    "code": {
-                                                      "description": "A particular code in the system.",
-                                                      "type": "string",
-                                                      "example": "1303503001"
-                                                    },
-                                                    "display": {
-                                                      "description": "Representation defined by the system.",
-                                                      "type": "string",
-                                                      "example": "Administration of RSV (respiratory syncytial virus) vaccine"
-                                                    }
-                                                  }
-                                                }
-                                              }
-                                            }
-                                          }
-                                        }
-                                      }
-                                    },
-                                    "identifier": {
-                                      "description": "Unique identifier for this immunisation record, as generated by the source system.",
-                                      "type": "array",
-                                      "minItems": 1,
-                                      "maxItems": 1,
-                                      "items": {
-                                        "type": "object",
-                                        "required": [
-                                          "system",
-                                          "value"
-                                        ],
-                                        "properties": {
-                                          "use": {
-                                            "description": "Identifier use as defined by https://www.hl7.org/fhir/valueset-identifier-use.html.",
-                                            "type": "string",
-                                            "enum": [
-                                              "usual",
-                                              "official",
-                                              "temp",
-                                              "secondary",
-                                              "old"
-                                            ],
-                                            "example": "official"
-                                          },
-                                          "system": {
-                                            "description": "URI of the namespace of this identifier.",
-                                            "type": "string",
-                                            "example": "https://supplierABC/identifiers/vacc"
-                                          },
-                                          "value": {
-                                            "description": "Identifier value within `system`.",
-                                            "type": "string",
-                                            "example": "e2154d29-1ead-4830-a513-0d59705078fa"
-                                          }
-                                        }
-                                      }
-                                    },
-                                    "status": {
-                                      "description": "Status of the immunisation event. This is *not* an indication of patient immunity, only whether the immunisation was completed or not. Currently we only return details of completed immunisations.",
-                                      "type": "string",
-                                      "enum": [
-                                        "completed"
-                                      ],
-                                      "example": "completed"
-                                    },
-                                    "vaccineCode": {
-                                      "description": "Vaccine product administered.",
-                                      "type": "object",
-                                      "required": [
-                                        "coding"
-                                      ],
-                                      "properties": {
-                                        "coding": {
-                                          "description": "Wrapper for the vaccine product details.",
-                                          "type": "array",
-                                          "minItems": 1,
-                                          "items": {
-                                            "type": "object",
-                                            "required": [
-                                              "system",
-                                              "code",
-                                              "display"
-                                            ],
-                                            "properties": {
-                                              "system": {
-                                                "description": "The identification of the code system that defines the meaning of the symbol in the code.",
-                                                "type": "string",
-                                                "example": "http://snomed.info/sct"
-                                              },
-                                              "code": {
-                                                "description": "SNOMED code for the vaccine product.",
-                                                "type": "string",
-                                                "example": "42605811000001109"
-                                              },
-                                              "display": {
-                                                "description": "Description of the vaccine product.",
-                                                "type": "string",
-                                                "example": "Abrysvo vaccine powder and solvent for solution for injection 0.5ml vials (Pfizer Ltd)"
-                                              }
-                                            }
-                                          }
-                                        }
-                                      }
-                                    },
-                                    "patient": {
-                                      "description": "The patient who was immunised.",
-                                      "type": "object",
-                                      "required": [
-                                        "reference",
-                                        "type",
-                                        "identifier"
-                                      ],
-                                      "properties": {
-                                        "reference": {
-                                          "description": "URI for the associated Patient resource in the bundle.",
-                                          "type": "string",
-                                          "example": "urn:uuid:a7a5bc28-5831-4158-8a73-0d3e6e43c1ac"
-                                        },
-                                        "type": {
-                                          "description": "Type of resource this reference refers to. Always `Patient`.",
-                                          "type": "string",
-                                          "example": "Patient"
-                                        },
-                                        "identifier": {
-                                          "description": "Business identifier for linked Patient. Always an NHS number.",
-                                          "type": "object",
-                                          "required": [
-                                            "system",
-                                            "value"
-                                          ],
-                                          "properties": {
-                                            "system": {
-                                              "description": "URI of coding system used to identify linked patient. Always https://fhir.nhs.uk/Id/nhs-number",
-                                              "type": "string",
-                                              "example": "https://fhir.nhs.uk/Id/nhs-number"
-                                            },
-                                            "value": {
-                                              "description": "Value in coding system representing linked patient.",
-                                              "type": "string",
-                                              "example": "9000000009"
-                                            }
-                                          }
-                                        }
-                                      }
-                                    },
-                                    "occurrence[X]": {
-                                      "type": "object",
-                                      "description": "When immunizations are given a specific date and time should always be known. The string data type for this element is not supported. Only occurrenceDateTime SHALL be used.",
-                                      "properties": {
-                                        "occurrenceDateTime": {
-                                          "description": "Date and time of immunisation.",
-                                          "type": "string",
-                                          "example": "2021-02-07T13:28:17.271000+00:00"
-                                        }
-                                      },
-                                      "required": [
-                                        "occurrenceDateTime"
-                                      ]
-                                    },
-                                    "recorded": {
-                                      "description": "The date the occurrence of the immunization was first captured in the record - potentially significantly after the occurrence of the event.",
-                                      "type": "string",
-                                      "example": "2021-02-07T13:28:17.271000+00:00"
-                                    },
-                                    "primarySource": {
-                                      "description": "An indication that the content of the record is based on information from the person who administered the vaccine. This reflects the context under which the data was originally recorded.",
-                                      "type": "boolean",
-                                      "example": true
-                                    },
-                                    "location": {
-                                      "type": "object",
-                                      "description": "The service delivery location where the vaccine administration occurred.",
-                                      "properties": {
-                                        "identifier": {
-                                          "type": "object",
-                                          "description": "An identifier for the service delivery location.",
-                                          "properties": {
-                                            "system": {
-                                              "description": "The system which defines the location. Typically this will be https://fhir.nhs.uk/Id/ods-organization-code for a health setting or https://fhir.hl7.org.uk/Id/urn-school-number for an education setting.",
-                                              "type": "string",
-                                              "example": "https://fhir.nhs.uk/Id/ods-organization-code"
-                                            },
-                                            "value": {
-                                              "description": "A code from the system to represent the location. An ODS code of X99999 represents a location where a code is not available.",
-                                              "type": "string",
-                                              "example": "X99999"
-                                            }
-                                          },
-                                          "required": [
-                                            "system",
-                                            "value"
-                                          ]
-                                        }
-                                      },
-                                      "required": [
-                                        "identifier"
-                                      ]
-                                    },
-                                    "manufacturer": {
-                                      "description": "Vaccine manufacturer details.",
-                                      "type": "object",
-                                      "properties": {
-                                        "display": {
-                                          "description": "Decsription of the vaccine manufacturer.",
-                                          "type": "string",
-                                          "example": "AstraZeneca Ltd"
-                                        }
-                                      }
-                                    },
-                                    "lotNumber": {
-                                      "description": "Lot number of the vaccine product.",
-                                      "type": "string",
-                                      "example": "4120Z001"
-                                    },
-                                    "expirationDate": {
-                                      "description": "Date vaccine batch expires.",
-                                      "type": "string",
-                                      "example": "2021-04-29"
-                                    },
-                                    "site": {
-                                      "description": "Body site where vaccine was administered.",
-                                      "type": "object",
-                                      "properties": {
-                                        "coding": {
-                                          "description": "Wrapper for the vaccination body site details.",
-                                          "type": "array",
-                                          "minItems": 1,
-                                          "items": {
-                                            "type": "object",
-                                            "properties": {
-                                              "system": {
-                                                "description": "Coding system used to describe vaccination body site.",
-                                                "type": "string",
-                                                "example": "http://snomed.info/sct"
-                                              },
-                                              "code": {
-                                                "description": "Code for the vaccination body site.",
-                                                "type": "string",
-                                                "example": "368208006"
-                                              },
-                                              "display": {
-                                                "description": "Description of the vaccination body site.",
-                                                "type": "string",
-                                                "example": "Left upper arm structure (body structure)"
-                                              }
-                                            }
-                                          }
-                                        }
-                                      },
-                                      "required": [
-                                        "coding"
-                                      ]
-                                    },
-                                    "route": {
-                                      "description": "The path by which the vaccine product is taken into the body.",
-                                      "type": "object",
-                                      "required": [
-                                        "coding"
-                                      ],
-                                      "properties": {
-                                        "coding": {
-                                          "description": "Wrapper for the vaccination route details.",
-                                          "type": "array",
-                                          "minItems": 1,
-                                          "items": {
-                                            "type": "object",
-                                            "properties": {
-                                              "system": {
-                                                "description": "Coding system used to describe vaccination route.",
-                                                "type": "string",
-                                                "example": "http://snomed.info/sct"
-                                              },
-                                              "code": {
-                                                "description": "Code for the vaccination route.",
-                                                "type": "string",
-                                                "example": "78421000"
-                                              },
-                                              "display": {
-                                                "description": "Description of the vaccination route.",
-                                                "type": "string",
-                                                "example": "Intramuscular route (qualifier value)"
-                                              }
-                                            }
-                                          }
-                                        }
-                                      }
-                                    },
-                                    "doseQuantity": {
-                                      "description": "The quantity of vaccine product that was administered.",
-                                      "type": "object",
-                                      "required": [],
-                                      "properties": {
-                                        "value": {
-                                          "description": "Number of units administered.",
-                                          "type": "number",
-                                          "example": 1
-                                        },
-                                        "unit": {
-                                          "description": "Description of unit.",
-                                          "type": "string",
-                                          "example": "milliliter"
-                                        },
-                                        "system": {
-                                          "description": "System that defines coded unit form.",
-                                          "type": "string",
-                                          "example": "http://unitsofmeasure.org"
-                                        },
-                                        "code": {
-                                          "description": "Code describing the unit.",
-                                          "type": "string",
-                                          "example": "ml"
-                                        }
-                                      }
-                                    },
-                                    "performer": {
-                                      "description": "Details of the organisation that performed the immunisation.",
-                                      "type": "array",
-                                      "minItems": 1,
-                                      "maxItems": 1,
-                                      "items": {
-                                        "type": "object",
-                                        "required": [
-                                          "actor"
-                                        ],
-                                        "properties": {
-                                          "actor": {
-                                            "description": "Organisation that performed the immunisation.",
-                                            "type": "object",
-                                            "required": [
-                                              "type",
-                                              "identifier"
-                                            ],
-                                            "properties": {
-                                              "type": {
-                                                "description": "Type of actor. Always `Organisation`.",
-                                                "type": "string",
-                                                "example": "Organisation"
-                                              },
-                                              "identifier": {
-                                                "description": "Organisation identifier.",
-                                                "type": "object",
-                                                "required": [
-                                                  "system",
-                                                  "value"
-                                                ],
-                                                "properties": {
-                                                  "system": {
-                                                    "description": "Coding system used for the organisation identifier. Always `https://fhir.nhs.uk/Id/ods-organization-code`.",
-                                                    "type": "string",
-                                                    "example": "https://fhir.nhs.uk/Id/ods-organization-code"
-                                                  },
-                                                  "value": {
-                                                    "description": "Organisation's ODS code.",
-                                                    "type": "string",
-                                                    "example": "B0C4P"
-                                                  }
-                                                }
-                                              },
-                                              "display": {
-                                                "description": "Organisation that performed the immunisation.",
-                                                "type": "string",
-                                                "example": "UNIVERSITY HOSPITAL OF WALES"
-                                              }
-                                            }
-                                          }
-                                        }
-                                      }
-                                    },
-                                    "reasonCode": {
-                                      "description": "Reasons why the vaccine was administered.",
-                                      "type": "array",
-                                      "minItems": 1,
-                                      "items": {
-                                        "type": "object",
-                                        "required": [
-                                          "coding"
-                                        ],
-                                        "properties": {
-                                          "coding": {
-                                            "description": "Wrapper for the reason code details.",
-                                            "type": "array",
-                                            "minItems": 1,
-                                            "items": {
-                                              "type": "object",
-                                              "required": [
-                                                "system",
-                                                "code",
-                                                "display"
-                                              ],
-                                              "properties": {
-                                                "system": {
-                                                  "description": "Coding system used to describe the reason for administration of vaccine.",
-                                                  "type": "string",
-                                                  "example": "http://snomed.info/sct"
-                                                },
-                                                "code": {
-                                                  "description": "SNOMED code for the vaccination reason.",
-                                                  "type": "string",
-                                                  "example": "443684005"
-                                                },
-                                                "display": {
-                                                  "description": "Description of the vaccination reason.",
-                                                  "type": "string",
-                                                  "example": "Disease outbreak (event)"
-                                                }
-                                              }
-                                            }
-                                          }
-                                        }
-                                      }
-                                    },
-                                    "protocolApplied": {
-                                      "description": "The protocol (set of recommendations) being followed by the provider who administered the dose.",
-                                      "type": "array",
-                                      "minItems": 1,
-                                      "items": {
-                                        "type": "object",
-                                        "required": [
-                                          "targetDisease",
-                                          "doseNumber[X]"
-                                        ],
-                                        "properties": {
-                                          "targetDisease": {
-                                            "type": "array",
-                                            "description": "The vaccine preventable disease the dose is being administered against.",
-                                            "items": {
-                                              "type": "object",
-                                              "properties": {
-                                                "coding": {
-                                                  "type": "array",
-                                                  "description": "A reference to a code defined by a terminology system.",
-                                                  "items": {
-                                                    "type": "object",
-                                                    "properties": {
-                                                      "system": {
-                                                        "description": "The identification of the code system that defines the meaning of the symbol in the code.",
-                                                        "type": "string"
-                                                      },
-                                                      "code": {
-                                                        "description": "A symbol in syntax defined by the system. The symbol may be a predefined code or an expression in a syntax defined by the coding system",
-                                                        "type": "string"
-                                                      },
-                                                      "display": {
-                                                        "description": "A representation of the meaning of the code in the system, following the rules of the system.",
-                                                        "type": "string"
-                                                      }
-                                                    },
-                                                    "required": [
-                                                      "system",
-                                                      "code",
-                                                      "display"
-                                                    ]
-                                                  }
-                                                }
-                                              },
-                                              "required": [
-                                                "coding"
-                                              ]
-                                            }
-                                          },
-                                          "doseNumber[X]": {
-                                            "type": "object",
-                                            "description": "Nominal position in a series. This SHALL be provided but may be populated using either of the dataTypes available: PositiveInt or String. The use of an integer is preferred. Maximum value is 9.",
-                                            "properties": {
-                                              "doseNumberPositiveInt": {
-                                                "description": "Nominal position in a course of vaccines. This `SHOULD be populated` where the data is available. Maximum value is 9.",
-                                                "type": "integer",
-                                                "maximum": 9,
-                                                "example": 1
-                                              },
-                                              "doseNumberString": {
-                                                "description": "Description of the dose sequence where it is not a numeric or a reason a dose number cannot be provided.  \nA string should only be used in cases where an integer is not available.",
-                                                "type": "string"
-                                              }
-                                            }
-                                          }
-                                        }
-                                      }
-                                    }
-                                  }
-                                },
-                                {
-                                  "description": "Demographic information about the patient receiving an immunisation.",
-                                  "type": "object",
-                                  "required": [
-                                    "resourceType",
-                                    "id"
-                                  ],
-                                  "properties": {
-                                    "resourceType": {
-                                      "description": "FHIR resource type. Always `Patient`.",
-                                      "type": "string",
-                                      "example": "Patient"
-                                    },
-                                    "id": {
-                                      "description": "Patient ID (NHS Number)",
-                                      "type": "string",
-                                      "example": "9000000009"
-                                    },
-                                    "identifier": {
-                                      "description": "Unique identifier for this patient. Always an NHS number.",
-                                      "type": "array",
-                                      "minItems": 1,
-                                      "items": {
-                                        "type": "object",
-                                        "required": [
-                                          "system",
-                                          "value"
-                                        ],
-                                        "properties": {
-                                          "system": {
-                                            "description": "Coding system used to identify patients.",
-                                            "type": "string",
-                                            "example": "https://fhir.nhs.uk/Id/nhs-number"
-                                          },
-                                          "value": {
-                                            "description": "Code identifying the patient.",
-                                            "type": "string",
-                                            "example": "9000000009"
-                                          }
-                                        }
-                                      }
-                                    }
-                                  }
-                                }
-                              ]
-                            },
-                            "search": {
-                              "description": "Search-related information for the Immunization.",
-                              "type": "object",
-                              "required": [
-                                "mode"
-                              ],
-                              "properties": {
-                                "mode": {
-                                  "description": "Indicates why this resource is in the result set. For Immunization resources this is always `match`.",
-                                  "enum": [
-                                    "match",
-                                    "include"
-                                  ]
-                                }
-                              }
-                            }
-                          }
-                        }
-                      },
-                      "total": {
-                        "description": "Number of matching immunisations found.",
-                        "type": "integer",
-                        "example": 2
-                      }
-                    }
-                  },
-                  "example": {
-                    "resourceType": "Bundle",
-                    "type": "searchset",
-                    "link": [
-                      {
-                        "relation": "self",
-                        "url": "https://sandbox.api.service.nhs.uk/immunisation-fhir-api/Immunization?immunization.target=RSV&_include=Immunization%3Apatient&patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7C9000000009"
-                      }
-                    ],
-                    "entry": [
-                      {
-                        "fullUrl": "https://sandbox.api.service.nhs.uk/immunisation-fhir-api/Immunization/191f288a-17f3-4cd5-a33c-a52aade6473c",
-                        "resource": {
-                          "resourceType": "Immunization",
-                          "id": "191f288a-17f3-4cd5-a33c-a52aade6473c",
-                          "extension": [
-                            {
-                              "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure",
-                              "valueCodeableConcept": {
-                                "coding": [
-                                  {
-                                    "system": "http://snomed.info/sct",
-                                    "code": "1303503001",
-                                    "display": "Administration of RSV (respiratory syncytial virus) vaccine"
-                                  }
-                                ]
-                              }
-                            }
-                          ],
-                          "identifier": [
-                            {
-                              "use": "official",
-                              "system": "https://supplierABC/identifiers/vacc",
-                              "value": "e2154d29-1ead-4830-a513-0d59705078fa"
-                            }
-                          ],
-                          "status": "completed",
-                          "vaccineCode": {
-                            "coding": [
-                              {
-                                "system": "http://snomed.info/sct",
-                                "code": "42605811000001109",
-                                "display": "Abrysvo vaccine powder and solvent for solution for injection 0.5ml vials (Pfizer Ltd)"
-                              }
-                            ]
-                          },
-                          "patient": {
-                            "reference": "urn:uuid:a7a5bc28-5831-4158-8a73-0d3e6e43c1ac",
-                            "type": "Patient",
-                            "identifier": {
-                              "system": "https://fhir.nhs.uk/Id/nhs-number",
-                              "value": "9000000009"
-                            }
-                          },
-                          "occurrenceDateTime": "2021-02-07T13:28:17.271000+00:00",
-                          "recorded": "2021-02-07T13:28:17.271000+00:00",
-                          "primarySource": true,
-                          "location": {
-                            "identifier": {
-                              "system": "https://fhir.nhs.uk/Id/ods-organization-code",
-                              "value": "X99999"
-                            }
-                          },
-                          "manufacturer": {
-                            "display": "AstraZeneca Ltd"
-                          },
-                          "lotNumber": "4120Z001",
-                          "expirationDate": "2021-07-02",
-                          "site": {
-                            "coding": [
-                              {
-                                "system": "http://snomed.info/sct",
-                                "code": "368208006",
-                                "display": "Left upper arm structure (body structure)"
-                              }
-                            ]
-                          },
-                          "route": {
-                            "coding": [
-                              {
-                                "system": "http://snomed.info/sct",
-                                "code": "78421000",
-                                "display": "Intramuscular route (qualifier value)"
-                              }
-                            ]
-                          },
-                          "doseQuantity": {
-                            "value": 0.5,
-                            "unit": "milliliter",
-                            "system": "http://unitsofmeasure.org",
-                            "code": "ml"
-                          },
-                          "performer": [
-                            {
-                              "actor": {
-                                "type": "Organization",
-                                "identifier": {
-                                  "system": "https://fhir.nhs.uk/Id/ods-organization-code",
-                                  "value": "B0C4P"
-                                },
-                                "display": "UNIVERSITY HOSPITAL OF WALES"
-                              }
-                            }
-                          ],
-                          "reasonCode": [
-                            {
-                              "coding": [
-                                {
-                                  "system": "http://snomed.info/sct",
-                                  "code": "443684005",
-                                  "display": "Disease outbreak (event)"
-                                }
-                              ]
-                            }
-                          ],
-                          "protocolApplied": [
-                            {
-                              "targetDisease": [
-                                {
-                                  "coding": [
-                                    {
-                                      "system": "http://snomed.info/sct",
-                                      "code": "55735004",
-                                      "display": "Respiratory syncytial virus infection (disorder)"
-                                    }
-                                  ]
-                                }
-                              ],
-                              "doseNumberPositiveInt": 1
-                            }
-                          ]
-                        },
-                        "search": {
-                          "mode": "match"
-                        }
-                      },
-                      {
-                        "fullUrl": "urn:uuid:a7a5bc28-5831-4158-8a73-0d3e6e43c1ac",
-                        "resource": {
-                          "resourceType": "Patient",
-                          "id": "9000000009",
-                          "identifier": [
-                            {
-                              "system": "https://fhir.nhs.uk/Id/nhs-number",
-                              "value": "9000000009"
-                            }
-                          ]
-                        },
-                        "search": {
-                          "mode": "include"
-                        }
-                      }
-                    ],
-                    "total": 1
-                  }
-                }
-              }
-            },
-            "4XX": {
-              "$ref": "#/components/responses/4XX-imms"
+              "$ref": "#/components/responses/4XX-imms-search"
             }
           }
         }
@@ -2713,7 +1791,7 @@
         "get": {
           "summary": "Retrieve a record of an immunisation by its unique identifier",
           "operationId": "readImmunization",
-          "description": "## Overview\nThis interaction allows you to retrieve the record of a single vaccination by our assigned id. We will return the full immunization resource as submitted. \nThe response will include an eTag for the version of the record which has been returned. If you intend to update a record, it is recommended that you use this interaction to obtain the latest version (and eTag for the version). \nTo retrieve a full vaccination history for a patient, see the search interaction. \nYou must be authorised for the read interaction and the disease type associated with the vaccination event in order to access the record. \n\n## Sandbox testing\nYou can test the following scenarios in our sandbox environment:\n\n| Scenario                                | Request                                                                                                                                                         | Response                                                                |\n| ----------------------------------------| ----------------------------------------------------------------------------------------------------------------------------------------------------------------| ------------------------------------------------------------------------|\n|                                         |                                                                                                                                                                 |                                                                         |\n|  Immunisation record found              | `id`=`12a33650-6f94-4e8f-a971-1c5c41da5b22`                                                                                            | HTTP Status 200 with immunisation data in response body                 |\n|  Bad Request                            | Didn't pass Required fields `id`            | HTTP Status 400 Bad Request               |\n",
+          "description": "## Overview\nThis interaction allows you to retrieve the record of a single vaccination by our assigned id. We will return the full immunization resource as submitted. \nThe response will include an eTag for the version of the record which has been returned. If you intend to update a record, it is recommended that you use this interaction to obtain the latest version (and eTag for the version). \nTo retrieve a full vaccination history for a patient, see the search interaction. \nYou must be authorised for the read interaction and the disease type associated with the vaccination event in order to access the record. \n\n## Sandbox testing\nYou can test the following scenarios in our sandbox environment:\n\n| Scenario                                | Request                                                                                                                                                         | Response                                                                |\n| ----------------------------------------| ----------------------------------------------------------------------------------------------------------------------------------------------------------------| ------------------------------------------------------------------------|\n|                                         |                                                                                                                                                                 |                                                                         |\n|  Immunisation record found              | `id`=`12a33650-6f94-4e8f-a971-1c5c41da5b22`                                                                                            | HTTP Status 200 with immunisation data in response body                 |\n|  Bad Request                            | Didn't pass required fields `id`            | HTTP Status 400 Bad Request               |\n",
           "parameters": [
             {
               "$ref": "#/components/parameters/CorrelationID"
@@ -2730,13 +1808,13 @@
               "description": "Read Immunization operation successful",
               "headers": {
                 "CorrelationID": {
-                  "$ref": "#/components/parameters/CorrelationID"
+                  "$ref": "#/components/headers/CorrelationID"
                 },
                 "RequestID": {
-                  "$ref": "#/components/parameters/RequestID"
+                  "$ref": "#/components/headers/RequestID"
                 },
                 "E-Tag": {
-                  "$ref": "#/components/parameters/E-Tag"
+                  "$ref": "#/components/headers/E-Tag"
                 }
               },
               "content": {
@@ -3250,7 +2328,6 @@
                       "doseQuantity": {
                         "description": "The quantity of vaccine product that was administered.",
                         "type": "object",
-                        "required": [],
                         "properties": {
                           "value": {
                             "description": "Number of units administered.",
@@ -3602,33 +2679,14 @@
               }
             },
             "4XX": {
-              "$ref": "#/components/responses/4XX-imms",
-              "example": {
-                "resourceType": "OperationOutcome",
-                "id": "3d64df5a-b753-49ec-b3df-f45c157941eb",
-                "issue": [
-                  {
-                    "severity": "error",
-                    "code": "invalid",
-                    "details": {
-                      "coding": [
-                        {
-                          "system": "https://fhir.nhs.uk/Codesystem/http-error-codes",
-                          "code": "INVALID"
-                        }
-                      ]
-                    },
-                    "diagnostics": "The provided event ID is either missing or not in the expected format."
-                  }
-                ]
-              }
+              "$ref": "#/components/responses/4XX-imms-read"
             }
           }
         },
         "put": {
           "summary": "Update a record of vaccination",
           "operationId": "updateImmunization",
-          "description": "## Overview\nThis record allows you to add a new updated record of a vaccination event. Update replaces the full immunization resource, so you must provide all data fields, not just the change (Patch is not currently supported). You may obtain all the current data for the vaccination event using the read interaction, which will also return an eTag for the version. \nYou may use update to re-instate a deleted record, but our update interaction does not support creating a new vaccination event where one does not currently exist. \nYou must not change the identifier when updating a vaccination event. The identifier is used as a primary identifier by downstream systems.  \nYou must be authorised for update interaction and the disease type associated with the vaccination event in order to update the record. \n\n## Sandbox testing        \n\n| Scenario                                | Request                                                                                                                                                         | Response                                                                |\n| ----------------------------------------| ----------------------------------------------------------------------------------------------------------------------------------------------------------------| ------------------------------------------------------------------------|\n|                                         |                                                                                                                                                                 |                                                                         |\n|  Update a vaccination event            | valid request as per schema                                                                                            | HTTP Status 200                        |\n|  Bad Request(missing/invalid required element in request body)      | Didn't pass `E-Tag`  in request header          |               HTTP Status   400 Bad Request               |\n",
+          "description": "## Overview\nThis interaction allows you to add a new updated record of a vaccination event. Update replaces the full immunization resource, so you must provide all data fields, not just the change (Patch is not currently supported). You may obtain all the current data for the vaccination event using the read interaction, which will also return an eTag for the version. \nYou may use update to re-instate a deleted record, but our update interaction does not support creating a new vaccination event where one does not currently exist. \nYou must not change the identifier when updating a vaccination event. The identifier is used as a primary identifier by downstream systems.  \nYou must be authorised for update interaction and the disease type associated with the vaccination event in order to update the record. \n\n## Sandbox testing        \n\n| Scenario                                | Request                                                                                                                                                         | Response                                                                |\n| ----------------------------------------| ----------------------------------------------------------------------------------------------------------------------------------------------------------------| ------------------------------------------------------------------------|\n|                                         |                                                                                                                                                                 |                                                                         |\n|  Update a vaccination event            | Valid request as per schema                                                                                            | HTTP Status 200                        |\n|  Bad Request (missing/invalid required element in request body)      | Didn't pass `E-Tag`  in request header          |               HTTP Status   400 Bad Request               |\n",
           "parameters": [
             {
               "$ref": "#/components/parameters/CorrelationID"
@@ -3794,7 +2852,7 @@
                               },
                               "name": {
                                 "type": "array",
-                                "description": "Patient name as registered on PDS or as recorded by the user where the record cannot be traced on PDS.  \nThere SHOULD be only one instance of name. If more than one name instance is provided additional elements SHOULD be populated only so the current, official name can be determined or otherwise the current, official name SHALL be the first name instance. There SHALL be at least one name instance with both family and given elements populated.",
+                                "description": "Patient name as registered, or as recorded by the user where the patient record cannot be traced. \nThere SHOULD be only one instance of name. If more than one name instance is provided additional elements SHOULD be populated only so the current, official name can be determined or otherwise the current, official name SHALL be the first name instance. There SHALL be at least one name instance with both family and given elements populated.",
                                 "items": {
                                   "type": "object",
                                   "properties": {
@@ -4137,7 +3195,6 @@
                     "doseQuantity": {
                       "description": "The quantity of vaccine product that was administered. This `SHOULD be populated` where the data is available.  \nA SNOMED-CT Concept ID value representing the unit of measure used SHOULD be provided.",
                       "type": "object",
-                      "required": [],
                       "properties": {
                         "value": {
                           "description": "The actual value of the dose amount administered. This `SHOULD be populated` where the data is available.  \nFor Example,  \nComirnaty ® (Pfizer BioNTech):  \n  Full Dose (Primary Course or booster) = 0.3  \n  Fractional Dose (Primary Course) = 0.1",
@@ -4478,22 +3535,22 @@
               "description": "Update Immunization operation successful",
               "headers": {
                 "CorrelationID": {
-                  "$ref": "#/components/parameters/CorrelationID"
+                  "$ref": "#/components/headers/CorrelationID"
                 },
                 "RequestID": {
-                  "$ref": "#/components/parameters/RequestID"
+                  "$ref": "#/components/headers/RequestID"
                 }
               }
             },
             "4XX": {
-              "$ref": "#/components/responses/4XX-imms"
+              "$ref": "#/components/responses/4XX-imms-update"
             }
           }
         },
         "delete": {
           "summary": "Mark a record of vaccination as being entered in error",
           "operationId": "deleteImmunization",
-          "description": "## Overview\nThis endpoint allows you to mark a record that has been entered in error.\nDeleted records will continue to be stored for a period of time but are not returned in response to read or search requests.\nA deleted record can be re-instated using the update interaction if it was incorrectly deleted. \n\n## Sandbox testing\n\n| Scenario                                | Request                                                                                                                                                         | Response                                                                |\n| ----------------------------------------| ----------------------------------------------------------------------------------------------------------------------------------------------------------------| ------------------------------------------------------------------------|\n|                                         |                                                                                                                                                                 |                                                                         |\n|  Delete a vaccination event            | `id`=`12a33650-6f94-4e8f-a971-1c5c41da5b22`                                                                                            | HTTP Status 204  No Content                      |\n|  Bad Request                            | Didn't pass Required fields `id`            | HTTP Status 400 Bad Request               |\n",
+          "description": "## Overview\nThis interaction allows you to mark a record that has been entered in error.\nDeleted records will continue to be stored for a period of time but are not returned in response to read or search requests.\nA deleted record can be re-instated using the update interaction if it was incorrectly deleted. \n\n## Sandbox testing\n\n| Scenario                                | Request                                                                                                                                                         | Response                                                                |\n| ----------------------------------------| ----------------------------------------------------------------------------------------------------------------------------------------------------------------| ------------------------------------------------------------------------|\n|                                         |                                                                                                                                                                 |                                                                         |\n|  Delete a vaccination event            | `id`=`12a33650-6f94-4e8f-a971-1c5c41da5b22`                                                                                            | HTTP Status 204  No Content                      |\n|  Bad Request                            | Didn't pass required fields `id`            | HTTP Status 400 Bad Request               |\n",
           "parameters": [
             {
               "$ref": "#/components/parameters/CorrelationID"
@@ -4508,39 +3565,180 @@
           "responses": {
             "204": {
               "description": "Delete Immunization operation successful"
+            },
+            "4XX": {
+              "$ref": "#/components/responses/4XX-imms-delete"
             }
-          },
-          "4XX": {
-            "$ref": "#/components/responses/4XX-imms"
           }
         }
       }
     },
     "components": {
       "responses": {
-        "4XX-imms": {
-          "description": "Below are examples of potential HTTP status codes and their associated error codes, which could be returned in the event of a fault.\n\n| HTTP status | Error code                 | Description | Example      |\n| ----------- | -------------------------- | --------------------------------------------- |--------------------------------------------------------------------------------------|\n| 400         | INVALID                    | The provided event ID is either missing or not in the expected format. |  {\"resourceType\": \"OperationOutcome\", \"id\": \"6f4ca309-19d7-4f61-90b3-acbd1f2eb8f8\", \"meta\": {\"profile\": [\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]}, \"issue\": [{\"severity\": \"error\", \"code\": \"invalid\", \"details\": {\"coding\": [{\"system\": \"https://fhir.nhs.uk/Codesystem/http-error-codes\", \"code\": \"INVALID\"}]}, \"diagnostics\": \"the provided event ID is either missing or not in the expected format.\"}]} |\n| 400         | BAD_REQUEST                | Search could not be processed or failed basic FHIR validation rules  | {\"resourceType\": \"OperationOutcome\", \"id\": \"4ff75db4-6e7d-411d-a490-c55c11f83043\", \"meta\": {\"profile\": [\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]}, \"issue\": [{\"severity\": \"error\", \"code\": \"invalid\", \"details\": {\"coding\": [{\"system\": \"https://fhir.nhs.uk/Codesystem/http-error-codes\", \"code\": \"INVALID\"}]}, \"diagnostics\": \"patient.identifier must be in the format of \\\"https://fhir.nhs.uk/Id/nhs-number|{NHS number}\\\" e.g. \\\"https://fhir.nhs.uk/Id/nhs-number|9000000009\\\"\"}]}  |\n| 401         | UNAUTHORISED               | Authorization is required for the interaction that was attempted  | {\"resourceType\":\"OperationOutcome\",\"id\":\"a5abca2a-4eda-41da-b2cc-95d48c6b791d\",\"meta\":{\"profile\":[\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]},\"issue\":[{\"severity\":\"error\",\"code\":\"expired\",\"details\":{\"coding\":[{\"system\":\"https://fhir.nhs.uk/Codesystem/http-error-codes\",\"code\":\"SEND_UNAUTHORIZED\"}]},\"diagnostics\":\"The sender has not provided a token or it has expired or is otherwise invalid.\"}]} |\n| 403         | UNAUTHORISED               | The sender does not have permissions to access this resource  | {\"resourceType\":\"OperationOutcome\",\"id\":\"a5abca2a-4eda-41da-b2cc-95d48c6b791d\",\"meta\":{\"profile\":[\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]},\"issue\":[{\"severity\":\"error\",\"code\":\"forbidden\",\"details\":{\"coding\":[{\"system\":\"https://fhir.nhs.uk/Codesystem/http-error-codes\",\"code\":\"SEND_UNAUTHORIZED\"}]},\"diagnostics\":\"The sender does not have permissions to access this resource. Please check your credentials and permissions.\"}]} |\n| 404         | NOT_FOUND                  | The requested resource was not found. | {\"resourceType\": \"OperationOutcome\", \"id\": \"bc2c3c82-4392-4314-9d6b-a7345f82d923\", \"meta\": {\"profile\": [\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]}, \"issue\": [{\"severity\": \"error\", \"code\": \"not-found\", \"details\": {\"coding\": [{\"system\": \"https://fhir.nhs.uk/Codesystem/http-error-codes\", \"code\": \"NOT-FOUND\"}]}, \"diagnostics\": \"The requested resource was not found.\"}]}  |\n| 405         | NOT_ALLOWED                | The requested method is not allowed  |\n| 422         | UNPROCESSABLE_ENTITY       | The proposed resource violated applicable FHIR profiles or server business rules. This should be accompanied by an OperationOutcome resource providing additional detail  |\n",
+        "4XX-imms-create": {
+          "description": "Below are examples of potential HTTP status codes and their associated error codes, which could be returned in the event of a fault.\n\n| HTTP status | Error code                 | Description | Example      |\n| ----------- | -------------------------- | --------------------------------------------- |--------------------------------------------------------------------------------------|\n| 400         | Bad Request               | Invalid resourceType in body |  {\"resourceType\": \"OperationOutcome\", \"id\": \"a7dc58e7-4033-43e6-b34e-cf7ee7bbc567\", \"meta\": {\"profile\": [\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]}, \"issue\": [{\"severity\": \"error\", \"code\": \"invariant\", \"details\": {\"coding\": [{\"system\": \"https://fhir.nhs.uk/Codesystem/http-error-codes\", \"code\": \"INVARIANT\"}]}, \"diagnostics\": \"Validation errors: This service only accepts FHIR Immunization Resources (i.e. resourceType must equal 'Immunization')\"}]} |\n| 400         | Bad Request               | Invalid resourceType within contained |  {\"resourceType\": \"OperationOutcome\", \"id\": \"ffda54b5-21a7-4e4c-9ca5-0a4e510d7467\", \"meta\": {\"profile\": [\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]}, \"issue\": [{\"severity\": \"error\", \"code\": \"invariant\", \"details\": {\"coding\": [{\"system\": \"https://fhir.nhs.uk/Codesystem/http-error-codes\", \"code\": \"INVARIANT\"}]}, \"diagnostics\": \"Validation errors: contained must contain only Patient and Practitioner resources\"}]} |\n| 400         | Bad Request               | Invalid status value |  {\"resourceType\": \"OperationOutcome\", \"id\": \"12a9f94c-df00-4e87-aefa-2c76f9065367\", \"meta\": {\"profile\": [\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]}, \"issue\": [{\"severity\": \"error\", \"code\": \"invariant\", \"details\": {\"coding\": [{\"system\": \"https://fhir.nhs.uk/Codesystem/http-error-codes\", \"code\": \"INVARIANT\"}]}, \"diagnostics\": \"Validation errors: status must be one of the following: completed\"}]} |\n| 400         | Bad Request               | Invalid value for a datetime (string) field e.g. occurrenceDateTime.<br>Note : The error format will remain same for any datetime (string) field; only the field name will change under diagnostics. |  {\"resourceType\": \"OperationOutcome\", \"id\": \"e02e3254-c1b3-4afd-a8ca-84091d7d272c\", \"meta\": {\"profile\": [\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]}, \"issue\": [{\"severity\": \"error\", \"code\": \"invariant\", \"details\": {\"coding\": [{\"system\": \"https://fhir.nhs.uk/Codesystem/http-error-codes\", \"code\": \"INVARIANT\"}]}, \"diagnostics\": \"Validation errors: occurrenceDateTime must be a valid datetime in the format 'YYYY-MM-DDThh:mm:ss+zz:zz' (where time element is optional, timezone must be given if and only if time is given, and milliseconds can be optionally included after the seconds). Note that partial dates are not allowed for occurrenceDateTime for this service.\"}]} |\n| 400         | Bad Request               | Invalid value for a string field e.g. postalCode<br>Note : The error format will remain same for any string field; only the field location will change under diagnostics. |  {\"resourceType\": \"OperationOutcome\", \"id\": \"0df23485-4690-41ab-8b24-8b28584ec2eb\", \"meta\": {\"profile\": [\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]}, \"issue\": [{\"severity\": \"error\", \"code\": \"invariant\", \"details\": {\"coding\": [{\"system\": \"https://fhir.nhs.uk/Codesystem/http-error-codes\", \"code\": \"INVARIANT\"}]}, \"diagnostics\": \"Validation errors: contained[?(@.resourceType=='Patient')].address[0].postalCode must be a non-empty string\"}]} |\n| 400         | Bad Request               | Invalid value for an integer field e.g. doseNumberPositiveInt<br>Note : The error format will remain same for any integer field; only the field location will change under diagnostics. |  {\"resourceType\": \"OperationOutcome\", \"id\": \"dda6b6cd-af06-47ea-a4d4-f0f8cdf83085\", \"meta\": {\"profile\": [\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]}, \"issue\": [{\"severity\": \"error\", \"code\": \"invariant\", \"details\": {\"coding\": [{\"system\": \"https://fhir.nhs.uk/Codesystem/http-error-codes\", \"code\": \"INVARIANT\"}]}, \"diagnostics\": \"Validation errors: protocolApplied[0].doseNumberPositiveInt must be a positive integer\"}]} |\n| 400         | Bad Request               | Invalid top level element e.g. test  |  {\"resourceType\": \"OperationOutcome\", \"id\": \"fd60f75c-d2cb-4c77-b3e9-ba8c3e0379e6\", \"meta\": {\"profile\": [\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]}, \"issue\": [{\"severity\": \"error\", \"code\": \"invariant\", \"details\": {\"coding\": [{\"system\": \"https://fhir.nhs.uk/Codesystem/http-error-codes\", \"code\": \"INVARIANT\"}]}, \"diagnostics\": \"Validation errors: \"test\" is not an allowed element of the Immunization resource for this service\"}]} |\n| 400         | Bad Request               | Missing mandatory field e.g. contained<br>Note : The error format will remain same for any mandatory field; only the field name will change under diagnostics. |  {\"resourceType\": \"OperationOutcome\", \"id\": \"72eee803-c8bf-4728-a15b-5d9a10bb645c\", \"meta\": {\"profile\": [\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]}, \"issue\": [{\"severity\": \"error\", \"code\": \"invariant\", \"details\": {\"coding\": [{\"system\": \"https://fhir.nhs.uk/Codesystem/http-error-codes\", \"code\": \"INVARIANT\"}]}, \"diagnostics\": \"contained is a mandatory field\"}]} |\n| 401         | Unauthorized               | Authorization is required for the interaction that was attempted |  {\"resourceType\":\"OperationOutcome\",\"id\":\"a5abca2a-4eda-41da-b2cc-95d48c6b791d\",\"meta\":{\"profile\":[\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]},\"issue\":[{\"severity\":\"error\",\"code\":\"expired\",\"details\":{\"coding\":[{\"system\":\"https://fhir.nhs.uk/Codesystem/http-error-codes\",\"code\":\"SEND_UNAUTHORIZED\"}]},\"diagnostics\":\"The sender has not provided a token or it has expired or is otherwise invalid.\"}]} |\n| 403         | Forbidden               | The sender does not have permissions to access this resource  | {\"resourceType\":\"OperationOutcome\",\"id\":\"a5abca2a-4eda-41da-b2cc-95d48c6b791d\",\"meta\":{\"profile\":[\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]},\"issue\":[{\"severity\":\"error\",\"code\":\"forbidden\",\"details\":{\"coding\":[{\"system\":\"https://fhir.nhs.uk/Codesystem/http-error-codes\",\"code\":\"SEND_UNAUTHORIZED\"}]},\"diagnostics\":\"The sender does not have permissions to access this resource. Please check your credentials and permissions.\"}]}  |\n| 403         | Forbidden               | The sender does not have permission for the specific operation or vaccine type  | {\"resourceType\": \"OperationOutcome\", \"id\": \"1b7eec0a-316f-4f6e-a342-4b37f6705050\", \"meta\": {\"profile\": [\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]}, \"issue\": [{\"severity\": \"error\", \"code\": \"forbidden\", \"details\": {\"coding\": [{\"system\": \"https://fhir.nhs.uk/Codesystem/http-error-codes\", \"code\": \"FORBIDDEN\"}]}, \"diagnostics\": \"Unauthorized request for vaccine type\"}]} |\n| 422         | Unprocessable Entity               | Duplicate Identifier value  | {\"resourceType\": \"OperationOutcome\", \"id\": \"b82adf54-1844-4354-a5dd-09bfc34dd569\", \"meta\": {\"profile\": [\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]}, \"issue\": [{\"severity\": \"error\", \"code\": \"duplicate\", \"details\": {\"coding\": [{\"system\": \"https://fhir.nhs.uk/Codesystem/http-error-codes\", \"code\": \"DUPLICATE\"}]}, \"diagnostics\": \"The provided identifier: https://supplierABC/identifiers/vacc#a7437179-e86e-4855-b68e-xxxxx is duplicated\"}]} |\n",
           "content": {
             "application/fhir+json": {
               "schema": {
                 "$ref": "#/components/schemas/OperationOutcome"
               },
               "example": {
-                "resourceType": "OperationOutcome",
-                "id": "3d64df5a-b753-49ec-b3df-f45c157941eb",
-                "issue": [
+                "resourceType":"OperationOutcome",
+                "id":"a5abca2a-4eda-41da-b2cc-95d48c6b791d",
+                "meta":{
+                  "profile":[
+                    "https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"
+                  ]
+                },
+                "issue":[
                   {
-                    "severity": "error",
-                    "code": "invalid",
-                    "details": {
-                      "coding": [
+                    "severity":"error",
+                    "code":"expired",
+                    "details":{
+                      "coding":[
                         {
-                          "system": "https://fhir.nhs.uk/Codesystem/http-error-codes",
-                          "code": "INVALID"
+                          "system":"https://fhir.nhs.uk/Codesystem/http-error-codes",
+                          "code":"SEND_UNAUTHORIZED"
                         }
                       ]
                     },
-                    "diagnostics": "Search parameter patient.identifier/-immunization.target must have one value."
+                    "diagnostics":"The sender has not provided a token or it has expired or is otherwise invalid."
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "4XX-imms-search": {
+          "description": "Below are examples of potential HTTP status codes and their associated error codes, which could be returned in the event of a fault.\n\n| HTTP status | Error code                 | Description | Example      |\n| ----------- | -------------------------- | --------------------------------------------- |--------------------------------------------------------------------------------------|\n| 400         | Bad Request               | Search parameter  immunization.target is either missing or not in the expected format. |  {\"resourceType\":\"OperationOutcome\",\"id\":\"0f985bbd-a25e-4644-bcab-e11ac9f1cf3a\",\"meta\":{\"profile\":[\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]},\"issue\":[{\"severity\":\"error\",\"code\":\"invalid\",\"details\":{\"coding\":[{\"system\":\"https://fhir.nhs.uk/Codesystem/http-error-codes\",\"code\":\"INVALID\"}]},\"diagnostics\":\"Search parameter -immunization.target must have one or more values.\"}]} |\n| 400         | Bad Request               | Search parameter patient.identifier is either missing or not in the expected format. |  {\"resourceType\":\"OperationOutcome\",\"id\":\"ee3ce747-95dc-40e9-be2e-404edf203444\",\"meta\":{\"profile\":[\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]},\"issue\":[{\"severity\":\"error\",\"code\":\"invalid\",\"details\":{\"coding\":[{\"system\":\"https://fhir.nhs.uk/Codesystem/http-error-codes\",\"code\":\"INVALID\"}]},\"diagnostics\":\"Search parameter patient.identifier must have one value.\"}]} |\n| 400         | Bad Request               | Invalid value for patient.identifier |  {\"resourceType\":\"OperationOutcome\",\"id\":\"ec7f1d44-6658-42cc-bffb-af790beba382\",\"meta\":{\"profile\":[\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]},\"issue\":[{\"severity\":\"error\",\"code\":\"invalid\",\"details\":{\"coding\":[{\"system\":\"https://fhir.nhs.uk/Codesystem/http-error-codes\",\"code\":\"INVALID\"}]},\"diagnostics\":\"patient.identifier must be in the format of \\\"https://fhir.nhs.uk/Id/nhs-number|{NHS number}\\\" e.g. \\\"https://fhir.nhs.uk/Id/nhs-number|9000000009\\\"\"}]} |\n| 400         | Bad Request               | Invalid date.to/date.from format |  {\"resourceType\": \"OperationOutcome\", \"id\": \"ad3d7881-6f2e-418f-ae13-75a07d7269d7\", \"meta\": {\"profile\": [\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]}, \"issue\": [{\"severity\": \"error\", \"code\": \"invalid\", \"details\": {\"coding\": [{\"system\": \"https://fhir.nhs.uk/Codesystem/http-error-codes\", \"code\": \"INVALID\"}]}, \"diagnostics\": \"Search parameter -date.to must be in format: YYYY-MM-DD\"}]} |\n| 400         | Bad Request               | Invalid value for \"-immunization.target\" |  {\"resourceType\": \"OperationOutcome\", \"id\": \"f1753822-5667-4562-a288-1544a0b66d00\", \"meta\": {\"profile\": [\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]}, \"issue\": [{\"severity\": \"error\", \"code\": \"invalid\", \"details\": {\"coding\": [{\"system\": \"https://fhir.nhs.uk/Codesystem/http-error-codes\", \"code\": \"INVALID\"}]}, \"diagnostics\": \"immunization-target must be one or more of the following: COVID19,FLU,HPV,MMR,3IN1,MENACWY,RSV\"}]} |\n| 401         | Unauthorized               | Authorization is required for the interaction that was attempted |  {\"resourceType\":\"OperationOutcome\",\"id\":\"a5abca2a-4eda-41da-b2cc-95d48c6b791d\",\"meta\":{\"profile\":[\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]},\"issue\":[{\"severity\":\"error\",\"code\":\"expired\",\"details\":{\"coding\":[{\"system\":\"https://fhir.nhs.uk/Codesystem/http-error-codes\",\"code\":\"SEND_UNAUTHORIZED\"}]},\"diagnostics\":\"The sender has not provided a token or it has expired or is otherwise invalid.\"}]} |\n| 403         | Forbidden               | The sender does not have permissions to access this resource  | {\"resourceType\":\"OperationOutcome\",\"id\":\"a5abca2a-4eda-41da-b2cc-95d48c6b791d\",\"meta\":{\"profile\":[\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]},\"issue\":[{\"severity\":\"error\",\"code\":\"forbidden\",\"details\":{\"coding\":[{\"system\":\"https://fhir.nhs.uk/Codesystem/http-error-codes\",\"code\":\"SEND_UNAUTHORIZED\"}]},\"diagnostics\":\"The sender does not have permissions to access this resource. Please check your credentials and permissions.\"}]}  |\n| 403         | Forbidden               | The sender does not have permission for the specific operation or vaccine type  | {\"resourceType\": \"OperationOutcome\", \"id\": \"1b7eec0a-316f-4f6e-a342-4b37f6705050\", \"meta\": {\"profile\": [\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]}, \"issue\": [{\"severity\": \"error\", \"code\": \"forbidden\", \"details\": {\"coding\": [{\"system\": \"https://fhir.nhs.uk/Codesystem/http-error-codes\", \"code\": \"FORBIDDEN\"}]}, \"diagnostics\": \"Unauthorized request for vaccine type\"}]} |\n",
+          "content": {
+            "application/fhir+json": {
+              "schema": {
+                "$ref": "#/components/schemas/OperationOutcome"
+              },
+              "example": {
+                "resourceType":"OperationOutcome",
+                "id":"a5abca2a-4eda-41da-b2cc-95d48c6b791d",
+                "meta":{
+                  "profile":[
+                    "https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"
+                  ]
+                },
+                "issue":[
+                  {
+                    "severity":"error",
+                    "code":"expired",
+                    "details":{
+                      "coding":[
+                        {
+                          "system":"https://fhir.nhs.uk/Codesystem/http-error-codes",
+                          "code":"SEND_UNAUTHORIZED"
+                        }
+                      ]
+                    },
+                    "diagnostics":"The sender has not provided a token or it has expired or is otherwise invalid."
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "4XX-imms-read": {
+          "description": "Below are examples of potential HTTP status codes and their associated error codes, which could be returned in the event of a fault.\n\n| HTTP status | Error code                 | Description | Example      |\n| ----------- | -------------------------- | --------------------------------------------- |--------------------------------------------------------------------------------------|\n| 400         | Bad Request               | Missing immunization event identifier (id) |  {\"resourceType\": \"OperationOutcome\", \"id\": \"438f5c0d-f89d-46ec-b4ba-c08dc5a44ff3\", \"meta\": {\"profile\": [\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]}, \"issue\": [{\"severity\": \"error\", \"code\": \"invalid\", \"details\": {\"coding\": [{\"system\": \"https://fhir.nhs.uk/Codesystem/http-error-codes\", \"code\": \"INVALID\"}]}, \"diagnostics\": \"the provided event ID is either missing or not in the expected format.\"}]} |\n| 401         | Unauthorized               | Authorization is required for the interaction that was attempted |  {\"resourceType\":\"OperationOutcome\",\"id\":\"a5abca2a-4eda-41da-b2cc-95d48c6b791d\",\"meta\":{\"profile\":[\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]},\"issue\":[{\"severity\":\"error\",\"code\":\"expired\",\"details\":{\"coding\":[{\"system\":\"https://fhir.nhs.uk/Codesystem/http-error-codes\",\"code\":\"SEND_UNAUTHORIZED\"}]},\"diagnostics\":\"The sender has not provided a token or it has expired or is otherwise invalid.\"}]} |\n| 403         | Forbidden               | The sender does not have permissions to access this resource  | {\"resourceType\":\"OperationOutcome\",\"id\":\"a5abca2a-4eda-41da-b2cc-95d48c6b791d\",\"meta\":{\"profile\":[\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]},\"issue\":[{\"severity\":\"error\",\"code\":\"forbidden\",\"details\":{\"coding\":[{\"system\":\"https://fhir.nhs.uk/Codesystem/http-error-codes\",\"code\":\"SEND_UNAUTHORIZED\"}]},\"diagnostics\":\"The sender does not have permissions to access this resource. Please check your credentials and permissions.\"}]}  |\n| 403         | Forbidden               | The sender does not have permission for the specific operation or vaccine type  | {\"resourceType\": \"OperationOutcome\", \"id\": \"1b7eec0a-316f-4f6e-a342-4b37f6705050\", \"meta\": {\"profile\": [\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]}, \"issue\": [{\"severity\": \"error\", \"code\": \"forbidden\", \"details\": {\"coding\": [{\"system\": \"https://fhir.nhs.uk/Codesystem/http-error-codes\", \"code\": \"FORBIDDEN\"}]}, \"diagnostics\": \"Unauthorized request for vaccine type\"}]} |\n| 404         | Not Found               | Unrecognized immunization event identifier (id) |  {\"resourceType\": \"OperationOutcome\", \"id\": \"5b51e331-5f9c-442f-a4c3-b5f52a1ba83e\", \"meta\": {\"profile\": [\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]}, \"issue\": [{\"severity\": \"error\", \"code\": \"not-found\", \"details\": {\"coding\": [{\"system\": \"https://fhir.nhs.uk/Codesystem/http-error-codes\", \"code\": \"NOT-FOUND\"}]}, \"diagnostics\": \"The requested resource was not found.\"}]} |\n",
+          "content": {
+            "application/fhir+json": {
+              "schema": {
+                "$ref": "#/components/schemas/OperationOutcome"
+              },
+              "example": {
+                "resourceType":"OperationOutcome",
+                "id":"a5abca2a-4eda-41da-b2cc-95d48c6b791d",
+                "meta":{
+                  "profile":[
+                    "https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"
+                  ]
+                },
+                "issue":[
+                  {
+                    "severity":"error",
+                    "code":"expired",
+                    "details":{
+                      "coding":[
+                        {
+                          "system":"https://fhir.nhs.uk/Codesystem/http-error-codes",
+                          "code":"SEND_UNAUTHORIZED"
+                        }
+                      ]
+                    },
+                    "diagnostics":"The sender has not provided a token or it has expired or is otherwise invalid."
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "4XX-imms-update": {
+          "description": "Below are examples of potential HTTP status codes and their associated error codes, which could be returned in the event of a fault.\n\n| HTTP status | Error code                 | Description | Example      |\n| ----------- | -------------------------- | --------------------------------------------- |--------------------------------------------------------------------------------------|\n| 400         | Bad Request               | All validation errors & mandatory field errors from the Record scenario |  All validation errors & mandatory field errors from POST /Immunization |\n| 400         | Bad Request               | Missing id in request parameter |  {\"resourceType\": \"OperationOutcome\", \"id\": \"05ef00c0-18ae-4a88-93ca-9dc1b0532ea1\", \"meta\": {\"profile\": [\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]}, \"issue\": [{\"severity\": \"error\", \"code\": \"invalid\", \"details\": {\"coding\": [{\"system\": \"https://fhir.nhs.uk/Codesystem/http-error-codes\", \"code\": \"INVALID\"}]}, \"diagnostics\": \"the provided event ID is either missing or not in the expected format.\"}]} |\n| 400         | Bad Request               | Missing id parameter in request body<br>or<br>mismatch between id provided within request body and request parameter |  {\"resourceType\": \"OperationOutcome\", \"id\": \"ddf659ac-1a34-4ca2-b11a-77b9a8febeec\", \"meta\": {\"profile\": [\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]}, \"issue\": [{\"severity\": \"error\", \"code\": \"invariant\", \"details\": {\"coding\": [{\"system\": \"https://fhir.nhs.uk/Codesystem/http-error-codes\", \"code\": \"INVARIANT\"}]}, \"diagnostics\": \"Validation errors: The provided immunization id:16ec10f2-afef-4c0b-9467-xxxx doesn't match with the content of the request body\"}]} |\n| 400         | Bad Request               | Mismatch between identifier value and stored event |  {\"resourceType\": \"OperationOutcome\", \"id\": \"ac43b4a6-7ceb-4ff8-a246-d7ceacdab058\", \"meta\": {\"profile\": [\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]}, \"issue\": [{\"severity\": \"error\", \"code\": \"invariant\", \"details\": {\"coding\": [{\"system\": \"https://fhir.nhs.uk/Codesystem/http-error-codes\", \"code\": \"INVARIANT\"}]}, \"diagnostics\": \"Validation errors: identifier[0].value doesn't match with the stored content\"}]} |\n| 400         | Bad Request               | Missing E-Tag (version) header |  {\"resourceType\": \"OperationOutcome\", \"id\": \"715d5e23-4621-4719-8902-e80faf6539fd\", \"meta\": {\"profile\": [\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]}, \"issue\": [{\"severity\": \"error\", \"code\": \"invariant\", \"details\": {\"coding\": [{\"system\": \"https://fhir.nhs.uk/Codesystem/http-error-codes\", \"code\": \"INVARIANT\"}]}, \"diagnostics\": \"Validation errors: Immunization resource version not specified in the request headers\"}]} |\n| 400         | Bad Request               | Wrong version number passed in E-Tag header<br>e.g. passing version no. > 1 in case of first-time update |  {\"resourceType\": \"OperationOutcome\", \"id\": \"7cf8b2e1-f069-4cce-9b48-5201f64a50a9\", \"meta\": {\"profile\": [\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]}, \"issue\": [{\"severity\": \"error\", \"code\": \"invariant\", \"details\": {\"coding\": [{\"system\": \"https://fhir.nhs.uk/Codesystem/http-error-codes\", \"code\": \"INVARIANT\"}]}, \"diagnostics\": \"Validation errors: The requested immunization resource 5a64fa79-9114-49bb-97c9-d455b0276475 version is inconsistent with the existing version.\"}]} |\n| 400         | Bad Request               | Empty value for E-Tag header |  {\"resourceType\": \"OperationOutcome\", \"id\": \"6eda36fc-777a-472a-b3a3-3e1627eca980\", \"meta\": {\"profile\": [\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]}, \"issue\": [{\"severity\": \"error\", \"code\": \"invariant\", \"details\": {\"coding\": [{\"system\": \"https://fhir.nhs.uk/Codesystem/http-error-codes\", \"code\": \"INVARIANT\"}]}, \"diagnostics\": \"Validation errors: Immunization resource version: in the request headers is invalid.\"}]} |\n| 400         | Bad Request               | E-Tag value <= current stored value |  {\"resourceType\": \"OperationOutcome\", \"id\": \"06e3086a-61b5-4dfc-b0ff-10e2658268f5\", \"meta\": {\"profile\": [\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]}, \"issue\": [{\"severity\": \"error\", \"code\": \"invariant\", \"details\": {\"coding\": [{\"system\": \"https://fhir.nhs.uk/Codesystem/http-error-codes\", \"code\": \"INVARIANT\"}]}, \"diagnostics\": \"Validation errors: The requested immunization resource 5a64fa79-9114-49bb-97c9-d455b0276475 has changed since the last retrieve.\"}]} |\n| 401         | Unauthorized               | Authorization is required for the interaction that was attempted |  {\"resourceType\":\"OperationOutcome\",\"id\":\"a5abca2a-4eda-41da-b2cc-95d48c6b791d\",\"meta\":{\"profile\":[\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]},\"issue\":[{\"severity\":\"error\",\"code\":\"expired\",\"details\":{\"coding\":[{\"system\":\"https://fhir.nhs.uk/Codesystem/http-error-codes\",\"code\":\"SEND_UNAUTHORIZED\"}]},\"diagnostics\":\"The sender has not provided a token or it has expired or is otherwise invalid.\"}]} |\n| 403         | Forbidden               | The sender does not have permissions to access this resource  | {\"resourceType\":\"OperationOutcome\",\"id\":\"a5abca2a-4eda-41da-b2cc-95d48c6b791d\",\"meta\":{\"profile\":[\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]},\"issue\":[{\"severity\":\"error\",\"code\":\"forbidden\",\"details\":{\"coding\":[{\"system\":\"https://fhir.nhs.uk/Codesystem/http-error-codes\",\"code\":\"SEND_UNAUTHORIZED\"}]},\"diagnostics\":\"The sender does not have permissions to access this resource. Please check your credentials and permissions.\"}]}  |\n| 403         | Forbidden               | The sender does not have permission for the specific operation or vaccine type  | {\"resourceType\": \"OperationOutcome\", \"id\": \"1b7eec0a-316f-4f6e-a342-4b37f6705050\", \"meta\": {\"profile\": [\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]}, \"issue\": [{\"severity\": \"error\", \"code\": \"forbidden\", \"details\": {\"coding\": [{\"system\": \"https://fhir.nhs.uk/Codesystem/http-error-codes\", \"code\": \"FORBIDDEN\"}]}, \"diagnostics\": \"Unauthorized request for vaccine type\"}]} |\n| 404         | Not Found               | Provided id not available |  {\"resourceType\": \"OperationOutcome\", \"id\": \"c86be3de-bcbb-4ba5-902e-9acf55187dc5\", \"meta\": {\"profile\": [\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]}, \"issue\": [{\"severity\": \"error\", \"code\": \"not-found\", \"details\": {\"coding\": [{\"system\": \"https://fhir.nhs.uk/Codesystem/http-error-codes\", \"code\": \"NOT-FOUND\"}]}, \"diagnostics\": \"Validation errors: The requested immunization resource with id:16ec10f2-afef-4c0b-9467-80434a7a0e26 was not found.\"}]} |\n",
+          "content": {
+            "application/fhir+json": {
+              "schema": {
+                "$ref": "#/components/schemas/OperationOutcome"
+              },
+              "example": {
+                "resourceType":"OperationOutcome",
+                "id":"a5abca2a-4eda-41da-b2cc-95d48c6b791d",
+                "meta":{
+                  "profile":[
+                    "https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"
+                  ]
+                },
+                "issue":[
+                  {
+                    "severity":"error",
+                    "code":"expired",
+                    "details":{
+                      "coding":[
+                        {
+                          "system":"https://fhir.nhs.uk/Codesystem/http-error-codes",
+                          "code":"SEND_UNAUTHORIZED"
+                        }
+                      ]
+                    },
+                    "diagnostics":"The sender has not provided a token or it has expired or is otherwise invalid."
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "4XX-imms-delete": {
+          "description": "Below are examples of potential HTTP status codes and their associated error codes, which could be returned in the event of a fault.\n\n| HTTP status | Error code                 | Description | Example      |\n| ----------- | -------------------------- | --------------------------------------------- |--------------------------------------------------------------------------------------|\n| 400         | Bad Request               | Missing or invalid id |  {\"resourceType\": \"OperationOutcome\", \"id\": \"f400ad2c-62d9-4f98-bc35-a146caf14dee\", \"meta\": {\"profile\": [\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]}, \"issue\": [{\"severity\": \"error\", \"code\": \"invalid\", \"details\": {\"coding\": [{\"system\": \"https://fhir.nhs.uk/Codesystem/http-error-codes\", \"code\": \"INVALID\"}]}, \"diagnostics\": \"the provided event ID is either missing or not in the expected format.\"}]} |\n| 401         | Unauthorized               | Authorization is required for the interaction that was attempted |  {\"resourceType\":\"OperationOutcome\",\"id\":\"a5abca2a-4eda-41da-b2cc-95d48c6b791d\",\"meta\":{\"profile\":[\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]},\"issue\":[{\"severity\":\"error\",\"code\":\"expired\",\"details\":{\"coding\":[{\"system\":\"https://fhir.nhs.uk/Codesystem/http-error-codes\",\"code\":\"SEND_UNAUTHORIZED\"}]},\"diagnostics\":\"The sender has not provided a token or it has expired or is otherwise invalid.\"}]} |\n| 403         | Forbidden               | The sender does not have permissions to access this resource  | {\"resourceType\":\"OperationOutcome\",\"id\":\"a5abca2a-4eda-41da-b2cc-95d48c6b791d\",\"meta\":{\"profile\":[\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]},\"issue\":[{\"severity\":\"error\",\"code\":\"forbidden\",\"details\":{\"coding\":[{\"system\":\"https://fhir.nhs.uk/Codesystem/http-error-codes\",\"code\":\"SEND_UNAUTHORIZED\"}]},\"diagnostics\":\"The sender does not have permissions to access this resource. Please check your credentials and permissions.\"}]}  |\n| 403         | Forbidden               | The sender does not have permission for the specific operation or vaccine type  | {\"resourceType\": \"OperationOutcome\", \"id\": \"1b7eec0a-316f-4f6e-a342-4b37f6705050\", \"meta\": {\"profile\": [\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]}, \"issue\": [{\"severity\": \"error\", \"code\": \"forbidden\", \"details\": {\"coding\": [{\"system\": \"https://fhir.nhs.uk/Codesystem/http-error-codes\", \"code\": \"FORBIDDEN\"}]}, \"diagnostics\": \"Unauthorized request for vaccine type\"}]} |\n| 404         | Not Found               | Non existing id in query parameter<br>or<br>Trying to deleted an already deleted record |  {\"resourceType\": \"OperationOutcome\", \"id\": \"f772ee3e-3baf-4934-a07a-a13f70b1a50e\", \"meta\": {\"profile\": [\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]}, \"issue\": [{\"severity\": \"error\", \"code\": \"not-found\", \"details\": {\"coding\": [{\"system\": \"https://fhir.nhs.uk/Codesystem/http-error-codes\", \"code\": \"NOT-FOUND\"}]}, \"diagnostics\": \"Immunization resource does not exist. ID: 5a64fa79-9114-49bb-97c9-xxxxxxxx\"}]} |\n",
+          "content": {
+            "application/fhir+json": {
+              "schema": {
+                "$ref": "#/components/schemas/OperationOutcome"
+              },
+              "example": {
+                "resourceType":"OperationOutcome",
+                "id":"a5abca2a-4eda-41da-b2cc-95d48c6b791d",
+                "meta":{
+                  "profile":[
+                    "https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"
+                  ]
+                },
+                "issue":[
+                  {
+                    "severity":"error",
+                    "code":"expired",
+                    "details":{
+                      "coding":[
+                        {
+                          "system":"https://fhir.nhs.uk/Codesystem/http-error-codes",
+                          "code":"SEND_UNAUTHORIZED"
+                        }
+                      ]
+                    },
+                    "diagnostics":"The sender has not provided a token or it has expired or is otherwise invalid."
                   }
                 ]
               }
@@ -4576,6 +3774,10 @@
                     "enum": [
                       "COVID19",
                       "FLU",
+                      "MMR",
+                      "HPV",
+                      "3IN1",
+                      "MENACWY",
                       "RSV"
                     ]
                   },
@@ -4599,6 +3801,43 @@
                 }
               }
             }
+          }
+        }
+      },
+      "headers": {
+        "CorrelationID": {
+          "required": false,
+          "description": "An optional ID which you can use to track transactions across multiple systems. It can take any value, but we recommend avoiding `.` characters.\n\nMirrored back in a response header.\n",
+          "schema": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "example": "60E0B220-8136-4CA5-AE46-1D97EF59D068"
+          }
+        },
+        "RequestID": {
+          "required": false,
+          "description": "A globally unique identifier (GUID) for the request, which we use to de-duplicate repeated requests and to trace the request if you contact our helpdesk.\n\nMust be a universally unique identifier (UUID) (ideally version 4).\n\nMirrored back in a response header.\n\nIf you re-send a failed request, use the same value in this header.\n",
+          "schema": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "example": "60E0B220-8136-4CA5-AE46-1D97EF59D068"
+          }
+        },
+        "Location": {
+          "required": true,
+          "description": "The location of the newly created Immunization record. It contains the resource ID at the end.",
+          "schema": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "example": "60E0B220-8136-4CA5-AE46-1D97EF59D068"
+          }
+        },
+        "E-Tag": {
+          "required": true,
+          "description": "Indicates the current version of an Immunization resource",
+          "schema": {
+            "type": "integer",
+            "example": 1
           }
         }
       },
@@ -4655,6 +3894,10 @@
             "enum": [
               "COVID19",
               "FLU",
+              "MMR",
+              "HPV",
+              "3IN1",
+              "MENACWY",
               "RSV"
             ]
           }
@@ -4689,22 +3932,11 @@
             "default": "Immunization:patient"
           }
         },
-        "Location": {
-          "in": "header",
-          "name": "location",
-          "required": true,
-          "description": "The location of newly created Immunization record. It contains resouce ID at the end.",
-          "schema": {
-            "type": "string",
-            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
-            "example": "60E0B220-8136-4CA5-AE46-1D97EF59D068"
-          }
-        },
         "E-Tag": {
           "in": "header",
           "name": "E-Tag",
           "required": true,
-          "description": "Indicaes the current version of Immunization resource",
+          "description": "Indicates the current version of an Immunization resource",
           "schema": {
             "type": "integer",
             "example": 1
