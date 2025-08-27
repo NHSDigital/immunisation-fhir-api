@@ -1,38 +1,38 @@
 locals {
-  public_subnet_config = [
-    {
+  public_subnet_config = {
+    A = {
       name              = "imms-${var.environment}-fhir-api-public-subnet-a"
       cidr_block        = "172.31.16.0/20"
       availability_zone = "eu-west-2a"
     },
-    {
+    B = {
       name              = "imms-${var.environment}-fhir-api-public-subnet-b"
       cidr_block        = "172.31.32.0/20"
       availability_zone = "eu-west-2b"
     },
-    {
+    C = {
       name              = "imms-${var.environment}-fhir-api-public-subnet-c"
       cidr_block        = "172.31.0.0/20"
       availability_zone = "eu-west-2c"
     }
-  ]
-  private_subnet_config = [
-    {
+  }
+  private_subnet_config = {
+    A = {
       name              = "imms-${var.environment}-fhir-api-private-subnet-a"
       cidr_block        = "172.31.48.0/20"
       availability_zone = "eu-west-2a"
     },
-    {
+    B = {
       name              = "imms-${var.environment}-fhir-api-private-subnet-b"
       cidr_block        = "172.31.64.0/20"
       availability_zone = "eu-west-2b"
     },
-    {
+    C = {
       name              = "imms-${var.environment}-fhir-api-private-subnet-c"
       cidr_block        = "172.31.80.0/20"
       availability_zone = "eu-west-2c"
     }
-  ]
+  }
 }
 
 resource "aws_vpc" "default" {
@@ -46,7 +46,7 @@ resource "aws_vpc" "default" {
 }
 
 resource "aws_subnet" "public" {
-  for_each = { for idx, subnet in local.public_subnet_config : idx => subnet }
+  for_each = local.public_subnet_config
 
   vpc_id            = aws_vpc.default.id
   cidr_block        = each.value.cidr_block
@@ -74,9 +74,9 @@ resource "aws_route_table" "public" {
 }
 
 resource "aws_route_table_association" "public_subnets" {
-  for_each = aws_subnet.public
+  for_each = local.public_subnet_config
 
-  subnet_id      = each.value.id
+  subnet_id      = aws_subnet.public[each.key].id
   route_table_id = aws_route_table.public.id
 }
 
@@ -87,7 +87,7 @@ resource "aws_route" "igw" {
 }
 
 resource "aws_subnet" "private" {
-  for_each = { for idx, subnet in local.private_subnet_config : idx => subnet }
+  for_each = local.private_subnet_config
 
   vpc_id            = aws_vpc.default.id
   cidr_block        = each.value.cidr_block
@@ -106,7 +106,7 @@ resource "aws_eip" "nat" {
 
 resource "aws_nat_gateway" "default" {
   allocation_id = aws_eip.nat.id
-  subnet_id     = aws_subnet.public[0].id
+  subnet_id     = aws_subnet.public["A"].id
 
   tags = {
     Name = "imms-${var.environment}-fhir-api-nat"
@@ -122,9 +122,9 @@ resource "aws_route_table" "private" {
 }
 
 resource "aws_route_table_association" "private_subnets" {
-  for_each = aws_subnet.private
+  for_each = local.private_subnet_config
 
-  subnet_id      = each.value.id
+  subnet_id      = aws_subnet.private[each.key].id
   route_table_id = aws_route_table.private.id
 }
 
@@ -135,16 +135,16 @@ resource "aws_route" "nat" {
 }
 
 resource "aws_route53_zone" "parent_hosted_zone" {
-  name = var.parent_route53_zone_name
+  name = "${var.environment}.vds.platform.nhs.uk"
 }
 
 resource "aws_route53_zone" "child_hosted_zone" {
-  name = var.child_route53_zone_name
+  name = "imms.${var.environment}.vds.platform.nhs.uk"
 }
 
 resource "aws_route53_record" "imms_ns" {
   zone_id = aws_route53_zone.parent_hosted_zone.zone_id
-  name    = var.child_route53_zone_name
+  name    = aws_route53_zone.child_hosted_zone.name
   type    = "NS"
   ttl     = 172800
   records = [for ns in aws_route53_zone.child_hosted_zone.name_servers : "${ns}."]

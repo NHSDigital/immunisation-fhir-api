@@ -26,7 +26,6 @@ steps:
       set -e
       if ! [[ $APIGEE_ENVIRONMENT =~ .*-*sandbox ]]; then
         export AWS_PROFILE=apim-dev
-        aws_account_no="$(aws sts get-caller-identity --query Account --output text)"
 
         service_name=$(FULLY_QUALIFIED_SERVICE_NAME)
 
@@ -35,11 +34,11 @@ steps:
         echo sandbox with following parameters:
         echo workspace: $workspace
         echo AWS environment: $APIGEE_ENVIRONMENT
-        
+
           cd terraform
 
-        make init
-        make apply aws_account_no=${aws_account_no} environment=$workspace
+        make init environment=${{ parameters.aws_account_type }} sub_environment=$workspace
+        make apply environment=${{ parameters.aws_account_type }} sub_environment=$workspace
       fi
     displayName: Apply Terraform
     workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)"

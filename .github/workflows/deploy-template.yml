@@ -1,8 +1,15 @@
-name: Deploy to INT and run E2e test
+name: Deploy Template
+
 on:
   workflow_call:
     inputs:
+      apigee_environment:
+        required: true
+        type: string
       environment:
+        required: true
+        type: string
+      sub_environment:
         required: true
         type: string
 
@@ -13,8 +20,8 @@ jobs:
       id-token: write
       contents: read
     steps:
-      - name: Debug OIDC
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Connect to AWS
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a
         with:
           aws-region: eu-west-2
           role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/auto-ops
@@ -24,26 +31,24 @@ jobs:
         run: aws sts get-caller-identity
 
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
         with:
           fetch-depth: 1
 
-      - uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd
         with:
           terraform_version: "1.12.2"
 
       - name: Terraform Init
         working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
-        run: |
-          export ENVIRONMENT=${{ inputs.environment }}
-          make init
+        run: make init apigee_environment=${{ inputs.apigee_environment }} environment=${{ inputs.environment }} sub_environment=${{ inputs.sub_environment }}
 
       - name: Terraform Plan
         working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
-        run: |
-          make plan environment=${{ inputs.environment }} aws_account_name=int
-
+        run: make plan apigee_environment=${{ inputs.apigee_environment }} environment=${{ inputs.environment }} sub_environment=${{ inputs.sub_environment }}
+        # TODO - save the plan and use it in the apply step
   terraform-apply:
+    if: ${{ vars.SKIP_APPLY != 'true' }}
     needs: terraform-plan
     runs-on: ubuntu-latest
     permissions:
@@ -53,45 +58,50 @@ jobs:
       name: int
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
 
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a
         with:
           aws-region: eu-west-2
           role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/auto-ops
           role-session-name: github-actions
 
-      - uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd
         with:
           terraform_version: "1.12.2"
 
       - name: Terraform Init
         working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
-        run: |
-          export ENVIRONMENT=${{ inputs.environment }}
-          make init
+        run: make init apigee_environment=${{ inputs.apigee_environment }} environment=${{ inputs.environment }} sub_environment=${{ inputs.sub_environment }}
 
       - name: Terraform Apply
         working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
-        run: |
-          make apply environment=${{ inputs.environment }} aws_account_name=int
-
+        run: make apply apigee_environment=${{ inputs.apigee_environment }} environment=${{ inputs.environment }} sub_environment=${{ inputs.sub_environment }}
+        # TODO - use a saved plan from the plan step
   e2e-tests:
+    if: ${{ vars.RUN_E2E == 'true' && inputs.sub_environment == vars.ACTIVE_ENVIRONMENT }}
     needs: terraform-apply
-    if: ${{ vars.RUN_E2E == 'true' || inputs.environment == vars.ACTIVE_ENVIRONMENT }}
     runs-on: ubuntu-latest
     permissions:
       id-token: write
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
 
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a
         with:
           aws-region: eu-west-2
           role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/auto-ops
           role-session-name: github-actions
+
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd
+        with:
+          terraform_version: "1.12.2"
+
+      - name: Terraform Init
+        working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
+        run: make init apigee_environment=${{ inputs.apigee_environment }} environment=${{ inputs.environment }} sub_environment=${{ inputs.sub_environment }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -100,8 +110,9 @@ jobs:
 
       - name: Install Poetry
         run: |
-          curl -sSL https://install.python-poetry.org | python3 -
+          curl -sSL https://install.python-poetry.org | python3 - --version 2.1.4
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+          poetry --version
 
       - name: Set Poetry to use Python 3.11
         working-directory: ${{ vars.E2E_DIR_PATH }}
@@ -113,27 +124,39 @@ jobs:
         run: |
           poetry install --no-root
 
+      - name: Install oathtool
+        run: sudo apt-get update && sudo apt-get install -y oathtool
+
+      - name: Get JWT token for apigee
+        env:
+          APIGEE_USERNAME: ${{ vars.APIGEE_USERNAME }}
+          APIGEE_PASSWORD: ${{ secrets.APIGEE_PASSWORD }}
+          APIGEE_OAUTH_TOKEN: ${{ secrets.APIGEE_BASIC_AUTH_TOKEN }}
+          APIGEE_OTP_SECRET: ${{ secrets.APIGEE_OTP_KEY }}
+        run: |
+          CODE=$(oathtool --totp -b "$APIGEE_OTP_SECRET")
+          echo "::add-mask::$CODE"
+          echo "Requesting access token from Apigee..."
+          response=$(curl -s -X POST "https://login.apigee.com/oauth/token" \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            -H "Accept: application/json;charset=utf-8" \
+            -H "Authorization: Basic $APIGEE_BASIC_AUTH_TOKEN" \
+            -d "username=$APIGEE_USERNAME&password=$APIGEE_PASSWORD&mfa_token=$CODE&grant_type=password")
+          token=$(echo "$response" | jq -e -r '.access_token')
+          if [[ -z "$token" ]]; then
+            echo "Failed to retrieve access token"
+            exit 1
+          fi
+          echo "::add-mask::$token"
+          echo "APIGEE_ACCESS_TOKEN=$token" >> $GITHUB_ENV
+
       - name: Run e2e tests
         working-directory: ${{ vars.E2E_DIR_PATH }}
+        env:
+          APIGEE_ACCESS_TOKEN: ${{ env.APIGEE_ACCESS_TOKEN }}
+          APIGEE_USERNAME: apm-testing-internal-dev@nhs.net
         run: |
-          apigee_token=$(aws ssm get-parameter \
-            --name "/imms/apigee/non-prod/token" \
-            --with-decryption \
-            --query "Parameter.Value" \
-            --output text)
-
-          status_api_key=$(aws ssm get-parameter \
-            --name "/imms/apigee/non-prod/status-api-key" \
-            --with-decryption \
-            --query "Parameter.Value" \
-            --output text)
-
-          export APIGEE_ACCESS_TOKEN=$apigee_token
-          export APIGEE_USERNAME=apm-testing-internal-dev@nhs.net
-          export APIGEE_ENVIRONMENT=int
-          export STATUS_API_KEY=$status_api_key
-          export PROXY_NAME=immunisation-fhir-api-internal-dev
-          export SERVICE_BASE_PATH=immunisation-fhir-api/FHIR/R4
-          export SSO_LOGIN_URL=https://login.apigee.com
-
+          export APIGEE_ENVIRONMENT=internal-dev
+          export PROXY_NAME=immunisation-fhir-api-${{ inputs.sub_environment }}
+          export SERVICE_BASE_PATH=immunisation-fhir-api/FHIR/R4-${{ inputs.sub_environment }}
           make run-immunization
