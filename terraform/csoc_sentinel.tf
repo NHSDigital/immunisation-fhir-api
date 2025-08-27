@@ -46,12 +46,11 @@ resource "aws_iam_policy" "cwlogs_subscription_policy" {
 
 # 4. Subscription Filter
 resource "aws_cloudwatch_log_subscription_filter" "cwlogs_subscription_logfilter" {
-  name            = "test_lambdafunction_logfilter"
+  name            = "${local.short_prefix}-cwlogs-subscription-logfilter"
   log_group_name  = aws_cloudwatch_log_group.cwlogs_subscription_log_group.name
-  filter_name     = var.immunisation_account_id
   filter_pattern  = ""
   destination_arn = "arn:aws:logs:eu-west-2:693466633220:destination:api_gateway_log_destination"
-  role_arn        = aws_iam_role.cwlogs_subscription_role.name
+  role_arn        = aws_iam_role.cwlogs_subscription_role.arn
 }
 
 # 5. API Gateway Log Role
