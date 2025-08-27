@@ -3,7 +3,7 @@ name: Deploy Blue Green - INT
 on:
   push:
     branches:
-      - release-2025-08-12
+      - release-2025-08-27
 
 jobs:
   deploy-green:
