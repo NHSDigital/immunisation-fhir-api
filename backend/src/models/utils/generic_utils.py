@@ -152,6 +152,9 @@ def form_json(response, _element, identifier, baseurl):
     # Full Immunization payload to be returned if only the identifier parameter was provided
     if identifier and not _element:
         resource = response["resource"]
+        resource.pop("contained", None)
+        if "use" not in response["identifier"][0]:
+            resource["identifier"][0]["use"] = "official"
 
     elif identifier and _element:
         element = {e.strip().lower() for e in _element.split(",") if e.strip()}
