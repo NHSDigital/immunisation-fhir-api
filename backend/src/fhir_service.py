@@ -67,6 +67,10 @@ class FhirService:
         imms_resp = self.immunization_repo.get_immunization_by_identifier(
             identifier_pk, imms_vax_type_perms
         )
+        patient_full_url = f"urn:uuid:{str(uuid4())}"
+        filtered_resource = Filter.search(imms_resp['resource'], patient_full_url)
+        imms_resp['resource'] = filtered_resource
+
         if not imms_resp:
             base_url = f"{get_service_url()}/Immunization"
             response = form_json(imms_resp, None, None, base_url)
