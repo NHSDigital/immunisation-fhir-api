@@ -79,7 +79,7 @@ resource "aws_iam_role" "api_logs_subscription_role" {
 }
 
 resource "aws_cloudwatch_log_subscription_filter" "api_logs_subscription_logfilter" {
-  name            = "${local.short_prefix}-api-logs-subscription-logfilter"
+  name            = "${var.short_prefix}-api-logs-subscription-logfilter"
   log_group_name  = aws_cloudwatch_log_group.api_access_log.name
   filter_pattern  = ""
   destination_arn = "arn:aws:logs:eu-west-2:693466633220:destination:api_gateway_log_destination"
