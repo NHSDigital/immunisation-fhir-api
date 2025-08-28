@@ -9,7 +9,7 @@ from constants import SOURCE_BUCKET_NAME, ACK_BUCKET_NAME
 
 
 class BatchFileRepository:
-    """Repository class to handle interactions with batch file interactions e.g. managing the source and ack files"""
+    """Repository class to handle interactions with batch files e.g. management of the source and ack files"""
     _ARCHIVE_FILE_DIR: str = "archive"
     _SOURCE_BUCKET_NAME: str = SOURCE_BUCKET_NAME
     _ACK_BUCKET_NAME: str = ACK_BUCKET_NAME
@@ -29,8 +29,8 @@ class BatchFileRepository:
             "RESPONSE_CODE": "10002",
             "RESPONSE_DISPLAY": "Infrastructure Level Response Value - Processing Error",
             "RECEIVED_TIME": batch_file_created_event["created_at_formatted_string"],
-            "MAILBOX_FROM": "",  # TODO: Leave blank for DPS, add mailbox if from mesh mailbox
-            "LOCAL_ID": "",  # TODO: Leave blank for DPS, add from ctl file if data picked up from MESH mailbox
+            "MAILBOX_FROM": "",  # VED-197 TODO: Leave blank for DPS, add mailbox if from mesh mailbox
+            "LOCAL_ID": "",  # VED-197 TODO: Leave blank for DPS, add from ctl file if data picked up from MESH mailbox
             "MESSAGE_DELIVERY": False,
         }
 

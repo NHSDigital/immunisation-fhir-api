@@ -12,9 +12,9 @@ service = BatchProcessorFilterService()
 def lambda_handler(event: events.SQSEvent, _: context):
     event_records = event.get("Records", [])
 
-    # Terraform is configured so this Lambda will get a batch size of 1. We are using SQS FIFO with the message group
-    # id set to {supplier}_{vaccine_type} so we will only want batches of 1 at a time.
-    # Lambda will scale out to handle multiple message groups in parallel:
+    # Terraform is configured so the Lambda will get a max batch size of 1. We are using SQS FIFO with the message group
+    # id set to {supplier}_{vaccine_type} so it makes sense to only process batches of 1 at a time.
+    # Lambda will scale out to handle multiple message groups in parallel so this will not block other groups:
     # https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/fifo-queue-lambda-behavior.html
     if len(event_records) != 1:
         raise InvalidBatchSizeError(f"Received {len(event_records)} records, expected 1")

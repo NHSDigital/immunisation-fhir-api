@@ -194,11 +194,6 @@ class TestLambdaHandlerDataSource(TestCase):
                 self.assert_sqs_message(file_details)
                 self.assert_no_ack_file(file_details)
 
-                # Reset audit table
-                # TODO - is this needed? Check when running all
-                # for item in self.get_audit_table_items():
-                #     dynamodb_client.delete_item(TableName=AUDIT_TABLE_NAME, Key=dict(item.items()))
-
     def test_lambda_handler_non_root_file(self):
         """
         Tests that when the file is not in the root of the source bucket, no action is taken:
