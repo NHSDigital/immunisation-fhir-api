@@ -69,7 +69,7 @@ class FhirService:
         )
         
         patient_full_url = f"urn:uuid:{str(uuid4())}"
-        filtered_response = Filter.search(imms_resp, patient_full_url)
+        filtered_response = Filter.search([imms_resp], patient_full_url)
 
         if not filtered_response:
             base_url = f"{get_service_url()}/Immunization"
