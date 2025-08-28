@@ -339,9 +339,11 @@ class TestGetImmunizationIdentifier(unittest.TestCase):
     def test_immunization_not_found(self):
         """it should return None if Immunization doesn't exist"""
         imms_id = "none"
+        imms_ids = ["imms-1", "imms-2"]
         identifier = "test"
         element = "id"
-        self.imms_repo.get_immunization_by_identifier.return_value = None
+        imms_list = [create_covid_19_immunization_dict(imms_id) for imms_id in imms_ids]
+        self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
 
         # When
         act_imms = self.fhir_service.get_immunization_by_identifier(imms_id, "COVID19.S", identifier, element)

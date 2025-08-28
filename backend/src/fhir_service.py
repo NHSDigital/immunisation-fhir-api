@@ -69,8 +69,7 @@ class FhirService:
         )
         
         patient_full_url = f"urn:uuid:{str(uuid4())}"
-        imms_list = [imms_resp] if isinstance(imms_resp, dict) else list(imms_resp or [])
-        filtered_response = [Filter.search(imms, patient_full_url) for imms in imms_list]
+        filtered_response = [Filter.search(imms, patient_full_url) for imms in imms_resp]
 
         if not filtered_response:
             base_url = f"{get_service_url()}/Immunization"
