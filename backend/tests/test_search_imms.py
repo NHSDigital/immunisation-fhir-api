@@ -7,6 +7,7 @@ from models.errors import Severity, Code, create_operation_outcome
 from search_imms_handler import search_imms
 from pathlib import Path
 from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
+from utils.generic_utils import encode_b64
 
 script_location = Path(__file__).absolute().parent
 
@@ -59,11 +60,13 @@ class TestSearchImmunizations(unittest.TestCase):
         self.controller.get_immunization_by_identifier.assert_called_once_with(lambda_event)
         self.assertDictEqual(exp_res, act_res)
 
+
+
     def test_search_immunizations_get_id_from_body(self):
-        """it should return a list of Immunizations"""
+        """it should NOT return a list of Immunizations. ID is not a valid parameter """
         lambda_event = {
             "pathParameters": {"id": "an-id"},
-            "body": "cGF0aWVudC5pZGVudGlmaWVyPWh0dHBzJTNBJTJGJTJGZmhpci5uaHMudWslMkZJZCUyRm5ocy1udW1iZXIlN0M5NjkzNjMyMTA5Ji1pbW11bml6YXRpb24udGFyZ2V0PUNPVklEMTkmX2luY2x1ZGU9SW1tdW5pemF0aW9uJTNBcGF0aWVudCZpZGVudGlmaWVyPWh0dHBzJTNBJTJGJTJGc3VwcGxpZXJBQkMlMkZpZGVudGlmaWVycyUyRnZhY2MlN0NmMTBiNTliMy1mYzczLTQ2MTYtOTljOS05ZTg4MmFiMzExODQmX2VsZW1lbnRzPWlkJTJDbWV0YSZpZD1z",
+            "body": encode_b64('"id"="s"'),
             "queryStringParameters": None,
         }
         exp_res = {"a-key": "a-value"}
@@ -74,8 +77,13 @@ class TestSearchImmunizations(unittest.TestCase):
         act_res = search_imms(lambda_event, self.controller)
 
         # Then
-        self.controller.get_immunization_by_identifier.assert_called_once_with(lambda_event)
-        self.assertDictEqual(exp_res, act_res)
+        # ID is not a valid parameter
+        self.controller.get_immunization_by_identifier.assert_not_called()
+        act_body = json.loads(act_res["body"])
+        act_issue = act_body["issue"][0]
+        self.assertEqual(act_issue["code"], Code.invalid)
+        self.assertEqual(act_issue["severity"], Severity.error)
+        self.assertEqual(act_issue["diagnostics"], 'Error checking route parameters: Invalid body parameter: "id"')
 
     def test_search_immunizations_get_id_from_body_passing_none(self):
         """it should enter search_immunizations as both the request params are none"""
@@ -129,7 +137,10 @@ class TestSearchImmunizations(unittest.TestCase):
 
     def test_search_immunizations_lambda_size_limit(self):
         """it should return 400 as search returned too many results."""
-        lambda_event = {"pathParameters": {"id": "an-id"}, "body": None}
+        lambda_event = {
+            "pathParameters": {"id": "an-id"},
+            "body": None,
+            }
         request_file = script_location / "sample_data" / "sample_input_search_imms.json"
         with open(request_file) as f:
             exp_res = json.load(f)
@@ -163,6 +174,27 @@ class TestSearchImmunizations(unittest.TestCase):
         # Then
         act_body = json.loads(act_res["body"])
 
-        self.assertEqual(exp_error["issue"][0]["code"], act_body["issue"][0]["code"])
-        self.assertEqual(exp_error["issue"][0]["severity"], act_body["issue"][0]["severity"])
+        act_issue = act_body["issue"][0]
+        self.assertEqual(act_issue["code"], Code.server_error)
+        self.assertEqual(act_issue["severity"], Severity.error)
         self.assertEqual(act_res["statusCode"], 500)
+
+    def test_search_immunizations_invalid_params(self):
+        """it should return 400 if invalid parameters are provided"""
+        lambda_event = {
+            "pathParameters": {"id": "an-id"},
+            "queryStringParameters": {
+                "identifier": "https://supplierABC/identifiers/vacc|f10b59b3-fc73-4616-99c9-9e882ab31184",
+                "_elephants": "id,meta",
+            },
+            "body": None,
+        }
+        # When
+        act_res = search_imms(lambda_event, self.controller)
+
+        # Then
+        act_body = json.loads(act_res["body"])
+        act_issue = act_body["issue"][0]
+        self.assertEqual(act_res["statusCode"], 400)
+        self.assertEqual(act_issue["severity"], Severity.error)
+        self.assertEqual(act_issue["diagnostics"], 'Error checking route parameters: Invalid body parameter: _elephants')

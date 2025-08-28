@@ -1,6 +1,7 @@
 import base64
 import unittest
 import datetime
+import urllib.parse
 from unittest.mock import create_autospec, patch
 
 from authorization import Authorization
@@ -13,7 +14,14 @@ from parameter_parser import (
     process_search_params,
     create_query_string,
     SearchParams,
+    body_to_dict,
+    check_route_parameters,
+    is_immunization_by_identifier,
+    is_search_immunizations,
+    get_parsed_body,
 )
+from constants import SEARCH_IMMUNIZATION_BY_IDENTIFIER_PARAMETERS, SEARCH_IMMUNIZATIONS_PARAMETERS
+
 
 class TestParameterParser(unittest.TestCase):
     def setUp(self):
@@ -212,3 +220,81 @@ class TestParameterParser(unittest.TestCase):
         expected = "-immunization.target=b,c&patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7Ca"
 
         self.assertEqual(expected, query_string)
+
+
+class TestSearchParameterValidator(unittest.TestCase):
+    def test_body_to_dict_with_list(self):
+        body = [{'key': 'identifier_1', 'value': ['id_1']}]
+        result = body_to_dict(body)
+        self.assertEqual(result, {'identifier_1': ['id_1']})
+
+    def test_body_to_dict_with_dict(self):
+        body = {'identifier_2': ['id_2']}
+        result = body_to_dict(body)
+        self.assertEqual(result, {'identifier_2': ['id_2']})
+
+    def test_body_to_dict_with_none(self):
+        body = None
+        result = body_to_dict(body)
+        self.assertEqual(result, {})
+
+    def test_check_route_parameters_valid(self):
+        query_params = {'identifier_3': 'id_3'}
+        body = None
+        valid_params = ['identifier_3']
+        self.assertTrue(check_route_parameters(query_params, body, valid_params))
+
+    def test_check_route_parameters_invalid(self):
+        query_params = {'invalid_4': 'id_4'}
+        body = None
+        valid_params = ['identifier_4']
+        with self.assertRaises(ValueError) as cm:
+            check_route_parameters(query_params, body, valid_params)
+        self.assertIn("Invalid body parameter: invalid_4", str(cm.exception))
+
+    def test_check_route_parameters_valid_body_list(self):
+        query_params = {}
+        body = [{'key': 'identifier_5', 'value': ['id_5']}]
+        valid_params = ['identifier_5']
+        self.assertTrue(check_route_parameters(query_params, body, valid_params))
+
+    def test_check_route_parameters_invalid_body_list(self):
+        query_params = {}
+        body = [{'key': 'badkey_6', 'value': ['id_6']}]
+        valid_params = ['identifier_6']
+        with self.assertRaises(ValueError) as cm:
+            check_route_parameters(query_params, body, valid_params)
+        self.assertIn("Invalid body parameter: badkey_6", str(cm.exception))
+
+    def test_is_immunization_by_identifier_true(self):
+        query_params = {'identifier': 'id_7'}
+        body = None
+        self.assertTrue(is_immunization_by_identifier(query_params, body))
+
+    def test_is_immunization_by_identifier_false(self):
+        query_params = {'badkey_8': 'id_8'}
+        body = None
+        with self.assertRaises(ValueError):
+            is_immunization_by_identifier(query_params, body)
+
+    def test_is_search_immunizations_true(self):
+        query_params = {'patient.identifier': 'id'}
+        body = None
+        self.assertTrue(is_search_immunizations(query_params, body))
+
+    def test_is_search_immunizations_false(self):
+        query_params = {'badkey_10': 'bad_10'}
+        body = None
+        with self.assertRaises(ValueError):
+            is_search_immunizations(query_params, body)
+
+    def test_get_parsed_body_none(self):
+        self.assertIsNone(get_parsed_body(None))
+
+    def test_get_parsed_body_valid(self):
+        data = {'identifier_11': ['id_11'], 'key_11': ['data_11']}
+        encoded = urllib.parse.urlencode({k: v[0] for k, v in data.items()})
+        b64 = base64.b64encode(encoded.encode("utf-8")).decode("utf-8")
+        parsed = get_parsed_body(b64)
+        self.assertEqual(parsed, data)
+        

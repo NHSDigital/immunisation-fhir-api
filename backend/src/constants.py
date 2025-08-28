@@ -23,3 +23,16 @@ class Urls:
 
 
 GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE = "Unable to process request. Issue may be transient."
+
+SEARCH_IMMUNIZATIONS_PARAMETERS = [
+    "patient.identifier",
+    "-immunization.target",
+    "_include",
+    "-date.from",
+    "-date.to"
+]
+
+SEARCH_IMMUNIZATION_BY_IDENTIFIER_PARAMETERS = [
+    "identifier",
+    "_elements"
+]

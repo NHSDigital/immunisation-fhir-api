@@ -6,10 +6,10 @@ package: build
 	docker run --rm -v $(shell pwd)/build:/build imms-lambda-build
 
 test:
-	@PYTHONPATH=src:tests python -m unittest
+	@PYTHONPATH=src:tests:tests/utils python -m unittest
 
 coverage-run:
-	@PYTHONPATH=src:tests coverage run -m unittest discover
+	@PYTHONPATH=src:tests:tests/utils coverage run -m unittest discover
 
 coverage-report:
 	coverage report -m 

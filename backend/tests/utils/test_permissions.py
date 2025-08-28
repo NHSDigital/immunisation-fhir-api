@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import patch
-from src.models.utils.permissions import get_supplier_permissions
+from models.utils.permissions import get_supplier_permissions
 
 
 class TestPermissions(unittest.TestCase):
