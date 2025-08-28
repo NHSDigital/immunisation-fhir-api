@@ -67,7 +67,6 @@ class FhirService:
         imms_resp = self.immunization_repo.get_immunization_by_identifier(
             identifier_pk, imms_vax_type_perms
         )
-
         if not imms_resp:
             base_url = f"{get_service_url()}/Immunization"
             response = form_json(imms_resp, None, None, base_url)

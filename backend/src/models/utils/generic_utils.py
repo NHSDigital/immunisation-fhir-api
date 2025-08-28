@@ -153,7 +153,7 @@ def form_json(response, _element, identifier, baseurl):
     if identifier and not _element:
         resource = response["resource"]
         resource.pop("contained", None)
-        if "use" not in response["identifier"][0]:
+        if "use" not in resource["identifier"][0]:
             resource["identifier"][0]["use"] = "official"
 
     elif identifier and _element:
