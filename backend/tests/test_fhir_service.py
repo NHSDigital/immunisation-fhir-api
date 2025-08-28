@@ -321,11 +321,9 @@ class TestGetImmunizationIdentifier(unittest.TestCase):
     def test_get_immunization_by_identifier(self):
         """it should find an Immunization by id"""
         imms = "an-id#an-id"
-        imms_ids = ["imms-1", "imms-2"]
-        imms_list = [create_covid_19_immunization_dict(imms_id) for imms_id in imms_ids]
         identifier = "test"
-        element = "id,meta"
-        self.imms_repo.get_immunization_by_identifier.return_value = deepcopy(imms_list)
+        element = "id,mEta,DDD"
+        self.imms_repo.get_immunization_by_identifier.return_value = {}
 
         # When
         service_resp = self.fhir_service.get_immunization_by_identifier(imms, "COVID19:search", identifier, element)
@@ -339,17 +337,15 @@ class TestGetImmunizationIdentifier(unittest.TestCase):
     def test_immunization_not_found(self):
         """it should return None if Immunization doesn't exist"""
         imms_id = "none"
-        imms_ids = ["imms-1", "imms-2"]
-        imms_list = [create_covid_19_immunization_dict(imms_id) for imms_id in imms_ids]
         identifier = "test"
         element = "id"
-        self.imms_repo.get_immunization_by_identifier.return_value = deepcopy(imms_list)
+        self.imms_repo.get_immunization_by_identifier.return_value = None
 
         # When
-        act_imms = self.fhir_service.get_immunization_by_identifier(imms_id, "COVID19.S", identifier, element)
+        act_imms = self.fhir_service.get_immunization_by_identifier(imms_id, "COVID19:search", identifier, element)
 
         # Then
-        self.imms_repo.get_immunization_by_identifier.assert_called_once_with(imms_id, "COVID19.S")
+        self.imms_repo.get_immunization_by_identifier.assert_called_once_with(imms_id, "COVID19:search")
 
         self.assertEqual(act_imms["entry"], [])
 
