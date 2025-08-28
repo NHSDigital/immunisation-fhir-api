@@ -18,7 +18,7 @@ resource "aws_iam_role" "cwlogs_subscription_role" {
 
 # 3. Log Group
 resource "aws_cloudwatch_log_group" "cwlogs_subscription_log_group" {
-  name              = "${local.short_prefix}-cwlogs-subscription-log-group"
+  name              = "/aws/cloudwatch/${local.short_prefix}-cwlogs-subscription-log-group"
   retention_in_days = 30
 }
 
@@ -36,7 +36,7 @@ resource "aws_iam_policy" "cwlogs_subscription_policy" {
           "logs:PutSubscriptionFilter"
         ]
         Resource = [
-          "arn:aws:logs:${var.aws_region}:${var.immunisation_account_id}:log-group:/aws/lambda/${local.short_prefix}-cwlogs-subscription-log-group:*",
+          "arn:aws:logs:${var.aws_region}:${var.immunisation_account_id}:log-group:/aws/cloudwatch/${local.short_prefix}-cwlogs-subscription-log-group:*",
           "arn:aws:logs:eu-west-2:693466633220:destination:api_gateway_log_destination"
         ]
       }
