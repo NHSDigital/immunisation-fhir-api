@@ -153,6 +153,13 @@ def form_json(response, _element, identifier, baseurl):
     if identifier and not _element:
         resource = response["resource"]
 
+        # --- filtering: drop contained and add use=official to identifiers ---
+        resource.pop("contained", None)
+        if isinstance(resource.get("identifier"), list):
+            for item in resource["identifier"]:
+                if isinstance(item, dict):
+                    item["use"] = "official"
+
     elif identifier and _element:
         element = {e.strip().lower() for e in _element.split(",") if e.strip()}
         resource = {"resourceType": "Immunization"}
