@@ -53,3 +53,35 @@ resource "aws_iam_role_policy" "cloudwatch" {
 }
 EOF
 }
+
+resource "aws_iam_role_policy_attachment" "cwlogs_apigateway_policy" {
+  role       = aws_iam_role.api_cloudwatch.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
+}
+
+# TODO un-hardcode the region
+# e.g.
+#   "logs.${data.aws_region.current.region}.amazonaws.com"
+
+resource "aws_iam_role" "cwlogs_subscription_role" {
+  name = "${local.short_prefix}-cwlogs-subscription-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Effect = "Allow",
+      Sid    = "",
+      Principal = {
+        Service = "logs.eu-west-2.amazonaws.com"
+      },
+      Action = "sts:AssumeRole"
+    }]
+  })
+}
+
+resource "aws_cloudwatch_log_subscription_filter" "cwlogs_subscription_logfilter" {
+  name            = "${local.short_prefix}-cwlogs-subscription-logfilter"
+  log_group_name  = aws_cloudwatch_log_group.api_access_log.name
+  filter_pattern  = ""
+  destination_arn = "arn:aws:logs:eu-west-2:693466633220:destination:api_gateway_log_destination"
+  role_arn        = aws_iam_role.cwlogs_subscription_role.arn
+}
