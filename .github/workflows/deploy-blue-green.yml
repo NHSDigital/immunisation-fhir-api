@@ -3,7 +3,7 @@ name: Deploy Blue Green - INT
 on:
   push:
     branches:
-      - release-2025-08-12
+      - release-2025-09-04
 
 jobs:
   deploy-green:
@@ -18,3 +18,4 @@ jobs:
       apigee_environment: int
       environment: preprod
       sub_environment: int-blue
+    needs: deploy-green
