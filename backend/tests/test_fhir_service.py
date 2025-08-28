@@ -321,9 +321,11 @@ class TestGetImmunizationIdentifier(unittest.TestCase):
     def test_get_immunization_by_identifier(self):
         """it should find an Immunization by id"""
         imms = "an-id#an-id"
+        imms_ids = ["imms-1", "imms-2"]
         identifier = "test"
-        element = "id,mEta,DDD"
-        self.imms_repo.get_immunization_by_identifier.return_value = {}
+        element = "id,meta"
+        imms_list = [create_covid_19_immunization_dict(imms_id) for imms_id in imms_ids]
+        self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
 
         # When
         service_resp = self.fhir_service.get_immunization_by_identifier(imms, "COVID19.S", identifier, element)
