@@ -323,14 +323,14 @@ class TestGetImmunizationIdentifier(unittest.TestCase):
         imms = "an-id#an-id"
         identifier = "test"
         element = "id,mEta,DDD"
-        self.imms_repo.get_immunization_by_identifier.return_value = {}
+        self.imms_repo.get_immunization_by_identifier.return_value = None
 
         # When
-        service_resp = self.fhir_service.get_immunization_by_identifier(imms, "COVID19:search", identifier, element)
+        service_resp = self.fhir_service.get_immunization_by_identifier(imms, "COVID19.S", identifier, element)
         act_imms = service_resp
 
         # Then
-        self.imms_repo.get_immunization_by_identifier.assert_called_once_with(imms, "COVID19:search")
+        self.imms_repo.get_immunization_by_identifier.assert_called_once_with(imms, "COVID19.S")
 
         self.assertEqual(act_imms["resourceType"], "Bundle")
 
@@ -339,7 +339,7 @@ class TestGetImmunizationIdentifier(unittest.TestCase):
         imms_id = "none"
         identifier = "test"
         element = "id"
-        self.imms_repo.get_immunization_by_identifier.return_value = None
+        self.imms_repo.get_immunization_by_identifier.return_value = {}
 
         # When
         act_imms = self.fhir_service.get_immunization_by_identifier(imms_id, "COVID19:search", identifier, element)
