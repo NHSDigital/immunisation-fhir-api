@@ -70,7 +70,7 @@ class FhirService:
 
         if not imms_resp:
             base_url = f"{get_service_url()}/Immunization"
-            response = form_json(imms_resp, None, None, base_url) 
+            response = form_json(imms_resp, None, None, base_url)
             return response
         else:
             base_url = f"{get_service_url()}/Immunization"
