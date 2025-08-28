@@ -251,6 +251,7 @@ resource "aws_lambda_function" "batch_processor_filter_lambda" {
       SPLUNK_FIREHOSE_NAME       = module.splunk.firehose_stream_name
       AUDIT_TABLE_NAME           = aws_dynamodb_table.audit-table.name
       FILE_NAME_GSI              = "filename_index"
+      QUEUE_NAME_GSI             = "queue_name_index"
     }
   }
   kms_key_arn                    = data.aws_kms_key.existing_lambda_encryption_key.arn
