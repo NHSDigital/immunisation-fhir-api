@@ -72,7 +72,7 @@ resource "aws_iam_policy" "api_logs_subscription_policy" {
         ]
         Resource = [
           "arn:aws:logs:${var.aws_region}:${var.immunisation_account_id}:log-group:/aws/vendedlogs/${aws_apigatewayv2_api.service_api.id}/${var.sub_environment}:*",
-          "arn:aws:logs:eu-west-2:693466633220:destination:api_gateway_log_destination"
+          "arn:aws:logs:${var.aws_region}:${var.csoc_account_id}:destination:api_gateway_log_destination"
         ]
       }
     ]
@@ -84,10 +84,6 @@ resource "aws_iam_role_policy_attachment" "api_logs_subscription_policy" {
   policy_arn = aws_iam_policy.api_logs_subscription_policy.arn
 }
 
-# TODO un-hardcode the region
-# e.g.
-#   "logs.${data.aws_region.current.region}.amazonaws.com"
-
 resource "aws_iam_role" "api_logs_subscription_role" {
   name = "${var.short_prefix}-api-logs-subscription-role"
   assume_role_policy = jsonencode({
@@ -96,7 +92,7 @@ resource "aws_iam_role" "api_logs_subscription_role" {
       Effect = "Allow",
       Sid    = "",
       Principal = {
-        Service = "logs.eu-west-2.amazonaws.com"
+        Service = "logs.${var.aws_region}.amazonaws.com"
       },
       Action = "sts:AssumeRole"
     }]
@@ -107,6 +103,6 @@ resource "aws_cloudwatch_log_subscription_filter" "api_logs_subscription_logfilt
   name            = "${var.short_prefix}-api-logs-subscription-logfilter"
   log_group_name  = aws_cloudwatch_log_group.api_access_log.name
   filter_pattern  = ""
-  destination_arn = "arn:aws:logs:eu-west-2:693466633220:destination:api_gateway_log_destination"
+  destination_arn = "arn:aws:logs:${var.aws_region}:${var.csoc_account_id}:destination:api_gateway_log_destination"
   role_arn        = aws_iam_role.api_logs_subscription_role.arn
 }

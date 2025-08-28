@@ -7,3 +7,4 @@ variable "sub_environment" {}
 variable "oas" {}
 variable "aws_region" {}
 variable "immunisation_account_id" {}
+variable "csoc_account_id" {}

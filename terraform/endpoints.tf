@@ -117,6 +117,7 @@ module "api_gateway" {
   oas             = local.oas
   aws_region      = var.aws_region
   immunisation_account_id = var.immunisation_account_id
+  csoc_account_id = var.csoc_account_id
 }
 
 resource "aws_lambda_permission" "api_gw" {
