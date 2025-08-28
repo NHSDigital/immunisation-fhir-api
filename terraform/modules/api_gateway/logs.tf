@@ -59,6 +59,31 @@ resource "aws_iam_role_policy_attachment" "api_logs_apigateway_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
 }
 
+resource "aws_iam_policy" "api_logs_subscription_policy" {
+  name = "${var.short_prefix}-api-logs-subscription-policy"
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Sid = "AllowPutAPIGSubFilter"
+        Effect = "Allow"
+        Action = [
+          "logs:PutSubscriptionFilter"
+        ]
+        Resource = [
+          "arn:aws:logs:${var.aws_region}:${var.immunisation_account_id}:log-group:/aws/vendedlogs/${aws_apigatewayv2_api.service_api.id}/${var.sub_environment}:*",
+          "arn:aws:logs:eu-west-2:693466633220:destination:api_gateway_log_destination"
+        ]
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "api_logs_subscription_policy" {
+  role       = aws_iam_role.api_cloudwatch.name
+  policy_arn = aws_iam_policy.api_logs_subscription_policy.arn
+}
+
 # TODO un-hardcode the region
 # e.g.
 #   "logs.${data.aws_region.current.region}.amazonaws.com"
