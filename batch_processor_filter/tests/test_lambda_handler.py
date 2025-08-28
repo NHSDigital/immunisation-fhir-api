@@ -5,7 +5,8 @@ import copy
 from unittest import TestCase
 from unittest.mock import patch
 
-from moto import mock_dynamodb, mock_sqs
+import botocore
+from moto import mock_dynamodb, mock_sqs, mock_s3
 
 from batch_file_created_event import BatchFileCreatedEvent
 from exceptions import InvalidBatchSizeError, EventAlreadyProcessingForSupplierAndVaccTypeError
@@ -18,10 +19,12 @@ with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
 
 sqs_client = boto3.client("sqs", region_name=REGION_NAME)
 dynamodb_client = boto3.client("dynamodb", region_name=REGION_NAME)
+s3_client = boto3.client("s3", region_name=REGION_NAME)
 
 
 @mock_dynamodb
 @mock_sqs
+@mock_s3
 class TestLambdaHandler(TestCase):
     default_batch_file_event: BatchFileCreatedEvent = BatchFileCreatedEvent(
         message_id="df0b745c-b8cb-492c-ba84-8ea28d9f51d5",
@@ -32,6 +35,8 @@ class TestLambdaHandler(TestCase):
         created_at_formatted_string="20250826T14372600"
     )
     mock_queue_url = MOCK_ENVIRONMENT_DICT.get("QUEUE_URL")
+    mock_source_bucket = MOCK_ENVIRONMENT_DICT.get("SOURCE_BUCKET_NAME")
+    mock_ack_bucket = MOCK_ENVIRONMENT_DICT.get("ACK_BUCKET_NAME")
 
     def setUp(self):
         dynamodb_client.create_table(
@@ -66,6 +71,12 @@ class TestLambdaHandler(TestCase):
             "FifoQueue": "true",
             "ContentBasedDeduplication": "true"
         })
+
+        for bucket_name in [self.mock_source_bucket, self.mock_ack_bucket]:
+            s3_client.create_bucket(
+                Bucket=bucket_name, CreateBucketConfiguration={"LocationConstraint": REGION_NAME}
+            )
+
         self.logger_patcher = patch("batch_processor_filter_service.logger")
         self.mock_logger = self.logger_patcher.start()
         self.firehose_log_patcher = patch("batch_processor_filter_service.send_log_to_firehose")
@@ -74,8 +85,30 @@ class TestLambdaHandler(TestCase):
     def tearDown(self):
         dynamodb_client.delete_table(TableName=AUDIT_TABLE_NAME)
         sqs_client.delete_queue(QueueUrl=self.mock_queue_url)
+
+        for bucket_name in [self.mock_source_bucket, self.mock_ack_bucket]:
+            for obj in s3_client.list_objects_v2(Bucket=bucket_name).get("Contents", []):
+                # Must delete objects before bucket can be deleted
+                s3_client.delete_object(Bucket=bucket_name, Key=obj["Key"])
+            s3_client.delete_bucket(Bucket=bucket_name)
+
         self.logger_patcher.stop()
         self.firehose_log_patcher.stop()
+
+    def _assert_source_file_moved(self, filename: str):
+        """Check used in the duplicate scenario to validate that the original uploaded file is moved"""
+        with self.assertRaises(botocore.exceptions.ClientError) as exc:
+            s3_client.get_object(Bucket=self.mock_source_bucket, Key=filename)
+
+        self.assertEqual(str(exc.exception), "An error occurred (NoSuchKey) when calling the GetObject "
+                                             "operation: The specified key does not exist.")
+        archived_object = s3_client.get_object(Bucket=self.mock_source_bucket, Key=f"archive/{filename}")
+        self.assertIsNotNone(archived_object)
+
+    def _assert_ack_file_created(self, ack_file_key: str):
+        """Check used in duplicate scenario to validate that the failure ack was created"""
+        ack_file = s3_client.get_object(Bucket=self.mock_ack_bucket, Key=f"ack/{ack_file_key}")
+        self.assertIsNotNone(ack_file)
 
     def test_lambda_handler_raises_error_when_empty_batch_received(self):
         with self.assertRaises(InvalidBatchSizeError) as exc:
@@ -98,9 +131,13 @@ class TestLambdaHandler(TestCase):
         add_entry_to_mock_table(dynamodb_client, AUDIT_TABLE_NAME, self.default_batch_file_event, FileStatus.PROCESSED)
         duplicate_file_event = copy.deepcopy(self.default_batch_file_event)
         duplicate_file_event["message_id"] = "fc9008b7-3865-4dcf-88b8-fc4abafff5f8"
+        test_file_name = duplicate_file_event["filename"]
 
         # Add the audit record for the incoming event
         add_entry_to_mock_table(dynamodb_client, AUDIT_TABLE_NAME, duplicate_file_event, FileStatus.QUEUED)
+
+        # Create the source file in S3
+        s3_client.put_object(Bucket=self.mock_source_bucket, Key=test_file_name)
 
         lambda_handler({"Records": [make_sqs_record(duplicate_file_event)]}, {})
 
@@ -109,10 +146,12 @@ class TestLambdaHandler(TestCase):
 
         sqs_messages = sqs_client.receive_message(QueueUrl=self.mock_queue_url)
         self.assertEqual(sqs_messages.get("Messages", []), [])
+        self._assert_source_file_moved(test_file_name)
+        self._assert_ack_file_created("Menacwy_Vaccinations_v5_TEST_20250820T10210000_InfAck_20250826T14372600.csv")
 
         self.mock_logger.info.assert_called_once_with(
             "A duplicate file has already been processed. Filename: %s",
-            "Menacwy_Vaccinations_v5_TEST_20250820T10210000.csv"
+            test_file_name
         )
 
     def test_lambda_handler_raises_error_when_event_already_processing_for_supplier_and_vacc_type(self):
@@ -164,7 +203,8 @@ class TestLambdaHandler(TestCase):
         self.assertEqual(len(sqs_messages.get("Messages", [])), 1)
         self.assertDictEqual(json.loads(sqs_messages["Messages"][0]["Body"]), dict(self.default_batch_file_event))
 
-        expected_log_message = "File forwarded for processing by ECS"
+        expected_log_message = (f"File forwarded for processing by ECS. Filename: "
+                                f"{self.default_batch_file_event['filename']}")
         self.mock_logger.info.assert_called_once_with(expected_log_message)
         self.mock_firehose_send_log.assert_called_once_with(
             {**self.default_batch_file_event, "message": expected_log_message}
@@ -194,7 +234,7 @@ class TestLambdaHandler(TestCase):
         self.assertEqual(len(sqs_messages.get("Messages", [])), 1)
         self.assertDictEqual(json.loads(sqs_messages["Messages"][0]["Body"]), dict(test_event))
 
-        expected_log_message = "File forwarded for processing by ECS"
+        expected_log_message = f"File forwarded for processing by ECS. Filename: {test_event['filename']}"
         self.mock_logger.info.assert_called_once_with(expected_log_message)
         self.mock_firehose_send_log.assert_called_once_with(
             {**test_event, "message": expected_log_message}

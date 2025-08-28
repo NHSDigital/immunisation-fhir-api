@@ -122,6 +122,32 @@ resource "aws_iam_policy" "batch_processor_filter_lambda_exec_policy" {
           "firehose:PutRecordBatch"
         ],
         "Resource" : "arn:aws:firehose:*:*:deliverystream/${module.splunk.firehose_stream_name}"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:ListBucket",
+          "s3:PutObject",
+          "s3:CopyObject",
+          "s3:DeleteObject"
+        ]
+        Resource = [
+          aws_s3_bucket.batch_data_source_bucket.arn,
+          "${aws_s3_bucket.batch_data_source_bucket.arn}/*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:ListBucket"
+        ]
+        Resource = [
+          aws_s3_bucket.batch_data_destination_bucket.arn,
+          "${aws_s3_bucket.batch_data_destination_bucket.arn}/*"
+        ]
       }
     ]
   })
@@ -247,11 +273,13 @@ resource "aws_lambda_function" "batch_processor_filter_lambda" {
 
   environment {
     variables = {
-      QUEUE_URL                  = aws_sqs_queue.supplier_fifo_queue.url
-      SPLUNK_FIREHOSE_NAME       = module.splunk.firehose_stream_name
-      AUDIT_TABLE_NAME           = aws_dynamodb_table.audit-table.name
-      FILE_NAME_GSI              = "filename_index"
-      QUEUE_NAME_GSI             = "queue_name_index"
+      SOURCE_BUCKET_NAME   = aws_s3_bucket.batch_data_source_bucket.bucket
+      ACK_BUCKET_NAME      = aws_s3_bucket.batch_data_destination_bucket.bucket
+      QUEUE_URL            = aws_sqs_queue.supplier_fifo_queue.url
+      SPLUNK_FIREHOSE_NAME = module.splunk.firehose_stream_name
+      AUDIT_TABLE_NAME     = aws_dynamodb_table.audit-table.name
+      FILE_NAME_GSI        = "filename_index"
+      QUEUE_NAME_GSI       = "queue_name_index"
     }
   }
   kms_key_arn                    = data.aws_kms_key.existing_lambda_encryption_key.arn

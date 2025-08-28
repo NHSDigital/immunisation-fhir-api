@@ -5,6 +5,7 @@ import logging
 
 from batch_audit_repository import BatchAuditRepository
 from batch_file_created_event import BatchFileCreatedEvent
+from batch_file_repository import BatchFileRepository
 from constants import REGION_NAME, FileStatus, QUEUE_URL
 from exceptions import EventAlreadyProcessingForSupplierAndVaccTypeError
 from send_log_to_firehose import send_log_to_firehose
@@ -16,8 +17,13 @@ logger.setLevel("INFO")
 
 class BatchProcessorFilterService:
     """Batch processor filter service class. Provides the business logic for the Lambda function"""
-    def __init__(self, audit_repo: BatchAuditRepository = BatchAuditRepository()):
+    def __init__(
+        self,
+        audit_repo: BatchAuditRepository = BatchAuditRepository(),
+        batch_file_repo: BatchFileRepository = BatchFileRepository()
+    ):
         self._batch_audit_repository = audit_repo
+        self._batch_file_repo = batch_file_repo
         self._queue_client = boto3.client('sqs', region_name=REGION_NAME)
 
     def _is_duplicate_file(self, file_key: str) -> bool:
@@ -34,6 +40,8 @@ class BatchProcessorFilterService:
             # Mark as processed and return without error so next event will be picked up from queue
             logger.info("A duplicate file has already been processed. Filename: %s", filename)
             self._batch_audit_repository.update_status(message_id, FileStatus.DUPLICATE)
+            self._batch_file_repo.upload_failure_ack(batch_file_created_event)
+            self._batch_file_repo.move_source_file_to_archive(filename)
             return
 
         if self._batch_audit_repository.is_event_processing_for_supplier_and_vacc_type(supplier, vaccine_type):
@@ -49,6 +57,6 @@ class BatchProcessorFilterService:
         )
         self._batch_audit_repository.update_status(message_id, FileStatus.PROCESSING)
 
-        successful_log_message = "File forwarded for processing by ECS"
+        successful_log_message = f"File forwarded for processing by ECS. Filename: {filename}"
         logger.info(successful_log_message)
         send_log_to_firehose({**batch_file_created_event, "message": successful_log_message})

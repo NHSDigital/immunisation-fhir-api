@@ -8,7 +8,9 @@ MOCK_ENVIRONMENT_DICT = {
     "AUDIT_TABLE_NAME": "immunisation-batch-internal-dev-audit-table",
     "QUEUE_URL": "https://sqs.eu-west-2.amazonaws.com/123456789012/imms-batch-metadata-queue.fifo",
     "FILE_NAME_GSI": "filename_index",
-    "QUEUE_NAME_GSI": "queue_name_index"
+    "QUEUE_NAME_GSI": "queue_name_index",
+    "SOURCE_BUCKET_NAME": "immunisation-batch-internal-dev-data-sources",
+    "ACK_BUCKET_NAME": "immunisation-batch-internal-dev-data-destinations"
 }
 
 
