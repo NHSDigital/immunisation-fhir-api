@@ -67,13 +67,17 @@ class FhirService:
         imms_resp = self.immunization_repo.get_immunization_by_identifier(
             identifier_pk, imms_vax_type_perms
         )
-        if not imms_resp:
+        
+        patient_full_url = f"urn:uuid:{str(uuid4())}"
+        filtered_response = [Filter.search(imms, patient_full_url) for imms in (imms_resp or [])]
+
+        if not filtered_response:
             base_url = f"{get_service_url()}/Immunization"
-            response = form_json(imms_resp, None, None, base_url)
+            response = form_json(filtered_response, None, None, base_url)
             return response
         else:
             base_url = f"{get_service_url()}/Immunization"
-            response = form_json(imms_resp, element, identifier, base_url)
+            response = form_json(filtered_response, element, identifier, base_url)
             return response
 
     def get_immunization_by_id(self, imms_id: str, imms_vax_type_perms: list[str]) -> Optional[dict]:
