@@ -9,16 +9,17 @@ logger.setLevel("INFO")
 marker = {}
 
 
-def monitor(nameMarker):  # initialises time for name marker
+def monitor(nameMarker):
     t = time.perf_counter_ns()
     if nameMarker in marker:
-        marker[nameMarker] = t
-    else:
         duration = t - marker[nameMarker]
         elapsed_ms = duration / 1_000_000
         out_msg = {
             "marker": nameMarker,
             "elapsed_time": elapsed_ms
         }
-    logger.info(json.dumps(out_msg))
-    marker[nameMarker] = t
+        logger.info(json.dumps(out_msg))
+        del marker[nameMarker]  # <-- remove the marker after logging
+    else:
+        marker[nameMarker] = t
+
