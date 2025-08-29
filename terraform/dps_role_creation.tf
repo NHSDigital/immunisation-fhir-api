@@ -14,8 +14,8 @@ resource "aws_iam_role" "dynamo_s3_access_role" {
   })
 }
 
-resource "aws_iam_role_policy" "dynamo_s3_access_policy" {
-  name = "imms-${local.resource_scope}-dynamo_s3_access-policy"
+resource "aws_iam_role_policy" "dynamo_access_policy" {
+  name = "imms-${local.resource_scope}-dynamo-access-policy"
   role = aws_iam_role.dynamo_s3_access_role.id
   policy = jsonencode({
     Version = "2012-10-17",
@@ -30,6 +30,25 @@ resource "aws_iam_role_policy" "dynamo_s3_access_policy" {
         Resource = [
           aws_dynamodb_table.delta-dynamodb-table.arn,
           "${aws_dynamodb_table.delta-dynamodb-table.arn}/index/*"
+        ]
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "kms_key_access_policy" {
+  name = "imms-${local.resource_scope}-kms-key-access-policy"
+  role = aws_iam_role.dynamo_s3_access_role.id
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "kms:Decrypt"
+        ],
+        Resource = [
+          data.aws_kms_key.existing_dynamo_encryption_key.arn
         ]
       }
     ]
