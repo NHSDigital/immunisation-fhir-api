@@ -5,6 +5,7 @@ import simplejson as json
 import base64
 import time
 import logging
+from datetime import datetime
 
 from batch.batch_filename_to_events_mapper import BatchFilenameToEventsMapper
 from fhir_batch_repository import create_table
