@@ -60,6 +60,7 @@ def forward_request_to_dynamo(
 def forward_lambda_handler(event, _):
     """Forward each row to the Imms API"""
     logger.info("Processing started")
+    batch_start_time = str(datetime.now())
     table = create_table()
     filename_to_events_mapper = BatchFilenameToEventsMapper()
     array_of_identifiers = []
@@ -67,6 +68,7 @@ def forward_lambda_handler(event, _):
 
     for record in event["Records"]:
         try:
+            operation_start_time = str(datetime.now())
             kinesis_payload = record["kinesis"]["data"]
             decoded_payload = base64.b64decode(kinesis_payload).decode("utf-8")
             incoming_message_body = json.loads(decoded_payload, use_decimal=True)
@@ -103,11 +105,21 @@ def forward_lambda_handler(event, _):
                 array_of_identifiers.append(identifier)
 
             imms_id = forward_request_to_dynamo(incoming_message_body, table, identifier_already_present, controller)
-            filename_to_events_mapper.add_event({**base_outgoing_message_body, "imms_id": imms_id})
+            filename_to_events_mapper.add_event(
+                { **base_outgoing_message_body,
+                 "batch_start_time": batch_start_time,
+                 "operation_start_time": operation_start_time,
+                 "operation_end_time": str(datetime.now()),
+                 "imms_id": imms_id }
+            )
 
         except Exception as error:  # pylint: disable = broad-exception-caught
             filename_to_events_mapper.add_event(
-                {**base_outgoing_message_body, "diagnostics": create_diagnostics_dictionary(error)}
+                { **base_outgoing_message_body,
+                 "batch_start_time": batch_start_time,
+                 "operation_start_time": operation_start_time,
+                 "operation_end_time": str(datetime.now()),
+                 "diagnostics": create_diagnostics_dictionary(error) }
             )
             logger.error("Error processing message: %s", error)
 
