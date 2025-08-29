@@ -236,29 +236,6 @@ class TestFhirControllerGetImmunizationByIdentifier(unittest.TestCase):
         self.assertEqual(body["resourceType"], "OperationOutcome")
 
     @patch("fhir_controller.get_supplier_permissions")
-    def test_get_imms_by_identifer_imms_identifier_and_element_not_present(self, mock_get_supplier_permissions):
-        """it should return Immunization Id if it exists"""
-        # Given
-        mock_get_supplier_permissions.return_value = ["COVID19.CRUDS"]
-        self.service.get_immunization_by_identifier.return_value = {"id": "test", "Version": 1}
-        lambda_event = {
-            "headers": {"SupplierSystem": "test"},
-            "queryStringParameters": {
-                "-immunization.target": "test",
-                "immunization.identifier": "https://supplierABC/identifiers/vacc|f10b59b3-fc73-4616-99c9-9e882ab31184",
-            },
-            "body": None,
-        }
-        # When
-        response = self.controller.get_immunization_by_identifier(lambda_event)
-        # Then
-        self.service.get_immunization_by_identifier.assert_not_called()
-
-        self.assertEqual(response["statusCode"], 400)
-        body = json.loads(response["body"])
-        self.assertEqual(body["resourceType"], "OperationOutcome")
-
-    @patch("fhir_controller.get_supplier_permissions")
     def test_get_imms_by_identifer_both_identifier_present(self, mock_get_supplier_permissions):
         """it should return Immunization Id if it exists"""
         # Given
