@@ -4,11 +4,11 @@ Functions for completing file-level validation
 """
 from clients import logger, s3_client
 from make_and_upload_ack_file import make_and_upload_ack_file
-from utils_for_recordprocessor import get_csv_content_dict_reader, invoke_filename_lambda
+from utils_for_recordprocessor import get_csv_content_dict_reader
 from errors import InvalidHeaders, NoOperationPermissions
 from logging_decorator import file_level_validation_logging_decorator
-from audit_table import change_audit_table_status_to_processed, get_next_queued_file_details
-from constants import SOURCE_BUCKET_NAME, EXPECTED_CSV_HEADERS, permission_to_operation_map, Permission
+from audit_table import update_audit_table_status
+from constants import SOURCE_BUCKET_NAME, EXPECTED_CSV_HEADERS, permission_to_operation_map, FileStatus, Permission
 
 
 def validate_content_headers(csv_content_reader) -> None:
@@ -64,7 +64,7 @@ def move_file(bucket_name: str, source_file_key: str, destination_file_key: str)
 def file_level_validation(incoming_message_body: dict) -> dict:
     """
     Validates that the csv headers are correct and that the supplier has permission to perform at least one of
-    the requested operations. Uploades the inf ack file and moves the source file to the processing folder.
+    the requested operations. Uploads the inf ack file and moves the source file to the processing folder.
     Returns an interim message body for row level processing.
     NOTE: If file level validation fails the source file is moved to the archive folder, the audit table is updated
     to reflect the file has been processed and the filename lambda is invoked with the next file in the queue.
@@ -113,10 +113,6 @@ def file_level_validation(incoming_message_body: dict) -> dict:
         except Exception as move_file_error:
             logger.error("Failed to move file to archive: %s", move_file_error)
 
-        # Update the audit table and invoke the filename lambda with next file in the queue (if one exists)
-        change_audit_table_status_to_processed(file_key, message_id)
-        queue_name = f"{supplier}_{vaccine}"
-        next_queued_file_details = get_next_queued_file_details(queue_name)
-        if next_queued_file_details:
-            invoke_filename_lambda(next_queued_file_details["filename"], next_queued_file_details["message_id"])
+        # Update the audit table
+        update_audit_table_status(file_key, message_id, FileStatus.PROCESSED)
         raise

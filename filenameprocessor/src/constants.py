@@ -13,11 +13,7 @@ from errors import (
 )
 
 SOURCE_BUCKET_NAME = os.getenv("SOURCE_BUCKET_NAME")
-FILE_NAME_PROC_LAMBDA_NAME = os.getenv("FILE_NAME_PROC_LAMBDA_NAME")
 AUDIT_TABLE_NAME = os.getenv("AUDIT_TABLE_NAME")
-AUDIT_TABLE_QUEUE_NAME_GSI = "queue_name_index"
-AUDIT_TABLE_FILENAME_GSI = "filename_index"
-DATA_SOURCES_BUCKET_SUFFIX = "data-sources"
 VALID_VERSIONS = ["V5"]
 
 SUPPLIER_PERMISSIONS_HASH_KEY = "supplier_permissions"

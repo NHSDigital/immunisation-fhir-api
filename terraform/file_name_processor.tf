@@ -161,13 +161,6 @@ resource "aws_iam_policy" "filenameprocessor_lambda_exec_policy" {
           "firehose:PutRecordBatch"
         ],
         "Resource" : "arn:aws:firehose:*:*:deliverystream/${module.splunk.firehose_stream_name}"
-      },
-      {
-        Effect = "Allow"
-        Action = "lambda:InvokeFunction"
-        Resource = [
-          "arn:aws:lambda:${var.aws_region}:${var.immunisation_account_id}:function:imms-${var.sub_environment}-filenameproc_lambda",
-        ]
       }
     ]
   })
@@ -184,7 +177,7 @@ resource "aws_iam_policy" "filenameprocessor_lambda_sqs_policy" {
       Action = [
         "sqs:SendMessage"
       ],
-      Resource = aws_sqs_queue.supplier_fifo_queue.arn
+      Resource = aws_sqs_queue.batch_file_created.arn
     }]
   })
 }
@@ -266,6 +259,7 @@ resource "aws_iam_role_policy_attachment" "filenameprocessor_lambda_dynamo_acces
   role       = aws_iam_role.filenameprocessor_lambda_exec_role.name
   policy_arn = aws_iam_policy.filenameprocessor_dynamo_access_policy.arn
 }
+
 # Lambda Function with Security Group and VPC.
 resource "aws_lambda_function" "file_processor_lambda" {
   function_name = "${local.short_prefix}-filenameproc_lambda"
@@ -284,15 +278,11 @@ resource "aws_lambda_function" "file_processor_lambda" {
     variables = {
       SOURCE_BUCKET_NAME         = aws_s3_bucket.batch_data_source_bucket.bucket
       ACK_BUCKET_NAME            = aws_s3_bucket.batch_data_destination_bucket.bucket
-      QUEUE_URL                  = aws_sqs_queue.supplier_fifo_queue.url
-      CONFIG_BUCKET_NAME         = local.config_bucket_name
+      QUEUE_URL                  = aws_sqs_queue.batch_file_created.url
       REDIS_HOST                 = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].address
       REDIS_PORT                 = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].port
       SPLUNK_FIREHOSE_NAME       = module.splunk.firehose_stream_name
       AUDIT_TABLE_NAME           = aws_dynamodb_table.audit-table.name
-      FILE_NAME_GSI              = "filename_index"
-      FILE_NAME_PROC_LAMBDA_NAME = "imms-${var.sub_environment}-filenameproc_lambda"
-
     }
   }
   kms_key_arn                    = data.aws_kms_key.existing_lambda_encryption_key.arn
@@ -303,7 +293,6 @@ resource "aws_lambda_function" "file_processor_lambda" {
   ]
 
 }
-
 
 # Permission for S3 to invoke Lambda function
 resource "aws_lambda_permission" "s3_invoke_permission" {

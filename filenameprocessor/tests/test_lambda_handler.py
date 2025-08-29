@@ -1,7 +1,7 @@
 """Tests for lambda_handler"""
 import json
 import sys
-from unittest.mock import patch
+from unittest.mock import patch, ANY
 from unittest import TestCase
 from json import loads as json_loads
 from contextlib import ExitStack
@@ -80,9 +80,15 @@ class TestLambdaHandlerDataSource(TestCase):
 
     def setUp(self):
         GenericSetUp(s3_client, firehose_client, sqs_client, dynamodb_client)
+        self.logger_patcher = patch("file_name_processor.logger")
+        self.decorator_logger_patcher = patch("logging_decorator.logger")
+        self.mock_logger = self.logger_patcher.start()
+        self.mock_decorator_logger = self.decorator_logger_patcher.start()
 
     def tearDown(self):
         GenericTearDown(s3_client, firehose_client, sqs_client, dynamodb_client)
+        self.logger_patcher.stop()
+        self.decorator_logger_patcher.stop()
 
     @staticmethod
     def make_record(file_key: str):
@@ -160,93 +166,33 @@ class TestLambdaHandlerDataSource(TestCase):
 
     def test_lambda_handler_no_file_key_throws_exception(self):
         """Tests if exception is thrown when file_key is not provided"""
-
         broken_record = {"Records": [{"s3": {"bucket": {"name": "test"}}}]}
-        with patch("file_name_processor.logger") as mock_logger:
-            lambda_handler(broken_record, None)
-            mock_logger.error.assert_called_once()
+
+        lambda_handler(broken_record, None)
+
+        self.mock_logger.error.assert_called_once_with("Error obtaining file_key: %s", ANY)
 
     def test_lambda_handler_new_file_success_and_first_in_queue(self):
         """
-        Tests that for a new file, which passes validation and is the only file processing for the supplier_vaccineType
-        queue:
+        Tests that for a new file, which passes validation:
         * The file is added to the audit table with a status of 'processing'
         * The message is sent to SQS
         * The make_and_upload_the_ack_file method is not called
-        * The invoke_filename_lambda method is not called
         """
-        # NOTE: Add a test case for each vaccine type
         test_cases = [MockFileDetails.emis_flu, MockFileDetails.ravs_rsv_1]
         for file_details in test_cases:
             with self.subTest(file_details.name):
-                # Setup the file in the source bucket
+                # Set up the file in the source bucket
                 s3_client.put_object(Bucket=BucketNames.SOURCE, Key=file_details.file_key)
 
                 with (  # noqa: E999
                     patch("file_name_processor.uuid4", return_value=file_details.message_id),  # noqa: E999
-                    patch("file_name_processor.invoke_filename_lambda") as mock_invoke_filename_lambda,  # noqa: E999
                 ):  # noqa: E999
                     lambda_handler(self.make_event([self.make_record(file_details.file_key)]), None)
 
-                assert_audit_table_entry(file_details, FileStatus.PROCESSING)
+                assert_audit_table_entry(file_details, FileStatus.QUEUED)
                 self.assert_sqs_message(file_details)
-                mock_invoke_filename_lambda.assert_not_called()
                 self.assert_no_ack_file(file_details)
-
-                # Reset audit table
-                for item in self.get_audit_table_items():
-                    dynamodb_client.delete_item(TableName=AUDIT_TABLE_NAME, Key=dict(item.items()))
-
-    def test_lambda_handler_new_file_success_and_other_files_in_queue(self):
-        """
-        Tests that for a new file, which passes validation and there are other files in the supplier_vaccineType queue:
-        * The file is added to the audit table with a status of 'queued'
-        * The message is not sent to SQS
-        * The make_and_upload_the_ack_file method is not called
-        * The invoke_filename_lambda method is not called
-        """
-        file_details = MockFileDetails.ravs_rsv_1
-        file_already_processing_details = MockFileDetails.ravs_rsv_2
-
-        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=file_details.file_key)
-
-        add_entry_to_table(file_already_processing_details, FileStatus.PROCESSING)
-
-        with (  # noqa: E999
-            patch("file_name_processor.uuid4", return_value=file_details.message_id),  # noqa: E999
-            patch("file_name_processor.invoke_filename_lambda") as mock_invoke_filename_lambda,  # noqa: E999
-        ):  # noqa: E999
-            lambda_handler(self.make_event([self.make_record(file_details.file_key)]), None)
-
-        assert_audit_table_entry(file_details, FileStatus.QUEUED)
-        self.assert_no_sqs_message()
-        self.assert_no_ack_file(file_details)
-        mock_invoke_filename_lambda.assert_not_called()
-
-    def test_lambda_handler_existing_file(self):
-        """
-        Tests that for an existing file, which is the only file processing for the supplier_vaccineType queue:
-        * The file status is updated to 'processing' in the audit table
-        * The message is sent to SQS
-        * The make_and_upload_the_ack_file method is not called
-        * The invoke_filename_lambda method is not called
-        """
-        file_details = MockFileDetails.ravs_rsv_1
-        add_entry_to_table(file_details, FileStatus.QUEUED)
-
-        with (  # noqa: E999
-            patch("file_name_processor.uuid4", return_value=file_details.message_id),  # noqa: E999
-            patch("file_name_processor.invoke_filename_lambda") as mock_invoke_filename_lambda,  # noqa: E999
-        ):  # noqa: E999
-            lambda_handler(
-                self.make_event([self.make_record_with_message_id(file_details.file_key, file_details.message_id)]),
-                None,
-            )
-
-        assert_audit_table_entry(file_details, FileStatus.PROCESSING)
-        self.assert_sqs_message(file_details)
-        self.assert_no_ack_file(file_details)
-        mock_invoke_filename_lambda.assert_not_called()
 
     def test_lambda_handler_non_root_file(self):
         """
@@ -254,54 +200,18 @@ class TestLambdaHandlerDataSource(TestCase):
         * The file is not added to the audit table
         * The message is not sent to SQS
         * The failure inf_ack file is not created
-        * The invoke_filename_lambda method is not called
         """
         file_details = MockFileDetails.emis_flu
         s3_client.put_object(Bucket=BucketNames.SOURCE, Key="folder/" + file_details.file_key)
 
         with (  # noqa: E999
             patch("file_name_processor.uuid4", return_value=file_details.message_id),  # noqa: E999
-            patch("file_name_processor.invoke_filename_lambda") as mock_invoke_filename_lambda,  # noqa: E999
         ):  # noqa: E999
             lambda_handler(self.make_event([self.make_record("folder/" + file_details.file_key)]), None)
 
         self.assert_not_in_audit_table(file_details)
         self.assert_no_sqs_message()
         self.assert_no_ack_file(file_details)
-        mock_invoke_filename_lambda.assert_not_called()
-
-    def test_lambda_handler_duplicate_file_other_files_in_queue(self):
-        """
-        Tests that for a file that is a duplicate of a file, and there are other files in the same supplier_vaccineType
-        queue:
-        * The file is added to the audit table with a status of 'Duplicate'
-        * The message is not sent to SQS
-        * The failure inf_ack file is created
-        * The invoke_filename_lambda method is not called
-        """
-        file_details = MockFileDetails.ravs_rsv_1
-        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=file_details.file_key)
-
-        duplicate_already_in_table = deepcopy(file_details)
-        duplicate_already_in_table.message_id = "duplicate_id"
-        duplicate_already_in_table.audit_table_entry[AuditTableKeys.MESSAGE_ID] = {
-            "S": duplicate_already_in_table.message_id
-        }
-        add_entry_to_table(duplicate_already_in_table, FileStatus.PROCESSED)
-
-        queued_file_details = MockFileDetails.ravs_rsv_2
-        add_entry_to_table(queued_file_details, FileStatus.QUEUED)
-
-        with (
-            patch("file_name_processor.uuid4", return_value=file_details.message_id),  # noqa: E999
-            patch("file_name_processor.invoke_filename_lambda") as mock_invoke_filename_lambda,  # noqa: E999
-        ):  # noqa: E999
-            lambda_handler(self.make_event([self.make_record(file_details.file_key)]), None)
-
-        assert_audit_table_entry(file_details, FileStatus.DUPLICATE)
-        self.assert_no_sqs_message()
-        self.assert_ack_file_contents(file_details)
-        mock_invoke_filename_lambda.assert_called_with(queued_file_details.file_key, queued_file_details.message_id)
 
     def test_lambda_invalid_file_key_no_other_files_in_queue(self):
         """
@@ -309,7 +219,6 @@ class TestLambdaHandlerDataSource(TestCase):
         * The file is added to the audit table with a status of 'Processed'
         * The message is not sent to SQS
         * The failure inf_ack file is created
-        * The invoke_filename_lambda method is not called
         """
         invalid_file_key = "InvalidVaccineType_Vaccinations_v5_YGM41_20240708T12130100.csv"
         s3_client.put_object(Bucket=BucketNames.SOURCE, Key=invalid_file_key)
@@ -323,7 +232,6 @@ class TestLambdaHandlerDataSource(TestCase):
                 "file_name_processor.validate_vaccine_type_permissions"  # noqa: E999
             ) as mock_validate_vaccine_type_permissions,  # noqa: E999
             patch("file_name_processor.uuid4", return_value=file_details.message_id),  # noqa: E999
-            patch("file_name_processor.invoke_filename_lambda") as mock_invoke_filename_lambda,  # noqa: E999
         ):  # noqa: E999
             lambda_handler(self.make_event([self.make_record(file_details.file_key)]), None)
 
@@ -339,7 +247,6 @@ class TestLambdaHandlerDataSource(TestCase):
         self.assertEqual(self.get_audit_table_items(), expected_table_items)
         mock_validate_vaccine_type_permissions.assert_not_called()
         self.assert_ack_file_contents(file_details)
-        mock_invoke_filename_lambda.assert_not_called()
         self.assert_no_sqs_message()
 
     def test_lambda_invalid_permissions_other_files_in_queue(self):
@@ -348,7 +255,6 @@ class TestLambdaHandlerDataSource(TestCase):
         * The file is added to the audit table with a status of 'Processed'
         * The message is not sent to SQS
         * The failure inf_ack file is created
-        * The invoke_filename_lambda method is called with queued file details
         """
         file_details = MockFileDetails.ravs_rsv_1
         s3_client.put_object(Bucket=BucketNames.SOURCE, Key=file_details.file_key)
@@ -361,95 +267,11 @@ class TestLambdaHandlerDataSource(TestCase):
         with (  # noqa: E999
             patch("file_name_processor.uuid4", return_value=file_details.message_id),  # noqa: E999
             patch("elasticache.redis_client.hget", side_effect=mock_hget),  # noqa: E999
-            patch("file_name_processor.invoke_filename_lambda") as mock_invoke_filename_lambda,  # noqa: E999
         ):  # noqa: E999
             lambda_handler(self.make_event([self.make_record(file_details.file_key)]), None)
         assert_audit_table_entry(file_details, FileStatus.PROCESSED)
         self.assert_no_sqs_message()
         self.assert_ack_file_contents(file_details)
-        mock_invoke_filename_lambda.assert_called_with(queued_file_details.file_key, queued_file_details.message_id)
-
-    def test_lambda_handler_multiple_records_for_same_queue(self):
-        """
-        The three files in this test are:
-        FILE_1: A file that is the first in the RAVS_RSV queue
-        FILE_2: A file that is the second in the RAVS_RSV queue
-        FILE_3: A file that fails validation
-
-        Tests that when multiple records are received for the same supplier_vaccineType queue, and there are no other
-        files ahead in the queue:
-        * The first file is added to the audit table with a status of 'processing'
-        * The message for the first file is sent to SQS
-        * The make_and_upload_the_ack_file method is not called for the first file
-        * The invoke_filename_lambda method is not called for the first file
-        * The second file is added to the audit table with a status of 'queued'
-        * The message for the second file is not sent to SQS
-        * The make_and_upload_the_ack_file method is not called for the second file
-        * The invoke_filename_lambda method is not called for the second file
-        * The third file is added to the audit table with a status of 'processed'
-        * The message for the third file is not sent to SQS
-        * The failure inf_ack file is created for the third file
-        * The invoke_filename_lambda method is not called for the third file
-        """
-        valid_file_details_1 = MockFileDetails.ravs_rsv_1
-
-        valid_file_details_2 = MockFileDetails.ravs_rsv_2
-
-        invalid_file_details_3 = deepcopy(MockFileDetails.ravs_rsv_3)
-        invalid_file_details_3.file_key = "InvalidVaccineType_Vaccinations_v5_InvalidOdsCode_20240708T12130100.csv"
-        invalid_file_details_3.ack_file_key = self.get_ack_file_key(
-            invalid_file_details_3.file_key, invalid_file_details_3.created_at_formatted_string
-        )
-        invalid_file_details_3.queue_name = "unknown_unknown"
-        invalid_file_details_3.audit_table_entry[AuditTableKeys.FILENAME] = {"S": invalid_file_details_3.file_key}
-        invalid_file_details_3.audit_table_entry[AuditTableKeys.QUEUE_NAME] = {"S": invalid_file_details_3.queue_name}
-        invalid_file_details_3.sqs_message_body["filename"] = invalid_file_details_3.file_key
-
-        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=valid_file_details_1.file_key)
-        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=valid_file_details_2.file_key)
-        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=invalid_file_details_3.file_key)
-
-        message_ids = [
-            valid_file_details_1.message_id,
-            valid_file_details_2.message_id,
-            invalid_file_details_3.message_id,
-        ]
-
-        created_at_formatted_strings = [
-            valid_file_details_1.created_at_formatted_string,
-            valid_file_details_2.created_at_formatted_string,
-            invalid_file_details_3.created_at_formatted_string,
-        ]
-
-        with (  # noqa: E999
-            patch("file_name_processor.uuid4", side_effect=message_ids),  # noqa: E999
-            patch(  # noqa: E999
-                "file_name_processor.get_created_at_formatted_string",  # noqa: E999
-                side_effect=created_at_formatted_strings,  # noqa: E999
-            ),  # noqa: E999
-            patch("file_name_processor.invoke_filename_lambda") as mock_invoke_filename_lambda,  # noqa: E999
-        ):  # noqa: E999
-            records = [
-                self.make_record(valid_file_details_1.file_key),
-                self.make_record(valid_file_details_2.file_key),
-                self.make_record(invalid_file_details_3.file_key),
-            ]
-            lambda_handler(self.make_event(records), None)
-
-        assert_audit_table_entry(valid_file_details_1, FileStatus.PROCESSING)
-        self.assert_sqs_message(valid_file_details_1)
-        self.assert_no_ack_file(valid_file_details_1)
-        mock_invoke_filename_lambda.assert_not_called()
-
-        assert_audit_table_entry(valid_file_details_2, FileStatus.QUEUED)
-        self.assert_no_sqs_message()
-        self.assert_no_ack_file(valid_file_details_2)
-        mock_invoke_filename_lambda.assert_not_called()
-
-        assert_audit_table_entry(invalid_file_details_3, FileStatus.PROCESSED)
-        self.assert_no_sqs_message()
-        self.assert_ack_file_contents(invalid_file_details_3)
-        mock_invoke_filename_lambda.assert_not_called()
 
 
 @patch.dict("os.environ", MOCK_ENVIRONMENT_DICT)
