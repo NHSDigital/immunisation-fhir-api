@@ -7,7 +7,7 @@ from tests.utils_for_tests.mock_environment_variables import BucketNames, MOCK_E
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from clients import REGION_NAME
-    from constants import AuditTableKeys, AUDIT_TABLE_NAME, AUDIT_TABLE_QUEUE_NAME_GSI, AUDIT_TABLE_FILENAME_GSI
+    from constants import AuditTableKeys, AUDIT_TABLE_NAME
 
 
 class GenericSetUp:
@@ -52,29 +52,9 @@ class GenericSetUp:
                 TableName=AUDIT_TABLE_NAME,
                 KeySchema=[{"AttributeName": AuditTableKeys.MESSAGE_ID, "KeyType": "HASH"}],
                 AttributeDefinitions=[
-                    {"AttributeName": AuditTableKeys.MESSAGE_ID, "AttributeType": "S"},
-                    {"AttributeName": AuditTableKeys.FILENAME, "AttributeType": "S"},
-                    {"AttributeName": AuditTableKeys.QUEUE_NAME, "AttributeType": "S"},
-                    {"AttributeName": AuditTableKeys.STATUS, "AttributeType": "S"},
+                    {"AttributeName": AuditTableKeys.MESSAGE_ID, "AttributeType": "S"}
                 ],
                 ProvisionedThroughput={"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
-                GlobalSecondaryIndexes=[
-                    {
-                        "IndexName": AUDIT_TABLE_FILENAME_GSI,
-                        "KeySchema": [{"AttributeName": AuditTableKeys.FILENAME, "KeyType": "HASH"}],
-                        "Projection": {"ProjectionType": "KEYS_ONLY"},
-                        "ProvisionedThroughput": {"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
-                    },
-                    {
-                        "IndexName": AUDIT_TABLE_QUEUE_NAME_GSI,
-                        "KeySchema": [
-                            {"AttributeName": AuditTableKeys.QUEUE_NAME, "KeyType": "HASH"},
-                            {"AttributeName": AuditTableKeys.STATUS, "KeyType": "RANGE"},
-                        ],
-                        "Projection": {"ProjectionType": "ALL"},
-                        "ProvisionedThroughput": {"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
-                    },
-                ],
             )
 
 

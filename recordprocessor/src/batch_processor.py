@@ -3,8 +3,11 @@
 import json
 import os
 import time
+
+from constants import FileStatus
 from process_row import process_row
 from mappings import map_target_disease
+from audit_table import update_audit_table_status
 from send_to_kinesis import send_to_kinesis
 from clients import logger
 from file_level_validation import file_level_validation
@@ -54,6 +57,8 @@ def process_csv_to_fhir(incoming_message_body: dict) -> None:
         send_to_kinesis(supplier, outgoing_message_body, vaccine)
 
         logger.info("Total rows processed: %s", row_count)
+
+    update_audit_table_status(file_key, file_id, FileStatus.PREPROCESSED)
 
 
 def main(event: str) -> None:
