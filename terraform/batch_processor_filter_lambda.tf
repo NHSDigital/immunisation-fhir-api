@@ -67,7 +67,7 @@ resource "aws_ecr_repository_policy" "batch_processor_filter_lambda_ECRImageRetr
         ],
         "Condition" : {
           "StringLike" : {
-            "aws:sourceArn" : "arn:aws:lambda:eu-west-2:${var.immunisation_account_id}:function:${local.short_prefix}-batch-processor-filter-lambda"
+            "aws:sourceArn" : "arn:aws:lambda:${var.aws_region}:${var.immunisation_account_id}:function:${local.short_prefix}-batch-processor-filter-lambda"
           }
         }
       }
