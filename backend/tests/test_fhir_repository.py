@@ -321,7 +321,6 @@ class TestUpdateImmunization(TestFhirRepositoryBase):
     def test_update1(self):
         """it should update record by replacing both Immunization and Patient"""
 
-        self.mock_redis_client.hget.return_value = "COVID19"
         imms_id = "an-imms-id"
         imms = create_covid_19_immunization_dict(imms_id)
         imms["patient"] = self.patient
@@ -340,7 +339,7 @@ class TestUpdateImmunization(TestFhirRepositoryBase):
             # When
 
             act_resource, updated_version = self.repository.update_immunization(
-                imms_id, imms, self.patient, 1, ["COVID19.CRUD"], "Test"
+                imms_id, imms, self.patient, 1, "Test"
             )
 
         # Then
@@ -376,7 +375,6 @@ class TestUpdateImmunization(TestFhirRepositoryBase):
     def test_update_throws_error_when_response_can_not_be_handled(self):
         """it should throw UnhandledResponse when the response from dynamodb can't be handled"""
 
-        self.mock_redis_client.hget.return_value = "COVID19"
         imms_id = "an-id"
         imms = create_covid_19_immunization_dict(imms_id)
         imms["patient"] = self.patient
@@ -389,7 +387,7 @@ class TestUpdateImmunization(TestFhirRepositoryBase):
         with self.assertRaises(UnhandledResponseError) as e:
             # When
 
-            self.repository.update_immunization(imms_id, imms, self.patient, 1, ["COVID19.CRUD"], "Test")
+            self.repository.update_immunization(imms_id, imms, self.patient, 1, "Test")
 
         # Then
         self.assertDictEqual(e.exception.response, response)
@@ -397,7 +395,6 @@ class TestUpdateImmunization(TestFhirRepositoryBase):
     def test_update_throws_error_when_identifier_already_in_dynamodb(self):
         """it should throw IdentifierDuplicationError when trying to update an immunization with an identfier that is already stored"""
 
-        self.mock_redis_client.hget.return_value = "COVID19"
         imms_id = "an-id"
         imms = create_covid_19_immunization_dict(imms_id)
         imms["patient"] = self.patient
@@ -407,13 +404,12 @@ class TestUpdateImmunization(TestFhirRepositoryBase):
         with self.assertRaises(IdentifierDuplicationError) as e:
             # When
 
-            self.repository.update_immunization(imms_id, imms, self.patient, 1, ["COVID19.CRUD"], "Test")
+            self.repository.update_immunization(imms_id, imms, self.patient, 1, "Test")
 
         self.assertEqual(str(e.exception), f"The provided identifier: {identifier} is duplicated")
 
     def test_reinstate_immunization_success(self):
         """it should reinstate an immunization successfully"""
-        self.mock_redis_client.hget.return_value = "COVID19"
         imms_id = "reinstate-id"
         imms = create_covid_19_immunization_dict(imms_id)
         imms["patient"] = self.patient
@@ -427,7 +423,7 @@ class TestUpdateImmunization(TestFhirRepositoryBase):
 
         with patch("time.time", return_value=123456):
             result, version = self.repository.reinstate_immunization(
-                imms_id, imms, self.patient, 1, ["COVID19.CRUD"], "Test"
+                imms_id, imms, self.patient, 1, "Test"
             )
 
         self.assertEqual(result, resource)
@@ -435,7 +431,6 @@ class TestUpdateImmunization(TestFhirRepositoryBase):
 
     def test_update_reinstated_immunization_success(self):
         """it should update a reinstated immunization successfully"""
-        self.mock_redis_client.hget.return_value = "COVID19"
         imms_id = "reinstated-id"
         imms = create_covid_19_immunization_dict(imms_id)
         imms["patient"] = self.patient
@@ -449,7 +444,7 @@ class TestUpdateImmunization(TestFhirRepositoryBase):
 
         with patch("time.time", return_value=123456):
             result, version = self.repository.update_reinstated_immunization(
-                imms_id, imms, self.patient, 1, ["COVID19.CRUD"], "Test"
+                imms_id, imms, self.patient, 1, "Test"
             )
 
         self.assertEqual(result, resource)
@@ -762,7 +757,7 @@ class TestImmunizationDecimals(TestFhirRepositoryBase):
         with patch("time.time") as mock_time:
             mock_time.return_value = now_epoch
             act_resource, act_version = self.repository.update_immunization(
-                imms_id, imms, self.patient, 1, ["COVID19.CRUD"], "Test"
+                imms_id, imms, self.patient, 1, "Test"
             )
         self.assertDictEqual(act_resource, resource)
         self.assertEqual(act_version, 2)
@@ -802,7 +797,6 @@ class TestImmunizationDecimals(TestFhirRepositoryBase):
 
     def test_decimal_on_update(self):
         """it should update record when replacing doseQuantity and keep decimal precision"""
-        self.mock_redis_client.hget.return_value = "COVID19"
         imms_id = "an-imms-id"
         imms = create_covid_19_immunization_dict(imms_id)
         imms["doseQuantity"] = 1.5556
@@ -814,7 +808,6 @@ class TestImmunizationDecimals(TestFhirRepositoryBase):
 
     def test_decimal_on_update_patient(self):
         """it should update record by replacing both Immunization and Patient and dosequantity"""
-        self.mock_redis_client.hget.return_value = "COVID19"
         imms_id = "an-imms-id"
         imms = create_covid_19_immunization_dict(imms_id)
         imms["doseQuantity"] = 1.590

@@ -268,7 +268,6 @@ class FhirController:
                     imms_id,
                     imms,
                     existing_resource_version,
-                    imms_vax_type_perms,
                     supplier_system
                 )
             # Validate if the imms resource to be updated is a logically deleted resource-end
@@ -323,7 +322,6 @@ class FhirController:
                         imms_id,
                         imms,
                         existing_resource_version,
-                        imms_vax_type_perms,
                         supplier_system
                     )
                 else:
@@ -331,7 +329,6 @@ class FhirController:
                         imms_id,
                         imms,
                         existing_resource_version,
-                        imms_vax_type_perms,
                         supplier_system
                     )
 

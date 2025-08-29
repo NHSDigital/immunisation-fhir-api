@@ -1043,7 +1043,7 @@ class TestUpdateImmunization(unittest.TestCase):
         response = self.controller.update_immunization(aws_event)
 
         self.service.update_immunization.assert_called_once_with(
-            imms_id, json.loads(imms), 1, ["COVID19.CRUD"], "Test"
+            imms_id, json.loads(imms), 1, "Test"
         )
         mock_get_permissions.assert_called_once_with("Test")
         self.assertEqual(response["statusCode"], 200)
@@ -1240,7 +1240,7 @@ class TestUpdateImmunization(unittest.TestCase):
         response = self.controller.update_immunization(aws_event)
 
         self.service.reinstate_immunization.assert_called_once_with(
-            imms_id, json.loads(imms), 1, ["COVID19.CRUDS"], "Test"
+            imms_id, json.loads(imms), 1, "Test"
         )
         self.assertEqual(response["statusCode"], 200)
         self.assertEqual(response["headers"]["E-Tag"], 2)
@@ -1268,7 +1268,7 @@ class TestUpdateImmunization(unittest.TestCase):
         response = self.controller.update_immunization(aws_event)
 
         self.service.reinstate_immunization.assert_called_once_with(
-            imms_id, json.loads(imms), 1, ["COVID19.CRUD"], "Test"
+            imms_id, json.loads(imms), 1, "Test"
         )
         mock_get_supplier_permissions.assert_called_once_with("Test")
         self.assertEqual(response["statusCode"], 200)
@@ -1485,7 +1485,7 @@ class TestUpdateImmunization(unittest.TestCase):
         response = self.controller.update_immunization(aws_event)
 
         self.service.update_reinstated_immunization.assert_called_once_with(
-            imms_id, json.loads(imms), 1, ["COVID19.CRUD"], "Test"
+            imms_id, json.loads(imms), 1, "Test"
         )
         self.assertEqual(response["statusCode"], 200)
         self.assertEqual(response["headers"]["E-Tag"], int("3"))

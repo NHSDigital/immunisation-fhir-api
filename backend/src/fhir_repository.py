@@ -185,11 +185,9 @@ class ImmunizationRepository:
         immunization: dict,
         patient: any,
         existing_resource_version: int,
-        imms_vax_type_perms: list[str],
         supplier_system: str,
     ) -> tuple[dict, int]:
         attr = RecordAttributes(immunization, patient)
-        self._handle_permissions(imms_vax_type_perms, attr)
         update_exp = self._build_update_expression(is_reinstate=False)
 
         self._check_duplicate_identifier(attr)
@@ -210,12 +208,9 @@ class ImmunizationRepository:
         immunization: dict,
         patient: any,
         existing_resource_version: int,
-        imms_vax_type_perms: list[str],
         supplier_system: str,
-
     ) -> tuple[dict, int]:
         attr = RecordAttributes(immunization, patient)
-        self._handle_permissions(imms_vax_type_perms, attr)
         update_exp = self._build_update_expression(is_reinstate=True)
 
         self._check_duplicate_identifier(attr)
@@ -236,11 +231,9 @@ class ImmunizationRepository:
         immunization: dict,
         patient: any,
         existing_resource_version: int,
-        imms_vax_type_perms: list[str],
         supplier_system: str,
     ) -> tuple[dict, int]:
         attr = RecordAttributes(immunization, patient)
-        self._handle_permissions(imms_vax_type_perms, attr)
         update_exp = self._build_update_expression(is_reinstate=False)
 
         self._check_duplicate_identifier(attr)
