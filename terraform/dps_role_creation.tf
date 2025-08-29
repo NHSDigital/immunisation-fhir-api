@@ -1,5 +1,5 @@
 resource "aws_iam_role" "dynamo_s3_access_role" {
-  name = "${local.short_prefix}-dynamo-s3-access-role"
+  name = "imms-${local.resource_scope}-dynamo-s3-access-role"
   assume_role_policy = jsonencode({
     Version : "2012-10-17",
     Statement : [
@@ -15,7 +15,7 @@ resource "aws_iam_role" "dynamo_s3_access_role" {
 }
 
 resource "aws_iam_role_policy" "dynamo_s3_access_policy" {
-  name = "${local.short_prefix}-dynamo_s3_access-policy"
+  name = "imms-${local.resource_scope}-dynamo_s3_access-policy"
   role = aws_iam_role.dynamo_s3_access_role.id
   policy = jsonencode({
     Version = "2012-10-17",
