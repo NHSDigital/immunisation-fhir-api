@@ -22,4 +22,3 @@ def monitor(nameMarker):
         del marker[nameMarker]  # <-- remove the marker after logging
     else:
         marker[nameMarker] = t
-
