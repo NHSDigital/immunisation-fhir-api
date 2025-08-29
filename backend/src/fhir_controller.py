@@ -374,7 +374,7 @@ class FhirController:
             return response
 
         try:
-            self.fhir_service.delete_immunization(imms_id, imms_vax_type_perms, supplier_system)
+            self.fhir_service.delete_immunization(imms_id, supplier_system)
             return self.create_response(204)
 
         except ResourceNotFoundError as not_found:

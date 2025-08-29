@@ -334,21 +334,10 @@ class ImmunizationRepository:
                     response=error.response,
                 )
 
-    def delete_immunization(
-            self, imms_id: str, imms_vax_type_perms: str, supplier_system: str) -> dict:
+    def delete_immunization(self, imms_id: str, supplier_system: str) -> dict:
         now_timestamp = int(time.time())
 
         try:
-            item = self.table.get_item(Key={"PK": _make_immunization_pk(imms_id)}).get("Item")
-            if not item:
-                raise ResourceNotFoundError(resource_type="Immunization", resource_id=imms_id)
-
-            if not item.get("DeletedAt") or item.get("DeletedAt") == "reinstated":
-                vaccine_type = self._vaccine_type(item["PatientSK"])
-                if not validate_permissions(imms_vax_type_perms, ApiOperationCode.DELETE, [vaccine_type]):
-                    raise UnauthorizedVaxError()
-
-            # Proceed with delete update
             response = self.table.update_item(
                 Key={"PK": _make_immunization_pk(imms_id)},
                 UpdateExpression=(

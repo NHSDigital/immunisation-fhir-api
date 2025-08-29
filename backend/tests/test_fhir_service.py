@@ -15,7 +15,7 @@ from authorisation.api_operation_code import ApiOperationCode
 from authorisation.authoriser import Authoriser
 from fhir_repository import ImmunizationRepository
 from fhir_service import FhirService, UpdateOutcome, get_service_url
-from models.errors import InvalidPatientId, CustomValidationError, UnauthorizedVaxError
+from models.errors import InvalidPatientId, CustomValidationError, UnauthorizedVaxError, ResourceNotFoundError
 from models.fhir_immunization import ImmunizationValidator
 from models.utils.generic_utils import get_contained_patient
 from pydantic import ValidationError
@@ -697,10 +697,12 @@ class TestUpdateImmunization(TestFhirServiceBase):
         self.imms_repo.update_reinstated_immunization.assert_not_called()
 
 
-class TestDeleteImmunization(unittest.TestCase):
+class TestDeleteImmunization(TestFhirServiceBase):
     """Tests for FhirService.delete_immunization"""
+    TEST_IMMUNISATION_ID = "an-id"
 
     def setUp(self):
+        super().setUp()
         self.authoriser = create_autospec(Authoriser)
         self.imms_repo = create_autospec(ImmunizationRepository)
         self.validator = create_autospec(ImmunizationValidator)
@@ -710,33 +712,48 @@ class TestDeleteImmunization(unittest.TestCase):
 
     def test_delete_immunization(self):
         """it should delete Immunization record"""
-        imms_id = "an-id"
-        imms = json.loads(create_covid_19_immunization(imms_id).json())
+        imms = json.loads(create_covid_19_immunization(self.TEST_IMMUNISATION_ID).json())
+        self.mock_redis_client.hget.return_value = "COVID19"
+        self.authoriser.authorise.return_value = True
+        self.imms_repo.get_immunization_by_id.return_value = {"Resource": imms}
         self.imms_repo.delete_immunization.return_value = imms
 
         # When
-        act_imms = self.fhir_service.delete_immunization(imms_id, "COVID.CRUDS", "Test")
+        act_imms = self.fhir_service.delete_immunization(self.TEST_IMMUNISATION_ID, "Test")
 
         # Then
-        self.imms_repo.delete_immunization.assert_called_once_with(imms_id, "COVID.CRUDS", "Test")
+        self.imms_repo.get_immunization_by_id.assert_called_once_with(self.TEST_IMMUNISATION_ID)
+        self.imms_repo.delete_immunization.assert_called_once_with(self.TEST_IMMUNISATION_ID, "Test")
+        self.authoriser.authorise.assert_called_once_with("Test", ApiOperationCode.DELETE, {"COVID19"})
         self.assertIsInstance(act_imms, Immunization)
-        self.assertEqual(act_imms.id, imms_id)
+        self.assertEqual(act_imms.id, self.TEST_IMMUNISATION_ID)
 
-    def test_delete_immunization_for_batch(self):
-        """it should delete Immunization record"""
-        imms_id = "an-id"
-        imms = json.loads(create_covid_19_immunization(imms_id).json())
-        self.imms_repo.delete_immunization.return_value = imms
+    def test_delete_immunization_throws_not_found_exception_if_does_not_exist(self):
+        """it should raise a ResourceNotFound exception if the immunisation does not exist"""
+        self.imms_repo.get_immunization_by_id.return_value = None
 
         # When
-        act_imms = self.fhir_service.delete_immunization(imms_id, None, "Test")
+        with self.assertRaises(ResourceNotFoundError):
+            self.fhir_service.delete_immunization(self.TEST_IMMUNISATION_ID, "Test")
 
         # Then
-        self.imms_repo.delete_immunization.assert_called_once_with(
-            imms_id, None, "Test"
-        )
-        self.assertIsInstance(act_imms, Immunization)
-        self.assertEqual(act_imms.id, imms_id)
+        self.imms_repo.get_immunization_by_id.assert_called_once_with(self.TEST_IMMUNISATION_ID)
+        self.imms_repo.delete_immunization.assert_not_called()
+
+    def test_delete_immunization_throws_authorisation_exception_if_does_not_have_required_permissions(self):
+        imms = json.loads(create_covid_19_immunization(self.TEST_IMMUNISATION_ID).json())
+        self.mock_redis_client.hget.return_value = "FLU"
+        self.authoriser.authorise.return_value = False
+        self.imms_repo.get_immunization_by_id.return_value = {"Resource": imms}
+
+        # When
+        with self.assertRaises(UnauthorizedVaxError):
+            self.fhir_service.delete_immunization(self.TEST_IMMUNISATION_ID, "Test")
+
+        # Then
+        self.imms_repo.get_immunization_by_id.assert_called_once_with(self.TEST_IMMUNISATION_ID)
+        self.imms_repo.delete_immunization.assert_not_called()
+        self.authoriser.authorise.assert_called_once_with("Test", ApiOperationCode.DELETE, {"FLU"})
 
 
 class TestSearchImmunizations(unittest.TestCase):
