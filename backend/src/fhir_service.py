@@ -18,7 +18,7 @@ import parameter_parser
 from authorisation.api_operation_code import ApiOperationCode
 from authorisation.authoriser import Authoriser
 from fhir_repository import ImmunizationRepository
-from models.errors import InvalidPatientId, CustomValidationError, UnauthorizedVaxError
+from models.errors import InvalidPatientId, CustomValidationError, UnauthorizedVaxError, ResourceNotFoundError
 from models.fhir_immunization import ImmunizationValidator
 from models.utils.generic_utils import nhs_number_mod11_check, get_occurrence_datetime, create_diagnostics, form_json, get_contained_patient
 from models.errors import MandatoryError
@@ -217,14 +217,24 @@ class FhirService:
 
         return UpdateOutcome.UPDATE, Immunization.parse_obj(imms), updated_version
 
-    def delete_immunization(self, imms_id: str, imms_vax_type_perms, supplier_system: str) -> Immunization:
+    def delete_immunization(self, imms_id: str, supplier_system: str) -> Immunization:
         """
         Delete an Immunization if it exits and return the ID back if successful.
-        Exception will be raised if resource didn't exit. Multiple calls to this method won't change
+        Exception will be raised if resource does not exist. Multiple calls to this method won't change
         the record in the database.
         """
+        existing_immunisation = self.immunization_repo.get_immunization_by_id(imms_id)
+
+        if not existing_immunisation:
+            raise ResourceNotFoundError(resource_type="Immunization", resource_id=imms_id)
+
+        vaccination_type = get_vaccine_type(existing_immunisation.get("Resource", {}))
+
+        if not self.authoriser.authorise(supplier_system, ApiOperationCode.DELETE, {vaccination_type}):
+            raise UnauthorizedVaxError()
+
         imms = self.immunization_repo.delete_immunization(
-            imms_id, imms_vax_type_perms, supplier_system
+            imms_id, supplier_system
         )
         return Immunization.parse_obj(imms)
 

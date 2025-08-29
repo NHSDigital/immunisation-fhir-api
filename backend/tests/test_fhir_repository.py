@@ -482,7 +482,7 @@ class TestDeleteImmunization(unittest.TestCase):
         with patch("time.time") as mock_time:
             mock_time.return_value = now_epoch
             # When
-            _id = self.repository.delete_immunization(imms_id, "COVID:delete", "Test")
+            _id = self.repository.delete_immunization(imms_id, "Test")
 
         # Then
         self.table.update_item.assert_called_once_with(
@@ -493,89 +493,17 @@ class TestDeleteImmunization(unittest.TestCase):
             ConditionExpression=ANY,
         )
 
-    def test_delete_returns_old_resource(self):
-        """it should return existing Immunization when delete is successful"""
-
-        imms_id = "an-id"
-        resource = {"foo": "bar"}
-        dynamo_response = {
-            "ResponseMetadata": {"HTTPStatusCode": 200},
-            "Attributes": {"Resource": json.dumps(resource)},
-        }
-        self.table.update_item = MagicMock(return_value=dynamo_response)
-        self.table.get_item = MagicMock(
-            return_value={
-                "Item": {
-                    "Resource": json.dumps({"foo": "bar"}),
-                    "Version": 1,
-                    "PatientSK": "COVID19#2516525251",
-                }
-            }
-        )
-
-        now_epoch = 123456
-        with patch("time.time") as mock_time:
-            mock_time.return_value = now_epoch
-            # When
-
-            act_resource = self.repository.delete_immunization(imms_id, ["COVID19.CRUD"], "Test")
-
-        # Then
-        self.table.update_item.assert_called_once_with(
-            Key=ANY,
-            UpdateExpression=ANY,
-            ExpressionAttributeValues=ANY,
-            ConditionExpression=ANY,
-            ReturnValues="ALL_NEW",
-        )
-        self.assertDictEqual(act_resource, resource)
-
-    def test_unauthorised_vax_delete(self):
-        """when delete is called for a resource without proper vax permission"""
-        imms_id = "an-id"
-        self.table.get_item = MagicMock(
-            return_value={
-                "Item": {
-                    "Resource": json.dumps({"foo": "bar"}),
-                    "Version": 1,
-                    "PatientSK": "FLU#2516525251",
-                    "DeletedAt": "reinstated"
-                }
-            }
-        )
-
-        self.repository.table.update_item.return_value = {
-        "ResponseMetadata": {
-            "HTTPStatusCode": 200
-        },
-        "Attributes": {
-            "Resource": json.dumps({"id": "valid-id", "status": "deleted"})
-        }
-    }
-
-        with self.assertRaises(UnauthorizedVaxError) as e:
-            self.repository.delete_immunization(imms_id, ["COVID19.CRUD"], "Test")
-
     def test_multiple_delete_should_not_update_timestamp(self):
         """when delete is called multiple times, or when it doesn't exist, it should not update DeletedAt,
         and it should return Error"""
         imms_id = "an-id"
         error_res = {"Error": {"Code": "ConditionalCheckFailedException"}}
-        self.table.get_item = MagicMock(
-            return_value={
-                "Item": {
-                    "Resource": json.dumps({"foo": "bar"}),
-                    "Version": 1,
-                    "PatientSK": "COVID19#2516525251",
-                }
-            }
-        )
         self.table.update_item.side_effect = botocore.exceptions.ClientError(
             error_response=error_res, operation_name="an-op"
         )
 
         with self.assertRaises(ResourceNotFoundError) as e:
-            self.repository.delete_immunization(imms_id, ["COVID19.CRUD"], "Test")
+            self.repository.delete_immunization(imms_id, "Test")
 
         # Then
         self.table.update_item.assert_called_once_with(
@@ -596,20 +524,11 @@ class TestDeleteImmunization(unittest.TestCase):
         imms_id = "an-id"
         bad_request = 400
         response = {"ResponseMetadata": {"HTTPStatusCode": bad_request}}
-        self.table.get_item = MagicMock(
-            return_value={
-                "Item": {
-                    "Resource": json.dumps({"foo": "bar"}),
-                    "Version": 1,
-                    "PatientSK": "COVID19#2516525251",
-                }
-            }
-        )
         self.table.update_item = MagicMock(return_value=response)
 
         with self.assertRaises(UnhandledResponseError) as e:
             # When
-            self.repository.delete_immunization(imms_id, ["COVID19.CRUD"], "Test")
+            self.repository.delete_immunization(imms_id, "Test")
 
         # Then
         self.assertDictEqual(e.exception.response, response)
@@ -807,7 +726,7 @@ class TestImmunizationDecimals(TestFhirRepositoryBase):
         self.run_update_immunization_test(imms_id, imms, resource, updated_dose_quantity)
 
     def test_decimal_on_update_patient(self):
-        """it should update record by replacing both Immunization and Patient and dosequantity"""
+        """it should update record by replacing both Immunization and Patient and dose quantity"""
         imms_id = "an-imms-id"
         imms = create_covid_19_immunization_dict(imms_id)
         imms["doseQuantity"] = 1.590

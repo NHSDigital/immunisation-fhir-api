@@ -1584,7 +1584,7 @@ class TestDeleteImmunization(unittest.TestCase):
         response = self.controller.delete_immunization(lambda_event)
 
         # Then
-        self.service.delete_immunization.assert_called_once_with(imms_id, ["COVID19.CRUDS"], "Test")
+        self.service.delete_immunization.assert_called_once_with(imms_id, "Test")
 
         self.assertEqual(response["statusCode"], 204)
         self.assertTrue("body" not in response)
