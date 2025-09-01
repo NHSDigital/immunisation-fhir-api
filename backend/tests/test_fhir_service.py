@@ -323,7 +323,11 @@ class TestGetImmunizationIdentifier(unittest.TestCase):
         imms_id = "an-id#an-id"
         identifier = "test"
         element = "id,mEta,DDD"
-        self.imms_repo.get_immunization_by_identifier.return_value = None
+        self.imms_repo.get_immunization_by_identifier.return_value = {
+            "resource": create_covid_19_immunization_dict(imms_id),
+            "id": imms_id,
+            "Version": 1,
+        }
 
         # When
         service_resp = self.fhir_service.get_immunization_by_identifier(imms_id, "COVID19.S", identifier, element)
