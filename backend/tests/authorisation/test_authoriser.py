@@ -1,8 +1,6 @@
 import unittest
 from unittest.mock import patch
 
-from poetry.console.commands import self
-
 from authorisation.api_operation_code import ApiOperationCode
 from authorisation.authoriser import Authoriser
 

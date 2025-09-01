@@ -7,7 +7,7 @@ from constants import SUPPLIER_PERMISSIONS_HASH_KEY
 
 
 class Authoriser:
-    """Authoriser class. Used for authorising operations of FHIR vaccinations."""
+    """Authoriser class. Used for authorising operations on FHIR vaccinations."""
     def __init__(self):
         self._cache_client = redis_client
 

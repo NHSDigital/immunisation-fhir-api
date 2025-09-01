@@ -9,8 +9,6 @@ from decimal import Decimal
 
 from fhir.resources.R4B.bundle import Bundle as FhirBundle, BundleEntry
 from fhir.resources.R4B.immunization import Immunization
-from poetry.console.commands import self
-from werkzeug.exceptions import Unauthorized
 
 from authorisation.api_operation_code import ApiOperationCode
 from authorisation.authoriser import Authoriser
