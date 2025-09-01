@@ -324,7 +324,7 @@ class FhirService:
         # TODO: is disease type a mandatory field? (I assumed it is)
         #  i.e. Should we provide a search option for getting Patient's entire imms history?
         if not nhs_number_mod11_check(nhs_number):
-            return create_diagnostics()
+            return create_diagnostics(), False
 
         permitted_vacc_types = self.authoriser.filter_permitted_vacc_types(
             supplier_system, ApiOperationCode.SEARCH, set(vaccine_types)

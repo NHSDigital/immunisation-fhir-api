@@ -65,8 +65,8 @@ class Authoriser:
         types that they cannot interact with without throwing an error"""
         supplier_permissions = self._get_supplier_permissions(supplier_system)
 
-        return set([
+        return {
             vaccine_type
             for vaccine_type in vaccination_types
             if requested_operation in supplier_permissions.get(vaccine_type.lower(), [])
-        ])
+        }
