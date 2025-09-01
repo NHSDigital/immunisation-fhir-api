@@ -1,5 +1,6 @@
 import time
 import unittest
+
 from utils import (
     generate_csv,
     upload_file_to_s3,
@@ -24,9 +25,13 @@ from constants import (
     FILE_NAME_VAL_ERROR,
     environment
 )
+# load dotenv for run from desktop
+# from dotenv import load_dotenv
+# load_dotenv()
 
 
 class TestE2EBatch(unittest.TestCase):
+
     def setUp(self):
         self.uploaded_files = []  # Tracks uploaded input keys
         self.ack_files = []       # Tracks ack keys
@@ -41,9 +46,8 @@ class TestE2EBatch(unittest.TestCase):
         def test_create_success(self):
             """Test CREATE scenario."""
             monitor("test_create_success")
-            input_file = generate_csv("PHYLIS", "0.3",
-                                      "RSV", "YGM41",
-                                      action_flag="CREATE")
+            input_file = generate_csv("PHYLIS", "0.3", "CREATE",
+                                      "RSV", "YGM41")
 
             key = upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
             self.uploaded_files.append(key)
@@ -239,7 +243,6 @@ class TestE2EBatch(unittest.TestCase):
         def test_end_to_end_speed_test_with_100000_rows(self):
             monitor("test_end_to_end_speed_test_with_100000_rows")
             """Test end_to_end_speed_test_with_100000_rows scenario with full integration"""
-            file_name = f"RSV_Vaccinations_v5_YGM41_{timestamp}.csv" if not file_name else file_name
             input_file = generate_csv_with_ordered_100000_rows(None)
 
             key = upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)

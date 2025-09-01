@@ -86,7 +86,7 @@ def generate_csv(fore_name, dose_amount, action_flag,
         data.append(create_row(unique_id, fore_name, dose_amount, "NEW", headers))
         data.append(create_row(unique_id, fore_name, dose_amount, "DELETE", headers))
         data.append(create_row(unique_id, fore_name, dose_amount, "UPDATE", headers))
-        data.append(create_row(unique_id, "fore_name", dose_amount, "UPDATE", headers))
+        data.append(create_row(unique_id, fore_name, dose_amount, "UPDATE", headers))
 
     df = pd.DataFrame(data)
 
@@ -103,6 +103,9 @@ def upload_file_to_s3(file_name, bucket, prefix):
 
     key = f"{prefix}{file_name}"
     try:
+        print(f"SAW DEBUG key:{key}")
+        print(f"SAW DEBUG bucket:{bucket}")
+        print(f"SAW DEBUG file_name:{file_name}")
         with open(file_name, "rb") as f:
             response = s3_client.put_object(Bucket=bucket, Key=key, Body=f)
 

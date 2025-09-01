@@ -17,6 +17,10 @@ FILE_NAME_VAL_ERROR = "Infrastructure Level Response Value - Processing Error"
 CONFIG_BUCKET = "imms-internal-dev-supplier-config"
 PERMISSIONS_CONFIG_FILE_KEY = "permissions_config.json"
 
+print(f"SAW. Debug {SOURCE_BUCKET}")
+print(f"SAW. Debug {ACK_BUCKET}")
+print(f"SAW. Debug {environment}")
+
 
 def create_row(unique_id, fore_name, dose_amount, action_flag, header):
     """Helper function to create a single row with the specified UNIQUE_ID and ACTION_FLAG."""
