@@ -16,7 +16,6 @@ class DefaultValues:
     imms_id = "test_imms_id"
     operation_requested = "CREATE"
     created_at_formatted_string = "20211120T12000000"
-    batch_start_time = fixed_datetime_str
     operation_start_time = fixed_datetime_str
     operation_end_time = fixed_datetime_str
 
@@ -96,7 +95,6 @@ class MessageDetails:
         local_id: str = DefaultValues.local_id,
         imms_id: str = DefaultValues.imms_id,
         created_at_formatted_string: str = DefaultValues.created_at_formatted_string,
-        batch_start_time: str = DefaultValues.batch_start_time,
         operation_start_time: str = DefaultValues.operation_start_time,
         operation_end_time: str = DefaultValues.operation_end_time,
     ):
@@ -117,7 +115,6 @@ class MessageDetails:
         self.local_id = local_id
         self.imms_id = imms_id
         self.created_at_formatted_string = created_at_formatted_string
-        self.batch_start_time= batch_start_time
         self.operation_start_time = operation_start_time
         self.operation_end_time = operation_end_time
 
@@ -128,7 +125,6 @@ class MessageDetails:
             "supplier": self.supplier,
             "vaccine_type": self.vaccine_type,
             "created_at_formatted_string": self.created_at_formatted_string,
-            "batch_start_time": self.batch_start_time,
             "operation_start_time": self.operation_start_time,
             "operation_end_time": self.operation_end_time,
             "row_id": self.row_id,
@@ -166,7 +162,6 @@ class ValidValues:
     mock_message_expected_log_value = {
         "function_name": "ack_processor_convert_message_to_ack_row",
         "date_time": fixed_datetime.strftime("%Y-%m-%d %H:%M:%S"),
-        "batch_start_time": MOCK_MESSAGE_DETAILS.batch_start_time,
         "operation_start_time": MOCK_MESSAGE_DETAILS.operation_start_time,
         "operation_end_time": MOCK_MESSAGE_DETAILS.operation_end_time,
         "status": "success",
@@ -260,7 +255,6 @@ class InvalidValues:
     Logging_with_no_values = {
         "function_name": "ack_processor_convert_message_to_ack_row",
         "date_time": fixed_datetime.strftime("%Y-%m-%d %H:%M:%S"),
-        "batch_start_time": "unknown",
         "operation_start_time": "unknown",
         "operation_end_time": "unknown",
         "status": "fail",

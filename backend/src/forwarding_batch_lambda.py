@@ -61,7 +61,6 @@ def forward_request_to_dynamo(
 def forward_lambda_handler(event, _):
     """Forward each row to the Imms API"""
     logger.info("Processing started")
-    batch_start_time = str(datetime.now())
     table = create_table()
     filename_to_events_mapper = BatchFilenameToEventsMapper()
     array_of_identifiers = []
@@ -108,7 +107,6 @@ def forward_lambda_handler(event, _):
             imms_id = forward_request_to_dynamo(incoming_message_body, table, identifier_already_present, controller)
             filename_to_events_mapper.add_event(
                 { **base_outgoing_message_body,
-                 "batch_start_time": batch_start_time,
                  "operation_start_time": operation_start_time,
                  "operation_end_time": str(datetime.now()),
                  "imms_id": imms_id }
@@ -117,7 +115,6 @@ def forward_lambda_handler(event, _):
         except Exception as error:  # pylint: disable = broad-exception-caught
             filename_to_events_mapper.add_event(
                 { **base_outgoing_message_body,
-                 "batch_start_time": batch_start_time,
                  "operation_start_time": operation_start_time,
                  "operation_end_time": str(datetime.now()),
                  "diagnostics": create_diagnostics_dictionary(error) }

@@ -58,7 +58,6 @@ def convert_message_to_ack_row_logging_decorator(func):
             additional_log_data = {
                 "file_key": file_key,
                 "message_id": message_id,
-                "batch_start_time": message.get("batch_start_time", "unknown"),
                 "operation_start_time": message.get("operation_start_time", "unknown"),
                 "operation_end_time": message.get("operation_end_time", "unknown"),
                 "vaccine_type": message.get("vaccine_type", "unknown"),
