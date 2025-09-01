@@ -9,13 +9,11 @@ from typing import Optional, Tuple
 import boto3
 import botocore.exceptions
 from boto3.dynamodb.conditions import Attr, Key
-from models.utils.permission_checker import ApiOperationCode, validate_permissions
 from botocore.config import Config
 from models.errors import (
     ResourceNotFoundError,
     UnhandledResponseError,
     IdentifierDuplicationError,
-    UnauthorizedVaxError,
 )
 from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
 
@@ -247,9 +245,6 @@ class ImmunizationRepository:
             deleted_at_required=True,
             update_reinstated=True,
         )
-
-    def _handle_permissions(self, imms_vax_type_perms: list[str], attr: RecordAttributes):
-        validate_permissions(imms_vax_type_perms, ApiOperationCode.UPDATE, [attr.vaccine_type])
 
     def _build_update_expression(self, is_reinstate: bool) -> str:
         if is_reinstate:

@@ -1,3 +1,4 @@
+"""Authoriser class"""
 import json
 
 from authorisation.api_operation_code import ApiOperationCode
@@ -6,6 +7,7 @@ from constants import SUPPLIER_PERMISSIONS_HASH_KEY
 
 
 class Authoriser:
+    """Authoriser class. Used for authorising operations of FHIR vaccinations."""
     def __init__(self):
         self._cache_client = redis_client
 
