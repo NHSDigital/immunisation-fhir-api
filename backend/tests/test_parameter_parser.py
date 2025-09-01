@@ -3,7 +3,6 @@ import unittest
 import datetime
 from unittest.mock import create_autospec, patch
 
-from authorization import Authorization
 from fhir_service import FhirService
 from models.errors import ParameterException
 from parameter_parser import (
@@ -18,7 +17,6 @@ from parameter_parser import (
 class TestParameterParser(unittest.TestCase):
     def setUp(self):
         self.service = create_autospec(FhirService)
-        self.authorizer = create_autospec(Authorization)
         self.patient_identifier_key = "patient.identifier"
         self.immunization_target_key = "-immunization.target"
         self.date_from_key = "-date.from"
