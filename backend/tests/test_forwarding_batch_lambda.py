@@ -455,6 +455,8 @@ class TestForwardLambdaHandler(TestCase):
         self.assertDictEqual(json.loads(first_call_kwargs["MessageBody"])[0], {
             "created_at_formatted_string": "2025-01-24T12:00:00Z",
             "file_key": "supplier_1_rsv_test_file",
+            "operation_start_time": ANY,
+            "operation_end_time": ANY,
             "imms_id": ANY,
             "local_id": "local-1",
             "operation_requested": "CREATE",
@@ -465,6 +467,8 @@ class TestForwardLambdaHandler(TestCase):
         self.assertDictEqual(json.loads(second_call_kwargs["MessageBody"])[0], {
             "created_at_formatted_string": "2025-01-24T12:00:00Z",
             "file_key": "supplier_2_rsv_test_file",
+            "operation_start_time": ANY,
+            "operation_end_time": ANY,
             "imms_id": ANY,
             "local_id": "local-2",
             "operation_requested": "CREATE",

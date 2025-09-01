@@ -7,12 +7,17 @@ from datetime import datetime
 class DefaultValues:
     """Class to hold default values for tests"""
 
+    fixed_datetime = datetime(2024, 10, 29, 12, 0, 0)
+    fixed_datetime_str = fixed_datetime.strftime("%Y-%m-%d %H:%M:%S")
+
     message_id = "test_file_id"
     row_id = "test_file_id#1"
     local_id = "test_system_uri^testabc"
     imms_id = "test_imms_id"
     operation_requested = "CREATE"
     created_at_formatted_string = "20211120T12000000"
+    operation_start_time = fixed_datetime_str
+    operation_end_time = fixed_datetime_str
 
 
 class DiagnosticsDictionaries:
@@ -90,6 +95,8 @@ class MessageDetails:
         local_id: str = DefaultValues.local_id,
         imms_id: str = DefaultValues.imms_id,
         created_at_formatted_string: str = DefaultValues.created_at_formatted_string,
+        operation_start_time: str = DefaultValues.operation_start_time,
+        operation_end_time: str = DefaultValues.operation_end_time,
     ):
         self.name = f"{vaccine_type.upper()}/ {supplier.upper()} {operation_requested} message"
         self.file_key = f"{vaccine_type}_Vaccinations_v5_{ods_code}_20210730T12000000.csv"
@@ -108,6 +115,8 @@ class MessageDetails:
         self.local_id = local_id
         self.imms_id = imms_id
         self.created_at_formatted_string = created_at_formatted_string
+        self.operation_start_time = operation_start_time
+        self.operation_end_time = operation_end_time
 
         self.queue_name = f"{supplier}_{vaccine_type}"
 
@@ -116,6 +125,8 @@ class MessageDetails:
             "supplier": self.supplier,
             "vaccine_type": self.vaccine_type,
             "created_at_formatted_string": self.created_at_formatted_string,
+            "operation_start_time": self.operation_start_time,
+            "operation_end_time": self.operation_end_time,
             "row_id": self.row_id,
             "local_id": self.local_id,
             "operation_requested": self.operation_requested,
@@ -151,6 +162,8 @@ class ValidValues:
     mock_message_expected_log_value = {
         "function_name": "ack_processor_convert_message_to_ack_row",
         "date_time": fixed_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+        "operation_start_time": MOCK_MESSAGE_DETAILS.operation_start_time,
+        "operation_end_time": MOCK_MESSAGE_DETAILS.operation_end_time,
         "status": "success",
         "supplier": MOCK_MESSAGE_DETAILS.supplier,
         "file_key": MOCK_MESSAGE_DETAILS.file_key,
@@ -242,6 +255,8 @@ class InvalidValues:
     Logging_with_no_values = {
         "function_name": "ack_processor_convert_message_to_ack_row",
         "date_time": fixed_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+        "operation_start_time": "unknown",
+        "operation_end_time": "unknown",
         "status": "fail",
         "supplier": "unknown",
         "file_key": "file_key_missing",
