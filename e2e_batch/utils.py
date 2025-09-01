@@ -1,6 +1,7 @@
 import time
 import csv
 import pandas as pd
+import boto3
 import uuid
 import json
 import random
@@ -27,7 +28,10 @@ from constants import (
 )
 
 
-def generate_csv(fore_name, dose_amount, action_flag, headers="NHS_NUMBER", same_id=False, file_key=False):
+def generate_csv(fore_name, dose_amount, action_flag,
+                 vax_type="RSV", ods="YGM41",
+                 headers="NHS_NUMBER", same_id=False, file_key=False
+                 ):
     """
     Generate a CSV file with 2 or 3 rows depending on the action_flag.
 
@@ -85,12 +89,8 @@ def generate_csv(fore_name, dose_amount, action_flag, headers="NHS_NUMBER", same
         data.append(create_row(unique_id, "fore_name", dose_amount, "UPDATE", headers))
 
     df = pd.DataFrame(data)
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%f")[:-3]
-    file_name = (
-        f"COVID19_Vaccinations_v4_YGM41_{timestamp}.csv"
-        if file_key
-        else f"COVID19_Vaccinations_v5_YGM41_{timestamp}.csv"
-    )
+
+    file_name = get_file_name(vax_type, ods, "4" if file_key else "5")
     df.to_csv(file_name, index=False, sep="|", quoting=csv.QUOTE_MINIMAL)
     return file_name
 
@@ -98,6 +98,8 @@ def generate_csv(fore_name, dose_amount, action_flag, headers="NHS_NUMBER", same
 def upload_file_to_s3(file_name, bucket, prefix):
     """Upload the given file to the specified bucket under the provided prefix.
     Returns the S3 key if successful, or raises an exception."""
+
+    response = s3_client.list_buckets()
 
     key = f"{prefix}{file_name}"
     try:
@@ -443,10 +445,14 @@ def generate_csv_with_ordered_100000_rows(file_name=None):
 
     # Convert to DataFrame and save as CSV
     df = pd.DataFrame(full_data)
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%f")[:-3]
-    file_name = f"RSV_Vaccinations_v5_YGM41_{timestamp}.csv" if not file_name else file_name
+    file_name = get_file_name("RSV", "YGM41", "5") if not file_name else file_name
     df.to_csv(file_name, index=False, sep="|", quoting=csv.QUOTE_MINIMAL)
     return file_name
+
+
+def get_file_name(vax_type, ods, version):
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%f")[:-3]
+    return f"{vax_type}_Vaccinations_v{version}_{ods}_{timestamp}.csv"
 
 
 def verify_final_ack_file(file_key):
