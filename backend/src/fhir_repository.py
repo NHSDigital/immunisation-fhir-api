@@ -408,7 +408,12 @@ class ImmunizationRepository:
             items = [x for x in raw_items if x["PatientSK"].split("#")[0] in vaccine_types]
 
             # Return a list of the FHIR immunization resource JSON items
-            final_resources = [json.loads(item["Resource"]) for item in items]
+            final_resources = [{
+                **json.loads(item["Resource"]),
+                "meta": {"versionId": int(item.get("Version", 1))}
+                }
+                for item in items
+                ]
 
             return final_resources
         else:

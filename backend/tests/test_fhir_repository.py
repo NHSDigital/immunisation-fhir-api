@@ -743,16 +743,18 @@ class TestFindImmunizations(unittest.TestCase):
 
     def test_map_results_to_immunizations(self):
         """it should map Resource list into a list of Immunizations"""
-        imms1 = {"id": 1}
-        imms2 = {"id": 2}
+        imms1 = {"id": 1, "meta": {"versionId": 1}}
+        imms2 = {"id": 2, "meta": {"versionId": 1}}
         items = [
             {
                 "Resource": json.dumps(imms1),
                 "PatientSK": "COVID19#some_other_text",
+                "Version": "1"
             },
             {
                 "Resource": json.dumps(imms2),
                 "PatientSK": "COVID19#some_other_text",
+                "Version": "1"
             },
         ]
 
