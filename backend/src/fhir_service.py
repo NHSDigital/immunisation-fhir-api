@@ -71,7 +71,7 @@ class FhirService:
 
         if not imms_resp:
             return form_json(imms_resp, None, None, base_url)
-        
+
         if not self.authoriser.authorise(supplier_name, ApiOperationCode.SEARCH, {vaccination_type}):
             raise UnauthorizedVaxError()
 
@@ -312,22 +312,32 @@ class FhirService:
         nhs_number: str,
         vaccine_types: list[str],
         params: str,
+        supplier_system: str,
         date_from: datetime.date = parameter_parser.date_from_default,
         date_to: datetime.date = parameter_parser.date_to_default,
-    ) -> FhirBundle:
+    ) -> tuple[FhirBundle, bool]:
         """
         Finds all instances of Immunization(s) for a specified patient which are for the specified vaccine type(s).
-        Bundles the resources with the relevant patient resource and returns the bundle.
+        Bundles the resources with the relevant patient resource and returns the bundle along with a boolean to state
+        whether the supplier requested vaccine types they were not authorised for.
         """
         # TODO: is disease type a mandatory field? (I assumed it is)
         #  i.e. Should we provide a search option for getting Patient's entire imms history?
         if not nhs_number_mod11_check(nhs_number):
             return create_diagnostics()
 
+        permitted_vacc_types = self.authoriser.filter_permitted_vacc_types(
+            supplier_system, ApiOperationCode.SEARCH, set(vaccine_types)
+        )
+
+        # Only raise error if supplier's request had no permitted vaccinations
+        if not permitted_vacc_types:
+            raise UnauthorizedVaxError()
+
         # Obtain all resources which are for the requested nhs number and vaccine type(s) and within the date range
         resources = [
             r
-            for r in self.immunization_repo.find_immunizations(nhs_number, vaccine_types)
+            for r in self.immunization_repo.find_immunizations(nhs_number, permitted_vacc_types)
             if self.is_valid_date_from(r, date_from) and self.is_valid_date_to(r, date_to)
         ]
 
@@ -366,8 +376,9 @@ class FhirService:
         # Create the bundle
         fhir_bundle = FhirBundle(resourceType="Bundle", type="searchset", entry=entries)
         fhir_bundle.link = [BundleLink(relation="self", url=self.create_url_for_bundle_link(params, vaccine_types))]
+        supplier_requested_unauthorised_vaccs = len(vaccine_types) != len(permitted_vacc_types)
 
-        return fhir_bundle
+        return fhir_bundle, supplier_requested_unauthorised_vaccs
 
     @timed
     def _validate_patient(self, imms: dict) -> dict:

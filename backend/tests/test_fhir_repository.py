@@ -72,7 +72,7 @@ class TestGetImmunizationByIdentifier(TestFhirRepositoryBase):
             IndexName="IdentifierGSI",
             KeyConditionExpression=Key("IdentifierPK").eq(imms_id),
         )
-   
+
         self.assertDictEqual(immunisation["resource"], resource["Resource"])
         self.assertEqual(immunisation["version"], 1)
         self.assertEqual(immunisation["id"], "test")
@@ -555,7 +555,7 @@ class TestFindImmunizations(unittest.TestCase):
         condition = Key("PatientPK").eq(_make_patient_pk(nhs_number))
 
         # When
-        _ = self.repository.find_immunizations(nhs_number, vaccine_types=["COVID19"])
+        _ = self.repository.find_immunizations(nhs_number, vaccine_types={"COVID19"})
 
         # Then
         self.table.query.assert_called_once_with(
@@ -572,7 +572,7 @@ class TestFindImmunizations(unittest.TestCase):
         is_ = Attr("DeletedAt").not_exists() | Attr("DeletedAt").eq("reinstated")
 
         # When
-        _ = self.repository.find_immunizations("an-id", ["COVID19"])
+        _ = self.repository.find_immunizations("an-id", {"COVID19"})
 
         # Then
         self.table.query.assert_called_once_with(
@@ -598,7 +598,7 @@ class TestFindImmunizations(unittest.TestCase):
         self.table.query = MagicMock(return_value=dynamo_response)
 
         # When
-        results = self.repository.find_immunizations("an-id", ["COVID19"])
+        results = self.repository.find_immunizations("an-id", {"COVID19"})
 
         # Then
         self.assertListEqual(results, [imms1, imms2])
@@ -611,7 +611,7 @@ class TestFindImmunizations(unittest.TestCase):
 
         with self.assertRaises(UnhandledResponseError) as e:
             # When
-            self.repository.find_immunizations("an-id", ["COVID19"])
+            self.repository.find_immunizations("an-id", {"COVID19"})
 
         # Then
         self.assertDictEqual(e.exception.response, response)

@@ -39,6 +39,8 @@ class Authoriser:
         requested_operation: ApiOperationCode,
         vaccination_types: set[str]
     ) -> bool:
+        """Checks that the supplier system is permitted to carry out the requested operation on the given vaccination
+        type(s)"""
         supplier_permissions = self._get_supplier_permissions(supplier_system)
 
         logger.info(
@@ -49,3 +51,20 @@ class Authoriser:
             requested_operation in supplier_permissions.get(vaccination_type.lower(), [])
             for vaccination_type in vaccination_types
         )
+
+    def filter_permitted_vacc_types(
+        self,
+        supplier_system: str,
+        requested_operation: ApiOperationCode,
+        vaccination_types: set[str]
+    ) -> set[str]:
+        """Returns the set of vaccine types that a given supplier can interact with for a given operation type.
+        This is a more permissive form of authorisation e.g. used in search as it will filter out any requested vacc
+        types that they cannot interact with without throwing an error"""
+        supplier_permissions = self._get_supplier_permissions(supplier_system)
+
+        return set([
+            vaccine_type
+            for vaccine_type in vaccination_types
+            if requested_operation in supplier_permissions.get(vaccine_type.lower(), [])
+        ])

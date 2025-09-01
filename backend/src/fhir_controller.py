@@ -410,25 +410,16 @@ class FhirController:
             return self.create_response(403, unauthorized.to_operation_outcome())
         # Check vaxx type permissions on the existing record - start
         try:
-            expanded_permissions = _expand_permissions(imms_vax_type_perms)
-            vax_type_perm = [
-                vaccine_type
-                for vaccine_type in search_params.immunization_targets
-                if ApiOperationCode.SEARCH in expanded_permissions.get(vaccine_type.lower(), [])
-            ]
-            if not vax_type_perm:
-                raise UnauthorizedVaxError
+            result, request_contained_unauthorised_vaccs = self.fhir_service.search_immunizations(
+                search_params.patient_identifier,
+                search_params.immunization_targets,
+                create_query_string(search_params),
+                supplier_system,
+                search_params.date_from,
+                search_params.date_to,
+            )
         except UnauthorizedVaxError as unauthorized:
             return self.create_response(403, unauthorized.to_operation_outcome())
-        # Check vaxx type permissions on the existing record - end
-
-        result = self.fhir_service.search_immunizations(
-            search_params.patient_identifier,
-            vax_type_perm,
-            create_query_string(search_params),
-            search_params.date_from,
-            search_params.date_to,
-        )
 
         if "diagnostics" in result:
             exp_error = create_operation_outcome(
@@ -450,7 +441,7 @@ class FhirController:
                 1 for entry in result_json_dict["entry"] if entry.get("search", {}).get("mode") == "match"
             )
             result_json_dict["total"] = total_count
-            if sorted(search_params.immunization_targets) != sorted(vax_type_perm):
+            if request_contained_unauthorised_vaccs:
                 exp_error = create_operation_outcome(
                     resource_id=str(uuid.uuid4()),
                     severity=Severity.warning,
@@ -498,7 +489,7 @@ class FhirController:
                     'e.g. "http://xyz.org/vaccs|2345-gh3s-r53h7-12ny"'
                 ),
             )
-        
+
         if not _elements:
             return None
 
@@ -570,7 +561,7 @@ class FhirController:
                 query_string_has_immunization_identifier,
                 query_string_has_element,
             )
-        
+
         # Post Search Identifier by body form
         if body and not query_params:
             decoded_body = base64.b64decode(body).decode("utf-8")
