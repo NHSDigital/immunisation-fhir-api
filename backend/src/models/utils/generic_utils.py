@@ -137,6 +137,7 @@ def create_diagnostics_error(value):
 
 def form_json(response, _element, identifier, baseurl):
     self_url = f"{baseurl}?identifier={identifier}" + (f"&_elements={_element}" if _element else "")
+    meta = {"versionId": response["version"]} if response and "version" in response else {}
     json = {
             "resourceType": "Bundle",
             "type": "searchset",
@@ -152,7 +153,7 @@ def form_json(response, _element, identifier, baseurl):
     # Full Immunization payload to be returned if only the identifier parameter was provided
     if identifier and not _element:
         resource = response["resource"]
-        resource["meta"] = {"versionId": response["version"]}
+        resource["meta"] = meta
 
     elif identifier and _element:
         element = {e.strip().lower() for e in _element.split(",") if e.strip()}
@@ -165,7 +166,7 @@ def form_json(response, _element, identifier, baseurl):
         # Add 'meta' if specified
         if "meta" in element:
             resource["id"] = response["id"]
-            resource["meta"] = {"versionId": response["version"]}
+            resource["meta"] = meta
 
     json["entry"] = [{
         "fullUrl": f"https://api.service.nhs.uk/immunisation-fhir-api/Immunization/{response['id']}",

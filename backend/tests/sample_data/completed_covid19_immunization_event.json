@@ -51,6 +51,7 @@
   ],
   "identifier": [
     {
+      "use": "official",
       "system": "https://supplierABC/identifiers/vacc",
       "value": "ACME-vacc123456"
     }
