@@ -1,8 +1,9 @@
 """Generic utils for tests"""
 
-
+import json
 import unittest
 from src.models.utils.generic_utils import form_json
+from tests.utils.generic_utils import load_json_data
 
 
 class TestFormJson(unittest.TestCase):
@@ -10,10 +11,12 @@ class TestFormJson(unittest.TestCase):
         self.baseurl = "https://api.service.nhs.uk/immunisation-fhir-api/Immunization"
         self.identifier = "https://supplierABC/identifiers/vacc|f10b59b3-fc73-4616-99c9-9e882ab31184"
         self.response = {
-            "resource": {"resourceType": "Immunization", "id": "f10b59b3-fc73-4616-99c9-9e882ab31184", "status": "completed"},
+            "resource": load_json_data("completed_covid19_immunization_event.json"),
             "id": "f10b59b3-fc73-4616-99c9-9e882ab31184",
             "version": 2,
         }
+
+        self.maxDiff = None
 
     def test_no_response(self):
         out = form_json(None, None, self.identifier, self.baseurl)
@@ -27,7 +30,7 @@ class TestFormJson(unittest.TestCase):
         out = form_json(self.response, None, self.identifier, self.baseurl)
         self.assertEqual(out["total"], 1)
         self.assertEqual(out["link"][0]["url"], f"{self.baseurl}?identifier={self.identifier}")
-        self.assertDictEqual(out["entry"][0]["resource"], self.response["resource"])
+        self.assertDictEqual(json.loads(out["entry"][0]["resource"]), json.loads(self.response["resource"]))
         self.assertEqual(out["entry"][0]["fullUrl"], f"{self.baseurl}/{self.response['id']}")
 
     def test_identifier_with_id_element_truncates_to_id(self):

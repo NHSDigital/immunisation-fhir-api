@@ -169,7 +169,7 @@ def form_json(response, _elements, identifier, baseurl):
         resource["meta"] = meta
 
     entry = BundleEntry(fullUrl=f"{baseurl}/{response['id']}",
-        resource=Immunization.construct(**resource),
+        resource=Immunization.construct(**resource) if _elements else Immunization.parse_obj(resource),
         search=BundleEntrySearch.construct(mode="match") if not _elements else None,
     )
 
