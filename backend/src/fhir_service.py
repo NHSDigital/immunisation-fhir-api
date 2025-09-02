@@ -142,7 +142,7 @@ class FhirService:
         existing_resource_vacc_type: str,
         supplier_system: str,
     ) -> tuple[Optional[UpdateOutcome], Immunization | dict, Optional[int]]:
-        # TODO - raise ticket to refactor this and below 3. Should have one update method and call repo based on type
+        # VED-747 - TODO - this and the below 2 methods are duplicated. We should streamline the update journey
         immunization["id"] = imms_id
 
         patient = self._validate_patient(immunization)
