@@ -145,19 +145,18 @@ def create_diagnostics_error(value):
 def form_json(response, _element, identifier, baseurl):
     self_url = f"{baseurl}?identifier={identifier}" + (f"&_elements={_element}" if _element else "")
     meta = {"versionId": response["version"]} if response and "version" in response else {}
-    fhir_bundle = FhirBundle(resourceType="Bundle", type="searchset", link = [BundleLink(relation="self", url=self_url)])
+    fhir_bundle = FhirBundle(resourceType="Bundle", type="searchset", link = [BundleLink(relation="self", url=self_url)], entry=[],
+        total=0)
 
     if not response:
-        fhir_bundle.entry = []
-        fhir_bundle.total = 0
-        return fhir_bundle
+        return fhir_bundle.dict(by_alias=True)
 
     # Full Immunization payload to be returned if only the identifier parameter was provided
     if identifier and not _element:
         resource = response["resource"]
         resource["meta"] = meta
 
-        imms = Immunization.parse_obj(resource)
+        imms = Immunization.construct(**resource)
 
     elif identifier and _element:
         element = {e.strip().lower() for e in _element.split(",") if e.strip()}
@@ -169,11 +168,11 @@ def form_json(response, _element, identifier, baseurl):
         if "meta" in element:
             resource["id"] = response["id"]
             resource["meta"] = meta
-
+        
         imms = Immunization.construct(**resource)
 
     entry = BundleEntry(
-        fullUrl=f"{baseurl}/Immunization/{response['id']}",
+        fullUrl=f"{baseurl}/{response['id']}",
         resource=imms,
         search=BundleEntrySearch.construct(mode="match"),
     )

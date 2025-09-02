@@ -343,7 +343,7 @@ class TestGetImmunizationIdentifier(unittest.TestCase):
         imms_id = "none"
         identifier = "test"
         element = "id"
-        self.imms_repo.get_immunization_by_identifier.return_value = None
+        self.imms_repo.get_immunization_by_identifier.return_value = {}
 
         # When
         act_imms = self.fhir_service.get_immunization_by_identifier(imms_id, "COVID19.CRUDS", identifier, element)
