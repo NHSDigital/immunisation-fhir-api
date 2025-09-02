@@ -382,7 +382,10 @@ class FhirService:
 
         # Create the bundle
         fhir_bundle = FhirBundle(resourceType="Bundle", type="searchset", entry=entries)
-        fhir_bundle.link = [BundleLink(relation="self", url=self.create_url_for_bundle_link(params, vaccine_types))]
+        fhir_bundle.link = [BundleLink(
+            relation="self",
+            url=self.create_url_for_bundle_link(params, permitted_vacc_types)
+        )]
         supplier_requested_unauthorised_vaccs = len(vaccine_types) != len(permitted_vacc_types)
 
         return fhir_bundle, supplier_requested_unauthorised_vaccs
