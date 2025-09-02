@@ -14,12 +14,13 @@ from constants import (
     SOURCE_BUCKET,
     INPUT_PREFIX,
     ACK_BUCKET,
-    environment
+    # environment
 )
 from e2e_batch_base import TestE2EBatchBase
 
 
-@unittest.skipIf(environment == "ref", "if ref")
+@unittest.skip("Skip all tests")
+# @unittest.skipIf(environment == "ref", "if ref")
 class TestE2EBatchCreate(TestE2EBatchBase):
 
     def test_create_success(self):

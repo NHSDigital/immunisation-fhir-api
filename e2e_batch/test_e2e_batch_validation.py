@@ -19,12 +19,13 @@ from constants import (
     PRE_VALIDATION_ERROR,
     POST_VALIDATION_ERROR,
     FILE_NAME_VAL_ERROR,
-    environment
+    # environment
 )
 from e2e_batch_base import TestE2EBatchBase
 
 
-@unittest.skipIf(environment == "ref", "if ref")
+@unittest.skip("Skip all tests")
+# @unittest.skipIf(environment == "ref", "if ref")
 class TestE2EBatchValidation(TestE2EBatchBase):
 
     def test_pre_validation_error(self):

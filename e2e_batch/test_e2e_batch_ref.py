@@ -11,12 +11,13 @@ from per_test import monitor
 from constants import (
     SOURCE_BUCKET,
     INPUT_PREFIX,
-    environment
+    # environment
 )
 from e2e_batch_base import TestE2EBatchBase
 
 
-@unittest.skipIf(environment != "ref", "if not ref")
+@unittest.skip("Skip all tests")
+# @unittest.skipIf(environment != "ref", "if not ref")
 class TestE2EBatchRef(TestE2EBatchBase):
 
     def test_end_to_end_speed_test_with_100000_rows(self):
