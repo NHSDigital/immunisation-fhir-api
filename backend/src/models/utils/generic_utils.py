@@ -9,7 +9,7 @@ from fhir.resources.R4B.bundle import (
     BundleLink,
     BundleEntrySearch,
 )
-from fhir.resources.immunization import Immunization
+from fhir.resources.R4B.immunization import Immunization
 from models.constants import Constants
 import urllib.parse
 import base64
