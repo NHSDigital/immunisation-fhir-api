@@ -151,7 +151,8 @@ class FhirService:
 
         vaccination_type = get_vaccine_type(immunization)
 
-        # If the user is updating the vaccination_type, they must have permissions for both the new and old type
+        # If the user is updating the resource vaccination_type, they must have permissions for both the existing and
+        # new type. In most cases it will be the same, but it is possible for users to update the vacc type
         if not self.authoriser.authorise(supplier_system, ApiOperationCode.UPDATE,
                                          {vaccination_type, existing_resource_vacc_type}):
             raise UnauthorizedVaxError()
