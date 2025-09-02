@@ -180,7 +180,7 @@ def form_json(response, _element, identifier, baseurl):
 
     fhir_bundle.entry = [entry]
     fhir_bundle.total = 1
-    return fhir_bundle
+    return fhir_bundle.dict(by_alias=True)
 
 
 def check_keys_in_sources(event, not_required_keys):
