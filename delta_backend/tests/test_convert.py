@@ -11,6 +11,7 @@ from common.mappings import ActionFlag, Operation, EventName
 MOCK_ENV_VARS = {
     "AWS_SQS_QUEUE_URL": "https://sqs.eu-west-2.amazonaws.com/123456789012/test-queue",
     "DELTA_TABLE_NAME": "immunisation-batch-internal-dev-audit-test-table",
+    "DELTA_TTL": "14",
     "SOURCE": "test-source",
 }
 request_json_data = ValuesForTests.json_data
