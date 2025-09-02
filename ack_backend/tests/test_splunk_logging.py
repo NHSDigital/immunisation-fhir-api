@@ -85,7 +85,7 @@ class TestLoggingDecorators(unittest.TestCase):
 
     def expected_lambda_handler_logs(self, success: bool, number_of_rows, ingestion_complete=False, diagnostics=None):
         """Returns the expected logs for the lambda handler function."""
-        # Mocking of timings is such that the time taken is 2 seconds for each row, 
+        # Mocking of timings is such that the time taken is 2 seconds for each row,
         # plus 2 seconds for the handler if it succeeds (i.e. it calls update_ack_file) or 1 second if it doesn't;
         # plus an extra second if ingestion is complete
         if success:
@@ -321,8 +321,6 @@ class TestLoggingDecorators(unittest.TestCase):
             patch("logging_decorators.send_log_to_firehose") as mock_send_log_to_firehose,
             patch("logging_decorators.logger") as mock_logger,
             patch("update_ack_file.change_audit_table_status_to_processed") as mock_change_audit_table_status_to_processed,
-            patch("update_ack_file.get_next_queued_file_details"),
-            patch("update_ack_file.invoke_filename_lambda"),
         ):
             result = lambda_handler(generate_event(messages), context={})
 
@@ -362,8 +360,6 @@ class TestLoggingDecorators(unittest.TestCase):
             patch("logging_decorators.send_log_to_firehose") as mock_send_log_to_firehose,
             patch("logging_decorators.logger") as mock_logger,
             patch("update_ack_file.change_audit_table_status_to_processed") as mock_change_audit_table_status_to_processed,
-            patch("update_ack_file.get_next_queued_file_details"),
-            patch("update_ack_file.invoke_filename_lambda"),
         ):
             result = lambda_handler(generate_event(messages), context={})
 

@@ -178,7 +178,7 @@ class FileDetails:
         self.event_no_permissions = json.dumps(self.event_no_permissions_dict)
 
         self.audit_table_entry = {
-            AuditTableKeys.MESSAGE_ID: {"S": self.message_id_order},
+            AuditTableKeys.MESSAGE_ID: {"S": self.message_id},
             AuditTableKeys.FILENAME: {"S": self.file_key},
             AuditTableKeys.QUEUE_NAME: {"S": self.queue_name},
             AuditTableKeys.TIMESTAMP: {"S": self.created_at_formatted_string},

@@ -151,13 +151,6 @@ resource "aws_iam_policy" "ecs_task_exec_policy" {
         Resource = "arn:aws:ecr:${var.aws_region}:${var.immunisation_account_id}:repository/${local.short_prefix}-processing-repo"
       },
       {
-        Effect = "Allow"
-        Action = "lambda:InvokeFunction"
-        Resource = [
-          aws_lambda_function.file_processor_lambda.arn
-        ]
-      },
-      {
         "Effect" : "Allow",
         "Action" : [
           "firehose:PutRecord",
@@ -221,10 +214,6 @@ resource "aws_ecs_task_definition" "ecs_task" {
       {
         name  = "AUDIT_TABLE_NAME"
         value = aws_dynamodb_table.audit-table.name
-      },
-      {
-        name  = "FILE_NAME_PROC_LAMBDA_NAME"
-        value = aws_lambda_function.file_processor_lambda.function_name
       },
       {
         name  = "REDIS_HOST"
