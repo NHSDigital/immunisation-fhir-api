@@ -3,6 +3,13 @@
 import datetime
 
 from typing import Literal, Union, Optional
+from fhir.resources.R4B.bundle import (
+    Bundle as FhirBundle,
+    BundleEntry,
+    BundleLink,
+    BundleEntrySearch,
+)
+from fhir.resources.immunization import Immunization
 from models.constants import Constants
 import urllib.parse
 import base64
@@ -138,28 +145,23 @@ def create_diagnostics_error(value):
 def form_json(response, _element, identifier, baseurl):
     self_url = f"{baseurl}?identifier={identifier}" + (f"&_elements={_element}" if _element else "")
     meta = {"versionId": response["version"]} if response and "version" in response else {}
-    json = {
-            "resourceType": "Bundle",
-            "type": "searchset",
-            "link": [
-                {"relation": "self", "url": self_url}
-            ]
-    }
+    fhir_bundle = FhirBundle(resourceType="Bundle", type="searchset", link = [BundleLink(relation="self", url=self_url)])
+
     if not response:
-        json["entry"] = []
-        json["total"] = 0
-        return json
+        fhir_bundle.entry = []
+        fhir_bundle.total = 0
+        return fhir_bundle
 
     # Full Immunization payload to be returned if only the identifier parameter was provided
     if identifier and not _element:
         resource = response["resource"]
         resource["meta"] = meta
 
+        imms = Immunization.parse_obj(resource)
+
     elif identifier and _element:
         element = {e.strip().lower() for e in _element.split(",") if e.strip()}
         resource = {"resourceType": "Immunization"}
-
-        # Add 'id' if specified
         if "id" in element:
             resource["id"] = response["id"]
 
@@ -168,13 +170,17 @@ def form_json(response, _element, identifier, baseurl):
             resource["id"] = response["id"]
             resource["meta"] = meta
 
-    json["entry"] = [{
-        "fullUrl": f"https://api.service.nhs.uk/immunisation-fhir-api/Immunization/{response['id']}",
-        "resource": resource,
-            }
-        ]
-    json["total"] = 1
-    return json
+        imms = Immunization.construct(**resource)
+
+    entry = BundleEntry(
+        fullUrl=f"{baseurl}/Immunization/{response['id']}",
+        resource=imms,
+        search=BundleEntrySearch.construct(mode="match"),
+    )
+
+    fhir_bundle.entry = [entry]
+    fhir_bundle.total = 1
+    return fhir_bundle
 
 
 def check_keys_in_sources(event, not_required_keys):
