@@ -1,6 +1,5 @@
 import time
 import logging
-import json
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger("PERFORMANCE")
@@ -14,14 +13,9 @@ def monitor(nameMarker):
     if nameMarker in marker:
         duration = t - marker[nameMarker]
         elapsed_ms = duration / 1_000_000
-        out_msg = {
-            "marker": nameMarker,
-            "elapsed_time": elapsed_ms
-        }
-        logger.info(f"Perf end [{nameMarker}]: {elapsed_ms} ms")
+        logger.info(f"end [{nameMarker}]: {elapsed_ms} ms")
 
-        logger.info(json.dumps(out_msg))
         del marker[nameMarker]  # <-- remove the marker after logging
     else:
-        logger.info(f"Perf start [{nameMarker}]")
+        logger.info(f"start [{nameMarker}]")
         marker[nameMarker] = t
