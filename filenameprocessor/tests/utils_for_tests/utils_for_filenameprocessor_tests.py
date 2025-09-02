@@ -1,7 +1,6 @@
 """Utils functions for filenameprocessor tests"""
 from unittest.mock import patch
 from io import StringIO
-from boto3.dynamodb.types import TypeDeserializer
 from boto3 import client as boto3_client
 
 from tests.utils_for_tests.values_for_tests import FileDetails, MockFileDetails
@@ -32,14 +31,6 @@ def get_csv_file_dict_reader(s3_client, bucket_name: str, file_key: str) -> Dict
     ack_file_csv_obj = s3_client.get_object(Bucket=bucket_name, Key=file_key)
     csv_content_string = ack_file_csv_obj["Body"].read().decode("utf-8")
     return DictReader(StringIO(csv_content_string), delimiter="|")
-
-
-def deserialize_dynamodb_types(dynamodb_table_entry_with_types):
-    """
-    Convert a dynamodb table entry with types to a table entry without types
-    e.g. {'Attr1': {'S': 'val1'}, 'Attr2': {'N': 'val2'}} becomes  {'Attr1': 'val1'}
-    """
-    return {k: TypeDeserializer().deserialize(v) for k, v in dynamodb_table_entry_with_types.items()}
 
 
 def add_entry_to_table(file_details: MockFileDetails, file_status: FileStatus) -> None:

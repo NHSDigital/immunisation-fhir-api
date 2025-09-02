@@ -1,9 +1,9 @@
 build:
-	docker build -t processor-lambda-build .
+	docker build -t imms-lambda-build -f Dockerfile .
 
-package:build
+package: build
 	mkdir -p build
-	docker run --rm -v $(shell pwd)/build:/build processor-lambda-build
+	docker run --rm -v $(shell pwd)/build:/build imms-lambda-build
 
 test:
 	@PYTHONPATH=src:tests python -m unittest
@@ -17,4 +17,4 @@ coverage-report:
 coverage-html:
 	coverage html
 
-.PHONY: build package
+.PHONY: build package test
