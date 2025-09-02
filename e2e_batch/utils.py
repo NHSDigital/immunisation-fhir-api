@@ -1,7 +1,6 @@
 import time
 import csv
 import pandas as pd
-import boto3
 import uuid
 import json
 import random
