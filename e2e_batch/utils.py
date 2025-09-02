@@ -102,9 +102,6 @@ def upload_file_to_s3(file_name, bucket, prefix):
 
     key = f"{prefix}{file_name}"
     try:
-        print(f"SAW DEBUG key:{key}")
-        print(f"SAW DEBUG bucket:{bucket}")
-        print(f"SAW DEBUG file_name:{file_name}")
         with open(file_name, "rb") as f:
             response = s3_client.put_object(Bucket=bucket, Key=key, Body=f)
 
