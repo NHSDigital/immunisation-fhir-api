@@ -45,7 +45,6 @@ class TestFormJson(unittest.TestCase):
         self.assertEqual(out["total"], 1)
         self.assertEqual(out["link"][0]["url"], f"{self.baseurl}?identifier={self.identifier}&_elements=meta")
         self.assertEqual(res["resourceType"], "Immunization")
-        self.assertEqual(res["id"], self.response["id"])
         self.assertIn("meta", res)
         self.assertEqual(res["meta"]["versionId"], self.response["version"])
 

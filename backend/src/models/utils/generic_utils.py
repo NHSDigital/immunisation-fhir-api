@@ -2,7 +2,7 @@
 
 import datetime
 
-from typing import Literal, Union, Optional
+from typing import Literal, Union, Optional, Dict, Any
 from fhir.resources.R4B.bundle import (
     Bundle as FhirBundle,
     BundleEntry,
@@ -141,44 +141,44 @@ def create_diagnostics_error(value):
     exp_error = {"diagnostics": diagnostics}
     return exp_error
 
+def empty_bundle(self_url: str) -> Dict[str, Any]:
+    return {
+        "resourceType": "Bundle",
+        "type": "searchset",
+        "link": [{"relation": "self", "url": self_url}],
+        "total": 0,
+        "entry": [],
+    }
 
 def form_json(response, _element, identifier, baseurl):
     self_url = f"{baseurl}?identifier={identifier}" + (f"&_elements={_element}" if _element else "")
-    meta = {"versionId": response["version"]} if response and "version" in response else {}
-    fhir_bundle = FhirBundle(resourceType="Bundle", type="searchset", link = [BundleLink(relation="self", url=self_url)], entry=[],
-        total=0)
 
     if not response:
-        return fhir_bundle.dict(by_alias=True)
+        return empty_bundle(self_url)
+    
+    meta = {"versionId": response["version"]} if "version" in response else {}
 
     # Full Immunization payload to be returned if only the identifier parameter was provided
-    if identifier and not _element:
+    if _element:
+        element = {e.strip().lower() for e in _element.split(",") if e.strip()}
+        resource = {"resourceType": "Immunization"}
+        if "id" in element: resource["id"] = response["id"]
+        if "meta" in element and meta: resource["meta"] = meta
+
+    else:
         resource = response["resource"]
         resource["meta"] = meta
 
-        imms = Immunization.construct(**resource)
-
-    elif identifier and _element:
-        element = {e.strip().lower() for e in _element.split(",") if e.strip()}
-        resource = {"resourceType": "Immunization"}
-        if "id" in element:
-            resource["id"] = response["id"]
-
-        # Add 'meta' if specified
-        if "meta" in element:
-            resource["id"] = response["id"]
-            resource["meta"] = meta
-        
-        imms = Immunization.construct(**resource)
-
-    entry = BundleEntry(
-        fullUrl=f"{baseurl}/{response['id']}",
-        resource=imms,
-        search=BundleEntrySearch.construct(mode="match"),
+    entry = BundleEntry(fullUrl=f"{baseurl}/{response['id']}",
+        resource=Immunization.construct(**resource),
+        search=BundleEntrySearch.construct(mode="match") if not _element else None,
     )
-
-    fhir_bundle.entry = [entry]
-    fhir_bundle.total = 1
+    
+    fhir_bundle = FhirBundle(
+        resourceType="Bundle", type="searchset", 
+        link = [BundleLink(relation="self", url=self_url)], 
+        entry=[entry], total=1)
+    
     return fhir_bundle.dict(by_alias=True)
 
 
