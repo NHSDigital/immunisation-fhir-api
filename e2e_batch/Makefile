@@ -7,5 +7,9 @@ PARALLEL_WORKERS=1
 print-token:
 	@echo "APIGEE_ACCESS_TOKEN=$(APIGEE_ACCESS_TOKEN)"
 
+
 run-immunization-batch:
-	ENVIRONMENT=$(ENVIRONMENT) poetry run unittest-parallel -v -j $(PARALLEL_WORKERS)
+	ENVIRONMENT=$(environment) poetry run python -m unittest -v -c
+
+run-immunization-batch1:
+	ENVIRONMENT=$(ENVIRONMENT) poetry run unittest -v -j $(PARALLEL_WORKERS)
