@@ -2,8 +2,6 @@
 
 import unittest
 import os
-from unittest.mock import patch
-from io import StringIO
 from boto3 import client as boto3_client
 from moto import mock_s3
 

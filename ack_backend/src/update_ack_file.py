@@ -1,12 +1,11 @@
 """Functions for uploading the data to the ack file"""
 
-import json
 from io import StringIO, BytesIO
 from typing import Union, Optional
 from botocore.exceptions import ClientError
-from constants import ACK_HEADERS, get_source_bucket_name, get_ack_bucket_name, FILE_NAME_PROC_LAMBDA_NAME
-from audit_table import change_audit_table_status_to_processed, get_next_queued_file_details
-from clients import get_s3_client, logger, lambda_client
+from constants import ACK_HEADERS, get_source_bucket_name, get_ack_bucket_name
+from audit_table import change_audit_table_status_to_processed
+from clients import get_s3_client, logger
 from utils_for_ack_lambda import get_row_count
 from logging_decorators import upload_ack_file_logging_decorator
 
@@ -96,12 +95,9 @@ def upload_ack_file(
         move_file(ack_bucket_name, temp_ack_file_key, archive_ack_file_key)
         move_file(source_bucket_name, f"processing/{file_key}", f"archive/{file_key}")
 
-        # Update the audit table and invoke the filename lambda with next file in the queue (if one exists)
+        # Update the audit table
         change_audit_table_status_to_processed(file_key, message_id)
-        supplier_queue = f"{supplier}_{vaccine_type}"
-        next_queued_file_details = get_next_queued_file_details(supplier_queue)
-        if next_queued_file_details:
-            invoke_filename_lambda(next_queued_file_details["filename"], next_queued_file_details["message_id"])
+
         # Ingestion of this file is complete
         result = {
             "message_id": message_id,
@@ -149,27 +145,3 @@ def move_file(bucket_name: str, source_file_key: str, destination_file_key: str)
     )
     s3_client.delete_object(Bucket=bucket_name, Key=source_file_key)
     logger.info("File moved from %s to %s", source_file_key, destination_file_key)
-
-
-def invoke_filename_lambda(file_key: str, message_id: str) -> None:
-    """Invokes the filenameprocessor lambda with the given file key and message id"""
-    try:
-        lambda_payload = {
-            "Records": [
-                {"s3": 
-                    {
-                        "bucket": {
-                            "name": get_source_bucket_name()
-                        },
-                        "object": {"key": file_key}
-                    },
-                    "message_id": message_id
-                }
-            ]
-        }
-        lambda_client.invoke(
-            FunctionName=FILE_NAME_PROC_LAMBDA_NAME, InvocationType="Event", Payload=json.dumps(lambda_payload)
-        )
-    except Exception as error:
-        logger.error("Error invoking filename lambda: %s", error)
-        raise
