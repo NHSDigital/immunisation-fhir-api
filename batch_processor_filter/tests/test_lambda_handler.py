@@ -6,7 +6,7 @@ from unittest import TestCase
 from unittest.mock import patch
 
 import botocore
-from moto import mock_dynamodb, mock_sqs, mock_s3
+from moto import mock_aws
 
 from batch_file_created_event import BatchFileCreatedEvent
 from exceptions import InvalidBatchSizeError, EventAlreadyProcessingForSupplierAndVaccTypeError
@@ -22,9 +22,7 @@ dynamodb_client = boto3.client("dynamodb", region_name=REGION_NAME)
 s3_client = boto3.client("s3", region_name=REGION_NAME)
 
 
-@mock_dynamodb
-@mock_sqs
-@mock_s3
+@mock_aws
 class TestLambdaHandler(TestCase):
     default_batch_file_event: BatchFileCreatedEvent = BatchFileCreatedEvent(
         message_id="df0b745c-b8cb-492c-ba84-8ea28d9f51d5",
