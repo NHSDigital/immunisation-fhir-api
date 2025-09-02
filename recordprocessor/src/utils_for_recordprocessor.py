@@ -16,6 +16,8 @@ def get_environment() -> str:
 def get_csv_content_dict_reader(file_key: str) -> DictReader:
     """Returns the requested file contents from the source bucket in the form of a DictReader"""
     logger.info("SAW> get_csv_content_dict_reader..1")
+    logger.info("SAW> Fetch file: %s", file_key)
+    logger.info("SAW> SOURCE_BUCKET_NAME: %s", os.getenv("SOURCE_BUCKET_NAME"))
     response = s3_client.get_object(Bucket=os.getenv("SOURCE_BUCKET_NAME"), Key=file_key)
     logger.info("SAW> get_csv_content_dict_reader..2")
     binary_io = response["Body"]

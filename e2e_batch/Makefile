@@ -12,7 +12,10 @@ run-immunization-batch:
 	ENVIRONMENT=$(environment) poetry run python -m unittest -v -c
 
 test:
+	ENVIRONMENT=$(environment) poetry run python -m unittest -v -c
+
+testp1:
 	ENVIRONMENT=$(ENVIRONMENT) time poetry run unittest-parallel -v -j $(PARALLEL_WORKERS)
 
-test2:
+testp2:
 	ENVIRONMENT=$(ENVIRONMENT) poetry run pytest -n $(PARALLEL_WORKERS) -v

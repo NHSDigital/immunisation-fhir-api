@@ -86,10 +86,11 @@ def generate_csv(fore_name, dose_amount, action_flag, headers="NHS_NUMBER", same
 
     df = pd.DataFrame(data)
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%f")[:-3]
+    # "RSV", "YGM41"
     file_name = (
-        f"COVID19_Vaccinations_v4_YGM41_{timestamp}.csv"
+        f"RSV_Vaccinations_v4_YGM41_{timestamp}.csv"
         if file_key
-        else f"COVID19_Vaccinations_v5_YGM41_{timestamp}.csv"
+        else f"RSV_Vaccinations_v5_YGM41_{timestamp}.csv"
     )
     # file_name = get_file_name(vax_type, ods, "4" if file_key else "5")
     df.to_csv(file_name, index=False, sep="|", quoting=csv.QUOTE_MINIMAL)
