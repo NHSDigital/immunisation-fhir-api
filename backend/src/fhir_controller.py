@@ -209,7 +209,7 @@ class FhirController:
                 )
                 return self.create_response(404, json.dumps(exp_error))
 
-            if "diagnostics" in existing_record and existing_record is not None:
+            if "diagnostics" in existing_record:
                 exp_error = create_operation_outcome(
                     resource_id=str(uuid.uuid4()),
                     severity=Severity.error,
@@ -222,14 +222,16 @@ class FhirController:
         # Validate if the imms resource does not exist - end
 
         existing_resource_version = int(existing_record["Version"])
+        existing_resource_vacc_type = existing_record["VaccineType"]
 
         try:
             # Validate if the imms resource to be updated is a logically deleted resource - start
-            if existing_record["DeletedAt"] == True:
+            if existing_record["DeletedAt"]:
                 outcome, resource, updated_version = self.fhir_service.reinstate_immunization(
                     imms_id,
                     imms,
                     existing_resource_version,
+                    existing_resource_vacc_type,
                     supplier_system
                 )
             # Validate if the imms resource to be updated is a logically deleted resource-end
@@ -284,6 +286,7 @@ class FhirController:
                         imms_id,
                         imms,
                         existing_resource_version,
+                        existing_resource_vacc_type,
                         supplier_system
                     )
                 else:
@@ -291,6 +294,7 @@ class FhirController:
                         imms_id,
                         imms,
                         existing_resource_version,
+                        existing_resource_vacc_type,
                         supplier_system
                     )
 

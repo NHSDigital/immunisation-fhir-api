@@ -564,6 +564,7 @@ class TestUpdateImmunization(TestFhirServiceBase):
         self.imms_repo.update_immunization.return_value = (
             create_covid_19_immunization_dict(imms_id), 2
         )
+        self.mock_redis_client.hget.return_value = "COVID19"
         self.authoriser.authorise.return_value = True
 
         nhs_number = VALID_NHS_NUMBER
@@ -571,11 +572,12 @@ class TestUpdateImmunization(TestFhirServiceBase):
         req_patient = get_contained_patient(req_imms)
 
         # When
-        outcome, _, _ = self.fhir_service.update_immunization(imms_id, req_imms, 1, "Test")
+        outcome, _, _ = self.fhir_service.update_immunization(imms_id, req_imms, 1, "COVID19", "Test")
 
         # Then
         self.assertEqual(outcome, UpdateOutcome.UPDATE)
         self.imms_repo.update_immunization.assert_called_once_with(imms_id, req_imms, req_patient, 1, "Test")
+        self.authoriser.authorise.assert_called_once_with("Test", ApiOperationCode.UPDATE, {"COVID19"})
 
     def test_id_not_present(self):
         """it should populate id in the message if it is not present"""
@@ -587,7 +589,7 @@ class TestUpdateImmunization(TestFhirServiceBase):
         del req_imms["id"]
 
         # When
-        self.fhir_service.update_immunization(req_imms_id, req_imms, 1, "Test")
+        self.fhir_service.update_immunization(req_imms_id, req_imms, 1, "COVID19", "Test")
 
         # Then
         passed_imms = self.imms_repo.update_immunization.call_args.args[1]
@@ -601,7 +603,7 @@ class TestUpdateImmunization(TestFhirServiceBase):
 
         with self.assertRaises(InvalidPatientId) as e:
             # When
-            self.fhir_service.update_immunization(imms_id, bad_patient_imms, 1, "Test")
+            self.fhir_service.update_immunization(imms_id, bad_patient_imms, 1, "COVID19", "Test")
 
         # Then
         self.assertEqual(e.exception.patient_identifier, invalid_nhs_number)
@@ -615,7 +617,7 @@ class TestUpdateImmunization(TestFhirServiceBase):
 
         with self.assertRaises(InvalidPatientId) as e:
             # When
-            self.fhir_service.update_immunization(imms_id, bad_patient_imms, 1, "Test")
+            self.fhir_service.update_immunization(imms_id, bad_patient_imms, 1, "COVID19", "Test")
 
         # Then
         self.assertEqual(e.exception.patient_identifier, invalid_nhs_number)
@@ -631,7 +633,7 @@ class TestUpdateImmunization(TestFhirServiceBase):
         self.imms_repo.reinstate_immunization.return_value = (req_imms, 5)
 
         outcome, resource, version = self.fhir_service.reinstate_immunization(
-            imms_id, req_imms, 1, "Test"
+            imms_id, req_imms, 1, "COVID19", "Test"
         )
 
         self.assertEqual(outcome, UpdateOutcome.UPDATE)
@@ -646,7 +648,7 @@ class TestUpdateImmunization(TestFhirServiceBase):
         self.mock_redis_client.hget.return_value = "FLU"
 
         with self.assertRaises(UnauthorizedVaxError):
-            self.fhir_service.reinstate_immunization(imms_id, req_imms, 1, "Test")
+            self.fhir_service.reinstate_immunization(imms_id, req_imms, 1, "FLU", "Test")
 
         self.authoriser.authorise.assert_called_once_with("Test", ApiOperationCode.UPDATE, {"FLU"})
 
@@ -659,7 +661,7 @@ class TestUpdateImmunization(TestFhirServiceBase):
         self.imms_repo.update_reinstated_immunization.return_value = (req_imms, 9)
 
         outcome, resource, version = self.fhir_service.update_reinstated_immunization(
-            imms_id, req_imms, 1, "Test"
+            imms_id, req_imms, 1, "COVID19", "Test"
         )
 
         self.assertEqual(outcome, UpdateOutcome.UPDATE)
@@ -672,7 +674,7 @@ class TestUpdateImmunization(TestFhirServiceBase):
         self.fhir_service._validate_patient = MagicMock(return_value={"diagnostics": "invalid patient"})
 
         outcome, resource, version = self.fhir_service.reinstate_immunization(
-            imms_id, req_imms, 1, "Test"
+            imms_id, req_imms, 1, "COVID19", "Test"
         )
 
         self.assertIsNone(outcome)
@@ -687,7 +689,7 @@ class TestUpdateImmunization(TestFhirServiceBase):
         self.fhir_service._validate_patient = MagicMock(return_value={"diagnostics": "invalid patient"})
 
         outcome, resource, version = self.fhir_service.update_reinstated_immunization(
-            imms_id, req_imms, 1, "Test"
+            imms_id, req_imms, 1, "COVID19", "Test"
         )
 
         self.assertIsNone(outcome)

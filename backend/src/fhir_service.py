@@ -139,6 +139,7 @@ class FhirService:
         imms_id: str,
         immunization: dict,
         existing_resource_version: int,
+        existing_resource_vacc_type: str,
         supplier_system: str,
     ) -> tuple[Optional[UpdateOutcome], Immunization | dict, Optional[int]]:
         # TODO - raise ticket to refactor this and below 3. Should have one update method and call repo based on type
@@ -150,7 +151,9 @@ class FhirService:
 
         vaccination_type = get_vaccine_type(immunization)
 
-        if not self.authoriser.authorise(supplier_system, ApiOperationCode.UPDATE, {vaccination_type}):
+        # If the user is updating the vaccination_type, they must have permissions for both the new and old type
+        if not self.authoriser.authorise(supplier_system, ApiOperationCode.UPDATE,
+                                         {vaccination_type, existing_resource_vacc_type}):
             raise UnauthorizedVaxError()
 
         imms, updated_version = self.immunization_repo.update_immunization(
@@ -168,6 +171,7 @@ class FhirService:
         imms_id: str,
         immunization: dict,
         existing_resource_version: int,
+        existing_resource_vacc_type: str,
         supplier_system: str,
     ) -> tuple[Optional[UpdateOutcome], Immunization | dict, Optional[int]]:
         immunization["id"] = imms_id
@@ -177,7 +181,8 @@ class FhirService:
 
         vaccination_type = get_vaccine_type(immunization)
 
-        if not self.authoriser.authorise(supplier_system, ApiOperationCode.UPDATE, {vaccination_type}):
+        if not self.authoriser.authorise(supplier_system, ApiOperationCode.UPDATE,
+                                         {vaccination_type, existing_resource_vacc_type}):
             raise UnauthorizedVaxError()
 
         imms, updated_version = self.immunization_repo.reinstate_immunization(
@@ -195,6 +200,7 @@ class FhirService:
         imms_id: str,
         immunization: dict,
         existing_resource_version: int,
+        existing_resource_vacc_type: str,
         supplier_system: str,
     ) -> tuple[Optional[UpdateOutcome], Immunization | dict, Optional[int]]:
         immunization["id"] = imms_id
@@ -204,7 +210,8 @@ class FhirService:
 
         vaccination_type = get_vaccine_type(immunization)
 
-        if not self.authoriser.authorise(supplier_system, ApiOperationCode.UPDATE, {vaccination_type}):
+        if not self.authoriser.authorise(supplier_system, ApiOperationCode.UPDATE,
+                                         {vaccination_type, existing_resource_vacc_type}):
             raise UnauthorizedVaxError()
 
         imms, updated_version = self.immunization_repo.update_reinstated_immunization(
