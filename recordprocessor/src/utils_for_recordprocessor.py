@@ -4,8 +4,14 @@ import os
 import json
 from csv import DictReader
 from io import TextIOWrapper
-from clients import s3_client, lambda_client, logger
+from clients import s3_client, lambda_client
 from constants import SOURCE_BUCKET_NAME, FILE_NAME_PROC_LAMBDA_NAME
+import logging
+
+
+logging.basicConfig(level="INFO")
+logger = logging.getLogger()
+logger.setLevel("INFO")
 
 
 def get_environment() -> str:
