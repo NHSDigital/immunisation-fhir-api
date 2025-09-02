@@ -199,7 +199,7 @@ steps:
       poetry env use 3.11
       set -e
       if ! [[ "$APIGEE_ENVIRONMENT" == "prod" || "$APIGEE_ENVIRONMENT" == "int" || "$APIGEE_ENVIRONMENT" == *"sandbox" ]]; then
-        echo "Running E2E batch folder test cases"
+        echo "Running E2E batch folder test cases (Parallel)"
 
         export AWS_PROFILE="apim-dev"
         aws_account_no="$(aws sts get-caller-identity --query Account --output text)"
@@ -217,14 +217,14 @@ steps:
         poetry install --no-root  # Install dependencies defined in pyproject.toml
 
         # ENVIRONMENT="$workspace" poetry run python -m unittest -v -c
-        ENVIRONMENT="$workspace" poetry run unittest-parallel -v -j 4
+        ENVIRONMENT="$workspace" time poetry run unittest-parallel -v -j 4
 
         echo "E2E batch folder test cases executed successfully"
       else
         echo "Skipping E2E batch folder test cases as the environment is prod-int-sandbox"
       fi
 
-    displayName: Run full batch test suite
+    displayName: Run batch test parallel
     workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/e2e_batch"
     condition: eq(1, 1) # Disable task but make this step visible in the pipeline
 

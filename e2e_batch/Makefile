@@ -11,5 +11,5 @@ print-token:
 run-immunization-batch:
 	ENVIRONMENT=$(environment) poetry run python -m unittest -v -c
 
-run-immunization-batch1:
-	ENVIRONMENT=$(ENVIRONMENT) poetry run unittest -v -j $(PARALLEL_WORKERS)
+test:
+	ENVIRONMENT=$(ENVIRONMENT) time poetry run unittest-parallel -v -j $(PARALLEL_WORKERS)
