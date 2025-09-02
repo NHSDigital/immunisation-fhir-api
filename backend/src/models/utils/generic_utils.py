@@ -130,7 +130,6 @@ def create_diagnostics():
     exp_error = {"diagnostics": diagnostics}
     return exp_error
 
-
 def create_diagnostics_error(value):
     if value == "Both":
         diagnostics = (
@@ -150,17 +149,17 @@ def empty_bundle(self_url: str) -> Dict[str, Any]:
         "entry": [],
     }
 
-def form_json(response, _element, identifier, baseurl):
-    self_url = f"{baseurl}?identifier={identifier}" + (f"&_elements={_element}" if _element else "")
+def form_json(response, _elements, identifier, baseurl):
+    self_url = f"{baseurl}?identifier={identifier}" + (f"&_elements={_elements}" if _elements else "")
 
     if not response:
         return empty_bundle(self_url)
-    
+
     meta = {"versionId": response["version"]} if "version" in response else {}
 
-    # Full Immunization payload to be returned if only the identifier parameter was provided
-    if _element:
-        element = {e.strip().lower() for e in _element.split(",") if e.strip()}
+    # Full Immunization payload to be returned if only the identifier parameter was provided and truncated when _elements is used
+    if _elements:
+        element = {e.strip().lower() for e in _elements.split(",") if e.strip()}
         resource = {"resourceType": "Immunization"}
         if "id" in element: resource["id"] = response["id"]
         if "meta" in element and meta: resource["meta"] = meta
@@ -171,16 +170,18 @@ def form_json(response, _element, identifier, baseurl):
 
     entry = BundleEntry(fullUrl=f"{baseurl}/{response['id']}",
         resource=Immunization.construct(**resource),
-        search=BundleEntrySearch.construct(mode="match") if not _element else None,
+        search=BundleEntrySearch.construct(mode="match") if not _elements else None,
     )
-    
+
     fhir_bundle = FhirBundle(
         resourceType="Bundle", type="searchset", 
         link = [BundleLink(relation="self", url=self_url)], 
-        entry=[entry], total=1)
-    
-    return fhir_bundle.dict(by_alias=True)
+        entry=[entry], 
+        total=1)
 
+    data = fhir_bundle.dict(by_alias=True)
+    data["total"] = data.pop("total")
+    return data
 
 def check_keys_in_sources(event, not_required_keys):
     # Decode and parse the body, assuming it is JSON and base64-encoded
