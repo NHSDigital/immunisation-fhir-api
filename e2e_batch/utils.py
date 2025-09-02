@@ -85,7 +85,7 @@ def generate_csv(fore_name, dose_amount, action_flag,
         data.append(create_row(unique_id, fore_name, dose_amount, "NEW", headers))
         data.append(create_row(unique_id, fore_name, dose_amount, "DELETE", headers))
         data.append(create_row(unique_id, fore_name, dose_amount, "UPDATE", headers))
-        data.append(create_row(unique_id, fore_name, dose_amount, "UPDATE", headers))
+        data.append(create_row(unique_id, "fore_name", dose_amount, "UPDATE", headers))
 
     df = pd.DataFrame(data)
 

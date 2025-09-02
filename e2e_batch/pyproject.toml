@@ -16,4 +16,6 @@ unittest-parallel = "^1.7.5"
 
 [tool.poetry.group.dev.dependencies]
 unittest-parallel = "^1.7.5"
+pytest = "^8.4.1"
+pytest-xdist = "^3.8.0"
 
