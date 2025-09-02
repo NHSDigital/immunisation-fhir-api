@@ -216,7 +216,8 @@ steps:
 
         poetry install --no-root  # Install dependencies defined in pyproject.toml
 
-        ENVIRONMENT="$workspace" poetry run python -m unittest -v -c
+        # ENVIRONMENT="$workspace" poetry run python -m unittest -v -c
+        ENVIRONMENT="$workspace" poetry run unittest -v -j 4
 
         echo "E2E batch folder test cases executed successfully"
       else
