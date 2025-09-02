@@ -1,7 +1,7 @@
 """Generic utilities"""
 
 import datetime
-
+import json
 from typing import Literal, Union, Optional, Dict, Any
 from fhir.resources.R4B.bundle import (
     Bundle as FhirBundle,
@@ -179,7 +179,8 @@ def form_json(response, _elements, identifier, baseurl):
         entry=[entry], 
         total=1)
 
-    data = fhir_bundle.dict(by_alias=True)
+
+    data = json.loads(fhir_bundle.json(by_alias=True))
     data["total"] = data.pop("total")
     return data
 

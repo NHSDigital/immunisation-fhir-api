@@ -102,7 +102,7 @@ class FhirController:
         try:
             if resource := self.fhir_service.get_immunization_by_identifier(
                 identifiers, imms_vax_type_perms, identifier, element):
-                return FhirController.create_response(200, json.dumps(resource))
+                return FhirController.create_response(200, resource)
         except UnauthorizedVaxError as unauthorized:
             return self.create_response(403, unauthorized.to_operation_outcome())
 
