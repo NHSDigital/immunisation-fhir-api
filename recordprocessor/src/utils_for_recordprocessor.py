@@ -3,7 +3,7 @@
 import os
 from csv import DictReader
 from io import TextIOWrapper
-from clients import s3_client
+from clients import s3_client, logger
 
 
 def get_environment() -> str:
@@ -15,9 +15,15 @@ def get_environment() -> str:
 
 def get_csv_content_dict_reader(file_key: str) -> DictReader:
     """Returns the requested file contents from the source bucket in the form of a DictReader"""
+    logger.info("SAW> get_csv_content_dict_reader..1")
+    logger.info("SAW> Fetch file: %s", file_key)
+    logger.info("SAW> SOURCE_BUCKET_NAME: %s", os.getenv("SOURCE_BUCKET_NAME"))
     response = s3_client.get_object(Bucket=os.getenv("SOURCE_BUCKET_NAME"), Key=file_key)
+    logger.info("SAW> get_csv_content_dict_reader..2")
     binary_io = response["Body"]
+    logger.info("SAW> get_csv_content_dict_reader..3")
     text_io = TextIOWrapper(binary_io, encoding="utf-8", newline="")
+    logger.info("SAW> get_csv_content_dict_reader..4")
     return DictReader(text_io, delimiter="|")
 
 

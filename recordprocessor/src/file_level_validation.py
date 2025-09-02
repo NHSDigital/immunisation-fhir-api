@@ -70,24 +70,36 @@ def file_level_validation(incoming_message_body: dict) -> dict:
     to reflect the file has been processed and the filename lambda is invoked with the next file in the queue.
     """
     try:
+        logger.info("SAW> file_level_validation...1")
         message_id = incoming_message_body.get("message_id")
+        logger.info("SAW> file_level_validation...2")
         vaccine = incoming_message_body.get("vaccine_type").upper()
+        logger.info("SAW> file_level_validation...3")
         supplier = incoming_message_body.get("supplier").upper()
+        logger.info("SAW> file_level_validation...4")
         file_key = incoming_message_body.get("filename")
+        logger.info("SAW> file_level_validation...5")
         permission = incoming_message_body.get("permission")
+        logger.info("SAW> file_level_validation...6")
         created_at_formatted_string = incoming_message_body.get("created_at_formatted_string")
+        logger.info("SAW> file_level_validation...7")
 
         # Fetch the data
         csv_reader = get_csv_content_dict_reader(file_key)
+        logger.info("SAW> file_level_validation...8")
 
         validate_content_headers(csv_reader)
+        logger.info("SAW> file_level_validation...9")
 
         # Validate has permission to perform at least one of the requested actions
         allowed_operations_set = get_permitted_operations(supplier, vaccine, permission)
+        logger.info("SAW> file_level_validation...10")
 
         make_and_upload_ack_file(message_id, file_key, True, True, created_at_formatted_string)
+        logger.info("SAW> file_level_validation...11")
 
         move_file(SOURCE_BUCKET_NAME, file_key, f"processing/{file_key}")
+        logger.info("SAW> file_level_validation...12")
 
         return {
             "message_id": message_id,

@@ -2,7 +2,7 @@
 
 from csv import writer
 from io import StringIO, BytesIO
-from clients import s3_client
+from clients import s3_client, logger
 from constants import ACK_BUCKET_NAME
 
 
@@ -49,5 +49,7 @@ def make_and_upload_ack_file(
     message_id: str, file_key: str, validation_passed: bool, message_delivered: bool, created_at_formatted_string: str
 ) -> None:
     """Creates the ack file and uploads it to the S3 ack bucket"""
+    logger.info("SAW> make_and_upload_ack_file...1")
     ack_data = make_ack_data(message_id, validation_passed, message_delivered, created_at_formatted_string)
+    logger.info("SAW> make_and_upload_ack_file...2")
     upload_ack_file(file_key, ack_data, created_at_formatted_string)
