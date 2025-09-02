@@ -1,6 +1,5 @@
 import time
 import unittest
-
 from utils import (
     generate_csv,
     upload_file_to_s3,
@@ -25,13 +24,9 @@ from constants import (
     FILE_NAME_VAL_ERROR,
     environment
 )
-# load dotenv for run from desktop
-# from dotenv import load_dotenv
-# load_dotenv()
 
 
 class TestE2EBatch(unittest.TestCase):
-
     def setUp(self):
         self.uploaded_files = []  # Tracks uploaded input keys
         self.ack_files = []       # Tracks ack keys
@@ -46,8 +41,7 @@ class TestE2EBatch(unittest.TestCase):
         def test_create_success(self):
             """Test CREATE scenario."""
             monitor("test_create_success")
-            input_file = generate_csv("PHYLIS", "0.3", "CREATE",
-                                      "RSV", "YGM41")
+            input_file = generate_csv("PHYLIS", "0.3", action_flag="CREATE")
 
             key = upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
             self.uploaded_files.append(key)
@@ -67,9 +61,7 @@ class TestE2EBatch(unittest.TestCase):
 
             monitor("test_duplicate_create")
 
-            input_file = generate_csv("PHYLIS", "0.3", "CREATE",
-                                      "RSV", "YGM41",
-                                      same_id=True)
+            input_file = generate_csv("PHYLIS", "0.3", action_flag="CREATE", same_id=True)
 
             key = upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
             self.uploaded_files.append(key)
@@ -87,7 +79,7 @@ class TestE2EBatch(unittest.TestCase):
         def test_update_success(self):
             """Test UPDATE scenario."""
             monitor("test_update_success")
-            input_file = generate_csv("PHYLIS", "0.5", "UPDATE", "RSV", "YGM41")
+            input_file = generate_csv("PHYLIS", "0.5", action_flag="UPDATE")
 
             key = upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
             self.uploaded_files.append(key)
@@ -104,7 +96,7 @@ class TestE2EBatch(unittest.TestCase):
         def test_reinstated_success(self):
             """Test REINSTATED scenario."""
             monitor("test_reinstated_success")
-            input_file = generate_csv("PHYLIS", "0.5", "REINSTATED", "RSV", "YGM41")
+            input_file = generate_csv("PHYLIS", "0.5", action_flag="REINSTATED")
 
             key = upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
             self.uploaded_files.append(key)
@@ -121,7 +113,7 @@ class TestE2EBatch(unittest.TestCase):
         def test_update_reinstated_success(self):
             """Test UPDATE-REINSTATED scenario."""
             monitor("test_update_reinstated_success")
-            input_file = generate_csv("PHYLIS", "0.5", "UPDATE-REINSTATED", "RSV", "YGM41")
+            input_file = generate_csv("PHYLIS", "0.5", action_flag="UPDATE-REINSTATED")
 
             key = upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
             self.uploaded_files.append(key)
@@ -138,7 +130,7 @@ class TestE2EBatch(unittest.TestCase):
         def test_delete_success(self):
             """Test DELETE scenario."""
             monitor("test_delete_success")
-            input_file = generate_csv("PHYLIS", "0.8", "DELETE", "RSV", "YGM41")
+            input_file = generate_csv("PHYLIS", "0.8", action_flag="DELETE")
 
             key = upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
             self.uploaded_files.append(key)
@@ -155,7 +147,7 @@ class TestE2EBatch(unittest.TestCase):
         def test_pre_validation_error(self):
             """Test PRE-VALIDATION error scenario."""
             monitor("test_pre_validation_error")
-            input_file = generate_csv("PHYLIS", "TRUE", "CREATE", "RSV", "YGM41")
+            input_file = generate_csv("PHYLIS", "TRUE", action_flag="CREATE")
 
             key = upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
             self.uploaded_files.append(key)
@@ -172,7 +164,7 @@ class TestE2EBatch(unittest.TestCase):
         def test_post_validation_error(self):
             """Test POST-VALIDATION error scenario."""
             monitor("test_post_validation_error")
-            input_file = generate_csv("", "0.3", "CREATE", "RSV", "YGM41")
+            input_file = generate_csv("", "0.3", action_flag="CREATE")
 
             key = upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
             self.uploaded_files.append(key)
@@ -187,7 +179,7 @@ class TestE2EBatch(unittest.TestCase):
         def test_file_name_validation_error(self):
             """Test FILE-NAME-VALIDATION error scenario."""
             monitor("test_file_name_validation_error")
-            input_file = generate_csv("PHYLIS", "0.3", "CREATE", "RSV", "YGM41", file_key=True)
+            input_file = generate_csv("PHYLIS", "0.3", action_flag="CREATE", file_key=True)
 
             key = upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
             self.uploaded_files.append(key)
@@ -202,7 +194,7 @@ class TestE2EBatch(unittest.TestCase):
         def test_header_name_validation_error(self):
             """Test HEADER-NAME-VALIDATION error scenario."""
             monitor("test_header_name_validation_error")
-            input_file = generate_csv("PHYLIS", "0.3", "CREATE", "RSV", "YGM41", headers="NH_NUMBER")
+            input_file = generate_csv("PHYLIS", "0.3", action_flag="CREATE", headers="NH_NUMBER")
 
             key = upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
             self.uploaded_files.append(key)
@@ -224,7 +216,7 @@ class TestE2EBatch(unittest.TestCase):
             upload_config_file("MMR_FULL")  # permissions_config.json is updated here
             time.sleep(20)
 
-            input_file = generate_csv("PHYLIS", "0.3", "CREATE", "RSV", "YGM41")
+            input_file = generate_csv("PHYLIS", "0.3", action_flag="CREATE")
 
             key = upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
             self.uploaded_files.append(key)
