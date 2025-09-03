@@ -88,6 +88,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
                     vaccine_type=VaccineTypes.covid_19,
                 )
                 expected_imms_resource["id"] = imms_id
+                expected_imms_resource["meta"] = {"versionId": "1"}
 
                 # When
                 response = imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.covid_19)
