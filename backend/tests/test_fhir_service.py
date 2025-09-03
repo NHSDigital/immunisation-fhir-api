@@ -354,19 +354,18 @@ class TestGetImmunizationIdentifier(unittest.TestCase):
         self.authoriser.authorise.return_value = True
         self.imms_repo.get_immunization_by_identifier.return_value = {
             "resource": mock_resource,
-            "id": identifier,
+            "id": imms_id,
             "version": 1
         }, "covid19"
 
         # When
-        service_resp = self.fhir_service.get_immunization_by_identifier(imms, self.MOCK_SUPPLIER_NAME, identifier,
+        service_resp = self.fhir_service.get_immunization_by_identifier(imms_id, self.MOCK_SUPPLIER_NAME, identifier,
                                                                         element)
 
         # Then
-        self.imms_repo.get_immunization_by_identifier.assert_called_once_with(imms)
+        self.imms_repo.get_immunization_by_identifier.assert_called_once_with(imms_id)
         self.authoriser.authorise.assert_called_once_with(self.MOCK_SUPPLIER_NAME, ApiOperationCode.SEARCH, {"covid19"})
         self.assertEqual(service_resp["resourceType"], "Bundle")
-        self.assertEqual(act_imms["resourceType"], "Bundle")
         self.assertEqual(service_resp.get("type"), "searchset")
         self.assertIn("entry", service_resp)
         self.assertEqual(len(service_resp["entry"]), 1)
