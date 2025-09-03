@@ -140,29 +140,29 @@ def create_diagnostics_error(value):
     exp_error = {"diagnostics": diagnostics}
     return exp_error
 
-def empty_bundle(self_url: str) -> Dict[str, Any]:
+def make_empty_bundle(self_url: str) -> Dict[str, Any]:
     return {
         "resourceType": "Bundle",
         "type": "searchset",
         "link": [{"relation": "self", "url": self_url}],
-        "total": 0,
         "entry": [],
+        "total": 0, 
     }
 
 def form_json(response, _elements, identifier, baseurl):
     self_url = f"{baseurl}?identifier={identifier}" + (f"&_elements={_elements}" if _elements else "")
 
     if not response:
-        return empty_bundle(self_url)
+        return make_empty_bundle(self_url)
 
     meta = {"versionId": response["version"]} if "version" in response else {}
 
     # Full Immunization payload to be returned if only the identifier parameter was provided and truncated when _elements is used
     if _elements:
-        element = {e.strip().lower() for e in _elements.split(",") if e.strip()}
+        elements = {e.strip().lower() for e in _elements.split(",") if e.strip()}
         resource = {"resourceType": "Immunization"}
-        if "id" in element: resource["id"] = response["id"]
-        if "meta" in element and meta: resource["meta"] = meta
+        if "id" in elements: resource["id"] = response["id"]
+        if "meta" in elements and meta: resource["meta"] = meta
 
     else:
         resource = response["resource"]
@@ -179,7 +179,7 @@ def form_json(response, _elements, identifier, baseurl):
         entry=[entry], 
         total=1)
 
-
+    # Reassigned total to ensure it appears last in the response to match expected output
     data = json.loads(fhir_bundle.json(by_alias=True))
     data["total"] = data.pop("total")
     return data

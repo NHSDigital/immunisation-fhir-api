@@ -337,6 +337,14 @@ class TestGetImmunizationIdentifier(unittest.TestCase):
         self.imms_repo.get_immunization_by_identifier.assert_called_once_with(imms_id, "COVID19.S")
 
         self.assertEqual(act_imms["resourceType"], "Bundle")
+        self.assertEqual(service_resp.get("type"), "searchset")
+        self.assertIn("entry", service_resp)
+        self.assertEqual(len(service_resp["entry"]), 1)
+        self.assertIn("total", service_resp)
+        self.assertEqual(service_resp["total"], 1)
+        res = service_resp["entry"][0]["resource"]
+        self.assertEqual(res["resourceType"], "Immunization")
+        self.assertEqual(res["id"], imms_id)
 
     def test_immunization_not_found(self):
         """it should return None if Immunization doesn't exist"""
