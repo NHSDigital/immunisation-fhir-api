@@ -767,7 +767,7 @@ class TestDeleteImmunization(TestFhirServiceBase):
         self.authoriser.authorise.assert_called_once_with("Test", ApiOperationCode.DELETE, {"FLU"})
 
 
-class TestSearchImmunizations(unittest.TestCase):
+class TestSearchImmunizations(TestFhirServiceBase):
     """Tests for FhirService.search_immunizations"""
     MOCK_SUPPLIER_SYSTEM_NAME = "Test"
 
@@ -1100,7 +1100,7 @@ class TestSearchImmunizations(unittest.TestCase):
         for i, entry in enumerate(entries):
             self.assertEqual(
                 entry.fullUrl,
-                f"https://api.service.nhs.uk/immunisation-fhir-api/Immunization/{imms_ids[i]}",
+                f"https://internal-dev.api.service.nhs.uk/immunisation-fhir-api/Immunization/{imms_ids[i]}",
             )
 
     def test_patient_contains_fullUrl(self):

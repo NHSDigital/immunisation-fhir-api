@@ -366,7 +366,7 @@ class FhirService:
             BundleEntry(
                 resource=Immunization.parse_obj(imms),
                 search=BundleEntrySearch(mode="match"),
-                fullUrl=f"https://api.service.nhs.uk/immunisation-fhir-api/Immunization/{imms['id']}",
+                fullUrl=f"{get_service_url()}/Immunization/{imms['id']}",
             )
             for imms in resources_filtered_for_search
         ]
