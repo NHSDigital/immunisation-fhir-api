@@ -1,8 +1,15 @@
 """Generic utilities"""
 
 import datetime
-
-from typing import Literal, Union, Optional
+import json
+from typing import Literal, Union, Optional, Dict, Any
+from fhir.resources.R4B.bundle import (
+    Bundle as FhirBundle,
+    BundleEntry,
+    BundleLink,
+    BundleEntrySearch,
+)
+from fhir.resources.R4B.immunization import Immunization
 from models.constants import Constants
 import urllib.parse
 import base64
@@ -123,7 +130,6 @@ def create_diagnostics():
     exp_error = {"diagnostics": diagnostics}
     return exp_error
 
-
 def create_diagnostics_error(value):
     if value == "Both":
         diagnostics = (
@@ -134,46 +140,49 @@ def create_diagnostics_error(value):
     exp_error = {"diagnostics": diagnostics}
     return exp_error
 
-
-def form_json(response, _element, identifier, baseurl):
-    self_url = f"{baseurl}?identifier={identifier}" + (f"&_elements={_element}" if _element else "")
-    json = {
-            "resourceType": "Bundle",
-            "type": "searchset",
-            "link": [
-                {"relation": "self", "url": self_url}
-            ]
+def make_empty_bundle(self_url: str) -> Dict[str, Any]:
+    return {
+        "resourceType": "Bundle",
+        "type": "searchset",
+        "link": [{"relation": "self", "url": self_url}],
+        "entry": [],
+        "total": 0, 
     }
+
+def form_json(response, _elements, identifier, baseurl):
+    self_url = f"{baseurl}?identifier={identifier}" + (f"&_elements={_elements}" if _elements else "")
+
     if not response:
-        json["entry"] = []
-        json["total"] = 0
-        return json
+        return make_empty_bundle(self_url)
 
-    # Full Immunization payload to be returned if only the identifier parameter was provided
-    if identifier and not _element:
-        resource = response["resource"]
+    meta = {"versionId": response["version"]} if "version" in response else {}
 
-    elif identifier and _element:
-        element = {e.strip().lower() for e in _element.split(",") if e.strip()}
+    # Full Immunization payload to be returned if only the identifier parameter was provided and truncated when _elements is used
+    if _elements:
+        elements = {e.strip().lower() for e in _elements.split(",") if e.strip()}
         resource = {"resourceType": "Immunization"}
+        if "id" in elements: resource["id"] = response["id"]
+        if "meta" in elements and meta: resource["meta"] = meta
 
-        # Add 'id' if specified
-        if "id" in element:
-            resource["id"] = response["id"]
+    else:
+        resource = response["resource"]
+        resource["meta"] = meta
 
-        # Add 'meta' if specified
-        if "meta" in element:
-            resource["id"] = response["id"]
-            resource["meta"] = {"versionId": response["version"]}
+    entry = BundleEntry(fullUrl=f"{baseurl}/{response['id']}",
+        resource=Immunization.construct(**resource) if _elements else Immunization.parse_obj(resource),
+        search=BundleEntrySearch.construct(mode="match") if not _elements else None,
+    )
 
-    json["entry"] = [{
-        "fullUrl": f"https://api.service.nhs.uk/immunisation-fhir-api/Immunization/{response['id']}",
-        "resource": resource,
-            }
-        ]
-    json["total"] = 1
-    return json
+    fhir_bundle = FhirBundle(
+        resourceType="Bundle", type="searchset", 
+        link = [BundleLink(relation="self", url=self_url)], 
+        entry=[entry], 
+        total=1)
 
+    # Reassigned total to ensure it appears last in the response to match expected output
+    data = json.loads(fhir_bundle.json(by_alias=True))
+    data["total"] = data.pop("total")
+    return data
 
 def check_keys_in_sources(event, not_required_keys):
     # Decode and parse the body, assuming it is JSON and base64-encoded
