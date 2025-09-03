@@ -1,4 +1,3 @@
-from urllib import response
 from responses import logger
 import simplejson as json
 import os
@@ -10,13 +9,11 @@ from typing import Optional, Tuple
 import boto3
 import botocore.exceptions
 from boto3.dynamodb.conditions import Attr, Key
-from models.utils.permission_checker import ApiOperationCode, validate_permissions
 from botocore.config import Config
 from models.errors import (
     ResourceNotFoundError,
     UnhandledResponseError,
     IdentifierDuplicationError,
-    UnauthorizedVaxError,
 )
 from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
 
@@ -87,28 +84,25 @@ class ImmunizationRepository:
     def __init__(self, table: Table):
         self.table = table
 
-    def get_immunization_by_identifier(
-        self, identifier_pk: str, imms_vax_type_perms: list[str]
-    ) -> Optional[dict]:
+    def get_immunization_by_identifier(self, identifier_pk: str) -> tuple[Optional[dict], Optional[str]]:
         response = self.table.query(
             IndexName="IdentifierGSI", KeyConditionExpression=Key("IdentifierPK").eq(identifier_pk)
         )
+
         if "Items" in response and len(response["Items"]) > 0:
             item = response["Items"][0]
             vaccine_type = self._vaccine_type(item["PatientSK"])
-            if not validate_permissions(imms_vax_type_perms,ApiOperationCode.SEARCH, [vaccine_type]):
-                raise UnauthorizedVaxError()
             resource = json.loads(item["Resource"])
             version = int(response["Items"][0]["Version"])
             return {
                 "resource": resource,
                 "id": resource.get("id"),
                 "version": version
-            }
+            }, vaccine_type
         else:
-            return None
+            return None, None
 
-    def get_immunization_by_id(self, imms_id: str, imms_vax_type_perms: str) -> Optional[dict]:
+    def get_immunization_by_id(self, imms_id: str) -> Optional[dict]:
         response = self.table.get_item(Key={"PK": _make_immunization_pk(imms_id)})
         item = response.get("Item")
 
@@ -117,12 +111,6 @@ class ImmunizationRepository:
         if item.get("DeletedAt") and item["DeletedAt"] != "reinstated":
             return None
 
-        # Get vaccine type + validate permissions
-        vaccine_type = self._vaccine_type(item["PatientSK"])
-        if not validate_permissions(imms_vax_type_perms, ApiOperationCode.READ, [vaccine_type]):
-            raise UnauthorizedVaxError()
-
-        # Build response
         return {
             "Resource": json.loads(item["Resource"]),
             "Version": item["Version"]
@@ -161,14 +149,11 @@ class ImmunizationRepository:
         else:
             return None
 
-    def create_immunization(
-        self, immunization: dict, patient: any, imms_vax_type_perms, supplier_system
-    ) -> dict:
+    def create_immunization(self, immunization: dict, patient: any, supplier_system: str) -> dict:
         new_id = str(uuid.uuid4())
         immunization["id"] = new_id
         attr = RecordAttributes(immunization, patient)
-        if not validate_permissions(imms_vax_type_perms,ApiOperationCode.CREATE, [attr.vaccine_type]):
-            raise UnauthorizedVaxError()
+
         query_response = _query_identifier(self.table, "IdentifierGSI", "IdentifierPK", attr.identifier)
 
         if query_response is not None:
@@ -198,11 +183,9 @@ class ImmunizationRepository:
         immunization: dict,
         patient: any,
         existing_resource_version: int,
-        imms_vax_type_perms: list[str],
         supplier_system: str,
     ) -> tuple[dict, int]:
         attr = RecordAttributes(immunization, patient)
-        self._handle_permissions(imms_vax_type_perms, attr)
         update_exp = self._build_update_expression(is_reinstate=False)
 
         self._check_duplicate_identifier(attr)
@@ -223,12 +206,9 @@ class ImmunizationRepository:
         immunization: dict,
         patient: any,
         existing_resource_version: int,
-        imms_vax_type_perms: list[str],
         supplier_system: str,
-
     ) -> tuple[dict, int]:
         attr = RecordAttributes(immunization, patient)
-        self._handle_permissions(imms_vax_type_perms, attr)
         update_exp = self._build_update_expression(is_reinstate=True)
 
         self._check_duplicate_identifier(attr)
@@ -249,11 +229,9 @@ class ImmunizationRepository:
         immunization: dict,
         patient: any,
         existing_resource_version: int,
-        imms_vax_type_perms: list[str],
         supplier_system: str,
     ) -> tuple[dict, int]:
         attr = RecordAttributes(immunization, patient)
-        self._handle_permissions(imms_vax_type_perms, attr)
         update_exp = self._build_update_expression(is_reinstate=False)
 
         self._check_duplicate_identifier(attr)
@@ -267,9 +245,6 @@ class ImmunizationRepository:
             deleted_at_required=True,
             update_reinstated=True,
         )
-
-    def _handle_permissions(self, imms_vax_type_perms: list[str], attr: RecordAttributes):
-        validate_permissions(imms_vax_type_perms, ApiOperationCode.UPDATE, [attr.vaccine_type])
 
     def _build_update_expression(self, is_reinstate: bool) -> str:
         if is_reinstate:
@@ -354,21 +329,10 @@ class ImmunizationRepository:
                     response=error.response,
                 )
 
-    def delete_immunization(
-            self, imms_id: str, imms_vax_type_perms: str, supplier_system: str) -> dict:
+    def delete_immunization(self, imms_id: str, supplier_system: str) -> dict:
         now_timestamp = int(time.time())
 
         try:
-            item = self.table.get_item(Key={"PK": _make_immunization_pk(imms_id)}).get("Item")
-            if not item:
-                raise ResourceNotFoundError(resource_type="Immunization", resource_id=imms_id)
-
-            if not item.get("DeletedAt") or item.get("DeletedAt") == "reinstated":
-                vaccine_type = self._vaccine_type(item["PatientSK"])
-                if not validate_permissions(imms_vax_type_perms, ApiOperationCode.DELETE, [vaccine_type]):
-                    raise UnauthorizedVaxError()
-
-            # Proceed with delete update
             response = self.table.update_item(
                 Key={"PK": _make_immunization_pk(imms_id)},
                 UpdateExpression=(
@@ -396,14 +360,14 @@ class ImmunizationRepository:
                     response=error.response,
                 )
 
-    def find_immunizations(self, patient_identifier: str, vaccine_types: list):
+    def find_immunizations(self, patient_identifier: str, vaccine_types: set):
         """it should find all of the specified patient's Immunization events for all of the specified vaccine_types"""
         condition = Key("PatientPK").eq(_make_patient_pk(patient_identifier))
         is_not_deleted = Attr("DeletedAt").not_exists() | Attr("DeletedAt").eq("reinstated")
 
         raw_items = self.get_all_items(condition, is_not_deleted)
 
-        if raw_items:    
+        if raw_items:
             # Filter the response to contain only the requested vaccine types
             items = [x for x in raw_items if x["PatientSK"].split("#")[0] in vaccine_types]
 
@@ -432,7 +396,7 @@ class ImmunizationRepository:
             response = self.table.query(**query_args)
             if "Items" not in response:
                 raise UnhandledResponseError(message="No Items in DynamoDB response", response=response)
-  
+
             items = response.get("Items", [])
             all_items.extend(items)
 
