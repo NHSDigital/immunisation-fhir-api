@@ -6,6 +6,7 @@ from utils.base_test import ImmunizationBaseTest
 from utils.constants import valid_nhs_number1, valid_nhs_number2, valid_patient_identifier2, valid_patient_identifier1
 from utils.resource import generate_imms_resource, generate_filtered_imms_resource
 from utils.mappings import VaccineTypes
+from utils.resource import get_service_url
 
 
 class TestSearchImmunization(ImmunizationBaseTest):
@@ -131,7 +132,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
                 expected_imms_resource["patient"]["reference"] = response_patient["fullUrl"]
                 response_imm = next(item for item in entries if item["resource"]["id"] == imms_id)
                 self.assertEqual(
-                    response_imm["fullUrl"], f"https://api.service.nhs.uk/immunisation-fhir-api/Immunization/{imms_id}"
+                    response_imm["fullUrl"], f"https://{get_service_url()}/Immunization/{imms_id}"
                 )
                 self.assertEqual(response_imm["search"], {"mode": "match"})
                 self.assertEqual(response_imm["resource"], expected_imms_resource)

@@ -171,3 +171,15 @@ def delete_imms_records(identifiers: list[str]) -> None:
                 f"[teardown warning] Deleted {success_count} records out of {total}, "
                 f"failed to delete {failure_count}"
             )
+def get_service_url(
+    service_env: str = os.getenv("IMMUNIZATION_ENV"),
+    service_base_path: str = os.getenv("IMMUNIZATION_BASE_PATH"),
+):
+    non_prod = ["internal-dev", "int", "sandbox"]
+    if service_env in non_prod:
+        subdomain = f"{service_env}."
+    elif service_env == "prod":
+        subdomain = ""
+    else:
+        subdomain = "internal-dev."
+    return f"https://{subdomain}api.service.nhs.uk/{service_base_path}"
