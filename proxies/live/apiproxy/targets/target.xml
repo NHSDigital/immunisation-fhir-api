@@ -12,7 +12,7 @@
         <Name>VerifyAPIKey.CustomAttributes</Name>
       </Step>
       <Step>
-        <Name>AssignMessage.AddAuthorizationHeaders</Name>
+        <Name>AssignMessage.AddSupplierSystemHeader</Name>
       </Step>
     </Request>
   </PreFlow>
