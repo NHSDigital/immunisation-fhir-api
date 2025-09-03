@@ -13,7 +13,7 @@ from common.mappings import ActionFlag, Operation, EventName
 MOCK_ENV_VARS = {
     "AWS_SQS_QUEUE_URL": "https://sqs.eu-west-2.amazonaws.com/123456789012/test-queue",
     "DELTA_TABLE_NAME": "immunisation-batch-internal-dev-audit-test-table",
-    "DELTA_TTL": "14",
+    "DELTA_TTL_DAYS": "14",
     "SOURCE": "test-source",
 }
 request_json_data = ValuesForTests.json_data
@@ -115,8 +115,8 @@ class TestConvertToFlatJson(unittest.TestCase):
             self.assertIn(key, filtered_items[0], f"{key} is missing")
             self.assertEqual(filtered_items[0][key], expected_value, f"{key} mismatch")
 
-        # Check that the value of ExpiresAt is DELTA_TTL days after DateTimeStamp
-        expected_seconds = int(os.environ["DELTA_TTL"]) * 24 * 60 * 60
+        # Check that the value of ExpiresAt is DELTA_TTL_DAYS after DateTimeStamp
+        expected_seconds = int(os.environ["DELTA_TTL_DAYS"]) * 24 * 60 * 60
         date_time = int(datetime.fromisoformat(unfiltered_items[0]["DateTimeStamp"]).timestamp())
         expires_at = unfiltered_items[0]["ExpiresAt"]
         self.assertEqual(expires_at - date_time, expected_seconds)

@@ -138,7 +138,7 @@ resource "aws_lambda_function" "delta_sync_lambda" {
   environment {
     variables = {
       DELTA_TABLE_NAME     = aws_dynamodb_table.delta-dynamodb-table.name
-      DELTA_TTL            = 30
+      DELTA_TTL_DAYS       = 30
       AWS_SQS_QUEUE_URL    = aws_sqs_queue.dlq.id
       SOURCE               = "IEDS"
       SPLUNK_FIREHOSE_NAME = module.splunk.firehose_stream_name
