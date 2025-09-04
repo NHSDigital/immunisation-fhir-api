@@ -2,6 +2,9 @@
   {
     "supplier": "DPSFULL",
     "permissions": [
+      "FLU.CRUDS",
+      "HPV.CRUDS",
+      "MMR.CRUDS",
       "RSV.CRUDS"
     ],
     "ods_codes": ["DPSFULL"]
@@ -9,6 +12,9 @@
   {
     "supplier": "DPSREDUCED",
     "permissions": [
+      "FLU.CRUDS",
+      "HPV.CRUDS",
+      "MMR.CRUDS",
       "RSV.CRUDS"
     ],
     "ods_codes": ["DPSREDUCED"]
@@ -17,6 +23,17 @@
     "supplier": "RAVS",
     "permissions": ["RSV.RS"],
     "ods_codes": ["X26", "X8E5B"]
+  },
+  {
+    "supplier": "TPP",
+    "permissions": [
+      "3IN1.CRUDS",
+      "HPV.CRUDS",
+      "MENACWY.CRUDS",
+      "MMR.CRUDS",
+      "RSV.CRUDS"
+    ],
+    "ods_codes": ["YGA"]
   },
   {
     "supplier": "PINNACLE",
@@ -77,10 +94,6 @@
   {
     "supplier": "EMIS",
     "ods_codes": ["YGM41", "YGJ"]
-  },
-  {
-    "supplier": "TPP",
-    "ods_codes": ["YGA"]
   },
   {
     "supplier": "MEDICUS",
