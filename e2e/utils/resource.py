@@ -185,7 +185,8 @@ def get_service_url(
         subdomain = ""
     else:
         subdomain = "internal-dev."
-        
-    service_base_path = re.sub(r"immunisation-fhir-api/FHIR/R4-pr-(\d+)", r"immunisation-fhir-api-pr-\1", service_base_path)
-    
+
+    service_base_path = re.sub(r"immunisation-fhir-api/FHIR/R4-pr-(\d+)",
+                               r"immunisation-fhir-api-pr-\1", service_base_path)
+
     return f"{subdomain}api.service.nhs.uk/{service_base_path}"
