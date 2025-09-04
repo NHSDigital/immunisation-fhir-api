@@ -8,7 +8,7 @@ NOTE: The expected file format for incoming files from the data sources bucket i
 
 import argparse
 from uuid import uuid4
-from utils_for_filenameprocessor import get_created_at_formatted_string, move_file
+from utils_for_filenameprocessor import get_creation_and_expiry_times, move_file
 from file_key_validation import validate_file_key, is_file_in_directory_root
 from send_sqs_message import make_and_send_sqs_message
 from make_and_upload_ack_file import make_and_upload_the_ack_file
@@ -63,17 +63,17 @@ def handle_record(record) -> dict:
 
     try:
         message_id = str(uuid4())
-        created_at_formatted_string = get_created_at_formatted_string(bucket_name, file_key)
+        created_at_formatted_string, expiry_timestamp = get_creation_and_expiry_times(bucket_name, file_key)
 
         vaccine_type, supplier = validate_file_key(file_key)
         permissions = validate_vaccine_type_permissions(vaccine_type=vaccine_type, supplier=supplier)
 
         queue_name = f"{supplier}_{vaccine_type}"
         upsert_audit_table(
-            message_id, file_key, created_at_formatted_string, queue_name, FileStatus.QUEUED
+            message_id, file_key, created_at_formatted_string, expiry_timestamp, queue_name, FileStatus.QUEUED
         )
         make_and_send_sqs_message(
-            file_key, message_id, permissions, vaccine_type, supplier, created_at_formatted_string
+            file_key, message_id, permissions, vaccine_type, supplier, created_at_formatted_string, expiry_timestamp
         )
 
         logger.info("Lambda invocation successful for file '%s'", file_key)
@@ -100,7 +100,7 @@ def handle_record(record) -> dict:
 
         queue_name = f"{supplier}_{vaccine_type}"
         upsert_audit_table(
-            message_id, file_key, created_at_formatted_string, queue_name, FileStatus.PROCESSED
+            message_id, file_key, created_at_formatted_string, expiry_timestamp, queue_name, FileStatus.PROCESSED
         )
 
         # Create ack file

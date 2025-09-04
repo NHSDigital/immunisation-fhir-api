@@ -14,6 +14,7 @@ from errors import (
 
 SOURCE_BUCKET_NAME = os.getenv("SOURCE_BUCKET_NAME")
 AUDIT_TABLE_NAME = os.getenv("AUDIT_TABLE_NAME")
+AUDIT_TABLE_TTL_DAYS = os.getenv("AUDIT_TABLE_TTL_DAYS")
 VALID_VERSIONS = ["V5"]
 
 SUPPLIER_PERMISSIONS_HASH_KEY = "supplier_permissions"
@@ -48,3 +49,4 @@ class AuditTableKeys(StrEnum):
     QUEUE_NAME = "queue_name"
     STATUS = "status"
     TIMESTAMP = "timestamp"
+    EXPIRES_AT = "expires_at"

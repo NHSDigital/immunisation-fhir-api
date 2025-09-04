@@ -16,6 +16,7 @@ fixed_datetime = datetime(2024, 10, 29, 12, 0, 0)
 # NOTE That that file details for files numbered anything other than one will have a different
 # created_at_formatted_string (the final digit of the year will be the file number, rather than '1')
 MOCK_CREATED_AT_FORMATTED_STRING = "20010101T00000000"
+MOCK_EXPIRES_AT = 947808000
 
 
 class FileDetails:
@@ -33,6 +34,7 @@ class FileDetails:
         self.queue_name = f"{self.supplier}_{self.vaccine_type}"
 
         self.created_at_formatted_string = f"200{file_number}0101T00000000"
+        self.expires_at = 947808000
         self.message_id = f"{self.supplier}_{self.vaccine_type}_test_id_{file_number}"
         self.name = f"{self.vaccine_type}/ {self.supplier} file"
 
@@ -52,6 +54,7 @@ class FileDetails:
             "filename": self.file_key,
             "permission": self.permissions_list,
             "created_at_formatted_string": self.created_at_formatted_string,
+            "expires_at": self.expires_at,
         }
 
         # NOTE THAT AUDIT_TABLE_ENTRY IS MISSING THE FILE STATUS - THIS MUST BE SPECIFIED AT THE TIME THE ENTRY
@@ -61,6 +64,7 @@ class FileDetails:
             AuditTableKeys.FILENAME: {"S": self.file_key},
             AuditTableKeys.QUEUE_NAME: {"S": self.queue_name},
             AuditTableKeys.TIMESTAMP: {"S": self.created_at_formatted_string},
+            AuditTableKeys.EXPIRES_AT: {"N": str(self.expires_at)},
         }
 
 

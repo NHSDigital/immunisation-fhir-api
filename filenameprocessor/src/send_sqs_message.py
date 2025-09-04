@@ -32,7 +32,8 @@ def make_and_send_sqs_message(
     permission: list[str],
     vaccine_type: str,
     supplier: str,
-    created_at_formatted_string: str
+    created_at_formatted_string: str,
+    expires_at: int
 ) -> None:
     """Attempts to send a message to the SQS queue. Raises an exception if the message is not successfully sent."""
     message_body = {
@@ -42,6 +43,7 @@ def make_and_send_sqs_message(
         "filename": file_key,
         "permission": permission,
         "created_at_formatted_string": created_at_formatted_string,
+        "expires_at": expires_at,
     }
 
     send_to_supplier_queue(message_body, vaccine_type, supplier)
