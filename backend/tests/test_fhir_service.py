@@ -767,7 +767,7 @@ class TestDeleteImmunization(TestFhirServiceBase):
         self.authoriser.authorise.assert_called_once_with("Test", ApiOperationCode.DELETE, {"FLU"})
 
 
-class TestSearchImmunizations(TestFhirServiceBase):
+class TestSearchImmunizations(unittest.TestCase):
     """Tests for FhirService.search_immunizations"""
     MOCK_SUPPLIER_SYSTEM_NAME = "Test"
 
