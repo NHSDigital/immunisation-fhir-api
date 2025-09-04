@@ -1,5 +1,4 @@
 import json
-import re
 import os
 import uuid
 import boto3
@@ -172,4 +171,3 @@ def delete_imms_records(identifiers: list[str]) -> None:
                 f"[teardown warning] Deleted {success_count} records out of {total}, "
                 f"failed to delete {failure_count}"
             )
-
