@@ -1100,7 +1100,7 @@ class TestSearchImmunizations(TestFhirServiceBase):
         for i, entry in enumerate(entries):
             self.assertEqual(
                 entry.fullUrl,
-                f"https://internal-dev.api.service.nhs.uk/immunisation-fhir-api/Immunization/{imms_ids[i]}",
+                f"https://internal-dev.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/{imms_ids[i]}",
             )
 
     def test_patient_contains_fullUrl(self):

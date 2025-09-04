@@ -2,6 +2,7 @@ import logging
 from uuid import uuid4
 import datetime
 import os
+import re
 from enum import Enum
 from typing import Optional, Union
 
@@ -43,6 +44,9 @@ def get_service_url(
         subdomain = ""
     else:
         subdomain = "internal-dev."
+
+    service_base_path = re.sub(r"immunisation-fhir-api(-pr-\d+)?", r"immunisation-fhir-api/FHIR/R4\1", service_base_path)
+
     return f"https://{subdomain}api.service.nhs.uk/{service_base_path}"
 
 
