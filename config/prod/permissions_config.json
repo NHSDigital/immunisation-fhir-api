@@ -25,6 +25,17 @@
     "ods_codes": ["X26", "X8E5B"]
   },
   {
+    "supplier": "EMIS",
+    "permissions": [
+      "3IN1.CRUDS",
+      "HPV.CRUDS",
+      "MENACWY.CRUDS",
+      "MMR.CRUDS",
+      "RSV.CRUDS"
+    ],
+    "ods_codes": ["YGM41", "YGJ"]
+  },
+  {
     "supplier": "TPP",
     "permissions": [
       "3IN1.CRUDS",
@@ -34,6 +45,17 @@
       "RSV.CRUDS"
     ],
     "ods_codes": ["YGA"]
+  },
+  {
+    "supplier": "MEDICUS",
+    "permissions": [
+      "3IN1.CRUDS",
+      "HPV.CRUDS",
+      "MENACWY.CRUDS",
+      "MMR.CRUDS",
+      "RSV.CRUDS"
+    ],
+    "ods_codes": ["YGMYW"]
   },
   {
     "supplier": "PINNACLE",
@@ -90,13 +112,5 @@
   {
     "supplier": "MAVIS",
     "ods_codes": ["V0V8L"]
-  },
-  {
-    "supplier": "EMIS",
-    "ods_codes": ["YGM41", "YGJ"]
-  },
-  {
-    "supplier": "MEDICUS",
-    "ods_codes": ["YGMYW"]
   }
 ]
