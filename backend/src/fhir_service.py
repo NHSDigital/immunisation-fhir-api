@@ -32,8 +32,8 @@ logger = logging.getLogger()
 def get_service_url(service_env: str = None, service_base_path: str = None
  ) -> str:
     service_env: str = service_env if service_env is not None else os.getenv("IMMUNIZATION_ENV", "")
-    service_base_path: str = os.getenv("IMMUNIZATION_BASE_PATH")
-    
+    base_path: str = service_base_path or os.getenv("IMMUNIZATION_BASE_PATH")
+
     non_prod = ["internal-dev", "int", "sandbox"]
     if service_env in non_prod:
         subdomain = f"{service_env}."
@@ -42,7 +42,7 @@ def get_service_url(service_env: str = None, service_base_path: str = None
     else:
         subdomain = "internal-dev."
 
-    return f"https://{subdomain}api.service.nhs.uk/{service_base_path}"
+    return f"https://{subdomain}api.service.nhs.uk/{base_path}"
 
 
 class UpdateOutcome(Enum):
