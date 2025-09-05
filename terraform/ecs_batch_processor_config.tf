@@ -327,6 +327,7 @@ resource "aws_pipes_pipe" "fifo_pipe" {
           assign_public_ip = "ENABLED"
         }
       }
+	  
       overrides {
         container_override {
           cpu  = 2048
