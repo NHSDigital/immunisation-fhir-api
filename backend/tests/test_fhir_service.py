@@ -1109,10 +1109,6 @@ class TestSearchImmunizations(unittest.TestCase):
         """Patient must have a fullUrl consisting of its id.
         See http://hl7.org/fhir/R4B/bundle-definitions.html#Bundle.entry.fullUrl.
         Tested because fhir.resources validation doesn't check this as mandatory."""
-
-        print(f"IMMUNIZATION_ENV: {os.environ.get('IMMUNIZATION_ENV')}")
-        print(f"IMMUNIZATION_BASE_PATH: {os.environ.get('IMMUNIZATION_BASE_PATH')}")
-
         imms_ids = ["imms-1", "imms-2"]
         imms_list = [create_covid_19_immunization_dict(imms_id) for imms_id in imms_ids]
         self.imms_repo.find_immunizations.return_value = imms_list

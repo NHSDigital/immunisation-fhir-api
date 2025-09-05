@@ -33,7 +33,7 @@ logger = logging.getLogger()
 def get_service_url(service_env: str = None, service_base_path: str = None
  ) -> str:
     service_env: str = service_env if service_env is not None else os.getenv("IMMUNIZATION_ENV", "")
-    service_base_path: str = service_base_path if service_base_path else os.getenv("IMMUNIZATION_BASE_PATH")
+    service_base_path: str = os.getenv("IMMUNIZATION_BASE_PATH")
     
     non_prod = ["internal-dev", "int", "sandbox"]
     if service_env in non_prod:
