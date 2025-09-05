@@ -60,9 +60,13 @@ class TestRecordProcessor(unittest.TestCase):
         GenericTearDown(s3_client, firehose_client, kinesis_client)
 
     @staticmethod
-    def upload_source_files(source_file_content):  # pylint: disable=dangerous-default-value
-        """Uploads a test file with the TEST_FILE_KEY (RSV EMIS file) the given file content to the source bucket"""
-        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=mock_rsv_emis_file.file_key, Body=source_file_content)
+    def upload_source_files(
+        source_file_content: str,
+        file_key: str = mock_rsv_emis_file.file_key
+    ):
+        """Uploads a test file with the TEST_FILE_KEY (RSV EMIS file as default) and the given file content to the
+        source bucket"""
+        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=file_key, Body=source_file_content)
 
     @staticmethod
     def get_shard_iterator():
@@ -96,7 +100,7 @@ class TestRecordProcessor(unittest.TestCase):
 
         self.assertEqual(actual_rows, [InfAckFileRows.HEADERS, expected_row])
 
-    def make_kinesis_assertions(self, test_cases):
+    def make_kinesis_assertions(self, test_cases, file_details: FileDetails = mock_rsv_emis_file):
         """
         The input is a list of test_case tuples where each tuple is structured as
         (test_name, index, expected_kinesis_data_ignoring_fhir_json, expect_success).
@@ -122,7 +126,7 @@ class TestRecordProcessor(unittest.TestCase):
             with self.subTest(test_name):
 
                 kinesis_record = kinesis_records[index]
-                self.assertEqual(kinesis_record["PartitionKey"], mock_rsv_emis_file.queue_name)
+                self.assertEqual(kinesis_record["PartitionKey"], file_details.queue_name)
                 self.assertEqual(kinesis_record["SequenceNumber"], f"{index+1}")
 
                 # Ensure that arrival times are sequential
@@ -132,11 +136,11 @@ class TestRecordProcessor(unittest.TestCase):
 
                 kinesis_data = json.loads(kinesis_record["Data"].decode("utf-8"), parse_float=Decimal)
                 expected_kinesis_data = {
-                    "row_id": f"{mock_rsv_emis_file.message_id}^{index+1}",
-                    "file_key": mock_rsv_emis_file.file_key,
-                    "supplier": mock_rsv_emis_file.supplier,
-                    "vax_type": mock_rsv_emis_file.vaccine_type,
-                    "created_at_formatted_string": mock_rsv_emis_file.created_at_formatted_string,
+                    "row_id": f"{file_details.message_id}^{index+1}",
+                    "file_key": file_details.file_key,
+                    "supplier": file_details.supplier,
+                    "vax_type": file_details.vaccine_type,
+                    "created_at_formatted_string": file_details.created_at_formatted_string,
                     **expected_kinesis_data,
                 }
                 if expect_success and "fhir_json" not in expected_kinesis_data:
@@ -370,7 +374,7 @@ class TestRecordProcessor(unittest.TestCase):
 
         main(mock_rsv_emis_file.event_full_permissions)
 
-        # Assertion case tuples are stuctured as
+        # Assertion case tuples are structured as
         # (test_name, index, expected_kinesis_data_ignoring_fhir_json,expect_success)
         assertion_cases = [
             (
@@ -386,6 +390,34 @@ class TestRecordProcessor(unittest.TestCase):
             "Received a file which was not utf-8 encoded: %s",
             mock_rsv_emis_file.file_key
         )
+
+    @patch("utils_for_recordprocessor.is_utf8")
+    def test_e2e_skips_encoding_check_for_internal_suppliers(self, mock_utf_checker):
+        """
+        VED-754 tests the handler successfully processes the file and skips the encoding check when the supplier is
+        internal e.g. DPS. This is because we know they will be using the desired utf-8 encoding and avoids the extra
+        processing time to validate the encoding. They will also be providing very large batch files so skipping this is
+        very important.
+        """
+        self.upload_source_files(ValidMockFileContent.with_new_dps_record, MockFileDetails.dps_flu.file_key)
+
+        main(MockFileDetails.dps_flu.event_full_permissions)
+
+        # Assertion case tuples are structured as
+        # (test_name, index, expected_kinesis_data_ignoring_fhir_json,expect_success)
+        assertion_cases = [
+            (
+                "CREATE success",
+                0,
+                {"operation_requested": "CREATE", "local_id": "DPS_ID_1234^DPS_SYSTEM"},
+                True,
+            )
+        ]
+        self.make_inf_ack_assertions(file_details=MockFileDetails.dps_flu, passed_validation=True)
+        self.mock_util_logger.info.assert_not_called()
+        mock_utf_checker.assert_not_called()
+        self.make_kinesis_assertions(assertion_cases, file_details=MockFileDetails.dps_flu)
+        self.mock_util_logger.info.assert_not_called()
 
 
 if __name__ == "__main__":

@@ -78,7 +78,7 @@ def file_level_validation(incoming_message_body: dict) -> dict:
         created_at_formatted_string = incoming_message_body.get("created_at_formatted_string")
 
         # Fetch the data
-        csv_reader = get_csv_content_dict_reader(file_key)
+        csv_reader = get_csv_content_dict_reader(file_key, supplier)
 
         validate_content_headers(csv_reader)
 

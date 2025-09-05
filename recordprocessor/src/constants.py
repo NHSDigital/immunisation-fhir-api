@@ -48,6 +48,9 @@ EXPECTED_CSV_HEADERS = [
 ]
 
 
+INTERNAL_SUPPLIER_NAMES = {"DPSFULL", "DPSREDUCED"}
+
+
 class FileStatus:
     """File status constants"""
 
