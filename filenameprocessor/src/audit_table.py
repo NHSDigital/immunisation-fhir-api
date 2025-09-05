@@ -1,4 +1,5 @@
 """Add the filename to the audit table and check for duplicates."""
+from typing import Optional
 from clients import dynamodb_client, logger
 from errors import UnhandledAuditTableError
 from constants import AUDIT_TABLE_NAME, AuditTableKeys
@@ -10,23 +11,29 @@ def upsert_audit_table(
     created_at_formatted_str: str,
     expiry_timestamp: int,
     queue_name: str,
-    file_status: str
+    file_status: str,
+    error_details: Optional[str] = None
 ) -> None:
     """
     Updates the audit table with the file details
     """
+    audit_item = {
+        AuditTableKeys.MESSAGE_ID: {"S": message_id},
+        AuditTableKeys.FILENAME: {"S": file_key},
+        AuditTableKeys.QUEUE_NAME: {"S": queue_name},
+        AuditTableKeys.STATUS: {"S": file_status},
+        AuditTableKeys.TIMESTAMP: {"S": created_at_formatted_str},
+        AuditTableKeys.EXPIRES_AT: {"N": str(expiry_timestamp)}
+    }
+
+    if error_details is not None:
+        audit_item[AuditTableKeys.ERROR_DETAILS] = {"S": error_details}
+
     try:
         # Add to the audit table (regardless of whether it is a duplicate)
         dynamodb_client.put_item(
             TableName=AUDIT_TABLE_NAME,
-            Item={
-                AuditTableKeys.MESSAGE_ID: {"S": message_id},
-                AuditTableKeys.FILENAME: {"S": file_key},
-                AuditTableKeys.QUEUE_NAME: {"S": queue_name},
-                AuditTableKeys.STATUS: {"S": file_status},
-                AuditTableKeys.TIMESTAMP: {"S": created_at_formatted_str},
-                AuditTableKeys.EXPIRES_AT: {"N": str(expiry_timestamp)},
-            },
+            Item=audit_item,
             ConditionExpression="attribute_not_exists(message_id)",  # Prevents accidental overwrites
         )
         logger.info("%s file, with message id %s, successfully added to audit table", file_key, message_id)
