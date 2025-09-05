@@ -111,7 +111,6 @@ class TestSendSQSMessage(TestCase):
                 vaccine_type=FLU_EMIS_FILE_DETAILS.vaccine_type,
                 supplier=FLU_EMIS_FILE_DETAILS.supplier,
                 created_at_formatted_string=FLU_EMIS_FILE_DETAILS.created_at_formatted_string,
-                expires_at=FLU_EMIS_FILE_DETAILS.expires_at,
             )
         )
 
@@ -129,6 +128,5 @@ class TestSendSQSMessage(TestCase):
                 vaccine_type=FLU_EMIS_FILE_DETAILS.vaccine_type,
                 supplier=FLU_EMIS_FILE_DETAILS.supplier,
                 created_at_formatted_string=FLU_EMIS_FILE_DETAILS.created_at_formatted_string,
-                expires_at=FLU_EMIS_FILE_DETAILS.expires_at,
             )
         self.assertIn(NON_EXISTENT_QUEUE_ERROR_MESSAGE, str(context.exception))

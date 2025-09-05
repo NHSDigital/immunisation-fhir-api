@@ -54,7 +54,6 @@ class FileDetails:
             "filename": self.file_key,
             "permission": self.permissions_list,
             "created_at_formatted_string": self.created_at_formatted_string,
-            "expires_at": self.expires_at,
         }
 
         # NOTE THAT AUDIT_TABLE_ENTRY IS MISSING THE FILE STATUS - THIS MUST BE SPECIFIED AT THE TIME THE ENTRY
