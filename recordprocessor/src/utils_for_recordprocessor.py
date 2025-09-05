@@ -3,9 +3,9 @@
 import os
 import json
 from csv import DictReader
-from io import TextIOWrapper
+from io import BytesIO, TextIOWrapper
 from clients import s3_client, lambda_client, logger
-from constants import SOURCE_BUCKET_NAME, FILE_NAME_PROC_LAMBDA_NAME
+from constants import SOURCE_BUCKET_NAME, FILE_NAME_PROC_LAMBDA_NAME, INTERNAL_SUPPLIER_NAMES
 
 
 def get_environment() -> str:
@@ -15,12 +15,34 @@ def get_environment() -> str:
     return _env if _env in ["internal-dev", "int", "ref", "sandbox", "prod"] else "internal-dev"
 
 
-def get_csv_content_dict_reader(file_key: str) -> DictReader:
+def get_csv_content_dict_reader(file_key: str, supplier: str) -> DictReader:
     """Returns the requested file contents from the source bucket in the form of a DictReader"""
-    response = s3_client.get_object(Bucket=os.getenv("SOURCE_BUCKET_NAME"), Key=file_key)
-    binary_io = response["Body"]
-    text_io = TextIOWrapper(binary_io, encoding="utf-8", newline="")
+    response = s3_client.get_object(Bucket=SOURCE_BUCKET_NAME, Key=file_key)
+    s3_object_bytes_io = BytesIO(response["Body"].read())
+    encoding = "utf-8"
+
+    # Skip encoding check if supplier is internal e.g. DPS
+    if supplier not in INTERNAL_SUPPLIER_NAMES:
+        if not is_utf8(s3_object_bytes_io, file_key):
+            encoding = "windows-1252"
+
+    text_io = TextIOWrapper(s3_object_bytes_io, encoding=encoding, newline="")
     return DictReader(text_io, delimiter="|")
+
+
+def is_utf8(file_bytes: BytesIO, file_key: str) -> bool:
+    """Checks if the given file is UTF-8. VED-754 some suppliers may provide non UTF-8encoded CSV files
+    e.g. Windows-1252, so we need to know whether or not to fallback"""
+    for line in file_bytes:
+        try:
+            line.decode("utf-8")
+        except UnicodeDecodeError:
+            logger.info("Received a file which was not utf-8 encoded: %s", file_key)
+            file_bytes.seek(0)
+            return False
+
+    file_bytes.seek(0)
+    return True
 
 
 def create_diagnostics_dictionary(error_type, status_code, error_message) -> dict:
