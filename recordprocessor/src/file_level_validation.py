@@ -61,7 +61,7 @@ def move_file(bucket_name: str, source_file_key: str, destination_file_key: str)
 
 
 @file_level_validation_logging_decorator
-def file_level_validation(incoming_message_body: dict) -> dict:
+def file_level_validation(incoming_message_body: dict, encoding="utf-8") -> dict:
     """
     Validates that the csv headers are correct and that the supplier has permission to perform at least one of
     the requested operations. Uploads the inf ack file and moves the source file to the processing folder.
@@ -70,22 +70,16 @@ def file_level_validation(incoming_message_body: dict) -> dict:
     to reflect the file has been processed and the filename lambda is invoked with the next file in the queue.
     """
     try:
-        logger.info("SAW> file_level_validation...1")
         message_id = incoming_message_body.get("message_id")
-        logger.info("SAW> file_level_validation...2")
         vaccine = incoming_message_body.get("vaccine_type").upper()
-        logger.info("SAW> file_level_validation...3")
         supplier = incoming_message_body.get("supplier").upper()
-        logger.info("SAW> file_level_validation...4")
         file_key = incoming_message_body.get("filename")
-        logger.info("SAW> file_level_validation...5")
         permission = incoming_message_body.get("permission")
-        logger.info("SAW> file_level_validation...6")
         created_at_formatted_string = incoming_message_body.get("created_at_formatted_string")
-        logger.info("SAW> file_level_validation...7")
 
         # Fetch the data
-        csv_reader = get_csv_content_dict_reader(file_key)
+        # SAW Conversion ERROR here
+        csv_reader = get_csv_content_dict_reader(file_key, encoding)
         logger.info("SAW> file_level_validation...8")
 
         validate_content_headers(csv_reader)
