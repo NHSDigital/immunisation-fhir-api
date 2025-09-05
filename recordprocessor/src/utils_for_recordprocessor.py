@@ -4,7 +4,6 @@ import os
 import json
 from csv import DictReader
 from io import BytesIO, TextIOWrapper
-from botocore.response import StreamingBody
 from clients import s3_client, lambda_client, logger
 from constants import SOURCE_BUCKET_NAME, FILE_NAME_PROC_LAMBDA_NAME
 
@@ -19,10 +18,7 @@ def get_environment() -> str:
 def get_csv_content_dict_reader(file_key: str) -> DictReader:
     """Returns the requested file contents from the source bucket in the form of a DictReader"""
     response = s3_client.get_object(Bucket=SOURCE_BUCKET_NAME, Key=file_key)
-    s3_object_body: StreamingBody = response["Body"]
-    # Try to seek, otherwise fallback to creating 2 objects
-    # Should test in real AWS in addition to moto
-    s3_object_bytes_io = BytesIO(s3_object_body.read())
+    s3_object_bytes_io = BytesIO(response["Body"].read())
     encoding = "utf-8" if is_utf8(s3_object_bytes_io, file_key) else "windows-1252"
     text_io = TextIOWrapper(s3_object_bytes_io, encoding=encoding, newline="")
     return DictReader(text_io, delimiter="|")
