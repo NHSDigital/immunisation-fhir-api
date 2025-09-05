@@ -1,11 +1,16 @@
 """Utils for filenameprocessor lambda"""
+from datetime import timedelta
 from clients import s3_client, logger
+from constants import AUDIT_TABLE_TTL_DAYS
 
 
-def get_created_at_formatted_string(bucket_name: str, file_key: str) -> str:
-    """Get the created_at_formatted_string from the response"""
+def get_creation_and_expiry_times(bucket_name: str, file_key: str) -> (str, int):
+    """Get 'created_at_formatted_string' and 'expires_at' from the response"""
     response = s3_client.get_object(Bucket=bucket_name, Key=file_key)
-    return response["LastModified"].strftime("%Y%m%dT%H%M%S00")
+    creation_datetime = response["LastModified"]
+    expiry_datetime = creation_datetime + timedelta(days=int(AUDIT_TABLE_TTL_DAYS))
+    expiry_timestamp = int(expiry_datetime.timestamp())
+    return creation_datetime.strftime("%Y%m%dT%H%M%S00"), expiry_timestamp
 
 
 def move_file(bucket_name: str, source_file_key: str, destination_file_key: str) -> None:
