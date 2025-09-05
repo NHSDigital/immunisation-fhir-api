@@ -24,8 +24,7 @@ locals {
   imms_lambda_env_vars = {
     "DYNAMODB_TABLE_NAME"    = local.imms_table_name,
     "IMMUNIZATION_ENV"       = local.resource_scope,
-     SERVICE_BASE_PATH=immunisation-fhir-api/FHIR/R4-${{ inputs.sub_environment }}
-    "IMMUNIZATION_BASE_PATH" = strcontains(var.sub_environment, "pr-") ? "immunisation-fhir-api-/FHIR/R4-${var.sub_environment}" : "immunisation-fhir-api/FHIR/R4"
+    "IMMUNIZATION_BASE_PATH" = strcontains(var.sub_environment, "pr-") ? "immunisation-fhir-api/FHIR/R4-${var.sub_environment}" : "immunisation-fhir-api"
     # except for prod and ref, any other env uses PDS int environment
     "PDS_ENV"              = var.pds_environment
     "PDS_CHECK_ENABLED"    = tostring(var.pds_check_enabled)
