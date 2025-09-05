@@ -1,4 +1,4 @@
-from clients import logger
+from common.clients import logger
 from s3_event import S3EventRecord
 from redis_cacher import RedisCacher
 '''

@@ -8,7 +8,7 @@ import json
 import time
 from datetime import datetime
 from functools import wraps
-from clients import firehose_client, logger, STREAM_NAME
+from common.clients import firehose_client, logger, STREAM_NAME
 
 
 def send_log_to_firehose(log_data: dict) -> None:
