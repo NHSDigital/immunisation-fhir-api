@@ -2,37 +2,37 @@
   {
     "supplier": "DPSFULL",
     "permissions": [
+      "3IN1.CRUDS",
       "COVID19.CRUDS",
       "FLU.CRUDS",
-      "MMR.CRUDS",
-      "RSV.CRUDS",
       "HPV.CRUDS",
       "MENACWY.CRUDS",
-      "3IN1.CRUDS"
+      "MMR.CRUDS",
+      "RSV.CRUDS"
     ],
     "ods_codes": ["DPSFULL"]
   },
   {
     "supplier": "DPSREDUCED",
     "permissions": [
+      "3IN1.CRUDS",
       "COVID19.CRUDS",
       "FLU.CRUDS",
-      "MMR.CRUDS",
-      "RSV.CRUDS",
       "HPV.CRUDS",
       "MENACWY.CRUDS",
-      "3IN1.CRUDS"
+      "MMR.CRUDS",
+      "RSV.CRUDS"
     ],
     "ods_codes": ["DPSREDUCED"]
   },
   {
     "supplier": "MAVIS",
     "permissions": [
-      "HPV.CRUDS",
       "3IN1.CRUDS",
+      "FLU.CRUDS",
+      "HPV.CRUDS",
       "MENACWY.CRUDS",
-      "MMR.CRUDS",
-      "FLU.CRUDS"
+      "MMR.CRUDS"
     ],
     "ods_codes": ["V0V8L"]
   },
@@ -48,39 +48,39 @@
   },
   {
     "supplier": "RAVS",
-    "permissions": ["RSV.CRUDS", "MMR.CRUDS"],
+    "permissions": ["MMR.CRUDS", "RSV.CRUDS"],
     "ods_codes": ["X26", "X8E5B"]
   },
   {
     "supplier": "EMIS",
     "permissions": [
-      "RSV.CRUDS",
-      "MMR.CRUDS",
-      "HPV.CRUDS",
       "3IN1.CRUDS",
-      "MENACWY.CRUDS"
+      "HPV.CRUDS",
+      "MENACWY.CRUDS",
+      "MMR.CRUDS",
+      "RSV.CRUDS"
     ],
     "ods_codes": ["YGM41", "YGJ"]
   },
   {
     "supplier": "TPP",
     "permissions": [
-      "RSV.CRUDS",
-      "MMR.CRUDS",
-      "HPV.CRUDS",
       "3IN1.CRUDS",
-      "MENACWY.CRUDS"
+      "HPV.CRUDS",
+      "MENACWY.CRUDS",
+      "MMR.CRUDS",
+      "RSV.CRUDS"
     ],
     "ods_codes": ["YGA"]
   },
   {
     "supplier": "MEDICUS",
     "permissions": [
-      "RSV.CRUDS",
-      "MMR.CRUDS",
-      "HPV.CRUDS",
       "3IN1.CRUDS",
-      "MENACWY.CRUDS"
+      "HPV.CRUDS",
+      "MENACWY.CRUDS",
+      "MMR.CRUDS",
+      "RSV.CRUDS"
     ],
     "ods_codes": ["YGMYW"]
   },
@@ -131,25 +131,25 @@
   {
     "supplier": "Test_App",
     "permissions": [
+      "3IN1.CRUDS",
       "COVID19.CRUDS",
       "FLU.CRUDS",
-      "MMR.CRUDS",
-      "RSV.CRUDS",
       "HPV.CRUDS",
       "MENACWY.CRUDS",
-      "3IN1.CRUDS"
+      "MMR.CRUDS",
+      "RSV.CRUDS"
     ]
   },
   {
     "supplier": "Postman_Auth",
     "permissions": [
+      "3IN1.CRUDS",
       "COVID19.CRUDS",
       "FLU.CRUDS",
-      "MMR.CRUDS",
-      "RSV.CRUDS",
       "HPV.CRUDS",
       "MENACWY.CRUDS",
-      "3IN1.CRUDS"
+      "MMR.CRUDS",
+      "RSV.CRUDS"
     ]
   }
 ]

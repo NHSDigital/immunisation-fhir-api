@@ -8,6 +8,7 @@ def upsert_audit_table(
     message_id: str,
     file_key: str,
     created_at_formatted_str: str,
+    expiry_timestamp: int,
     queue_name: str,
     file_status: str
 ) -> None:
@@ -24,6 +25,7 @@ def upsert_audit_table(
                 AuditTableKeys.QUEUE_NAME: {"S": queue_name},
                 AuditTableKeys.STATUS: {"S": file_status},
                 AuditTableKeys.TIMESTAMP: {"S": created_at_formatted_str},
+                AuditTableKeys.EXPIRES_AT: {"N": str(expiry_timestamp)},
             },
             ConditionExpression="attribute_not_exists(message_id)",  # Prevents accidental overwrites
         )
