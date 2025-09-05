@@ -73,7 +73,7 @@ def handle_record(record) -> dict:
             message_id, file_key, created_at_formatted_string, expiry_timestamp, queue_name, FileStatus.QUEUED
         )
         make_and_send_sqs_message(
-            file_key, message_id, permissions, vaccine_type, supplier, created_at_formatted_string, expiry_timestamp
+            file_key, message_id, permissions, vaccine_type, supplier, created_at_formatted_string
         )
 
         logger.info("Lambda invocation successful for file '%s'", file_key)

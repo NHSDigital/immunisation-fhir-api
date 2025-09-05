@@ -34,7 +34,7 @@ class FileDetails:
         self.queue_name = f"{self.supplier}_{self.vaccine_type}"
 
         self.created_at_formatted_string = f"200{file_number}0101T00000000"
-        self.expires_at = 947808000
+        self.expires_at = MOCK_EXPIRES_AT
         self.message_id = f"{self.supplier}_{self.vaccine_type}_test_id_{file_number}"
         self.name = f"{self.vaccine_type}/ {self.supplier} file"
 
