@@ -46,8 +46,11 @@ class TestRecordProcessor(unittest.TestCase):
         GenericSetUp(s3_client, firehose_client, kinesis_client)
 
         redis_patcher = patch("mappings.redis_client")
+        util_logger_patcher = patch("utils_for_recordprocessor.logger")
         self.addCleanup(redis_patcher.stop)
+        self.addCleanup(util_logger_patcher.stop)
         mock_redis_client = redis_patcher.start()
+        self.mock_util_logger = util_logger_patcher.start()
         mock_redis_client.hget.return_value = json.dumps([{
             "code": "55735004",
             "term": "Respiratory syncytial virus infection (disorder)"
@@ -357,6 +360,32 @@ class TestRecordProcessor(unittest.TestCase):
             "message": "Successfully sent for record processing",
         }
         mock_send_log_to_firehose.assert_called_with(expected_log_data)
+
+    def test_e2e_successfully_processes_windows_1252_encoded_file_contents(self):
+        """
+        VED-754 tests the handler successfully processed windows-1252 encoded files that contain special characters
+        which would otherwise fail for UTF-8. This is a temporary workaround for suppliers using legacy formats.
+        """
+        self.upload_source_files(ValidMockFileContent.with_new_special_char.encode("windows-1252"))
+
+        main(mock_rsv_emis_file.event_full_permissions)
+
+        # Assertion case tuples are stuctured as
+        # (test_name, index, expected_kinesis_data_ignoring_fhir_json,expect_success)
+        assertion_cases = [
+            (
+                "CREATE success",
+                0,
+                {"operation_requested": "CREATE", "local_id": MockLocalIds.RSV_001_RAVS},
+                True,
+            )
+        ]
+        self.make_inf_ack_assertions(file_details=mock_rsv_emis_file, passed_validation=True)
+        self.make_kinesis_assertions(assertion_cases)
+        self.mock_util_logger.info.assert_called_once_with(
+            "Received a file which was not utf-8 encoded: %s",
+            mock_rsv_emis_file.file_key
+        )
 
 
 if __name__ == "__main__":

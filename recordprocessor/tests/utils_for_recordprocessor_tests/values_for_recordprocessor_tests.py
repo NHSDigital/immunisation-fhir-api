@@ -112,12 +112,25 @@ class MockFileRows:
         '"J82068"|"https://fhir.nhs.uk/Id/ods-organization-code"'
     )
 
+    # For test case VED-754 - windows-1252 encoding issues only surfaces with characters outside of 0-127 ASCII
+    NEW_WITH_SPECIAL_CHARACTERS = (
+        '9674963871|"SABINA"|"GRÉIR"|"20190131"|"2"|"GU14 6TU"|"20240610T183325"|"J82067"|'
+        f'"https://fhir.nhs.uk/Id/ods-organization-code"|"{MockUniqueIds.RSV_001}"|"{MockUniqueIdUris.RAVS}"|'
+        '"new"|"Ellena"|"O\'Reilly"|"20240101"|"TRUE"|'
+        '"1303503001"|"Administration of vaccine product containing only Human orthopneumovirus antigen (procedure)"|'
+        '1|"42605811000001109"|"Abrysvo vaccine powder and solvent for solution for injection 0.5ml vials (Pfizer Ltd) '
+        '(product)"|"Pfizer"|"RSVTEST"|"20241231"|"368208006"|"Left upper arm structure (body structure)"|'
+        '"78421000"|"Intramuscular route (qualifier value)"|"0.5"|"258773002"|"Milliliter (qualifier value)"|"Test"|'
+        '"J82067"|"https://fhir.nhs.uk/Id/ods-organization-code"'
+    )
+
 
 class ValidMockFileContent:
     """Class containing valid file content for use in tests"""
 
     headers = MockFileRows.HEADERS
     with_new = headers + "\n" + MockFileRows.NEW
+    with_new_special_char = headers + "\n" + MockFileRows.NEW_WITH_SPECIAL_CHARACTERS
     with_update = headers + "\n" + MockFileRows.UPDATE
     with_delete = headers + "\n" + MockFileRows.DELETE
     with_update_and_delete = headers + "\n" + MockFileRows.UPDATE + "\n" + MockFileRows.DELETE
