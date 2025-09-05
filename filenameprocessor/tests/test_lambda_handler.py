@@ -18,7 +18,7 @@ from tests.utils_for_tests.utils_for_filenameprocessor_tests import (
     MOCK_ODS_CODE_TO_SUPPLIER
 )
 from tests.utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT, BucketNames, Sqs
-from tests.utils_for_tests.values_for_tests import MOCK_CREATED_AT_FORMATTED_STRING, MockFileDetails
+from tests.utils_for_tests.values_for_tests import MOCK_CREATED_AT_FORMATTED_STRING, MOCK_EXPIRES_AT, MockFileDetails
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
@@ -62,10 +62,11 @@ class TestLambdaHandlerDataSource(TestCase):
 
         # Set up common patches to be applied to all tests in the class (these can be overridden in individual tests.)
         common_patches = [
-            # Patch get_created_at_formatted_string, so that the ack file key can be deduced  (it is already unittested
+            # Patch get_creation_and_expiry_times, so that the ack file key can be deduced  (it is already unittested
             # separately). Note that files numbered '1', which are predominantly used in these tests, use the
             # MOCK_CREATED_AT_FORMATTED_STRING.
-            patch("file_name_processor.get_created_at_formatted_string", return_value=MOCK_CREATED_AT_FORMATTED_STRING),
+            patch("file_name_processor.get_creation_and_expiry_times",
+                  return_value=(MOCK_CREATED_AT_FORMATTED_STRING, MOCK_EXPIRES_AT)),
             # Patch redis_client to use a fake redis client.
             patch("elasticache.redis_client", new=fakeredis.FakeStrictRedis()),
             # Patch the permissions config to allow all suppliers full permissions for all vaccine types.
@@ -242,6 +243,7 @@ class TestLambdaHandlerDataSource(TestCase):
                 "queue_name": {"S": "unknown_unknown"},
                 "status": {"S": "Processed"},
                 "timestamp": {"S": file_details.created_at_formatted_string},
+                "expires_at": {"N": str(file_details.expires_at)},
             }
         ]
         self.assertEqual(self.get_audit_table_items(), expected_table_items)

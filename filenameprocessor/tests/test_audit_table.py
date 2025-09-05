@@ -54,7 +54,8 @@ class TestAuditTable(TestCase):
             file_key=ravs_rsv_test_file.file_key,
             created_at_formatted_str=ravs_rsv_test_file.created_at_formatted_string,
             queue_name=ravs_rsv_test_file.queue_name,
-            file_status=FileStatus.PROCESSED
+            file_status=FileStatus.PROCESSED,
+            expiry_timestamp=ravs_rsv_test_file.expires_at
         )
 
         assert_audit_table_entry(ravs_rsv_test_file, FileStatus.PROCESSED)
@@ -68,7 +69,8 @@ class TestAuditTable(TestCase):
             file_key=ravs_rsv_test_file.file_key,
             created_at_formatted_str=ravs_rsv_test_file.created_at_formatted_string,
             queue_name=ravs_rsv_test_file.queue_name,
-            file_status=FileStatus.PROCESSED
+            file_status=FileStatus.PROCESSED,
+            expiry_timestamp=ravs_rsv_test_file.expires_at
         )
 
         assert_audit_table_entry(ravs_rsv_test_file, FileStatus.PROCESSED)
@@ -80,4 +82,5 @@ class TestAuditTable(TestCase):
                 created_at_formatted_str=ravs_rsv_test_file.created_at_formatted_string,
                 queue_name=ravs_rsv_test_file.queue_name,
                 file_status=FileStatus.PROCESSED,
+                expiry_timestamp=ravs_rsv_test_file.expires_at
             )

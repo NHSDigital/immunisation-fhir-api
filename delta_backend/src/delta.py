@@ -17,6 +17,7 @@ from log_firehose import FirehoseLogger
 failure_queue_url = os.environ["AWS_SQS_QUEUE_URL"]
 delta_table_name = os.environ["DELTA_TABLE_NAME"]
 delta_source = os.environ["SOURCE"]
+delta_ttl_days = os.environ["DELTA_TTL_DAYS"]
 region_name = "eu-west-2"
 logging.basicConfig()
 logger = logging.getLogger()
@@ -73,7 +74,7 @@ def get_imms_id(primary_key: str) -> str:
 
 def get_creation_and_expiry_times(creation_timestamp: float) -> (str, int):
     creation_datetime = datetime.fromtimestamp(creation_timestamp, UTC)
-    expiry_datetime = creation_datetime + timedelta(days=30)
+    expiry_datetime = creation_datetime + timedelta(days=int(delta_ttl_days))
     expiry_timestamp = int(expiry_datetime.timestamp())
     return creation_datetime.isoformat(), expiry_timestamp
 
