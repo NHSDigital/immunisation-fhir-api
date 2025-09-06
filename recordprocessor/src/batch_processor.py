@@ -9,6 +9,7 @@ from send_to_kinesis import send_to_kinesis
 from clients import logger
 from file_level_validation import file_level_validation
 from errors import NoOperationPermissions, InvalidHeaders
+from utils_for_recordprocessor import get_csv_content_dict_reader
 
 
 def process_csv_to_fhir(incoming_message_body: dict) -> None:
@@ -31,29 +32,85 @@ def process_csv_to_fhir(incoming_message_body: dict) -> None:
     csv_reader = interim_message_body.get("csv_dict_reader")
 
     target_disease = map_target_disease(vaccine)
-
+    print("process csv to fhir")
     row_count = 0
+    encoder = "utf-8"  # default encoding
+    try:
+        row_count = process_rows(file_id, vaccine, supplier, file_key, allowed_operations,
+                                 created_at_formatted_string, csv_reader, target_disease)
+    except Exception as error:  # pylint: disable=broad-exception-caught
+        new_encoder = "cp1252"
+        print(f"Error processing: {error}.")
+        # check if it's a decode error, ie error.args[0] begins with "'utf-8' codec can't decode byte"
+        if error.reason == "invalid continuation byte":
+            print(f"Encode error at row {row_count} with {encoder}. Switch to {new_encoder}")
+            # print(f"Detected decode error: {error.reason}")
+            encoder = new_encoder
+            # if we are here, re-read the file with alternative encoding and skip processed rows
+            row_count = process_rows_retry(file_id, vaccine, supplier, file_key,
+                                           allowed_operations, created_at_formatted_string,
+                                           encoder, row_count)
+        else:
+            logger.error(f"Non-decode error: {error}. Cannot retry. Call someone.")
+            raise error from error
+
+    logger.info("Total rows processed: %s", row_count)
+
+
+def process_rows_retry(file_id, vaccine, supplier, file_key, allowed_operations,
+                       created_at_formatted_string, encoder, total_rows_processed_count=0) -> int:
+    """
+    Retry processing rows with a different encoding from a specific row number
+    """
+    print("process_rows_retry...")
+    new_reader = get_csv_content_dict_reader(file_key, encoder=encoder)
+
+    total_rows_processed_count = process_rows(
+        file_id, vaccine, supplier, file_key, allowed_operations,
+        created_at_formatted_string, new_reader, total_rows_processed_count)
+
+    return total_rows_processed_count
+
+
+def process_rows(file_id, vaccine, supplier, file_key, allowed_operations, created_at_formatted_string,
+                 csv_reader, target_disease,
+                 total_rows_processed_count=0) -> int:
+    """
+    Processes each row in the csv_reader starting from start_row.
+    """
+    print("process_rows...")
+    row_count = 0
+    start_row = total_rows_processed_count
     for row in csv_reader:
+
         row_count += 1
-        row_id = f"{file_id}^{row_count}"
-        logger.info("MESSAGE ID : %s", row_id)
+        if row_count > start_row:
+            row_id = f"{file_id}^{row_count}"
+            logger.info("MESSAGE ID : %s", row_id)
 
-        # Process the row to obtain the details needed for the message_body and ack file
-        details_from_processing = process_row(target_disease, allowed_operations, row)
+            # convert dict to string and print first 20 chars
+            if (total_rows_processed_count % 1000 == 0):
+                print(f"Process: {total_rows_processed_count}")
+            if (total_rows_processed_count > 19995):
+                print(f"Process: {total_rows_processed_count} - {row['PERSON_SURNAME']}")
 
-        # Create the message body for sending
-        outgoing_message_body = {
-            "row_id": row_id,
-            "file_key": file_key,
-            "supplier": supplier,
-            "vax_type": vaccine,
-            "created_at_formatted_string": created_at_formatted_string,
-            **details_from_processing,
-        }
+            # Process the row to obtain the details needed for the message_body and ack file
+            details_from_processing = process_row(target_disease, allowed_operations, row)
 
-        send_to_kinesis(supplier, outgoing_message_body, vaccine)
+            # Create the message body for sending
+            outgoing_message_body = {
+                "row_id": row_id,
+                "file_key": file_key,
+                "supplier": supplier,
+                "vax_type": vaccine,
+                "created_at_formatted_string": created_at_formatted_string,
+                **details_from_processing,
+            }
 
-        logger.info("Total rows processed: %s", row_count)
+            send_to_kinesis(supplier, outgoing_message_body, vaccine)
+            total_rows_processed_count += 1
+            logger.info("Total rows processed: %s", total_rows_processed_count)
+    return total_rows_processed_count
 
 
 def main(event: str) -> None:
