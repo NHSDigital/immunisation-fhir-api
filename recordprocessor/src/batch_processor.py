@@ -16,6 +16,7 @@ def process_csv_to_fhir(incoming_message_body: dict) -> None:
     For each row of the csv, attempts to transform into FHIR format, sends a message to kinesis,
     and documents the outcome for each row in the ack file.
     """
+    encoder = "utf-8"  # default encoding
     try:
         interim_message_body = file_level_validation(incoming_message_body=incoming_message_body)
     except (InvalidHeaders, NoOperationPermissions, Exception):  # pylint: disable=broad-exception-caught
@@ -36,11 +37,11 @@ def process_csv_to_fhir(incoming_message_body: dict) -> None:
         row_count = process_rows(file_id, vaccine, supplier, file_key, allowed_operations,
                                  created_at_formatted_string, csv_reader, target_disease)
     except Exception as error:  # pylint: disable=broad-exception-caught
-        encoder = "cp1252"
+        new_encoder = "cp1252"
         print(f"Error processing: {error}.")
-        print(f"Encode error at row {row_count} with {encoding}. Switch to {encoder}")
         # check if it's a decode error, ie error.args[0] begins with "'utf-8' codec can't decode byte"
         if error.args[0].startswith("'utf-8' codec can't decode byte"):
+            print(f"Encode error at row {row_count} with {encoder}. Switch to {new_encoder}")
             print(f"Detected decode error: {error.args[0]}")
             # if we are here, re-read the file with correct encoding and ignore the processed rows
             # if error.args[0] == "'utf-8' codec can't decode byte 0xe9 in position 2996: invalid continuation byte":
