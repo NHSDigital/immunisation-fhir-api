@@ -25,6 +25,14 @@
     "ods_codes": ["X26", "X8E5B"]
   },
   {
+    "supplier": "MAVIS",
+    "permissions": [
+      "FLU.CUD",
+      "HPV.CUD"
+    ],
+    "ods_codes": ["V0V8L"]
+  },
+  {
     "supplier": "EMIS",
     "permissions": [
       "3IN1.CRUDS",
@@ -108,9 +116,5 @@
   {
     "supplier": "SONAR",
     "ods_codes": ["8HK48"]
-  },
-  {
-    "supplier": "MAVIS",
-    "ods_codes": ["V0V8L"]
   }
 ]
