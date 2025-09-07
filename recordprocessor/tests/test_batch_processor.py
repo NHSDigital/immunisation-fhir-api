@@ -16,6 +16,8 @@ class TestProcessCsvToFhir(unittest.TestCase):
 
     def setUp(self):
         self.mock_logger_info = create_patch("logging.Logger.info")
+        self.mock_logger_warning = create_patch("logging.Logger.warning")
+        self.mock_logger_error = create_patch("logging.Logger.error")
         self.mock_send_to_kinesis = create_patch("batch_processor.send_to_kinesis")
         self.mock_map_target_disease = create_patch("batch_processor.map_target_disease")
         self.mock_s3_get_object = create_patch("utils_for_recordprocessor.s3_client.get_object")
@@ -35,7 +37,6 @@ class TestProcessCsvToFhir(unittest.TestCase):
             body = data[1:] * multiplier
             data = header + body
             data = data[:num_rows + 1]
-        print(f"Expanded test data to {len(data)-1} rows")
         return data
 
     def create_test_data_from_file(self, file_name: str) -> list[bytes]:
@@ -51,9 +52,7 @@ class TestProcessCsvToFhir(unittest.TestCase):
             line = data[i]
             # Split fields by pipe
             fields = line.strip().split(b"|")
-            print(f"replace field: {fields[field]}")
             fields[field] = new_text
-            print(f"replaced field: {fields[field]}")
             # Reconstruct the line
             data[i] = b"|".join(fields) + b"\n"
             break
@@ -61,60 +60,98 @@ class TestProcessCsvToFhir(unittest.TestCase):
 
     def test_process_large_file_with_cp1252(self):
         """ Test processing a large file with cp1252 encoding """
-        try:
-            n_rows = 20000
-            data = self.create_test_data_from_file("test-batch-data.csv")
-            data = self.expand_test_data(data, n_rows)
-            data = self.insert_cp1252_at_end(data, b'D\xe9cembre', 2)
-            self.mock_s3_get_object.side_effect = [{"Body": BytesIO(b"".join(data))},
-                                                   {"Body": BytesIO(b"".join(data))}]
-            self.mock_map_target_disease.return_value = "RSV"
+        n_rows = 500
+        data = self.create_test_data_from_file("test-batch-data.csv")
+        data = self.expand_test_data(data, n_rows)
+        data = self.insert_cp1252_at_end(data, b'D\xe9cembre', 2)
+        ret1 = {"Body": BytesIO(b"".join(data))}
+        ret2 = {"Body": BytesIO(b"".join(data))}
+        self.mock_s3_get_object.side_effect = [ret1, ret2]
+        self.mock_map_target_disease.return_value = "some disease"
 
-            message_body = {
-                        "message_id": "file123",
-                        "vaccine_type": "covid",
-                        "supplier": "test-supplier",
-                        "filename": "file-key-1",
-                        "permission": ["COVID.R", "COVID.U", "COVID.D"],
-                        "allowed_operations": ["CREATE", "UPDATE", "DELETE"],
-                        "created_at_formatted_string": "2024-09-05T12:00:00Z"
-                    }
-            self.mock_get_permitted_operations.return_value = {"CREATE", "UPDATE", "DELETE"}
+        message_body = {
+                    "vaccine_type": "vax-type-1",
+                    "supplier": "test-supplier",
+                }
+        self.mock_map_target_disease.return_value = "some disease"
 
-            self.mock_map_target_disease.return_value = "RSV"
+        n_rows_processed = process_csv_to_fhir(message_body)
+        self.assertEqual(n_rows_processed, n_rows)
+        self.assertEqual(self.mock_send_to_kinesis.call_count, n_rows)
+        # check logger.warning called for decode error
+        self.mock_logger_warning.assert_called()
+        warning_call_args = self.mock_logger_warning.call_args[0][0]
+        self.assertTrue(warning_call_args.startswith("Error processing: 'utf-8' codec can't decode byte"))
 
-            n_rows_processed = process_csv_to_fhir(message_body)
-            self.assertEqual(n_rows_processed, n_rows)
-        except Exception as e:
-            print(f"Exception during test: {e}")
+    def test_process_large_file_with_utf8(self):
+        """ Test processing a large file with utf-8 encoding """
+        n_rows = 500
+        data = self.create_test_data_from_file("test-batch-data.csv")
+        data = self.expand_test_data(data, n_rows)
+        ret1 = {"Body": BytesIO(b"".join(data))}
+        ret2 = {"Body": BytesIO(b"".join(data))}
+        self.mock_s3_get_object.side_effect = [ret1, ret2]
+        self.mock_map_target_disease.return_value = "some disease"
 
-    def test_process_small_file_with_cp1252(self):
+        message_body = {
+                    "vaccine_type": "vax-type-1",
+                    "supplier": "test-supplier",
+                }
+        self.mock_map_target_disease.return_value = "some disease"
+
+        n_rows_processed = process_csv_to_fhir(message_body)
+        self.assertEqual(n_rows_processed, n_rows)
+        self.assertEqual(self.mock_send_to_kinesis.call_count, n_rows)
+        self.mock_logger_warning.assert_not_called()
+        self.mock_logger_error.assert_not_called()
+
+    def test_process_cp1252_small_file(self):
         """ Test processing a small file with cp1252 encoding """
-        try:
-            data = self.create_test_data_from_file("test-batch-data-cp1252.csv")
-            n_rows = len(data) - 1  # Exclude header
-            # data = self.insert_cp1252_at_end(data, b'D\xe9cembre', 2)
-            self.mock_s3_get_object.side_effect = [{"Body": BytesIO(b"".join(data))},
-                                                   {"Body": BytesIO(b"".join(data))}]
-            self.mock_map_target_disease.return_value = "RSV"
+        data = self.create_test_data_from_file("test-batch-data-cp1252.csv")
+        data = [line if line.endswith(b"\n") else line + b"\n" for line in data]
+        n_rows = len(data) - 1  # Exclude header
 
-            message_body = {
-                        "message_id": "file123",
-                        "vaccine_type": "covid",
-                        "supplier": "test-supplier",
-                        "filename": "file-key-1",
-                        "permission": ["COVID.R", "COVID.U", "COVID.D"],
-                        "allowed_operations": ["CREATE", "UPDATE", "DELETE"],
-                        "created_at_formatted_string": "2024-09-05T12:00:00Z"
-                    }
-            self.mock_get_permitted_operations.return_value = {"CREATE", "UPDATE", "DELETE"}
+        ret1 = {"Body": BytesIO(b"".join(data))}
+        ret2 = {"Body": BytesIO(b"".join(data))}
+        self.mock_s3_get_object.side_effect = [ret1, ret2]
+        self.mock_map_target_disease.return_value = "some disease"
 
-            self.mock_map_target_disease.return_value = "RSV"
+        message_body = {
+                    "vaccine_type": "vax-type-1",
+                    "supplier": "test-supplier",
+                }
 
-            n_rows_processed = process_csv_to_fhir(message_body)
-            self.assertEqual(n_rows_processed, n_rows)
-        except Exception as e:
-            print(f"Exception during test: {e}")
+        self.mock_map_target_disease.return_value = "some disease"
+
+        n_rows_processed = process_csv_to_fhir(message_body)
+        self.assertEqual(n_rows_processed, n_rows)
+        self.assertEqual(self.mock_send_to_kinesis.call_count, n_rows)
+        self.mock_logger_warning.assert_called()
+        warning_call_args = self.mock_logger_warning.call_args[0][0]
+        self.assertTrue(warning_call_args.startswith("Invalid Encoding detected in process_csv_to_fhir"))
+
+    def test_process_utf8_small_file(self):
+        """ Test processing a small file with cp1252 encoding """
+        data = self.create_test_data_from_file("test-batch-data.csv")
+        data = [line if line.endswith(b"\n") else line + b"\n" for line in data]
+        n_rows = len(data) - 1  # Exclude header
+
+        ret1 = {"Body": BytesIO(b"".join(data))}
+        ret2 = {"Body": BytesIO(b"".join(data))}
+        self.mock_s3_get_object.side_effect = [ret1, ret2]
+        self.mock_map_target_disease.return_value = "some disease"
+
+        message_body = {
+                    "vaccine_type": "vax-type-1",
+                    "supplier": "test-supplier",
+                }
+        self.mock_map_target_disease.return_value = "some disease"
+
+        n_rows_processed = process_csv_to_fhir(message_body)
+        self.assertEqual(n_rows_processed, n_rows)
+        self.assertEqual(self.mock_send_to_kinesis.call_count, n_rows)
+        self.mock_logger_warning.assert_not_called()
+        self.mock_logger_error.assert_not_called()
 
     def test_fix_cp1252(self):
         # create a cp1252 string that contains an accented E

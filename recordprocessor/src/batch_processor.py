@@ -7,9 +7,10 @@ from process_row import process_row
 from mappings import map_target_disease
 from send_to_kinesis import send_to_kinesis
 from clients import logger
-from file_level_validation import file_level_validation, validate_content_headers
+from file_level_validation import file_level_validation
 from errors import NoOperationPermissions, InvalidHeaders, InvalidEncoding
 from utils_for_recordprocessor import get_csv_content_dict_reader
+from typing import Optional
 
 
 def process_csv_to_fhir(incoming_message_body: dict) -> None:
@@ -43,21 +44,21 @@ def process_csv_to_fhir(incoming_message_body: dict) -> None:
 
     target_disease = map_target_disease(vaccine)
     row_count = 0
+    logger.info(f"process with encoder {encoder} from row {row_count+1}")
     row_count, err = process_rows(file_id, vaccine, supplier, file_key, allowed_operations,
                                   created_at_formatted_string, csv_reader, target_disease)
     if err:
-        print(f"Error processing: {err}.")
-        # check if it's a decode error, ie error.args[0] begins with "'utf-8' codec can't decode byte"
+        logger.warning(f"Error processing: {err}.")
+        # check if it's a decode error
         if err.reason == "invalid continuation byte":
             new_encoder = "cp1252"
-            print(f"Encode error at row {row_count} with {encoder}. Switch to {new_encoder}")
-            # print(f"Detected decode error: {error.reason}")
+            logger.info(f"Encode error at row {row_count} with {encoder}. Switch to {new_encoder}")
             encoder = new_encoder
-            # if we are here, re-read the file with alternative encoding and skip processed rows
+            # load alternative encoder
             csv_reader = get_csv_content_dict_reader(file_key, encoder=encoder)
-            validate_content_headers(csv_reader)
-            row_count = process_rows(file_id, vaccine, supplier, file_key, allowed_operations,
-                                     created_at_formatted_string, csv_reader, target_disease, row_count)
+            # re-read the file and skip processed rows
+            row_count, err = process_rows(file_id, vaccine, supplier, file_key, allowed_operations,
+                                          created_at_formatted_string, csv_reader, target_disease, row_count)
         else:
             logger.error(f"Non-decode error: {err}. Cannot retry. Call someone.")
             raise err
@@ -66,47 +67,28 @@ def process_csv_to_fhir(incoming_message_body: dict) -> None:
     return row_count
 
 
-def process_rows_retry(file_id, vaccine, supplier, file_key, allowed_operations,
-                       created_at_formatted_string, encoder, total_rows_processed_count=0) -> int:
-    """
-    Retry processing rows with a different encoding from a specific row number
-    """
-    print("process_rows_retry...")
-    new_reader = get_csv_content_dict_reader(file_key, encoder=encoder)
-
-    total_rows_processed_count = process_rows(
-        file_id, vaccine, supplier, file_key, allowed_operations,
-        created_at_formatted_string, new_reader, total_rows_processed_count)
-
-    return total_rows_processed_count
-
-
 def process_rows(file_id, vaccine, supplier, file_key, allowed_operations, created_at_formatted_string,
                  csv_reader, target_disease,
-                 total_rows_processed_count=0) -> int:
+                 total_rows_processed_count=0) -> tuple[int, Optional[Exception]]:
     """
     Processes each row in the csv_reader starting from start_row.
     """
-    print("process_rows...")
     row_count = 0
     start_row = total_rows_processed_count
     try:
         for row in csv_reader:
-
             row_count += 1
             if row_count > start_row:
                 row_id = f"{file_id}^{row_count}"
                 logger.info("MESSAGE ID : %s", row_id)
-
-                # convert dict to string and print first 20 chars
+                # Log progress every 1000 rows and the first 10 rows after a restart
                 if (total_rows_processed_count % 1000 == 0):
-                    print(f"Process: {total_rows_processed_count}")
-                if (total_rows_processed_count > 19995):
-                    print(f"Process: {total_rows_processed_count} - {row['PERSON_SURNAME']}")
+                    logger.info(f"Process: {total_rows_processed_count+1}")
+                if (start_row > 0 and row_count <= start_row+10):
+                    logger.info(f"Restarted Process (log up to first 10): {total_rows_processed_count+1}")
 
                 # Process the row to obtain the details needed for the message_body and ack file
                 details_from_processing = process_row(target_disease, allowed_operations, row)
-
                 # Create the message body for sending
                 outgoing_message_body = {
                     "row_id": row_id,
@@ -116,14 +98,13 @@ def process_rows(file_id, vaccine, supplier, file_key, allowed_operations, creat
                     "created_at_formatted_string": created_at_formatted_string,
                     **details_from_processing,
                 }
-
                 send_to_kinesis(supplier, outgoing_message_body, vaccine)
                 total_rows_processed_count += 1
                 logger.info("Total rows processed: %s", total_rows_processed_count)
     except Exception as error:  # pylint: disable=broad-exception-caught
         logger.error("Error processing row %s: %s", row_count, error)
         return total_rows_processed_count, error
-    return total_rows_processed_count
+    return total_rows_processed_count, None
 
 
 def main(event: str) -> None:
