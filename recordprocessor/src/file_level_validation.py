@@ -5,7 +5,7 @@ Functions for completing file-level validation
 from clients import logger, s3_client
 from make_and_upload_ack_file import make_and_upload_ack_file
 from utils_for_recordprocessor import get_csv_content_dict_reader, invoke_filename_lambda
-from errors import InvalidHeaders, NoOperationPermissions
+from errors import InvalidHeaders, NoOperationPermissions, InvalidEncoding
 from logging_decorator import file_level_validation_logging_decorator
 from audit_table import change_audit_table_status_to_processed, get_next_queued_file_details
 from constants import SOURCE_BUCKET_NAME, EXPECTED_CSV_HEADERS, permission_to_operation_map, Permission
@@ -61,7 +61,7 @@ def move_file(bucket_name: str, source_file_key: str, destination_file_key: str)
 
 
 @file_level_validation_logging_decorator
-def file_level_validation(incoming_message_body: dict) -> dict:
+def file_level_validation(incoming_message_body: dict, encoder: str) -> dict:
     """
     Validates that the csv headers are correct and that the supplier has permission to perform at least one of
     the requested operations. Uploades the inf ack file and moves the source file to the processing folder.
@@ -78,7 +78,7 @@ def file_level_validation(incoming_message_body: dict) -> dict:
         created_at_formatted_string = incoming_message_body.get("created_at_formatted_string")
 
         # Fetch the data
-        csv_reader = get_csv_content_dict_reader(file_key)
+        csv_reader = get_csv_content_dict_reader(file_key, encoder=encoder)
 
         validate_content_headers(csv_reader)
 
@@ -98,8 +98,10 @@ def file_level_validation(incoming_message_body: dict) -> dict:
             "created_at_formatted_string": created_at_formatted_string,
             "csv_dict_reader": csv_reader,
         }
-
     except (InvalidHeaders, NoOperationPermissions, Exception) as error:
+        if error.reason == "invalid continuation byte" and encoder == "utf-8":
+            # propagate the error to trigger a retry with cp1252 encoding
+            raise InvalidEncoding(f"Error File encoding {encoder} is invalid.")
         logger.error("Error in file_level_validation: %s", error)
 
         # NOTE: The Exception may occur before the file_id, file_key and created_at_formatted_string are assigned
