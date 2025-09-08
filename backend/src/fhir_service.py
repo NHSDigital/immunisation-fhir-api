@@ -29,10 +29,12 @@ from filter import Filter
 logging.basicConfig(level="INFO")
 logger = logging.getLogger()
 
-def get_service_url(
-    service_env: str = os.getenv("IMMUNIZATION_ENV"),
-    service_base_path: str = os.getenv("IMMUNIZATION_BASE_PATH"),
-):
+def get_service_url(service_env: str = os.getenv("IMMUNIZATION_ENV"), service_base_path: str = os.getenv("IMMUNIZATION_BASE_PATH")
+ ) -> str:
+    
+    if not service_base_path:
+        service_base_path = "immunisation-fhir-api/FHIR/R4"
+
     non_prod = ["internal-dev", "int", "sandbox"]
     if service_env in non_prod:
         subdomain = f"{service_env}."
@@ -40,6 +42,7 @@ def get_service_url(
         subdomain = ""
     else:
         subdomain = "internal-dev."
+
     return f"https://{subdomain}api.service.nhs.uk/{service_base_path}"
 
 
@@ -366,7 +369,7 @@ class FhirService:
             BundleEntry(
                 resource=Immunization.parse_obj(imms),
                 search=BundleEntrySearch(mode="match"),
-                fullUrl=f"https://api.service.nhs.uk/immunisation-fhir-api/Immunization/{imms['id']}",
+                fullUrl=f"{get_service_url()}/Immunization/{imms['id']}",
             )
             for imms in resources_filtered_for_search
         ]
