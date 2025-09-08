@@ -45,7 +45,7 @@ def handle_record(record) -> dict:
 
     vaccine_type = "unknown"
     supplier = "unknown"
-    expiry_timestamp = "not_set"
+    expiry_timestamp = "unknown"
 
     if bucket_name != SOURCE_BUCKET_NAME:
         return handle_unexpected_bucket_name(bucket_name, file_key)
