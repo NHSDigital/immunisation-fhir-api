@@ -1,15 +1,15 @@
-from common.clients import redis_client, logger
+from common.clients import redis_client, STREAM_NAME, logger
 from s3_event import S3Event
 from record_processor import process_record
 from event_read import read_event
-from log_decorator import logging_decorator
+from common.log_decorator import logging_decorator
 '''
     Event Processor
     The Business Logic for the Redis Sync Lambda Function.
     This module processes S3 events and iterates through each record to process them individually.'''
 
 
-@logging_decorator(prefix="redis_sync")
+@logging_decorator(prefix="redis_sync", stream_name=STREAM_NAME)
 def handler(event, _):
 
     try:

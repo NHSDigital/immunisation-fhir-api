@@ -40,7 +40,7 @@ class TestHandler(unittest.TestCase):
         self.logger_exception_patcher.stop()
 
     def test_handler_success(self):
-        with patch("log_decorator.logging_decorator", lambda prefix=None: (lambda f: f)):
+        with patch("common.log_decorator.logging_decorator", lambda prefix=None, stream_name=None: (lambda f: f)):
             importlib.reload(redis_sync)
             mock_event = {'Records': [self.s3_vaccine]}
             self.mock_get_s3_records.return_value = [self.s3_vaccine]
@@ -53,7 +53,7 @@ class TestHandler(unittest.TestCase):
                 self.assertEqual(result["file_keys"], ['test-key'])
 
     def test_handler_failure(self):
-        with patch("log_decorator.logging_decorator", lambda prefix=None: (lambda f: f)):
+        with patch("common.log_decorator.logging_decorator", lambda prefix=None, stream_name=None: (lambda f: f)):
             importlib.reload(redis_sync)
 
             mock_event = {'Records': [self.s3_vaccine]}
@@ -66,7 +66,7 @@ class TestHandler(unittest.TestCase):
                 self.assertEqual(result, {'status': 'error', 'message': 'Error processing S3 event'})
 
     def test_handler_no_records(self):
-        with patch("log_decorator.logging_decorator", lambda prefix=None: (lambda f: f)):
+        with patch("common.log_decorator.logging_decorator", lambda prefix=None, stream_name=None: (lambda f: f)):
             importlib.reload(redis_sync)
             mock_event = {'Records': []}
             self.mock_get_s3_records.return_value = []
@@ -74,7 +74,7 @@ class TestHandler(unittest.TestCase):
             self.assertEqual(result, {'status': 'success', 'message': 'No records found in event'})
 
     def test_handler_exception(self):
-        with patch("log_decorator.logging_decorator", lambda prefix=None: (lambda f: f)):
+        with patch("common.log_decorator.logging_decorator", lambda prefix=None, stream_name=None: (lambda f: f)):
             importlib.reload(redis_sync)
             mock_event = {'Records': [self.s3_vaccine]}
             self.mock_get_s3_records.return_value = [self.s3_vaccine]
@@ -84,14 +84,14 @@ class TestHandler(unittest.TestCase):
                 self.assertEqual(result, {'status': 'error', 'message': 'Error processing S3 event'})
 
     def test_handler_with_empty_event(self):
-        with patch("log_decorator.logging_decorator", lambda prefix=None: (lambda f: f)):
+        with patch("common.log_decorator.logging_decorator", lambda prefix=None, stream_name=None: (lambda f: f)):
             importlib.reload(redis_sync)
             self.mock_get_s3_records.return_value = []
             result = redis_sync.handler({}, None)
             self.assertEqual(result, {'status': 'success', 'message': 'No records found in event'})
 
     def test_handler_multi_record(self):
-        with patch("log_decorator.logging_decorator", lambda prefix=None: (lambda f: f)):
+        with patch("common.log_decorator.logging_decorator", lambda prefix=None, stream_name=None: (lambda f: f)):
             importlib.reload(redis_sync)
             mock_event = {'Records': [self.s3_vaccine, self.s3_supplier]}
             # If you need S3EventRecord, uncomment the import and use it here
@@ -112,7 +112,7 @@ class TestHandler(unittest.TestCase):
                 self.assertEqual(result['file_keys'][1], 'test-key2')
 
     def test_handler_read_event(self):
-        with patch("log_decorator.logging_decorator", lambda prefix=None: (lambda f: f)):
+        with patch("common.log_decorator.logging_decorator", lambda prefix=None, stream_name=None: (lambda f: f)):
             importlib.reload(redis_sync)
             mock_event = {'read': 'myhash'}
             mock_read_event_response = {'field1': 'value1'}
