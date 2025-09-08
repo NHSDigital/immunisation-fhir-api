@@ -20,7 +20,7 @@ resource "aws_ecr_repository" "redis_sync_lambda_repository" {
 module "redis_sync_docker_image" {
   source           = "terraform-aws-modules/lambda/aws//modules/docker-build"
   version          = "8.0.1"
-  docker_file_path = "./redis_sync/Dockerfile"
+
   create_ecr_repo  = false
   ecr_repo         = aws_ecr_repository.redis_sync_lambda_repository.name
   ecr_repo_lifecycle_policy = jsonencode({
