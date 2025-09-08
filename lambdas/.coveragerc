@@ -6,3 +6,6 @@ omit =
     id_sync/tests/*
     id_sync/tests/*/*
     id_sync/tests/*/*/*
+    redis_sync/tests/*
+    redis_sync/tests/*/*
+    redis_sync/tests/*/*/*
