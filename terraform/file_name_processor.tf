@@ -283,6 +283,7 @@ resource "aws_lambda_function" "file_processor_lambda" {
       REDIS_PORT                 = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].port
       SPLUNK_FIREHOSE_NAME       = module.splunk.firehose_stream_name
       AUDIT_TABLE_NAME           = aws_dynamodb_table.audit-table.name
+      AUDIT_TABLE_TTL_DAYS       = 60
     }
   }
   kms_key_arn                    = data.aws_kms_key.existing_lambda_encryption_key.arn

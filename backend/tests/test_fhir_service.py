@@ -2,7 +2,8 @@ import json
 import uuid
 import datetime
 import unittest
-from unittest.mock import MagicMock
+import os
+from unittest.mock import MagicMock, patch
 from copy import deepcopy
 from unittest.mock import create_autospec, patch
 from decimal import Decimal
@@ -54,22 +55,22 @@ class TestServiceUrl(unittest.TestCase):
     def test_get_service_url(self):
         """it should create service url"""
         env = "int"
-        base_path = "my-base-path"
+        base_path = "immunisation-fhir-api/FHIR/R4"
         url = get_service_url(env, base_path)
         self.assertEqual(url, f"https://{env}.api.service.nhs.uk/{base_path}")
         # default should be internal-dev
         env = "it-does-not-exist"
-        base_path = "my-base-path"
+        base_path = "immunisation-fhir-api/FHIR/R4"
         url = get_service_url(env, base_path)
         self.assertEqual(url, f"https://internal-dev.api.service.nhs.uk/{base_path}")
         # prod should not have a subdomain
         env = "prod"
-        base_path = "my-base-path"
+        base_path = "immunisation-fhir-api/FHIR/R4"
         url = get_service_url(env, base_path)
         self.assertEqual(url, f"https://api.service.nhs.uk/{base_path}")
         # any other env should fall back to internal-dev (like pr-xx or per-user)
         env = "pr-42"
-        base_path = "my-base-path"
+        base_path = "immunisation-fhir-api/FHIR/R4"
         url = get_service_url(env, base_path)
         self.assertEqual(url, f"https://internal-dev.api.service.nhs.uk/{base_path}")
 
@@ -772,6 +773,8 @@ class TestSearchImmunizations(unittest.TestCase):
     MOCK_SUPPLIER_SYSTEM_NAME = "Test"
 
     def setUp(self):
+        os.environ["IMMUNIZATION_ENV"] = "internal-dev"
+        os.environ["IMMUNIZATION_BASE_PATH"] = "immunisation-fhir-api/FHIR/R4"
         self.authoriser = create_autospec(Authoriser)
         self.imms_repo = create_autospec(ImmunizationRepository)
         self.validator = create_autospec(ImmunizationValidator)
@@ -1083,7 +1086,6 @@ class TestSearchImmunizations(unittest.TestCase):
         """All matches must have a fullUrl consisting of their id.
         See http://hl7.org/fhir/R4B/bundle-definitions.html#Bundle.entry.fullUrl.
         Tested because fhir.resources validation doesn't check this as mandatory."""
-
         imms_ids = ["imms-1", "imms-2"]
         imms_list = [create_covid_19_immunization_dict(imms_id) for imms_id in imms_ids]
         self.imms_repo.find_immunizations.return_value = imms_list
@@ -1100,14 +1102,13 @@ class TestSearchImmunizations(unittest.TestCase):
         for i, entry in enumerate(entries):
             self.assertEqual(
                 entry.fullUrl,
-                f"https://api.service.nhs.uk/immunisation-fhir-api/Immunization/{imms_ids[i]}",
+                f"https://internal-dev.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/{imms_ids[i]}",
             )
 
     def test_patient_contains_fullUrl(self):
         """Patient must have a fullUrl consisting of its id.
         See http://hl7.org/fhir/R4B/bundle-definitions.html#Bundle.entry.fullUrl.
         Tested because fhir.resources validation doesn't check this as mandatory."""
-
         imms_ids = ["imms-1", "imms-2"]
         imms_list = [create_covid_19_immunization_dict(imms_id) for imms_id in imms_ids]
         self.imms_repo.find_immunizations.return_value = imms_list
