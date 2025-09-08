@@ -318,3 +318,29 @@ resource "aws_cloudwatch_log_group" "file_name_processor_log_group" {
   name              = "/aws/lambda/${local.short_prefix}-filenameproc_lambda"
   retention_in_days = 30
 }
+
+resource "aws_cloudwatch_log_metric_filter" "file_name_processor_error_logs" {
+  name           = "${local.short_prefix}-FilenameProcessorErrorLogsFilter"
+  pattern        = "%\\[ERROR\\]|\\[CRITICAL\\]%"
+  log_group_name = aws_cloudwatch_log_group.file_name_processor_log_group.name
+
+  metric_transformation {
+    name      = "${local.short_prefix}-FilenameProcessorErrorLogs"
+    namespace = "${local.short_prefix}-FilenameProcessorLambda"
+    value     = "1"
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "file_name_processor_error_alarm" {
+  alarm_name          = "${local.short_prefix}-file-name-processor-lambda-error"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = 1
+  metric_name         = "${local.short_prefix}-FilenameProcessorErrorLogs"
+  namespace           = "${local.short_prefix}-FilenameProcessorLambda"
+  period              = 60
+  statistic           = "Count"
+  threshold           = 1
+  alarm_description   = "This sets off an alarm for any error logs found in the file name processor Lambda function"
+  alarm_actions       = [aws_sns_topic.batch_processor_errors.arn]
+  treat_missing_data  = "notBreaching"
+}
