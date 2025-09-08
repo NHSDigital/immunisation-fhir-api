@@ -6,20 +6,34 @@ RUN mkdir -p /home/appuser && \
     echo 'appuser:x:1001:' >> /etc/group && \
     chown -R 1001:1001 /home/appuser && pip install "poetry~=2.1.4"
 
-# Install Poetry as root
-COPY poetry.lock pyproject.toml README.md ./
+# Install Poetry dependencies
+# Copy redis_sync Poetry files
+COPY ./redis_sync/poetry.lock ./redis_sync/pyproject.toml ./
+COPY ./shared/src/common ./src/common
+
+RUN echo "Listing /var/task after source code copy:" && ls -R /var/task
+
+# Install redis_sync dependencies
+WORKDIR /var/task
 RUN poetry config virtualenvs.create false && poetry install --no-interaction --no-ansi --no-root --only main
-# -----------------------------
-FROM base AS test
-COPY src src
-COPY tests tests
-RUN poetry install --no-interaction --no-ansi --no-root && \
-    pytest --disable-warnings tests
 
 # -----------------------------
 FROM base AS build
-COPY src .
+
+# Set working directory back to Lambda task root
+WORKDIR /var/task
+
+# Copy shared source code
+COPY ./shared/src/common ./common
+
+# Copy redis_sync source code
+COPY ./redis_sync/src .
+
+# Set correct permissions
 RUN chmod 644 $(find . -type f) && chmod 755 $(find . -type d)
+
 # Build as non-root user
 USER 1001:1001
+
+# Set the Lambda handler
 CMD ["redis_sync.handler"]

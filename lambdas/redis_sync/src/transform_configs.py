@@ -1,4 +1,4 @@
-from clients import logger
+from common.clients import logger
 
 
 def transform_vaccine_map(mapping):
