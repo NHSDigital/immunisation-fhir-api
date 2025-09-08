@@ -61,7 +61,7 @@ def move_file(bucket_name: str, source_file_key: str, destination_file_key: str)
 
 
 @file_level_validation_logging_decorator
-def file_level_validation(incoming_message_body: dict, encoder: str) -> dict:
+def file_level_validation(incoming_message_body: dict) -> dict:
     """
     Validates that the csv headers are correct and that the supplier has permission to perform at least one of
     the requested operations. Uploades the inf ack file and moves the source file to the processing folder.
@@ -76,6 +76,7 @@ def file_level_validation(incoming_message_body: dict, encoder: str) -> dict:
         file_key = incoming_message_body.get("filename")
         permission = incoming_message_body.get("permission")
         created_at_formatted_string = incoming_message_body.get("created_at_formatted_string")
+        encoder = incoming_message_body.get("encoder", "utf-8")
 
         # Fetch the data
         csv_reader = get_csv_content_dict_reader(file_key, encoder=encoder)
@@ -99,9 +100,10 @@ def file_level_validation(incoming_message_body: dict, encoder: str) -> dict:
             "csv_dict_reader": csv_reader,
         }
     except (InvalidHeaders, NoOperationPermissions, Exception) as error:
-        if error.reason == "invalid continuation byte" and encoder == "utf-8":
-            # propagate the error to trigger a retry with cp1252 encoding
-            raise InvalidEncoding(f"Error File encoding {encoder} is invalid.")
+        reason = getattr(error, 'reason', None)
+        if reason is not None:
+            if reason == "invalid continuation byte" and encoder == "utf-8":
+                raise InvalidEncoding(f"Error File encoding {encoder} is invalid.")
         logger.error("Error in file_level_validation: %s", error)
 
         # NOTE: The Exception may occur before the file_id, file_key and created_at_formatted_string are assigned

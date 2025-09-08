@@ -20,13 +20,16 @@ def process_csv_to_fhir(incoming_message_body: dict) -> None:
     """
     encoder = "utf-8"  # default encoding
     try:
-        interim_message_body = file_level_validation(incoming_message_body=incoming_message_body, encoder=encoder)
+        # and encoder to the incoming message body
+        incoming_message_body["encoder"] = encoder
+        interim_message_body = file_level_validation(incoming_message_body=incoming_message_body)
     except InvalidEncoding as error:
         logger.warning("Invalid Encoding detected in process_csv_to_fhir: %s", error)
         # retry with cp1252 encoding
         encoder = "cp1252"
         try:
-            interim_message_body = file_level_validation(incoming_message_body=incoming_message_body, encoder=encoder)
+            incoming_message_body["encoder"] = encoder
+            interim_message_body = file_level_validation(incoming_message_body=incoming_message_body)
         except Exception as error:
             logger.error(f"Error in file_level_validation with {encoder} encoding: %s", error)
             return 0
@@ -102,8 +105,12 @@ def process_rows(file_id, vaccine, supplier, file_key, allowed_operations, creat
                 total_rows_processed_count += 1
                 logger.info("Total rows processed: %s", total_rows_processed_count)
     except Exception as error:  # pylint: disable=broad-exception-caught
+        # if error reason is 'invalid continuation byte', then it's a decode error
         logger.error("Error processing row %s: %s", row_count, error)
-        return total_rows_processed_count, error
+        if hasattr(error, 'reason') and error.reason == "invalid continuation byte":
+            return total_rows_processed_count, error
+        else:
+            raise error
     return total_rows_processed_count, None
 
 
