@@ -18,7 +18,13 @@ class FileStatus(StrEnum):
     PROCESSING = "Processing"
     PREPROCESSED = "Preprocessed"
     PROCESSED = "Processed"
-    DUPLICATE = "Not processed - duplicate"
+    NOT_PROCESSED = "Not processed"
+    FAILED = "Failed"
+
+
+class FileNotProcessedReason(StrEnum):
+    """Reasons why a file was not processed"""
+    DUPLICATE = "Duplicate"
 
 
 class AuditTableKeys(StrEnum):
@@ -29,3 +35,4 @@ class AuditTableKeys(StrEnum):
     QUEUE_NAME = "queue_name"
     STATUS = "status"
     TIMESTAMP = "timestamp"
+    ERROR_DETAILS = "error_details"
