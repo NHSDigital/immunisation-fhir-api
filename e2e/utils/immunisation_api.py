@@ -188,6 +188,16 @@ class ImmunisationApi:
             expected_status_code=expected_status_code
         )
 
+    def search_immunization_by_identifier_and_elements(
+            self, identifier_system: str,
+            identifier_value: str, expected_status_code: int = 200):
+        return self.make_request_with_backoff(
+            http_method="GET",
+            url=f"{self.url}/Immunization?identifier={identifier_system}|{identifier_value}&_elements=id,meta",
+            headers=self._update_headers(),
+            expected_status_code=expected_status_code
+        )
+
     def search_immunizations_full(
             self,
             http_method: Literal["POST", "GET"],

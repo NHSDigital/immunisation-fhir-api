@@ -18,7 +18,6 @@ class TestSearchImmunizationByIdentifier(ImmunizationBaseTest):
         return ids[0] if len(ids) == 1 else tuple(ids)
 
     def test_search_imms(self):
-        """it should search records given nhs-number and vaccine type"""
         for imms_api in self.imms_apis:
             with self.subTest(imms_api):
                 # Given two patients each with one covid_19
