@@ -13,10 +13,12 @@ from utils_for_recordprocessor import get_csv_content_dict_reader
 from typing import Optional
 
 
-def process_csv_to_fhir(incoming_message_body: dict) -> None:
+def process_csv_to_fhir(incoming_message_body: dict) -> int:
     """
     For each row of the csv, attempts to transform into FHIR format, sends a message to kinesis,
     and documents the outcome for each row in the ack file.
+    Returns the number of rows processed. While this is not used by the handler, the number of rows
+    processed must be correct and therefore is returned for logging and test purposes.
     """
     encoder = "utf-8"  # default encoding
     try:
@@ -50,10 +52,10 @@ def process_csv_to_fhir(incoming_message_body: dict) -> None:
     logger.info(f"process with encoder {encoder} from row {row_count+1}")
     row_count, err = process_rows(file_id, vaccine, supplier, file_key, allowed_operations,
                                   created_at_formatted_string, csv_reader, target_disease)
+
     if err:
-        logger.warning(f"Error processing: {err}.")
-        # check if it's a decode error
-        if err.reason == "invalid continuation byte":
+        logger.warning(f"Processing Error: {err}.")
+        if isinstance(err, InvalidEncoding):
             new_encoder = "cp1252"
             logger.info(f"Encode error at row {row_count} with {encoder}. Switch to {new_encoder}")
             encoder = new_encoder
@@ -63,10 +65,9 @@ def process_csv_to_fhir(incoming_message_body: dict) -> None:
             row_count, err = process_rows(file_id, vaccine, supplier, file_key, allowed_operations,
                                           created_at_formatted_string, csv_reader, target_disease, row_count)
         else:
-            logger.error(f"Non-decode error: {err}. Cannot retry. Call someone.")
+            logger.error(f"Row Processing error: {err}")
             raise err
 
-    logger.info("Total rows processed: %s", row_count)
     return row_count
 
 
@@ -108,7 +109,7 @@ def process_rows(file_id, vaccine, supplier, file_key, allowed_operations, creat
         # if error reason is 'invalid continuation byte', then it's a decode error
         logger.error("Error processing row %s: %s", row_count, error)
         if hasattr(error, 'reason') and error.reason == "invalid continuation byte":
-            return total_rows_processed_count, error
+            return total_rows_processed_count, InvalidEncoding("Invalid continuation byte")
         else:
             raise error
     return total_rows_processed_count, None
@@ -118,11 +119,13 @@ def main(event: str) -> None:
     """Process each row of the file"""
     logger.info("task started")
     start = time.time()
+    n_rows_processed = 0
     try:
-        process_csv_to_fhir(incoming_message_body=json.loads(event))
+        n_rows_processed = process_csv_to_fhir(incoming_message_body=json.loads(event))
     except Exception as error:  # pylint: disable=broad-exception-caught
         logger.error("Error processing message: %s", error)
     end = time.time()
+    logger.info("Total rows processed: %s", n_rows_processed)
     logger.info("Total time for completion: %ss", round(end - start, 5))
 
 

@@ -102,3 +102,8 @@ def assert_audit_table_entry(file_details: FileDetails, expected_status: FileSta
         TableName=AUDIT_TABLE_NAME, Key={AuditTableKeys.MESSAGE_ID: {"S": file_details.message_id}}
     ).get("Item")
     assert table_entry == {**file_details.audit_table_entry, "status": {"S": expected_status}}
+
+
+def create_patch(target: str):
+    patcher = patch(target)
+    return patcher.start()
