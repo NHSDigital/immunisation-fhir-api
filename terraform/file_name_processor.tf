@@ -345,6 +345,6 @@ resource "aws_cloudwatch_metric_alarm" "file_name_processor_error_alarm" {
   statistic           = "Sum"
   threshold           = 1
   alarm_description   = "This sets off an alarm for any error logs found in the file name processor Lambda function"
-  alarm_actions       = [aws_sns_topic.batch_processor_errors[0].arn]
+  alarm_actions       = [aws_sns_topic.batch_processor_errors.arn]
   treat_missing_data  = "notBreaching"
 }
