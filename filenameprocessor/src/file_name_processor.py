@@ -9,11 +9,11 @@ NOTE: The expected file format for incoming files from the data sources bucket i
 import argparse
 from uuid import uuid4
 from utils_for_filenameprocessor import get_created_at_formatted_string, move_file, invoke_filename_lambda
-from file_key_validation import validate_file_key, is_file_in_directory_root
+from file_validation import validate_file_key, is_file_in_directory_root, validate_file_not_empty
 from send_sqs_message import make_and_send_sqs_message
 from make_and_upload_ack_file import make_and_upload_the_ack_file
 from audit_table import upsert_audit_table, get_next_queued_file_details, ensure_file_is_not_a_duplicate
-from clients import logger
+from clients import logger, s3_client
 from logging_decorator import logging_decorator
 from supplier_permissions import validate_vaccine_type_permissions
 from errors import (
@@ -22,7 +22,7 @@ from errors import (
     InvalidSupplierError,
     UnhandledAuditTableError,
     DuplicateFileError,
-    UnhandledSqsError,
+    UnhandledSqsError, EmptyFileError,
 )
 from constants import FileStatus, DATA_SOURCES_BUCKET_SUFFIX, ERROR_TYPE_TO_STATUS_CODE_MAP
 
@@ -67,11 +67,15 @@ def handle_record(record) -> dict:
 
             # Get message_id if the file is not new, else assign one
             message_id = record.get("message_id", str(uuid4()))
+            s3_response = s3_client.get_object(Bucket=bucket_name, Key=file_key)
 
-            created_at_formatted_string = get_created_at_formatted_string(bucket_name, file_key)
+            created_at_formatted_string = get_created_at_formatted_string(s3_response)
 
             vaccine_type, supplier = validate_file_key(file_key)
+            # VED-757: Known issue with suppliers sometimes sending empty files
+            validate_file_not_empty(s3_response)
             permissions = validate_vaccine_type_permissions(vaccine_type=vaccine_type, supplier=supplier)
+
             if not is_existing_file:
                 ensure_file_is_not_a_duplicate(file_key, created_at_formatted_string)
 
@@ -106,12 +110,18 @@ def handle_record(record) -> dict:
             InvalidSupplierError,
             UnhandledAuditTableError,
             DuplicateFileError,
+            EmptyFileError,
             UnhandledSqsError,
             Exception,
         ) as error:
             logger.error("Error processing file '%s': %s", file_key, str(error))
 
-            file_status = FileStatus.DUPLICATE if isinstance(error, DuplicateFileError) else FileStatus.PROCESSED
+            file_status = FileStatus.PROCESSED
+            if isinstance(error, DuplicateFileError):
+                file_status = FileStatus.DUPLICATE
+            elif isinstance(error, EmptyFileError):
+                file_status = FileStatus.EMPTY
+
             queue_name = f"{supplier}_{vaccine_type}"
             upsert_audit_table(
                 message_id, file_key, created_at_formatted_string, queue_name, file_status, is_existing_file

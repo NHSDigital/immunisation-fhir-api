@@ -18,7 +18,8 @@ from tests.utils_for_tests.utils_for_filenameprocessor_tests import (
     MOCK_ODS_CODE_TO_SUPPLIER
 )
 from tests.utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT, BucketNames, Sqs
-from tests.utils_for_tests.values_for_tests import MOCK_CREATED_AT_FORMATTED_STRING, MockFileDetails
+from tests.utils_for_tests.values_for_tests import MOCK_CREATED_AT_FORMATTED_STRING, MockFileDetails, \
+    MOCK_BATCH_FILE_CONTENT, MOCK_FILE_HEADERS
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
@@ -92,7 +93,7 @@ class TestLambdaHandlerDataSource(TestCase):
     @staticmethod
     def make_record_with_message_id(file_key: str, message_id: str):
         """
-        Makes a record which includes a message_id, with the s3 bucket name set to BucketNames.SOURCE and and
+        Makes a record which includes a message_id, with the s3 bucket name set to BucketNames.SOURCE and
         s3 object key set to the file_key.
         """
         return {"s3": {"bucket": {"name": BucketNames.SOURCE}, "object": {"key": file_key}}, "message_id": message_id}
@@ -180,7 +181,7 @@ class TestLambdaHandlerDataSource(TestCase):
         for file_details in test_cases:
             with self.subTest(file_details.name):
                 # Setup the file in the source bucket
-                s3_client.put_object(Bucket=BucketNames.SOURCE, Key=file_details.file_key)
+                s3_client.put_object(Bucket=BucketNames.SOURCE, Key=file_details.file_key, Body=MOCK_BATCH_FILE_CONTENT)
 
                 with (  # noqa: E999
                     patch("file_name_processor.uuid4", return_value=file_details.message_id),  # noqa: E999
@@ -208,7 +209,7 @@ class TestLambdaHandlerDataSource(TestCase):
         file_details = MockFileDetails.ravs_rsv_1
         file_already_processing_details = MockFileDetails.ravs_rsv_2
 
-        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=file_details.file_key)
+        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=file_details.file_key, Body=MOCK_BATCH_FILE_CONTENT)
 
         add_entry_to_table(file_already_processing_details, FileStatus.PROCESSING)
 
@@ -234,6 +235,8 @@ class TestLambdaHandlerDataSource(TestCase):
         file_details = MockFileDetails.ravs_rsv_1
         add_entry_to_table(file_details, FileStatus.QUEUED)
 
+        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=file_details.file_key, Body=MOCK_BATCH_FILE_CONTENT)
+
         with (  # noqa: E999
             patch("file_name_processor.uuid4", return_value=file_details.message_id),  # noqa: E999
             patch("file_name_processor.invoke_filename_lambda") as mock_invoke_filename_lambda,  # noqa: E999
@@ -246,6 +249,32 @@ class TestLambdaHandlerDataSource(TestCase):
         assert_audit_table_entry(file_details, FileStatus.PROCESSING)
         self.assert_sqs_message(file_details)
         self.assert_no_ack_file(file_details)
+        mock_invoke_filename_lambda.assert_not_called()
+
+    def test_lambda_handler_correctly_flags_empty_file(self):
+        """
+        VED-757 Tests that for an empty batch file:
+        * The file status is updated to 'Not processed - empty file' in the audit table
+        * The message is not sent to SQS
+        * The failure inf_ack file is created
+        """
+        file_details = MockFileDetails.ravs_rsv_1
+        add_entry_to_table(file_details, FileStatus.QUEUED)
+
+        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=file_details.file_key, Body=MOCK_FILE_HEADERS)
+
+        with (  # noqa: E999
+            patch("file_name_processor.uuid4", return_value=file_details.message_id),  # noqa: E999
+            patch("file_name_processor.invoke_filename_lambda") as mock_invoke_filename_lambda,  # noqa: E999
+        ):  # noqa: E999
+            lambda_handler(
+                self.make_event([self.make_record_with_message_id(file_details.file_key, file_details.message_id)]),
+                None,
+            )
+
+        assert_audit_table_entry(file_details, FileStatus.EMPTY)
+        self.assert_no_sqs_message()
+        self.assert_ack_file_contents(file_details)
         mock_invoke_filename_lambda.assert_not_called()
 
     def test_lambda_handler_non_root_file(self):
@@ -280,7 +309,7 @@ class TestLambdaHandlerDataSource(TestCase):
         * The invoke_filename_lambda method is not called
         """
         file_details = MockFileDetails.ravs_rsv_1
-        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=file_details.file_key)
+        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=file_details.file_key, Body=MOCK_BATCH_FILE_CONTENT)
 
         duplicate_already_in_table = deepcopy(file_details)
         duplicate_already_in_table.message_id = "duplicate_id"
@@ -312,7 +341,7 @@ class TestLambdaHandlerDataSource(TestCase):
         * The invoke_filename_lambda method is not called
         """
         invalid_file_key = "InvalidVaccineType_Vaccinations_v5_YGM41_20240708T12130100.csv"
-        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=invalid_file_key)
+        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=invalid_file_key, Body=MOCK_BATCH_FILE_CONTENT)
         file_details = deepcopy(MockFileDetails.ravs_rsv_1)
         file_details.file_key = invalid_file_key
         file_details.ack_file_key = self.get_ack_file_key(invalid_file_key)
@@ -351,7 +380,7 @@ class TestLambdaHandlerDataSource(TestCase):
         * The invoke_filename_lambda method is called with queued file details
         """
         file_details = MockFileDetails.ravs_rsv_1
-        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=file_details.file_key)
+        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=file_details.file_key, Body=MOCK_BATCH_FILE_CONTENT)
 
         queued_file_details = MockFileDetails.ravs_rsv_2
         add_entry_to_table(queued_file_details, FileStatus.QUEUED)
@@ -405,9 +434,10 @@ class TestLambdaHandlerDataSource(TestCase):
         invalid_file_details_3.audit_table_entry[AuditTableKeys.QUEUE_NAME] = {"S": invalid_file_details_3.queue_name}
         invalid_file_details_3.sqs_message_body["filename"] = invalid_file_details_3.file_key
 
-        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=valid_file_details_1.file_key)
-        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=valid_file_details_2.file_key)
-        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=invalid_file_details_3.file_key)
+        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=valid_file_details_1.file_key, Body=MOCK_BATCH_FILE_CONTENT)
+        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=valid_file_details_2.file_key, Body=MOCK_BATCH_FILE_CONTENT)
+        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=invalid_file_details_3.file_key,
+                             Body=MOCK_BATCH_FILE_CONTENT)
 
         message_ids = [
             valid_file_details_1.message_id,

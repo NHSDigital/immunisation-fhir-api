@@ -37,16 +37,10 @@ class TestUtilsForFilenameprocessor(TestCase):
 
     def test_get_created_at_formatted_string(self):
         """Test that get_created_at_formatted_string can correctly get the created_at_formatted_string"""
-        bucket_name = BucketNames.SOURCE
-        file_key = "test_file_key"
-
-        s3_client.put_object(Bucket=bucket_name, Key=file_key)
-
-        mock_last_modified = {"LastModified": datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)}
+        mock_last_modified_s3_response = {"LastModified": datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)}
         expected_result = "20240101T12000000"
 
-        with patch("utils_for_filenameprocessor.s3_client.get_object", return_value=mock_last_modified):
-            created_at_formatted_string = get_created_at_formatted_string(bucket_name, file_key)
+        created_at_formatted_string = get_created_at_formatted_string(mock_last_modified_s3_response)
 
         self.assertEqual(created_at_formatted_string, expected_result)
 

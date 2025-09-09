@@ -75,3 +75,29 @@ class MockFileDetails:
     emis_flu = FileDetails("EMIS", "FLU", "YGM41")
     emis_rsv = FileDetails("EMIS", "RSV", "YGM41")
     ravs_flu = FileDetails("RAVS", "FLU", "X8E5B")
+
+
+MOCK_FILE_HEADERS = (
+    "NHS_NUMBER|PERSON_FORENAME|PERSON_SURNAME|PERSON_DOB|PERSON_GENDER_CODE|PERSON_POSTCODE|"
+    "DATE_AND_TIME|SITE_CODE|SITE_CODE_TYPE_URI|UNIQUE_ID|UNIQUE_ID_URI|ACTION_FLAG|"
+    "PERFORMING_PROFESSIONAL_FORENAME|PERFORMING_PROFESSIONAL_SURNAME|RECORDED_DATE|"
+    "PRIMARY_SOURCE|VACCINATION_PROCEDURE_CODE|VACCINATION_PROCEDURE_TERM|DOSE_SEQUENCE|"
+    "VACCINE_PRODUCT_CODE|VACCINE_PRODUCT_TERM|VACCINE_MANUFACTURER|BATCH_NUMBER|EXPIRY_DATE|"
+    "SITE_OF_VACCINATION_CODE|SITE_OF_VACCINATION_TERM|ROUTE_OF_VACCINATION_CODE|"
+    "ROUTE_OF_VACCINATION_TERM|DOSE_AMOUNT|DOSE_UNIT_CODE|DOSE_UNIT_TERM|INDICATION_CODE|"
+    "LOCATION_CODE|LOCATION_CODE_TYPE_URI"
+) + "\n"
+
+# The content does not matter for the filename processor Lambda. It only needs to ensure the file is not empty.
+# Validation of the headers and contents happens later in the batch flow
+MOCK_FILE_DATA = (
+    '9674963871|"ALAN"|"PARTRIDGE"|"20190131"|"2"|"AA14 6AA"|"20240610T183325"|"J82067"|'
+    '"https://fhir.nhs.uk/Id/ods-organization-code"|"1234"|"a_system"|"new"|"Ellena"|"O\'Reilly"|"20240101"|"TRUE"|'
+    '"1303503001"|"Administration of vaccine product containing only Human orthopneumovirus antigen (procedure)"|'
+    '1|"42605811000001109"|"Abrysvo vaccine powder and solvent for solution for injection 0.5ml vials (Pfizer Ltd) '
+    '(product)"|"Pfizer"|"RSVTEST"|"20241231"|"368208006"|"Left upper arm structure (body structure)"|'
+    '"78421000"|"Intramuscular route (qualifier value)"|"0.5"|"258773002"|"Milliliter (qualifier value)"|"Test"|'
+    '"J82067"|"https://fhir.nhs.uk/Id/ods-organization-code"'
+)
+
+MOCK_BATCH_FILE_CONTENT = MOCK_FILE_HEADERS + MOCK_FILE_DATA
