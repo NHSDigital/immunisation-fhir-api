@@ -35,19 +35,14 @@ class TestUtilsForFilenameprocessor(TestCase):
 
     def test_get_creation_and_expiry_times(self):
         """Test that get_creation_and_expiry_times can correctly get the created_at_formatted_string"""
-        bucket_name = BucketNames.SOURCE
-        file_key = "test_file_key"
-
-        s3_client.put_object(Bucket=bucket_name, Key=file_key)
-
         mock_last_modified_created_at = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
-        mock_last_modified = {"LastModified": mock_last_modified_created_at}
+        mock_last_modified_s3_response = {"LastModified": mock_last_modified_created_at}
+
         expected_result_created_at = "20240101T12000000"
         expected_expiry_datetime = mock_last_modified_created_at + timedelta(days=int(AUDIT_TABLE_TTL_DAYS))
         expected_result_expires_at = int(expected_expiry_datetime.timestamp())
 
-        with patch("utils_for_filenameprocessor.s3_client.get_object", return_value=mock_last_modified):
-            created_at_formatted_string, expires_at = get_creation_and_expiry_times(bucket_name, file_key)
+        created_at_formatted_string, expires_at = get_creation_and_expiry_times(mock_last_modified_s3_response)
 
         self.assertEqual(created_at_formatted_string, expected_result_created_at)
         self.assertEqual(expires_at, expected_result_expires_at)
