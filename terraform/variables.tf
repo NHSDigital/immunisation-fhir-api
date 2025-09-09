@@ -7,14 +7,6 @@ variable "sub_environment" {
 variable "immunisation_account_id" {}
 variable "dspp_core_account_id" {}
 
-# TODO - change this. Get a shared mailbox/switch to Lambda -> Slack integration
-# Also should have different config for Prod vs PTL
-variable "batch_processor_errors_target_email" {
-  default     = "daniel.yip4@nhs.net"
-  description = "The target email address for the Batch Processor Errors SNS topic"
-  type        = string
-}
-
 variable "create_mesh_processor" {
   default = false
 }
@@ -41,6 +33,13 @@ variable "pds_environment" {
 
 variable "pds_check_enabled" {
   default = true
+}
+
+# Remember to switch off in PR envs after testing
+variable "batch_error_notifications_enabled" {
+  default     = true
+  description = "Switch to enable batch processing error notifications to Slack"
+  type        = bool
 }
 
 variable "has_sub_environment_scope" {

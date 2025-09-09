@@ -1,9 +1,11 @@
 resource "aws_sns_topic" "batch_processor_errors" {
-  name = "${local.short_prefix}-batch-processor-errors"
+  count = var.batch_error_notifications_enabled ? 1 : 0
+  name  = "${local.resource_scope}-batch-processor-errors"
 }
 
 resource "aws_sns_topic_policy" "batch_processor_errors_topic_policy" {
-  arn    = aws_sns_topic.batch_processor_errors.arn
+  count  = var.batch_error_notifications_enabled ? 1 : 0
+  arn    = aws_sns_topic.batch_processor_errors[0].arn
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
@@ -14,14 +16,8 @@ resource "aws_sns_topic_policy" "batch_processor_errors_topic_policy" {
           Service = "cloudwatch.amazonaws.com"
         },
         Action    = "SNS:Publish",
-        Resource  = aws_sns_topic.batch_processor_errors.arn
+        Resource  = aws_sns_topic.batch_processor_errors[0].arn
       }
     ]
   })
-}
-
-resource "aws_sns_topic_subscription" "batch_processor_errors_email_target" {
-  topic_arn     = aws_sns_topic.batch_processor_errors.arn
-  protocol      = "email"
-  endpoint      = var.batch_processor_errors_target_email
 }
