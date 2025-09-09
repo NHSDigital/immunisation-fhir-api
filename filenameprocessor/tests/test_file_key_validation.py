@@ -9,7 +9,7 @@ from tests.utils_for_tests.utils_for_filenameprocessor_tests import MOCK_ODS_COD
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
-    from file_key_validation import is_file_in_directory_root, is_valid_datetime, validate_file_key
+    from file_validation import is_file_in_directory_root, is_valid_datetime, validate_file_key
     from errors import InvalidFileKeyError
 
 VALID_FLU_EMIS_FILE_KEY = MockFileDetails.emis_flu.file_key
