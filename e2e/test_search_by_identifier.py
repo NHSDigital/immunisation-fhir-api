@@ -15,9 +15,6 @@ from lib.env import get_service_base_path
 
 
 class TestSearchImmunizationByIdentifier(ImmunizationBaseTest):
-    # NOTE: In each test, the result may contain more hits. We only assert if the resource that we created is
-    #  in the result set and assert the one that we don't expect is not present.
-    # This is to make these tests stateless otherwise; we need to clean up the db after each test
 
     def store_records(self, *resources):
         ids = []
@@ -35,36 +32,43 @@ class TestSearchImmunizationByIdentifier(ImmunizationBaseTest):
                 covid_19_p2 = generate_imms_resource()
                 rsv_p1 = generate_imms_resource()
                 rsv_p2 = generate_imms_resource()
-                covid_19_p1_id, covid_19_p2_id = self.store_records(covid_19_p1, covid_19_p2)
-                rsv_p1_id, rsv_p2_id = self.store_records(rsv_p1, rsv_p2)
-                covid_response_p1 = imms_api.get_immunization_by_id(covid_19_p1_id)
-                rsv_response_p1 = imms_api.get_immunization_by_id(rsv_p1_id)
+                covid_ids = self.store_records(covid_19_p1, covid_19_p2)
+                rsv_ids = self.store_records(rsv_p1, rsv_p2)
+
+                # Retrieve the resources to get the identifier system and value via read API
+                covid_resource = imms_api.get_immunization_by_id(covid_ids[0])
+                rsv_resource = imms_api.get_immunization_by_id(rsv_ids[0])
+
+                # Extract identifier components safely for covid resource
+                identifiers = covid_resource.get("identifier", [])
+                identifier_system = identifiers[0].get("system")
+                identifier_value = identifiers[0].get("value")
+
+                # Extract identifier components safely for rsv resource
+                rsv_identifiers = rsv_resource.get("identifier", [])
+                rsv_identifier_system = rsv_identifiers[0].get("system")
+                rsv_identifier_value = rsv_identifiers[0].get("value")
 
                 # When
-                # response = imms_api.search_immunization_by_identifier(identifier_system, identifier_value)
-                identifier_value_covid = covid_response_p1["identifier"][0]["value"]
-                identifier_system_covid = covid_response_p1["identifier"][0]["system"]
-                response = imms_api.search_immunization_by_identifier(identifier_system_covid, identifier_value_covid)
+                search_response = imms_api.search_immunization_by_identifier(identifier_system, identifier_value)
+                self.assertEqual(search_response.status_code, 200, search_response.text)
+                bundle = search_response.json()
+                self.assertEqual(bundle.get("resourceType"), "Bundle", bundle)
+                entries = bundle.get("entry", [])
+                self.assertTrue(entries, "Expected at least one match in Bundle.entry")
+                self.assertEqual(len(entries), 1, f"Expected exactly one match, got {len(entries)}")
 
-                identifier_value_rsv = rsv_response_p1["identifier"][0]["value"]
-                identifier_system_rsv = rsv_response_p1["identifier"][0]["system"]
-                response = imms_api.search_immunization_by_identifier(identifier_system_covid, identifier_value_covid)
-                response_rsv = imms_api.search_immunization_by_identifier(identifier_system_rsv, identifier_value_rsv)
-
-                # Then
-                self.assertEqual(response.status_code, 200, response.text)
-                body = response.json()
-                self.assertEqual(body["resourceType"], "Bundle")
-
-                resource_identifier = [entity["resource"]["identifier"]["value"] for entity in body["entry"]]
-                self.assertTrue(covid_19_p1_id in resource_identifier)
-
-                self.assertEqual(response_rsv.status_code, 200, response_rsv.text)
-                body_rsv = response_rsv.json()
-                self.assertEqual(body_rsv["resourceType"], "Bundle")
-
-                resource_identifier = [entity["resource"]["id"] for entity in body_rsv["entry"]]
-                self.assertTrue(rsv_p1_id in resource_identifier)
+                # When
+                rsv_search_response = imms_api.search_immunization_by_identifier(
+                    rsv_identifier_system,
+                    rsv_identifier_value
+                    )
+                self.assertEqual(rsv_search_response.status_code, 200, search_response.text)
+                rsv_bundle = rsv_search_response.json()
+                self.assertEqual(bundle.get("resourceType"), "Bundle", rsv_bundle)
+                entries = rsv_bundle.get("entry", [])
+                self.assertTrue(entries, "Expected at least one match in Bundle.entry")
+                self.assertEqual(len(entries), 1, f"Expected exactly one match, got {len(entries)}")
 
     def test_search_patient_multiple_diseases(self):
         # Given patient has two vaccines
