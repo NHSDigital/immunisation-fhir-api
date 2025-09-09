@@ -253,7 +253,7 @@ class TestLambdaHandlerDataSource(TestCase):
 
     def test_lambda_handler_correctly_flags_empty_file(self):
         """
-        VED-745 Tests that for an empty batch file:
+        VED-757 Tests that for an empty batch file:
         * The file status is updated to 'Not processed - empty file' in the audit table
         * The message is not sent to SQS
         * The failure inf_ack file is created
