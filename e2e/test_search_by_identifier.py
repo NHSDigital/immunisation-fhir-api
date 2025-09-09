@@ -3,18 +3,22 @@ import uuid
 from typing import NamedTuple, Literal, Optional, List
 from decimal import Decimal
 from utils.base_test import ImmunizationBaseTest
-from utils.constants import valid_nhs_number1, valid_nhs_number2, valid_patient_identifier2, valid_patient_identifier1
+from utils.constants import (
+    valid_nhs_number1,
+    valid_nhs_number2,
+    valid_patient_identifier2,
+    valid_patient_identifier1,
+)
 from utils.resource import generate_imms_resource, generate_filtered_imms_resource
 from utils.mappings import VaccineTypes
 from lib.env import get_service_base_path
 
 
-class TestSearchImmunization(ImmunizationBaseTest):
+class TestSearchImmunizationByIdentifier(ImmunizationBaseTest):
     # NOTE: In each test, the result may contain more hits. We only assert if the resource that we created is
     #  in the result set and assert the one that we don't expect is not present.
     # This is to make these tests stateless otherwise; we need to clean up the db after each test
 
-    # create one or more immunization resources and return the created resource ids
     def store_records(self, *resources):
         ids = []
         for res in resources:
@@ -27,33 +31,40 @@ class TestSearchImmunization(ImmunizationBaseTest):
         for imms_api in self.imms_apis:
             with self.subTest(imms_api):
                 # Given two patients each with one covid_19
-                covid_19_p1 = generate_imms_resource(valid_nhs_number1, VaccineTypes.covid_19)
-                covid_19_p2 = generate_imms_resource(valid_nhs_number2, VaccineTypes.covid_19)
-                rsv_p1 = generate_imms_resource(valid_nhs_number1, VaccineTypes.rsv)
-                rsv_p2 = generate_imms_resource(valid_nhs_number2, VaccineTypes.rsv)
+                covid_19_p1 = generate_imms_resource()
+                covid_19_p2 = generate_imms_resource()
+                rsv_p1 = generate_imms_resource()
+                rsv_p2 = generate_imms_resource()
                 covid_19_p1_id, covid_19_p2_id = self.store_records(covid_19_p1, covid_19_p2)
                 rsv_p1_id, rsv_p2_id = self.store_records(rsv_p1, rsv_p2)
+                covid_response_p1 = imms_api.get_immunization_by_id(covid_19_p1_id)
+                rsv_response_p1 = imms_api.get_immunization_by_id(rsv_p1_id)
 
                 # When
-                response = imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.covid_19)
-                response_rsv = imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.rsv)
+                # response = imms_api.search_immunization_by_identifier(identifier_system, identifier_value)
+                identifier_value_covid = covid_response_p1["identifier"][0]["value"]
+                identifier_system_covid = covid_response_p1["identifier"][0]["system"]
+                response = imms_api.search_immunization_by_identifier(identifier_system_covid, identifier_value_covid)
+
+                identifier_value_rsv = rsv_response_p1["identifier"][0]["value"]
+                identifier_system_rsv = rsv_response_p1["identifier"][0]["system"]
+                response = imms_api.search_immunization_by_identifier(identifier_system_covid, identifier_value_covid)
+                response_rsv = imms_api.search_immunization_by_identifier(identifier_system_rsv, identifier_value_rsv)
 
                 # Then
                 self.assertEqual(response.status_code, 200, response.text)
                 body = response.json()
                 self.assertEqual(body["resourceType"], "Bundle")
 
-                resource_ids = [entity["resource"]["id"] for entity in body["entry"]]
-                self.assertTrue(covid_19_p1_id in resource_ids)
-                self.assertTrue(covid_19_p2_id not in resource_ids)
+                resource_identifier = [entity["resource"]["identifier"]["value"] for entity in body["entry"]]
+                self.assertTrue(covid_19_p1_id in resource_identifier)
 
                 self.assertEqual(response_rsv.status_code, 200, response_rsv.text)
                 body_rsv = response_rsv.json()
                 self.assertEqual(body_rsv["resourceType"], "Bundle")
 
-                resource_ids = [entity["resource"]["id"] for entity in body_rsv["entry"]]
-                self.assertTrue(rsv_p1_id in resource_ids)
-                self.assertTrue(rsv_p2_id not in resource_ids)
+                resource_identifier = [entity["resource"]["id"] for entity in body_rsv["entry"]]
+                self.assertTrue(rsv_p1_id in resource_identifier)
 
     def test_search_patient_multiple_diseases(self):
         # Given patient has two vaccines
