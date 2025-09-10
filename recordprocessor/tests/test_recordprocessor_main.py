@@ -23,6 +23,7 @@ from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests impo
     REGION_NAME,
 )
 from tests.utils_for_recordprocessor_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT, BucketNames, Kinesis
+from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import create_patch
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
     from constants import Diagnostics
@@ -52,6 +53,7 @@ class TestRecordProcessor(unittest.TestCase):
             "code": "55735004",
             "term": "Respiratory syncytial virus infection (disorder)"
         }])
+        self.mock_logger_info = create_patch("logging.Logger.info")
 
     def tearDown(self) -> None:
         GenericTearDown(s3_client, firehose_client, kinesis_client)

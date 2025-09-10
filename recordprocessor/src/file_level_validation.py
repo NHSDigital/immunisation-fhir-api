@@ -76,11 +76,17 @@ def file_level_validation(incoming_message_body: dict) -> dict:
         file_key = incoming_message_body.get("filename")
         permission = incoming_message_body.get("permission")
         created_at_formatted_string = incoming_message_body.get("created_at_formatted_string")
+        encoder = incoming_message_body.get("encoder", "utf-8")
 
         # Fetch the data
-        csv_reader = get_csv_content_dict_reader(file_key)
-
-        validate_content_headers(csv_reader)
+        try:
+            csv_reader = get_csv_content_dict_reader(file_key, encoder=encoder)
+            validate_content_headers(csv_reader)
+        except UnicodeDecodeError as e:
+            logger.warning("Invalid Encoding detected: %s", e)
+            # retry with cp1252 encoding
+            csv_reader = get_csv_content_dict_reader(file_key, encoder="cp1252")
+            validate_content_headers(csv_reader)
 
         # Validate has permission to perform at least one of the requested actions
         allowed_operations_set = get_permitted_operations(supplier, vaccine, permission)
@@ -98,7 +104,6 @@ def file_level_validation(incoming_message_body: dict) -> dict:
             "created_at_formatted_string": created_at_formatted_string,
             "csv_dict_reader": csv_reader,
         }
-
     except (InvalidHeaders, NoOperationPermissions, Exception) as error:
         logger.error("Error in file_level_validation: %s", error)
 
