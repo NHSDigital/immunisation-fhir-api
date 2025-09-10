@@ -21,6 +21,4 @@ resource "aws_iam_role" "batch_processor_errors_chatbot" {
       },
     ]
   })
-  # To try: could test without this?
-  managed_policy_arns = ["arn:aws:iam::aws:policy/AWSResourceExplorerReadOnlyAccess"]
 }
