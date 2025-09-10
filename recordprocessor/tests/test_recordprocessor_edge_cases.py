@@ -54,7 +54,7 @@ class TestProcessorEdgeCases(unittest.TestCase):
             break
         return data
 
-    def test_process_large_file_with_cp1252(self):
+    def test_process_large_file_cp1252(self):
         """ Test processing a large file with cp1252 encoding """
         n_rows = 500
         data = self.create_test_data_from_file("test-batch-data.csv")
@@ -79,7 +79,7 @@ class TestProcessorEdgeCases(unittest.TestCase):
         warning_call_args = self.mock_logger_warning.call_args[0][0]
         self.assertEqual(warning_call_args, "Processing Error: Invalid continuation byte.")
 
-    def test_process_large_file_with_utf8(self):
+    def test_process_large_file_utf8(self):
         """ Test processing a large file with utf-8 encoding """
         n_rows = 500
         data = self.create_test_data_from_file("test-batch-data.csv")
@@ -101,9 +101,10 @@ class TestProcessorEdgeCases(unittest.TestCase):
         self.mock_logger_warning.assert_not_called()
         self.mock_logger_error.assert_not_called()
 
-    def test_process_cp1252_small_file(self):
+    def test_process_small_file_cp1252(self):
         """ Test processing a small file with cp1252 encoding """
         data = self.create_test_data_from_file("test-batch-data-cp1252.csv")
+        data = self.insert_cp1252_at_end(data, b'D\xe9cembre', 2)
         data = [line if line.endswith(b"\n") else line + b"\n" for line in data]
         n_rows = len(data) - 1  # Exclude header
 
@@ -124,9 +125,9 @@ class TestProcessorEdgeCases(unittest.TestCase):
         self.assertEqual(self.mock_send_to_kinesis.call_count, n_rows)
         self.mock_logger_warning.assert_called()
         warning_call_args = self.mock_logger_warning.call_args[0][0]
-        self.assertTrue(warning_call_args.startswith("Invalid Encoding detected in process_csv_to_fhir"))
+        self.assertTrue(warning_call_args.startswith("Invalid Encoding detected"))
 
-    def test_process_utf8_small_file(self):
+    def test_process_small_file_utf8(self):
         """ Test processing a small file with utf-8 encoding """
         data = self.create_test_data_from_file("test-batch-data.csv")
         data = [line if line.endswith(b"\n") else line + b"\n" for line in data]

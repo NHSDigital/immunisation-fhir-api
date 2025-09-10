@@ -25,17 +25,8 @@ def process_csv_to_fhir(incoming_message_body: dict) -> int:
         # and encoder to the incoming message body
         incoming_message_body["encoder"] = encoder
         interim_message_body = file_level_validation(incoming_message_body=incoming_message_body)
-    except InvalidEncoding as error:
-        logger.warning("Invalid Encoding detected in process_csv_to_fhir: %s", error)
-        # retry with cp1252 encoding
-        encoder = "cp1252"
-        try:
-            incoming_message_body["encoder"] = encoder
-            interim_message_body = file_level_validation(incoming_message_body=incoming_message_body)
-        except Exception as error:
-            logger.error(f"Error in file_level_validation with {encoder} encoding: %s", error)
-            return 0
-    except (InvalidHeaders, NoOperationPermissions, Exception):  # pylint: disable=broad-exception-caught
+    except (InvalidHeaders, NoOperationPermissions, Exception) as e:  # pylint: disable=broad-exception-caught
+        logger.error(f"File level validation failed: {e}")
         # If the file is invalid, processing should cease immediately
         return 0
 

@@ -79,9 +79,17 @@ def file_level_validation(incoming_message_body: dict) -> dict:
         encoder = incoming_message_body.get("encoder", "utf-8")
 
         # Fetch the data
-        csv_reader = get_csv_content_dict_reader(file_key, encoder=encoder)
-
-        validate_content_headers(csv_reader)
+        try:
+            csv_reader = get_csv_content_dict_reader(file_key, encoder=encoder)
+            validate_content_headers(csv_reader)
+        except Exception as e:
+            if hasattr(e, 'reason') and e.reason == "invalid continuation byte" and encoder == "utf-8":
+                logger.warning("Invalid Encoding detected: %s", e)
+                # retry with cp1252 encoding
+                csv_reader = get_csv_content_dict_reader(file_key, encoder="cp1252")
+                validate_content_headers(csv_reader)
+            else:
+                raise
 
         # Validate has permission to perform at least one of the requested actions
         allowed_operations_set = get_permitted_operations(supplier, vaccine, permission)
