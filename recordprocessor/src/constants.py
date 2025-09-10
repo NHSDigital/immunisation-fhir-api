@@ -55,7 +55,14 @@ class FileStatus:
     PROCESSING = "Processing"
     PREPROCESSED = "Preprocessed"  # All entries in file converted to FHIR and forwarded to Kinesis
     PROCESSED = "Processed"  # All entries processed and ack file created
-    DUPLICATE = "Duplicate"
+    NOT_PROCESSED = "Not processed"
+    FAILED = "Failed"
+
+
+class FileNotProcessedReason(StrEnum):
+    """Reasons why a file was not processed"""
+    UNAUTHORISED = "Unauthorised"
+    INVALID_FILE_HEADERS = "Invalid file headers"
 
 
 class AuditTableKeys:
@@ -66,6 +73,7 @@ class AuditTableKeys:
     QUEUE_NAME = "queue_name"
     STATUS = "status"
     TIMESTAMP = "timestamp"
+    ERROR_DETAILS = "error_details"
 
 
 class Diagnostics:
