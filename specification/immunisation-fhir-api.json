@@ -1031,7 +1031,10 @@
                                             "description": "Tags applied to this resource. Tags are intended to be used to identify and relate resources to process and workflow, and applications are not required to consider the tags when interpreting the meaning of a resource."
                                           }
                                         }
-                                      }
+                                      },
+                                      "required": [
+                                        "versionId"
+                                      ]
                                     },
                                     "extension": {
                                       "description": "FHIR extension wrapper for the vaccination procedure performed. Always contains exactly one object.",
@@ -4761,6 +4764,9 @@
                 "resource": {
                   "resourceType": "Immunization",
                   "id": "191f288a-17f3-4cd5-a33c-a52aade6473c",
+                  "meta": {
+                            "versionId": "1"
+                          },
                   "extension": [
                     {
                       "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure",
@@ -6430,7 +6436,10 @@
                     "description": "Tags applied to this resource. Tags are intended to be used to identify and relate resources to process and workflow, and applications are not required to consider the tags when interpreting the meaning of a resource."
                   }
                 }
-              }
+              },
+              "required": [
+                "versionId"
+              ]
             }
           ]
         },
