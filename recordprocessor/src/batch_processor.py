@@ -28,7 +28,7 @@ def process_csv_to_fhir(incoming_message_body: dict) -> int:
         incoming_message_body["encoder"] = encoder
         interim_message_body = file_level_validation(incoming_message_body=incoming_message_body)
     except (InvalidHeaders, NoOperationPermissions, Exception) as e:  # pylint: disable=broad-exception-caught
-        logger.error(f"File level validation failed: {e}")        # If the file is invalid, processing should cease immediately
+        logger.error(f"File level validation failed: {e}")        # If the file is invalid, processing should cease
         return 0
 
     file_id = interim_message_body.get("message_id")
@@ -56,8 +56,8 @@ def process_csv_to_fhir(incoming_message_body: dict) -> int:
             # load alternative encoder
             csv_reader = get_csv_content_dict_reader(file_key, encoder=encoder)
             # re-read the file and skip processed rows
-            row_count, = process_rows(file_id, vaccine, supplier, file_key, allowed_operations,
-                                      created_at_formatted_string, csv_reader, target_disease, row_count)
+            row_count, err = process_rows(file_id, vaccine, supplier, file_key, allowed_operations,
+                                          created_at_formatted_string, csv_reader, target_disease, row_count)
         else:
             logger.error(f"Row Processing error: {err}")
             raise err
