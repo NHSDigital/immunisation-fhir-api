@@ -82,6 +82,9 @@ def process_rows(file_id, vaccine, supplier, file_key, allowed_operations, creat
                 if (start_row > 0 and row_count <= start_row+10):
                     logger.info(f"Restarted Process (log up to first 10): {total_rows_processed_count+1}")
 
+                total_rows_processed_count += 1
+                logger.info(f"Process row: {total_rows_processed_count}")
+
                 # Process the row to obtain the details needed for the message_body and ack file
                 details_from_processing = process_row(target_disease, allowed_operations, row)
                 # Create the message body for sending
@@ -94,8 +97,7 @@ def process_rows(file_id, vaccine, supplier, file_key, allowed_operations, creat
                     **details_from_processing,
                 }
                 send_to_kinesis(supplier, outgoing_message_body, vaccine)
-                total_rows_processed_count += 1
-                logger.info("Total rows processed: %s", total_rows_processed_count)
+
     except Exception as error:  # pylint: disable=broad-exception-caught
         # if error reason is 'invalid continuation byte', then it's a decode error
         logger.error("Error processing row %s: %s", row_count, error)
