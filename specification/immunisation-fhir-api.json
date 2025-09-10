@@ -1638,6 +1638,9 @@
                         "resource": {
                           "resourceType": "Immunization",
                           "id": "191f288a-17f3-4cd5-a33c-a52aade6473c",
+                          "meta": {
+                            "versionId": "1"
+                          },
                           "extension": [
                             {
                               "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure",
