@@ -150,26 +150,3 @@ class TestProcessorEdgeCases(unittest.TestCase):
         self.mock_logger_warning.assert_not_called()
         self.mock_logger_error.assert_not_called()
 
-    def test_fix_cp1252(self):
-        # create a cp1252 string that contains an accented E
-        # this is not a unit test as such but checks/confirms encoding assumptions
-        source_text = b'D\xe9cembre'
-        test_dict = {
-            "date": source_text,
-            "name": "Test Name"}
-        utf8_dict = dict_decode(test_dict, "cp1252")
-        self.assertEqual(utf8_dict["date"], "Décembre")
-        self.assertEqual(utf8_dict["name"], "Test Name")
-
-
-def dict_decode(input_dict: dict, encoding: str) -> dict:
-    """
-    Decode all byte strings in a dictionary to UTF-8 strings using the specified encoding.
-    """
-    decoded_dict = {}
-    for key, value in input_dict.items():
-        if isinstance(value, bytes):
-            decoded_dict[key] = value.decode(encoding)
-        else:
-            decoded_dict[key] = value
-    return decoded_dict
