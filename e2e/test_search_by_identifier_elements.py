@@ -61,7 +61,7 @@ class TestSearchImmunizationByIdentifier(ImmunizationBaseTest):
                 self.assertEqual(bundle.get("total", 0), 0)
                 self.assertFalse(bundle.get("entry"))
 
-    def test_search_immunization_parameter_smoke_tests(self):
+    def test_search_by_identifier_parameter_smoke_tests(self):
         stored_records = generate_imms_resource(
             valid_nhs_number1, VaccineTypes.covid_19,
             imms_identifier_value=str(uuid.uuid4()))
@@ -102,16 +102,24 @@ class TestSearchImmunizationByIdentifier(ImmunizationBaseTest):
                 ),
                 SearchTestParams(
                     "POST",
-                    f"identifier={identifier_system}|{identifier_value}&_elements=id,meta",
-                    None,
+                    "",
+                    f"identifier={identifier_system}|{identifier_value}",
                     True,
                     200
-                )
+                ),
+                SearchTestParams(
+                    "POST",
+                    f"identifier={identifier_system}|{identifier_value}",
+                    f"identifier={identifier_system}|{identifier_value}",
+                    False,
+                    400
+                ),
                 ]
         for search in searches:
             pprint.pprint(search)
             response = self.default_imms_api.search_immunizations_full(
-                search.method, search.query_string,
+                search.method,
+                search.query_string,
                 body=search.body,
                 expected_status_code=search.expected_status_code)
 
@@ -123,9 +131,10 @@ class TestSearchImmunizationByIdentifier(ImmunizationBaseTest):
                 assert "entry" in results.keys()
                 assert response.status_code == 200
                 assert results["resourceType"] == "Bundle"
-
-                # result_ids = [result["resource"]["id"] for result in results["entry"]]
-                # created_and_returned_ids = list(set(result_ids) & set(created_resource_ids))
-                # assert len(created_and_returned_ids) == len(search.expected_indexes)
-                # for expected_index in search.expected_indexes:
-                # assert created_resource_ids[expected_index] in result_ids
+                assert results["type"] == "searchset"
+                assert results["total"] == 1
+                assert isinstance(results["entry"], list)
+            else:
+                assert "entry" not in results.keys()
+                assert response.status_code != 200
+                assert results["resourceType"] == "OperationOutcome"

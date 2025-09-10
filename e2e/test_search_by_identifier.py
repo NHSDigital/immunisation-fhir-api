@@ -1,5 +1,8 @@
 
 from decimal import Decimal
+import pprint
+from typing import NamedTuple, Literal, Optional
+import uuid
 from utils.base_test import ImmunizationBaseTest
 from utils.constants import valid_nhs_number1
 
@@ -132,3 +135,81 @@ class TestSearchImmunizationByIdentifier(ImmunizationBaseTest):
                 self.assertEqual(response_imm["search"], {"mode": "match"})
                 expected_imms_resource["patient"]["reference"] = response_imm["resource"]["patient"]["reference"]
                 self.assertEqual(response_imm["resource"], expected_imms_resource)
+
+    def test_search_immunization_parameter_smoke_tests(self):
+        stored_records = generate_imms_resource(
+            valid_nhs_number1, VaccineTypes.covid_19,
+            imms_identifier_value=str(uuid.uuid4()))
+
+        imms_id = self.store_records(stored_records)
+        # Retrieve the resources to get the identifier system and value via read API
+        covid_resource = self.default_imms_api.get_immunization_by_id(imms_id).json()
+
+        # Extract identifier components safely for covid resource
+        identifiers = covid_resource.get("identifier", [])
+        identifier_system = identifiers[0].get("system")
+        identifier_value = identifiers[0].get("value")
+
+        # created_resource_ids = [result["id"] for result in stored_records]
+
+        class SearchTestParams(NamedTuple):
+            method: Literal["POST", "GET"]
+            query_string: Optional[str]
+            body: Optional[str]
+            should_be_success: bool
+            expected_status_code: int = 200
+
+        searches = [
+                SearchTestParams(
+                    "GET",
+                    "",
+                    None,
+                    False,
+                    400
+                ),
+                # No results.
+                SearchTestParams(
+                    "GET",
+                    f"identifier={identifier_system}|{identifier_value}",
+                    None,
+                    True,
+                    200
+                ),
+                SearchTestParams(
+                    "POST",
+                    "",
+                    f"identifier={identifier_system}|{identifier_value}",
+                    True,
+                    200
+                ),
+                SearchTestParams(
+                    "POST",
+                    f"identifier={identifier_system}|{identifier_value}",
+                    f"identifier={identifier_system}|{identifier_value}",
+                    False,
+                    400
+                ),
+                ]
+        for search in searches:
+            pprint.pprint(search)
+            response = self.default_imms_api.search_immunizations_full(
+                search.method,
+                search.query_string,
+                body=search.body,
+                expected_status_code=search.expected_status_code)
+
+            # Then
+            assert response.ok == search.should_be_success, response.text
+
+            results: dict = response.json()
+            if search.should_be_success:
+                assert "entry" in results.keys()
+                assert response.status_code == 200
+                assert results["resourceType"] == "Bundle"
+                assert results["type"] == "searchset"
+                assert results["total"] == 1
+                assert isinstance(results["entry"], list)
+            else:
+                assert "entry" not in results.keys()
+                assert response.status_code != 200
+                assert results["resourceType"] == "OperationOutcome"
