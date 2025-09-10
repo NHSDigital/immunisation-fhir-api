@@ -149,4 +149,3 @@ class TestProcessorEdgeCases(unittest.TestCase):
         self.assertEqual(self.mock_send_to_kinesis.call_count, n_rows)
         self.mock_logger_warning.assert_not_called()
         self.mock_logger_error.assert_not_called()
-
