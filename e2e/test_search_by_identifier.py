@@ -23,11 +23,10 @@ class TestSearchImmunizationByIdentifier(ImmunizationBaseTest):
     def test_search_imms(self):
         for imms_api in self.imms_apis:
             with self.subTest(imms_api):
-                # Given two patients each with one covid_19
-                covid_19_p1 = generate_imms_resource()
-                rsv_p1 = generate_imms_resource()
-                covid_ids = self.store_records(covid_19_p1)
-                rsv_ids = self.store_records(rsv_p1)
+                covid19_imms_data = generate_imms_resource()
+                rsv_imms_data = generate_imms_resource()
+                covid_ids = self.store_records(covid19_imms_data)
+                rsv_ids = self.store_records(rsv_imms_data)
 
                 # Retrieve the resources to get the identifier system and value via read API
                 covid_resource = imms_api.get_immunization_by_id(covid_ids).json()
