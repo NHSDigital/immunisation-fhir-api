@@ -43,8 +43,9 @@ def process_csv_to_fhir(incoming_message_body: dict) -> int:
                                   created_at_formatted_string, csv_reader, target_disease)
 
     if err:
-        logger.warning(f"Processing Error: {err}.")
         if isinstance(err, InvalidEncoding):
+            """ resolves encoding issue VED-754 """
+            logger.warning(f"Encoding Error: {err}.")
             new_encoder = "cp1252"
             logger.info(f"Encode error at row {row_count} with {encoder}. Switch to {new_encoder}")
             encoder = new_encoder
