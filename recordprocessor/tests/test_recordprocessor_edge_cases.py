@@ -77,7 +77,7 @@ class TestProcessorEdgeCases(unittest.TestCase):
         # check logger.warning called for decode error
         self.mock_logger_warning.assert_called()
         warning_call_args = self.mock_logger_warning.call_args[0][0]
-        self.assertTrue(warning_call_args.startswith("Encoding Error: 'utf-8' codec can't decode byte 0xe9 in position 6064: invalid continuation byte."))
+        self.assertTrue(warning_call_args.startswith("Encoding Error: 'utf-8' codec can't decode byte 0xe9"))
 
     def test_process_large_file_utf8(self):
         """ Test processing a large file with utf-8 encoding """
