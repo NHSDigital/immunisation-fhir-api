@@ -8,7 +8,7 @@ from mappings import map_target_disease
 from send_to_kinesis import send_to_kinesis
 from clients import logger
 from file_level_validation import file_level_validation
-from errors import NoOperationPermissions, InvalidHeaders, InvalidEncoding
+from errors import NoOperationPermissions, InvalidHeaders
 from utils_for_recordprocessor import get_csv_content_dict_reader
 from typing import Optional
 
@@ -43,7 +43,7 @@ def process_csv_to_fhir(incoming_message_body: dict) -> int:
                                   created_at_formatted_string, csv_reader, target_disease)
 
     if err:
-        if isinstance(err, InvalidEncoding):
+        if isinstance(err, UnicodeDecodeError):
             """ resolves encoding issue VED-754 """
             logger.warning(f"Encoding Error: {err}.")
             new_encoder = "cp1252"
@@ -95,13 +95,10 @@ def process_rows(file_id, vaccine, supplier, file_key, allowed_operations, creat
                 send_to_kinesis(supplier, outgoing_message_body, vaccine)
                 total_rows_processed_count += 1
 
-    except Exception as error:  # pylint: disable=broad-exception-caught
-        # if error reason is 'invalid continuation byte', then it's a decode error
+    except UnicodeDecodeError as error:  # pylint: disable=broad-exception-caught
         logger.error("Error processing row %s: %s", row_count, error)
-        if hasattr(error, 'reason') and error.reason == "invalid continuation byte":
-            return total_rows_processed_count, InvalidEncoding("Invalid continuation byte")
-        else:
-            raise error
+        return total_rows_processed_count, error
+
     return total_rows_processed_count, None
 
 
