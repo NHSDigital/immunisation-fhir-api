@@ -39,7 +39,6 @@ def process_csv_to_fhir(incoming_message_body: dict) -> int:
 
     target_disease = map_target_disease(vaccine)
     row_count = 0
-    logger.info(f"process with encoder {encoder} from row {row_count+1}")
     row_count, err = process_rows(file_id, vaccine, supplier, file_key, allowed_operations,
                                   created_at_formatted_string, csv_reader, target_disease)
 
