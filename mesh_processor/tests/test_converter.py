@@ -48,7 +48,7 @@ class TestLambdaHandler(TestCase):
         result = invoke_lambda("test-csv-file.csv")
         self.assertEqual(result["statusCode"], 200)
 
-        get_target_response = s3.get_object(Bucket="destination-bucket", Key="overridden-filename.csv")
+        get_target_response = s3.get_object(Bucket="destination-bucket", Key="overridden-filename_undw3w==.csv")
         body = get_target_response["Body"].read().decode("utf-8")
         assert body == "some CSV content"
 
@@ -71,7 +71,7 @@ class TestLambdaHandler(TestCase):
         result = invoke_lambda("test-csv-file.csv")
         self.assertEqual(result["statusCode"], 200)
 
-        response = s3.get_object(Bucket="destination-bucket", Key="test-csv-file.csv")
+        response = s3.get_object(Bucket="destination-bucket", Key="test-csv-file_undw3w==.csv")
         body = response["Body"].read().decode("utf-8")
         assert body == "some CSV content"
 
@@ -88,7 +88,8 @@ class TestLambdaHandler(TestCase):
                     "some CSV content",
                     "--12345678--",
                     ""
-                ])
+                ]),
+                "test-csv-file_8aia6A==.csv"
             ),
             (
                 "missing initial newline",
@@ -100,7 +101,8 @@ class TestLambdaHandler(TestCase):
                     "some CSV content",
                     "--12345678--",
                     ""
-                ])
+                ]),
+                "test-csv-file_D2bxXQ==.csv"
             ),
             (
                 "missing final newline",
@@ -112,7 +114,8 @@ class TestLambdaHandler(TestCase):
                     "",
                     "some CSV content",
                     "--12345678--",
-                ])
+                ]),
+                "test-csv-file_waYOrA==.csv"
             ),
             (
                 "multiple parts",
@@ -130,11 +133,12 @@ class TestLambdaHandler(TestCase):
                     "some ignored content",
                     "--12345678--",
                     ""
-                ])
+                ]),
+                "test-csv-file_7zR2dg==.csv"
             )
         ]
-        for msg, body in cases:
-            with self.subTest(msg=msg, body=body):
+        for msg, body, filename in cases:
+            with self.subTest(msg=msg, body=body, filename=filename):
                 s3 = boto3.client("s3", region_name="eu-west-2")
                 s3.put_object(
                     Bucket="source-bucket",
@@ -146,7 +150,7 @@ class TestLambdaHandler(TestCase):
                 result = invoke_lambda("test-dat-file.dat")
                 self.assertEqual(result["statusCode"], 200)
 
-                response = s3.get_object(Bucket="destination-bucket", Key="test-csv-file.csv")
+                response = s3.get_object(Bucket="destination-bucket", Key=filename)
                 body = response["Body"].read().decode("utf-8")
                 assert body == "some CSV content"
                 content_type = response["ContentType"]
@@ -165,7 +169,8 @@ class TestLambdaHandler(TestCase):
                     "some CSV content",
                     "--12345678--",
                     ""
-                ])
+                ]),
+                "test-dat-file_r67kLQ==.dat"
             ),
             (
                 "no header",
@@ -176,11 +181,12 @@ class TestLambdaHandler(TestCase):
                     "some CSV content",
                     "--12345678--",
                     ""
-                ])
+                ]),
+                "test-dat-file_VPfBaQ==.dat"
             )
         ]
-        for msg, body in cases:
-            with self.subTest(msg=msg, body=body):
+        for msg, body, filename in cases:
+            with self.subTest(msg=msg, body=body, filename=filename):
                 s3 = boto3.client("s3", region_name="eu-west-2")
                 s3.put_object(
                     Bucket="source-bucket",
@@ -192,7 +198,7 @@ class TestLambdaHandler(TestCase):
                 result = invoke_lambda("test-dat-file.dat")
                 self.assertEqual(result["statusCode"], 200)
 
-                response = s3.get_object(Bucket="destination-bucket", Key="test-dat-file.dat")
+                response = s3.get_object(Bucket="destination-bucket", Key=filename)
                 body = response["Body"].read().decode("utf-8")
                 assert body == "some CSV content"
 
@@ -217,7 +223,7 @@ class TestLambdaHandler(TestCase):
         result = invoke_lambda("test-dat-file.dat")
         self.assertEqual(result["statusCode"], 200)
 
-        response = s3.get_object(Bucket="destination-bucket", Key="test-csv-file.csv")
+        response = s3.get_object(Bucket="destination-bucket", Key="test-csv-file_dfUskg==.csv")
         body = response["Body"].read().decode("utf-8")
         assert body == "some CSV content"
         content_type = response["ContentType"]
@@ -245,7 +251,7 @@ class TestLambdaHandler(TestCase):
         result = invoke_lambda("test-dat-file.dat")
         self.assertEqual(result["statusCode"], 200)
 
-        response = s3.get_object(Bucket="destination-bucket", Key="test-csv-file.csv")
+        response = s3.get_object(Bucket="destination-bucket", Key="test-csv-file_HVspqQ==.csv")
         body = response["Body"].read().decode("utf-8")
         assert body == "some CSV content\nsplit across\nmultiple lines"
 
@@ -267,6 +273,5 @@ class TestLambdaHandler(TestCase):
                 result = invoke_lambda("test-dat-file.dat")
                 self.assertEqual(result["statusCode"], 500)
 
-                with self.assertRaises(ClientError) as e:
-                    s3.head_object(Bucket="destination-bucket", Key="test-csv-file.csv")
-                self.assertEqual(e.exception.response["Error"]["Code"], "404")
+                list_objects_response = s3.list_objects_v2(Bucket="destination-bucket")
+                self.assertEqual(list_objects_response["KeyCount"], 0)

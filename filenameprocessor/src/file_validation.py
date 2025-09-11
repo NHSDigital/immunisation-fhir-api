@@ -38,34 +38,54 @@ def validate_file_key(file_key: str) -> tuple[str, str]:
     Checks that all elements of the file key are valid, raises an exception otherwise.
     Returns a tuple containing the vaccine_type and supplier (both converted to upper case).
     """
-
-    if not match(r"^[^_.]*_[^_.]*_[^_.]*_[^_.]*_[^_.]*\.[^_.]*$", file_key):
-        error_message = "Initial file validation failed: invalid file key format"
-        raise InvalidFileKeyError(error_message)
-
     file_key = file_key.upper()
-    file_key_parts_without_extension = file_key.split(".")[0].split("_")
+
+    file_name_and_extension = file_key.rsplit(".", 1)
+    if len(file_name_and_extension) != 2:
+        raise InvalidFileKeyError("Initial file validation failed: missing file extension")
+
+    file_key_parts_without_extension = file_name_and_extension[0].split("_")
+    if len(file_key_parts_without_extension) < 5:
+        raise InvalidFileKeyError("Initial file validation failed: not enough parts in file key")
 
     vaccine_type = file_key_parts_without_extension[0]
     vaccination = file_key_parts_without_extension[1]
     version = file_key_parts_without_extension[2]
     ods_code = file_key_parts_without_extension[3]
     timestamp = file_key_parts_without_extension[4]
-    extension = file_key.split(".")[1]
+    extension = file_name_and_extension[1]
     supplier = get_supplier_system_from_cache(ods_code)
 
     valid_vaccine_types = get_valid_vaccine_types_from_cache()
 
     # Validate each file key element
-    if not (
-        vaccine_type in valid_vaccine_types
-        and vaccination == "VACCINATIONS"
-        and version in VALID_VERSIONS
-        and supplier  # Note that if supplier could be identified, this also implies that ODS code is valid
-        and is_valid_datetime(timestamp)
-        and ((extension == "CSV") or (extension == "DAT"))  # The DAT extension has been added for MESH file processing
-    ):
-        raise InvalidFileKeyError("Initial file validation failed: invalid file key")
+    # if not (
+    #     vaccine_type in valid_vaccine_types
+    #     and vaccination == "VACCINATIONS"
+    #     and version in VALID_VERSIONS
+    #     and supplier  # Note that if supplier could be identified, this also implies that ODS code is valid
+    #     and is_valid_datetime(timestamp)
+    #     and ((extension == "CSV") or (extension == "DAT"))  # The DAT extension has been added for MESH file processing
+    # ):
+    #     raise InvalidFileKeyError("Initial file validation failed: invalid file key")
+    #
+    if vaccine_type not in valid_vaccine_types:
+        raise InvalidFileKeyError("Initial file validation failed: invalid vaccine type")
+
+    if vaccination != "VACCINATIONS":
+        raise InvalidFileKeyError("Initial file validation failed: file key must contain VACCINATIONS")
+
+    if version not in VALID_VERSIONS:
+        raise InvalidFileKeyError("Initial file validation failed: invalid file version")
+
+    if not supplier:
+        raise InvalidFileKeyError("Initial file validation failed: invalid supplier ODS code")
+
+    if not is_valid_datetime(timestamp):
+        raise InvalidFileKeyError("Initial file validation failed: invalid timestamp")
+
+    if extension not in ["CSV", "DAT"]:
+        raise InvalidFileKeyError("Initial file validation failed: unsupported file extension")
 
     return vaccine_type, supplier
 

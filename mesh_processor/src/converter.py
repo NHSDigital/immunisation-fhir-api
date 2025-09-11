@@ -85,7 +85,13 @@ def move_file(source_bucket: str, source_key: str, destination_bucket: str, dest
     s3_client.delete_object(Bucket=source_bucket, Key=source_key)
 
 
-def transfer_multipart_content(bucket_name: str, file_key: str, boundary: bytes, filename: str) -> None:
+def transfer_multipart_content(
+    bucket_name: str,
+    file_key: str,
+    boundary: bytes,
+    filename: str,
+    checksum: str
+) -> None:
     with open(
         f"s3://{bucket_name}/{file_key}",
         "rb",
@@ -98,6 +104,7 @@ def transfer_multipart_content(bucket_name: str, file_key: str, boundary: bytes,
         if content_disposition:
             _, content_disposition_params = parse_header_value(content_disposition)
             filename = content_disposition_params.get("filename") or filename
+        filename = add_checksum_to_filename(filename, checksum)
         content_type = headers.get("Content-Type") or "application/octet-stream"
 
         with open(
@@ -117,26 +124,54 @@ def transfer_multipart_content(bucket_name: str, file_key: str, boundary: bytes,
         move_file(DESTINATION_BUCKET_NAME, f"streaming/{filename}", DESTINATION_BUCKET_NAME, filename)
 
 
+def get_checksum_value(checksum_obj: dict[str, str]) -> str:
+    return (
+        checksum_obj.get("ChecksumCRC64NVME")
+        or checksum_obj.get("ChecksumCRC32")
+        or checksum_obj.get("ChecksumCRC32C")
+        or checksum_obj.get("ChecksumSHA1")
+        or checksum_obj.get("ChecksumSHA256")
+        or checksum_obj.get("ChecksumMD5")
+    )
+
+
+def add_checksum_to_filename(filename: str, checksum: str) -> str:
+    filename_parts = filename.rsplit(".", 1)
+    return (
+        f"{filename_parts[0]}_{checksum}.{filename_parts[1]}"
+        if len(filename_parts) > 1
+        else f"{filename}_{checksum}"
+    )
+
+
 def process_record(record: dict) -> None:
     bucket_name = record["s3"]["bucket"]["name"]
     file_key = record["s3"]["object"]["key"]
     logger.info(f"Processing {file_key}")
 
-    response = s3_client.head_object(Bucket=bucket_name, Key=file_key)
-    content_type = response['ContentType']
+    head_object_response = s3_client.head_object(Bucket=bucket_name, Key=file_key)
+    content_type = head_object_response['ContentType']
     media_type, content_type_params = parse_header_value(content_type)
-    filename = response["Metadata"].get("mex-filename") or file_key
+    filename = head_object_response["Metadata"].get("mex-filename") or file_key
+
+    get_object_attributes_response = s3_client.get_object_attributes(
+        Bucket=bucket_name,
+        Key=file_key,
+        ObjectAttributes=["Checksum"]
+    )
+    checksum_obj = get_object_attributes_response["Checksum"]
+    checksum = get_checksum_value(checksum_obj)
 
     # Handle multipart content by parsing the filename from headers and streaming the content from the first part
     if media_type.startswith("multipart/"):
         logger.info("Found multipart content")
         boundary = content_type_params["boundary"].encode("utf-8")
-        transfer_multipart_content(bucket_name, file_key, boundary, filename)
+        transfer_multipart_content(bucket_name, file_key, boundary, filename, checksum)
     else:
         s3_client.copy_object(
             Bucket=DESTINATION_BUCKET_NAME,
             CopySource={"Bucket": bucket_name, "Key": file_key},
-            Key=filename
+            Key=add_checksum_to_filename(filename, checksum),
         )
 
     logger.info(f"Transfer complete for {file_key}")
