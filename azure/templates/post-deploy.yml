@@ -40,6 +40,17 @@ steps:
       profile: "apim-dev"
       aws_account: ${{ parameters.aws_account_type }}
 
+  - script: |
+      echo "CPU info:"
+      lscpu
+      echo "Memory info:"
+      free -h
+      echo "Disk info:"
+      df -h
+      echo "Top 5 CPU processes:"
+      top -b -n 1 | head -15
+    displayName: "Print System Info"
+
   - bash: |
       set -e
       if ! [[ $APIGEE_ENVIRONMENT =~ .*-*sandbox ]]; then
@@ -257,40 +268,6 @@ steps:
       fi
 
     displayName: e2e parallel 2
-    workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/e2e_batch"
-    condition: eq(1, 1) # Disable task but make this step visible in the pipeline
-
-
-  - bash: |
-      pyenv local 3.11
-      poetry env use 3.11
-      set -e
-      if ! [[ "$APIGEE_ENVIRONMENT" == "prod" || "$APIGEE_ENVIRONMENT" == "int" || "$APIGEE_ENVIRONMENT" == *"sandbox" ]]; then
-        echo "Running E2E batch test cases (Parallelx4)"
-
-        export AWS_PROFILE="apim-dev"
-        aws_account_no="$(aws sts get-caller-identity --query Account --output text)"
-        echo "Using AWS Account: $aws_account_no"
-
-        service_name="${FULLY_QUALIFIED_SERVICE_NAME}"
-
-        pr_no=$(echo "$service_name" | { grep -oE '[0-9]+$' || true; })
-        if [ -z "$pr_no" ]; then
-          workspace="$APIGEE_ENVIRONMENT"
-        else
-          workspace="pr-$pr_no"
-        fi
-
-        poetry install --no-root  # Install dependencies defined in pyproject.toml
-
-        ENVIRONMENT="$workspace" time poetry run unittest-parallel -v -j 4
-
-        echo "E2E batch folder test cases executed successfully"
-      else
-        echo "Skipping E2E batch folder test cases as the environment is prod-int-sandbox"
-      fi
-
-    displayName: e2e parallel 4
     workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/e2e_batch"
     condition: eq(1, 1) # Disable task but make this step visible in the pipeline
 
