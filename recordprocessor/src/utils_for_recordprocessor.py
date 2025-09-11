@@ -13,11 +13,11 @@ def get_environment() -> str:
     return _env if _env in ["internal-dev", "int", "ref", "sandbox", "prod"] else "internal-dev"
 
 
-def get_csv_content_dict_reader(file_key: str) -> DictReader:
+def get_csv_content_dict_reader(file_key: str, encoder="utf-8") -> DictReader:
     """Returns the requested file contents from the source bucket in the form of a DictReader"""
     response = s3_client.get_object(Bucket=os.getenv("SOURCE_BUCKET_NAME"), Key=file_key)
     binary_io = response["Body"]
-    text_io = TextIOWrapper(binary_io, encoding="utf-8", newline="")
+    text_io = TextIOWrapper(binary_io, encoding=encoder, newline="")
     return DictReader(text_io, delimiter="|")
 
 
