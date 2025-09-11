@@ -11,7 +11,9 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
 
 s3_client = boto3.client('s3')
+sts_client = boto3.client('sts')
 
+aws_account_id = sts_client.get_caller_identity()['Account']
 
 def parse_headers(headers_str: str) -> dict[str, str]:
     headers = dict(
@@ -80,9 +82,15 @@ def move_file(source_bucket: str, source_key: str, destination_bucket: str, dest
     s3_client.copy_object(
         CopySource={"Bucket": source_bucket, "Key": source_key},
         Bucket=destination_bucket,
-        Key=destination_key
+        Key=destination_key,
+        ExpectedBucketOwner=aws_account_id,
+        ExpectedSourceBucketOwner=aws_account_id,
     )
-    s3_client.delete_object(Bucket=source_bucket, Key=source_key)
+    s3_client.delete_object(
+        Bucket=source_bucket,
+        Key=source_key,
+        ExpectedBucketOwner=aws_account_id,
+    )
 
 
 def transfer_multipart_content(
@@ -149,7 +157,11 @@ def process_record(record: dict) -> None:
     file_key = record["s3"]["object"]["key"]
     logger.info(f"Processing {file_key}")
 
-    head_object_response = s3_client.head_object(Bucket=bucket_name, Key=file_key)
+    head_object_response = s3_client.head_object(
+        Bucket=bucket_name,
+        Key=file_key,
+        ExpectedBucketOwner=aws_account_id,
+    )
     content_type = head_object_response['ContentType']
     media_type, content_type_params = parse_header_value(content_type)
     filename = head_object_response["Metadata"].get("mex-filename") or file_key
@@ -157,7 +169,8 @@ def process_record(record: dict) -> None:
     get_object_attributes_response = s3_client.get_object_attributes(
         Bucket=bucket_name,
         Key=file_key,
-        ObjectAttributes=["Checksum"]
+        ObjectAttributes=["Checksum"],
+        ExpectedBucketOwner=aws_account_id,
     )
     checksum_obj = get_object_attributes_response["Checksum"]
     checksum = get_checksum_value(checksum_obj)
@@ -172,6 +185,8 @@ def process_record(record: dict) -> None:
             Bucket=DESTINATION_BUCKET_NAME,
             CopySource={"Bucket": bucket_name, "Key": file_key},
             Key=add_checksum_to_filename(filename, checksum),
+            ExpectedBucketOwner=aws_account_id,
+            ExpectedSourceBucketOwner=aws_account_id,
         )
 
     logger.info(f"Transfer complete for {file_key}")
