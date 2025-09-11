@@ -1,8 +1,10 @@
+RUN_ENV := @PYTHONPATH=src:../shared/src
+
 subscribe:
-	@PYTHONPATH=src poetry run python src/subscribe_mns.py
+	$(RUN_ENV) poetry run python src/subscribe_mns.py
 
 unsubscribe:
-	@PYTHONPATH=src poetry run python src/unsubscribe_mns.py
+	$(RUN_ENV) poetry run python src/unsubscribe_mns.py
 
 TEST_ENV := @PYTHONPATH=src:tests:../shared/src
 
