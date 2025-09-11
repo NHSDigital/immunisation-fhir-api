@@ -2,7 +2,7 @@
 
 from unittest import TestCase
 from unittest.mock import patch
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from moto import mock_s3
 from boto3 import client as boto3_client
 
@@ -11,9 +11,10 @@ from tests.utils_for_tests.generic_setup_and_teardown import GenericSetUp, Gener
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
+    from constants import AUDIT_TABLE_TTL_DAYS
     from clients import REGION_NAME
     from utils_for_filenameprocessor import (
-        get_created_at_formatted_string,
+        get_creation_and_expiry_times,
         move_file
     )
 
@@ -32,20 +33,19 @@ class TestUtilsForFilenameprocessor(TestCase):
         """Tear down the s3 buckets"""
         GenericTearDown(s3_client)
 
-    def test_get_created_at_formatted_string(self):
-        """Test that get_created_at_formatted_string can correctly get the created_at_formatted_string"""
-        bucket_name = BucketNames.SOURCE
-        file_key = "test_file_key"
+    def test_get_creation_and_expiry_times(self):
+        """Test that get_creation_and_expiry_times can correctly get the created_at_formatted_string"""
+        mock_last_modified_created_at = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        mock_last_modified_s3_response = {"LastModified": mock_last_modified_created_at}
 
-        s3_client.put_object(Bucket=bucket_name, Key=file_key)
+        expected_result_created_at = "20240101T12000000"
+        expected_expiry_datetime = mock_last_modified_created_at + timedelta(days=int(AUDIT_TABLE_TTL_DAYS))
+        expected_result_expires_at = int(expected_expiry_datetime.timestamp())
 
-        mock_last_modified = {"LastModified": datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)}
-        expected_result = "20240101T12000000"
+        created_at_formatted_string, expires_at = get_creation_and_expiry_times(mock_last_modified_s3_response)
 
-        with patch("utils_for_filenameprocessor.s3_client.get_object", return_value=mock_last_modified):
-            created_at_formatted_string = get_created_at_formatted_string(bucket_name, file_key)
-
-        self.assertEqual(created_at_formatted_string, expected_result)
+        self.assertEqual(created_at_formatted_string, expected_result_created_at)
+        self.assertEqual(expires_at, expected_result_expires_at)
 
     def test_move_file(self):
         """Tests that move_file correctly moves a file from one location to another within a single S3 bucket"""

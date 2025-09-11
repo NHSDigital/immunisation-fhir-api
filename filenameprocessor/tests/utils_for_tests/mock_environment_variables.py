@@ -40,5 +40,6 @@ MOCK_ENVIRONMENT_DICT = {
     "REDIS_HOST": "localhost",
     "REDIS_PORT": "6379",
     "SPLUNK_FIREHOSE_NAME": Firehose.STREAM_NAME,
-    "AUDIT_TABLE_NAME": "immunisation-batch-internal-dev-audit-table"
+    "AUDIT_TABLE_NAME": "immunisation-batch-internal-dev-audit-table",
+    "AUDIT_TABLE_TTL_DAYS": "14",
 }

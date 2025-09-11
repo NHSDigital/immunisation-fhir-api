@@ -1,20 +1,21 @@
 import json
-import os
 import uuid
 import datetime
 import unittest
-from unittest.mock import MagicMock
+import os
+from unittest.mock import MagicMock, patch
 from copy import deepcopy
-from unittest.mock import create_autospec, patch
-from unittest import skip
 from unittest.mock import create_autospec, patch
 from decimal import Decimal
 
 from fhir.resources.R4B.bundle import Bundle as FhirBundle, BundleEntry
 from fhir.resources.R4B.immunization import Immunization
+
+from authorisation.api_operation_code import ApiOperationCode
+from authorisation.authoriser import Authoriser
 from fhir_repository import ImmunizationRepository
 from fhir_service import FhirService, UpdateOutcome, get_service_url
-from models.errors import InvalidPatientId, CustomValidationError
+from models.errors import InvalidPatientId, CustomValidationError, UnauthorizedVaxError, ResourceNotFoundError
 from models.fhir_immunization import ImmunizationValidator
 from models.utils.generic_utils import get_contained_patient
 from pydantic import ValidationError
@@ -43,33 +44,33 @@ class TestFhirServiceBase(unittest.TestCase):
         patch.stopall()
 
 class TestServiceUrl(unittest.TestCase):
-    
+
     def setUp(self):
         self.logger_info_patcher = patch("logging.Logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
-        
+
     def tearDown(self):
         patch.stopall()
-    
+
     def test_get_service_url(self):
         """it should create service url"""
         env = "int"
-        base_path = "my-base-path"
+        base_path = "immunisation-fhir-api/FHIR/R4"
         url = get_service_url(env, base_path)
         self.assertEqual(url, f"https://{env}.api.service.nhs.uk/{base_path}")
         # default should be internal-dev
         env = "it-does-not-exist"
-        base_path = "my-base-path"
+        base_path = "immunisation-fhir-api/FHIR/R4"
         url = get_service_url(env, base_path)
         self.assertEqual(url, f"https://internal-dev.api.service.nhs.uk/{base_path}")
         # prod should not have a subdomain
         env = "prod"
-        base_path = "my-base-path"
+        base_path = "immunisation-fhir-api/FHIR/R4"
         url = get_service_url(env, base_path)
         self.assertEqual(url, f"https://api.service.nhs.uk/{base_path}")
         # any other env should fall back to internal-dev (like pr-xx or per-user)
         env = "pr-42"
-        base_path = "my-base-path"
+        base_path = "immunisation-fhir-api/FHIR/R4"
         url = get_service_url(env, base_path)
         self.assertEqual(url, f"https://internal-dev.api.service.nhs.uk/{base_path}")
 
@@ -78,9 +79,10 @@ class TestGetImmunizationByAll(TestFhirServiceBase):
 
     def setUp(self):
         super().setUp()
+        self.authoriser = create_autospec(Authoriser)
         self.imms_repo = create_autospec(ImmunizationRepository)
         self.validator = create_autospec(ImmunizationValidator)
-        self.fhir_service = FhirService(self.imms_repo, self.validator)
+        self.fhir_service = FhirService(self.imms_repo, self.authoriser, self.validator)
         self.logger_info_patcher = patch("logging.Logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
 
@@ -188,25 +190,30 @@ class TestGetImmunization(TestFhirServiceBase):
 
     def setUp(self):
         super().setUp()
+        self.authoriser = create_autospec(Authoriser)
         self.imms_repo = create_autospec(ImmunizationRepository)
         self.validator = create_autospec(ImmunizationValidator)
-        self.fhir_service = FhirService(self.imms_repo, self.validator)
+        self.fhir_service = FhirService(self.imms_repo, self.authoriser, self.validator)
         self.logger_info_patcher = patch("logging.Logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
+
     def tearDown(self):
         patch.stopall()
 
     def test_get_immunization_by_id(self):
         """it should find an Immunization by id"""
         imms_id = "an-id"
+        self.mock_redis_client.hget.return_value = "COVID-19"
+        self.authoriser.authorise.return_value = True
         self.imms_repo.get_immunization_by_id.return_value = {"Resource": create_covid_19_immunization(imms_id).dict()}
 
         # When
-        service_resp = self.fhir_service.get_immunization_by_id(imms_id, "COVID19.CRUDS")
+        service_resp = self.fhir_service.get_immunization_by_id(imms_id, "Test Supplier")
         act_imms = service_resp["Resource"]
 
         # Then
-        self.imms_repo.get_immunization_by_id.assert_called_once_with(imms_id, "COVID19.CRUDS")
+        self.authoriser.authorise.assert_called_once_with("Test Supplier", ApiOperationCode.READ, {"COVID-19"})
+        self.imms_repo.get_immunization_by_id.assert_called_once_with(imms_id)
 
         self.assertEqual(act_imms.id, imms_id)
 
@@ -216,12 +223,10 @@ class TestGetImmunization(TestFhirServiceBase):
         self.imms_repo.get_immunization_by_id.return_value = None
 
         # When
-        act_imms = self.fhir_service.get_immunization_by_id(imms_id, "COVID19.CRUDS")
+        act_imms = self.fhir_service.get_immunization_by_id(imms_id, "Test Supplier")
 
         # Then
-        self.imms_repo.get_immunization_by_id.assert_called_once_with(
-            imms_id, "COVID19.CRUDS"
-        )
+        self.imms_repo.get_immunization_by_id.assert_called_once_with(imms_id)
         self.assertEqual(act_imms, None)
 
     def test_get_immunization_by_id_patient_not_restricted(self):
@@ -232,15 +237,19 @@ class TestGetImmunization(TestFhirServiceBase):
         imms_id = "non_restricted_id"
 
         immunization_data = load_json_data("completed_covid19_immunization_event.json")
+        self.mock_redis_client.hget.return_value = "COVID-19"
+        self.authoriser.authorise.return_value = True
         self.imms_repo.get_immunization_by_id.return_value = {"Resource": immunization_data}
 
         expected_imms = load_json_data("completed_covid19_immunization_event_for_read.json")
         expected_output = Immunization.parse_obj(expected_imms)
 
         # When
-        actual_output = self.fhir_service.get_immunization_by_id(imms_id, "COV.CRUDS")
+        actual_output = self.fhir_service.get_immunization_by_id(imms_id, "Test Supplier")
 
         # Then
+        self.authoriser.authorise.assert_called_once_with("Test Supplier", ApiOperationCode.READ, {"COVID-19"})
+        self.imms_repo.get_immunization_by_id.assert_called_once_with(imms_id)
         self.assertEqual(actual_output["Resource"], expected_output)
 
     def test_pre_validation_failed(self):
@@ -267,6 +276,22 @@ class TestGetImmunization(TestFhirServiceBase):
         # Then
         self.assertEqual(error.exception.message, expected_msg)
         self.imms_repo.update_immunization.assert_not_called()
+
+    def test_unauthorised_error_raised_when_user_lacks_permissions(self):
+        """it should throw an exception when user lacks permissions"""
+        imms_id = "an-id"
+        self.mock_redis_client.hget.return_value = "COVID-19"
+        self.authoriser.authorise.return_value = False
+        self.imms_repo.get_immunization_by_id.return_value = {"Resource": create_covid_19_immunization(imms_id).dict()}
+
+        with self.assertRaises(UnauthorizedVaxError):
+            # When
+            self.fhir_service.get_immunization_by_id(imms_id, "Test Supplier")
+
+        # Then
+        self.authoriser.authorise.assert_called_once_with("Test Supplier", ApiOperationCode.READ, {"COVID-19"})
+        self.imms_repo.get_immunization_by_id.assert_called_once_with(imms_id)
+
 
 def test_post_validation_failed_get_invalid_target_disease(self):
     """it should raise CustomValidationError for invalid target disease code on get"""
@@ -307,45 +332,80 @@ def test_post_validation_failed_get_missing_patient_name(self):
 
 class TestGetImmunizationIdentifier(unittest.TestCase):
     """Tests for FhirService.get_immunization_by_id"""
+    MOCK_SUPPLIER_NAME = "TestSupplier"
 
     def setUp(self):
+        self.authoriser = create_autospec(Authoriser)
         self.imms_repo = create_autospec(ImmunizationRepository)
         self.validator = create_autospec(ImmunizationValidator)
-        self.fhir_service = FhirService(self.imms_repo, self.validator)
+        self.fhir_service = FhirService(self.imms_repo, self.authoriser, self.validator)
         self.logger_info_patcher = patch("logging.Logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
-        
+
     def tearDown(self):
         patch.stopall()
 
     def test_get_immunization_by_identifier(self):
         """it should find an Immunization by id"""
+        imms_id = "an-id#an-id"
+        identifier = "test"
+        element = "id,mEta,DDD"
+
+        mock_resource = create_covid_19_immunization_dict(identifier)
+        self.authoriser.authorise.return_value = True
+        self.imms_repo.get_immunization_by_identifier.return_value = {
+            "resource": mock_resource,
+            "id": imms_id,
+            "version": 1
+        }, "covid19"
+
+        # When
+        service_resp = self.fhir_service.get_immunization_by_identifier(imms_id, self.MOCK_SUPPLIER_NAME, identifier,
+                                                                        element)
+
+        # Then
+        self.imms_repo.get_immunization_by_identifier.assert_called_once_with(imms_id)
+        self.authoriser.authorise.assert_called_once_with(self.MOCK_SUPPLIER_NAME, ApiOperationCode.SEARCH, {"covid19"})
+        self.assertEqual(service_resp["resourceType"], "Bundle")
+        self.assertEqual(service_resp.get("type"), "searchset")
+        self.assertIn("entry", service_resp)
+        self.assertEqual(len(service_resp["entry"]), 1)
+        self.assertIn("total", service_resp)
+        self.assertEqual(service_resp["total"], 1)
+        res = service_resp["entry"][0]["resource"]
+        self.assertEqual(res["resourceType"], "Immunization")
+        self.assertEqual(res["id"], imms_id)
+
+    def test_get_immunization_by_identifier_raises_error_when_not_authorised(self):
+        """it should find an Immunization by id"""
         imms = "an-id#an-id"
         identifier = "test"
         element = "id,mEta,DDD"
-        self.imms_repo.get_immunization_by_identifier.return_value = None
+        self.authoriser.authorise.return_value = False
+        self.imms_repo.get_immunization_by_identifier.return_value = {"id": "foo", "version": 1}, "covid19"
 
-        # When
-        service_resp = self.fhir_service.get_immunization_by_identifier(imms, "COVID19.S", identifier, element)
-        act_imms = service_resp
+        with self.assertRaises(UnauthorizedVaxError):
+            # When
+            self.fhir_service.get_immunization_by_identifier(imms, self.MOCK_SUPPLIER_NAME, identifier, element)
 
         # Then
-        self.imms_repo.get_immunization_by_identifier.assert_called_once_with(imms, "COVID19.S")
+        self.imms_repo.get_immunization_by_identifier.assert_called_once_with(imms)
+        self.authoriser.authorise.assert_called_once_with(self.MOCK_SUPPLIER_NAME, ApiOperationCode.SEARCH, {"covid19"})
 
-        self.assertEqual(act_imms["resourceType"], "Bundle")
 
     def test_immunization_not_found(self):
         """it should return None if Immunization doesn't exist"""
         imms_id = "none"
         identifier = "test"
         element = "id"
-        self.imms_repo.get_immunization_by_identifier.return_value = {}
+        self.imms_repo.get_immunization_by_identifier.return_value = None, None
 
         # When
-        act_imms = self.fhir_service.get_immunization_by_identifier(imms_id, "COVID19.CRUDS", identifier, element)
+        act_imms = self.fhir_service.get_immunization_by_identifier(imms_id, self.MOCK_SUPPLIER_NAME, identifier,
+                                                                    element)
 
         # Then
-        self.imms_repo.get_immunization_by_identifier.assert_called_once_with(imms_id, "COVID19.CRUDS")
+        self.imms_repo.get_immunization_by_identifier.assert_called_once_with(imms_id)
 
         self.assertEqual(act_imms["entry"], [])
 
@@ -355,17 +415,20 @@ class TestCreateImmunization(TestFhirServiceBase):
 
     def setUp(self):
         super().setUp()
+        self.authoriser = create_autospec(Authoriser)
         self.imms_repo = create_autospec(ImmunizationRepository)
         self.validator = create_autospec(ImmunizationValidator)
-        self.fhir_service = FhirService(self.imms_repo, self.validator)
+        self.fhir_service = FhirService(self.imms_repo, self.authoriser, self.validator)
         self.pre_validate_fhir_service = FhirService(
             self.imms_repo,
+            self.authoriser,
             ImmunizationValidator(add_post_validators=False),
         )
 
     def test_create_immunization(self):
         """it should create Immunization and validate it"""
-        imms_id = "an-id"
+        self.mock_redis_client.hget.return_value = "COVID19"
+        self.authoriser.authorise.return_value = True
         self.imms_repo.create_immunization.return_value = (
             create_covid_19_immunization_dict_no_id()
         )
@@ -374,22 +437,23 @@ class TestCreateImmunization(TestFhirServiceBase):
         req_imms = create_covid_19_immunization_dict_no_id(nhs_number)
         req_patient = get_contained_patient(req_imms)
         # When
-        stored_imms = self.fhir_service.create_immunization(req_imms, ["COVID19.CRUDS"], "Test")
+        stored_imms = self.fhir_service.create_immunization(req_imms, "Test")
 
         # Then
-        self.imms_repo.create_immunization.assert_called_once_with(req_imms, req_patient, ["COVID19.CRUDS"], "Test")
+        self.authoriser.authorise.assert_called_once_with("Test", ApiOperationCode.CREATE, {"COVID19"})
+        self.imms_repo.create_immunization.assert_called_once_with(req_imms, req_patient, "Test")
 
         self.validator.validate.assert_called_once_with(req_imms)
         self.assertIsInstance(stored_imms, Immunization)
 
-    def test_create_immunization_with_id(self):
+    def test_create_immunization_with_id_throws_error(self):
         """it should throw exception if id present in create Immunization"""
         imms = create_covid_19_immunization_dict("an-id", "9990548609")
         expected_msg = "id field must not be present for CREATE operation"
 
         with self.assertRaises(CustomValidationError) as error:
             # When
-            self.pre_validate_fhir_service.create_immunization(imms, "COVID19.CRUDS", "Test")
+            self.pre_validate_fhir_service.create_immunization(imms, "Test")
 
         # Then
         self.assertTrue(expected_msg in error.exception.message)
@@ -403,7 +467,7 @@ class TestCreateImmunization(TestFhirServiceBase):
 
         with self.assertRaises(CustomValidationError) as error:
             # When
-            self.pre_validate_fhir_service.create_immunization(imms, ["COVID19.CRUDS"], "Test")
+            self.pre_validate_fhir_service.create_immunization(imms, "Test")
 
         # Then
         self.assertTrue(expected_msg in error.exception.message)
@@ -424,7 +488,7 @@ class TestCreateImmunization(TestFhirServiceBase):
         fhir_service = FhirService(self.imms_repo)
 
         with self.assertRaises(CustomValidationError) as error:
-            fhir_service.create_immunization(bad_target_disease_imms, "COVID19.CRUDS", "Test")
+            fhir_service.create_immunization(bad_target_disease_imms, "Test")
 
         self.assertEqual(bad_target_disease_msg, error.exception.message)
         self.imms_repo.create_immunization.assert_not_called()
@@ -443,7 +507,7 @@ class TestCreateImmunization(TestFhirServiceBase):
         fhir_service = FhirService(self.imms_repo)
 
         with self.assertRaises(CustomValidationError) as error:
-            fhir_service.create_immunization(bad_patient_name_imms, "COVID19.CRUDS", "Test")
+            fhir_service.create_immunization(bad_patient_name_imms, "Test")
 
         self.assertTrue(bad_patient_name_msg in error.exception.message)
         self.imms_repo.create_immunization.assert_not_called()
@@ -455,7 +519,7 @@ class TestCreateImmunization(TestFhirServiceBase):
 
         with self.assertRaises(InvalidPatientId) as e:
             # When
-            self.fhir_service.create_immunization(bad_patient_imms, "COVID19.CRUDS", "Test")
+            self.fhir_service.create_immunization(bad_patient_imms, "Test")
 
         # Then
         self.assertEqual(e.exception.patient_identifier, invalid_nhs_number)
@@ -468,19 +532,42 @@ class TestCreateImmunization(TestFhirServiceBase):
 
         with self.assertRaises(InvalidPatientId) as e:
             # When
-            self.fhir_service.create_immunization(bad_patient_imms, "COVID19.CRUDS", "Test")
+            self.fhir_service.create_immunization(bad_patient_imms, "Test")
 
         # Then
         self.assertEqual(e.exception.patient_identifier, invalid_nhs_number)
         self.imms_repo.create_immunization.assert_not_called()
 
-class TestUpdateImmunization(unittest.TestCase):
+    def test_unauthorised_error_raised_when_user_lacks_permissions(self):
+        """it should raise error when user lacks permissions"""
+        self.mock_redis_client.hget.return_value = "FLU"
+        self.authoriser.authorise.return_value = False
+        self.imms_repo.create_immunization.return_value = (
+            create_covid_19_immunization_dict_no_id()
+        )
+
+        nhs_number = VALID_NHS_NUMBER
+        req_imms = create_covid_19_immunization_dict_no_id(nhs_number)
+
+        with self.assertRaises(UnauthorizedVaxError):
+            # When
+            self.fhir_service.create_immunization(req_imms, "Test")
+
+        # Then
+        self.authoriser.authorise.assert_called_once_with("Test", ApiOperationCode.CREATE, {"FLU"})
+        self.validator.validate.assert_called_once_with(req_imms)
+        self.imms_repo.create_immunization.assert_not_called()
+
+
+class TestUpdateImmunization(TestFhirServiceBase):
     """Tests for FhirService.update_immunization"""
 
     def setUp(self):
+        super().setUp()
+        self.authoriser = create_autospec(Authoriser)
         self.imms_repo = create_autospec(ImmunizationRepository)
         self.validator = create_autospec(ImmunizationValidator)
-        self.fhir_service = FhirService(self.imms_repo, self.validator)
+        self.fhir_service = FhirService(self.imms_repo, self.authoriser, self.validator)
 
     def test_update_immunization(self):
         """it should update Immunization and validate NHS number"""
@@ -488,28 +575,32 @@ class TestUpdateImmunization(unittest.TestCase):
         self.imms_repo.update_immunization.return_value = (
             create_covid_19_immunization_dict(imms_id), 2
         )
+        self.mock_redis_client.hget.return_value = "COVID19"
+        self.authoriser.authorise.return_value = True
 
         nhs_number = VALID_NHS_NUMBER
         req_imms = create_covid_19_immunization_dict(imms_id, nhs_number)
         req_patient = get_contained_patient(req_imms)
 
         # When
-        outcome, _, _ = self.fhir_service.update_immunization(imms_id, req_imms, 1, ["COVID19.CRUD"], "Test")
+        outcome, _, _ = self.fhir_service.update_immunization(imms_id, req_imms, 1, "COVID19", "Test")
 
         # Then
         self.assertEqual(outcome, UpdateOutcome.UPDATE)
-        self.imms_repo.update_immunization.assert_called_once_with(imms_id, req_imms, req_patient, 1,["COVID19.CRUD"], "Test")
+        self.imms_repo.update_immunization.assert_called_once_with(imms_id, req_imms, req_patient, 1, "Test")
+        self.authoriser.authorise.assert_called_once_with("Test", ApiOperationCode.UPDATE, {"COVID19"})
 
     def test_id_not_present(self):
         """it should populate id in the message if it is not present"""
         req_imms_id = "an-id"
         self.imms_repo.update_immunization.return_value = create_covid_19_immunization_dict(req_imms_id), 2
+        self.authoriser.authorise.return_value = True
 
         req_imms = create_covid_19_immunization_dict("we-will-remove-this-id")
         del req_imms["id"]
 
         # When
-        self.fhir_service.update_immunization(req_imms_id, req_imms, 1, "C.CRUDS", "Test")
+        self.fhir_service.update_immunization(req_imms_id, req_imms, 1, "COVID19", "Test")
 
         # Then
         passed_imms = self.imms_repo.update_immunization.call_args.args[1]
@@ -523,7 +614,7 @@ class TestUpdateImmunization(unittest.TestCase):
 
         with self.assertRaises(InvalidPatientId) as e:
             # When
-            self.fhir_service.update_immunization(imms_id, bad_patient_imms, 1, ["C.CRUDS"], "Test")
+            self.fhir_service.update_immunization(imms_id, bad_patient_imms, 1, "COVID19", "Test")
 
         # Then
         self.assertEqual(e.exception.patient_identifier, invalid_nhs_number)
@@ -537,7 +628,7 @@ class TestUpdateImmunization(unittest.TestCase):
 
         with self.assertRaises(InvalidPatientId) as e:
             # When
-            self.fhir_service.update_immunization(imms_id, bad_patient_imms, 1, ["COVID19.CRUDS"], "Test")
+            self.fhir_service.update_immunization(imms_id, bad_patient_imms, 1, "COVID19", "Test")
 
         # Then
         self.assertEqual(e.exception.patient_identifier, invalid_nhs_number)
@@ -548,24 +639,40 @@ class TestUpdateImmunization(unittest.TestCase):
         imms_id = "an-id"
         req_imms = create_covid_19_immunization_dict(imms_id)
         self.fhir_service._validate_patient = MagicMock(return_value={})
+        self.authoriser.authorise.return_value = True
+        self.mock_redis_client.hget.return_value = "COVID19"
         self.imms_repo.reinstate_immunization.return_value = (req_imms, 5)
 
         outcome, resource, version = self.fhir_service.reinstate_immunization(
-            imms_id, req_imms, 1, ["COVID19:CRUD"], "Test"
+            imms_id, req_imms, 1, "COVID19", "Test"
         )
 
         self.assertEqual(outcome, UpdateOutcome.UPDATE)
         self.assertEqual(version, 5)
 
+    def test_reinstate_immunization_raises_exception_when_missing_authz(self):
+        """it should raise an unauthorised error when missing authorisation"""
+        imms_id = "an-id"
+        req_imms = create_covid_19_immunization_dict(imms_id)
+        self.fhir_service._validate_patient = MagicMock(return_value={})
+        self.authoriser.authorise.return_value = False
+        self.mock_redis_client.hget.return_value = "FLU"
+
+        with self.assertRaises(UnauthorizedVaxError):
+            self.fhir_service.reinstate_immunization(imms_id, req_imms, 1, "FLU", "Test")
+
+        self.authoriser.authorise.assert_called_once_with("Test", ApiOperationCode.UPDATE, {"FLU"})
+
     def test_update_reinstated_immunization_returns_updated_version(self):
         """it should return updated version from update_reinstated"""
         imms_id = "an-id"
         req_imms = create_covid_19_immunization_dict(imms_id)
+        self.authoriser.authorise.return_value = True
         self.fhir_service._validate_patient = MagicMock(return_value={})
         self.imms_repo.update_reinstated_immunization.return_value = (req_imms, 9)
 
         outcome, resource, version = self.fhir_service.update_reinstated_immunization(
-            imms_id, req_imms, 1, ["COVID19:CRUD"], "Test"
+            imms_id, req_imms, 1, "COVID19", "Test"
         )
 
         self.assertEqual(outcome, UpdateOutcome.UPDATE)
@@ -578,7 +685,7 @@ class TestUpdateImmunization(unittest.TestCase):
         self.fhir_service._validate_patient = MagicMock(return_value={"diagnostics": "invalid patient"})
 
         outcome, resource, version = self.fhir_service.reinstate_immunization(
-            imms_id, req_imms, 1, ["COVID19:CRUD"], "Test"
+            imms_id, req_imms, 1, "COVID19", "Test"
         )
 
         self.assertIsNone(outcome)
@@ -593,7 +700,7 @@ class TestUpdateImmunization(unittest.TestCase):
         self.fhir_service._validate_patient = MagicMock(return_value={"diagnostics": "invalid patient"})
 
         outcome, resource, version = self.fhir_service.update_reinstated_immunization(
-            imms_id, req_imms, 1, ["COVID19:CRUD"], "Test"
+            imms_id, req_imms, 1, "COVID19", "Test"
         )
 
         self.assertIsNone(outcome)
@@ -602,54 +709,76 @@ class TestUpdateImmunization(unittest.TestCase):
         self.imms_repo.update_reinstated_immunization.assert_not_called()
 
 
-class TestDeleteImmunization(unittest.TestCase):
+class TestDeleteImmunization(TestFhirServiceBase):
     """Tests for FhirService.delete_immunization"""
+    TEST_IMMUNISATION_ID = "an-id"
 
     def setUp(self):
+        super().setUp()
+        self.authoriser = create_autospec(Authoriser)
         self.imms_repo = create_autospec(ImmunizationRepository)
         self.validator = create_autospec(ImmunizationValidator)
         self.fhir_service = FhirService(
-            self.imms_repo, self.validator
+            self.imms_repo, self.authoriser, self.validator
         )
 
     def test_delete_immunization(self):
         """it should delete Immunization record"""
-        imms_id = "an-id"
-        imms = json.loads(create_covid_19_immunization(imms_id).json())
+        imms = json.loads(create_covid_19_immunization(self.TEST_IMMUNISATION_ID).json())
+        self.mock_redis_client.hget.return_value = "COVID19"
+        self.authoriser.authorise.return_value = True
+        self.imms_repo.get_immunization_by_id.return_value = {"Resource": imms}
         self.imms_repo.delete_immunization.return_value = imms
 
         # When
-        act_imms = self.fhir_service.delete_immunization(imms_id, "COVID.CRUDS", "Test")
+        act_imms = self.fhir_service.delete_immunization(self.TEST_IMMUNISATION_ID, "Test")
 
         # Then
-        self.imms_repo.delete_immunization.assert_called_once_with(imms_id, "COVID.CRUDS", "Test")
+        self.imms_repo.get_immunization_by_id.assert_called_once_with(self.TEST_IMMUNISATION_ID)
+        self.imms_repo.delete_immunization.assert_called_once_with(self.TEST_IMMUNISATION_ID, "Test")
+        self.authoriser.authorise.assert_called_once_with("Test", ApiOperationCode.DELETE, {"COVID19"})
         self.assertIsInstance(act_imms, Immunization)
-        self.assertEqual(act_imms.id, imms_id)
+        self.assertEqual(act_imms.id, self.TEST_IMMUNISATION_ID)
 
-    def test_delete_immunization_for_batch(self):
-        """it should delete Immunization record"""
-        imms_id = "an-id"
-        imms = json.loads(create_covid_19_immunization(imms_id).json())
-        self.imms_repo.delete_immunization.return_value = imms
+    def test_delete_immunization_throws_not_found_exception_if_does_not_exist(self):
+        """it should raise a ResourceNotFound exception if the immunisation does not exist"""
+        self.imms_repo.get_immunization_by_id.return_value = None
 
         # When
-        act_imms = self.fhir_service.delete_immunization(imms_id, None, "Test")
+        with self.assertRaises(ResourceNotFoundError):
+            self.fhir_service.delete_immunization(self.TEST_IMMUNISATION_ID, "Test")
 
         # Then
-        self.imms_repo.delete_immunization.assert_called_once_with(
-            imms_id, None, "Test"
-        )
-        self.assertIsInstance(act_imms, Immunization)
-        self.assertEqual(act_imms.id, imms_id)
+        self.imms_repo.get_immunization_by_id.assert_called_once_with(self.TEST_IMMUNISATION_ID)
+        self.imms_repo.delete_immunization.assert_not_called()
+
+    def test_delete_immunization_throws_authorisation_exception_if_does_not_have_required_permissions(self):
+        imms = json.loads(create_covid_19_immunization(self.TEST_IMMUNISATION_ID).json())
+        self.mock_redis_client.hget.return_value = "FLU"
+        self.authoriser.authorise.return_value = False
+        self.imms_repo.get_immunization_by_id.return_value = {"Resource": imms}
+
+        # When
+        with self.assertRaises(UnauthorizedVaxError):
+            self.fhir_service.delete_immunization(self.TEST_IMMUNISATION_ID, "Test")
+
+        # Then
+        self.imms_repo.get_immunization_by_id.assert_called_once_with(self.TEST_IMMUNISATION_ID)
+        self.imms_repo.delete_immunization.assert_not_called()
+        self.authoriser.authorise.assert_called_once_with("Test", ApiOperationCode.DELETE, {"FLU"})
 
 
 class TestSearchImmunizations(unittest.TestCase):
     """Tests for FhirService.search_immunizations"""
+    MOCK_SUPPLIER_SYSTEM_NAME = "Test"
 
     def setUp(self):
+        os.environ["IMMUNIZATION_ENV"] = "internal-dev"
+        os.environ["IMMUNIZATION_BASE_PATH"] = "immunisation-fhir-api/FHIR/R4"
+        self.authoriser = create_autospec(Authoriser)
         self.imms_repo = create_autospec(ImmunizationRepository)
         self.validator = create_autospec(ImmunizationValidator)
-        self.fhir_service = FhirService(self.imms_repo, self.validator)
+        self.fhir_service = FhirService(self.imms_repo, self.authoriser, self.validator)
         self.nhs_search_param = "patient.identifier"
         self.vaccine_type_search_param = "-immunization.target"
         self.sample_patient_resource = load_json_data("bundle_patient_resource.json")
@@ -660,13 +789,18 @@ class TestSearchImmunizations(unittest.TestCase):
         vaccine_type = "COVID19"
         params = f"{self.nhs_search_param}={nhs_number}&{self.vaccine_type_search_param}={vaccine_type}"
 
+        self.authoriser.filter_permitted_vacc_types.return_value = {vaccine_type}
         self.imms_repo.find_immunizations.return_value = []
 
         # When
-        _ = self.fhir_service.search_immunizations(nhs_number, [vaccine_type], params)
+        _ = self.fhir_service.search_immunizations(nhs_number, [vaccine_type],
+                                                   params, self.MOCK_SUPPLIER_SYSTEM_NAME)
 
         # Then
-        self.imms_repo.find_immunizations.assert_called_once_with(nhs_number, [vaccine_type])
+        self.authoriser.filter_permitted_vacc_types.assert_called_once_with(
+            self.MOCK_SUPPLIER_SYSTEM_NAME, ApiOperationCode.SEARCH, {vaccine_type}
+        )
+        self.imms_repo.find_immunizations.assert_called_once_with(nhs_number, {vaccine_type})
 
     def test_make_fhir_bundle_from_search_result(self):
         """It should return a FHIR Bundle resource"""
@@ -676,13 +810,16 @@ class TestSearchImmunizations(unittest.TestCase):
         nhs_number = NHS_NUMBER_USED_IN_SAMPLE_DATA
         vaccine_types = ["COVID19"]
         params = f"{self.nhs_search_param}={nhs_number}&{self.vaccine_type_search_param}={vaccine_types}"
+        self.authoriser.filter_permitted_vacc_types.return_value = set(vaccine_types)
         # When
-        result = self.fhir_service.search_immunizations(nhs_number, vaccine_types, params)
+        result, contains_unauthorised_vaccs = self.fhir_service.search_immunizations(nhs_number, vaccine_types, params,
+                                                        self.MOCK_SUPPLIER_SYSTEM_NAME)
         searched_imms = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
         # Then
         self.assertIsInstance(result, FhirBundle)
         self.assertEqual(result.type, "searchset")
         self.assertEqual(len(imms_ids), len(searched_imms))
+        self.assertFalse(contains_unauthorised_vaccs)
         # Assert each entry in the bundle
         for i, entry in enumerate(searched_imms):
             self.assertIsInstance(entry, BundleEntry)
@@ -703,13 +840,15 @@ class TestSearchImmunizations(unittest.TestCase):
         imms_ids = [imms[0] for imms in imms]
         nhs_number = NHS_NUMBER_USED_IN_SAMPLE_DATA
         vaccine_types = ["COVID19"]
+        self.authoriser.filter_permitted_vacc_types.return_value = set(vaccine_types)
 
         # CASE: Day before.
         self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
 
         # When
-        result = self.fhir_service.search_immunizations(
-            nhs_number, vaccine_types, "", date_from=datetime.date(2021, 2, 6)
+        result, _ = self.fhir_service.search_immunizations(
+            nhs_number, vaccine_types, "", self.MOCK_SUPPLIER_SYSTEM_NAME,
+            date_from=datetime.date(2021, 2, 6)
         )
         searched_imms = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
 
@@ -722,7 +861,10 @@ class TestSearchImmunizations(unittest.TestCase):
         self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
 
         # When
-        result = self.fhir_service.search_immunizations(nhs_number, vaccine_types, "", date_from=datetime.date(2021, 2, 7))
+        result, _ = self.fhir_service.search_immunizations(
+            nhs_number, vaccine_types, "", self.MOCK_SUPPLIER_SYSTEM_NAME,
+            date_from=datetime.date(2021, 2, 7)
+        )
         searched_imms = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
 
         # Then
@@ -734,8 +876,8 @@ class TestSearchImmunizations(unittest.TestCase):
         self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
 
         # When
-        result = self.fhir_service.search_immunizations(
-            nhs_number, vaccine_types, "", date_from=datetime.date(2021, 2, 8)
+        result, _ = self.fhir_service.search_immunizations(
+            nhs_number, vaccine_types, "", self.MOCK_SUPPLIER_SYSTEM_NAME, date_from=datetime.date(2021, 2, 8)
         )
         searched_imms = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
 
@@ -747,8 +889,8 @@ class TestSearchImmunizations(unittest.TestCase):
         self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
 
         # When
-        result = self.fhir_service.search_immunizations(
-            nhs_number, vaccine_types, "", date_from=datetime.date(2021, 2, 9)
+        result, _ = self.fhir_service.search_immunizations(
+            nhs_number, vaccine_types, "", self.MOCK_SUPPLIER_SYSTEM_NAME,date_from=datetime.date(2021, 2, 9)
         )
         searched_imms = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
 
@@ -762,12 +904,14 @@ class TestSearchImmunizations(unittest.TestCase):
         imms_list = [create_covid_19_immunization_dict(imms_id) for imms_id in imms_ids]
         nhs_number = NHS_NUMBER_USED_IN_SAMPLE_DATA
         vaccine_types = ["COVID19"]
+        self.authoriser.filter_permitted_vacc_types.return_value = set(vaccine_types)
 
         # CASE: Without date_from
         self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
 
         # When
-        result = self.fhir_service.search_immunizations(nhs_number, vaccine_types, "")
+        result, _ = self.fhir_service.search_immunizations(nhs_number, vaccine_types, "",
+                                                        self.MOCK_SUPPLIER_SYSTEM_NAME)
         searched_imms = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
 
         # Then
@@ -778,8 +922,9 @@ class TestSearchImmunizations(unittest.TestCase):
         self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
 
         # When
-        result = self.fhir_service.search_immunizations(
-            nhs_number, vaccine_types, "", date_from=datetime.date(2021, 3, 6)
+        result, _ = self.fhir_service.search_immunizations(
+            nhs_number, vaccine_types, "", self.MOCK_SUPPLIER_SYSTEM_NAME,
+            date_from=datetime.date(2021, 3, 6)
         )
         searched_imms = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
 
@@ -798,13 +943,15 @@ class TestSearchImmunizations(unittest.TestCase):
         imms_ids = [imms[0] for imms in imms]
         nhs_number = NHS_NUMBER_USED_IN_SAMPLE_DATA
         vaccine_types = ["COVID19"]
+        self.authoriser.filter_permitted_vacc_types.return_value = set(vaccine_types)
 
         # CASE: Day after.
         self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
 
         # When
-        result = self.fhir_service.search_immunizations(
-            nhs_number, vaccine_types, "", date_to=datetime.date(2021, 2, 9)
+        result, _ = self.fhir_service.search_immunizations(
+            nhs_number, vaccine_types, "", self.MOCK_SUPPLIER_SYSTEM_NAME,
+            date_to=datetime.date(2021, 2, 9)
         )
         searched_imms = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
 
@@ -817,8 +964,9 @@ class TestSearchImmunizations(unittest.TestCase):
         self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
 
         # When
-        result = self.fhir_service.search_immunizations(
-            nhs_number, vaccine_types, "", date_to=datetime.date(2021, 2, 8)
+        result, _ = self.fhir_service.search_immunizations(
+            nhs_number, vaccine_types, "", self.MOCK_SUPPLIER_SYSTEM_NAME,
+            date_to=datetime.date(2021, 2, 8)
         )
         searched_imms = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
 
@@ -831,8 +979,9 @@ class TestSearchImmunizations(unittest.TestCase):
         self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
 
         # When
-        result = self.fhir_service.search_immunizations(
-            nhs_number, vaccine_types, "", date_to=datetime.date(2021, 2, 7)
+        result, _ = self.fhir_service.search_immunizations(
+            nhs_number, vaccine_types, "", self.MOCK_SUPPLIER_SYSTEM_NAME,
+            date_to=datetime.date(2021, 2, 7)
         )
         searched_imms = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
 
@@ -844,8 +993,9 @@ class TestSearchImmunizations(unittest.TestCase):
         self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
 
         # When
-        result = self.fhir_service.search_immunizations(
-            nhs_number, vaccine_types, "", date_to=datetime.date(2021, 2, 6)
+        result, _ = self.fhir_service.search_immunizations(
+            nhs_number, vaccine_types, "", self.MOCK_SUPPLIER_SYSTEM_NAME,
+            date_to=datetime.date(2021, 2, 6)
         )
         searched_imms = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
 
@@ -859,12 +1009,14 @@ class TestSearchImmunizations(unittest.TestCase):
         imms_list = [create_covid_19_immunization_dict(imms_id) for imms_id in imms_ids]
         nhs_number = NHS_NUMBER_USED_IN_SAMPLE_DATA
         vaccine_types = ["COVID19"]
+        self.authoriser.filter_permitted_vacc_types.return_value = set(vaccine_types)
 
         # CASE 1: Without date_to argument
         self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
 
         # When
-        result = self.fhir_service.search_immunizations(nhs_number, vaccine_types, "")
+        result, _ = self.fhir_service.search_immunizations(nhs_number, vaccine_types, "",
+                                                        self.MOCK_SUPPLIER_SYSTEM_NAME)
         searched_imms = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
 
         # Then
@@ -875,8 +1027,9 @@ class TestSearchImmunizations(unittest.TestCase):
         self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
 
         # When
-        result = self.fhir_service.search_immunizations(
-            nhs_number, vaccine_types, "", date_to=datetime.date(2021, 3, 8)
+        result, _ = self.fhir_service.search_immunizations(
+            nhs_number, vaccine_types, "", self.MOCK_SUPPLIER_SYSTEM_NAME,
+            date_to=datetime.date(2021, 3, 8)
         )
         searched_imms = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
 
@@ -897,11 +1050,12 @@ class TestSearchImmunizations(unittest.TestCase):
         ]
 
         vaccine_types = ["COVID19"]
+        self.authoriser.filter_permitted_vacc_types.return_value = set(vaccine_types)
         self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
 
         # When
-        result = self.fhir_service.search_immunizations(
-            NHS_NUMBER_USED_IN_SAMPLE_DATA, vaccine_types, ""
+        result, _ = self.fhir_service.search_immunizations(
+            NHS_NUMBER_USED_IN_SAMPLE_DATA, vaccine_types, "", self.MOCK_SUPPLIER_SYSTEM_NAME
         )
         searched_imms = [
             json.loads(entry.json(), parse_float=Decimal)
@@ -932,37 +1086,39 @@ class TestSearchImmunizations(unittest.TestCase):
         """All matches must have a fullUrl consisting of their id.
         See http://hl7.org/fhir/R4B/bundle-definitions.html#Bundle.entry.fullUrl.
         Tested because fhir.resources validation doesn't check this as mandatory."""
-
         imms_ids = ["imms-1", "imms-2"]
         imms_list = [create_covid_19_immunization_dict(imms_id) for imms_id in imms_ids]
         self.imms_repo.find_immunizations.return_value = imms_list
         nhs_number = NHS_NUMBER_USED_IN_SAMPLE_DATA
         vaccine_types = ["COVID19"]
+        self.authoriser.filter_permitted_vacc_types.return_value = set(vaccine_types)
 
         # When
-        result = self.fhir_service.search_immunizations(nhs_number, vaccine_types, "")
+        result, _ = self.fhir_service.search_immunizations(nhs_number, vaccine_types, "",
+                                                        self.MOCK_SUPPLIER_SYSTEM_NAME)
         entries = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
 
         # Then
         for i, entry in enumerate(entries):
             self.assertEqual(
                 entry.fullUrl,
-                f"https://api.service.nhs.uk/immunisation-fhir-api/Immunization/{imms_ids[i]}",
+                f"https://internal-dev.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/{imms_ids[i]}",
             )
 
     def test_patient_contains_fullUrl(self):
         """Patient must have a fullUrl consisting of its id.
         See http://hl7.org/fhir/R4B/bundle-definitions.html#Bundle.entry.fullUrl.
         Tested because fhir.resources validation doesn't check this as mandatory."""
-
         imms_ids = ["imms-1", "imms-2"]
         imms_list = [create_covid_19_immunization_dict(imms_id) for imms_id in imms_ids]
         self.imms_repo.find_immunizations.return_value = imms_list
         nhs_number = NHS_NUMBER_USED_IN_SAMPLE_DATA
         vaccine_types = ["COVID19"]
+        self.authoriser.filter_permitted_vacc_types.return_value = set(vaccine_types)
 
         # When
-        result = self.fhir_service.search_immunizations(nhs_number, vaccine_types, "")
+        result, _ = self.fhir_service.search_immunizations(nhs_number, vaccine_types, "",
+                                                        self.MOCK_SUPPLIER_SYSTEM_NAME)
 
         # Then
         patient_entry = next((entry for entry in result.entry if entry.resource.resource_type == "Patient"), None)
@@ -982,9 +1138,11 @@ class TestSearchImmunizations(unittest.TestCase):
         self.imms_repo.find_immunizations.return_value = imms_list
         nhs_number = VALID_NHS_NUMBER
         vaccine_types = ["COVID19"]
+        self.authoriser.filter_permitted_vacc_types.return_value = set(vaccine_types)
 
         # When
-        result = self.fhir_service.search_immunizations(nhs_number, vaccine_types, "")
+        result, _ = self.fhir_service.search_immunizations(nhs_number, vaccine_types, "",
+                                                        self.MOCK_SUPPLIER_SYSTEM_NAME)
 
         # Then
         patient_entry = next((entry for entry in result.entry if entry.resource.resource_type == "Patient"))
@@ -999,9 +1157,11 @@ class TestSearchImmunizations(unittest.TestCase):
         self.imms_repo.find_immunizations.return_value = imms_list
         nhs_number = VALID_NHS_NUMBER
         vaccine_types = ["COVID19"]
+        self.authoriser.filter_permitted_vacc_types.return_value = set(vaccine_types)
 
         # When
-        result = self.fhir_service.search_immunizations(nhs_number, vaccine_types, "")
+        result, _ = self.fhir_service.search_immunizations(nhs_number, vaccine_types, "",
+                                                        self.MOCK_SUPPLIER_SYSTEM_NAME)
 
         # Then
         patient_entry = next((entry for entry in result.entry if entry.resource.resource_type == "Patient"))
@@ -1016,3 +1176,45 @@ class TestSearchImmunizations(unittest.TestCase):
         for k, v in vars(patient_entry_resource).items():
             if k not in fields_to_keep:
                 self.assertIsNone(v)
+
+    def test_search_raises_unauthorised_error_if_no_permissions(self):
+        """It should raise an UnauthorisedVaxError if the supplier does not have permissions for ANY of the requested
+        vaccination types"""
+        vaccine_type = "COVID19"
+        params = f"{self.nhs_search_param}={VALID_NHS_NUMBER}&{self.vaccine_type_search_param}={vaccine_type}"
+
+        self.authoriser.filter_permitted_vacc_types.return_value = {}
+
+        # When
+        with self.assertRaises(UnauthorizedVaxError):
+            self.fhir_service.search_immunizations(VALID_NHS_NUMBER, [vaccine_type],
+                                                   params, self.MOCK_SUPPLIER_SYSTEM_NAME)
+
+        # Then
+        self.authoriser.filter_permitted_vacc_types.assert_called_once_with(
+            self.MOCK_SUPPLIER_SYSTEM_NAME, ApiOperationCode.SEARCH, {vaccine_type}
+        )
+        self.imms_repo.find_immunizations.assert_not_called()
+
+    def test_search_returns_successfully_but_flags_if_supplier_requests_vacc_types_without_perms(self):
+        """It should return a boolean indicating if the supplier has requested one or more vaccination types which
+        they do not have permission to search. This is a more permissive model and ensures that results are still
+        returned for the vacc types that they can handle"""
+        vaccine_types = ["COVID19", "FLU"]
+        params = f"{self.nhs_search_param}={VALID_NHS_NUMBER}&{self.vaccine_type_search_param}={vaccine_types}"
+
+        # Supplier only has permission for Covid19
+        self.authoriser.filter_permitted_vacc_types.return_value = {"COVID19"}
+
+        # When
+        _, request_has_unauthorised_vacc_types = self.fhir_service.search_immunizations(
+            VALID_NHS_NUMBER, vaccine_types, params, self.MOCK_SUPPLIER_SYSTEM_NAME
+        )
+
+        # Then
+        self.authoriser.filter_permitted_vacc_types.assert_called_once_with(
+            self.MOCK_SUPPLIER_SYSTEM_NAME, ApiOperationCode.SEARCH, set(vaccine_types)
+        )
+        # Only calls the repository for vacc types it is authorised for
+        self.imms_repo.find_immunizations.assert_called_once_with(VALID_NHS_NUMBER, {"COVID19"})
+        self.assertTrue(request_has_unauthorised_vacc_types)

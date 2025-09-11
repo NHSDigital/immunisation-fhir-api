@@ -23,3 +23,4 @@ class Urls:
 
 
 GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE = "Unable to process request. Issue may be transient."
+SUPPLIER_PERMISSIONS_HASH_KEY = "supplier_permissions"

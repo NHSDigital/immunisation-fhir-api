@@ -61,7 +61,7 @@ def move_file(bucket_name: str, source_file_key: str, destination_file_key: str)
 
 
 @file_level_validation_logging_decorator
-def file_level_validation(incoming_message_body: dict, encoding="utf-8") -> dict:
+def file_level_validation(incoming_message_body: dict) -> dict:
     """
     Validates that the csv headers are correct and that the supplier has permission to perform at least one of
     the requested operations. Uploads the inf ack file and moves the source file to the processing folder.
@@ -76,24 +76,26 @@ def file_level_validation(incoming_message_body: dict, encoding="utf-8") -> dict
         file_key = incoming_message_body.get("filename")
         permission = incoming_message_body.get("permission")
         created_at_formatted_string = incoming_message_body.get("created_at_formatted_string")
+        encoder = incoming_message_body.get("encoder", "utf-8")
 
         # Fetch the data
-        # SAW Conversion ERROR here
-        csv_reader = get_csv_content_dict_reader(file_key, encoding)
-        logger.info("SAW> file_level_validation...8")
+        try:
+            csv_reader = get_csv_content_dict_reader(file_key, encoder=encoder)
+            validate_content_headers(csv_reader)
+        except UnicodeDecodeError as e:
+            logger.warning("Invalid Encoding detected: %s", e)
+            # retry with cp1252 encoding
+            csv_reader = get_csv_content_dict_reader(file_key, encoder="cp1252")
+            validate_content_headers(csv_reader)
 
         validate_content_headers(csv_reader)
-        logger.info("SAW> file_level_validation...9")
 
         # Validate has permission to perform at least one of the requested actions
         allowed_operations_set = get_permitted_operations(supplier, vaccine, permission)
-        logger.info("SAW> file_level_validation...10")
 
         make_and_upload_ack_file(message_id, file_key, True, True, created_at_formatted_string)
-        logger.info("SAW> file_level_validation...11")
 
         move_file(SOURCE_BUCKET_NAME, file_key, f"processing/{file_key}")
-        logger.info("SAW> file_level_validation...12")
 
         return {
             "message_id": message_id,

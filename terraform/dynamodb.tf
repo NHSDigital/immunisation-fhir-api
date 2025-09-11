@@ -24,6 +24,11 @@ resource "aws_dynamodb_table" "audit-table" {
     type = "S"
   }
 
+  ttl {
+    attribute_name = "expires_at"
+    enabled        = true
+  }
+
   global_secondary_index {
     name            = "filename_index"
     hash_key        = "filename"

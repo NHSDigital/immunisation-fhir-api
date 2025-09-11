@@ -103,7 +103,7 @@ class ImmunisationApi:
                 time.sleep(delay)
 
     def create_immunization_resource(self, resource: dict = None) -> str:
-        """creates an Immunization resource and returns the resource url"""
+        """creates an Immunization resource and returns the resource id by parsing the resource url"""
         imms = resource if resource else generate_imms_resource()
         response = self.create_immunization(imms)
         assert response.status_code == 201, (response.status_code, response.text)
@@ -129,6 +129,8 @@ class ImmunisationApi:
             expected_status_code=expected_status_code
         )
 
+    # Create a new Immunization resource by sending a POST request to the API
+    # The function also validates the response and extracts the resource ID from the Location header
     def create_immunization(self, imms, expected_status_code: int = 201):
         response = self.make_request_with_backoff(
             http_method="POST",
@@ -172,6 +174,26 @@ class ImmunisationApi:
             http_method="GET",
             url=f"{self.url}/Immunization?patient.identifier={patient_identifier_system}|{patient_identifier}"
             f"&-immunization.target={immunization_target}",
+            headers=self._update_headers(),
+            expected_status_code=expected_status_code
+        )
+
+    def search_immunization_by_identifier(
+            self, identifier_system: str,
+            identifier_value: str, expected_status_code: int = 200):
+        return self.make_request_with_backoff(
+            http_method="GET",
+            url=f"{self.url}/Immunization?identifier={identifier_system}|{identifier_value}",
+            headers=self._update_headers(),
+            expected_status_code=expected_status_code
+        )
+
+    def search_immunization_by_identifier_and_elements(
+            self, identifier_system: str,
+            identifier_value: str, expected_status_code: int = 200):
+        return self.make_request_with_backoff(
+            http_method="GET",
+            url=f"{self.url}/Immunization?identifier={identifier_system}|{identifier_value}&_elements=id,meta",
             headers=self._update_headers(),
             expected_status_code=expected_status_code
         )

@@ -13,6 +13,7 @@ TEST_QUEUE_URL = "https://sqs.eu-west-2.amazonaws.com/123456789012/test-queue"
 ## @TODO: # Note: Environment variables shared across tests, thus aligned
 os.environ["AWS_SQS_QUEUE_URL"] = TEST_QUEUE_URL
 os.environ["DELTA_TABLE_NAME"] = "my_delta_table"
+os.environ["DELTA_TTL_DAYS"] = "14"
 os.environ["SOURCE"] = "my_source"
 
 from delta import send_message, handler, process_record  # Import after setting environment variables
