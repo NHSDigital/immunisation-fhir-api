@@ -14,7 +14,7 @@ def send_to_supplier_queue(message_body: dict, vaccine_type: str, supplier: str)
         logger.error(error_message)
         raise InvalidSupplierError(error_message)
 
-    try:        
+    try:
         queue_url = os.getenv("QUEUE_URL")
         sqs_client.send_message(
             QueueUrl=queue_url, MessageBody=json_dumps(message_body), MessageGroupId=f"{supplier}_{vaccine_type}"
