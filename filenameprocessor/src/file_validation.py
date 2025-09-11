@@ -1,7 +1,7 @@
 """Functions for file key validation"""
 
-from re import match
 from datetime import datetime
+
 from constants import VALID_VERSIONS, EMPTY_BATCH_FILE_SIZE_IN_BYTES
 from elasticache import get_valid_vaccine_types_from_cache, get_supplier_system_from_cache
 from errors import InvalidFileKeyError, EmptyFileError

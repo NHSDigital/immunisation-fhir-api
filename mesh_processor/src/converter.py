@@ -15,6 +15,7 @@ sts_client = boto3.client('sts')
 
 aws_account_id = sts_client.get_caller_identity()['Account']
 
+
 def parse_headers(headers_str: str) -> dict[str, str]:
     headers = dict(
         header_str.split(":", 1)

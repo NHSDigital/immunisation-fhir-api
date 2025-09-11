@@ -18,6 +18,7 @@ VALID_RSV_RAVS_FILE_KEY = MockFileDetails.ravs_rsv_1.file_key
 
 class TestFileKeyValidation(TestCase):
     """Tests for file_key_validation functions"""
+
     def test_is_file_in_directory_root(self):
         test_cases = [
             ("test_file.csv", True),
@@ -79,37 +80,48 @@ class TestFileKeyValidation(TestCase):
             # File key with no '.'
             (VALID_FLU_EMIS_FILE_KEY.replace(".", ""), "Initial file validation failed: missing file extension"),
             # File key with additional '.' in vaccine type
-            (VALID_FLU_EMIS_FILE_KEY[:2] + "." + VALID_FLU_EMIS_FILE_KEY[2:],"Initial file validation failed: unsupported vaccine type"),
+            (VALID_FLU_EMIS_FILE_KEY[:2] + "." + VALID_FLU_EMIS_FILE_KEY[2:],
+             "Initial file validation failed: unsupported vaccine type"),
             # File key with additional '_' in vaccine type
-            (VALID_FLU_EMIS_FILE_KEY[:2] + "_" + VALID_FLU_EMIS_FILE_KEY[2:],"Initial file validation failed: unsupported vaccine type"),
+            (VALID_FLU_EMIS_FILE_KEY[:2] + "_" + VALID_FLU_EMIS_FILE_KEY[2:],
+             "Initial file validation failed: unsupported vaccine type"),
             # File key with missing '_'
-            (VALID_FLU_EMIS_FILE_KEY.replace("_", "", 1), "Initial file validation failed: not enough parts in file key"),
+            (VALID_FLU_EMIS_FILE_KEY.replace("_", "", 1),
+             "Initial file validation failed: not enough parts in file key"),
             # File key with missing '_'
             (VALID_FLU_EMIS_FILE_KEY.replace("_", ""), "Initial file validation failed: not enough parts in file key"),
             # File key with missing extension
             (VALID_FLU_EMIS_FILE_KEY.replace(".csv", ""), "Initial file validation failed: missing file extension"),
             # File key with invalid vaccine type
-            (VALID_FLU_EMIS_FILE_KEY.replace("FLU", "Flue"), "Initial file validation failed: unsupported vaccine type"),
+            (VALID_FLU_EMIS_FILE_KEY.replace("FLU", "Flue"),
+             "Initial file validation failed: unsupported vaccine type"),
             # File key with missing vaccine type
             (VALID_FLU_EMIS_FILE_KEY.replace("FLU", ""), "Initial file validation failed: unsupported vaccine type"),
             # File key with invalid vaccinations element
-            (VALID_FLU_EMIS_FILE_KEY.replace("Vaccinations", "Vaccination"),"Initial file validation failed: file key must contain VACCINATIONS"),
+            (VALID_FLU_EMIS_FILE_KEY.replace("Vaccinations", "Vaccination"),
+             "Initial file validation failed: file key must contain VACCINATIONS"),
             # File key with missing vaccinations element
-            (VALID_FLU_EMIS_FILE_KEY.replace("Vaccinations", ""), "Initial file validation failed: file key must contain VACCINATIONS"),
+            (VALID_FLU_EMIS_FILE_KEY.replace("Vaccinations", ""),
+             "Initial file validation failed: file key must contain VACCINATIONS"),
             # File key with invalid version
             (VALID_FLU_EMIS_FILE_KEY.replace("v5", "v4"), "Initial file validation failed: unsupported file version"),
             # File key with missing version
             (VALID_FLU_EMIS_FILE_KEY.replace("v5", ""), "Initial file validation failed: unsupported file version"),
             # File key with invalid ODS code
-            (VALID_FLU_EMIS_FILE_KEY.replace("YGM41", "YGAM"), "Initial file validation failed: unregistered supplier ODS code"),
+            (VALID_FLU_EMIS_FILE_KEY.replace("YGM41", "YGAM"),
+             "Initial file validation failed: unregistered supplier ODS code"),
             # File key with missing ODS code
-            (VALID_FLU_EMIS_FILE_KEY.replace("YGM41", ""), "Initial file validation failed: unregistered supplier ODS code"),
+            (VALID_FLU_EMIS_FILE_KEY.replace("YGM41", ""),
+             "Initial file validation failed: unregistered supplier ODS code"),
             # File key with invalid timestamp
-            (VALID_FLU_EMIS_FILE_KEY.replace("20000101T00000001", "20200132T12345600"),"Initial file validation failed: invalid timestamp"),
+            (VALID_FLU_EMIS_FILE_KEY.replace("20000101T00000001", "20200132T12345600"),
+             "Initial file validation failed: invalid timestamp"),
             # File key with missing timestamp
-            (VALID_FLU_EMIS_FILE_KEY.replace("20000101T00000001", ""),"Initial file validation failed: invalid timestamp"),
+            (VALID_FLU_EMIS_FILE_KEY.replace("20000101T00000001", ""),
+             "Initial file validation failed: invalid timestamp"),
             # File key with incorrect extension
-            (VALID_FLU_EMIS_FILE_KEY.replace(".csv", ".xlsx"), "Initial file validation failed: unsupported file extension"),
+            (VALID_FLU_EMIS_FILE_KEY.replace(".csv", ".xlsx"),
+             "Initial file validation failed: unsupported file extension"),
         ]
 
         for file_key, expected_result in test_cases_for_failure_scenarios:
