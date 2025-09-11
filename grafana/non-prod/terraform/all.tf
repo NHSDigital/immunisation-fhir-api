@@ -46,7 +46,7 @@ resource "aws_appautoscaling_target" "target" {
   scalable_dimension = "ecs:service:DesiredCount"
   role_arn           = aws_iam_role.ecs_auto_scale_role.arn
   min_capacity       = 1
-  max_capacity       = 1
+  max_capacity       = 12
   tags = merge(var.tags, {
     Name = "${local.prefix}-aas-tgt"
   })
@@ -120,7 +120,7 @@ data "template_file" "grafana_app" {
 resource "aws_ecs_task_definition" "app" {
     family                   = "${local.prefix}-app"
     execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
-    task_role_arn            = aws_iam_role.ecs_task_role.arn    
+    task_role_arn            = aws_iam_role.ecs_task_role.arn
     network_mode             = "awsvpc"
     requires_compatibilities = ["FARGATE"]
     cpu                      = var.fargate_cpu
@@ -178,7 +178,7 @@ resource "aws_iam_role_policy_attachment" "route53resolver_policy_attachment" {
 }
 
 ## Task Execution Role (ecs_task_execution_role):
-## This role is used by the ECS agent to pull container images from 
+## This role is used by the ECS agent to pull container images from
 ## Amazon ECR, and to store and retrieve logs in Amazon CloudWatch.
 ## It grants permissions needed for ECS to start and manage tasks
 resource "aws_iam_role" "ecs_task_execution_role" {
@@ -237,8 +237,8 @@ resource "aws_iam_role_policy_attachment" "ecs-task-execution-role-policy-attach
 }
 
 # This role is assumed by the containers running within the task.
-# It grants permissions that the application inside the container 
-# needs to interact with other AWS services (e.g., accessing S3, 
+# It grants permissions that the application inside the container
+# needs to interact with other AWS services (e.g., accessing S3,
 # DynamoDB, etc.).
 resource "aws_iam_role" "ecs_task_role" {
   name = "${local.prefix}-ecs-task-role"
@@ -452,7 +452,7 @@ resource "aws_internet_gateway" "gw" {
 resource "aws_route" "internet_access" {
     route_table_id         = aws_vpc.grafana_main.main_route_table_id
     destination_cidr_block = "0.0.0.0/0"
-    gateway_id             = aws_internet_gateway.gw.id    
+    gateway_id             = aws_internet_gateway.gw.id
 }
 
 # Create a new route table for the private subnets
@@ -544,7 +544,7 @@ resource "aws_eip" "nat" {
 
 resource "aws_nat_gateway" "nat" {
   allocation_id = aws_eip.nat.id
-  subnet_id     = element(aws_subnet.grafana_public[*].id, 0) 
+  subnet_id     = element(aws_subnet.grafana_public[*].id, 0)
   tags = merge(var.tags, {
     Name = "${local.prefix}-nat-gw"
   })
