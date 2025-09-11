@@ -76,9 +76,17 @@ def file_level_validation(incoming_message_body: dict) -> dict:
         file_key = incoming_message_body.get("filename")
         permission = incoming_message_body.get("permission")
         created_at_formatted_string = incoming_message_body.get("created_at_formatted_string")
+        encoder = incoming_message_body.get("encoder", "utf-8")
 
         # Fetch the data
-        csv_reader = get_csv_content_dict_reader(file_key)
+        try:
+            csv_reader = get_csv_content_dict_reader(file_key, encoder=encoder)
+            validate_content_headers(csv_reader)
+        except UnicodeDecodeError as e:
+            logger.warning("Invalid Encoding detected: %s", e)
+            # retry with cp1252 encoding
+            csv_reader = get_csv_content_dict_reader(file_key, encoder="cp1252")
+            validate_content_headers(csv_reader)
 
         validate_content_headers(csv_reader)
 
