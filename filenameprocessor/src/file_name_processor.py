@@ -9,11 +9,11 @@ NOTE: The expected file format for incoming files from the data sources bucket i
 import argparse
 from uuid import uuid4
 from utils_for_filenameprocessor import get_creation_and_expiry_times, move_file
-from file_key_validation import validate_file_key, is_file_in_directory_root
+from file_validation import validate_file_key, is_file_in_directory_root, validate_file_not_empty
 from send_sqs_message import make_and_send_sqs_message
 from make_and_upload_ack_file import make_and_upload_the_ack_file
 from audit_table import upsert_audit_table
-from clients import logger
+from clients import logger, s3_client
 from logging_decorator import logging_decorator
 from supplier_permissions import validate_vaccine_type_permissions
 from errors import (
@@ -22,6 +22,7 @@ from errors import (
     InvalidSupplierError,
     UnhandledAuditTableError,
     UnhandledSqsError,
+    EmptyFileError
 )
 from constants import FileStatus, ERROR_TYPE_TO_STATUS_CODE_MAP, SOURCE_BUCKET_NAME
 
@@ -63,9 +64,12 @@ def handle_record(record) -> dict:
 
     try:
         message_id = str(uuid4())
-        created_at_formatted_string, expiry_timestamp = get_creation_and_expiry_times(bucket_name, file_key)
+        s3_response = s3_client.get_object(Bucket=bucket_name, Key=file_key)
+        created_at_formatted_string, expiry_timestamp = get_creation_and_expiry_times(s3_response)
 
         vaccine_type, supplier = validate_file_key(file_key)
+        # VED-757: Known issue with suppliers sometimes sending empty files
+        validate_file_not_empty(s3_response)
         permissions = validate_vaccine_type_permissions(vaccine_type=vaccine_type, supplier=supplier)
 
         queue_name = f"{supplier}_{vaccine_type}"
@@ -90,6 +94,7 @@ def handle_record(record) -> dict:
 
     except (  # pylint: disable=broad-exception-caught
         VaccineTypePermissionsError,
+        EmptyFileError,
         InvalidFileKeyError,
         InvalidSupplierError,
         UnhandledAuditTableError,
@@ -99,8 +104,10 @@ def handle_record(record) -> dict:
         logger.error("Error processing file '%s': %s", file_key, str(error))
 
         queue_name = f"{supplier}_{vaccine_type}"
+        file_status = FileStatus.EMPTY if isinstance(error, EmptyFileError) else FileStatus.PROCESSED
+
         upsert_audit_table(
-            message_id, file_key, created_at_formatted_string, expiry_timestamp, queue_name, FileStatus.PROCESSED
+            message_id, file_key, created_at_formatted_string, expiry_timestamp, queue_name, file_status
         )
 
         # Create ack file
