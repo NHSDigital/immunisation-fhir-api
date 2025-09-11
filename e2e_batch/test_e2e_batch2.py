@@ -1,4 +1,3 @@
-import time
 import unittest
 from utils import (
     generate_csv,
@@ -7,9 +6,6 @@ from utils import (
     wait_for_ack_file,
     check_ack_file_content,
     validate_row_count,
-    upload_config_file,
-    generate_csv_with_ordered_100000_rows,
-    verify_final_ack_file,
     delete_file_from_s3
 )
 from per_test import monitor
@@ -20,9 +16,10 @@ from constants import (
     ACK_BUCKET,
     PRE_VALIDATION_ERROR,
     POST_VALIDATION_ERROR,
-    FILE_NAME_VAL_ERROR,
     environment
 )
+
+OFFSET = 2
 
 
 class TestE2EBatch2(unittest.TestCase):
@@ -30,7 +27,6 @@ class TestE2EBatch2(unittest.TestCase):
     def setUp(self):
         self.uploaded_files = []  # Tracks uploaded input keys
         self.ack_files = []       # Tracks ack keys
-        self.day_offset = 2  # Used to create unique timestamps for parallel tests
 
     def tearDown(self):
         # get name of unit test
@@ -49,8 +45,7 @@ class TestE2EBatch2(unittest.TestCase):
         def test_pre_validation_error(self):
             """Test PRE-VALIDATION error scenario."""
             monitor("test_pre_validation_error")
-            input_file = generate_csv("PHYLIS", "TRUE", action_flag="CREATE",
-                                      day_offset=self.day_offset)
+            input_file = generate_csv("PHYLIS", "TRUE", action_flag="CREATE", offset=OFFSET)
 
             key = upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
             self.uploaded_files.append(key)
@@ -67,7 +62,7 @@ class TestE2EBatch2(unittest.TestCase):
         def test_post_validation_error(self):
             """Test POST-VALIDATION error scenario."""
             monitor("test_post_validation_error")
-            input_file = generate_csv("", "0.3", action_flag="CREATE")
+            input_file = generate_csv("", "0.3", action_flag="CREATE", offset=OFFSET)
 
             key = upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
             self.uploaded_files.append(key)
@@ -78,78 +73,3 @@ class TestE2EBatch2(unittest.TestCase):
             ack_content = get_file_content_from_s3(ACK_BUCKET, ack_key)
             check_ack_file_content(ack_content, "Fatal Error", POST_VALIDATION_ERROR, None)
             monitor("test_post_validation_error")
-
-        def test_file_name_validation_error(self):
-            """Test FILE-NAME-VALIDATION error scenario."""
-            monitor("test_file_name_validation_error")
-            input_file = generate_csv("PHYLIS", "0.3", action_flag="CREATE", file_key=True)
-
-            key = upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
-            self.uploaded_files.append(key)
-
-            ack_key = wait_for_ack_file(True, input_file)
-            self.ack_files.append(ack_key)
-
-            ack_content = get_file_content_from_s3(ACK_BUCKET, ack_key)
-            check_ack_file_content(ack_content, "Failure", FILE_NAME_VAL_ERROR, None)
-            monitor("test_file_name_validation_error")
-
-        def test_header_name_validation_error(self):
-            """Test HEADER-NAME-VALIDATION error scenario."""
-            monitor("test_header_name_validation_error")
-            input_file = generate_csv("PHYLIS", "0.3", action_flag="CREATE", headers="NH_NUMBER")
-
-            key = upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
-            self.uploaded_files.append(key)
-
-            ack_key = wait_for_ack_file(True, input_file)
-            self.ack_files.append(ack_key)
-
-            ack_content = get_file_content_from_s3(ACK_BUCKET, ack_key)
-            check_ack_file_content(ack_content, "Failure", FILE_NAME_VAL_ERROR, None)
-            monitor("test_header_name_validation_error")
-
-        # This test updates the permissions_config.json file from the imms-internal-dev-supplier-config
-        # S3 bucket shared across multiple environments (PR environments, internal-dev, int, and ref).
-        # Running this may modify permissions in these environments, causing unintended side effects.
-        @unittest.skip("Modifies shared S3 permissions configuration")
-        def test_invalid_permission(self):
-            """Test INVALID-PERMISSION error scenario."""
-            monitor("test_invalid_permission")
-            upload_config_file("MMR_FULL")  # permissions_config.json is updated here
-            time.sleep(20)
-
-            input_file = generate_csv("PHYLIS", "0.3", action_flag="CREATE")
-
-            key = upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
-            self.uploaded_files.append(key)
-
-            ack_key = wait_for_ack_file(True, input_file)
-            self.ack_files.append(ack_key)
-
-            ack_content = get_file_content_from_s3(ACK_BUCKET, ack_key)
-            check_ack_file_content(ack_content, "Failure", FILE_NAME_VAL_ERROR, None)
-
-            upload_config_file("COVID19_FULL")
-            time.sleep(20)
-            monitor("test_invalid_permission")
-
-    else:
-        def test_end_to_end_speed_test_with_100000_rows(self):
-            monitor("test_end_to_end_speed_test_with_100000_rows")
-            """Test end_to_end_speed_test_with_100000_rows scenario with full integration"""
-            input_file = generate_csv_with_ordered_100000_rows(None)
-
-            key = upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
-            self.uploaded_files.append(key)
-
-            final_ack_key = wait_for_ack_file(None, input_file, timeout=1800)
-            self.ack_files.append(final_ack_key)
-
-            response = verify_final_ack_file(final_ack_key)
-            assert response is True
-            monitor("test_end_to_end_speed_test_with_100000_rows")
-
-
-if __name__ == "__main__":
-    unittest.main()
