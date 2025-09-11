@@ -18,4 +18,4 @@ testp1:
 	ENVIRONMENT=$(ENVIRONMENT) time poetry run unittest-parallel -v -j $(PARALLEL_WORKERS)
 
 testp2:
-	ENVIRONMENT=$(ENVIRONMENT) time poetry run pytest -n $(PARALLEL_WORKERS) -v -s
+	ENVIRONMENT=$(ENVIRONMENT) time poetry run pytest -n auto -v -s

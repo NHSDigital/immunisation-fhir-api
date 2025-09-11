@@ -236,7 +236,7 @@ steps:
 
     displayName: e2e serial
     workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/e2e_batch"
-    condition: eq(1, 1) # Disable task but make this step visible in the pipeline
+    condition: eq(1, 2) # Disable task but make this step visible in the pipeline
 
   - bash: |
       pyenv local 3.11
