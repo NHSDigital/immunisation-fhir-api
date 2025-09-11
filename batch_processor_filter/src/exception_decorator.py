@@ -15,7 +15,7 @@ def exception_decorator(func: Callable):
         try:
             func(*args, **kwargs)
         except EventAlreadyProcessingForSupplierAndVaccTypeError as exc:
-            # Re-raise so event will be returned and retried for this known error
+            # Re-raise so event will be returned to SQS and retried for this expected error
             raise exc
         except Exception as exc:  # pylint:disable = broad-exception-caught
             logger.error("An unhandled exception occurred in the batch processor filter Lambda", exc_info=exc)
