@@ -1,0 +1,14 @@
+[report]
+omit =
+    tests/*
+    tests/*/*
+    tests/*/*/*
+    tests/test_*.py
+    tests/*/test_*.py
+    tests/*/*/test_*.py
+    mns_subscription/tests/*
+    mns_subscription/tests/*/*
+    mns_subscription/tests/*/*/*
+    ../shared/tests/*
+    ../shared/tests/*/*
+    ../shared/tests/*/*/*

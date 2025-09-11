@@ -2,7 +2,7 @@ import unittest
 import os
 from unittest.mock import patch, MagicMock, Mock, create_autospec
 from mns_service import MnsService, MNS_URL
-from authentication import AppRestrictedAuth
+from common.authentication import AppRestrictedAuth
 from models.errors import (
     ServerError,
     UnhandledResponseError,

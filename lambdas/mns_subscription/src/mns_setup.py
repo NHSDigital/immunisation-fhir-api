@@ -1,8 +1,8 @@
 import logging
-from cache import Cache
+from common.cache import Cache
 from mns_service import MnsService
 import boto3
-from authentication import AppRestrictedAuth, Service
+from common.authentication import AppRestrictedAuth, Service
 from botocore.config import Config
 
 logging.basicConfig(level=logging.INFO)

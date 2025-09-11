@@ -3,7 +3,7 @@ import os
 import uuid
 import logging
 import json
-from authentication import AppRestrictedAuth
+from common.authentication import AppRestrictedAuth
 from models.errors import (
     UnhandledResponseError,
     ResourceNotFoundError,
