@@ -200,7 +200,7 @@ steps:
       poetry env use 3.11
       set -e
       if ! [[ "$APIGEE_ENVIRONMENT" == "prod" || "$APIGEE_ENVIRONMENT" == "int" || "$APIGEE_ENVIRONMENT" == *"sandbox" ]]; then
-        echo "Running E2E batch folder test cases (Parallel)"
+        echo "Running E2E batch folder test cases (Serial))"
 
         export AWS_PROFILE="apim-dev"
         aws_account_no="$(aws sts get-caller-identity --query Account --output text)"
@@ -217,7 +217,7 @@ steps:
 
         poetry install --no-root  # Install dependencies defined in pyproject.toml
 
-        ENVIRONMENT="$workspace" poetry run python -m unittest -v -c
+        ENVIRONMENT="$workspace" time poetry run python -m unittest -v -c
         echo "E2E batch folder test cases executed successfully"
       else
         echo "Skipping E2E batch folder test cases as the environment is prod-int-sandbox"
@@ -232,7 +232,7 @@ steps:
       poetry env use 3.11
       set -e
       if ! [[ "$APIGEE_ENVIRONMENT" == "prod" || "$APIGEE_ENVIRONMENT" == "int" || "$APIGEE_ENVIRONMENT" == *"sandbox" ]]; then
-        echo "Running E2E batch folder test cases (Parallel)"
+        echo "Running E2E batch test cases (Parallel x2)"
 
         export AWS_PROFILE="apim-dev"
         aws_account_no="$(aws sts get-caller-identity --query Account --output text)"
@@ -266,7 +266,7 @@ steps:
       poetry env use 3.11
       set -e
       if ! [[ "$APIGEE_ENVIRONMENT" == "prod" || "$APIGEE_ENVIRONMENT" == "int" || "$APIGEE_ENVIRONMENT" == *"sandbox" ]]; then
-        echo "Running E2E batch folder test cases (Parallel)"
+        echo "Running E2E batch test cases (Parallelx4)"
 
         export AWS_PROFILE="apim-dev"
         aws_account_no="$(aws sts get-caller-identity --query Account --output text)"
