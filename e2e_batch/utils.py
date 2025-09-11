@@ -38,7 +38,11 @@ def get_timestamp_with_offset(offset):
     return dt.strftime("%Y%m%dT%H%M%S%f")[:-3]
 
 
-def generate_csv(fore_name, dose_amount, action_flag, offset, headers="NHS_NUMBER", same_id=False, file_key=False):
+def generate_csv(fore_name, dose_amount,
+                 action_flag, offset,
+                 headers="NHS_NUMBER",
+                 same_id=False, file_key=False,
+                 vax_type="RSV", ods="YGM41"):
     """
     Generate a CSV file with 2 or 3 rows depending on the action_flag.
 
@@ -103,7 +107,7 @@ def generate_csv(fore_name, dose_amount, action_flag, offset, headers="NHS_NUMBE
     #     if file_key
     #     else f"RSV_Vaccinations_v5_YGM41_{timestamp}.csv"
     # )
-    file_name = get_file_name("RSV", "YGM41", file_key, offset)
+    file_name = get_file_name(vax_type, ods, file_key, offset)
     # if test_name == file_name:
     #     print("SAW> File name generation is consistent.")
 
@@ -410,7 +414,7 @@ async def upload_config_file(value):
     upload_file_to_s3(PERMISSIONS_CONFIG_FILE_KEY, CONFIG_BUCKET, INPUT_PREFIX)
 
 
-def generate_csv_with_ordered_100000_rows(offset):
+def generate_csv_with_ordered_100000_rows(vax_type, ods, offset):
     """
     Generate a CSV where:
     - 100 sets of (NEW → UPDATE → DELETE) are created.
@@ -464,7 +468,7 @@ def generate_csv_with_ordered_100000_rows(offset):
     df = pd.DataFrame(full_data)
     # timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%f")[:-3]
     # file_name = f"RSV_Vaccinations_v5_YGM41_{timestamp}.csv" if not file_name else file_name
-    file_name = get_file_name("RSV", "YGM41", "5", day_offset=offset)
+    file_name = get_file_name(vax_type, ods, "5", day_offset=offset)
 
     # file_name = get_file_name("RSV", "YGM41", "5") if not file_name else file_name
     df.to_csv(file_name, index=False, sep="|", quoting=csv.QUOTE_MINIMAL)

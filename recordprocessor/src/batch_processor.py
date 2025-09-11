@@ -110,6 +110,9 @@ def main(event: str) -> None:
     """Process each row of the file"""
     logger.info("task started")
     start = time.time()
+    # dump the event to logs
+    logger.info("Batch Processor")
+    logger.info("event")
     n_rows_processed = 0
     try:
         n_rows_processed = process_csv_to_fhir(incoming_message_body=json.loads(event))

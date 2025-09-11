@@ -39,7 +39,9 @@ class TestE2EBatch(unittest.IsolatedAsyncioTestCase):
     if environment != "ref":
         async def test_create_success(self):
             """Test CREATE scenario."""
-            input_file = generate_csv("PHYLIS", "0.3", action_flag="CREATE", offset=1)
+            input_file = generate_csv("PHYLIS", "0.3",
+                                      action_flag="CREATE", offset=1,
+                                      vax_type="COVID19", ods="8HA94")
 
             key = await upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
             self.uploaded_files.append(key)
@@ -55,7 +57,9 @@ class TestE2EBatch(unittest.IsolatedAsyncioTestCase):
         async def test_duplicate_create(self):
             """Test DUPLICATE scenario."""
 
-            input_file = generate_csv("PHYLIS", "0.3", action_flag="CREATE", same_id=True, offset=2)
+            input_file = generate_csv("PHYLIS", "0.3",
+                                      action_flag="CREATE", same_id=True, offset=2,
+                                      vax_type="FLU", ods="8HK48")
 
             key = await upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
             self.uploaded_files.append(key)
@@ -70,7 +74,8 @@ class TestE2EBatch(unittest.IsolatedAsyncioTestCase):
 
         async def test_update_success(self):
             """Test UPDATE scenario."""
-            input_file = generate_csv("PHYLIS", "0.5", action_flag="UPDATE", offset=3)
+            input_file = generate_csv("PHYLIS", "0.5", action_flag="UPDATE",
+                                      offset=3, vax_type="MMR", ods="V0V8L")
 
             key = await upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
             self.uploaded_files.append(key)
@@ -85,7 +90,9 @@ class TestE2EBatch(unittest.IsolatedAsyncioTestCase):
 
         async def test_reinstated_success(self):
             """Test REINSTATED scenario."""
-            input_file = generate_csv("PHYLIS", "0.5", action_flag="REINSTATED", offset=4)
+            input_file = generate_csv("PHYLIS", "0.5",
+                                      action_flag="REINSTATED", offset=4,
+                                      vax_type="HPV", ods="DPSREDUCED")
 
             key = await upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
             self.uploaded_files.append(key)
@@ -100,7 +107,9 @@ class TestE2EBatch(unittest.IsolatedAsyncioTestCase):
 
         async def test_update_reinstated_success(self):
             """Test UPDATE-REINSTATED scenario."""
-            input_file = generate_csv("PHYLIS", "0.5", action_flag="UPDATE-REINSTATED", offset=5)
+            input_file = generate_csv("PHYLIS", "0.5",
+                                      action_flag="UPDATE-REINSTATED", offset=5,
+                                      vax_type="MENACWY", ods="DPSFULL")
 
             key = await upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
             self.uploaded_files.append(key)
@@ -115,7 +124,9 @@ class TestE2EBatch(unittest.IsolatedAsyncioTestCase):
 
         async def test_delete_success(self):
             """Test DELETE scenario."""
-            input_file = generate_csv("PHYLIS", "0.8", action_flag="DELETE", offset=6)
+            input_file = generate_csv("PHYLIS", "0.8",
+                                      action_flag="DELETE", offset=6,
+                                      vax_type="MMR", ods="V0V8L")
 
             key = await upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
             self.uploaded_files.append(key)
@@ -130,7 +141,8 @@ class TestE2EBatch(unittest.IsolatedAsyncioTestCase):
 
         async def test_pre_validation_error(self):
             """Test PRE-VALIDATION error scenario."""
-            input_file = generate_csv("PHYLIS", "TRUE", action_flag="CREATE", offset=7)
+            input_file = generate_csv("PHYLIS", "TRUE", action_flag="CREATE",
+                                      offset=7, vax_type="MMR", ods="X8E5B")
 
             key = await upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
             self.uploaded_files.append(key)
@@ -145,7 +157,8 @@ class TestE2EBatch(unittest.IsolatedAsyncioTestCase):
 
         async def test_post_validation_error(self):
             """Test POST-VALIDATION error scenario."""
-            input_file = generate_csv("", "0.3", action_flag="CREATE", offset=8)
+            input_file = generate_csv("", "0.3", action_flag="CREATE",
+                                      offset=8, vax_type="3IN1", ods="YGJ")
 
             key = await upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
             self.uploaded_files.append(key)
@@ -158,8 +171,9 @@ class TestE2EBatch(unittest.IsolatedAsyncioTestCase):
 
         async def test_file_name_validation_error(self):
             """Test FILE-NAME-VALIDATION error scenario."""
-            input_file = generate_csv("PHYLIS", "0.3", action_flag="CREATE", file_key=True, offset=9)
-
+            input_file = generate_csv("PHYLIS", "0.3", action_flag="CREATE",
+                                      file_key=True, offset=9,
+                                      vax_type="HPV", ods="YGA")
             key = await upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
             self.uploaded_files.append(key)
 
@@ -171,7 +185,9 @@ class TestE2EBatch(unittest.IsolatedAsyncioTestCase):
 
         async def test_header_name_validation_error(self):
             """Test HEADER-NAME-VALIDATION error scenario."""
-            input_file = generate_csv("PHYLIS", "0.3", action_flag="CREATE", headers="NH_NUMBER", offset=10)
+            input_file = generate_csv("PHYLIS", "0.3", action_flag="CREATE",
+                                      headers="NH_NUMBER", offset=10,
+                                      vax_type="3IN1", ods="YGMYW")
 
             key = await upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
             self.uploaded_files.append(key)
@@ -191,7 +207,8 @@ class TestE2EBatch(unittest.IsolatedAsyncioTestCase):
             await upload_config_file("MMR_FULL")  # permissions_config.json is updated here
             await asyncio.sleep(20)
 
-            input_file = generate_csv("PHYLIS", "0.3", action_flag="CREATE", offset=11)
+            input_file = generate_csv("PHYLIS", "0.3", action_flag="CREATE",
+                                      offset=11, vax_type="PINNACLE", ods="8J1100001")
 
             key = await upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
             self.uploaded_files.append(key)
@@ -208,7 +225,8 @@ class TestE2EBatch(unittest.IsolatedAsyncioTestCase):
     else:
         async def test_end_to_end_speed_test_with_100000_rows(self):
             """Test end_to_end_speed_test_with_100000_rows scenario with full integration"""
-            input_file = generate_csv_with_ordered_100000_rows(12)
+            input_file = generate_csv_with_ordered_100000_rows(12,
+                                                               vax_type="COVID19", ods="DPSFULL")
 
             key = await upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
             self.uploaded_files.append(key)
