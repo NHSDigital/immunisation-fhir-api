@@ -2,7 +2,8 @@
 
 from datetime import datetime
 
-from constants import VALID_VERSIONS, EMPTY_BATCH_FILE_SIZE_IN_BYTES
+from constants import VALID_VERSIONS, EMPTY_BATCH_FILE_SIZE_IN_BYTES, EXPECTED_NUMBER_OF_FILE_KEY_PARTS, \
+    VALID_FILE_EXTENSIONS
 from elasticache import get_valid_vaccine_types_from_cache, get_supplier_system_from_cache
 from errors import InvalidFileKeyError, EmptyFileError
 
@@ -45,7 +46,7 @@ def validate_file_key(file_key: str) -> tuple[str, str]:
         raise InvalidFileKeyError("Initial file validation failed: missing file extension")
 
     file_key_parts_without_extension = file_name_and_extension[0].split("_")
-    if len(file_key_parts_without_extension) < 5:
+    if len(file_key_parts_without_extension) < EXPECTED_NUMBER_OF_FILE_KEY_PARTS:
         raise InvalidFileKeyError("Initial file validation failed: not enough parts in file key")
 
     vaccine_type = file_key_parts_without_extension[0]
@@ -73,7 +74,7 @@ def validate_file_key(file_key: str) -> tuple[str, str]:
     if not is_valid_datetime(timestamp):
         raise InvalidFileKeyError("Initial file validation failed: invalid timestamp")
 
-    if extension not in ["CSV", "DAT"]:
+    if extension not in VALID_FILE_EXTENSIONS:
         raise InvalidFileKeyError("Initial file validation failed: unsupported file extension")
 
     return vaccine_type, supplier
