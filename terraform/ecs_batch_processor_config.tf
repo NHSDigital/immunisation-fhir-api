@@ -362,7 +362,7 @@ resource "aws_cloudwatch_log_metric_filter" "record_processor_task_error_logs" {
   count          = var.batch_error_notifications_enabled ? 1 : 0
 
   name           = "${local.short_prefix}-RecordProcessorTaskErrorLogsFilter"
-  pattern        = "%ERROR:|CRITICAL:%"
+  pattern        = "%ERROR:%"
   log_group_name = aws_cloudwatch_log_group.ecs_task_log_group.name
 
   metric_transformation {
@@ -384,6 +384,6 @@ resource "aws_cloudwatch_metric_alarm" "record_processor_task_error_alarm" {
   statistic           = "Sum"
   threshold           = 1
   alarm_description   = "This sets off an alarm for any error logs found in the record processor ECS task"
-  alarm_actions       = [aws_sns_topic.batch_processor_errors.arn]
+  alarm_actions       = [data.aws_sns_topic.batch_processor_errors.arn]
   treat_missing_data  = "notBreaching"
 }

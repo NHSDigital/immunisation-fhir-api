@@ -306,7 +306,8 @@ resource "aws_cloudwatch_log_metric_filter" "batch_processor_filter_error_logs" 
   count          = var.batch_error_notifications_enabled ? 1 : 0
 
   name           = "${local.short_prefix}-BatchProcessorFilterErrorLogsFilter"
-  pattern        = "%\\[ERROR\\]|\\[CRITICAL\\]%"
+  # Ignore errors with the below exception type. This is an expected error which returns items to the queue
+  pattern        = "\"[ERROR]\" -EventAlreadyProcessingForSupplierAndVaccTypeError"
   log_group_name = aws_cloudwatch_log_group.batch_processor_filter_lambda_log_group.name
 
   metric_transformation {
@@ -328,6 +329,6 @@ resource "aws_cloudwatch_metric_alarm" "batch_processor_filter_error_alarm" {
   statistic           = "Sum"
   threshold           = 1
   alarm_description   = "This sets off an alarm for any error logs found in the batch processor filter Lambda function"
-  alarm_actions       = [aws_sns_topic.batch_processor_errors.arn]
+  alarm_actions       = [data.aws_sns_topic.batch_processor_errors.arn]
   treat_missing_data  = "notBreaching"
 }
