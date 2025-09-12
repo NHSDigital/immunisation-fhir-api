@@ -222,9 +222,26 @@ class TestAuditTable(TestCase):
                 is_existing_file=False,
             )
 
+        # Test case 8: new file with status of 'Not processed - empty file', and files ahead in the queue.
+        # File should be added to the audit table, with status 'Not processed - empty file'. Return value should be
+        # False.
+        rsv_ravs_test_file_5 = FileDetails("RAVS", "RSV", "YGM41", file_number=5)
+
+        result = upsert_audit_table(
+            message_id=rsv_ravs_test_file_5.message_id,
+            file_key=rsv_ravs_test_file_5.file_key,
+            created_at_formatted_str=rsv_ravs_test_file_5.created_at_formatted_string,
+            queue_name=rsv_ravs_test_file_5.queue_name,
+            file_status=FileStatus.EMPTY,
+            is_existing_file=False,
+        )
+
+        self.assertFalse(result)
+        assert_audit_table_entry(rsv_ravs_test_file_5, FileStatus.EMPTY)
+
         # Final reconciliation: ensure that all of the correct items are in the audit table
         table_items = self.get_table_items()
-        assert len(table_items) == 7
+        assert len(table_items) == 8
         assert_audit_table_entry(MockFileDetails.emis_flu, FileStatus.QUEUED)
         assert_audit_table_entry(MockFileDetails.emis_rsv, FileStatus.QUEUED)
         assert_audit_table_entry(MockFileDetails.ravs_flu, FileStatus.QUEUED)
@@ -232,3 +249,4 @@ class TestAuditTable(TestCase):
         assert_audit_table_entry(ravs_rsv_test_file_2, FileStatus.DUPLICATE)
         assert_audit_table_entry(ravs_rsv_test_file_3, FileStatus.PROCESSING)
         assert_audit_table_entry(rsv_ravs_test_file_4, FileStatus.PROCESSED)
+        assert_audit_table_entry(rsv_ravs_test_file_5, FileStatus.EMPTY)

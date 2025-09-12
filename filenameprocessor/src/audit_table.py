@@ -64,7 +64,7 @@ def upsert_audit_table(
             return False
 
         # If the file is not already processed, check whether there is a file ahead in the queue already processing
-        if file_status not in (FileStatus.PROCESSED, FileStatus.DUPLICATE):
+        if file_status not in (FileStatus.PROCESSED, FileStatus.DUPLICATE, FileStatus.EMPTY):
             files_in_processing = dynamodb_resource.Table(AUDIT_TABLE_NAME).query(
                 IndexName=AUDIT_TABLE_QUEUE_NAME_GSI,
                 KeyConditionExpression=Key(AuditTableKeys.QUEUE_NAME).eq(queue_name)
