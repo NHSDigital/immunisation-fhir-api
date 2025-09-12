@@ -54,7 +54,7 @@ def process_csv_to_fhir(incoming_message_body: dict) -> int:
             encoder = new_encoder
 
             # load alternative encoder
-            csv_reader = get_csv_content_dict_reader(file_key, encoder=encoder)
+            csv_reader = get_csv_content_dict_reader(f"processing/{file_key}", encoder=encoder)
             # re-read the file and skip processed rows
             row_count, err = process_rows(file_id, vaccine, supplier, file_key, allowed_operations,
                                           created_at_formatted_string, csv_reader, target_disease, row_count)
