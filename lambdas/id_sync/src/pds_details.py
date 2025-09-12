@@ -48,7 +48,6 @@ def pds_get_patient_id(nhs_number: str) -> str:
 
         return patient_details["identifier"][0]["value"]
 
-    # ✅ Remove the IdSyncException catch since you're just re-raising
     except Exception as e:
         msg = f"Error getting PDS patient ID for {nhs_number}"
         logger.exception(msg)
