@@ -18,18 +18,6 @@ def validate_content_headers(csv_content_reader) -> None:
         raise InvalidHeaders("File headers are invalid.")
 
 
-def get_file_status_for_error(error: Exception) -> str:
-    """Returns the appropriate file status based on the error that occurred"""
-    if isinstance(error, NoOperationPermissions):
-        return f"{FileStatus.NOT_PROCESSED} - {FileNotProcessedReason.UNAUTHORISED}"
-
-    # TODO - discuss with team. Do we want client errors to leave pipeline unblocked. Or block and investigate?
-    elif isinstance(error, InvalidHeaders):
-        return f"{FileStatus.NOT_PROCESSED} - {FileNotProcessedReason.INVALID_FILE_HEADERS}"
-
-    return FileStatus.FAILED
-
-
 def get_permitted_operations(
     supplier: str, vaccine_type: str, allowed_permissions_list: list
 ) -> set:
@@ -128,7 +116,8 @@ def file_level_validation(incoming_message_body: dict) -> dict:
         file_key = file_key or "Unable to ascertain file_key"
         created_at_formatted_string = created_at_formatted_string or "Unable to ascertain created_at_formatted_string"
         make_and_upload_ack_file(message_id, file_key, False, False, created_at_formatted_string)
-        file_status = get_file_status_for_error(error)
+        file_status = f"{FileStatus.NOT_PROCESSED} - {FileNotProcessedReason.UNAUTHORISED}"\
+            if isinstance(error, NoOperationPermissions) else FileStatus.FAILED
 
         try:
             move_file(SOURCE_BUCKET_NAME, file_key, f"archive/{file_key}")

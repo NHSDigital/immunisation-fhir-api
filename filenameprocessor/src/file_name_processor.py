@@ -135,7 +135,6 @@ def get_file_status_for_error(error: Exception) -> str:
         return FileStatus.FAILED
 
     if isinstance(error, VaccineTypePermissionsError):
-        # TODO - come back and clarify behaviour for client errors
         return f"{FileStatus.NOT_PROCESSED} - {FileNotProcessedReason.UNAUTHORISED}"
     elif isinstance(error, EmptyFileError):
         return f"{FileStatus.NOT_PROCESSED} - {FileNotProcessedReason.EMPTY}"

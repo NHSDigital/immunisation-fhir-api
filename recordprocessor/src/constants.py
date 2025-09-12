@@ -62,7 +62,6 @@ class FileStatus:
 class FileNotProcessedReason(StrEnum):
     """Reasons why a file was not processed"""
     UNAUTHORISED = "Unauthorised"
-    INVALID_FILE_HEADERS = "Invalid file headers"
 
 
 class AuditTableKeys:
