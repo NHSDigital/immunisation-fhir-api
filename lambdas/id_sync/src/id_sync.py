@@ -13,6 +13,7 @@ from record_processor import process_record
 - Any unexpected error is wrapped into `IdSyncException(message="Error processing id_sync event")`.
 """
 
+
 @logging_decorator(prefix="id_sync", stream_name=STREAM_NAME)
 def handler(event_data: Dict[str, Any], _context) -> Dict[str, Any]:
     try:
