@@ -29,7 +29,3 @@
 - Code is located in the `lambdas/id_sync/src/` directory.
 - Unit tests are in the `lambdas/id_sync/tests/` directory.
 - Use the provided Makefile and Dockerfile for building, testing, and packaging.
-
-## License
-
-This project is maintained by NHS. See [LICENSE](../LICENSE) for details.

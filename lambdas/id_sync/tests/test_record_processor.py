@@ -45,8 +45,8 @@ class TestRecordProcessor(unittest.TestCase):
     def test_process_record_success_update_required(self):
         """Test successful processing when patient ID differs"""
         # Arrange
-        pds_id = "pds-id-1"
-        nhs_number = "nhs-number-1"
+        pds_id = "9000000008"
+        nhs_number = "9000000009"
 
         test_sqs_record = {"body": {"subject": nhs_number}}
         self.mock_pds_get_patient_id.return_value = pds_id
@@ -54,7 +54,7 @@ class TestRecordProcessor(unittest.TestCase):
         self.mock_ieds_update_patient_id.return_value = success_response
         # Act
         result = process_record(test_sqs_record)
-
+        self.maxDiff = None
         # Assert
         expected_result = success_response
         self.assertEqual(result, expected_result)
@@ -89,7 +89,7 @@ class TestRecordProcessor(unittest.TestCase):
         # Act & Assert
         result = process_record(test_record)
         self.assertEqual(result["status"], "success")
-        self.assertEqual(result["message"], f"No patient ID found for NHS number: {test_id}")
+        self.assertEqual(result["message"], f"No patient ID found for NHS number")
         self.mock_ieds_check_exist.assert_not_called()
         self.mock_ieds_update_patient_id.assert_not_called()
 
