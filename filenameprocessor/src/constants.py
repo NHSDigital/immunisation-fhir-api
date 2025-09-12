@@ -47,7 +47,6 @@ class FileNotProcessedReason(StrEnum):
     """Reasons why a file was not processed"""
     EMPTY = "Empty file"
     UNAUTHORISED = "Unauthorised"
-    INVALID_FILENAME = "Invalid filename"
 
 
 class AuditTableKeys(StrEnum):
