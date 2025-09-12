@@ -33,6 +33,12 @@ def _log_data_from_body(event) -> dict:
         log_data["local_id"] = local_id
     except Exception:
         pass
+    try:
+        patient_data = [item for item in imms.get("contained") if item.get("resourceType") == "Patient"]
+        nhs_number = patient_data[0]["identifier"][0]["value"]
+        log_data["nhs_number"] = nhs_number
+    except Exception:
+        pass
     return log_data
 
 
@@ -42,7 +48,6 @@ def function_info(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         event = args[0] if args else {}
-        logger.info(f"Event: {event}")
         headers = event.get("headers", {})
         correlation_id = headers.get("X-Correlation-ID", "X-Correlation-ID not passed")
         request_id = headers.get("X-Request-ID", "X-Request-ID not passed")
@@ -64,7 +69,6 @@ def function_info(func):
         start = time.time()
         try:
             result = func(*args, **kwargs)
-            logger.info(f"Result:{result}")
             end = time.time()
             log_data["time_taken"] = f"{round(end - start, 5)}s"
             log_data.update(_log_data_from_body(event))
