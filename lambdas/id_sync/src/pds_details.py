@@ -13,6 +13,7 @@ pds_env = get_pds_env()
 safe_tmp_dir = tempfile.mkdtemp(dir="/tmp")  # NOSONAR
 
 
+# Get Patient details from external service PDS using NHS number from MNS notification
 def pds_get_patient_details(nhs_number: str) -> dict:
     try:
         logger.info(f"get patient details. nhs_number: {nhs_number}")
@@ -34,6 +35,7 @@ def pds_get_patient_details(nhs_number: str) -> dict:
         raise IdSyncException(message=msg, exception=e)
 
 
+# Extract Patient identifier value from PDS patient details
 def pds_get_patient_id(nhs_number: str) -> str:
     """
     Get PDS patient ID from NHS number.

@@ -26,8 +26,6 @@ def handler(event_data: Dict[str, Any], _context) -> Dict[str, Any]:
 
         logger.info("id_sync processing event with %d records", len(records))
 
-        # Process records in order. Let any unexpected exception bubble to the outer handler
-        # so tests that expect a wrapped IdSyncException keep working.
         results = [process_record(record) for record in records]
         nhs_numbers = [result["nhs_number"] for result in results]
         error_count = sum(1 for result in results if result.get("status") == "error")
@@ -36,9 +34,11 @@ def handler(event_data: Dict[str, Any], _context) -> Dict[str, Any]:
             raise IdSyncException(message=f"Processed {len(records)} records with {error_count} errors",
                                   nhs_numbers=nhs_numbers)
 
-        response = {"status": "success",
-                    "message": f"Successfully processed {len(records)} records",
-                    "nhs_numbers": nhs_numbers}
+        response = {
+            "status": "success",
+            "message": f"Successfully processed {len(records)} records",
+            "nhs_numbers": nhs_numbers
+            }
 
         logger.info("id_sync handler completed: %s", response)
         return response
