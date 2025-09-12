@@ -2,7 +2,7 @@
 
 See `README.specification.md` for details of the API specification's development.
 
-## Spelling
+## Spelling 
 
 Refer to the FHIR Immunization resource capitalised and with a "z" as FHIR is U.S. English.
 
