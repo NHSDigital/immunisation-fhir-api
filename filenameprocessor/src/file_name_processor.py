@@ -131,15 +131,12 @@ def handle_record(record) -> dict:
 
 def get_file_status_for_error(error: Exception) -> str:
     """Creates a file status based on the type of error that was thrown"""
-    if not isinstance(error, (VaccineTypePermissionsError, InvalidFileKeyError, EmptyFileError)):
-        return FileStatus.FAILED
-
     if isinstance(error, VaccineTypePermissionsError):
         return f"{FileStatus.NOT_PROCESSED} - {FileNotProcessedReason.UNAUTHORISED}"
     elif isinstance(error, EmptyFileError):
         return f"{FileStatus.NOT_PROCESSED} - {FileNotProcessedReason.EMPTY}"
 
-    return f"{FileStatus.NOT_PROCESSED} - {FileNotProcessedReason.INVALID_FILENAME}"
+    return FileStatus.FAILED
 
 
 def handle_unexpected_bucket_name(bucket_name: str, file_key: str) -> dict:

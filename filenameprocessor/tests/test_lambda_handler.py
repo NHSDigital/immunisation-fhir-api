@@ -276,7 +276,7 @@ class TestLambdaHandlerDataSource(TestCase):
                 "message_id": {"S": file_details.message_id},
                 "filename": {"S": file_details.file_key},
                 "queue_name": {"S": "unknown_unknown"},
-                "status": {"S": "Not processed - Invalid filename"},
+                "status": {"S": "Failed"},
                 "error_details": {"S": "Initial file validation failed: invalid file key"},
                 "timestamp": {"S": file_details.created_at_formatted_string},
                 "expires_at": {"N": str(file_details.expires_at)},
