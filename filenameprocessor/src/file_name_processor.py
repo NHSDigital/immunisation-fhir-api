@@ -19,12 +19,11 @@ from supplier_permissions import validate_vaccine_type_permissions
 from errors import (
     VaccineTypePermissionsError,
     InvalidFileKeyError,
-    InvalidSupplierError,
     UnhandledAuditTableError,
     UnhandledSqsError,
     EmptyFileError
 )
-from constants import FileStatus, ERROR_TYPE_TO_STATUS_CODE_MAP, SOURCE_BUCKET_NAME
+from constants import FileNotProcessedReason, FileStatus, ERROR_TYPE_TO_STATUS_CODE_MAP, SOURCE_BUCKET_NAME
 
 
 # NOTE: logging_decorator is applied to handle_record function, rather than lambda_handler, because
@@ -46,6 +45,7 @@ def handle_record(record) -> dict:
 
     vaccine_type = "unknown"
     supplier = "unknown"
+    expiry_timestamp = "unknown"
 
     if bucket_name != SOURCE_BUCKET_NAME:
         return handle_unexpected_bucket_name(bucket_name, file_key)
@@ -73,11 +73,11 @@ def handle_record(record) -> dict:
         permissions = validate_vaccine_type_permissions(vaccine_type=vaccine_type, supplier=supplier)
 
         queue_name = f"{supplier}_{vaccine_type}"
-        upsert_audit_table(
-            message_id, file_key, created_at_formatted_string, expiry_timestamp, queue_name, FileStatus.QUEUED
-        )
         make_and_send_sqs_message(
             file_key, message_id, permissions, vaccine_type, supplier, created_at_formatted_string
+        )
+        upsert_audit_table(
+            message_id, file_key, created_at_formatted_string, expiry_timestamp, queue_name, FileStatus.QUEUED
         )
 
         logger.info("Lambda invocation successful for file '%s'", file_key)
@@ -96,18 +96,22 @@ def handle_record(record) -> dict:
         VaccineTypePermissionsError,
         EmptyFileError,
         InvalidFileKeyError,
-        InvalidSupplierError,
         UnhandledAuditTableError,
         UnhandledSqsError,
         Exception,
     ) as error:
-        logger.error("Error processing file '%s': %s", file_key, str(error))
+        if isinstance(error, EmptyFileError):
+            # Avoid error log noise for accepted scenario in which supplier provides a batch file with no records
+            logger.warning("Error processing file '%s': %s", file_key, str(error))
+        else:
+            logger.error("Error processing file '%s': %s", file_key, str(error))
 
         queue_name = f"{supplier}_{vaccine_type}"
-        file_status = FileStatus.EMPTY if isinstance(error, EmptyFileError) else FileStatus.PROCESSED
+        file_status = get_file_status_for_error(error)
 
         upsert_audit_table(
-            message_id, file_key, created_at_formatted_string, expiry_timestamp, queue_name, file_status
+            message_id, file_key, created_at_formatted_string, expiry_timestamp, queue_name, file_status,
+            error_details=str(error)
         )
 
         # Create ack file
@@ -127,6 +131,16 @@ def handle_record(record) -> dict:
             "vaccine_type": vaccine_type,
             "supplier": supplier
         }
+
+
+def get_file_status_for_error(error: Exception) -> str:
+    """Creates a file status based on the type of error that was thrown"""
+    if isinstance(error, VaccineTypePermissionsError):
+        return f"{FileStatus.NOT_PROCESSED} - {FileNotProcessedReason.UNAUTHORISED}"
+    elif isinstance(error, EmptyFileError):
+        return f"{FileStatus.NOT_PROCESSED} - {FileNotProcessedReason.EMPTY}"
+
+    return FileStatus.FAILED
 
 
 def handle_unexpected_bucket_name(bucket_name: str, file_key: str) -> dict:

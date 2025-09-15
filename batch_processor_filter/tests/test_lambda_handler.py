@@ -1,9 +1,10 @@
 import json
+from json import JSONDecodeError
 
 import boto3
 import copy
 from unittest import TestCase
-from unittest.mock import patch
+from unittest.mock import patch, Mock, ANY
 
 import botocore
 from moto import mock_aws
@@ -77,6 +78,8 @@ class TestLambdaHandler(TestCase):
 
         self.logger_patcher = patch("batch_processor_filter_service.logger")
         self.mock_logger = self.logger_patcher.start()
+        self.exception_decorator_logger_patcher = patch("exception_decorator.logger")
+        self.mock_exception_decorator_logger = self.exception_decorator_logger_patcher.start()
         self.firehose_log_patcher = patch("batch_processor_filter_service.send_log_to_firehose")
         self.mock_firehose_send_log = self.firehose_log_patcher.start()
 
@@ -90,8 +93,7 @@ class TestLambdaHandler(TestCase):
                 s3_client.delete_object(Bucket=bucket_name, Key=obj["Key"])
             s3_client.delete_bucket(Bucket=bucket_name)
 
-        self.logger_patcher.stop()
-        self.firehose_log_patcher.stop()
+        patch.stopall()
 
     def _assert_source_file_moved(self, filename: str):
         """Check used in the duplicate scenario to validate that the original uploaded file is moved"""
@@ -110,7 +112,7 @@ class TestLambdaHandler(TestCase):
 
     def test_lambda_handler_raises_error_when_empty_batch_received(self):
         with self.assertRaises(InvalidBatchSizeError) as exc:
-            lambda_handler({"Records": []}, {})
+            lambda_handler({"Records": []}, Mock())
 
         self.assertEqual(str(exc.exception), "Received 0 records, expected 1")
 
@@ -119,9 +121,23 @@ class TestLambdaHandler(TestCase):
             lambda_handler({"Records": [
                 make_sqs_record(self.default_batch_file_event),
                 make_sqs_record(self.default_batch_file_event),
-            ]}, {})
+            ]}, Mock())
 
         self.assertEqual(str(exc.exception), "Received 2 records, expected 1")
+
+    def test_lambda_handler_decorator_logs_unhandled_exceptions(self):
+        """The exception decorator should log the error when an unhandled exception occurs"""
+        with self.assertRaises(JSONDecodeError):
+            lambda_handler({"Records": [
+                {
+                    "body": "{'malformed}"
+                }
+            ]}, Mock())
+
+        self.mock_exception_decorator_logger.error.assert_called_once_with(
+            "An unhandled exception occurred in the batch processor filter Lambda",
+            exc_info=ANY
+        )
 
     def test_lambda_handler_handles_duplicate_file_scenario(self):
         """Should update the audit table status to duplicate for the incoming record"""
@@ -137,61 +153,69 @@ class TestLambdaHandler(TestCase):
         # Create the source file in S3
         s3_client.put_object(Bucket=self.mock_source_bucket, Key=test_file_name)
 
-        lambda_handler({"Records": [make_sqs_record(duplicate_file_event)]}, {})
+        lambda_handler({"Records": [make_sqs_record(duplicate_file_event)]}, Mock())
 
         status = get_audit_entry_status_by_id(dynamodb_client, AUDIT_TABLE_NAME, duplicate_file_event["message_id"])
-        self.assertEqual(status, "Not processed - duplicate")
+        self.assertEqual(status, "Not processed - Duplicate")
 
         sqs_messages = sqs_client.receive_message(QueueUrl=self.mock_queue_url)
         self.assertEqual(sqs_messages.get("Messages", []), [])
         self._assert_source_file_moved(test_file_name)
         self._assert_ack_file_created("Menacwy_Vaccinations_v5_TEST_20250820T10210000_InfAck_20250826T14372600.csv")
 
-        self.mock_logger.info.assert_called_once_with(
+        self.mock_logger.error.assert_called_once_with(
             "A duplicate file has already been processed. Filename: %s",
             test_file_name
         )
 
     def test_lambda_handler_raises_error_when_event_already_processing_for_supplier_and_vacc_type(self):
         """Should raise exception so that the event is returned to the originating queue to be retried later"""
-        # Add an audit entry for a batch event that is already processing
-        add_entry_to_mock_table(dynamodb_client, AUDIT_TABLE_NAME, self.default_batch_file_event, FileStatus.PROCESSING)
+        test_cases = {
+            ("Event is already being processed for supplier + vacc type queue", FileStatus.PROCESSING),
+            ("There is a failed event to be checked in supplier + vacc type queue", FileStatus.FAILED)
+        }
 
-        test_event: BatchFileCreatedEvent = BatchFileCreatedEvent(
-            message_id="3b60c4f7-ef67-43c7-8f0d-4faee04d7d0e",
-            vaccine_type="MENACWY",  # Same vacc type
-            supplier="TESTSUPPLIER",  # Same supplier
-            permission=["some-permissions"],
-            filename="Menacwy_Vaccinations_v5_TEST_20250826T15003000.csv",  # Different timestamp
-            created_at_formatted_string="20250826T15003000"
-        )
-        # Add the audit record for the incoming event
-        add_entry_to_mock_table(dynamodb_client, AUDIT_TABLE_NAME, test_event, FileStatus.QUEUED)
+        for msg, file_status in test_cases:
+            self.mock_logger.reset_mock()
+            with self.subTest(msg=msg):
+                # Add an audit entry for a batch event that is already processing or failed
+                add_entry_to_mock_table(dynamodb_client, AUDIT_TABLE_NAME, self.default_batch_file_event, file_status)
 
-        with self.assertRaises(EventAlreadyProcessingForSupplierAndVaccTypeError) as exc:
-            lambda_handler({"Records": [make_sqs_record(test_event)]}, {})
+                test_event: BatchFileCreatedEvent = BatchFileCreatedEvent(
+                    message_id="3b60c4f7-ef67-43c7-8f0d-4faee04d7d0e",
+                    vaccine_type="MENACWY",  # Same vacc type
+                    supplier="TESTSUPPLIER",  # Same supplier
+                    permission=["some-permissions"],
+                    filename="Menacwy_Vaccinations_v5_TEST_20250826T15003000.csv",  # Different timestamp
+                    created_at_formatted_string="20250826T15003000"
+                )
+                # Add the audit record for the incoming event
+                add_entry_to_mock_table(dynamodb_client, AUDIT_TABLE_NAME, test_event, FileStatus.QUEUED)
 
-        self.assertEqual(
-            str(exc.exception),
-            "Batch event already processing for supplier: TESTSUPPLIER and vacc type: MENACWY"
-        )
+                with self.assertRaises(EventAlreadyProcessingForSupplierAndVaccTypeError) as exc:
+                    lambda_handler({"Records": [make_sqs_record(test_event)]}, Mock())
 
-        status = get_audit_entry_status_by_id(dynamodb_client, AUDIT_TABLE_NAME, test_event["message_id"])
-        self.assertEqual(status, "Queued")
+                self.assertEqual(
+                    str(exc.exception),
+                    "Batch event already processing for supplier: TESTSUPPLIER and vacc type: MENACWY"
+                )
 
-        sqs_messages = sqs_client.receive_message(QueueUrl=self.mock_queue_url)
-        self.assertEqual(sqs_messages.get("Messages", []), [])
+                status = get_audit_entry_status_by_id(dynamodb_client, AUDIT_TABLE_NAME, test_event["message_id"])
+                self.assertEqual(status, "Queued")
 
-        self.mock_logger.info.assert_called_once_with(
-            "Batch event already being processed for supplier and vacc type. Filename: %s",
-            "Menacwy_Vaccinations_v5_TEST_20250826T15003000.csv"
-        )
+                sqs_messages = sqs_client.receive_message(QueueUrl=self.mock_queue_url)
+                self.assertEqual(sqs_messages.get("Messages", []), [])
+
+                self.mock_logger.info.assert_called_once_with(
+                    "Batch event already processing for supplier and vacc type. Filename: %s",
+                    "Menacwy_Vaccinations_v5_TEST_20250826T15003000.csv"
+                )
 
     def test_lambda_handler_processes_event_successfully(self):
         """Should update the audit entry status to Processing and forward to SQS"""
         add_entry_to_mock_table(dynamodb_client, AUDIT_TABLE_NAME, self.default_batch_file_event, FileStatus.QUEUED)
 
-        lambda_handler({"Records": [make_sqs_record(self.default_batch_file_event)]}, {})
+        lambda_handler({"Records": [make_sqs_record(self.default_batch_file_event)]}, Mock())
 
         status = get_audit_entry_status_by_id(dynamodb_client, AUDIT_TABLE_NAME,
                                               self.default_batch_file_event["message_id"])
@@ -223,7 +247,7 @@ class TestLambdaHandler(TestCase):
         )
         add_entry_to_mock_table(dynamodb_client, AUDIT_TABLE_NAME, test_event, FileStatus.QUEUED)
 
-        lambda_handler({"Records": [make_sqs_record(test_event)]}, {})
+        lambda_handler({"Records": [make_sqs_record(test_event)]}, Mock())
 
         status = get_audit_entry_status_by_id(dynamodb_client, AUDIT_TABLE_NAME, test_event["message_id"])
         self.assertEqual(status, "Processing")

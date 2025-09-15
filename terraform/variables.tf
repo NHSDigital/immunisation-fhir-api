@@ -35,6 +35,13 @@ variable "pds_check_enabled" {
   default = true
 }
 
+# Remember to switch off in PR envs after testing
+variable "batch_error_notifications_enabled" {
+  default     = true
+  description = "Switch to enable batch processing error notifications to Slack"
+  type        = bool
+}
+
 variable "has_sub_environment_scope" {
   default = false
 }
