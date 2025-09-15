@@ -3,7 +3,7 @@ import os
 from unittest.mock import patch, MagicMock, Mock, create_autospec
 from mns_service import MnsService, MNS_URL
 from common.authentication import AppRestrictedAuth
-from models.errors import (
+from common.models.errors import (
     ServerError,
     UnhandledResponseError,
     TokenValidationError,
@@ -266,8 +266,8 @@ class TestMnsService(unittest.TestCase):
         with self.assertRaises(ResourceNotFoundError) as context:
             MnsService.raise_error_response(resp)
         self.assertIn("Subscription or Resource not found", str(context.exception))
-        self.assertEqual(context.exception.message, "Subscription or Resource not found")
-        self.assertEqual(context.exception.response, {"resource": "Not found"})
+        self.assertEqual(context.exception.resource_id, "Subscription or Resource not found")
+        self.assertEqual(context.exception.resource_type, {"resource": "Not found"})
 
     def test_400_bad_request_error(self):
         resp = self.mock_response(400, {"resource": "Invalid"})

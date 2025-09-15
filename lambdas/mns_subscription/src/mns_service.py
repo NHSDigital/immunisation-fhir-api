@@ -4,7 +4,7 @@ import uuid
 import logging
 import json
 from common.authentication import AppRestrictedAuth
-from models.errors import (
+from common.models.errors import (
     UnhandledResponseError,
     ResourceNotFoundError,
     UnauthorizedError,
@@ -129,4 +129,6 @@ class MnsService:
             response.status_code,
             (UnhandledResponseError, f"Unhandled error: {response.status_code}"))
 
+        if response.status_code == 404:
+            raise exception_class(resource_type=response.json(), resource_id=error_message)
         raise exception_class(response=response.json(), message=error_message)
