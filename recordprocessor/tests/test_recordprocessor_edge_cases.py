@@ -1,7 +1,7 @@
 import unittest
 import os
 from io import BytesIO
-from unittest.mock import patch
+from unittest.mock import call, patch
 from batch_processor import process_csv_to_fhir
 from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import create_patch
 
@@ -68,6 +68,7 @@ class TestProcessorEdgeCases(unittest.TestCase):
         message_body = {
                     "vaccine_type": "vax-type-1",
                     "supplier": "test-supplier",
+                    "filename": "test-filename"
                 }
         self.mock_map_target_disease.return_value = "some disease"
 
@@ -78,6 +79,10 @@ class TestProcessorEdgeCases(unittest.TestCase):
         self.mock_logger_warning.assert_called()
         warning_call_args = self.mock_logger_warning.call_args[0][0]
         self.assertTrue(warning_call_args.startswith("Encoding Error: 'utf-8' codec can't decode byte 0xe9"))
+        self.mock_s3_get_object.assert_has_calls([
+            call(Bucket=None, Key="test-filename"),
+            call(Bucket=None, Key="processing/test-filename"),
+        ])
 
     def test_process_large_file_utf8(self):
         """ Test processing a large file with utf-8 encoding """
