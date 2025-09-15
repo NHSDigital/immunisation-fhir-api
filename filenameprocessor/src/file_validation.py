@@ -40,8 +40,7 @@ def validate_file_key(file_key: str) -> tuple[str, str]:
     """
 
     if not match(r"^[^_.]*_[^_.]*_[^_.]*_[^_.]*_[^_.]*", file_key):
-        error_message = "Initial file validation failed: invalid file key format"
-        raise InvalidFileKeyError(error_message)
+        raise InvalidFileKeyError("Initial file validation failed: invalid file key format")
 
     file_key = file_key.upper()
     file_name_and_extension = file_key.rsplit(".", 1)
