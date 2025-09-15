@@ -89,8 +89,6 @@ def file_level_validation(incoming_message_body: dict) -> dict:
             csv_reader = get_csv_content_dict_reader(file_key, encoder="cp1252")
             validate_content_headers(csv_reader)
 
-        validate_content_headers(csv_reader)
-
         # Validate has permission to perform at least one of the requested actions
         allowed_operations_set = get_permitted_operations(supplier, vaccine, permission)
 
