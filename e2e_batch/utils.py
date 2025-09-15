@@ -1,5 +1,4 @@
 import time
-import asyncio
 import csv
 import pandas as pd
 import uuid
@@ -115,7 +114,7 @@ def generate_csv(fore_name, dose_amount,
     return file_name
 
 
-async def upload_file_to_s3(file_name, bucket, prefix):
+def upload_file_to_s3(file_name, bucket, prefix):
     """Upload the given file to the specified bucket under the provided prefix.
     Returns the S3 key if successful, or raises an exception."""
 
@@ -138,7 +137,7 @@ async def upload_file_to_s3(file_name, bucket, prefix):
         raise Exception(f"Unexpected error during file upload: {e}")
 
 
-async def delete_file_from_s3(bucket, key):
+def delete_file_from_s3(bucket, key):
     """Delete the specified file (object) from the given S3 bucket.
     Returns True if deletion is successful, otherwise raises an exception."""
     try:
@@ -158,7 +157,7 @@ async def delete_file_from_s3(bucket, key):
         raise Exception(f"Unexpected error during file deletion: {e}")
 
 
-async def wait_for_ack_file(ack_prefix, input_file_name, timeout=1200):
+def wait_for_ack_file(ack_prefix, input_file_name, timeout=1200):
     """Poll the ACK_BUCKET for an ack file that contains the input_file_name as a substring."""
     # processor takes min 30 seconds to spin up, so we wait longer initially
     sleep_interval = 30  # seconds
@@ -177,7 +176,7 @@ async def wait_for_ack_file(ack_prefix, input_file_name, timeout=1200):
                 key = obj["Key"]
                 if search_pattern in key:
                     return key
-        await asyncio.sleep(sleep_interval)
+        time.sleep(sleep_interval)
         if sleep_interval == 30:
             sleep_interval = 5  # Reduce sleep interval after the first wait
     raise AckFileNotFoundError(
@@ -185,7 +184,7 @@ async def wait_for_ack_file(ack_prefix, input_file_name, timeout=1200):
     )
 
 
-async def get_file_content_from_s3(bucket, key):
+def get_file_content_from_s3(bucket, key):
     """Download and return the file content from S3."""
 
     response = s3_client.get_object(Bucket=bucket, Key=key)
@@ -408,7 +407,7 @@ def save_json_to_file(json_data, filename="permissions_config.json"):
         json.dump(json_data, json_file, indent=4)
 
 
-async def upload_config_file(value):
+def upload_config_file(value):
     input_file = create_permissions_json(value)
     save_json_to_file(input_file)
     upload_file_to_s3(PERMISSIONS_CONFIG_FILE_KEY, CONFIG_BUCKET, INPUT_PREFIX)
