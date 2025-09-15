@@ -8,7 +8,8 @@ from utils_for_recordprocessor import get_csv_content_dict_reader
 from errors import InvalidHeaders, NoOperationPermissions
 from logging_decorator import file_level_validation_logging_decorator
 from audit_table import update_audit_table_status
-from constants import SOURCE_BUCKET_NAME, EXPECTED_CSV_HEADERS, permission_to_operation_map, FileStatus, Permission
+from constants import SOURCE_BUCKET_NAME, EXPECTED_CSV_HEADERS, permission_to_operation_map, FileStatus, Permission, \
+    FileNotProcessedReason
 
 
 def validate_content_headers(csv_content_reader) -> None:
@@ -113,6 +114,8 @@ def file_level_validation(incoming_message_body: dict) -> dict:
         file_key = file_key or "Unable to ascertain file_key"
         created_at_formatted_string = created_at_formatted_string or "Unable to ascertain created_at_formatted_string"
         make_and_upload_ack_file(message_id, file_key, False, False, created_at_formatted_string)
+        file_status = f"{FileStatus.NOT_PROCESSED} - {FileNotProcessedReason.UNAUTHORISED}"\
+            if isinstance(error, NoOperationPermissions) else FileStatus.FAILED
 
         try:
             move_file(SOURCE_BUCKET_NAME, file_key, f"archive/{file_key}")
@@ -120,5 +123,5 @@ def file_level_validation(incoming_message_body: dict) -> dict:
             logger.error("Failed to move file to archive: %s", move_file_error)
 
         # Update the audit table
-        update_audit_table_status(file_key, message_id, FileStatus.PROCESSED)
+        update_audit_table_status(file_key, message_id, file_status, error_details=str(error))
         raise

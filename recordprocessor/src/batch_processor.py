@@ -3,6 +3,7 @@
 import json
 import os
 import time
+from json import JSONDecodeError
 
 from constants import FileStatus
 from process_row import process_row
@@ -111,10 +112,25 @@ def main(event: str) -> None:
     logger.info("task started")
     start = time.time()
     n_rows_processed = 0
+
     try:
-        n_rows_processed = process_csv_to_fhir(incoming_message_body=json.loads(event))
+        incoming_message_body = json.loads(event)
+    except JSONDecodeError as error:
+        logger.error("Error decoding incoming message: %s", error)
+        return
+
+    try:
+        n_rows_processed = process_csv_to_fhir(incoming_message_body=incoming_message_body)
     except Exception as error:  # pylint: disable=broad-exception-caught
         logger.error("Error processing message: %s", error)
+        message_id = incoming_message_body.get("message_id")
+        file_key = incoming_message_body.get("file_key")
+
+        # If an unexpected error occurs, attempt to mark the event as failed. If the event is so malformed that this
+        # also fails, we will still get the error alert and the event will remain in processing meaning the supplier +
+        # vacc type queue is blocked until we resolve the issue
+        update_audit_table_status(file_key, message_id, FileStatus.FAILED, error_details=str(error))
+
     end = time.time()
     logger.info("Total rows processed: %s", n_rows_processed)
     logger.info("Total time for completion: %ss", round(end - start, 5))
