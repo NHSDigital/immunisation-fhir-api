@@ -673,6 +673,39 @@ class TestIedsCheckExists(TestIedsDbOperations):
         # Assert - Verify the limit parameter is correctly passed
         self.mock_get_items_from_patient_id.assert_called_once_with(patient_id, 1)
 
-    # ✅ Remove tests that are no longer relevant:
-    # - test_ieds_check_exist_missing_count_field (no longer uses Count)
-    # - test_ieds_check_exist_count_greater_than_one (no longer uses Count)
+
+
+class TestExtractPatientResource(TestIedsDbOperations):
+    def test_extract_patient_from_immunization_contained(self):
+        """Should return the contained Patient resource from an Immunization Resource"""
+        item = {
+            "Resource": {
+                "resourceType": "Immunization",
+                "contained": [
+                    {
+                        "resourceType": "Patient",
+                        "id": "Pat1",
+                        "name": [{"family": "Taylor", "given": ["Sarah"]}],
+                        "gender": "unknown",
+                        "birthDate": "1965-02-28"
+                    }
+                ]
+            }
+        }
+
+        patient = ieds_db_operations.extract_patient_resource_from_item(item)
+        self.assertIsNotNone(patient)
+        self.assertEqual(patient.get("resourceType"), "Patient")
+        self.assertEqual(patient.get("id"), "Pat1")
+
+    def test_extract_returns_none_when_no_patient_in_contained(self):
+        """Should return None when contained exists but has no Patient entries"""
+        item = {"Resource": {"resourceType": "Immunization", "contained": [{"resourceType": "Practitioner"}]}}
+        patient = ieds_db_operations.extract_patient_resource_from_item(item)
+        self.assertIsNone(patient)
+
+    def test_extract_returns_none_when_resource_not_dict(self):
+        """Should return None when Resource attribute is present but not a dict"""
+        item = {"Resource": '{"not": "a dict string"}'}
+        patient = ieds_db_operations.extract_patient_resource_from_item(item)
+        self.assertIsNone(patient)
