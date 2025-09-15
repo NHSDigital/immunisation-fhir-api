@@ -100,7 +100,11 @@ def handle_record(record) -> dict:
         UnhandledSqsError,
         Exception,
     ) as error:
-        logger.error("Error processing file '%s': %s", file_key, str(error))
+        if isinstance(error, EmptyFileError):
+            # Avoid error log noise for accepted scenario in which supplier provides a batch file with no records
+            logger.warning("Error processing file '%s': %s", file_key, str(error))
+        else:
+            logger.error("Error processing file '%s': %s", file_key, str(error))
 
         queue_name = f"{supplier}_{vaccine_type}"
         file_status = get_file_status_for_error(error)

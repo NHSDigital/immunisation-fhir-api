@@ -229,6 +229,11 @@ class TestLambdaHandlerDataSource(TestCase):
         self.assertEqual(self.get_audit_table_items(), expected_table_items)
         self.assert_no_sqs_message()
         self.assert_ack_file_contents(file_details)
+        self.mock_logger.warning.assert_called_once_with(
+            "Error processing file '%s': %s",
+            "RSV_Vaccinations_v5_X8E5B_20000101T00000001.csv",
+            "Initial file validation failed: batch file was empty"
+        )
 
     def test_lambda_handler_non_root_file(self):
         """
