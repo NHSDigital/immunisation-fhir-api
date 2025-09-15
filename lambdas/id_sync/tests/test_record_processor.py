@@ -89,7 +89,7 @@ class TestRecordProcessor(unittest.TestCase):
         # Act & Assert
         result = process_record(test_record)
         self.assertEqual(result["status"], "success")
-        self.assertEqual(result["message"], f"No patient ID found for NHS number")
+        self.assertEqual(result["message"], "No patient ID found for NHS number")
         self.mock_ieds_check_exist.assert_not_called()
         self.mock_ieds_update_patient_id.assert_not_called()
 

@@ -17,7 +17,6 @@ from record_processor import process_record
 @logging_decorator(prefix="id_sync", stream_name=STREAM_NAME)
 def handler(event_data: Dict[str, Any], _context) -> Dict[str, Any]:
     try:
-        logger.info("id_sync handler invoked")
         event = AwsLambdaEvent(event_data)
         records = event.records
 
@@ -44,11 +43,9 @@ def handler(event_data: Dict[str, Any], _context) -> Dict[str, Any]:
         return response
 
     except IdSyncException as e:
-        # Preserve domain exceptions but ensure they're logged
         logger.exception(f"id_sync error: {e.message}")
         raise
     except Exception:
         msg = "Error processing id_sync event"
         logger.exception(msg)
-        # Raise a domain exception with a predictable message for callers/tests
         raise IdSyncException(message=msg)
