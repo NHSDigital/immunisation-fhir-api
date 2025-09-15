@@ -7,17 +7,26 @@ class TestRecordProcessor(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures and mocks"""
+        # Patch logger
         self.logger_patcher = patch('record_processor.logger')
         self.mock_logger = self.logger_patcher.start()
 
+        # PDS helpers
         self.pds_get_patient_id_patcher = patch('record_processor.pds_get_patient_id')
         self.mock_pds_get_patient_id = self.pds_get_patient_id_patcher.start()
 
+        self.pds_get_patient_details_patcher = patch('record_processor.pds_get_patient_details')
+        self.mock_pds_get_patient_details = self.pds_get_patient_details_patcher.start()
+
+        # IEDS helpers
         self.ieds_check_exist_patcher = patch('record_processor.ieds_check_exist')
         self.mock_ieds_check_exist = self.ieds_check_exist_patcher.start()
 
         self.ieds_update_patient_id_patcher = patch('record_processor.ieds_update_patient_id')
         self.mock_ieds_update_patient_id = self.ieds_update_patient_id_patcher.start()
+
+        self.get_items_from_patient_id_patcher = patch('record_processor.get_items_from_patient_id')
+        self.mock_get_items_from_patient_id = self.get_items_from_patient_id_patcher.start()
 
     def tearDown(self):
         patch.stopall()
@@ -27,7 +36,6 @@ class TestRecordProcessor(unittest.TestCase):
         # Arrange
         test_id = "54321"
         with patch('record_processor.ieds_check_exist', return_value=True):
-
             test_record = {"body": {"subject": test_id}}
             self.mock_pds_get_patient_id.return_value = test_id
 
@@ -43,34 +51,82 @@ class TestRecordProcessor(unittest.TestCase):
             self.mock_pds_get_patient_id.assert_called_once_with(test_id)
 
     def test_process_record_success_update_required(self):
-        """Test successful processing when patient ID differs"""
+        """Test successful processing when patient ID differs and demographics match"""
         # Arrange
         pds_id = "9000000008"
         nhs_number = "9000000009"
 
         test_sqs_record = {"body": {"subject": nhs_number}}
         self.mock_pds_get_patient_id.return_value = pds_id
+
+        # pds_get_patient_details should return details used by demographics_match
+        self.mock_pds_get_patient_details.return_value = {
+            "name": [{"given": ["John"], "family": "Doe"}],
+            "gender": "male",
+            "birthDate": "1980-01-01",
+        }
+
+        # Provide one IEDS item that will match demographics via demographics_match
+        matching_item = {
+            "Resource": {
+                "resourceType": "Patient",
+                "name": [{"given": ["John"], "family": "Doe"}],
+                "gender": "male",
+                "birthDate": "1980-01-01",
+            }
+        }
+        self.mock_get_items_from_patient_id.return_value = [matching_item]
+
         success_response = {"status": "success"}
         self.mock_ieds_update_patient_id.return_value = success_response
+
         # Act
         result = process_record(test_sqs_record)
-        self.maxDiff = None
-        # Assert
-        expected_result = success_response
-        self.assertEqual(result, expected_result)
 
-        # Verify calls
+        # Assert
+        self.assertEqual(result, success_response)
         self.mock_pds_get_patient_id.assert_called_once_with(nhs_number)
+
+    def test_process_record_demographics_mismatch_skips_update(self):
+        """If no IEDS item matches demographics, the update should be skipped"""
+        # Arrange
+        pds_id = "pds-1"
+        nhs_number = "nhs-1"
+        test_sqs_record = {"body": {"subject": nhs_number}}
+
+        self.mock_pds_get_patient_id.return_value = pds_id
+        self.mock_pds_get_patient_details.return_value = {
+            "name": [{"given": ["Alice"], "family": "Smith"}],
+            "gender": "female",
+            "birthDate": "1995-05-05",
+        }
+
+        # IEDS items exist but do not match demographics
+        non_matching_item = {
+            "Resource": {
+                "resourceType": "Patient",
+                "name": [{"given": ["Bob"], "family": "Jones"}],
+                "gender": "male",
+                "birthDate": "1990-01-01",
+            }
+        }
+        self.mock_get_items_from_patient_id.return_value = [non_matching_item]
+
+        # Act
+        result = process_record(test_sqs_record)
+
+        # Assert: update skipped
+        self.assertEqual(result["status"], "success")
+        self.assertIn("update skipped", result["message"])
 
     def test_process_record_no_records_exist(self):
         """Test when no records exist for the patient ID"""
-
         # Arrange
         test_id = "12345"
         with patch('record_processor.ieds_check_exist', return_value=False):
+            test_record = {"body": {"subject": test_id}}
 
             # Act
-            test_record = {"body": {"subject": test_id}}
             result = process_record(test_record)
 
             # Assert
@@ -86,6 +142,7 @@ class TestRecordProcessor(unittest.TestCase):
         test_id = "12345a"
         self.mock_pds_get_patient_id.return_value = None
         test_record = {"body": {"subject": test_id}}
+
         # Act & Assert
         result = process_record(test_record)
         self.assertEqual(result["status"], "success")
@@ -112,6 +169,18 @@ class TestRecordProcessor(unittest.TestCase):
         new_test_id = "nhs-number-2"
 
         self.mock_pds_get_patient_id.return_value = new_test_id
+        # Mock demographics so update proceeds
+        self.mock_pds_get_patient_details.return_value = {
+            "name": [{"given": ["A"], "family": "B"}],
+            "gender": "female", "birthDate": "1990-01-01"
+        }
+        self.mock_get_items_from_patient_id.return_value = [{
+            "Resource": {
+                "resourceType": "Patient",
+                "name": [{"given": ["A"], "family": "B"}],
+                "gender": "female", "birthDate": "1990-01-01"
+            }
+        }]
         self.mock_ieds_update_patient_id.return_value = {"status": "success"}
         # Act
         result = process_record(test_record)
