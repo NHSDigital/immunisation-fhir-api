@@ -1,3 +1,4 @@
+import json
 from boto3.dynamodb.conditions import Key
 from os_vars import get_ieds_table_name
 from common.aws_dynamodb import get_dynamodb_table
@@ -141,3 +142,41 @@ def get_items_from_patient_id(id: str, limit=BATCH_SIZE) -> list:
             nhs_numbers=[patient_pk],
             exception=e
         )
+
+def extract_patient_resource_from_item(item: dict) -> dict | None:
+    """Extract a Patient resource dict from an IEDS item.
+
+    Accepts common shapes: item['Resource'] (dict or JSON string), item['resource'], or a wrapper with 'resource'.
+    Returns the patient resource dict or None if not found/parsible.
+    """
+    if not isinstance(item, dict):
+        return None
+
+    candidate = item.get("Resource") or item.get("resource") or item.get("Body") or item.get("body")
+    if not candidate:
+        return None
+
+    # candidate might be a JSON string
+    if isinstance(candidate, str):
+        try:
+            candidate = json.loads(candidate)
+        except Exception:
+            return None
+
+    if isinstance(candidate, dict):
+        # if wrapped like {"resource": {...}}
+        if "resource" in candidate and isinstance(candidate["resource"], dict):
+            candidate = candidate["resource"]
+
+        # If this dict is the Patient resource itself
+        if candidate.get("resourceType") == "Patient":
+            return candidate
+
+        # If it's a bundle/entry, search for Patient
+        if isinstance(candidate.get("entry"), list):
+            for entry in candidate.get("entry", []):
+                r = entry.get("resource") or entry.get("Resource")
+                if isinstance(r, dict) and r.get("resourceType") == "Patient":
+                    return r
+
+    return None

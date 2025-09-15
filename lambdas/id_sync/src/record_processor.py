@@ -1,7 +1,12 @@
 from common.clients import logger
 from typing import Dict, Any
-from pds_details import pds_get_patient_id
-from ieds_db_operations import ieds_check_exist, ieds_update_patient_id
+from pds_details import pds_get_patient_id, pds_get_patient_details, normalize_name_from_pds
+from ieds_db_operations import (
+    ieds_check_exist,
+    ieds_update_patient_id,
+    extract_patient_resource_from_item,
+    get_items_from_patient_id,
+)
 import json
 import ast
 
@@ -53,10 +58,125 @@ def process_nhs_number(nhs_number: str) -> Dict[str, Any]:
     logger.info("Update patient ID from %s to %s", nhs_number, new_nhs_number)
 
     if ieds_check_exist(nhs_number):
-        response = ieds_update_patient_id(nhs_number, new_nhs_number)
+        # Fetch PDS details for demographic comparison
+        try:
+            pds_details = pds_get_patient_details(nhs_number)
+        except Exception:
+            logger.exception("process_nhs_number: failed to fetch PDS details, aborting update")
+            return {
+                "status": "error",
+                "message": "Failed to fetch PDS details for demographic comparison",
+                "nhs_number": nhs_number,
+            }
+
+        # Get IEDS items for this patient id and compare demographics
+        try:
+            items = get_items_from_patient_id(nhs_number)
+        except Exception:
+            logger.exception("process_nhs_number: failed to fetch IEDS items, aborting update")
+            return {
+                "status": "error",
+                "message": "Failed to fetch IEDS items for demographic comparison",
+                "nhs_number": nhs_number,
+            }
+
+        # If at least one IEDS item matches demographics, proceed with update
+        match_found = False
+        for item in items:
+            try:
+                if demographics_match(pds_details, item):
+                    match_found = True
+                    break
+            except Exception:
+                logger.exception("process_nhs_number: error while comparing demographics for item: %s", item)
+
+        if not match_found:
+            logger.info("process_nhs_number: No IEDS items matched PDS demographics. Skipping update for %s", nhs_number)
+            response = {
+                "status": "success",
+                "message": "No IEDS items matched PDS demographics; update skipped",
+            }
+        else:
+            response = ieds_update_patient_id(nhs_number, new_nhs_number)
     else:
         logger.info("No IEDS record found for: %s", nhs_number)
         response = {"status": "success", "message": f"No records returned for ID: {nhs_number}"}
 
     response["nhs_number"] = nhs_number
     return response
+
+def extract_normalized_name_from_patient(patient: dict) -> str | None:
+    """Return a normalized 'given family' name string from a Patient resource or None."""
+    if not patient:
+        return None
+    name = patient.get("name")
+    if not name:
+        return None
+    try:
+        name_entry = name[0] if isinstance(name, list) else name
+        given = name_entry.get("given")
+        given_str = None
+        if isinstance(given, list) and given:
+            given_str = given[0]
+        elif isinstance(given, str):
+            given_str = given
+        family = name_entry.get("family")
+        parts = [p for p in [given_str, family] if p]
+        return " ".join(parts).strip().lower() if parts else None
+    except Exception:
+        return None
+
+
+def demographics_match(pds_details: dict, ieds_item: dict) -> bool:
+    """Compare PDS patient details to an IEDS item (FHIR Patient resource).
+
+    Parameters:
+    - pds_details: dict returned by PDS (patient details)
+    - ieds_item: dict representing a single IEDS item containing a FHIR Patient resource
+
+    Returns True if name, birthDate and gender match (when present in both sources).
+    If required fields are missing or unparsable on the IEDS side the function returns False.
+    """
+    try:
+        # extract pds values
+        pds_name = normalize_name_from_pds(pds_details) if isinstance(pds_details, dict) else None
+        pds_gender = pds_details.get("gender") if isinstance(pds_details, dict) else None
+        pds_birth = pds_details.get("birthDate") if isinstance(pds_details, dict) else None
+
+        patient = extract_patient_resource_from_item(ieds_item)
+        if not patient:
+            logger.debug("demographics_match: no patient resource in item")
+            return False
+
+        # normalize incoming patient name
+        incoming_name = extract_normalized_name_from_patient(patient)
+
+        incoming_gender = patient.get("gender")
+        incoming_birth = patient.get("birthDate")
+
+        def _norm_str(x):
+            return str(x).strip().lower() if x is not None else None
+
+        # Compare birthDate (strict if both present)
+        if pds_birth and incoming_birth:
+            if str(pds_birth).strip() != str(incoming_birth).strip():
+                logger.debug("demographics_match: birthDate mismatch %s != %s", pds_birth, incoming_birth)
+                return False
+
+        # Compare gender (case-insensitive)
+        if pds_gender and incoming_gender:
+            if _norm_str(pds_gender) != _norm_str(incoming_gender):
+                logger.debug("demographics_match: gender mismatch %s != %s", pds_gender, incoming_gender)
+                return False
+
+        # Compare names if both present (normalized)
+        if pds_name and incoming_name:
+            if _norm_str(pds_name) != _norm_str(incoming_name):
+                logger.debug("demographics_match: name mismatch %s != %s", pds_name, incoming_name)
+                return False
+
+        # If we reached here, all present fields matched (or were not present to compare)
+        return True
+    except Exception:
+        logger.exception("demographics_match: comparison failed with exception")
+        return False
