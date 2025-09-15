@@ -50,7 +50,6 @@ def process_nhs_number(nhs_number: str) -> Dict[str, Any]:
             "message": "No update required",
             "nhs_number": nhs_number,
         }
-    
     logger.info("Update patient ID from %s to %s", nhs_number, new_nhs_number)
 
     if ieds_check_exist(nhs_number):
