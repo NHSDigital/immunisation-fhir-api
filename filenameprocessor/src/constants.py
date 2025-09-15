@@ -36,7 +36,7 @@ ERROR_TYPE_TO_STATUS_CODE_MAP = {
 }
 
 # The size in bytes of an empty batch file containing only the headers row
-EMPTY_BATCH_FILE_SIZE_IN_BYTES = 615
+EMPTY_BATCH_FILE_SIZE_IN_BYTES = 700
 
 
 class FileStatus(StrEnum):
