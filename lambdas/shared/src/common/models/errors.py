@@ -359,6 +359,5 @@ def create_operation_outcome(resource_id: str, severity: Severity, code: Code, d
         ],
     }
 
-
     def __init__(self, diagnostics_dictionary: dict):
         self.diagnostics_dictionary = diagnostics_dictionary
