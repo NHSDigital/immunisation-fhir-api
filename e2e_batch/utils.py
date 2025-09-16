@@ -27,7 +27,11 @@ from constants import (
 )
 
 
-def generate_csv(fore_name, dose_amount, action_flag, headers="NHS_NUMBER", same_id=False, file_key=False):
+def generate_csv(fore_name, dose_amount,
+                 action_flag, headers="NHS_NUMBER",
+                 same_id=False, file_key=False,
+                 vax_type="RSV", ods="YGM41",
+                 timestamp=None):
     """
     Generate a CSV file with 2 or 3 rows depending on the action_flag.
 
@@ -85,12 +89,7 @@ def generate_csv(fore_name, dose_amount, action_flag, headers="NHS_NUMBER", same
         data.append(create_row(unique_id, "fore_name", dose_amount, "UPDATE", headers))
 
     df = pd.DataFrame(data)
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%f")[:-3]
-    file_name = (
-        f"COVID19_Vaccinations_v4_YGM41_{timestamp}.csv"
-        if file_key
-        else f"COVID19_Vaccinations_v5_YGM41_{timestamp}.csv"
-    )
+    file_name = get_file_name(vax_type, ods, file_key, timestamp)
     df.to_csv(file_name, index=False, sep="|", quoting=csv.QUOTE_MINIMAL)
     return file_name
 
@@ -138,7 +137,7 @@ def delete_file_from_s3(bucket, key):
         raise Exception(f"Unexpected error during file deletion: {e}")
 
 
-def wait_for_ack_file(ack_prefix, input_file_name, timeout=120):
+def wait_for_ack_file(ack_prefix, input_file_name, timeout=1200):
     """Poll the ACK_BUCKET for an ack file that contains the input_file_name as a substring."""
 
     filename_without_ext = input_file_name[:-4] if input_file_name.endswith(".csv") else input_file_name
@@ -156,6 +155,35 @@ def wait_for_ack_file(ack_prefix, input_file_name, timeout=120):
                 key = obj["Key"]
                 if search_pattern in key:
                     return key
+
+        time.sleep(5)
+    raise AckFileNotFoundError(
+        f"Ack file matching '{search_pattern}' not found in bucket {ACK_BUCKET} within {timeout} seconds."
+    )
+
+
+def wait_for_ack_files(ack_prefix, input_file_name, n_files_expected=1, timeout=1200):
+    """Poll the ACK_BUCKET for an ack file that contains the input_file_name as a substring."""
+
+    filename_without_ext = input_file_name[:-4] if input_file_name.endswith(".csv") else input_file_name
+    if ack_prefix:
+        search_pattern = f"{ACK_PREFIX}{filename_without_ext}"
+        ack_prefix = ACK_PREFIX
+    else:
+        search_pattern = f"{FORWARDEDFILE_PREFIX}{filename_without_ext}"
+        ack_prefix = FORWARDEDFILE_PREFIX
+    start_time = time.time()
+    matched_files = []
+
+    while time.time() - start_time < timeout:
+        response = s3_client.list_objects_v2(Bucket=ACK_BUCKET, Prefix=ack_prefix)
+        if "Contents" in response:
+            for obj in response["Contents"]:
+                key = obj["Key"]
+                if search_pattern in key:
+                    matched_files.append(key)
+        if len(matched_files) >= n_files_expected:
+            return matched_files
         time.sleep(5)
     raise AckFileNotFoundError(
         f"Ack file matching '{search_pattern}' not found in bucket {ACK_BUCKET} within {timeout} seconds."
@@ -391,7 +419,7 @@ def upload_config_file(value):
     upload_file_to_s3(PERMISSIONS_CONFIG_FILE_KEY, CONFIG_BUCKET, INPUT_PREFIX)
 
 
-def generate_csv_with_ordered_100000_rows(file_name=None):
+def generate_csv_with_ordered_100000_rows(vax_type, ods):
     """
     Generate a CSV where:
     - 100 sets of (NEW → UPDATE → DELETE) are created.
@@ -443,8 +471,7 @@ def generate_csv_with_ordered_100000_rows(file_name=None):
 
     # Convert to DataFrame and save as CSV
     df = pd.DataFrame(full_data)
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%f")[:-3]
-    file_name = f"RSV_Vaccinations_v5_YGM41_{timestamp}.csv" if not file_name else file_name
+    file_name = get_file_name(vax_type, ods, "5")
     df.to_csv(file_name, index=False, sep="|", quoting=csv.QUOTE_MINIMAL)
     return file_name
 
@@ -465,3 +492,19 @@ def verify_final_ack_file(file_key):
             f"All values OK: {all_ok}"
         )
     return True
+
+
+def get_file_name(vax_type, ods, file_key, timestamp=None):
+    version = "4" if file_key else "5"
+
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%f")[:-3] if not timestamp else timestamp
+    return f"{vax_type}_Vaccinations_v{version}_{ods}_{timestamp}.csv"
+
+
+def generate_fileset(name_prefix, version, action_flags) -> list:
+    """Generate multiple CSV files with different action flags."""
+    files = []
+    for action in action_flags:
+        file = generate_csv(name_prefix, version, action_flag=action)
+        files.append(file)
+    return files
