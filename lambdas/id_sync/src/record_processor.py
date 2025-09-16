@@ -128,54 +128,44 @@ def extract_normalized_name_from_patient(patient: dict) -> str | None:
 
 
 def demographics_match(pds_details: dict, ieds_item: dict) -> bool:
-    """Compare PDS patient details to an IEDS item (FHIR Patient resource).
-
-    Parameters:
-    - pds_details: dict returned by PDS (patient details)
-    - ieds_item: dict representing a single IEDS item containing a FHIR Patient resource
-
+    """Compare PDS patient details from PDS to an IEDS item (FHIR Patient resource).
     Returns True if name, birthDate and gender match (when present in both sources).
     If required fields are missing or unparsable on the IEDS side the function returns False.
     """
     try:
-        # extract pds values
-        pds_name = normalize_name_from_pds(pds_details) if isinstance(pds_details, dict) else None
-        pds_gender = pds_details.get("gender") if isinstance(pds_details, dict) else None
-        pds_birth = pds_details.get("birthDate") if isinstance(pds_details, dict) else None
+         
+        def normalize_strings(item: Any) -> str | None:
+            return str(item).strip().lower() if item else None
+        
+        # Retrieve patient resource from PDS
+        pds_name = normalize_strings(normalize_name_from_pds(pds_details))
+        pds_gender = normalize_strings(pds_details.get("gender"))
+        pds_birth = normalize_strings(pds_details.get("birthDate"))
 
+        # Retrieve patient resource from IEDS item
         patient = extract_patient_resource_from_item(ieds_item)
         if not patient:
-            logger.debug("demographics_match: no patient resource in item")
+            logger.debug("demographics_match: no patient resource in IEDS table item")
             return False
 
-        # normalize incoming patient name
-        incoming_name = extract_normalized_name_from_patient(patient)
+        # normalize patient name
+        ieds_name = extract_normalized_name_from_patient(patient)
 
-        incoming_gender = patient.get("gender")
-        incoming_birth = patient.get("birthDate")
+        ieds_gender = normalize_strings(patient.get("gender"))
+        ieds_birth = patient.get("birthDate")
 
-        def _norm_str(x):
-            return str(x).strip().lower() if x is not None else None
+        if pds_birth and ieds_birth and pds_birth != ieds_birth:
+            logger.debug("demographics_match: birthDate mismatch %s != %s", pds_birth, ieds_birth)
+            return False
 
-        # Compare birthDate (strict if both present)
-        if pds_birth and incoming_birth:
-            if str(pds_birth).strip() != str(incoming_birth).strip():
-                logger.debug("demographics_match: birthDate mismatch %s != %s", pds_birth, incoming_birth)
-                return False
+        if pds_gender and ieds_gender and pds_gender != ieds_gender:
+            logger.debug("demographics_match: gender mismatch %s != %s", pds_gender, ieds_gender)
+            return False
 
-        # Compare gender (case-insensitive)
-        if pds_gender and incoming_gender:
-            if _norm_str(pds_gender) != _norm_str(incoming_gender):
-                logger.debug("demographics_match: gender mismatch %s != %s", pds_gender, incoming_gender)
-                return False
+        if pds_name and ieds_name and pds_name != ieds_name:
+            logger.debug("demographics_match: name mismatch %s != %s", pds_name, ieds_name)
+            return False
 
-        # Compare names if both present (normalized)
-        if pds_name and incoming_name:
-            if _norm_str(pds_name) != _norm_str(incoming_name):
-                logger.debug("demographics_match: name mismatch %s != %s", pds_name, incoming_name)
-                return False
-
-        # If we reached here, all present fields matched (or were not present to compare)
         return True
     except Exception:
         logger.exception("demographics_match: comparison failed with exception")
