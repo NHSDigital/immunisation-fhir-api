@@ -1,7 +1,7 @@
 """Functions for uploading the data to the ack file"""
 
 from io import StringIO, BytesIO
-from typing import Union, Optional
+from typing import Optional
 from botocore.exceptions import ClientError
 from constants import ACK_HEADERS, get_source_bucket_name, get_ack_bucket_name
 from audit_table import change_audit_table_status_to_processed
@@ -15,7 +15,7 @@ def create_ack_data(
     local_id: str,
     row_id: str,
     successful_api_response: bool,
-    diagnostics: Union[None, str] = None,
+    diagnostics: None | str = None,
     imms_id: str = None,
 ) -> dict:
     """Returns a dictionary containing the ack headers as keys, along with the relevant values."""

@@ -7,8 +7,6 @@ from datetime import datetime
 from functools import wraps
 from common.clients import firehose_client, logger
 
-# TODO: can we factor the basic decorator into shared?
-
 STREAM_NAME = os.getenv("SPLUNK_FIREHOSE_NAME", "immunisation-fhir-api-internal-dev-splunk-firehose")
 
 

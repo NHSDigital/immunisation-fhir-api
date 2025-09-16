@@ -251,7 +251,7 @@ class InvalidValues:
 
     fixed_datetime = datetime(2024, 10, 29, 12, 0, 0)
 
-    Logging_with_no_values = {
+    logging_with_no_values = {
         "function_name": "ack_processor_convert_message_to_ack_row",
         "date_time": fixed_datetime.strftime("%Y-%m-%d %H:%M:%S"),
         "operation_start_time": "unknown",

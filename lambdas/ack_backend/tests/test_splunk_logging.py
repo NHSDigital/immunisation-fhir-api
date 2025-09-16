@@ -139,7 +139,7 @@ class TestLoggingDecorators(unittest.TestCase):
             with self.assertRaises(Exception):
                 lambda_handler(event={"Records": [{"body": json.dumps([{"": "456"}])}]}, context={})
 
-            expected_first_logger_info_data = {**InvalidValues.Logging_with_no_values}
+            expected_first_logger_info_data = {**InvalidValues.logging_with_no_values}
 
             expected_first_logger_error_data = self.expected_lambda_handler_logs(
                 success=False, number_of_rows=1, ingestion_complete=False,
