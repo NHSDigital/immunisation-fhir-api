@@ -55,22 +55,3 @@ def pds_get_patient_id(nhs_number: str) -> str:
         logger.exception(msg)
         raise IdSyncException(message=msg, exception=e)
 
-
-def normalize_name_from_pds(pds_get_patient_details: dict) -> str | None:
-    """Return a normalized full name (given + family) from PDS patient details or None."""
-    try:
-        name = pds_get_patient_details.get("name")
-        if not name:
-            return None
-        name_entry = name[0] if isinstance(name, list) else name
-        given = name_entry.get("given")
-        given_str = None
-        if isinstance(given, list) and given:
-            given_str = given[0]
-        elif isinstance(given, str):
-            given_str = given
-        family = name_entry.get("family")
-        parts = [p for p in [given_str, family] if p]
-        return " ".join(parts).strip().lower() if parts else None
-    except Exception:
-        return None
