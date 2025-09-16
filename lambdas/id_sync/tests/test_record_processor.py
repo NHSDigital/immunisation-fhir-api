@@ -69,10 +69,16 @@ class TestRecordProcessor(unittest.TestCase):
         # Provide one IEDS item that will match demographics via demographics_match
         matching_item = {
             "Resource": {
-                "resourceType": "Patient",
-                "name": [{"given": ["John"], "family": "Doe"}],
-                "gender": "male",
-                "birthDate": "1980-01-01",
+                "resourceType": "Immunization",
+                "contained": [
+                    {
+                        "resourceType": "Patient",
+                        "id": "Pat1",
+                        "name": [{"given": ["John"], "family": "Doe"}],
+                        "gender": "male",
+                        "birthDate": "1980-01-01",
+                    }
+                ]
             }
         }
         self.mock_get_items_from_patient_id.return_value = [matching_item]
@@ -104,10 +110,16 @@ class TestRecordProcessor(unittest.TestCase):
         # IEDS items exist but do not match demographics
         non_matching_item = {
             "Resource": {
-                "resourceType": "Patient",
-                "name": [{"given": ["Bob"], "family": "Jones"}],
-                "gender": "male",
-                "birthDate": "1990-01-01",
+                "resourceType": "Immunization",
+                "contained": [
+                    {
+                        "resourceType": "Patient",
+                        "id": "Pat2",
+                        "name": [{"given": ["Bob"], "family": "Jones"}],
+                        "gender": "male",
+                        "birthDate": "1990-01-01",
+                    }
+                ]
             }
         }
         self.mock_get_items_from_patient_id.return_value = [non_matching_item]
@@ -176,9 +188,15 @@ class TestRecordProcessor(unittest.TestCase):
         }
         self.mock_get_items_from_patient_id.return_value = [{
             "Resource": {
-                "resourceType": "Patient",
-                "name": [{"given": ["A"], "family": "B"}],
-                "gender": "female", "birthDate": "1990-01-01"
+                "resourceType": "Immunization",
+                "contained": [
+                    {
+                        "resourceType": "Patient",
+                        "id": "Pat3",
+                        "name": [{"given": ["A"], "family": "B"}],
+                        "gender": "female", "birthDate": "1990-01-01"
+                    }
+                ]
             }
         }]
         self.mock_ieds_update_patient_id.return_value = {"status": "success"}
