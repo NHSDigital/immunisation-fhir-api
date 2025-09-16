@@ -672,4 +672,3 @@ class TestIedsCheckExists(TestIedsDbOperations):
 
         # Assert - Verify the limit parameter is correctly passed
         self.mock_get_items_from_patient_id.assert_called_once_with(patient_id, 1)
-

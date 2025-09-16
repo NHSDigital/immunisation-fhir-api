@@ -105,6 +105,7 @@ def process_nhs_number(nhs_number: str) -> Dict[str, Any]:
     response["nhs_number"] = nhs_number
     return response
 
+
 def extract_normalized_name_from_patient(patient: dict) -> str | None:
     """Return a normalized 'given family' name string from a Patient resource or None."""
     if not patient:
@@ -133,10 +134,9 @@ def demographics_match(pds_details: dict, ieds_item: dict) -> bool:
     If required fields are missing or unparsable on the IEDS side the function returns False.
     """
     try:
-         
         def normalize_strings(item: Any) -> str | None:
             return str(item).strip().lower() if item else None
-        
+
         # Retrieve patient resource from PDS
         pds_name = normalize_strings(normalize_name_from_pds(pds_details))
         pds_gender = normalize_strings(pds_details.get("gender"))
