@@ -39,19 +39,23 @@ def validate_file_key(file_key: str) -> tuple[str, str]:
     Returns a tuple containing the vaccine_type and supplier (both converted to upper case).
     """
 
-    if not match(r"^[^_.]*_[^_.]*_[^_.]*_[^_.]*_[^_.]*\.[^_.]*$", file_key):
-        error_message = "Initial file validation failed: invalid file key format"
-        raise InvalidFileKeyError(error_message)
+    if not match(r"^[^_.]*_[^_.]*_[^_.]*_[^_.]*_[^_.]*", file_key):
+        raise InvalidFileKeyError("Initial file validation failed: invalid file key format")
 
     file_key = file_key.upper()
-    file_key_parts_without_extension = file_key.split(".")[0].split("_")
+    file_name_and_extension = file_key.rsplit(".", 1)
+
+    if len(file_name_and_extension) != 2:
+        raise InvalidFileKeyError("Initial file validation failed: missing file extension")
+
+    file_key_parts_without_extension = file_name_and_extension[0].split("_")
 
     vaccine_type = file_key_parts_without_extension[0]
     vaccination = file_key_parts_without_extension[1]
     version = file_key_parts_without_extension[2]
     ods_code = file_key_parts_without_extension[3]
     timestamp = file_key_parts_without_extension[4]
-    extension = file_key.split(".")[1]
+    extension = file_name_and_extension[1]
     supplier = get_supplier_system_from_cache(ods_code)
 
     valid_vaccine_types = get_valid_vaccine_types_from_cache()

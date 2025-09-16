@@ -3,13 +3,15 @@ from aws_lambda_typing import events, context
 
 from batch_file_created_event import BatchFileCreatedEvent
 from batch_processor_filter_service import BatchProcessorFilterService
+from exception_decorator import exception_decorator
 from exceptions import InvalidBatchSizeError
 
 
 service = BatchProcessorFilterService()
 
 
-def lambda_handler(event: events.SQSEvent, _: context):
+@exception_decorator
+def lambda_handler(event: events.SQSEvent, _: context.Context):
     event_records = event.get("Records", [])
 
     # Terraform is configured so the Lambda will get a max batch size of 1. We are using SQS FIFO with the message group

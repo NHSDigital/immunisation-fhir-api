@@ -3,14 +3,17 @@
 import unittest
 import json
 from decimal import Decimal
+from json import JSONDecodeError
 from unittest.mock import patch
 from datetime import datetime, timedelta, timezone
-from moto import mock_s3, mock_kinesis, mock_firehose
+from moto import mock_s3, mock_kinesis, mock_firehose, mock_dynamodb
 from boto3 import client as boto3_client
 
 from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
     GenericSetUp,
     GenericTearDown,
+    add_entry_to_table,
+    assert_audit_table_entry
 )
 from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
     MockFileDetails,
@@ -23,19 +26,22 @@ from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests impo
     REGION_NAME,
 )
 from tests.utils_for_recordprocessor_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT, BucketNames, Kinesis
+from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import create_patch
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
-    from constants import Diagnostics
+    from constants import Diagnostics, FileStatus, FileNotProcessedReason, AUDIT_TABLE_NAME, AuditTableKeys
     from batch_processor import main
 
 s3_client = boto3_client("s3", region_name=REGION_NAME)
 kinesis_client = boto3_client("kinesis", region_name=REGION_NAME)
 firehose_client = boto3_client("firehose", region_name=REGION_NAME)
+dynamo_db_client = boto3_client("dynamodb", region_name=REGION_NAME)
 yesterday = datetime.now(timezone.utc) - timedelta(days=1)
 mock_rsv_emis_file = MockFileDetails.rsv_emis
 
 
 @patch.dict("os.environ", MOCK_ENVIRONMENT_DICT)
+@mock_dynamodb
 @mock_s3
 @mock_kinesis
 @mock_firehose
@@ -43,17 +49,21 @@ class TestRecordProcessor(unittest.TestCase):
     """Tests for main function for RecordProcessor"""
 
     def setUp(self) -> None:
-        GenericSetUp(s3_client, firehose_client, kinesis_client)
+        GenericSetUp(s3_client, firehose_client, kinesis_client, dynamo_db_client)
 
         redis_patcher = patch("mappings.redis_client")
+        batch_processor_logger_patcher = patch("batch_processor.logger")
         self.addCleanup(redis_patcher.stop)
+        self.mock_batch_processor_logger = batch_processor_logger_patcher.start()
         mock_redis_client = redis_patcher.start()
         mock_redis_client.hget.return_value = json.dumps([{
             "code": "55735004",
             "term": "Respiratory syncytial virus infection (disorder)"
         }])
+        self.mock_logger_info = create_patch("logging.Logger.info")
 
     def tearDown(self) -> None:
+        patch.stopall()
         GenericTearDown(s3_client, firehose_client, kinesis_client)
 
     @staticmethod
@@ -143,14 +153,24 @@ class TestRecordProcessor(unittest.TestCase):
                     kinesis_data.pop(key_to_ignore)
                 self.assertEqual(kinesis_data, expected_kinesis_data)
 
+    def assert_object_moved_to_archive(self, file_key: str) -> None:
+        """Checks that the S3 object was moved to the archive directory"""
+        with self.assertRaises(s3_client.exceptions.NoSuchKey):
+            s3_client.get_object(Bucket=BucketNames.SOURCE, Key=f"processing/{file_key}")
+
+        response = s3_client.get_object(Bucket=BucketNames.SOURCE, Key=f"archive/{file_key}")
+        self.assertIsNotNone(response)
+
     def test_e2e_full_permissions(self):
         """
         Tests that file containing CREATE, UPDATE and DELETE is successfully processed when the supplier has
         full permissions.
         """
+        test_file = mock_rsv_emis_file
         self.upload_source_files(ValidMockFileContent.with_new_and_update_and_delete)
+        add_entry_to_table(test_file, FileStatus.PROCESSING)
 
-        main(mock_rsv_emis_file.event_full_permissions)
+        main(test_file.event_full_permissions)
 
         # Assertion case tuples are stuctured as
         # (test_name, index, expected_kinesis_data_ignoring_fhir_json,expect_success)
@@ -176,15 +196,18 @@ class TestRecordProcessor(unittest.TestCase):
         ]
         self.make_inf_ack_assertions(file_details=mock_rsv_emis_file, passed_validation=True)
         self.make_kinesis_assertions(assertion_cases)
+        assert_audit_table_entry(test_file, FileStatus.PREPROCESSED)
 
     def test_e2e_partial_permissions(self):
         """
         Tests that file containing CREATE, UPDATE and DELETE is successfully processed when the supplier only has CREATE
         permissions.
         """
+        test_file = mock_rsv_emis_file
+        add_entry_to_table(test_file, FileStatus.PROCESSING)
         self.upload_source_files(ValidMockFileContent.with_new_and_update_and_delete)
 
-        main(mock_rsv_emis_file.event_create_permissions_only)
+        main(test_file.event_create_permissions_only)
 
         # Assertion case tuples are stuctured as
         # (test_name, index, expected_kinesis_data_ignoring_fhir_json,expect_success)
@@ -226,15 +249,18 @@ class TestRecordProcessor(unittest.TestCase):
         ]
         self.make_inf_ack_assertions(file_details=mock_rsv_emis_file, passed_validation=True)
         self.make_kinesis_assertions(assertion_cases)
+        assert_audit_table_entry(test_file, FileStatus.PREPROCESSED)
 
     def test_e2e_no_required_permissions(self):
         """
         Tests that file containing UPDATE and DELETE is successfully processed when the supplier has CREATE permissions
         only.
         """
+        test_file = mock_rsv_emis_file
+        add_entry_to_table(test_file, FileStatus.PROCESSING)
         self.upload_source_files(ValidMockFileContent.with_update_and_delete)
 
-        main(mock_rsv_emis_file.event_create_permissions_only)
+        main(test_file.event_create_permissions_only)
 
         kinesis_records = kinesis_client.get_records(ShardIterator=self.get_shard_iterator(), Limit=10)["Records"]
         self.assertEqual(len(kinesis_records), 2)
@@ -244,27 +270,39 @@ class TestRecordProcessor(unittest.TestCase):
             self.assertIn("diagnostics", data_dict)
             self.assertNotIn("fhir_json", data_dict)
         self.make_inf_ack_assertions(file_details=mock_rsv_emis_file, passed_validation=True)
+        assert_audit_table_entry(test_file, FileStatus.PREPROCESSED)
 
     def test_e2e_no_permissions(self):
         """
         Tests that file containing UPDATE and DELETE is successfully processed when the supplier has no permissions.
         """
+        test_file = mock_rsv_emis_file
+        add_entry_to_table(test_file, FileStatus.PROCESSING)
         self.upload_source_files(ValidMockFileContent.with_update_and_delete)
 
-        main(mock_rsv_emis_file.event_no_permissions)
+        main(test_file.event_no_permissions)
 
         kinesis_records = kinesis_client.get_records(ShardIterator=self.get_shard_iterator(), Limit=10)["Records"]
+        table_entry = dynamo_db_client.get_item(
+            TableName=AUDIT_TABLE_NAME, Key={AuditTableKeys.MESSAGE_ID: {"S": test_file.message_id}}
+        ).get("Item")
         self.assertEqual(len(kinesis_records), 0)
         self.make_inf_ack_assertions(file_details=mock_rsv_emis_file, passed_validation=False)
+        self.assertDictEqual(table_entry, {
+            **test_file.audit_table_entry,
+            "status": {"S": f"{FileStatus.NOT_PROCESSED} - {FileNotProcessedReason.UNAUTHORISED}"},
+            "error_details": {"S": "EMIS does not have permissions to perform any of the requested actions."}
+        })
 
     def test_e2e_invalid_action_flags(self):
         """Tests that file is successfully processed when the ACTION_FLAG field is empty or invalid."""
-
+        test_file = mock_rsv_emis_file
+        add_entry_to_table(test_file, FileStatus.PROCESSING)
         self.upload_source_files(
             ValidMockFileContent.with_update_and_delete.replace("update", "").replace("delete", "INVALID")
         )
 
-        main(mock_rsv_emis_file.event_full_permissions)
+        main(test_file.event_full_permissions)
 
         expected_kinesis_data = {
             "diagnostics": {
@@ -288,6 +326,8 @@ class TestRecordProcessor(unittest.TestCase):
     def test_e2e_differing_amounts_of_data(self):
         """Tests that file containing rows with differing amounts of data present is processed as expected"""
         # Create file content with different amounts of data present in each row
+        test_file = mock_rsv_emis_file
+        add_entry_to_table(test_file, FileStatus.PROCESSING)
         headers = "|".join(MockFieldDictionaries.all_fields.keys())
         all_fields_values = "|".join(f'"{v}"' for v in MockFieldDictionaries.all_fields.values())
         mandatory_fields_only_values = "|".join(f'"{v}"' for v in MockFieldDictionaries.mandatory_fields_only.values())
@@ -295,7 +335,7 @@ class TestRecordProcessor(unittest.TestCase):
         file_content = f"{headers}\n{all_fields_values}\n{mandatory_fields_only_values}\n{critical_fields_only_values}"
         self.upload_source_files(file_content)
 
-        main(mock_rsv_emis_file.event_full_permissions)
+        main(test_file.event_full_permissions)
 
         all_fields_row_expected_kinesis_data = {
             "operation_requested": "UPDATE",
@@ -329,6 +369,8 @@ class TestRecordProcessor(unittest.TestCase):
         Tests that, for a file with valid content and supplier with full permissions, when the kinesis send fails, the
         ack file is created and documents an error.
         """
+        test_file = mock_rsv_emis_file
+        add_entry_to_table(test_file, FileStatus.PROCESSING)
         self.upload_source_files(ValidMockFileContent.with_new_and_update)
         # Delete the kinesis stream, to cause kinesis send to fail
         kinesis_client.delete_stream(StreamName=Kinesis.STREAM_NAME, EnforceConsumerDeletion=True)
@@ -340,11 +382,14 @@ class TestRecordProcessor(unittest.TestCase):
         ):  # noqa: E999
             mock_time.time.side_effect = [1672531200, 1672531200.123456]
             mock_datetime.now.return_value = datetime(2024, 1, 1, 12, 0, 0)
-            main(mock_rsv_emis_file.event_full_permissions)
+            main(test_file.event_full_permissions)
 
         # Since the failure occured at row level, not file level, the ack file should still be created
         # and firehose logs should indicate a successful file level validation
-        self.make_inf_ack_assertions(file_details=mock_rsv_emis_file, passed_validation=True)
+        table_entry = dynamo_db_client.get_item(
+            TableName=AUDIT_TABLE_NAME, Key={AuditTableKeys.MESSAGE_ID: {"S": test_file.message_id}}
+        ).get("Item")
+        self.make_inf_ack_assertions(file_details=test_file, passed_validation=True)
         expected_log_data = {
             "function_name": "record_processor_file_level_validation",
             "date_time": "2024-01-01 12:00:00",
@@ -357,6 +402,55 @@ class TestRecordProcessor(unittest.TestCase):
             "message": "Successfully sent for record processing",
         }
         mock_send_log_to_firehose.assert_called_with(expected_log_data)
+        self.assertDictEqual(table_entry, {
+            **test_file.audit_table_entry,
+            "status": {"S": FileStatus.FAILED},
+            "error_details": {"S": "An error occurred (ResourceNotFoundException) when calling the PutRecord operation"
+                                   ": Stream imms-batch-internal-dev-processingdata-stream under account 123456789012"
+                                   " not found."}
+        })
+
+    def test_e2e_empty_file_is_flagged_and_processed_correctly(self):
+        """
+        Tests files that contain only the headers and no records are marked as empty and moved to archive.
+        """
+        test_cases = [
+            ("File containing only headers", ValidMockFileContent.headers),
+            ("File containing headers and new line", ValidMockFileContent.headers + "\n"),
+            ("File containing headers and multiple new lines", ValidMockFileContent.empty_file_with_multiple_new_lines)
+        ]
+        for description, file_content in test_cases:
+
+            with self.subTest(description=description):
+                self.mock_batch_processor_logger.reset_mock()
+                test_file = mock_rsv_emis_file
+                self.upload_source_files(file_content)
+                add_entry_to_table(test_file, FileStatus.PROCESSING)
+
+                main(test_file.event_full_permissions)
+
+                kinesis_records = kinesis_client.get_records(
+                    ShardIterator=self.get_shard_iterator(), Limit=10)["Records"]
+
+                self.mock_batch_processor_logger.warning.assert_called_once_with(
+                    "File was empty: %s. Moving file to archive directory.",
+                    "RSV_Vaccinations_v5_8HK48_20210730T12000000.csv"
+                )
+                self.assertListEqual(kinesis_records, [])
+                assert_audit_table_entry(test_file, "Not processed - Empty file")
+                self.assert_object_moved_to_archive(test_file.file_key)
+
+    def test_e2e_error_is_logged_if_invalid_json_provided(self):
+        """This scenario should not happen. If it does, it means our batch processing system config is broken and we
+        have received malformed content from SQS -> EventBridge. In this case we log the error so we will be alerted.
+        However, we cannot do anything with the AuditDB record as we cannot retrieve information from the event"""
+        malformed_event = '{"test": {}'
+        main(malformed_event)
+
+        logged_message = self.mock_batch_processor_logger.error.call_args[0][0]
+        exception = self.mock_batch_processor_logger.error.call_args[0][1]
+        self.assertEqual(logged_message, "Error decoding incoming message: %s")
+        self.assertIsInstance(exception, JSONDecodeError)
 
 
 if __name__ == "__main__":

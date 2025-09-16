@@ -1,18 +1,14 @@
 """Batch processor filter service module"""
 import boto3
 import json
-import logging
 
 from batch_audit_repository import BatchAuditRepository
 from batch_file_created_event import BatchFileCreatedEvent
 from batch_file_repository import BatchFileRepository
-from constants import REGION_NAME, FileStatus, QUEUE_URL
+from constants import REGION_NAME, FileStatus, QUEUE_URL, FileNotProcessedReason
 from exceptions import EventAlreadyProcessingForSupplierAndVaccTypeError
+from logger import logger
 from send_log_to_firehose import send_log_to_firehose
-
-logging.basicConfig(level="INFO")
-logger = logging.getLogger()
-logger.setLevel("INFO")
 
 
 class BatchProcessorFilterService:
@@ -38,15 +34,21 @@ class BatchProcessorFilterService:
 
         if self._is_duplicate_file(filename):
             # Mark as processed and return without error so next event will be picked up from queue
-            logger.info("A duplicate file has already been processed. Filename: %s", filename)
-            self._batch_audit_repository.update_status(message_id, FileStatus.DUPLICATE)
+            logger.error("A duplicate file has already been processed. Filename: %s", filename)
+            self._batch_audit_repository.update_status(
+                message_id,
+                f"{FileStatus.NOT_PROCESSED} - {FileNotProcessedReason.DUPLICATE}"
+            )
             self._batch_file_repo.upload_failure_ack(batch_file_created_event)
             self._batch_file_repo.move_source_file_to_archive(filename)
             return
 
-        if self._batch_audit_repository.is_event_processing_for_supplier_and_vacc_type(supplier, vaccine_type):
+        if self._batch_audit_repository.is_event_processing_or_failed_for_supplier_and_vacc_type(
+            supplier,
+            vaccine_type
+        ):
             # Raise error so event is returned to queue and retried again later
-            logger.info("Batch event already being processed for supplier and vacc type. Filename: %s", filename)
+            logger.info("Batch event already processing for supplier and vacc type. Filename: %s", filename)
             raise EventAlreadyProcessingForSupplierAndVaccTypeError(f"Batch event already processing for supplier: "
                                                                     f"{supplier} and vacc type: {vaccine_type}")
 

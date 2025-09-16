@@ -10,7 +10,7 @@ from moto import mock_s3, mock_firehose, mock_sqs, mock_dynamodb
 
 from tests.utils_for_tests.generic_setup_and_teardown import GenericSetUp, GenericTearDown
 from tests.utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT, BucketNames, Firehose
-from tests.utils_for_tests.values_for_tests import MockFileDetails, fixed_datetime
+from tests.utils_for_tests.values_for_tests import MockFileDetails, fixed_datetime, MOCK_BATCH_FILE_CONTENT
 from tests.utils_for_tests.utils_for_filenameprocessor_tests import create_mock_hget
 
 # Ensure environment variables are mocked before importing from src files
@@ -41,7 +41,7 @@ class TestLoggingDecorator(unittest.TestCase):
     def setUp(self):
         """Set up the mock AWS environment and upload a valid FLU/EMIS file example"""
         GenericSetUp(s3_client, firehose_client, sqs_client, dynamodb_client)
-        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=FILE_DETAILS.file_key)
+        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=FILE_DETAILS.file_key, Body=MOCK_BATCH_FILE_CONTENT)
 
     def tearDown(self):
         """Clean the mock AWS environment"""

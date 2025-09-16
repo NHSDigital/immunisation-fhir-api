@@ -12,7 +12,8 @@ from tests.utils_for_recordprocessor_tests.mock_environment_variables import MOC
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from clients import REGION_NAME
     from csv import DictReader
-    from constants import AuditTableKeys, AUDIT_TABLE_NAME, FileStatus
+    from constants import AuditTableKeys, AUDIT_TABLE_NAME, FileStatus, AUDIT_TABLE_FILENAME_GSI, \
+        AUDIT_TABLE_QUEUE_NAME_GSI
 
 dynamodb_client = boto3_client("dynamodb", region_name=REGION_NAME)
 
@@ -38,7 +39,7 @@ class GenericSetUp:
     * If kinesis_client is provided, creates a kinesis stream
     """
 
-    def __init__(self, s3_client=None, firehose_client=None, kinesis_client=None):
+    def __init__(self, s3_client=None, firehose_client=None, kinesis_client=None, dynamo_db_client=None):
 
         if s3_client:
             for bucket_name in [BucketNames.SOURCE, BucketNames.DESTINATION, BucketNames.MOCK_FIREHOSE]:
@@ -60,11 +61,41 @@ class GenericSetUp:
         if kinesis_client:
             kinesis_client.create_stream(StreamName=Kinesis.STREAM_NAME, ShardCount=1)
 
+        if dynamo_db_client:
+            dynamo_db_client.create_table(
+                TableName=AUDIT_TABLE_NAME,
+                KeySchema=[{"AttributeName": AuditTableKeys.MESSAGE_ID, "KeyType": "HASH"}],
+                AttributeDefinitions=[
+                    {"AttributeName": AuditTableKeys.MESSAGE_ID, "AttributeType": "S"},
+                    {"AttributeName": AuditTableKeys.FILENAME, "AttributeType": "S"},
+                    {"AttributeName": AuditTableKeys.QUEUE_NAME, "AttributeType": "S"},
+                    {"AttributeName": AuditTableKeys.STATUS, "AttributeType": "S"},
+                ],
+                ProvisionedThroughput={"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
+                GlobalSecondaryIndexes=[
+                    {
+                        "IndexName": AUDIT_TABLE_FILENAME_GSI,
+                        "KeySchema": [{"AttributeName": AuditTableKeys.FILENAME, "KeyType": "HASH"}],
+                        "Projection": {"ProjectionType": "KEYS_ONLY"},
+                        "ProvisionedThroughput": {"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
+                    },
+                    {
+                        "IndexName": AUDIT_TABLE_QUEUE_NAME_GSI,
+                        "KeySchema": [
+                            {"AttributeName": AuditTableKeys.QUEUE_NAME, "KeyType": "HASH"},
+                            {"AttributeName": AuditTableKeys.STATUS, "KeyType": "RANGE"},
+                        ],
+                        "Projection": {"ProjectionType": "ALL"},
+                        "ProvisionedThroughput": {"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
+                    },
+                ],
+            )
+
 
 class GenericTearDown:
     """Performs generic tear down of mock resources"""
 
-    def __init__(self, s3_client=None, firehose_client=None, kinesis_client=None):
+    def __init__(self, s3_client=None, firehose_client=None, kinesis_client=None, dynamo_db_client=None):
 
         if s3_client:
             for bucket_name in [BucketNames.SOURCE, BucketNames.DESTINATION]:
@@ -80,6 +111,9 @@ class GenericTearDown:
                 kinesis_client.delete_stream(StreamName=Kinesis.STREAM_NAME, EnforceConsumerDeletion=True)
             except kinesis_client.exceptions.ResourceNotFoundException:
                 pass
+
+        if dynamo_db_client:
+            dynamo_db_client.delete_table(TableName=AUDIT_TABLE_NAME)
 
 
 def add_entry_to_table(file_details: MockFileDetails, file_status: FileStatus) -> None:
@@ -102,3 +136,8 @@ def assert_audit_table_entry(file_details: FileDetails, expected_status: FileSta
         TableName=AUDIT_TABLE_NAME, Key={AuditTableKeys.MESSAGE_ID: {"S": file_details.message_id}}
     ).get("Item")
     assert table_entry == {**file_details.audit_table_entry, "status": {"S": expected_status}}
+
+
+def create_patch(target: str):
+    patcher = patch(target)
+    return patcher.start()

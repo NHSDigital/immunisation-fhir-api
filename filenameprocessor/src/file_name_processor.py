@@ -9,21 +9,20 @@ NOTE: The expected file format for incoming files from the data sources bucket i
 import argparse
 from uuid import uuid4
 from utils_for_filenameprocessor import get_creation_and_expiry_times, move_file
-from file_key_validation import validate_file_key, is_file_in_directory_root
+from file_validation import validate_file_key, is_file_in_directory_root
 from send_sqs_message import make_and_send_sqs_message
 from make_and_upload_ack_file import make_and_upload_the_ack_file
 from audit_table import upsert_audit_table
-from clients import logger
+from clients import logger, s3_client
 from logging_decorator import logging_decorator
 from supplier_permissions import validate_vaccine_type_permissions
 from errors import (
     VaccineTypePermissionsError,
     InvalidFileKeyError,
-    InvalidSupplierError,
     UnhandledAuditTableError,
-    UnhandledSqsError,
+    UnhandledSqsError
 )
-from constants import FileStatus, ERROR_TYPE_TO_STATUS_CODE_MAP, SOURCE_BUCKET_NAME
+from constants import FileNotProcessedReason, FileStatus, ERROR_TYPE_TO_STATUS_CODE_MAP, SOURCE_BUCKET_NAME
 
 
 # NOTE: logging_decorator is applied to handle_record function, rather than lambda_handler, because
@@ -45,6 +44,7 @@ def handle_record(record) -> dict:
 
     vaccine_type = "unknown"
     supplier = "unknown"
+    expiry_timestamp = "unknown"
 
     if bucket_name != SOURCE_BUCKET_NAME:
         return handle_unexpected_bucket_name(bucket_name, file_key)
@@ -63,17 +63,18 @@ def handle_record(record) -> dict:
 
     try:
         message_id = str(uuid4())
-        created_at_formatted_string, expiry_timestamp = get_creation_and_expiry_times(bucket_name, file_key)
+        s3_response = s3_client.get_object(Bucket=bucket_name, Key=file_key)
+        created_at_formatted_string, expiry_timestamp = get_creation_and_expiry_times(s3_response)
 
         vaccine_type, supplier = validate_file_key(file_key)
         permissions = validate_vaccine_type_permissions(vaccine_type=vaccine_type, supplier=supplier)
 
         queue_name = f"{supplier}_{vaccine_type}"
-        upsert_audit_table(
-            message_id, file_key, created_at_formatted_string, expiry_timestamp, queue_name, FileStatus.QUEUED
-        )
         make_and_send_sqs_message(
             file_key, message_id, permissions, vaccine_type, supplier, created_at_formatted_string
+        )
+        upsert_audit_table(
+            message_id, file_key, created_at_formatted_string, expiry_timestamp, queue_name, FileStatus.QUEUED
         )
 
         logger.info("Lambda invocation successful for file '%s'", file_key)
@@ -91,7 +92,6 @@ def handle_record(record) -> dict:
     except (  # pylint: disable=broad-exception-caught
         VaccineTypePermissionsError,
         InvalidFileKeyError,
-        InvalidSupplierError,
         UnhandledAuditTableError,
         UnhandledSqsError,
         Exception,
@@ -99,8 +99,11 @@ def handle_record(record) -> dict:
         logger.error("Error processing file '%s': %s", file_key, str(error))
 
         queue_name = f"{supplier}_{vaccine_type}"
+        file_status = get_file_status_for_error(error)
+
         upsert_audit_table(
-            message_id, file_key, created_at_formatted_string, expiry_timestamp, queue_name, FileStatus.PROCESSED
+            message_id, file_key, created_at_formatted_string, expiry_timestamp, queue_name, file_status,
+            error_details=str(error)
         )
 
         # Create ack file
@@ -120,6 +123,14 @@ def handle_record(record) -> dict:
             "vaccine_type": vaccine_type,
             "supplier": supplier
         }
+
+
+def get_file_status_for_error(error: Exception) -> str:
+    """Creates a file status based on the type of error that was thrown"""
+    if isinstance(error, VaccineTypePermissionsError):
+        return f"{FileStatus.NOT_PROCESSED} - {FileNotProcessedReason.UNAUTHORISED}"
+
+    return FileStatus.FAILED
 
 
 def handle_unexpected_bucket_name(bucket_name: str, file_key: str) -> dict:

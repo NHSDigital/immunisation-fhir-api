@@ -6,10 +6,8 @@ from enum import StrEnum
 from errors import (
     VaccineTypePermissionsError,
     InvalidFileKeyError,
-    InvalidSupplierError,
     UnhandledAuditTableError,
-    DuplicateFileError,
-    UnhandledSqsError,
+    UnhandledSqsError
 )
 
 SOURCE_BUCKET_NAME = os.getenv("SOURCE_BUCKET_NAME")
@@ -24,9 +22,7 @@ ODS_CODE_TO_SUPPLIER_SYSTEM_HASH_KEY = "ods_code_to_supplier"
 ERROR_TYPE_TO_STATUS_CODE_MAP = {
     VaccineTypePermissionsError: 403,
     InvalidFileKeyError: 400,  # Includes invalid ODS code, therefore unable to identify supplier
-    InvalidSupplierError: 500,  # Only raised if supplier variable is not correctly set
     UnhandledAuditTableError: 500,
-    DuplicateFileError: 422,
     UnhandledSqsError: 500,
     Exception: 500,
 }
@@ -38,7 +34,14 @@ class FileStatus(StrEnum):
     QUEUED = "Queued"
     PROCESSING = "Processing"
     PROCESSED = "Processed"
-    DUPLICATE = "Not processed - duplicate"
+    NOT_PROCESSED = "Not processed"
+    FAILED = "Failed"
+
+
+class FileNotProcessedReason(StrEnum):
+    """Reasons why a file was not processed"""
+    EMPTY = "Empty file"
+    UNAUTHORISED = "Unauthorised"
 
 
 class AuditTableKeys(StrEnum):
@@ -50,3 +53,4 @@ class AuditTableKeys(StrEnum):
     STATUS = "status"
     TIMESTAMP = "timestamp"
     EXPIRES_AT = "expires_at"
+    ERROR_DETAILS = "error_details"
