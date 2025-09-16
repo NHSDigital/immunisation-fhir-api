@@ -207,5 +207,6 @@ class TestUpdateAckFile(unittest.TestCase):
         result = obtain_current_ack_content(MOCK_MESSAGE_DETAILS.temp_ack_file_key)
         self.assertEqual(result.getvalue(), existing_content)
 
+
 if __name__ == "__main__":
     unittest.main()

@@ -246,7 +246,6 @@ class ValidValues:
     }
 
 
-
 class InvalidValues:
     """Invalid values for use in tests"""
 

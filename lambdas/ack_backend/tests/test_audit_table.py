@@ -1,7 +1,8 @@
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 import audit_table
 from common.models.errors import UnhandledAuditTableError
+
 
 class TestAuditTable(unittest.TestCase):
 

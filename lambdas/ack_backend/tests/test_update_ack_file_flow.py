@@ -19,7 +19,10 @@ class TestUpdateAckFileFlow(unittest.TestCase):
         self.ack_bucket_patcher = patch('update_ack_file.get_ack_bucket_name', return_value=self.ack_bucket_name)
         self.mock_get_ack_bucket_name = self.ack_bucket_patcher.start()
 
-        self.source_bucket_patcher = patch('update_ack_file.get_source_bucket_name', return_value=self.source_bucket_name)
+        self.source_bucket_patcher = patch(
+            'update_ack_file.get_source_bucket_name',
+            return_value=self.source_bucket_name
+        )
         self.mock_get_source_bucket_name = self.source_bucket_patcher.start()
 
         self.s3_client.create_bucket(

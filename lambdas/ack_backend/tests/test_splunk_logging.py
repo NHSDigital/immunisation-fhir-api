@@ -104,10 +104,10 @@ class TestLoggingDecorators(unittest.TestCase):
         """Tests a single object in the body of the event"""
 
         for operation in ["CREATE", "UPDATE", "DELETE"]:
-            with (
-                patch("logging_decorators.send_log_to_firehose") as mock_send_log_to_firehose,
-                patch("logging_decorators.logger") as mock_logger,
-            ):
+            with (  # noqa: E999
+                patch("logging_decorators.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
+                patch("logging_decorators.logger") as mock_logger,  # noqa: E999
+            ):  # noqa: E999
                 result = lambda_handler(event=generate_event([{"operation_requested": operation}]), context={})
 
             self.assertEqual(result, {"statusCode": 200, "body": json.dumps("Lambda function executed successfully!")})
@@ -132,17 +132,18 @@ class TestLoggingDecorators(unittest.TestCase):
     def test_splunk_logging_missing_data(self):
         """Tests missing key values in the body of the event"""
 
-        with (
-            patch("logging_decorators.send_log_to_firehose") as mock_send_log_to_firehose,
-            patch("logging_decorators.logger") as mock_logger,
-        ):
+        with (  # noqa: E999
+            patch("logging_decorators.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
+            patch("logging_decorators.logger") as mock_logger,  # noqa: E999
+        ):  # noqa: E999
             with self.assertRaises(Exception):
                 lambda_handler(event={"Records": [{"body": json.dumps([{"": "456"}])}]}, context={})
 
             expected_first_logger_info_data = {**InvalidValues.Logging_with_no_values}
 
             expected_first_logger_error_data = self.expected_lambda_handler_logs(
-                success=False, number_of_rows=1, ingestion_complete=False, diagnostics="'NoneType' object has no attribute 'replace'"
+                success=False, number_of_rows=1, ingestion_complete=False,
+                diagnostics="'NoneType' object has no attribute 'replace'"
             )
 
             first_logger_info_call_args = json.loads(self.extract_all_call_args_for_logger_info(mock_logger)[0])
@@ -171,10 +172,10 @@ class TestLoggingDecorators(unittest.TestCase):
         ]
 
         for test_case in test_cases:
-            with (
-                patch("logging_decorators.send_log_to_firehose") as mock_send_log_to_firehose,
-                patch("logging_decorators.logger") as mock_logger,
-            ):
+            with (  # noqa: E999
+                patch("logging_decorators.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
+                patch("logging_decorators.logger") as mock_logger,  # noqa: E999
+            ):  # noqa: E999
                 result = lambda_handler(event=generate_event([{"diagnostics": test_case["diagnostics"]}]), context={})
 
             self.assertEqual(result, EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS)
@@ -202,10 +203,10 @@ class TestLoggingDecorators(unittest.TestCase):
         """Tests logging for multiple objects in the body of the event"""
         messages = [{"row_id": "test1"}, {"row_id": "test2"}]
 
-        with (
-            patch("logging_decorators.send_log_to_firehose") as mock_send_log_to_firehose,
-            patch("logging_decorators.logger") as mock_logger,
-        ):
+        with (  # noqa: E999
+            patch("logging_decorators.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
+            patch("logging_decorators.logger") as mock_logger,  # noqa: E999
+        ):  # noqa: E999
             result = lambda_handler(generate_event(messages), context={})
 
         self.assertEqual(result, EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS)
@@ -252,10 +253,10 @@ class TestLoggingDecorators(unittest.TestCase):
             {"row_id": "test3", "operation_requested": "DELETE", "diagnostics": DiagnosticsDictionaries.NO_PERMISSIONS},
         ]
 
-        with (
-            patch("logging_decorators.send_log_to_firehose") as mock_send_log_to_firehose,
-            patch("logging_decorators.logger") as mock_logger,
-        ):
+        with (  # noqa: E999
+            patch("logging_decorators.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
+            patch("logging_decorators.logger") as mock_logger,  # noqa: E999
+        ):  # noqa: E999
             result = lambda_handler(generate_event(messages), context={})
 
         self.assertEqual(result, EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS)
@@ -317,11 +318,12 @@ class TestLoggingDecorators(unittest.TestCase):
             message_value = "test" + str(i)
             messages.append({"row_id": message_value})
 
-        with (
-            patch("logging_decorators.send_log_to_firehose") as mock_send_log_to_firehose,
-            patch("logging_decorators.logger") as mock_logger,
-            patch("update_ack_file.change_audit_table_status_to_processed") as mock_change_audit_table_status_to_processed,
-        ):
+        with (  # noqa: E999
+            patch("logging_decorators.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
+            patch("logging_decorators.logger") as mock_logger,  # noqa: E999
+            patch("update_ack_file.change_audit_table_status_to_processed")
+                as mock_change_audit_table_status_to_processed,  # noqa: E999
+        ):  # noqa: E999
             result = lambda_handler(generate_event(messages), context={})
 
         self.assertEqual(result, EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS)
@@ -347,7 +349,6 @@ class TestLoggingDecorators(unittest.TestCase):
         )
         mock_change_audit_table_status_to_processed.assert_not_called()
 
-
     def test_splunk_update_ack_file_logged(self):
         """Tests that update_ack_file is logged if we have sent acks for the whole file"""
         # send 99 messages
@@ -356,11 +357,12 @@ class TestLoggingDecorators(unittest.TestCase):
             message_value = "test" + str(i)
             messages.append({"row_id": message_value})
 
-        with (
-            patch("logging_decorators.send_log_to_firehose") as mock_send_log_to_firehose,
-            patch("logging_decorators.logger") as mock_logger,
-            patch("update_ack_file.change_audit_table_status_to_processed") as mock_change_audit_table_status_to_processed,
-        ):
+        with (  # noqa: E999
+            patch("logging_decorators.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
+            patch("logging_decorators.logger") as mock_logger,  # noqa: E999
+            patch("update_ack_file.change_audit_table_status_to_processed")
+                as mock_change_audit_table_status_to_processed,  # noqa: E999
+        ):  # noqa: E999
             result = lambda_handler(generate_event(messages), context={})
 
         self.assertEqual(result, EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS)
@@ -374,7 +376,9 @@ class TestLoggingDecorators(unittest.TestCase):
                 "message_id": "test1",
                 "time_taken": "1.0s"
             }
-        expected_last_logger_info_data = self.expected_lambda_handler_logs(success=True, number_of_rows=99, ingestion_complete=True)
+        expected_last_logger_info_data = self.expected_lambda_handler_logs(
+            success=True, number_of_rows=99, ingestion_complete=True
+        )
 
         all_logger_info_call_args = self.extract_all_call_args_for_logger_info(mock_logger)
         thirdlast_logger_info_call_args = json.loads(all_logger_info_call_args[98])

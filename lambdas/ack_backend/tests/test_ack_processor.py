@@ -113,8 +113,13 @@ class TestAckProcessor(unittest.TestCase):
         response = lambda_handler(event=event, context={})
 
         self.assertEqual(response, EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS)
-        validate_ack_file_content(self.s3_client,
-            [*array_of_success_messages, *array_of_failure_messages, *array_of_mixed_success_and_failure_messages],
+        validate_ack_file_content(
+            self.s3_client,
+            [
+                *array_of_success_messages,
+                *array_of_failure_messages,
+                *array_of_mixed_success_and_failure_messages
+            ],
             existing_file_content=ValidValues.ack_headers,
         )
 
@@ -169,7 +174,10 @@ class TestAckProcessor(unittest.TestCase):
             # TODO: None of the test cases have any existing ack file content?
             with self.subTest(msg=f"Existing ack file: {test_case['description']}"):
                 existing_ack_file_content = test_case.get("existing_ack_file_content", "")
-                setup_existing_ack_file(MOCK_MESSAGE_DETAILS.temp_ack_file_key, existing_ack_file_content, self.s3_client)
+                setup_existing_ack_file(
+                    MOCK_MESSAGE_DETAILS.temp_ack_file_key,
+                    existing_ack_file_content, self.s3_client
+                )
                 response = lambda_handler(event=self.generate_event(test_case["messages"]), context={})
                 self.assertEqual(response, EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS)
                 validate_ack_file_content(self.s3_client, test_case["messages"], existing_ack_file_content)
