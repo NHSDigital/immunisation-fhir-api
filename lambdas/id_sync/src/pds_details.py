@@ -54,4 +54,3 @@ def pds_get_patient_id(nhs_number: str) -> str:
         msg = f"Error getting PDS patient ID for {nhs_number}"
         logger.exception(msg)
         raise IdSyncException(message=msg, exception=e)
-
