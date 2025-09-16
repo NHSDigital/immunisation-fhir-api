@@ -154,15 +154,19 @@ def demographics_match(pds_details: dict, ieds_item: dict) -> bool:
         ieds_gender = normalize_strings(patient.get("gender"))
         ieds_birth = patient.get("birthDate")
 
-        if pds_birth and ieds_birth and pds_birth != ieds_birth:
+        if not all([pds_name, pds_gender, pds_birth, ieds_name, ieds_gender, ieds_birth]):
+            logger.debug("demographics_match: missing required demographics")
+            return False
+
+        if pds_birth != ieds_birth:
             logger.debug("demographics_match: birthDate mismatch %s != %s", pds_birth, ieds_birth)
             return False
 
-        if pds_gender and ieds_gender and pds_gender != ieds_gender:
+        if pds_gender != ieds_gender:
             logger.debug("demographics_match: gender mismatch %s != %s", pds_gender, ieds_gender)
             return False
 
-        if pds_name and ieds_name and pds_name != ieds_name:
+        if pds_name != ieds_name:
             logger.debug("demographics_match: name mismatch %s != %s", pds_name, ieds_name)
             return False
 
