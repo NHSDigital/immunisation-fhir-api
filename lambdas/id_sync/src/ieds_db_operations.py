@@ -151,7 +151,6 @@ def extract_patient_resource_from_item(item: dict) -> dict | None:
     if not isinstance(patient_resource, dict):
         return None
 
-    # Otherwise, check contained
     for response in patient_resource.get("contained", []):
         if isinstance(response, dict) and response.get("resourceType") == "Patient":
             return response

@@ -57,53 +57,44 @@ def process_nhs_number(nhs_number: str) -> Dict[str, Any]:
         }
     logger.info("Update patient ID from %s to %s", nhs_number, new_nhs_number)
 
-    if ieds_check_exist(nhs_number):
-        # Fetch PDS details for demographic comparison
-        try:
-            pds_details = pds_get_patient_details(nhs_number)
-        except Exception:
-            logger.exception("process_nhs_number: failed to fetch PDS details, aborting update")
-            return {
-                "status": "error",
-                "message": "Failed to fetch PDS details for demographic comparison",
-                "nhs_number": nhs_number,
-            }
-
-        # Get IEDS items for this patient id and compare demographics
-        try:
-            items = get_items_from_patient_id(nhs_number)
-        except Exception:
-            logger.exception("process_nhs_number: failed to fetch IEDS items, aborting update")
-            return {
-                "status": "error",
-                "message": "Failed to fetch IEDS items for demographic comparison",
-                "nhs_number": nhs_number,
-            }
-
-        # If at least one IEDS item matches demographics, proceed with update
-        match_found = False
-        for item in items:
-            try:
-                if demographics_match(pds_details, item):
-                    match_found = True
-                    break
-            except Exception:
-                logger.exception("process_nhs_number: error while comparing demographics for item: %s", item)
-
-        if not match_found:
-            logger.info("process_nhs_number: No IEDS items matched PDS demographics. Skipping update for %s", nhs_number)
-            response = {
-                "status": "success",
-                "message": "No IEDS items matched PDS demographics; update skipped",
-            }
-        else:
-            response = ieds_update_patient_id(nhs_number, new_nhs_number)
-    else:
+    if not ieds_check_exist(nhs_number):
         logger.info("No IEDS record found for: %s", nhs_number)
         response = {"status": "success", "message": f"No records returned for ID: {nhs_number}"}
+        return response
+    try:
+        pds_details, ieds_details = fetch_demographic_details(nhs_number)
+    except Exception as e:
+        logger.exception("process_nhs_number: %s, aborting update", e)
+        return {
+                "status": "error",
+                "message": str(e),
+                "nhs_number": nhs_number,
+        }
 
+    # If at least one IEDS item matches demographics, proceed with update
+    if not all(demographics_match(pds_details, detail) for detail in ieds_details):
+        logger.info("Not all IEDS items matched PDS demographics; skipping update for %s", nhs_number)
+        return {
+            "status": "success",
+            "message": "Not all IEDS items matched PDS demographics; update skipped",
+            "nhs_number": nhs_number,
+        }
+
+    response = ieds_update_patient_id(nhs_number, new_nhs_number)
     response["nhs_number"] = nhs_number
     return response
+
+
+def fetch_demographic_details(nhs_number: str):
+    try:
+        pds = pds_get_patient_details(nhs_number)
+    except Exception as e:
+        raise RuntimeError("Failed to fetch PDS details") from e
+    try:
+        ieds = get_items_from_patient_id(nhs_number)
+    except Exception as e:
+        raise RuntimeError("Failed to fetch IEDS items") from e
+    return pds, ieds
 
 
 def extract_normalized_name_from_patient(patient: dict) -> str | None:

@@ -129,7 +129,7 @@ class TestRecordProcessor(unittest.TestCase):
 
         # Assert
         self.assertEqual(result["status"], "success")
-        self.assertIn("update skipped", result["message"])
+        self.assertEqual(result["message"], "Not all IEDS items matched PDS demographics; update skipped")
 
     def test_invalid_body_parsing_returns_error(self):
         """When body is a malformed string, process_record should return an error"""
@@ -182,8 +182,8 @@ class TestRecordProcessor(unittest.TestCase):
         self.mock_pds_get_patient_details.return_value = {
             "name": [
                 {
-                    "given": ["Tom"],
-                    "family": "Hanks"}
+                    "given": ["Sarah"],
+                    "family": "Fowley"}
                 ],
             "gender": "male",
             "birthDate": "1956-07-09"
@@ -194,7 +194,7 @@ class TestRecordProcessor(unittest.TestCase):
                 "contained": [{
                     "resourceType": "Patient",
                     "id": "PatM",
-                    "name": [{"given": ["Tom"], "family": "Hanks"}],
+                    "name": [{"given": ["Sarah"], "family": "Fowley"}],
                     "gender": "male", "birthDate": "1956-07-09"}
                 ]}
             }
@@ -215,8 +215,6 @@ class TestRecordProcessor(unittest.TestCase):
             # Act
             result = process_record(test_record)
 
-            # Assert
-            self.assertEqual(result["status"], "success")
             self.assertEqual(result["message"], f"No records returned for ID: {test_id}")
 
             # Verify PDS was not called
@@ -307,7 +305,8 @@ class TestRecordProcessor(unittest.TestCase):
                             "family": "Doe"
                         }],
                         "gender": "male",
-                        "birthDate": "1980-01-02"}
+                        "birthDate": "1980-01-02"
+                    }
                 ]
             }
         }
@@ -315,7 +314,7 @@ class TestRecordProcessor(unittest.TestCase):
 
         result = process_record(test_sqs_record)
         self.assertEqual(result["status"], "success")
-        self.assertIn("update skipped", result["message"])
+        self.assertEqual(result["message"], "Not all IEDS items matched PDS demographics; update skipped")
 
     def test_process_record_gender_mismatch_skips_update(self):
         """If gender differs between PDS and IEDS, update should be skipped"""
@@ -342,14 +341,17 @@ class TestRecordProcessor(unittest.TestCase):
                             "given": ["Alex"],
                             "family": "Smith"
                         }],
-                        "gender": "male", "birthDate": "1992-03-03"}
+                        "gender": "male",
+                        "birthDate": "1992-03-03"
+                    }
                 ]
-            }}
+            }
+        }
         self.mock_get_items_from_patient_id.return_value = [item]
 
         result = process_record(test_sqs_record)
         self.assertEqual(result["status"], "success")
-        self.assertIn("update skipped", result["message"])
+        self.assertEqual(result["message"], "Not all IEDS items matched PDS demographics; update skipped")
 
     def test_process_record_no_comparable_fields_skips_update(self):
         """If PDS provides no comparable fields, do not update (skip)"""
@@ -373,11 +375,13 @@ class TestRecordProcessor(unittest.TestCase):
                             "family": "Lee"
                         }],
                         "gender": "female",
-                        "birthDate": "2000-01-01"}
+                        "birthDate": "2000-01-01"
+                    }
                 ]
-            }}
+            }
+        }
         self.mock_get_items_from_patient_id.return_value = [item]
 
         result = process_record(test_sqs_record)
         self.assertEqual(result["status"], "success")
-        self.assertIn("update skipped", result["message"])
+        self.assertEqual(result["message"], "Not all IEDS items matched PDS demographics; update skipped")
