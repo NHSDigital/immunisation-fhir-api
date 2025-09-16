@@ -19,7 +19,7 @@ from tests.utils_for_tests.utils_for_filenameprocessor_tests import (
 )
 from tests.utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT, BucketNames, Sqs
 from tests.utils_for_tests.values_for_tests import MOCK_CREATED_AT_FORMATTED_STRING, MockFileDetails, \
-    MOCK_BATCH_FILE_CONTENT, MOCK_FILE_HEADERS, MOCK_EXPIRES_AT
+    MOCK_BATCH_FILE_CONTENT, MOCK_EXPIRES_AT
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
@@ -195,45 +195,6 @@ class TestLambdaHandlerDataSource(TestCase):
                 assert_audit_table_entry(file_details, FileStatus.QUEUED)
                 self.assert_sqs_message(file_details)
                 self.assert_no_ack_file(file_details)
-
-    def test_lambda_handler_correctly_flags_empty_file(self):
-        """
-        VED-757 Tests that for an empty batch file:
-        * The file status is updated to 'Not processed - empty file' in the audit table
-        * The message is not sent to SQS
-        * The failure inf_ack file is created
-        """
-        file_details = MockFileDetails.ravs_rsv_1
-
-        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=file_details.file_key, Body=MOCK_FILE_HEADERS)
-
-        with (  # noqa: E999
-            patch("file_name_processor.uuid4", return_value=file_details.message_id),  # noqa: E999
-        ):  # noqa: E999
-            lambda_handler(
-                self.make_event([self.make_record_with_message_id(file_details.file_key, file_details.message_id)]),
-                None,
-            )
-
-        expected_table_items = [
-            {
-                "message_id": {"S": file_details.message_id},
-                "filename": {"S": file_details.file_key},
-                "queue_name": {"S": "RAVS_RSV"},
-                "status": {"S": "Not processed - Empty file"},
-                "error_details": {"S": "Initial file validation failed: batch file was empty"},
-                "timestamp": {"S": file_details.created_at_formatted_string},
-                "expires_at": {"N": str(file_details.expires_at)},
-            }
-        ]
-        self.assertEqual(self.get_audit_table_items(), expected_table_items)
-        self.assert_no_sqs_message()
-        self.assert_ack_file_contents(file_details)
-        self.mock_logger.warning.assert_called_once_with(
-            "Error processing file '%s': %s",
-            "RSV_Vaccinations_v5_X8E5B_20000101T00000001.csv",
-            "Initial file validation failed: batch file was empty"
-        )
 
     def test_lambda_handler_non_root_file(self):
         """

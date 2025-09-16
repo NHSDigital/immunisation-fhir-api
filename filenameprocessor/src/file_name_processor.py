@@ -9,7 +9,7 @@ NOTE: The expected file format for incoming files from the data sources bucket i
 import argparse
 from uuid import uuid4
 from utils_for_filenameprocessor import get_creation_and_expiry_times, move_file
-from file_validation import validate_file_key, is_file_in_directory_root, validate_file_not_empty
+from file_validation import validate_file_key, is_file_in_directory_root
 from send_sqs_message import make_and_send_sqs_message
 from make_and_upload_ack_file import make_and_upload_the_ack_file
 from audit_table import upsert_audit_table
@@ -20,8 +20,7 @@ from errors import (
     VaccineTypePermissionsError,
     InvalidFileKeyError,
     UnhandledAuditTableError,
-    UnhandledSqsError,
-    EmptyFileError
+    UnhandledSqsError
 )
 from constants import FileNotProcessedReason, FileStatus, ERROR_TYPE_TO_STATUS_CODE_MAP, SOURCE_BUCKET_NAME
 
@@ -68,8 +67,6 @@ def handle_record(record) -> dict:
         created_at_formatted_string, expiry_timestamp = get_creation_and_expiry_times(s3_response)
 
         vaccine_type, supplier = validate_file_key(file_key)
-        # VED-757: Known issue with suppliers sometimes sending empty files
-        validate_file_not_empty(s3_response)
         permissions = validate_vaccine_type_permissions(vaccine_type=vaccine_type, supplier=supplier)
 
         queue_name = f"{supplier}_{vaccine_type}"
@@ -94,17 +91,12 @@ def handle_record(record) -> dict:
 
     except (  # pylint: disable=broad-exception-caught
         VaccineTypePermissionsError,
-        EmptyFileError,
         InvalidFileKeyError,
         UnhandledAuditTableError,
         UnhandledSqsError,
         Exception,
     ) as error:
-        if isinstance(error, EmptyFileError):
-            # Avoid error log noise for accepted scenario in which supplier provides a batch file with no records
-            logger.warning("Error processing file '%s': %s", file_key, str(error))
-        else:
-            logger.error("Error processing file '%s': %s", file_key, str(error))
+        logger.error("Error processing file '%s': %s", file_key, str(error))
 
         queue_name = f"{supplier}_{vaccine_type}"
         file_status = get_file_status_for_error(error)
@@ -137,8 +129,6 @@ def get_file_status_for_error(error: Exception) -> str:
     """Creates a file status based on the type of error that was thrown"""
     if isinstance(error, VaccineTypePermissionsError):
         return f"{FileStatus.NOT_PROCESSED} - {FileNotProcessedReason.UNAUTHORISED}"
-    elif isinstance(error, EmptyFileError):
-        return f"{FileStatus.NOT_PROCESSED} - {FileNotProcessedReason.EMPTY}"
 
     return FileStatus.FAILED
 

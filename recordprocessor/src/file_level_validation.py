@@ -2,6 +2,8 @@
 Functions for completing file-level validation
 (validating headers and ensuring that the supplier has permission to perform at least one of the requested operations)
 """
+from csv import DictReader
+
 from clients import logger, s3_client
 from make_and_upload_ack_file import make_and_upload_ack_file
 from utils_for_recordprocessor import get_csv_content_dict_reader
@@ -9,13 +11,18 @@ from errors import InvalidHeaders, NoOperationPermissions
 from logging_decorator import file_level_validation_logging_decorator
 from audit_table import update_audit_table_status
 from constants import SOURCE_BUCKET_NAME, EXPECTED_CSV_HEADERS, permission_to_operation_map, FileStatus, Permission, \
-    FileNotProcessedReason
+    FileNotProcessedReason, ARCHIVE_DIR_NAME, PROCESSING_DIR_NAME
 
 
-def validate_content_headers(csv_content_reader) -> None:
+def validate_content_headers(csv_content_reader: DictReader) -> None:
     """Raises an InvalidHeaders error if the headers in the CSV file do not match the expected headers."""
     if csv_content_reader.fieldnames != EXPECTED_CSV_HEADERS:
         raise InvalidHeaders("File headers are invalid.")
+
+
+def file_is_empty(row_count: int) -> bool:
+    """Simple helper for readability to check if no rows were processed in a file i.e. empty"""
+    return row_count == 0
 
 
 def get_permitted_operations(
@@ -94,7 +101,7 @@ def file_level_validation(incoming_message_body: dict) -> dict:
 
         make_and_upload_ack_file(message_id, file_key, True, True, created_at_formatted_string)
 
-        move_file(SOURCE_BUCKET_NAME, file_key, f"processing/{file_key}")
+        move_file(SOURCE_BUCKET_NAME, file_key, f"{PROCESSING_DIR_NAME}/{file_key}")
 
         return {
             "message_id": message_id,
@@ -118,7 +125,7 @@ def file_level_validation(incoming_message_body: dict) -> dict:
             if isinstance(error, NoOperationPermissions) else FileStatus.FAILED
 
         try:
-            move_file(SOURCE_BUCKET_NAME, file_key, f"archive/{file_key}")
+            move_file(SOURCE_BUCKET_NAME, file_key, f"{ARCHIVE_DIR_NAME}/{file_key}")
         except Exception as move_file_error:
             logger.error("Failed to move file to archive: %s", move_file_error)
 
