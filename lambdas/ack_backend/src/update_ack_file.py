@@ -5,7 +5,7 @@ from typing import Union, Optional
 from botocore.exceptions import ClientError
 from constants import ACK_HEADERS, get_source_bucket_name, get_ack_bucket_name
 from audit_table import change_audit_table_status_to_processed
-from clients import get_s3_client, logger
+from common.clients import get_s3_client, logger
 from utils_for_ack_lambda import get_row_count
 from logging_decorators import upload_ack_file_logging_decorator
 

@@ -127,6 +127,10 @@ class ValidationError(RuntimeError):
         pass
 
 
+class UnhandledAuditTableError(Exception):
+    """A custom exception for when an unexpected error occurs whilst adding the file to the audit table."""
+
+
 @dataclass
 class InvalidPatientId(ValidationError):
     """Use this when NHS Number is invalid or doesn't exist"""

@@ -1,6 +1,6 @@
 """Utils for ack lambda"""
 
-from clients import get_s3_client
+from common.clients import get_s3_client
 
 
 def get_row_count(bucket_name: str, file_key: str) -> int:
