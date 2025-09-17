@@ -121,12 +121,12 @@ class TestRecordProcessor(unittest.TestCase):
         }
         self.mock_get_items_from_patient_id.return_value = [non_matching_item]
 
-        # Act
+    # Act
         result = process_record(test_sqs_record)
 
         # Assert
         self.assertEqual(result["status"], "success")
-        self.assertEqual(result["message"], "Not all IEDS items matched PDS demographics; update skipped")
+        self.assertEqual(result["message"], "No records matched PDS demographics; update skipped")
 
     def test_invalid_body_parsing_returns_error(self):
         """When body is a malformed string, process_record should return an error"""
@@ -200,7 +200,7 @@ class TestRecordProcessor(unittest.TestCase):
 
         result = process_record(test_sqs_record)
         self.assertEqual(result["status"], "success")
-        self.mock_ieds_update_patient_id.assert_called_once_with(nhs_number, pds_id)
+        self.mock_ieds_update_patient_id.assert_called_once_with(nhs_number, pds_id, items_to_update=[item])
 
     def test_process_record_no_records_exist(self):
         """Test when no records exist for the patient ID"""
@@ -315,7 +315,7 @@ class TestRecordProcessor(unittest.TestCase):
 
         result = process_record(test_sqs_record)
         self.assertEqual(result["status"], "success")
-        self.assertEqual(result["message"], "Not all IEDS items matched PDS demographics; update skipped")
+        self.assertEqual(result["message"], "No records matched PDS demographics; update skipped")
 
     def test_process_record_gender_mismatch_skips_update(self):
         """If gender differs between PDS and IEDS, update should be skipped"""
@@ -352,7 +352,7 @@ class TestRecordProcessor(unittest.TestCase):
 
         result = process_record(test_sqs_record)
         self.assertEqual(result["status"], "success")
-        self.assertEqual(result["message"], "Not all IEDS items matched PDS demographics; update skipped")
+        self.assertEqual(result["message"], "No records matched PDS demographics; update skipped")
 
     def test_process_record_no_comparable_fields_skips_update(self):
         """If PDS provides no comparable fields, do not update (skip)"""
@@ -385,4 +385,4 @@ class TestRecordProcessor(unittest.TestCase):
 
         result = process_record(test_sqs_record)
         self.assertEqual(result["status"], "success")
-        self.assertEqual(result["message"], "Not all IEDS items matched PDS demographics; update skipped")
+        self.assertEqual(result["message"], "No records matched PDS demographics; update skipped")

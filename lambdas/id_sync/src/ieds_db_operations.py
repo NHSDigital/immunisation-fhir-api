@@ -19,7 +19,7 @@ def get_ieds_table():
 BATCH_SIZE = 25
 
 
-def ieds_update_patient_id(old_id: str, new_id: str) -> dict:
+def ieds_update_patient_id(old_id: str, new_id: str, items_to_update: list | None = None) -> dict:
     """Update the patient ID in the IEDS table."""
     logger.info(f"ieds_update_patient_id. Update patient ID from {old_id} to {new_id}")
     if not old_id or not new_id or not old_id.strip() or not new_id.strip():
@@ -33,8 +33,11 @@ def ieds_update_patient_id(old_id: str, new_id: str) -> dict:
 
         new_patient_pk = f"Patient#{new_id}"
 
-        logger.info("Getting items to update in IEDS table...")
-        items_to_update = get_items_from_patient_id(old_id)
+        if items_to_update is None:
+            logger.info("Getting items to update in IEDS table...")
+            items_to_update = get_items_from_patient_id(old_id)
+        else:
+            logger.info("Using provided items_to_update list, size=%d", len(items_to_update))
 
         if not items_to_update:
             logger.warning(f"No items found to update for patient ID: {old_id}")

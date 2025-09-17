@@ -1,5 +1,5 @@
 from common.clients import logger
-from typing import Dict, Any
+from typing import Dict, List, Any
 from pds_details import pds_get_patient_id, pds_get_patient_details
 from ieds_db_operations import (
     ieds_update_patient_id,
@@ -77,16 +77,34 @@ def process_nhs_number(nhs_number: str) -> Dict[str, Any]:
         }
 
     # If at least one IEDS item matches demographics, proceed with update
-    if not all(demographics_match(pds_details, detail) for detail in ieds_details):
-        logger.info("Not all IEDS items matched PDS demographics; skipping update for %s", nhs_number)
+    matching_records: List[Dict[str, Any]] = []
+    discarded_records: List[Dict[str, Any]] = []
+    for detail in ieds_details:
+        if demographics_match(pds_details, detail):
+            matching_records.append(detail)
+        else:
+            discarded_records.append(detail)
+
+    if not matching_records:
+        logger.info(
+            "No records matched PDS demographics; skipping update for %s",
+            nhs_number,
+        )
         return {
             "status": "success",
-            "message": "Not all IEDS items matched PDS demographics; update skipped",
+            "message": "No records matched PDS demographics; update skipped",
             "nhs_number": nhs_number,
+            "matched": 0,
+            "discarded": len(discarded_records),
         }
 
-    response = ieds_update_patient_id(nhs_number, new_nhs_number)
+    response = ieds_update_patient_id(
+        nhs_number, new_nhs_number, items_to_update=matching_records
+    )
     response["nhs_number"] = nhs_number
+    # add counts for observability
+    response["matched"] = len(matching_records)
+    response["discarded"] = len(discarded_records)
     return response
 
 
@@ -144,16 +162,17 @@ def demographics_match(pds_details: dict, ieds_item: dict) -> bool:
             logger.debug("demographics_match: no patient resource in IEDS table item")
             return False
 
-        # normalize patient name
+        # normalize patient fields from IEDS
         ieds_name = normalize_strings(extract_normalized_name_from_patient(patient))
-
         ieds_gender = normalize_strings(patient.get("gender"))
-        ieds_birth = patient.get("birthDate")
+        ieds_birth = normalize_strings(patient.get("birthDate"))
 
+        # All required fields must be present
         if not all([pds_name, pds_gender, pds_birth, ieds_name, ieds_gender, ieds_birth]):
             logger.debug("demographics_match: missing required demographics")
             return False
 
+        # Compare fields
         if pds_birth != ieds_birth:
             logger.debug("demographics_match: birthDate mismatch %s != %s", pds_birth, ieds_birth)
             return False
