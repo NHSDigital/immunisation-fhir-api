@@ -55,6 +55,7 @@
     "supplier": "EMIS",
     "permissions": [
       "3IN1.CRUDS",
+      "COVID19.CRUDS",
       "HPV.CRUDS",
       "MENACWY.CRUDS",
       "MMR.CRUDS",

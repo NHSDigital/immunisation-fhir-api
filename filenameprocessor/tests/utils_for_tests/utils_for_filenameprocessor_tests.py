@@ -39,7 +39,7 @@ def add_entry_to_table(file_details: MockFileDetails, file_status: FileStatus) -
     dynamodb_client.put_item(TableName=AUDIT_TABLE_NAME, Item=audit_table_entry)
 
 
-def assert_audit_table_entry(file_details: FileDetails, expected_status: FileStatus) -> None:
+def assert_audit_table_entry(file_details: FileDetails, expected_status: str) -> None:
     """Assert that the file details are in the audit table"""
     table_entry = dynamodb_client.get_item(
         TableName=AUDIT_TABLE_NAME, Key={AuditTableKeys.MESSAGE_ID: {"S": file_details.message_id}}

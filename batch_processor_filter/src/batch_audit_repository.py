@@ -12,6 +12,7 @@ class BatchAuditRepository:
         | Key(AuditTableKeys.STATUS).eq(FileStatus.PREPROCESSED)
         | Key(AuditTableKeys.STATUS).eq(FileStatus.PROCESSING)
     )
+    _PROCESSING_AND_FAILED_STATUSES = {FileStatus.PROCESSING, FileStatus.FAILED}
 
     def __init__(self):
         self._batch_audit_table = boto3.resource("dynamodb", region_name=REGION_NAME).Table(AUDIT_TABLE_NAME)
@@ -25,16 +26,20 @@ class BatchAuditRepository:
 
         return len(matching_files) > 0
 
-    def is_event_processing_for_supplier_and_vacc_type(self, supplier: str, vacc_type: str) -> bool:
+    def is_event_processing_or_failed_for_supplier_and_vacc_type(self, supplier: str, vacc_type: str) -> bool:
         queue_name = f"{supplier}_{vacc_type}"
 
-        files_in_processing = self._batch_audit_table.query(
-            IndexName=AUDIT_TABLE_QUEUE_NAME_GSI,
-            KeyConditionExpression=Key(AuditTableKeys.QUEUE_NAME).eq(queue_name) & Key(AuditTableKeys.STATUS)
-            .eq(FileStatus.PROCESSING)
-        ).get("Items", [])
+        for status in self._PROCESSING_AND_FAILED_STATUSES:
+            files_in_queue = self._batch_audit_table.query(
+                IndexName=AUDIT_TABLE_QUEUE_NAME_GSI,
+                KeyConditionExpression=Key(AuditTableKeys.QUEUE_NAME).eq(queue_name) & Key(AuditTableKeys.STATUS)
+                .eq(status)
+            ).get("Items", [])
 
-        return len(files_in_processing) > 0
+            if len(files_in_queue) > 0:
+                return True
+
+        return False
 
     def update_status(self, message_id: str, updated_status: str) -> None:
         self._batch_audit_table.update_item(
