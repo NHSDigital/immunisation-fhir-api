@@ -1,7 +1,6 @@
-from common.clients import logger
-from common.clients import STREAM_NAME
-from common.log_decorator import logging_decorator
 from common.aws_lambda_event import AwsLambdaEvent
+from common.clients import logger, STREAM_NAME
+from common.log_decorator import logging_decorator
 from exceptions.id_sync_exception import IdSyncException
 from record_processor import process_record
 '''
