@@ -1,5 +1,6 @@
 from common.aws_lambda_event import AwsLambdaEvent
 
+
 class S3EventRecord:
     """
     S3 Event Parsing Utilities
