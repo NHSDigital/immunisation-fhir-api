@@ -3,14 +3,16 @@
 import json
 import os
 import time
+from csv import DictReader
+from json import JSONDecodeError
 
-from constants import FileStatus
+from constants import FileStatus, FileNotProcessedReason, SOURCE_BUCKET_NAME, ARCHIVE_DIR_NAME, PROCESSING_DIR_NAME
 from process_row import process_row
 from mappings import map_target_disease
 from audit_table import update_audit_table_status
 from send_to_kinesis import send_to_kinesis
 from clients import logger
-from file_level_validation import file_level_validation
+from file_level_validation import file_level_validation, file_is_empty, move_file
 from errors import NoOperationPermissions, InvalidHeaders
 from utils_for_recordprocessor import get_csv_content_dict_reader
 from typing import Optional
@@ -41,7 +43,6 @@ def process_csv_to_fhir(incoming_message_body: dict) -> int:
 
     target_disease = map_target_disease(vaccine)
 
-    row_count = 0
     row_count, err = process_rows(file_id, vaccine, supplier, file_key, allowed_operations,
                                   created_at_formatted_string, csv_reader, target_disease)
 
@@ -54,7 +55,7 @@ def process_csv_to_fhir(incoming_message_body: dict) -> int:
             encoder = new_encoder
 
             # load alternative encoder
-            csv_reader = get_csv_content_dict_reader(file_key, encoder=encoder)
+            csv_reader = get_csv_content_dict_reader(f"{PROCESSING_DIR_NAME}/{file_key}", encoder=encoder)
             # re-read the file and skip processed rows
             row_count, err = process_rows(file_id, vaccine, supplier, file_key, allowed_operations,
                                           created_at_formatted_string, csv_reader, target_disease, row_count)
@@ -62,14 +63,29 @@ def process_csv_to_fhir(incoming_message_body: dict) -> int:
             logger.error(f"Row Processing error: {err}")
             raise err
 
-    update_audit_table_status(file_key, file_id, FileStatus.PREPROCESSED)
+    file_status = FileStatus.PREPROCESSED
+
+    if file_is_empty(row_count):
+        logger.warning("File was empty: %s. Moving file to archive directory.", file_key)
+        move_file(SOURCE_BUCKET_NAME, f"{PROCESSING_DIR_NAME}/{file_key}", f"{ARCHIVE_DIR_NAME}/{file_key}")
+        file_status = f"{FileStatus.NOT_PROCESSED} - {FileNotProcessedReason.EMPTY}"
+
+    update_audit_table_status(file_key, file_id, file_status)
     return row_count
 
 
 # Process the row to obtain the details needed for the message_body and ack file
-def process_rows(file_id, vaccine, supplier, file_key, allowed_operations, created_at_formatted_string,
-                 csv_reader, target_disease,
-                 total_rows_processed_count=0) -> tuple[int, Optional[Exception]]:
+def process_rows(
+    file_id: str,
+    vaccine: str,
+    supplier: str,
+    file_key: str,
+    allowed_operations: set,
+    created_at_formatted_string: str,
+    csv_reader: DictReader,
+    target_disease: list[dict],
+    total_rows_processed_count: int = 0
+) -> tuple[int, Optional[Exception]]:
     """
     Processes each row in the csv_reader starting from start_row.
     """
@@ -111,10 +127,25 @@ def main(event: str) -> None:
     logger.info("task started")
     start = time.time()
     n_rows_processed = 0
+
     try:
-        n_rows_processed = process_csv_to_fhir(incoming_message_body=json.loads(event))
+        incoming_message_body = json.loads(event)
+    except JSONDecodeError as error:
+        logger.error("Error decoding incoming message: %s", error)
+        return
+
+    try:
+        n_rows_processed = process_csv_to_fhir(incoming_message_body=incoming_message_body)
     except Exception as error:  # pylint: disable=broad-exception-caught
         logger.error("Error processing message: %s", error)
+        message_id = incoming_message_body.get("message_id")
+        file_key = incoming_message_body.get("file_key")
+
+        # If an unexpected error occurs, attempt to mark the event as failed. If the event is so malformed that this
+        # also fails, we will still get the error alert and the event will remain in processing meaning the supplier +
+        # vacc type queue is blocked until we resolve the issue
+        update_audit_table_status(file_key, message_id, FileStatus.FAILED, error_details=str(error))
+
     end = time.time()
     logger.info("Total rows processed: %s", n_rows_processed)
     logger.info("Total time for completion: %ss", round(end - start, 5))

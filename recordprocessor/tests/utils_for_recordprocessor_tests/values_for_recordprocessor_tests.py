@@ -125,6 +125,7 @@ class ValidMockFileContent:
     with_new_and_update_and_delete = (
         headers + "\n" + MockFileRows.NEW + "\n" + MockFileRows.UPDATE + "\n" + MockFileRows.DELETE
     )
+    empty_file_with_multiple_new_lines = MockFileRows.HEADERS + "\n".join(["\n" for i in range(100)])
 
 
 class FileDetails:
