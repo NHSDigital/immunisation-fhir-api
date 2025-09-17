@@ -10,7 +10,6 @@ from tests.utils_for_recordprocessor_tests.generic_setup_and_teardown import (
     GenericSetUp,
     GenericTearDown,
 )
-from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import add_entry_to_table
 from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
     MockFileDetails,
     ValidMockFileContent,
