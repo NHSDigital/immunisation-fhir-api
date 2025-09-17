@@ -1,4 +1,5 @@
 import unittest
+from unittest import skipIf
 from utils import (
     generate_csv,
     upload_file_to_s3,
@@ -28,14 +29,16 @@ class TestE2EBatch(unittest.TestCase):
         for ack_key in self.ack_files:
             delete_file_from_s3(ACK_BUCKET, ack_key)
 
-    @unittest.skipIf(environment == "ref")
+    @skipIf(environment == "ref", reason="Skip tests in 'ref' environment")
     def test_create_success(self):
         """Test CREATE scenario."""
 
         # create 3 files to simulate simultaneous uploads
+        #  timestamps are in correct sequence
         input_files = generate_files("PHYLIS", "0.3", action_flags=["CREATE", "UPDATE", "DELETE"])
 
         for input_file in input_files:
+            # TODO All 3 files in 1 go
             key = upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
             self.uploaded_files.append(key)
 

@@ -54,25 +54,15 @@ def generate_csv(fore_name, dose_amount,
 
     data = []
 
-    if action_flag == "CREATE":
-        if same_id:
+    unique_id = str(uuid.uuid4())
 
-            unique_id = str(uuid.uuid4())
-            data.append(create_row(unique_id, fore_name, dose_amount, "NEW", headers))
-            data.append(create_row(unique_id, fore_name, dose_amount, "NEW", headers))
-        else:
-            unique_ids = [str(uuid.uuid4()), str(uuid.uuid4())]
-            for unique_id in unique_ids:
-                data.append(create_row(unique_id, fore_name, dose_amount, "NEW", headers))
+    if action_flag == "CREATE":
+        data.append(create_row(unique_id, fore_name, dose_amount, "NEW", headers))
 
     elif action_flag == "UPDATE":
-        unique_id = str(uuid.uuid4())
-        data.append(create_row(unique_id, fore_name, dose_amount, "NEW", headers))
         data.append(create_row(unique_id, fore_name, dose_amount, "UPDATE", headers))
 
     elif action_flag == "DELETE":
-        unique_id = str(uuid.uuid4())
-        data.append(create_row(unique_id, fore_name, dose_amount, "NEW", headers))
         data.append(create_row(unique_id, fore_name, dose_amount, "DELETE", headers))
 
     elif action_flag == "REINSTATED":
@@ -90,6 +80,30 @@ def generate_csv(fore_name, dose_amount,
 
     df = pd.DataFrame(data)
     file_name = get_file_name(vax_type, ods, file_key, timestamp)
+    df.to_csv(file_name, index=False, sep="|", quoting=csv.QUOTE_MINIMAL)
+    return file_name
+
+
+def generate_csv2(fore_name, dose_amount,
+                 action_flag, headers="NHS_NUMBER",
+                 file_key=False,
+                 vax_type="RSV", ods="YGM41"):
+
+    data = []
+
+    unique_id = str(uuid.uuid4())
+
+    if action_flag == "CREATE":
+        data.append(create_row(unique_id, fore_name, dose_amount, "NEW", headers))
+
+    elif action_flag == "UPDATE":
+        data.append(create_row(unique_id, fore_name, dose_amount, "UPDATE", headers))
+
+    elif action_flag == "DELETE":
+        data.append(create_row(unique_id, fore_name, dose_amount, "DELETE", headers))
+
+    df = pd.DataFrame(data)
+    file_name = get_file_name(vax_type, ods, file_key)
     df.to_csv(file_name, index=False, sep="|", quoting=csv.QUOTE_MINIMAL)
     return file_name
 
@@ -116,6 +130,8 @@ def upload_file_to_s3(file_name, bucket, prefix):
     except Exception as e:
         raise Exception(f"Unexpected error during file upload: {e}")
 
+def upload_files_simultaneous_to_s3(file_names, bucket, prefix):
+    
 
 def delete_file_from_s3(bucket, key):
     """Delete the specified file (object) from the given S3 bucket.
