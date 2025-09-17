@@ -49,8 +49,7 @@ class TestFunctionInfoWrapper(unittest.TestCase):
 
         # Assert
         self.assertEqual(result, "Success")
-        self.assertEqual(mock_logger.info.call_count, 2)
-
+        mock_logger.info.assert_called()
         mock_firehose_logger.send_log.assert_called()
 
         args, kwargs = mock_logger.info.call_args
@@ -65,6 +64,34 @@ class TestFunctionInfoWrapper(unittest.TestCase):
         self.assertEqual(logged_info['resource_path'], test_resource_path)
         self.assertEqual(logged_info['local_id'], '12345^http://test')
         self.assertEqual(logged_info['vaccine_type'], 'FLU')
+
+    def test_successful_execution_logger(self, mock_logger, mock_firehose_logger):
+        # Arrange
+        test_correlation = "test_correlation"
+        test_request = "test_request"
+        test_supplier = "test_supplier"
+        test_actual_path = "/test"
+        test_resource_path = "/test"
+
+        self.mock_redis_client.hget.return_value = "FLU"
+        wrapped_function = function_info(self.mock_success_function)
+        event = {
+            'headers': {
+                'X-Correlation-ID': test_correlation,
+                'X-Request-ID': test_request,
+                'SupplierSystem': test_supplier
+            },
+            'path': test_actual_path,
+            'requestContext': {'resourcePath': test_resource_path},
+            'body': "{\"identifier\": [{\"system\": \"http://test\", \"value\": \"12345\"}], \"protocolApplied\": [{\"targetDisease\": [{\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"840539006\", \"display\": \"Disease caused by severe acute respiratory syndrome coronavirus 2\"}]}]}]}"
+        }
+
+        # Act
+        result = wrapped_function(event, {})
+
+        # Assert
+        self.assertEqual(result, "Success")
+        self.assertEqual(mock_logger.info.call_count, 2)
 
     def test_exception_handling(self, mock_logger, mock_firehose_logger):
         # Arrange
