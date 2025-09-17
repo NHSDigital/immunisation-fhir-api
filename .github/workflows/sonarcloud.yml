@@ -142,7 +142,7 @@ jobs:
         continue-on-error: true
         run: |
             poetry install
-            poetry run coverage run --rcfile=.coveragerc --source=src -m unittest discover || echo "redis_sync tests failed" >> ../../failed_tests.txt
+            poetry run coverage run --source=src -m unittest discover || echo "redis_sync tests failed" >> ../../failed_tests.txt
             poetry run coverage xml -o ../../redis_sync-coverage.xml
 
       - name: Run unittest with shared
