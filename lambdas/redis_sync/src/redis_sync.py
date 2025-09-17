@@ -1,8 +1,8 @@
-from common.clients import redis_client, STREAM_NAME, logger
-from s3_event import S3Event
-from record_processor import process_record
 from event_read import read_event
+from record_processor import process_record
+from common.clients import redis_client, STREAM_NAME, logger
 from common.log_decorator import logging_decorator
+from common.s3_event import S3Event
 '''
     Event Processor
     The Business Logic for the Redis Sync Lambda Function.

@@ -27,7 +27,7 @@ class TestHandler(unittest.TestCase):
         self.mock_logger_error = self.logger_error_patcher.start()
         self.logger_exception_patcher = patch("logging.Logger.exception")
         self.mock_logger_exception = self.logger_exception_patcher.start()
-        self.get_s3_records_patcher = patch("s3_event.S3Event.get_s3_records")
+        self.get_s3_records_patcher = patch("common.s3_event.S3Event.get_s3_records")
         self.mock_get_s3_records = self.get_s3_records_patcher.start()
         self.record_processor_patcher = patch("redis_sync.process_record")
         self.mock_record_processor = self.record_processor_patcher.start()

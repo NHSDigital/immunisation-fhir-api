@@ -1,6 +1,6 @@
-from common.clients import logger
-from s3_event import S3EventRecord
 from redis_cacher import RedisCacher
+from common.clients import logger
+from common.s3_event import S3EventRecord
 '''
     Record Processor
     This module processes individual S3 records from an event.

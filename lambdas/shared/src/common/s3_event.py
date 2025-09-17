@@ -1,3 +1,5 @@
+from common.aws_lambda_event import AwsLambdaEvent
+
 class S3EventRecord:
     """
     S3 Event Parsing Utilities
@@ -18,10 +20,10 @@ class S3EventRecord:
         return ret
 
 
-class S3Event:
+class S3Event(AwsLambdaEvent):
     def __init__(self, event):
-        self.event = event
+        super().__init__(event)
 
     def get_s3_records(self):
         # return a list of S3EventRecord objects - stripping out the s3 key
-        return [S3EventRecord(record['s3']) for record in self.event['Records']]
+        return [S3EventRecord(record['s3']) for record in self.records]
