@@ -16,17 +16,6 @@ def get_ieds_table():
     return ieds_table
 
 
-def ieds_check_exist(id: str) -> bool:
-    """Check if a record exists in the IEDS table for the given ID."""
-    logger.info(f"Check Id exists ID: {id}")
-    items = get_items_from_patient_id(id, 1)
-
-    if items or len(items) > 0:
-        logger.info(f"Found patient ID: {id}")
-        return True
-    return False
-
-
 BATCH_SIZE = 25
 
 
@@ -118,28 +107,62 @@ def ieds_update_patient_id(old_id: str, new_id: str) -> dict:
         )
 
 
-def get_items_from_patient_id(id: str, limit=BATCH_SIZE) -> list:
-    """Get all items for patient ID."""
+def get_items_from_patient_id(id: str, filter_expression=None) -> list:
+    """Query the PatientGSI and paginate through all results.
+
+    - Uses LastEvaluatedKey to page until all items are collected.
+    - If `filter_expression` is provided it will be included as `FilterExpression`.
+    - Raises `IdSyncException` if the DynamoDB response doesn't include 'Items' or
+      an underlying error occurs.
+    """
     logger.info(f"Getting items for patient id: {id}")
     patient_pk = f"Patient#{id}"
-    try:
-        response = get_ieds_table().query(
-            IndexName='PatientGSI',  # query the GSI
-            KeyConditionExpression=Key('PatientPK').eq(patient_pk),
-            Limit=limit
-        )
 
-        if 'Items' not in response or not response['Items']:
+    all_items: list = []
+    last_evaluated_key = None
+    try:
+        while True:
+            query_args = {
+                "IndexName": "PatientGSI",
+                "KeyConditionExpression": Key('PatientPK').eq(patient_pk),
+            }
+            if filter_expression is not None:
+                query_args["FilterExpression"] = filter_expression
+            if last_evaluated_key:
+                query_args["ExclusiveStartKey"] = last_evaluated_key
+
+            response = get_ieds_table().query(**query_args)
+
+            if "Items" not in response:
+                # Unexpected DynamoDB response shape - surface as IdSyncException
+                logger.exception("Unexpected DynamoDB response: missing 'Items'")
+                raise IdSyncException(
+                    message="No Items in DynamoDB response",
+                    nhs_numbers=[patient_pk],
+                    exception=response,
+                )
+
+            items = response.get("Items", [])
+            all_items.extend(items)
+
+            last_evaluated_key = response.get("LastEvaluatedKey")
+            if not last_evaluated_key:
+                break
+
+        if not all_items:
             logger.warning(f"No items found for patient PK: {patient_pk}")
             return []
 
-        return response['Items']
+        return all_items
+
+    except IdSyncException:
+        raise
     except Exception as e:
         logger.exception(f"Error querying items for patient PK: {patient_pk}")
         raise IdSyncException(
             message=f"Error querying items for patient PK: {patient_pk}",
             nhs_numbers=[patient_pk],
-            exception=e
+            exception=e,
         )
 
 

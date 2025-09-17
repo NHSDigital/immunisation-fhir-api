@@ -1,17 +1,16 @@
-from typing import Any, Dict
-
-from common.clients import logger, STREAM_NAME
-from common.log_decorator import logging_decorator
-from common.aws_lambda_event import AwsLambdaEvent
-from exceptions.id_sync_exception import IdSyncException
-from record_processor import process_record
-
 """
 - Parses the incoming AWS event into `AwsLambdaEvent` and iterate its `records`.
 - Delegate each record to `process_record` and collect `nhs_number` from each result.
 - If any record has status == "error" raise `IdSyncException` with aggregated nhs_numbers.
 - Any unexpected error is wrapped into `IdSyncException(message="Error processing id_sync event")`.
 """
+
+from typing import Any, Dict
+from common.clients import logger, STREAM_NAME
+from common.log_decorator import logging_decorator
+from common.aws_lambda_event import AwsLambdaEvent
+from exceptions.id_sync_exception import IdSyncException
+from record_processor import process_record
 
 
 @logging_decorator(prefix="id_sync", stream_name=STREAM_NAME)

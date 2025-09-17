@@ -2,7 +2,6 @@ from common.clients import logger
 from typing import Dict, Any
 from pds_details import pds_get_patient_id, pds_get_patient_details
 from ieds_db_operations import (
-    ieds_check_exist,
     ieds_update_patient_id,
     extract_patient_resource_from_item,
     get_items_from_patient_id,
@@ -57,18 +56,24 @@ def process_nhs_number(nhs_number: str) -> Dict[str, Any]:
         }
     logger.info("Update patient ID from %s to %s", nhs_number, new_nhs_number)
 
-    if not ieds_check_exist(nhs_number):
-        logger.info("No IEDS record found for: %s", nhs_number)
-        response = {"status": "success", "message": f"No records returned for ID: {nhs_number}"}
-        return response
     try:
         pds_details, ieds_details = fetch_demographic_details(nhs_number)
     except Exception as e:
-        logger.exception("process_nhs_number: %s, aborting update", e)
+        logger.exception("process_nhs_number: failed to fetch demographic details: %s", e)
         return {
                 "status": "error",
                 "message": str(e),
                 "nhs_number": nhs_number,
+        }
+
+    # If no IEDS items were returned, nothing to update — return a clear success
+    # message to match existing test expectations.
+    if not ieds_details:
+        logger.info("No IEDS records returned for NHS number: %s", nhs_number)
+        return {
+            "status": "success",
+            "message": f"No records returned for ID: {nhs_number}",
+            "nhs_number": nhs_number,
         }
 
     # If at least one IEDS item matches demographics, proceed with update
