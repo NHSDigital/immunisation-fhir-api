@@ -41,7 +41,7 @@ class TestFunctionInfoWrapper(unittest.TestCase):
             },
             'path': test_actual_path,
             'requestContext': {'resourcePath': test_resource_path},
-            'body': "{\"identifier\": [{\"system\": \"http://test\", \"value\": \"12345\"}], \"contained\": [{\"resourceType\": \"Patient\", \"id\": \"Pat1\", \"identifier\": [{\"system\": \"https://fhir.nhs.uk/Id/nhs-number\", \"value\": \"9693632109\"}]}], \"protocolApplied\": [{\"targetDisease\": [{\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"840539006\", \"display\": \"Disease caused by severe acute respiratory syndrome coronavirus 2\"}]}]}]}"
+            'body': "{\"identifier\": [{\"system\": \"http://test\", \"value\": \"12345\"}], \"protocolApplied\": [{\"targetDisease\": [{\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"840539006\", \"display\": \"Disease caused by severe acute respiratory syndrome coronavirus 2\"}]}]}]}"
         }
 
         # Act
@@ -64,7 +64,6 @@ class TestFunctionInfoWrapper(unittest.TestCase):
         self.assertEqual(logged_info['resource_path'], test_resource_path)
         self.assertEqual(logged_info['local_id'], '12345^http://test')
         self.assertEqual(logged_info['vaccine_type'], 'FLU')
-        self.assertEqual(logged_info['nhs_number'], '9693632109')
 
     def test_exception_handling(self, mock_logger, mock_firehose_logger):
         # Arrange
@@ -87,7 +86,7 @@ class TestFunctionInfoWrapper(unittest.TestCase):
                 'SupplierSystem': test_supplier
             },
                 'path': test_actual_path, 'requestContext': {'resourcePath': test_resource_path},
-                'body': "{\"identifier\": [{\"system\": \"http://test\", \"value\": \"12345\"}], \"contained\": [{\"resourceType\": \"Patient\", \"id\": \"Pat1\", \"identifier\": [{\"system\": \"https://fhir.nhs.uk/Id/nhs-number\", \"value\": \"9693632109\"}]}], \"protocolApplied\": [{\"targetDisease\": [{\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"840539006\", \"display\": \"Disease caused by severe acute respiratory syndrome coronavirus 2\"}]}]}]}"}
+                'body': "{\"identifier\": [{\"system\": \"http://test\", \"value\": \"12345\"}], \"protocolApplied\": [{\"targetDisease\": [{\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"840539006\", \"display\": \"Disease caused by severe acute respiratory syndrome coronavirus 2\"}]}]}]}"}
 
             context = {}
             decorated_function_raises(event, context)
@@ -109,7 +108,6 @@ class TestFunctionInfoWrapper(unittest.TestCase):
         self.assertEqual(logged_info['error'], str(ValueError("Test error")))
         self.assertEqual(logged_info['local_id'], '12345^http://test')
         self.assertEqual(logged_info['vaccine_type'], 'FLU')
-        self.assertEqual(logged_info['nhs_number'], '9693632109')
 
     def test_body_missing(self, mock_logger, mock_firehose_logger):
         # Arrange
@@ -144,7 +142,6 @@ class TestFunctionInfoWrapper(unittest.TestCase):
         self.assertEqual(logged_info['resource_path'], test_resource_path)
         self.assertNotIn('local_id', logged_info)
         self.assertNotIn('vaccine_type', logged_info)
-        self.assertNotIn('nhs_number', logged_info)
 
     def test_body_not_json(self, mock_logger, mock_firehose_logger):
         # Arrange
@@ -181,7 +178,6 @@ class TestFunctionInfoWrapper(unittest.TestCase):
         self.assertEqual(logged_info['resource_path'], test_resource_path)
         self.assertNotIn('local_id', logged_info)
         self.assertNotIn('vaccine_type', logged_info)
-        self.assertNotIn('nhs_number', logged_info)
 
     def test_body_invalid_identifier(self, mock_logger, mock_firehose_logger):
         # Arrange
@@ -204,7 +200,7 @@ class TestFunctionInfoWrapper(unittest.TestCase):
                 'SupplierSystem': test_supplier
             },
                 'path': test_actual_path, 'requestContext': {'resourcePath': test_resource_path},
-                'body': "{\"identifier\": [], \"contained\": [{\"resourceType\": \"Patient\", \"id\": \"Pat1\", \"identifier\": [{\"system\": \"https://fhir.nhs.uk/Id/nhs-number\", \"value\": \"9693632109\"}]}], \"protocolApplied\": [{\"targetDisease\": [{\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"840539006\", \"display\": \"Disease caused by severe acute respiratory syndrome coronavirus 2\"}]}]}]}"}
+                'body': "{\"identifier\": [], \"protocolApplied\": [{\"targetDisease\": [{\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"840539006\", \"display\": \"Disease caused by severe acute respiratory syndrome coronavirus 2\"}]}]}]}"}
 
             context = {}
             decorated_function_raises(event, context)
@@ -220,7 +216,6 @@ class TestFunctionInfoWrapper(unittest.TestCase):
         self.assertEqual(logged_info['resource_path'], test_resource_path)
         self.assertNotIn('local_id', logged_info)
         self.assertEqual(logged_info['vaccine_type'], 'FLU')
-        self.assertEqual(logged_info['nhs_number'], '9693632109')
 
     def test_body_invalid_protocol_applied(self, mock_logger, mock_firehose_logger):
         # Arrange
@@ -243,7 +238,7 @@ class TestFunctionInfoWrapper(unittest.TestCase):
                 'SupplierSystem': test_supplier
             },
                 'path': test_actual_path, 'requestContext': {'resourcePath': test_resource_path},
-                'body': "{\"identifier\": [{\"system\": \"http://test\", \"value\": \"12345\"}], \"contained\": [{\"resourceType\": \"Patient\", \"id\": \"Pat1\", \"identifier\": [{\"system\": \"https://fhir.nhs.uk/Id/nhs-number\", \"value\": \"9693632109\"}]}], \"protocolApplied\": []}"}
+                'body': "{\"identifier\": [{\"system\": \"http://test\", \"value\": \"12345\"}], \"protocolApplied\": []}"}
 
             context = {}
             decorated_function_raises(event, context)
@@ -259,124 +254,3 @@ class TestFunctionInfoWrapper(unittest.TestCase):
         self.assertEqual(logged_info['resource_path'], test_resource_path)
         self.assertEqual(logged_info['local_id'], '12345^http://test')
         self.assertNotIn('vaccine_type', logged_info)
-        self.assertEqual(logged_info['nhs_number'], '9693632109')
-
-    def test_contained_invalid(self, mock_logger, mock_firehose_logger):
-        # Arrange
-        test_correlation = "failed_test_correlation_contained_invalid"
-        test_request = "failed_test_request_contained_invalid"
-        test_supplier = "failed_test_supplier_contained_invalid"
-        test_actual_path = "/failed_test_contained_invalid"
-        test_resource_path = "/failed_test_contained_invalid"
-
-        self.mock_redis_client.hget.return_value = "FLU"
-
-        wrapped_function = function_info(self.mock_success_function)
-        event = {
-            'headers': {
-                'X-Correlation-ID': test_correlation,
-                'X-Request-ID': test_request,
-                'SupplierSystem': test_supplier
-            },
-            'path': test_actual_path,
-            'requestContext': {'resourcePath': test_resource_path},
-            'body': "{\"identifier\": [{\"system\": \"http://test\", \"value\": \"12345\"}], \"contained\": \"invalid\", \"protocolApplied\": [{\"targetDisease\": [{\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"840539006\", \"display\": \"Disease caused by severe acute respiratory syndrome coronavirus 2\"}]}]}]}"
-        }
-
-        # Act
-        result = wrapped_function(event, {})
-
-        # Assert
-        args, kwargs = mock_logger.info.call_args
-        logged_info = json.loads(args[0])
-
-        self.assertIn('function_name', logged_info)
-        self.assertIn('time_taken', logged_info)
-        self.assertEqual(logged_info['X-Correlation-ID'], test_correlation)
-        self.assertEqual(logged_info['X-Request-ID'], test_request)
-        self.assertEqual(logged_info['supplier'], test_supplier)
-        self.assertEqual(logged_info['actual_path'], test_actual_path)
-        self.assertEqual(logged_info['resource_path'], test_resource_path)
-        self.assertEqual(logged_info['local_id'], '12345^http://test')
-        self.assertEqual(logged_info['vaccine_type'], 'FLU')
-        self.assertNotIn('nhs_number', logged_info)
-
-    def test_patient_data_invalid(self, mock_logger, mock_firehose_logger):
-        # Arrange
-        test_correlation = "failed_test_correlation_patient_data_invalid"
-        test_request = "failed_test_request_patient_data_invalid"
-        test_supplier = "failed_test_supplier_patient_data_invalid"
-        test_actual_path = "/failed_test_patient_data_invalid"
-        test_resource_path = "/failed_test_patient_data_invalid"
-
-        self.mock_redis_client.hget.return_value = "FLU"
-
-        wrapped_function = function_info(self.mock_success_function)
-        event = {
-            'headers': {
-                'X-Correlation-ID': test_correlation,
-                'X-Request-ID': test_request,
-                'SupplierSystem': test_supplier
-            },
-            'path': test_actual_path,
-            'requestContext': {'resourcePath': test_resource_path},
-            'body': "{\"identifier\": [{\"system\": \"http://test\", \"value\": \"12345\"}],\"contained\": [{\"resourceType\": \"Patient\", \"id\": \"Pat1\", \"identifier\": []}], \"protocolApplied\": [{\"targetDisease\": [{\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"840539006\", \"display\": \"Disease caused by severe acute respiratory syndrome coronavirus 2\"}]}]}]}"
-        }
-
-        # Act
-        result = wrapped_function(event, {})
-
-        # Assert
-        args, kwargs = mock_logger.info.call_args
-        logged_info = json.loads(args[0])
-
-        self.assertIn('function_name', logged_info)
-        self.assertIn('time_taken', logged_info)
-        self.assertEqual(logged_info['X-Correlation-ID'], test_correlation)
-        self.assertEqual(logged_info['X-Request-ID'], test_request)
-        self.assertEqual(logged_info['supplier'], test_supplier)
-        self.assertEqual(logged_info['actual_path'], test_actual_path)
-        self.assertEqual(logged_info['resource_path'], test_resource_path)
-        self.assertEqual(logged_info['local_id'], '12345^http://test')
-        self.assertEqual(logged_info['vaccine_type'], 'FLU')
-        self.assertNotIn('nhs_number', logged_info)
-
-    def test_nhs_number_missing(self, mock_logger, mock_firehose_logger):
-        # Arrange
-        test_correlation = "failed_test_correlation_nhs_number_missing"
-        test_request = "failed_test_request_nhs_number_missing"
-        test_supplier = "failed_test_supplier_nhs_number_missing"
-        test_actual_path = "/failed_test_nhs_number_missing"
-        test_resource_path = "/failed_test_nhs_number_missing"
-
-        self.mock_redis_client.hget.return_value = "FLU"
-
-        wrapped_function = function_info(self.mock_success_function)
-        event = {
-            'headers': {
-                'X-Correlation-ID': test_correlation,
-                'X-Request-ID': test_request,
-                'SupplierSystem': test_supplier
-            },
-            'path': test_actual_path,
-            'requestContext': {'resourcePath': test_resource_path},
-            'body': "{\"identifier\": [{\"system\": \"http://test\", \"value\": \"12345\"}], \"contained\": [{\"resourceType\": \"Patient\", \"id\": \"Pat1\", \"identifier\": [{\"system\": \"https://fhir.nhs.uk/Id/nhs-number\"}]}], \"protocolApplied\": [{\"targetDisease\": [{\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"840539006\", \"display\": \"Disease caused by severe acute respiratory syndrome coronavirus 2\"}]}]}]}"
-        }
-
-        # Act
-        result = wrapped_function(event, {})
-
-        # Assert
-        args, kwargs = mock_logger.info.call_args
-        logged_info = json.loads(args[0])
-
-        self.assertIn('function_name', logged_info)
-        self.assertIn('time_taken', logged_info)
-        self.assertEqual(logged_info['X-Correlation-ID'], test_correlation)
-        self.assertEqual(logged_info['X-Request-ID'], test_request)
-        self.assertEqual(logged_info['supplier'], test_supplier)
-        self.assertEqual(logged_info['actual_path'], test_actual_path)
-        self.assertEqual(logged_info['resource_path'], test_resource_path)
-        self.assertEqual(logged_info['local_id'], '12345^http://test')
-        self.assertEqual(logged_info['vaccine_type'], 'FLU')
-        self.assertNotIn('nhs_number', logged_info)

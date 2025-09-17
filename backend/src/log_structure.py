@@ -33,12 +33,6 @@ def _log_data_from_body(event) -> dict:
         log_data["local_id"] = local_id
     except Exception:
         pass
-    try:
-        patient_data = [item for item in imms.get("contained") if item.get("resourceType") == "Patient"]
-        nhs_number = patient_data[0]["identifier"][0]["value"]
-        log_data["nhs_number"] = nhs_number
-    except Exception:
-        pass
     return log_data
 
 
