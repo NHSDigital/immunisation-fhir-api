@@ -27,7 +27,31 @@ from constants import (
 )
 
 
-def generate_csv(fore_name, dose_amount, action_flag, headers="NHS_NUMBER", same_id=False, file_key=False):
+class SeedTestData:
+    def __init__(self, description, vax_ods, actions: list, header="NHS_NUMBER",
+                 success: bool = True, dose_amount=0.5, inject_char=False, version=4):
+        self.description = description
+        self.dose_amount = dose_amount
+        self.actions = actions
+        self.vax = vax_ods.key()
+        self.ods = vax_ods.value()[0]  # Use the first ODS code for the vaccine
+        self.success = success
+        self.header = header
+        self.inject_char = inject_char
+        self.version = version
+
+
+class TestData:
+    def __init__(self, file_name, success, description, actions):
+        self.file_name = file_name
+        self.success = success
+        self.description = description
+        self.actions = actions
+        self.key = None  # To be set when the file is uploaded to S3
+
+
+def generate_csv(dose_amount, action_flag, headers="NHS_NUMBER", same_id=False, version="4",
+                 vax_type="RSV", ods="YGM41"):
     """
     Generate a CSV file with 2 or 3 rows depending on the action_flag.
 
@@ -54,43 +78,38 @@ def generate_csv(fore_name, dose_amount, action_flag, headers="NHS_NUMBER", same
         if same_id:
 
             unique_id = str(uuid.uuid4())
-            data.append(create_row(unique_id, fore_name, dose_amount, "NEW", headers))
-            data.append(create_row(unique_id, fore_name, dose_amount, "NEW", headers))
+            data.append(create_row(unique_id, dose_amount, "NEW", headers))
+            data.append(create_row(unique_id, dose_amount, "NEW", headers))
         else:
             unique_ids = [str(uuid.uuid4()), str(uuid.uuid4())]
             for unique_id in unique_ids:
-                data.append(create_row(unique_id, fore_name, dose_amount, "NEW", headers))
+                data.append(create_row(unique_id, dose_amount, "NEW", headers))
 
     elif action_flag == "UPDATE":
         unique_id = str(uuid.uuid4())
-        data.append(create_row(unique_id, fore_name, dose_amount, "NEW", headers))
-        data.append(create_row(unique_id, fore_name, dose_amount, "UPDATE", headers))
+        data.append(create_row(unique_id, dose_amount, "NEW", headers))
+        data.append(create_row(unique_id, dose_amount, "UPDATE", headers))
 
     elif action_flag == "DELETE":
         unique_id = str(uuid.uuid4())
-        data.append(create_row(unique_id, fore_name, dose_amount, "NEW", headers))
-        data.append(create_row(unique_id, fore_name, dose_amount, "DELETE", headers))
+        data.append(create_row(unique_id, dose_amount, "NEW", headers))
+        data.append(create_row(unique_id, dose_amount, "DELETE", headers))
 
     elif action_flag == "REINSTATED":
         unique_id = str(uuid.uuid4())
-        data.append(create_row(unique_id, fore_name, dose_amount, "NEW", headers))
-        data.append(create_row(unique_id, fore_name, dose_amount, "DELETE", headers))
-        data.append(create_row(unique_id, fore_name, dose_amount, "UPDATE", headers))
+        data.append(create_row(unique_id, dose_amount, "NEW", headers))
+        data.append(create_row(unique_id, dose_amount, "DELETE", headers))
+        data.append(create_row(unique_id, dose_amount, "UPDATE", headers))
 
     elif action_flag == "UPDATE-REINSTATED":
         unique_id = str(uuid.uuid4())
-        data.append(create_row(unique_id, fore_name, dose_amount, "NEW", headers))
-        data.append(create_row(unique_id, fore_name, dose_amount, "DELETE", headers))
-        data.append(create_row(unique_id, fore_name, dose_amount, "UPDATE", headers))
-        data.append(create_row(unique_id, "fore_name", dose_amount, "UPDATE", headers))
+        data.append(create_row(unique_id, dose_amount, "NEW", headers))
+        data.append(create_row(unique_id, dose_amount, "DELETE", headers))
+        data.append(create_row(unique_id, dose_amount, "UPDATE", headers))
+        data.append(create_row(unique_id, dose_amount, "UPDATE", headers))
 
     df = pd.DataFrame(data)
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%f")[:-3]
-    file_name = (
-        f"COVID19_Vaccinations_v4_YGM41_{timestamp}.csv"
-        if file_key
-        else f"COVID19_Vaccinations_v5_YGM41_{timestamp}.csv"
-    )
+    file_name = get_file_name(vax_type, ods, version)
     df.to_csv(file_name, index=False, sep="|", quoting=csv.QUOTE_MINIMAL)
     return file_name
 
@@ -138,7 +157,7 @@ def delete_file_from_s3(bucket, key):
         raise Exception(f"Unexpected error during file deletion: {e}")
 
 
-def wait_for_ack_file(ack_prefix, input_file_name, timeout=120):
+def wait_for_ack_file(ack_prefix, input_file_name, timeout=1200):
     """Poll the ACK_BUCKET for an ack file that contains the input_file_name as a substring."""
 
     filename_without_ext = input_file_name[:-4] if input_file_name.endswith(".csv") else input_file_name
@@ -391,7 +410,7 @@ def upload_config_file(value):
     upload_file_to_s3(PERMISSIONS_CONFIG_FILE_KEY, CONFIG_BUCKET, INPUT_PREFIX)
 
 
-def generate_csv_with_ordered_100000_rows(file_name=None):
+def generate_csv_with_ordered_100000_rows(vax_type, ods):
     """
     Generate a CSV where:
     - 100 sets of (NEW → UPDATE → DELETE) are created.
@@ -407,13 +426,13 @@ def generate_csv_with_ordered_100000_rows(file_name=None):
     # Generate first 300 rows as structured NEW → UPDATE → DELETE sets
     for i in range(special_row_count // 3):  # 100 sets
         new_row = create_row(
-            unique_id=unique_ids[i], fore_name="PHYLIS", dose_amount="0.3", action_flag="NEW", header="NHS_NUMBER"
+            unique_id=unique_ids[i], dose_amount="0.3", action_flag="NEW", header="NHS_NUMBER"
         )
         update_row = create_row(
-            unique_id=unique_ids[i], fore_name="PHYLIS", dose_amount="0.4", action_flag="UPDATE", header="NHS_NUMBER"
+            unique_id=unique_ids[i], dose_amount="0.4", action_flag="UPDATE", header="NHS_NUMBER"
         )
         delete_row = create_row(
-            unique_id=unique_ids[i], fore_name="PHYLIS", dose_amount="0.1", action_flag="DELETE", header="NHS_NUMBER"
+            unique_id=unique_ids[i], dose_amount="0.1", action_flag="DELETE", header="NHS_NUMBER"
         )
 
         special_data.append((new_row, update_row, delete_row))  # Keep them as ordered tuples
@@ -427,7 +446,7 @@ def generate_csv_with_ordered_100000_rows(file_name=None):
     # Generate remaining 99,700 rows as CREATE operations
     create_data = [
         create_row(
-            unique_id=str(uuid.uuid4()), action_flag="NEW", dose_amount="0.3", fore_name="PHYLIS", header="NHS_NUMBER"
+            unique_id=str(uuid.uuid4()), action_flag="NEW", dose_amount="0.3", header="NHS_NUMBER"
         )
         for _ in range(total_rows - special_row_count)
     ]
@@ -443,8 +462,7 @@ def generate_csv_with_ordered_100000_rows(file_name=None):
 
     # Convert to DataFrame and save as CSV
     df = pd.DataFrame(full_data)
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%f")[:-3]
-    file_name = f"RSV_Vaccinations_v5_YGM41_{timestamp}.csv" if not file_name else file_name
+    file_name = get_file_name(vax_type, ods, "5")
     df.to_csv(file_name, index=False, sep="|", quoting=csv.QUOTE_MINIMAL)
     return file_name
 
@@ -465,3 +483,39 @@ def verify_final_ack_file(file_key):
             f"All values OK: {all_ok}"
         )
     return True
+
+
+def get_file_name(vax_type, ods, version="4"):
+    dt = datetime.now(timezone.utc)
+    timestamp = dt.strftime("%Y%m%dT%H%M%S%f")[:-3]
+    return f"{vax_type}_Vaccinations_v{version}_{ods}_{timestamp}.csv"
+
+
+def generate_csv_files(seed_data_list: list[SeedTestData]) -> list[TestData]:
+    """Generate CSV files based on a list of SeedTestData instances."""
+    test_data = []
+    for seed_data in seed_data_list:
+        for action in seed_data.actions:
+            file_name = generate_csv(
+                dose_amount=seed_data.dose_amount,
+                action_flag=action,
+                headers=seed_data.header,
+                same_id=seed_data.inject_char,
+                vax_type=seed_data.vax,
+                ods=seed_data.ods,
+            )
+        test_data.append(
+            TestData(file_name, seed_data.success, seed_data.description, seed_data.actions)
+        )
+    return test_data
+
+
+def generate_csv_file(seed: SeedTestData, action: str):
+
+    unique_id = str(uuid.uuid4())
+    data = []
+    data.append(create_row(unique_id, seed.dose_amount, action, seed.header))
+    df = pd.DataFrame(data)
+    file_name = get_file_name(seed.vax, seed.ods, seed.version)
+    df.to_csv(file_name, index=False, sep="|", quoting=csv.QUOTE_MINIMAL)
+    return file_name

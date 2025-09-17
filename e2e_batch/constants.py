@@ -18,12 +18,12 @@ CONFIG_BUCKET = "imms-internal-dev-supplier-config"
 PERMISSIONS_CONFIG_FILE_KEY = "permissions_config.json"
 
 
-def create_row(unique_id, fore_name, dose_amount, action_flag, header):
+def create_row(unique_id, dose_amount, action_flag, header):
     """Helper function to create a single row with the specified UNIQUE_ID and ACTION_FLAG."""
 
     return {
         header: "9732928395",
-        "PERSON_FORENAME": fore_name,
+        "PERSON_FORENAME": "PHYLIS",
         "PERSON_SURNAME": "James",
         "PERSON_DOB": "20080217",
         "PERSON_GENDER_CODE": "0",
