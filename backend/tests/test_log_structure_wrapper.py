@@ -49,7 +49,8 @@ class TestFunctionInfoWrapper(unittest.TestCase):
 
         # Assert
         self.assertEqual(result, "Success")
-        mock_logger.info.assert_called()
+        self.assertEqual(mock_logger.info.call_count, 2)
+
         mock_firehose_logger.send_log.assert_called()
 
         args, kwargs = mock_logger.info.call_args
