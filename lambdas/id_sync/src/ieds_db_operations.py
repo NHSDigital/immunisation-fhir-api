@@ -107,63 +107,65 @@ def ieds_update_patient_id(old_id: str, new_id: str) -> dict:
         )
 
 
-def get_items_from_patient_id(id: str, filter_expression=None) -> list:
-    """Query the PatientGSI and paginate through all results.
+def get_items_from_patient_id(id: str) -> list:
+    """Public wrapper: build PatientPK and return all matching items.
 
-    - Uses LastEvaluatedKey to page until all items are collected.
-    - If `filter_expression` is provided it will be included as `FilterExpression`.
-    - Raises `IdSyncException` if the DynamoDB response doesn't include 'Items' or
-      an underlying error occurs.
+    Delegates actual paging to the internal helper `_paginate_items_for_patient_pk`.
+    Raises IdSyncException on error.
     """
-    logger.info(f"Getting items for patient id: {id}")
+    logger.info("Getting items for patient id: %s", id)
     patient_pk = f"Patient#{id}"
-
-    all_items: list = []
-    last_evaluated_key = None
     try:
-        while True:
-            query_args = {
-                "IndexName": "PatientGSI",
-                "KeyConditionExpression": Key('PatientPK').eq(patient_pk),
-            }
-            if filter_expression is not None:
-                query_args["FilterExpression"] = filter_expression
-            if last_evaluated_key:
-                query_args["ExclusiveStartKey"] = last_evaluated_key
-
-            response = get_ieds_table().query(**query_args)
-
-            if "Items" not in response:
-                # Unexpected DynamoDB response shape - surface as IdSyncException
-                logger.exception("Unexpected DynamoDB response: missing 'Items'")
-                raise IdSyncException(
-                    message="No Items in DynamoDB response",
-                    nhs_numbers=[patient_pk],
-                    exception=response,
-                )
-
-            items = response.get("Items", [])
-            all_items.extend(items)
-
-            last_evaluated_key = response.get("LastEvaluatedKey")
-            if not last_evaluated_key:
-                break
-
-        if not all_items:
-            logger.warning(f"No items found for patient PK: {patient_pk}")
-            return []
-
-        return all_items
-
+        return paginate_items_for_patient_pk(patient_pk)
     except IdSyncException:
         raise
     except Exception as e:
-        logger.exception(f"Error querying items for patient PK: {patient_pk}")
+        logger.exception("Error querying items for patient PK: %s", patient_pk)
         raise IdSyncException(
             message=f"Error querying items for patient PK: {patient_pk}",
             nhs_numbers=[patient_pk],
             exception=e,
         )
+
+
+def paginate_items_for_patient_pk(patient_pk: str) -> list:
+    """Internal helper that pages through the PatientGSI and returns all items.
+
+    Raises IdSyncException when the DynamoDB response is malformed.
+    """
+    all_items: list = []
+    last_evaluated_key = None
+    while True:
+        query_args = {
+            "IndexName": "PatientGSI",
+            "KeyConditionExpression": Key('PatientPK').eq(patient_pk),
+        }
+        if last_evaluated_key:
+            query_args["ExclusiveStartKey"] = last_evaluated_key
+
+        response = get_ieds_table().query(**query_args)
+
+        if "Items" not in response:
+            # Unexpected DynamoDB response shape - surface as IdSyncException
+            logger.exception("Unexpected DynamoDB response: missing 'Items'")
+            raise IdSyncException(
+                message="No Items in DynamoDB response",
+                nhs_numbers=[patient_pk],
+                exception=response,
+            )
+
+        items = response.get("Items", [])
+        all_items.extend(items)
+
+        last_evaluated_key = response.get("LastEvaluatedKey")
+        if not last_evaluated_key:
+            break
+
+    if not all_items:
+        logger.warning("No items found for patient PK: %s", patient_pk)
+        return []
+
+    return all_items
 
 
 def extract_patient_resource_from_item(item: dict) -> dict | None:
