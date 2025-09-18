@@ -35,5 +35,5 @@ module "mesh" {
   compress_threshold               = 1 * 1024 * 1024
   get_message_max_concurrency      = 10
   handshake_schedule               = "rate(24 hours)"
-  fetch_message_lambda_memory_size = 512
+  fetch_message_lambda_memory_size = var.aws_environment == "prod" ? 512 : 128
 }
