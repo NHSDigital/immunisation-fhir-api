@@ -21,7 +21,10 @@
   },
   {
     "supplier": "RAVS",
-    "permissions": ["RSV.RS"],
+    "permissions": [
+      "MMR.CRUDS",
+      "RSV.RS"
+    ],
     "ods_codes": ["X26", "X8E5B"]
   },
   {
