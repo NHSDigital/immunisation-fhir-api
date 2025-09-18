@@ -2,7 +2,7 @@ from boto3.dynamodb.conditions import Key
 from os_vars import get_ieds_table_name
 from common.aws_dynamodb import get_dynamodb_table
 from common.clients import logger, dynamodb_client
-from utils import log_status, BATCH_SIZE
+from utils import make_status, BATCH_SIZE
 from exceptions.id_sync_exception import IdSyncException
 
 ieds_table = None
@@ -21,10 +21,10 @@ def ieds_update_patient_id(old_id: str, new_id: str, items_to_update: list | Non
     """Update the patient ID in the IEDS table."""
     logger.info(f"ieds_update_patient_id. Update patient ID from {old_id} to {new_id}")
     if not old_id or not new_id or not old_id.strip() or not new_id.strip():
-        return log_status("Old ID and New ID cannot be empty", old_id, "error")
+        return make_status("Old ID and New ID cannot be empty", old_id, "error")
 
     if old_id == new_id:
-        return log_status(f"No change in patient ID: {old_id}", old_id)
+        return make_status(f"No change in patient ID: {old_id}", old_id)
 
     try:
         logger.info(f"Updating patient ID in IEDS from {old_id} to {new_id}")
@@ -37,7 +37,7 @@ def ieds_update_patient_id(old_id: str, new_id: str, items_to_update: list | Non
 
         if not items_to_update:
             logger.warning(f"No items found to update for patient ID: {old_id}")
-            return log_status(f"No items found to update for patient ID: {old_id}", old_id)
+            return make_status(f"No items found to update for patient ID: {old_id}", old_id)
 
         logger.info(f"Items to update: {len(items_to_update)}")
 
@@ -52,12 +52,12 @@ def ieds_update_patient_id(old_id: str, new_id: str, items_to_update: list | Non
             f"All batches complete. Total batches: {total_batches}, All successful: {all_batches_successful}")
 
         if all_batches_successful:
-            return log_status(
+            return make_status(
                 f"IEDS update, patient ID: {old_id}=>{new_id}. {len(items_to_update)} updated {total_batches}.",
                 old_id,
             )
         else:
-            return log_status(f"Failed to update some batches for patient ID: {old_id}", old_id, "error")
+            return make_status(f"Failed to update some batches for patient ID: {old_id}", old_id, "error")
 
     except Exception as e:
         logger.exception("Error updating patient ID")

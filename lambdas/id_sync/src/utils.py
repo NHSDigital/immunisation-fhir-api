@@ -1,7 +1,7 @@
 from typing import Dict, Any
 
 
-def log_status(msg: str, nhs_number: str | None = None, status: str = "success") -> Dict[str, Any]:
+def make_status(msg: str, nhs_number: str | None = None, status: str = "success") -> Dict[str, Any]:
     """Return a simple status dict used by record processing for observability.
 
     If `nhs_number` is None the key is omitted which keeps the output shape

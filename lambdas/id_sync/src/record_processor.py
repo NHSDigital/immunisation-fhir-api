@@ -6,7 +6,7 @@ from ieds_db_operations import (
     extract_patient_resource_from_item,
     get_items_from_patient_id,
 )
-from utils import log_status
+from utils import make_status
 import json
 import ast
 
@@ -43,33 +43,35 @@ def process_nhs_number(nhs_number: str) -> Dict[str, Any]:
     new_nhs_number = pds_get_patient_id(nhs_number)
 
     if not new_nhs_number:
-        return log_status("No patient ID found for NHS number", nhs_number)
+        return make_status("No patient ID found for NHS number", nhs_number)
 
     if new_nhs_number == nhs_number:
-        return log_status("No update required", nhs_number)
+        return make_status("No update required", nhs_number)
+
     logger.info("Update patient ID from %s to %s", nhs_number, new_nhs_number)
 
     try:
-        pds_details, ieds_details = fetch_demographic_details(nhs_number)
+        # Fetch PDS Patient resource and IEDS resources for the old NHS number
+        pds_patient_resource, ieds_resources = fetch_pds_and_ieds_resources(nhs_number)
     except Exception as e:
         logger.exception("process_nhs_number: failed to fetch demographic details: %s", e)
-        return log_status(str(e), nhs_number, "error")
+        return make_status(str(e), nhs_number, "error")
 
-    if not ieds_details:
+    if not ieds_resources:
         logger.info("No IEDS records returned for NHS number: %s", nhs_number)
-        return log_status(f"No records returned for ID: {nhs_number}", nhs_number)
+        return make_status(f"No records returned for ID: {nhs_number}", nhs_number)
 
     # Compare demographics from PDS to each IEDS item, keep only matching records
     matching_records, discarded_records = [], []
-    for detail in ieds_details:
-        if demographics_match(pds_details, detail):
+    for detail in ieds_resources:
+        if demographics_match(pds_patient_resource, detail):
             matching_records.append(detail)
         else:
             discarded_records.append(detail)
 
     if not matching_records:
         logger.info("No records matched PDS demographics: %d", len(discarded_records))
-        return log_status("No records matched PDS demographics; update skipped", nhs_number)
+        return make_status("No records matched PDS demographics; update skipped", nhs_number)
 
     response = ieds_update_patient_id(
         nhs_number, new_nhs_number, items_to_update=matching_records
@@ -81,7 +83,8 @@ def process_nhs_number(nhs_number: str) -> Dict[str, Any]:
     return response
 
 
-def fetch_demographic_details(nhs_number: str):
+# Function to fetch PDS Patient details and IEDS Immunisation records
+def fetch_pds_and_ieds_resources(nhs_number: str):
     try:
         pds = pds_get_patient_details(nhs_number)
     except Exception as e:
