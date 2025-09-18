@@ -312,6 +312,7 @@ class TestUpdatePatientIdInIEDS(TestIedsDbOperations):
             "status": "success",
             "message": f"IEDS update, patient ID: {old_id}=>{new_id}. {len(mock_items)} updated 1."
         }
+        expected_result["nhs_number"] = old_id
         self.assertEqual(result, expected_result)
 
         # Verify get_items_from_patient_id was called
@@ -342,6 +343,7 @@ class TestUpdatePatientIdInIEDS(TestIedsDbOperations):
             "status": "error",
             "message": f"Failed to update some batches for patient ID: {old_id}"
         }
+        expected_result["nhs_number"] = old_id
         self.assertEqual(result, expected_result)
 
         # Verify transact_write_items was called (not update_item)
@@ -364,6 +366,7 @@ class TestUpdatePatientIdInIEDS(TestIedsDbOperations):
             "status": "success",
             "message": f"No items found to update for patient ID: {old_id}"
         }
+        expected_result["nhs_number"] = old_id
         self.assertEqual(result, expected_result)
 
         # Verify get_items_from_patient_id was called
@@ -386,6 +389,7 @@ class TestUpdatePatientIdInIEDS(TestIedsDbOperations):
             "status": "error",
             "message": "Old ID and New ID cannot be empty"
         }
+        expected_result["nhs_number"] = old_id
         self.assertEqual(result, expected_result)
 
         # Verify no update was attempted
@@ -406,6 +410,7 @@ class TestUpdatePatientIdInIEDS(TestIedsDbOperations):
             "status": "error",
             "message": "Old ID and New ID cannot be empty"
         }
+        expected_result["nhs_number"] = old_id
         self.assertEqual(result, expected_result)
 
         # Verify no update was attempted
@@ -425,6 +430,7 @@ class TestUpdatePatientIdInIEDS(TestIedsDbOperations):
             "status": "success",
             "message": f"No change in patient ID: {patient_id}"
         }
+        expected_result["nhs_number"] = patient_id
         self.assertEqual(result, expected_result)
 
         # Verify no update was attempted

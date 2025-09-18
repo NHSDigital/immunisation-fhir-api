@@ -6,6 +6,7 @@ from ieds_db_operations import (
     extract_patient_resource_from_item,
     get_items_from_patient_id,
 )
+from utils import log_status
 import json
 import ast
 
@@ -162,7 +163,3 @@ def demographics_match(pds_details: dict, ieds_item: dict) -> bool:
         logger.exception("demographics_match: comparison failed with exception")
         return False
 
-
-def log_status(msg: str, nhs_number: str, status: str = "success") -> Dict[str, Any]:
-    message = {"status": status, "message": msg, "nhs_number": nhs_number}
-    return message
