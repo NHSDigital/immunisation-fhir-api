@@ -23,6 +23,14 @@ class TestFunctionInfoWrapper(unittest.TestCase):
     def mock_function_raises(_event, _context):
         raise ValueError("Test error")
 
+    def extract_all_call_args_for_logger(self, mock_logger) -> list:
+        """Extracts all arguments for logger.*."""
+        return (
+            [ args[0] for args, _ in mock_logger.info.call_args_list ]
+            + [ args[0] for args, _ in mock_logger.warning.call_args_list ]
+            + [ args[0] for args, _ in mock_logger.error.call_args_list ]
+        )
+
     def test_successful_execution(self, mock_logger, mock_firehose_logger):
         # Arrange
         test_correlation = "test_correlation"
@@ -65,7 +73,8 @@ class TestFunctionInfoWrapper(unittest.TestCase):
         self.assertEqual(logged_info['local_id'], '12345^http://test')
         self.assertEqual(logged_info['vaccine_type'], 'FLU')
 
-    def test_successful_execution_logger(self, mock_logger, mock_firehose_logger):
+    def test_successful_execution_pii(self, mock_logger, mock_firehose_logger):
+        """Pass personally identifiable information in an event, and ensure that it is not logged anywhere."""
         # Arrange
         test_correlation = "test_correlation"
         test_request = "test_request"
@@ -83,7 +92,7 @@ class TestFunctionInfoWrapper(unittest.TestCase):
             },
             'path': test_actual_path,
             'requestContext': {'resourcePath': test_resource_path},
-            'body': "{\"identifier\": [{\"system\": \"http://test\", \"value\": \"12345\"}], \"protocolApplied\": [{\"targetDisease\": [{\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"840539006\", \"display\": \"Disease caused by severe acute respiratory syndrome coronavirus 2\"}]}]}]}"
+            'body': "{\"identifier\": [{\"system\": \"http://test\", \"value\": \"12345\"}], \"contained\": [{\"resourceType\": \"Patient\", \"id\": \"Pat1\", \"identifier\": [{\"system\": \"https://fhir.nhs.uk/Id/nhs-number\", \"value\": \"9693632109\"}]}], \"protocolApplied\": [{\"targetDisease\": [{\"coding\": [{\"system\": \"http://snomed.info/sct\", \"code\": \"840539006\", \"display\": \"Disease caused by severe acute respiratory syndrome coronavirus 2\"}]}]}]}"
         }
 
         # Act
@@ -91,7 +100,9 @@ class TestFunctionInfoWrapper(unittest.TestCase):
 
         # Assert
         self.assertEqual(result, "Success")
-        self.assertEqual(mock_logger.info.call_count, 2)
+
+        for logger_info in self.extract_all_call_args_for_logger(mock_logger):
+            self.assertNotIn("9693632109", str(logger_info))
 
     def test_exception_handling(self, mock_logger, mock_firehose_logger):
         # Arrange
