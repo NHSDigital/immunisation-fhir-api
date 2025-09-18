@@ -1,5 +1,5 @@
 from common.clients import logger
-from typing import Dict, List, Any
+from typing import Dict, Any
 from pds_details import pds_get_patient_id, pds_get_patient_details
 from ieds_db_operations import (
     ieds_update_patient_id,
@@ -42,43 +42,24 @@ def process_nhs_number(nhs_number: str) -> Dict[str, Any]:
     new_nhs_number = pds_get_patient_id(nhs_number)
 
     if not new_nhs_number:
-        return {
-            "status": "success",
-            "message": "No patient ID found for NHS number",
-            "nhs_number": nhs_number,
-        }
+        return log_status("No patient ID found for NHS number", nhs_number)
 
     if new_nhs_number == nhs_number:
-        return {
-            "status": "success",
-            "message": "No update required",
-            "nhs_number": nhs_number,
-        }
+        return log_status("No update required", nhs_number)
     logger.info("Update patient ID from %s to %s", nhs_number, new_nhs_number)
 
     try:
         pds_details, ieds_details = fetch_demographic_details(nhs_number)
     except Exception as e:
         logger.exception("process_nhs_number: failed to fetch demographic details: %s", e)
-        return {
-                "status": "error",
-                "message": str(e),
-                "nhs_number": nhs_number,
-        }
+        return log_status(str(e), nhs_number, "error")
 
-    # If no IEDS items were returned, nothing to update — return a clear success
-    # message to match existing test expectations.
     if not ieds_details:
         logger.info("No IEDS records returned for NHS number: %s", nhs_number)
-        return {
-            "status": "success",
-            "message": f"No records returned for ID: {nhs_number}",
-            "nhs_number": nhs_number,
-        }
+        return log_status(f"No records returned for ID: {nhs_number}", nhs_number)
 
-    # If at least one IEDS item matches demographics, proceed with update
-    matching_records: List[Dict[str, Any]] = []
-    discarded_records: List[Dict[str, Any]] = []
+    # Compare demographics from PDS to each IEDS item, keep only matching records
+    matching_records, discarded_records = [], []
     for detail in ieds_details:
         if demographics_match(pds_details, detail):
             matching_records.append(detail)
@@ -86,17 +67,8 @@ def process_nhs_number(nhs_number: str) -> Dict[str, Any]:
             discarded_records.append(detail)
 
     if not matching_records:
-        logger.info(
-            "No records matched PDS demographics; skipping update for %s",
-            nhs_number,
-        )
-        return {
-            "status": "success",
-            "message": "No records matched PDS demographics; update skipped",
-            "nhs_number": nhs_number,
-            "matched": 0,
-            "discarded": len(discarded_records),
-        }
+        logger.info("No records matched PDS demographics: %d", len(discarded_records))
+        return log_status("No records matched PDS demographics; update skipped", nhs_number)
 
     response = ieds_update_patient_id(
         nhs_number, new_nhs_number, items_to_update=matching_records
@@ -189,3 +161,8 @@ def demographics_match(pds_details: dict, ieds_item: dict) -> bool:
     except Exception:
         logger.exception("demographics_match: comparison failed with exception")
         return False
+
+
+def log_status(msg: str, nhs_number: str, status: str = "success") -> Dict[str, Any]:
+    message = {"status": status, "message": msg, "nhs_number": nhs_number}
+    return message
