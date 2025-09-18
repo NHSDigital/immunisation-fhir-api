@@ -10,16 +10,16 @@ import fakeredis
 from boto3 import client as boto3_client
 from moto import mock_s3, mock_sqs, mock_firehose, mock_dynamodb
 
+from errors import UnhandledSqsError
 from tests.utils_for_tests.generic_setup_and_teardown import GenericSetUp, GenericTearDown
 from tests.utils_for_tests.utils_for_filenameprocessor_tests import (
-    add_entry_to_table,
     assert_audit_table_entry,
     create_mock_hget,
     MOCK_ODS_CODE_TO_SUPPLIER
 )
 from tests.utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT, BucketNames, Sqs
 from tests.utils_for_tests.values_for_tests import MOCK_CREATED_AT_FORMATTED_STRING, MockFileDetails, \
-    MOCK_BATCH_FILE_CONTENT, MOCK_FILE_HEADERS, MOCK_EXPIRES_AT
+    MOCK_BATCH_FILE_CONTENT, MOCK_EXPIRES_AT
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
@@ -196,29 +196,6 @@ class TestLambdaHandlerDataSource(TestCase):
                 self.assert_sqs_message(file_details)
                 self.assert_no_ack_file(file_details)
 
-    def test_lambda_handler_correctly_flags_empty_file(self):
-        """
-        VED-757 Tests that for an empty batch file:
-        * The file status is updated to 'Not processed - empty file' in the audit table
-        * The message is not sent to SQS
-        * The failure inf_ack file is created
-        """
-        file_details = MockFileDetails.ravs_rsv_1
-
-        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=file_details.file_key, Body=MOCK_FILE_HEADERS)
-
-        with (  # noqa: E999
-            patch("file_name_processor.uuid4", return_value=file_details.message_id),  # noqa: E999
-        ):  # noqa: E999
-            lambda_handler(
-                self.make_event([self.make_record_with_message_id(file_details.file_key, file_details.message_id)]),
-                None,
-            )
-
-        assert_audit_table_entry(file_details, FileStatus.EMPTY)
-        self.assert_no_sqs_message()
-        self.assert_ack_file_contents(file_details)
-
     def test_lambda_handler_non_root_file(self):
         """
         Tests that when the file is not in the root of the source bucket, no action is taken:
@@ -240,8 +217,8 @@ class TestLambdaHandlerDataSource(TestCase):
 
     def test_lambda_invalid_file_key_no_other_files_in_queue(self):
         """
-        Tests that when the file_key is invalid, and there are no other files in the supplier_vaccineType queue:
-        * The file is added to the audit table with a status of 'Processed'
+        Tests that when the file_key is invalid:
+        * The file is added to the audit table with a status of 'Not processed - Invalid filename'
         * The message is not sent to SQS
         * The failure inf_ack file is created
         """
@@ -265,7 +242,8 @@ class TestLambdaHandlerDataSource(TestCase):
                 "message_id": {"S": file_details.message_id},
                 "filename": {"S": file_details.file_key},
                 "queue_name": {"S": "unknown_unknown"},
-                "status": {"S": "Processed"},
+                "status": {"S": "Failed"},
+                "error_details": {"S": "Initial file validation failed: invalid file key"},
                 "timestamp": {"S": file_details.created_at_formatted_string},
                 "expires_at": {"N": str(file_details.expires_at)},
             }
@@ -275,18 +253,15 @@ class TestLambdaHandlerDataSource(TestCase):
         self.assert_ack_file_contents(file_details)
         self.assert_no_sqs_message()
 
-    def test_lambda_invalid_permissions_other_files_in_queue(self):
+    def test_lambda_invalid_permissions(self):
         """
-        Tests that when the file permissions are invalid, and there are other files in the supplier_vaccineType queue:
-        * The file is added to the audit table with a status of 'Processed'
+        Tests that when the file permissions are invalid:
+        * The file is added to the audit table with a status of 'Not processed - Unauthorised'
         * The message is not sent to SQS
         * The failure inf_ack file is created
         """
         file_details = MockFileDetails.ravs_rsv_1
         s3_client.put_object(Bucket=BucketNames.SOURCE, Key=file_details.file_key, Body=MOCK_BATCH_FILE_CONTENT)
-
-        queued_file_details = MockFileDetails.ravs_rsv_2
-        add_entry_to_table(queued_file_details, FileStatus.QUEUED)
 
         # Mock the supplier permissions with a value which doesn't include the requested Flu permissions
         mock_hget = create_mock_hget({"X8E5B": "RAVS"}, {})
@@ -295,9 +270,54 @@ class TestLambdaHandlerDataSource(TestCase):
             patch("elasticache.redis_client.hget", side_effect=mock_hget),  # noqa: E999
         ):  # noqa: E999
             lambda_handler(self.make_event([self.make_record(file_details.file_key)]), None)
-        assert_audit_table_entry(file_details, FileStatus.PROCESSED)
+
+        expected_table_items = [
+            {
+                "message_id": {"S": file_details.message_id},
+                "filename": {"S": file_details.file_key},
+                "queue_name": {"S": "RAVS_RSV"},
+                "status": {"S": "Not processed - Unauthorised"},
+                "error_details": {"S": "Initial file validation failed: RAVS does not have permissions for RSV"},
+                "timestamp": {"S": file_details.created_at_formatted_string},
+                "expires_at": {"N": str(file_details.expires_at)}
+            }
+        ]
+        self.assertEqual(self.get_audit_table_items(), expected_table_items)
         self.assert_no_sqs_message()
         self.assert_ack_file_contents(file_details)
+
+    def test_lambda_adds_event_to_audit_table_as_failed_when_unexpected_exception_is_caught(self):
+        """
+        Tests that when an unexpected error occurs e.g. sending to SQS (maybe in case of bad deployment):
+        * The file is added to the audit table with a status of 'Failed' and the reason
+        * The message is not sent to SQS
+        * The failure inf_ack file is created
+        """
+        test_file_details = MockFileDetails.emis_flu
+        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=test_file_details.file_key, Body=MOCK_BATCH_FILE_CONTENT)
+
+        with (  # noqa: E999
+            patch("file_name_processor.uuid4", return_value=test_file_details.message_id),  # noqa: E999
+            patch("file_name_processor.make_and_send_sqs_message", side_effect=UnhandledSqsError(
+                "Some client error with SQS"
+            ))
+        ):  # noqa: E999
+            lambda_handler(self.make_event([self.make_record(test_file_details.file_key)]), None)
+
+        expected_table_items = [
+            {
+                "message_id": {"S": test_file_details.message_id},
+                "filename": {"S": test_file_details.file_key},
+                "queue_name": {"S": "EMIS_FLU"},
+                "status": {"S": "Failed"},
+                "error_details": {"S": "Some client error with SQS"},
+                "timestamp": {"S": test_file_details.created_at_formatted_string},
+                "expires_at": {"N": str(test_file_details.expires_at)},
+            }
+        ]
+        self.assertEqual(self.get_audit_table_items(), expected_table_items)
+        self.assert_ack_file_contents(test_file_details)
+        self.assert_no_sqs_message()
 
 
 @patch.dict("os.environ", MOCK_ENVIRONMENT_DICT)

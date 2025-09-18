@@ -65,6 +65,8 @@ class TestFileKeyValidation(TestCase):
             (VALID_FLU_EMIS_FILE_KEY.upper(), "YGM41", ("FLU", "EMIS")),
             # Valid RSV/ RAVS file key
             (VALID_RSV_RAVS_FILE_KEY, "X8E5B", ("RSV", "RAVS")),
+            # VED-763 - Some suppliers may include ODS code at end of file for uniqueness
+            ("RSV_Vaccinations_v5_X8E5B_20000101T00000001_ODS123.csv", "X8E5B", ("RSV", "RAVS")),
         ]
 
         for file_key, ods_code, expected_result in test_cases_for_success_scenarios:
@@ -75,19 +77,20 @@ class TestFileKeyValidation(TestCase):
 
         key_format_error_message = "Initial file validation failed: invalid file key format"
         invalid_file_key_error_message = "Initial file validation failed: invalid file key"
+        missing_file_extension_error_message = "Initial file validation failed: missing file extension"
         test_cases_for_failure_scenarios = [
             # File key with no '.'
-            (VALID_FLU_EMIS_FILE_KEY.replace(".", ""), key_format_error_message),
+            (VALID_FLU_EMIS_FILE_KEY.replace(".", ""), missing_file_extension_error_message),
             # File key with additional '.'
             (VALID_FLU_EMIS_FILE_KEY[:2] + "." + VALID_FLU_EMIS_FILE_KEY[2:], key_format_error_message),
             # File key with additional '_'
-            (VALID_FLU_EMIS_FILE_KEY[:2] + "_" + VALID_FLU_EMIS_FILE_KEY[2:], key_format_error_message),
+            (VALID_FLU_EMIS_FILE_KEY[:2] + "_" + VALID_FLU_EMIS_FILE_KEY[2:], invalid_file_key_error_message),
             # File key with missing '_'
             (VALID_FLU_EMIS_FILE_KEY.replace("_", "", 1), key_format_error_message),
             # File key with missing '_'
             (VALID_FLU_EMIS_FILE_KEY.replace("_", ""), key_format_error_message),
             # File key with missing extension
-            (VALID_FLU_EMIS_FILE_KEY.replace(".csv", ""), key_format_error_message),
+            (VALID_FLU_EMIS_FILE_KEY.replace(".csv", ""), missing_file_extension_error_message),
             # File key with invalid vaccine type
             (VALID_FLU_EMIS_FILE_KEY.replace("FLU", "Flue"), invalid_file_key_error_message),
             # File key with missing vaccine type
@@ -110,6 +113,8 @@ class TestFileKeyValidation(TestCase):
             (VALID_FLU_EMIS_FILE_KEY.replace("20000101T00000001", ""), invalid_file_key_error_message),
             # File key with incorrect extension
             (VALID_FLU_EMIS_FILE_KEY.replace(".csv", ".xlsx"), invalid_file_key_error_message),
+            # File key with ODS code but missing _ in the initial part of file key
+            ("MMR_Vaccinations_v5_DPSFULL20250910T11225000_test.csv", invalid_file_key_error_message)
         ]
 
         for file_key, expected_result in test_cases_for_failure_scenarios:
