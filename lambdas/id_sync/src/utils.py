@@ -12,4 +12,5 @@ def log_status(msg: str, nhs_number: str | None = None, status: str = "success")
         result["nhs_number"] = nhs_number
     return result
 
+
 BATCH_SIZE = 25

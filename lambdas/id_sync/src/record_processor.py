@@ -162,4 +162,3 @@ def demographics_match(pds_details: dict, ieds_item: dict) -> bool:
     except Exception:
         logger.exception("demographics_match: comparison failed with exception")
         return False
-

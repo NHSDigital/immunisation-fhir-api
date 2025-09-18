@@ -36,7 +36,8 @@ class TestIedsDbOperationsConditional(unittest.TestCase):
     def test_ieds_update_with_items_to_update_uses_provided_list(self):
         items = [{'PK': 'Patient#1'}, {'PK': 'Patient#1#r2'}]
         # patch transact_write_items to return success
-        self.mock_dynamodb_client.transact_write_items = MagicMock(return_value={'ResponseMetadata': {'HTTPStatusCode': 200}})
+        self.mock_dynamodb_client.transact_write_items = MagicMock(
+            return_value={'ResponseMetadata': {'HTTPStatusCode': 200}})
 
         res = ieds_db_operations.ieds_update_patient_id('1', '2', items_to_update=items)
         self.assertEqual(res['status'], 'success')
@@ -64,7 +65,8 @@ class TestIedsDbOperationsConditional(unittest.TestCase):
 
     def test_ieds_update_non_200_response(self):
         items = [{'PK': 'Patient#1'}]
-        self.mock_dynamodb_client.transact_write_items = MagicMock(return_value={'ResponseMetadata': {'HTTPStatusCode': 500}})
+        self.mock_dynamodb_client.transact_write_items = MagicMock(
+            return_value={'ResponseMetadata': {'HTTPStatusCode': 500}})
 
         res = ieds_db_operations.ieds_update_patient_id('1', '2', items_to_update=items)
         self.assertEqual(res['status'], 'error')
