@@ -7,7 +7,7 @@ version: 2
 updates:
   - package-ecosystem: "docker"
     directories:
-      - "/ack_backend"
+      - "/lambdas/ack_backend"
       - "/delta_backend"
       - "/filenameprocessor"
       - "/grafana/non-prod/docker"
@@ -49,7 +49,7 @@ updates:
   - package-ecosystem: "pip"
     directories:
       - "/"
-      - "/ack_backend"
+      - "/lambdas/ack_backend"
       - "/backend"
       - "/batch_processor_filter"
       - "/delta_backend"

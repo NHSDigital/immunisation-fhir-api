@@ -13,7 +13,7 @@
 			"path": "recordprocessor"
 		},
 		{
-			"path": "ack_backend"
+			"path": "lambdas/ack_backend"
 		},
 		{
 			"path": "delta_backend"

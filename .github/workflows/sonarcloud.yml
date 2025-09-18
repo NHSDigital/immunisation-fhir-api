@@ -81,15 +81,15 @@ jobs:
           poetry run coverage xml -o ../recordforwarder-coverage.xml
 
       - name: Run unittest with coverage-ack-lambda
-        working-directory: ack_backend
+        working-directory: lambdas/ack_backend
         id: acklambda
         env:
-          PYTHONPATH: ${{ github.workspace }}/ack_backend/src:${{ github.workspace }}/ack_backend/tests
+          PYTHONPATH: ${{ env.LAMBDA_PATH }}/ack_backend/src:${{ github.workspace }}/ack_backend/tests
         continue-on-error: true
         run: |
-          poetry install
-          poetry run coverage run -m unittest discover || echo "ack-lambda tests failed" >> ../failed_tests.txt
-          poetry run coverage xml -o ../ack-lambda-coverage.xml
+            poetry install
+            poetry run coverage run -m unittest discover || echo "ack-lambda tests failed" >> ../../failed_tests.txt
+            poetry run coverage xml -o ../../ack-lambda-coverage.xml
 
       - name: Run unittest with coverage-delta
         working-directory: delta_backend

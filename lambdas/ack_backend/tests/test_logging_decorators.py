@@ -1,8 +1,8 @@
 import unittest
-from unittest.mock import patch, MagicMock, call
+from unittest.mock import patch
 import logging_decorators
-import json
 import time
+
 
 class TestLoggingDecorators(unittest.TestCase):
     def setUp(self):
@@ -126,6 +126,7 @@ class TestLoggingDecorators(unittest.TestCase):
             dummy_lambda({}, {})
         self.mock_logger.error.assert_called()
         self.mock_firehose.put_record.assert_called()
+
 
 if __name__ == "__main__":
     unittest.main()
