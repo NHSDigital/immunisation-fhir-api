@@ -11,6 +11,3 @@ def make_status(msg: str, nhs_number: str | None = None, status: str = "success"
     if nhs_number is not None:
         result["nhs_number"] = nhs_number
     return result
-
-
-BATCH_SIZE = 25

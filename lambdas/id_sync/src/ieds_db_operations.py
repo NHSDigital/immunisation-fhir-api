@@ -2,10 +2,11 @@ from boto3.dynamodb.conditions import Key
 from os_vars import get_ieds_table_name
 from common.aws_dynamodb import get_dynamodb_table
 from common.clients import logger, dynamodb_client
-from utils import make_status, BATCH_SIZE
+from utils import make_status
 from exceptions.id_sync_exception import IdSyncException
 
 ieds_table = None
+BATCH_SIZE = 25  # DynamoDB TransactWriteItems max batch size
 
 
 def get_ieds_table():
