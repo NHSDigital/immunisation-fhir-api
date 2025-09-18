@@ -62,15 +62,16 @@ def process_nhs_number(nhs_number: str) -> Dict[str, Any]:
         return make_status(f"No records returned for ID: {nhs_number}", nhs_number)
 
     # Compare demographics from PDS to each IEDS item, keep only matching records
-    matching_records, discarded_records = [], []
+    matching_records = []
+    discarded_count = 0
     for detail in ieds_resources:
         if demographics_match(pds_patient_resource, detail):
             matching_records.append(detail)
         else:
-            discarded_records.append(detail)
+            discarded_count += 1
 
     if not matching_records:
-        logger.info("No records matched PDS demographics: %d", len(discarded_records))
+        logger.info("No records matched PDS demographics: %d", discarded_count)
         return make_status("No records matched PDS demographics; update skipped", nhs_number)
 
     response = ieds_update_patient_id(
@@ -79,7 +80,7 @@ def process_nhs_number(nhs_number: str) -> Dict[str, Any]:
     response["nhs_number"] = nhs_number
     # add counts for observability
     response["matched"] = len(matching_records)
-    response["discarded"] = len(discarded_records)
+    response["discarded"] = discarded_count
     return response
 
 
