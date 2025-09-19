@@ -56,13 +56,9 @@ class TestClients(unittest.TestCase):
         self.mock_boto3_client.assert_any_call("firehose", region_name=self.AWS_REGION)
 
     def test_redis_client(self):
-        ''' Test redis client is created with correct parameters '''
+        ''' Test redis client is not initialized on import '''
         importlib.reload(clients)
-        self.mock_redis.assert_called_once_with(
-            host=self.REDIS_HOST,
-            port=self.REDIS_PORT,
-            decode_responses=True
-        )
+        self.mock_redis.assert_not_called()
 
     def test_logging_setup(self):
         ''' Test logging is set up correctly '''
@@ -75,8 +71,10 @@ class TestClients(unittest.TestCase):
         clients.logger.setLevel.assert_called_once_with("INFO")
 
     def test_redis_client_initialization(self):
-        ''' Test redis client initialization '''
+        ''' Test redis client is initialized exactly once even with multiple invocations'''
         importlib.reload(clients)
+        clients.get_redis_client()
+        clients.get_redis_client()
         self.mock_redis.assert_called_once_with(host=self.REDIS_HOST, port=self.REDIS_PORT, decode_responses=True)
         self.assertTrue(hasattr(clients, 'redis_client'))
         self.assertIsInstance(clients.redis_client, self.mock_redis.return_value.__class__)

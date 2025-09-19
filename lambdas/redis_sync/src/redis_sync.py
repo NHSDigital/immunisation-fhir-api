@@ -1,6 +1,6 @@
 from event_read import read_event
 from record_processor import process_record
-from common.clients import redis_client, STREAM_NAME, logger
+from common.clients import get_redis_client, STREAM_NAME, logger
 from common.log_decorator import logging_decorator
 from common.s3_event import S3Event
 '''
@@ -35,7 +35,7 @@ def handler(event, _):
         no_records = "No records found in event"
         # check if the event requires a read, ie {"read": "my-hashmap"}
         if "read" in event:
-            return read_event(redis_client, event, logger)
+            return read_event(get_redis_client(), event, logger)
         elif "Records" in event:
             logger.info("Processing S3 event with %d records", len(event.get('Records', [])))
             s3_records = S3Event(event).get_s3_records()

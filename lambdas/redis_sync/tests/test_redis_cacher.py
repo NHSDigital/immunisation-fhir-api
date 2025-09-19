@@ -11,7 +11,7 @@ class TestRedisCacher(unittest.TestCase):
         self.mock_s3_reader = self.s3_reader_patcher.start()
         self.transform_map_patcher = patch("redis_cacher.transform_map")
         self.mock_transform_map = self.transform_map_patcher.start()
-        self.redis_client_patcher = patch("redis_cacher.redis_client")
+        self.redis_client_patcher = patch("common.clients.redis_client")
         self.mock_redis_client = self.redis_client_patcher.start()
         self.logger_info_patcher = patch("logging.Logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
