@@ -60,6 +60,17 @@ def validate_file_key(file_key: str) -> tuple[str, str]:
 
     valid_vaccine_types = get_valid_vaccine_types_from_cache()
 
+    # debug the check values
+    print("SAW ----------- DEBUG -------------")
+    print(f"vaccine_type: {vaccine_type}  ")
+    print(f"vaccination: {vaccination}  ")
+    print(f"version: {version}  ")
+    print(f"ods_code: {ods_code}  ")
+    print(f"timestamp: {timestamp}  ")
+    print(f"extension: {extension}  ")
+    print(f"supplier: {supplier}  ")
+    print(f"valid_vaccine_types: {valid_vaccine_types}  ")
+
     # Validate each file key element
     if not (
         vaccine_type in valid_vaccine_types

@@ -41,7 +41,8 @@ ods_vaccines = {
 }
 
 
-class SeedTestData:
+class TestData:
+
     def __init__(self, description, vax_ods, actions: list, header="NHS_NUMBER",
                  success: bool = True, dose_amount=0.5, inject_char=False, version=4,
                  check_ack=False):
@@ -55,15 +56,7 @@ class SeedTestData:
         self.inject_char = inject_char
         self.version = version
         self.check_ack = check_ack
-
-
-class TestData:
-    def __init__(self, file_name, success, description, action):
-        self.file_name = file_name
-        self.success = success
-        self.description = description
-        self.action = action
-        self.key = None
+        self.file_name = None
 
 
 def generate_csv(dose_amount, action_flag, headers="NHS_NUMBER", same_id=False, version="4",
@@ -197,12 +190,17 @@ def wait_for_ack_file(ack_prefix, input_file_name, timeout=1200):
     )
 
 
-def poll_destination(input_file_name, check_ack: bool = False):
+class DestinationType:
+    INF = ACK_PREFIX
+    BUS = FORWARDEDFILE_PREFIX
+
+
+def poll_destination(input_file_name, ack_prefix: DestinationType):
     """Poll the ACK_BUCKET for an ack file that contains the input_file_name as a substring."""
 
     filename_without_ext = input_file_name[:-4] if input_file_name.endswith(".csv") else input_file_name
 
-    ack_prefix = ACK_PREFIX if check_ack else FORWARDEDFILE_PREFIX
+    # ack_prefix = ACK_PREFIX if sub_folder == DestinationType.INF else FORWARDEDFILE_PREFIX
 
     search_pattern = f"{ack_prefix}{filename_without_ext}"
     return poll_s3_file_pattern(ack_prefix, search_pattern)
@@ -525,33 +523,25 @@ def verify_final_ack_file(file_key):
 
 
 def get_file_name(vax_type, ods, version="4"):
-    dt = datetime.now(timezone.utc)
-    timestamp = dt.strftime("%Y%m%dT%H%M%S%f")[:-3]
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S00")
+    # timestamp = timestamp[:-3]
     return f"{vax_type}_Vaccinations_v{version}_{ods}_{timestamp}.csv"
 
 
-def generate_csv_files(seed_data_list: list[SeedTestData]) -> list[TestData]:
-    """Generate CSV files based on a list of SeedTestData instances."""
-    test_data = []
+def generate_csv_files(seed_data_list: list[TestData]) -> list[TestData]:
+    """Generate CSV files based on a list of TestData instances."""
     for seed_data in seed_data_list:
-        for action in seed_data.actions:
-            file_name = generate_csv(
-                dose_amount=seed_data.dose_amount,
-                action_flag=action,
-                headers=seed_data.header,
-                same_id=seed_data.inject_char,
-                vax_type=seed_data.vax,
-                ods=seed_data.ods,
-            )
-            test_data.append(TestData(file_name, seed_data.success, seed_data.description, action))
-    return test_data
+        file_name = (generate_csv_file(seed_data, actions=seed_data.actions))
+        seed_data.file_name = file_name
+    return seed_data_list
 
 
-def generate_csv_file(seed: SeedTestData, action: str):
+def generate_csv_file(seed: TestData, actions: str) -> str:
 
     unique_id = str(uuid.uuid4())
     data = []
-    data.append(create_row(unique_id, seed.dose_amount, action, seed.header))
+    for action in actions:
+        data.append(create_row(unique_id, seed.dose_amount, action, seed.header))
     df = pd.DataFrame(data)
     file_name = get_file_name(seed.vax, seed.ods, seed.version)
     df.to_csv(file_name, index=False, sep="|", quoting=csv.QUOTE_MINIMAL)
