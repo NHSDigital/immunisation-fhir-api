@@ -2,9 +2,9 @@
 
 from re import match
 from datetime import datetime
-from constants import VALID_VERSIONS, EMPTY_BATCH_FILE_SIZE_IN_BYTES
+from constants import VALID_VERSIONS
 from elasticache import get_valid_vaccine_types_from_cache, get_supplier_system_from_cache
-from errors import InvalidFileKeyError, EmptyFileError
+from errors import InvalidFileKeyError
 
 
 def is_file_in_directory_root(file_key: str) -> bool:
@@ -72,9 +72,3 @@ def validate_file_key(file_key: str) -> tuple[str, str]:
         raise InvalidFileKeyError("Initial file validation failed: invalid file key")
 
     return vaccine_type, supplier
-
-
-def validate_file_not_empty(s3_response: dict) -> None:
-    """Checks that the batch file from S3 is not empty or containing only the header row"""
-    if s3_response.get("ContentLength", 0) <= EMPTY_BATCH_FILE_SIZE_IN_BYTES:
-        raise EmptyFileError("Initial file validation failed: batch file was empty")

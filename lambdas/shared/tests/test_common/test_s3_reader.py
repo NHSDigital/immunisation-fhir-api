@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import patch, MagicMock
-from s3_reader import S3Reader
+from common.s3_reader import S3Reader
 
 
 class TestS3Reader(unittest.TestCase):
@@ -10,7 +10,7 @@ class TestS3Reader(unittest.TestCase):
         self.key = "test.json"
 
         # Patch s3_client
-        self.s3_client_patcher = patch("s3_reader.s3_client")
+        self.s3_client_patcher = patch("common.s3_reader.s3_client")
         self.mock_s3_client = self.s3_client_patcher.start()
 
         self.logger_info_patcher = patch("logging.Logger.info")

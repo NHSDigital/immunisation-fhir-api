@@ -2,8 +2,8 @@ import requests
 import uuid
 
 from common.authentication import AppRestrictedAuth
-from common.models.errors import UnhandledResponseError
 from common.clients import logger
+from common.models.errors import UnhandledResponseError
 
 
 class PdsService:

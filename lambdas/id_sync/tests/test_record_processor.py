@@ -7,17 +7,22 @@ class TestRecordProcessor(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures and mocks"""
+        # Patch logger
         self.logger_patcher = patch('record_processor.logger')
         self.mock_logger = self.logger_patcher.start()
 
+        # PDS helpers
         self.pds_get_patient_id_patcher = patch('record_processor.pds_get_patient_id')
         self.mock_pds_get_patient_id = self.pds_get_patient_id_patcher.start()
 
-        self.ieds_check_exist_patcher = patch('record_processor.ieds_check_exist')
-        self.mock_ieds_check_exist = self.ieds_check_exist_patcher.start()
+        self.pds_get_patient_details_patcher = patch('record_processor.pds_get_patient_details')
+        self.mock_pds_get_patient_details = self.pds_get_patient_details_patcher.start()
 
         self.ieds_update_patient_id_patcher = patch('record_processor.ieds_update_patient_id')
         self.mock_ieds_update_patient_id = self.ieds_update_patient_id_patcher.start()
+
+        self.get_items_from_patient_id_patcher = patch('record_processor.get_items_from_patient_id')
+        self.mock_get_items_from_patient_id = self.get_items_from_patient_id_patcher.start()
 
     def tearDown(self):
         patch.stopall()
@@ -26,59 +31,192 @@ class TestRecordProcessor(unittest.TestCase):
         """Test successful processing when patient ID matches"""
         # Arrange
         test_id = "54321"
-        with patch('record_processor.ieds_check_exist', return_value=True):
+        # Simulate IEDS items exist
+        self.mock_get_items_from_patient_id.return_value = [{"Resource": {}}]
+        test_record = {"body": {"subject": test_id}}
+        self.mock_pds_get_patient_id.return_value = test_id
 
-            test_record = {"body": {"subject": test_id}}
-            self.mock_pds_get_patient_id.return_value = test_id
+        # Act
+        result = process_record(test_record)
 
-            # Act
-            result = process_record(test_record)
+        # Assert
+        self.assertEqual(result["nhs_number"], test_id)
+        self.assertEqual(result["message"], "No update required")
+        self.assertEqual(result["status"], "success")
 
-            # Assert
-            self.assertEqual(result["nhs_number"], test_id)
-            self.assertEqual(result["message"], "No update required")
-            self.assertEqual(result["status"], "success")
-
-            # Verify calls
-            self.mock_pds_get_patient_id.assert_called_once_with(test_id)
+        # Verify calls
+        self.mock_pds_get_patient_id.assert_called_once_with(test_id)
 
     def test_process_record_success_update_required(self):
-        """Test successful processing when patient ID differs"""
+        """Test successful processing when patient ID differs and demographics match"""
         # Arrange
-        pds_id = "pds-id-1"
-        nhs_number = "nhs-number-1"
+        pds_id = "9000000008"
+        nhs_number = "9000000009"
 
         test_sqs_record = {"body": {"subject": nhs_number}}
         self.mock_pds_get_patient_id.return_value = pds_id
+
+        # pds_get_patient_details should return details used by demographics_match
+        self.mock_pds_get_patient_details.return_value = {
+            "name": [{"given": ["John"], "family": "Doe"}],
+            "gender": "male",
+            "birthDate": "1980-01-01",
+        }
+
+        # Provide one IEDS item that will match demographics via demographics_match
+        matching_item = {
+            "Resource": {
+                "resourceType": "Immunization",
+                "contained": [
+                    {
+                        "resourceType": "Patient",
+                        "id": "Pat1",
+                        "name": [{"given": ["John"], "family": "Doe"}],
+                        "gender": "male",
+                        "birthDate": "1980-01-01",
+                    }
+                ]
+            }
+        }
+        self.mock_get_items_from_patient_id.return_value = [matching_item]
+
         success_response = {"status": "success"}
         self.mock_ieds_update_patient_id.return_value = success_response
+
         # Act
         result = process_record(test_sqs_record)
 
         # Assert
-        expected_result = success_response
-        self.assertEqual(result, expected_result)
-
-        # Verify calls
+        self.assertEqual(result, success_response)
         self.mock_pds_get_patient_id.assert_called_once_with(nhs_number)
+
+    def test_process_record_demographics_mismatch_skips_update(self):
+        """If no IEDS item matches demographics, the update should be skipped"""
+        # Arrange
+        pds_id = "pds-1"
+        nhs_number = "nhs-1"
+        test_sqs_record = {"body": {"subject": nhs_number}}
+
+        self.mock_pds_get_patient_id.return_value = pds_id
+        self.mock_pds_get_patient_details.return_value = {
+            "name": [{"given": ["Alice"], "family": "Smith"}],
+            "gender": "female",
+            "birthDate": "1995-05-05",
+        }
+
+        # IEDS items exist but do not match demographics
+        non_matching_item = {
+            "Resource": {
+                "resourceType": "Immunization",
+                "contained": [
+                    {
+                        "resourceType": "Patient",
+                        "id": "Pat2",
+                        "name": [{"given": ["Bob"], "family": "Jones"}],
+                        "gender": "male",
+                        "birthDate": "1990-01-01",
+                    }
+                ]
+            }
+        }
+        self.mock_get_items_from_patient_id.return_value = [non_matching_item]
+
+    # Act
+        result = process_record(test_sqs_record)
+
+        # Assert
+        self.assertEqual(result["status"], "success")
+        self.assertEqual(result["message"], "No records matched PDS demographics; update skipped")
+
+    def test_invalid_body_parsing_returns_error(self):
+        """When body is a malformed string, process_record should return an error"""
+        bad_record = {"body": "not-a-json-or-python-literal"}
+        result = process_record(bad_record)
+        self.assertEqual(result["status"], "error")
+        self.assertIn("Invalid body format", result["message"])
+
+    def test_no_subject_in_body_returns_error(self):
+        """When body doesn't contain a subject, return an error"""
+        result = process_record({"body": {"other": "value"}})
+        self.assertEqual(result["status"], "error")
+        self.assertIn("No NHS number found", result["message"])
+
+    def test_pds_details_exception_aborts_update(self):
+        """If fetching PDS details raises, function should return error"""
+        nhs_number = "nhs-exc-1"
+        test_sqs_record = {"body": {"subject": nhs_number}}
+        # pds returns a different id to force update path
+        self.mock_pds_get_patient_id.return_value = "pds-new"
+        self.mock_get_items_from_patient_id.return_value = [{"Resource": {}}]
+        self.mock_pds_get_patient_details.side_effect = Exception("pds fail")
+
+        result = process_record(test_sqs_record)
+        self.assertEqual(result["status"], "error")
+        self.assertIn("Failed to fetch PDS details", result["message"])
+
+    def test_get_items_exception_aborts_update(self):
+        """If fetching IEDS items raises, function should return error"""
+        nhs_number = "nhs-exc-2"
+        test_sqs_record = {"body": {"subject": nhs_number}}
+        self.mock_pds_get_patient_id.return_value = "pds-new"
+        self.mock_get_items_from_patient_id.return_value = [{"Resource": {}}]
+        self.mock_pds_get_patient_details.return_value = {
+            "name": [{"given": ["J"], "family": "K"}],
+            "gender": "male", "birthDate": "2000-01-01"
+        }
+        self.mock_get_items_from_patient_id.side_effect = Exception("dynamo fail")
+
+        result = process_record(test_sqs_record)
+        self.assertEqual(result["status"], "error")
+        self.assertIn("Failed to fetch IEDS items", result["message"])
+
+    def test_update_called_on_match(self):
+        """Verify ieds_update_patient_id is called when demographics match"""
+        pds_id = "pds-match"
+        nhs_number = "nhs-match"
+        test_sqs_record = {"body": {"subject": nhs_number}}
+        self.mock_pds_get_patient_id.return_value = pds_id
+        self.mock_pds_get_patient_details.return_value = {
+            "name": [
+                {
+                    "given": ["Sarah"],
+                    "family": "Fowley"}
+                ],
+            "gender": "male",
+            "birthDate": "1956-07-09"
+        }
+        item = {
+            "Resource": {
+                "resourceType": "Immunization",
+                "contained": [{
+                    "resourceType": "Patient",
+                    "id": "PatM",
+                    "name": [{"given": ["Sarah"], "family": "Fowley"}],
+                    "gender": "male", "birthDate": "1956-07-09"}
+                ]}
+            }
+        self.mock_get_items_from_patient_id.return_value = [item]
+        self.mock_ieds_update_patient_id.return_value = {"status": "success"}
+
+        result = process_record(test_sqs_record)
+        self.assertEqual(result["status"], "success")
+        self.mock_ieds_update_patient_id.assert_called_once_with(nhs_number, pds_id, items_to_update=[item])
 
     def test_process_record_no_records_exist(self):
         """Test when no records exist for the patient ID"""
-
         # Arrange
         test_id = "12345"
-        with patch('record_processor.ieds_check_exist', return_value=False):
+        # Simulate no IEDS items
+        self.mock_get_items_from_patient_id.return_value = []
+        test_record = {"body": {"subject": test_id}}
 
-            # Act
-            test_record = {"body": {"subject": test_id}}
-            result = process_record(test_record)
+        # Act
+        result = process_record(test_record)
 
-            # Assert
-            self.assertEqual(result["status"], "success")
-            self.assertEqual(result["message"], f"No records returned for ID: {test_id}")
+        self.assertEqual(result["message"], f"No records returned for ID: {test_id}")
 
-            # Verify PDS was not called
-            self.mock_pds_get_patient_id.assert_called_once()
+        # Verify PDS was not called
+        self.mock_pds_get_patient_id.assert_called_once()
 
     def test_process_record_pds_returns_none_id(self):
         """Test when PDS returns none """
@@ -86,11 +224,13 @@ class TestRecordProcessor(unittest.TestCase):
         test_id = "12345a"
         self.mock_pds_get_patient_id.return_value = None
         test_record = {"body": {"subject": test_id}}
+
         # Act & Assert
         result = process_record(test_record)
         self.assertEqual(result["status"], "success")
-        self.assertEqual(result["message"], f"No patient ID found for NHS number: {test_id}")
-        self.mock_ieds_check_exist.assert_not_called()
+        self.assertEqual(result["message"], "No patient ID found for NHS number")
+        # No IEDS lookups should have been attempted when PDS returns None
+        self.mock_get_items_from_patient_id.assert_not_called()
         self.mock_ieds_update_patient_id.assert_not_called()
 
     def test_process_record_ieds_returns_false(self):
@@ -99,7 +239,9 @@ class TestRecordProcessor(unittest.TestCase):
         test_id = "12345a"
         pds_id = "pds-id-1"
         self.mock_pds_get_patient_id.return_value = pds_id
-        self.mock_ieds_check_exist.return_value = False
+        # Simulate no items returned from IEDS
+        self.mock_get_items_from_patient_id.return_value = []
+
         # Act & Assert
         result = process_record({"body": {"subject": test_id}})
         self.assertEqual(result["status"], "success")
@@ -112,9 +254,135 @@ class TestRecordProcessor(unittest.TestCase):
         new_test_id = "nhs-number-2"
 
         self.mock_pds_get_patient_id.return_value = new_test_id
+        # Mock demographics so update proceeds
+        self.mock_pds_get_patient_details.return_value = {
+            "name": [{"given": ["A"], "family": "B"}],
+            "gender": "female", "birthDate": "1990-01-01"
+        }
+        self.mock_get_items_from_patient_id.return_value = [{
+            "Resource": {
+                "resourceType": "Immunization",
+                "contained": [
+                    {
+                        "resourceType": "Patient",
+                        "id": "Pat3",
+                        "name": [{"given": ["A"], "family": "B"}],
+                        "gender": "female", "birthDate": "1990-01-01"
+                    }
+                ]
+            }
+        }]
         self.mock_ieds_update_patient_id.return_value = {"status": "success"}
         # Act
         result = process_record(test_record)
 
         # Assert
         self.assertEqual(result["status"], "success")
+
+    def test_process_record_birthdate_mismatch_skips_update(self):
+        """If birthDate differs between PDS and IEDS, update should be skipped"""
+        pds_id = "pds-2"
+        nhs_number = "nhs-2"
+        test_sqs_record = {"body": {"subject": nhs_number}}
+
+        self.mock_pds_get_patient_id.return_value = pds_id
+        self.mock_pds_get_patient_details.return_value = {
+            "name": [{"given": ["John"], "family": "Doe"}],
+            "gender": "male",
+            "birthDate": "1980-01-01",
+        }
+
+        # IEDS has different birthDate
+        item = {
+            "Resource": {
+                "resourceType": "Immunization",
+                "contained": [
+                    {
+                        "resourceType": "Patient",
+                        "id": "PatX",
+                        "name":
+                        [{
+                            "given": ["John"],
+                            "family": "Doe"
+                        }],
+                        "gender": "male",
+                        "birthDate": "1980-01-02"
+                    }
+                ]
+            }
+        }
+        self.mock_get_items_from_patient_id.return_value = [item]
+
+        result = process_record(test_sqs_record)
+        self.assertEqual(result["status"], "success")
+        self.assertEqual(result["message"], "No records matched PDS demographics; update skipped")
+
+    def test_process_record_gender_mismatch_skips_update(self):
+        """If gender differs between PDS and IEDS, update should be skipped"""
+        pds_id = "pds-3"
+        nhs_number = "nhs-3"
+        test_sqs_record = {"body": {"subject": nhs_number}}
+
+        self.mock_pds_get_patient_id.return_value = pds_id
+        self.mock_pds_get_patient_details.return_value = {
+            "name": [{"given": ["Alex"], "family": "Smith"}],
+            "gender": "female",
+            "birthDate": "1992-03-03",
+        }
+
+        # IEDS has different gender
+        item = {
+            "Resource": {
+                "resourceType": "Immunization",
+                "contained": [
+                    {
+                        "resourceType": "Patient",
+                        "id": "PatY",
+                        "name": [{
+                            "given": ["Alex"],
+                            "family": "Smith"
+                        }],
+                        "gender": "male",
+                        "birthDate": "1992-03-03"
+                    }
+                ]
+            }
+        }
+        self.mock_get_items_from_patient_id.return_value = [item]
+
+        result = process_record(test_sqs_record)
+        self.assertEqual(result["status"], "success")
+        self.assertEqual(result["message"], "No records matched PDS demographics; update skipped")
+
+    def test_process_record_no_comparable_fields_skips_update(self):
+        """If PDS provides no comparable fields, do not update (skip)"""
+        pds_id = "pds-4"
+        nhs_number = "nhs-4"
+        test_sqs_record = {"body": {"subject": nhs_number}}
+
+        self.mock_pds_get_patient_id.return_value = pds_id
+        # PDS returns minimal/empty details
+        self.mock_pds_get_patient_details.return_value = {}
+
+        item = {
+            "Resource": {
+                "resourceType": "Immunization",
+                "contained": [
+                    {
+                        "resourceType": "Patient",
+                        "id": "PatZ",
+                        "name": [{
+                            "given": ["Zoe"],
+                            "family": "Lee"
+                        }],
+                        "gender": "female",
+                        "birthDate": "2000-01-01"
+                    }
+                ]
+            }
+        }
+        self.mock_get_items_from_patient_id.return_value = [item]
+
+        result = process_record(test_sqs_record)
+        self.assertEqual(result["status"], "success")
+        self.assertEqual(result["message"], "No records matched PDS demographics; update skipped")
