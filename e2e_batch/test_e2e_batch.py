@@ -8,7 +8,7 @@ from utils import (
     generate_csv_files,
     TestData,
     poll_destination,
-    DestinationType
+    DestinationType,
 )
 
 from constants import (
