@@ -44,7 +44,7 @@ ods_vaccines = {
 class TestData:
 
     def __init__(self, description, vax_ods, actions: list, header="NHS_NUMBER",
-                 success: bool = True, dose_amount=0.5, inject_char=False, version=4,
+                 success: bool = True, dose_amount=0.5, inject_char=False, version=5,
                  check_ack=False):
         self.description = description
         self.dose_amount = dose_amount
@@ -56,7 +56,8 @@ class TestData:
         self.inject_char = inject_char
         self.version = version
         self.check_ack = check_ack
-        self.file_name = None
+        self.key = None
+        self.ack_keys = {DestinationType.INF: None, DestinationType.BUS: None}
 
 
 def generate_csv(dose_amount, action_flag, headers="NHS_NUMBER", same_id=False, version="4",
@@ -522,7 +523,7 @@ def verify_final_ack_file(file_key):
     return True
 
 
-def get_file_name(vax_type, ods, version="4"):
+def get_file_name(vax_type, ods, version="5"):
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S00")
     # timestamp = timestamp[:-3]
     if is_valid_datetime(timestamp) is False:

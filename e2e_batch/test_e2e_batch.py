@@ -14,6 +14,7 @@ from utils import (
 from constants import (
     SOURCE_BUCKET,
     INPUT_PREFIX,
+    ACK_BUCKET,
     environment
 )
 
@@ -49,40 +50,29 @@ class TestE2EBatch(unittest.TestCase):
             test.key = key
 
         # dictionary of file name to track whether inf and bus acks have been received
-        pending = {test.file_name: {DestinationType.INF: True, DestinationType.BUS: True} for test in test_datas}
-
         start_time = time.time()
         # while there are still pending files, poll for acks and forwarded files
-        while pending:
-            for file_name in list(pending.keys()):
-                test = pending[file_name]
+        pending = True
+        while pending and (time.time() - start_time) < max_timeout:
+            pending = False
+            for test_data in test_datas:
                 # loop through keys in test (inf and bus)
-                for key in test.keys():
-                    if test[key]:
-                        is_pending = poll_destination(file_name, key)
-                        if is_pending:
-                            test[key] = False
-            for file_name in list(pending.keys()):
-                test = pending[file_name]
-                # if both inf and bus are False, remove from pending
-                if not test[DestinationType.INF] and not test[DestinationType.BUS]:
-                    del pending[file_name]
-
-            # if max_timeout exceeded, break
-            if (time.time() - start_time) > max_timeout:
-                break
-
+                for ack_key in test_data.ack_keys.keys():
+                    if not test_data.ack_keys[ack_key]:
+                        found_ack_key = poll_destination(test_data.file_name, ack_key)
+                        if found_ack_key:
+                            test_data.ack_keys[ack_key] = found_ack_key
+                        else:
+                            pending = True
             if pending:
                 time.sleep(1)
 
         # Now validate all files have been processed correctly
-        for test in test_datas:
+        for test_data in test_datas:
             # Validate the ACK file
-            ack_content = get_file_content_from_s3(environment.ACK_BUCKET, test.file_name)
-            fwd_content = get_file_content_from_s3(environment.FORWARDEDFILE_BUCKET, test.fwd_key)
+            inf_ack_content = get_file_content_from_s3(ACK_BUCKET, test_data.ack_keys[DestinationType.INF])
+            bus_ack_content = get_file_content_from_s3(ACK_BUCKET, test_data.ack_keys[DestinationType.BUS])
 
-            check_ack_file_content(ack_content, "OK", None, test.action)
-            validate_row_count(test.file_name, test.key)
-            # Validate the forwarded file
-            validate_row_count(test.file_name, test.key)
-            check_ack_file_content(fwd_content, "OK", None, test.action)
+            check_ack_file_content(inf_ack_content, "Success", None, test_data.actions)
+            validate_row_count(test_data.file_name, test_data.ack_keys[DestinationType.BUS])
+            # how to validate bus ack content?
