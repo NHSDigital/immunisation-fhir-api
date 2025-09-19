@@ -20,7 +20,9 @@ def is_valid_datetime(timestamp: str) -> bool:
     where 'zz' is a two digit number indicating the timezone
     """
     # Check that datetime (excluding timezone) is a valid datetime in the expected format.
+    print(f"Validating timestamp: {timestamp}")
     if len(timestamp) < 15:
+        print("Timestamp is too short")
         return False
 
     # Note that any digits after the seconds (i.e. from the 16th character onwards, usually expected to represent
@@ -59,6 +61,25 @@ def validate_file_key(file_key: str) -> tuple[str, str]:
     supplier = get_supplier_system_from_cache(ods_code)
 
     valid_vaccine_types = get_valid_vaccine_types_from_cache()
+
+    # debug the check values
+    print("SAW ----------- DEBUG -------------")
+    print(f"vaccine_type: {vaccine_type}  ")
+    print(f"vaccination: {vaccination}  ")
+    print(f"version: {version}  ")
+    print(f"ods_code: {ods_code}  ")
+    print(f"timestamp: {timestamp}  ")
+    print(f"extension: {extension}  ")
+    print(f"supplier: {supplier}  ")
+    print(f"valid_vaccine_types: {valid_vaccine_types}  ")
+
+    print(f"vaccine_type in valid_vaccine_types: {vaccine_type in valid_vaccine_types}  ")
+    print(f"vaccination == 'VACCINATIONS': {vaccination == 'VACCINATIONS'}  ")
+    print(f"version in VALID_VERSIONS: {version in VALID_VERSIONS}  ")
+    print(f"supplier: {supplier}  ")
+    print(f"is_valid_datetime(timestamp): {is_valid_datetime(timestamp)}  ")
+    print(f"extension check: {(extension == 'CSV') or (extension == 'DAT')}  ")
+    print("SAW ----------- END DEBUG -------------")
 
     # Validate each file key element
     if not (
