@@ -526,8 +526,6 @@ def verify_final_ack_file(file_key):
 def get_file_name(vax_type, ods, version="5"):
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S00")
     # timestamp = timestamp[:-3]
-    if is_valid_datetime(timestamp) is False:
-        print("Timestamp is not valid")
     return f"{vax_type}_Vaccinations_v{version}_{ods}_{timestamp}.csv"
 
 
@@ -549,24 +547,3 @@ def generate_csv_file(seed: TestData, actions: str) -> str:
     file_name = get_file_name(seed.vax, seed.ods, seed.version)
     df.to_csv(file_name, index=False, sep="|", quoting=csv.QUOTE_MINIMAL)
     return file_name
-
-
-def is_valid_datetime(timestamp: str) -> bool:
-    """
-    Returns a bool to indicate whether the timestamp is a valid datetime in the format 'YYYYmmddTHHMMSSzz'
-    where 'zz' is a two digit number indicating the timezone
-    """
-    # Check that datetime (excluding timezone) is a valid datetime in the expected format.
-    print(f"Validating timestamp: {timestamp}")
-    if len(timestamp) < 15:
-        print("Timestamp is too short")
-        return False
-
-    # Note that any digits after the seconds (i.e. from the 16th character onwards, usually expected to represent
-    # timezone), do not need to be validated
-    try:
-        datetime.strptime(timestamp[:15], "%Y%m%dT%H%M%S")
-    except ValueError:
-        return False
-
-    return True
