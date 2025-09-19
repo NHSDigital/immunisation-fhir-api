@@ -26,28 +26,44 @@ from constants import (
     HEADER_RESPONSE_CODE_COLUMN,
 )
 
+ods_vaccines = {
+    "DPSFULL": ["3IN1", "COVID19", "FLU", "HPV", "MENACWY", "MMR", "RSV"],
+    "DPSREDUCED": ["3IN1", "COVID19", "FLU", "HPV", "MENACWY", "MMR", "RSV"],
+    "V0V8L": ["3IN1", "FLU", "HPV", "MENACWY", "MMR"],
+    "8HK48": ["FLU"],
+    "8HA94": ["COVID19"],
+    "X26": ["MMR", "RSV"],
+    "X8E5B": ["MMR", "RSV"],
+    "YGM41": ["3IN1", "COVID19", "HPV", "MENACWY", "MMR", "RSV"],
+    "YGJ": ["3IN1", "COVID19", "HPV", "MENACWY", "MMR", "RSV"],
+    "YGA": ["3IN1", "HPV", "MENACWY", "MMR", "RSV"],
+    "YGMYW": ["3IN1", "HPV", "MENACWY", "MMR", "RSV"],
+}
+
 
 class SeedTestData:
     def __init__(self, description, vax_ods, actions: list, header="NHS_NUMBER",
-                 success: bool = True, dose_amount=0.5, inject_char=False, version=4):
+                 success: bool = True, dose_amount=0.5, inject_char=False, version=4,
+                 check_ack=False):
         self.description = description
         self.dose_amount = dose_amount
         self.actions = actions
-        self.vax = vax_ods.key()
-        self.ods = vax_ods.value()[0]  # Use the first ODS code for the vaccine
+        self.vax = ods_vaccines[vax_ods][0]  # Use the first vaccine for the ods
+        self.ods = vax_ods
         self.success = success
         self.header = header
         self.inject_char = inject_char
         self.version = version
+        self.check_ack = check_ack
 
 
 class TestData:
-    def __init__(self, file_name, success, description, actions):
+    def __init__(self, file_name, success, description, action):
         self.file_name = file_name
         self.success = success
         self.description = description
-        self.actions = actions
-        self.key = None  # To be set when the file is uploaded to S3
+        self.action = action
+        self.key = None
 
 
 def generate_csv(dose_amount, action_flag, headers="NHS_NUMBER", same_id=False, version="4",
@@ -181,16 +197,14 @@ def wait_for_ack_file(ack_prefix, input_file_name, timeout=1200):
     )
 
 
-def poll_ack_file(ack_prefix, input_file_name):
+def poll_destination(input_file_name, check_ack: bool = False):
     """Poll the ACK_BUCKET for an ack file that contains the input_file_name as a substring."""
 
     filename_without_ext = input_file_name[:-4] if input_file_name.endswith(".csv") else input_file_name
-    if ack_prefix:
-        search_pattern = f"{ACK_PREFIX}{filename_without_ext}"
-        ack_prefix = ACK_PREFIX
-    else:
-        search_pattern = f"{FORWARDEDFILE_PREFIX}{filename_without_ext}"
-        ack_prefix = FORWARDEDFILE_PREFIX
+
+    ack_prefix = ACK_PREFIX if check_ack else FORWARDEDFILE_PREFIX
+
+    search_pattern = f"{ack_prefix}{filename_without_ext}"
     return poll_s3_file_pattern(ack_prefix, search_pattern)
 
 
@@ -529,9 +543,7 @@ def generate_csv_files(seed_data_list: list[SeedTestData]) -> list[TestData]:
                 vax_type=seed_data.vax,
                 ods=seed_data.ods,
             )
-        test_data.append(
-            TestData(file_name, seed_data.success, seed_data.description, seed_data.actions)
-        )
+            test_data.append(TestData(file_name, seed_data.success, seed_data.description, action))
     return test_data
 
 

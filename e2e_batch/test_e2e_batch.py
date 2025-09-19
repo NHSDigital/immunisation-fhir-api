@@ -3,17 +3,17 @@ import time
 from utils import (
     upload_file_to_s3,
     get_file_content_from_s3,
-    wait_for_ack_file,
     check_ack_file_content,
     validate_row_count,
     generate_csv_files,
-    SeedTestData
+    SeedTestData,
+    TestData,
+    poll_destination
 )
 
 from constants import (
     SOURCE_BUCKET,
     INPUT_PREFIX,
-    ACK_BUCKET,
     environment
 )
 
@@ -21,20 +21,6 @@ CREATE = "CREATE"
 UPDATE = "UPDATE"
 DELETE = "DELETE"
 
-
-ods_vaccines = {
-    "DPSFULL": ["3IN1", "COVID19", "FLU", "HPV", "MENACWY", "MMR", "RSV"],
-    "DPSREDUCED": ["3IN1", "COVID19", "FLU", "HPV", "MENACWY", "MMR", "RSV"],
-    "V0V8L": ["3IN1", "FLU", "HPV", "MENACWY", "MMR"],
-    "8HK48": ["FLU"],
-    "8HA94": ["COVID19"],
-    "X26": ["MMR", "RSV"],
-    "X8E5B": ["MMR", "RSV"],
-    "YGM41": ["3IN1", "COVID19", "HPV", "MENACWY", "MMR", "RSV"],
-    "YGJ": ["3IN1", "COVID19", "HPV", "MENACWY", "MMR", "RSV"],
-    "YGA": ["3IN1", "HPV", "MENACWY", "MMR", "RSV"],
-    "YGMYW": ["3IN1", "HPV", "MENACWY", "MMR", "RSV"],
-}
 
 seed_datas = [
     SeedTestData("Create", "V0V8L", [CREATE]),
@@ -50,39 +36,52 @@ seed_datas = [
 
 class TestE2EBatch(unittest.TestCase):
 
-    @unittest.skipIf(environment == "ref")
+    @unittest.skipIf(environment == "ref", "Skip for ref")
     def test_create_success(self):
         """Test CREATE scenario."""
+        max_timeout = 1200  # seconds
 
-        test_datas = generate_csv_files(seed_datas)
+        test_datas: list[TestData] = generate_csv_files(seed_datas)
 
         for test in test_datas:
+
             key = upload_file_to_s3(test.file_name, SOURCE_BUCKET, INPUT_PREFIX)
             test.key = key
 
-        process_acks_as_received(test_datas, ACK_BUCKET)
+        # dictionary of file name to track whether inf and bus acks have been received
+        pending = {test.file_name: {"inf": True, "bus": True} for test in test_datas}
 
+        start_time = time.time()
+        # while there are still pending files, poll for acks and forwarded files
+        while pending:
+            for file_name in list(pending.keys()):
+                test = pending[file_name]
+                for key in ["inf", "bus"]:
+                    if test[key]:
+                        inf_key = poll_destination(file_name, check_ack=test.check_ack)
+                        if inf_key:
+                            test[key] = False
+            for file_name in list(pending.keys()):
+                test = pending[file_name]
+                # if both inf and bus are False, remove from pending
+                if not test["inf"] and not test["bus"]:
+                    del pending[file_name]
 
-def process_acks_as_received(test_datas, ack_bucket, poll_interval=2, timeout=1200):
-    """
-    Polls for ACK files and processes them as soon as they are available.
-    """
-    start_time = time.time()
-    pending = {test.file_name: test for test in test_datas}
-    processed = set()
+            # if max_timeout exceeded, break
+            if (time.time() - start_time) > max_timeout:
+                break
 
-    while pending and (time.time() - start_time) < timeout:
-        for file_name in list(pending.keys()):
-            ack_key = wait_for_ack_file(None, file_name, ack_bucket, timeout=1)
-            if ack_key:
-                # Process the ACK immediately
-                validate_row_count(file_name, ack_key)
-                ack_content = get_file_content_from_s3(ack_bucket, ack_key)
-                check_ack_file_content(ack_content, "OK", None, "CREATE")
-                processed.add(file_name)
-                del pending[file_name]
-        if pending:
-            time.sleep(poll_interval)
+            if pending:
+                time.sleep(5)
 
-    if pending:
-        raise TimeoutError(f"Timeout waiting for ACKs: {list(pending.keys())}")
+        # Now validate all files have been processed correctly
+        for test in test_datas:
+            # Validate the ACK file
+            ack_content = get_file_content_from_s3(environment.ACK_BUCKET, test.file_name)
+            fwd_content = get_file_content_from_s3(environment.FORWARDEDFILE_BUCKET, test.fwd_key)
+
+            check_ack_file_content(ack_content, "OK", None, test.action)
+            validate_row_count(test.file_name, test.key)
+            # Validate the forwarded file
+            validate_row_count(test.file_name, test.key)
+            check_ack_file_content(fwd_content, "OK", None, test.action)
