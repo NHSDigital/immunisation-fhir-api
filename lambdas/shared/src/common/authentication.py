@@ -7,8 +7,8 @@ import uuid
 from enum import Enum
 
 from .cache import Cache
-from common.models.errors import UnhandledResponseError
 from common.clients import logger
+from common.models.errors import UnhandledResponseError
 
 
 class Service(Enum):
