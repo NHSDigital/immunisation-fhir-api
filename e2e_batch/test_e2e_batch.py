@@ -7,7 +7,6 @@ from utils import (
     validate_row_count,
     generate_csv_files,
     TestData,
-    poll_destination,
     DestinationType,
 )
 import logging
@@ -30,10 +29,9 @@ seed_datas = [
     TestData("Update", "8HK48", [CREATE, UPDATE]),
     TestData("Delete", "8HA94", [CREATE, UPDATE, DELETE]),
     TestData("Reinstate", "X26", [CREATE, DELETE, UPDATE]),
-    # TestData("Update-Reinstate", "X8E5B", [CREATE, DELETE, UPDATE, UPDATE]),
-    # TestData("Update-No Create", "YGM41", [UPDATE], success=False),
-    # TestData("Delete-No Create", "YGJ", [DELETE], success=False),
-    # TestData("Create with extended ascii characters in name", "YGA", [CREATE], inject_char=True),
+    TestData("Update no Create", "YGM41", [UPDATE], success=False),
+    TestData("Delete no Create", "YGJ", [DELETE], success=False),
+    TestData("Create with extended ascii characters in name", "YGA", [CREATE], inject_char=True),
 ]
 
 logging.basicConfig(level="INFO")
@@ -51,10 +49,10 @@ class TestE2EBatch(unittest.TestCase):
 
         test_datas: list[TestData] = generate_csv_files(seed_datas)
 
-        for test in test_datas:
-
-            key = upload_file_to_s3(test.file_name, SOURCE_BUCKET, INPUT_PREFIX)
-            test.key = key
+        for test_data in test_datas:
+            logging.info(f"Upload {test_data.file_name}")
+            key = upload_file_to_s3(test_data.file_name, SOURCE_BUCKET, INPUT_PREFIX)
+            test_data.key = key
 
         # dictionary of file name to track whether inf and bus acks have been received
         start_time = time.time()
@@ -63,15 +61,7 @@ class TestE2EBatch(unittest.TestCase):
         while pending and (time.time() - start_time) < max_timeout:
             pending = False
             for test_data in test_datas:
-                # loop through keys in test (inf and bus)
-                for ack_key in test_data.ack_keys.keys():
-                    if not test_data.ack_keys[ack_key]:
-                        found_ack_key = poll_destination(test_data.file_name, ack_key)
-                        if found_ack_key:
-                            test_data.ack_keys[ack_key] = found_ack_key
-                            logging.info(f"Found {ack_key} ack for {test_data.file_name}: {found_ack_key}")
-                        else:
-                            pending = True
+                pending = test_data.poll_destination(pending, logging)
             if pending:
                 time.sleep(1)
 
@@ -90,4 +80,3 @@ class TestE2EBatch(unittest.TestCase):
             # bus_ack_content = get_file_content_from_s3(ACK_BUCKET, test_data.ack_keys[DestinationType.BUS])
 
         logging.info(f"Completed all validations. Total time taken: {time.time() - start_time:.1f} seconds")
-

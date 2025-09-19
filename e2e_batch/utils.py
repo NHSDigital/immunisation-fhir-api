@@ -59,6 +59,18 @@ class TestData:
         self.key = None
         self.ack_keys = {DestinationType.INF: None, DestinationType.BUS: None}
 
+    def poll_destination(self, pending: bool, logging) -> bool:
+        # loop through keys in test (inf and bus)
+        for ack_key in self.ack_keys.keys():
+            if not self.ack_keys[ack_key]:
+                found_ack_key = poll_destination(self.file_name, ack_key)
+                if found_ack_key:
+                    self.ack_keys[ack_key] = found_ack_key
+                    logging.info(f"Found {found_ack_key}")
+                else:
+                    pending = True
+        return pending
+
 
 def generate_csv(dose_amount, action_flag, headers="NHS_NUMBER", same_id=False, version="4",
                  vax_type="RSV", ods="YGM41"):
@@ -539,10 +551,10 @@ def generate_csv_files(seed_data_list: list[TestData]) -> list[TestData]:
 
 def generate_csv_file(seed: TestData, actions: str) -> str:
 
-    unique_id = str(uuid.uuid4())
     data = []
     for action in actions:
-        data.append(create_row(unique_id, seed.dose_amount, action, seed.header))
+        unique_id = str(uuid.uuid4())
+        data.append(create_row(unique_id, seed.dose_amount, action, seed.header, seed.inject_char))
     df = pd.DataFrame(data)
     file_name = get_file_name(seed.vax, seed.ods, seed.version)
     df.to_csv(file_name, index=False, sep="|", quoting=csv.QUOTE_MINIMAL)

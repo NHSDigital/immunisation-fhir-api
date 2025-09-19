@@ -18,13 +18,15 @@ CONFIG_BUCKET = "imms-internal-dev-supplier-config"
 PERMISSIONS_CONFIG_FILE_KEY = "permissions_config.json"
 
 
-def create_row(unique_id, dose_amount, action_flag, header):
+def create_row(unique_id, dose_amount, action_flag, header, inject_char=None):
     """Helper function to create a single row with the specified UNIQUE_ID and ACTION_FLAG."""
+
+    name = "James" if not inject_char else b'Jam\xe9s'
 
     return {
         header: "9732928395",
         "PERSON_FORENAME": "PHYLIS",
-        "PERSON_SURNAME": "James",
+        "PERSON_SURNAME": name,
         "PERSON_DOB": "20080217",
         "PERSON_GENDER_CODE": "0",
         "PERSON_POSTCODE": "WD25 0DZ",
@@ -35,7 +37,7 @@ def create_row(unique_id, dose_amount, action_flag, header):
         "UNIQUE_ID_URI": "https://www.ravs.england.nhs.uk/",
         "ACTION_FLAG": action_flag,
         "PERFORMING_PROFESSIONAL_FORENAME": "PHYLIS",
-        "PERFORMING_PROFESSIONAL_SURNAME": "James",
+        "PERFORMING_PROFESSIONAL_SURNAME": name,
         "RECORDED_DATE": datetime.now(timezone.utc).strftime("%Y%m%d"),
         "PRIMARY_SOURCE": "TRUE",
         "VACCINATION_PROCEDURE_CODE": "956951000000104",
