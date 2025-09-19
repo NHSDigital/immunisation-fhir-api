@@ -11,43 +11,40 @@ from common.clients import logger, STREAM_NAME
 from common.log_decorator import logging_decorator
 from exceptions.id_sync_exception import IdSyncException
 from record_processor import process_record
-'''
-Lambda function handler for processing SQS events.Lambda for ID Sync. Fired by SQS
-'''
 
 
 @logging_decorator(prefix="id_sync", stream_name=STREAM_NAME)
-def handler(event_data, _):
-
+def handler(event_data: Dict[str, Any], _context) -> Dict[str, Any]:
     try:
-        logger.info("id_sync handler invoked")
         event = AwsLambdaEvent(event_data)
-        record_count = len(event.records)
-        if record_count > 0:
-            logger.info("id_sync processing event with %d records", record_count)
-            error_count = 0
-            nhs_numbers = []
-            for record in event.records:
-                record_result = process_record(record)
-                nhs_numbers.append(record_result["nhs_number"])
-                if record_result["status"] == "error":
-                    error_count += 1
-            if error_count > 0:
-                raise IdSyncException(message=f"Processed {record_count} records with {error_count} errors",
-                                      nhs_numbers=nhs_numbers)
+        records = event.records
 
-            else:
-                response = {"status": "success",
-                            "message": f"Successfully processed {record_count} records",
-                            "nhs_numbers": nhs_numbers}
-        else:
-            response = {"status": "success", "message": "No records found in event"}
+        if not records:
+            return {"status": "success", "message": "No records found in event"}
+
+        logger.info("id_sync processing event with %d records", len(records))
+
+        results = [process_record(record) for record in records]
+        nhs_numbers = [result["nhs_number"] for result in results]
+        error_count = sum(1 for result in results if result.get("status") == "error")
+
+        if error_count:
+            raise IdSyncException(message=f"Processed {len(records)} records with {error_count} errors",
+                                  nhs_numbers=nhs_numbers)
+
+        response = {
+            "status": "success",
+            "message": f"Successfully processed {len(records)} records",
+            "nhs_numbers": nhs_numbers
+            }
+
         logger.info("id_sync handler completed: %s", response)
         return response
+
     except IdSyncException as e:
         logger.exception(f"id_sync error: {e.message}")
-        raise e
-    except Exception as e:
+        raise
+    except Exception:
         msg = "Error processing id_sync event"
         logger.exception(msg)
-        raise IdSyncException(message=msg, exception=e)
+        raise IdSyncException(message=msg)
