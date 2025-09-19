@@ -1,11 +1,11 @@
 import unittest
+import time
 from utils import (
     upload_file_to_s3,
     get_file_content_from_s3,
     wait_for_ack_file,
     check_ack_file_content,
     validate_row_count,
-    delete_file_from_s3,
     generate_csv_files,
     SeedTestData
 )
@@ -60,11 +60,29 @@ class TestE2EBatch(unittest.TestCase):
             key = upload_file_to_s3(test.file_name, SOURCE_BUCKET, INPUT_PREFIX)
             test.key = key
 
-        for test in test_datas:
-            ack_key = wait_for_ack_file(None, test.file_name, ACK_BUCKET, timeout=1200)
-            self.ack_files.append(ack_key)
+        process_acks_as_received(test_datas, ACK_BUCKET)
 
-            validate_row_count(test.file_name, ack_key)
 
-            ack_content = get_file_content_from_s3(ACK_BUCKET, ack_key)
-            check_ack_file_content(ack_content, "OK", None, "CREATE")
+def process_acks_as_received(test_datas, ack_bucket, poll_interval=2, timeout=1200):
+    """
+    Polls for ACK files and processes them as soon as they are available.
+    """
+    start_time = time.time()
+    pending = {test.file_name: test for test in test_datas}
+    processed = set()
+
+    while pending and (time.time() - start_time) < timeout:
+        for file_name in list(pending.keys()):
+            ack_key = wait_for_ack_file(None, file_name, ack_bucket, timeout=0)
+            if ack_key:
+                # Process the ACK immediately
+                validate_row_count(file_name, ack_key)
+                ack_content = get_file_content_from_s3(ack_bucket, ack_key)
+                check_ack_file_content(ack_content, "OK", None, "CREATE")
+                processed.add(file_name)
+                del pending[file_name]
+        if pending:
+            time.sleep(poll_interval)
+
+    if pending:
+        raise TimeoutError(f"Timeout waiting for ACKs: {list(pending.keys())}")
