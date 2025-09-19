@@ -6,6 +6,3 @@ omit =
     id_sync/tests/*
     id_sync/tests/*/*
     id_sync/tests/*/*/*
-    mns_subscription/tests/*
-    mns_subscription/tests/*/*
-    mns_subscription/tests/*/*/*
