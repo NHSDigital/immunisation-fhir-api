@@ -181,6 +181,31 @@ def wait_for_ack_file(ack_prefix, input_file_name, timeout=1200):
     )
 
 
+def poll_ack_file(ack_prefix, input_file_name):
+    """Poll the ACK_BUCKET for an ack file that contains the input_file_name as a substring."""
+
+    filename_without_ext = input_file_name[:-4] if input_file_name.endswith(".csv") else input_file_name
+    if ack_prefix:
+        search_pattern = f"{ACK_PREFIX}{filename_without_ext}"
+        ack_prefix = ACK_PREFIX
+    else:
+        search_pattern = f"{FORWARDEDFILE_PREFIX}{filename_without_ext}"
+        ack_prefix = FORWARDEDFILE_PREFIX
+    return poll_s3_file_pattern(ack_prefix, search_pattern)
+
+
+def poll_s3_file_pattern(prefix, search_pattern):
+    """Poll the ACK_BUCKET for an ack file that contains the input_file_name as a substring."""
+
+    response = s3_client.list_objects_v2(Bucket=ACK_BUCKET, Prefix=prefix)
+    if "Contents" in response:
+        for obj in response["Contents"]:
+            key = obj["Key"]
+            if search_pattern in key:
+                return key
+    return None
+
+
 def get_file_content_from_s3(bucket, key):
     """Download and return the file content from S3."""
 
