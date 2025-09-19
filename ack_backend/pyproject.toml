@@ -10,7 +10,7 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "~3.11"
-boto3 = "~1.40.28"
+boto3 = "~1.40.34"
 mypy-boto3-dynamodb = "^1.40.20"
 freezegun      = "^1.5.2"
 moto           = "^4"
