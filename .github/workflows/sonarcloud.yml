@@ -135,15 +135,15 @@ jobs:
           poetry run coverage xml -o ../mns_subscription-coverage.xml
 
       - name: Run unittest with redis_sync
-        working-directory: redis_sync
+        working-directory: lambdas/redis_sync
         id: redis_sync
         env:
-          PYTHONPATH: ${{ github.workspace }}/redis_sync/src:${{ github.workspace }}/redis_sync/tests
+          PYTHONPATH: ${{ env.LAMBDA_PATH }}/redis_sync/src:${{ env.SHARED_PATH }}/src
         continue-on-error: true
         run: |
             poetry install
-            poetry run coverage run -m unittest discover || echo "redis_sync tests failed" >> ../failed_tests.txt
-            poetry run coverage xml -o ../redis_sync-coverage.xml
+            poetry run coverage run --source=src -m unittest discover || echo "redis_sync tests failed" >> ../../failed_tests.txt
+            poetry run coverage xml -o ../../redis_sync-coverage.xml
 
       - name: Run unittest with shared
         working-directory: lambdas/shared
