@@ -32,6 +32,8 @@ class BatchProcessorFilterService:
         supplier = batch_file_created_event["supplier"]
         vaccine_type = batch_file_created_event["vaccine_type"]
 
+        logger.info("Received batch file event for filename: %s with message id: %s", filename, message_id)
+
         if self._is_duplicate_file(filename):
             # Mark as processed and return without error so next event will be picked up from queue
             logger.error("A duplicate file has already been processed. Filename: %s", filename)
@@ -52,12 +54,12 @@ class BatchProcessorFilterService:
             raise EventAlreadyProcessingForSupplierAndVaccTypeError(f"Batch event already processing for supplier: "
                                                                     f"{supplier} and vacc type: {vaccine_type}")
 
+        self._batch_audit_repository.update_status(message_id, FileStatus.PROCESSING)
         self._queue_client.send_message(
             QueueUrl=QUEUE_URL,
             MessageBody=json.dumps(batch_file_created_event),
             MessageGroupId=f"{supplier}_{vaccine_type}"
         )
-        self._batch_audit_repository.update_status(message_id, FileStatus.PROCESSING)
 
         successful_log_message = f"File forwarded for processing by ECS. Filename: {filename}"
         logger.info(successful_log_message)
