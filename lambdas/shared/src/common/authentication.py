@@ -12,7 +12,9 @@ from common.models.errors import UnhandledResponseError
 
 
 class Service(Enum):
+    # TODO: PDS and MNS need separate secrets
     PDS = "pds"
+    MNS = "pds"
     IMMUNIZATION = "imms"
 
 
@@ -23,8 +25,8 @@ class AppRestrictedAuth:
         self.cache_key = f"{service.value}_access_token"
 
         self.expiry = 30
-        self.secret_name = f"imms/pds/{environment}/jwt-secrets" if service == Service.PDS else \
-            f"imms/immunization/{environment}/jwt-secrets"
+        self.secret_name = f"imms/immunization/{environment}/jwt-secrets" if service == Service.IMMUNIZATION else \
+            f"imms/{service}/{environment}/jwt-secrets"
 
         self.token_url = f"https://{environment}.api.service.nhs.uk/oauth2/token" \
             if environment != "prod" else "https://api.service.nhs.uk/oauth2/token"

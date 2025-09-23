@@ -13,7 +13,7 @@ def get_mns_service(mns_env: str = "int"):
     cache = Cache(directory="/tmp")
     logging.info("Creating authenticator...")
     authenticator = AppRestrictedAuth(
-        service=Service.PDS,
+        service=Service.MNS,
         secret_manager_client=boto3.client("secretsmanager", config=boto_config),
         environment=mns_env,
         cache=cache,
