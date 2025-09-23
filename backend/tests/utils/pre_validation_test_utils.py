@@ -336,8 +336,11 @@ class ValidatorModelTests:
         )
 
         if is_occurrence_date_time:
-             expected_error_message += "Only '+00:00' and '+01:00' are accepted as valid timezone offsets.\n"
-             expected_error_message += f"Note that partial dates are not allowed for {field_location} in this service."
+             expected_error_message += (
+                 "Only '+00:00' and '+01:00' are accepted as valid timezone offsets.\n"
+                 f"Note that partial dates are not allowed for {field_location} in this service.\n"
+                 "Date must not be in the future."
+                 )
              valid_datetime_formats = ValidValues.for_date_times_strict_timezones
              invalid_datetime_formats = InvalidValues.for_date_time_string_formats_for_strict_timezone
         else:
