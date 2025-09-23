@@ -121,12 +121,12 @@ class PreValidation:
             "- 'YYYY-MM-DD' — Full date only"
             "- 'YYYY-MM-DDThh:mm:ss%z' — Full date and time with timezone (e.g. +00:00 or +01:00)"
             "- 'YYYY-MM-DDThh:mm:ss.f%z' — Full date and time with milliseconds and timezone"
+            "Date must not be in the future."
         )
         if strict_timezone:
             error_message += (
                 "Only '+00:00' and '+01:00' are accepted as valid timezone offsets.\n"
                 f"Note that partial dates are not allowed for {field_location} in this service.\n"
-                "Date must not be in the future."
                 )
 
         allowed_suffixes = {"+00:00", "+01:00", "+0000", "+0100",}
@@ -140,15 +140,13 @@ class PreValidation:
         for fmt in formats:
             try:
                 fhir_date = datetime.strptime(field_value, fmt)
+                # Enforce future-date rule using central checker (after successful parse)
+                if PreValidation.check_if_future_date(fhir_date):
+                    raise ValueError(f"{field_location} must not be in the future")
                 # After successful parse, enforce timezone and future-date rules
                 if strict_timezone and fhir_date.tzinfo is not None:
                     if not any(field_value.endswith(suffix) for suffix in allowed_suffixes):
                         raise ValueError(error_message)
-
-                # Enforce not-in-the-future rule using central checker (after successful parse)
-                if PreValidation.check_if_future_date(fhir_date):
-                    raise ValueError(f"{field_location} must not be in the future")
-
                 return fhir_date.isoformat()
             except ValueError:
                 continue
