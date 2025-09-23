@@ -291,6 +291,12 @@ class InvalidValues:
         "2000-02-30",  # Invalid combination of month and day
     ]
 
+    for_future_dates = [
+        "2100-01-01",  # Year in future
+        "2050-12-31",  # Year in future
+        "2029-06-15",  # Year in future
+    ]
+
     # Strings which are not in acceptable date time format
     for_date_time_string_formats_for_relaxed_timezone = [
         "",  # Empty string

@@ -83,7 +83,7 @@ class PreValidation:
                     raise ValueError(f"{field_location} must be an array of non-empty objects")
 
     @staticmethod
-    def for_date(field_value: str, field_location: str):
+    def for_date(field_value: str, field_location: str, future_date_allowed: bool = False):
         """
         Apply pre-validation to a date field to ensure that it is a string (JSON dates must be
         written as strings) containing a valid date in the format "YYYY-MM-DD"
@@ -98,8 +98,9 @@ class PreValidation:
                 f'{field_location} must be a valid date string in the format "YYYY-MM-DD"'
             ) from value_error
 
-        # Enforce not-in-the-future rule using central checker
-        PreValidation.check_if_future_date(parsed_date)
+        # Enforce not-in-the-future rule using central checker (after successful parse)
+        if not future_date_allowed and PreValidation.check_if_future_date(parsed_date):
+            raise ValueError(f"{field_location} must not be in the future")
 
     @staticmethod
     def for_date_time(field_value: str, field_location: str, strict_timezone: bool = True):
@@ -139,13 +140,15 @@ class PreValidation:
         for fmt in formats:
             try:
                 fhir_date = datetime.strptime(field_value, fmt)
-                
+                # After successful parse, enforce timezone and future-date rules
                 if strict_timezone and fhir_date.tzinfo is not None:
-                   if PreValidation.check_if_future_date(fhir_date):
-                       raise ValueError(error_message)
-                   if not any(field_value.endswith(suffix) for suffix in allowed_suffixes):
-                       raise ValueError(error_message)
-                # Enforce not-in-the-future rule using central checker
+                    if not any(field_value.endswith(suffix) for suffix in allowed_suffixes):
+                        raise ValueError(error_message)
+
+                # Enforce not-in-the-future rule using central checker (after successful parse)
+                if PreValidation.check_if_future_date(fhir_date):
+                    raise ValueError(f"{field_location} must not be in the future")
+
                 return fhir_date.isoformat()
             except ValueError:
                 continue

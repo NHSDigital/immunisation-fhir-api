@@ -282,6 +282,7 @@ class ValidatorModelTests:
     def test_date_value(
         test_instance: unittest.TestCase,
         field_location: str,
+        is_future_date_allowed: bool = False,
     ):
         """
         Test that a FHIR model accepts valid date values and rejects the following invalid values:
@@ -313,6 +314,15 @@ class ValidatorModelTests:
                 field_location=field_location,
                 invalid_value=invalid_date_format,
                 expected_error_message=f"{field_location} must be a valid date string in the " + 'format "YYYY-MM-DD"',
+            )
+        if not is_future_date_allowed:
+            for invalid_date_format in InvalidValues.for_future_dates:
+                test_invalid_values_rejected(
+                    test_instance,
+                    valid_json_data,
+                    field_location=field_location,
+                    invalid_value=invalid_date_format,
+                expected_error_message=f"{field_location} must not be in the future",
             )
 
     @staticmethod
