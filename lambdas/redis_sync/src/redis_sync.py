@@ -1,7 +1,8 @@
 from event_read import read_event
 from record_processor import process_record
-from common.clients import get_redis_client, STREAM_NAME, logger
+from common.clients import STREAM_NAME, logger
 from common.log_decorator import logging_decorator
+from common.redis_client import get_redis_client
 from common.s3_event import S3Event
 '''
     Event Processor

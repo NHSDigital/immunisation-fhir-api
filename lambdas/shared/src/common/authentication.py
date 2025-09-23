@@ -40,7 +40,6 @@ class AppRestrictedAuth:
     def create_jwt(self, now: int):
         logger.info("create_jwt")
         secret_object = self.get_service_secrets()
-        logger.info(f"Secret object: {secret_object}")
         claims = {
             "iss": secret_object['api_key'],
             "sub": secret_object['api_key'],
