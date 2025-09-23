@@ -10,7 +10,6 @@ import fakeredis
 from boto3 import client as boto3_client
 from moto import mock_s3, mock_sqs, mock_firehose, mock_dynamodb
 
-from errors import UnhandledSqsError
 from tests.utils_for_tests.generic_setup_and_teardown import GenericSetUp, GenericTearDown
 from tests.utils_for_tests.utils_for_filenameprocessor_tests import (
     assert_audit_table_entry,
@@ -288,7 +287,7 @@ class TestLambdaHandlerDataSource(TestCase):
 
     def test_lambda_adds_event_to_audit_table_as_failed_when_unexpected_exception_is_caught(self):
         """
-        Tests that when an unexpected error occurs e.g. sending to SQS (maybe in case of bad deployment):
+        Tests that when an unexpected error occurs e.g. an unexpected exception when validating permissions:
         * The file is added to the audit table with a status of 'Failed' and the reason
         * The message is not sent to SQS
         * The failure inf_ack file is created
@@ -298,8 +297,8 @@ class TestLambdaHandlerDataSource(TestCase):
 
         with (  # noqa: E999
             patch("file_name_processor.uuid4", return_value=test_file_details.message_id),  # noqa: E999
-            patch("file_name_processor.make_and_send_sqs_message", side_effect=UnhandledSqsError(
-                "Some client error with SQS"
+            patch("file_name_processor.validate_vaccine_type_permissions", side_effect=Exception(
+                "Some unexpected exception"
             ))
         ):  # noqa: E999
             lambda_handler(self.make_event([self.make_record(test_file_details.file_key)]), None)
@@ -310,7 +309,7 @@ class TestLambdaHandlerDataSource(TestCase):
                 "filename": {"S": test_file_details.file_key},
                 "queue_name": {"S": "EMIS_FLU"},
                 "status": {"S": "Failed"},
-                "error_details": {"S": "Some client error with SQS"},
+                "error_details": {"S": "Some unexpected exception"},
                 "timestamp": {"S": test_file_details.created_at_formatted_string},
                 "expires_at": {"N": str(test_file_details.expires_at)},
             }
