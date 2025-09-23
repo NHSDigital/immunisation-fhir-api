@@ -12,8 +12,9 @@ def get_mns_service(mns_env: str = "int"):
     boto_config = Config(region_name="eu-west-2")
     cache = Cache(directory="/tmp")
     logging.info("Creating authenticator...")
+    # TODO: MNS and PDS need separate secrets
     authenticator = AppRestrictedAuth(
-        service=Service.MNS,
+        service=Service.PDS,
         secret_manager_client=boto3.client("secretsmanager", config=boto_config),
         environment=mns_env,
         cache=cache,
