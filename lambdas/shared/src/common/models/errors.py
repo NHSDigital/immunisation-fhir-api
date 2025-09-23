@@ -13,6 +13,7 @@ class Code(str, Enum):
     forbidden = "forbidden"
     not_found = "not-found"
     invalid = "invalid or missing access token"
+    exception = "exception"
     server_error = "internal server error"
     invariant = "invariant"
     incomplete = "parameter-incomplete"
@@ -169,7 +170,7 @@ class UnhandledResponseError(RuntimeError):
         return create_operation_outcome(
             resource_id=str(uuid.uuid4()),
             severity=Severity.error,
-            code=Code.server_error,
+            code=Code.exception,
             diagnostics=self.__str__(),
         )
 
@@ -216,7 +217,7 @@ class InvalidPatientId(ValidationError):
         return create_operation_outcome(
             resource_id=str(uuid.uuid4()),
             severity=Severity.error,
-            code=Code.server_error,
+            code=Code.exception,
             diagnostics=self.__str__(),
         )
 
@@ -235,7 +236,7 @@ class InconsistentIdError(ValidationError):
         return create_operation_outcome(
             resource_id=str(uuid.uuid4()),
             severity=Severity.error,
-            code=Code.server_error,
+            code=Code.exception,
             diagnostics=self.__str__(),
         )
 
