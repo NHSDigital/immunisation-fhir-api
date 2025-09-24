@@ -144,6 +144,7 @@ def demographics_match(pds_details: dict, ieds_item: dict) -> bool:
         pds_name = normalize_strings(extract_normalized_name_from_patient(pds_details))
         pds_gender = normalize_strings(pds_details.get("gender"))
         pds_birth = normalize_strings(pds_details.get("birthDate"))
+        logger.debug("demographics_match: demographics match for %s", pds_name, pds_gender, pds_birth)
 
         # Retrieve patient resource from IEDS item
         patient = extract_patient_resource_from_item(ieds_item)
@@ -155,6 +156,7 @@ def demographics_match(pds_details: dict, ieds_item: dict) -> bool:
         ieds_name = normalize_strings(extract_normalized_name_from_patient(patient))
         ieds_gender = normalize_strings(patient.get("gender"))
         ieds_birth = normalize_strings(patient.get("birthDate"))
+        logger.debug("demographics_match: demographics match for %s", patient)
 
         # All required fields must be present
         if not all([pds_name, pds_gender, pds_birth, ieds_name, ieds_gender, ieds_birth]):
@@ -174,6 +176,7 @@ def demographics_match(pds_details: dict, ieds_item: dict) -> bool:
             logger.debug("demographics_match: name mismatch %s != %s", pds_name, ieds_name)
             return False
 
+        logger.debug("demographics_match: demographics match for %s", patient)
         return True
     except Exception:
         logger.exception("demographics_match: comparison failed with exception")
