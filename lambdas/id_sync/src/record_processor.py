@@ -68,11 +68,13 @@ def process_nhs_number(nhs_number: str) -> Dict[str, Any]:
     # Compare demographics from PDS to each IEDS item, keep only matching records
     matching_records = []
     discarded_count = 0
+    discarded_records = []
     for detail in ieds_resources:
         if demographics_match(pds_patient_resource, detail):
             matching_records.append(detail)
         else:
             discarded_count += 1
+            discarded_records.append(detail)
 
     if not matching_records:
         logger.info("No records matched PDS demographics: %d", discarded_count)
@@ -144,39 +146,39 @@ def demographics_match(pds_details: dict, ieds_item: dict) -> bool:
         pds_name = normalize_strings(extract_normalized_name_from_patient(pds_details))
         pds_gender = normalize_strings(pds_details.get("gender"))
         pds_birth = normalize_strings(pds_details.get("birthDate"))
-        logger.debug("demographics_match: demographics match for %s", pds_name, pds_gender, pds_birth)
+        logger.info("demographics_match: demographics match for %s", pds_name, pds_gender, pds_birth)
 
         # Retrieve patient resource from IEDS item
         patient = extract_patient_resource_from_item(ieds_item)
         if not patient:
-            logger.debug("demographics_match: no patient resource in IEDS table item")
+            logger.info("demographics_match: no patient resource in IEDS table item")
             return False
 
         # normalize patient fields from IEDS
         ieds_name = normalize_strings(extract_normalized_name_from_patient(patient))
         ieds_gender = normalize_strings(patient.get("gender"))
         ieds_birth = normalize_strings(patient.get("birthDate"))
-        logger.debug("demographics_match: demographics match for %s", patient)
+        logger.info("demographics_match: demographics match for %s", patient)
 
         # All required fields must be present
         if not all([pds_name, pds_gender, pds_birth, ieds_name, ieds_gender, ieds_birth]):
-            logger.debug("demographics_match: missing required demographics")
+            logger.info("demographics_match: missing required demographics")
             return False
 
         # Compare fields
         if pds_birth != ieds_birth:
-            logger.debug("demographics_match: birthDate mismatch %s != %s", pds_birth, ieds_birth)
+            logger.info("demographics_match: birthDate mismatch %s != %s", pds_birth, ieds_birth)
             return False
 
         if pds_gender != ieds_gender:
-            logger.debug("demographics_match: gender mismatch %s != %s", pds_gender, ieds_gender)
+            logger.info("demographics_match: gender mismatch %s != %s", pds_gender, ieds_gender)
             return False
 
         if pds_name != ieds_name:
-            logger.debug("demographics_match: name mismatch %s != %s", pds_name, ieds_name)
+            logger.info("demographics_match: name mismatch %s != %s", pds_name, ieds_name)
             return False
 
-        logger.debug("demographics_match: demographics match for %s", patient)
+        logger.info("demographics_match: demographics match for %s", patient)
         return True
     except Exception:
         logger.exception("demographics_match: comparison failed with exception")
