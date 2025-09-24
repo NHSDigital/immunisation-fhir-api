@@ -2,6 +2,9 @@
 
 from dataclasses import dataclass
 from decimal import Decimal
+from datetime import datetime, timedelta
+import random
+
 
 # Lists of data types for 'invalid data type' testing
 integers = [-1, 0, 1]
@@ -292,9 +295,8 @@ class InvalidValues:
     ]
 
     for_future_dates = [
-        "2100-01-01",  # Year in future
-        "2050-12-31",  # Year in future
-        "2029-06-15",  # Year in future
+        (datetime.now() + timedelta(days=random.randint(1, 30))).strftime("%Y-%m-%d")
+        for i in range(3)
     ]
 
     # Strings which are not in acceptable date time format
