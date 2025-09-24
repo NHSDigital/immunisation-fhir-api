@@ -1,4 +1,4 @@
-name: SonarCloud
+name: Quality Checks
 
 on:
   push:
@@ -12,14 +12,40 @@ env:
   LAMBDA_PATH: ${{ github.workspace }}/lambdas
 
 jobs:
-  sonarcloud:
-    name: SonarCloud
+  lint:
+    name: Lint specification and Python projects
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v5
+
+      - name: Install poetry
+        run: pip install poetry==2.1.4
+
+      # Base linting requires 3.8 due to APIM package dependencies. See root README for details under linting.
+      # Consider upgrading this and poetry deps if we move away from Azure DevOps to using the Proxygen tool.
+      - uses: actions/setup-python@v5
         with:
-          fetch-depth: 0
+          python-version: 3.8
+          cache: 'poetry'
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '23.11.0'
+          cache: 'npm'
+
+      - name: Install linting dependencies
+        run: make install-node && poetry install --no-root
+
+      - name: Lint
+        run: make lint
+
+  testcoverage_and_sonarcloud:
+    name: Test Coverage and SonarCloud
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
 
       - name: Install poetry
         run: pip install poetry==2.1.4
@@ -184,7 +210,7 @@ jobs:
           fi
 
       - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@master
+        uses: SonarSource/sonarqube-scan-action@fd88b7d7ccbaefd23d8f36f73b59db7a3d246602
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
