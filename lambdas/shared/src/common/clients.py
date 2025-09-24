@@ -6,12 +6,12 @@ from boto3 import client as boto3_client, resource as boto3_resource
 logging.basicConfig(level=logging.INFO)
 root_logger = logging.getLogger()
 root_logger.setLevel(logging.INFO)
+
 for handler in root_logger.handlers:
-	# make sure handler level is not higher than INFO
-	try:
-		handler.setLevel(logging.INFO)
-	except Exception:
-		pass
+    try:
+        handler.setLevel(logging.INFO)
+    except Exception:
+        pass
 
 # Export the configured root logger for modules to use
 logger = root_logger
