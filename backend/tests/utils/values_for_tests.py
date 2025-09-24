@@ -34,7 +34,7 @@ class ValidValues:
     for_date_times_strict_timezones = [
         "2000-01-01",  # Full date only
         "2000-01-01T00:00:00+00:00",  # Time and offset all zeroes
-        "2025-05-20T18:26:30+01:00",  # Date with Time with no milliseconds and positive offset
+        "2025-09-24T11:04:30+01:00",  # Date with Time with no milliseconds and positive offset
         "2000-01-01T00:00:00+01:00",  # Time and offset all zeroes
         "1933-12-31T11:11:11+01:00",  # Positive offset (with hours and minutes not 0)
         "1933-12-31T11:11:11.1+00:00",  # DateTime with milliseconds to 1 decimal place

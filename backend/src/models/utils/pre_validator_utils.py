@@ -98,7 +98,7 @@ class PreValidation:
                 f'{field_location} must be a valid date string in the format "YYYY-MM-DD"'
             ) from value_error
 
-        # Enforce not-in-the-future rule using central checker (after successful parse)
+        # Enforce future date rule using central checker after successful parse
         if not future_date_allowed and PreValidation.check_if_future_date(parsed_date):
             raise ValueError(f"{field_location} must not be in the future")
 
@@ -140,7 +140,7 @@ class PreValidation:
         for fmt in formats:
             try:
                 fhir_date = datetime.strptime(field_value, fmt)
-                # Enforce future-date rule using central checker (after successful parse)
+                # Enforce future-date rule using central checker after successful parse
                 if PreValidation.check_if_future_date(fhir_date):
                     raise ValueError(f"{field_location} must not be in the future")
                 # After successful parse, enforce timezone and future-date rules
@@ -256,3 +256,4 @@ class PreValidation:
             now = datetime.now().date()
         if parsed_value > now:
             return True
+        return False
