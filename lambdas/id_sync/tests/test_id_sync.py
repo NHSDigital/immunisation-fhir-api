@@ -235,29 +235,30 @@ class TestIdSyncHandler(unittest.TestCase):
         self.assertEqual(exception.message, "Error processing id_sync event")
 
     def test_handler_process_record_missing_nhs_number(self):
-        """Test handler when process_record returns incomplete data"""
+        """Test handler when process_record returns error and missing NHS number"""
+
         # Setup mocks
         mock_event = MagicMock()
         mock_event.records = [MagicMock()]
         self.mock_aws_lambda_event.return_value = mock_event
 
-        # Missing "nhs_number" in response
+        # Return result without 'nhs_number' but with an 'error' status
         self.mock_process_record.return_value = {
-            "status": "success"
-            # Missing "nhs_number"
+            "status": "error",
+            "message": "Missing NHS number"
+            # No 'nhs_number'
         }
 
-        # Call handler
+        # Call handler and expect exception
         with self.assertRaises(IdSyncException) as exception_context:
             handler(self.single_sqs_event, None)
 
         exception = exception_context.exception
 
-        # convert exception payload to json
         self.assertIsInstance(exception, IdSyncException)
-        self.assertEqual(exception.nhs_numbers, None)
-        self.assertEqual(exception.message, "Error processing id_sync event")
-        self.mock_logger.exception.assert_called_once_with("Error processing id_sync event")
+        self.assertEqual(exception.nhs_numbers, [])  # Since no nhs_number was collected
+        self.assertEqual(exception.message, "Processed 1 records with 1 errors")
+        self.mock_logger.exception.assert_called_once_with(f"id_sync error: {exception.message}")
 
     def test_handler_context_parameter_ignored(self):
         """Test that context parameter is properly ignored"""

@@ -24,11 +24,24 @@ def handler(event_data: Dict[str, Any], _context) -> Dict[str, Any]:
 
         logger.info("id_sync processing event with %d records", len(records))
 
-        results = [process_record(record) for record in records]
-        nhs_numbers = [result["nhs_number"] for result in results]
-        error_count = sum(1 for result in results if result.get("status") == "error")
+        # Use explicit loops instead of list comprehensions so we can more
+        # easily inspect intermediate results and avoid building temporary
+        # comprehension constructs.
+        results = []
+        nhs_numbers = []
+        error_count = 0
 
-        if error_count:
+        for record in records:
+            result = process_record(record)
+            results.append(result)
+
+            if "nhs_number" in result:
+                nhs_numbers.append(result["nhs_number"])
+
+            if result.get("status") == "error":
+                error_count += 1
+
+        if error_count > 0:
             raise IdSyncException(message=f"Processed {len(records)} records with {error_count} errors",
                                   nhs_numbers=nhs_numbers)
 
