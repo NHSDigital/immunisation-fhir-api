@@ -57,7 +57,7 @@ jobs:
 
       - bash: |
           export AWS_PROFILE=apim-dev
-          cd mns_subscription
+          cd lambdas/mns_subscription
 
           echo "unsubscribing SQS Queue from MNS notifications."
           pyenv install -s 3.11.11
