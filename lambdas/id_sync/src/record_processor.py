@@ -30,6 +30,7 @@ def process_record(event_record: Dict[str, Any]) -> Dict[str, Any]:
         body = body_text
 
     nhs_number = body.get("subject")
+    # Reached
     logger.info("process record NHS number: %s", nhs_number)
     if nhs_number:
         return process_nhs_number(nhs_number)
@@ -56,6 +57,9 @@ def process_nhs_number(nhs_number: str) -> Dict[str, Any]:
     except Exception as e:
         logger.exception("process_nhs_number: failed to fetch demographic details: %s", e)
         return make_status(str(e), nhs_number, "error")
+
+    logger.info("Fetched PDS details: %s", pds_patient_resource)
+    logger.info("Fetched IEDS resources. IEDS count: %d", len(ieds_resources), ieds_resources if ieds_resources else 0)
 
     if not ieds_resources:
         logger.info("No IEDS records returned for NHS number: %s", nhs_number)
@@ -86,14 +90,22 @@ def process_nhs_number(nhs_number: str) -> Dict[str, Any]:
 
 # Function to fetch PDS Patient details and IEDS Immunisation records
 def fetch_pds_and_ieds_resources(nhs_number: str):
+    logger.info("fetch_pds_and_ieds_resources: fetching for %s", nhs_number)
     try:
         pds = pds_get_patient_details(nhs_number)
+        logger.info("fetch_pds_resources: fetching for %s", pds)
     except Exception as e:
+        logger.exception("fetch_pds_and_ieds_resources: failed to fetch PDS details for %s", nhs_number)
         raise RuntimeError("Failed to fetch PDS details") from e
+
     try:
         ieds = get_items_from_patient_id(nhs_number)
     except Exception as e:
+        logger.exception("fetch_pds_and_ieds_resources: failed to fetch IEDS items for %s", nhs_number)
         raise RuntimeError("Failed to fetch IEDS items") from e
+
+    count = len(ieds)
+    logger.info("fetch_pds_and_ieds_resources: fetched PDS and %d IEDS items for %s", count, nhs_number)
     return pds, ieds
 
 
