@@ -2,19 +2,9 @@ import os
 import logging
 from boto3 import client as boto3_client, resource as boto3_resource
 
-# Configure root logger with a numeric level and ensure any handlers accept INFO.
 logging.basicConfig(level=logging.INFO)
-root_logger = logging.getLogger()
-root_logger.setLevel(logging.INFO)
-
-for handler in root_logger.handlers:
-    try:
-        handler.setLevel(logging.INFO)
-    except Exception:
-        pass
-
-# Export the configured root logger for modules to use
-logger = root_logger
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 STREAM_NAME = os.getenv("SPLUNK_FIREHOSE_NAME", "firehose-name-not-defined")
 CONFIG_BUCKET_NAME = os.getenv("CONFIG_BUCKET_NAME", "variconfig-bucketable-not-defined")
