@@ -69,10 +69,13 @@ resource "aws_iam_role" "auto_ops" {
         Action = "sts:AssumeRoleWithWebIdentity",
         Condition = {
           StringEquals = {
-            "token.actions.githubusercontent.com:aud" : "sts.amazonaws.com"
+            "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
           },
           StringLike = {
-            "token.actions.githubusercontent.com:sub" : "repo:NHSDigital/immunisation-fhir-api:*"
+            "token.actions.githubusercontent.com:sub": var.environment != "prod" ? [
+              "repo:NHSDigital/immunisation-fhir-api:*",
+              "repo:NHSDigital/imms_fhir_api_automation:*"
+            ] : ["repo:NHSDigital/immunisation-fhir-api:*"]
           }
         }
       }

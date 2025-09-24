@@ -10,6 +10,9 @@ AUDIT_TABLE_FILENAME_GSI = "filename_index"
 AUDIT_TABLE_QUEUE_NAME_GSI = "queue_name_index"
 FILE_NAME_PROC_LAMBDA_NAME = os.getenv("FILE_NAME_PROC_LAMBDA_NAME")
 
+ARCHIVE_DIR_NAME = "archive"
+PROCESSING_DIR_NAME = "processing"
+
 EXPECTED_CSV_HEADERS = [
     "NHS_NUMBER",
     "PERSON_FORENAME",
@@ -62,6 +65,7 @@ class FileStatus:
 class FileNotProcessedReason(StrEnum):
     """Reasons why a file was not processed"""
     UNAUTHORISED = "Unauthorised"
+    EMPTY = "Empty file"
 
 
 class AuditTableKeys:

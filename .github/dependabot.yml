@@ -58,10 +58,10 @@ updates:
       - "/filenameprocessor"
       - "/mesh_processor"
       - "/recordprocessor"
-      - "/redis_sync"
+      - "/lambdas/redis_sync"
       - "/lambdas/id_sync"
+      - "/lambdas/mns_subscription"
       - "/lambdas/shared"
-      - "/mns_subscription"
     schedule:
       interval: "daily"
     open-pull-requests-limit: 1

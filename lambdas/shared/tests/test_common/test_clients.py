@@ -20,7 +20,7 @@ class TestClients(unittest.TestCase):
         self.mock_getenv = self.getenv_patch.start()
         self.mock_getenv.side_effect = lambda key, default=None: {
             "CONFIG_BUCKET_NAME": self.BUCKET_NAME,
-            "AWS_REGION": self.AWS_REGION
+            "AWS_REGION": self.AWS_REGION,
         }.get(key, default)
 
         self.mock_boto3_client.return_value = self.mock_boto3_client

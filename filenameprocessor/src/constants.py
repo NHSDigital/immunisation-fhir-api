@@ -7,7 +7,6 @@ from errors import (
     VaccineTypePermissionsError,
     InvalidFileKeyError,
     UnhandledAuditTableError,
-    EmptyFileError,
     UnhandledSqsError
 )
 
@@ -23,14 +22,10 @@ ODS_CODE_TO_SUPPLIER_SYSTEM_HASH_KEY = "ods_code_to_supplier"
 ERROR_TYPE_TO_STATUS_CODE_MAP = {
     VaccineTypePermissionsError: 403,
     InvalidFileKeyError: 400,  # Includes invalid ODS code, therefore unable to identify supplier
-    EmptyFileError: 400,
     UnhandledAuditTableError: 500,
     UnhandledSqsError: 500,
     Exception: 500,
 }
-
-# The size in bytes of an empty batch file containing only the headers row
-EMPTY_BATCH_FILE_SIZE_IN_BYTES = 700
 
 
 class FileStatus(StrEnum):

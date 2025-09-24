@@ -153,6 +153,14 @@ class TestRecordProcessor(unittest.TestCase):
                     kinesis_data.pop(key_to_ignore)
                 self.assertEqual(kinesis_data, expected_kinesis_data)
 
+    def assert_object_moved_to_archive(self, file_key: str) -> None:
+        """Checks that the S3 object was moved to the archive directory"""
+        with self.assertRaises(s3_client.exceptions.NoSuchKey):
+            s3_client.get_object(Bucket=BucketNames.SOURCE, Key=f"processing/{file_key}")
+
+        response = s3_client.get_object(Bucket=BucketNames.SOURCE, Key=f"archive/{file_key}")
+        self.assertIsNotNone(response)
+
     def test_e2e_full_permissions(self):
         """
         Tests that file containing CREATE, UPDATE and DELETE is successfully processed when the supplier has
@@ -401,6 +409,36 @@ class TestRecordProcessor(unittest.TestCase):
                                    ": Stream imms-batch-internal-dev-processingdata-stream under account 123456789012"
                                    " not found."}
         })
+
+    def test_e2e_empty_file_is_flagged_and_processed_correctly(self):
+        """
+        Tests files that contain only the headers and no records are marked as empty and moved to archive.
+        """
+        test_cases = [
+            ("File containing only headers", ValidMockFileContent.headers),
+            ("File containing headers and new line", ValidMockFileContent.headers + "\n"),
+            ("File containing headers and multiple new lines", ValidMockFileContent.empty_file_with_multiple_new_lines)
+        ]
+        for description, file_content in test_cases:
+
+            with self.subTest(description=description):
+                self.mock_batch_processor_logger.reset_mock()
+                test_file = mock_rsv_emis_file
+                self.upload_source_files(file_content)
+                add_entry_to_table(test_file, FileStatus.PROCESSING)
+
+                main(test_file.event_full_permissions)
+
+                kinesis_records = kinesis_client.get_records(
+                    ShardIterator=self.get_shard_iterator(), Limit=10)["Records"]
+
+                self.mock_batch_processor_logger.warning.assert_called_once_with(
+                    "File was empty: %s. Moving file to archive directory.",
+                    "RSV_Vaccinations_v5_8HK48_20210730T12000000.csv"
+                )
+                self.assertListEqual(kinesis_records, [])
+                assert_audit_table_entry(test_file, "Not processed - Empty file")
+                self.assert_object_moved_to_archive(test_file.file_key)
 
     def test_e2e_error_is_logged_if_invalid_json_provided(self):
         """This scenario should not happen. If it does, it means our batch processing system config is broken and we

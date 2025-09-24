@@ -4,7 +4,7 @@ from json import JSONDecodeError
 import boto3
 import copy
 from unittest import TestCase
-from unittest.mock import patch, Mock, ANY
+from unittest.mock import patch, Mock, ANY, call
 
 import botocore
 from moto import mock_aws
@@ -206,10 +206,17 @@ class TestLambdaHandler(TestCase):
                 sqs_messages = sqs_client.receive_message(QueueUrl=self.mock_queue_url)
                 self.assertEqual(sqs_messages.get("Messages", []), [])
 
-                self.mock_logger.info.assert_called_once_with(
-                    "Batch event already processing for supplier and vacc type. Filename: %s",
-                    "Menacwy_Vaccinations_v5_TEST_20250826T15003000.csv"
-                )
+                self.mock_logger.info.assert_has_calls([
+                    call(
+                        "Received batch file event for filename: %s with message id: %s",
+                        "Menacwy_Vaccinations_v5_TEST_20250826T15003000.csv",
+                        "3b60c4f7-ef67-43c7-8f0d-4faee04d7d0e"
+                    ),
+                    call(
+                        "Batch event already processing for supplier and vacc type. Filename: %s",
+                        "Menacwy_Vaccinations_v5_TEST_20250826T15003000.csv"
+                    )
+                ])
 
     def test_lambda_handler_processes_event_successfully(self):
         """Should update the audit entry status to Processing and forward to SQS"""
@@ -225,11 +232,20 @@ class TestLambdaHandler(TestCase):
         self.assertEqual(len(sqs_messages.get("Messages", [])), 1)
         self.assertDictEqual(json.loads(sqs_messages["Messages"][0]["Body"]), dict(self.default_batch_file_event))
 
-        expected_log_message = (f"File forwarded for processing by ECS. Filename: "
-                                f"{self.default_batch_file_event['filename']}")
-        self.mock_logger.info.assert_called_once_with(expected_log_message)
+        expected_success_log_message = (f"File forwarded for processing by ECS. Filename: "
+                                        f"{self.default_batch_file_event['filename']}")
+        self.mock_logger.info.assert_has_calls([
+            call(
+                "Received batch file event for filename: %s with message id: %s",
+                "Menacwy_Vaccinations_v5_TEST_20250820T10210000.csv",
+                "df0b745c-b8cb-492c-ba84-8ea28d9f51d5"
+            ),
+            call(
+                expected_success_log_message
+            )
+        ])
         self.mock_firehose_send_log.assert_called_once_with(
-            {**self.default_batch_file_event, "message": expected_log_message}
+            {**self.default_batch_file_event, "message": expected_success_log_message}
         )
 
     def test_lambda_handler_processes_event_successfully_when_event_for_same_supplier_and_vacc_already_processed(self):
@@ -256,8 +272,17 @@ class TestLambdaHandler(TestCase):
         self.assertEqual(len(sqs_messages.get("Messages", [])), 1)
         self.assertDictEqual(json.loads(sqs_messages["Messages"][0]["Body"]), dict(test_event))
 
-        expected_log_message = f"File forwarded for processing by ECS. Filename: {test_event['filename']}"
-        self.mock_logger.info.assert_called_once_with(expected_log_message)
+        expected_success_log_message = f"File forwarded for processing by ECS. Filename: {test_event['filename']}"
+        self.mock_logger.info.assert_has_calls([
+            call(
+                "Received batch file event for filename: %s with message id: %s",
+                "Menacwy_Vaccinations_v5_TEST_20250826T15003000.csv",
+                "3b60c4f7-ef67-43c7-8f0d-4faee04d7d0e"
+            ),
+            call(
+                expected_success_log_message
+            )
+        ])
         self.mock_firehose_send_log.assert_called_once_with(
-            {**test_event, "message": expected_log_message}
+            {**test_event, "message": expected_success_log_message}
         )
