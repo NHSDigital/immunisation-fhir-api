@@ -59,7 +59,8 @@ def process_nhs_number(nhs_number: str) -> Dict[str, Any]:
         return make_status(str(e), nhs_number, "error")
 
     logger.info("Fetched PDS details: %s", pds_patient_resource)
-    logger.info("Fetched IEDS resources. IEDS count: %d", len(ieds_resources), ieds_resources if ieds_resources else 0)
+    logger.info("Fetched IEDS resources: %s", ieds_resources)
+    logger.info("Fetched IEDS resources. IEDS count: %d", len(ieds_resources) if ieds_resources else 0)
 
     if not ieds_resources:
         logger.info("No IEDS records returned for NHS number: %s", nhs_number)
@@ -77,7 +78,7 @@ def process_nhs_number(nhs_number: str) -> Dict[str, Any]:
             discarded_records.append(detail)
 
     if not matching_records:
-        logger.info("No records matched PDS demographics: %d", discarded_count, discarded_records)
+        logger.info("No records matched PDS demographics: %d %s", discarded_count, discarded_records)
         return make_status("No records matched PDS demographics; update skipped", nhs_number)
 
     response = ieds_update_patient_id(
@@ -90,7 +91,7 @@ def process_nhs_number(nhs_number: str) -> Dict[str, Any]:
     return response
 
 
-# Function to fetch PDS Patient details and IEDS Immunisation records
+# Function to fetch PDS Patient details and IEDS Immunisation records. WORKS
 def fetch_pds_and_ieds_resources(nhs_number: str):
     logger.info("fetch_pds_and_ieds_resources: fetching for %s", nhs_number)
     try:
@@ -108,6 +109,7 @@ def fetch_pds_and_ieds_resources(nhs_number: str):
 
     count = len(ieds)
     logger.info("fetch_pds_and_ieds_resources: fetched PDS and %d IEDS items for %s", count, nhs_number)
+    logger.info("fetch_ieds_resources:", ieds)
     return pds, ieds
 
 
