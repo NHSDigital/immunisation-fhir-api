@@ -1,5 +1,9 @@
-from common.clients import logger
+import logging
+import json
+import ast
 from typing import Dict, Any
+
+from common.clients import logger as clients_logger
 from pds_details import pds_get_patient_id, pds_get_patient_details
 from ieds_db_operations import (
     ieds_update_patient_id,
@@ -7,19 +11,31 @@ from ieds_db_operations import (
     get_items_from_patient_id,
 )
 from utils import make_status
-import json
-import ast
+
+# Module-local logger for records processing. Use this for logs local to this module
+# so they can be managed separately from the shared clients logger.
+module_logger = logging.getLogger(__name__)
+# Keep a module-level `logger` symbol for backwards compatibility with tests
+# and other modules that patch or import `record_processor.logger`.
+logger = module_logger
 
 
 def process_record(event_record: Dict[str, Any]) -> Dict[str, Any]:
 
-    logger.info("process_record. Processing record: %s", event_record)
-    # Probe logger configuration to help debug missing logs in CloudWatch
+    module_logger.info("process_record. Processing record: %s", event_record)
+    # Probe logger configuration to help debug missing logs in CloudWatch.
+    # Log both the module-local logger and the shared clients logger so it's
+    # possible to compare their handlers/levels in CloudWatch.
     try:
-        logger.info(
-            "probe: logger id=%s module=%s level=%d handlers=%d",
-            hex(id(logger)), getattr(logger, "__module__", None),
-            logger.getEffectiveLevel(), len(logger.handlers),
+        module_logger.info(
+            "probe: module_logger id=%s module=%s level=%d handlers=%d",
+            hex(id(module_logger)), getattr(module_logger, "__module__", None),
+            module_logger.getEffectiveLevel(), len(module_logger.handlers),
+        )
+        module_logger.info(
+            "probe: clients_logger id=%s module=%s level=%d handlers=%d",
+            hex(id(clients_logger)), getattr(clients_logger, "__module__", None),
+            clients_logger.getEffectiveLevel(), len(clients_logger.handlers),
         )
     except Exception:
         # Keep probe non-fatal in production
@@ -34,18 +50,18 @@ def process_record(event_record: Dict[str, Any]) -> Dict[str, Any]:
             try:
                 body = ast.literal_eval(body_text)
             except (ValueError, SyntaxError):
-                logger.error("Failed to parse body: %s", body_text)
+                module_logger.error("Failed to parse body: %s", body_text)
                 return {"status": "error", "message": "Invalid body format"}
     else:
         body = body_text
 
     nhs_number = body.get("subject")
     # Reached
-    logger.info("process record NHS number: %s", nhs_number)
+    module_logger.info("process record NHS number: %s", nhs_number)
     if nhs_number:
         return process_nhs_number(nhs_number)
 
-    logger.info("No NHS number found in event record")
+    module_logger.info("No NHS number found in event record")
     return {"status": "error", "message": "No NHS number found in event record"}
 
 
@@ -59,20 +75,21 @@ def process_nhs_number(nhs_number: str) -> Dict[str, Any]:
     if new_nhs_number == nhs_number:
         return make_status("No update required", nhs_number)
 
-    logger.info("Update patient ID from %s to %s", nhs_number, new_nhs_number)
+    module_logger.info("Update patient ID from %s to %s", nhs_number, new_nhs_number)
 
     try:
         # Fetch PDS Patient resource and IEDS resources for the old NHS number
         pds_patient_resource, ieds_resources = fetch_pds_and_ieds_resources(nhs_number)
     except Exception as e:
-        logger.exception("process_nhs_number: failed to fetch demographic details: %s", e)
+        module_logger.exception("process_nhs_number: failed to fetch demographic details: %s", e)
         return make_status(str(e), nhs_number, "error")
 
-    logger.info("Fetched PDS details: %s", pds_patient_resource)
-    logger.info("Fetched IEDS resources. IEDS count: %d", len(ieds_resources), ieds_resources if ieds_resources else 0)
+    module_logger.info("Fetched PDS details: %s", pds_patient_resource)
+    module_logger.info("Fetched IEDS resources. IEDS count: %d", len(ieds_resources),
+                       ieds_resources if ieds_resources else 0)
 
     if not ieds_resources:
-        logger.info("No IEDS records returned for NHS number: %s", nhs_number)
+        module_logger.info("No IEDS records returned for NHS number: %s", nhs_number)
         return make_status(f"No records returned for ID: {nhs_number}", nhs_number)
 
     # Compare demographics from PDS to each IEDS item, keep only matching records
@@ -87,7 +104,7 @@ def process_nhs_number(nhs_number: str) -> Dict[str, Any]:
             discarded_records.append(detail)
 
     if not matching_records:
-        logger.info("No records matched PDS demographics: %d", discarded_count, discarded_records)
+        module_logger.info("No records matched PDS demographics: %d %s", discarded_count, discarded_records)
         return make_status("No records matched PDS demographics; update skipped", nhs_number)
 
     response = ieds_update_patient_id(
@@ -102,22 +119,26 @@ def process_nhs_number(nhs_number: str) -> Dict[str, Any]:
 
 # Function to fetch PDS Patient details and IEDS Immunisation records
 def fetch_pds_and_ieds_resources(nhs_number: str):
-    logger.info("fetch_pds_and_ieds_resources: fetching for %s", nhs_number)
+    module_logger.info("fetch_pds_and_ieds_resources: fetching for %s", nhs_number)
     try:
         pds = pds_get_patient_details(nhs_number)
-        logger.info("fetch_pds_resources: fetching for %s", pds)
+        module_logger.info("fetch_pds_resources: fetching for %s", pds)
     except Exception as e:
-        logger.exception("fetch_pds_and_ieds_resources: failed to fetch PDS details for %s", nhs_number)
+        module_logger.exception(
+            "fetch_pds_and_ieds_resources: failed to fetch PDS details for %s", nhs_number
+        )
         raise RuntimeError("Failed to fetch PDS details") from e
 
     try:
         ieds = get_items_from_patient_id(nhs_number)
     except Exception as e:
-        logger.exception("fetch_pds_and_ieds_resources: failed to fetch IEDS items for %s", nhs_number)
+        module_logger.exception(
+            "fetch_pds_and_ieds_resources: failed to fetch IEDS items for %s", nhs_number
+        )
         raise RuntimeError("Failed to fetch IEDS items") from e
 
     count = len(ieds)
-    logger.info("fetch_pds_and_ieds_resources: fetched PDS and %d IEDS items for %s", count, nhs_number)
+    module_logger.info("fetch_pds_and_ieds_resources: fetched PDS and %d IEDS items for %s", count, nhs_number)
     return pds, ieds
 
 
@@ -156,40 +177,45 @@ def demographics_match(pds_details: dict, ieds_item: dict) -> bool:
         pds_name = normalize_strings(extract_normalized_name_from_patient(pds_details))
         pds_gender = normalize_strings(pds_details.get("gender"))
         pds_birth = normalize_strings(pds_details.get("birthDate"))
-        logger.info("demographics_match: demographics match for %s", pds_name, pds_gender, pds_birth)
+        module_logger.info(
+            "demographics_match: demographics from PDS: %s %s %s",
+            pds_name,
+            pds_gender,
+            pds_birth,
+        )
 
         # Retrieve patient resource from IEDS item
         patient = extract_patient_resource_from_item(ieds_item)
         if not patient:
-            logger.info("demographics_match: no patient resource in IEDS table item")
+            module_logger.info("demographics_match: no patient resource in IEDS table item")
             return False
 
         # normalize patient fields from IEDS
         ieds_name = normalize_strings(extract_normalized_name_from_patient(patient))
         ieds_gender = normalize_strings(patient.get("gender"))
         ieds_birth = normalize_strings(patient.get("birthDate"))
-        logger.info("demographics_match: demographics match for %s", patient)
+        module_logger.info("demographics_match: demographics from IEDS: %s", patient)
 
         # All required fields must be present
         if not all([pds_name, pds_gender, pds_birth, ieds_name, ieds_gender, ieds_birth]):
-            logger.info("demographics_match: missing required demographics")
+            module_logger.info("demographics_match: missing required demographics")
             return False
 
         # Compare fields
         if pds_birth != ieds_birth:
-            logger.info("demographics_match: birthDate mismatch %s != %s", pds_birth, ieds_birth)
+            module_logger.info("demographics_match: birthDate mismatch %s != %s", pds_birth, ieds_birth)
             return False
 
         if pds_gender != ieds_gender:
-            logger.info("demographics_match: gender mismatch %s != %s", pds_gender, ieds_gender)
+            module_logger.info("demographics_match: gender mismatch %s != %s", pds_gender, ieds_gender)
             return False
 
         if pds_name != ieds_name:
-            logger.info("demographics_match: name mismatch %s != %s", pds_name, ieds_name)
+            module_logger.info("demographics_match: name mismatch %s != %s", pds_name, ieds_name)
             return False
 
-        logger.info("demographics_match: demographics match for %s", patient)
+        module_logger.info("demographics_match: demographics match for %s", patient)
         return True
     except Exception:
-        logger.exception("demographics_match: comparison failed with exception")
+        module_logger.exception("demographics_match: comparison failed with exception")
         return False
