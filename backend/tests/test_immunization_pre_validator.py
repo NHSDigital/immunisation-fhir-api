@@ -1103,7 +1103,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
 
     def test_pre_validate_expiration_date(self):
         """Test pre_validate_expiration_date accepts valid values and rejects invalid values"""
-        ValidatorModelTests.test_date_value(self, field_location="expirationDate")
+        ValidatorModelTests.test_date_value(self, field_location="expirationDate", is_future_date_allowed=True)
 
     def test_pre_validate_site_coding(self):
         """Test pre_validate_site_coding accepts valid values and rejects invalid values"""

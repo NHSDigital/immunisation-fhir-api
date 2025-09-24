@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Union
 
@@ -80,7 +80,7 @@ class PreValidation:
                     raise ValueError(f"{field_location} must be an array of non-empty objects")
 
     @staticmethod
-    def for_date(field_value: str, field_location: str):
+    def for_date(field_value: str, field_location: str, future_date_allowed: bool = False):
         """
         Apply pre-validation to a date field to ensure that it is a string (JSON dates must be
         written as strings) containing a valid date in the format "YYYY-MM-DD"
@@ -89,9 +89,13 @@ class PreValidation:
             raise TypeError(f"{field_location} must be a string")
 
         try:
-            datetime.strptime(field_value, "%Y-%m-%d").date()
+            parsed_date = datetime.strptime(field_value, "%Y-%m-%d").date()
         except ValueError as value_error:
             raise ValueError(f'{field_location} must be a valid date string in the format "YYYY-MM-DD"') from value_error
+
+        # Enforce future date rule using central checker after successful parse
+        if not future_date_allowed and PreValidation.check_if_future_date(parsed_date):
+            raise ValueError(f"{field_location} must not be in the future")
 
     @staticmethod
     def for_date_time(field_value: str, field_location: str, strict_timezone: bool = True):
@@ -112,11 +116,13 @@ class PreValidation:
             "- 'YYYY-MM-DD' — Full date only"
             "- 'YYYY-MM-DDThh:mm:ss%z' — Full date and time with timezone (e.g. +00:00 or +01:00)"
             "- 'YYYY-MM-DDThh:mm:ss.f%z' — Full date and time with milliseconds and timezone"
+            "-  Date must not be in the future."
         )
-
         if strict_timezone:
-            error_message += "Only '+00:00' and '+01:00' are accepted as valid timezone offsets.\n"
-            error_message += f"Note that partial dates are not allowed for {field_location} in this service."
+            error_message += (
+                "Only '+00:00' and '+01:00' are accepted as valid timezone offsets.\n"
+                f"Note that partial dates are not allowed for {field_location} in this service.\n"
+            )
 
         allowed_suffixes = {
             "+00:00",
@@ -135,7 +141,10 @@ class PreValidation:
         for fmt in formats:
             try:
                 fhir_date = datetime.strptime(field_value, fmt)
-
+                # Enforce future-date rule using central checker after successful parse
+                if PreValidation.check_if_future_date(fhir_date):
+                    raise ValueError(f"{field_location} must not be in the future")
+                # After successful parse, enforce timezone and future-date rules
                 if strict_timezone and fhir_date.tzinfo is not None:
                     if not any(field_value.endswith(suffix) for suffix in allowed_suffixes):
                         raise ValueError(error_message)
@@ -233,3 +242,16 @@ class PreValidation:
         """
         if not nhs_number_mod11_check(nhs_number):
             raise ValueError(f"{field_location} is not a valid NHS number")
+
+    @staticmethod
+    def check_if_future_date(parsed_value: date | datetime):
+        """
+        Ensure a parsed date or datetime object is not in the future.
+        """
+        if isinstance(parsed_value, datetime):
+            now = datetime.now(parsed_value.tzinfo) if parsed_value.tzinfo else datetime.now()
+        elif isinstance(parsed_value, date):
+            now = datetime.now().date()
+        if parsed_value > now:
+            return True
+        return False

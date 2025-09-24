@@ -737,7 +737,7 @@ class PreValidators:
         """
         try:
             field_value = values["expirationDate"]
-            PreValidation.for_date(field_value, "expirationDate")
+            PreValidation.for_date(field_value, "expirationDate", future_date_allowed=True)
         except KeyError:
             pass
 

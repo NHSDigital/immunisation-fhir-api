@@ -281,6 +281,7 @@ class ValidatorModelTests:
     def test_date_value(
         test_instance: unittest.TestCase,
         field_location: str,
+        is_future_date_allowed: bool = False,
     ):
         """
         Test that a FHIR model accepts valid date values and rejects the following invalid values:
@@ -313,6 +314,15 @@ class ValidatorModelTests:
                 invalid_value=invalid_date_format,
                 expected_error_message=f"{field_location} must be a valid date string in the " + 'format "YYYY-MM-DD"',
             )
+        if not is_future_date_allowed:
+            for invalid_date_format in InvalidValues.for_future_dates:
+                test_invalid_values_rejected(
+                    test_instance,
+                    valid_json_data,
+                    field_location=field_location,
+                    invalid_value=invalid_date_format,
+                    expected_error_message=f"{field_location} must not be in the future",
+                )
 
     @staticmethod
     def test_date_time_value(
@@ -332,11 +342,14 @@ class ValidatorModelTests:
             "- 'YYYY-MM-DD' — Full date only"
             "- 'YYYY-MM-DDThh:mm:ss%z' — Full date and time with timezone (e.g. +00:00 or +01:00)"
             "- 'YYYY-MM-DDThh:mm:ss.f%z' — Full date and time with milliseconds and timezone"
+            "-  Date must not be in the future."
         )
 
         if is_occurrence_date_time:
-            expected_error_message += "Only '+00:00' and '+01:00' are accepted as valid timezone offsets.\n"
-            expected_error_message += f"Note that partial dates are not allowed for {field_location} in this service."
+            expected_error_message += (
+                "Only '+00:00' and '+01:00' are accepted as valid timezone offsets.\n"
+                f"Note that partial dates are not allowed for {field_location} in this service.\n"
+            )
             valid_datetime_formats = ValidValues.for_date_times_strict_timezones
             invalid_datetime_formats = InvalidValues.for_date_time_string_formats_for_strict_timezone
         else:
