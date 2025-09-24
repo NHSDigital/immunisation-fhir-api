@@ -78,7 +78,8 @@ def process_nhs_number(nhs_number: str) -> Dict[str, Any]:
             discarded_records.append(detail)
 
     if not matching_records:
-        logger.info("No records matched PDS demographics: %d %s", discarded_count, discarded_records)
+        logger.info("No records matched PDS demographics: %d\nDiscarded:\n%s", discarded_count,
+                    json.dumps(discarded_records, indent=2))
         return make_status("No records matched PDS demographics; update skipped", nhs_number)
 
     response = ieds_update_patient_id(
@@ -109,7 +110,7 @@ def fetch_pds_and_ieds_resources(nhs_number: str):
 
     count = len(ieds)
     logger.info("fetch_pds_and_ieds_resources: fetched PDS and %d IEDS items for %s", count, nhs_number)
-    logger.info("fetch_ieds_resources:", ieds)
+    logger.info("fetch_ieds_resources: %s", ieds)
     return pds, ieds
 
 
@@ -148,7 +149,8 @@ def demographics_match(pds_details: dict, ieds_item: dict) -> bool:
         pds_name = normalize_strings(extract_normalized_name_from_patient(pds_details))
         pds_gender = normalize_strings(pds_details.get("gender"))
         pds_birth = normalize_strings(pds_details.get("birthDate"))
-        logger.info("demographics_match: demographics match for %s", pds_name, pds_gender, pds_birth)
+        logger.info("demographics_match: demographics match for name=%s, gender=%s, birthDate=%s",
+                    pds_name, pds_gender, pds_birth)
 
         # Retrieve patient resource from IEDS item
         patient = extract_patient_resource_from_item(ieds_item)
