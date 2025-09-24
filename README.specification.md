@@ -102,7 +102,7 @@ To get started developing your API use this template repo alongside guidance pro
 This folder contains templates that can be customised for items such as opening pull requests or issues within the repo
 
 `/.github/workflows`: This folder contains templates for github action workflows such as:
-- `pr-lint.yaml`: This workflow template shows how to link Pull Request's to Jira tickets and runs when a pull request is opened.
+- `pr-jira-link.yaml`: This workflow template links Pull Requests to Jira tickets and runs when a pull request is opened.
 - `continuous-integration.yml`: This workflow template shows how to publish a Github release when pushing to master.
 
 #### `/azure`:

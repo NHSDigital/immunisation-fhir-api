@@ -1,4 +1,4 @@
-name: PR Quality Check
+name: Create PR JIRA Link
 on:
   pull_request:
     types: [opened]
