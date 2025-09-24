@@ -6,14 +6,16 @@ on:
 jobs:
   link-ticket:
     runs-on: ubuntu-latest
+    env:
+      BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
     steps:
       - name: Check ticket name conforms to requirements
-        run: echo ${{ github.event.pull_request.head.ref }} | grep -i -E -q "(amb-[0-9]+)|(ambspii-[0-9]+)|(adz-[0-9]+)|(ved-[0-9]+)|(dependabot\/)"
+        run: echo $BRANCH_NAME | grep -i -E -q "(amb-[0-9]+)|(ambspii-[0-9]+)|(adz-[0-9]+)|(ved-[0-9]+)|(dependabot\/)"
         continue-on-error: true
 
       - name: Grab ticket name
         if: contains(github.event.pull_request.head.ref, 'amb-') || contains(github.event.pull_request.head.ref, 'AMB-') || contains(github.event.pull_request.head.ref, 'ambspii-') || contains(github.event.pull_request.head.ref, 'AMBSPII-') || contains(github.event.pull_request.head.ref, 'adz-') || contains(github.event.pull_request.head.ref, 'ADZ-') || contains(github.event.pull_request.head.ref, 'ved-') || contains(github.event.pull_request.head.ref, 'VED-')
-        run: echo "TICKET_NAME=$(echo ${{ github.event.pull_request.head.ref }} | grep -i -o '\(amb-[0-9]\+\)\|\(ambspii-[0-9]\+\)\|\(adz-[0-9]\+\)\|\(ved-[0-9]\+\)' | tr '[:lower:]' '[:upper:]')" >> $GITHUB_ENV
+        run: echo "TICKET_NAME=$(echo $BRANCH_NAME | grep -i -o '\(amb-[0-9]\+\)\|\(ambspii-[0-9]\+\)\|\(adz-[0-9]\+\)\|\(ved-[0-9]\+\)' | tr '[:lower:]' '[:upper:]')" >> $GITHUB_ENV
         continue-on-error: true
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: true
@@ -21,7 +23,7 @@ jobs:
       - name: Comment on PR with link to JIRA ticket
         if: contains(github.event.pull_request.head.ref, 'amb-') || contains(github.event.pull_request.head.ref, 'AMB-') || contains(github.event.pull_request.head.ref, 'ambspii-') || contains(github.event.pull_request.head.ref, 'AMBSPII-') || contains(github.event.pull_request.head.ref, 'adz-') || contains(github.event.pull_request.head.ref, 'ADZ-') || contains(github.event.pull_request.head.ref, 'ved-') || contains(github.event.pull_request.head.ref, 'VED-')
         continue-on-error: true
-        uses: unsplash/comment-on-pr@v1.3.1
+        uses: unsplash/comment-on-pr@b5610c6125a7197eaec80072ea35ef53e1fc6035
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
