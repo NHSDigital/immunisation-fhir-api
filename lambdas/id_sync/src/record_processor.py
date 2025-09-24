@@ -16,11 +16,10 @@ def process_record(event_record: Dict[str, Any]) -> Dict[str, Any]:
     logger.info("process_record. Processing record: %s", event_record)
     # Probe logger configuration to help debug missing logs in CloudWatch
     try:
-        import logging as _logging
         logger.info(
-            "probe: logger id=%s module=%s level=%s handlers=%d",
+            "probe: logger id=%s module=%s level=%d handlers=%d",
             hex(id(logger)), getattr(logger, "__module__", None),
-            _logging.getLevelName(logger.getEffectiveLevel()), len(logger.handlers),
+            logger.getEffectiveLevel(), len(logger.handlers),
         )
     except Exception:
         # Keep probe non-fatal in production
