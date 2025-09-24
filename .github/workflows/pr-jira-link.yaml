@@ -21,7 +21,7 @@ jobs:
       - name: Comment on PR with link to JIRA ticket
         if: contains(github.event.pull_request.head.ref, 'amb-') || contains(github.event.pull_request.head.ref, 'AMB-') || contains(github.event.pull_request.head.ref, 'ambspii-') || contains(github.event.pull_request.head.ref, 'AMBSPII-') || contains(github.event.pull_request.head.ref, 'adz-') || contains(github.event.pull_request.head.ref, 'ADZ-') || contains(github.event.pull_request.head.ref, 'ved-') || contains(github.event.pull_request.head.ref, 'VED-')
         continue-on-error: true
-        uses: unsplash/comment-on-pr@master
+        uses: unsplash/comment-on-pr@v1.3.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
