@@ -343,7 +343,7 @@ class ValidatorModelTests:
             "- 'YYYY-MM-DD' — Full date only"
             "- 'YYYY-MM-DDThh:mm:ss%z' — Full date and time with timezone (e.g. +00:00 or +01:00)"
             "- 'YYYY-MM-DDThh:mm:ss.f%z' — Full date and time with milliseconds and timezone"
-            "Date must not be in the future."
+            "-  Date must not be in the future."
         )
 
         if is_occurrence_date_time:
