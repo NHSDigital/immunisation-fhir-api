@@ -71,6 +71,7 @@ def process_nhs_number(nhs_number: str) -> Dict[str, Any]:
     discarded_count = 0
     discarded_records = []
     for detail in ieds_resources:
+        logger.info("Processing IEDS record: %s", detail)
         if demographics_match(pds_patient_resource, detail):
             matching_records.append(detail)
         else:
@@ -79,7 +80,7 @@ def process_nhs_number(nhs_number: str) -> Dict[str, Any]:
 
     if not matching_records:
         logger.info("No records matched PDS demographics: %d\nDiscarded:\n%s", discarded_count,
-                    json.dumps(discarded_records, indent=2))
+                    json.dumps(discarded_records, indent=2), default=str)
         return make_status("No records matched PDS demographics; update skipped", nhs_number)
 
     response = ieds_update_patient_id(

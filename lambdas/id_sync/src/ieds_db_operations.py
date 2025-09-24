@@ -2,6 +2,9 @@ from boto3.dynamodb.conditions import Key
 from os_vars import get_ieds_table_name
 from common.aws_dynamodb import get_dynamodb_table
 from common.clients import logger, dynamodb_client
+import json
+import ast
+
 from utils import make_status
 from exceptions.id_sync_exception import IdSyncException
 
@@ -136,12 +139,33 @@ def extract_patient_resource_from_item(item: dict) -> dict | None:
     Extract a Patient resource dict from an IEDS database.
     """
     patient_resource = item.get("Resource", None)
+    logger.info(f"patient_resource (raw): {patient_resource}")
+
+    # Accept either a dict (preferred) or a JSON / Python-literal string
+    if isinstance(patient_resource, str):
+        # Try JSON first, then fall back to ast.literal_eval for single-quotes
+        try:
+            patient_resource_parsed = json.loads(patient_resource)
+        except Exception:
+            try:
+                patient_resource_parsed = ast.literal_eval(patient_resource)
+            except Exception:
+                logger.debug("extract_patient_resource_from_item: Resource is a string but could not be parsed")
+                return None
+        patient_resource = patient_resource_parsed
+
     if not isinstance(patient_resource, dict):
         return None
 
-    for response in patient_resource.get("contained", []):
+    # The Patient resource may be nested under 'contained' or be the resource itself
+    contained = patient_resource.get("contained") or []
+    for response in contained:
         if isinstance(response, dict) and response.get("resourceType") == "Patient":
             return response
+
+    # Fallback: if the resource is itself a Patient, return it
+    if patient_resource.get("resourceType") == "Patient":
+        return patient_resource
 
     return None
 
