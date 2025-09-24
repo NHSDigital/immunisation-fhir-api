@@ -49,7 +49,6 @@ updates:
   - package-ecosystem: "pip"
     directories:
       - "/"
-      - "/lambdas/ack_backend"
       - "/backend"
       - "/batch_processor_filter"
       - "/delta_backend"
@@ -58,6 +57,7 @@ updates:
       - "/filenameprocessor"
       - "/mesh_processor"
       - "/recordprocessor"
+      - "/lambdas/ack_backend"
       - "/lambdas/redis_sync"
       - "/lambdas/id_sync"
       - "/lambdas/mns_subscription"

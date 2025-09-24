@@ -13,9 +13,6 @@
 			"path": "recordprocessor"
 		},
 		{
-			"path": "lambdas/ack_backend"
-		},
-		{
 			"path": "delta_backend"
 		},
 		{
@@ -26,6 +23,9 @@
 		},
 		{
 			"path": "e2e_batch"
+		},
+		{
+			"path": "lambdas/ack_backend"
 		},
         {
             "path": "lambdas/redis_sync"

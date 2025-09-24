@@ -6,6 +6,3 @@ omit =
     id_sync/tests/*
     id_sync/tests/*/*
     id_sync/tests/*/*/*
-    ack_backend/tests/*
-    ack_backend/tests/*/*
-    ack_backend/tests/*/*/*
