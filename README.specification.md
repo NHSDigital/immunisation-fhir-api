@@ -103,7 +103,7 @@ This folder contains templates that can be customised for items such as opening 
 
 `/.github/workflows`: This folder contains templates for github action workflows such as:
 - `pr-jira-link.yaml`: This workflow template links Pull Requests to Jira tickets and runs when a pull request is opened.
-- `continuous-integration.yml`: This workflow template shows how to publish a Github release when pushing to master.
+- `create-release-tag.yml`: This workflow template shows how to publish a Github release when pushing to master.
 
 #### `/azure`:
 
