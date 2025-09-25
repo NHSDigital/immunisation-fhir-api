@@ -3,20 +3,16 @@ from datetime import datetime, timezone
 from vax_suppliers import TestPair, OdsVax
 from constants import (
     ActionFlag, BusRowResult, DestinationType, Operation,
-    create_row,
-    SOURCE_BUCKET,
     ACK_BUCKET,
-    TEMP_ACK_PREFIX,
     RAVS_URI,
     OperationOutcome
 )
 from utils import (
     poll_s3_file_pattern, fetch_pk_and_operation_from_dynamodb,
     validate_fatal_error,
-    delete_file_from_s3,
-    delete_filename_from_audit_table,
-    delete_filename_from_events_table,
-    get_file_content_from_s3
+    get_file_content_from_s3,
+    aws_cleanup,
+    create_row,
 )
 from clients import logger
 from errors import DynamoDBMismatchError
@@ -39,18 +35,19 @@ class TestCase:
         self.description: str = scenario.get("description", "")
         self.ods_vax: OdsVax = scenario.get("ods_vax")
         self.actions: list[TestAction] = scenario.get("actions", [])
-        ods_vax = self.ods_vax
-        self.ods = ods_vax.ods_code
-        self.vax = ods_vax.vax
+        self.ods = self.ods_vax.ods_code
+        self.vax = self.ods_vax.vax
         self.dose_amount: float = scenario.get("dose_amount", 0.5)
-        self.inject_char = scenario.get("test_encoding", False)
+        self.inject_cp1252 = scenario.get("create_with_cp1252_encoded_character", False)
         self.header = scenario.get("header", "NHS_NUMBER")
         self.version = scenario.get("version", 5)
         self.operation_outcome = scenario.get("operation_outcome", "")
-        # initialise attribs to be set later
-        self.ack_keys = {DestinationType.INF: None, DestinationType.BUS: None}
-        self.key = None             # TODO is identifier and key the same
         self.enabled = scenario.get("enabled", False)
+        self.ack_keys = {DestinationType.INF: None, DestinationType.BUS: None}
+        # initialise attribs to be set later
+        self.key = None             # S3 key of the uploaded file
+        self.file_name = None       # name of the generated CSV file
+        self.identifier = None      # unique identifier of subject in the CSV file rows
 
     def get_poll_destinations(self, pending: bool) -> bool:
         # loop through keys in test (inf and bus)
@@ -113,14 +110,14 @@ class TestCase:
             elif row_HEADER_RESPONSE_CODE == "Fatal Error":
                 validate_fatal_error(desc, row, i, operation_outcome)
 
-    def generate_csv_file_good(self):
+    def generate_csv_file(self):
 
         self.file_name = self.get_file_name(self.vax, self.ods, self.version)
         logger.info(f"Test \"{self.name}\" File {self.file_name}")
         data = []
         self.identifier = str(uuid.uuid4())
         for action in self.actions:
-            row = create_row(self.identifier, self.dose_amount, action.action, self.header, self.inject_char)
+            row = create_row(self.identifier, self.dose_amount, action.action, self.header, self.inject_cp1252)
             logger.info(f" > {action.action} - {self.vax}/{self.ods} - {self.identifier}")
             data.append(row)
         df = pd.DataFrame(data)
@@ -129,48 +126,35 @@ class TestCase:
 
     def get_file_name(self, vax_type, ods, version="5"):
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S00")
-        # timestamp = timestamp[:-3]
         return f"{vax_type}_Vaccinations_v{version}_{ods}_{timestamp}.csv"
 
     def cleanup(self):
-        if self.key:
-            archive_file = f"archive/{self.key}"
-            if not delete_file_from_s3(SOURCE_BUCKET, archive_file):
-                logger.warning(f"S3 delete fail {SOURCE_BUCKET}: {archive_file}")
-            delete_filename_from_audit_table(self.key)
-            delete_filename_from_events_table(self.identifier)
-        for ack_key in self.ack_keys.values():
-            if ack_key:
-                if not delete_file_from_s3(ACK_BUCKET, ack_key):
-                    logger.warning(f"s3 delete fail {ACK_BUCKET}: {ack_key}")
-        # cleanup TEMP_ACK
-        delete_file_from_s3(ACK_BUCKET, TEMP_ACK_PREFIX)
+        aws_cleanup(self.key, self.identifier, self.ack_keys)
 
 
-class TestCases:
-    def __init__(self, test_cases: dict):
-        self.test_cases = []
-        # scenarios = scenario.get(environment)
-        for s in test_cases:
-            self.test_cases.append(TestCase(s))
+def create_test_cases(test_case_dict: dict) -> list[TestCase]:
+    """Initialize test cases from a dictionary."""
+    return [TestCase(name) for name in test_case_dict]
 
-    def enable_tests(self, names: list[str]):
-        for name in names:
-            for test in self.test_cases:
-                if test.name == name:
-                    test.enabled = True
-                    break
-            else:
-                raise Exception(f"Test case with name '{name}' not found.")
 
-    def generate_csv_files_good(self) -> list[TestCase]:
-        """Generate CSV files based on a list of Test Rules."""
-        ret = []
-        for seed_data in self.test_cases:
-            if seed_data.enabled:
-                seed_data.generate_csv_file_good()
-                ret.append(seed_data)
-        return ret
+def enable_tests(test_cases: list[TestCase], names: list[str]) -> None:
+    """Enable only the test cases with the given names."""
+    for name in names:
+        for test in test_cases:
+            if test.name == name:
+                test.enabled = True
+                break
+        else:
+            raise Exception(f"Test case with name '{name}' not found.")
+
+
+def generate_csv_files(test_cases: list[TestCase]) -> list[TestCase]:
+    """Generate CSV files for all enabled test cases."""
+    ret = []
+    for test in test_cases:
+        if test.enabled:
+            test.generate_csv_file()
+            ret.append(test)
 
 
 scenarios = {
@@ -220,7 +204,7 @@ scenarios = {
             "ods_vax": TestPair.YGA_MENACWY_CRUDS,
             "operation_outcome": ActionFlag.CREATE,
             "actions": [TestAction(ActionFlag.CREATE)],
-            "test_encoding": True
+            "create_with_cp1252_encoded_character": True
         }
       ],
     "ref": []

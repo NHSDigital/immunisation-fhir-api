@@ -5,24 +5,27 @@ from utils import (
     get_file_content_from_s3,
     check_ack_file_content,
     validate_row_count,
+    purge_sqs_queues,
+    delete_file_from_s3
 )
 
-from clients import logger, sqs_client, batch_fifo_queue_url, ack_metadata_queue_url
-from scenarios import scenarios, TestCases, TestCase
+from clients import logger
+from scenarios import scenarios, TestCase, create_test_cases, enable_tests, generate_csv_files
 
 from constants import (
     SOURCE_BUCKET,
     INPUT_PREFIX,
     ACK_BUCKET,
     environment,
-    DestinationType
+    DestinationType,
+    TEMP_ACK_PREFIX
 )
 
 
 class TestE2EBatch(unittest.TestCase):
     def setUp(self):
-        test_data = TestCases(scenarios["dev"])
-        test_data.enable_tests([
+        self.tests: list[TestCase] = create_test_cases(scenarios["dev"])
+        enable_tests(self.tests, [
             "Successful Create",
             "Successful Update",
             "Successful Delete",
@@ -30,28 +33,20 @@ class TestE2EBatch(unittest.TestCase):
             "Failed Update",
             "Failed Delete",
         ])
-        self.tests:  list[TestCase] = test_data.generate_csv_files_good()
+        generate_csv_files(self.tests)
 
     def tearDown(self):
         logger.info("Cleanup...")
         for test in self.tests:
             test.cleanup()
-
-        try:
-            # only purge if ENVIRONMENT=pr-* or dev
-            if environment.startswith("pr-"):
-                sqs_client.purge_queue(QueueUrl=batch_fifo_queue_url)
-                sqs_client.purge_queue(QueueUrl=ack_metadata_queue_url)
-        except sqs_client.exceptions.PurgeQueueInProgress:
-            logger.error("SQS purge already in progress. Try again later.")
-        except Exception as e:
-            logger.error(f"SQS Purge error: {e}")
+        delete_file_from_s3(ACK_BUCKET, TEMP_ACK_PREFIX)
+        purge_sqs_queues()
 
     @unittest.skipIf(environment == "ref", "Skip for ref")
     def test_batch_submission(self):
         """Test all scenarios and submit as batch."""
         start_time = time.time()
-        max_timeout = 1200  # seconds)
+        max_timeout = 1200  # seconds
 
         send_files(self.tests)
 
@@ -91,7 +86,7 @@ def poll_for_responses(tests: list[TestCase], max_timeout=1200) -> bool:
     return True
 
 
-def validate_responses(tests: TestCases):
+def validate_responses(tests: list[TestCase]):
     start_time = time.time()
     count = 0
     expected_count = len(tests) * 2

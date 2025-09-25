@@ -10,19 +10,22 @@ from botocore.exceptions import ClientError
 from boto3.dynamodb.conditions import Key
 from io import StringIO
 from datetime import datetime, timezone
-from clients import logger, s3_client, audit_table, events_table
+from clients import (
+    logger, s3_client, audit_table, events_table, sqs_client,
+    batch_fifo_queue_url, ack_metadata_queue_url
+)
 from errors import AckFileNotFoundError, DynamoDBMismatchError
 from constants import (
     ACK_BUCKET,
     FORWARDEDFILE_PREFIX,
     SOURCE_BUCKET,
     DUPLICATE,
-    create_row,
     ACK_PREFIX,
     FILE_NAME_VAL_ERROR,
     HEADER_RESPONSE_CODE_COLUMN,
     RAVS_URI,
     ActionFlag,
+    environment
 )
 
 
@@ -53,14 +56,15 @@ def delete_file_from_s3(bucket, key):
     """Delete the specified file (object) from the given S3 bucket.
     Returns True if deletion is successful, otherwise raises an exception."""
     try:
-        response = s3_client.delete_object(Bucket=bucket, Key=key)
+        if key and key.strip():
+            response = s3_client.delete_object(Bucket=bucket, Key=key)
 
-        # Optionally verify deletion status
-        status_code = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
-        if status_code != 204:
-            raise Exception(f"Delete failed with status code: {status_code}")
+            # Optionally verify deletion status
+            status_code = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
+            if status_code != 204:
+                raise Exception(f"Delete failed with status code: {status_code}")
 
-        print(f"Deleted {key}")
+            print(f"Deleted {key}")
         return True
 
     except ClientError as e:
@@ -442,3 +446,72 @@ def poll_s3_file_pattern(prefix, search_pattern):
             if search_pattern in key:
                 return key
     return None
+
+
+def aws_cleanup(key, identifier, ack_keys):
+    if key:
+        archive_file = f"archive/{key}"
+        if not delete_file_from_s3(SOURCE_BUCKET, archive_file):
+            logger.warning(f"S3 delete fail {SOURCE_BUCKET}: {archive_file}")
+        delete_filename_from_audit_table(key)
+        delete_filename_from_events_table(identifier)
+    for ack_key in ack_keys.values():
+        if ack_key:
+            if not delete_file_from_s3(ACK_BUCKET, ack_key):
+                logger.warning(f"s3 delete fail {ACK_BUCKET}: {ack_key}")
+
+
+def purge_sqs_queues() -> bool:
+    try:
+        # only purge if ENVIRONMENT=pr-* to avoid purging shared queues
+        if environment.startswith("pr-"):
+            sqs_client.purge_queue(QueueUrl=batch_fifo_queue_url)
+            sqs_client.purge_queue(QueueUrl=ack_metadata_queue_url)
+        return True
+    except sqs_client.exceptions.PurgeQueueInProgress:
+        logger.error("SQS purge already in progress. Try again later.")
+    except Exception as e:
+        logger.error(f"SQS Purge error: {e}")
+    return False
+
+
+def create_row(unique_id, dose_amount, action_flag: str, header, inject_cp1252=None):
+    """Helper function to create a single row with the specified UNIQUE_ID and ACTION_FLAG."""
+
+    name = "James" if not inject_cp1252 else b'Jam\xe9s'
+    return {
+        header: "9732928395",
+        "PERSON_FORENAME": "PHYLIS",
+        "PERSON_SURNAME": name,
+        "PERSON_DOB": "20080217",
+        "PERSON_GENDER_CODE": "0",
+        "PERSON_POSTCODE": "WD25 0DZ",
+        "DATE_AND_TIME": datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S"),
+        "SITE_CODE": "RVVKC",
+        "SITE_CODE_TYPE_URI": "https://fhir.nhs.uk/Id/ods-organization-code",
+        "UNIQUE_ID": unique_id,
+        "UNIQUE_ID_URI": RAVS_URI,
+        "ACTION_FLAG": action_flag,
+        "PERFORMING_PROFESSIONAL_FORENAME": "PHYLIS",
+        "PERFORMING_PROFESSIONAL_SURNAME": name,
+        "RECORDED_DATE": datetime.now(timezone.utc).strftime("%Y%m%d"),
+        "PRIMARY_SOURCE": "TRUE",
+        "VACCINATION_PROCEDURE_CODE": "956951000000104",
+        "VACCINATION_PROCEDURE_TERM": "RSV vaccination in pregnancy (procedure)",
+        "DOSE_SEQUENCE": "1",
+        "VACCINE_PRODUCT_CODE": "42223111000001107",
+        "VACCINE_PRODUCT_TERM": "Quadrivalent influenza vaccine (Sanofi Pasteur)",
+        "VACCINE_MANUFACTURER": "Sanofi Pasteur",
+        "BATCH_NUMBER": "BN92478105653",
+        "EXPIRY_DATE": "20240915",
+        "SITE_OF_VACCINATION_CODE": "368209003",
+        "SITE_OF_VACCINATION_TERM": "Right arm",
+        "ROUTE_OF_VACCINATION_CODE": "1210999013",
+        "ROUTE_OF_VACCINATION_TERM": "Intradermal use",
+        "DOSE_AMOUNT": dose_amount,
+        "DOSE_UNIT_CODE": "2622896019",
+        "DOSE_UNIT_TERM": "Inhalation - unit of product usage",
+        "INDICATION_CODE": "1037351000000105",
+        "LOCATION_CODE": "RJC02",
+        "LOCATION_CODE_TYPE_URI": "https://fhir.nhs.uk/Id/ods-organization-code",
+    }
