@@ -67,7 +67,7 @@ class TestClients(unittest.TestCase):
         importlib.reload(clients)
         self.assertEqual(clients.global_s3_client, None)
 
-    def test_global_s3client_initialization(self):
+    def test_global_s3_client_initialization(self):
         ''' Test global_s3_client is initialized exactly once even with multiple invocations'''
         importlib.reload(clients)
         clients.get_s3_client()
