@@ -2,9 +2,9 @@ import os
 import logging
 from boto3 import client as boto3_client, resource as boto3_resource
 
-logging.basicConfig(level="INFO")
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
-logger.setLevel("INFO")
+logger.setLevel(logging.INFO)
 
 STREAM_NAME = os.getenv("SPLUNK_FIREHOSE_NAME", "firehose-name-not-defined")
 CONFIG_BUCKET_NAME = os.getenv("CONFIG_BUCKET_NAME", "variconfig-bucketable-not-defined")
