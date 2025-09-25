@@ -94,7 +94,7 @@ def update_contained_resource_field(
     )
     return json_data
 
-def format_future_dates(dates: List[Union[date, datetime]], mode: str = "auto") -> List[str]:
+def format_date_types(dates: List[Union[date, datetime]], mode: str = "auto") -> List[str]:
     """
     Accepts a list of date or datetime objects and returns them as strings:
     - datetime → ISO 8601 string with timezone if present

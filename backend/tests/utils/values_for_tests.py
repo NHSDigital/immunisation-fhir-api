@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 from decimal import Decimal
-from .generic_utils import format_future_dates
+from .generic_utils import format_date_types
 from datetime import datetime, timedelta
 
 
@@ -301,13 +301,13 @@ class InvalidValues:
         now + timedelta(days=730)
     ]
 
-    for_future_dates = format_future_dates(sample_inputs, mode = "date")
+    for_future_dates = format_date_types(sample_inputs, mode = "date")
 
     # Strings which are not in acceptable date time format
     for_date_time_string_formats_for_relaxed_timezone = [
         "",  # Empty string
         "invalid",  # Invalid format
-        *format_future_dates(sample_inputs, mode = "datetime"),
+        *format_date_types(sample_inputs, mode = "datetime"),
         "20000101",  # Date digits only (i.e. without hypens)
         "20000101000000",  # Date and time digits only
         "200001010000000000",  # Date, time and timezone digits only
