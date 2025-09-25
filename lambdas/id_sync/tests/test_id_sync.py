@@ -256,7 +256,7 @@ class TestIdSyncHandler(unittest.TestCase):
         exception = exception_context.exception
 
         self.assertIsInstance(exception, IdSyncException)
-        self.assertEqual(exception.nhs_numbers, [])  # Since no nhs_number was collected
+        self.assertEqual(exception.nhs_numbers, [])
         self.assertEqual(exception.message, "Processed 1 records with 1 errors")
         self.mock_logger.exception.assert_called_once_with(f"id_sync error: {exception.message}")
 

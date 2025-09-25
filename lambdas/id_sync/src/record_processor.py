@@ -57,8 +57,7 @@ def process_nhs_number(nhs_number: str) -> Dict[str, Any]:
         logger.exception("process_nhs_number: failed to fetch demographic details: %s", e)
         return make_status(str(e), nhs_number, "error")
 
-    logger.info("Fetched PDS details: %s", pds_patient_resource)
-    logger.info("Fetched IEDS resources: %s", ieds_resources)
+    logger.debug("Fetched PDS details: %s", pds_patient_resource)
     logger.info("Fetched IEDS resources. IEDS count: %d", len(ieds_resources) if ieds_resources else 0)
 
     if not ieds_resources:
@@ -76,7 +75,7 @@ def process_nhs_number(nhs_number: str) -> Dict[str, Any]:
             discarded_count += 1
 
     if not matching_records:
-        logger.info("No records matched PDS demographics: %d", discarded_count,)
+        logger.info("No records matched PDS demographics: %d", discarded_count)
         return make_status("No records matched PDS demographics; update skipped", nhs_number)
 
     response = ieds_update_patient_id(
@@ -94,7 +93,6 @@ def fetch_pds_and_ieds_resources(nhs_number: str):
     logger.info("fetch_pds_and_ieds_resources: fetching for %s", nhs_number)
     try:
         pds = pds_get_patient_details(nhs_number)
-        logger.info("fetch_pds_resources: fetching for %s", pds)
     except Exception as e:
         logger.exception("fetch_pds_and_ieds_resources: failed to fetch PDS details for %s", nhs_number)
         raise RuntimeError("Failed to fetch PDS details") from e
@@ -105,9 +103,6 @@ def fetch_pds_and_ieds_resources(nhs_number: str):
         logger.exception("fetch_pds_and_ieds_resources: failed to fetch IEDS items for %s", nhs_number)
         raise RuntimeError("Failed to fetch IEDS items") from e
 
-    count = len(ieds)
-    logger.info("fetch_pds_and_ieds_resources: fetched PDS and %d IEDS items for %s", count, nhs_number)
-    logger.info("fetch_ieds_resources: %s", ieds)
     return pds, ieds
 
 
@@ -146,7 +141,7 @@ def demographics_match(pds_details: dict, ieds_item: dict) -> bool:
         pds_name = normalize_strings(extract_normalized_name_from_patient(pds_details))
         pds_gender = normalize_strings(pds_details.get("gender"))
         pds_birth = normalize_strings(pds_details.get("birthDate"))
-        logger.info("demographics_match: demographics match for name=%s, gender=%s, birthDate=%s",
+        logger.debug("demographics_match: demographics match for name=%s, gender=%s, birthDate=%s",
                     pds_name, pds_gender, pds_birth)
 
         # Retrieve patient resource from IEDS item
@@ -159,27 +154,26 @@ def demographics_match(pds_details: dict, ieds_item: dict) -> bool:
         ieds_name = normalize_strings(extract_normalized_name_from_patient(patient))
         ieds_gender = normalize_strings(patient.get("gender"))
         ieds_birth = normalize_strings(patient.get("birthDate"))
-        logger.info("demographics_match: demographics match for %s", patient)
+        logger.debug("demographics_match: demographics match for %s", patient)
 
         # All required fields must be present
         if not all([pds_name, pds_gender, pds_birth, ieds_name, ieds_gender, ieds_birth]):
-            logger.info("demographics_match: missing required demographics")
+            logger.debug("demographics_match: missing required demographics")
             return False
 
         # Compare fields
         if pds_birth != ieds_birth:
-            logger.info("demographics_match: birthDate mismatch %s != %s", pds_birth, ieds_birth)
+            logger.debug("demographics_match: birthDate mismatch %s != %s", pds_birth, ieds_birth)
             return False
 
         if pds_gender != ieds_gender:
-            logger.info("demographics_match: gender mismatch %s != %s", pds_gender, ieds_gender)
+            logger.debug("demographics_match: gender mismatch %s != %s", pds_gender, ieds_gender)
             return False
 
         if pds_name != ieds_name:
-            logger.info("demographics_match: name mismatch %s != %s", pds_name, ieds_name)
+            logger.debug("demographics_match: name mismatch %s != %s", pds_name, ieds_name)
             return False
 
-        logger.info("demographics_match: demographics match for %s", patient)
         return True
     except Exception:
         logger.exception("demographics_match: comparison failed with exception")
