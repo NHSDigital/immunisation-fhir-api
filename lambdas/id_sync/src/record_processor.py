@@ -57,6 +57,8 @@ def process_nhs_number(nhs_number: str) -> Dict[str, Any]:
         logger.exception("process_nhs_number: failed to fetch demographic details: %s", e)
         return make_status(str(e), nhs_number, "error")
 
+    logger.info("Fetched IEDS resources. IEDS count: %d", len(ieds_resources) if ieds_resources else 0)
+
     if not ieds_resources:
         logger.info("No IEDS records returned for NHS number: %s", nhs_number)
         return make_status(f"No records returned for ID: {nhs_number}", nhs_number)
@@ -65,6 +67,7 @@ def process_nhs_number(nhs_number: str) -> Dict[str, Any]:
     matching_records = []
     discarded_count = 0
     for detail in ieds_resources:
+        logger.info("Processing IEDS record: %s", detail)
         if demographics_match(pds_patient_resource, detail):
             matching_records.append(detail)
         else:
@@ -84,16 +87,21 @@ def process_nhs_number(nhs_number: str) -> Dict[str, Any]:
     return response
 
 
-# Function to fetch PDS Patient details and IEDS Immunisation records
+# Function to fetch PDS Patient details and IEDS Immunisation records.
 def fetch_pds_and_ieds_resources(nhs_number: str):
+    logger.info("fetch_pds_and_ieds_resources: fetching for %s", nhs_number)
     try:
         pds = pds_get_patient_details(nhs_number)
     except Exception as e:
+        logger.exception("fetch_pds_and_ieds_resources: failed to fetch PDS details for %s", nhs_number)
         raise RuntimeError("Failed to fetch PDS details") from e
+
     try:
         ieds = get_items_from_patient_id(nhs_number)
     except Exception as e:
+        logger.exception("fetch_pds_and_ieds_resources: failed to fetch IEDS items for %s", nhs_number)
         raise RuntimeError("Failed to fetch IEDS items") from e
+
     return pds, ieds
 
 
@@ -132,11 +140,13 @@ def demographics_match(pds_details: dict, ieds_item: dict) -> bool:
         pds_name = normalize_strings(extract_normalized_name_from_patient(pds_details))
         pds_gender = normalize_strings(pds_details.get("gender"))
         pds_birth = normalize_strings(pds_details.get("birthDate"))
+        logger.debug("demographics_match: demographics match for name=%s, gender=%s, birthDate=%s",
+                     pds_name, pds_gender, pds_birth)
 
         # Retrieve patient resource from IEDS item
         patient = extract_patient_resource_from_item(ieds_item)
         if not patient:
-            logger.debug("demographics_match: no patient resource in IEDS table item")
+            logger.info("demographics_match: no patient resource in IEDS table item")
             return False
 
         # normalize patient fields from IEDS
