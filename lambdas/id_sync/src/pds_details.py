@@ -43,7 +43,6 @@ def pds_get_patient_id(nhs_number: str) -> str:
     :return: PDS patient ID
     """
     try:
-        logger.info(f"get_pds_patient_id. nhs_number: {nhs_number}")
         patient_details = pds_get_patient_details(nhs_number)
         if not patient_details:
             return None
