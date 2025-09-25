@@ -24,9 +24,6 @@ def handler(event_data: Dict[str, Any], _context) -> Dict[str, Any]:
 
         logger.info("id_sync processing event with %d records", len(records))
 
-        # Use explicit loops instead of list comprehensions so we can more
-        # easily inspect intermediate results and avoid building temporary
-        # comprehension constructs.
         results = []
         nhs_numbers = []
         error_count = 0

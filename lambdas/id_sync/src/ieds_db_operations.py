@@ -22,7 +22,7 @@ def get_ieds_table():
 
 
 def ieds_update_patient_id(old_id: str, new_id: str, items_to_update: list | None = None) -> dict:
-    """Update the patient ID in the IEDS table."""
+    """Update the patient ID (new NHS number) in the IEDS table."""
     logger.info(f"ieds_update_patient_id. Update patient ID from {old_id} to {new_id}")
     if not old_id or not new_id or not old_id.strip() or not new_id.strip():
         return make_status("Old ID and New ID cannot be empty", old_id, "error")
