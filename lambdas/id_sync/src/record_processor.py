@@ -57,7 +57,6 @@ def process_nhs_number(nhs_number: str) -> Dict[str, Any]:
         logger.exception("process_nhs_number: failed to fetch demographic details: %s", e)
         return make_status(str(e), nhs_number, "error")
 
-    logger.debug("Fetched PDS details: %s", pds_patient_resource)
     logger.info("Fetched IEDS resources. IEDS count: %d", len(ieds_resources) if ieds_resources else 0)
 
     if not ieds_resources:
@@ -154,7 +153,6 @@ def demographics_match(pds_details: dict, ieds_item: dict) -> bool:
         ieds_name = normalize_strings(extract_normalized_name_from_patient(patient))
         ieds_gender = normalize_strings(patient.get("gender"))
         ieds_birth = normalize_strings(patient.get("birthDate"))
-        logger.debug("demographics_match: demographics match for %s", patient)
 
         # All required fields must be present
         if not all([pds_name, pds_gender, pds_birth, ieds_name, ieds_gender, ieds_birth]):

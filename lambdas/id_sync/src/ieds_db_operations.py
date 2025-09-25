@@ -142,7 +142,7 @@ def extract_patient_resource_from_item(item: dict) -> dict | None:
         try:
             patient_resource_parsed = json.loads(patient_resource)
         except json.JSONDecodeError:
-            logger.warning("Failed to decode patient_resource JSON string")
+            logger.error("Failed to decode patient_resource JSON string")
             return None
         patient_resource = patient_resource_parsed
 
