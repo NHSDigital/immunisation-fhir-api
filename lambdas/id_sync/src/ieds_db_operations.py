@@ -137,7 +137,6 @@ def extract_patient_resource_from_item(item: dict) -> dict | None:
     Extract a Patient resource from an IEDS database.
     """
     patient_resource = item.get("Resource", None)
-    logger.info(f"patient_resource (raw): {patient_resource}")
 
     if isinstance(patient_resource, str):
         try:
