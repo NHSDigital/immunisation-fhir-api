@@ -30,7 +30,6 @@ def process_record(event_record: Dict[str, Any]) -> Dict[str, Any]:
         body = body_text
 
     nhs_number = body.get("subject")
-    # Reached
     logger.info("process record NHS number: %s", nhs_number)
     if nhs_number:
         return process_nhs_number(nhs_number)
@@ -90,7 +89,7 @@ def process_nhs_number(nhs_number: str) -> Dict[str, Any]:
     return response
 
 
-# Function to fetch PDS Patient details and IEDS Immunisation records. WORKS
+# Function to fetch PDS Patient details and IEDS Immunisation records.
 def fetch_pds_and_ieds_resources(nhs_number: str):
     logger.info("fetch_pds_and_ieds_resources: fetching for %s", nhs_number)
     try:
