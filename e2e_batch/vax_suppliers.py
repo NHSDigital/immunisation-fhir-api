@@ -1,10 +1,3 @@
-class VaxSupplierPerms:
-    def __init__(self, ods_code, vax, permissions):
-        self.ods_code = ods_code
-        self.vax = vax
-        self.permissions = permissions
-
-
 # json to represent the classes below
 suppliers = {
     "DPSFULL": {

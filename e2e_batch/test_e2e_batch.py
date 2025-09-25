@@ -46,7 +46,7 @@ class TestE2EBatch(unittest.TestCase):
     def test_batch_submission(self):
         """Test all scenarios and submit as batch."""
         start_time = time.time()
-        max_timeout = 1200  # seconds
+        max_timeout = 600  # seconds
 
         send_files(self.tests)
 

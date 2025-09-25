@@ -29,9 +29,10 @@ This test suite provides automated end-to-end (E2E) testing for the Immunisation
 
 ## How to Run
 1. Ensure all dependencies and environment variables are set (see project root README).
-2. Update .`.env` file with contents indicated in `PR-NNN.env`, modified for PR and AWS access credentials
-3. Update the apigee app to match the required PR-NNN
-3. Run tests from vscode debugger or from makefile using 
+2. Update `.env` file with contents indicated in `PR-NNN.env`, modified for PR
+3. Update `.env` with referrence to the appropriate AWS config profile `AWS_PROFILE={your-aws-profile}`
+4. Update the apigee app to match the required PR-NNN
+5. Run tests from vscode debugger or from makefile using 
 ```
 make test
 ```

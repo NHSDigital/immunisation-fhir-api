@@ -73,7 +73,7 @@ def delete_file_from_s3(bucket, key):
         raise Exception(f"Unexpected error during file deletion: {e}")
 
 
-def wait_for_ack_file(ack_prefix, input_file_name, timeout=1200):
+def wait_for_ack_file(ack_prefix, input_file_name, timeout=600):
     """Poll the ACK_BUCKET for an ack file that contains the input_file_name as a substring."""
 
     filename_without_ext = input_file_name[:-4] if input_file_name.endswith(".csv") else input_file_name
