@@ -48,26 +48,13 @@ class AppRestrictedAuth:
             "exp": now + self.expiry,
             "jti": str(uuid.uuid4())
         }
-        logger.info(f"JWT claims: {claims}")
-        # ✅ Version-compatible JWT encoding
-        try:
-            # PyJWT 2.x
-            return jwt.encode(
-                claims,
-                secret_object['private_key'],
-                algorithm='RS512',
-                headers={"kid": secret_object['kid']}
-            )
-        except TypeError:
-            # PyJWT 1.x (older versions return bytes)
-            token = jwt.encode(
-                claims,
-                secret_object['private_key'],
-                algorithm='RS512',
-                headers={"kid": secret_object['kid']}
-            )
-            # Convert bytes to string if needed
-            return token.decode('utf-8') if isinstance(token, bytes) else token
+
+        return jwt.encode(
+            claims,
+            secret_object['private_key'],
+            algorithm='RS512',
+            headers={"kid": secret_object['kid']}
+        )
 
     def get_access_token(self):
         logger.info("get_access_token")
@@ -77,15 +64,13 @@ class AppRestrictedAuth:
         logger.info(f"Cache key: {self.cache_key}")
         logger.info("Checking cache for access token")
         cached = self.cache.get(self.cache_key)
-        logger.info(f"Cached token: {cached}")
+
         if cached and cached["expires_at"] > now:
             logger.info("Returning cached access token")
             return cached["token"]
 
         logger.info("No valid cached token found, creating new token")
         _jwt = self.create_jwt(now)
-
-        logger.info(f"JWT created: {_jwt}")
 
         headers = {
             'Content-Type': 'application/x-www-form-urlencoded'
