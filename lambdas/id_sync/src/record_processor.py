@@ -142,7 +142,7 @@ def demographics_match(pds_details: dict, ieds_item: dict) -> bool:
         pds_gender = normalize_strings(pds_details.get("gender"))
         pds_birth = normalize_strings(pds_details.get("birthDate"))
         logger.debug("demographics_match: demographics match for name=%s, gender=%s, birthDate=%s",
-                    pds_name, pds_gender, pds_birth)
+                     pds_name, pds_gender, pds_birth)
 
         # Retrieve patient resource from IEDS item
         patient = extract_patient_resource_from_item(ieds_item)
