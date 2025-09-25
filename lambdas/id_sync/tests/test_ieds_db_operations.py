@@ -1,8 +1,49 @@
 import unittest
+
+from ieds_db_operations import extract_patient_resource_from_item
 from unittest.mock import patch, MagicMock
 from exceptions.id_sync_exception import IdSyncException
-
 import ieds_db_operations
+
+
+class TestExtractPatientResourceFromItem(unittest.TestCase):
+
+    def test_extract_from_dict_with_contained_patient(self):
+        item = {
+            "Resource": {
+                "resourceType": "Immunization",
+                "contained": [
+                    {"resourceType": "Patient", "id": "P1", "name": [{"family": "Doe"}]}
+                ],
+            }
+        }
+
+        patient = extract_patient_resource_from_item(item)
+        self.assertIsNotNone(patient)
+        self.assertIsInstance(patient, dict)
+        self.assertEqual(patient.get("resourceType"), "Patient")
+        self.assertEqual(patient.get("id"), "P1")
+
+    def test_extract_from_json_string(self):
+        resource_json = '{"resourceType": "Immunization", "contained": [{"resourceType": "Patient", "id": "P2"}]}'
+        item = {"Resource": resource_json}
+
+        patient = extract_patient_resource_from_item(item)
+        self.assertIsNotNone(patient)
+        self.assertEqual(patient.get("id"), "P2")
+
+    def test_malformed_json_string_returns_none(self):
+        # A malformed JSON string should not raise, but return None
+        item = {"Resource": "{not: valid json}"}
+        self.assertIsNone(extract_patient_resource_from_item(item))
+
+    def test_non_dict_resource_returns_none(self):
+        item = {"Resource": 12345}
+        self.assertIsNone(extract_patient_resource_from_item(item))
+
+    def test_missing_resource_returns_none(self):
+        item = {}
+        self.assertIsNone(extract_patient_resource_from_item(item))
 
 
 class TestIedsDbOperations(unittest.TestCase):
