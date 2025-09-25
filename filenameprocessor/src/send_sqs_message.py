@@ -14,6 +14,7 @@ def send_to_supplier_queue(message_body: dict, vaccine_type: str, supplier: str)
             QueueUrl=queue_url, MessageBody=json_dumps(message_body), MessageGroupId=f"{supplier}_{vaccine_type}"
         )
         logger.info("Message sent to SQS queue for supplier: %s", supplier)
+        logger.info("MessageGroupId: %s", f"{supplier}_{vaccine_type}")
     except Exception as error:  # pylint: disable=broad-exception-caught
         error_message = f"An unexpected error occurred whilst sending to SQS: {error}"
         logger.error(error_message)
