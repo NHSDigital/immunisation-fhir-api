@@ -119,7 +119,7 @@ jobs:
         continue-on-error: true
         run: |
             poetry install
-            poetry run coverage run -m unittest --source=src discover || echo "ack-lambda tests failed" >> ../../failed_tests.txt
+            poetry run coverage run --source=src -m unittest discover || echo "ack-lambda tests failed" >> ../../failed_tests.txt
             poetry run coverage xml -o ../../ack-lambda-coverage.xml
 
       - name: Run unittest with coverage-mns-subscription
