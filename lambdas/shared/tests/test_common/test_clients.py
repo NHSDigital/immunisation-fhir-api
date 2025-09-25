@@ -61,3 +61,17 @@ class TestClients(unittest.TestCase):
         self.mock_logging.assert_called_once_with()
         self.assertTrue(hasattr(clients, 'logger'))
         clients.logger.setLevel.assert_any_call("INFO")
+
+    def test_global_s3_client(self):
+        ''' Test global_s3_client is not initialized on import '''
+        importlib.reload(clients)
+        self.assertEqual(clients.global_s3_client, None)
+
+    def test_global_s3client_initialization(self):
+        ''' Test global_s3_client is initialized exactly once even with multiple invocations'''
+        importlib.reload(clients)
+        clients.get_s3_client()
+        self.assertNotEqual(clients.global_s3_client, None)
+        call_count = self.mock_boto3_client.call_count
+        clients.get_s3_client()
+        self.assertEqual(self.mock_boto3_client.call_count, call_count)
