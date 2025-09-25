@@ -38,8 +38,10 @@ class TestE2EBatch(unittest.TestCase):
             test.cleanup()
 
         try:
-            sqs_client.purge_queue(QueueUrl=batch_fifo_queue_url)
-            sqs_client.purge_queue(QueueUrl=ack_metadata_queue_url)
+            # only purge if ENVIRONMENT=pr-* or dev
+            if environment.startswith("pr-"):
+                sqs_client.purge_queue(QueueUrl=batch_fifo_queue_url)
+                sqs_client.purge_queue(QueueUrl=ack_metadata_queue_url)
         except sqs_client.exceptions.PurgeQueueInProgress:
             logger.error("SQS purge already in progress. Try again later.")
         except Exception as e:
