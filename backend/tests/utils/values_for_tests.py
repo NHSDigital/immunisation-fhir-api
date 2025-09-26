@@ -2,6 +2,9 @@
 
 from dataclasses import dataclass
 from decimal import Decimal
+from .generic_utils import format_date_types
+from datetime import datetime, timedelta
+
 
 # Lists of data types for 'invalid data type' testing
 integers = [-1, 0, 1]
@@ -291,16 +294,20 @@ class InvalidValues:
         "2000-02-30",  # Invalid combination of month and day
     ]
 
-    for_future_dates = [
-        "2100-01-01",  # Year in future
-        "2050-12-31",  # Year in future
-        "2029-06-15",  # Year in future
+    now = datetime.now()
+    sample_inputs = [
+        now + timedelta(days=1),
+        now + timedelta(days=365),
+        now + timedelta(days=730)
     ]
+
+    for_future_dates = format_date_types(sample_inputs, mode = "date")
 
     # Strings which are not in acceptable date time format
     for_date_time_string_formats_for_relaxed_timezone = [
         "",  # Empty string
         "invalid",  # Invalid format
+        *format_date_types(sample_inputs, mode = "datetime"),
         "20000101",  # Date digits only (i.e. without hypens)
         "20000101000000",  # Date and time digits only
         "200001010000000000",  # Date, time and timezone digits only
@@ -392,4 +399,3 @@ class InvalidValues:
     ]
     
     invalid_dose_quantity = {"value": 2, "unit": "ml", "code": "258773002"}
- 
