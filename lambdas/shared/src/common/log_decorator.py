@@ -21,7 +21,7 @@ def send_log_to_firehose(stream_name, log_data: dict) -> None:
 
 
 def generate_and_send_logs(stream_name,
-                           start_time, base_log_data: dict, additional_log_data: dict, 
+                           start_time, base_log_data: dict, additional_log_data: dict,
                            use_ms_precision: bool = False, is_error_log: bool = False
                            ) -> None:
     """Generates log data which includes the base_log_data, additional_log_data, and time taken (calculated using the
