@@ -1,6 +1,6 @@
 # Define the directory containing the Docker image and calculate its SHA-256 hash for triggering redeployments
 locals {
-  id_sync_lambda_dir = abspath("${path.root}/../id_sync")
+  id_sync_lambda_dir = abspath("${path.root}/../lambdas/id_sync")
 
   id_sync_lambda_files = fileset(local.id_sync_lambda_dir, "**")
 
