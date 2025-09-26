@@ -6,6 +6,7 @@ from io import StringIO
 from contextlib import ExitStack
 from moto import mock_s3
 from boto3 import client as boto3_client
+from common.log_decorator import generate_and_send_logs, send_log_to_firehose
 
 from tests.utils.values_for_ack_backend_tests import (
     ValidValues,
@@ -29,6 +30,7 @@ class TestLoggingDecorators(unittest.TestCase):
     def setUp(self):
         self.s3_client = boto3_client("s3", region_name="eu-west-2")
         GenericSetUp(self.s3_client)
+        self.stream_name = MOCK_ENVIRONMENT_DICT["FIREHOSE_STREAM_NAME"]
 
         # MOCK SOURCE FILE WITH 100 ROWS TO SIMULATE THE SCENARIO WHERE THE ACK FILE IS NO FULL.
         # TODO: Test all other scenarios.
@@ -105,8 +107,8 @@ class TestLoggingDecorators(unittest.TestCase):
 
         for operation in ["CREATE", "UPDATE", "DELETE"]:
             with (  # noqa: E999
-                patch("logging_decorators.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
-                patch("logging_decorators.logger") as mock_logger,  # noqa: E999
+                patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
+                patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
             ):  # noqa: E999
                 result = lambda_handler(event=generate_event([{"operation_requested": operation}]), context={})
 
@@ -126,15 +128,18 @@ class TestLoggingDecorators(unittest.TestCase):
             self.assertEqual(second_logger_info_call_args, expected_second_logger_info_data)
 
             mock_send_log_to_firehose.assert_has_calls(
-                [call(expected_first_logger_info_data), call(expected_second_logger_info_data)]
+                [
+                    call(self.stream_name, expected_first_logger_info_data),
+                    call(self.stream_name, expected_second_logger_info_data)
+                ]
             )
 
     def test_splunk_logging_missing_data(self):
         """Tests missing key values in the body of the event"""
 
         with (  # noqa: E999
-            patch("logging_decorators.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
-            patch("logging_decorators.logger") as mock_logger,  # noqa: E999
+            patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
+            patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
         ):  # noqa: E999
             with self.assertRaises(Exception):
                 lambda_handler(event={"Records": [{"body": json.dumps([{"": "456"}])}]}, context={})
@@ -151,12 +156,17 @@ class TestLoggingDecorators(unittest.TestCase):
             self.assertEqual(first_logger_info_call_args, expected_first_logger_info_data)
             self.assertEqual(first_logger_error_call_args, expected_first_logger_error_data)
 
+            print(mock_send_log_to_firehose.call_args_list)
+            print(call(expected_first_logger_info_data))
+            print(call(expected_first_logger_error_data))
             self.assertEqual(
-                mock_send_log_to_firehose.call_args_list,
-                [call(expected_first_logger_info_data), call(expected_first_logger_error_data)],
+                mock_send_log_to_firehose.call_args_list, [
+                    call(self.stream_name, expected_first_logger_info_data),
+                    call(self.stream_name, expected_first_logger_error_data)
+                ],
             )
 
-    @patch("logging_decorators.send_log_to_firehose")
+    @patch("common.log_decorator.send_log_to_firehose")
     def test_splunk_logging_statuscode_diagnostics(
         self,
         mock_send_log_to_firehose,
@@ -173,8 +183,8 @@ class TestLoggingDecorators(unittest.TestCase):
 
         for test_case in test_cases:
             with (  # noqa: E999
-                patch("logging_decorators.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
-                patch("logging_decorators.logger") as mock_logger,  # noqa: E999
+                patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
+                patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
             ):  # noqa: E999
                 result = lambda_handler(event=generate_event([{"diagnostics": test_case["diagnostics"]}]), context={})
 
@@ -196,7 +206,10 @@ class TestLoggingDecorators(unittest.TestCase):
             self.assertEqual(second_logger_info_call_args, expected_second_logger_info_data)
 
             mock_send_log_to_firehose.assert_has_calls(
-                [call(expected_first_logger_info_data), call(expected_second_logger_info_data)]
+                [
+                    call(self.stream_name, expected_first_logger_info_data),
+                    call(self.stream_name, expected_second_logger_info_data)
+                ]
             )
 
     def test_splunk_logging_multiple_rows(self):
@@ -204,8 +217,8 @@ class TestLoggingDecorators(unittest.TestCase):
         messages = [{"row_id": "test1"}, {"row_id": "test2"}]
 
         with (  # noqa: E999
-            patch("logging_decorators.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
-            patch("logging_decorators.logger") as mock_logger,  # noqa: E999
+            patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
+            patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
         ):  # noqa: E999
             result = lambda_handler(generate_event(messages), context={})
 
@@ -227,13 +240,13 @@ class TestLoggingDecorators(unittest.TestCase):
 
         mock_send_log_to_firehose.assert_has_calls(
             [
-                call(expected_first_logger_info_data),
-                call(expected_second_logger_info_data),
-                call(expected_third_logger_info_data),
+                call(self.stream_name, expected_first_logger_info_data),
+                call(self.stream_name, expected_second_logger_info_data),
+                call(self.stream_name, expected_third_logger_info_data),
             ]
         )
 
-    @patch("logging_decorators.send_log_to_firehose")
+    @patch("common.log_decorator.send_log_to_firehose")
     def test_splunk_logging_multiple_with_diagnostics(
         self,
         mock_send_log_to_firehose,
@@ -254,8 +267,8 @@ class TestLoggingDecorators(unittest.TestCase):
         ]
 
         with (  # noqa: E999
-            patch("logging_decorators.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
-            patch("logging_decorators.logger") as mock_logger,  # noqa: E999
+            patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
+            patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
         ):  # noqa: E999
             result = lambda_handler(generate_event(messages), context={})
 
@@ -302,10 +315,10 @@ class TestLoggingDecorators(unittest.TestCase):
 
         mock_send_log_to_firehose.assert_has_calls(
             [
-                call(expected_first_logger_info_data),
-                call(expected_second_logger_info_data),
-                call(expected_third_logger_info_data),
-                call(expected_fourth_logger_info_data),
+                call(self.stream_name, expected_first_logger_info_data),
+                call(self.stream_name, expected_second_logger_info_data),
+                call(self.stream_name, expected_third_logger_info_data),
+                call(self.stream_name, expected_fourth_logger_info_data),
             ]
         )
 
@@ -319,8 +332,8 @@ class TestLoggingDecorators(unittest.TestCase):
             messages.append({"row_id": message_value})
 
         with (  # noqa: E999
-            patch("logging_decorators.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
-            patch("logging_decorators.logger") as mock_logger,  # noqa: E999
+            patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
+            patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
             patch("update_ack_file.change_audit_table_status_to_processed")
                 as mock_change_audit_table_status_to_processed,  # noqa: E999
         ):  # noqa: E999
@@ -343,8 +356,8 @@ class TestLoggingDecorators(unittest.TestCase):
 
         mock_send_log_to_firehose.assert_has_calls(
             [
-                call(secondlast_logger_info_call_args),
-                call(last_logger_info_call_args),
+                call(self.stream_name, secondlast_logger_info_call_args),
+                call(self.stream_name, last_logger_info_call_args),
             ]
         )
         mock_change_audit_table_status_to_processed.assert_not_called()
@@ -358,8 +371,8 @@ class TestLoggingDecorators(unittest.TestCase):
             messages.append({"row_id": message_value})
 
         with (  # noqa: E999
-            patch("logging_decorators.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
-            patch("logging_decorators.logger") as mock_logger,  # noqa: E999
+            patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
+            patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
             patch("update_ack_file.change_audit_table_status_to_processed")
                 as mock_change_audit_table_status_to_processed,  # noqa: E999
         ):  # noqa: E999
@@ -390,9 +403,9 @@ class TestLoggingDecorators(unittest.TestCase):
 
         mock_send_log_to_firehose.assert_has_calls(
             [
-                call(thirdlast_logger_info_call_args),
-                call(secondlast_logger_info_call_args),
-                call(last_logger_info_call_args),
+                call(self.stream_name, thirdlast_logger_info_call_args),
+                call(self.stream_name, secondlast_logger_info_call_args),
+                call(self.stream_name, last_logger_info_call_args),
             ]
         )
         mock_change_audit_table_status_to_processed.assert_called()

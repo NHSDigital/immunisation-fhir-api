@@ -1,49 +1,19 @@
 import unittest
 from unittest.mock import patch
 import logging_decorators
-import time
 
 
 class TestLoggingDecorators(unittest.TestCase):
     def setUp(self):
         # Patch logger and firehose_client
-        self.logger_patcher = patch('logging_decorators.logger')
+        self.logger_patcher = patch('common.log_decorator.logger')
         self.mock_logger = self.logger_patcher.start()
-        self.firehose_patcher = patch('logging_decorators.firehose_client')
+        self.firehose_patcher = patch('common.log_decorator.firehose_client')
         self.mock_firehose = self.firehose_patcher.start()
 
     def tearDown(self):
         self.logger_patcher.stop()
         self.firehose_patcher.stop()
-
-    def test_send_log_to_firehose_success(self):
-        log_data = {"foo": "bar"}
-        logging_decorators.send_log_to_firehose(log_data)
-        self.mock_firehose.put_record.assert_called_once()
-        self.mock_logger.info.assert_called_with("Log sent to Firehose")
-
-    def test_send_log_to_firehose_exception(self):
-        self.mock_firehose.put_record.side_effect = Exception("fail!")
-        log_data = {"foo": "bar"}
-        logging_decorators.send_log_to_firehose(log_data)
-        self.mock_logger.exception.assert_called()
-        self.assertIn("Error sending log to Firehose", self.mock_logger.exception.call_args[0][0])
-
-    def test_generate_and_send_logs_info(self):
-        start_time = time.time() - 1
-        base_log_data = {"base": "data"}
-        additional_log_data = {"extra": "info"}
-        logging_decorators.generate_and_send_logs(start_time, base_log_data, additional_log_data)
-        self.mock_logger.info.assert_called()
-        self.mock_firehose.put_record.assert_called_once()
-
-    def test_generate_and_send_logs_error(self):
-        start_time = time.time() - 1
-        base_log_data = {"base": "data"}
-        additional_log_data = {"extra": "info"}
-        logging_decorators.generate_and_send_logs(start_time, base_log_data, additional_log_data, is_error_log=True)
-        self.mock_logger.error.assert_called()
-        self.mock_firehose.put_record.assert_called_once()
 
     def test_process_diagnostics_dict(self):
         diagnostics = {"statusCode": 400, "error_message": "bad request"}

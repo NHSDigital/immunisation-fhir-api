@@ -1,42 +1,12 @@
 """Decorators for logging and sending logs to Firehose"""
 
 import os
-import json
 import time
 from datetime import datetime
 from functools import wraps
-from common.clients import firehose_client, logger
+from common.log_decorator import generate_and_send_logs
 
 STREAM_NAME = os.getenv("SPLUNK_FIREHOSE_NAME", "immunisation-fhir-api-internal-dev-splunk-firehose")
-
-
-def send_log_to_firehose(log_data: dict) -> None:
-    """Sends the log_message to Firehose"""
-    try:
-        record = {"Data": json.dumps({"event": log_data}).encode("utf-8")}
-        firehose_client.put_record(DeliveryStreamName=STREAM_NAME, Record=record)
-        logger.info("Log sent to Firehose")
-    except Exception as error:  # pylint:disable = broad-exception-caught
-        logger.exception("Error sending log to Firehose: %s", error)
-
-
-def generate_and_send_logs(
-    start_time: float,
-    base_log_data: dict,
-    additional_log_data: dict,
-    use_ms_precision: bool = False,
-    is_error_log: bool = False
-) -> None:
-    """Generates log data which includes the base_log_data, additional_log_data, and time taken (calculated using the
-    current time and given start_time) and sends them to Cloudwatch and Firehose."""
-    seconds_elapsed = time.time() - start_time
-    formatted_time_elapsed = f"{round(seconds_elapsed * 1000, 5)}ms" if use_ms_precision else \
-        f"{round(seconds_elapsed, 5)}s"
-
-    log_data = {**base_log_data, "time_taken": formatted_time_elapsed, **additional_log_data}
-    log_function = logger.error if is_error_log else logger.info
-    log_function(json.dumps(log_data))
-    send_log_to_firehose(log_data)
 
 
 def convert_message_to_ack_row_logging_decorator(func):
@@ -65,13 +35,13 @@ def convert_message_to_ack_row_logging_decorator(func):
                 "operation_requested": message.get("operation_requested", "unknown"),
                 **process_diagnostics(diagnostics, file_key, message_id),
             }
-            generate_and_send_logs(start_time, base_log_data, additional_log_data, use_ms_precision=True)
+            generate_and_send_logs(STREAM_NAME, start_time, base_log_data, additional_log_data, use_ms_precision=True)
 
             return result
 
         except Exception as error:
             additional_log_data = {"status": "fail", "statusCode": 500, "diagnostics": str(error)}
-            generate_and_send_logs(start_time, base_log_data, additional_log_data, use_ms_precision=True,
+            generate_and_send_logs(STREAM_NAME, start_time, base_log_data, additional_log_data, use_ms_precision=True,
                                    is_error_log=True)
             raise
 
@@ -93,7 +63,7 @@ def upload_ack_file_logging_decorator(func):
             message_for_logs = "Record processing complete"
             base_log_data.update(result)
             additional_log_data = {"status": "success", "statusCode": 200, "message": message_for_logs}
-            generate_and_send_logs(start_time, base_log_data, additional_log_data)
+            generate_and_send_logs(STREAM_NAME, start_time, base_log_data, additional_log_data)
         return result
 
     return wrapper
@@ -112,12 +82,12 @@ def ack_lambda_handler_logging_decorator(func):
             result = func(event, context, *args, **kwargs)
             message_for_logs = "Lambda function executed successfully!"
             additional_log_data = {"status": "success", "statusCode": 200, "message": message_for_logs}
-            generate_and_send_logs(start_time, base_log_data, additional_log_data)
+            generate_and_send_logs(STREAM_NAME, start_time, base_log_data, additional_log_data)
             return result
 
         except Exception as error:
             additional_log_data = {"status": "fail", "statusCode": 500, "diagnostics": str(error)}
-            generate_and_send_logs(start_time, base_log_data, additional_log_data, is_error_log=True)
+            generate_and_send_logs(STREAM_NAME, start_time, base_log_data, additional_log_data, is_error_log=True)
             raise
 
     return wrapper
