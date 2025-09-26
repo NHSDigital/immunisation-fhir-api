@@ -1,6 +1,6 @@
 # Define locals for shared lambdas
 locals {
-  shared_dir        = abspath("${path.root}/../shared")
+  shared_dir        = abspath("${path.root}/../lambdas/shared")
 
   shared_files      = fileset(local.shared_dir, "**")
 

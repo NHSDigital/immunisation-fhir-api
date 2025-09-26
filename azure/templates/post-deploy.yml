@@ -93,7 +93,7 @@ steps:
         echo "Subscribing SQS to MNS for notifications..."
         make subscribe
       displayName: "Run MNS Subscription"
-      workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/mns_subscription"
+      workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/lambdas/mns_subscription"
       env:
         SQS_ARN: "$(ID_SYNC_QUEUE_ARN)"
 
