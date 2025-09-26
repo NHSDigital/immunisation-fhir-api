@@ -6,6 +6,10 @@ on:
       apigee_environment:
         required: true
         type: string
+      create_mns_subscription:
+        required: false
+        type: boolean
+        default: true
       environment:
         required: true
         type: string
@@ -19,6 +23,11 @@ on:
         description: Select the Apigee proxy environment
         options:
           - internal-dev # Add rest later
+      create_mns_subscription:
+        description: Create an MNS Subscription. Only available in dev
+        required: false
+        type: boolean
+        default: true
       environment:
         type: string
         description: Select the backend environment
@@ -93,7 +102,24 @@ jobs:
       - name: Terraform Apply
         working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
         run: make apply apigee_environment=${{ inputs.apigee_environment }} environment=${{ inputs.environment }} sub_environment=${{ inputs.sub_environment }}
-        # TODO - use a saved plan from the plan step
+
+      - name: Install poetry
+        if: ${{ inputs.environment == 'dev' && inputs.create_mns_subscription }}
+        run: pip install poetry==2.1.4
+
+      - uses: actions/setup-python@v5
+        if: ${{ inputs.environment == 'dev' && inputs.create_mns_subscription }}
+        with:
+          python-version: 3.11
+          cache: 'poetry'
+
+      - name: Create MNS Subscription
+        if: ${{ inputs.environment == 'dev' && inputs.create_mns_subscription }}
+        working-directory: './lambdas/mns_subscription'
+        run: |
+          poetry install --no-root
+          echo "Subscribing SQS to MNS for notifications..."
+          make subscribe
   # TODO - replace with modular e2e test workflow
   # e2e-tests:
   #   if: ${{ vars.RUN_E2E == 'true' && inputs.sub_environment == vars.ACTIVE_ENVIRONMENT }}
