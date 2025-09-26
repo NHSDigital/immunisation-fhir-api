@@ -84,6 +84,30 @@ class TestLogDecorator(unittest.TestCase):
 
     @patch("time.time")
     @patch("common.log_decorator.send_log_to_firehose")
+    def test_generate_and_send_logs_with_ms_precision(self, mock_send_log, mock_time):
+        """Test generate_and_send_logs using ms precision"""
+        # Arrange
+        mock_time.return_value = 1000.5
+        start_time = 1000.0
+        base_log_data = {"function_name": "test_func", "date_time": "2023-01-01"}
+        additional_log_data = {"statusCode": 200, "result": "success"}
+
+        # Act
+        generate_and_send_logs(self.test_stream, start_time, base_log_data, additional_log_data, use_ms_precision=True)
+
+        # Assert
+        expected_log_data = {
+            "function_name": "test_func",
+            "date_time": "2023-01-01",
+            "time_taken": "500.0ms",
+            "statusCode": 200,
+            "result": "success"
+        }
+        self.mock_logger_error.assert_not_called()
+        mock_send_log.assert_called_once_with(self.test_stream, expected_log_data)
+
+    @patch("time.time")
+    @patch("common.log_decorator.send_log_to_firehose")
     def test_generate_and_send_logs_error(self, mock_send_log, mock_time):
         """Test generate_and_send_logs with error log generation"""
         # Arrange

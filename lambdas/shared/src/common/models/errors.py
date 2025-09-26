@@ -1,7 +1,6 @@
 import uuid
 from dataclasses import dataclass
 from enum import Enum
-from typing import Union
 
 
 class Severity(str, Enum):
@@ -160,7 +159,7 @@ class ResourceFoundError(RuntimeError):
 class UnhandledResponseError(RuntimeError):
     """Use this error when the response from an external service (ex: dynamodb) can't be handled"""
 
-    response: Union[dict, str]
+    response: dict | str
     message: str
 
     def __str__(self):
@@ -202,6 +201,10 @@ class MandatoryError(Exception):
 class ValidationError(RuntimeError):
     def to_operation_outcome(self) -> dict:
         pass
+
+
+class UnhandledAuditTableError(Exception):
+    """A custom exception for when an unexpected error occurs whilst adding the file to the audit table."""
 
 
 @dataclass

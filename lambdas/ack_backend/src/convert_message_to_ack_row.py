@@ -1,11 +1,10 @@
 """Functions for converting the incoming message body into a row of ack data"""
 
-from typing import Union
 from logging_decorators import convert_message_to_ack_row_logging_decorator
 from update_ack_file import create_ack_data
 
 
-def get_error_message_for_ack_file(message_diagnostics) -> Union[None, str]:
+def get_error_message_for_ack_file(message_diagnostics) -> None | str:
     """Determines and returns the error message to be displayed in the ack file"""
     if message_diagnostics is None:
         return None

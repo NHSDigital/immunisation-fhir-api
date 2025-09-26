@@ -1,7 +1,7 @@
 """Add the filename to the audit table and check for duplicates."""
 
-from clients import dynamodb_client, logger
-from errors import UnhandledAuditTableError
+from common.clients import dynamodb_client, logger
+from common.models.errors import UnhandledAuditTableError
 from constants import AUDIT_TABLE_NAME, FileStatus, AuditTableKeys
 
 

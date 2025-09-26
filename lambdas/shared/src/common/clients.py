@@ -12,8 +12,19 @@ CONFIG_BUCKET_NAME = os.getenv("CONFIG_BUCKET_NAME", "variconfig-bucketable-not-
 REGION_NAME = os.getenv("AWS_REGION", "eu-west-2")
 
 s3_client = boto3_client("s3", region_name=REGION_NAME)
-firehose_client = boto3_client("firehose", region_name=REGION_NAME)
 
+# for lambdas which require a global s3_client
+global_s3_client = None
+
+
+def get_s3_client():
+    global global_s3_client
+    if global_s3_client is None:
+        global_s3_client = boto3_client("s3", region_name=REGION_NAME)
+    return global_s3_client
+
+
+firehose_client = boto3_client("firehose", region_name=REGION_NAME)
 secrets_manager_client = boto3_client("secretsmanager", region_name=REGION_NAME)
-dynamodb_resource = boto3_resource("dynamodb", region_name=REGION_NAME)
 dynamodb_client = boto3_client("dynamodb", region_name=REGION_NAME)
+dynamodb_resource = boto3_resource("dynamodb", region_name=REGION_NAME)
