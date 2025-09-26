@@ -7,92 +7,26 @@ import random
 import io
 import os
 from botocore.exceptions import ClientError
+from boto3.dynamodb.conditions import Key
 from io import StringIO
 from datetime import datetime, timezone
-from clients import logger, s3_client, table
+from clients import (
+    logger, s3_client, audit_table, events_table, sqs_client,
+    batch_fifo_queue_url, ack_metadata_queue_url
+)
 from errors import AckFileNotFoundError, DynamoDBMismatchError
 from constants import (
     ACK_BUCKET,
     FORWARDEDFILE_PREFIX,
     SOURCE_BUCKET,
     DUPLICATE,
-    create_row,
     ACK_PREFIX,
     FILE_NAME_VAL_ERROR,
-    CONFIG_BUCKET,
-    create_permissions_json,
-    PERMISSIONS_CONFIG_FILE_KEY,
-    INPUT_PREFIX,
     HEADER_RESPONSE_CODE_COLUMN,
+    RAVS_URI,
+    ActionFlag,
+    environment
 )
-
-
-def generate_csv(fore_name, dose_amount, action_flag, headers="NHS_NUMBER", same_id=False, file_key=False):
-    """
-    Generate a CSV file with 2 or 3 rows depending on the action_flag.
-
-    - For CREATE:
-        - Both rows have unique UNIQUE_IDs with "ACTION_FLAG": "NEW".
-        - If same_id=True, both rows share the same UNIQUE_ID.
-
-    - For UPDATE:
-        - One row has "ACTION_FLAG": "NEW" and the other "ACTION_FLAG": "UPDATE" with the same UNIQUE_ID.
-
-    - For DELETE:
-        - One row has "ACTION_FLAG": "NEW" and the other "ACTION_FLAG": "DELETE" with the same UNIQUE_ID.
-
-    - For REINSTATED:
-        - Three rows are generated with the same UNIQUE_ID:
-          - The first row has "ACTION_FLAG": "NEW".
-          - The second row has "ACTION_FLAG": "DELETE".
-          - The third row has "ACTION_FLAG": "UPDATE".
-    """
-
-    data = []
-
-    if action_flag == "CREATE":
-        if same_id:
-
-            unique_id = str(uuid.uuid4())
-            data.append(create_row(unique_id, fore_name, dose_amount, "NEW", headers))
-            data.append(create_row(unique_id, fore_name, dose_amount, "NEW", headers))
-        else:
-            unique_ids = [str(uuid.uuid4()), str(uuid.uuid4())]
-            for unique_id in unique_ids:
-                data.append(create_row(unique_id, fore_name, dose_amount, "NEW", headers))
-
-    elif action_flag == "UPDATE":
-        unique_id = str(uuid.uuid4())
-        data.append(create_row(unique_id, fore_name, dose_amount, "NEW", headers))
-        data.append(create_row(unique_id, fore_name, dose_amount, "UPDATE", headers))
-
-    elif action_flag == "DELETE":
-        unique_id = str(uuid.uuid4())
-        data.append(create_row(unique_id, fore_name, dose_amount, "NEW", headers))
-        data.append(create_row(unique_id, fore_name, dose_amount, "DELETE", headers))
-
-    elif action_flag == "REINSTATED":
-        unique_id = str(uuid.uuid4())
-        data.append(create_row(unique_id, fore_name, dose_amount, "NEW", headers))
-        data.append(create_row(unique_id, fore_name, dose_amount, "DELETE", headers))
-        data.append(create_row(unique_id, fore_name, dose_amount, "UPDATE", headers))
-
-    elif action_flag == "UPDATE-REINSTATED":
-        unique_id = str(uuid.uuid4())
-        data.append(create_row(unique_id, fore_name, dose_amount, "NEW", headers))
-        data.append(create_row(unique_id, fore_name, dose_amount, "DELETE", headers))
-        data.append(create_row(unique_id, fore_name, dose_amount, "UPDATE", headers))
-        data.append(create_row(unique_id, "fore_name", dose_amount, "UPDATE", headers))
-
-    df = pd.DataFrame(data)
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%f")[:-3]
-    file_name = (
-        f"COVID19_Vaccinations_v4_YGM41_{timestamp}.csv"
-        if file_key
-        else f"COVID19_Vaccinations_v5_YGM41_{timestamp}.csv"
-    )
-    df.to_csv(file_name, index=False, sep="|", quoting=csv.QUOTE_MINIMAL)
-    return file_name
 
 
 def upload_file_to_s3(file_name, bucket, prefix):
@@ -122,14 +56,15 @@ def delete_file_from_s3(bucket, key):
     """Delete the specified file (object) from the given S3 bucket.
     Returns True if deletion is successful, otherwise raises an exception."""
     try:
-        response = s3_client.delete_object(Bucket=bucket, Key=key)
+        if key and key.strip():
+            response = s3_client.delete_object(Bucket=bucket, Key=key)
 
-        # Optionally verify deletion status
-        status_code = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
-        if status_code != 204:
-            raise Exception(f"Delete failed with status code: {status_code}")
+            # Optionally verify deletion status
+            status_code = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
+            if status_code != 204:
+                raise Exception(f"Delete failed with status code: {status_code}")
 
-        print(f"Deleted {key} from bucket {bucket}")
+            print(f"Deleted {key}")
         return True
 
     except ClientError as e:
@@ -138,7 +73,7 @@ def delete_file_from_s3(bucket, key):
         raise Exception(f"Unexpected error during file deletion: {e}")
 
 
-def wait_for_ack_file(ack_prefix, input_file_name, timeout=120):
+def wait_for_ack_file(ack_prefix, input_file_name, timeout=600):
     """Poll the ACK_BUCKET for an ack file that contains the input_file_name as a substring."""
 
     filename_without_ext = input_file_name[:-4] if input_file_name.endswith(".csv") else input_file_name
@@ -170,7 +105,7 @@ def get_file_content_from_s3(bucket, key):
     return content
 
 
-def check_ack_file_content(content, response_code, operation_outcome, operation_requested):
+def check_ack_file_content(desc, content, response_code, operation_outcome, operation_requested) -> bool:
     """
     Parse and validate the acknowledgment (ACK) CSV file content.
 
@@ -206,23 +141,23 @@ def check_ack_file_content(content, response_code, operation_outcome, operation_
 
     if operation_outcome and DUPLICATE in operation_outcome:
         # Handle DUPLICATE scenario:
-        assert len(rows) == 2, f"Expected 2 rows for DUPLICATE scenario, got {len(rows)}"
+        assert len(rows) == 2, f"{desc}. Expected 2 rows for DUPLICATE scenario, got {len(rows)}"
 
         first_row = rows[0]
-        validate_header_response_code(first_row, 0, "OK")
+        validate_header_response_code(desc, first_row, 0, "OK")
         validate_ok_response(first_row, 0, operation_requested)
 
         second_row = rows[1]
-        validate_header_response_code(second_row, 1, "Fatal Error")
-        validate_fatal_error(second_row, 1, DUPLICATE)
+        validate_header_response_code(desc, second_row, 1, "Fatal Error")
+        validate_fatal_error(desc, second_row, 1, DUPLICATE)
     else:
         # Handle normal scenarios:
         for i, row in enumerate(rows):
             if response_code and "HEADER_RESPONSE_CODE" in row:
-                assert row["HEADER_RESPONSE_CODE"].strip() == response_code, (
-                    f"Row {i} expected HEADER_RESPONSE_CODE '{response_code}', "
-                    f"but got '{row['HEADER_RESPONSE_CODE'].strip()}'"
-                )
+                row_HEADER_RESPONSE_CODE = row["HEADER_RESPONSE_CODE"].strip()
+                assert row_HEADER_RESPONSE_CODE == response_code, (
+                    f"{desc}.Row {i} expected HEADER_RESPONSE_CODE '{response_code}', "
+                    f"but got '{row_HEADER_RESPONSE_CODE}'")
             if operation_outcome and "OPERATION_OUTCOME" in row:
                 assert row["OPERATION_OUTCOME"].strip() == operation_outcome, (
                     f"Row {i} expected OPERATION_OUTCOME '{operation_outcome}', "
@@ -234,7 +169,7 @@ def check_ack_file_content(content, response_code, operation_outcome, operation_
                 validate_fatal_error(row, i, operation_outcome)
 
 
-def validate_header_response_code(row, index, expected_code):
+def validate_header_response_code(desc, row, index, expected_code):
     """Ensure HEADER_RESPONSE_CODE exists and matches expected response code."""
 
     if "HEADER_RESPONSE_CODE" not in row:
@@ -342,24 +277,25 @@ def fetch_pk_and_operation_from_dynamodb(identifier_pk):
         Logs any exceptions encountered during the DynamoDB query.
     """
     try:
-        response = table.query(
+        response = events_table.query(
             IndexName="IdentifierGSI",
             KeyConditionExpression="IdentifierPK = :identifier_pk",
             ExpressionAttributeValues={":identifier_pk": identifier_pk},
         )
-        if "Items" in response and response["Items"] and "DeletedAt" in response["Items"][0]:
-            return (response["Items"][0]["PK"], response["Items"][0]["Operation"], response["Items"][0]["DeletedAt"])
-        if "Items" in response and response["Items"]:
-            return (response["Items"][0]["PK"], response["Items"][0]["Operation"], None)
-        else:
-            return "NOT_FOUND"
+        if "Items" in response:
+            items = response["Items"]
+            if items:
+                if "DeletedAt" in items[0]:
+                    return (items[0]["PK"], items[0]["Operation"], items[0]["DeletedAt"])
+                return (items[0]["PK"], items[0]["Operation"], None)
+        return (identifier_pk, ActionFlag.NONE, None)
 
     except Exception as e:
         logger.error(f"Error fetching from DynamoDB: {e}")
         return "ERROR"
 
 
-def validate_row_count(source_file_name, ack_file_name):
+def validate_row_count(desc, source_file_name, ack_file_name):
     """
     Compare the row count of a file in one S3 bucket with a file in another S3 bucket.
     Raises:
@@ -369,7 +305,7 @@ def validate_row_count(source_file_name, ack_file_name):
     ack_file_row_count = fetch_row_count(ACK_BUCKET, ack_file_name)
     assert (
         source_file_row_count == ack_file_row_count
-    ), f"Row count mismatch: Input ({source_file_row_count}) vs Ack ({ack_file_row_count})"
+    ), f"{desc}. Row count mismatch: Input ({source_file_row_count}) vs Ack ({ack_file_row_count})"
 
 
 def fetch_row_count(bucket, file_name):
@@ -383,12 +319,6 @@ def fetch_row_count(bucket, file_name):
 def save_json_to_file(json_data, filename="permissions_config.json"):
     with open(filename, "w") as json_file:
         json.dump(json_data, json_file, indent=4)
-
-
-def upload_config_file(value):
-    input_file = create_permissions_json(value)
-    save_json_to_file(input_file)
-    upload_file_to_s3(PERMISSIONS_CONFIG_FILE_KEY, CONFIG_BUCKET, INPUT_PREFIX)
 
 
 def generate_csv_with_ordered_100000_rows(file_name=None):
@@ -465,3 +395,123 @@ def verify_final_ack_file(file_key):
             f"All values OK: {all_ok}"
         )
     return True
+
+
+def delete_filename_from_audit_table(filename) -> bool:
+
+    # 1. Query the GSI to get all items with the given filename
+    try:
+        response = audit_table.query(
+            IndexName="filename_index",
+            KeyConditionExpression=Key("filename").eq(filename)
+        )
+        items = response.get("Items", [])
+
+        # 2. Delete each item by primary key (message_id)
+        for item in items:
+            audit_table.delete_item(Key={"message_id": item["message_id"]})
+        return True
+    except Exception as e:
+        logger.error(f"Error deleting from audit table: {e}")
+        return False
+
+
+def delete_filename_from_events_table(identifier) -> bool:
+
+    # 1. Query the GSI to get all items with the given filename
+    try:
+        identifier_pk = f"{RAVS_URI}#{identifier}"
+        response = events_table.query(
+            IndexName="IdentifierGSI",
+            KeyConditionExpression=Key("IdentifierPK").eq(identifier_pk)
+        )
+        items = response.get("Items", [])
+
+        # 2. Delete each item by primary key (PK)
+        for item in items:
+            events_table.delete_item(Key={"PK": item["PK"]})
+        return True
+    except Exception as e:
+        logger.warning(f"Error deleting from events table: {e}")
+        return False
+
+
+def poll_s3_file_pattern(prefix, search_pattern):
+    """Poll the ACK_BUCKET for an ack file that contains the input_file_name as a substring."""
+
+    response = s3_client.list_objects_v2(Bucket=ACK_BUCKET, Prefix=prefix)
+    if "Contents" in response:
+        for obj in response["Contents"]:
+            key = obj["Key"]
+            if search_pattern in key:
+                return key
+    return None
+
+
+def aws_cleanup(key, identifier, ack_keys):
+    if key:
+        archive_file = f"archive/{key}"
+        if not delete_file_from_s3(SOURCE_BUCKET, archive_file):
+            logger.warning(f"S3 delete fail {SOURCE_BUCKET}: {archive_file}")
+        delete_filename_from_audit_table(key)
+        delete_filename_from_events_table(identifier)
+    for ack_key in ack_keys.values():
+        if ack_key:
+            if not delete_file_from_s3(ACK_BUCKET, ack_key):
+                logger.warning(f"s3 delete fail {ACK_BUCKET}: {ack_key}")
+
+
+def purge_sqs_queues() -> bool:
+    try:
+        # only purge if ENVIRONMENT=pr-* to avoid purging shared queues
+        if environment.startswith("pr-"):
+            sqs_client.purge_queue(QueueUrl=batch_fifo_queue_url)
+            sqs_client.purge_queue(QueueUrl=ack_metadata_queue_url)
+        return True
+    except sqs_client.exceptions.PurgeQueueInProgress:
+        logger.error("SQS purge already in progress. Try again later.")
+    except Exception as e:
+        logger.error(f"SQS Purge error: {e}")
+    return False
+
+
+def create_row(unique_id, dose_amount, action_flag: str, header, inject_cp1252=None):
+    """Helper function to create a single row with the specified UNIQUE_ID and ACTION_FLAG."""
+
+    name = "James" if not inject_cp1252 else b'Jam\xe9s'
+    return {
+        header: "9732928395",
+        "PERSON_FORENAME": "PHYLIS",
+        "PERSON_SURNAME": name,
+        "PERSON_DOB": "20080217",
+        "PERSON_GENDER_CODE": "0",
+        "PERSON_POSTCODE": "WD25 0DZ",
+        "DATE_AND_TIME": datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S"),
+        "SITE_CODE": "RVVKC",
+        "SITE_CODE_TYPE_URI": "https://fhir.nhs.uk/Id/ods-organization-code",
+        "UNIQUE_ID": unique_id,
+        "UNIQUE_ID_URI": RAVS_URI,
+        "ACTION_FLAG": action_flag,
+        "PERFORMING_PROFESSIONAL_FORENAME": "PHYLIS",
+        "PERFORMING_PROFESSIONAL_SURNAME": name,
+        "RECORDED_DATE": datetime.now(timezone.utc).strftime("%Y%m%d"),
+        "PRIMARY_SOURCE": "TRUE",
+        "VACCINATION_PROCEDURE_CODE": "956951000000104",
+        "VACCINATION_PROCEDURE_TERM": "RSV vaccination in pregnancy (procedure)",
+        "DOSE_SEQUENCE": "1",
+        "VACCINE_PRODUCT_CODE": "42223111000001107",
+        "VACCINE_PRODUCT_TERM": "Quadrivalent influenza vaccine (Sanofi Pasteur)",
+        "VACCINE_MANUFACTURER": "Sanofi Pasteur",
+        "BATCH_NUMBER": "BN92478105653",
+        "EXPIRY_DATE": "20240915",
+        "SITE_OF_VACCINATION_CODE": "368209003",
+        "SITE_OF_VACCINATION_TERM": "Right arm",
+        "ROUTE_OF_VACCINATION_CODE": "1210999013",
+        "ROUTE_OF_VACCINATION_TERM": "Intradermal use",
+        "DOSE_AMOUNT": dose_amount,
+        "DOSE_UNIT_CODE": "2622896019",
+        "DOSE_UNIT_TERM": "Inhalation - unit of product usage",
+        "INDICATION_CODE": "1037351000000105",
+        "LOCATION_CODE": "RJC02",
+        "LOCATION_CODE_TYPE_URI": "https://fhir.nhs.uk/Id/ods-organization-code",
+    }
