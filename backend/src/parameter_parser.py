@@ -86,7 +86,6 @@ def process_search_params(params: ParamContainer) -> SearchParams:
 
     :raises ParameterException:
     """
-
     # mandatory parameter patient.identifier
     patient_identifiers = params.get(patient_identifier_key, [])
     patient_identifier = patient_identifiers[0] if len(patient_identifiers) == 1 else None
@@ -101,11 +100,10 @@ def process_search_params(params: ParamContainer) -> SearchParams:
                       f"\"{patient_identifier_system}|{{NHS number}}\" "
                       f"e.g. \"{patient_identifier_system}|9000000009\"")
 
-    nhs_number = patient_identifier_parts[1]
-    if not nhs_number_mod11_check(nhs_number):
+    if not nhs_number_mod11_check(patient_identifier_parts[1]):
         raise ParameterException(f"Search parameter {patient_identifier_key} must be a valid NHS number.")
 
-    patient_identifier = nhs_number
+    patient_identifier = patient_identifier_parts[1]
 
     # mandatory parameter immunization.target
     params[immunization_target_key] = list(set(params.get(immunization_target_key, [])))
@@ -121,6 +119,8 @@ def process_search_params(params: ParamContainer) -> SearchParams:
 
     # date.from
     errors = []
+    date_from = None
+    date_to = None
     date_froms = params.get(date_from_key, [])
 
     if len(date_froms) > 1:
@@ -149,8 +149,6 @@ def process_search_params(params: ParamContainer) -> SearchParams:
 
     # include
     includes = params.get(include_key, [])
-    if len(includes) > 1:
-        errors.append(f"Search parameter {include_key} may have one value at most.")
     include = includes[0] if len(includes) > 0 else None
 
     if errors:
