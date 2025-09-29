@@ -4,8 +4,7 @@ from mns_setup import get_mns_service
 
 def run_subscription():
     mns = get_mns_service()
-    result = mns.check_subscription()
-    return result
+    return mns.check_subscription()
 
 
 if __name__ == "__main__":

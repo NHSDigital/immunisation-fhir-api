@@ -1,6 +1,6 @@
 # Define the directory containing the Docker image and calculate its SHA-256 hash for triggering redeployments
 locals {
-  id_sync_lambda_dir = abspath("${path.root}/../id_sync")
+  id_sync_lambda_dir = abspath("${path.root}/../lambdas/id_sync")
 
   id_sync_lambda_files = fileset(local.id_sync_lambda_dir, "**")
 
@@ -42,9 +42,10 @@ module "id_sync_docker_image" {
 
   platform      = "linux/amd64"
   use_image_tag = false
-  source_path   = abspath("${path.root}/..")
+  source_path   = abspath("${path.root}/../lambdas")
   triggers = {
-    dir_sha = local.id_sync_lambda_dir_sha
+    dir_sha        = local.id_sync_lambda_dir_sha
+    shared_dir_sha = local.shared_dir_sha
   }
 }
 
