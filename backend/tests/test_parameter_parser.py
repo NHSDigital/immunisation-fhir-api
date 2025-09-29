@@ -11,6 +11,8 @@ from parameter_parser import (
     process_params,
     process_search_params,
     create_query_string,
+    create_query_string,
+    include_key,
     SearchParams,
 )
 
@@ -221,7 +223,7 @@ class TestParameterParser(unittest.TestCase):
                     "https://fhir.nhs.uk/Id/nhs-number|9000000009"
                 ],
                 self.immunization_target_key: ["RSV", "RSV", "FLU"],
-                "_include": ["Patient:practitioner"],
+                "_include": ["immunization:patient"],
             }
         )
 
@@ -230,7 +232,7 @@ class TestParameterParser(unittest.TestCase):
         self.assertCountEqual(params.immunization_targets, ["RSV", "FLU"])
 
         # include should be returned as provided
-        self.assertEqual(params.include, "Patient:practitioner")
+        self.assertEqual(params.include, "immunization:patient")
 
     def test_process_search_params_aggregates_date_errors(self):
         """When multiple date-related errors occur they should be returned together."""
@@ -270,3 +272,23 @@ class TestParameterParser(unittest.TestCase):
             )
 
         self.assertEqual(str(e.exception), f"Search parameter {self.patient_identifier_key} must be a valid NHS number.")
+
+    def test_process_search_params_invalid_include_value_is_rejected(self):
+        """_include may only be 'Immunization:patient' if provided."""
+        self.mock_redis_client.hkeys.return_value = ["RSV"]
+
+        with self.assertRaises(ParameterException) as e:
+            process_search_params(
+                {
+                    self.patient_identifier_key: [
+                        "https://fhir.nhs.uk/Id/nhs-number|9000000009"
+                    ],
+                    self.immunization_target_key: ["RSV"],
+                    "_include": ["Patient:practitioner"],
+                }
+            )
+
+        self.assertEqual(
+            str(e.exception),
+            f"Search parameter {include_key} may only be 'Immunization:patient' if provided.",
+        )

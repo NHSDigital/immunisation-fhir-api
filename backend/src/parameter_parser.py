@@ -149,6 +149,8 @@ def process_search_params(params: ParamContainer) -> SearchParams:
 
     # include
     includes = params.get(include_key, [])
+    if includes and includes[0].lower() != "immunization:patient":
+        errors.append(f"Search parameter {include_key} may only be 'Immunization:patient' if provided.")
     include = includes[0] if len(includes) > 0 else None
 
     if errors:
