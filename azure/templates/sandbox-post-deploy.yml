@@ -34,7 +34,7 @@ steps:
 
       counter=0
       while [[ $counter -lt 31 ]]; do
-        response=$(curl -H "apikey: $(status-endpoint-api-key)" -s "$endpoint")
+        response=$(curl -H "apikey: $(status-endpoint-api-key)" -s "$status_endpoint")
         response_code=$(jq -r '.checks.healthcheck.responseCode' <<< "$response")
         response_body=$(jq -r '.checks.healthcheck.outcome' <<< "$response")
         status=$(jq -r '.status' <<< "$response")
@@ -42,7 +42,7 @@ steps:
             echo "Status test successful"
             break
         else
-            echo "Waiting for $endpoint to return a 200 response with 'OK' body..."
+            echo "Waiting for $status_endpoint to return a 200 response with 'OK' body..."
             ((counter=counter+1)) # Increment counter by 1
             echo "Attempt $counter"
             sleep 30

@@ -42,7 +42,7 @@ build-proxy:
 
 #Files to loop over in release
 # VED-811: remove everything except for proxy related files as we move to Github Actions for backend deployment
-_dist_include="pytest.ini poetry.lock poetry.toml pyproject.toml Makefile build/. specification sandbox scripts"
+_dist_include="pytest.ini poetry.lock poetry.toml pyproject.toml Makefile build/. specification sandbox scripts e2e"
 
 
 #Create /dist/ sub-directory and copy files into directory
