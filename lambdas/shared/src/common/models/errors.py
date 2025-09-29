@@ -1,7 +1,6 @@
 import uuid
 from dataclasses import dataclass
 from enum import Enum
-from typing import Union
 
 
 class Severity(str, Enum):
@@ -12,9 +11,11 @@ class Severity(str, Enum):
 class Code(str, Enum):
     forbidden = "forbidden"
     not_found = "not-found"
-    invalid = "invalid"
-    server_error = "exception"
+    invalid = "invalid or missing access token"
+    exception = "exception"
+    server_error = "internal server error"
     invariant = "invariant"
+    incomplete = "parameter-incomplete"
     not_supported = "not-supported"
     duplicate = "duplicate"
     # Added an unauthorized code its used when returning a response for an unauthorized vaccine type search.
@@ -23,6 +24,12 @@ class Code(str, Enum):
 
 @dataclass
 class UnauthorizedError(RuntimeError):
+    response: dict | str
+    message: str
+
+    def __str__(self):
+        return f"{self.message}\n{self.response}"
+
     @staticmethod
     def to_operation_outcome() -> dict:
         msg = "Unauthorized request"
@@ -36,6 +43,12 @@ class UnauthorizedError(RuntimeError):
 
 @dataclass
 class UnauthorizedVaxError(RuntimeError):
+    response: dict | str
+    message: str
+
+    def __str__(self):
+        return f"{self.message}\n{self.response}"
+
     @staticmethod
     def to_operation_outcome() -> dict:
         msg = "Unauthorized request for vaccine type"
@@ -49,6 +62,12 @@ class UnauthorizedVaxError(RuntimeError):
 
 @dataclass
 class UnauthorizedVaxOnRecordError(RuntimeError):
+    response: dict | str
+    message: str
+
+    def __str__(self):
+        return f"{self.message}\n{self.response}"
+
     @staticmethod
     def to_operation_outcome() -> dict:
         msg = "Unauthorized request for vaccine type present in the stored immunization resource"
@@ -61,10 +80,48 @@ class UnauthorizedVaxOnRecordError(RuntimeError):
 
 
 @dataclass
+class TokenValidationError(RuntimeError):
+    response: dict | str
+    message: str
+
+    def __str__(self):
+        return f"{self.message}\n{self.response}"
+
+    @staticmethod
+    def to_operation_outcome() -> dict:
+        msg = "Missing/Invalid Token"
+        return create_operation_outcome(
+            resource_id=str(uuid.uuid4()),
+            severity=Severity.error,
+            code=Code.invalid,
+            diagnostics=msg,
+        )
+
+
+@dataclass
+class ConflictError(RuntimeError):
+    response: dict | str
+    message: str
+
+    def __str__(self):
+        return f"{self.message}\n{self.response}"
+
+    @staticmethod
+    def to_operation_outcome() -> dict:
+        msg = "Conflict"
+        return create_operation_outcome(
+            resource_id=str(uuid.uuid4()),
+            severity=Severity.error,
+            code=Code.duplicate,
+            diagnostics=msg,
+        )
+
+
+@dataclass
 class ResourceNotFoundError(RuntimeError):
     """Return this error when the requested FHIR resource does not exist"""
 
-    resource_type: str
+    resource_type: str | None
     resource_id: str
 
     def __str__(self):
@@ -102,7 +159,7 @@ class ResourceFoundError(RuntimeError):
 class UnhandledResponseError(RuntimeError):
     """Use this error when the response from an external service (ex: dynamodb) can't be handled"""
 
-    response: Union[dict, str]
+    response: dict | str
     message: str
 
     def __str__(self):
@@ -112,7 +169,26 @@ class UnhandledResponseError(RuntimeError):
         return create_operation_outcome(
             resource_id=str(uuid.uuid4()),
             severity=Severity.error,
-            code=Code.server_error,
+            code=Code.exception,
+            diagnostics=self.__str__(),
+        )
+
+
+@dataclass
+class BadRequestError(RuntimeError):
+    """Use when payload is missing required parameters"""
+
+    response: dict | str
+    message: str
+
+    def __str__(self):
+        return f"{self.message}\n{self.response}"
+
+    def to_operation_outcome(self) -> dict:
+        return create_operation_outcome(
+            resource_id=str(uuid.uuid4()),
+            severity=Severity.error,
+            code=Code.incomplete,
             diagnostics=self.__str__(),
         )
 
@@ -125,6 +201,10 @@ class MandatoryError(Exception):
 class ValidationError(RuntimeError):
     def to_operation_outcome(self) -> dict:
         pass
+
+
+class UnhandledAuditTableError(Exception):
+    """A custom exception for when an unexpected error occurs whilst adding the file to the audit table."""
 
 
 @dataclass
@@ -140,7 +220,7 @@ class InvalidPatientId(ValidationError):
         return create_operation_outcome(
             resource_id=str(uuid.uuid4()),
             severity=Severity.error,
-            code=Code.server_error,
+            code=Code.exception,
             diagnostics=self.__str__(),
         )
 
@@ -159,7 +239,7 @@ class InconsistentIdError(ValidationError):
         return create_operation_outcome(
             resource_id=str(uuid.uuid4()),
             severity=Severity.error,
-            code=Code.server_error,
+            code=Code.exception,
             diagnostics=self.__str__(),
         )
 
@@ -201,28 +281,23 @@ class IdentifierDuplicationError(RuntimeError):
         )
 
 
-def create_operation_outcome(resource_id: str, severity: Severity, code: Code, diagnostics: str) -> dict:
-    """Create an OperationOutcome object. Do not use `fhir.resource` library since it adds unnecessary validations"""
-    return {
-        "resourceType": "OperationOutcome",
-        "id": resource_id,
-        "meta": {"profile": ["https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"]},
-        "issue": [
-            {
-                "severity": severity,
-                "code": code,
-                "details": {
-                    "coding": [
-                        {
-                            "system": "https://fhir.nhs.uk/Codesystem/http-error-codes",
-                            "code": code.upper(),
-                        }
-                    ]
-                },
-                "diagnostics": diagnostics,
-            }
-        ],
-    }
+@dataclass
+class ServerError(RuntimeError):
+    """Use when there is a server error"""
+
+    response: dict | str
+    message: str
+
+    def __str__(self):
+        return f"{self.message}\n{self.response}"
+
+    def to_operation_outcome(self) -> dict:
+        return create_operation_outcome(
+            resource_id=str(uuid.uuid4()),
+            severity=Severity.error,
+            code=Code.server_error,
+            diagnostics=self.__str__(),
+        )
 
 
 @dataclass
@@ -266,3 +341,27 @@ class RecordProcessorError(Exception):
 
     def __init__(self, diagnostics_dictionary: dict):
         self.diagnostics_dictionary = diagnostics_dictionary
+
+
+def create_operation_outcome(resource_id: str, severity: Severity, code: Code, diagnostics: str) -> dict:
+    """Create an OperationOutcome object. Do not use `fhir.resource` library since it adds unnecessary validations"""
+    return {
+        "resourceType": "OperationOutcome",
+        "id": resource_id,
+        "meta": {"profile": ["https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"]},
+        "issue": [
+            {
+                "severity": severity,
+                "code": code,
+                "details": {
+                    "coding": [
+                        {
+                            "system": "https://fhir.nhs.uk/Codesystem/http-error-codes",
+                            "code": code.upper(),
+                        }
+                    ]
+                },
+                "diagnostics": diagnostics,
+            }
+        ],
+    }

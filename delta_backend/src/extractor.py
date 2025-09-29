@@ -43,7 +43,7 @@ class Extractor:
 
 
     def _get_person_names(self):
-        occurrence_time = self._get_occurance_date_time()
+        occurrence_time = self._get_occurrence_date_time()
         patient = self._get_patient()
         names = patient.get("name", [])
         names = [n for n in names if "given" in n and "family" in n]
@@ -61,7 +61,7 @@ class Extractor:
 
     def _get_practitioner_names(self):
         contained = self.fhir_json_data.get("contained", [])
-        occurrence_time = self._get_occurance_date_time()
+        occurrence_time = self._get_occurrence_date_time()
         practitioner = next((c for c in contained if isinstance(c, dict) and c.get("resourceType") == "Practitioner"), None)
         if not practitioner or "name" not in practitioner:
             return "", ""
@@ -97,18 +97,11 @@ class Extractor:
 
         return (not start or start <= occurrence_time) and (not end or occurrence_time <= end)
 
-    def _get_occurance_date_time(self) -> str:
-        try:
-            occurrence_time = datetime.fromisoformat(self.fhir_json_data.get("occurrenceDateTime", ""))
-            if occurrence_time and occurrence_time.tzinfo is None:
-                occurrence_time = occurrence_time.replace(tzinfo=timezone.utc)
-                return occurrence_time
-            return occurrence_time
-
-        except Exception as e:
-            message = "DateTime conversion error [%s]: %s" % (e.__class__.__name__, e)
-            error = self._log_error(ConversionFieldName.DATE_AND_TIME, message, e, code=exception_messages.UNEXPECTED_EXCEPTION)
-            return error
+    def _get_occurrence_date_time(self) -> datetime:
+        occurrence_time = datetime.fromisoformat(self.fhir_json_data.get("occurrenceDateTime", ""))
+        if occurrence_time and occurrence_time.tzinfo is None:
+            occurrence_time = occurrence_time.replace(tzinfo=timezone.utc)
+        return occurrence_time
 
     def _get_first_snomed_code(self, coding_container: dict) -> str:
         codings = coding_container.get("coding", [])
@@ -189,8 +182,7 @@ class Extractor:
         """
         Convert a date string according to match YYYYMMDD format.
         """
-        if not date or not isinstance(date, str):
-            self._log_error(field_name, date, "Invalid value. Must be non empty string")
+        if not date:
             return ""
         try:
             dt = datetime.fromisoformat(date)
@@ -258,7 +250,7 @@ class Extractor:
         return value.lower() if isinstance(value, str) else value
 
     def extract_valid_address(self):
-        occurrence_time = self._get_occurance_date_time()
+        occurrence_time = self._get_occurrence_date_time()
         patient = self._get_patient()
 
         addresses = patient.get("address", [])

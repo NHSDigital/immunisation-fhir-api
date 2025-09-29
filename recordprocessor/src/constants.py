@@ -10,6 +10,9 @@ AUDIT_TABLE_FILENAME_GSI = "filename_index"
 AUDIT_TABLE_QUEUE_NAME_GSI = "queue_name_index"
 FILE_NAME_PROC_LAMBDA_NAME = os.getenv("FILE_NAME_PROC_LAMBDA_NAME")
 
+ARCHIVE_DIR_NAME = "archive"
+PROCESSING_DIR_NAME = "processing"
+
 EXPECTED_CSV_HEADERS = [
     "NHS_NUMBER",
     "PERSON_FORENAME",
@@ -53,8 +56,16 @@ class FileStatus:
 
     QUEUED = "Queued"
     PROCESSING = "Processing"
-    PROCESSED = "Processed"
-    DUPLICATE = "Duplicate"
+    PREPROCESSED = "Preprocessed"  # All entries in file converted to FHIR and forwarded to Kinesis
+    PROCESSED = "Processed"  # All entries processed and ack file created
+    NOT_PROCESSED = "Not processed"
+    FAILED = "Failed"
+
+
+class FileNotProcessedReason(StrEnum):
+    """Reasons why a file was not processed"""
+    UNAUTHORISED = "Unauthorised"
+    EMPTY = "Empty file"
 
 
 class AuditTableKeys:
@@ -65,6 +76,7 @@ class AuditTableKeys:
     QUEUE_NAME = "queue_name"
     STATUS = "status"
     TIMESTAMP = "timestamp"
+    ERROR_DETAILS = "error_details"
 
 
 class Diagnostics:

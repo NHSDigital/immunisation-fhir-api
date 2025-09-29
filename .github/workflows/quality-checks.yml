@@ -1,0 +1,216 @@
+name: Quality Checks
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    types: [labeled, opened, synchronize, reopened, unlabeled]
+
+env:
+  SHARED_PATH: ${{ github.workspace }}/lambdas/shared
+  LAMBDA_PATH: ${{ github.workspace }}/lambdas
+
+jobs:
+  lint:
+    name: Lint specification and Python projects
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install poetry
+        run: pip install poetry==2.1.4
+
+      # Base linting requires 3.8 due to APIM package dependencies. See root README for details under linting.
+      # Consider upgrading this and poetry deps if we move away from Azure DevOps to using the Proxygen tool.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.8
+          cache: 'poetry'
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '23.11.0'
+          cache: 'npm'
+
+      - name: Install linting dependencies
+        run: make install-node && poetry install --no-root
+
+      - name: Lint
+        run: make lint
+
+  testcoverage_and_sonarcloud:
+    name: Test Coverage and SonarCloud
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install poetry
+        run: pip install poetry==2.1.4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+          cache: 'poetry'
+
+      - name: Set up AWS credentials
+        env:
+          AWS_ACCESS_KEY_ID: "FOOBARKEY"
+          AWS_SECRET_ACCESS_KEY: "FOOBARSECRET"
+        run: |
+          aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+          aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+
+      - name: Run unittest with filenameprocessor-coverage
+        working-directory: filenameprocessor
+        id: filenameprocessor
+        continue-on-error: true
+        run: |
+          poetry install
+          poetry run coverage run -m unittest discover || echo "filenameprocessor tests failed" >> ../failed_tests.txt
+          poetry run coverage xml -o ../filenameprocessor-coverage.xml
+
+      - name: Run unittest with batchprocessorfilter-coverage
+        working-directory: batch_processor_filter
+        id: batchprocessorfilter
+        env:
+          PYTHONPATH: ${{ github.workspace }}/batch_processor_filter/src:${{ github.workspace }}/batch_processor_filter/tests
+        continue-on-error: true
+        run: |
+          poetry install
+          poetry run coverage run -m unittest discover || echo "batchprocessorfilter tests failed" >> ../failed_tests.txt
+          poetry run coverage xml -o ../batchprocessorfilter-coverage.xml
+
+      - name: Run unittest with recordprocessor-coverage
+        working-directory: recordprocessor
+        id: recordprocessor
+        env:
+          PYTHONPATH: ${{ github.workspace }}/recordprocessor/src:${{ github.workspace }}/recordprocessor/tests
+        continue-on-error: true
+        run: |
+          poetry install
+          poetry run coverage run -m unittest discover || echo "recordprocessor tests failed" >> ../failed_tests.txt
+          poetry run coverage xml -o ../recordprocessor-coverage.xml
+
+        # This step is redundant - all of these tests will be run in the backend step below
+      - name: Run unittest with recordforwarder-coverage
+        working-directory: backend
+        id: recordforwarder
+        env:
+          PYTHONPATH: ${{ github.workspace }}/backend/src:${{ github.workspace }}/backend/tests
+        continue-on-error: true
+        run: |
+          poetry install
+          poetry run coverage run -m unittest discover -p "*batch*.py" || echo "recordforwarder tests failed" >> ../failed_tests.txt
+          poetry run coverage xml -o ../recordforwarder-coverage.xml
+
+      - name: Run unittest with coverage-delta
+        working-directory: delta_backend
+        id: delta
+        env:
+            PYTHONPATH: delta_backend/src:delta_backend/tests
+        continue-on-error: true
+        run: |
+          poetry install
+          poetry run coverage run -m unittest discover || echo "delta tests failed" >> ../failed_tests.txt
+          poetry run coverage xml -o ../delta-coverage.xml
+
+      - name: Run unittest with coverage-fhir-api
+        working-directory: backend
+        env:
+          PYTHONPATH: ${{ github.workspace }}/backend/src:${{ github.workspace }}/backend/tests
+        id: fhirapi
+        continue-on-error: true
+        run: |
+          poetry install
+          poetry run coverage run -m unittest discover || echo "fhir-api tests failed" >> ../failed_tests.txt
+          poetry run coverage xml -o ../backend-coverage.xml
+
+      - name: Run unittest with coverage-mesh-processor
+        working-directory: mesh_processor
+        id: meshprocessor
+        continue-on-error: true
+        run: |
+          poetry install
+          poetry run coverage run -m unittest discover || echo "mesh_processor tests failed" >> ../failed_tests.txt
+          poetry run coverage xml -o ../mesh_processor-coverage.xml
+
+      - name: Run unittest with coverage-ack-lambda
+        working-directory: lambdas/ack_backend
+        id: acklambda
+        env:
+          PYTHONPATH: ${{ env.LAMBDA_PATH }}/ack_backend/src:${{ github.workspace }}/ack_backend/tests
+        continue-on-error: true
+        run: |
+            poetry install
+            poetry run coverage run --source=src -m unittest discover || echo "ack-lambda tests failed" >> ../../failed_tests.txt
+            poetry run coverage xml -o ../../ack-lambda-coverage.xml
+
+      - name: Run unittest with coverage-mns-subscription
+        working-directory: lambdas/mns_subscription
+        id: mns_subscription
+        env:
+          PYTHONPATH: ${{ env.LAMBDA_PATH }}/mns_subscription/src:${{ env.SHARED_PATH }}/src
+        continue-on-error: true
+        run: |
+          poetry install
+          poetry run coverage run -m unittest discover || echo "mns_subscription tests failed" >> ../../failed_tests.txt
+          poetry run coverage report -m
+          poetry run coverage xml -o ../../mns_subscription-coverage.xml
+
+      - name: Run unittest with redis_sync
+        working-directory: lambdas/redis_sync
+        id: redis_sync
+        env:
+          PYTHONPATH: ${{ env.LAMBDA_PATH }}/redis_sync/src:${{ env.SHARED_PATH }}/src
+        continue-on-error: true
+        run: |
+          poetry install
+          poetry run coverage run --source=src -m unittest discover || echo "redis_sync tests failed" >> ../../failed_tests.txt
+          poetry run coverage xml -o ../../redis_sync-coverage.xml
+
+      - name: Run unittest with shared
+        working-directory: lambdas/shared
+        id: shared
+        env:
+          PYTHONPATH: ${{ env.SHARED_PATH }}/src
+        continue-on-error: true
+        run: |
+          poetry install
+          poetry run coverage run --rcfile=.coveragerc --source=src -m unittest discover -s tests -p "test_*.py" -v || echo "shared tests failed" >> ../../failed_tests.txt
+          poetry run coverage xml -o ../../shared-coverage.xml
+
+      - name: Run unittest with id_sync
+        working-directory: lambdas/id_sync
+        id: id_sync
+        env:
+          PYTHONPATH: ${{ env.LAMBDA_PATH }}/id_sync/src:${{ env.SHARED_PATH }}/src
+        continue-on-error: true
+        run: |
+          poetry install
+          poetry run coverage run --rcfile=.coveragerc --source=src -m unittest discover || echo "id_sync tests failed" >> ../../failed_tests.txt
+          poetry run coverage xml -o ../../id_sync-coverage.xml
+
+      - name: Run Test Failure Summary
+        id: check_failure
+        run: |
+          if [ -s failed_tests.txt ]; then
+            echo "The following tests failed:"
+            cat failed_tests.txt
+
+            while IFS= read -r line; do
+              echo "##[error]Test Failures: $line"
+            done < failed_tests.txt
+
+            exit 1
+          else
+            echo "All tests passed."
+          fi
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@fd88b7d7ccbaefd23d8f36f73b59db7a3d246602
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Needed to get PR information, if any
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
