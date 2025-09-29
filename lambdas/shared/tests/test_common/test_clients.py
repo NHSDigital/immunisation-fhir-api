@@ -59,3 +59,17 @@ class TestClients(unittest.TestCase):
     def test_logger_set_level(self):
         """Test that logger level is set to INFO"""
         self.mock_logger_instance.setLevel.assert_called_once_with(logging.INFO)
+
+    def test_global_s3_client(self):
+        ''' Test global_s3_client is not initialized on import '''
+        importlib.reload(clients)
+        self.assertEqual(clients.global_s3_client, None)
+
+    def test_global_s3_client_initialization(self):
+        ''' Test global_s3_client is initialized exactly once even with multiple invocations'''
+        importlib.reload(clients)
+        clients.get_s3_client()
+        self.assertNotEqual(clients.global_s3_client, None)
+        call_count = self.mock_boto3_client.call_count
+        clients.get_s3_client()
+        self.assertEqual(self.mock_boto3_client.call_count, call_count)

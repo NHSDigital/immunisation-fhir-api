@@ -1,8 +1,11 @@
 # Define the directory containing the Docker image and calculate its SHA-256 hash for triggering redeployments
 locals {
-  ack_lambda_dir     = abspath("${path.root}/../ack_backend")
-  ack_lambda_files   = fileset(local.ack_lambda_dir, "**")
+  ack_lambda_dir = abspath("${path.root}/../lambdas/ack_backend")
+
+  ack_lambda_files = fileset(local.ack_lambda_dir, "**")
+
   ack_lambda_dir_sha = sha1(join("", [for f in local.ack_lambda_files : filesha1("${local.ack_lambda_dir}/${f}")]))
+  ack_lambda_name    = "${local.short_prefix}-ack_lambda"
 }
 
 
@@ -18,7 +21,7 @@ resource "aws_ecr_repository" "ack_lambda_repository" {
 module "ack_processor_docker_image" {
   source  = "terraform-aws-modules/lambda/aws//modules/docker-build"
   version = "8.0.1"
-
+  docker_file_path = "./ack_backend/Dockerfile"
   create_ecr_repo = false
   ecr_repo        = aws_ecr_repository.ack_lambda_repository.name
   ecr_repo_lifecycle_policy = jsonencode({
@@ -40,9 +43,10 @@ module "ack_processor_docker_image" {
 
   platform      = "linux/amd64"
   use_image_tag = false
-  source_path   = local.ack_lambda_dir
+  source_path = abspath("${path.root}/../lambdas")
   triggers = {
-    dir_sha = local.ack_lambda_dir_sha
+    dir_sha        = local.ack_lambda_dir_sha
+    shared_dir_sha = local.shared_dir_sha
   }
 }
 
