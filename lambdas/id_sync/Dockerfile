@@ -9,9 +9,6 @@ RUN mkdir -p /home/appuser && \
 # Install Poetry dependencies
 # Copy id_sync Poetry files
 COPY ./id_sync/poetry.lock ./id_sync/pyproject.toml ./
-COPY ./shared/src/common ./src/common
-
-RUN echo "Listing /var/task after source code copy:" && ls -R /var/task
 
 # Install id_sync dependencies
 WORKDIR /var/task
