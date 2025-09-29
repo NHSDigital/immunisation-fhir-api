@@ -92,8 +92,10 @@ def generate_expected_ack_content(
     return existing_content
 
 
-def validate_ack_file_content(s3_client,
-    incoming_messages: list[dict], existing_file_content: str = ValidValues.ack_headers
+def validate_ack_file_content(
+    s3_client,
+    incoming_messages: list[dict],
+    existing_file_content: str = ValidValues.ack_headers
 ) -> None:
     """
     Obtains the ack file content and ensures that it matches the expected content (expected content is based

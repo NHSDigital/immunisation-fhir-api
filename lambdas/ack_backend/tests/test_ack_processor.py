@@ -50,7 +50,7 @@ class TestAckProcessor(unittest.TestCase):
             Key=f"processing/{MOCK_MESSAGE_DETAILS.file_key}",
             Body=mock_source_file_with_100_rows.getvalue(),
         )
-        self.logger_info_patcher = patch('logging_decorators.logger.info')
+        self.logger_info_patcher = patch('common.log_decorator.logger.info')
         self.mock_logger_info = self.logger_info_patcher.start()
 
     def tearDown(self) -> None:
@@ -113,8 +113,13 @@ class TestAckProcessor(unittest.TestCase):
         response = lambda_handler(event=event, context={})
 
         self.assertEqual(response, EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS)
-        validate_ack_file_content(self.s3_client,
-            [*array_of_success_messages, *array_of_failure_messages, *array_of_mixed_success_and_failure_messages],
+        validate_ack_file_content(
+            self.s3_client,
+            [
+                *array_of_success_messages,
+                *array_of_failure_messages,
+                *array_of_mixed_success_and_failure_messages
+            ],
             existing_file_content=ValidValues.ack_headers,
         )
 
@@ -169,7 +174,10 @@ class TestAckProcessor(unittest.TestCase):
             # TODO: None of the test cases have any existing ack file content?
             with self.subTest(msg=f"Existing ack file: {test_case['description']}"):
                 existing_ack_file_content = test_case.get("existing_ack_file_content", "")
-                setup_existing_ack_file(MOCK_MESSAGE_DETAILS.temp_ack_file_key, existing_ack_file_content, self.s3_client)
+                setup_existing_ack_file(
+                    MOCK_MESSAGE_DETAILS.temp_ack_file_key,
+                    existing_ack_file_content, self.s3_client
+                )
                 response = lambda_handler(event=self.generate_event(test_case["messages"]), context={})
                 self.assertEqual(response, EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS)
                 validate_ack_file_content(self.s3_client, test_case["messages"], existing_ack_file_content)
@@ -194,10 +202,10 @@ class TestAckProcessor(unittest.TestCase):
 
         for test_case in test_cases:
             with self.subTest(msg=test_case["description"]):
-                with patch("logging_decorators.send_log_to_firehose") as mock_send_log_to_firehose:
+                with patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose:
                     with self.assertRaises(Exception):
                         lambda_handler(event=test_case["event"], context={})
-                error_log = mock_send_log_to_firehose.call_args[0][0]
+                error_log = mock_send_log_to_firehose.call_args[0][1]
                 self.assertIn(test_case["expected_message"], error_log["diagnostics"])
 
 
