@@ -13,10 +13,6 @@ resources:
   pipelines:
   - pipeline: build_pipeline
     source: "Immunisation-Fhir-Api-Build"
-    trigger:
-      branches:
-        include:
-          - release-*
 
 pool:
   name: 'AWS-ECS'
@@ -42,12 +38,7 @@ extends:
     prod_requires_approval: true
     prod_producer_approval: true
     apigee_deployments:
-      - environment: ref
-        depends_on: []
-        jinja_templates:
-          DOMAIN_ENDPOINT: https://${{ parameters.sub_environment }}.example.com
       - environment: prod
-        depends_on:
-        - ref
+        depends_on: []
         jinja_templates:
           DOMAIN_ENDPOINT: https://${{ parameters.sub_environment }}.imms.prod.vds.platform.nhs.uk
