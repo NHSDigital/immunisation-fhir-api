@@ -1,224 +1,129 @@
 import time
 import unittest
 from utils import (
-    generate_csv,
     upload_file_to_s3,
     get_file_content_from_s3,
-    wait_for_ack_file,
     check_ack_file_content,
     validate_row_count,
-    upload_config_file,
-    generate_csv_with_ordered_100000_rows,
-    verify_final_ack_file,
+    purge_sqs_queues,
     delete_file_from_s3
 )
+
+from clients import logger
+from scenarios import scenarios, TestCase, create_test_cases, enable_tests, generate_csv_files
 
 from constants import (
     SOURCE_BUCKET,
     INPUT_PREFIX,
     ACK_BUCKET,
-    PRE_VALIDATION_ERROR,
-    POST_VALIDATION_ERROR,
-    DUPLICATE,
-    FILE_NAME_VAL_ERROR,
-    environment
+    environment,
+    DestinationType,
+    TEMP_ACK_PREFIX
 )
 
 
 class TestE2EBatch(unittest.TestCase):
     def setUp(self):
-        self.uploaded_files = []  # Tracks uploaded input keys
-        self.ack_files = []       # Tracks ack keys
+        self.tests: list[TestCase] = create_test_cases(scenarios["dev"])
+        enable_tests(self.tests, [
+            "Successful Create",
+            "Successful Update",
+            "Successful Delete",
+            "Create with 1252 char",
+            "Failed Update",
+            "Failed Delete",
+        ])
+        generate_csv_files(self.tests)
 
     def tearDown(self):
-        for file_key in self.uploaded_files:
-            delete_file_from_s3(SOURCE_BUCKET, file_key)
-        for ack_key in self.ack_files:
-            delete_file_from_s3(ACK_BUCKET, ack_key)
+        logger.info("Cleanup...")
+        for test in self.tests:
+            test.cleanup()
+        delete_file_from_s3(ACK_BUCKET, TEMP_ACK_PREFIX)
+        purge_sqs_queues()
 
-    if environment != "ref":
-        def test_create_success(self):
-            """Test CREATE scenario."""
-            input_file = generate_csv("PHYLIS", "0.3", action_flag="CREATE")
+    @unittest.skipIf(environment == "ref", "Skip for ref")
+    def test_batch_submission(self):
+        """Test all scenarios and submit as batch."""
+        start_time = time.time()
+        max_timeout = 600  # seconds
 
-            key = upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
-            self.uploaded_files.append(key)
+        send_files(self.tests)
 
-            ack_key = wait_for_ack_file(None, input_file)
-            self.ack_files.append(ack_key)
+        if not poll_for_responses(self.tests, max_timeout):
+            logger.error("Timeout waiting for responses")
 
-            validate_row_count(input_file, ack_key)
+        validate_responses(self.tests)
 
-            ack_content = get_file_content_from_s3(ACK_BUCKET, ack_key)
-            check_ack_file_content(ack_content, "OK", None, "CREATE")
-
-        def test_duplicate_create(self):
-            """Test DUPLICATE scenario."""
-
-            input_file = generate_csv("PHYLIS", "0.3", action_flag="CREATE", same_id=True)
-
-            key = upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
-            self.uploaded_files.append(key)
-
-            ack_key = wait_for_ack_file(None, input_file)
-            self.ack_files.append(ack_key)
-
-            validate_row_count(input_file, ack_key)
-
-            ack_content = get_file_content_from_s3(ACK_BUCKET, ack_key)
-            check_ack_file_content(ack_content, "Fatal Error", DUPLICATE, "CREATE")
-
-        def test_update_success(self):
-            """Test UPDATE scenario."""
-            input_file = generate_csv("PHYLIS", "0.5", action_flag="UPDATE")
-
-            key = upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
-            self.uploaded_files.append(key)
-
-            ack_key = wait_for_ack_file(None, input_file)
-            self.ack_files.append(ack_key)
-
-            validate_row_count(input_file, ack_key)
-
-            ack_content = get_file_content_from_s3(ACK_BUCKET, ack_key)
-            check_ack_file_content(ack_content, "OK", None, "UPDATE")
-
-        def test_reinstated_success(self):
-            """Test REINSTATED scenario."""
-            input_file = generate_csv("PHYLIS", "0.5", action_flag="REINSTATED")
-
-            key = upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
-            self.uploaded_files.append(key)
-
-            ack_key = wait_for_ack_file(None, input_file)
-            self.ack_files.append(ack_key)
-
-            validate_row_count(input_file, ack_key)
-
-            ack_content = get_file_content_from_s3(ACK_BUCKET, ack_key)
-            check_ack_file_content(ack_content, "OK", None, "reinstated")
-
-        def test_update_reinstated_success(self):
-            """Test UPDATE-REINSTATED scenario."""
-            input_file = generate_csv("PHYLIS", "0.5", action_flag="UPDATE-REINSTATED")
-
-            key = upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
-            self.uploaded_files.append(key)
-
-            ack_key = wait_for_ack_file(None, input_file)
-            self.ack_files.append(ack_key)
-
-            validate_row_count(input_file, ack_key)
-
-            ack_content = get_file_content_from_s3(ACK_BUCKET, ack_key)
-            check_ack_file_content(ack_content, "OK", None, "update-reinstated")
-
-        def test_delete_success(self):
-            """Test DELETE scenario."""
-            input_file = generate_csv("PHYLIS", "0.8", action_flag="DELETE")
-
-            key = upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
-            self.uploaded_files.append(key)
-
-            ack_key = wait_for_ack_file(None, input_file)
-            self.ack_files.append(ack_key)
-
-            validate_row_count(input_file, ack_key)
-
-            ack_content = get_file_content_from_s3(ACK_BUCKET, ack_key)
-            check_ack_file_content(ack_content, "OK", None, "DELETE")
-
-        def test_pre_validation_error(self):
-            """Test PRE-VALIDATION error scenario."""
-            input_file = generate_csv("PHYLIS", "TRUE", action_flag="CREATE")
-
-            key = upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
-            self.uploaded_files.append(key)
-
-            ack_key = wait_for_ack_file(None, input_file)
-            self.ack_files.append(ack_key)
-
-            validate_row_count(input_file, ack_key)
-
-            ack_content = get_file_content_from_s3(ACK_BUCKET, ack_key)
-            check_ack_file_content(ack_content, "Fatal Error", PRE_VALIDATION_ERROR, None)
-
-        def test_post_validation_error(self):
-            """Test POST-VALIDATION error scenario."""
-            input_file = generate_csv("", "0.3", action_flag="CREATE")
-
-            key = upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
-            self.uploaded_files.append(key)
-
-            ack_key = wait_for_ack_file(None, input_file)
-            self.ack_files.append(ack_key)
-
-            ack_content = get_file_content_from_s3(ACK_BUCKET, ack_key)
-            check_ack_file_content(ack_content, "Fatal Error", POST_VALIDATION_ERROR, None)
-
-        def test_file_name_validation_error(self):
-            """Test FILE-NAME-VALIDATION error scenario."""
-            input_file = generate_csv("PHYLIS", "0.3", action_flag="CREATE", file_key=True)
-
-            key = upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
-            self.uploaded_files.append(key)
-
-            ack_key = wait_for_ack_file(True, input_file)
-            self.ack_files.append(ack_key)
-
-            ack_content = get_file_content_from_s3(ACK_BUCKET, ack_key)
-            check_ack_file_content(ack_content, "Failure", FILE_NAME_VAL_ERROR, None)
-
-        def test_header_name_validation_error(self):
-            """Test HEADER-NAME-VALIDATION error scenario."""
-            input_file = generate_csv("PHYLIS", "0.3", action_flag="CREATE", headers="NH_NUMBER")
-
-            key = upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
-            self.uploaded_files.append(key)
-
-            ack_key = wait_for_ack_file(True, input_file)
-            self.ack_files.append(ack_key)
-
-            ack_content = get_file_content_from_s3(ACK_BUCKET, ack_key)
-            check_ack_file_content(ack_content, "Failure", FILE_NAME_VAL_ERROR, None)
-
-        # This test updates the permissions_config.json file from the imms-internal-dev-supplier-config
-        # S3 bucket shared across multiple environments (PR environments, internal-dev, int, and ref).
-        # Running this may modify permissions in these environments, causing unintended side effects.
-        @unittest.skip("Modifies shared S3 permissions configuration")
-        def test_invalid_permission(self):
-            """Test INVALID-PERMISSION error scenario."""
-            upload_config_file("MMR_FULL")  # permissions_config.json is updated here
-            time.sleep(20)
-
-            input_file = generate_csv("PHYLIS", "0.3", action_flag="CREATE")
-
-            key = upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
-            self.uploaded_files.append(key)
-
-            ack_key = wait_for_ack_file(True, input_file)
-            self.ack_files.append(ack_key)
-
-            ack_content = get_file_content_from_s3(ACK_BUCKET, ack_key)
-            check_ack_file_content(ack_content, "Failure", FILE_NAME_VAL_ERROR, None)
-
-            upload_config_file("COVID19_FULL")
-            time.sleep(20)
-
-    else:
-        def test_end_to_end_speed_test_with_100000_rows(self):
-            """Test end_to_end_speed_test_with_100000_rows scenario with full integration"""
-            input_file = generate_csv_with_ordered_100000_rows(None)
-
-            key = upload_file_to_s3(input_file, SOURCE_BUCKET, INPUT_PREFIX)
-            self.uploaded_files.append(key)
-
-            final_ack_key = wait_for_ack_file(None, input_file, timeout=1800)
-            self.ack_files.append(final_ack_key)
-
-            response = verify_final_ack_file(final_ack_key)
-            assert response is True
+        logger.info(f"Tests Completed. Time: {time.time() - start_time:.1f} seconds")
 
 
-if __name__ == "__main__":
-    unittest.main()
+def send_files(tests: list[TestCase]):
+    start_time = time.time()
+    for test in tests:
+        if test.enabled:
+            logger.info(f"Upload {test.file_name} ")
+            key = upload_file_to_s3(test.file_name, SOURCE_BUCKET, INPUT_PREFIX)
+            test.key = key
+    logger.info(f"Files uploaded. Time: {time.time() - start_time:.1f} seconds")
+
+
+def poll_for_responses(tests: list[TestCase], max_timeout=1200) -> bool:
+    logger.info("Waiting while processing...")
+    start_time = time.time()
+    # while there are still pending files, poll for acks and forwarded files
+    pending = True
+    while pending:
+        pending = False
+        for test in tests:
+            pending = test.get_poll_destinations(pending)
+        if pending:
+            print(".", end="")
+            time.sleep(5)
+        if (time.time() - start_time) > max_timeout:
+            return False
+    logger.info(f"Files processed. Time: {time.time() - start_time:.1f} seconds")
+    return True
+
+
+def validate_responses(tests: list[TestCase]):
+    start_time = time.time()
+    count = 0
+    expected_count = len(tests) * 2
+    errors = False
+    try:
+        for test in tests:
+            logger.info(f"Validation for Test: {test.name} ")
+            # Validate the ACK file
+            if test.ack_keys[DestinationType.INF]:
+                count += 1
+                inf_ack_content = get_file_content_from_s3(ACK_BUCKET, test.ack_keys[DestinationType.INF])
+                check_ack_file_content(test.name, inf_ack_content, "Success", None,
+                                       test.operation_outcome)
+            else:
+                logger.error(f"INF ACK file not found for test: {test.name}")
+                errors = True
+
+            if test.ack_keys[DestinationType.BUS]:
+                count += 1
+                validate_row_count(f"{test.name} - bus", test.file_name,
+                                   test.ack_keys[DestinationType.BUS])
+
+                test.check_bus_file_content()
+
+                test.check_final_success_action()
+            else:
+                logger.error(f"BUS ACK file not found for test: {test.name}")
+                errors = True
+
+    except Exception as e:
+        logger.error(f"Error during validation: {e}")
+        errors = True
+    finally:
+        if count == expected_count:
+            logger.info("All responses subject to validation.")
+        else:
+            logger.error(f"{count} of {expected_count} responses subject to validation.")
+        logger.info(f"Time: {time.time() - start_time:.1f} seconds")
+        assert count == expected_count, f"Only {count} of {expected_count} responses subject to validation."
+        assert not errors, "Errors found during validation."
