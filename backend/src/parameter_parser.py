@@ -37,6 +37,93 @@ class SearchParams:
         return str(self.__dict__)
 
 
+def process_mandatory_params(params: ParamContainer) -> tuple[str, list[str]]:
+    """Validate mandatory params and return (patient_identifier, vaccine_types).
+
+    Raises ParameterException for any validation error.
+    """
+    # patient.identifier
+    patient_identifiers = params.get(patient_identifier_key, [])
+    patient_identifier = patient_identifiers[0] if len(patient_identifiers) == 1 else None
+
+    if patient_identifier is None:
+        raise ParameterException(f"Search parameter {patient_identifier_key} must have one value.")
+
+    patient_identifier_parts = patient_identifier.split("|")
+    if len(patient_identifier_parts) != 2 or patient_identifier_parts[0] != patient_identifier_system:
+        raise ParameterException(
+            "patient.identifier must be in the format of "
+            f"\"{patient_identifier_system}|{{NHS number}}\" "
+            f"e.g. \"{patient_identifier_system}|9000000009\"")
+
+    if not nhs_number_mod11_check(patient_identifier_parts[1]):
+        raise ParameterException(f"Search parameter {patient_identifier_key} must be a valid NHS number.")
+
+    # immunization.target
+    params[immunization_target_key] = list(set(params.get(immunization_target_key, [])))
+    vaccine_types_local = [v for v in params[immunization_target_key] if v is not None]
+    if len(vaccine_types_local) < 1:
+        raise ParameterException(f"Search parameter {immunization_target_key} must have one or more values.")
+
+    valid_vaccine_types = redis_client.hkeys(Constants.VACCINE_TYPE_TO_DISEASES_HASH_KEY)
+    if any(x not in valid_vaccine_types for x in vaccine_types_local):
+        raise ParameterException(
+            f"immunization-target must be one or more of the following: {', '.join(valid_vaccine_types)}")
+
+    return patient_identifier_parts[1], vaccine_types_local
+
+
+def process_optional_params(params: ParamContainer) -> tuple[datetime.date, datetime.date, Optional[str], list[str]]:
+    """Parse optional params (date.from, date.to, _include).
+
+    Returns (date_from, date_to, include, errors).
+    """
+    errors: list[str] = []
+    date_from = None
+    date_to = None
+
+    date_froms = params.get(date_from_key, [])
+    if len(date_froms) > 1:
+        errors.append(f"Search parameter {date_from_key} may have one value at most.")
+
+    try:
+        date_from = datetime.datetime.strptime(date_froms[0], "%Y-%m-%d").date() if len(date_froms) == 1 else date_from_default
+    except ValueError:
+        errors.append(f"Search parameter {date_from_key} must be in format: YYYY-MM-DD")
+
+    date_tos = params.get(date_to_key, [])
+    if len(date_tos) > 1:
+        errors.append(f"Search parameter {date_to_key} may have one value at most.")
+
+    try:
+        date_to = datetime.datetime.strptime(date_tos[0], "%Y-%m-%d").date() if len(date_tos) == 1 else date_to_default
+    except ValueError:
+        errors.append(f"Search parameter {date_to_key} must be in format: YYYY-MM-DD")
+
+    includes = params.get(include_key, [])
+    if includes and includes[0].lower() != "immunization:patient":
+        errors.append(f"Search parameter {include_key} may only be 'Immunization:patient' if provided.")
+    include = includes[0] if len(includes) > 0 else None
+
+    return date_from, date_to, include, errors
+
+def process_search_params(params: ParamContainer) -> SearchParams:
+    """Validate and parse search parameters.
+
+    :raises ParameterException:
+    """
+    patient_identifier, vaccine_types = process_mandatory_params(params)
+    date_from, date_to, include, errors = process_optional_params(params)
+
+    if date_from and date_to and date_from > date_to:
+        errors.append(f"Search parameter {date_from_key} must be before {date_to_key}")
+
+    if errors:
+        raise ParameterException("; ".join(errors))
+
+    return SearchParams(patient_identifier, vaccine_types, date_from, date_to, include)
+
+
 def process_params(aws_event: APIGatewayProxyEventV1) -> ParamContainer:
     """Combines query string and content parameters. Duplicates not allowed. Splits on a comma."""
 
@@ -79,84 +166,6 @@ def process_params(aws_event: APIGatewayProxyEventV1) -> ParamContainer:
                      for key in (query_params.keys() | body_params.keys())}
 
     return parsed_params
-
-
-def process_search_params(params: ParamContainer) -> SearchParams:
-    """Validate and parse search parameters.
-
-    :raises ParameterException:
-    """
-    # mandatory parameter patient.identifier
-    patient_identifiers = params.get(patient_identifier_key, [])
-    patient_identifier = patient_identifiers[0] if len(patient_identifiers) == 1 else None
-
-    if patient_identifier is None:
-        raise ParameterException(f"Search parameter {patient_identifier_key} must have one value.")
-
-    patient_identifier_parts = patient_identifier.split("|")
-    if len(patient_identifier_parts) != 2 or not patient_identifier_parts[
-                                                     0] == patient_identifier_system:
-        raise ParameterException("patient.identifier must be in the format of "
-                      f"\"{patient_identifier_system}|{{NHS number}}\" "
-                      f"e.g. \"{patient_identifier_system}|9000000009\"")
-
-    if not nhs_number_mod11_check(patient_identifier_parts[1]):
-        raise ParameterException(f"Search parameter {patient_identifier_key} must be a valid NHS number.")
-
-    patient_identifier = patient_identifier_parts[1]
-
-    # mandatory parameter immunization.target
-    params[immunization_target_key] = list(set(params.get(immunization_target_key, [])))
-    vaccine_types = [vaccine_type for vaccine_type in params[immunization_target_key] if
-                     vaccine_type is not None]
-    if len(vaccine_types) < 1:
-        raise ParameterException(f"Search parameter {immunization_target_key} must have one or more values.")
-
-    valid_vaccine_types = redis_client.hkeys(Constants.VACCINE_TYPE_TO_DISEASES_HASH_KEY)
-    if any(x not in valid_vaccine_types for x in vaccine_types):
-        raise ParameterException(
-            f"immunization-target must be one or more of the following: {', '.join(valid_vaccine_types)}")
-
-    # date.from
-    errors = []
-    date_from = None
-    date_to = None
-    date_froms = params.get(date_from_key, [])
-
-    if len(date_froms) > 1:
-        errors.append(f"Search parameter {date_from_key} may have one value at most.")
-
-    try:
-        date_from = datetime.datetime.strptime(date_froms[0], "%Y-%m-%d").date() \
-            if len(date_froms) == 1 else date_from_default
-    except ValueError:
-        errors.append(f"Search parameter {date_from_key} must be in format: YYYY-MM-DD")
-
-    # date.to
-    date_tos = params.get(date_to_key, [])
-
-    if len(date_tos) > 1:
-        errors.append(f"Search parameter {date_to_key} may have one value at most.")
-
-    try:
-        date_to = datetime.datetime.strptime(date_tos[0], "%Y-%m-%d").date() \
-            if len(date_tos) == 1 else date_to_default
-    except ValueError:
-        errors.append(f"Search parameter {date_to_key} must be in format: YYYY-MM-DD")
-
-    if date_from and date_to and date_from > date_to:
-        errors.append(f"Search parameter {date_from_key} must be before {date_to_key}")
-
-    # include
-    includes = params.get(include_key, [])
-    if includes and includes[0].lower() != "immunization:patient":
-        errors.append(f"Search parameter {include_key} may only be 'Immunization:patient' if provided.")
-    include = includes[0] if len(includes) > 0 else None
-
-    if errors:
-        raise ParameterException("; ".join(errors))
-
-    return SearchParams(patient_identifier, vaccine_types, date_from, date_to, include)
 
 
 def create_query_string(search_params: SearchParams) -> str:
