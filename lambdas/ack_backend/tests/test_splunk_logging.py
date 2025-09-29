@@ -156,8 +156,6 @@ class TestLoggingDecorators(unittest.TestCase):
             self.assertEqual(first_logger_info_call_args, expected_first_logger_info_data)
             self.assertEqual(first_logger_error_call_args, expected_first_logger_error_data)
 
-            print(call(expected_first_logger_info_data))
-            print(call(expected_first_logger_error_data))
             self.assertEqual(
                 mock_send_log_to_firehose.call_args_list, [
                     call(self.stream_name, expected_first_logger_info_data),
