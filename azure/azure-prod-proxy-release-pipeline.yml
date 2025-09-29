@@ -43,10 +43,11 @@ extends:
     prod_producer_approval: true
     apigee_deployments:
       - environment: ref
-        stage_name: Deploy Ref Proxy (TEST TO BE REMOVED)
+        depends_on: []
         jinja_templates:
           DOMAIN_ENDPOINT: https://${{ parameters.sub_environment }}.example.com
       - environment: prod
-        stage_name: Deploy Prod Proxy
+        depends_on:
+        - ref
         jinja_templates:
           DOMAIN_ENDPOINT: https://${{ parameters.sub_environment }}.imms.prod.vds.platform.nhs.uk
