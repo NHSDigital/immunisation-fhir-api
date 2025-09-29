@@ -100,7 +100,7 @@ def process_search_params(params: ParamContainer) -> SearchParams:
                       f"\"{patient_identifier_system}|{{NHS number}}\" "
                       f"e.g. \"{patient_identifier_system}|9000000009\"")
 
-    patient_identifier = patient_identifier.split("|")[1]
+    patient_identifier = patient_identifier_parts[1]
 
     # immunization.target
     params[immunization_target_key] = list(set(params.get(immunization_target_key, [])))
