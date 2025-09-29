@@ -87,7 +87,7 @@ def process_search_params(params: ParamContainer) -> SearchParams:
     :raises ParameterException:
     """
 
-    # patient.identifier
+    # mandatory parameter patient.identifier
     patient_identifiers = params.get(patient_identifier_key, [])
     patient_identifier = patient_identifiers[0] if len(patient_identifiers) == 1 else None
 
@@ -107,7 +107,7 @@ def process_search_params(params: ParamContainer) -> SearchParams:
 
     patient_identifier = nhs_number
 
-    # immunization.target
+    # mandatory parameter immunization.target
     params[immunization_target_key] = list(set(params.get(immunization_target_key, [])))
     vaccine_types = [vaccine_type for vaccine_type in params[immunization_target_key] if
                      vaccine_type is not None]
@@ -120,35 +120,41 @@ def process_search_params(params: ParamContainer) -> SearchParams:
             f"immunization-target must be one or more of the following: {', '.join(valid_vaccine_types)}")
 
     # date.from
+    errors = []
     date_froms = params.get(date_from_key, [])
 
     if len(date_froms) > 1:
-        raise ParameterException(f"Search parameter {date_from_key} may have one value at most.")
+        errors.append(f"Search parameter {date_from_key} may have one value at most.")
 
     try:
         date_from = datetime.datetime.strptime(date_froms[0], "%Y-%m-%d").date() \
             if len(date_froms) == 1 else date_from_default
     except ValueError:
-        raise ParameterException(f"Search parameter {date_from_key} must be in format: YYYY-MM-DD")
+        errors.append(f"Search parameter {date_from_key} must be in format: YYYY-MM-DD")
 
     # date.to
     date_tos = params.get(date_to_key, [])
 
     if len(date_tos) > 1:
-        raise ParameterException(f"Search parameter {date_to_key} may have one value at most.")
+        errors.append(f"Search parameter {date_to_key} may have one value at most.")
 
     try:
         date_to = datetime.datetime.strptime(date_tos[0], "%Y-%m-%d").date() \
             if len(date_tos) == 1 else date_to_default
     except ValueError:
-        raise ParameterException(f"Search parameter {date_to_key} must be in format: YYYY-MM-DD")
+        errors.append(f"Search parameter {date_to_key} must be in format: YYYY-MM-DD")
 
     if date_from and date_to and date_from > date_to:
-        raise ParameterException(f"Search parameter {date_from_key} must be before {date_to_key}")
+        errors.append(f"Search parameter {date_from_key} must be before {date_to_key}")
 
     # include
     includes = params.get(include_key, [])
+    if len(includes) > 1:
+        errors.append(f"Search parameter {include_key} may have one value at most.")
     include = includes[0] if len(includes) > 0 else None
+
+    if errors:
+        raise ParameterException("; ".join(errors))
 
     return SearchParams(patient_identifier, vaccine_types, date_from, date_to, include)
 
