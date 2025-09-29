@@ -50,5 +50,6 @@ def handler(event, _):
             return {"status": "success", "message": no_records}
 
     except Exception:
+        # PoC: comment to make PR
         logger.exception("Error processing S3 event")
         return {"status": "error", "message": "Error processing S3 event"}
