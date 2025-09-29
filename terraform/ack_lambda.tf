@@ -1,6 +1,6 @@
 # Define the directory containing the Docker image and calculate its SHA-256 hash for triggering redeployments
 locals {
-  ack_lambda_dir = abspath("${path.root}/../ack_backend")
+  ack_lambda_dir = abspath("${path.root}/../lambdas/ack_backend")
 
   ack_lambda_files = fileset(local.ack_lambda_dir, "**")
 
@@ -43,9 +43,10 @@ module "ack_processor_docker_image" {
 
   platform      = "linux/amd64"
   use_image_tag = false
-  source_path = abspath("${path.root}/..")
+  source_path = abspath("${path.root}/../lambdas")
   triggers = {
-    dir_sha = local.ack_lambda_dir_sha
+    dir_sha        = local.ack_lambda_dir_sha
+    shared_dir_sha = local.shared_dir_sha
   }
 }
 
