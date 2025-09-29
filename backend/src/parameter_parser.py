@@ -8,6 +8,7 @@ from urllib.parse import parse_qs, urlencode, quote
 
 from clients import redis_client, logger
 from models.errors import ParameterException
+from models.utils.generic_utils import nhs_number_mod11_check
 from models.constants import Constants
 
 ParamValue = list[str]
@@ -101,6 +102,8 @@ def process_search_params(params: ParamContainer) -> SearchParams:
                       f"e.g. \"{patient_identifier_system}|9000000009\"")
 
     patient_identifier = patient_identifier_parts[1]
+    if not nhs_number_mod11_check(patient_identifier):
+        raise ParameterException(f"Search parameter {patient_identifier_key} must be a valid NHS number.")
 
     # immunization.target
     params[immunization_target_key] = list(set(params.get(immunization_target_key, [])))
