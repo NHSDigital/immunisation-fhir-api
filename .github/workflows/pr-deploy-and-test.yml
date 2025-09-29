@@ -1,0 +1,14 @@
+name: PR Deploy and Test
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  deploy-pr-env:
+    uses: ./.github/workflows/deploy-backend.yml
+    with:
+      apigee_environment: internal-dev
+      create_mns_subscription: true
+      environment: dev
+      sub_environment: pr-${{github.event.pull_request.number}}

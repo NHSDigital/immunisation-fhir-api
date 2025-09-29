@@ -34,19 +34,12 @@ extends:
       - environment: internal-dev
         jinja_templates:
           DOMAIN_ENDPOINT: https://internal-dev.imms.dev.vds.platform.nhs.uk
-        post_deploy:
-          - template: ./templates/post-deploy.yml
-            parameters:
-              aws_account_type: "dev"
       - environment: internal-dev-sandbox
         proxy_path: sandbox
         jinja_templates:
           DOMAIN_ENDPOINT: just-dummy-value-for-successful-build
         post_deploy:
-          - template: ./templates/post-deploy.yml
-            parameters:
-              aws_account_type: "dev"
-              subscribe_to_mns: false
+          - template: ./templates/sandbox-post-deploy.yml
       - environment: sandbox
         proxy_path: sandbox
         jinja_templates:
@@ -54,21 +47,8 @@ extends:
         depends_on:
           - internal_dev_sandbox
       - environment: ref
-        depends_on:
-          - internal_dev
-          - internal_dev_sandbox
         jinja_templates:
-          DOMAIN_ENDPOINT: https://ref.imms.dev.vds.platform.nhs.uk
-        post_deploy:
-          - template: ./templates/post-deploy.yml
-            parameters:
-              aws_account_type: "dev"
+            DOMAIN_ENDPOINT: https://ref.imms.dev.vds.platform.nhs.uk
       - environment: int
-        depends_on:
-          - internal_dev
         jinja_templates:
           DOMAIN_ENDPOINT: https://int.imms.dev.vds.platform.nhs.uk
-        post_deploy:
-          - template: ./templates/post-deploy.yml
-            parameters:
-              aws_account_type: "dev"
