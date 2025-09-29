@@ -24,6 +24,15 @@ pool:
 variables:
   - template: project.yml
 
+parameters:
+  - name: sub_environment
+    displayName: Sub-Environment
+    type: string
+    default: blue
+    values:
+    - blue
+    - green
+
 extends:
   template: azure/common/apigee-deployment.yml@common
   parameters:
@@ -33,11 +42,11 @@ extends:
     prod_requires_approval: true
     prod_producer_approval: true
     apigee_deployments:
-      - environment: prod
-        stage_name: blue
+      - environment: ref
+        stage_name: Deploy Ref Proxy (TEST TO BE REMOVED)
         jinja_templates:
-          DOMAIN_ENDPOINT: https://blue.imms.prod.vds.platform.nhs.uk
+          DOMAIN_ENDPOINT: https://${{ parameters.sub_environment }}.example.com
       - environment: prod
-        stage_name: green
+        stage_name: Deploy Prod Proxy
         jinja_templates:
-          DOMAIN_ENDPOINT: https://green.imms.prod.vds.platform.nhs.uk
+          DOMAIN_ENDPOINT: https://${{ parameters.sub_environment }}.imms.prod.vds.platform.nhs.uk
