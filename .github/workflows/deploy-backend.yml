@@ -32,7 +32,7 @@ on:
         type: boolean
         default: true
       environment:
-        type: string
+        type: choice
         description: Select the backend environment
         options:
           - dev
