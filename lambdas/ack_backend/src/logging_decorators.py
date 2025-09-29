@@ -6,7 +6,7 @@ from datetime import datetime
 from functools import wraps
 from common.log_decorator import generate_and_send_logs
 
-prefix = "ack_processor"
+PREFIX = "ack_processor"
 STREAM_NAME = os.getenv("SPLUNK_FIREHOSE_NAME", "immunisation-fhir-api-internal-dev-splunk-firehose")
 
 
@@ -15,7 +15,7 @@ def convert_message_to_ack_row_logging_decorator(func):
 
     @wraps(func)
     def wrapper(message, created_at_formatted_string):
-        base_log_data = {"function_name": f"{prefix}_{func.__name__}", "date_time": str(datetime.now())}
+        base_log_data = {"function_name": f"{PREFIX}_{func.__name__}", "date_time": str(datetime.now())}
         start_time = time.time()
 
         try:
@@ -55,7 +55,7 @@ def upload_ack_file_logging_decorator(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
 
-        base_log_data = {"function_name": f"{prefix}_{func.__name__}", "date_time": str(datetime.now())}
+        base_log_data = {"function_name": f"{PREFIX}_{func.__name__}", "date_time": str(datetime.now())}
         start_time = time.time()
 
         # NB this doesn't require a try-catch block as the wrapped function never throws an exception
@@ -76,7 +76,7 @@ def ack_lambda_handler_logging_decorator(func):
     @wraps(func)
     def wrapper(event, context, *args, **kwargs):
 
-        base_log_data = {"function_name": f"{prefix}_{func.__name__}", "date_time": str(datetime.now())}
+        base_log_data = {"function_name": f"{PREFIX}_{func.__name__}", "date_time": str(datetime.now())}
         start_time = time.time()
 
         try:

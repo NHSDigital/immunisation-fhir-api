@@ -5,16 +5,14 @@ RUN mkdir -p /home/appuser && \
     echo 'appuser:x:1001:' >> /etc/group && \
     chown -R 1001:1001 /home/appuser && pip install "poetry~=2.1.4"
 
-# Install Poetry dependencies
-# Copy ack_backend Poetry files
-COPY ./ack_backend/poetry.lock ./ack_backend/pyproject.toml ./
-COPY ./shared/src/common ./src/common
-
-RUN echo "Listing /var/task after source code copy:" && ls -R /var/task
-
 # Install ack_backend dependencies
 WORKDIR /var/task
 RUN poetry config virtualenvs.create false && poetry install --no-interaction --no-ansi --no-root --only main
+
+# Install Poetry dependencies
+# Copy ack_backend Poetry files
+COPY ./ack_backend/poetry.lock ./ack_backend/pyproject.toml ./
+
 # -----------------------------
 FROM base AS build
 
