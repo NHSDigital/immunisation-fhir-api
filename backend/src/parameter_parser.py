@@ -101,9 +101,11 @@ def process_search_params(params: ParamContainer) -> SearchParams:
                       f"\"{patient_identifier_system}|{{NHS number}}\" "
                       f"e.g. \"{patient_identifier_system}|9000000009\"")
 
-    patient_identifier = patient_identifier_parts[1]
-    if not nhs_number_mod11_check(patient_identifier):
+    nhs_number = patient_identifier_parts[1]
+    if not nhs_number_mod11_check(nhs_number):
         raise ParameterException(f"Search parameter {patient_identifier_key} must be a valid NHS number.")
+
+    patient_identifier = nhs_number
 
     # immunization.target
     params[immunization_target_key] = list(set(params.get(immunization_target_key, [])))
