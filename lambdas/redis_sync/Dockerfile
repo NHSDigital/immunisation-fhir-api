@@ -9,9 +9,6 @@ RUN mkdir -p /home/appuser && \
 # Install Poetry dependencies
 # Copy redis_sync Poetry files
 COPY ./redis_sync/poetry.lock ./redis_sync/pyproject.toml ./
-COPY ./shared/src/common ./src/common
-
-RUN echo "Listing /var/task after source code copy:" && ls -R /var/task
 
 # Install redis_sync dependencies
 WORKDIR /var/task

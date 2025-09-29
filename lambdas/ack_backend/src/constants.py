@@ -4,13 +4,16 @@ import os
 
 AUDIT_TABLE_NAME = os.getenv("AUDIT_TABLE_NAME")
 
+
 def get_source_bucket_name() -> str:
     """Get the SOURCE_BUCKET_NAME environment from environment variables."""
     return os.getenv("SOURCE_BUCKET_NAME")
 
+
 def get_ack_bucket_name() -> str:
     """Get the ACK_BUCKET_NAME environment from environment variables."""
     return os.getenv("ACK_BUCKET_NAME")
+
 
 class FileStatus:
     """File status constants"""
