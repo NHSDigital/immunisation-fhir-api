@@ -19,7 +19,7 @@ jobs:
     env:
       APIGEE_ENVIRONMENT: internal-dev
       BACKEND_ENVIRONMENT: dev
-      BACKEND_SUB_ENVIRONMENT: pr-${{ github.event_name == 'pull_request' ? github.event.pull_request.number : inputs.pr_number }}
+      BACKEND_SUB_ENVIRONMENT: pr-${{ github.event_name == 'pull_request' && github.event.pull_request.number || inputs.pr_number }}
     permissions:
       id-token: write
       contents: read
@@ -47,7 +47,7 @@ jobs:
         run: |
           make init apigee_environment=$APIGEE_ENVIRONMENT environment=$BACKEND_ENVIRONMENT sub_environment=$BACKEND_SUB_ENVIRONMENT
           echo "ID_SYNC_QUEUE_ARN=$(make -s output name=id_sync_queue_arn)" >> $GITHUB_ENV
-      
+
       - name: Install poetry
         run: pip install poetry==2.1.4
 
