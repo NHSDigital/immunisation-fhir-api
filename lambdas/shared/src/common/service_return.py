@@ -35,7 +35,11 @@ class ServiceReturn:
         return "Unknown"
 
     def to_string(self):
-        return f"{self.message} ({type(self.exception).__name__}: {self.exception}) @ {self.call_location}"
+        exception_msg = f"{type(self.exception).__name__}: {self.exception}" if self.exception else "No exception"
+        error_msg = f"{self.message}" if self.message else ""
+        return f"{self.call_location}." \
+               f"{error_msg} " \
+               f"{exception_msg})"
 
     def __bool__(self):
         return self.exception is None
