@@ -39,7 +39,6 @@ class SearchParams:
 
 def process_mandatory_params(params: ParamContainer) -> tuple[str, list[str]]:
     """Validate mandatory params and return (patient_identifier, vaccine_types).
-
     Raises ParameterException for any validation error.
     """
     # patient.identifier
@@ -75,7 +74,6 @@ def process_mandatory_params(params: ParamContainer) -> tuple[str, list[str]]:
 
 def process_optional_params(params: ParamContainer) -> tuple[datetime.date, datetime.date, Optional[str], list[str]]:
     """Parse optional params (date.from, date.to, _include).
-
     Returns (date_from, date_to, include, errors).
     """
     errors: list[str] = []
@@ -109,7 +107,6 @@ def process_optional_params(params: ParamContainer) -> tuple[datetime.date, date
 
 def process_search_params(params: ParamContainer) -> SearchParams:
     """Validate and parse search parameters.
-
     :raises ParameterException:
     """
     patient_identifier, vaccine_types = process_mandatory_params(params)
