@@ -59,7 +59,7 @@ jobs:
       - name: Unsubscribe MNS
         working-directory: './lambdas/mns_subscription'
         env:
-        SQS_ARN: ${{ env.ID_SYNC_QUEUE_ARN }}
+          SQS_ARN: ${{ env.ID_SYNC_QUEUE_ARN }}
         run: |
           poetry install --no-root
 
