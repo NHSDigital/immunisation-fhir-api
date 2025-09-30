@@ -6,107 +6,68 @@ on:
   workflow_dispatch:
     inputs:
       pr_number:
-        description: 'PR number (required for manual runs)'
-        required: false
+        description: The PR number of the environment to teardown
+        required: true
+        type: string
 
 jobs:
   teardown:
     name: PR Teardown
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    environment:
+      name: dev
     env:
-      AWS_REGION: ${{ secrets.AWS_REGION || 'eu-west-2' }}
       APIGEE_ENVIRONMENT: internal-dev
+      BACKEND_ENVIRONMENT: dev
+      BACKEND_SUB_ENVIRONMENT: pr-${{ github.event_name == 'pull_request' ? github.event.pull_request.number : inputs.pr_number }}
+    permissions:
+      id-token: write
+      contents: read
+  
+  steps:
+    - name: Connect to AWS
+      uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a
+      with:
+        aws-region: eu-west-2
+        role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/auto-ops
+        role-session-name: github-actions
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    - name: Whoami
+      run: aws sts get-caller-identity
 
-      - name: Set workspace tag
-        id: set-workspace
-        run: |
-          # PR number comes from event (pull_request) or workflow_dispatch input
-          PR_NUMBER=${{ github.event.pull_request.number || github.event.inputs.pr_number }}
-          if [ -z "$PR_NUMBER" ]; then
-            echo "No PR number found. Provide via workflow_dispatch input 'pr_number' or run from a PR event."
-            exit 1
-          fi
-          WORKSPACE="pr-${PR_NUMBER}"
-          echo "PR_NUMBER=${PR_NUMBER}" >> $GITHUB_ENV
-          echo "WORKSPACE=${WORKSPACE}" >> $GITHUB_ENV
-          echo "Set WORKSPACE=$WORKSPACE"
+    - name: Checkout
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+      
+    - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd
+      with:
+        terraform_version: "1.12.2"
 
-      - name: Assume AWS role
-        id: assume-role
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          # Role ARN = arn:aws:iam::<account-id>:role/<role-name>
-          role-to-assume: arn:aws:iam::${{ secrets.AWS_DEV_ACCOUNT_ID }}:role/${{ secrets.AWS_ASSUME_ROLE_NAME }}
-          aws-region: ${{ env.AWS_REGION }}
-        # Note: configure-aws-credentials supports OIDC or long-lived secrets depending on repo config.
+    - name: Terraform Init and extract MNS SQS QUEUE ARN
+      working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
+      run: |
+        make init apigee_environment=$APIGEE_ENVIRONMENT environment=$BACKEND_ENVIRONMENT sub_environment=$BACKEND_SUB_ENVIRONMENT
+        echo "ID_SYNC_QUEUE_ARN=$(make -s output name=id_sync_queue_arn)" >> $GITHUB_ENV
+        echo "Extracted ID_SYNC_QUEUE_ARN=$ID_SYNC_QUEUE_ARN"
+    
+    - name: Install poetry
+      run: pip install poetry==2.1.4
 
-      - name: Set AWS default region and APIGEE environment
-        run: |
-          echo "AWS_DEFAULT_REGION=${{ env.AWS_REGION }}" >> $GITHUB_ENV
-          echo "APIGEE_ENVIRONMENT=${{ env.APIGEE_ENVIRONMENT }}" >> $GITHUB_ENV
+    - uses: actions/setup-python@v5
+      with:
+        python-version: 3.11
+        cache: 'poetry'
 
-      - name: Init Terraform and extract MNS values
-        id: init-terraform
-        env:
-          AWS_PROFILE: apim-dev
-        run: |
-          set -euo pipefail
-          cd terraform
-          # Use make to init and create the workspace
-          make init apigee_environment=internal-dev environment=dev sub_environment="$WORKSPACE"
-          make workspace apigee_environment=internal-dev environment=dev sub_environment="$WORKSPACE"
+    - name: Unsubscribe MNS
+      working-directory: './lambdas/mns_subscription'
+      env:
+       SQS_ARN: ${{ env.ID_SYNC_QUEUE_ARN }}
+      run: |
+        poetry install --no-root
 
-          # Extract values from Terraform state before destroying
-          ID_SYNC_QUEUE_ARN=$(make -s output name=id_sync_queue_arn)
-          echo "ID_SYNC_QUEUE_ARN=$ID_SYNC_QUEUE_ARN" >> $GITHUB_ENV
-          echo "Extracted ID_SYNC_QUEUE_ARN=$ID_SYNC_QUEUE_ARN"
+        echo "Unsubscribing SQS to MNS for notifications..."
+        make unsubscribe
 
-      - name: Unsubscribe MNS
-        env:
-          AWS_PROFILE: apim-dev
-          SQS_ARN: ${{ env.ID_SYNC_QUEUE_ARN }}
-        run: |
-          set -euo pipefail
-          cd lambdas/mns_subscription
-
-          # Use setup-python in a separate step or install here
-          python3 -m pip install --upgrade pip
-          python3 -m pip install poetry
-
-          # Prefer the repo's pyproject/poetry files
-          poetry install --no-root
-
-          echo "Unsubscribing SQS to MNS for notifications..."
-          make unsubscribe
-
-      - name: Destroy terraform PR workspace and linked resources
-        env:
-          AWS_PROFILE: apim-dev
-        run: |
-          set -euo pipefail
-          cd terraform
-
-          # Retry destroy up to 2 times (similar to retryCountOnTaskFailure: 2)
-          ATTEMPTS=0
-          until [ $ATTEMPTS -ge 2 ]
-          do
-            if make destroy apigee_environment=internal-dev environment=dev sub_environment="$WORKSPACE"; then
-              echo "Terraform destroy succeeded"
-              break
-            fi
-            ATTEMPTS=$((ATTEMPTS+1))
-            echo "Retrying terraform destroy (attempt $((ATTEMPTS+1)))"
-            sleep 3
-          done
-
-          if [ $ATTEMPTS -ge 2 ]; then
-            echo "Terraform destroy failed after retries"
-            exit 1
-          fi
-
-    # end job
+    - name: Terraform Destroy
+      working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
+      run: |
+        make destroy apigee_environment=$APIGEE_ENVIRONMENT environment=$BACKEND_ENVIRONMENT sub_environment=$BACKEND_SUB_ENVIRONMENT
