@@ -142,3 +142,8 @@ jobs:
           poetry install --no-root
           echo "Subscribing SQS to MNS for notifications..."
           make subscribe
+
+      # Need steps for e2e tests: VED-812
+      # Will need to wait for API and ensure proxy is deployed with same commit ID as proxy pipelines
+      # will be running and deploying at the same time in Azure
+      # may need a variable for different commands as we only run certain tests in different environments
