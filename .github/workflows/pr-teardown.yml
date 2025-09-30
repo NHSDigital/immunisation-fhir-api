@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       pr_number:
-        description: The PR number of the environment to teardown
+        description: The PR number of the environment to teardown e.g pr-123
         required: true
         type: string
 
