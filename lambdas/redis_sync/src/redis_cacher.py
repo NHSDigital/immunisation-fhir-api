@@ -46,7 +46,7 @@ class RedisCacher:
                     redis_client.hdel(key, *fields_to_delete)
                     logger.info("Deleted mapping fields for %s: %s", key, fields_to_delete)
 
-            # return success - not certain of the "what" should be though as ServiceReturn manages status
+            # return success - not certain of the "what", as ServiceReturn already manages status
             return ServiceReturn(value={"status": "success", "message": f"File {file_key} uploaded to Redis cache."})
         except Exception:
             return ServiceReturn(status=500, message=f"Error uploading file '{file_key}' to Redis cache")

@@ -22,7 +22,8 @@ def _process_all_records(s3_records: list) -> dict:
             error_count += 1
     if error_count > 0:
         logger.error("Processed %d records with %d errors", record_count, error_count)
-        return ServiceReturn(value={"status": "error", "message": f"Processed {record_count} records with {error_count} errors",
+        return ServiceReturn(value={"status": "error",
+                                    "message": f"Processed {record_count} records with {error_count} errors",
                                     "file_keys": file_keys})
     else:
         logger.info("Successfully processed all %d records", record_count)
