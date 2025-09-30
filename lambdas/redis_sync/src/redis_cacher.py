@@ -49,6 +49,4 @@ class RedisCacher:
             # return success - not certain of the "what" should be though as ServiceReturn manages status
             return ServiceReturn(value={"status": "success", "message": f"File {file_key} uploaded to Redis cache."})
         except Exception:
-            msg = f"Error uploading file '{file_key}' to Redis cache"
-            logger.exception(msg)
-            return ServiceReturn(status=500, message=msg)
+            return ServiceReturn(status=500, message=f"Error uploading file '{file_key}' to Redis cache")
