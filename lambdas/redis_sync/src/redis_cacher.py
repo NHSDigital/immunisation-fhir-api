@@ -25,8 +25,8 @@ class RedisCacher:
 
                 logger.info("Config file content for '%s': %s", file_key, config_file_content)
             else:
-                logger.error("Failed to read S3 file '%s': %s", file_key, result.message)
-                return ServiceReturn(status=500, message=result.message)
+                return ServiceReturn(status=500,
+                                     message=f"Failed to read S3 file '{file_key}': {result.message}")
 
             # Transform
             redis_mappings = transform_map(config_file_content, file_key)
@@ -46,6 +46,7 @@ class RedisCacher:
                     redis_client.hdel(key, *fields_to_delete)
                     logger.info("Deleted mapping fields for %s: %s", key, fields_to_delete)
 
+            # return success - not certain of the "what" should be though as ServiceReturn manages status
             return ServiceReturn(value={"status": "success", "message": f"File {file_key} uploaded to Redis cache."})
         except Exception:
             msg = f"Error uploading file '{file_key}' to Redis cache"
