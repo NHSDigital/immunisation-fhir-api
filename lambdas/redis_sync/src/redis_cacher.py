@@ -5,22 +5,28 @@ from transform_map import transform_map
 from common.clients import logger
 from common.redis_client import get_redis_client
 from common.s3_reader import S3Reader
+from common.service_return import ServiceReturn
 
 
 class RedisCacher:
     """Class to handle interactions with ElastiCache (Redis) for configuration files."""
 
     @staticmethod
-    def upload(bucket_name: str, file_key: str) -> dict:
+    def upload(bucket_name: str, file_key: str) -> ServiceReturn:
         try:
             logger.info("Upload from s3 to Redis cache. file '%s'. bucket '%s'", file_key, bucket_name)
 
             # get from s3
-            config_file_content = S3Reader.read(bucket_name, file_key)
-            if isinstance(config_file_content, str):
-                config_file_content = json.loads(config_file_content)
+            result = S3Reader.read(bucket_name, file_key)
+            if result.is_success:
+                config_file_content = result.value
+                if isinstance(config_file_content, str):
+                    config_file_content = json.loads(config_file_content)
 
-            logger.info("Config file content for '%s': %s", file_key, config_file_content)
+                logger.info("Config file content for '%s': %s", file_key, config_file_content)
+            else:
+                logger.error("Failed to read S3 file '%s': %s", file_key, result.message)
+                return ServiceReturn(status=500, message=result.message)
 
             # Transform
             redis_mappings = transform_map(config_file_content, file_key)
@@ -40,8 +46,8 @@ class RedisCacher:
                     redis_client.hdel(key, *fields_to_delete)
                     logger.info("Deleted mapping fields for %s: %s", key, fields_to_delete)
 
-            return {"status": "success", "message": f"File {file_key} uploaded to Redis cache."}
+            return ServiceReturn(value={"status": "success", "message": f"File {file_key} uploaded to Redis cache."})
         except Exception:
             msg = f"Error uploading file '{file_key}' to Redis cache"
             logger.exception(msg)
-            return {"status": "error", "message": msg}
+            return ServiceReturn(status=500, message=msg)

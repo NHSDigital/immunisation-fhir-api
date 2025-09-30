@@ -1,4 +1,5 @@
 from common.clients import s3_client, logger
+from service_return import ServiceReturn
 
 
 class S3Reader:
@@ -11,11 +12,11 @@ class S3Reader:
     """
 
     @staticmethod
-    def read(bucket_name, file_key):
+    def read(bucket_name, file_key) -> ServiceReturn:
         try:
             s3_file = s3_client.get_object(Bucket=bucket_name, Key=file_key)
-            return s3_file["Body"].read().decode("utf-8")
+            return ServiceReturn(value=s3_file["Body"].read().decode("utf-8"))
 
         except Exception as error:  # pylint: disable=broad-except
             logger.exception("Error reading S3 file '%s' from bucket '%s'", file_key, bucket_name)
-            raise error
+            return ServiceReturn(status=500, message="Error reading S3 file", exception=error)
