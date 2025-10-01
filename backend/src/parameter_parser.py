@@ -65,8 +65,7 @@ def process_immunization_target(imms_params: ParamContainer) -> list[str]:
 
     :raises ParameterException:
     """
-    imms_params[immunization_target_key] = list(set(imms_params.get(immunization_target_key, [])))
-    vaccine_types = [vaccine_type for vaccine_type in imms_params[immunization_target_key] if
+    vaccine_types = [vaccine_type for vaccine_type in set(imms_params.get(immunization_target_key, [])) if
                      vaccine_type is not None]
     if len(vaccine_types) < 1:
         raise ParameterException(f"Search parameter {immunization_target_key} must have one or more values.")
