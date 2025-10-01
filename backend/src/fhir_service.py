@@ -332,9 +332,6 @@ class FhirService:
         Bundles the resources with the relevant patient resource and returns the bundle along with a boolean to state
         whether the supplier requested vaccine types they were not authorised for.
         """
-        # TODO: is disease type a mandatory field? (I assumed it is)
-        #  i.e. Should we provide a search option for getting Patient's entire imms history?
-
         permitted_vacc_types = self.authoriser.filter_permitted_vacc_types(
             supplier_system, ApiOperationCode.SEARCH, set(vaccine_types)
         )

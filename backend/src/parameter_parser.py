@@ -49,7 +49,7 @@ def process_patient_identifier(identifier_params: ParamContainer) -> str:
 
     patient_identifier_parts = patient_identifier.split("|")
     identifier_system = patient_identifier_parts[0]
-    if len(patient_identifier_parts) != 2 or not identifier_system == patient_identifier_system:
+    if len(patient_identifier_parts) != 2 or identifier_system != patient_identifier_system:
         raise ParameterException("patient.identifier must be in the format of "
                       f"\"{patient_identifier_system}|{{NHS number}}\" "
                       f"e.g. \"{patient_identifier_system}|9000000009\"")
