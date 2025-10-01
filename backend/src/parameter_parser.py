@@ -35,6 +35,48 @@ class SearchParams:
 
     def __repr__(self):
         return str(self.__dict__)
+    
+def process_patient_identifier(identifier_params: ParamContainer) -> str:
+    """Validate and parse patient identifier parameter.
+
+    :raises ParameterException:
+    """
+    patient_identifiers = identifier_params.get(patient_identifier_key, [])
+    patient_identifier = patient_identifiers[0] if len(patient_identifiers) == 1 else None
+
+    if patient_identifier is None:
+        raise ParameterException(f"Search parameter {patient_identifier_key} must have one value.")
+
+    patient_identifier_parts = patient_identifier.split("|")
+    if len(patient_identifier_parts) != 2 or not patient_identifier_parts[
+                                                     0] == patient_identifier_system:
+        raise ParameterException("patient.identifier must be in the format of "
+                      f"\"{patient_identifier_system}|{{NHS number}}\" "
+                      f"e.g. \"{patient_identifier_system}|9000000009\"")
+    
+    if not nhs_number_mod11_check(patient_identifier_parts[1]):
+        raise ParameterException("Search parameter patient.identifier must be a valid NHS number.")
+      
+    return patient_identifier.split("|")[1]
+
+
+def process_immunization_target(imms_params: ParamContainer) -> list[str]:
+    """Validate and parse immunization target parameter.
+
+    :raises ParameterException:
+    """
+    imms_params[immunization_target_key] = list(set(imms_params.get(immunization_target_key, [])))
+    vaccine_types = [vaccine_type for vaccine_type in imms_params[immunization_target_key] if
+                     vaccine_type is not None]
+    if len(vaccine_types) < 1:
+        raise ParameterException(f"Search parameter {immunization_target_key} must have one or more values.")
+
+    valid_vaccine_types = redis_client.hkeys(Constants.VACCINE_TYPE_TO_DISEASES_HASH_KEY)
+    if any(x not in valid_vaccine_types for x in vaccine_types):
+        raise ParameterException(
+            f"immunization-target must be one or more of the following: {', '.join(valid_vaccine_types)}")
+    
+    return vaccine_types
 
 
 def process_mandatory_params(params: ParamContainer) -> tuple[str, list[str]]:
@@ -42,34 +84,12 @@ def process_mandatory_params(params: ParamContainer) -> tuple[str, list[str]]:
     Raises ParameterException for any validation error.
     """
     # patient.identifier
-    patient_identifiers = params.get(patient_identifier_key, [])
-    patient_identifier = patient_identifiers[0] if len(patient_identifiers) == 1 else None
-
-    if patient_identifier is None:
-        raise ParameterException(f"Search parameter {patient_identifier_key} must have one value.")
-
-    patient_identifier_parts = patient_identifier.split("|")
-    if len(patient_identifier_parts) != 2 or patient_identifier_parts[0] != patient_identifier_system:
-        raise ParameterException(
-            "patient.identifier must be in the format of "
-            f"\"{patient_identifier_system}|{{NHS number}}\" "
-            f"e.g. \"{patient_identifier_system}|9000000009\"")
-
-    if not nhs_number_mod11_check(patient_identifier_parts[1]):
-        raise ParameterException(f"Search parameter {patient_identifier_key} must be a valid NHS number.")
+    patient_identifier = process_patient_identifier(params)
 
     # immunization.target
-    params[immunization_target_key] = list(set(params.get(immunization_target_key, [])))
-    vaccine_types_local = [v for v in params[immunization_target_key] if v is not None]
-    if len(vaccine_types_local) < 1:
-        raise ParameterException(f"Search parameter {immunization_target_key} must have one or more values.")
+    vaccine_types = process_immunization_target(params)
 
-    valid_vaccine_types = redis_client.hkeys(Constants.VACCINE_TYPE_TO_DISEASES_HASH_KEY)
-    if any(x not in valid_vaccine_types for x in vaccine_types_local):
-        raise ParameterException(
-            f"immunization-target must be one or more of the following: {', '.join(valid_vaccine_types)}")
-
-    return patient_identifier_parts[1], vaccine_types_local
+    return patient_identifier, vaccine_types
 
 
 def process_optional_params(params: ParamContainer) -> tuple[datetime.date, datetime.date, Optional[str], list[str]]:
