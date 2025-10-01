@@ -27,7 +27,6 @@ def pds_get_patient_details(nhs_number: str) -> dict:
         )
         pds_service = PdsService(authenticator, pds_env)
         patient = pds_service.get_patient_details(nhs_number)
-        logger.info("get patient details. response: %s", patient)
         return patient
     except Exception as e:
         msg = f"Error getting PDS patient details for {nhs_number}"

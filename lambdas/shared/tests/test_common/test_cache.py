@@ -1,8 +1,9 @@
 import json
+import os
 import tempfile
 import unittest
 
-from common.cache import Cache
+from src.common.cache import Cache
 
 
 class TestCache(unittest.TestCase):
@@ -50,6 +51,11 @@ class TestCache(unittest.TestCase):
         value = self.cache.get(key)
         self.assertIsNone(value)
 
+    def test_delete_key_not_found(self):
+        """it should return None gracefully if key doesn't exist"""
+        value = self.cache.delete("it-does-not-exist")
+        self.assertIsNone(value)
+
     def test_write_to_file(self):
         """it should update the cache file"""
         value = {"foo": "a-long-foo-so-to-make-sure-truncate-is-working", "bar": 42}
@@ -67,3 +73,16 @@ class TestCache(unittest.TestCase):
         with open(self.cache.cache_file.name, "r") as stored:
             content = json.loads(stored.read())
             self.assertDictEqual(content[key], new_value)
+
+    def test_cache_create_empty(self):
+        """it should gracefully create an empty cache"""
+        filename = f"{tempfile.gettempdir()}/cache.json"
+        os.remove(filename)
+
+        # When
+        self.cache = Cache(tempfile.gettempdir())
+
+        # Then
+        with open(self.cache.cache_file.name, "r") as stored:
+            content = stored.read()
+            self.assertEqual(len(content), 0)
