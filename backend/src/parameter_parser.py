@@ -48,16 +48,17 @@ def process_patient_identifier(identifier_params: ParamContainer) -> str:
         raise ParameterException(f"Search parameter {patient_identifier_key} must have one value.")
 
     patient_identifier_parts = patient_identifier.split("|")
-    if len(patient_identifier_parts) != 2 or not patient_identifier_parts[
-                                                     0] == patient_identifier_system:
+    identifier_system = patient_identifier_parts[0]
+    if len(patient_identifier_parts) != 2 or not identifier_system == patient_identifier_system:
         raise ParameterException("patient.identifier must be in the format of "
                       f"\"{patient_identifier_system}|{{NHS number}}\" "
                       f"e.g. \"{patient_identifier_system}|9000000009\"")
-    
-    if not nhs_number_mod11_check(patient_identifier_parts[1]):
+
+    nhs_number = patient_identifier_parts[1]
+    if not nhs_number_mod11_check(nhs_number):
         raise ParameterException("Search parameter patient.identifier must be a valid NHS number.")
-      
-    return patient_identifier.split("|")[1]
+
+    return nhs_number
 
 
 def process_immunization_target(imms_params: ParamContainer) -> list[str]:

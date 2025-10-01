@@ -108,7 +108,7 @@ class TestParameterParser(unittest.TestCase):
                 self.immunization_target_key: ["RSV"],
             }
         )
-        self.assertIsNotNone(params)
+        
 
     def test_process_search_params_whitelists_immunization_target(self):
         mock_redis_key = "RSV"
@@ -117,7 +117,7 @@ class TestParameterParser(unittest.TestCase):
             process_search_params(
                 {
                     self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
-                    self.immunization_target_key: ["not-a-code"],
+                    self.immunization_target_key: ["FLU", "COVID-19", "NOT-A-REAL-VALUE"],
                 }
             )
         self.assertEqual(
@@ -125,6 +125,10 @@ class TestParameterParser(unittest.TestCase):
             f"Unexpected exception message: {str(e.exception)}"
         )
 
+
+    def test_process_search_params_immunization_target(self):
+        mock_redis_key = "RSV"
+        self.mock_redis_client.hkeys.return_value = [mock_redis_key]
         params = process_search_params(
             {
                 self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
@@ -133,6 +137,7 @@ class TestParameterParser(unittest.TestCase):
         )
 
         self.assertIsNotNone(params)
+
 
     def test_search_params_date_from_must_be_before_date_to(self):
         self.mock_redis_client.hkeys.return_value = ["RSV"]
