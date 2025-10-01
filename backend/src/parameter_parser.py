@@ -35,7 +35,7 @@ class SearchParams:
 
     def __repr__(self):
         return str(self.__dict__)
-    
+
 def process_patient_identifier(identifier_params: ParamContainer) -> str:
     """Validate and parse patient identifier parameter.
 
