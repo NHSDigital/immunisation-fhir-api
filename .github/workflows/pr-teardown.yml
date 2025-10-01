@@ -1,0 +1,73 @@
+name: PR Teardown
+
+on:
+  pull_request:
+    types: [closed]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: The PR number of the environment to teardown e.g 123
+        required: true
+        type: string
+
+jobs:
+  teardown:
+    name: PR Teardown
+    runs-on: ubuntu-latest
+    environment:
+      name: dev
+    env:
+      APIGEE_ENVIRONMENT: internal-dev
+      BACKEND_ENVIRONMENT: dev
+      BACKEND_SUB_ENVIRONMENT: pr-${{ github.event_name == 'pull_request' && github.event.pull_request.number || inputs.pr_number }}
+    permissions:
+      id-token: write
+      contents: read
+  
+    steps:
+      - name: Connect to AWS
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a
+        with:
+          aws-region: eu-west-2
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/auto-ops
+          role-session-name: github-actions
+
+      - name: Whoami
+        run: aws sts get-caller-identity
+
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+        
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd
+        with:
+          terraform_version: "1.12.2"
+
+      - name: Terraform Init and extract MNS SQS QUEUE ARN
+        working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
+        run: |
+          make init apigee_environment=$APIGEE_ENVIRONMENT environment=$BACKEND_ENVIRONMENT sub_environment=$BACKEND_SUB_ENVIRONMENT
+          make workspace apigee_environment=$APIGEE_ENVIRONMENT environment=$BACKEND_ENVIRONMENT sub_environment=$BACKEND_SUB_ENVIRONMENT
+          echo "ID_SYNC_QUEUE_ARN=$(make -s output name=id_sync_queue_arn)" >> $GITHUB_ENV
+
+      - name: Install poetry
+        run: pip install poetry==2.1.4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+          cache: 'poetry'
+
+      - name: Unsubscribe MNS
+        working-directory: './lambdas/mns_subscription'
+        env:
+          SQS_ARN: ${{ env.ID_SYNC_QUEUE_ARN }}
+        run: |
+          poetry install --no-root
+
+          echo "Unsubscribing SQS to MNS for notifications..."
+          make unsubscribe
+
+      - name: Terraform Destroy
+        working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
+        run: |
+          make destroy apigee_environment=$APIGEE_ENVIRONMENT environment=$BACKEND_ENVIRONMENT sub_environment=$BACKEND_SUB_ENVIRONMENT
