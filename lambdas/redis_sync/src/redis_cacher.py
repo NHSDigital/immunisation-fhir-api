@@ -17,20 +17,16 @@ class RedisCacher:
 
             # get from s3
             config_file_content = S3Reader.read(bucket_name, file_key)
-            print(f"SAW: S3 file content for '{file_key}': {config_file_content}")
             if isinstance(config_file_content, str):
                 config_file_content = json.loads(config_file_content)
 
             logger.info("Config file content for '%s': %s", file_key, config_file_content)
 
             # Transform
-            print(f"SAW: Transforming file content for '{file_key}'")
             redis_mappings = transform_map(config_file_content, file_key)
             if redis_mappings:
                 redis_client = get_redis_client()
-                print(f"SAW: Redis mappings for '{file_key}': {redis_mappings}")
                 for key, mapping in redis_mappings.items():
-                    print(f"SAW: Processing Redis key '{key}' with mapping: {mapping}")
                     safe_mapping = {
                         k: json.dumps(v) if isinstance(v, list) else v
                         for k, v in mapping.items()

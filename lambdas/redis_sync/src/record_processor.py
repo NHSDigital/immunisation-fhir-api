@@ -20,7 +20,6 @@ def process_record(record: S3EventRecord) -> dict:
         }
 
         try:
-            print(f"Uploading to cache for filename '{file_key}'")
             result = RedisCacher.upload(bucket_name, file_key)
             result.update(base_log_data)
             return result

@@ -13,10 +13,7 @@ class S3Reader:
     @staticmethod
     def read(bucket_name, file_key):
         try:
-            print(f"SAW: Reading S3 file '{file_key}' from bucket '{bucket_name}'")
             s3_file = s3_client.get_object(Bucket=bucket_name, Key=file_key)
-            print(f"SAW: Successfully read S3 file '{file_key}' from bucket '{bucket_name}'")
-            print(f"SAW: S3 file content: {s3_file}")
             return s3_file["Body"].read().decode("utf-8")
 
         except Exception as error:  # pylint: disable=broad-except
