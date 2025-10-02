@@ -26,26 +26,30 @@ class RedisCacher:
             # Transform
             print(f"SAW: Transforming file content for '{file_key}'")
             redis_mappings = transform_map(config_file_content, file_key)
+            if redis_mappings:
+                redis_client = get_redis_client()
+                print(f"SAW: Redis mappings for '{file_key}': {redis_mappings}")
+                for key, mapping in redis_mappings.items():
+                    print(f"SAW: Processing Redis key '{key}' with mapping: {mapping}")
+                    safe_mapping = {
+                        k: json.dumps(v) if isinstance(v, list) else v
+                        for k, v in mapping.items()
+                    }
+                    
+                    existing_mapping = redis_client.hgetall(key)
+                    logger.info("Existing mapping for %s: %s", key, existing_mapping)
+                    redis_client.hmset(key, safe_mapping)
+                    logger.info("New mapping for %s: %s", key, safe_mapping)
+                    fields_to_delete = [k for k in existing_mapping if k not in safe_mapping]
+                    if fields_to_delete:
+                        redis_client.hdel(key, *fields_to_delete)
+                        logger.info("Deleted mapping fields for %s: %s", key, fields_to_delete)
 
-            redis_client = get_redis_client()
-            print(f"SAW: Redis mappings for '{file_key}': {redis_mappings}")
-            for key, mapping in redis_mappings.items():
-                print(f"SAW: Processing Redis key '{key}' with mapping: {mapping}")
-                safe_mapping = {
-                    k: json.dumps(v) if isinstance(v, list) else v
-                    for k, v in mapping.items()
-                }
-                
-                existing_mapping = redis_client.hgetall(key)
-                logger.info("Existing mapping for %s: %s", key, existing_mapping)
-                redis_client.hmset(key, safe_mapping)
-                logger.info("New mapping for %s: %s", key, safe_mapping)
-                fields_to_delete = [k for k in existing_mapping if k not in safe_mapping]
-                if fields_to_delete:
-                    redis_client.hdel(key, *fields_to_delete)
-                    logger.info("Deleted mapping fields for %s: %s", key, fields_to_delete)
-
-            return {"status": "success", "message": f"File {file_key} uploaded to Redis cache."}
+                return {"status": "success", "message": f"File {file_key} uploaded to Redis cache."}
+            else:
+                msg = f"No valid Redis mappings found for file '{file_key}'. Nothing uploaded."
+                logger.warning(msg)
+                return {"status": "warning", "message": msg}
         except Exception:
             msg = f"Error uploading file '{file_key}' to Redis cache"
             logger.exception(msg)

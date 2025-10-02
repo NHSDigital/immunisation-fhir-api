@@ -6,7 +6,7 @@ Transform config file to format required in REDIS cache.
 '''
 
 
-def transform_map(data, file_type):
+def transform_map(data, file_type) -> dict:
     # Transform the vaccine map data as needed
     logger.info("Transforming data for file type: %s", file_type)
     if file_type == RedisCacheKey.PERMISSIONS_CONFIG_FILE_KEY:
@@ -19,4 +19,4 @@ def transform_map(data, file_type):
         key = file_type.split('.')[0]  # Use the filename without extension as key
         return {key: data}
     logger.warning(f"Unrecognized file type: {file_type}. Returning data as is.")
-    return data  # Default case, return data as is if no transformation is defined
+    return {}  # Default case, return empty dict if no transformation is defined
