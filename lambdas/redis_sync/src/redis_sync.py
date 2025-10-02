@@ -33,7 +33,6 @@ def _process_all_records(s3_records: list) -> dict:
 def handler(event, _):
 
     try:
-        print("SAW redis sync handler - debug")
         no_records = "No records found in event"
         # check if the event requires a read, ie {"read": "my-hashmap"}
         if "read" in event:
