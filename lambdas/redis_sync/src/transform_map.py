@@ -14,4 +14,9 @@ def transform_map(data, file_type):
     if file_type == RedisCacheKey.DISEASE_MAPPING_FILE_KEY:
         return transform_vaccine_map(data)
     logger.info("No specific transformation defined for file type: %s", file_type)
+    # check for generic json file
+    if file_type.endswith('.json'):
+        key = file_type.split('.')[0]  # Use the filename without extension as key
+        return {key: data}
+    logger.warning(f"Unrecognized file type: {file_type}. Returning data as is.")
     return data  # Default case, return data as is if no transformation is defined

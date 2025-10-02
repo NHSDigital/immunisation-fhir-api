@@ -35,6 +35,7 @@ class RedisCacher:
                     k: json.dumps(v) if isinstance(v, list) else v
                     for k, v in mapping.items()
                 }
+                
                 existing_mapping = redis_client.hgetall(key)
                 logger.info("Existing mapping for %s: %s", key, existing_mapping)
                 redis_client.hmset(key, safe_mapping)
