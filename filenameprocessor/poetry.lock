@@ -27,18 +27,18 @@ files = [
 
 [[package]]
 name = "boto3"
-version = "1.40.42"
+version = "1.40.43"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "boto3-1.40.42-py3-none-any.whl", hash = "sha256:71ea8ca488e8b0d0a16b1b32816f8bab9aa66757c4122caf137ae2dbc95d7001"},
-    {file = "boto3-1.40.42.tar.gz", hash = "sha256:dbd8afc41f0cc759d0115c673e50bd1395b992a5c14627b56163cf35b86673c6"},
+    {file = "boto3-1.40.43-py3-none-any.whl", hash = "sha256:c5d64ba2fb2d90c33c3969f3751869c45746d5efb5136e4cc619e3630ece89a3"},
+    {file = "boto3-1.40.43.tar.gz", hash = "sha256:9ad9190672ce8736898bec2d94875aea6ae1ead2ac6d158e01d820f3ff9c23e0"},
 ]
 
 [package.dependencies]
-botocore = ">=1.40.42,<1.41.0"
+botocore = ">=1.40.43,<1.41.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.14.0,<0.15.0"
 
@@ -47,14 +47,14 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "boto3-stubs-lite"
-version = "1.40.42"
-description = "Lite type annotations for boto3 1.40.42 generated with mypy-boto3-builder 8.11.0"
+version = "1.40.43"
+description = "Lite type annotations for boto3 1.40.43 generated with mypy-boto3-builder 8.11.0"
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "boto3_stubs_lite-1.40.42-py3-none-any.whl", hash = "sha256:ff182e87e1d487ad1871ac0c3fed4b3e33d3164848d19fa5fdc36c9926893f4e"},
-    {file = "boto3_stubs_lite-1.40.42.tar.gz", hash = "sha256:68392d0adb45006adaecbf6c30030863efc02bb22e53ff88cbef54efb0639eaf"},
+    {file = "boto3_stubs_lite-1.40.43-py3-none-any.whl", hash = "sha256:749b39bfef74e35850a0433459f8322dc43765d92537b01310d7aee834b64efe"},
+    {file = "boto3_stubs_lite-1.40.43.tar.gz", hash = "sha256:4cd7375b486fa451f1c70f249a7b92dcbc79e6570ccacdd205fdad4f05241398"},
 ]
 
 [package.dependencies]
@@ -117,7 +117,7 @@ bedrock-data-automation-runtime = ["mypy-boto3-bedrock-data-automation-runtime (
 bedrock-runtime = ["mypy-boto3-bedrock-runtime (>=1.40.0,<1.41.0)"]
 billing = ["mypy-boto3-billing (>=1.40.0,<1.41.0)"]
 billingconductor = ["mypy-boto3-billingconductor (>=1.40.0,<1.41.0)"]
-boto3 = ["boto3 (==1.40.42)"]
+boto3 = ["boto3 (==1.40.43)"]
 braket = ["mypy-boto3-braket (>=1.40.0,<1.41.0)"]
 budgets = ["mypy-boto3-budgets (>=1.40.0,<1.41.0)"]
 ce = ["mypy-boto3-ce (>=1.40.0,<1.41.0)"]
@@ -483,14 +483,14 @@ xray = ["mypy-boto3-xray (>=1.40.0,<1.41.0)"]
 
 [[package]]
 name = "botocore"
-version = "1.40.42"
+version = "1.40.43"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "botocore-1.40.42-py3-none-any.whl", hash = "sha256:2682a4120be21234036003a806206b6b3963ba53a495d0a57d40d67fce4497a9"},
-    {file = "botocore-1.40.42.tar.gz", hash = "sha256:41bea751685fb2a51b4fc6be329a0cd0a285dbeb0686a21099e87ef146664bc0"},
+    {file = "botocore-1.40.43-py3-none-any.whl", hash = "sha256:1639f38999fc0cf42c92c5c83c5fbe189a4857a86f55b842be868e3283c6d3bb"},
+    {file = "botocore-1.40.43.tar.gz", hash = "sha256:d87412dc1ea785df156f412627d3417c9f9eb45601fd0846d8fe96fe3c78b630"},
 ]
 
 [package.dependencies]
@@ -1712,4 +1712,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = "~3.11"
-content-hash = "5136647fd521fe7ba317b47eabb15cd2d3643fe55d0884e4bc822c187712b779"
+content-hash = "ff7667d9bc3a1f83db02de4e64278c3f5cb4bf800ef50fb338e81a5a33a28ff8"
