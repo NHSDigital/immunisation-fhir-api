@@ -6,6 +6,7 @@ variable "sub_environment" {
 
 variable "immunisation_account_id" {}
 variable "dspp_core_account_id" {}
+variable "csoc_account_id" {}
 
 variable "create_mesh_processor" {
   default = false

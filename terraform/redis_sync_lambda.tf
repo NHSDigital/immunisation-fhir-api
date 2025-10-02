@@ -1,6 +1,6 @@
 # Define the directory containing the Docker image and calculate its SHA-256 hash for triggering redeployments
 locals {
-  redis_sync_lambda_dir = abspath("${path.root}/../redis_sync")
+  redis_sync_lambda_dir = abspath("${path.root}/../lambdas/redis_sync")
 
   redis_sync_lambda_files = fileset(local.redis_sync_lambda_dir, "**")
 
@@ -19,7 +19,7 @@ resource "aws_ecr_repository" "redis_sync_lambda_repository" {
 # Module for building and pushing Docker image to ECR
 module "redis_sync_docker_image" {
   source           = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version          = "8.0.1"
+  version          = "8.1.0"
   docker_file_path = "./redis_sync/Dockerfile"
   create_ecr_repo  = false
   ecr_repo         = aws_ecr_repository.redis_sync_lambda_repository.name
@@ -42,9 +42,10 @@ module "redis_sync_docker_image" {
 
   platform      = "linux/amd64"
   use_image_tag = false
-  source_path   = abspath("${path.root}/..")
+  source_path   = abspath("${path.root}/../lambdas")
   triggers = {
-    dir_sha = local.redis_sync_lambda_dir_sha
+    dir_sha        = local.redis_sync_lambda_dir_sha
+    shared_dir_sha = local.shared_dir_sha
   }
 }
 
