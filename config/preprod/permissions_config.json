@@ -76,6 +76,13 @@
     "ods_codes": ["YGMYW"]
   },
   {
+    "supplier": "OXDH",
+    "permissions": [
+      "COVID19.CRUDS",
+      "FLU.CRUDS"
+    ]
+  },
+  {
     "supplier": "Test_App",
     "permissions": [
       "3IN1.CRUDS",
