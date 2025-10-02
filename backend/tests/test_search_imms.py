@@ -127,15 +127,12 @@ class TestSearchImmunizations(unittest.TestCase):
         self.controller.get_immunization_by_identifier.assert_called_once_with(lambda_event)
         self.assertDictEqual(exp_res, act_res)
 
+    @patch("search_imms_handler.MAX_RESPONSE_SIZE_BYTES", 10)
     def test_search_immunizations_lambda_size_limit(self):
         """it should return 400 as search returned too many results."""
         lambda_event = {"pathParameters": {"id": "an-id"}, "body": None}
-        request_file = script_location / "sample_data" / "sample_input_search_imms.json"
-        with open(request_file) as f:
-            exp_res = json.load(f)
-        self.controller.search_immunizations.return_value = json.dumps(exp_res)
 
-        self.controller.search_immunizations.return_value = exp_res
+        self.controller.search_immunizations.return_value = {"response": "size is larger than lambda limit"}
 
         # When
         act_res = search_imms(lambda_event, self.controller)

@@ -9,7 +9,7 @@ from aws_lambda_typing import context as context_, events
 
 from fhir_controller import FhirController, make_controller
 from models.errors import Severity, Code, create_operation_outcome
-from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
+from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE, MAX_RESPONSE_SIZE_BYTES
 from log_structure import function_info
 import base64
 import urllib.parse
@@ -57,7 +57,7 @@ def search_imms(event: events.APIGatewayProxyEventV1, controller: FhirController
         result_json = json.dumps(response)
         result_size = len(result_json.encode("utf-8"))
 
-        if result_size > 6 * 1024 * 1024:
+        if result_size > MAX_RESPONSE_SIZE_BYTES:
             exp_error = create_operation_outcome(
                 resource_id=str(uuid.uuid4()),
                 severity=Severity.error,

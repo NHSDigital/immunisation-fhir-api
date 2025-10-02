@@ -2,8 +2,8 @@ import requests
 import uuid
 
 from common.authentication import AppRestrictedAuth
-from common.models.errors import UnhandledResponseError
 from common.clients import logger
+from common.models.errors import UnhandledResponseError
 
 
 class PdsService:
@@ -27,7 +27,6 @@ class PdsService:
         response = requests.get(f"{self.base_url}/{patient_id}", headers=request_headers, timeout=5)
 
         if response.status_code == 200:
-            logger.info(f"PDS. Response: {response.json()}")
             return response.json()
         elif response.status_code == 404:
             logger.info(f"PDS. Patient not found for ID: {patient_id}")

@@ -1,6 +1,6 @@
 locals {
   # NHSD cert file
-  truststore_file_name = "server-renewed-cert.pem"
+  truststore_file_name = var.environment == "preprod" ? "imms-int-cert.pem" : "server-renewed-cert.pem"
 }
 
 data "aws_s3_bucket" "cert_storage" {

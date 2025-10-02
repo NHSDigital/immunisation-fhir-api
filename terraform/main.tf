@@ -47,7 +47,9 @@ check "private_subnets" {
 }
 
 data "aws_vpc" "default" {
-  default = true
+  tags = {
+    Name = "imms-${var.environment}-fhir-api-vpc"
+  }
 }
 
 data "aws_subnets" "all" {
@@ -103,4 +105,8 @@ data "aws_kms_key" "existing_id_sync_sqs_encryption_key" {
 
 data "aws_route53_zone" "project_zone" {
   name = local.project_domain_name
+}
+
+data "aws_sns_topic" "batch_processor_errors" {
+  name = "${var.environment}-batch-processor-errors"
 }

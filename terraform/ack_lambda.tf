@@ -1,8 +1,11 @@
 # Define the directory containing the Docker image and calculate its SHA-256 hash for triggering redeployments
 locals {
-  ack_lambda_dir     = abspath("${path.root}/../ack_backend")
-  ack_lambda_files   = fileset(local.ack_lambda_dir, "**")
+  ack_lambda_dir = abspath("${path.root}/../lambdas/ack_backend")
+
+  ack_lambda_files = fileset(local.ack_lambda_dir, "**")
+
   ack_lambda_dir_sha = sha1(join("", [for f in local.ack_lambda_files : filesha1("${local.ack_lambda_dir}/${f}")]))
+  ack_lambda_name    = "${local.short_prefix}-ack_lambda"
 }
 
 
@@ -17,8 +20,8 @@ resource "aws_ecr_repository" "ack_lambda_repository" {
 # Module for building and pushing Docker image to ECR
 module "ack_processor_docker_image" {
   source  = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version = "8.0.1"
-
+  version = "8.1.0"
+  docker_file_path = "./ack_backend/Dockerfile"
   create_ecr_repo = false
   ecr_repo        = aws_ecr_repository.ack_lambda_repository.name
   ecr_repo_lifecycle_policy = jsonencode({
@@ -40,9 +43,10 @@ module "ack_processor_docker_image" {
 
   platform      = "linux/amd64"
   use_image_tag = false
-  source_path   = local.ack_lambda_dir
+  source_path = abspath("${path.root}/../lambdas")
   triggers = {
-    dir_sha = local.ack_lambda_dir_sha
+    dir_sha        = local.ack_lambda_dir_sha
+    shared_dir_sha = local.shared_dir_sha
   }
 }
 
@@ -125,15 +129,7 @@ resource "aws_iam_policy" "ack_lambda_exec_policy" {
       },
       {
         Effect = "Allow"
-        Action = "lambda:InvokeFunction"
-        Resource = [
-          aws_lambda_function.file_processor_lambda.arn,
-        ]
-      },
-      {
-        Effect = "Allow"
         Action = [
-          "dynamodb:Query",
           "dynamodb:UpdateItem"
         ]
         Resource = [
@@ -165,6 +161,7 @@ resource "aws_cloudwatch_log_group" "ack_lambda_log_group" {
   name              = "/aws/lambda/${local.short_prefix}-ack-lambda"
   retention_in_days = 30
 }
+
 resource "aws_iam_policy" "ack_s3_kms_access_policy" {
   name        = "${local.short_prefix}-ack-s3-kms-policy"
   description = "Allow Lambda to decrypt environment variables"
@@ -199,6 +196,7 @@ resource "aws_iam_role_policy_attachment" "lambda_kms_policy_attachment" {
   role       = aws_iam_role.ack_lambda_exec_role.name
   policy_arn = aws_iam_policy.ack_s3_kms_access_policy.arn
 }
+
 # Lambda Function with Security Group and VPC.
 resource "aws_lambda_function" "ack_processor_lambda" {
   function_name = "${local.short_prefix}-ack-lambda"
@@ -218,7 +216,6 @@ resource "aws_lambda_function" "ack_processor_lambda" {
       SPLUNK_FIREHOSE_NAME       = module.splunk.firehose_stream_name
       SOURCE_BUCKET_NAME         = aws_s3_bucket.batch_data_source_bucket.bucket
       AUDIT_TABLE_NAME           = aws_dynamodb_table.audit-table.name
-      FILE_NAME_PROC_LAMBDA_NAME = aws_lambda_function.file_processor_lambda.function_name
     }
   }
 
@@ -231,6 +228,6 @@ resource "aws_lambda_function" "ack_processor_lambda" {
 resource "aws_lambda_event_source_mapping" "sqs_to_lambda" {
   event_source_arn = aws_sqs_queue.fifo_queue.arn
   function_name    = aws_lambda_function.ack_processor_lambda.arn
-  batch_size       = 10
+  batch_size       = 1 # VED-734 - forwarder lambda already sends a list of up to 100 messages in the body
   enabled          = true
 }

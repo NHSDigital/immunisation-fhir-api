@@ -125,6 +125,7 @@ class ValidMockFileContent:
     with_new_and_update_and_delete = (
         headers + "\n" + MockFileRows.NEW + "\n" + MockFileRows.UPDATE + "\n" + MockFileRows.DELETE
     )
+    empty_file_with_multiple_new_lines = MockFileRows.HEADERS + "\n".join(["\n" for i in range(100)])
 
 
 class FileDetails:
@@ -178,7 +179,7 @@ class FileDetails:
         self.event_no_permissions = json.dumps(self.event_no_permissions_dict)
 
         self.audit_table_entry = {
-            AuditTableKeys.MESSAGE_ID: {"S": self.message_id_order},
+            AuditTableKeys.MESSAGE_ID: {"S": self.message_id},
             AuditTableKeys.FILENAME: {"S": self.file_key},
             AuditTableKeys.QUEUE_NAME: {"S": self.queue_name},
             AuditTableKeys.TIMESTAMP: {"S": self.created_at_formatted_string},

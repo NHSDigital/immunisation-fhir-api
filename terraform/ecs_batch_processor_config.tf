@@ -27,7 +27,7 @@ resource "aws_ecr_repository" "processing_repository" {
 # Build and Push Docker Image to ECR (Reusing the existing module)
 module "processing_docker_image" {
   source  = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version = "8.0.1"
+  version = "8.1.0"
 
   docker_file_path = "Dockerfile"
   create_ecr_repo  = false
@@ -151,13 +151,6 @@ resource "aws_iam_policy" "ecs_task_exec_policy" {
         Resource = "arn:aws:ecr:${var.aws_region}:${var.immunisation_account_id}:repository/${local.short_prefix}-processing-repo"
       },
       {
-        Effect = "Allow"
-        Action = "lambda:InvokeFunction"
-        Resource = [
-          aws_lambda_function.file_processor_lambda.arn
-        ]
-      },
-      {
         "Effect" : "Allow",
         "Action" : [
           "firehose:PutRecord",
@@ -221,10 +214,6 @@ resource "aws_ecs_task_definition" "ecs_task" {
       {
         name  = "AUDIT_TABLE_NAME"
         value = aws_dynamodb_table.audit-table.name
-      },
-      {
-        name  = "FILE_NAME_PROC_LAMBDA_NAME"
-        value = aws_lambda_function.file_processor_lambda.function_name
       },
       {
         name  = "REDIS_HOST"
@@ -367,4 +356,34 @@ resource "aws_pipes_pipe" "fifo_pipe" {
 resource "aws_cloudwatch_log_group" "pipe_log_group" {
   name              = "/aws/vendedlogs/pipes/${local.short_prefix}-pipe-logs"
   retention_in_days = 30
+}
+
+resource "aws_cloudwatch_log_metric_filter" "record_processor_task_error_logs" {
+  count          = var.batch_error_notifications_enabled ? 1 : 0
+
+  name           = "${local.short_prefix}-RecordProcessorTaskErrorLogsFilter"
+  pattern        = "%ERROR:%"
+  log_group_name = aws_cloudwatch_log_group.ecs_task_log_group.name
+
+  metric_transformation {
+    name      = "${local.short_prefix}-RecordProcessorTaskErrorLogs"
+    namespace = "${local.short_prefix}-RecordProcessorTask"
+    value     = "1"
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "record_processor_task_error_alarm" {
+  count               = var.batch_error_notifications_enabled ? 1 : 0
+
+  alarm_name          = "${local.short_prefix}-record-processor-task-error"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = 1
+  metric_name         = "${local.short_prefix}-RecordProcessorTaskErrorLogs"
+  namespace           = "${local.short_prefix}-RecordProcessorTask"
+  period              = 120
+  statistic           = "Sum"
+  threshold           = 1
+  alarm_description   = "This sets off an alarm for any error logs found in the record processor ECS task"
+  alarm_actions       = [data.aws_sns_topic.batch_processor_errors.arn]
+  treat_missing_data  = "notBreaching"
 }

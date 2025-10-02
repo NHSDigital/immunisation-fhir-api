@@ -1,7 +1,8 @@
 import unittest
 import os
+from typing import Optional
 from unittest import TestCase
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, call, ANY
 from boto3 import resource as boto3_resource
 from moto import mock_aws
 from models.errors import (
@@ -19,7 +20,10 @@ import json
 from utils.test_utils_for_batch import ForwarderValues, MockFhirImmsResources
 
 with patch.dict("os.environ", ForwarderValues.MOCK_ENVIRONMENT_DICT):
-    from forwarding_batch_lambda import forward_lambda_handler, create_diagnostics_dictionary, forward_request_to_dynamo
+    from forwarding_batch_lambda import forward_lambda_handler, create_diagnostics_dictionary, forward_request_to_dynamo, \
+    QUEUE_URL
+
+
 @mock_aws
 @patch.dict(os.environ, ForwarderValues.MOCK_ENVIRONMENT_DICT)
 class TestForwardLambdaHandler(TestCase):
@@ -99,13 +103,14 @@ class TestForwardLambdaHandler(TestCase):
 
     @staticmethod
     def generate_input(
-        row_id,
-        identifier_value=None,
-        file_key="test_file_key",
-        created_at_formatted_string="2025-01-24T12:00:00Z",
-        include_fhir_json=True,
-        operation_requested="create",
-        diagnostics=None,
+        row_id: int,
+        identifier_value: Optional[str] = None,
+        file_key: str = "test_file_key",
+        created_at_formatted_string: str = "2025-01-24T12:00:00Z",
+        include_fhir_json: bool = True,
+        operation_requested: str = "create",
+        diagnostics: dict = None,
+        supplier: str = "test_supplier"
     ):
         """Generates input rows for test_cases."""
         details_from_processing = TestForwardLambdaHandler.generate_details_from_processing(
@@ -118,7 +123,7 @@ class TestForwardLambdaHandler(TestCase):
             "row_id": f"row-{row_id}",
             "file_key": file_key,
             "created_at_formatted_string": created_at_formatted_string,
-            "supplier": "test_supplier",
+            "supplier": supplier,
             "vax_type": "RSV",
             **details_from_processing,
         }
@@ -403,12 +408,74 @@ class TestForwardLambdaHandler(TestCase):
         mock_send_message.reset_mock()
         event = self.generate_event(test_cases)
 
-
         self.mock_redis_client.hget.return_value = "RSV"
         forward_lambda_handler(event, {})
 
         self.assert_dynamo_item(table_item)
         self.assert_values_in_sqs_messages(mock_send_message, test_cases)
+
+    @patch("forwarding_batch_lambda.sqs_client.send_message")
+    def test_forward_lambda_handler_groups_and_sends_events_by_filename(self, mock_send_message):
+        """VED-734 - each batch handled by the Lambda may have events relating to different parent CSV files. This
+        test ensures events are grouped accordingly and sent with the correct SQS"""
+        mock_records = [
+            {
+                "input": self.generate_input(
+                    row_id=1,
+                    identifier_value="supplier_1_system/54321",
+                    operation_requested="CREATE",
+                    file_key="supplier_1_rsv_test_file",
+                    supplier="supplier_1"
+                )
+            },
+            {
+                "input": self.generate_input(
+                    row_id=2,
+                    identifier_value="supplier_2_system/12345",
+                    operation_requested="CREATE",
+                    file_key="supplier_2_rsv_test_file",
+                    supplier="supplier_2"
+                )
+            }
+        ]
+        mock_kinesis_event = self.generate_event(mock_records)
+        self.mock_redis_client.hget.return_value = "RSV"
+
+        forward_lambda_handler(mock_kinesis_event, {})
+
+        sqs_calls = mock_send_message.call_args_list
+        _, first_call_kwargs = sqs_calls[0]
+        _, second_call_kwargs = sqs_calls[1]
+
+        # Separate calls are made for each of the respective groups
+        self.assertEqual(len(sqs_calls), 2)
+        self.assertEqual(first_call_kwargs["MessageGroupId"], "supplier_1_rsv_test_file_2025-01-24T12:00:00Z")
+        self.assertEqual(second_call_kwargs["MessageGroupId"], "supplier_2_rsv_test_file_2025-01-24T12:00:00Z")
+
+        self.assertDictEqual(json.loads(first_call_kwargs["MessageBody"])[0], {
+            "created_at_formatted_string": "2025-01-24T12:00:00Z",
+            "file_key": "supplier_1_rsv_test_file",
+            "operation_start_time": ANY,
+            "operation_end_time": ANY,
+            "imms_id": ANY,
+            "local_id": "local-1",
+            "operation_requested": "CREATE",
+            "row_id": "row-1",
+            "supplier": "supplier_1",
+            "vaccine_type": "RSV"
+        })
+        self.assertDictEqual(json.loads(second_call_kwargs["MessageBody"])[0], {
+            "created_at_formatted_string": "2025-01-24T12:00:00Z",
+            "file_key": "supplier_2_rsv_test_file",
+            "operation_start_time": ANY,
+            "operation_end_time": ANY,
+            "imms_id": ANY,
+            "local_id": "local-2",
+            "operation_requested": "CREATE",
+            "row_id": "row-2",
+            "supplier": "supplier_2",
+            "vaccine_type": "RSV"
+        })
 
     @patch("forwarding_batch_lambda.sqs_client.send_message")
     def test_forward_lambda_handler_update_scenarios(self, mock_send_message):
@@ -584,7 +651,7 @@ class TestForwardLambdaHandler(TestCase):
     @patch("forwarding_batch_lambda.forward_request_to_dynamo")
     @patch("forwarding_batch_lambda.create_table")
     @patch("forwarding_batch_lambda.make_batch_controller")
-    def test_forward_request_to_dyanamo(
+    def test_forward_request_to_dynamo(
         self, mock_make_controller, mock_create_table, mock_forward_request_to_dynamo, mock_send_message
     ):
         """Test forward lambda handler to assert dynamo db is called,

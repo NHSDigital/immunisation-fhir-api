@@ -17,7 +17,7 @@ resource "aws_ecr_repository" "delta_lambda_repository" {
 
 module "delta_docker_image" {
   source  = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version = "8.0.1"
+  version = "8.1.0"
 
   create_ecr_repo = false
   ecr_repo        = "${local.prefix}-delta-lambda-repo"
@@ -138,6 +138,7 @@ resource "aws_lambda_function" "delta_sync_lambda" {
   environment {
     variables = {
       DELTA_TABLE_NAME     = aws_dynamodb_table.delta-dynamodb-table.name
+      DELTA_TTL_DAYS       = 30
       AWS_SQS_QUEUE_URL    = aws_sqs_queue.dlq.id
       SOURCE               = "IEDS"
       SPLUNK_FIREHOSE_NAME = module.splunk.firehose_stream_name

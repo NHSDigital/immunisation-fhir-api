@@ -1,5 +1,5 @@
 """Tests for audit_table functions"""
-
+import unittest
 from unittest import TestCase
 from unittest.mock import patch
 from boto3 import client as boto3_client
@@ -10,7 +10,6 @@ from tests.utils_for_recordprocessor_tests.mock_environment_variables import MOC
 from tests.utils_for_recordprocessor_tests.generic_setup_and_teardown import GenericSetUp, GenericTearDown
 from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import MockFileDetails, FileDetails
 from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
-    deserialize_dynamodb_types,
     add_entry_to_table,
 )
 
@@ -21,7 +20,7 @@ with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
         FileStatus,
     )
 
-    from audit_table import get_next_queued_file_details, change_audit_table_status_to_processed
+    from audit_table import update_audit_table_status
     from clients import REGION_NAME
 
 
@@ -49,60 +48,48 @@ class TestAuditTable(TestCase):
 
         return dynamodb_client.scan(TableName=AUDIT_TABLE_NAME).get("Items", [])
 
-    def test_get_next_queued_file_details(self):
-        """Test that the get_next_queued_file_details function returns the correct file details"""
-        # NOTE: Throughout this test the assertions will be checking for the next queued RAVS_RSV file.
-        queue_to_check = "RAVS_RSV"
-
-        # Test case 1: no files in audit table
-        self.assertIsNone(get_next_queued_file_details(queue_to_check))
-
-        # Test case 2: files in audit table, but none of the files are in the RAVS_RSV queue
-        add_entry_to_table(MockFileDetails.flu_emis, file_status=FileStatus.QUEUED)  # different queue
-        add_entry_to_table(MockFileDetails.rsv_emis, file_status=FileStatus.QUEUED)  # different queue
-        add_entry_to_table(MockFileDetails.ravs_flu, file_status=FileStatus.QUEUED)  # different queue
-        add_entry_to_table(MockFileDetails.ravs_rsv_1, FileStatus.PROCESSED)  # same queue but already processed
-        self.assertIsNone(get_next_queued_file_details(queue_to_check))
-
-        # Test case 3: one queued file in the ravs_rsv queue
-        add_entry_to_table(MockFileDetails.ravs_rsv_2, file_status=FileStatus.QUEUED)
-        expected_table_entry = {**MockFileDetails.ravs_rsv_2.audit_table_entry, "status": {"S": FileStatus.QUEUED}}
-        self.assertEqual(get_next_queued_file_details(queue_to_check), deserialize_dynamodb_types(expected_table_entry))
-
-        # # Test case 4: multiple queued files in the RAVS_RSV queue
-        # Note that ravs_rsv files 3 and 4 have later timestamps than file 2, so file 2 remains the first in the queue
-        add_entry_to_table(MockFileDetails.ravs_rsv_3, file_status=FileStatus.QUEUED)
-        add_entry_to_table(MockFileDetails.ravs_rsv_4, file_status=FileStatus.QUEUED)
-        self.assertEqual(get_next_queued_file_details(queue_to_check), deserialize_dynamodb_types(expected_table_entry))
-
-    def test_change_audit_table_status_to_processed(self):
-        """Checks audit table correctly updates a record as processed"""
+    def test_update_audit_table_status(self):
+        """Checks audit table correctly updates a record to the requested status"""
         # Test case 1: file should be updated with status of 'Processed'.
 
-        add_entry_to_table(MockFileDetails.rsv_ravs, file_status=FileStatus.QUEUED)
+        add_entry_to_table(MockFileDetails.rsv_ravs, file_status=FileStatus.PROCESSING)
         add_entry_to_table(MockFileDetails.flu_emis, file_status=FileStatus.QUEUED)
-        table_items = dynamodb_client.scan(TableName=AUDIT_TABLE_NAME).get("Items", [])
 
-        expected_table_entry = {**MockFileDetails.rsv_ravs.audit_table_entry, "status": {"S": FileStatus.PROCESSED}}
+        expected_table_entry = {**MockFileDetails.rsv_ravs.audit_table_entry, "status": {"S": FileStatus.PREPROCESSED}}
         ravs_rsv_test_file = FileDetails("RSV", "RAVS", "X26")
         file_key = ravs_rsv_test_file.file_key
-        message_id = ravs_rsv_test_file.message_id_order
+        message_id = ravs_rsv_test_file.message_id
 
-        change_audit_table_status_to_processed(file_key, message_id)
+        update_audit_table_status(file_key, message_id, FileStatus.PREPROCESSED)
         table_items = dynamodb_client.scan(TableName=AUDIT_TABLE_NAME).get("Items", [])
 
         self.assertIn(expected_table_entry, table_items)
 
-        # Test case 2: # Audit table status should not be updated. Error should be raised.
+    def test_update_audit_table_status_including_error_details(self):
+        """Checks audit table correctly updates a record including some error details"""
+        add_entry_to_table(MockFileDetails.rsv_ravs, file_status=FileStatus.QUEUED)
+        ravs_rsv_test_file = FileDetails("RSV", "RAVS", "X26")
+
+        update_audit_table_status(ravs_rsv_test_file.file_key, ravs_rsv_test_file.message_id, FileStatus.FAILED,
+                                  error_details="Test error details")
+
+        table_items = dynamodb_client.scan(TableName=AUDIT_TABLE_NAME).get("Items", [])
+        self.assertEqual(1, len(table_items))
+        self.assertEqual({
+            **MockFileDetails.rsv_ravs.audit_table_entry,
+            "status": {"S": FileStatus.FAILED},
+            "error_details": {"S": "Test error details"}
+        }, table_items[0])
+
+    def test_update_audit_table_status_throws_exception_with_invalid_id(self):
         emis_flu_test_file_2 = FileDetails("FLU", "EMIS", "YGM41")
 
         message_id = emis_flu_test_file_2.message_id
         file_key = (emis_flu_test_file_2.file_key,)
-        with self.assertRaises(UnhandledAuditTableError):
-            change_audit_table_status_to_processed(file_key, message_id)
 
-        # Test case 3: # Audit table status should updated to processed for all values.
-        message_id = emis_flu_test_file_2.message_id_order
-        file_key = emis_flu_test_file_2.file_key
-        change_audit_table_status_to_processed(file_key, message_id)
-        table_items = dynamodb_client.scan(TableName=AUDIT_TABLE_NAME).get("Items", [])
+        with self.assertRaises(UnhandledAuditTableError):
+            update_audit_table_status(file_key, message_id, FileStatus.PROCESSED)
+
+
+if __name__ == "__main__":
+    unittest.main()

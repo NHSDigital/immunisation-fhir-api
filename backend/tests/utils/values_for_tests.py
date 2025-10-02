@@ -2,6 +2,9 @@
 
 from dataclasses import dataclass
 from decimal import Decimal
+from .generic_utils import format_date_types
+from datetime import datetime, timedelta
+
 
 # Lists of data types for 'invalid data type' testing
 integers = [-1, 0, 1]
@@ -34,7 +37,7 @@ class ValidValues:
     for_date_times_strict_timezones = [
         "2000-01-01",  # Full date only
         "2000-01-01T00:00:00+00:00",  # Time and offset all zeroes
-        "2025-05-20T18:26:30+01:00",  # Date with Time with no milliseconds and positive offset
+        "2025-09-24T11:04:30+01:00",  # Date with Time with no milliseconds and positive offset
         "2000-01-01T00:00:00+01:00",  # Time and offset all zeroes
         "1933-12-31T11:11:11+01:00",  # Positive offset (with hours and minutes not 0)
         "1933-12-31T11:11:11.1+00:00",  # DateTime with milliseconds to 1 decimal place
@@ -291,10 +294,20 @@ class InvalidValues:
         "2000-02-30",  # Invalid combination of month and day
     ]
 
+    now = datetime.now()
+    sample_inputs = [
+        now + timedelta(days=1),
+        now + timedelta(days=365),
+        now + timedelta(days=730)
+    ]
+
+    for_future_dates = format_date_types(sample_inputs, mode = "date")
+
     # Strings which are not in acceptable date time format
     for_date_time_string_formats_for_relaxed_timezone = [
         "",  # Empty string
         "invalid",  # Invalid format
+        *format_date_types(sample_inputs, mode = "datetime"),
         "20000101",  # Date digits only (i.e. without hypens)
         "20000101000000",  # Date and time digits only
         "200001010000000000",  # Date, time and timezone digits only
@@ -386,4 +399,3 @@ class InvalidValues:
     ]
     
     invalid_dose_quantity = {"value": 2, "unit": "ml", "code": "258773002"}
- 

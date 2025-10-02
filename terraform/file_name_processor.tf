@@ -17,7 +17,7 @@ resource "aws_ecr_repository" "file_name_processor_lambda_repository" {
 # Module for building and pushing Docker image to ECR
 module "file_processor_docker_image" {
   source  = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version = "8.0.1"
+  version = "8.1.0"
 
   create_ecr_repo = false
   ecr_repo        = aws_ecr_repository.file_name_processor_lambda_repository.name
@@ -161,13 +161,6 @@ resource "aws_iam_policy" "filenameprocessor_lambda_exec_policy" {
           "firehose:PutRecordBatch"
         ],
         "Resource" : "arn:aws:firehose:*:*:deliverystream/${module.splunk.firehose_stream_name}"
-      },
-      {
-        Effect = "Allow"
-        Action = "lambda:InvokeFunction"
-        Resource = [
-          "arn:aws:lambda:${var.aws_region}:${var.immunisation_account_id}:function:imms-${var.sub_environment}-filenameproc_lambda",
-        ]
       }
     ]
   })
@@ -184,7 +177,7 @@ resource "aws_iam_policy" "filenameprocessor_lambda_sqs_policy" {
       Action = [
         "sqs:SendMessage"
       ],
-      Resource = aws_sqs_queue.supplier_fifo_queue.arn
+      Resource = aws_sqs_queue.batch_file_created.arn
     }]
   })
 }
@@ -266,6 +259,7 @@ resource "aws_iam_role_policy_attachment" "filenameprocessor_lambda_dynamo_acces
   role       = aws_iam_role.filenameprocessor_lambda_exec_role.name
   policy_arn = aws_iam_policy.filenameprocessor_dynamo_access_policy.arn
 }
+
 # Lambda Function with Security Group and VPC.
 resource "aws_lambda_function" "file_processor_lambda" {
   function_name = "${local.short_prefix}-filenameproc_lambda"
@@ -284,15 +278,12 @@ resource "aws_lambda_function" "file_processor_lambda" {
     variables = {
       SOURCE_BUCKET_NAME         = aws_s3_bucket.batch_data_source_bucket.bucket
       ACK_BUCKET_NAME            = aws_s3_bucket.batch_data_destination_bucket.bucket
-      QUEUE_URL                  = aws_sqs_queue.supplier_fifo_queue.url
-      CONFIG_BUCKET_NAME         = local.config_bucket_name
+      QUEUE_URL                  = aws_sqs_queue.batch_file_created.url
       REDIS_HOST                 = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].address
       REDIS_PORT                 = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].port
       SPLUNK_FIREHOSE_NAME       = module.splunk.firehose_stream_name
       AUDIT_TABLE_NAME           = aws_dynamodb_table.audit-table.name
-      FILE_NAME_GSI              = "filename_index"
-      FILE_NAME_PROC_LAMBDA_NAME = "imms-${var.sub_environment}-filenameproc_lambda"
-
+      AUDIT_TABLE_TTL_DAYS       = 60
     }
   }
   kms_key_arn                    = data.aws_kms_key.existing_lambda_encryption_key.arn
@@ -303,7 +294,6 @@ resource "aws_lambda_function" "file_processor_lambda" {
   ]
 
 }
-
 
 # Permission for S3 to invoke Lambda function
 resource "aws_lambda_permission" "s3_invoke_permission" {
@@ -327,4 +317,34 @@ resource "aws_s3_bucket_notification" "datasources_lambda_notification" {
 resource "aws_cloudwatch_log_group" "file_name_processor_log_group" {
   name              = "/aws/lambda/${local.short_prefix}-filenameproc_lambda"
   retention_in_days = 30
+}
+
+resource "aws_cloudwatch_log_metric_filter" "file_name_processor_error_logs" {
+  count          = var.batch_error_notifications_enabled ? 1 : 0
+
+  name           = "${local.short_prefix}-FilenameProcessorErrorLogsFilter"
+  pattern        = "%\\[ERROR\\]%"
+  log_group_name = aws_cloudwatch_log_group.file_name_processor_log_group.name
+
+  metric_transformation {
+    name      = "${local.short_prefix}-FilenameProcessorErrorLogs"
+    namespace = "${local.short_prefix}-FilenameProcessorLambda"
+    value     = "1"
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "file_name_processor_error_alarm" {
+  count               = var.batch_error_notifications_enabled ? 1 : 0
+
+  alarm_name          = "${local.short_prefix}-file-name-processor-lambda-error"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = 1
+  metric_name         = "${local.short_prefix}-FilenameProcessorErrorLogs"
+  namespace           = "${local.short_prefix}-FilenameProcessorLambda"
+  period              = 120
+  statistic           = "Sum"
+  threshold           = 1
+  alarm_description   = "This sets off an alarm for any error logs found in the file name processor Lambda function"
+  alarm_actions       = [data.aws_sns_topic.batch_processor_errors.arn]
+  treat_missing_data  = "notBreaching"
 }

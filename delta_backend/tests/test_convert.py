@@ -1,6 +1,8 @@
 import json
+import os
 import unittest
 from copy import deepcopy
+from datetime import datetime
 from unittest.mock import patch, Mock
 from moto import mock_aws
 from boto3 import resource as boto3_resource
@@ -11,6 +13,7 @@ from common.mappings import ActionFlag, Operation, EventName
 MOCK_ENV_VARS = {
     "AWS_SQS_QUEUE_URL": "https://sqs.eu-west-2.amazonaws.com/123456789012/test-queue",
     "DELTA_TABLE_NAME": "immunisation-batch-internal-dev-audit-test-table",
+    "DELTA_TTL_DAYS": "14",
     "SOURCE": "test-source",
 }
 request_json_data = ValuesForTests.json_data
@@ -82,18 +85,23 @@ class TestConvertToFlatJson(unittest.TestCase):
     def assert_dynamodb_record(self, operation_flag, action_flag, items, expected_values, expected_imms, response):
         """
         Asserts that a record with the expected structure exists in DynamoDB.
-        Ignores dynamically generated fields like PK, DateTimeStamp, and ExpiresAt.
+        Ignores the dynamically generated field PK.
         Ensures that the 'Imms' field matches exactly.
+        Ensures that the ExpiresAt field has been calculated correctly.
         """
         self.assertTrue(response)
 
-        filtered_items = [
-            {k: v for k, v in item.items() if k not in ["PK", "DateTimeStamp", "ExpiresAt"]}
+        unfiltered_items = [
+            {k: v for k, v in item.items()}
             for item in items
             if item.get("Operation") == operation_flag
             and item.get("Imms", {}).get("ACTION_FLAG") == action_flag
         ]
 
+        filtered_items = [
+            {k: v for k, v in item.items() if k not in ["PK", "DateTimeStamp", "ExpiresAt"]}
+            for item in unfiltered_items
+        ]
         self.assertGreater(len(filtered_items), 0, f"No matching item found for {operation_flag}")
 
         imms_data = filtered_items[0]["Imms"]
@@ -106,6 +114,12 @@ class TestConvertToFlatJson(unittest.TestCase):
         for key, expected_value in expected_values.items():
             self.assertIn(key, filtered_items[0], f"{key} is missing")
             self.assertEqual(filtered_items[0][key], expected_value, f"{key} mismatch")
+
+        # Check that the value of ExpiresAt is DELTA_TTL_DAYS after DateTimeStamp
+        expected_seconds = int(os.environ["DELTA_TTL_DAYS"]) * 24 * 60 * 60
+        date_time = int(datetime.fromisoformat(unfiltered_items[0]["DateTimeStamp"]).timestamp())
+        expires_at = unfiltered_items[0]["ExpiresAt"]
+        self.assertEqual(expires_at - date_time, expected_seconds)
 
     def test_fhir_converter_json_direct_data(self):
         """it should convert fhir json data to flat json"""

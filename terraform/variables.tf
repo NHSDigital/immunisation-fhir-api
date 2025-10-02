@@ -6,6 +6,7 @@ variable "sub_environment" {
 
 variable "immunisation_account_id" {}
 variable "dspp_core_account_id" {}
+variable "csoc_account_id" {}
 
 variable "create_mesh_processor" {
   default = false
@@ -19,9 +20,6 @@ variable "project_short_name" {
   default = "imms"
 }
 
-variable "use_new_aws_preprod_account" {
-  default = true
-}
 variable "service" {
   default = "fhir-api"
 }
@@ -38,6 +36,13 @@ variable "pds_check_enabled" {
   default = true
 }
 
+# Remember to switch off in PR envs after testing
+variable "batch_error_notifications_enabled" {
+  default     = true
+  description = "Switch to enable batch processing error notifications to Slack"
+  type        = bool
+}
+
 variable "has_sub_environment_scope" {
   default = false
 }
@@ -46,7 +51,6 @@ locals {
   prefix              = "${var.project_name}-${var.service}-${var.sub_environment}"
   short_prefix        = "${var.project_short_name}-${var.sub_environment}"
   batch_prefix        = "immunisation-batch-${var.sub_environment}"
-  vpc_name            = "imms-${var.environment}-fhir-api-vpc"
   root_domain_name    = "${var.environment}.vds.platform.nhs.uk"
   project_domain_name = "imms.${local.root_domain_name}"
   service_domain_name = "${var.sub_environment}.${local.project_domain_name}"
