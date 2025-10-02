@@ -230,12 +230,12 @@ class FhirService:
         Exception will be raised if resource does not exist. Multiple calls to this method won't change
         the record in the database.
         """
-        existing_immunisation = self.immunization_repo.get_immunization_by_id(imms_id)
+        existing_immunisation, _ = self.immunization_repo.get_immunization_by_id(imms_id)
 
         if not existing_immunisation:
             raise ResourceNotFoundError(resource_type="Immunization", resource_id=imms_id)
 
-        vaccination_type = get_vaccine_type(existing_immunisation.get("Resource", {}))
+        vaccination_type = get_vaccine_type(existing_immunisation)
 
         if not self.authoriser.authorise(supplier_system, ApiOperationCode.DELETE, {vaccination_type}):
             raise UnauthorizedVaxError()

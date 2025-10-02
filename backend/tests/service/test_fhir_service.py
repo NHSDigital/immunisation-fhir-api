@@ -729,7 +729,7 @@ class TestDeleteImmunization(TestFhirServiceBase):
         imms = json.loads(create_covid_19_immunization(self.TEST_IMMUNISATION_ID).json())
         self.mock_redis_client.hget.return_value = "COVID19"
         self.authoriser.authorise.return_value = True
-        self.imms_repo.get_immunization_by_id.return_value = {"Resource": imms}
+        self.imms_repo.get_immunization_by_id.return_value = (imms, "1")
         self.imms_repo.delete_immunization.return_value = imms
 
         # When
@@ -744,7 +744,7 @@ class TestDeleteImmunization(TestFhirServiceBase):
 
     def test_delete_immunization_throws_not_found_exception_if_does_not_exist(self):
         """it should raise a ResourceNotFound exception if the immunisation does not exist"""
-        self.imms_repo.get_immunization_by_id.return_value = None
+        self.imms_repo.get_immunization_by_id.return_value = (None, None)
 
         # When
         with self.assertRaises(ResourceNotFoundError):
@@ -758,7 +758,7 @@ class TestDeleteImmunization(TestFhirServiceBase):
         imms = json.loads(create_covid_19_immunization(self.TEST_IMMUNISATION_ID).json())
         self.mock_redis_client.hget.return_value = "FLU"
         self.authoriser.authorise.return_value = False
-        self.imms_repo.get_immunization_by_id.return_value = {"Resource": imms}
+        self.imms_repo.get_immunization_by_id.return_value = (imms, "1")
 
         # When
         with self.assertRaises(UnauthorizedVaxError):
