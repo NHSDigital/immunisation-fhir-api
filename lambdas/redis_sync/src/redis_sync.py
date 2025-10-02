@@ -14,7 +14,9 @@ def _process_all_records(s3_records: list) -> dict:
     record_count = len(s3_records)
     error_count = 0
     file_keys = []
+    print(f"Processing {record_count} records")
     for record in s3_records:
+        print(f"Processing record: {record}")
         record_result = process_record(record)
         file_keys.append(record_result["file_key"])
         if record_result["status"] == "error":
@@ -33,17 +35,21 @@ def _process_all_records(s3_records: list) -> dict:
 def handler(event, _):
 
     try:
+        print("SAW redis sync handler - debug")
         no_records = "No records found in event"
         # check if the event requires a read, ie {"read": "my-hashmap"}
         if "read" in event:
+            print("SAW redis sync handler - read event")
             return read_event(get_redis_client(), event, logger)
         elif "Records" in event:
+            print("SAW redis sync handler - S3 event")
             logger.info("Processing S3 event with %d records", len(event.get('Records', [])))
             s3_records = S3Event(event).get_s3_records()
             if not s3_records:
                 logger.info(no_records)
                 return {"status": "success", "message": no_records}
             else:
+                print("SAW redis sync handler - processing S3 records")
                 return _process_all_records(s3_records)
         else:
             logger.info(no_records)
