@@ -3,7 +3,7 @@ import unittest
 import datetime
 from unittest.mock import create_autospec, patch
 
-from fhir_service import FhirService
+from service.fhir_service import FhirService
 from models.errors import ParameterException
 from parameter_parser import (
     date_from_key,

@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch, ANY
 
 import botocore.exceptions
 from boto3.dynamodb.conditions import Attr, Key
-from fhir_repository import ImmunizationRepository
+from repository.fhir_repository import ImmunizationRepository
 from models.utils.validation_utils import get_vaccine_type
 from models.errors import (
     ResourceNotFoundError,

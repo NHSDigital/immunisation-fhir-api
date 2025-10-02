@@ -12,8 +12,8 @@ from controller.aws_apig_event_utils import get_supplier_system_header, get_path
 from controller.aws_apig_response_utils import create_response
 from controller.constants import E_TAG_HEADER_NAME
 from controller.fhir_api_exception_handler import fhir_api_exception_handler
-from fhir_repository import ImmunizationRepository, create_table
-from fhir_service import FhirService, UpdateOutcome, get_service_url
+from repository.fhir_repository import ImmunizationRepository, create_table
+from service.fhir_service import FhirService, UpdateOutcome, get_service_url
 from models.errors import (
     Severity,
     Code,
@@ -90,7 +90,7 @@ class FhirController:
             return create_response(403, unauthorized.to_operation_outcome())
 
     @fhir_api_exception_handler
-    def get_immunization_by_id(self, aws_event) -> dict:
+    def get_immunization_by_id(self, aws_event: APIGatewayProxyEventV1) -> dict:
         imms_id = get_path_parameter(aws_event, "id")
 
         if id_error := self._validate_id(imms_id):

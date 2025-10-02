@@ -13,8 +13,8 @@ import urllib.parse
 
 from controller.aws_apig_response_utils import create_response
 from controller.fhir_controller import FhirController
-from fhir_repository import ImmunizationRepository
-from fhir_service import FhirService, UpdateOutcome
+from repository.fhir_repository import ImmunizationRepository
+from service.fhir_service import FhirService, UpdateOutcome
 from models.errors import (
     ResourceNotFoundError,
     UnhandledResponseError,

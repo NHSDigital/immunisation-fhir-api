@@ -17,7 +17,7 @@ from pydantic import ValidationError
 import parameter_parser
 from authorisation.api_operation_code import ApiOperationCode
 from authorisation.authoriser import Authoriser
-from fhir_repository import ImmunizationRepository
+from repository.fhir_repository import ImmunizationRepository
 from models.errors import InvalidPatientId, CustomValidationError, UnauthorizedVaxError, ResourceNotFoundError
 from models.fhir_immunization import ImmunizationValidator
 from models.utils.generic_utils import nhs_number_mod11_check, get_occurrence_datetime, create_diagnostics, form_json, get_contained_patient

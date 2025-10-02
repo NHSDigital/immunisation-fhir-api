@@ -3,7 +3,7 @@ import uuid
 import datetime
 import unittest
 import os
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 from copy import deepcopy
 from unittest.mock import create_autospec, patch
 from decimal import Decimal
@@ -13,8 +13,8 @@ from fhir.resources.R4B.immunization import Immunization
 
 from authorisation.api_operation_code import ApiOperationCode
 from authorisation.authoriser import Authoriser
-from fhir_repository import ImmunizationRepository
-from fhir_service import FhirService, UpdateOutcome, get_service_url
+from repository.fhir_repository import ImmunizationRepository
+from service.fhir_service import FhirService, UpdateOutcome, get_service_url
 from models.errors import InvalidPatientId, CustomValidationError, UnauthorizedVaxError, ResourceNotFoundError
 from models.fhir_immunization import ImmunizationValidator
 from models.utils.generic_utils import get_contained_patient
