@@ -6,7 +6,6 @@ import uuid
 from decimal import Decimal
 from typing import Optional
 from aws_lambda_typing.events import APIGatewayProxyEventV1
-from boto3 import client as boto3_client
 
 from controller.aws_apig_event_utils import get_supplier_system_header, get_path_parameter
 from controller.aws_apig_response_utils import create_response
@@ -29,9 +28,6 @@ from models.errors import (
 from models.utils.generic_utils import check_keys_in_sources
 from parameter_parser import process_params, process_search_params, create_query_string
 import urllib.parse
-
-sqs_client = boto3_client("sqs", region_name="eu-west-2")
-queue_url = os.getenv("SQS_QUEUE_URL", "Queue_url")
 
 
 def make_controller(
