@@ -31,7 +31,7 @@ logger = logging.getLogger()
 
 def get_service_url(service_env: str = os.getenv("IMMUNIZATION_ENV"), service_base_path: str = os.getenv("IMMUNIZATION_BASE_PATH")
  ) -> str:
-    
+
     if not service_base_path:
         service_base_path = "immunisation-fhir-api/FHIR/R4"
 
@@ -83,25 +83,21 @@ class FhirService:
         imms_resp['resource'] = filtered_resource
         return form_json(imms_resp, element, identifier, base_url)
 
-    def get_immunization_by_id(self, imms_id: str, supplier_system: str) -> Optional[dict]:
+    def get_immunization_by_id(self, imms_id: str, supplier_system: str) -> tuple[Immunization, str]:
         """
-        Get an Immunization by its ID. Return None if it is not found. If the patient doesn't have an NHS number,
-        return the Immunization.
+        Get an Immunization by its ID. Returns the immunization entity and version number.
         """
-        if not (imms_resp := self.immunization_repo.get_immunization_by_id(imms_id)):
-            return None
+        resource, version = self.immunization_repo.get_immunization_by_id(imms_id)
 
-        # Returns the Immunisation full resource with no obfuscation
-        resource = imms_resp.get("Resource", {})
+        if resource is None:
+            raise ResourceNotFoundError(resource_type="Immunization", resource_id=imms_id)
+
         vaccination_type = get_vaccine_type(resource)
 
         if not self.authoriser.authorise(supplier_system, ApiOperationCode.READ, {vaccination_type}):
             raise UnauthorizedVaxError()
 
-        return {
-            "Version": imms_resp.get("Version", ""),
-            "Resource": Immunization.parse_obj(resource),
-        }
+        return Immunization.parse_obj(resource), version
 
     def get_immunization_by_id_all(self, imms_id: str, imms: dict) -> Optional[dict]:
         """

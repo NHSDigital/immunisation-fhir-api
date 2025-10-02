@@ -10,7 +10,9 @@ from fhir.resources.R4B.immunization import Immunization
 from unittest.mock import create_autospec, ANY, patch, Mock
 from urllib.parse import urlencode
 import urllib.parse
-from fhir_controller import FhirController
+
+from controller.aws_apig_response_utils import create_response
+from controller.fhir_controller import FhirController
 from fhir_repository import ImmunizationRepository
 from fhir_service import FhirService, UpdateOutcome
 from models.errors import (
@@ -22,9 +24,9 @@ from models.errors import (
     UnauthorizedVaxError,
     IdentifierDuplicationError,
 )
-from tests.utils.immunization_utils import create_covid_19_immunization
+from testing_utils.immunization_utils import create_covid_19_immunization
 from parameter_parser import patient_identifier_system, process_search_params
-from tests.utils.generic_utils import load_json_data
+from testing_utils.generic_utils import load_json_data
 
 class TestFhirControllerBase(unittest.TestCase):
     """Base class for all tests to set up common fixtures"""
@@ -52,7 +54,7 @@ class TestFhirController(TestFhirControllerBase):
     def test_create_response(self):
         """it should return application/fhir+json with correct status code"""
         body = {"message": "a body"}
-        res = self.controller.create_response(42, body)
+        res = create_response(42, body)
         headers = res["headers"]
 
         self.assertEqual(res["statusCode"], 42)
@@ -65,7 +67,7 @@ class TestFhirController(TestFhirControllerBase):
         self.assertDictEqual(json.loads(res["body"]), body)
 
     def test_no_body_no_header(self):
-        res = self.controller.create_response(42)
+        res = create_response(42)
         self.assertEqual(res["statusCode"], 42)
         self.assertDictEqual(res["headers"], {})
         self.assertTrue("body" not in res)
@@ -671,7 +673,7 @@ class TestFhirControllerGetImmunizationById(unittest.TestCase):
         """it should return Immunization resource if it exists"""
         # Given
         imms_id = "a-id"
-        self.service.get_immunization_by_id.return_value = Immunization.construct()
+        self.service.get_immunization_by_id.return_value = (Immunization.construct(), "1")
         lambda_event = {
             "headers": {"SupplierSystem": "test"},
             "pathParameters": {"id": imms_id},
@@ -685,9 +687,29 @@ class TestFhirControllerGetImmunizationById(unittest.TestCase):
         self.assertEqual(response["statusCode"], 200)
         body = json.loads(response["body"])
         self.assertEqual(body["resourceType"], "Immunization")
+        self.assertEqual(response["headers"]["E-Tag"], "1")
+
+    def test_get_imms_by_id_returns_unauthorized_when_supplier_header_missing(self):
+        """it should return Immunization resource if it exists"""
+        # Given
+        imms_id = "foo-123"
+        lambda_event = {
+            "headers": {"missing": "required supplier header"},
+            "pathParameters": {"id": imms_id},
+        }
+
+        # When
+        response = self.controller.get_immunization_by_id(lambda_event)
+        # Then
+        self.service.get_immunization_by_id.assert_not_called()
+
+        self.assertEqual(response["statusCode"], 403)
+        body = json.loads(response["body"])
+        self.assertEqual(body["resourceType"], "OperationOutcome")
+        self.assertEqual(body["issue"][0]["code"], "forbidden")
 
     def test_get_imms_by_id_unauthorised_vax_error(self):
-        """it should return Immunization resource if it exists"""
+        """it should return a 403 error is the service layer throws an UnauthorizedVaxError"""
         # Given
         imms_id = "a-id"
         self.service.get_immunization_by_id.side_effect = UnauthorizedVaxError
@@ -700,12 +722,18 @@ class TestFhirControllerGetImmunizationById(unittest.TestCase):
         response = self.controller.get_immunization_by_id(lambda_event)
         # Then
         self.assertEqual(response["statusCode"], 403)
+        body = json.loads(response["body"])
+        self.assertEqual(body["resourceType"], "OperationOutcome")
+        self.assertEqual(body["issue"][0]["code"], "forbidden")
 
     def test_not_found(self):
         """it should return not-found OperationOutcome if it doesn't exist"""
         # Given
         imms_id = "a-non-existing-id"
-        self.service.get_immunization_by_id.return_value = None
+        self.service.get_immunization_by_id.side_effect = ResourceNotFoundError(
+            resource_type="Immunization",
+            resource_id=imms_id
+        )
         lambda_event = {
             "headers": {"SupplierSystem": "test"},
             "pathParameters": {"id": imms_id},
@@ -1071,28 +1099,6 @@ class TestUpdateImmunization(unittest.TestCase):
         )
         self.assertEqual(response["statusCode"], 200)
         self.assertEqual(response["headers"]["E-Tag"],  2)
-
-    def test_update_record_exists(self):
-        """it should return not-found OperationOutcome if ID doesn't exist"""
-        # Given
-
-        imms_id = "a-non-existing-id"
-        self.service.get_immunization_by_id.return_value = None
-        lambda_event = {
-            "headers": {"E-Tag": 1, "SupplierSystem": "Test"},
-            "pathParameters": {"id": imms_id},
-        }
-
-        # When
-        response = self.controller.get_immunization_by_id(lambda_event)
-
-        # Then
-        self.service.get_immunization_by_id.assert_called_once_with(imms_id, "Test")
-
-        self.assertEqual(response["statusCode"], 404)
-        body = json.loads(response["body"])
-        self.assertEqual(body["resourceType"], "OperationOutcome")
-        self.assertEqual(body["issue"][0]["code"], "not-found")
 
     def test_validation_error(self):
         """it should return 400 if Immunization is invalid"""
@@ -1660,7 +1666,7 @@ class TestSearchImmunizations(TestFhirControllerBase):
         body = json.loads(response["body"])
         self.assertEqual(body["resourceType"], "OperationOutcome")
 
-    @patch("fhir_controller.process_search_params", wraps=process_search_params)
+    @patch("controller.fhir_controller.process_search_params", wraps=process_search_params)
     def test_uses_parameter_parser(self, process_search_params: Mock):
         self.mock_redis_client.hkeys.return_value = self.MOCK_REDIS_V2D_HKEYS
         lambda_event = {
@@ -1679,7 +1685,7 @@ class TestSearchImmunizations(TestFhirControllerBase):
             }
         )
 
-    @patch("fhir_controller.process_search_params")
+    @patch("controller.fhir_controller.process_search_params")
     def test_search_immunizations_returns_400_on_ParameterException_from_parameter_parser(
         self, process_search_params: Mock
     ):

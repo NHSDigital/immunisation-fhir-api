@@ -9,7 +9,7 @@ from datetime import datetime
 
 from batch.batch_filename_to_events_mapper import BatchFilenameToEventsMapper
 from fhir_batch_repository import create_table
-from fhir_batch_controller import ImmunizationBatchController, make_batch_controller
+from controller.fhir_batch_controller import ImmunizationBatchController, make_batch_controller
 from clients import sqs_client
 from models.errors import (
     MessageNotSuccessfulError,

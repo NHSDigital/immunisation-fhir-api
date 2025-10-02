@@ -8,7 +8,7 @@ from moto import mock_aws
 from uuid import uuid4
 from models.errors import IdentifierDuplicationError, ResourceNotFoundError, UnhandledResponseError, ResourceFoundError
 from fhir_batch_repository import ImmunizationBatchRepository, create_table
-from tests.utils.immunization_utils import create_covid_19_immunization_dict
+from testing_utils.immunization_utils import create_covid_19_immunization_dict
 
 imms_id = str(uuid4())
 

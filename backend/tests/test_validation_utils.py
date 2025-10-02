@@ -1,9 +1,7 @@
 import unittest
 from copy import deepcopy
 
-from base_utils.base_utils import obtain_field_location
 from jsonpath_ng.ext import parse
-from models.field_locations import FieldLocations
 from models.obtain_field_value import ObtainFieldValue
 from models.utils.generic_utils import (
     get_current_name_instance,
@@ -13,10 +11,10 @@ from models.utils.generic_utils import (
 )
 
 from models.fhir_immunization import ImmunizationValidator
-from utils.generic_utils import (
+from testing_utils.generic_utils import (
     load_json_data,
 )
-from utils.values_for_tests import ValidValues, InvalidValues, NameInstances
+from testing_utils.values_for_tests import ValidValues, InvalidValues, NameInstances
 
 
 class TestValidatorUtils(unittest.TestCase):

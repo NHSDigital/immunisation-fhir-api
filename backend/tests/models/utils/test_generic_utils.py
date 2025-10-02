@@ -2,7 +2,7 @@
 
 import unittest
 from src.models.utils.generic_utils import form_json
-from tests.utils.generic_utils import load_json_data, format_date_types
+from testing_utils.generic_utils import load_json_data, format_date_types
 
 import unittest
 from datetime import datetime, date

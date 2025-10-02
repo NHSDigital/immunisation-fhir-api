@@ -11,11 +11,10 @@ from models.utils.validation_utils import get_vaccine_type
 from models.errors import (
     ResourceNotFoundError,
     UnhandledResponseError,
-    IdentifierDuplicationError,
-    UnauthorizedVaxError
+    IdentifierDuplicationError
 )
-from tests.utils.generic_utils import update_target_disease_code
-from tests.utils.immunization_utils import create_covid_19_immunization_dict
+from testing_utils.generic_utils import update_target_disease_code
+from testing_utils.immunization_utils import create_covid_19_immunization_dict
 
 def _make_immunization_pk(_id):
     return f"Immunization#{_id}"
@@ -101,22 +100,22 @@ class TestGetImmunization(unittest.TestCase):
     def test_get_immunization_by_id(self):
         """it should find an Immunization by id"""
         imms_id = "an-id"
-        resource = dict()
-        resource["Resource"] = {"foo": "bar"}
-        resource["Version"] = 1
+        expected_resource = {"foo": "bar"}
+        expected_version = "1"
         self.table.get_item = MagicMock(
             return_value={
                 "Item": {
-                    "Resource": json.dumps({"foo": "bar"}),
-                    "Version": 1,
+                    "Resource": json.dumps(expected_resource),
+                    "Version": expected_version,
                     "PatientSK": "COVID19#2516525251",
                 }
             }
         )
-        imms = self.repository.get_immunization_by_id(imms_id)
+        immunisation, version = self.repository.get_immunization_by_id(imms_id)
 
         # Validate the results
-        self.assertDictEqual(resource, imms)
+        self.assertDictEqual(expected_resource, immunisation)
+        self.assertEqual(version, expected_version)
         self.table.get_item.assert_called_once_with(Key={"PK": _make_immunization_pk(imms_id)})
 
     def test_immunization_not_found(self):
@@ -124,8 +123,9 @@ class TestGetImmunization(unittest.TestCase):
         imms_id = "non-existent-id"
         self.table.get_item = MagicMock(return_value={})
 
-        imms = self.repository.get_immunization_by_id(imms_id)
+        imms, version = self.repository.get_immunization_by_id(imms_id)
         self.assertIsNone(imms)
+        self.assertIsNone(version)
 
 
 def _make_a_patient(nhs_number="1234567890") -> dict:
@@ -466,8 +466,9 @@ class TestDeleteImmunization(unittest.TestCase):
         imms_id = "a-deleted-id"
         self.table.get_item = MagicMock(return_value={"Item": {"Resource": "{}", "DeletedAt": time.time()}})
 
-        imms = self.repository.get_immunization_by_id(imms_id)
+        imms, version = self.repository.get_immunization_by_id(imms_id)
         self.assertIsNone(imms)
+        self.assertIsNone(version)
 
     def test_delete_immunization(self):
         """it should logical delete Immunization by setting DeletedAt attribute"""

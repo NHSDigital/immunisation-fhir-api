@@ -1,7 +1,7 @@
 import unittest
 import uuid
 from unittest.mock import Mock, create_autospec
-from tests.utils.immunization_utils import create_covid_19_immunization
+from testing_utils.immunization_utils import create_covid_19_immunization
 from fhir_batch_service import ImmunizationBatchService
 from fhir_batch_repository import ImmunizationBatchRepository
 from models.errors import (
@@ -10,7 +10,7 @@ from models.errors import (
     CustomValidationError,
     IdentifierDuplicationError
 )
-from fhir_batch_controller import ImmunizationBatchController
+from controller.fhir_batch_controller import ImmunizationBatchController
 
 class TestCreateImmunizationBatchController(unittest.TestCase):
 
@@ -36,9 +36,9 @@ class TestCreateImmunizationBatchController(unittest.TestCase):
         }
 
         self.mock_service.create_immunization.return_value = imms_id
-        
+
         result = self.controller.send_request_to_dynamo(message_body, self.mock_table, True)
-        
+
         self.assertEqual(result, imms_id)
         self.mock_service.create_immunization.assert_called_once_with(
             immunization=message_body['fhir_json'],
@@ -55,7 +55,7 @@ class TestCreateImmunizationBatchController(unittest.TestCase):
         imms_id = str(uuid.uuid4())
         imms = create_covid_19_immunization(imms_id)
         create_result = CustomValidationError(message = "Validation errors: contained[?(@.resourceType=='Patient')].identifier[0].value does not exists")
-             
+
         message_body = {
             "supplier": "test_supplier",
             "fhir_json": imms.json(),
@@ -64,9 +64,9 @@ class TestCreateImmunizationBatchController(unittest.TestCase):
         }
 
         self.mock_service.create_immunization.return_value = create_result
-        
+
         result = self.controller.send_request_to_dynamo(message_body, self.mock_table, True)
-        
+
         self.assertEqual(result, create_result)
         self.mock_service.create_immunization.assert_called_once_with(
             immunization=message_body['fhir_json'],
@@ -74,8 +74,8 @@ class TestCreateImmunizationBatchController(unittest.TestCase):
             vax_type=message_body['vax_type'],
             table=self.mock_table,
             is_present=True
-        )  
-    
+        )
+
     def test_send_request_to_dynamo_create_duplicate(self):
         """it should not create the Immunization since its a duplicate record"""
 
@@ -89,10 +89,10 @@ class TestCreateImmunizationBatchController(unittest.TestCase):
             "operation_requested": "CREATE"
         }
 
-        self.mock_service.create_immunization.return_value = create_result   
-        
+        self.mock_service.create_immunization.return_value = create_result
+
         result = self.controller.send_request_to_dynamo(message_body, self.mock_table, True)
-        
+
         self.assertEqual(result, create_result)
         self.mock_service.create_immunization.assert_called_once_with(
             immunization=message_body['fhir_json'],
@@ -115,10 +115,10 @@ class TestCreateImmunizationBatchController(unittest.TestCase):
             "operation_requested": "CREATE"
         }
 
-        self.mock_service.create_immunization.return_value = UnhandledResponseError("Non-200 response from dynamodb", "connection timeout")   
-        
+        self.mock_service.create_immunization.return_value = UnhandledResponseError("Non-200 response from dynamodb", "connection timeout")
+
         result = self.controller.send_request_to_dynamo(message_body, self.mock_table, True)
-        
+
         self.assertEqual(result, update_result)
         self.mock_service.create_immunization.assert_called_once_with(
             immunization=message_body['fhir_json'],
@@ -126,7 +126,7 @@ class TestCreateImmunizationBatchController(unittest.TestCase):
             vax_type=message_body['vax_type'],
             table=self.mock_table,
             is_present=True
-        )    
+        )
 
 class TestUpdateImmunizationBatchController(unittest.TestCase):
 
@@ -152,9 +152,9 @@ class TestUpdateImmunizationBatchController(unittest.TestCase):
         }
 
         self.mock_service.update_immunization.return_value = imms_id
-        
+
         result = self.controller.send_request_to_dynamo(message_body, self.mock_table, True)
-        
+
         self.assertEqual(result, imms_id)
         self.mock_service.update_immunization.assert_called_once_with(
             immunization=message_body['fhir_json'],
@@ -178,9 +178,9 @@ class TestUpdateImmunizationBatchController(unittest.TestCase):
         }
 
         self.mock_service.update_immunization.return_value = update_result
-        
+
         result = self.controller.send_request_to_dynamo(message_body, self.mock_table, True)
-        
+
         self.assertEqual(result, update_result)
         self.mock_service.update_immunization.assert_called_once_with(
             immunization=message_body['fhir_json'],
@@ -188,8 +188,8 @@ class TestUpdateImmunizationBatchController(unittest.TestCase):
             vax_type=message_body['vax_type'],
             table=self.mock_table,
             is_present=True
-        )  
-    
+        )
+
     def test_send_request_to_dynamo_update_resource_not_found(self):
         """it should not update the Immunization since no resource found for the record"""
 
@@ -203,10 +203,10 @@ class TestUpdateImmunizationBatchController(unittest.TestCase):
             "operation_requested": "UPDATE"
         }
 
-        self.mock_service.update_immunization.return_value = update_result   
-        
+        self.mock_service.update_immunization.return_value = update_result
+
         result = self.controller.send_request_to_dynamo(message_body, self.mock_table, True)
-        
+
         self.assertEqual(result, update_result)
         self.mock_service.update_immunization.assert_called_once_with(
             immunization=message_body['fhir_json'],
@@ -229,10 +229,10 @@ class TestUpdateImmunizationBatchController(unittest.TestCase):
             "operation_requested": "UPDATE"
         }
 
-        self.mock_service.update_immunization.return_value = UnhandledResponseError("Non-200 response from dynamodb", "connection timeout")   
-        
+        self.mock_service.update_immunization.return_value = UnhandledResponseError("Non-200 response from dynamodb", "connection timeout")
+
         result = self.controller.send_request_to_dynamo(message_body, self.mock_table, True)
-        
+
         self.assertEqual(result, update_result)
         self.mock_service.update_immunization.assert_called_once_with(
             immunization=message_body['fhir_json'],
@@ -240,8 +240,8 @@ class TestUpdateImmunizationBatchController(unittest.TestCase):
             vax_type=message_body['vax_type'],
             table=self.mock_table,
             is_present=True
-        )    
-    
+        )
+
 
 class TestDeleteImmunizationBatchController(unittest.TestCase):
 
@@ -267,9 +267,9 @@ class TestDeleteImmunizationBatchController(unittest.TestCase):
         }
 
         self.mock_service.delete_immunization.return_value = imms_id
-        
+
         result = self.controller.send_request_to_dynamo(message_body, self.mock_table, True)
-        
+
         self.assertEqual(result, imms_id)
         self.mock_service.delete_immunization.assert_called_once_with(
             immunization=message_body['fhir_json'],
@@ -293,9 +293,9 @@ class TestDeleteImmunizationBatchController(unittest.TestCase):
         }
 
         self.mock_service.delete_immunization.return_value = update_result
-        
+
         result = self.controller.send_request_to_dynamo(message_body, self.mock_table, True)
-        
+
         self.assertEqual(result, update_result)
         self.mock_service.delete_immunization.assert_called_once_with(
             immunization=message_body['fhir_json'],
@@ -303,8 +303,8 @@ class TestDeleteImmunizationBatchController(unittest.TestCase):
             vax_type=message_body['vax_type'],
             table=self.mock_table,
             is_present=True
-        )  
-    
+        )
+
     def test_send_request_to_dynamo_delete_resource_not_found(self):
         """it should not delete the Immunization since no resource found for the record"""
 
@@ -318,10 +318,10 @@ class TestDeleteImmunizationBatchController(unittest.TestCase):
             "operation_requested": "DELETE"
         }
 
-        self.mock_service.delete_immunization.return_value = update_result   
-        
+        self.mock_service.delete_immunization.return_value = update_result
+
         result = self.controller.send_request_to_dynamo(message_body, self.mock_table, True)
-        
+
         self.assertEqual(result, update_result)
         self.mock_service.delete_immunization.assert_called_once_with(
             immunization=message_body['fhir_json'],
@@ -344,10 +344,10 @@ class TestDeleteImmunizationBatchController(unittest.TestCase):
             "operation_requested": "DELETE"
         }
 
-        self.mock_service.delete_immunization.return_value = UnhandledResponseError("Non-200 response from dynamodb", "connection timeout")   
-        
+        self.mock_service.delete_immunization.return_value = UnhandledResponseError("Non-200 response from dynamodb", "connection timeout")
+
         result = self.controller.send_request_to_dynamo(message_body, self.mock_table, True)
-        
+
         self.assertEqual(result, update_result)
         self.mock_service.delete_immunization.assert_called_once_with(
             immunization=message_body['fhir_json'],
@@ -356,7 +356,7 @@ class TestDeleteImmunizationBatchController(unittest.TestCase):
             table=self.mock_table,
             is_present=True
         )
-    
+
 
 if __name__ == '__main__':
     unittest.main()

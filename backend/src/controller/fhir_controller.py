@@ -6,9 +6,12 @@ import uuid
 from decimal import Decimal
 from typing import Optional
 from aws_lambda_typing.events import APIGatewayProxyEventV1
-from fhir.resources.R4B.immunization import Immunization
 from boto3 import client as boto3_client
 
+from controller.aws_apig_event_utils import get_supplier_system_header, get_path_parameter
+from controller.aws_apig_response_utils import create_response
+from controller.constants import E_TAG_HEADER_NAME
+from controller.fhir_api_exception_handler import fhir_api_exception_handler
 from fhir_repository import ImmunizationRepository, create_table
 from fhir_service import FhirService, UpdateOutcome, get_service_url
 from models.errors import (
@@ -58,7 +61,7 @@ class FhirController:
             else:
                 raise UnauthorizedError()
         except UnauthorizedError as unauthorized:
-            return self.create_response(403, unauthorized.to_operation_outcome())
+            return create_response(403, unauthorized.to_operation_outcome())
         body = aws_event["body"]
         if query_params and body:
             error = create_operation_outcome(
@@ -67,7 +70,7 @@ class FhirController:
                 code=Code.invalid,
                 diagnostics=('Parameters may not be duplicated. Use commas for "or".'),
             )
-            return self.create_response(400, error)
+            return create_response(400, error)
         identifier, element, not_required, has_imms_identifier, has_element = self.fetch_identifier_system_and_element(
             aws_event
         )
@@ -75,55 +78,33 @@ class FhirController:
             return self.create_response_for_identifier(not_required, has_imms_identifier, has_element)
         # If not found, retrieve from multiValueQueryStringParameters
         if id_error := self._validate_identifier_system(identifier, element):
-            return self.create_response(400, id_error)
+            return create_response(400, id_error)
         identifiers = identifier.replace("|", "#")
         supplier_system = self._identify_supplier_system(aws_event)
 
         try:
             if resource := self.fhir_service.get_immunization_by_identifier(
                 identifiers, supplier_system, identifier, element):
-                return FhirController.create_response(200, resource)
+                return create_response(200, resource)
         except UnauthorizedVaxError as unauthorized:
-            return self.create_response(403, unauthorized.to_operation_outcome())
+            return create_response(403, unauthorized.to_operation_outcome())
 
+    @fhir_api_exception_handler
     def get_immunization_by_id(self, aws_event) -> dict:
-        imms_id = aws_event["pathParameters"]["id"]
+        imms_id = get_path_parameter(aws_event, "id")
+
         if id_error := self._validate_id(imms_id):
-            return self.create_response(400, id_error)
+            return create_response(400, id_error)
 
-        try:
-            if aws_event.get("headers"):
-                supplier_system = self._identify_supplier_system(aws_event)
-            else:
-                raise UnauthorizedError()
-        except UnauthorizedError as unauthorized:
-            return self.create_response(403, unauthorized.to_operation_outcome())
+        supplier_system = get_supplier_system_header(aws_event)
 
-        try:
-            if resource := self.fhir_service.get_immunization_by_id(imms_id, supplier_system):
-                version = str()
-                if isinstance(resource, Immunization):
-                    resp = resource
-                else:
-                    resp = resource["Resource"]
-                    if resource.get("Version"):
-                        version = resource["Version"]
-                return FhirController.create_response(200, resp.json(), {"E-Tag": version})
-            else:
-                msg = "The requested resource was not found."
-                id_error = create_operation_outcome(
-                    resource_id=str(uuid.uuid4()),
-                    severity=Severity.error,
-                    code=Code.not_found,
-                    diagnostics=msg,
-                )
-                return FhirController.create_response(404, id_error)
-        except UnauthorizedVaxError as unauthorized:
-            return self.create_response(403, unauthorized.to_operation_outcome())
+        resource, version = self.fhir_service.get_immunization_by_id(imms_id, supplier_system)
+
+        return create_response(200, resource.json(), {E_TAG_HEADER_NAME: version})
 
     def create_immunization(self, aws_event):
         if not aws_event.get("headers"):
-            return self.create_response(
+            return create_response(
                 403,
                 create_operation_outcome(
                     resource_id=str(uuid.uuid4()),
@@ -148,19 +129,19 @@ class FhirController:
                     code=Code.invariant,
                     diagnostics=resource["diagnostics"],
                 )
-                return self.create_response(400, json.dumps(exp_error))
+                return create_response(400, json.dumps(exp_error))
             else:
                 location = f"{get_service_url()}/Immunization/{resource.id}"
                 version = "1"
-                return self.create_response(201, None, {"Location": location, "E-Tag": version})
+                return create_response(201, None, {"Location": location, "E-Tag": version})
         except ValidationError as error:
-            return self.create_response(400, error.to_operation_outcome())
+            return create_response(400, error.to_operation_outcome())
         except IdentifierDuplicationError as duplicate:
-            return self.create_response(422, duplicate.to_operation_outcome())
+            return create_response(422, duplicate.to_operation_outcome())
         except UnhandledResponseError as unhandled_error:
-            return self.create_response(500, unhandled_error.to_operation_outcome())
+            return create_response(500, unhandled_error.to_operation_outcome())
         except UnauthorizedVaxError as unauthorized:
-            return self.create_response(403, unauthorized.to_operation_outcome())
+            return create_response(403, unauthorized.to_operation_outcome())
 
     def update_immunization(self, aws_event):
         try:
@@ -169,13 +150,13 @@ class FhirController:
             else:
                 raise UnauthorizedError()
         except UnauthorizedError as unauthorized:
-            return self.create_response(403, unauthorized.to_operation_outcome())
+            return create_response(403, unauthorized.to_operation_outcome())
 
         supplier_system = self._identify_supplier_system(aws_event)
 
         # Validate the imms id - start
         if id_error := self._validate_id(imms_id):
-            return FhirController.create_response(400, json.dumps(id_error))
+            return create_response(400, json.dumps(id_error))
         # Validate the imms id - end
 
         # Validate the body of the request - start
@@ -189,7 +170,7 @@ class FhirController:
                     code=Code.invariant,
                     diagnostics=f"Validation errors: The provided immunization id:{imms_id} doesn't match with the content of the request body",
                 )
-                return self.create_response(400, json.dumps(exp_error))
+                return create_response(400, json.dumps(exp_error))
             # Validate the imms id in the path params and body of request - end
         except json.decoder.JSONDecodeError as e:
             return self._create_bad_request(f"Request's body contains malformed JSON: {e}")
@@ -207,7 +188,7 @@ class FhirController:
                     code=Code.not_found,
                     diagnostics=f"Validation errors: The requested immunization resource with id:{imms_id} was not found.",
                 )
-                return self.create_response(404, json.dumps(exp_error))
+                return create_response(404, json.dumps(exp_error))
 
             if "diagnostics" in existing_record:
                 exp_error = create_operation_outcome(
@@ -216,9 +197,9 @@ class FhirController:
                     code=Code.invariant,
                     diagnostics=existing_record["diagnostics"],
                 )
-                return self.create_response(400, json.dumps(exp_error))
+                return create_response(400, json.dumps(exp_error))
         except ValidationError as error:
-            return self.create_response(400, error.to_operation_outcome())
+            return create_response(400, error.to_operation_outcome())
         # Validate if the imms resource does not exist - end
 
         existing_resource_version = int(existing_record["Version"])
@@ -244,7 +225,7 @@ class FhirController:
                         code=Code.invariant,
                         diagnostics="Validation errors: Immunization resource version not specified in the request headers",
                     )
-                    return self.create_response(400, json.dumps(exp_error))
+                    return create_response(400, json.dumps(exp_error))
                 # Validate if imms resource version is part of the request - end
 
                 # Validate the imms resource version provided in the request headers - start
@@ -258,7 +239,7 @@ class FhirController:
                         code=Code.invariant,
                         diagnostics=f"Validation errors: Immunization resource version:{resource_version} in the request headers is invalid.",
                     )
-                    return self.create_response(400, json.dumps(exp_error))
+                    return create_response(400, json.dumps(exp_error))
                 # Validate the imms resource version provided in the request headers - end
 
                 # Validate if resource version has changed since the last retrieve - start
@@ -269,7 +250,7 @@ class FhirController:
                         code=Code.invariant,
                         diagnostics=f"Validation errors: The requested immunization resource {imms_id} has changed since the last retrieve.",
                     )
-                    return self.create_response(400, json.dumps(exp_error))
+                    return create_response(400, json.dumps(exp_error))
                 if existing_resource_version < resource_version_header:
                     exp_error = create_operation_outcome(
                         resource_id=str(uuid.uuid4()),
@@ -277,7 +258,7 @@ class FhirController:
                         code=Code.invariant,
                         diagnostics=f"Validation errors: The requested immunization resource {imms_id} version is inconsistent with the existing version.",
                     )
-                    return self.create_response(400, json.dumps(exp_error))
+                    return create_response(400, json.dumps(exp_error))
                 # Validate if resource version has changed since the last retrieve - end
 
                 # Check if the record is reinstated record - start
@@ -308,15 +289,15 @@ class FhirController:
                     code=Code.invariant,
                     diagnostics=resource["diagnostics"],
                 )
-                return self.create_response(400, json.dumps(exp_error))
+                return create_response(400, json.dumps(exp_error))
             if outcome == UpdateOutcome.UPDATE:
-                return self.create_response(200, None, {"E-Tag": updated_version}) #include e-tag here, is it not included in the response resource
+                return create_response(200, None, {"E-Tag": updated_version}) #include e-tag here, is it not included in the response resource
         except ValidationError as error:
-            return self.create_response(400, error.to_operation_outcome())
+            return create_response(400, error.to_operation_outcome())
         except IdentifierDuplicationError as duplicate:
-            return self.create_response(422, duplicate.to_operation_outcome())
+            return create_response(422, duplicate.to_operation_outcome())
         except UnauthorizedVaxError as unauthorized:
-            return self.create_response(403, unauthorized.to_operation_outcome())
+            return create_response(403, unauthorized.to_operation_outcome())
 
     def delete_immunization(self, aws_event):
         try:
@@ -325,24 +306,24 @@ class FhirController:
             else:
                 raise UnauthorizedError()
         except UnauthorizedError as unauthorized:
-            return self.create_response(403, unauthorized.to_operation_outcome())
+            return create_response(403, unauthorized.to_operation_outcome())
 
         # Validate the imms id
         if id_error := self._validate_id(imms_id):
-            return FhirController.create_response(400, json.dumps(id_error))
+            return create_response(400, json.dumps(id_error))
 
         supplier_system = self._identify_supplier_system(aws_event)
 
         try:
             self.fhir_service.delete_immunization(imms_id, supplier_system)
-            return self.create_response(204)
+            return create_response(204)
 
         except ResourceNotFoundError as not_found:
-            return self.create_response(404, not_found.to_operation_outcome())
+            return create_response(404, not_found.to_operation_outcome())
         except UnhandledResponseError as unhandled_error:
-           return self.create_response(500, unhandled_error.to_operation_outcome())
+           return create_response(500, unhandled_error.to_operation_outcome())
         except UnauthorizedVaxError as unauthorized:
-            return self.create_response(403, unauthorized.to_operation_outcome())
+            return create_response(403, unauthorized.to_operation_outcome())
 
     def search_immunizations(self, aws_event: APIGatewayProxyEventV1) -> dict:
         try:
@@ -359,7 +340,7 @@ class FhirController:
             else:
                 raise UnauthorizedError()
         except UnauthorizedError as unauthorized:
-            return self.create_response(403, unauthorized.to_operation_outcome())
+            return create_response(403, unauthorized.to_operation_outcome())
 
         try:
             result, request_contained_unauthorised_vaccs = self.fhir_service.search_immunizations(
@@ -371,7 +352,7 @@ class FhirController:
                 search_params.date_to,
             )
         except UnauthorizedVaxError as unauthorized:
-            return self.create_response(403, unauthorized.to_operation_outcome())
+            return create_response(403, unauthorized.to_operation_outcome())
 
         if "diagnostics" in result:
             exp_error = create_operation_outcome(
@@ -380,7 +361,7 @@ class FhirController:
                 code=Code.invariant,
                 diagnostics=result["diagnostics"],
             )
-            return self.create_response(400, json.dumps(exp_error))
+            return create_response(400, json.dumps(exp_error))
         # Workaround for fhir.resources JSON removing the empty "entry" list.
         result_json_dict: dict = json.loads(result.json())
         if "entry" in result_json_dict:
@@ -404,7 +385,7 @@ class FhirController:
         if "entry" not in result_json_dict:
             result_json_dict["entry"] = []
             result_json_dict["total"] = 0
-        return self.create_response(200, json.dumps(result_json_dict))
+        return create_response(200, json.dumps(result_json_dict))
 
     def _validate_id(self, _id: str) -> Optional[dict]:
         if not re.match(self.immunization_id_pattern, _id):
@@ -415,8 +396,8 @@ class FhirController:
                 code=Code.invalid,
                 diagnostics=msg,
             )
-        else:
-            return None
+
+        return None
 
     def _validate_identifier_system(self, _id: str, _elements: str) -> Optional[dict]:
         if not _id:
@@ -462,7 +443,7 @@ class FhirController:
             code=Code.invalid,
             diagnostics=message,
         )
-        return self.create_response(400, error)
+        return create_response(400, error)
 
     def fetch_identifier_system_and_element(self, event: dict):
         """
@@ -531,7 +512,7 @@ class FhirController:
                 code=Code.server_error,
                 diagnostics="Search parameter should have either identifier or patient.identifier",
             )
-            return self.create_response(400, error)
+            return create_response(400, error)
 
         if not_required and has_element:
             error = create_operation_outcome(
@@ -540,27 +521,11 @@ class FhirController:
                 code=Code.server_error,
                 diagnostics="Search parameter _elements must have the following parameter: identifier",
             )
-            return self.create_response(400, error)
-
-    @staticmethod
-    def create_response(status_code, body=None, headers=None):
-        if body:
-            if isinstance(body, dict):
-                body = json.dumps(body)
-            if headers:
-                headers["Content-Type"] = "application/fhir+json"
-            else:
-                headers = {"Content-Type": "application/fhir+json"}
-
-        return {
-            "statusCode": status_code,
-            "headers": headers if headers else {},
-            **({"body": body} if body else {}),
-        }
+            return create_response(400, error)
 
     @staticmethod
     def _identify_supplier_system(aws_event):
         supplier_system = aws_event["headers"]["SupplierSystem"]
         if not supplier_system:
-            raise UnauthorizedError("SupplierSystem header is missing")
+            raise UnauthorizedError()
         return supplier_system
