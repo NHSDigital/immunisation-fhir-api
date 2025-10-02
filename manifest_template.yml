@@ -4,7 +4,7 @@ APIGEE_ENVIRONMENTS:
     has_mock_auth: true
     display_name_suffix: Internal Development
     ratelimiting:
-      immunisation-fhir-api-dev:
+      immunisation-fhir-api-internal-dev:
         quota:
           enabled: true
           limit: 300
@@ -36,7 +36,7 @@ APIGEE_ENVIRONMENTS:
     has_mock_auth: false
     display_name_suffix: Integration Testing
     ratelimiting:
-      immunisation-fhir-api-ref:
+      immunisation-fhir-api-int:
         quota:
           enabled: true
           limit: 300
@@ -44,7 +44,7 @@ APIGEE_ENVIRONMENTS:
           timeunit: minute
         spikeArrest:
           enabled: true
-          ratelimit: 600pm # 10 requests per second 
+          ratelimit: 600pm # 10 requests per second
       app:
         quota:
           enabled: false
@@ -69,10 +69,10 @@ APIGEE_ENVIRONMENTS:
     has_mock_auth: false
     display_name_suffix: Reference
     ratelimiting:
-      immunisation-fhir-api-int:
+      immunisation-fhir-api-ref:
         quota:
           enabled: true
-          limit: 300 
+          limit: 300
           interval: 1
           timeunit: minute
         spikeArrest:
@@ -91,17 +91,21 @@ APIGEE_ENVIRONMENTS:
       immunisation-fhir-api-prod:
         quota:
           enabled: true
-          limit: 1200 
+          limit: 3000
+          interval: 1
+          timeunit: minute
+        spikeArrest:
+          enabled: true
+          ratelimit: 3000pm # 50 requests per second
+      app:
+        quota:
+          enabled: true
+          limit: 1200
           interval: 1
           timeunit: minute
         spikeArrest:
           enabled: true
           ratelimit: 1200pm # 20 requests per second
-      app:
-        quota:
-          enabled: false
-        spikeArrest:
-          enabled: false
 
 ACCESS_MODES:
   - name: user-restricted
@@ -120,7 +124,7 @@ ACCESS_MODES:
     scopes: ['urn:nhsd:apim:app:level3:immunisation-fhir-api']
     requireCallbackUrl: false
     description: Application Restricted
-    
+
   # - name: patient-access
   #   nameSuffix: -patient-access
   #   displayName: Patient-Access
