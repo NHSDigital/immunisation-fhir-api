@@ -27,7 +27,7 @@ resource "aws_iam_role_policy" "eventbridge_forwarder_policy" {
       Effect = "Allow",
       Action = ["events:PutEvents"],
       Resource = [
-        "arn:aws:events:eu-west-2:693466633220:event-bus/shield-eventbus"
+        "arn:aws:events:eu-west-2:${var.csoc_account_id}:event-bus/shield-eventbus"
       ]
     }]
   })
