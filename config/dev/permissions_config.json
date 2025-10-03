@@ -86,6 +86,13 @@
     "ods_codes": ["YGMYW"]
   },
   {
+    "supplier": "OXDH",
+    "permissions": [
+      "COVID19.CRUDS",
+      "FLU.CRUDS"
+    ]
+  },
+  {
     "supplier": "PINNACLE",
     "ods_codes": ["8J1100001"]
   },
