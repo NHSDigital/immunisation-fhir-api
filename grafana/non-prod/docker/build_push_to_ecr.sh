@@ -2,7 +2,7 @@
 
 # Set variables
 
-dirname=$(dirname "$0")
+dirname=$(dirname "${0}")
 DOCKERFILE_DIR=$(realpath "${dirname}")
 echo "DOCKERFILE_DIR: ${DOCKERFILE_DIR}"
 
@@ -11,7 +11,7 @@ echo "DOCKERFILE_DIR: ${DOCKERFILE_DIR}"
 # loop until valid response is received
 if [[ -z "${1}" ]]; then
   while true; do
-    read -p "Enter the environment (prod, int, ref, internal-dev): " ENVIRONMENT
+    read -r -p "Enter the environment (prod, int, ref, internal-dev): " ENVIRONMENT
     case "${ENVIRONMENT}" in
       prod|int|ref|internal-dev)
         break
@@ -46,26 +46,27 @@ TAGS='[
 LIFECYCLE_POLICY_FILE="lifecycle-policy.json"
 
 # Change to the directory containing the Dockerfile
-cd "${DOCKERFILE_DIR}"
+if ! cd "${DOCKERFILE_DIR}"; then
+  echo "DOCKERFILE_DIR not found."
+  exit 1
+fi
 
 # Check if Dockerfile exists
 if [[ ! -f Dockerfile ]]; then
-  echo "Dockerfile not found in the current directory."
+  echo "Dockerfile not found in DOCKERFILE_DIR."
   exit 1
 fi
 
 # Create ECR repository if it does not exist
-aws ecr describe-repositories --repository-names "${REPOSITORY_NAME}" --region "${AWS_REGION}" > /dev/null 2>&1
-
-if [[ $? -ne 0 ]]; then
+if ! aws ecr describe-repositories --repository-names "${REPOSITORY_NAME}" --region "${AWS_REGION}" > /dev/null 2>&1; then
   echo "Creating ECR repository: ${REPOSITORY_NAME}"
   aws ecr create-repository --repository-name "${REPOSITORY_NAME}" --region "${AWS_REGION}"
   # Add tags to the repository
-  aws ecr tag-resource --resource-arn arn:aws:ecr:${AWS_REGION}:${ACCOUNT_ID}:repository/${REPOSITORY_NAME} --tags ${TAGS}
+  aws ecr tag-resource --resource-arn "arn:aws:ecr:${AWS_REGION}:${ACCOUNT_ID}:repository/${REPOSITORY_NAME}" --tags "${TAGS}"
 fi
 
 # Apply lifecycle policy to the ECR repository
-aws ecr put-lifecycle-policy --repository-name "${REPOSITORY_NAME}" --lifecycle-policy-text file://"${LIFECYCLE_POLICY_FILE}" --region "${AWS_REGION}"
+aws ecr put-lifecycle-policy --repository-name "${REPOSITORY_NAME}" --lifecycle-policy-text "file://${LIFECYCLE_POLICY_FILE}" --region "${AWS_REGION}"
 
 printf "Building and pushing Docker image to ECR...\n"
 # Authenticate Docker to ECR
@@ -80,10 +81,7 @@ docker pull --platform linux/amd64 grafana/grafana:latest
 
 # Build Docker image for linux/amd64 architecture and push to ECR
 docker buildx create --use
-docker buildx build --platform linux/amd64 -t "${IMAGE_NAME}" --push .
-
-# Check if the build was successful
-if [[ $? -ne 0 ]]; then
+if ! docker buildx build --platform linux/amd64 -t "${IMAGE_NAME}" --push .; then
   echo "Docker build failed."
   exit 1
 fi
