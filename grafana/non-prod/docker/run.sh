@@ -18,12 +18,10 @@ if [ ! -f /etc/grafana/grafana.ini ]; then
     exit 1
 fi
 
-GF_UPDATE_CHECK=false
-
 # Start Grafana in the foreground
 echo "Starting Grafana server..."
-exec $GF_PATHS_HOME/bin/grafana-server \
-  --homepath=$GF_PATHS_HOME \
+exec "$GF_PATHS_HOME/bin/grafana-server" \
+  --homepath="$GF_PATHS_HOME" \
   --config=/etc/grafana/grafana.ini \
   --packaging=docker \
   cfg:default.paths.data=/var/lib/grafana \
