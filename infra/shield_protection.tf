@@ -13,7 +13,7 @@ resource "aws_shield_protection" "nat_eip" {
   resource_arn = "arn:aws:ec2:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:eip-allocation/${aws_eip.example.id}"
 
   tags = {
-    Environment = "Dev"
+    Environment = "imms-${var.environment}-fhir-api-nat-shield"
   }
 }
 
@@ -33,5 +33,66 @@ resource "aws_cloudwatch_metric_alarm" "nat_eip_ddos" {
 
   dimensions = {
     ResourceArn = "arn:aws:ec2:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:eip-allocation/${aws_eip.nat.id}"
+  }
+}
+
+# Protect the Route53 Parent and child hosted zone (must be created in us-east-1)
+
+
+
+# Protect the parent hosted zone
+resource "aws_shield_protection" "parent_dns" {
+  provider     = aws.use1
+  name         = "shield_ddos_parent_zone"
+  resource_arn = aws_route53_zone.parent_hosted_zone.arn
+
+  tags = {
+    Environment = var.environment
+    Owner       = "infra"
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "parent_dns_ddos" {
+  provider            = aws.use1
+  alarm_name          = "shield_ddos_parent_zone"
+  alarm_description   = "Alarm when Shield detects DDoS on parent hosted zone"
+
+  namespace           = "AWS/DDoSProtection"
+  metric_name         = "DDoSDetected"
+  statistic           = "Maximum"
+  period              = 60
+  evaluation_periods  = 20
+  datapoints_to_alarm = 1
+  threshold           = 0
+  comparison_operator = "GreaterThanThreshold"
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    ResourceArn = aws_route53_zone.parent_hosted_zone.arn
+  }
+}
+
+
+resource "aws_shield_protection" "child_dns" {
+  provider     = aws.use1
+  name         = "route53_shield_ddos_childzone"
+  resource_arn = aws_route53_zone.child_hosted_zone.arn
+}
+
+resource "aws_cloudwatch_metric_alarm" "child_dns_ddos" {
+  provider            = aws.use1
+  alarm_name          = "route53_shield_ddos_childzone"
+  namespace           = "AWS/DDoSProtection"
+  metric_name         = "DDoSDetected"
+  statistic           = "Maximum"
+  period              = 60
+  evaluation_periods  = 20
+  datapoints_to_alarm = 1
+  threshold           = 0
+  comparison_operator = "GreaterThanThreshold"
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    ResourceArn = aws_route53_zone.child_hosted_zone.arn
   }
 }
