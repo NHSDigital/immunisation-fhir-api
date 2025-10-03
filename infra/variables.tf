@@ -10,6 +10,12 @@ variable "dspp_account_id" {
   description = "DSPP Core AWS account ID"
   type        = string
 }
+variable "csoc_account_id" {
+  description = "CSOC Core AWS account ID"
+  type        = string
+
+}
+
 variable "auto_ops_role" {
   default = "role/auto-ops"
   type    = string

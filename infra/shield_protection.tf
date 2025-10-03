@@ -4,84 +4,64 @@ data "aws_availability_zones" "available" {}
 data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
 
+provider "aws" {
+  alias  = "use1"
+  region = "us-east-1"
+}
 
-
-
-# Protect the NAT Gateway Elastic IP
+# Create all resources to Protect
 resource "aws_shield_protection" "nat_eip" {
-  name         = "example"
+  name         = "shield_nat_eip"
   resource_arn = "arn:aws:ec2:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:eip-allocation/${aws_eip.example.id}"
 
   tags = {
-    Environment = "imms-${var.environment}-fhir-api-nat-shield"
+    Environment = "imms-${var.environment}-fhir-api-eip-shield"
   }
 }
 
-resource "aws_cloudwatch_metric_alarm" "nat_eip_ddos" {
-  alarm_name          = "infra_shield_ddos_natgw"
-  alarm_description   = "Alarm when Shield detects DDoS on NAT Gateway EIP"
-
-  namespace           = "AWS/DDoSProtection"
-  metric_name         = "DDoSDetected"
-  statistic           = "Maximum"
-  period              = 60
-  evaluation_periods  = 20
-  datapoints_to_alarm = 1
-  threshold           = 0
-  comparison_operator = "GreaterThanThreshold"
-  treat_missing_data  = "notBreaching"
-
-  dimensions = {
-    ResourceArn = "arn:aws:ec2:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:eip-allocation/${aws_eip.nat.id}"
-  }
-}
-
-# Protect the Route53 Parent and child hosted zone (must be created in us-east-1)
-
-
-
-# Protect the parent hosted zone
 resource "aws_shield_protection" "parent_dns" {
   provider     = aws.use1
   name         = "shield_ddos_parent_zone"
   resource_arn = aws_route53_zone.parent_hosted_zone.arn
 
   tags = {
-    Environment = var.environment
-    Owner       = "infra"
+    Environment = "imms-${var.environment}-fhir-api-parent-dns-shield"
   }
 }
-
-resource "aws_cloudwatch_metric_alarm" "parent_dns_ddos" {
-  provider            = aws.use1
-  alarm_name          = "shield_ddos_parent_zone"
-  alarm_description   = "Alarm when Shield detects DDoS on parent hosted zone"
-
-  namespace           = "AWS/DDoSProtection"
-  metric_name         = "DDoSDetected"
-  statistic           = "Maximum"
-  period              = 60
-  evaluation_periods  = 20
-  datapoints_to_alarm = 1
-  threshold           = 0
-  comparison_operator = "GreaterThanThreshold"
-  treat_missing_data  = "notBreaching"
-
-  dimensions = {
-    ResourceArn = aws_route53_zone.parent_hosted_zone.arn
-  }
-}
-
 
 resource "aws_shield_protection" "child_dns" {
   provider     = aws.use1
   name         = "route53_shield_ddos_childzone"
   resource_arn = aws_route53_zone.child_hosted_zone.arn
+
+  tags = {
+    Environment = "imms-${var.environment}-fhir-api-child-dns-shield"
+  }
 }
 
-resource "aws_cloudwatch_metric_alarm" "child_dns_ddos" {
-  provider            = aws.use1
-  alarm_name          = "route53_shield_ddos_childzone"
+
+
+locals {
+  regional_shield_arn = {
+    nat_gateway_eip = aws_shield_protection.nat_eip.resource_arn
+  }
+}
+
+locals {
+  global_shield_arn = {
+    route53_parent_zone = aws_shield_protection.parent_dns.resource_arn
+    route53_child_zone = aws_shield_protection.child_dns.resource_arn
+  }
+}
+
+
+# Create Metric Alarms for each of those resources
+resource "aws_cloudwatch_metric_alarm" "ddos_protection_regional" {
+  for_each = local.regional_shield_arn
+
+  alarm_name          = "shield_ddos_${each.key}"
+  alarm_description   = "Alarm when Shield detects DDoS on ${each.key}"
+
   namespace           = "AWS/DDoSProtection"
   metric_name         = "DDoSDetected"
   statistic           = "Maximum"
@@ -93,6 +73,29 @@ resource "aws_cloudwatch_metric_alarm" "child_dns_ddos" {
   treat_missing_data  = "notBreaching"
 
   dimensions = {
-    ResourceArn = aws_route53_zone.child_hosted_zone.arn
+    ResourceArn = each.value
+  }
+}
+
+# Create Metric Alarms for Global Resources in us-east-1 Region
+resource "aws_cloudwatch_metric_alarm" "ddos_protection_global" {
+  for_each = locals.global_shield_arn
+
+  provider            = aws.use1
+  alarm_name          = "shield_ddos_${each.key}"
+  alarm_description   = "Alarm when Shield detects DDoS on ${each.key}"
+
+  namespace           = "AWS/DDoSProtection"
+  metric_name         = "DDoSDetected"
+  statistic           = "Maximum"
+  period              = 60
+  evaluation_periods  = 20
+  datapoints_to_alarm = 1
+  threshold           = 0
+  comparison_operator = "GreaterThanThreshold"
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    ResourceArn = each.value
   }
 }
