@@ -99,3 +99,52 @@ resource "aws_cloudwatch_metric_alarm" "ddos_protection_global" {
     ResourceArn = each.value
   }
 }
+
+
+# Event Bus Rule for eu-west-2 Region
+
+resource "aws_cloudwatch_event_rule" "shield_ddos_rule_regional" {
+  name        = "imms_${var.environment}_shield_ddos_rule_${data.aws_region.current.name}"
+  description = "Forward Shield DDoS CloudWatch alarms to CSOC event bus"
+
+  event_pattern = jsonencode({
+    "source"      = ["aws.cloudwatch"],
+    "detail-type" = ["CloudWatch Alarm State Change"],
+    "resources"   = [
+      for alarm in aws_cloudwatch_metric_alarm.ddos_protection_regional : alarm.arn
+    ]
+  })
+}
+
+
+
+resource "aws_cloudwatch_event_target" "shield_ddos_target_regional" {
+  rule      = aws_cloudwatch_event_rule.shield_ddos_rule_regional.name
+  target_id = "csoc-eventbus"
+  arn       = "arn:aws:events:eu-west-2:${var.csoc_account_id}:event-bus/shield-eventbus"
+  role_arn  = aws_iam_role.shield_ddos_forwarder.arn
+}
+
+# Event Bus Rule for us-east-1 Region
+
+resource "aws_cloudwatch_event_rule" "shield_ddos_rule_global" {
+  provider    = aws.use1
+  name        = "imms_${var.environment}_shield_ddos_rule_us-east-1"
+  description = "Forward Shield DDoS CloudWatch alarms (global) to CSOC event bus"
+
+  event_pattern = jsonencode({
+    "source"      = ["aws.cloudwatch"],
+    "detail-type" = ["CloudWatch Alarm State Change"],
+    "resources"   = [
+      for alarm in aws_cloudwatch_metric_alarm.ddos_protection_global : alarm.arn
+    ]
+  })
+}
+
+resource "aws_cloudwatch_event_target" "shield_ddos_target_global" {
+  provider  = aws.use1
+  rule      = aws_cloudwatch_event_rule.shield_ddos_rule_global.name
+  target_id = "csoc-eventbus"
+  arn       = "arn:aws:events:us-east-1:${var.csoc_account_id}:event-bus/shield-eventbus"
+  role_arn  = aws_iam_role.shield_ddos_forwarder.arn
+}
