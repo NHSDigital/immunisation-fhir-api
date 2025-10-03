@@ -3,8 +3,8 @@ import logging
 import pprint
 import uuid
 
-
-from fhir_controller import FhirController, make_controller
+from controller.aws_apig_response_utils import create_response
+from controller.fhir_controller import FhirController, make_controller
 from models.errors import Severity, Code, create_operation_outcome
 from log_structure import function_info
 from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
@@ -28,7 +28,7 @@ def delete_immunization(event, controller: FhirController):
             code=Code.server_error,
             diagnostics=GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE,
         )
-        return FhirController.create_response(500, exp_error)
+        return create_response(500, exp_error)
 
 
 if __name__ == "__main__":

@@ -87,8 +87,6 @@ class RecordAttributes:
 
 
 class ImmunizationBatchRepository:
-    def __init__(self):
-        pass
 
     def create_immunization(
         self, immunization: any, supplier_system: str, vax_type: str, table: any, is_present: bool
@@ -252,7 +250,7 @@ class ImmunizationBatchRepository:
                 else Attr("PK").eq(attr.pk) & Attr("DeletedAt").not_exists()
             )
             if deleted_at_required and update_reinstated == False:
-                ExpressionAttributeValues = {
+                expression_attribute_values = {
                     ":timestamp": attr.timestamp,
                     ":patient_pk": attr.patient_pk,
                     ":patient_sk": attr.patient_sk,
@@ -263,7 +261,7 @@ class ImmunizationBatchRepository:
                     ":respawn": "reinstated",
                 }
             else:
-                ExpressionAttributeValues = {
+                expression_attribute_values = {
                     ":timestamp": attr.timestamp,
                     ":patient_pk": attr.patient_pk,
                     ":patient_sk": attr.patient_sk,
@@ -279,7 +277,7 @@ class ImmunizationBatchRepository:
                 ExpressionAttributeNames={
                     "#imms_resource": "Resource",
                 },
-                ExpressionAttributeValues=ExpressionAttributeValues,
+                ExpressionAttributeValues=expression_attribute_values,
                 ReturnValues="ALL_NEW",
                 ConditionExpression=condition_expression,
             )

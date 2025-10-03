@@ -2,8 +2,8 @@
 
 from fhir.resources.R4B.immunization import Immunization
 
-from tests.utils.values_for_tests import ValidValues
-from tests.utils.generic_utils import load_json_data
+from testing_utils.values_for_tests import ValidValues
+from testing_utils.generic_utils import load_json_data
 
 VALID_NHS_NUMBER = ValidValues.nhs_number
 

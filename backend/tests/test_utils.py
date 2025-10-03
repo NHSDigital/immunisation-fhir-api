@@ -1,12 +1,11 @@
 """Tests for generic utils"""
 
 import unittest
-import json
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from copy import deepcopy
 
 from models.utils.validation_utils import convert_disease_codes_to_vaccine_type, get_vaccine_type
-from utils.generic_utils import load_json_data, update_target_disease_code
+from testing_utils.generic_utils import load_json_data, update_target_disease_code
 
 
 class TestGenericUtils(unittest.TestCase):

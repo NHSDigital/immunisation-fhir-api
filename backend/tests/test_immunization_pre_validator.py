@@ -7,10 +7,9 @@ from unittest.mock import patch
 
 from jsonpath_ng.ext import parse
 
-from clients import redis_client
 from models.fhir_immunization import ImmunizationValidator
 from models.utils.generic_utils import get_generic_extension_value
-from utils.generic_utils import (
+from testing_utils.generic_utils import (
     # these have an underscore to avoid pytest collecting them as tests
     test_valid_values_accepted as _test_valid_values_accepted,
     test_invalid_values_rejected as _test_invalid_values_rejected,
@@ -22,9 +21,8 @@ from models.utils.generic_utils import (
     practitioner_name_given_field_location,
     practitioner_name_family_field_location,
 )
-from utils.pre_validation_test_utils import ValidatorModelTests
-from utils.values_for_tests import ValidValues, InvalidValues
-from models.constants import Constants
+from testing_utils.pre_validation_test_utils import ValidatorModelTests
+from testing_utils.values_for_tests import ValidValues, InvalidValues
 from models.fhir_immunization_pre_validators import PreValidators
 
 class TestImmunizationModelPreValidationRules(unittest.TestCase):
@@ -37,9 +35,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         self.validator = ImmunizationValidator(add_post_validators=False)
         self.redis_patcher = patch("models.utils.validation_utils.redis_client")
         self.mock_redis_client = self.redis_patcher.start()
-        
-        
-        
+
     def tearDown(self):
         patch.stopall()
 
@@ -1173,13 +1169,13 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
 
         system_location = "doseQuantity.system"
         ValidatorModelTests.test_string_value(self, system_location, valid_strings_to_test=["http://unitsofmeasure.org"])
-    
+
     def test_pre_validate_dose_quantity_code(self):
         """Test pre_validate_dose_quantity_code accepts valid values and rejects invalid values"""
 
         code_location = "doseQuantity.code"
         ValidatorModelTests.test_string_value(self, code_location, valid_strings_to_test=["ABC123"])
-    
+
     def test_pre_validate_dose_quantity_system_and_code(self):
         """Test pre_validate_dose_quantity_system_and_code accepts valid values and rejects invalid values"""
 

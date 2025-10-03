@@ -14,7 +14,7 @@ from filter import (
     replace_address_postal_codes,
     replace_organization_values,
 )
-from tests.utils.generic_utils import load_json_data
+from testing_utils.generic_utils import load_json_data
 
 
 class TestFilter(unittest.TestCase):

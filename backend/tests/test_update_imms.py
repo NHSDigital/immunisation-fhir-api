@@ -1,8 +1,7 @@
-import json
 import unittest
 from unittest.mock import create_autospec, patch
 
-from fhir_controller import FhirController
+from controller.fhir_controller import FhirController
 from models.errors import Severity, Code, create_operation_outcome
 from update_imms_handler import update_imms
 from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
@@ -36,7 +35,7 @@ class TestUpdateImmunizations(unittest.TestCase):
         self.controller.update_immunization.assert_called_once_with(lambda_event)
         self.assertDictEqual(exp_res, act_res)
 
-    @patch("update_imms_handler.FhirController.create_response")
+    @patch("update_imms_handler.create_response")
     def test_update_imms_exception(self, mock_create_response):
         """unhandled exceptions should result in 500"""
         lambda_event = {"pathParameters": {"id": "an-id"}}
@@ -68,7 +67,7 @@ class TestUpdateImmunizations(unittest.TestCase):
         self.assertEqual(diagnostics, GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE)
         self.assertEqual(act_res, mock_response)
 
-        
+
 
     def test_update_imms_with_duplicated_identifier_returns_error(self):
         """Should return an IdentifierDuplication error"""
