@@ -12,7 +12,7 @@ provider "aws" {
 # Create all resources to Protect
 resource "aws_shield_protection" "nat_eip" {
   name         = "shield_nat_eip"
-  resource_arn = "arn:aws:ec2:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:eip-allocation/${aws_eip.example.id}"
+  resource_arn = "arn:aws:ec2:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:eip-allocation/${aws_eip.nat.id}"
 
   tags = {
     Environment = "imms-${var.environment}-fhir-api-eip-shield"
