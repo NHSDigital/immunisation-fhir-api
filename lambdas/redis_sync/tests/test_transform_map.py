@@ -33,3 +33,12 @@ class TestTransformMap(unittest.TestCase):
         self.assertEqual(result, {"result": "vaccine"})
         self.mock_logger_info.assert_any_call(
             "Transforming data for file type: %s", RedisCacheKey.DISEASE_MAPPING_FILE_KEY)
+
+    def test_validation_rules_file_key_calls_validation_rules(self):
+        data = {"validation": "schema"}
+        self.mock_validation_rules.return_value = {"validation_rules": data}
+        result = transform_map(data, RedisCacheKey.VALIDATION_RULES_FILE_KEY)
+        self.mock_validation_rules.assert_called_once_with(data)
+        self.assertEqual(result, {"validation_rules": data})
+        self.mock_logger_info.assert_any_call(
+            "Transforming data for file type: %s", RedisCacheKey.VALIDATION_RULES_FILE_KEY)
