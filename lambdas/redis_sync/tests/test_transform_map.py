@@ -12,7 +12,7 @@ class TestTransformMap(unittest.TestCase):
         self.mock_supplier_permissions = patch("transform_map.transform_supplier_permissions",
                                                return_value={"result": "supplier"}).start()
         self.mock_vaccine_map = patch("transform_map.transform_vaccine_map", return_value={"result": "vaccine"}).start()
-        self.mock_validation_schema = patch("transform_map.transform_validation_schema").start()
+        self.mock_validation_rules = patch("transform_map.transform_validation_rules").start()
 
     def tearDown(self):
         patch.stopall()
@@ -27,7 +27,7 @@ class TestTransformMap(unittest.TestCase):
 
     def test_disease_mapping_file_key_calls_vaccine_map(self):
         data = {"other": "data"}
-        self.mock_validation_schema.return_value = {"validation_schema": data}
+        self.mock_validation_rules.return_value = {"validation_rules": data}
         result = transform_map(data, RedisCacheKey.DISEASE_MAPPING_FILE_KEY)
         self.mock_vaccine_map.assert_called_once_with(data)
         self.assertEqual(result, {"result": "vaccine"})

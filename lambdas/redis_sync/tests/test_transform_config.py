@@ -3,7 +3,7 @@ import unittest
 import json
 from unittest.mock import patch
 from transform_configs import (
-    transform_vaccine_map, transform_supplier_permissions, transform_validation_schema
+    transform_vaccine_map, transform_supplier_permissions, transform_validation_rules
 )
 
 
@@ -45,11 +45,11 @@ class TestBase(unittest.TestCase):
         result = transform_supplier_permissions(self.supplier_data)
         self.assertEqual(result["ods_code_to_supplier"], expected)
 
-    def test_validation_schema(self):
-        # validation schema is simple json returned as is to key "validation_schema"
+    def test_validation_rules(self):
+        # validation schema is simple json returned as is to key "validation_rules"
         sample_schema = {"type": "object", "properties": {"name": {"type": "string"}}}
-        result = transform_validation_schema(sample_schema)
-        self.assertEqual(result, {"validation_schema": sample_schema})
+        result = transform_validation_rules(sample_schema)
+        self.assertEqual(result, {"validation_rules": sample_schema})
 
     def test_empty_input(self):
         result = transform_supplier_permissions([])

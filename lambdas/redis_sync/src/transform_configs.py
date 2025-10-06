@@ -48,5 +48,5 @@ def transform_supplier_permissions(mapping):
     }
 
 
-def transform_validation_schema(data) -> dict:
-    return {"validation_schema": data}
+def transform_validation_rules(data) -> dict:
+    return {"validation_rules": data}
