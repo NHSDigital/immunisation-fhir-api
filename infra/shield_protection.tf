@@ -11,32 +11,24 @@ provider "aws" {
 
 # Create all resources to Protect
 resource "aws_shield_protection" "nat_eip" {
-  name         = "shield_nat_eip"
+  name         = "imms-${var.environment}-fhir-api-eip-shield"
   resource_arn = "arn:aws:ec2:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:eip-allocation/${aws_eip.nat.id}"
-
-  tags = {
-    Environment = "imms-${var.environment}-fhir-api-eip-shield"
-  }
 }
 
 resource "aws_shield_protection" "parent_dns" {
   provider     = aws.use1
-  name         = "shield_ddos_parent_zone"
+  name         = "imms-${var.environment}-fhir-api-parent-dns-shield"
   resource_arn = aws_route53_zone.parent_hosted_zone.arn
 
   tags = {
-    Environment = "imms-${var.environment}-fhir-api-parent-dns-shield"
+    Environment = 
   }
 }
 
 resource "aws_shield_protection" "child_dns" {
   provider     = aws.use1
-  name         = "route53_shield_ddos_childzone"
+  name         = "imms-${var.environment}-fhir-api-parent-dns-shield"
   resource_arn = aws_route53_zone.child_hosted_zone.arn
-
-  tags = {
-    Environment = "imms-${var.environment}-fhir-api-child-dns-shield"
-  }
 }
 
 
@@ -45,9 +37,6 @@ locals {
   regional_shield_arn = {
     nat_gateway_eip = aws_shield_protection.nat_eip.resource_arn
   }
-}
-
-locals {
   global_shield_arn = {
     route53_parent_zone = aws_shield_protection.parent_dns.resource_arn
     route53_child_zone = aws_shield_protection.child_dns.resource_arn

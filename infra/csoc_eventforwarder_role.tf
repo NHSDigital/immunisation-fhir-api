@@ -1,5 +1,5 @@
 resource "aws_iam_role" "eventbridge_forwarder_role" {
-  name = "${local.short_prefix}-eventbridge-forwarder-role"
+  name = "imms-${var.environment}-eventbridge-forwarder-role"
   assume_role_policy = jsonencode({
     Version : "2012-10-17",
     Statement = [{
@@ -9,7 +9,7 @@ resource "aws_iam_role" "eventbridge_forwarder_role" {
       Action   = "sts:AssumeRole",
       Condition = {
         StringEquals = {
-          "aws:SourceAccount" = var.immunisation_account_id
+          "aws:SourceAccount" = var.imms_account_id
         }
       }
     }]
@@ -17,7 +17,7 @@ resource "aws_iam_role" "eventbridge_forwarder_role" {
 }
 
 resource "aws_iam_role_policy" "eventbridge_forwarder_policy" {
-  name = "${local.short_prefix}-eventbridge-forwarder-policy"
+  name = "imms-${var.environment}-eventbridge-forwarder-policy"
   role = aws_iam_role.eventbridge_forwarder_role.id
 
   policy = jsonencode({
