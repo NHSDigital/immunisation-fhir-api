@@ -24,6 +24,10 @@ class RedisCacher:
 
             # Transform
             redis_mappings = transform_map(config_file_content, file_key)
+            if not redis_mappings:
+                msg = f"No valid Redis mappings found for file '{file_key}'. Nothing uploaded."
+                logger.warning(msg)
+                return {"status": "warning", "message": msg}
 
             redis_client = get_redis_client()
             for key, mapping in redis_mappings.items():
