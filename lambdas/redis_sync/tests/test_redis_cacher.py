@@ -6,21 +6,14 @@ from redis_cacher import RedisCacher
 class TestRedisCacher(unittest.TestCase):
 
     def setUp(self):
-        # mock s3_reader and transform_map
-        self.s3_reader_patcher = patch("redis_cacher.S3Reader")
-        self.mock_s3_reader = self.s3_reader_patcher.start()
-        self.transform_map_patcher = patch("redis_cacher.transform_map")
-        self.mock_transform_map = self.transform_map_patcher.start()
-        self.redis_client_patcher = patch("common.redis_client.redis_client")
-        self.mock_redis_client = self.redis_client_patcher.start()
-        self.logger_info_patcher = patch("logging.Logger.info")
-        self.mock_logger_info = self.logger_info_patcher.start()
+        self.mock_s3_reader = patch("redis_cacher.S3Reader").start()
+        self.mock_transform_map = patch("redis_cacher.transform_map").start()
+        self.mock_redis_client = patch("common.redis_client.redis_client").start()
+        self.mock_logger_info = patch("logging.Logger.info").start()
+        self.mock_logger_warning = patch("logging.Logger.warning").start()
 
     def tearDown(self):
-        self.s3_reader_patcher.stop()
-        self.transform_map_patcher.stop()
-        self.redis_client_patcher.stop()
-        self.logger_info_patcher.stop()
+        patch.stopall()
 
     def test_upload(self):
         mock_data = {"a": "b"}
@@ -75,3 +68,21 @@ class TestRedisCacher(unittest.TestCase):
         })
         self.mock_redis_client.hdel.assert_called_once_with("hash_name", "obsolete_key_1", "obsolete_key_2")
         self.assertEqual(result, {"status": "success", "message": f"File {file_key} uploaded to Redis cache."})
+
+    def test_unrecognised_format(self):
+        mock_data = {"a": "b"}
+
+        self.mock_s3_reader.read = unittest.mock.Mock()
+        self.mock_s3_reader.read.return_value = mock_data
+        self.mock_transform_map.return_value = {}
+
+        bucket_name = "bucket"
+        file_key = "file-key.my_yaml"
+        result = RedisCacher.upload(bucket_name, file_key)
+
+        self.mock_s3_reader.read.assert_called_once_with(bucket_name, file_key)
+        self.assertEqual(result["status"], "warning")
+        self.assertEqual(result["message"], f"No valid Redis mappings found for file '{file_key}'. Nothing uploaded.")
+        self.mock_logger_warning.assert_called_once()
+        self.mock_redis_client.hmset.assert_not_called()
+        self.mock_redis_client.hdel.assert_not_called()
