@@ -2,7 +2,9 @@
 import unittest
 import json
 from unittest.mock import patch
-from transform_configs import transform_vaccine_map, transform_supplier_permissions, transform_generic
+from transform_configs import (
+    transform_vaccine_map, transform_supplier_permissions, transform_validation_schema
+)
 
 
 class TestBase(unittest.TestCase):
@@ -67,30 +69,7 @@ class TestTransformGeneric(TestBase):
     def tearDown(self):
         super().tearDown()
 
-    def test_json_file_transformation(self):
-        data = {"name": "test"}
-        file_type = "example.json"
-        expected = {"example_json": data}
-        result = transform_generic(data, file_type)
-        self.assertEqual(result, expected)
-
-    def test_json_file_with_uppercase_extension(self):
-        data = {"key": "value"}
-        file_type = "SamPle.JSON"
-        expected = {"sample_json": data}
-        result = transform_generic(data, file_type)
-        self.assertEqual(result, expected)
-
-    def test_unrecognized_file_type_returns_empty_dict(self):
-        data = {"key1": "value1"}
-        file_type = "example.txt"
-        result = transform_generic(data, file_type)
-        self.assertEqual(result, {})
-
-    @patch('logging.getLogger')
-    def test_warning_logged_for_unrecognized_file_type(self, mock_get_logger):
-        file_type = "unsupported.csv"
-        transform_generic({}, file_type)
-        self.mock_logger_warning.assert_called_once_with(
-            f"Unrecognized file type: {file_type}."
-        )
+    def test_transform_validation_schema(self):
+        data = {"some": "data"}
+        result = transform_validation_schema(data, )
+        self.assertEqual(result, {"validation_schema": data})

@@ -48,10 +48,5 @@ def transform_supplier_permissions(mapping):
     }
 
 
-def transform_generic(data, file_type) -> dict:
-    # check for generic json file
-    if file_type.lower().endswith('.json'):
-        key = f"{file_type.split('.')[0]}_json"
-        return {key.lower(): data}
-    logger.warning(f"Unrecognized file type: {file_type}.")
-    return {}  # Default case, return empty dict if no transformation is defined
+def transform_validation_schema(data) -> dict:
+    return {"validation_schema": data}
