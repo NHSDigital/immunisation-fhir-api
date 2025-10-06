@@ -24,6 +24,9 @@ from models.errors import (
 logging.basicConfig(level="INFO")
 logger = logging.getLogger()
 
+print("Set up logger during Lambda init")
+print(logger.getEffectiveLevel())
+
 QUEUE_URL = os.getenv("SQS_QUEUE_URL")
 
 
@@ -61,6 +64,10 @@ def forward_request_to_dynamo(
 def forward_lambda_handler(event, _):
     """Forward each row to the Imms API"""
     logger.info("Processing started")
+
+    print("############")
+    print("Checking log level once Lambda handler invoked. Expecting warning rather than info")
+    print(logger.getEffectiveLevel())
     table = create_table()
     filename_to_events_mapper = BatchFilenameToEventsMapper()
     array_of_identifiers = []
