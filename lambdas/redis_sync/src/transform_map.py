@@ -15,7 +15,7 @@ def transform_map(data, file_type) -> dict:
         return transform_supplier_permissions(data)
     if file_type == RedisCacheKey.DISEASE_MAPPING_FILE_KEY:
         return transform_vaccine_map(data)
-    if file_type == RedisCacheKey.validation_rules_FILE_KEY:
+    if file_type == RedisCacheKey.VALIDATION_RULES_FILE_KEY:
         return transform_validation_rules(data)
 
     logger.info("No specific transformation defined for file type: %s", file_type)
