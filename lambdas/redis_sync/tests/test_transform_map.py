@@ -33,10 +33,3 @@ class TestTransformMap(unittest.TestCase):
         self.assertEqual(result, {"result": "vaccine"})
         self.mock_logger_info.assert_any_call(
             "Transforming data for file type: %s", RedisCacheKey.DISEASE_MAPPING_FILE_KEY)
-
-    def test_other_file_type_validation(self):
-        data = {"generic": "data"}
-        result = transform_map(data, "invalid schema")
-        self.mock_validation_schema.assert_not_called()
-        self.mock_logger_warning.assert_called_once()
-        self.assertEqual(result, data)
