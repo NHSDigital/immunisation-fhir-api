@@ -7,7 +7,7 @@ from transform_configs import (
 )
 
 
-class TestBase(unittest.TestCase):
+class TestTransformConfigs(unittest.TestCase):
     def setUp(self):
         self.mock_logger_info = patch("transform_configs.logger.info").start()
         self.mock_logger_warning = patch("transform_configs.logger.warning").start()
