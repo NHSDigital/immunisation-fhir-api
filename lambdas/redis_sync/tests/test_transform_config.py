@@ -12,14 +12,6 @@ class TestBase(unittest.TestCase):
         self.mock_logger_info = patch("transform_configs.logger.info").start()
         self.mock_logger_warning = patch("transform_configs.logger.warning").start()
 
-    def tearDown(self):
-        patch.stopall()
-
-
-class TestTransformConfigs(TestBase):
-    def setUp(self):
-        super().setUp()
-
         with open("./tests/test_data/disease_mapping.json") as mapping_data:
             self.sample_map = json.load(mapping_data)
 
@@ -27,7 +19,7 @@ class TestTransformConfigs(TestBase):
             self.supplier_data = json.load(permissions_data)
 
     def tearDown(self):
-        super().tearDown()
+        patch.stopall()
 
     def test_disease_to_vacc(self):
         with open("./tests/test_data/expected_disease_to_vacc.json") as f:
@@ -53,23 +45,15 @@ class TestTransformConfigs(TestBase):
         result = transform_supplier_permissions(self.supplier_data)
         self.assertEqual(result["ods_code_to_supplier"], expected)
 
+    def test_validation_schema(self):
+        # validation schema is simple json returned as is to key "validation_schema"
+        sample_schema = {"type": "object", "properties": {"name": {"type": "string"}}}
+        result = transform_validation_schema(sample_schema)
+        self.assertEqual(result, {"validation_schema": sample_schema})
+
     def test_empty_input(self):
         result = transform_supplier_permissions([])
         self.assertEqual(result, {
             "supplier_permissions": {},
             "ods_code_to_supplier": {},
         })
-
-
-class TestTransformGeneric(TestBase):
-
-    def setUp(self):
-        super().setUp()
-
-    def tearDown(self):
-        super().tearDown()
-
-    def test_transform_validation_schema(self):
-        data = {"some": "data"}
-        result = transform_validation_schema(data, )
-        self.assertEqual(result, {"validation_schema": data})
