@@ -18,6 +18,5 @@ def transform_map(data, file_type) -> dict:
     if file_type == RedisCacheKey.VALIDATION_SCHEMA_FILE_KEY:
         return transform_validation_schema(data)
 
-    logger.warning("No specific transformation defined for file type: %s", file_type)
-
-    return data
+    logger.info("No specific transformation defined for file type: %s", file_type)
+    return data  # Default case, return data as is if no transformation is defined
