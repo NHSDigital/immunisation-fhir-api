@@ -2,13 +2,15 @@
 import unittest
 import json
 from unittest.mock import patch
-from transform_configs import transform_vaccine_map, transform_supplier_permissions
+from transform_configs import (
+    transform_vaccine_map, transform_supplier_permissions, transform_validation_rules
+)
 
 
 class TestTransformConfigs(unittest.TestCase):
     def setUp(self):
-        self.logger_info_patcher = patch("transform_configs.logger.info")
-        self.mock_logger_info = self.logger_info_patcher.start()
+        self.mock_logger_info = patch("transform_configs.logger.info").start()
+        self.mock_logger_warning = patch("transform_configs.logger.warning").start()
 
         with open("./tests/test_data/disease_mapping.json") as mapping_data:
             self.sample_map = json.load(mapping_data)
@@ -17,7 +19,7 @@ class TestTransformConfigs(unittest.TestCase):
             self.supplier_data = json.load(permissions_data)
 
     def tearDown(self):
-        self.logger_info_patcher.stop()
+        patch.stopall()
 
     def test_disease_to_vacc(self):
         with open("./tests/test_data/expected_disease_to_vacc.json") as f:
@@ -42,6 +44,12 @@ class TestTransformConfigs(unittest.TestCase):
             expected = json.load(f)
         result = transform_supplier_permissions(self.supplier_data)
         self.assertEqual(result["ods_code_to_supplier"], expected)
+
+    def test_validation_rules(self):
+        # validation schema is simple json returned as is to key "validation_rules"
+        sample_schema = {"type": "object", "properties": {"name": {"type": "string"}}}
+        result = transform_validation_rules(sample_schema)
+        self.assertEqual(result, {"validation_rules": sample_schema})
 
     def test_empty_input(self):
         result = transform_supplier_permissions([])
