@@ -14,10 +14,6 @@ resource "aws_shield_protection" "parent_dns" {
   provider     = aws.use1
   name         = "imms-${var.environment}-fhir-api-parent-dns-shield"
   resource_arn = aws_route53_zone.parent_hosted_zone.arn
-
-  tags = {
-    Environment = 
-  }
 }
 
 resource "aws_shield_protection" "child_dns" {
@@ -63,7 +59,7 @@ resource "aws_cloudwatch_metric_alarm" "ddos_protection_regional" {
 
 # Create Metric Alarms for Global Resources in us-east-1 Region
 resource "aws_cloudwatch_metric_alarm" "ddos_protection_global" {
-  for_each = locals.global_shield_arn
+  for_each = local.global_shield_arn
 
   provider            = aws.use1
   alarm_name          = "shield_ddos_${each.key}"
@@ -106,7 +102,7 @@ resource "aws_cloudwatch_event_target" "shield_ddos_target_regional" {
   rule      = aws_cloudwatch_event_rule.shield_ddos_rule_regional.name
   target_id = "csoc-eventbus"
   arn       = "arn:aws:events:eu-west-2:${var.csoc_account_id}:event-bus/shield-eventbus"
-  role_arn  = aws_iam_role.shield_ddos_forwarder.arn
+  role_arn  = aws_iam_role.eventbridge_forwarder_role.arn
 }
 
 # Event Bus Rule for us-east-1 Region
@@ -130,5 +126,5 @@ resource "aws_cloudwatch_event_target" "shield_ddos_target_global" {
   rule      = aws_cloudwatch_event_rule.shield_ddos_rule_global.name
   target_id = "csoc-eventbus"
   arn       = "arn:aws:events:us-east-1:${var.csoc_account_id}:event-bus/shield-eventbus"
-  role_arn  = aws_iam_role.shield_ddos_forwarder.arn
+  role_arn  = aws_iam_role.eventbridge_forwarder_role.arn
 }
