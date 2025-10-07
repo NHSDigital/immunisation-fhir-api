@@ -217,6 +217,7 @@ resource "aws_lambda_function" "mesh_file_converter_lambda" {
 
   environment {
     variables = {
+      ACCOUNT_ID              = var.immunisation_account_id
       DESTINATION_BUCKET_NAME = aws_s3_bucket.batch_data_source_bucket.bucket
     }
   }

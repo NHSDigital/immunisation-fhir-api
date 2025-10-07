@@ -6,6 +6,8 @@ import boto3
 from botocore.exceptions import ClientError
 from moto import mock_aws
 
+MOCK_MOTO_ACCOUNT_ID = "123456789012"
+
 
 def invoke_lambda(file_key: str):
     # Local import so that globals can be mocked
@@ -26,7 +28,7 @@ def invoke_lambda(file_key: str):
 
 
 @mock_aws
-@patch.dict(os.environ, {"DESTINATION_BUCKET_NAME": "destination-bucket"})
+@patch.dict(os.environ, {"DESTINATION_BUCKET_NAME": "destination-bucket", "ACCOUNT_ID": MOCK_MOTO_ACCOUNT_ID})
 class TestLambdaHandler(TestCase):
     def setUp(self):
         s3 = boto3.client("s3", region_name="eu-west-2")
