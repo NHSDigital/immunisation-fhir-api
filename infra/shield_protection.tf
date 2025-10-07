@@ -84,7 +84,7 @@ resource "aws_cloudwatch_metric_alarm" "ddos_protection_global" {
 # Event Bus Rule for eu-west-2 Region
 
 resource "aws_cloudwatch_event_rule" "shield_ddos_rule_regional" {
-  name        = "imms_${var.environment}_shield_ddos_rule_${data.aws_region.current.name}"
+  name        = "imms_${var.environment}_shield_ddos_rule_${data.aws_region.current.region}"
   description = "Forward Shield DDoS CloudWatch alarms to CSOC event bus"
 
   event_pattern = jsonencode({
