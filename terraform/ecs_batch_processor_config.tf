@@ -27,7 +27,7 @@ resource "aws_ecr_repository" "processing_repository" {
 # Build and Push Docker Image to ECR (Reusing the existing module)
 module "processing_docker_image" {
   source  = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version = "7.20.2"
+  version = "8.1.0"
 
   docker_file_path = "Dockerfile"
   create_ecr_repo  = false
@@ -93,7 +93,7 @@ resource "aws_iam_policy" "ecs_task_exec_policy" {
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ],
-        Resource = "arn:aws:logs:${var.aws_region}:${local.immunisation_account_id}:log-group:/aws/vendedlogs/ecs/${local.short_prefix}-processor-task:*"
+        Resource = "arn:aws:logs:${var.aws_region}:${var.immunisation_account_id}:log-group:/aws/vendedlogs/ecs/${local.short_prefix}-processor-task:*"
       },
       {
         Effect = "Allow",
@@ -148,14 +148,7 @@ resource "aws_iam_policy" "ecs_task_exec_policy" {
         Action = [
           "ecr:GetAuthorizationToken"
         ],
-        Resource = "arn:aws:ecr:${var.aws_region}:${local.immunisation_account_id}:repository/${local.short_prefix}-processing-repo"
-      },
-      {
-        Effect = "Allow"
-        Action = "lambda:InvokeFunction"
-        Resource = [
-          aws_lambda_function.file_processor_lambda.arn
-        ]
+        Resource = "arn:aws:ecr:${var.aws_region}:${var.immunisation_account_id}:repository/${local.short_prefix}-processing-repo"
       },
       {
         "Effect" : "Allow",
@@ -223,8 +216,12 @@ resource "aws_ecs_task_definition" "ecs_task" {
         value = aws_dynamodb_table.audit-table.name
       },
       {
-        name  = "FILE_NAME_PROC_LAMBDA_NAME"
-        value = aws_lambda_function.file_processor_lambda.function_name
+        name  = "REDIS_HOST"
+        value = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].address
+      },
+      {
+        name  = "REDIS_PORT"
+        value = tostring(data.aws_elasticache_cluster.existing_redis.cache_nodes[0].port)
       }
     ]
     logConfiguration = {
@@ -271,7 +268,7 @@ resource "aws_iam_policy" "fifo_pipe_policy" {
           "pipes:DescribePipe"
         ],
         Resource = [
-          "arn:aws:pipes:${var.aws_region}:${local.immunisation_account_id}:pipe/${local.short_prefix}-pipe",
+          "arn:aws:pipes:${var.aws_region}:${var.immunisation_account_id}:pipe/${local.short_prefix}-pipe",
           aws_ecs_task_definition.ecs_task.arn
         ]
       },
@@ -288,11 +285,11 @@ resource "aws_iam_policy" "fifo_pipe_policy" {
         ],
         Effect = "Allow",
         Resource = [
-          "arn:aws:logs:${var.aws_region}:${local.immunisation_account_id}:log-group:/aws/vendedlogs/pipes/${local.short_prefix}-pipe-logs:*",
-          "arn:aws:ecs:${var.aws_region}:${local.immunisation_account_id}:task/${local.short_prefix}-ecs-cluster/*",
-          "arn:aws:logs:${var.aws_region}:${local.immunisation_account_id}:log-group:/aws/vendedlogs/ecs/${local.short_prefix}-processor-task:*",
+          "arn:aws:logs:${var.aws_region}:${var.immunisation_account_id}:log-group:/aws/vendedlogs/pipes/${local.short_prefix}-pipe-logs:*",
+          "arn:aws:ecs:${var.aws_region}:${var.immunisation_account_id}:task/${local.short_prefix}-ecs-cluster/*",
+          "arn:aws:logs:${var.aws_region}:${var.immunisation_account_id}:log-group:/aws/vendedlogs/ecs/${local.short_prefix}-processor-task:*",
           aws_sqs_queue.supplier_fifo_queue.arn,
-          "arn:aws:ecs:${var.aws_region}:${local.immunisation_account_id}:cluster/${local.short_prefix}-ecs-cluster",
+          "arn:aws:ecs:${var.aws_region}:${var.immunisation_account_id}:cluster/${local.short_prefix}-ecs-cluster",
           aws_ecs_task_definition.ecs_task.arn
         ]
       },
@@ -326,7 +323,7 @@ resource "aws_pipes_pipe" "fifo_pipe" {
       launch_type         = "FARGATE"
       network_configuration {
         aws_vpc_configuration {
-          subnets          = data.aws_subnets.default.ids
+          subnets          = local.private_subnet_ids
           assign_public_ip = "ENABLED"
         }
       }
@@ -359,4 +356,34 @@ resource "aws_pipes_pipe" "fifo_pipe" {
 resource "aws_cloudwatch_log_group" "pipe_log_group" {
   name              = "/aws/vendedlogs/pipes/${local.short_prefix}-pipe-logs"
   retention_in_days = 30
+}
+
+resource "aws_cloudwatch_log_metric_filter" "record_processor_task_error_logs" {
+  count          = var.batch_error_notifications_enabled ? 1 : 0
+
+  name           = "${local.short_prefix}-RecordProcessorTaskErrorLogsFilter"
+  pattern        = "%ERROR:%"
+  log_group_name = aws_cloudwatch_log_group.ecs_task_log_group.name
+
+  metric_transformation {
+    name      = "${local.short_prefix}-RecordProcessorTaskErrorLogs"
+    namespace = "${local.short_prefix}-RecordProcessorTask"
+    value     = "1"
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "record_processor_task_error_alarm" {
+  count               = var.batch_error_notifications_enabled ? 1 : 0
+
+  alarm_name          = "${local.short_prefix}-record-processor-task-error"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = 1
+  metric_name         = "${local.short_prefix}-RecordProcessorTaskErrorLogs"
+  namespace           = "${local.short_prefix}-RecordProcessorTask"
+  period              = 120
+  statistic           = "Sum"
+  threshold           = 1
+  alarm_description   = "This sets off an alarm for any error logs found in the record processor ECS task"
+  alarm_actions       = [data.aws_sns_topic.batch_processor_errors.arn]
+  treat_missing_data  = "notBreaching"
 }

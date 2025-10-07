@@ -1,0 +1,36 @@
+{
+    "Records": [
+        {
+            "eventVersion": "2.1",
+            "eventSource": "aws:s3",
+            "awsRegion": "eu-west-2",
+            "eventTime": "2025-06-11T17:23:46.990Z",
+            "eventName": "ObjectCreated:Put",
+            "userIdentity": {
+                "principalId": "AWS:AROAVA5YK2MEBRIFRJLOJ:STWA21@hscic.gov.uk"
+            },
+            "requestParameters": {
+                "sourceIPAddress": "11.222.333.44"
+            },
+            "responseElements": {
+                "x-amz-request-id": "amz-request-id-value",
+                "x-amz-id-2": "amz-id-2-value"
+            },
+            "s3": {
+                "s3SchemaVersion": "1.0",
+                "configurationId": "tf-s3-lambda-20250610075911685100000001",
+                "bucket": {
+                    "name": "imms-internal-dev-supplier-config",
+                    "arn": "arn:aws:s3:::imms-internal-dev-supplier-config"
+                },
+                "object": {
+                    "key": "disease_vaccine.json",
+                    "size": 1345,
+                    "eTag": "etag-value",
+                    "versionId": "versionId-value",
+                    "sequencer": "sequencer-value"
+                }
+            }
+        }
+    ]
+}

@@ -48,3 +48,4 @@ extends:
           - template: ./templates/post-deploy.yml
             parameters:
               aws_account_type: 'dev'
+              subscribe_to_mns: false

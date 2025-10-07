@@ -27,6 +27,7 @@ def create_covid_19_immunization_dict(
 
     return immunization_json
 
+
 def create_covid_19_immunization_dict_no_id(
     nhs_number=VALID_NHS_NUMBER, occurrence_date_time="2021-02-07T13:28:17.271+00:00"
 ):

@@ -2,8 +2,7 @@
 
 from unittest import TestCase
 from unittest.mock import patch
-import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from moto import mock_s3
 from boto3 import client as boto3_client
 
@@ -12,14 +11,12 @@ from tests.utils_for_tests.generic_setup_and_teardown import GenericSetUp, Gener
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
+    from constants import AUDIT_TABLE_TTL_DAYS
     from clients import REGION_NAME
     from utils_for_filenameprocessor import (
-        get_created_at_formatted_string,
-        identify_supplier,
-        move_file,
-        invoke_filename_lambda,
+        get_creation_and_expiry_times,
+        move_file
     )
-    from constants import SOURCE_BUCKET_NAME, FILE_NAME_PROC_LAMBDA_NAME
 
 s3_client = boto3_client("s3", region_name=REGION_NAME)
 
@@ -36,48 +33,19 @@ class TestUtilsForFilenameprocessor(TestCase):
         """Tear down the s3 buckets"""
         GenericTearDown(s3_client)
 
-    def test_get_created_at_formatted_string(self):
-        """Test that get_created_at_formatted_string can correctly get the created_at_formatted_string"""
-        bucket_name = BucketNames.SOURCE
-        file_key = "test_file_key"
+    def test_get_creation_and_expiry_times(self):
+        """Test that get_creation_and_expiry_times can correctly get the created_at_formatted_string"""
+        mock_last_modified_created_at = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        mock_last_modified_s3_response = {"LastModified": mock_last_modified_created_at}
 
-        s3_client.put_object(Bucket=bucket_name, Key=file_key)
+        expected_result_created_at = "20240101T12000000"
+        expected_expiry_datetime = mock_last_modified_created_at + timedelta(days=int(AUDIT_TABLE_TTL_DAYS))
+        expected_result_expires_at = int(expected_expiry_datetime.timestamp())
 
-        mock_last_modified = {"LastModified": datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)}
-        expected_result = "20240101T12000000"
+        created_at_formatted_string, expires_at = get_creation_and_expiry_times(mock_last_modified_s3_response)
 
-        with patch("utils_for_filenameprocessor.s3_client.get_object", return_value=mock_last_modified):
-            created_at_formatted_string = get_created_at_formatted_string(bucket_name, file_key)
-
-        self.assertEqual(created_at_formatted_string, expected_result)
-
-    def test_identify_supplier(self):
-        """Test that identify_supplier correctly identifies supplier using ods_to_supplier_mappings"""
-        # Each test case tuple has the structure (ods_code, expected_result)
-        test_cases = (
-            ("YGM41", "EMIS"),
-            ("8J1100001", "PINNACLE"),
-            ("8HK48", "SONAR"),
-            ("YGA", "TPP"),
-            ("0DE", "AGEM-NIVS"),
-            ("0DF", "NIMS"),
-            ("8HA94", "EVA"),
-            ("X26", "RAVS"),
-            ("YGMYH", "MEDICAL_DIRECTOR"),
-            ("W00", "WELSH_DA_1"),
-            ("W000", "WELSH_DA_2"),
-            ("ZT001", "NORTHERN_IRELAND_DA"),
-            ("YA7", "SCOTLAND_DA"),
-            ("N2N9I", "COVID19_VACCINE_RESOLUTION_SERVICEDESK"),
-            ("YGJ", "EMIS"),
-            ("DPSREDUCED", "DPSREDUCED"),
-            ("DPSFULL", "DPSFULL"),
-            ("NOT_A_VALID_ODS_CODE", ""),  # Should default to empty string if ods code isn't in the mappings
-        )
-
-        for ods_code, expected_result in test_cases:
-            with self.subTest(f"SubTest for ODS code: {ods_code}"):
-                self.assertEqual(identify_supplier(ods_code), expected_result)
+        self.assertEqual(created_at_formatted_string, expected_result_created_at)
+        self.assertEqual(expires_at, expected_result_expires_at)
 
     def test_move_file(self):
         """Tests that move_file correctly moves a file from one location to another within a single S3 bucket"""
@@ -95,19 +63,3 @@ class TestUtilsForFilenameprocessor(TestCase):
         self.assertIn(destination_file_key, keys_of_objects_in_bucket)
         destination_file_content = s3_client.get_object(Bucket=BucketNames.SOURCE, Key=destination_file_key)
         self.assertEqual(destination_file_content["Body"].read().decode("utf-8"), source_file_content)
-
-    def test_invoke_filename_lambda(self):
-        """Tests that invoke_filename_lambda correctly invokes the filenameprocessor lambda"""
-        file_key = "test_file_key"
-        message_id = "test_message_id"
-
-        with patch("utils_for_filenameprocessor.lambda_client.invoke") as mock_lambda_client_invoke:
-            invoke_filename_lambda(file_key, message_id)
-
-        s3_details = {"bucket": {"name": SOURCE_BUCKET_NAME}, "object": {"key": file_key}}
-        payload = json.dumps({"Records": [{"s3": s3_details, "message_id": message_id}]})
-        # NOTE: Due to the limitations of MOTO it is not possible to check invocations of the
-        # filenameprocessor lambda to ensure that the invocation was successful
-        mock_lambda_client_invoke.assert_called_once_with(
-            FunctionName=FILE_NAME_PROC_LAMBDA_NAME, InvocationType="Event", Payload=payload
-        )

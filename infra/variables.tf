@@ -1,30 +1,43 @@
-data "aws_vpc" "default" {
-  default = true
-}
-
-data "aws_subnets" "default" {
-  filter {
-    name   = "vpc-id"
-    values = [data.aws_vpc.default.id]
-  }
-}
-
-data "aws_route_tables" "default_route_tables" {
-  vpc_id = data.aws_vpc.default.id
-}
-
 variable "aws_region" {
+  type    = string
   default = "eu-west-2"
 }
-
-locals {
-  account                 = terraform.workspace # non-prod or prod
-  dspp_core_account_id    = local.account == "prod" ? 232116723729 : 603871901111
-  immunisation_account_id = local.account == "prod" ? 664418956997 : 345594581768
-  # TODO - add new accounts for CDP migration
+variable "imms_account_id" {
+  description = "Immunisation AWS account ID"
+  type        = string
+}
+variable "dspp_account_id" {
+  description = "DSPP Core AWS account ID"
+  type        = string
+}
+variable "auto_ops_role" {
+  default = "role/auto-ops"
+  type    = string
+}
+variable "admin_role" {
+  default = "root"
+  type    = string
+}
+variable "dev_ops_role" {
+  type = string
+}
+variable "dspp_admin_role" {
+  type = string
+}
+variable "build_agent_account_id" {
+  type    = string
+  default = "958002497996"
+}
+variable "environment" {
+  type        = string
+  description = "Immunisation AWS account name (dev / preprod / prod)"
+  default     = "dev"
+}
+variable "blue_green_split" {
+  type        = bool
+  description = "Whether this account uses blue / green split deployments"
+  default     = false
 }
 
-# TODO - why is this not managed by terraform?
-data "aws_kms_key" "existing_s3_encryption_key" {
-  key_id = "alias/imms-batch-s3-shared-key"
-}
+variable "mns_account_id" {}
+variable "mns_admin_role" {}

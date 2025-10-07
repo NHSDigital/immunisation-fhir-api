@@ -13,7 +13,7 @@ from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests impo
 from tests.utils_for_recordprocessor_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
-    from src.send_to_kinesis import send_to_kinesis
+    from send_to_kinesis import send_to_kinesis
 
 kinesis_client = boto3_client("kinesis", region_name=REGION_NAME)
 

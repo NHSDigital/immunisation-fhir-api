@@ -21,7 +21,7 @@ resource "aws_ecr_repository" "operation_lambda_repository" {
 #resource "docker_image" "lambda_function_docker" {
 module "docker_image" {
   source  = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version = "7.20.2"
+  version = "8.1.0"
 
   create_ecr_repo  = false
   ecr_repo         = "${local.prefix}-operation-lambda-repo"
@@ -74,13 +74,13 @@ resource "aws_ecr_repository_policy" "operation_lambda_ECRImageRetreival_policy"
         "Condition" : {
           "StringLike" : {
             "aws:sourceArn" : [
-              "arn:aws:lambda:eu-west-2:${local.immunisation_account_id}:function:${local.short_prefix}_get_status",
-              "arn:aws:lambda:eu-west-2:${local.immunisation_account_id}:function:${local.short_prefix}_not_found",
-              "arn:aws:lambda:eu-west-2:${local.immunisation_account_id}:function:${local.short_prefix}_search_imms",
-              "arn:aws:lambda:eu-west-2:${local.immunisation_account_id}:function:${local.short_prefix}_get_imms",
-              "arn:aws:lambda:eu-west-2:${local.immunisation_account_id}:function:${local.short_prefix}_delete_imms",
-              "arn:aws:lambda:eu-west-2:${local.immunisation_account_id}:function:${local.short_prefix}_create_imms",
-              "arn:aws:lambda:eu-west-2:${local.immunisation_account_id}:function:${local.short_prefix}_update_imms"
+              "arn:aws:lambda:eu-west-2:${var.immunisation_account_id}:function:${local.short_prefix}_get_status",
+              "arn:aws:lambda:eu-west-2:${var.immunisation_account_id}:function:${local.short_prefix}_not_found",
+              "arn:aws:lambda:eu-west-2:${var.immunisation_account_id}:function:${local.short_prefix}_search_imms",
+              "arn:aws:lambda:eu-west-2:${var.immunisation_account_id}:function:${local.short_prefix}_get_imms",
+              "arn:aws:lambda:eu-west-2:${var.immunisation_account_id}:function:${local.short_prefix}_delete_imms",
+              "arn:aws:lambda:eu-west-2:${var.immunisation_account_id}:function:${local.short_prefix}_create_imms",
+              "arn:aws:lambda:eu-west-2:${var.immunisation_account_id}:function:${local.short_prefix}_update_imms"
             ]
           }
         }

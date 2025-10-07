@@ -1,0 +1,29 @@
+name: Create PR JIRA Link
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  link-ticket:
+    runs-on: ubuntu-latest
+    env:
+      BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
+    steps:
+      - name: Check ticket name conforms to requirements
+        run: echo $BRANCH_NAME | grep -i -E -q "(ved-[0-9]+)|(dependabot\/)"
+        continue-on-error: true
+
+      - name: Grab ticket name
+        run: echo "TICKET_NAME=$(echo $BRANCH_NAME | grep -i -o '\(ved-[0-9]\+\)' | tr '[:lower:]' '[:upper:]')" >> $GITHUB_ENV
+        continue-on-error: true
+
+      - name: Comment on PR with link to JIRA ticket
+        if: contains(env.TICKET_NAME, 'VED-')
+        continue-on-error: true
+        uses: unsplash/comment-on-pr@a9bf050e744c8282dee4bb0dbcf063186d8316c4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          msg: |
+            This branch is working on a ticket in the NHS England VED JIRA Project. Here's a handy link to the ticket:
+            # [${{ env.TICKET_NAME }}](https://nhsd-jira.digital.nhs.uk/browse/${{ env.TICKET_NAME}})

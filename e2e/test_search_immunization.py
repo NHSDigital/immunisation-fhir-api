@@ -2,11 +2,11 @@ import pprint
 import uuid
 from typing import NamedTuple, Literal, Optional, List
 from decimal import Decimal
-
 from utils.base_test import ImmunizationBaseTest
 from utils.constants import valid_nhs_number1, valid_nhs_number2, valid_patient_identifier2, valid_patient_identifier1
 from utils.resource import generate_imms_resource, generate_filtered_imms_resource
 from utils.mappings import VaccineTypes
+from lib.env import get_service_base_path
 
 
 class TestSearchImmunization(ImmunizationBaseTest):
@@ -89,6 +89,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
                     vaccine_type=VaccineTypes.covid_19,
                 )
                 expected_imms_resource["id"] = imms_id
+                expected_imms_resource["meta"] = {"versionId": "1"}
 
                 # When
                 response = imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.covid_19)
@@ -131,7 +132,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
                 expected_imms_resource["patient"]["reference"] = response_patient["fullUrl"]
                 response_imm = next(item for item in entries if item["resource"]["id"] == imms_id)
                 self.assertEqual(
-                    response_imm["fullUrl"], f"https://api.service.nhs.uk/immunisation-fhir-api/Immunization/{imms_id}"
+                    response_imm["fullUrl"], f"{get_service_base_path()}/Immunization/{imms_id}"
                 )
                 self.assertEqual(response_imm["search"], {"mode": "match"})
                 self.assertEqual(response_imm["resource"], expected_imms_resource)
@@ -334,13 +335,6 @@ class TestSearchImmunization(ImmunizationBaseTest):
 
                 result_ids = [result["resource"]["id"] for result in results["entry"]]
                 created_and_returned_ids = list(set(result_ids) & set(created_resource_ids))
-                print("\n Search Test Debug Info:")
-                print("Search method:", search.method)
-                print("Search query string:", search.query_string)
-                print("Expected indexes:", search.expected_indexes)
-                print("Expected IDs:", [created_resource_ids[i] for i in search.expected_indexes])
-                print("Actual returned IDs:", result_ids)
-                print("Matched IDs:", created_and_returned_ids)
                 assert len(created_and_returned_ids) == len(search.expected_indexes)
                 for expected_index in search.expected_indexes:
                     assert created_resource_ids[expected_index] in result_ids

@@ -17,7 +17,7 @@ resource "aws_ecr_repository" "file_name_processor_lambda_repository" {
 # Module for building and pushing Docker image to ECR
 module "file_processor_docker_image" {
   source  = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version = "7.20.2"
+  version = "8.1.0"
 
   create_ecr_repo = false
   ecr_repo        = aws_ecr_repository.file_name_processor_lambda_repository.name
@@ -68,7 +68,7 @@ resource "aws_ecr_repository_policy" "filenameprocessor_lambda_ECRImageRetreival
         ],
         "Condition" : {
           "StringLike" : {
-            "aws:sourceArn" : "arn:aws:lambda:eu-west-2:${local.immunisation_account_id}:function:${local.short_prefix}-filenameproc_lambda"
+            "aws:sourceArn" : "arn:aws:lambda:eu-west-2:${var.immunisation_account_id}:function:${local.short_prefix}-filenameproc_lambda"
           }
         }
       }
@@ -105,7 +105,7 @@ resource "aws_iam_policy" "filenameprocessor_lambda_exec_policy" {
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ]
-        Resource = "arn:aws:logs:${var.aws_region}:${local.immunisation_account_id}:log-group:/aws/lambda/${local.short_prefix}-filenameproc_lambda:*"
+        Resource = "arn:aws:logs:${var.aws_region}:${var.immunisation_account_id}:log-group:/aws/lambda/${local.short_prefix}-filenameproc_lambda:*"
       },
       {
         Effect = "Allow"
@@ -161,13 +161,6 @@ resource "aws_iam_policy" "filenameprocessor_lambda_exec_policy" {
           "firehose:PutRecordBatch"
         ],
         "Resource" : "arn:aws:firehose:*:*:deliverystream/${module.splunk.firehose_stream_name}"
-      },
-      {
-        Effect = "Allow"
-        Action = "lambda:InvokeFunction"
-        Resource = [
-          "arn:aws:lambda:${var.aws_region}:${local.immunisation_account_id}:function:imms-${local.env}-filenameproc_lambda",
-        ]
       }
     ]
   })
@@ -184,7 +177,7 @@ resource "aws_iam_policy" "filenameprocessor_lambda_sqs_policy" {
       Action = [
         "sqs:SendMessage"
       ],
-      Resource = aws_sqs_queue.supplier_fifo_queue.arn
+      Resource = aws_sqs_queue.batch_file_created.arn
     }]
   })
 }
@@ -266,6 +259,7 @@ resource "aws_iam_role_policy_attachment" "filenameprocessor_lambda_dynamo_acces
   role       = aws_iam_role.filenameprocessor_lambda_exec_role.name
   policy_arn = aws_iam_policy.filenameprocessor_dynamo_access_policy.arn
 }
+
 # Lambda Function with Security Group and VPC.
 resource "aws_lambda_function" "file_processor_lambda" {
   function_name = "${local.short_prefix}-filenameproc_lambda"
@@ -276,7 +270,7 @@ resource "aws_lambda_function" "file_processor_lambda" {
   timeout       = 360
 
   vpc_config {
-    subnet_ids         = data.aws_subnets.default.ids
+    subnet_ids         = local.private_subnet_ids
     security_group_ids = [data.aws_security_group.existing_securitygroup.id]
   }
 
@@ -284,15 +278,12 @@ resource "aws_lambda_function" "file_processor_lambda" {
     variables = {
       SOURCE_BUCKET_NAME         = aws_s3_bucket.batch_data_source_bucket.bucket
       ACK_BUCKET_NAME            = aws_s3_bucket.batch_data_destination_bucket.bucket
-      QUEUE_URL                  = aws_sqs_queue.supplier_fifo_queue.url
-      CONFIG_BUCKET_NAME         = local.config_bucket_name
+      QUEUE_URL                  = aws_sqs_queue.batch_file_created.url
       REDIS_HOST                 = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].address
       REDIS_PORT                 = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].port
       SPLUNK_FIREHOSE_NAME       = module.splunk.firehose_stream_name
       AUDIT_TABLE_NAME           = aws_dynamodb_table.audit-table.name
-      FILE_NAME_GSI              = "filename_index"
-      FILE_NAME_PROC_LAMBDA_NAME = "imms-${local.env}-filenameproc_lambda"
-
+      AUDIT_TABLE_TTL_DAYS       = 60
     }
   }
   kms_key_arn                    = data.aws_kms_key.existing_lambda_encryption_key.arn
@@ -303,7 +294,6 @@ resource "aws_lambda_function" "file_processor_lambda" {
   ]
 
 }
-
 
 # Permission for S3 to invoke Lambda function
 resource "aws_lambda_permission" "s3_invoke_permission" {
@@ -321,111 +311,40 @@ resource "aws_s3_bucket_notification" "datasources_lambda_notification" {
   lambda_function {
     lambda_function_arn = aws_lambda_function.file_processor_lambda.arn
     events              = ["s3:ObjectCreated:*"]
-    #filter_prefix      =""
   }
-}
-
-# S3 Bucket notification to trigger Lambda function for config bucket
-resource "aws_s3_bucket_notification" "config_lambda_notification" {
-  # For now, only create a trigger in internal-dev and prod as those are the envs with a config bucket
-  count = local.create_config_bucket ? 1 : 0
-
-  bucket = aws_s3_bucket.batch_config_bucket[0].bucket
-
-  lambda_function {
-    lambda_function_arn = aws_lambda_function.file_processor_lambda.arn
-    events              = ["s3:ObjectCreated:*"]
-  }
-}
-
-# Permission for the new S3 bucket to invoke the Lambda function
-resource "aws_lambda_permission" "new_s3_invoke_permission" {
-  count = local.create_config_bucket ? 1 : 0
-
-  statement_id  = "AllowExecutionFromNewS3"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.file_processor_lambda.function_name
-  principal     = "s3.amazonaws.com"
-  source_arn    = local.config_bucket_arn
-}
-
-# IAM Role for ElastiCache.
-resource "aws_iam_role" "elasticache_exec_role" {
-  name = "${local.short_prefix}-elasticache-exec-role"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [{
-      Effect = "Allow",
-      Sid    = "",
-      Principal = {
-        Service = "elasticache.amazonaws.com" # ElastiCache service principal
-      },
-      Action = "sts:AssumeRole"
-    }]
-  })
-}
-
-resource "aws_iam_policy" "elasticache_permissions" {
-  name = "${local.short_prefix}-elasticache-permissions"
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "elasticache:DescribeCacheClusters",
-          "elasticache:ListTagsForResource",
-          "elasticache:AddTagsToResource",
-          "elasticache:RemoveTagsFromResource"
-        ]
-        Resource = "arn:aws:elasticache:${var.aws_region}:${local.immunisation_account_id}:cluster/immunisation-redis-cluster"
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "elasticache:CreateCacheCluster",
-          "elasticache:DeleteCacheCluster",
-          "elasticache:ModifyCacheCluster"
-        ]
-        Resource = "arn:aws:elasticache:${var.aws_region}:${local.immunisation_account_id}:cluster/immunisation-redis-cluster"
-        Condition = {
-          "StringEquals" : {
-            "aws:RequestedRegion" : var.aws_region
-          }
-        }
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "elasticache:DescribeCacheSubnetGroups"
-        ]
-        Resource = "arn:aws:elasticache:${var.aws_region}:${local.immunisation_account_id}:subnet-group/immunisation-redis-subnet-group"
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "elasticache:CreateCacheSubnetGroup",
-          "elasticache:DeleteCacheSubnetGroup",
-          "elasticache:ModifyCacheSubnetGroup"
-        ]
-        Resource = "arn:aws:elasticache:${var.aws_region}:${local.immunisation_account_id}:subnet-group/immunisation-redis-subnet-group"
-        Condition = {
-          "StringEquals" : {
-            "aws:RequestedRegion" : var.aws_region
-          }
-        }
-      }
-    ]
-  })
-}
-
-# Attach the policy to the ElastiCache role
-resource "aws_iam_role_policy_attachment" "elasticache_policy_attachment" {
-  role       = aws_iam_role.elasticache_exec_role.name
-  policy_arn = aws_iam_policy.elasticache_permissions.arn
 }
 
 resource "aws_cloudwatch_log_group" "file_name_processor_log_group" {
   name              = "/aws/lambda/${local.short_prefix}-filenameproc_lambda"
   retention_in_days = 30
+}
+
+resource "aws_cloudwatch_log_metric_filter" "file_name_processor_error_logs" {
+  count          = var.batch_error_notifications_enabled ? 1 : 0
+
+  name           = "${local.short_prefix}-FilenameProcessorErrorLogsFilter"
+  pattern        = "%\\[ERROR\\]%"
+  log_group_name = aws_cloudwatch_log_group.file_name_processor_log_group.name
+
+  metric_transformation {
+    name      = "${local.short_prefix}-FilenameProcessorErrorLogs"
+    namespace = "${local.short_prefix}-FilenameProcessorLambda"
+    value     = "1"
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "file_name_processor_error_alarm" {
+  count               = var.batch_error_notifications_enabled ? 1 : 0
+
+  alarm_name          = "${local.short_prefix}-file-name-processor-lambda-error"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = 1
+  metric_name         = "${local.short_prefix}-FilenameProcessorErrorLogs"
+  namespace           = "${local.short_prefix}-FilenameProcessorLambda"
+  period              = 120
+  statistic           = "Sum"
+  threshold           = 1
+  alarm_description   = "This sets off an alarm for any error logs found in the file name processor Lambda function"
+  alarm_actions       = [data.aws_sns_topic.batch_processor_errors.arn]
+  treat_missing_data  = "notBreaching"
 }

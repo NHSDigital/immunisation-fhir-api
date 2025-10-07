@@ -1,8 +1,15 @@
 """Generic utilities"""
 
 import datetime
-
-from typing import Literal, Union, Optional
+import json
+from typing import Literal, Union, Optional, Dict, Any
+from fhir.resources.R4B.bundle import (
+    Bundle as FhirBundle,
+    BundleEntry,
+    BundleLink,
+    BundleEntrySearch,
+)
+from fhir.resources.R4B.immunization import Immunization
 from models.constants import Constants
 import urllib.parse
 import base64
@@ -75,6 +82,7 @@ def is_valid_simple_snomed(simple_snomed: str) -> bool:
     return (
         simple_snomed is not None
         and simple_snomed.isdigit()
+        and simple_snomed[0] != '0'
         and min_snomed_length <= len(simple_snomed) <= max_snomed_length
         and validate(simple_snomed)
         and (simple_snomed[-3:-1] in ("00", "10"))
@@ -122,7 +130,6 @@ def create_diagnostics():
     exp_error = {"diagnostics": diagnostics}
     return exp_error
 
-
 def create_diagnostics_error(value):
     if value == "Both":
         diagnostics = (
@@ -133,47 +140,49 @@ def create_diagnostics_error(value):
     exp_error = {"diagnostics": diagnostics}
     return exp_error
 
-
-def form_json(response, _element, identifier, baseurl):
-    # Elements to include, based on the '_element' parameter
-    if not response:
-        json = {
-            "resourceType": "Bundle",
-            "type": "searchset",
-            "link": [
-                {"relation": "self", "url": f"{baseurl}?immunization.identifier={identifier}&_elements={_element}"}
-            ],
-            "entry": [],
-            "total": 0,
-        }
-        return json
-
-    # Basic structure for the JSON output
-    json = {
+def make_empty_bundle(self_url: str) -> Dict[str, Any]:
+    return {
         "resourceType": "Bundle",
         "type": "searchset",
-        "link": [{"relation": "self", "url": f"{baseurl}?immunization.identifier={identifier}&_elements={_element}"}],
-        "entry": [
-            {
-                "fullUrl": f"https://api.service.nhs.uk/immunisation-fhir-api/Immunization/{response['id']}",
-                "resource": {"resourceType": "Immunization"},
-            }
-        ],
-        "total": 1,
+        "link": [{"relation": "self", "url": self_url}],
+        "entry": [],
+        "total": 0, 
     }
-    __elements = _element.lower()
-    element = __elements.split(",")
-    # Add 'id' if specified
-    if "id" in element:
-        json["entry"][0]["resource"]["id"] = response["id"]
 
-    # Add 'meta' if specified
-    if "meta" in element:
-        json["entry"][0]["resource"]["id"] = response["id"]
-        json["entry"][0]["resource"]["meta"] = {"versionId": response["version"]}
+def form_json(response, _elements, identifier, baseurl):
+    self_url = f"{baseurl}?identifier={identifier}" + (f"&_elements={_elements}" if _elements else "")
 
-    return json
+    if not response:
+        return make_empty_bundle(self_url)
 
+    meta = {"versionId": response["version"]} if "version" in response else {}
+
+    # Full Immunization payload to be returned if only the identifier parameter was provided and truncated when _elements is used
+    if _elements:
+        elements = {e.strip().lower() for e in _elements.split(",") if e.strip()}
+        resource = {"resourceType": "Immunization"}
+        if "id" in elements: resource["id"] = response["id"]
+        if "meta" in elements and meta: resource["meta"] = meta
+
+    else:
+        resource = response["resource"]
+        resource["meta"] = meta
+
+    entry = BundleEntry(fullUrl=f"{baseurl}/{response['id']}",
+        resource=Immunization.construct(**resource) if _elements else Immunization.parse_obj(resource),
+        search=BundleEntrySearch.construct(mode="match") if not _elements else None,
+    )
+
+    fhir_bundle = FhirBundle(
+        resourceType="Bundle", type="searchset", 
+        link = [BundleLink(relation="self", url=self_url)], 
+        entry=[entry], 
+        total=1)
+
+    # Reassigned total to ensure it appears last in the response to match expected output
+    data = json.loads(fhir_bundle.json(by_alias=True))
+    data["total"] = data.pop("total")
+    return data
 
 def check_keys_in_sources(event, not_required_keys):
     # Decode and parse the body, assuming it is JSON and base64-encoded

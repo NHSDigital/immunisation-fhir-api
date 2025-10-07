@@ -20,7 +20,7 @@ resource "aws_ecr_repository" "forwarder_lambda_repository" {
 
 module "forwarding_docker_image" {
   source  = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version = "7.20.2"
+  version = "8.1.0"
 
   create_ecr_repo  = false
   ecr_repo         = aws_ecr_repository.forwarder_lambda_repository.name
@@ -72,7 +72,7 @@ resource "aws_ecr_repository_policy" "forwarder_lambda_ECRImageRetreival_policy"
         ],
         "Condition" : {
           "StringLike" : {
-            "aws:sourceArn" : "arn:aws:lambda:eu-west-2:${local.immunisation_account_id}:function:${local.short_prefix}-forwarding_lambda"
+            "aws:sourceArn" : "arn:aws:lambda:eu-west-2:${var.immunisation_account_id}:function:${local.short_prefix}-forwarding_lambda"
           }
         }
       }
@@ -109,7 +109,7 @@ resource "aws_iam_policy" "forwarding_lambda_exec_policy" {
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ]
-        Resource = "arn:aws:logs:${var.aws_region}:${local.immunisation_account_id}:log-group:/aws/lambda/${local.short_prefix}-forwarding_lambda:*",
+        Resource = "arn:aws:logs:${var.aws_region}:${var.immunisation_account_id}:log-group:/aws/lambda/${local.short_prefix}-forwarding_lambda:*",
       },
       {
         Effect = "Allow"
@@ -185,6 +185,15 @@ resource "aws_iam_policy" "forwarding_lambda_exec_policy" {
           "sqs:SendMessage"
         ]
         Resource = aws_sqs_queue.fifo_queue.arn
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "ec2:CreateNetworkInterface",
+          "ec2:DescribeNetworkInterfaces",
+          "ec2:DeleteNetworkInterface"
+        ],
+        Resource = "*"
       }
     ]
   })
@@ -209,12 +218,19 @@ resource "aws_lambda_function" "forwarding_lambda" {
     size = 1024
   }
 
+  vpc_config {
+    subnet_ids         = local.private_subnet_ids
+    security_group_ids = [data.aws_security_group.existing_securitygroup.id]
+  }
+
   environment {
     variables = {
       SOURCE_BUCKET_NAME  = aws_s3_bucket.batch_data_source_bucket.bucket
       ACK_BUCKET_NAME     = aws_s3_bucket.batch_data_destination_bucket.bucket
       DYNAMODB_TABLE_NAME = aws_dynamodb_table.events-dynamodb-table.name
       SQS_QUEUE_URL       = aws_sqs_queue.fifo_queue.url
+      REDIS_HOST          = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].address
+      REDIS_PORT          = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].port
     }
   }
   kms_key_arn = data.aws_kms_key.existing_lambda_encryption_key.arn

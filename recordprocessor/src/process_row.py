@@ -2,18 +2,17 @@
 
 from convert_to_fhir_imms_resource import convert_to_fhir_imms_resource
 from constants import Diagnostics
-from mappings import Vaccine
 from clients import logger
 from utils_for_recordprocessor import create_diagnostics_dictionary
 
 
-def process_row(vaccine: Vaccine, allowed_operations: set, row: dict) -> dict:
+def process_row(target_disease: list, allowed_operations: set, row: dict) -> dict:
     """
     Processes a row of the file and returns a dictionary containing the fhir_json, action_flag, imms_id, local_id
     (where applicable), version(where applicable) and any diagnostics.
     The local_id is combination of unique_id and unique_id_uri combined by "^"
     """
-    action_flag = row.get("ACTION_FLAG", "").upper()
+    action_flag = (row.get("ACTION_FLAG") or "").upper()
     unique_id_uri = row.get("UNIQUE_ID_URI")
     unique_id = row.get("UNIQUE_ID")
     local_id = f"{unique_id}^{unique_id_uri}"
@@ -41,7 +40,7 @@ def process_row(vaccine: Vaccine, allowed_operations: set, row: dict) -> dict:
         }
 
     # Handle missing UNIQUE_ID or UNIQUE_ID_URI
-    if not (row.get("UNIQUE_ID_URI") and row.get("UNIQUE_ID")):
+    if not (unique_id_uri and unique_id):
         logger.error("Invalid row format: row is missing either UNIQUE_ID or UNIQUE_ID_URI")
         return {
             "diagnostics": create_diagnostics_dictionary("MISSING_UNIQUE_ID", 400, Diagnostics.MISSING_UNIQUE_ID),
@@ -51,7 +50,7 @@ def process_row(vaccine: Vaccine, allowed_operations: set, row: dict) -> dict:
 
     # Handle success
     return {
-        "fhir_json": convert_to_fhir_imms_resource(row, vaccine),
+        "fhir_json": convert_to_fhir_imms_resource(row, target_disease, action_flag),
         "operation_requested": operation_requested,
         "local_id": local_id,
     }

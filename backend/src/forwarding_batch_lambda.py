@@ -1,10 +1,13 @@
-"""Functions for forwarding each row to the Imms API"""
+"""Lambda Handler which streams batch file entries from Kinesis and forwards to the Imms FHIR API"""
 
 import os
 import simplejson as json
 import base64
 import time
 import logging
+from datetime import datetime
+
+from batch.batch_filename_to_events_mapper import BatchFilenameToEventsMapper
 from fhir_batch_repository import create_table
 from fhir_batch_controller import ImmunizationBatchController, make_batch_controller
 from clients import sqs_client
@@ -47,23 +50,25 @@ def create_diagnostics_dictionary(error: Exception) -> dict:
 
 
 def forward_request_to_dynamo(
-    message_body: any, table: any, is_present: bool, batchcontroller: ImmunizationBatchController
+    message_body: any, table: any, is_present: bool, batch_controller: ImmunizationBatchController
 ):
     """Forwards the request to the Imms API (where possible) and updates the ack file with the outcome"""
     row_id = message_body.get("row_id")
     logger.info("FORWARDED MESSAGE: ID %s", row_id)
-    return batchcontroller.send_request_to_dynamo(message_body, table, is_present)
+    return batch_controller.send_request_to_dynamo(message_body, table, is_present)
 
 
 def forward_lambda_handler(event, _):
     """Forward each row to the Imms API"""
     logger.info("Processing started")
     table = create_table()
-    array_of_messages = []
+    filename_to_events_mapper = BatchFilenameToEventsMapper()
     array_of_identifiers = []
     controller = make_batch_controller()
+
     for record in event["Records"]:
         try:
+            operation_start_time = str(datetime.now())
             kinesis_payload = record["kinesis"]["data"]
             decoded_payload = base64.b64decode(kinesis_payload).decode("utf-8")
             incoming_message_body = json.loads(decoded_payload, use_decimal=True)
@@ -100,23 +105,28 @@ def forward_lambda_handler(event, _):
                 array_of_identifiers.append(identifier)
 
             imms_id = forward_request_to_dynamo(incoming_message_body, table, identifier_already_present, controller)
-            array_of_messages.append({**base_outgoing_message_body, "imms_id": imms_id})
+            filename_to_events_mapper.add_event(
+                { **base_outgoing_message_body,
+                 "operation_start_time": operation_start_time,
+                 "operation_end_time": str(datetime.now()),
+                 "imms_id": imms_id }
+            )
 
         except Exception as error:  # pylint: disable = broad-exception-caught
-            array_of_messages.append(
-                {**base_outgoing_message_body, "diagnostics": create_diagnostics_dictionary(error)}
+            filename_to_events_mapper.add_event(
+                { **base_outgoing_message_body,
+                 "operation_start_time": operation_start_time,
+                 "operation_end_time": str(datetime.now()),
+                 "diagnostics": create_diagnostics_dictionary(error) }
             )
             logger.error("Error processing message: %s", error)
 
     # Send to SQS
-    sqs_message_body = json.dumps(array_of_messages)
-    message_len = len(sqs_message_body)
-    logger.info(f"total message length:{message_len}")
-    message_group_id = f"{file_key}_{created_at_formatted_string}"
-    if message_len < 256 * 1024:
-        sqs_client.send_message(QueueUrl=QUEUE_URL, MessageBody=sqs_message_body, MessageGroupId=message_group_id)
-    else:
-        logger.info("Message size exceeds 256 KB limit.Sending to sqs failed")
+    for filename_key, events in filename_to_events_mapper.get_map().items():
+        sqs_message_body = json.dumps(events)
+        logger.info(f"total message length:{len(sqs_message_body)}")
+
+        sqs_client.send_message(QueueUrl=QUEUE_URL, MessageBody=sqs_message_body, MessageGroupId=filename_key)
 
 
 if __name__ == "__main__":

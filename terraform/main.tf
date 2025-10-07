@@ -2,11 +2,11 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5"
+      version = "~> 6"
     }
     docker = {
       source  = "kreuzwerker/docker"
-      version = "3.0.2"
+      version = "3.6.2"
     }
   }
   backend "s3" {
@@ -17,14 +17,21 @@ terraform {
 }
 
 provider "aws" {
-  region  = var.aws_region
-  profile = "apim-dev"
+  region = var.aws_region
   default_tags {
     tags = {
       Project     = var.project_name
-      Environment = local.environment
+      Environment = local.resource_scope
       Service     = var.service
     }
+  }
+}
+
+provider "docker" {
+  registry_auth {
+    address  = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.region}.amazonaws.com"
+    username = data.aws_ecr_authorization_token.token.user_name
+    password = data.aws_ecr_authorization_token.token.password
   }
 }
 
@@ -32,10 +39,74 @@ data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
 data "aws_ecr_authorization_token" "token" {}
 
-provider "docker" {
-  registry_auth {
-    address  = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.name}.amazonaws.com"
-    username = data.aws_ecr_authorization_token.token.user_name
-    password = data.aws_ecr_authorization_token.token.password
+check "private_subnets" {
+  assert {
+    condition     = length(local.private_subnet_ids) > 0
+    error_message = "No private subnets with internet access found in VPC ${data.aws_vpc.default.id}"
   }
+}
+
+data "aws_vpc" "default" {
+  tags = {
+    Name = "imms-${var.environment}-fhir-api-vpc"
+  }
+}
+
+data "aws_subnets" "all" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default.id]
+  }
+}
+
+data "aws_route_table" "route_table_by_subnet" {
+  for_each = toset(data.aws_subnets.all.ids)
+
+  subnet_id = each.value
+}
+
+data "aws_route" "internet_traffic_route_by_subnet" {
+  for_each = data.aws_route_table.route_table_by_subnet
+
+  route_table_id         = each.value.id
+  destination_cidr_block = "0.0.0.0/0"
+}
+
+data "aws_kms_key" "existing_s3_encryption_key" {
+  key_id = "alias/imms-batch-s3-shared-key"
+}
+
+data "aws_kms_key" "existing_dynamo_encryption_key" {
+  key_id = "alias/imms-event-dynamodb-encryption"
+}
+
+data "aws_elasticache_cluster" "existing_redis" {
+  cluster_id = "immunisation-redis-cluster"
+}
+
+data "aws_security_group" "existing_securitygroup" {
+  filter {
+    name   = "group-name"
+    values = ["immunisation-security-group"]
+  }
+}
+
+data "aws_kms_key" "existing_lambda_encryption_key" {
+  key_id = "alias/imms-batch-lambda-env-encryption"
+}
+
+data "aws_kms_key" "existing_kinesis_encryption_key" {
+  key_id = "alias/imms-batch-kinesis-stream-encryption"
+}
+
+data "aws_kms_key" "existing_id_sync_sqs_encryption_key" {
+  key_id = "alias/imms-event-id-sync-encryption"
+}
+
+data "aws_route53_zone" "project_zone" {
+  name = local.project_domain_name
+}
+
+data "aws_sns_topic" "batch_processor_errors" {
+  name = "${var.environment}-batch-processor-errors"
 }

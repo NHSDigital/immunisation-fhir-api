@@ -1,7 +1,8 @@
 resource "aws_dynamodb_table" "audit-table" {
-  name         = "immunisation-batch-${local.environment}-audit-table"
-  billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "message_id"
+  name                        = "immunisation-batch-${local.resource_scope}-audit-table"
+  billing_mode                = "PAY_PER_REQUEST"
+  hash_key                    = "message_id"
+  deletion_protection_enabled = !local.is_temp
 
   attribute {
     name = "message_id"
@@ -23,6 +24,11 @@ resource "aws_dynamodb_table" "audit-table" {
     type = "S"
   }
 
+  ttl {
+    attribute_name = "expires_at"
+    enabled        = true
+  }
+
   global_secondary_index {
     name            = "filename_index"
     hash_key        = "filename"
@@ -37,7 +43,7 @@ resource "aws_dynamodb_table" "audit-table" {
   }
 
   point_in_time_recovery {
-    enabled = local.environment == "prod"
+    enabled = var.environment == "prod"
   }
 
   server_side_encryption {
@@ -47,9 +53,10 @@ resource "aws_dynamodb_table" "audit-table" {
 }
 
 resource "aws_dynamodb_table" "delta-dynamodb-table" {
-  name         = "imms-${local.environment}-delta"
-  billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "PK"
+  name                        = "imms-${local.resource_scope}-delta"
+  billing_mode                = "PAY_PER_REQUEST"
+  hash_key                    = "PK"
+  deletion_protection_enabled = !local.is_temp
 
   attribute {
     name = "PK"
@@ -96,7 +103,7 @@ resource "aws_dynamodb_table" "delta-dynamodb-table" {
   }
 
   point_in_time_recovery {
-    enabled = local.environment == "prod"
+    enabled = var.environment == "prod"
   }
 
   server_side_encryption {
@@ -106,11 +113,12 @@ resource "aws_dynamodb_table" "delta-dynamodb-table" {
 }
 
 resource "aws_dynamodb_table" "events-dynamodb-table" {
-  name             = "imms-${local.environment}-imms-events"
-  billing_mode     = "PAY_PER_REQUEST"
-  hash_key         = "PK"
-  stream_enabled   = true
-  stream_view_type = "NEW_IMAGE"
+  name                        = "imms-${local.resource_scope}-imms-events"
+  billing_mode                = "PAY_PER_REQUEST"
+  hash_key                    = "PK"
+  stream_enabled              = true
+  stream_view_type            = "NEW_IMAGE"
+  deletion_protection_enabled = !local.is_temp
 
   attribute {
     name = "PK"
@@ -147,7 +155,7 @@ resource "aws_dynamodb_table" "events-dynamodb-table" {
   }
 
   point_in_time_recovery {
-    enabled = local.environment == "prod"
+    enabled = var.environment == "prod"
   }
 
   server_side_encryption {

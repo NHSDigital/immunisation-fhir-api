@@ -1,6 +1,7 @@
 """Constants for recordprocessor"""
 
 import os
+from enum import StrEnum
 
 SOURCE_BUCKET_NAME = os.getenv("SOURCE_BUCKET_NAME")
 ACK_BUCKET_NAME = os.getenv("ACK_BUCKET_NAME")
@@ -8,6 +9,9 @@ AUDIT_TABLE_NAME = os.getenv("AUDIT_TABLE_NAME")
 AUDIT_TABLE_FILENAME_GSI = "filename_index"
 AUDIT_TABLE_QUEUE_NAME_GSI = "queue_name_index"
 FILE_NAME_PROC_LAMBDA_NAME = os.getenv("FILE_NAME_PROC_LAMBDA_NAME")
+
+ARCHIVE_DIR_NAME = "archive"
+PROCESSING_DIR_NAME = "processing"
 
 EXPECTED_CSV_HEADERS = [
     "NHS_NUMBER",
@@ -52,8 +56,16 @@ class FileStatus:
 
     QUEUED = "Queued"
     PROCESSING = "Processing"
-    PROCESSED = "Processed"
-    DUPLICATE = "Duplicate"
+    PREPROCESSED = "Preprocessed"  # All entries in file converted to FHIR and forwarded to Kinesis
+    PROCESSED = "Processed"  # All entries processed and ack file created
+    NOT_PROCESSED = "Not processed"
+    FAILED = "Failed"
+
+
+class FileNotProcessedReason(StrEnum):
+    """Reasons why a file was not processed"""
+    UNAUTHORISED = "Unauthorised"
+    EMPTY = "Empty file"
 
 
 class AuditTableKeys:
@@ -64,6 +76,7 @@ class AuditTableKeys:
     QUEUE_NAME = "queue_name"
     STATUS = "status"
     TIMESTAMP = "timestamp"
+    ERROR_DETAILS = "error_details"
 
 
 class Diagnostics:
@@ -84,3 +97,22 @@ class Urls:
     NHS_NUMBER = "https://fhir.nhs.uk/Id/nhs-number"
     NULL_FLAVOUR_CODES = "http://terminology.hl7.org/CodeSystem/v3-NullFlavor"
     VACCINATION_PROCEDURE = "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure"
+
+
+class Operation(StrEnum):
+    CREATE = "CREATE"
+    UPDATE = "UPDATE"
+    DELETE = "DELETE"
+
+
+class Permission(StrEnum):
+    CREATE = "C"
+    UPDATE = "U"
+    DELETE = "D"
+
+
+permission_to_operation_map = {
+    Permission.CREATE: Operation.CREATE,
+    Permission.UPDATE: Operation.UPDATE,
+    Permission.DELETE: Operation.DELETE
+}

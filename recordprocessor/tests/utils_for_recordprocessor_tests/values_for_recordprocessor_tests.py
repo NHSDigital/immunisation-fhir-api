@@ -7,7 +7,6 @@ from tests.utils_for_recordprocessor_tests.mock_environment_variables import MOC
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
     from constants import Urls, AuditTableKeys
-    from mappings import Vaccine
 
 
 REGION_NAME = "eu-west-2"
@@ -126,6 +125,7 @@ class ValidMockFileContent:
     with_new_and_update_and_delete = (
         headers + "\n" + MockFileRows.NEW + "\n" + MockFileRows.UPDATE + "\n" + MockFileRows.DELETE
     )
+    empty_file_with_multiple_new_lines = MockFileRows.HEADERS + "\n".join(["\n" for i in range(100)])
 
 
 class FileDetails:
@@ -151,10 +151,10 @@ class FileDetails:
         self.file_date_and_time_string = f"20000101T0000000{file_number}"
         self.message_id = f"{vaccine_type.lower()}_{supplier.lower()}_test_id"
         self.message_id_order = f"{vaccine_type.lower()}_{supplier.lower()}_test_id_{file_number}"
-        self.full_permissions_list = [f"{vaccine_type}_FULL"]
-        self.create_permissions_only = [f"{vaccine_type}_CREATE"]
-        self.update_permissions_only = [f"{vaccine_type}_UPDATE"]
-        self.delete_permissions_only = [f"{vaccine_type}_DELETE"]
+        self.full_permissions_list = [f"{vaccine_type}.CRUD"]
+        self.create_permissions_only = [f"{vaccine_type}.C"]
+        self.update_permissions_only = [f"{vaccine_type}.U"]
+        self.delete_permissions_only = [f"{vaccine_type}.D"]
 
         self.queue_name = f"{supplier}_{vaccine_type}"
 
@@ -171,13 +171,15 @@ class FileDetails:
         self.event_create_permissions_only_dict = {**self.base_event, "permission": self.create_permissions_only}
         self.event_update_permissions_only_dict = {**self.base_event, "permission": self.update_permissions_only}
         self.event_delete_permissions_only_dict = {**self.base_event, "permission": self.delete_permissions_only}
+        self.event_no_permissions_dict = {**self.base_event, "permission": []}
         self.event_full_permissions = json.dumps(self.event_full_permissions_dict)
         self.event_create_permissions_only = json.dumps(self.event_create_permissions_only_dict)
         self.event_update_permissions_only = json.dumps(self.event_update_permissions_only_dict)
         self.event_delete_permissions_only = json.dumps(self.event_delete_permissions_only_dict)
+        self.event_no_permissions = json.dumps(self.event_no_permissions_dict)
 
         self.audit_table_entry = {
-            AuditTableKeys.MESSAGE_ID: {"S": self.message_id_order},
+            AuditTableKeys.MESSAGE_ID: {"S": self.message_id},
             AuditTableKeys.FILENAME: {"S": self.file_key},
             AuditTableKeys.QUEUE_NAME: {"S": self.queue_name},
             AuditTableKeys.TIMESTAMP: {"S": self.created_at_formatted_string},
@@ -301,6 +303,7 @@ class MockFieldDictionaries:
     }
     mandatory_fields_only = {key: (UnorderedFieldDictionaries.mandatory_fields.get(key) or "") for key in field_order}
     critical_fields_only = {key: (UnorderedFieldDictionaries.critical_fields.get(key) or "") for key in field_order}
+    mandatory_fields_delete_action = {**mandatory_fields_only, "ACTION_FLAG": "DELETE"}
 
 
 class MockFhirImmsResources:
@@ -385,7 +388,7 @@ class MockFhirImmsResources:
         "reasonCode": [{"coding": [{"code": "1037351000000105", "system": Urls.SNOMED}]}],
         "protocolApplied": [
             {
-                "targetDisease": getattr(TargetDiseaseElements, Vaccine.RSV.value),
+                "targetDisease": TargetDiseaseElements.RSV,
                 "doseNumberPositiveInt": 1,
             }
         ],
@@ -439,7 +442,7 @@ class MockFhirImmsResources:
         ],
         "protocolApplied": [
             {
-                "targetDisease": getattr(TargetDiseaseElements, Vaccine.RSV.value),
+                "targetDisease": TargetDiseaseElements.RSV,
                 "doseNumberString": "Dose sequence not recorded",
             }
         ],
@@ -452,10 +455,38 @@ class MockFhirImmsResources:
         "identifier": [{"system": "a_unique_id_uri", "value": "a_unique_id"}],
         "protocolApplied": [
             {
-                "targetDisease": getattr(TargetDiseaseElements, Vaccine.RSV.value),
+                "targetDisease": TargetDiseaseElements.RSV,
                 "doseNumberString": "Dose sequence not recorded",
             }
         ],
+    }
+
+    # VED-32 DELETE action only requires the immunisation decorator
+    delete_operation_fields = {
+        "resourceType": "Immunization",
+        "status": "completed",
+        "protocolApplied": [
+            {
+                "targetDisease": [
+                    {
+                        "coding": [
+                            {
+                                "system": "http://snomed.info/sct",
+                                "code": "55735004",
+                                "display": "Respiratory syncytial virus infection (disorder)"
+                            }
+                        ]
+                    }
+                ]
+            }
+        ],
+        "recorded": "2024-09-04",
+        "identifier": [
+            {
+                "value": "RSV_002",
+                "system": "https://www.ravs.england.nhs.uk/"
+            }
+        ]
     }
 
 

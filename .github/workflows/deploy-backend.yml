@@ -1,0 +1,150 @@
+name: Deploy Backend
+
+on:
+  workflow_call:
+    inputs:
+      apigee_environment:
+        required: true
+        type: string
+      create_mns_subscription:
+        required: false
+        type: boolean
+        default: true
+      environment:
+        required: true
+        type: string
+      sub_environment:
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      apigee_environment:
+        type: choice
+        description: Select the Apigee proxy environment
+        options:
+          - internal-dev
+          - int
+          - ref
+          - prod
+      create_mns_subscription:
+        description: Create an MNS Subscription. Only available in dev
+        required: false
+        type: boolean
+        default: true
+      environment:
+        type: string
+        description: Select the backend environment
+        options:
+          - dev
+          - preprod
+          - prod
+      sub_environment:
+        type: string
+        description: Set the sub environment name e.g. pr-xxx, or green/blue in higher environments
+
+jobs:
+  terraform-plan:
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment }}
+    env: # Sonarcloud - do not allow direct usage of untrusted data
+      APIGEE_ENVIRONMENT: ${{ inputs.apigee_environment }}
+      BACKEND_ENVIRONMENT: ${{ inputs.environment }}
+      BACKEND_SUB_ENVIRONMENT: ${{ inputs.sub_environment }}
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Connect to AWS
+        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838
+        with:
+          aws-region: eu-west-2
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/auto-ops
+          role-session-name: github-actions
+
+      - name: Whoami
+        run: aws sts get-caller-identity
+
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd
+        with:
+          terraform_version: "1.12.2"
+
+      - name: Terraform Init
+        working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
+        run: make init apigee_environment=$APIGEE_ENVIRONMENT environment=$BACKEND_ENVIRONMENT sub_environment=$BACKEND_SUB_ENVIRONMENT
+
+      - name: Terraform Plan
+        working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
+        run: make plan-ci apigee_environment=$APIGEE_ENVIRONMENT environment=$BACKEND_ENVIRONMENT sub_environment=$BACKEND_SUB_ENVIRONMENT
+
+      - name: Save Terraform Plan
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tfplan
+          path: ${{ vars.TERRAFORM_DIR_PATH }}/tfplan
+
+  terraform-apply:
+    needs: terraform-plan
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment }}
+    env: # Sonarcloud - do not allow direct usage of untrusted data
+      APIGEE_ENVIRONMENT: ${{ inputs.apigee_environment }}
+      BACKEND_ENVIRONMENT: ${{ inputs.environment }}
+      BACKEND_SUB_ENVIRONMENT: ${{ inputs.sub_environment }}
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+
+      - uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a
+        with:
+          aws-region: eu-west-2
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/auto-ops
+          role-session-name: github-actions
+
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd
+        with:
+          terraform_version: "1.12.2"
+
+      - name: Retrieve Terraform Plan
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
+        with:
+          name: tfplan
+          path: ${{ vars.TERRAFORM_DIR_PATH }}
+
+      - name: Terraform Init
+        working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
+        run: make init apigee_environment=$APIGEE_ENVIRONMENT environment=$BACKEND_ENVIRONMENT sub_environment=$BACKEND_SUB_ENVIRONMENT
+
+      - name: Terraform Apply
+        working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
+        run: |
+          make apply-ci apigee_environment=$APIGEE_ENVIRONMENT environment=$BACKEND_ENVIRONMENT sub_environment=$BACKEND_SUB_ENVIRONMENT
+          echo "ID_SYNC_QUEUE_ARN=$(make -s output name=id_sync_queue_arn)" >> $GITHUB_ENV
+
+      - name: Install poetry
+        if: ${{ inputs.environment == 'dev' && inputs.create_mns_subscription }}
+        run: pip install poetry==2.1.4
+
+      - uses: actions/setup-python@v5
+        if: ${{ inputs.environment == 'dev' && inputs.create_mns_subscription }}
+        with:
+          python-version: 3.11
+          cache: 'poetry'
+
+      - name: Create MNS Subscription
+        if: ${{ inputs.environment == 'dev' && inputs.create_mns_subscription }}
+        working-directory: './lambdas/mns_subscription'
+        env:
+          APIGEE_ENVIRONMENT: ${{ inputs.apigee_environment }}
+          SQS_ARN: ${{ env.ID_SYNC_QUEUE_ARN }}
+        run: |
+          poetry install --no-root
+          echo "Subscribing SQS to MNS for notifications..."
+          make subscribe

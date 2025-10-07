@@ -23,6 +23,9 @@ See https://nhsd-confluence.digital.nhs.uk/display/APM/Glossary.
 | `filenameprocessor` | **Imms Batch** – Processes batch file names. |
 | `mesh_processor`    | **Imms Batch** – MESH-specific batch processing functionality. |
 | `recordprocessor`   | **Imms Batch** – Handles batch record processing. |
+| `redis_sync`        | **Imms Redis** – Handles sync s3 to REDIS. |
+| `id_sync`           | **Imms Redis** – Handles sync SQS to IEDS. |
+| `shared`            | **Imms Redis** – Not a lambda but Shared Code for lambdas |
 ---
 
 ### Pipelines
@@ -42,7 +45,6 @@ See https://nhsd-confluence.digital.nhs.uk/display/APM/Glossary.
 | `terraform`            | Core Terraform infrastructure code. This is run in each PR and sets up lambdas associated with the PR.|
 | `terraform_sandbox`    | Sandbox environment for testing infrastructure changes. |
 | `terraform_aws_backup` | Streamlined backup processing with AWS. |
-| `mesh-infra`           | Infrastructure setup for Imms batch MESH integration. |
 | `proxies`              | Apigee API proxy definitions. |
 ---
 
@@ -105,11 +107,17 @@ Once connected, you should see the path as something similar to: `/mnt/d/Source/
 
 5. Configure pyenv.
     ```
-    pyenv install --list | grep "3.10"
-    pyenv install 3.10.16 #current latest
+    pyenv install --list | grep "3.11"
+    pyenv install 3.11.13 #current latest
     ```
 
-6. Install poetry 
+6. Install direnv if not already present, and hook it to the shell.
+    ```
+    sudo apt-get update && sudo apt-get install direnv
+    echo 'eval "$(direnv hook bash)"' >> ~/.bashrc
+    ```
+
+7. Install poetry 
     ```
     pip install poetry
     ```
@@ -122,8 +130,9 @@ For detailed instructions on running individual Lambdas, refer to the README.md 
 Steps: 
 1. Set the python version in the folder with the code used by lambda for example `./backend` (see [lambdas](#lambdas)) folder.
     ```
-    pyenv local 3.10.16 # Set version in backend (this creates a .python-version file)
+    pyenv local 3.11.13 # Set version in backend (this creates a .python-version file)
     ```
+   Note: consult the lambda's `pyproject.toml` file to get the required Python version for this lambda. At the time of writing, this is `~3.10` for the batch lambdas and `~3.11` for all the others.
 
 2. Configure poetry
     ```
@@ -137,6 +146,10 @@ Steps:
     ```
     AWS_PROFILE={your_profile}
     IMMUNIZATION_ENV=local
+    ```
+    For unit tests to run successfully, you may also need to add an environment variable for PYTHONPATH. This should be:
+    ```
+    PYTHONPATH=src:tests
     ```
 
 4. Configure `direnv` by creating a `.envrc` file in the backend folder. This points direnv to the `.venv` created by poetry and loads env variables specified in the `.env` file
@@ -154,11 +167,15 @@ Steps:
     ```
     Test if environment variables have been loaded into shell: `echo $IMMUNIZATION_ENV`.
 
+#### Running Unit Tests from the Command Line
+
+It is not necessary to activate the virtual environment (using `source .venv/bin/activate`) before running a unit test suite from the command line; `direnv` will pick up the correct configurations for us. Run `pip list` to verify that the expected packages are installed. You should for example see that `recordprocessor` is specifically running `moto` v4, regardless of which if any `.venv` is active.
+
 ### Setting up the root level environment
 The root-level virtual environment is primarily used for linting, as we create separate virtual environments for each folder that contains Lambda functions.
 Steps: 
 1. Follow instructions above to [install dependencies](#install-dependencies) & [set up a virtual environment](#setting-up-a-virtual-environment-with-poetry). 
-**Note: While this project uses Python 3.10 (e.g. for Lambdas), the NHSDigital/api-management-utils repository — which orchestrates setup and linting — defaults to Python 3.8.
+**Note: While this project uses Python 3.11 (e.g. for Lambdas), the NHSDigital/api-management-utils repository — which orchestrates setup and linting — defaults to Python 3.8.
 The linting command is executed from within that repo but calls the Makefile in this project, so be aware of potential Python version mismatches when running or debugging locally or in the pipeline.**
 2. Run `make lint`. This will:
     - Check the linting of the API specification yaml.
@@ -169,20 +186,38 @@ The current team uses VS Code mainly. So this setup is targeted towards VS code.
 
 ### VS Code
 
-The project must be opened as a multi-root workspace for VS Code to know that `backend` has its own environment.
+The project must be opened as a multi-root workspace for VS Code to know that specific lambdas (e.g. `backend`) have their own environment.
+This example is for `backend`; substitute another lambda name in where applicable.
 
 - Open the workspace `immunisation-fhir-api.code-workspace`.
 - Copy `backend/.vscode/settings.json.default` to `backend/.vscode/settings.json`, or merge the contents with
   your existing file.
+- Similarly, copy or merge `backend/.vscode/launch.json.default` to `backend/.vscode/launch.json`.
 
 VS Code will automatically use the `backend` environment when you're editing a file under `backend`.
 
 Depending on your existing setup VS Code might automatically choose the wrong virtualenvs. Change it
 with `Python: Select Interpreter`.
 
-The root (`immunisation-fhir-api`) should point to `/mnt/d/Source/immunisation-fhir-api/.venv/bin/python`.
+The root (`immunisation-fhir-api`) should point to the root `.venv`, e.g. `/mnt/d/Source/immunisation-fhir-api/.venv/bin/python`.
 
-`backend` should be pointing at `/mnt/d/Source/immunisation-fhir-api/backend/.venv/bin/python`
+Meanwhile, `backend` should be pointing at (e.g.) `/mnt/d/Source/immunisation-fhir-api/backend/.venv/bin/python`
+
+#### Running Unit Tests
+
+Note that unit tests can be run from the command line without VSCode configuration.
+
+In order that VSCode can resolve modules in unit tests, it needs the PYTHONPATH. This should be setup in `backend/.vscode/launch.json` (see above).
+
+**NOTE:** In order to run unit test suites, you may need to manually switch to the correct virtual environment each time you wish to
+run a different set of tests. To do this: 
+- Show and Run Commands (Ctrl-Shift-P on Windows)
+    - Python: Create Environment
+    - Venv
+    - Select the `.venv` named for the test suite you wish to run, e.g. `backend`
+    - Use Existing
+- VSCode should now display a toast saying that the following environment is selected: 
+    - (e.g.) `/mnt/d/Source/immunisation-fhir-api/backend/.venv/bin/python`
 
 ### IntelliJ
 
@@ -201,3 +236,12 @@ The root (`immunisation-fhir-api`) should point to `/mnt/d/Source/immunisation-f
 Please note that this project requires that all commits are verified using a GPG key. 
 To set up a GPG key please follow the instructions specified here:
 https://docs.github.com/en/authentication/managing-commit-signature-verification
+
+
+## AWS configuration: Getting credentials for AWS federated user account
+
+In the 'Access keys' popup menu under AWS Access Portal:
+
+**NOTE** that AWS's 'Recommended' method of getting credentials **(AWS IAM Identity Center credentials)** will break mocking in unit tests; specifically any tests calling `dynamodb_client.create_table()` will fail with `botocore.errorfactory.ResourceInUseException: Table already exists`.
+
+Instead, use **Option 2 (Add a profile to your AWS credentials file)**.

@@ -1,9 +1,10 @@
+
 locals {
   policy_statement_allow_administration = {
-    Sid    = "Allow administration of the key",
+    Sid    = "AllowKeyAdministration",
     Effect = "Allow",
     Principal = {
-      AWS = "arn:aws:iam::${local.immunisation_account_id}:root"
+      AWS = "arn:aws:iam::${var.imms_account_id}:${var.admin_role}"
     },
     Action = [
       "kms:Create*",
@@ -26,10 +27,10 @@ locals {
   }
 
   policy_statement_allow_auto_ops = {
-    Sid    = "KMS KeyUser access",
+    Sid    = "KMSKeyUserAccess",
     Effect = "Allow",
     Principal = {
-      AWS = ["arn:aws:iam::${local.immunisation_account_id}:role/auto-ops"]
+      AWS = "arn:aws:iam::${var.imms_account_id}:${var.auto_ops_role}"
     },
     Action = [
       "kms:Encrypt",
@@ -39,10 +40,10 @@ locals {
   }
 
   policy_statement_allow_devops = {
-    Sid    = "KMS KeyUser access for DevOps",
+    Sid    = "KMSKeyUserAccessForDevOps",
     Effect = "Allow",
     Principal = {
-      AWS = ["arn:aws:iam::${local.immunisation_account_id}:role/DevOps"]
+      AWS = "arn:aws:iam::${var.imms_account_id}:${var.dev_ops_role}"
     },
     Action = [
       "kms:Encrypt",
@@ -51,11 +52,12 @@ locals {
     Resource = "*"
   }
 
+  #TODO: This should be renamed (account_a)
   policy_statement_allow_account_a = {
     Sid    = "AllowAccountA",
     Effect = "Allow",
     Principal = {
-      AWS = "arn:aws:iam::${local.dspp_core_account_id}:root"
+      AWS = "arn:aws:iam::${var.dspp_account_id}:${var.dspp_admin_role}"
     },
     Action = [
       "kms:Encrypt",
@@ -64,7 +66,18 @@ locals {
     ],
     Resource = "*"
   }
+
+  policy_statement_allow_mns = {
+    Sid    = "AllowMNSLambdaDelivery",
+    Effect = "Allow",
+    Principal = {
+      AWS = "arn:aws:iam::${var.mns_account_id}:${var.mns_admin_role}"
+    },
+    Action = "kms:GenerateDataKey",
+    Resource = "*"
+  }
 }
+
 
 resource "aws_kms_key" "dynamodb_encryption" {
   description         = "KMS key for DynamoDB encryption"
@@ -143,4 +156,67 @@ resource "aws_kms_key" "s3_shared_key" {
 resource "aws_kms_alias" "s3_shared_key" {
   name          = "alias/imms-batch-s3-shared-key"
   target_key_id = aws_kms_key.s3_shared_key.key_id
+}
+
+resource "aws_kms_key" "id_sync_sqs_encryption" {
+  description         = "KMS key for MNS service access"
+  key_usage           = "ENCRYPT_DECRYPT"
+  enable_key_rotation = true
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Id      = "key-consolepolicy-3",
+    Statement = [
+      local.policy_statement_allow_administration,
+      local.policy_statement_allow_auto_ops,
+      local.policy_statement_allow_devops,
+      local.policy_statement_allow_mns
+    ]
+  })
+}
+
+resource "aws_kms_alias" "id_sync_sqs_encryption" {
+  name          = "alias/imms-event-id-sync-encryption"
+  target_key_id = aws_kms_key.id_sync_sqs_encryption.key_id
+}
+
+resource "aws_kms_key" "batch_processor_errors_sns_encryption_key" {
+  description             = "KMS key for encrypting the batch processor errors SNS Topic messages"
+  deletion_window_in_days = 7
+  enable_key_rotation     = true
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      local.policy_statement_allow_administration,
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "sns.amazonaws.com"
+        }
+        Action   = ["kms:GenerateDataKey*", "kms:Decrypt"]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow",
+        Principal = {
+          "Service": "cloudwatch.amazonaws.com"
+        },
+        Action = ["kms:GenerateDataKey*", "kms:Decrypt"],
+        Resource = "*"
+      },
+      {
+        Effect = "Allow",
+        Principal = {
+          "Service": "chatbot.amazonaws.com"
+        },
+        Action = ["kms:GenerateDataKey*", "kms:Decrypt"],
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_kms_alias" "batch_processor_errors_sns_encryption_key" {
+  name          = "alias/${var.environment}-batch-processor-errors-imms-sns-encryption"
+  target_key_id = aws_kms_key.batch_processor_errors_sns_encryption_key.key_id
 }

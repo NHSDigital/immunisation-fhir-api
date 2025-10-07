@@ -26,7 +26,7 @@ class Sqs:
     """Class to hold SQS values for use in tests"""
 
     ATTRIBUTES = {"FifoQueue": "true", "ContentBasedDeduplication": "true"}
-    QUEUE_NAME = "imms-batch-internal-dev-metadata-queue.fifo"
+    QUEUE_NAME = "imms-batch-file-created-queue.fifo"
     TEST_QUEUE_URL = f"https://sqs.{REGION_NAME}.amazonaws.com/{MOCK_ACCOUNT_ID}/{QUEUE_NAME}"
 
 
@@ -36,10 +36,10 @@ class Sqs:
 MOCK_ENVIRONMENT_DICT = {
     "SOURCE_BUCKET_NAME": BucketNames.SOURCE,
     "ACK_BUCKET_NAME": BucketNames.DESTINATION,
-    "QUEUE_URL": "https://sqs.eu-west-2.amazonaws.com/123456789012/imms-batch-internal-dev-metadata-queue.fifo",
+    "QUEUE_URL": "https://sqs.eu-west-2.amazonaws.com/123456789012/imms-batch-file-created-queue.fifo",
     "REDIS_HOST": "localhost",
     "REDIS_PORT": "6379",
     "SPLUNK_FIREHOSE_NAME": Firehose.STREAM_NAME,
     "AUDIT_TABLE_NAME": "immunisation-batch-internal-dev-audit-table",
-    "FILE_NAME_PROC_LAMBDA_NAME": "imms-batch-internal-dev-filenameproc_lambda",
+    "AUDIT_TABLE_TTL_DAYS": "14",
 }

@@ -6,6 +6,8 @@ import unittest
 from decimal import Decimal
 from typing import Literal, Any
 from jsonpath_ng.ext import parse
+from datetime import datetime, date
+from typing import Union, List
 
 
 def load_json_data(filename: str):
@@ -72,7 +74,7 @@ def test_invalid_values_rejected(
     invalid_json_data = parse(field_location).update(valid_json_data, invalid_value)
 
     # Test that correct error type is raised
-    with test_instance.assertRaises(ValueError or TypeError) as error:
+    with test_instance.assertRaises((ValueError, TypeError)) as error:
         test_instance.validator.validate(invalid_json_data)
 
     full_error_message = str(error.exception)
@@ -91,3 +93,21 @@ def update_contained_resource_field(
         {field_to_update: update_value}
     )
     return json_data
+
+def format_date_types(dates: List[Union[date, datetime]], mode: str = "auto") -> List[str]:
+    """
+    Accepts a list of date or datetime objects and returns them as strings:
+    - datetime → ISO 8601 string with timezone if present
+    - date → 'YYYY-MM-DD'
+    """
+    formatted = []
+
+    for future_date in dates:
+        if mode == "datetime":
+            formatted.append(future_date.isoformat())  # full datetime with timezone
+        elif mode == "date":
+            formatted.append(future_date.strftime('%Y-%m-%d'))  # just date
+        else:
+            raise TypeError(f"Unsupported type {type(future_date)}; expected date or datetime.")
+
+    return formatted

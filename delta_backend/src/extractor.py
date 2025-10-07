@@ -29,6 +29,7 @@ class Extractor:
         return next((c for c in contained if isinstance(c, dict) and c.get("resourceType") == "Patient"), "")
 
     def _get_valid_names(self, names, occurrence_time):
+
         official_names = [n for n in names if n.get("use") == "official" and self._is_current_period(n, occurrence_time)]
         if official_names:
             return official_names[0]
@@ -80,36 +81,25 @@ class Extractor:
             return True  # If no period is specified, assume it's valid
 
         start = datetime.fromisoformat(period.get("start")) if period.get("start") else None
-        end = datetime.fromisoformat(period.get("end")) if period.get("end") else None
-
+        end_str = period.get("end")
+        end = datetime.fromisoformat(period.get("end")) if end_str else None
         # Ensure all datetime objects are timezone-aware
         if start and start.tzinfo is None:
             start = start.replace(tzinfo=timezone.utc)
+        if end and "T" not in end_str:
+            # If end is a date-only string like "2025-06-12", upgrade to full end-of-day
+            end = end.replace(hour=23, minute=59, second=59, microsecond=999999)
         if end and end.tzinfo is None:
+            # If end still has no timezone info, assign UTC
             end = end.replace(tzinfo=timezone.utc)
 
         return (not start or start <= occurrence_time) and (not end or occurrence_time <= end)
 
     def _get_occurrence_date_time(self) -> datetime:
-        occurrence_datetime_str = self.fhir_json_data.get("occurrenceDateTime", "")
-
-        try:
-            occurrence_datetime = datetime.fromisoformat(occurrence_datetime_str)
-
-            if occurrence_datetime and occurrence_datetime.tzinfo is None:
-                occurrence_datetime = occurrence_datetime.replace(tzinfo=timezone.utc)
-
-            return occurrence_datetime
-
-        except Exception as e:
-            message = "DateTime conversion error [%s]: %s" % (e.__class__.__name__, e)
-            self._log_error(
-                ConversionFieldName.DATE_AND_TIME,
-                occurrence_datetime_str,
-                message,
-                code=exception_messages.UNEXPECTED_EXCEPTION
-            )
-            raise
+        occurrence_time = datetime.fromisoformat(self.fhir_json_data.get("occurrenceDateTime", ""))
+        if occurrence_time and occurrence_time.tzinfo is None:
+            occurrence_time = occurrence_time.replace(tzinfo=timezone.utc)
+        return occurrence_time
 
     def _get_first_snomed_code(self, coding_container: dict) -> str:
         codings = coding_container.get("coding", [])
@@ -190,8 +180,7 @@ class Extractor:
         """
         Convert a date string according to match YYYYMMDD format.
         """
-        if not date or not isinstance(date, str):
-            self._log_error(field_name, date, "Invalid value. Must be non empty string")
+        if not date:
             return ""
         try:
             dt = datetime.fromisoformat(date)
@@ -322,7 +311,7 @@ class Extractor:
         primary_source = self.fhir_json_data.get("primarySource")
 
         if isinstance(primary_source, bool):
-            return primary_source
+            return str(primary_source).upper()
         return ""
 
     def extract_vaccination_procedure_code(self) -> str:

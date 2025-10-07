@@ -85,6 +85,8 @@ class PreValidators:
             self.pre_validate_route_coding_display,
             self.pre_validate_dose_quantity_value,
             self.pre_validate_dose_quantity_code,
+            self.pre_validate_dose_quantity_system,
+            self.pre_validate_dose_quantity_system_and_code,
             self.pre_validate_dose_quantity_unit,
             self.pre_validate_reason_code_codings,
             self.pre_validate_reason_code_coding_codes,
@@ -94,6 +96,7 @@ class PreValidators:
             self.pre_validate_value_codeable_concept,
             self.pre_validate_extension_length,
             self.pre_validate_vaccination_procedure_code,
+            self.pre_validate_vaccine_code,
         ]
 
         for method in validation_methods:
@@ -623,16 +626,16 @@ class PreValidators:
             PreValidation.for_list(field_value, "protocolApplied", defined_length=1)
         except KeyError:
             pass
-
+    DOSE_NUMBER_MAX_VALUE = 9
     def pre_validate_dose_number_positive_int(self, values: dict) -> dict:
         """
         Pre-validate that, if protocolApplied[0].doseNumberPositiveInt (legacy CSV field : dose_sequence)
-        exists, then it is an integer from 1 to 9
+        exists, then it is an integer from 1 to 9 (DOSE_NUMBER_MAX_VALUE)
         """
         field_location = "protocolApplied[0].doseNumberPositiveInt"
         try:
             field_value = values["protocolApplied"][0]["doseNumberPositiveInt"]
-            PreValidation.for_positive_integer(field_value, field_location)
+            PreValidation.for_positive_integer(field_value, field_location, self.DOSE_NUMBER_MAX_VALUE)
         except (KeyError, IndexError):
             pass
 
@@ -726,7 +729,7 @@ class PreValidators:
         """
         try:
             field_value = values["expirationDate"]
-            PreValidation.for_date(field_value, "expirationDate")
+            PreValidation.for_date(field_value, "expirationDate", future_date_allowed=True)
         except KeyError:
             pass
 
@@ -798,9 +801,6 @@ class PreValidators:
         except (KeyError, IndexError):
             pass
 
-    # TODO: need to validate that doseQuantity.system is "http://unitsofmeasure.org"?
-    # Check with Martin
-
     def pre_validate_dose_quantity_value(self, values: dict) -> dict:
         """
         Pre-validate that, if doseQuantity.value (legacy CSV field name: DOSE_AMOUNT) exists,
@@ -817,6 +817,17 @@ class PreValidators:
         except KeyError:
             pass
 
+    def pre_validate_dose_quantity_system(self, values: dict) -> dict:
+        """
+        Pre-validate that if doseQuantity.system exists then it is a non-empty string:
+        If system exists, it must be a non-empty string.
+        """
+        try:
+            field_value = values["doseQuantity"]["system"]
+            PreValidation.for_string(field_value, "doseQuantity.system")            
+        except KeyError:
+            pass
+    
     def pre_validate_dose_quantity_code(self, values: dict) -> dict:
         """
         Pre-validate that, if doseQuantity.code (legacy CSV field name: DOSE_UNIT_CODE) exists,
@@ -827,6 +838,21 @@ class PreValidators:
             PreValidation.for_string(field_value, "doseQuantity.code")
         except KeyError:
             pass
+
+    def pre_validate_dose_quantity_system_and_code(self, values: dict) -> dict:
+        """
+        Pre-validate doseQuantity.code and doseQuantity.system:
+        1. If code exists, system MUST also exist (FHIR SimpleQuantity rule).
+        """
+        dose_quantity = values.get("doseQuantity", {})
+        code = dose_quantity.get("code")
+        system = dose_quantity.get("system")
+        
+        PreValidation.require_system_when_code_present(
+            code, system, "doseQuantity.code", "doseQuantity.system"
+            )
+    
+        return values
 
     def pre_validate_dose_quantity_unit(self, values: dict) -> dict:
         """
@@ -903,3 +929,21 @@ class PreValidators:
             PreValidation.for_string(field_value, "location.identifier.system")
         except KeyError:
             pass
+
+    def pre_validate_vaccine_code(self, values: dict) -> dict:
+        """
+        Pre-validate that, if vaccineCode.coding[?(@.system=='http://snomed.info/sct')].code
+        (legacy CSV field : VACCINE_PRODUCT_CODE) exists, then it is a valid snomed code
+
+        NOTE: vaccineCode is a mandatory FHIR field. A value of None will be rejected by the
+        FHIR model before pre-validators are run.
+        """
+        url = "http://snomed.info/sct"
+        field_location = f"vaccineCode.coding[?(@.system=='{url}')].code"
+        try:
+            field_value = [x for x in values["vaccineCode"]["coding"] if x.get("system") == url][0]["code"]
+            PreValidation.for_string(field_value, field_location)
+            PreValidation.for_snomed_code(field_value, field_location)
+        except (KeyError, IndexError):
+            pass
+

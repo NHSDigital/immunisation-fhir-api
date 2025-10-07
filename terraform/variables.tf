@@ -1,5 +1,19 @@
+variable "environment" {}
+
+variable "sub_environment" {
+  description = "The value is set in the makefile"
+}
+
+variable "immunisation_account_id" {}
+variable "dspp_core_account_id" {}
+variable "csoc_account_id" {}
+
+variable "create_mesh_processor" {
+  default = false
+}
+
 variable "project_name" {
-  default = "immunisations"
+  default = "immunisation"
 }
 
 variable "project_short_name" {
@@ -14,70 +28,38 @@ variable "aws_region" {
   default = "eu-west-2"
 }
 
-locals {
-  environment       = terraform.workspace == "green" ? "prod" : terraform.workspace == "blue" ? "prod" : terraform.workspace
-  env               = terraform.workspace
-  prefix            = "${var.project_name}-${var.service}-${local.env}"
-  short_prefix      = "${var.project_short_name}-${local.env}"
-  batch_prefix      = "immunisation-batch-${local.env}"
-  config_env        = local.environment == "prod" ? "prod" : "dev"
-  config_bucket_env = local.environment == "prod" ? "prod" : "internal-dev"
-
-  root_domain         = "${local.config_env}.vds.platform.nhs.uk"
-  project_domain_name = data.aws_route53_zone.project_zone.name
-  service_domain_name = "${local.env}.${local.project_domain_name}"
-
-  # For now, only create the config bucket in internal-dev and prod as we only have one Redis instance per account.
-  create_config_bucket = local.environment == local.config_bucket_env
-  config_bucket_arn    = local.create_config_bucket ? aws_s3_bucket.batch_config_bucket[0].arn : data.aws_s3_bucket.existing_config_bucket[0].arn
-  config_bucket_name   = local.create_config_bucket ? aws_s3_bucket.batch_config_bucket[0].bucket : data.aws_s3_bucket.existing_config_bucket[0].bucket
+variable "pds_environment" {
+  default = "int"
 }
 
-data "aws_vpc" "default" {
+variable "pds_check_enabled" {
   default = true
 }
 
-data "aws_subnets" "default" {
-  filter {
-    name   = "vpc-id"
-    values = [data.aws_vpc.default.id]
-  }
+# Remember to switch off in PR envs after testing
+variable "batch_error_notifications_enabled" {
+  default     = true
+  description = "Switch to enable batch processing error notifications to Slack"
+  type        = bool
 }
 
-data "aws_kms_key" "existing_s3_encryption_key" {
-  key_id = "alias/imms-batch-s3-shared-key"
+variable "has_sub_environment_scope" {
+  default = false
 }
 
-data "aws_kms_key" "existing_dynamo_encryption_key" {
-  key_id = "alias/imms-event-dynamodb-encryption"
-}
-
-data "aws_elasticache_cluster" "existing_redis" {
-  cluster_id = "immunisation-redis-cluster"
-}
-
-data "aws_security_group" "existing_securitygroup" {
-  filter {
-    name   = "group-name"
-    values = ["immunisation-security-group"]
-  }
-}
-
-data "aws_s3_bucket" "existing_config_bucket" {
-  # For now, look up the internal-dev bucket during int, ref and PR branch deploys.
-  count = local.create_config_bucket ? 0 : 1
-
-  bucket = "imms-${local.config_bucket_env}-supplier-config"
-}
-
-data "aws_kms_key" "existing_lambda_encryption_key" {
-  key_id = "alias/imms-batch-lambda-env-encryption"
-}
-
-data "aws_kms_key" "existing_kinesis_encryption_key" {
-  key_id = "alias/imms-batch-kinesis-stream-encryption"
-}
-
-data "aws_kms_key" "mesh_s3_encryption_key" {
-  key_id = "alias/local-immunisation-mesh"
+locals {
+  prefix              = "${var.project_name}-${var.service}-${var.sub_environment}"
+  short_prefix        = "${var.project_short_name}-${var.sub_environment}"
+  batch_prefix        = "immunisation-batch-${var.sub_environment}"
+  root_domain_name    = "${var.environment}.vds.platform.nhs.uk"
+  project_domain_name = "imms.${local.root_domain_name}"
+  service_domain_name = "${var.sub_environment}.${local.project_domain_name}"
+  config_bucket_arn   = aws_s3_bucket.batch_config_bucket.arn
+  config_bucket_name  = aws_s3_bucket.batch_config_bucket.bucket
+  is_temp             = length(regexall("[a-z]{2,4}-?[0-9]+", var.sub_environment)) > 0
+  resource_scope      = var.has_sub_environment_scope ? var.sub_environment : var.environment
+  # Public subnet - The subnet has a direct route to an internet gateway. Resources in a public subnet can access the public internet.
+  # public_subnet_ids = [for k, v in data.aws_route.internet_traffic_route_by_subnet : k if length(v.gateway_id) > 0]
+  # Private subnet - The subnet does not have a direct route to an internet gateway. Resources in a private subnet require a NAT device to access the public internet.
+  private_subnet_ids = [for k, v in data.aws_route.internet_traffic_route_by_subnet : k if length(v.nat_gateway_id) > 0]
 }

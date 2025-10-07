@@ -1,4 +1,4 @@
 -include .env
 
-run-immunization-batch:
-	ENV=$(environment) poetry run python  -m unittest -v -c
+test:
+    ENVIRONMENT=$(ENVIRONMENT) poetry run python -m unittest -v -c

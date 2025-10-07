@@ -7,7 +7,7 @@ version: 2
 updates:
   - package-ecosystem: "docker"
     directories:
-      - "/ack_backend"
+      - "/lambdas/ack_backend"
       - "/delta_backend"
       - "/filenameprocessor"
       - "/grafana/non-prod/docker"
@@ -49,14 +49,19 @@ updates:
   - package-ecosystem: "pip"
     directories:
       - "/"
-      - "/ack_backend"
       - "/backend"
+      - "/batch_processor_filter"
       - "/delta_backend"
       - "/e2e"
       - "/e2e_batch"
       - "/filenameprocessor"
       - "/mesh_processor"
       - "/recordprocessor"
+      - "/lambdas/ack_backend"
+      - "/lambdas/redis_sync"
+      - "/lambdas/id_sync"
+      - "/lambdas/mns_subscription"
+      - "/lambdas/shared"
     schedule:
       interval: "daily"
     open-pull-requests-limit: 1
@@ -70,7 +75,6 @@ updates:
     directories:
       - "/grafana/non-prod/terraform"
       - "/infra"
-      - "/mesh-infra"
       - "/terraform"
       - "/terraform_aws_backup/**"
     schedule:

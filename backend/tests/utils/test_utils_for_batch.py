@@ -148,8 +148,8 @@ class MockFhirImmsResources:
                         "coding": [
                             {
                                 "system": "http://snomed.info/sct",
-                                "code": "55735004",
-                                "display": "Respiratory syncytial virus infection (disorder)",
+                                "code": "398102009",
+                                "display": "Acute poliomyelitis",
                             }
                         ]
                     }
@@ -157,4 +157,33 @@ class MockFhirImmsResources:
                 "doseNumberPositiveInt": 1,
             }
         ],
+    }
+
+    # VED-32 Object for the delete batch operation will only contain the minimum fieldset
+    delete_operation_fields = {
+        "resourceType": "Immunization",
+        "status": "completed",
+        "protocolApplied": [
+            {
+                "targetDisease": [
+                    {
+                        "coding": [
+                            {
+                                "system": "http://snomed.info/sct",
+                                "code": "398102009",
+                                "display": "Acute poliomyelitis",
+                            }
+                        ]
+                    }
+                ],
+                "doseNumberPositiveInt": 1,
+            }
+        ],
+        "recorded": "2024-09-04",
+        "identifier": [
+            {
+                "value": "RSV_002",
+                "system": "https://www.ravs.england.nhs.uk/"
+            }
+        ]
     }

@@ -20,9 +20,9 @@ resource "aws_s3_bucket_policy" "batch_data_source_bucket_policy" {
       {
         Effect : "Allow",
         Principal : {
-          AWS : "arn:aws:iam::${local.dspp_core_account_id}:root"
+          AWS : "arn:aws:iam::${var.dspp_core_account_id}:root"
         },
-        Action : local.environment == "prod" ? [
+        Action : var.environment == "prod" ? [
           "s3:PutObject"
           ] : [
           "s3:ListBucket",
@@ -93,7 +93,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "datasources_lifecycle" {
 
 resource "aws_s3_bucket" "batch_data_destination_bucket" {
   # Deliberately not using `local.batch_prefix` as we don't want separate blue / green destinations in prod.
-  bucket        = "immunisation-batch-${local.environment}-data-destinations"
+  bucket        = "immunisation-batch-${local.resource_scope}-data-destinations"
   force_destroy = local.is_temp
 }
 
@@ -114,9 +114,9 @@ resource "aws_s3_bucket_policy" "batch_data_destination_bucket_policy" {
       {
         Effect : "Allow",
         Principal : {
-          AWS : "arn:aws:iam::${local.dspp_core_account_id}:root"
+          AWS : "arn:aws:iam::${var.dspp_core_account_id}:root"
         },
-        Action : local.environment == "prod" ? [
+        Action : var.environment == "prod" ? [
           "s3:ListBucket",
           "s3:GetObject",
           ] : [
@@ -192,16 +192,11 @@ resource "aws_s3_bucket_lifecycle_configuration" "data_destinations" {
 }
 
 resource "aws_s3_bucket" "batch_config_bucket" {
-  # For now, only create in internal-dev and prod as we only have one shared Redis instance per account.
-  count = local.create_config_bucket ? 1 : 0
-
-  bucket = "imms-${local.environment}-supplier-config"
+  bucket = "imms-${local.resource_scope}-fhir-config"
 }
 
 resource "aws_s3_bucket_public_access_block" "batch_config_bucket_public_access_block" {
-  count = local.create_config_bucket ? 1 : 0
-
-  bucket = aws_s3_bucket.batch_config_bucket[0].id
+  bucket = aws_s3_bucket.batch_config_bucket.id
 
   block_public_acls       = true
   block_public_policy     = true
@@ -210,9 +205,7 @@ resource "aws_s3_bucket_public_access_block" "batch_config_bucket_public_access_
 }
 
 resource "aws_s3_bucket_policy" "batch_config_bucket_policy" {
-  count = local.create_config_bucket ? 1 : 0
-
-  bucket = aws_s3_bucket.batch_config_bucket[0].id
+  bucket = aws_s3_bucket.batch_config_bucket.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -226,8 +219,8 @@ resource "aws_s3_bucket_policy" "batch_config_bucket_policy" {
         }
         Action = "s3:*"
         Resource = [
-          aws_s3_bucket.batch_config_bucket[0].arn,
-          "${aws_s3_bucket.batch_config_bucket[0].arn}/*",
+          aws_s3_bucket.batch_config_bucket.arn,
+          "${aws_s3_bucket.batch_config_bucket.arn}/*",
         ]
         Condition = {
           Bool = {
