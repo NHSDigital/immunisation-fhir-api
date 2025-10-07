@@ -6,7 +6,6 @@ from io import StringIO
 from contextlib import ExitStack
 from moto import mock_s3
 from boto3 import client as boto3_client
-from common.log_decorator import generate_and_send_logs, send_log_to_firehose
 
 from tests.utils.values_for_ack_backend_tests import (
     ValidValues,

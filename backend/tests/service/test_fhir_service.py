@@ -3,7 +3,7 @@ import uuid
 import datetime
 import unittest
 import os
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 from copy import deepcopy
 from unittest.mock import create_autospec, patch
 from decimal import Decimal
@@ -13,20 +13,20 @@ from fhir.resources.R4B.immunization import Immunization
 
 from authorisation.api_operation_code import ApiOperationCode
 from authorisation.authoriser import Authoriser
-from fhir_repository import ImmunizationRepository
-from fhir_service import FhirService, UpdateOutcome, get_service_url
+from repository.fhir_repository import ImmunizationRepository
+from service.fhir_service import FhirService, UpdateOutcome, get_service_url
 from models.errors import InvalidPatientId, CustomValidationError, UnauthorizedVaxError, ResourceNotFoundError
 from models.fhir_immunization import ImmunizationValidator
 from models.utils.generic_utils import get_contained_patient
 from pydantic import ValidationError
 from pydantic.error_wrappers import ErrorWrapper
-from tests.utils.immunization_utils import (
+from testing_utils.immunization_utils import (
     create_covid_19_immunization,
     create_covid_19_immunization_dict,
     create_covid_19_immunization_dict_no_id,
     VALID_NHS_NUMBER,
 )
-from tests.utils.generic_utils import load_json_data
+from testing_utils.generic_utils import load_json_data
 from constants import NHS_NUMBER_USED_IN_SAMPLE_DATA
 
 class TestFhirServiceBase(unittest.TestCase):
@@ -205,29 +205,30 @@ class TestGetImmunization(TestFhirServiceBase):
         imms_id = "an-id"
         self.mock_redis_client.hget.return_value = "COVID-19"
         self.authoriser.authorise.return_value = True
-        self.imms_repo.get_immunization_by_id.return_value = {"Resource": create_covid_19_immunization(imms_id).dict()}
+        self.imms_repo.get_immunization_and_version_by_id.return_value = (create_covid_19_immunization(imms_id).dict(), "")
 
         # When
-        service_resp = self.fhir_service.get_immunization_by_id(imms_id, "Test Supplier")
-        act_imms = service_resp["Resource"]
+        immunisation, version = self.fhir_service.get_immunization_and_version_by_id(imms_id, "Test Supplier")
 
         # Then
         self.authoriser.authorise.assert_called_once_with("Test Supplier", ApiOperationCode.READ, {"COVID-19"})
-        self.imms_repo.get_immunization_by_id.assert_called_once_with(imms_id)
+        self.imms_repo.get_immunization_and_version_by_id.assert_called_once_with(imms_id)
 
-        self.assertEqual(act_imms.id, imms_id)
+        self.assertEqual(immunisation.id, imms_id)
+        self.assertEqual(version, "")
 
     def test_immunization_not_found(self):
         """it should return None if Immunization doesn't exist"""
-        imms_id = "none-existent-id"
-        self.imms_repo.get_immunization_by_id.return_value = None
+        imms_id = "non-existent-id"
+        self.imms_repo.get_immunization_and_version_by_id.return_value = None, None
 
         # When
-        act_imms = self.fhir_service.get_immunization_by_id(imms_id, "Test Supplier")
+        with self.assertRaises(ResourceNotFoundError) as error:
+            self.fhir_service.get_immunization_and_version_by_id(imms_id, "Test Supplier")
 
         # Then
-        self.imms_repo.get_immunization_by_id.assert_called_once_with(imms_id)
-        self.assertEqual(act_imms, None)
+        self.imms_repo.get_immunization_and_version_by_id.assert_called_once_with(imms_id)
+        self.assertEqual("Immunization resource does not exist. ID: non-existent-id", str(error.exception))
 
     def test_get_immunization_by_id_patient_not_restricted(self):
         """
@@ -239,18 +240,19 @@ class TestGetImmunization(TestFhirServiceBase):
         immunization_data = load_json_data("completed_covid19_immunization_event.json")
         self.mock_redis_client.hget.return_value = "COVID-19"
         self.authoriser.authorise.return_value = True
-        self.imms_repo.get_immunization_by_id.return_value = {"Resource": immunization_data}
+        self.imms_repo.get_immunization_and_version_by_id.return_value = (immunization_data, "2")
 
         expected_imms = load_json_data("completed_covid19_immunization_event_for_read.json")
         expected_output = Immunization.parse_obj(expected_imms)
 
         # When
-        actual_output = self.fhir_service.get_immunization_by_id(imms_id, "Test Supplier")
+        actual_output, version = self.fhir_service.get_immunization_and_version_by_id(imms_id, "Test Supplier")
 
         # Then
         self.authoriser.authorise.assert_called_once_with("Test Supplier", ApiOperationCode.READ, {"COVID-19"})
-        self.imms_repo.get_immunization_by_id.assert_called_once_with(imms_id)
-        self.assertEqual(actual_output["Resource"], expected_output)
+        self.imms_repo.get_immunization_and_version_by_id.assert_called_once_with(imms_id)
+        self.assertEqual(actual_output, expected_output)
+        self.assertEqual(version, "2")
 
     def test_pre_validation_failed(self):
         """it should throw exception if Immunization is not valid"""
@@ -282,15 +284,15 @@ class TestGetImmunization(TestFhirServiceBase):
         imms_id = "an-id"
         self.mock_redis_client.hget.return_value = "COVID-19"
         self.authoriser.authorise.return_value = False
-        self.imms_repo.get_immunization_by_id.return_value = {"Resource": create_covid_19_immunization(imms_id).dict()}
+        self.imms_repo.get_immunization_and_version_by_id.return_value = (create_covid_19_immunization(imms_id).dict(), 1)
 
         with self.assertRaises(UnauthorizedVaxError):
             # When
-            self.fhir_service.get_immunization_by_id(imms_id, "Test Supplier")
+            self.fhir_service.get_immunization_and_version_by_id(imms_id, "Test Supplier")
 
         # Then
         self.authoriser.authorise.assert_called_once_with("Test Supplier", ApiOperationCode.READ, {"COVID-19"})
-        self.imms_repo.get_immunization_by_id.assert_called_once_with(imms_id)
+        self.imms_repo.get_immunization_and_version_by_id.assert_called_once_with(imms_id)
 
 
 def test_post_validation_failed_get_invalid_target_disease(self):
@@ -727,14 +729,14 @@ class TestDeleteImmunization(TestFhirServiceBase):
         imms = json.loads(create_covid_19_immunization(self.TEST_IMMUNISATION_ID).json())
         self.mock_redis_client.hget.return_value = "COVID19"
         self.authoriser.authorise.return_value = True
-        self.imms_repo.get_immunization_by_id.return_value = {"Resource": imms}
+        self.imms_repo.get_immunization_and_version_by_id.return_value = (imms, "1")
         self.imms_repo.delete_immunization.return_value = imms
 
         # When
         act_imms = self.fhir_service.delete_immunization(self.TEST_IMMUNISATION_ID, "Test")
 
         # Then
-        self.imms_repo.get_immunization_by_id.assert_called_once_with(self.TEST_IMMUNISATION_ID)
+        self.imms_repo.get_immunization_and_version_by_id.assert_called_once_with(self.TEST_IMMUNISATION_ID)
         self.imms_repo.delete_immunization.assert_called_once_with(self.TEST_IMMUNISATION_ID, "Test")
         self.authoriser.authorise.assert_called_once_with("Test", ApiOperationCode.DELETE, {"COVID19"})
         self.assertIsInstance(act_imms, Immunization)
@@ -742,28 +744,28 @@ class TestDeleteImmunization(TestFhirServiceBase):
 
     def test_delete_immunization_throws_not_found_exception_if_does_not_exist(self):
         """it should raise a ResourceNotFound exception if the immunisation does not exist"""
-        self.imms_repo.get_immunization_by_id.return_value = None
+        self.imms_repo.get_immunization_and_version_by_id.return_value = (None, None)
 
         # When
         with self.assertRaises(ResourceNotFoundError):
             self.fhir_service.delete_immunization(self.TEST_IMMUNISATION_ID, "Test")
 
         # Then
-        self.imms_repo.get_immunization_by_id.assert_called_once_with(self.TEST_IMMUNISATION_ID)
+        self.imms_repo.get_immunization_and_version_by_id.assert_called_once_with(self.TEST_IMMUNISATION_ID)
         self.imms_repo.delete_immunization.assert_not_called()
 
     def test_delete_immunization_throws_authorisation_exception_if_does_not_have_required_permissions(self):
         imms = json.loads(create_covid_19_immunization(self.TEST_IMMUNISATION_ID).json())
         self.mock_redis_client.hget.return_value = "FLU"
         self.authoriser.authorise.return_value = False
-        self.imms_repo.get_immunization_by_id.return_value = {"Resource": imms}
+        self.imms_repo.get_immunization_and_version_by_id.return_value = (imms, "1")
 
         # When
         with self.assertRaises(UnauthorizedVaxError):
             self.fhir_service.delete_immunization(self.TEST_IMMUNISATION_ID, "Test")
 
         # Then
-        self.imms_repo.get_immunization_by_id.assert_called_once_with(self.TEST_IMMUNISATION_ID)
+        self.imms_repo.get_immunization_and_version_by_id.assert_called_once_with(self.TEST_IMMUNISATION_ID)
         self.imms_repo.delete_immunization.assert_not_called()
         self.authoriser.authorise.assert_called_once_with("Test", ApiOperationCode.DELETE, {"FLU"})
 
