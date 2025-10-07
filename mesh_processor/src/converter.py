@@ -5,6 +5,7 @@ from typing import BinaryIO
 import boto3
 from smart_open import open
 
+EXPECTED_BUCKET_OWNER_ACCOUNT = os.getenv("ACCOUNT_ID")
 DESTINATION_BUCKET_NAME = os.getenv("DESTINATION_BUCKET_NAME")
 
 logging.basicConfig(level=logging.INFO)
@@ -80,9 +81,15 @@ def move_file(source_bucket: str, source_key: str, destination_bucket: str, dest
     s3_client.copy_object(
         CopySource={"Bucket": source_bucket, "Key": source_key},
         Bucket=destination_bucket,
-        Key=destination_key
+        Key=destination_key,
+        ExpectedBucketOwner=EXPECTED_BUCKET_OWNER_ACCOUNT,
+        ExpectedSourceBucketOwner=EXPECTED_BUCKET_OWNER_ACCOUNT
     )
-    s3_client.delete_object(Bucket=source_bucket, Key=source_key)
+    s3_client.delete_object(
+        Bucket=source_bucket,
+        Key=source_key,
+        ExpectedBucketOwner=EXPECTED_BUCKET_OWNER_ACCOUNT
+    )
 
 
 def transfer_multipart_content(bucket_name: str, file_key: str, boundary: bytes, filename: str) -> None:
@@ -122,7 +129,11 @@ def process_record(record: dict) -> None:
     file_key = record["s3"]["object"]["key"]
     logger.info(f"Processing {file_key}")
 
-    response = s3_client.head_object(Bucket=bucket_name, Key=file_key)
+    response = s3_client.head_object(
+        Bucket=bucket_name,
+        Key=file_key,
+        ExpectedBucketOwner=EXPECTED_BUCKET_OWNER_ACCOUNT
+    )
     content_type = response['ContentType']
     media_type, content_type_params = parse_header_value(content_type)
     filename = response["Metadata"].get("mex-filename") or file_key
@@ -136,7 +147,9 @@ def process_record(record: dict) -> None:
         s3_client.copy_object(
             Bucket=DESTINATION_BUCKET_NAME,
             CopySource={"Bucket": bucket_name, "Key": file_key},
-            Key=filename
+            Key=filename,
+            ExpectedBucketOwner=EXPECTED_BUCKET_OWNER_ACCOUNT,
+            ExpectedSourceBucketOwner=EXPECTED_BUCKET_OWNER_ACCOUNT
         )
 
     logger.info(f"Transfer complete for {file_key}")
