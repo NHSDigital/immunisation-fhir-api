@@ -19,9 +19,8 @@ class Extractor:
     DATE_CONVERT_FORMAT = "%Y%m%d"
     DEFAULT_POSTCODE = "ZZ99 3CZ"
 
-    def __init__(self, fhir_json_data, report_unexpected_exception = True):
+    def __init__(self, fhir_json_data):
         self.fhir_json_data = json.loads(fhir_json_data, parse_float=decimal.Decimal) if isinstance(fhir_json_data, str) else fhir_json_data
-        self.report_unexpected_exception = report_unexpected_exception
         self.error_records = []
 
     def _get_patient(self):
@@ -39,8 +38,6 @@ class Extractor:
             return valid_names[0]
 
         return names[0]
-
-
 
     def _get_person_names(self):
         occurrence_time = self._get_occurrence_date_time()
@@ -165,18 +162,17 @@ class Extractor:
         return site_code, site_code_type_uri
 
     def _log_error(self, field_name, field_value, e, code=exception_messages.RECORD_CHECK_FAILED):
-        if self.report_unexpected_exception:
-            if isinstance(e, Exception):
-                message = exception_messages.MESSAGES[exception_messages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, str(e))
-            else:
-                message = str(e)
+        if isinstance(e, Exception):
+            message = exception_messages.MESSAGES[exception_messages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, str(e))
+        else:
+            message = str(e)
 
-            self.error_records.append({
-                "code": code,
-                "field": field_name,
-                "value": field_value,
-                "message": message
-            })
+        self.error_records.append({
+            "code": code,
+            "field": field_name,
+            "value": field_value,
+            "message": message
+        })
 
     def _convert_date(self, field_name, date, format) -> str:
         """
