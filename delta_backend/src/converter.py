@@ -6,22 +6,16 @@ from common.mappings import ActionFlag
 
 class Converter:
 
-    def __init__(self, fhir_data, action_flag = ActionFlag.UPDATE, report_unexpected_exception=True):
+    def __init__(self, fhir_data, action_flag = ActionFlag.UPDATE):
         self.converted = {}
         self.error_records = []
         self.action_flag = action_flag
-        self.report_unexpected_exception = report_unexpected_exception
 
-        try:
-            if not fhir_data:
-                raise ValueError("FHIR data is required for initialization.")
+        if not fhir_data:
+            raise ValueError("FHIR data is required for initialization.")
 
-            self.extractor = Extractor(fhir_data, self.report_unexpected_exception)
-            self.conversion_layout = ConversionLayout(self.extractor)
-        except Exception as e:
-            if report_unexpected_exception:
-                self._log_error(None, None, f"Initialization failed: [{e.__class__.__name__}] {e}")
-            raise
+        self.extractor = Extractor(fhir_data)
+        self.conversion_layout = ConversionLayout(self.extractor)
 
     def run_conversion(self):
         conversions = self.conversion_layout.get_conversion_layout()
@@ -44,26 +38,21 @@ class Converter:
                 converted = conversion.expression_rule()
                 if converted is not None:
                     self.converted[flat_field] = converted
-
         except Exception as e:
             self._log_error(
                 flat_field,
-                None,
                 f"Conversion error [{e.__class__.__name__}]: {e}",
                 code=exception_messages.PARSING_ERROR
             )
             self.converted[flat_field] = ""
 
-    def _log_error(self, field_name, field_value, e, code=exception_messages.UNEXPECTED_EXCEPTION):
-        error_obj = {
+    def _log_error(self, field_name, e, code):
+        self.error_records.append({
             "code": code,
             "field": field_name,
-            "value": field_value,
+            "value": None,
             "message": str(e)
-        }
-
-        if self.report_unexpected_exception:
-            self.error_records.append(error_obj)
+        })
 
     def get_error_records(self):
         return self.error_records

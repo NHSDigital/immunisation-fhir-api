@@ -28,7 +28,7 @@ class TestConvertToFlatJson(unittest.TestCase):
         # Start moto AWS mocks
         self.mock = mock_aws()
         self.mock.start()
-    
+
         """Set up mock DynamoDB table."""
         self.dynamodb_resource = boto3_resource("dynamodb", "eu-west-2")
         self.table = self.dynamodb_resource.create_table(
@@ -74,7 +74,7 @@ class TestConvertToFlatJson(unittest.TestCase):
         self.logger_exception_patcher.stop()
         self.logger_info_patcher.stop()
         self.mock_firehose_logger.stop()
-        
+
         self.mock.stop()
 
     @staticmethod
@@ -126,34 +126,18 @@ class TestConvertToFlatJson(unittest.TestCase):
         json_data = json.dumps(ValuesForTests.json_data)
 
         fhir_converter = Converter(json_data)
-        FlatFile = fhir_converter.run_conversion()
+        result = fhir_converter.run_conversion()
 
-        flatJSON = json.dumps(FlatFile)
+        result_str = json.dumps(result)
         expected_imms_value = deepcopy(ValuesForTests.expected_imms2)  # UPDATE is currently the default action-flag
         expected_imms = json.dumps(expected_imms_value)
-        self.assertEqual(flatJSON, expected_imms)
+        self.assertEqual(result_str, expected_imms)
 
-        errorRecords = fhir_converter.get_error_records()
+        error_records = fhir_converter.get_error_records()
 
-        self.assertEqual(len(errorRecords), 0)
-        
-    def test_fhir_converter_json_direct_data(self):
-        """it should convert fhir json data to flat json"""
-        json_data = json.dumps(ValuesForTests.json_data)
+        self.assertEqual(len(error_records), 0)
 
-        fhir_converter = Converter(json_data)
-        FlatFile = fhir_converter.run_conversion()
-
-        flatJSON = json.dumps(FlatFile)
-        expected_imms_value = deepcopy(ValuesForTests.expected_imms2)  # UPDATE is currently the default action-flag
-        expected_imms = json.dumps(expected_imms_value)
-        self.assertEqual(flatJSON, expected_imms)
-
-        errorRecords = fhir_converter.get_error_records()
-
-        self.assertEqual(len(errorRecords), 0)
-
-    def test_fhir_converter_json_error_scenario_reporting_on(self):
+    def test_fhir_converter_json_error_scenario(self):
         """it should convert fhir json data to flat json - error scenarios"""
         error_test_cases = [ErrorValuesForTests.missing_json, ErrorValuesForTests.json_dob_error]
 
@@ -163,42 +147,18 @@ class TestConvertToFlatJson(unittest.TestCase):
             fhir_converter = Converter(json_data)
             fhir_converter.run_conversion()
 
-            errorRecords = fhir_converter.get_error_records()
+            error_records = fhir_converter.get_error_records()
 
             # Check if bad data creates error records
-            self.assertTrue(len(errorRecords) > 0)
-            
-    def test_fhir_converter_json_error_scenario_reporting_off(self):
-        """it should convert fhir json data to flat json - error scenarios"""
-        error_test_cases = [ErrorValuesForTests.missing_json, ErrorValuesForTests.json_dob_error]
+            self.assertTrue(len(error_records) > 0)
 
-        for test_case in error_test_cases:
-            json_data = json.dumps(test_case)
-
-            fhir_converter = Converter(json_data, report_unexpected_exception=False)
-            fhir_converter.run_conversion()
-
-            errorRecords = fhir_converter.get_error_records()
-
-            # Check if bad data creates error records
-            self.assertTrue(len(errorRecords) == 0)
-            
-    def test_fhir_converter_json_incorrect_data_scenario_reporting_on(self):
+    def test_fhir_converter_json_incorrect_data_scenario(self):
         """it should convert fhir json data to flat json - error scenarios"""
 
         with self.assertRaises(ValueError):
             fhir_converter = Converter(None)
-            errorRecords = fhir_converter.get_error_records()
-            self.assertTrue(len(errorRecords) > 0)
-    
-    
-    def test_fhir_converter_json_incorrect_data_scenario_reporting_off(self):
-        """it should convert fhir json data to flat json - error scenarios"""
-
-        with self.assertRaises(ValueError):
-            fhir_converter = Converter(None, report_unexpected_exception=False)
-            errorRecords = fhir_converter.get_error_records()
-            self.assertTrue(len(errorRecords) == 0)
+            error_records = fhir_converter.get_error_records()
+            self.assertTrue(len(error_records) > 0)
 
     def test_handler_imms_convert_to_flat_json(self):
         """Test that the Imms field contains the correct flat JSON data for CREATE, UPDATE, and DELETE operations."""
@@ -231,8 +191,6 @@ class TestConvertToFlatJson(unittest.TestCase):
                     response
                 )
 
-                result = self.table.scan()
-                items = result.get("Items", [])
                 self.clear_table()
 
     def clear_table(self):
@@ -240,8 +198,6 @@ class TestConvertToFlatJson(unittest.TestCase):
         with self.table.batch_writer() as batch:
             for item in scan.get("Items", []):
                 batch.delete_item(Key={"PK": item["PK"]})
-        result = self.table.scan()
-        items = result.get("Items", [])
 
     if __name__ == "__main__":
         unittest.main()
