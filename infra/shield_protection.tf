@@ -4,11 +4,6 @@ data "aws_availability_zones" "available" {}
 data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
 
-provider "aws" {
-  alias  = "use1"
-  region = "us-east-1"
-}
-
 # Create all resources to Protect
 resource "aws_shield_protection" "nat_eip" {
   name         = "imms-${var.environment}-fhir-api-eip-shield"
