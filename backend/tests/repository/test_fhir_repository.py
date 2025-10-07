@@ -111,7 +111,7 @@ class TestGetImmunization(unittest.TestCase):
                 }
             }
         )
-        immunisation, version = self.repository.get_immunization_by_id(imms_id)
+        immunisation, version = self.repository.get_immunization_and_version_by_id(imms_id)
 
         # Validate the results
         self.assertDictEqual(expected_resource, immunisation)
@@ -123,7 +123,7 @@ class TestGetImmunization(unittest.TestCase):
         imms_id = "non-existent-id"
         self.table.get_item = MagicMock(return_value={})
 
-        imms, version = self.repository.get_immunization_by_id(imms_id)
+        imms, version = self.repository.get_immunization_and_version_by_id(imms_id)
         self.assertIsNone(imms)
         self.assertIsNone(version)
 
@@ -466,7 +466,7 @@ class TestDeleteImmunization(unittest.TestCase):
         imms_id = "a-deleted-id"
         self.table.get_item = MagicMock(return_value={"Item": {"Resource": "{}", "DeletedAt": time.time()}})
 
-        imms, version = self.repository.get_immunization_by_id(imms_id)
+        imms, version = self.repository.get_immunization_and_version_by_id(imms_id)
         self.assertIsNone(imms)
         self.assertIsNone(version)
 

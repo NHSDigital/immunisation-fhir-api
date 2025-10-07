@@ -83,11 +83,11 @@ class FhirService:
         imms_resp['resource'] = filtered_resource
         return form_json(imms_resp, element, identifier, base_url)
 
-    def get_immunization_by_id(self, imms_id: str, supplier_system: str) -> tuple[Immunization, str]:
+    def get_immunization_and_version_by_id(self, imms_id: str, supplier_system: str) -> tuple[Immunization, str]:
         """
         Get an Immunization by its ID. Returns the immunization entity and version number.
         """
-        resource, version = self.immunization_repo.get_immunization_by_id(imms_id)
+        resource, version = self.immunization_repo.get_immunization_and_version_by_id(imms_id)
 
         if resource is None:
             raise ResourceNotFoundError(resource_type="Immunization", resource_id=imms_id)
@@ -230,7 +230,7 @@ class FhirService:
         Exception will be raised if resource does not exist. Multiple calls to this method won't change
         the record in the database.
         """
-        existing_immunisation, _ = self.immunization_repo.get_immunization_by_id(imms_id)
+        existing_immunisation, _ = self.immunization_repo.get_immunization_and_version_by_id(imms_id)
 
         if not existing_immunisation:
             raise ResourceNotFoundError(resource_type="Immunization", resource_id=imms_id)

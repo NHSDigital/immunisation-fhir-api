@@ -94,7 +94,7 @@ class FhirController:
 
         supplier_system = get_supplier_system_header(aws_event)
 
-        resource, version = self.fhir_service.get_immunization_by_id(imms_id, supplier_system)
+        resource, version = self.fhir_service.get_immunization_and_version_by_id(imms_id, supplier_system)
 
         return create_response(200, resource.json(), {E_TAG_HEADER_NAME: version})
 

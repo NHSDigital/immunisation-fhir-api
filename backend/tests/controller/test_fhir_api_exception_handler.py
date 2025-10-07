@@ -25,23 +25,19 @@ class TestFhirApiExceptionHandler(unittest.TestCase):
 
     def test_exception_handler_handles_custom_exception_and_returns_fhir_response(self):
         """Test that custom exceptions are handled by the wrapper and a valid response is returned to the client"""
-        test_cases = {
-            ("Test UnauthorisedError", UnauthorizedError, 403, "forbidden", "Unauthorized request"),
-            ("Test UnauthorizedVaxError", UnauthorizedVaxError, 403, "forbidden",
-             "Unauthorized request for vaccine type"),
-            ("Test ResourceNotFoundError", ResourceNotFoundError, 404, "not-found", "Immunization resource does not "
-                                                                                    "exist. ID: 123")
-        }
+        test_cases = [
+            (UnauthorizedError(), 403, "forbidden", "Unauthorized request"),
+            (UnauthorizedVaxError(), 403, "forbidden", "Unauthorized request for vaccine type"),
+            (ResourceNotFoundError(resource_type="Immunization", resource_id="123"), 404, "not-found",
+             "Immunization resource does not exist. ID: 123")
+        ]
 
-        for msg, error_type, expected_status, expected_code, expected_message in test_cases:
-            with self.subTest(msg=msg):
+        for error, expected_status, expected_code, expected_message in test_cases:
+            with self.subTest(msg=f"Test {error.__class__.__name__}"):
 
                 @fhir_api_exception_handler
                 def dummy_func():
-                    if msg == "Test ResourceNotFoundError":
-                        raise error_type(resource_type="Immunization", resource_id="123")
-
-                    raise error_type()
+                    raise error
 
                 response = dummy_func()
 

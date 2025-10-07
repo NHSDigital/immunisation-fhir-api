@@ -673,7 +673,7 @@ class TestFhirControllerGetImmunizationById(unittest.TestCase):
         """it should return Immunization resource if it exists"""
         # Given
         imms_id = "a-id"
-        self.service.get_immunization_by_id.return_value = (Immunization.construct(), "1")
+        self.service.get_immunization_and_version_by_id.return_value = (Immunization.construct(), "1")
         lambda_event = {
             "headers": {"SupplierSystem": "test"},
             "pathParameters": {"id": imms_id},
@@ -682,7 +682,7 @@ class TestFhirControllerGetImmunizationById(unittest.TestCase):
         # When
         response = self.controller.get_immunization_by_id(lambda_event)
         # Then
-        self.service.get_immunization_by_id.assert_called_once_with(imms_id, "test")
+        self.service.get_immunization_and_version_by_id.assert_called_once_with(imms_id, "test")
 
         self.assertEqual(response["statusCode"], 200)
         body = json.loads(response["body"])
@@ -701,7 +701,7 @@ class TestFhirControllerGetImmunizationById(unittest.TestCase):
         # When
         response = self.controller.get_immunization_by_id(lambda_event)
         # Then
-        self.service.get_immunization_by_id.assert_not_called()
+        self.service.get_immunization_and_version_by_id.assert_not_called()
 
         self.assertEqual(response["statusCode"], 403)
         body = json.loads(response["body"])
@@ -712,7 +712,7 @@ class TestFhirControllerGetImmunizationById(unittest.TestCase):
         """it should return a 403 error is the service layer throws an UnauthorizedVaxError"""
         # Given
         imms_id = "a-id"
-        self.service.get_immunization_by_id.side_effect = UnauthorizedVaxError
+        self.service.get_immunization_and_version_by_id.side_effect = UnauthorizedVaxError
         lambda_event = {
             "headers": {"SupplierSystem": "test"},
             "pathParameters": {"id": imms_id},
@@ -730,7 +730,7 @@ class TestFhirControllerGetImmunizationById(unittest.TestCase):
         """it should return not-found OperationOutcome if it doesn't exist"""
         # Given
         imms_id = "a-non-existing-id"
-        self.service.get_immunization_by_id.side_effect = ResourceNotFoundError(
+        self.service.get_immunization_and_version_by_id.side_effect = ResourceNotFoundError(
             resource_type="Immunization",
             resource_id=imms_id
         )
@@ -743,7 +743,7 @@ class TestFhirControllerGetImmunizationById(unittest.TestCase):
         response = self.controller.get_immunization_by_id(lambda_event)
 
         # Then
-        self.service.get_immunization_by_id.assert_called_once_with(imms_id, "test")
+        self.service.get_immunization_and_version_by_id.assert_called_once_with(imms_id, "test")
 
         self.assertEqual(response["statusCode"], 404)
         body = json.loads(response["body"])
@@ -756,7 +756,7 @@ class TestFhirControllerGetImmunizationById(unittest.TestCase):
 
         response = self.controller.get_immunization_by_id(invalid_id)
 
-        self.assertEqual(self.service.get_immunization_by_id.call_count, 0)
+        self.assertEqual(self.service.get_immunization_and_version_by_id.call_count, 0)
         self.assertEqual(response["statusCode"], 400)
         outcome = json.loads(response["body"])
         self.assertEqual(outcome["resourceType"], "OperationOutcome")
@@ -827,7 +827,7 @@ class TestCreateImmunization(unittest.TestCase):
         }
 
         response = self.controller.create_immunization(aws_event)
-        self.assertEqual(self.service.get_immunization_by_id.call_count, 0)
+        self.assertEqual(self.service.get_immunization_and_version_by_id.call_count, 0)
         self.assertEqual(response["statusCode"], 400)
         outcome = json.loads(response["body"])
         self.assertEqual(outcome["resourceType"], "OperationOutcome")
@@ -1333,7 +1333,7 @@ class TestDeleteImmunization(unittest.TestCase):
 
         response = self.controller.delete_immunization(invalid_id)
 
-        self.assertEqual(self.service.get_immunization_by_id.call_count, 0)
+        self.assertEqual(self.service.get_immunization_and_version_by_id.call_count, 0)
         self.assertEqual(response["statusCode"], 400)
         outcome = json.loads(response["body"])
         self.assertEqual(outcome["resourceType"], "OperationOutcome")

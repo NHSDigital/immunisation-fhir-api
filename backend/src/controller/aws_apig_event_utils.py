@@ -10,8 +10,7 @@ from utils import dict_utils
 
 def get_path_parameter(event: APIGatewayProxyEventV1, param_name: str) -> str:
     return dict_utils.get_field(
-        dict(event),
-        "pathParameters",
+        event["pathParameters"],
         param_name,
         default=""
     )

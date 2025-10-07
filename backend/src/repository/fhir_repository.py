@@ -102,7 +102,7 @@ class ImmunizationRepository:
         else:
             return None, None
 
-    def get_immunization_by_id(self, imms_id: str) -> tuple[Optional[dict], Optional[str]]:
+    def get_immunization_and_version_by_id(self, imms_id: str) -> tuple[Optional[dict], Optional[str]]:
         response = self.table.get_item(Key={"PK": _make_immunization_pk(imms_id)})
         item = response.get("Item")
 
