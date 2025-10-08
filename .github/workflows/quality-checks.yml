@@ -47,15 +47,15 @@ jobs:
 
       - name: Install linting dependencies
         run: poetry install
-        working-directory: quality-checks
+        working-directory: quality_checks
 
       - name: Lint
         run: poetry run lint
-        working-directory: quality-checks
+        working-directory: quality_checks
 
       - name: Check formatting
         run: poetry run format-check
-        working-directory: quality-checks
+        working-directory: quality_checks
 
   testcoverage_and_sonarcloud:
     name: Test Coverage and SonarCloud
