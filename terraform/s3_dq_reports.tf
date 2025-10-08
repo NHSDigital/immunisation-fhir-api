@@ -1,6 +1,6 @@
 # Create s3 Bucket with conditional destroy for pr environments
 resource "aws_s3_bucket" "data_quality_reports_bucket" {
-    bucket      = "imms-${local.short_prefix}-data_quality_reports"
+    bucket      = "${local.short_prefix}-data-quality-reports"
     force_destroy = local.is_temp
 
 }
