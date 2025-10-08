@@ -15,7 +15,7 @@ resource "aws_s3_bucket_public_access_block" "data_quality_reports_bucket_public
   restrict_public_buckets = true
 }
 
-resource "aws_s3_bucket_lifecycle_configuration" "data_destinations" {
+resource "aws_s3_bucket_lifecycle_configuration" "data_quality_reports" {
   bucket = aws_s3_bucket.data_quality_reports_bucket.id
 
   rule {
