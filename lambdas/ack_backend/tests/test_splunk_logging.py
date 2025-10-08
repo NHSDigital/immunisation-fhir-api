@@ -5,7 +5,7 @@ from unittest.mock import patch, call
 import json
 from io import StringIO
 from contextlib import ExitStack
-from moto import mock_s3
+from moto import mock_aws
 from boto3 import client as boto3_client
 
 from tests.utils.values_for_ack_backend_tests import (
@@ -26,7 +26,7 @@ with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
 
 
 @patch.dict("os.environ", MOCK_ENVIRONMENT_DICT)
-@mock_s3
+@mock_aws
 class TestLoggingDecorators(unittest.TestCase):
     """Tests for the ack lambda logging decorators"""
 
@@ -97,7 +97,7 @@ class TestLoggingDecorators(unittest.TestCase):
         # plus 2 seconds for the handler if it succeeds (i.e. it calls update_ack_file) or 1 second if it doesn't;
         # plus an extra second if ingestion is complete
         if success:
-            time_taken = f"{number_of_rows * 2 + 3}.0s" if ingestion_complete else f"{number_of_rows * 2 + 2}.0s"
+            time_taken = f"{number_of_rows * 2 + 3}.0s" if ingestion_complete else f"{number_of_rows * 2 + 1}.0s"
         else:
             time_taken = f"{number_of_rows * 2 + 1}.0s"
 
@@ -118,6 +118,7 @@ class TestLoggingDecorators(unittest.TestCase):
         for operation in ["CREATE", "UPDATE", "DELETE"]:
             with (  # noqa: E999
                 patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
+                patch("ack_processor.is_ack_processing_complete", return_value=False),
                 patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
             ):  # noqa: E999
                 result = lambda_handler(
@@ -169,7 +170,7 @@ class TestLoggingDecorators(unittest.TestCase):
                 success=False,
                 number_of_rows=1,
                 ingestion_complete=False,
-                diagnostics="'NoneType' object has no attribute 'replace'",
+                diagnostics="list index out of range",
             )
 
             first_logger_info_call_args = json.loads(self.extract_all_call_args_for_logger_info(mock_logger)[0])
@@ -190,7 +191,7 @@ class TestLoggingDecorators(unittest.TestCase):
         self,
         mock_send_log_to_firehose,
     ):
-        """'Tests the correct codes are returned for diagnostics"""
+        """Tests the correct codes are returned for diagnostics"""
         test_cases = [
             {
                 "diagnostics": DiagnosticsDictionaries.RESOURCE_FOUND_ERROR,
@@ -221,6 +222,7 @@ class TestLoggingDecorators(unittest.TestCase):
         for test_case in test_cases:
             with (  # noqa: E999
                 patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
+                patch("ack_processor.is_ack_processing_complete", return_value=False),
                 patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
             ):  # noqa: E999
                 result = lambda_handler(
@@ -254,25 +256,20 @@ class TestLoggingDecorators(unittest.TestCase):
 
     def test_splunk_logging_multiple_rows(self):
         """Tests logging for multiple objects in the body of the event"""
-        messages = [{"row_id": "test1"}, {"row_id": "test2"}]
+        messages = [{"row_id": "test^1"}, {"row_id": "test^2"}]
 
         with (  # noqa: E999
             patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
+            patch("ack_processor.is_ack_processing_complete", return_value=False),
             patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
         ):  # noqa: E999
             result = lambda_handler(generate_event(messages), context={})
 
         self.assertEqual(result, EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS)
 
-        expected_first_logger_info_data = {
-            **ValidValues.mock_message_expected_log_value,
-            "message_id": "test1",
-        }
+        expected_first_logger_info_data = {**ValidValues.mock_message_expected_log_value, "message_id": "test^1"}
 
-        expected_second_logger_info_data = {
-            **ValidValues.mock_message_expected_log_value,
-            "message_id": "test2",
-        }
+        expected_second_logger_info_data = {**ValidValues.mock_message_expected_log_value, "message_id": "test^2"}
 
         expected_third_logger_info_data = self.expected_lambda_handler_logs(success=True, number_of_rows=2)
 
@@ -300,24 +297,21 @@ class TestLoggingDecorators(unittest.TestCase):
         """Tests logging for multiple objects in the body of the event with diagnostics"""
         messages = [
             {
-                "row_id": "test1",
+                "row_id": "test^1",
                 "operation_requested": "CREATE",
                 "diagnostics": DiagnosticsDictionaries.RESOURCE_FOUND_ERROR,
             },
             {
-                "row_id": "test2",
+                "row_id": "test^2",
                 "operation_requested": "UPDATE",
                 "diagnostics": DiagnosticsDictionaries.MESSAGE_NOT_SUCCESSFUL_ERROR,
             },
-            {
-                "row_id": "test3",
-                "operation_requested": "DELETE",
-                "diagnostics": DiagnosticsDictionaries.NO_PERMISSIONS,
-            },
+            {"row_id": "test^3", "operation_requested": "DELETE", "diagnostics": DiagnosticsDictionaries.NO_PERMISSIONS},
         ]
 
         with (  # noqa: E999
             patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
+            patch("ack_processor.is_ack_processing_complete", return_value=False),
             patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
         ):  # noqa: E999
             result = lambda_handler(generate_event(messages), context={})
@@ -326,7 +320,7 @@ class TestLoggingDecorators(unittest.TestCase):
 
         expected_first_logger_info_data = {
             **ValidValues.mock_message_expected_log_value,
-            "message_id": "test1",
+            "message_id": "test^1",
             "operation_requested": "CREATE",
             "statusCode": DiagnosticsDictionaries.RESOURCE_FOUND_ERROR["statusCode"],
             "status": "fail",
@@ -335,7 +329,7 @@ class TestLoggingDecorators(unittest.TestCase):
 
         expected_second_logger_info_data = {
             **ValidValues.mock_message_expected_log_value,
-            "message_id": "test2",
+            "message_id": "test^2",
             "operation_requested": "UPDATE",
             "statusCode": DiagnosticsDictionaries.MESSAGE_NOT_SUCCESSFUL_ERROR["statusCode"],
             "status": "fail",
@@ -344,7 +338,7 @@ class TestLoggingDecorators(unittest.TestCase):
 
         expected_third_logger_info_data = {
             **ValidValues.mock_message_expected_log_value,
-            "message_id": "test3",
+            "message_id": "test^3",
             "operation_requested": "DELETE",
             "statusCode": DiagnosticsDictionaries.NO_PERMISSIONS["statusCode"],
             "status": "fail",
@@ -378,24 +372,24 @@ class TestLoggingDecorators(unittest.TestCase):
         # send 98 messages
         messages = []
         for i in range(1, 99):
-            message_value = "test" + str(i)
+            message_value = "test^" + str(i)
             messages.append({"row_id": message_value})
 
         with (  # noqa: E999
             patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
             patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
-            patch(
-                "update_ack_file.change_audit_table_status_to_processed"
-            ) as mock_change_audit_table_status_to_processed,  # noqa: E999
+            patch("ack_processor.is_ack_processing_complete", return_value=False),
+            patch("update_ack_file.change_audit_table_status_to_processed")
+                as mock_change_audit_table_status_to_processed,  # noqa: E999
         ):  # noqa: E999
             result = lambda_handler(generate_event(messages), context={})
 
         self.assertEqual(result, EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS)
 
         expected_secondlast_logger_info_data = {
-            **ValidValues.mock_message_expected_log_value,
-            "message_id": "test98",
-        }
+                **ValidValues.mock_message_expected_log_value,
+                "message_id": "test^98",
+            }
         expected_last_logger_info_data = self.expected_lambda_handler_logs(success=True, number_of_rows=98)
 
         all_logger_info_call_args = self.extract_all_call_args_for_logger_info(mock_logger)
@@ -418,29 +412,29 @@ class TestLoggingDecorators(unittest.TestCase):
         # send 99 messages
         messages = []
         for i in range(1, 100):
-            message_value = "test" + str(i)
+            message_value = "test^" + str(i)
             messages.append({"row_id": message_value})
 
         with (  # noqa: E999
             patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
             patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
-            patch(
-                "update_ack_file.change_audit_table_status_to_processed"
-            ) as mock_change_audit_table_status_to_processed,  # noqa: E999
+            patch("ack_processor.is_ack_processing_complete", return_value=True),
+            patch("update_ack_file.change_audit_table_status_to_processed")
+                as mock_change_audit_table_status_to_processed,  # noqa: E999
         ):  # noqa: E999
             result = lambda_handler(generate_event(messages), context={})
 
         self.assertEqual(result, EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS)
 
         expected_thirdlast_logger_info_data = {
-            **ValidValues.mock_message_expected_log_value,
-            "message_id": "test99",
-        }
+                **ValidValues.mock_message_expected_log_value,
+                "message_id": "test^99",
+            }
         expected_secondlast_logger_info_data = {
-            **ValidValues.upload_ack_file_expected_log,
-            "message_id": "test1",
-            "time_taken": "1.0s",
-        }
+                **ValidValues.upload_ack_file_expected_log,
+                "message_id": "test",
+                "time_taken": "1.0s"
+            }
         expected_last_logger_info_data = self.expected_lambda_handler_logs(
             success=True, number_of_rows=99, ingestion_complete=True
         )

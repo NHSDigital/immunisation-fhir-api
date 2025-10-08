@@ -6,22 +6,23 @@ import json
 from unittest.mock import patch
 from io import StringIO
 from boto3 import client as boto3_client
-from moto import mock_s3, mock_firehose
+from moto import mock_aws
 
-from tests.utils.mock_environment_variables import (
+from utils.mock_environment_variables import (
+    AUDIT_TABLE_NAME,
     MOCK_ENVIRONMENT_DICT,
     BucketNames,
     REGION_NAME,
 )
-from tests.utils.generic_setup_and_teardown_for_ack_backend import (
+from utils.generic_setup_and_teardown_for_ack_backend import (
     GenericSetUp,
     GenericTearDown,
 )
-from tests.utils.utils_for_ack_backend_tests import (
-    setup_existing_ack_file,
+from utils.utils_for_ack_backend_tests import (
+    add_audit_entry_to_table,
     validate_ack_file_content,
 )
-from tests.utils.values_for_ack_backend_tests import (
+from utils.values_for_ack_backend_tests import (
     DiagnosticsDictionaries,
     MOCK_MESSAGE_DETAILS,
     ValidValues,
@@ -39,18 +40,17 @@ BASE_FAILURE_MESSAGE = {
 
 
 @patch.dict(os.environ, MOCK_ENVIRONMENT_DICT)
-@mock_s3
-@mock_firehose
+@patch("audit_table.AUDIT_TABLE_NAME", AUDIT_TABLE_NAME)
+@mock_aws
 class TestAckProcessor(unittest.TestCase):
     """Tests for the ack processor lambda handler."""
 
     def setUp(self) -> None:
         self.s3_client = boto3_client("s3", region_name=REGION_NAME)
         self.firehose_client = boto3_client("firehose", region_name=REGION_NAME)
-        GenericSetUp(self.s3_client, self.firehose_client)
+        self.dynamodb_client = boto3_client("dynamodb", region_name=REGION_NAME)
+        GenericSetUp(self.s3_client, self.firehose_client, self.dynamodb_client)
 
-        # MOCK SOURCE FILE WITH 100 ROWS TO SIMULATE THE SCENARIO WHERE THE ACK FILE IS NO FULL.
-        # TODO: Test all other scenarios.
         mock_source_file_with_100_rows = StringIO("\n".join(f"Row {i}" for i in range(1, 101)))
         self.s3_client.put_object(
             Bucket=BucketNames.SOURCE,
@@ -61,7 +61,7 @@ class TestAckProcessor(unittest.TestCase):
         self.mock_logger_info = self.logger_info_patcher.start()
 
     def tearDown(self) -> None:
-        GenericTearDown(self.s3_client, self.firehose_client)
+        GenericTearDown(self.s3_client, self.firehose_client, self.dynamodb_client)
         self.mock_logger_info.stop()
 
     @staticmethod
@@ -82,6 +82,8 @@ class TestAckProcessor(unittest.TestCase):
 
     def test_lambda_handler_main_multiple_records(self):
         """Test lambda handler with multiple records."""
+        # Set up an audit entry which does not yet have record_count recorded
+        add_audit_entry_to_table(self.dynamodb_client, "row")
         # First array of messages: all successful. Rows 1 to 3
         array_of_success_messages = [
             {
@@ -147,66 +149,75 @@ class TestAckProcessor(unittest.TestCase):
 
     def test_lambda_handler_main(self):
         """Test lambda handler with consitent ack_file_name and message_template."""
+        # Set up an audit entry which does not yet have record_count recorded
+        add_audit_entry_to_table(self.dynamodb_client, "row")
         test_cases = [
             {
                 "description": "Multiple messages: all successful",
-                "messages": [{"row_id": f"row_{i+1}"} for i in range(10)],
+                "messages": [{"row_id": f"row^{i+1}"} for i in range(10)],
             },
             {
                 "description": "Multiple messages: all with diagnostics (failure messages)",
                 "messages": [
                     {
-                        "row_id": "row_1",
-                        "diagnostics": DiagnosticsDictionaries.UNIQUE_ID_MISSING,
+                        "row_id": "row^1",
+                        "diagnostics": DiagnosticsDictionaries.UNIQUE_ID_MISSING
                     },
                     {
-                        "row_id": "row_2",
-                        "diagnostics": DiagnosticsDictionaries.NO_PERMISSIONS,
+                        "row_id": "row^2",
+                        "diagnostics": DiagnosticsDictionaries.NO_PERMISSIONS
                     },
                     {
-                        "row_id": "row_3",
-                        "diagnostics": DiagnosticsDictionaries.RESOURCE_NOT_FOUND_ERROR,
+                        "row_id": "row^3",
+                        "diagnostics": DiagnosticsDictionaries.RESOURCE_NOT_FOUND_ERROR
                     },
                 ],
             },
             {
                 "description": "Multiple messages: mixture of success and failure messages",
                 "messages": [
-                    {"row_id": "row_1", "imms_id": "TEST_IMMS_ID"},
                     {
-                        "row_id": "row_2",
-                        "diagnostics": DiagnosticsDictionaries.UNIQUE_ID_MISSING,
+                        "row_id": "row^1",
+                        "imms_id": "TEST_IMMS_ID"
                     },
                     {
-                        "row_id": "row_3",
-                        "diagnostics": DiagnosticsDictionaries.CUSTOM_VALIDATION_ERROR,
-                    },
-                    {"row_id": "row_4"},
-                    {
-                        "row_id": "row_5",
-                        "diagnostics": DiagnosticsDictionaries.CUSTOM_VALIDATION_ERROR,
+                        "row_id": "row^2",
+                        "diagnostics": DiagnosticsDictionaries.UNIQUE_ID_MISSING
                     },
                     {
-                        "row_id": "row_6",
-                        "diagnostics": DiagnosticsDictionaries.CUSTOM_VALIDATION_ERROR,
+                        "row_id": "row^3",
+                        "diagnostics": DiagnosticsDictionaries.CUSTOM_VALIDATION_ERROR
                     },
-                    {"row_id": "row_7"},
                     {
-                        "row_id": "row_8",
-                        "diagnostics": DiagnosticsDictionaries.IDENTIFIER_DUPLICATION_ERROR,
+                        "row_id": "row^4"
+                    },
+                    {
+                        "row_id": "row^5",
+                        "diagnostics": DiagnosticsDictionaries.CUSTOM_VALIDATION_ERROR
+                    },
+                    {
+                        "row_id": "row^6",
+                        "diagnostics": DiagnosticsDictionaries.CUSTOM_VALIDATION_ERROR
+                    },
+                    {
+                        "row_id": "row^7"
+                    },
+                    {
+                        "row_id": "row^8",
+                        "diagnostics": DiagnosticsDictionaries.IDENTIFIER_DUPLICATION_ERROR
                     },
                 ],
             },
             {
                 "description": "Single row: success",
-                "messages": [{"row_id": "row_1"}],
+                "messages": [{"row_id": "row^1"}],
             },
             {
                 "description": "Single row: malformed diagnostics info from forwarder",
                 "messages": [
                     {
-                        "row_id": "row_1",
-                        "diagnostics": "SHOULD BE A DICTIONARY, NOT A STRING",
+                        "row_id": "row^1",
+                        "diagnostics": "SHOULD BE A DICTIONARY, NOT A STRING"
                     }
                 ],
             },
@@ -224,23 +235,7 @@ class TestAckProcessor(unittest.TestCase):
                     Key=MOCK_MESSAGE_DETAILS.temp_ack_file_key,
                 )
 
-            # Test scenario where there is an existing ack file
-            # TODO: None of the test cases have any existing ack file content?
-            with self.subTest(msg=f"Existing ack file: {test_case['description']}"):
-                existing_ack_file_content = test_case.get("existing_ack_file_content", "")
-                setup_existing_ack_file(
-                    MOCK_MESSAGE_DETAILS.temp_ack_file_key,
-                    existing_ack_file_content,
-                    self.s3_client,
-                )
-                response = lambda_handler(event=self.generate_event(test_case["messages"]), context={})
-                self.assertEqual(response, EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS)
-                validate_ack_file_content(self.s3_client, test_case["messages"], existing_ack_file_content)
-
-                self.s3_client.delete_object(
-                    Bucket=BucketNames.DESTINATION,
-                    Key=MOCK_MESSAGE_DETAILS.temp_ack_file_key,
-                )
+    # def test_lambda_handler
 
     def test_lambda_handler_error_scenarios(self):
         """Test that the lambda handler raises appropriate exceptions for malformed event data."""

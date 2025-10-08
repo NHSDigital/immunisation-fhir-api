@@ -2,12 +2,10 @@
 
 from botocore.exceptions import ClientError
 from io import StringIO, BytesIO
-from typing import Optional
 from audit_table import change_audit_table_status_to_processed
 from common.clients import get_s3_client, logger
 from constants import ACK_HEADERS, get_source_bucket_name, get_ack_bucket_name
 from logging_decorators import upload_ack_file_logging_decorator
-from utils_for_ack_lambda import get_row_count
 
 
 def create_ack_data(
@@ -45,6 +43,37 @@ def create_ack_data(
     }
 
 
+# TODO - can change name
+@upload_ack_file_logging_decorator
+def complete_batch_file_process(
+    message_id: str,
+    supplier: str,
+    vaccine_type: str,
+    created_at_formatted_string: str,
+    file_key: str,
+    total_ack_rows_processed: int
+) -> dict:
+    """Mark the batch file as processed. This involves moving the ack and original file to destinations and updating
+    the audit table status"""
+    # TODO - move to constants
+    ack_bucket_name = get_ack_bucket_name()
+    source_bucket_name = get_source_bucket_name()
+    ack_filename = f"{file_key.replace('.csv', f'_BusAck_{created_at_formatted_string}.csv')}"
+
+    move_file(ack_bucket_name, f"TempAck/{ack_filename}", f"forwardedFile/{ack_filename}")
+    move_file(source_bucket_name, f"processing/{file_key}", f"archive/{file_key}")
+
+    change_audit_table_status_to_processed(file_key, message_id)
+
+    return {
+        "message_id": message_id,
+        "file_key": file_key,
+        "supplier": supplier,
+        "vaccine_type": vaccine_type,
+        "row_count": total_ack_rows_processed
+    }
+
+
 def obtain_current_ack_content(temp_ack_file_key: str) -> StringIO:
     """Returns the current ack file content if the file exists, or else initialises the content with the ack headers."""
     try:
@@ -65,58 +94,8 @@ def obtain_current_ack_content(temp_ack_file_key: str) -> StringIO:
     return accumulated_csv_content
 
 
-@upload_ack_file_logging_decorator
-def upload_ack_file(
-    temp_ack_file_key: str,
-    message_id: str,
-    supplier: str,
-    vaccine_type: str,
-    accumulated_csv_content: StringIO,
-    ack_data_rows: list,
-    archive_ack_file_key: str,
-    file_key: str,
-) -> Optional[dict]:
-    """Adds the data row to the uploaded ack file"""
-    for row in ack_data_rows:
-        data_row_str = [str(item) for item in row.values()]
-        cleaned_row = "|".join(data_row_str).replace(" |", "|").replace("| ", "|").strip()
-        accumulated_csv_content.write(cleaned_row + "\n")
-    csv_file_like_object = BytesIO(accumulated_csv_content.getvalue().encode("utf-8"))
-
-    ack_bucket_name = get_ack_bucket_name()
-    source_bucket_name = get_source_bucket_name()
-
-    get_s3_client().upload_fileobj(csv_file_like_object, ack_bucket_name, temp_ack_file_key)
-
-    row_count_source = get_row_count(source_bucket_name, f"processing/{file_key}")
-    row_count_destination = get_row_count(ack_bucket_name, temp_ack_file_key)
-    # TODO: Should we check for > and if so what handling is required
-    if row_count_destination == row_count_source:
-        move_file(ack_bucket_name, temp_ack_file_key, archive_ack_file_key)
-        move_file(source_bucket_name, f"processing/{file_key}", f"archive/{file_key}")
-
-        # Update the audit table
-        change_audit_table_status_to_processed(file_key, message_id)
-
-        # Ingestion of this file is complete
-        result = {
-            "message_id": message_id,
-            "file_key": file_key,
-            "supplier": supplier,
-            "vaccine_type": vaccine_type,
-            "row_count": row_count_source - 1,
-        }
-    else:
-        result = None
-    logger.info("Ack file updated to %s: %s", ack_bucket_name, archive_ack_file_key)
-    return result
-
-
 def update_ack_file(
     file_key: str,
-    message_id: str,
-    supplier: str,
-    vaccine_type: str,
     created_at_formatted_string: str,
     ack_data_rows: list,
 ) -> None:
@@ -125,16 +104,17 @@ def update_ack_file(
     temp_ack_file_key = f"TempAck/{ack_filename}"
     archive_ack_file_key = f"forwardedFile/{ack_filename}"
     accumulated_csv_content = obtain_current_ack_content(temp_ack_file_key)
-    upload_ack_file(
-        temp_ack_file_key,
-        message_id,
-        supplier,
-        vaccine_type,
-        accumulated_csv_content,
-        ack_data_rows,
-        archive_ack_file_key,
-        file_key,
-    )
+
+    for row in ack_data_rows:
+        data_row_str = [str(item) for item in row.values()]
+        cleaned_row = "|".join(data_row_str).replace(" |", "|").replace("| ", "|").strip()
+        accumulated_csv_content.write(cleaned_row + "\n")
+
+    csv_file_like_object = BytesIO(accumulated_csv_content.getvalue().encode("utf-8"))
+    ack_bucket_name = get_ack_bucket_name()
+
+    get_s3_client().upload_fileobj(csv_file_like_object, ack_bucket_name, temp_ack_file_key)
+    logger.info("Ack file updated to %s: %s", ack_bucket_name, archive_ack_file_key)
 
 
 def move_file(bucket_name: str, source_file_key: str, destination_file_key: str) -> None:

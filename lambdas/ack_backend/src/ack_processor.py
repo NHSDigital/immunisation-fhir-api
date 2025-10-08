@@ -2,12 +2,13 @@
 
 import json
 from logging_decorators import ack_lambda_handler_logging_decorator
-from update_ack_file import update_ack_file
+from update_ack_file import update_ack_file, complete_batch_file_process
+from utils_for_ack_lambda import is_ack_processing_complete
 from convert_message_to_ack_row import convert_message_to_ack_row
 
 
 @ack_lambda_handler_logging_decorator
-def lambda_handler(event, context):
+def lambda_handler(event, _):
     """
     Ack lambda handler.
     For each record: each message in the array of messages is converted to an ack row,
@@ -22,6 +23,7 @@ def lambda_handler(event, context):
     message_id = None
 
     ack_data_rows = []
+    total_ack_rows_processed = 0
 
     for i, record in enumerate(event["Records"]):
 
@@ -31,10 +33,8 @@ def lambda_handler(event, context):
             raise ValueError("Could not load incoming message body") from body_json_error
 
         if i == 0:
-            # IMPORTANT NOTE: An assumption is made here that the file_key and created_at_formatted_string are the same
-            # for all messages in the event. The use of FIFO SQS queues ensures that this is the case, provided that
-            # there is only one file processing at a time for each supplier queue (combination of supplier and vaccine
-            # type).
+            # The SQS FIFO MessageGroupId that this lambda consumes from is based on the source filename + created at
+            # datetime. Therefore, can safely retrieve file metadata from the first record in the list
             file_key = incoming_message_body[0].get("file_key")
             message_id = (incoming_message_body[0].get("row_id", "")).split("^")[0]
             vaccine_type = incoming_message_body[0].get("vaccine_type")
@@ -44,14 +44,14 @@ def lambda_handler(event, context):
         for message in incoming_message_body:
             ack_data_rows.append(convert_message_to_ack_row(message, created_at_formatted_string))
 
-    update_ack_file(
-        file_key,
-        message_id,
-        supplier,
-        vaccine_type,
-        created_at_formatted_string,
-        ack_data_rows,
-    )
+        if i == len(event["Records"]) - 1:
+            total_ack_rows_processed = int(incoming_message_body[-1].get("row_id", "").split("^")[1])
+
+    update_ack_file(file_key, created_at_formatted_string, ack_data_rows)
+
+    if is_ack_processing_complete(message_id, total_ack_rows_processed):
+        complete_batch_file_process(message_id, supplier, vaccine_type, created_at_formatted_string, file_key,
+                                    total_ack_rows_processed)
 
     return {
         "statusCode": 200,
