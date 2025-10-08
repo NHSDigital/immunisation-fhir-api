@@ -14,7 +14,7 @@ install-node:
 
 #Configures Git Hooks, which are scripts that run given a specified event.
 .git/hooks/pre-commit:
-	cp scripts/pre-commit .git/hooks/pre-commit
+	cp utilities/scripts/pre-commit .git/hooks/pre-commit
 
 #Condensed Target to run all targets above.
 install: install-node install-python .git/hooks/pre-commit
@@ -33,16 +33,16 @@ clean:
 publish: clean
 	mkdir -p build
 	npm run publish 2> /dev/null
-	cp build/immunisation-fhir-api.json sandbox/
-	cp -r specification sandbox/specification
+	cp build/immunisation-fhir-api.json utilities/sandbox/
+	cp -r utilities/specification utilities/sandbox/specification
 
 #Runs build proxy script
 build-proxy:
-	scripts/build_proxy.sh
+	utilities/scripts/build_proxy.sh
 
 #Files to loop over in release
 # VED-811: remove everything except for proxy related files as we move to Github Actions for backend deployment
-_dist_include="pytest.ini poetry.lock poetry.toml pyproject.toml Makefile build/. specification sandbox terraform scripts"
+_dist_include="pytest.ini poetry.lock poetry.toml pyproject.toml Makefile build/. utilities/specification utilities/sandbox terraform utilities/scripts"
 
 
 #Create /dist/ sub-directory and copy files into directory
@@ -90,7 +90,7 @@ test-prod:
 	--junitxml=test-report.xml \
 
 setup-python-envs:
-	scripts/setup-python-envs.sh
+	utilities/scripts/setup-python-envs.sh
 
 initialise-all-python-venvs:
 	for dir in $(PYTHON_PROJECT_DIRS); do ( \
