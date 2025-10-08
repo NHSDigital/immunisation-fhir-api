@@ -24,7 +24,7 @@ jobs:
 
       # Base linting requires 3.8 due to APIM package dependencies. See root README for details under linting.
       # Consider upgrading this and poetry deps if we move away from Azure DevOps to using the Proxygen tool.
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: 3.8
           cache: 'poetry'
@@ -50,7 +50,7 @@ jobs:
       - name: Install poetry
         run: pip install poetry==2.1.4
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: 3.11
           cache: 'poetry'
