@@ -19,7 +19,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "data_destinations" {
   bucket = aws_s3_bucket.data_quality_reports_bucket.id
 
   rule {
-    id     = "DeleteFilesFromForwardedFile"
+    id     = "GenericValidationReports"
     status = "Enabled"
 
     filter {
