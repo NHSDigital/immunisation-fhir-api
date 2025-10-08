@@ -14,10 +14,6 @@ resource "aws_shield_protection" "parent_dns" {
   provider     = aws.use1
   name         = "imms-${var.environment}-fhir-api-parent-dns-shield"
   resource_arn = aws_route53_zone.parent_hosted_zone.arn
-
-  tags = {
-    Environment = 
-  }
 }
 
 resource "aws_shield_protection" "child_dns" {
@@ -43,7 +39,7 @@ locals {
 resource "aws_cloudwatch_metric_alarm" "ddos_protection_regional" {
   for_each = local.regional_shield_arn
 
-  alarm_name          = "shield_ddos_${each.key}"
+  alarm_name          = "imms-${var.environment}-shield_ddos_${each.key}"
   alarm_description   = "Alarm when Shield detects DDoS on ${each.key}"
 
   namespace           = "AWS/DDoSProtection"
@@ -63,10 +59,10 @@ resource "aws_cloudwatch_metric_alarm" "ddos_protection_regional" {
 
 # Create Metric Alarms for Global Resources in us-east-1 Region
 resource "aws_cloudwatch_metric_alarm" "ddos_protection_global" {
-  for_each = locals.global_shield_arn
+  for_each = local.global_shield_arn
 
   provider            = aws.use1
-  alarm_name          = "shield_ddos_${each.key}"
+  alarm_name          = "imms-${var.environment}-shield_ddos_${each.key}"
   alarm_description   = "Alarm when Shield detects DDoS on ${each.key}"
 
   namespace           = "AWS/DDoSProtection"
@@ -88,7 +84,7 @@ resource "aws_cloudwatch_metric_alarm" "ddos_protection_global" {
 # Event Bus Rule for eu-west-2 Region
 
 resource "aws_cloudwatch_event_rule" "shield_ddos_rule_regional" {
-  name        = "imms_${var.environment}_shield_ddos_rule_${data.aws_region.current.name}"
+  name        = "imms-${var.environment}-shield_ddos_rule_${data.aws_region.current.region}"
   description = "Forward Shield DDoS CloudWatch alarms to CSOC event bus"
 
   event_pattern = jsonencode({
@@ -113,7 +109,7 @@ resource "aws_cloudwatch_event_target" "shield_ddos_target_regional" {
 
 resource "aws_cloudwatch_event_rule" "shield_ddos_rule_global" {
   provider    = aws.use1
-  name        = "imms_${var.environment}_shield_ddos_rule_us-east-1"
+  name        = "imms-${var.environment}-shield_ddos_rule-us-east-1"
   description = "Forward Shield DDoS CloudWatch alarms (global) to CSOC event bus"
 
   event_pattern = jsonencode({
