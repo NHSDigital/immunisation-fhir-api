@@ -9,13 +9,13 @@ from datetime import datetime, timedelta, timezone
 from moto import mock_s3, mock_kinesis, mock_firehose, mock_dynamodb
 from boto3 import client as boto3_client
 
-from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
+from utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
     GenericSetUp,
     GenericTearDown,
     add_entry_to_table,
     assert_audit_table_entry,
 )
-from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
+from utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
     MockFileDetails,
     FileDetails,
     ValidMockFileContent,
@@ -25,12 +25,12 @@ from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests impo
     InfAckFileRows,
     REGION_NAME,
 )
-from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
+from utils_for_recordprocessor_tests.mock_environment_variables import (
     MOCK_ENVIRONMENT_DICT,
     BucketNames,
     Kinesis,
 )
-from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
+from utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
     create_patch,
 )
 
@@ -230,7 +230,7 @@ class TestRecordProcessor(unittest.TestCase):
         ]
         self.make_inf_ack_assertions(file_details=mock_rsv_emis_file, passed_validation=True)
         self.make_kinesis_assertions(assertion_cases)
-        assert_audit_table_entry(test_file, FileStatus.PREPROCESSED)
+        assert_audit_table_entry(test_file, FileStatus.PREPROCESSED, row_count=3)
 
     def test_e2e_partial_permissions(self):
         """
@@ -286,7 +286,7 @@ class TestRecordProcessor(unittest.TestCase):
         ]
         self.make_inf_ack_assertions(file_details=mock_rsv_emis_file, passed_validation=True)
         self.make_kinesis_assertions(assertion_cases)
-        assert_audit_table_entry(test_file, FileStatus.PREPROCESSED)
+        assert_audit_table_entry(test_file, FileStatus.PREPROCESSED, row_count=3)
 
     def test_e2e_no_required_permissions(self):
         """
@@ -307,7 +307,7 @@ class TestRecordProcessor(unittest.TestCase):
             self.assertIn("diagnostics", data_dict)
             self.assertNotIn("fhir_json", data_dict)
         self.make_inf_ack_assertions(file_details=mock_rsv_emis_file, passed_validation=True)
-        assert_audit_table_entry(test_file, FileStatus.PREPROCESSED)
+        assert_audit_table_entry(test_file, FileStatus.PREPROCESSED, row_count=2)
 
     def test_e2e_no_permissions(self):
         """
@@ -511,7 +511,7 @@ class TestRecordProcessor(unittest.TestCase):
                     "RSV_Vaccinations_v5_8HK48_20210730T12000000.csv",
                 )
                 self.assertListEqual(kinesis_records, [])
-                assert_audit_table_entry(test_file, "Not processed - Empty file")
+                assert_audit_table_entry(test_file, "Not processed - Empty file", row_count=0)
                 self.assert_object_moved_to_archive(test_file.file_key)
 
     def test_e2e_error_is_logged_if_invalid_json_provided(self):

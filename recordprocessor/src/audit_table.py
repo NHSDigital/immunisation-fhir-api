@@ -7,11 +7,22 @@ from errors import UnhandledAuditTableError
 from constants import AUDIT_TABLE_NAME, AuditTableKeys
 
 
-def update_audit_table_status(file_key: str, message_id: str, status: str, error_details: Optional[str] = None) -> None:
+def update_audit_table_status(
+    file_key: str,
+    message_id: str,
+    status: str,
+    error_details: Optional[str] = None,
+    record_count: Optional[int] = None,
+) -> None:
     """Updates the status in the audit table to the requested value"""
     update_expression = f"SET #{AuditTableKeys.STATUS} = :status"
     expression_attr_names = {f"#{AuditTableKeys.STATUS}": "status"}
     expression_attr_values = {":status": {"S": status}}
+
+    if record_count is not None:
+        update_expression = update_expression + f", #{AuditTableKeys.RECORD_COUNT} = :record_count"
+        expression_attr_names[f"#{AuditTableKeys.RECORD_COUNT}"] = "record_count"
+        expression_attr_values[":record_count"] = {"N": str(record_count)}
 
     if error_details is not None:
         update_expression = update_expression + f", #{AuditTableKeys.ERROR_DETAILS} = :error_details"
