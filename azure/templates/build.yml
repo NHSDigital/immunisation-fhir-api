@@ -2,9 +2,9 @@ steps:
   - bash: |
       mkdir -p build
       npm run publish 2> /dev/null
-      cp build/immunisation-fhir-api.json sandbox/
+      cp build/immunisation-fhir-api.json utilities/sandbox/
 
-        cd sandbox
+        cd utilities/sandbox
       docker build -t sandbox .
     displayName: Build sandbox image
     workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)"
