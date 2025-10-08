@@ -397,5 +397,5 @@ class InvalidValues:
         {"use": "official", "given": ["Florence"]},
         {"family": "Nightingale", "given": ""},
     ]
-    
+
     invalid_dose_quantity = {"value": 2, "unit": "ml", "code": "258773002"}

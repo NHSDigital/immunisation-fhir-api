@@ -4,7 +4,7 @@ import json
 
 from typing import Union
 from .generic_utils import create_diagnostics_error
-from base_utils.base_utils import obtain_field_location
+from models.utils.base_utils import obtain_field_location
 from models.obtain_field_value import ObtainFieldValue
 from models.field_names import FieldNames
 from models.errors import MandatoryError
@@ -54,7 +54,7 @@ def convert_disease_codes_to_vaccine_type(disease_codes_input: list) -> Union[st
     """
     key = ":".join(sorted(disease_codes_input))
     vaccine_type = redis_client.hget(Constants.DISEASES_TO_VACCINE_TYPE_HASH_KEY, key)
-    
+
     if not vaccine_type:
         raise ValueError(
             f"Validation errors: protocolApplied[0].targetDisease[*].coding[?(@.system=='http://snomed.info/sct')].code - "

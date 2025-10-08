@@ -3,7 +3,7 @@ import unittest
 from unittest.mock import create_autospec, patch
 
 from create_imms_handler import create_immunization
-from fhir_controller import FhirController
+from controller.fhir_controller import FhirController
 from models.errors import Severity, Code, create_operation_outcome
 from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
 
@@ -15,7 +15,7 @@ class TestCreateImmunizationById(unittest.TestCase):
         self.mock_logger_info = self.logger_info_patcher.start()
         self.logger_exception_patcher = patch("logging.Logger.exception")
         self.mock_logger_exception = self.logger_exception_patcher.start()
-        
+
     def tearDown(self):
         patch.stopall()
 

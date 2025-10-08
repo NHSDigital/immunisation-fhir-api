@@ -9,14 +9,14 @@ from jsonpath_ng.ext import parse
 
 
 from models.fhir_immunization import ImmunizationValidator
-from tests.utils.generic_utils import (
+from testing_utils.generic_utils import (
     # these have an underscore to avoid pytest collecting them as tests
     test_invalid_values_rejected as _test_invalid_values_rejected,
     load_json_data,
 )
-from tests.utils.mandation_test_utils import MandationTests
-from tests.utils.values_for_tests import NameInstances
-from tests.utils.generic_utils import update_contained_resource_field
+from testing_utils.mandation_test_utils import MandationTests
+from testing_utils.values_for_tests import NameInstances
+from testing_utils.generic_utils import update_contained_resource_field
 
 class TestImmunizationModelPostValidationRules(unittest.TestCase):
     """Test immunization post validation rules on the FHIR model"""

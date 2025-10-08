@@ -102,19 +102,17 @@ class ImmunizationRepository:
         else:
             return None, None
 
-    def get_immunization_by_id(self, imms_id: str) -> Optional[dict]:
+    def get_immunization_and_version_by_id(self, imms_id: str) -> tuple[Optional[dict], Optional[str]]:
         response = self.table.get_item(Key={"PK": _make_immunization_pk(imms_id)})
         item = response.get("Item")
 
         if not item:
-            return None
-        if item.get("DeletedAt") and item["DeletedAt"] != "reinstated":
-            return None
+            return None, None
 
-        return {
-            "Resource": json.loads(item["Resource"]),
-            "Version": item["Version"]
-        }
+        if item.get("DeletedAt") and item["DeletedAt"] != "reinstated":
+            return None, None
+
+        return json.loads(item.get("Resource", {})), str(item.get("Version", ""))
 
     def get_immunization_by_id_all(self, imms_id: str, imms: dict) -> Optional[dict]:
         response = self.table.get_item(Key={"PK": _make_immunization_pk(imms_id)})

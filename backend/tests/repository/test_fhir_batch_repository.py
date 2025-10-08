@@ -7,8 +7,8 @@ import botocore.exceptions
 from moto import mock_aws
 from uuid import uuid4
 from models.errors import IdentifierDuplicationError, ResourceNotFoundError, UnhandledResponseError, ResourceFoundError
-from fhir_batch_repository import ImmunizationBatchRepository, create_table
-from tests.utils.immunization_utils import create_covid_19_immunization_dict
+from repository.fhir_batch_repository import ImmunizationBatchRepository, create_table
+from testing_utils.immunization_utils import create_covid_19_immunization_dict
 
 imms_id = str(uuid4())
 
@@ -18,7 +18,7 @@ def _make_immunization_pk(_id):
 
 @mock_aws
 class TestImmunizationBatchRepository(unittest.TestCase):
-    
+
     def setUp(self):
         os.environ["DYNAMODB_TABLE_NAME"] = "test-immunization-table"
         self.dynamodb = boto3.resource("dynamodb", region_name="eu-west-2")
@@ -37,8 +37,8 @@ class TestImmunizationBatchRepository(unittest.TestCase):
     def tearDown(self):
         patch.stopall()
 
-class TestCreateImmunization(TestImmunizationBatchRepository): 
-    
+class TestCreateImmunization(TestImmunizationBatchRepository):
+
     def modify_immunization(self, remove_nhs):
         """Modify the immunization object by removing NHS number if required"""
         if remove_nhs:
@@ -78,8 +78,8 @@ class TestCreateImmunization(TestImmunizationBatchRepository):
 
     def test_create_immunization_without_nhs_number(self):
         """Test creating Immunization without NHS number."""
-        
-        self.create_immunization_test_logic(is_present=False, remove_nhs=True)    
+
+        self.create_immunization_test_logic(is_present=False, remove_nhs=True)
 
 
     def test_create_immunization_duplicate(self):
@@ -92,7 +92,7 @@ class TestCreateImmunization(TestImmunizationBatchRepository):
         })
         with self.assertRaises(IdentifierDuplicationError):
             self.repository.create_immunization(self.immunization, "supplier", "vax-type", self.table, False)
-        self.table.put_item.assert_not_called()  
+        self.table.put_item.assert_not_called()
 
     def test_create_should_catch_dynamo_error(self):
         """it should throw UnhandledResponse when the response from dynamodb can't be handled"""
@@ -102,7 +102,7 @@ class TestCreateImmunization(TestImmunizationBatchRepository):
         self.table.put_item = MagicMock(return_value=response)
         with self.assertRaises(UnhandledResponseError) as e:
             self.repository.create_immunization(self.immunization, "supplier", "vax-type", self.table, False)
-        self.assertDictEqual(e.exception.response, response)  
+        self.assertDictEqual(e.exception.response, response)
 
 
     def test_create_immunization_unhandled_error(self):
@@ -119,10 +119,10 @@ class TestCreateImmunization(TestImmunizationBatchRepository):
 
         with unittest.mock.patch.object(self.table, 'put_item', side_effect=botocore.exceptions.ClientError({"Error": {"Code": "ConditionalCheckFailedException"}}, "PutItem")):
             with self.assertRaises(ResourceFoundError):
-                self.repository.create_immunization(self.immunization, "supplier", "vax-type", self.table, False)              
-        
+                self.repository.create_immunization(self.immunization, "supplier", "vax-type", self.table, False)
 
-class TestUpdateImmunization(TestImmunizationBatchRepository): 
+
+class TestUpdateImmunization(TestImmunizationBatchRepository):
     def test_update_immunization(self):
         """it should update Immunization record"""
 
@@ -165,7 +165,7 @@ class TestUpdateImmunization(TestImmunizationBatchRepository):
                 },
                 "expected_extra_values": {}
             }
-        ] 
+        ]
         for is_present in [True, False]:
             for case in test_cases:
                 with self.subTest(is_present=is_present, case=case):
@@ -183,7 +183,7 @@ class TestUpdateImmunization(TestImmunizationBatchRepository):
                         ":supplier_system": "supplier"
                     }
                     expected_values.update(case["expected_extra_values"])
-                    
+
                     self.table.update_item.assert_called_with(
                         Key={"PK": _make_immunization_pk(imms_id)},
                         UpdateExpression=ANY,
@@ -193,7 +193,7 @@ class TestUpdateImmunization(TestImmunizationBatchRepository):
                         ConditionExpression=ANY,
                     )
                     self.assertEqual(response, f'Immunization#{self.immunization["id"]}')
-    
+
     def test_update_immunization_not_found(self):
         """it should not update Immunization since the imms id not found"""
 
@@ -218,7 +218,7 @@ class TestUpdateImmunization(TestImmunizationBatchRepository):
             )
         with self.assertRaises(UnhandledResponseError) as e:
             self.repository.update_immunization(self.immunization, "supplier", "vax-type", self.table, False)
-        self.assertDictEqual(e.exception.response, response)  
+        self.assertDictEqual(e.exception.response, response)
 
     def test_update_immunization_unhandled_error(self):
         """it should throw UnhandledResponse when the response from dynamodb can't be handled"""
@@ -235,7 +235,7 @@ class TestUpdateImmunization(TestImmunizationBatchRepository):
                     }]
                 }
             )
-                self.repository.update_immunization(self.immunization, "supplier", "vax-type", self.table, False)    
+                self.repository.update_immunization(self.immunization, "supplier", "vax-type", self.table, False)
         self.assertDictEqual(e.exception.response, response)
 
     def test_update_immunization_conditionalcheckfailedexception_error(self):
@@ -252,9 +252,9 @@ class TestUpdateImmunization(TestImmunizationBatchRepository):
                     }]
                 }
             )
-                self.repository.update_immunization(self.immunization, "supplier", "vax-type", self.table, False)    
-          
-class TestDeleteImmunization(TestImmunizationBatchRepository): 
+                self.repository.update_immunization(self.immunization, "supplier", "vax-type", self.table, False)
+
+class TestDeleteImmunization(TestImmunizationBatchRepository):
     def test_delete_immunization(self):
         """it should delete Immunization record"""
 
@@ -276,7 +276,7 @@ class TestDeleteImmunization(TestImmunizationBatchRepository):
                 ReturnValues=ANY,
                 ConditionExpression=ANY,
             )
-            self.assertEqual(response, f'Immunization#{self.immunization ["id"]}')  
+            self.assertEqual(response, f'Immunization#{self.immunization ["id"]}')
 
     def test_delete_immunization_not_found(self):
         """it should not delete Immunization since the imms id not found"""
@@ -302,7 +302,7 @@ class TestDeleteImmunization(TestImmunizationBatchRepository):
             )
         with self.assertRaises(UnhandledResponseError) as e:
             self.repository.delete_immunization(self.immunization, "supplier", "vax-type", self.table, False)
-        self.assertDictEqual(e.exception.response, response)  
+        self.assertDictEqual(e.exception.response, response)
 
     def test_delete_immunization_unhandled_error(self):
         """it should throw UnhandledResponse when the response from dynamodb can't be handled"""
@@ -319,7 +319,7 @@ class TestDeleteImmunization(TestImmunizationBatchRepository):
                     }]
                 }
             )
-                self.repository.delete_immunization(self.immunization, "supplier", "vax-type", self.table, False)    
+                self.repository.delete_immunization(self.immunization, "supplier", "vax-type", self.table, False)
         self.assertDictEqual(e.exception.response, response)
 
     def test_delete_immunization_conditionalcheckfailedexception_error(self):
