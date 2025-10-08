@@ -39,17 +39,21 @@ APIGEE_ENVIRONMENTS:
       immunisation-fhir-api-int:
         quota:
           enabled: true
-          limit: 300
+          limit: 6000
           interval: 1
           timeunit: minute
         spikeArrest:
           enabled: true
-          ratelimit: 600pm # 10 requests per second
+          ratelimit: 6000pm # 100 requests per second
       app:
         quota:
-          enabled: false
+          enabled: true
+          limit: 3000
+          interval: 1
+          timeunit: minute
         spikeArrest:
-          enabled: false
+          enabled: true
+          ratelimit: 3000pm # 50 requests per second
   - name: sandbox
     display_name_suffix: Sandbox
     portal_visibility: false
