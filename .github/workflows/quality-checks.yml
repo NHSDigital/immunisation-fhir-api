@@ -50,11 +50,11 @@ jobs:
         working-directory: quality_checks
 
       - name: Lint
-        run: poetry run lint
+        run: poetry run make lint
         working-directory: quality_checks
 
       - name: Check formatting
-        run: poetry run format-check
+        run: poetry run make format-check
         working-directory: quality_checks
 
   testcoverage_and_sonarcloud:
