@@ -14,9 +14,14 @@ class GenericSetUp:
     def __init__(self, s3_client=None, firehose_client=None):
 
         if s3_client:
-            for bucket_name in [BucketNames.SOURCE, BucketNames.DESTINATION, BucketNames.MOCK_FIREHOSE]:
+            for bucket_name in [
+                BucketNames.SOURCE,
+                BucketNames.DESTINATION,
+                BucketNames.MOCK_FIREHOSE,
+            ]:
                 s3_client.create_bucket(
-                    Bucket=bucket_name, CreateBucketConfiguration={"LocationConstraint": REGION_NAME}
+                    Bucket=bucket_name,
+                    CreateBucketConfiguration={"LocationConstraint": REGION_NAME},
                 )
 
         if firehose_client:
@@ -37,7 +42,11 @@ class GenericTearDown:
     def __init__(self, s3_client=None, firehose_client=None):
 
         if s3_client:
-            for bucket_name in [BucketNames.SOURCE, BucketNames.DESTINATION, BucketNames.MOCK_FIREHOSE]:
+            for bucket_name in [
+                BucketNames.SOURCE,
+                BucketNames.DESTINATION,
+                BucketNames.MOCK_FIREHOSE,
+            ]:
                 for obj in s3_client.list_objects_v2(Bucket=bucket_name).get("Contents", []):
                     s3_client.delete_object(Bucket=bucket_name, Key=obj["Key"])
                 s3_client.delete_bucket(Bucket=bucket_name)

@@ -1,4 +1,5 @@
 """Module for the global FHIR API exception handler"""
+
 import functools
 import uuid
 from typing import Callable, Type
@@ -6,14 +7,19 @@ from typing import Callable, Type
 from clients import logger
 from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
 from controller.aws_apig_response_utils import create_response
-from models.errors import UnauthorizedVaxError, UnauthorizedError, ResourceNotFoundError, create_operation_outcome, \
-    Severity, Code
-
+from models.errors import (
+    UnauthorizedVaxError,
+    UnauthorizedError,
+    ResourceNotFoundError,
+    create_operation_outcome,
+    Severity,
+    Code,
+)
 
 _CUSTOM_EXCEPTION_TO_STATUS_MAP: dict[Type[Exception], int] = {
     UnauthorizedError: 403,
     UnauthorizedVaxError: 403,
-    ResourceNotFoundError: 404
+    ResourceNotFoundError: 404,
 }
 
 
@@ -39,4 +45,3 @@ def fhir_api_exception_handler(function: Callable) -> Callable:
             return create_response(500, server_error)
 
     return wrapper
-

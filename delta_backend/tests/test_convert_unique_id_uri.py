@@ -5,6 +5,7 @@ from utils_for_converter_tests import ValuesForTests
 from converter import Converter
 from common.mappings import ConversionFieldName
 
+
 class TestUniqueIdUri(unittest.TestCase):
 
     def setUp(self):

@@ -69,22 +69,22 @@ class AppRestrictedAuthentication(BaseAuthentication):
             "aud": self.token_url,
             "iat": now,
             "exp": now + self.expiry,
-            "jti": str(uuid.uuid4())
+            "jti": str(uuid.uuid4()),
         }
-        _jwt = jwt.encode(claims, self.private_key, algorithm='RS512', headers={"kid": self.kid})
+        _jwt = jwt.encode(claims, self.private_key, algorithm="RS512", headers={"kid": self.kid})
 
-        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+        headers = {"Content-Type": "application/x-www-form-urlencoded"}
         data = {
-            'grant_type': 'client_credentials',
-            'client_assertion_type': 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
-            'client_assertion': _jwt
+            "grant_type": "client_credentials",
+            "client_assertion_type": "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
+            "client_assertion": _jwt,
         }
         token_response = requests.post(self.token_url, data=data, headers=headers)
 
         if token_response.status_code != 200:
             raise AuthenticationError(f"ApplicationRestricted token POST request failed\n{token_response.text}")
 
-        return token_response.json().get('access_token')
+        return token_response.json().get("access_token")
 
 
 class AuthCodeFlow:

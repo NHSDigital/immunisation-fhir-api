@@ -1,4 +1,5 @@
 """Add the filename to the audit table and check for duplicates."""
+
 from typing import Optional
 from clients import dynamodb_client, logger
 from errors import UnhandledAuditTableError
@@ -12,7 +13,7 @@ def upsert_audit_table(
     expiry_timestamp: int,
     queue_name: str,
     file_status: str,
-    error_details: Optional[str] = None
+    error_details: Optional[str] = None,
 ) -> None:
     """
     Updates the audit table with the file details
@@ -23,7 +24,7 @@ def upsert_audit_table(
         AuditTableKeys.QUEUE_NAME: {"S": queue_name},
         AuditTableKeys.STATUS: {"S": file_status},
         AuditTableKeys.TIMESTAMP: {"S": created_at_formatted_str},
-        AuditTableKeys.EXPIRES_AT: {"N": str(expiry_timestamp)}
+        AuditTableKeys.EXPIRES_AT: {"N": str(expiry_timestamp)},
     }
 
     if error_details is not None:
@@ -36,7 +37,11 @@ def upsert_audit_table(
             Item=audit_item,
             ConditionExpression="attribute_not_exists(message_id)",  # Prevents accidental overwrites
         )
-        logger.info("%s file, with message id %s, successfully added to audit table", file_key, message_id)
+        logger.info(
+            "%s file, with message id %s, successfully added to audit table",
+            file_key,
+            message_id,
+        )
 
     except Exception as error:  # pylint: disable = broad-exception-caught
         logger.error(error)

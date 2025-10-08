@@ -14,10 +14,10 @@ class AwsLambdaEvent:
     def __init__(self, event: Dict[str, Any]):
         self.event_source = None
         self.event_type = AwsEventType.UNKNOWN
-        self.event_source = event.get('eventSource')
+        self.event_source = event.get("eventSource")
         if self.event_source in [e.value for e in AwsEventType]:
             self.event_type = AwsEventType(self.event_source)
 
         self.records = []
         if "Records" in event:
-            self.records = event.get('Records', [])
+            self.records = event.get("Records", [])

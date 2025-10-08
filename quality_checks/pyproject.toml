@@ -1,0 +1,18 @@
+[project]
+name = "quality-checks"
+version = "0.1.0"
+description = "dependencies required for code quality checks (linting, formatting etc.)"
+authors = [
+    {name = "Matt Jarvis",email = "matt.jarvis2@nhs.net"}
+]
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "flake8 (>=7.3.0,<8.0.0)",
+    "black (>=25.9.0,<26.0.0)",
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

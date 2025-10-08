@@ -6,6 +6,7 @@ from utils_for_converter_tests import ValuesForTests
 from converter import Converter
 from common.mappings import ConversionFieldName
 
+
 class TestDoseAmountTypeUriToFlatJson(unittest.TestCase):
 
     def setUp(self):
@@ -23,14 +24,14 @@ class TestDoseAmountTypeUriToFlatJson(unittest.TestCase):
         self.request_json_data["doseQuantity"] = {
             "value": 0.5,
             "code": "ml",
-            "unit": "milliliter"
+            "unit": "milliliter",
         }
         self._run_dose_amount_test(expected_result=decimal.Decimal(0.5))
 
     def test_dose_amount_value_missing(self):
         self.request_json_data["doseQuantity"] = {
             "code": "ml",
-            "unit": "milliliter"
+            "unit": "milliliter",
             # 'value' intentionally omitted
         }
         self._run_dose_amount_test(expected_result="")

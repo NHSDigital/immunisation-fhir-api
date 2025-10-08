@@ -1,10 +1,9 @@
 import unittest
 from unittest.mock import create_autospec, patch
 
-from controller.fhir_controller import FhirController
-from models.errors import Severity, Code, create_operation_outcome
-from update_imms_handler import update_imms
 from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
+from controller.fhir_controller import FhirController
+from update_imms_handler import update_imms
 
 
 class TestUpdateImmunizations(unittest.TestCase):
@@ -19,7 +18,6 @@ class TestUpdateImmunizations(unittest.TestCase):
 
     def tearDown(self):
         patch.stopall()
-
 
     def test_update_immunization(self):
         """it should call service update method"""
@@ -42,12 +40,6 @@ class TestUpdateImmunizations(unittest.TestCase):
         error_msg = "an unhandled error"
         self.controller.update_immunization.side_effect = Exception(error_msg)
 
-        exp_error = create_operation_outcome(
-            resource_id=None,
-            severity=Severity.error,
-            code=Code.server_error,
-            diagnostics=GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE,
-        )
         mock_response = "controller-response-error"
         mock_create_response.return_value = mock_response
 
@@ -66,8 +58,6 @@ class TestUpdateImmunizations(unittest.TestCase):
         self.assertEqual(code, "exception")
         self.assertEqual(diagnostics, GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE)
         self.assertEqual(act_res, mock_response)
-
-
 
     def test_update_imms_with_duplicated_identifier_returns_error(self):
         """Should return an IdentifierDuplication error"""

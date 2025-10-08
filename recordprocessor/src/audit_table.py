@@ -1,4 +1,5 @@
 """Add the filename to the audit table and check for duplicates."""
+
 from typing import Optional
 
 from clients import dynamodb_client, logger
@@ -6,12 +7,7 @@ from errors import UnhandledAuditTableError
 from constants import AUDIT_TABLE_NAME, AuditTableKeys
 
 
-def update_audit_table_status(
-    file_key: str,
-    message_id: str,
-    status: str,
-    error_details: Optional[str] = None
-) -> None:
+def update_audit_table_status(file_key: str, message_id: str, status: str, error_details: Optional[str] = None) -> None:
     """Updates the status in the audit table to the requested value"""
     update_expression = f"SET #{AuditTableKeys.STATUS} = :status"
     expression_attr_names = {f"#{AuditTableKeys.STATUS}": "status"}
@@ -37,7 +33,7 @@ def update_audit_table_status(
             "The status of %s file, with message id %s, was successfully updated to %s in the audit table",
             file_key,
             message_id,
-            status
+            status,
         )
 
     except Exception as error:  # pylint: disable = broad-exception-caught

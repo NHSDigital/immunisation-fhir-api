@@ -12,8 +12,26 @@ env:
   LAMBDA_PATH: ${{ github.workspace }}/lambdas
 
 jobs:
-  lint:
-    name: Lint specification and Python projects
+  lint-specification:
+    name: Lint specification
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '23.11.0'
+          cache: 'npm'
+
+      - name: Install linting dependencies
+        run: make install-node
+
+      - name: Lint
+        run: make lint
+
+  lint-python:
+    name: Lint Python projects
     runs-on: ubuntu-latest
 
     steps:
@@ -22,23 +40,22 @@ jobs:
       - name: Install poetry
         run: pip install poetry==2.1.4
 
-      # Base linting requires 3.8 due to APIM package dependencies. See root README for details under linting.
-      # Consider upgrading this and poetry deps if we move away from Azure DevOps to using the Proxygen tool.
       - uses: actions/setup-python@v6
         with:
-          python-version: 3.8
+          python-version: 3.11
           cache: 'poetry'
 
-      - uses: actions/setup-node@v5
-        with:
-          node-version: '23.11.0'
-          cache: 'npm'
-
       - name: Install linting dependencies
-        run: make install-node && poetry install --no-root
+        run: poetry install
+        working-directory: quality-checks
 
       - name: Lint
-        run: make lint
+        run: poetry run lint
+        working-directory: quality-checks
+
+      - name: Check formatting
+        run: poetry run format-check
+        working-directory: quality-checks
 
   testcoverage_and_sonarcloud:
     name: Test Coverage and SonarCloud

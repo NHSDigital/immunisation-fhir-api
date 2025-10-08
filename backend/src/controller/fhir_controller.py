@@ -2,17 +2,20 @@ import base64
 import json
 import os
 import re
+import urllib.parse
 import uuid
 from decimal import Decimal
 from typing import Optional
+
 from aws_lambda_typing.events import APIGatewayProxyEventV1
 
-from controller.aws_apig_event_utils import get_supplier_system_header, get_path_parameter
+from controller.aws_apig_event_utils import (
+    get_supplier_system_header,
+    get_path_parameter,
+)
 from controller.aws_apig_response_utils import create_response
 from controller.constants import E_TAG_HEADER_NAME
 from controller.fhir_api_exception_handler import fhir_api_exception_handler
-from repository.fhir_repository import ImmunizationRepository, create_table
-from service.fhir_service import FhirService, UpdateOutcome, get_service_url
 from models.errors import (
     Severity,
     Code,
@@ -27,11 +30,14 @@ from models.errors import (
 )
 from models.utils.generic_utils import check_keys_in_sources
 from parameter_parser import process_params, process_search_params, create_query_string
-import urllib.parse
+from repository.fhir_repository import ImmunizationRepository, create_table
+from service.fhir_service import FhirService, UpdateOutcome, get_service_url
+
+IMMUNIZATION_ENV = os.getenv("IMMUNIZATION_ENV")
 
 
 def make_controller(
-    immunization_env: str = os.getenv("IMMUNIZATION_ENV"),
+    immunization_env: str = IMMUNIZATION_ENV,
 ):
     endpoint_url = "http://localhost:4566" if immunization_env == "local" else None
     imms_repo = ImmunizationRepository(create_table(endpoint_url=endpoint_url))
@@ -80,7 +86,8 @@ class FhirController:
 
         try:
             if resource := self.fhir_service.get_immunization_by_identifier(
-                identifiers, supplier_system, identifier, element):
+                identifiers, supplier_system, identifier, element
+            ):
                 return create_response(200, resource)
         except UnauthorizedVaxError as unauthorized:
             return create_response(403, unauthorized.to_operation_outcome())
@@ -106,8 +113,8 @@ class FhirController:
                     resource_id=str(uuid.uuid4()),
                     severity=Severity.error,
                     code=Code.forbidden,
-                    diagnostics="Unauthorized request"
-                )
+                    diagnostics="Unauthorized request",
+                ),
             )
 
         supplier_system = self._identify_supplier_system(aws_event)
@@ -164,7 +171,10 @@ class FhirController:
                     resource_id=str(uuid.uuid4()),
                     severity=Severity.error,
                     code=Code.invariant,
-                    diagnostics=f"Validation errors: The provided immunization id:{imms_id} doesn't match with the content of the request body",
+                    diagnostics=(
+                        f"Validation errors: The provided immunization id:{imms_id} doesn't match with the content of "
+                        "the request body"
+                    ),
                 )
                 return create_response(400, json.dumps(exp_error))
             # Validate the imms id in the path params and body of request - end
@@ -182,7 +192,9 @@ class FhirController:
                     resource_id=str(uuid.uuid4()),
                     severity=Severity.error,
                     code=Code.not_found,
-                    diagnostics=f"Validation errors: The requested immunization resource with id:{imms_id} was not found.",
+                    diagnostics=(
+                        f"Validation errors: The requested immunization resource with id:{imms_id} was not found."
+                    ),
                 )
                 return create_response(404, json.dumps(exp_error))
 
@@ -209,7 +221,7 @@ class FhirController:
                     imms,
                     existing_resource_version,
                     existing_resource_vacc_type,
-                    supplier_system
+                    supplier_system,
                 )
             # Validate if the imms resource to be updated is a logically deleted resource-end
             else:
@@ -219,7 +231,9 @@ class FhirController:
                         resource_id=str(uuid.uuid4()),
                         severity=Severity.error,
                         code=Code.invariant,
-                        diagnostics="Validation errors: Immunization resource version not specified in the request headers",
+                        diagnostics=(
+                            "Validation errors: Immunization resource version not specified in the request headers"
+                        ),
                     )
                     return create_response(400, json.dumps(exp_error))
                 # Validate if imms resource version is part of the request - end
@@ -233,7 +247,10 @@ class FhirController:
                         resource_id=str(uuid.uuid4()),
                         severity=Severity.error,
                         code=Code.invariant,
-                        diagnostics=f"Validation errors: Immunization resource version:{resource_version} in the request headers is invalid.",
+                        diagnostics=(
+                            f"Validation errors: Immunization resource version:{resource_version} in the request "
+                            "headers is invalid."
+                        ),
                     )
                     return create_response(400, json.dumps(exp_error))
                 # Validate the imms resource version provided in the request headers - end
@@ -244,7 +261,10 @@ class FhirController:
                         resource_id=str(uuid.uuid4()),
                         severity=Severity.error,
                         code=Code.invariant,
-                        diagnostics=f"Validation errors: The requested immunization resource {imms_id} has changed since the last retrieve.",
+                        diagnostics=(
+                            f"Validation errors: The requested immunization resource {imms_id} has changed since the "
+                            "last retrieve."
+                        ),
                     )
                     return create_response(400, json.dumps(exp_error))
                 if existing_resource_version < resource_version_header:
@@ -252,19 +272,22 @@ class FhirController:
                         resource_id=str(uuid.uuid4()),
                         severity=Severity.error,
                         code=Code.invariant,
-                        diagnostics=f"Validation errors: The requested immunization resource {imms_id} version is inconsistent with the existing version.",
+                        diagnostics=(
+                            f"Validation errors: The requested immunization resource {imms_id} version is inconsistent "
+                            "with the existing version."
+                        ),
                     )
                     return create_response(400, json.dumps(exp_error))
                 # Validate if resource version has changed since the last retrieve - end
 
                 # Check if the record is reinstated record - start
-                if existing_record["Reinstated"] == True:
+                if existing_record["Reinstated"] is True:
                     outcome, resource, updated_version = self.fhir_service.update_reinstated_immunization(
                         imms_id,
                         imms,
                         existing_resource_version,
                         existing_resource_vacc_type,
-                        supplier_system
+                        supplier_system,
                     )
                 else:
                     outcome, resource, updated_version = self.fhir_service.update_immunization(
@@ -272,7 +295,7 @@ class FhirController:
                         imms,
                         existing_resource_version,
                         existing_resource_vacc_type,
-                        supplier_system
+                        supplier_system,
                     )
 
                 # Check if the record is reinstated record - end
@@ -287,7 +310,9 @@ class FhirController:
                 )
                 return create_response(400, json.dumps(exp_error))
             if outcome == UpdateOutcome.UPDATE:
-                return create_response(200, None, {"E-Tag": updated_version}) #include e-tag here, is it not included in the response resource
+                return create_response(
+                    200, None, {"E-Tag": updated_version}
+                )  # include e-tag here, is it not included in the response resource
         except ValidationError as error:
             return create_response(400, error.to_operation_outcome())
         except IdentifierDuplicationError as duplicate:
@@ -317,7 +342,7 @@ class FhirController:
         except ResourceNotFoundError as not_found:
             return create_response(404, not_found.to_operation_outcome())
         except UnhandledResponseError as unhandled_error:
-           return create_response(500, unhandled_error.to_operation_outcome())
+            return create_response(500, unhandled_error.to_operation_outcome())
         except UnauthorizedVaxError as unauthorized:
             return create_response(403, unauthorized.to_operation_outcome())
 
@@ -366,9 +391,7 @@ class FhirController:
                 for entry in result_json_dict["entry"]
                 if entry["resource"].get("status") not in ("not-done", "entered-in-error")
             ]
-            total_count = sum(
-                1 for entry in result_json_dict["entry"] if entry.get("search", {}).get("mode") == "match"
-            )
+            total_count = sum(1 for entry in result_json_dict["entry"] if entry.get("search", {}).get("mode") == "match")
             result_json_dict["total"] = total_count
             if request_contained_unauthorised_vaccs:
                 exp_error = create_operation_outcome(
@@ -458,7 +481,13 @@ class FhirController:
 
         query_params = event.get("queryStringParameters", {})
         body = event["body"]
-        not_required_keys = ["-date.from", "-date.to", "-immunization.target", "_include", "patient.identifier"]
+        not_required_keys = [
+            "-date.from",
+            "-date.to",
+            "-immunization.target",
+            "_include",
+            "patient.identifier",
+        ]
 
         # Get Search Query Parameters
         if query_params and not body:

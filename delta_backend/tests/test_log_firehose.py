@@ -23,17 +23,17 @@ class TestFirehoseLogger(unittest.TestCase):
         mock_response = {
             "RecordId": "shardId-000000000000000000000001",
             "ResponseMetadata": {
-            "RequestId": "12345abcde67890fghijk",
-            "HTTPStatusCode": 200, 
-            "RetryAttempts": 0
-            }
-        }        
+                "RequestId": "12345abcde67890fghijk",
+                "HTTPStatusCode": 200,
+                "RetryAttempts": 0,
+            },
+        }
         mock_firehose_client = MagicMock()
         mock_boto_client.return_value = mock_firehose_client
         mock_firehose_client.put_record.return_value = mock_response
-        
+
         stream_name = "stream_name"
-        firehose_logger = FirehoseLogger(boto_client=mock_firehose_client, stream_name=stream_name)    
+        firehose_logger = FirehoseLogger(boto_client=mock_firehose_client, stream_name=stream_name)
         log_message = {"text": "Test log message"}
 
         # Act
@@ -66,6 +66,7 @@ class TestFirehoseLogger(unittest.TestCase):
                 Record={"Data": json.dumps(log_message).encode("utf-8")},
             )
             mock_logger_exception.assert_called_once_with("Error sending log to Firehose: Test exception")
+
 
 if __name__ == "__main__":
     unittest.main()

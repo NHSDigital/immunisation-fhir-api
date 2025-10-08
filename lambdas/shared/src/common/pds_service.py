@@ -11,8 +11,11 @@ class PdsService:
         logger.info(f"PdsService init: {environment}")
         self.authenticator = authenticator
 
-        self.base_url = f"https://{environment}.api.service.nhs.uk/personal-demographics/FHIR/R4/Patient" \
-            if environment != "prod" else "https://api.service.nhs.uk/personal-demographics/FHIR/R4/Patient"
+        self.base_url = (
+            f"https://{environment}.api.service.nhs.uk/personal-demographics/FHIR/R4/Patient"
+            if environment != "prod"
+            else "https://api.service.nhs.uk/personal-demographics/FHIR/R4/Patient"
+        )
 
         logger.info(f"PDS Service URL: {self.base_url}")
 
@@ -20,9 +23,9 @@ class PdsService:
         logger.info(f"PDS. Get patient details for ID: {patient_id}")
         access_token = self.authenticator.get_access_token()
         request_headers = {
-            'Authorization': f'Bearer {access_token}',
-            'X-Request-ID': str(uuid.uuid4()),
-            'X-Correlation-ID': str(uuid.uuid4())
+            "Authorization": f"Bearer {access_token}",
+            "X-Request-ID": str(uuid.uuid4()),
+            "X-Correlation-ID": str(uuid.uuid4()),
         }
         response = requests.get(f"{self.base_url}/{patient_id}", headers=request_headers, timeout=5)
 

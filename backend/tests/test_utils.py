@@ -1,15 +1,19 @@
 """Tests for generic utils"""
 
 import unittest
-from unittest.mock import patch
 from copy import deepcopy
+from unittest.mock import patch
 
-from models.utils.validation_utils import convert_disease_codes_to_vaccine_type, get_vaccine_type
+from models.utils.validation_utils import (
+    convert_disease_codes_to_vaccine_type,
+    get_vaccine_type,
+)
 from testing_utils.generic_utils import load_json_data, update_target_disease_code
 
 
 class TestGenericUtils(unittest.TestCase):
     """Tests for generic utils functions"""
+
     def setUp(self):
         """Set up for each test. This runs before every test"""
         self.json_data = load_json_data(filename="completed_mmr_immunization_event.json")
@@ -31,9 +35,17 @@ class TestGenericUtils(unittest.TestCase):
             (["14189004", "36989005", "36653000"], "MMR"),
             (["36989005", "14189004", "36653000"], "MMR"),
             (["36653000", "14189004", "36989005"], "MMR"),
-            (["55735004"], "RSV")
+            (["55735004"], "RSV"),
         ]
-        self.mock_redis_client.hget.side_effect = ['COVID19', 'FLU', 'HPV', 'MMR', 'MMR', 'MMR', 'RSV']
+        self.mock_redis_client.hget.side_effect = [
+            "COVID19",
+            "FLU",
+            "HPV",
+            "MMR",
+            "MMR",
+            "MMR",
+            "RSV",
+        ]
 
         for combination, vaccine_type in valid_combinations:
             self.assertEqual(convert_disease_codes_to_vaccine_type(combination), vaccine_type)
@@ -59,20 +71,28 @@ class TestGenericUtils(unittest.TestCase):
         Test that get_vaccine_type returns the correct vaccine type when given valid json data with a
         valid combination of target disease code, or raises an appropriate error otherwise
         """
-        self.mock_redis_client.hget.return_value = 'RSV'
+        self.mock_redis_client.hget.return_value = "RSV"
         # TEST VALID DATA
-        valid_json_data = load_json_data(filename=f"completed_rsv_immunization_event.json")
+        valid_json_data = load_json_data(filename="completed_rsv_immunization_event.json")
 
         vac_type = get_vaccine_type(valid_json_data)
         self.assertEqual(vac_type, "RSV")
 
         self.mock_redis_client.hget.return_value = "FLU"
         # VALID DATA: coding field with multiple coding systems including SNOMED
-        flu_json_data = load_json_data(filename=f"completed_flu_immunization_event.json")
+        flu_json_data = load_json_data(filename="completed_flu_immunization_event.json")
         valid_target_disease_element = {
             "coding": [
-                {"system": "ANOTHER_SYSTEM_URL", "code": "ANOTHER_CODE", "display": "Influenza"},
-                {"system": "http://snomed.info/sct", "code": "6142004", "display": "Influenza"},
+                {
+                    "system": "ANOTHER_SYSTEM_URL",
+                    "code": "ANOTHER_CODE",
+                    "display": "Influenza",
+                },
+                {
+                    "system": "http://snomed.info/sct",
+                    "code": "6142004",
+                    "display": "Influenza",
+                },
             ]
         }
         flu_json_data["protocolApplied"][0]["targetDisease"][0] = valid_target_disease_element
@@ -80,9 +100,7 @@ class TestGenericUtils(unittest.TestCase):
 
         # TEST INVALID DATA FOR SINGLE TARGET DISEASE
         self.mock_redis_client.hget.return_value = None  # Reset mock for invalid cases
-        covid_19_json_data = load_json_data(
-            filename=f"completed_covid19_immunization_event.json"
-        )
+        covid_19_json_data = load_json_data(filename="completed_covid19_immunization_event.json")
 
         # INVALID DATA, SINGLE TARGET DISEASE: No targetDisease field
         invalid_covid_19_json_data = deepcopy(covid_19_json_data)
@@ -99,7 +117,15 @@ class TestGenericUtils(unittest.TestCase):
             # INVALID DATA, SINGLE TARGET DISEASE: No "coding" field
             {"text": "Influenza"},
             # INVALID DATA, SINGLE TARGET DISEASE: Valid code, but no snomed coding system
-            {"coding": [{"system": "NOT_THE_SNOMED_URL", "code": "6142004", "display": "Influenza"}]},
+            {
+                "coding": [
+                    {
+                        "system": "NOT_THE_SNOMED_URL",
+                        "code": "6142004",
+                        "display": "Influenza",
+                    }
+                ]
+            },
             # INVALID DATA, SINGLE TARGET DISEASE: coding field doesn't contain a code
             {"coding": [{"system": "http://snomed.info/sct", "display": "Influenza"}]},
         ]
@@ -126,7 +152,7 @@ class TestGenericUtils(unittest.TestCase):
         )
 
         # TEST INVALID DATA FOR MULTIPLE TARGET DISEASES
-        mmr_json_data = load_json_data(filename=f"completed_mmr_immunization_event.json")
+        mmr_json_data = load_json_data(filename="completed_mmr_immunization_event.json")
 
         # INVALID DATA, MULTIPLE TARGET DISEASES: Invalid code combination
         invalid_mmr_json_data = deepcopy(mmr_json_data)
@@ -145,7 +171,15 @@ class TestGenericUtils(unittest.TestCase):
             # INVALID DATA, MULTIPLE TARGET DISEASES: No "coding" field
             {"text": "Mumps"},
             # INVALID DATA, MULTIPLE TARGET DISEASES: Valid code, but no snomed coding system
-            {"coding": [{"system": "NOT_THE_SNOMED_URL", "code": "36989005", "display": "Mumps"}]},
+            {
+                "coding": [
+                    {
+                        "system": "NOT_THE_SNOMED_URL",
+                        "code": "36989005",
+                        "display": "Mumps",
+                    }
+                ]
+            },
             # INVALID DATA, MULTIPLE TARGET DISEASES: coding field doesn't contain a code
             {"coding": [{"system": "http://snomed.info/sct", "display": "Mumps"}]},
         ]

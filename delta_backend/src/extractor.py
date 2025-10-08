@@ -1,14 +1,18 @@
 import decimal
 import json
-import exception_messages
 from datetime import datetime, timedelta, timezone
+
+import exception_messages
 from common.mappings import Gender, ConversionFieldName
+
 
 class Extractor:
 
     # This file holds the schema/base layout that maps FHIR fields to flat JSON fields
     # Each entry tells the converter how to extract and transform a specific value
-    EXTENSION_URL_VACCINATION_PRODEDURE = "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure"
+    EXTENSION_URL_VACCINATION_PRODEDURE = (
+        "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure"
+    )
     EXTENSION_URL_SCT_DESC_DISPLAY = "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-CodingSCTDescDisplay"
 
     CODING_SYSTEM_URL_SNOMED = "http://snomed.info/sct"
@@ -19,14 +23,21 @@ class Extractor:
     DATE_CONVERT_FORMAT = "%Y%m%d"
     DEFAULT_POSTCODE = "ZZ99 3CZ"
 
-    def __init__(self, fhir_json_data, report_unexpected_exception = True):
-        self.fhir_json_data = json.loads(fhir_json_data, parse_float=decimal.Decimal) if isinstance(fhir_json_data, str) else fhir_json_data
+    def __init__(self, fhir_json_data, report_unexpected_exception=True):
+        self.fhir_json_data = (
+            json.loads(fhir_json_data, parse_float=decimal.Decimal)
+            if isinstance(fhir_json_data, str)
+            else fhir_json_data
+        )
         self.report_unexpected_exception = report_unexpected_exception
         self.error_records = []
 
     def _get_patient(self):
         contained = self.fhir_json_data.get("contained", [])
-        return next((c for c in contained if isinstance(c, dict) and c.get("resourceType") == "Patient"), "")
+        return next(
+            (c for c in contained if isinstance(c, dict) and c.get("resourceType") == "Patient"),
+            "",
+        )
 
     def _get_valid_names(self, names, occurrence_time):
 
@@ -39,8 +50,6 @@ class Extractor:
             return valid_names[0]
 
         return names[0]
-
-
 
     def _get_person_names(self):
         occurrence_time = self._get_occurrence_date_time()
@@ -62,7 +71,10 @@ class Extractor:
     def _get_practitioner_names(self):
         contained = self.fhir_json_data.get("contained", [])
         occurrence_time = self._get_occurrence_date_time()
-        practitioner = next((c for c in contained if isinstance(c, dict) and c.get("resourceType") == "Practitioner"), None)
+        practitioner = next(
+            (c for c in contained if isinstance(c, dict) and c.get("resourceType") == "Practitioner"),
+            None,
+        )
         if not practitioner or "name" not in practitioner:
             return "", ""
 
@@ -150,8 +162,7 @@ class Extractor:
                 (
                     p
                     for p in valid_performers
-                    if p.get("actor", {}).get("identifier", {}).get("system")
-                    == self.ODS_ORG_CODE_SYSTEM_URL
+                    if p.get("actor", {}).get("identifier", {}).get("system") == self.ODS_ORG_CODE_SYSTEM_URL
                 ),
                 next(
                     (p for p in valid_performers if p.get("actor", {}).get("type") == "Organization"),
@@ -167,16 +178,21 @@ class Extractor:
     def _log_error(self, field_name, field_value, e, code=exception_messages.RECORD_CHECK_FAILED):
         if self.report_unexpected_exception:
             if isinstance(e, Exception):
-                message = exception_messages.MESSAGES[exception_messages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, str(e))
+                message = exception_messages.MESSAGES[exception_messages.UNEXPECTED_EXCEPTION] % (
+                    e.__class__.__name__,
+                    str(e),
+                )
             else:
                 message = str(e)
 
-            self.error_records.append({
-                "code": code,
-                "field": field_name,
-                "value": field_value,
-                "message": message
-            })
+            self.error_records.append(
+                {
+                    "code": code,
+                    "field": field_name,
+                    "value": field_value,
+                    "message": message,
+                }
+            )
 
     def _convert_date(self, field_name, date, format) -> str:
         """
@@ -260,23 +276,41 @@ class Extractor:
         if len(addresses) == 1:
             return addresses[0].get("postalCode") or self.DEFAULT_POSTCODE
 
-        if not (valid_addresses := [
-            addr for addr in addresses
-            if addr.get("postalCode") and self._is_current_period(addr, occurrence_time)
-        ]):
+        if not (
+            valid_addresses := [
+                addr for addr in addresses if addr.get("postalCode") and self._is_current_period(addr, occurrence_time)
+            ]
+        ):
             return self.DEFAULT_POSTCODE
 
         selected_address = (
-            next((a for a in valid_addresses if self.normalize(a.get("use")) == "home" and self.normalize(a.get("type")) != "postal"), None)
-            or next((a for a in valid_addresses if self.normalize(a.get("use")) != "old" and self.normalize(a.get("type")) != "postal"), None)
-            or next((a for a in valid_addresses if self.normalize(a.get("use")) != "old"), None)
+            next(
+                (
+                    a
+                    for a in valid_addresses
+                    if self.normalize(a.get("use")) == "home" and self.normalize(a.get("type")) != "postal"
+                ),
+                None,
+            )
+            or next(
+                (
+                    a
+                    for a in valid_addresses
+                    if self.normalize(a.get("use")) != "old" and self.normalize(a.get("type")) != "postal"
+                ),
+                None,
+            )
+            or next(
+                (a for a in valid_addresses if self.normalize(a.get("use")) != "old"),
+                None,
+            )
             or valid_addresses[0]
         )
 
         return selected_address.get("postalCode") or self.DEFAULT_POSTCODE
 
     def extract_date_time(self) -> str:
-        date = self.fhir_json_data.get("occurrenceDateTime","")
+        date = self.fhir_json_data.get("occurrenceDateTime", "")
         if date:
             return self._convert_date_to_safe_format(ConversionFieldName.DATE_AND_TIME, date)
         return ""
@@ -356,7 +390,7 @@ class Extractor:
         return self.fhir_json_data.get("lotNumber", "")
 
     def extract_expiry_date(self) -> str:
-        date = self.fhir_json_data.get("expirationDate","")
+        date = self.fhir_json_data.get("expirationDate", "")
         return self._convert_date(ConversionFieldName.EXPIRY_DATE, date, self.DATE_CONVERT_FORMAT)
 
     def extract_site_of_vaccination_code(self) -> str:

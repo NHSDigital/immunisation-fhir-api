@@ -1,5 +1,6 @@
 import copy
 import uuid
+
 from utils.base_test import ImmunizationBaseTest
 from utils.immunisation_api import parse_location
 from utils.resource import generate_imms_resource
@@ -14,7 +15,7 @@ class TestUpdateImmunization(ImmunizationBaseTest):
                 # Given
                 immunization_resources = [
                     generate_imms_resource(),
-                    generate_imms_resource(sample_data_file_name="completed_rsv_immunization_event")
+                    generate_imms_resource(sample_data_file_name="completed_rsv_immunization_event"),
                 ]
 
                 for imms in immunization_resources:
