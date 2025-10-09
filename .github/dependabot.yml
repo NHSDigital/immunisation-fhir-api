@@ -76,7 +76,7 @@ updates:
       - "/infrastructure/grafana/non-prod/terraform"
       - "/infra"
       - "/terraform"
-      - "/terraform_aws_backup/**"
+      - "/infrastructure/terraform_aws_backup/**"
     schedule:
       interval: "daily"
     open-pull-requests-limit: 1
