@@ -30,7 +30,7 @@ locals {
   }
   global_shield_arn = {
     route53_parent_zone = aws_shield_protection.parent_dns.resource_arn
-    route53_child_zone = aws_shield_protection.child_dns.resource_arn
+    route53_child_zone  = aws_shield_protection.child_dns.resource_arn
   }
 }
 
@@ -39,8 +39,8 @@ locals {
 resource "aws_cloudwatch_metric_alarm" "ddos_protection_regional" {
   for_each = local.regional_shield_arn
 
-  alarm_name          = "imms-${var.environment}-shield_ddos_${each.key}"
-  alarm_description   = "Alarm when Shield detects DDoS on ${each.key}"
+  alarm_name        = "imms-${var.environment}-shield_ddos_${each.key}"
+  alarm_description = "Alarm when Shield detects DDoS on ${each.key}"
 
   namespace           = "AWS/DDoSProtection"
   metric_name         = "DDoSDetected"
@@ -61,9 +61,9 @@ resource "aws_cloudwatch_metric_alarm" "ddos_protection_regional" {
 resource "aws_cloudwatch_metric_alarm" "ddos_protection_global" {
   for_each = local.global_shield_arn
 
-  provider            = aws.use1
-  alarm_name          = "imms-${var.environment}-shield_ddos_${each.key}"
-  alarm_description   = "Alarm when Shield detects DDoS on ${each.key}"
+  provider          = aws.use1
+  alarm_name        = "imms-${var.environment}-shield_ddos_${each.key}"
+  alarm_description = "Alarm when Shield detects DDoS on ${each.key}"
 
   namespace           = "AWS/DDoSProtection"
   metric_name         = "DDoSDetected"
@@ -90,7 +90,7 @@ resource "aws_cloudwatch_event_rule" "shield_ddos_rule_regional" {
   event_pattern = jsonencode({
     "source"      = ["aws.cloudwatch"],
     "detail-type" = ["CloudWatch Alarm State Change"],
-    "resources"   = [
+    "resources" = [
       for alarm in aws_cloudwatch_metric_alarm.ddos_protection_regional : alarm.arn
     ]
   })
@@ -115,7 +115,7 @@ resource "aws_cloudwatch_event_rule" "shield_ddos_rule_global" {
   event_pattern = jsonencode({
     "source"      = ["aws.cloudwatch"],
     "detail-type" = ["CloudWatch Alarm State Change"],
-    "resources"   = [
+    "resources" = [
       for alarm in aws_cloudwatch_metric_alarm.ddos_protection_global : alarm.arn
     ]
   })

@@ -1,7 +1,7 @@
 # Create s3 Bucket with conditional destroy for pr environments
 resource "aws_s3_bucket" "data_quality_reports_bucket" {
-    bucket      = "imms-${local.resource_scope}-data-quality-reports"
-    force_destroy = local.is_temp
+  bucket        = "imms-${local.resource_scope}-data-quality-reports"
+  force_destroy = local.is_temp
 
 }
 
@@ -47,8 +47,8 @@ resource "aws_iam_policy" "s3_dq_access" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect   = "Allow"
-        Action   = ["s3:PutObject"]
+        Effect = "Allow"
+        Action = ["s3:PutObject"]
         Resource = [
           aws_s3_bucket.data_quality_reports_bucket.arn,
           "${aws_s3_bucket.data_quality_reports_bucket.arn}/*"
@@ -74,8 +74,8 @@ resource "aws_s3_bucket_policy" "data_quality_bucket_policy" {
         }
         Action = "s3:*"
         Resource = [
-         aws_s3_bucket.data_quality_reports_bucket.arn,
-         "${aws_s3_bucket.data_quality_reports_bucket.arn}/*"
+          aws_s3_bucket.data_quality_reports_bucket.arn,
+          "${aws_s3_bucket.data_quality_reports_bucket.arn}/*"
         ]
         Condition = {
           Bool = {
