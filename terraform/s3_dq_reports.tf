@@ -1,6 +1,6 @@
 # Create s3 Bucket with conditional destroy for pr environments
 resource "aws_s3_bucket" "data_quality_reports_bucket" {
-    bucket      = "${local.short_prefix}-data-quality-reports"
+    bucket      = "imms-${local.resource_scope}-data-quality-reports"
     force_destroy = local.is_temp
 
 }
@@ -41,19 +41,48 @@ resource "aws_s3_bucket_versioning" "dq_source_versioning" {
 }
 
 
-# If used should attached to lambda or any aws service that needs to perform any operation
+# If used should attach to lambda or any aws service that needs to perform any operation
 resource "aws_iam_policy" "s3_dq_access" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
         Effect   = "Allow"
-        Action   = ["s3:GetObject", "s3:PutObject", "s3:ListBucket"]
+        Action   = ["s3:PutObject"]
         Resource = [
           aws_s3_bucket.data_quality_reports_bucket.arn,
           "${aws_s3_bucket.data_quality_reports_bucket.arn}/*"
         ]
       }
+    ]
+  })
+}
+
+
+resource "aws_s3_bucket_policy" "data_quality_bucket_policy" {
+  bucket = aws_s3_bucket.data_quality_reports_bucket.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Id      = "data_quality_bucket_policy"
+    Statement = [
+      {
+        Sid    = "HTTPSOnly"
+        Effect = "Deny"
+        Principal = {
+          AWS = "*"
+        }
+        Action = "s3:*"
+        Resource = [
+         aws_s3_bucket.data_quality_reports_bucket.arn,
+         "${aws_s3_bucket.data_quality_reports_bucket.arn}/*"
+        ]
+        Condition = {
+          Bool = {
+            "aws:SecureTransport" = "false"
+          }
+        }
+      },
     ]
   })
 }
