@@ -1,2 +1,4 @@
 #!/bin/sh
 make lint
+make -C quality_checks lint
+make -C quality_checks format-check
