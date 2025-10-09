@@ -1,107 +1,101 @@
 # FHIR JSON importer and data access
 import json
 
+
 class FHIRParser:
-    #parser variables
-    FHIRResource = {}
+    # parser variables
+    def __init__(self):
+        self.FHIRResource = {}
 
-#-------------------------------------------
-#File Management
+    # -------------------------------------------
+    # File Management
+    # used for files
+    def parse_fhir_file(self, fhir_file_name):
+        with open(fhir_file_name, 'r') as json_file:
+            self.FHIRResource = json.load(json_file)
 
-# used for files
-    def parseFHIRFile(self, FHIRFileName):
-            with open(FHIRFileName, 'r') as JSON:
-                self.FHIRResource = json.load(JSON)
+    # used for JSON FHIR Resource data
+    def parse_fhir_data(self, fhir_data):
+        self.FHIRResource = fhir_data
 
-
-# used for JSON FHIR Resource data
-    def parseFHIRData(self, FHIRData):
-        self.FHIRResource = FHIRData
-
-#------------------------------------------------
-# Scan and Identify
-
-# scan for a key name or a value
-    def _scanValuesForMatch(self, parent, matchValue):
+    # ------------------------------------------------
+    # Scan and Identify
+    # scan for a key name or a value
+    def _scan_values_for_match(self, parent, match_value):
         try:
             for key in parent:
-                if (parent[key] == matchValue):
+                if (parent[key] == match_value):
                     return True
             return False
-        except:
+        except Exception:
             return False
 
-
-# locate an index for an item in a list
-    def _locateListId(self, parent, locator):
-        fieldList = locator.split(":")
-        nodeId = 0
+    # locate an index for an item in a list
+    def _locate_list_id(self, parent, locator):
+        field_list = locator.split(":")
+        node_id = 0
         index = 0
         try:
             while index < len(parent):
                 for key in parent[index]:
-                    if ((parent[index][key] == fieldList[1]) or (key == fieldList[1])):
-                        nodeId = index
+                    if ((parent[index][key] == field_list[1]) or (key == field_list[1])):
+                        node_id = index
                         break
                     else:
-                        if self._scanValuesForMatch(parent[index][key], fieldList[1]):
-                            nodeId = index
+                        if self._scan_values_for_match(parent[index][key], field_list[1]):
+                            node_id = index
                             break
                 index += 1
-        except:
+        except Exception:
             return ''
-        return parent[nodeId]
-    
+        return parent[node_id]
 
-# identify a node in the FHIR data
-    def _getNode(self, parent, child):
-        #check for indices
+    # identify a node in the FHIR data
+    def _get_node(self, parent, child):
+        # check for indices
         try:
             result = parent[child]
-        except:
+        except Exception:
             try:
                 child = int(child)
                 result = parent[child]
-            except:
+            except Exception:
                 result = ''
         return result
-    
 
-# locate a value for a key
+    # locate a value for a key
     def _scanForValue(self, FHIRFields):
         fieldList = FHIRFields.split("|")
-        #get root field before we iterate
+        # get root field before we iterate
         rootfield = self.FHIRResource[fieldList[0]]
         del fieldList[0]
         try:
             for field in fieldList:
                 if (field.startswith("#")):
-                    rootfield = self._locateListId(rootfield, field) #check here for default index??
+                    rootfield = self._locate_list_id(rootfield, field)  # check here for default index??
                 else:
-                    rootfield = self._getNode(rootfield, field)
-        except:
+                    rootfield = self._get_node(rootfield, field)
+        except Exception:
             rootfield = ''
-        return rootfield       
-     
+        return rootfield
 
     # get the value list for a key
     def getKeyValue(self, fieldName):
         value = []
         try:
             responseValue = self._scanForValue(fieldName)
-        except:
+        except Exception:
             responseValue = ''
 
         value.append(responseValue)
         return value
-    
 
     # get the value list for a key
     def getKeySingleValue(self, fieldName):
         value = ''
         try:
             responseValue = self._scanForValue(fieldName)
-        except:
+        except Exception:
             responseValue = ''
 
         value = responseValue

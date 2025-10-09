@@ -15,17 +15,17 @@ KEY_CHECK_FAILED = 12
 
 
 MESSAGES = {
-                UNEXPECTED_EXCEPTION: 'Unexpected exception [%s]: %s',
-                VALUE_CHECK_FAILED: 'Value check failed.',
-                HEADER_CHECK_FAILED: 'Header check failed.',
-                RECORD_LENGTH_CHECK_FAILED: 'Record length check failed.',
-                RECORD_CHECK_FAILED: 'Record check failed.',
-                VALUE_PREDICATE_FALSE: 'Value predicate returned false.',
-                RECORD_PREDICATE_FALSE: 'Record predicate returned false.',
-                UNIQUE_CHECK_FAILED: 'Unique check failed.',
-                ASSERT_CHECK_FAILED: 'Assertion check failed.',
-                FINALLY_ASSERT_CHECK_FAILED: 'Final assertion check failed.',
-                PARSING_ERROR: 'Failed to parse data correctly.',
-                PARENT_FAILED: 'The parent expression failed to validate',
-                KEY_CHECK_FAILED: 'Value could not be found in the Key list'
-            }
+    UNEXPECTED_EXCEPTION: 'Unexpected exception [%s]: %s',
+    VALUE_CHECK_FAILED: 'Value check failed.',
+    HEADER_CHECK_FAILED: 'Header check failed.',
+    RECORD_LENGTH_CHECK_FAILED: 'Record length check failed.',
+    RECORD_CHECK_FAILED: 'Record check failed.',
+    VALUE_PREDICATE_FALSE: 'Value predicate returned false.',
+    RECORD_PREDICATE_FALSE: 'Record predicate returned false.',
+    UNIQUE_CHECK_FAILED: 'Unique check failed.',
+    ASSERT_CHECK_FAILED: 'Assertion check failed.',
+    FINALLY_ASSERT_CHECK_FAILED: 'Final assertion check failed.',
+    PARSING_ERROR: 'Failed to parse data correctly.',
+    PARENT_FAILED: 'The parent expression failed to validate',
+    KEY_CHECK_FAILED: 'Value could not be found in the Key list'
+}
