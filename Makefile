@@ -1,7 +1,7 @@
 SHELL=/usr/bin/env bash -euo pipefail
 
 PYTHON_PROJECT_DIRS_WITH_UNIT_TESTS = backend batch_processor_filter delta_backend filenameprocessor mesh_processor recordprocessor lambdas/ack_backend lambdas/redis_sync lambdas/id_sync lambdas/mns_subscription lambdas/shared
-PYTHON_PROJECT_DIRS = e2e e2e_batch $(PYTHON_PROJECT_DIRS_WITH_UNIT_TESTS)
+PYTHON_PROJECT_DIRS = e2e e2e_batch quality_checks $(PYTHON_PROJECT_DIRS_WITH_UNIT_TESTS)
 
 #Installs dependencies using poetry.
 install-python:
