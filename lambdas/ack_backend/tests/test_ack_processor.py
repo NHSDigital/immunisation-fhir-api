@@ -3,7 +3,7 @@
 import unittest
 import os
 import json
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 from io import StringIO
 from boto3 import client as boto3_client
 from moto import mock_aws
@@ -21,6 +21,7 @@ from utils.generic_setup_and_teardown_for_ack_backend import (
 from utils.utils_for_ack_backend_tests import (
     add_audit_entry_to_table,
     validate_ack_file_content,
+    generate_sample_existing_ack_content,
 )
 from utils.values_for_ack_backend_tests import (
     DiagnosticsDictionaries,
@@ -28,6 +29,7 @@ from utils.values_for_ack_backend_tests import (
     ValidValues,
     EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS,
 )
+from utils_for_ack_lambda import _BATCH_EVENT_ID_TO_RECORD_COUNT_MAP
 
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from ack_processor import lambda_handler
@@ -68,7 +70,7 @@ class TestAckProcessor(unittest.TestCase):
     def generate_event(test_messages: list[dict]) -> dict:
         """
         Returns an event where each message in the incoming message body list is based on a standard mock message,
-        updated with the details from the corresponsing message in the given test_messages list.
+        updated with the details from the corresponding message in the given test_messages list.
         """
         incoming_message_body = [
             (
@@ -79,6 +81,34 @@ class TestAckProcessor(unittest.TestCase):
             for message in test_messages
         ]
         return {"Records": [{"body": json.dumps(incoming_message_body)}]}
+
+    def assert_ack_and_source_file_locations_correct(
+        self,
+        source_file_key: str,
+        tmp_ack_file_key: str,
+        complete_ack_file_key: str,
+        is_complete: bool,
+    ) -> None:
+        """Helper function to check the ack and source files have not been moved as the processing is not yet
+        complete"""
+        if is_complete:
+            ack_file = self.s3_client.get_object(Bucket=BucketNames.DESTINATION, Key=complete_ack_file_key)
+        else:
+            ack_file = self.s3_client.get_object(Bucket=BucketNames.DESTINATION, Key=tmp_ack_file_key)
+        self.assertIsNotNone(ack_file["Body"].read())
+
+        full_src_file_key = f"archive/{source_file_key}" if is_complete else f"processing/{source_file_key}"
+        src_file = self.s3_client.get_object(Bucket=BucketNames.SOURCE, Key=full_src_file_key)
+        self.assertIsNotNone(src_file["Body"].read())
+
+    def assert_audit_entry_status_equals(self, message_id: str, status: str) -> None:
+        """Checks the audit entry status is as expected"""
+        audit_entry = self.dynamodb_client.get_item(
+            TableName=AUDIT_TABLE_NAME, Key={"message_id": {"S": message_id}}
+        ).get("Item")
+
+        actual_status = audit_entry.get("status", {}).get("S")
+        self.assertEqual(actual_status, status)
 
     def test_lambda_handler_main_multiple_records(self):
         """Test lambda handler with multiple records."""
@@ -235,7 +265,148 @@ class TestAckProcessor(unittest.TestCase):
                     Key=MOCK_MESSAGE_DETAILS.temp_ack_file_key,
                 )
 
-    # def test_lambda_handler
+    def test_lambda_handler_updates_ack_file_but_does_not_mark_complete_when_records_still_remaining(self):
+        """
+        Test that the batch file process is not marked as complete when not all records have been processed.
+        This means:
+        - the ack file remains in the TempAck directory
+        - the source file remains in the processing directory
+        - all ack records in the event are written to the temporary ack
+        """
+        mock_batch_message_id = "b500efe4-6e75-4768-a38b-6127b3c7b8e0"
+
+        # Original source file had 100 records
+        add_audit_entry_to_table(self.dynamodb_client, mock_batch_message_id, record_count=100)
+        array_of_success_messages = [
+            {**BASE_SUCCESS_MESSAGE, "row_id": f"{mock_batch_message_id}^{i}", "imms_id": f"imms_{i}",
+             "local_id": f"local^{i}"}
+            for i in range(1, 4)
+        ]
+        test_event = {
+            "Records": [
+                {"body": json.dumps(array_of_success_messages)}
+            ]
+        }
+
+        response = lambda_handler(event=test_event, context={})
+
+        self.assertEqual(response, EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS)
+        validate_ack_file_content(
+            self.s3_client,
+            [
+                *array_of_success_messages
+            ],
+            existing_file_content=ValidValues.ack_headers,
+        )
+        self.assert_ack_and_source_file_locations_correct(
+            MOCK_MESSAGE_DETAILS.file_key,
+            MOCK_MESSAGE_DETAILS.temp_ack_file_key,
+            MOCK_MESSAGE_DETAILS.archive_ack_file_key,
+            is_complete=False
+        )
+        self.assert_audit_entry_status_equals(mock_batch_message_id, "Preprocessed")
+
+    @patch("utils_for_ack_lambda.get_record_count_by_message_id", return_value=500)
+    def test_lambda_handler_uses_message_id_to_record_count_cache_to_reduce_ddb_calls(
+        self,
+        mock_get_record_count: Mock
+    ):
+        """The DynamoDB Audit table is used to store the total record count for each source file. To reduce calls each
+        time - this test checks that we cache the value as this lambda is called many times for large files"""
+        mock_batch_message_id = "622cdeea-461e-4a83-acb5-7871d47ddbcd"
+
+        # Original source file had 100 records
+        add_audit_entry_to_table(self.dynamodb_client, mock_batch_message_id, record_count=500)
+
+        message_one = [{**BASE_SUCCESS_MESSAGE, "row_id": f"{mock_batch_message_id}^1", "imms_id": "imms_1",
+                        "local_id": "local^1"}]
+        message_two = [{**BASE_SUCCESS_MESSAGE, "row_id": f"{mock_batch_message_id}^2", "imms_id": "imms_2",
+                        "local_id": "local^2"}]
+        test_event_one = {
+            "Records": [
+                {"body": json.dumps(message_one)}
+            ]
+        }
+        test_event_two = {
+            "Records": [
+                {"body": json.dumps(message_two)}
+            ]
+        }
+
+        response = lambda_handler(event=test_event_one, context={})
+        self.assertEqual(response, EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS)
+        second_invocation_response = lambda_handler(event=test_event_two, context={})
+        self.assertEqual(second_invocation_response, EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS)
+
+        # Assert that the DDB call is only performed once on the first invocation
+        mock_get_record_count.assert_called_once_with(mock_batch_message_id)
+        validate_ack_file_content(
+            self.s3_client,
+            [
+                *message_one, *message_two
+            ],
+            existing_file_content=ValidValues.ack_headers,
+        )
+        self.assert_ack_and_source_file_locations_correct(
+            MOCK_MESSAGE_DETAILS.file_key,
+            MOCK_MESSAGE_DETAILS.temp_ack_file_key,
+            MOCK_MESSAGE_DETAILS.archive_ack_file_key,
+            is_complete=False
+        )
+        self.assertEqual(_BATCH_EVENT_ID_TO_RECORD_COUNT_MAP[mock_batch_message_id], 500)
+        self.assert_audit_entry_status_equals(mock_batch_message_id, "Preprocessed")
+
+    def test_lambda_handler_updates_ack_file_and_marks_complete_when_all_records_processed(self):
+        """
+        Test that the batch file process is marked as complete when all records have been processed.
+        This means:
+        - the ack file moves from the TempAck directory to the forwardedFile directory
+        - the source file moves from the processing to the archive directory
+        - all ack records in the event are appended to the existing temporary ack file
+        - the DDB Audit Table status is set as 'Processed'
+        """
+        mock_batch_message_id = "75db20e6-c0b5-4012-a8bc-f861a1dd4b22"
+
+        # Original source file had 100 records
+        add_audit_entry_to_table(self.dynamodb_client, mock_batch_message_id, record_count=100)
+
+        # Previous invocations have already created and added to the temp ack file
+        existing_ack_content = generate_sample_existing_ack_content()
+        self.s3_client.put_object(
+            Bucket=BucketNames.DESTINATION,
+            Key=MOCK_MESSAGE_DETAILS.temp_ack_file_key,
+            Body=StringIO(existing_ack_content).getvalue(),
+        )
+
+        array_of_success_messages = [
+            {**BASE_SUCCESS_MESSAGE, "row_id": f"{mock_batch_message_id}^{i}", "imms_id": f"imms_{i}",
+             "local_id": f"local^{i}"}
+            for i in range(50, 101)
+        ]
+        test_event = {
+            "Records": [
+                {"body": json.dumps(array_of_success_messages)}
+            ]
+        }
+
+        response = lambda_handler(event=test_event, context={})
+
+        self.assertEqual(response, EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS)
+        validate_ack_file_content(
+            self.s3_client,
+            [
+                *array_of_success_messages
+            ],
+            existing_file_content=existing_ack_content,
+            is_complete=True
+        )
+        self.assert_ack_and_source_file_locations_correct(
+            MOCK_MESSAGE_DETAILS.file_key,
+            MOCK_MESSAGE_DETAILS.temp_ack_file_key,
+            MOCK_MESSAGE_DETAILS.archive_ack_file_key,
+            is_complete=True
+        )
+        self.assert_audit_entry_status_equals(mock_batch_message_id, "Processed")
 
     def test_lambda_handler_error_scenarios(self):
         """Test that the lambda handler raises appropriate exceptions for malformed event data."""

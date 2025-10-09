@@ -43,7 +43,6 @@ def create_ack_data(
     }
 
 
-# TODO - can change name
 @upload_ack_file_logging_decorator
 def complete_batch_file_process(
     message_id: str,
@@ -55,7 +54,6 @@ def complete_batch_file_process(
 ) -> dict:
     """Mark the batch file as processed. This involves moving the ack and original file to destinations and updating
     the audit table status"""
-    # TODO - move to constants
     ack_bucket_name = get_ack_bucket_name()
     source_bucket_name = get_source_bucket_name()
     ack_filename = f"{file_key.replace('.csv', f'_BusAck_{created_at_formatted_string}.csv')}"
