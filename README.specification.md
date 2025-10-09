@@ -7,7 +7,7 @@ This is a specification for the *immunisation-fhir-api* API.
 * `utilities/specification/` This [Open API Specification](https://swagger.io/docs/specification/about/) describes the endpoints, methods and messages exchanged by the API. Use it to generate interactive documentation; the contract between the API and its consumers.
 * `utilities/sandbox/` This NodeJS application implements a mock implementation of the service. Use it as a back-end service to the interactive documentation to illustrate interactions and concepts. It is not intended to provide an exhaustive/faithful environment suitable for full development and testing.
 * `utilities/scripts/` Utilities helpful to developers of this specification.
-* `proxies/` Live (connecting to another service) and sandbox (using the sandbox container) Apigee API Proxy definitions.
+* `infrastructure/proxies/` Live (connecting to another service) and sandbox (using the sandbox container) Apigee API Proxy definitions.
 
 Consumers of the API will find developer documentation on the [NHS Digital Developer Hub](https://digital.nhs.uk/developer).
 
@@ -116,7 +116,7 @@ The `project.yml` file needs to be populated with your service names to make the
 
 `/azure/templates`: Here you can define reusable actions, such as running tests, and call these actions during Azure Devops pipelines. 
 
-#### `/proxies`:
+#### `infrastructure/proxies`:
 
 This folder contains files relating to your Apigee API proxy.
 
@@ -133,16 +133,16 @@ See the APM confluence for more information on how the [_ping](https://nhsd-conf
 
 `/targets`: The XMLs within these folders set up target definitions which allow connections to external target servers. The sandbox target definition is implemented to route to the sandbox target server (code for this sandbox is found under /sandbox of this template repo). For more info on setting up a target server see the [API Producer Zone confluence](https://nhsd-confluence.digital.nhs.uk/display/APM/Setting+up+a+target+server)
 
-#### `/sandbox`:
+#### `utilities/sandbox`:
 
 This folder contains a template for a sandbox API. This example is a NodeJs application running in Docker. The application handles a few simple endpoints such as: /_ping, /health, /_status, /hello and some logging logic.
 For more information about building sandbox APIs see the [API Producer Zone confluence](https://nhsd-confluence.digital.nhs.uk/display/APM/Setting+up+your+API+sandbox ).
 
-#### `/scripts`:
+#### `utilities/scripts`:
 
 Contains useful scripts that are used throughout the project, for example in Makefile and Github workflows
 
-#### `/specification`:
+#### `utilities/specification`:
 
 Create an OpenAPI Specification to document your API. For more information about developing specifications see the [API Producer Zone confluence](https://nhsd-confluence.digital.nhs.uk/display/APM/Documenting+your+API).
 
