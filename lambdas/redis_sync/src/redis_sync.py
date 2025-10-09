@@ -5,7 +5,7 @@ from common.log_decorator import logging_decorator
 from common.redis_client import get_redis_client
 from common.s3_event import S3Event
 '''
-    Event Processor
+    Event Processor.
     The Business Logic for the Redis Sync Lambda Function.
     This module processes S3 events and iterates through each record to process them individually.'''
 
