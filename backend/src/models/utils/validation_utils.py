@@ -1,7 +1,6 @@
 """Utils for backend folder"""
 
 import json
-from typing import Union
 
 from clients import redis_client
 from constants import Urls
