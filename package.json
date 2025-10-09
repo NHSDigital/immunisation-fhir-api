@@ -5,18 +5,23 @@
   "scripts": {
     "lint": "redocly lint --skip-rule=security-defined specification/immunisation-fhir-api.yaml",
     "publish": "redocly bundle specification/immunisation-fhir-api.yaml --remove-unused-components --ext json -o build/immunisation-fhir-api.json",
-    "check-licenses": "node_modules/.bin/license-checker --failOn GPL --failOn LGPL"
+    "check-licenses": "node_modules/.bin/license-checker --failOn GPL --failOn LGPL",
+    "prepare": "husky"
   },
   "author": "NHS Digital",
   "license": "MIT",
   "homepage": "https://github.com/NHSDigital/immunisation-fhir-api",
   "devDependencies": {
     "@redocly/cli": "^2.3.1",
+    "husky": "^9.1.7",
     "license-checker": "^25.0.1",
     "lint-staged": "^16.2.3"
   },
   "lint-staged": {
-    "*.py": ["poetry -P quality_checks run flake8", "poetry -P quality_checks run black -l 121"],
+    "*.py": [
+      "poetry -P quality_checks run flake8",
+      "poetry -P quality_checks run black -l 121"
+    ],
     "*.tf": "terraform fmt",
     "immunisation-fhir-api.{yaml,json}": "redocly lint --skip-rule=security-defined"
   }
