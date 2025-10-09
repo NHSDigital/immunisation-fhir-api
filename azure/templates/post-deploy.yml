@@ -191,7 +191,7 @@ steps:
         echo "running: $test_cmd -v -c"
         $test_cmd -v -c
       fi
-    workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/e2e"
+    workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/tests/e2e"
     displayName: Run Full Test Suite
 
   - bash: |
@@ -224,7 +224,7 @@ steps:
       fi
 
     displayName: Run full batch test suite
-    workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/e2e_batch"
+    workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/tests/e2e_batch"
 
   - task: PublishTestResults@2
     displayName: 'Publish test results'

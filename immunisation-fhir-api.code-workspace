@@ -19,10 +19,10 @@
 			"path": "mesh_processor"
 		},
 		{
-			"path": "e2e"
+			"path": "tests/e2e"
 		},
 		{
-			"path": "e2e_batch"
+			"path": "tests/e2e_batch"
 		},
 		{
 			"path": "lambdas/ack_backend"
