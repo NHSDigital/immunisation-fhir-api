@@ -21,8 +21,8 @@ jobs:
 
       - uses: actions/setup-node@v5
         with:
-          node-version: '23.11.0'
-          cache: 'npm'
+          node-version: "23.11.0"
+          cache: "npm"
 
       - name: Install linting dependencies
         run: make install-node
@@ -43,7 +43,7 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: 3.11
-          cache: 'poetry'
+          cache: "poetry"
 
       - name: Install linting dependencies
         run: poetry install --no-root
@@ -70,7 +70,7 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: 3.11
-          cache: 'poetry'
+          cache: "poetry"
 
       - name: Set up AWS credentials
         env:
@@ -127,7 +127,7 @@ jobs:
         working-directory: delta_backend
         id: delta
         env:
-            PYTHONPATH: delta_backend/src:delta_backend/tests
+          PYTHONPATH: delta_backend/src:delta_backend/tests
         continue-on-error: true
         run: |
           poetry install
@@ -161,9 +161,9 @@ jobs:
           PYTHONPATH: ${{ env.LAMBDA_PATH }}/ack_backend/src:${{ github.workspace }}/ack_backend/tests
         continue-on-error: true
         run: |
-            poetry install
-            poetry run coverage run --source=src -m unittest discover || echo "ack-lambda tests failed" >> ../../failed_tests.txt
-            poetry run coverage xml -o ../../ack-lambda-coverage.xml
+          poetry install
+          poetry run coverage run --source=src -m unittest discover || echo "ack-lambda tests failed" >> ../../failed_tests.txt
+          poetry run coverage xml -o ../../ack-lambda-coverage.xml
 
       - name: Run unittest with coverage-mns-subscription
         working-directory: lambdas/mns_subscription

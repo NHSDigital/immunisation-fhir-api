@@ -6,24 +6,26 @@ This project is designed to convert FHIR-compliant JSON data (e.g., Immunization
 
 ## 📁 File Structure Overview
 
-| File Name              | What It Does |
-|------------------------|---------------|
-| **`converter.py`**     | 🧠 The main brain — applies the schema, runs conversions, handles errors. |
-| **`conversion_layout.py`** | A plain Python list that defines which fields you want, and how they should be formatted (e.g. date format, renaming rules). |
-| **`delta.py`** | Holds the function called by AWS Lambda |
-| **`extractor.py`**     | Tailored functionality to extract target fields from immunization record received by the delta handler. |
-| **`exception_messages.py`** | Holds reusable error messages and codes for clean debugging and validation feedback. |
-| **`log_firehose.py`** | Firehose logging functionality. |
-| **`utils.py`** | Holds utility functions. |
+| File Name                   | What It Does                                                                                                                 |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| **`converter.py`**          | 🧠 The main brain — applies the schema, runs conversions, handles errors.                                                    |
+| **`conversion_layout.py`**  | A plain Python list that defines which fields you want, and how they should be formatted (e.g. date format, renaming rules). |
+| **`delta.py`**              | Holds the function called by AWS Lambda                                                                                      |
+| **`extractor.py`**          | Tailored functionality to extract target fields from immunization record received by the delta handler.                      |
+| **`exception_messages.py`** | Holds reusable error messages and codes for clean debugging and validation feedback.                                         |
+| **`log_firehose.py`**       | Firehose logging functionality.                                                                                              |
+| **`utils.py`**              | Holds utility functions.                                                                                                     |
+
 ---
 
-
 ## Setting up the delta lambda locally
+
 Note: Paths are relative to this directory, `delta_backend`.
 
 1. Follow the instructions in the root level README.md to setup the [dependencies](../README.md#environment-setup) and create a [virtual environment](../README.md#) for this folder.
 
 2. Replace the `.env` file in the `delta_backend` folder. Note the variables might change in the future. These environment variables will be loaded automatically when using `direnv`.
+
     ```
     AWS_PROFILE=
     DYNAMODB_TABLE_NAME=
@@ -71,7 +73,9 @@ python check_conversion.py
 ```
 
 ### Output Location
+
 When the script runs, it will automatically:
+
 - Save a **flat JSON file** as `output.json`
 - Save a **CSV file** as `output.csv`
 
@@ -83,6 +87,8 @@ These will be located one level up from the `tests/` folder:
 ```
 
 ### Visualization
+
 You can now:
+
 - Open `output.csv` in Excel or Google Sheets to view cleanly structured records
 - Inspect `output.json` to validate the flat key-value output programmatically

@@ -11,15 +11,15 @@ resources:
       ref: refs/heads/edge
       endpoint: NHSDigital
   pipelines:
-  - pipeline: build_pipeline
-    source: "Immunisation-Fhir-Api-Build"
-    trigger:
-      branches:
-        include:
-          - refs/tags/v*
+    - pipeline: build_pipeline
+      source: "Immunisation-Fhir-Api-Build"
+      trigger:
+        branches:
+          include:
+            - refs/tags/v*
 
 pool:
-  name: 'AWS-ECS'
+  name: "AWS-ECS"
 
 variables:
   - template: project.yml
@@ -37,7 +37,7 @@ extends:
         post_deploy:
           - template: ./templates/post-deploy.yml
             parameters:
-              aws_account_type: 'dev'
+              aws_account_type: "dev"
       - environment: internal-dev-sandbox
         proxy_path: sandbox
         jinja_templates:
@@ -45,7 +45,7 @@ extends:
         post_deploy:
           - template: ./templates/post-deploy.yml
             parameters:
-              aws_account_type: 'dev'
+              aws_account_type: "dev"
               subscribe_to_mns: false
       - environment: sandbox
         proxy_path: sandbox
@@ -55,20 +55,20 @@ extends:
           - internal_dev_sandbox
       - environment: ref
         depends_on:
-            - internal_dev
-            - internal_dev_sandbox
+          - internal_dev
+          - internal_dev_sandbox
         jinja_templates:
-            DOMAIN_ENDPOINT: https://ref.imms.dev.vds.platform.nhs.uk
+          DOMAIN_ENDPOINT: https://ref.imms.dev.vds.platform.nhs.uk
         post_deploy:
-            - template: ./templates/post-deploy.yml
-              parameters:
-                aws_account_type: 'dev'
+          - template: ./templates/post-deploy.yml
+            parameters:
+              aws_account_type: "dev"
       - environment: int
         depends_on:
           - internal_dev
         jinja_templates:
           DOMAIN_ENDPOINT: https://int.imms.dev.vds.platform.nhs.uk
         post_deploy:
-            - template: ./templates/post-deploy.yml
-              parameters:
-                aws_account_type: 'dev'
+          - template: ./templates/post-deploy.yml
+            parameters:
+              aws_account_type: "dev"
