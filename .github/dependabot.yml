@@ -10,7 +10,7 @@ updates:
       - "/lambdas/ack_backend"
       - "/delta_backend"
       - "/filenameprocessor"
-      - "/grafana/non-prod/docker"
+      - "/infrastructure/grafana/non-prod/docker"
       - "/mesh_processor"
       - "/recordprocessor"
       - "/sandbox"
