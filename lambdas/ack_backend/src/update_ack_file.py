@@ -4,8 +4,9 @@ from botocore.exceptions import ClientError
 from io import StringIO, BytesIO
 from audit_table import change_audit_table_status_to_processed
 from common.clients import get_s3_client, logger
-from constants import ACK_HEADERS, get_source_bucket_name, get_ack_bucket_name
-from logging_decorators import upload_ack_file_logging_decorator
+from constants import ACK_HEADERS, get_source_bucket_name, get_ack_bucket_name, COMPLETED_ACK_DIR, TEMP_ACK_DIR, \
+    BATCH_FILE_PROCESSING_DIR, BATCH_FILE_ARCHIVE_DIR
+from logging_decorators import complete_batch_file_process_logging_decorator
 
 
 def create_ack_data(
@@ -43,7 +44,7 @@ def create_ack_data(
     }
 
 
-@upload_ack_file_logging_decorator
+@complete_batch_file_process_logging_decorator
 def complete_batch_file_process(
     message_id: str,
     supplier: str,
@@ -54,12 +55,18 @@ def complete_batch_file_process(
 ) -> dict:
     """Mark the batch file as processed. This involves moving the ack and original file to destinations and updating
     the audit table status"""
-    ack_bucket_name = get_ack_bucket_name()
-    source_bucket_name = get_source_bucket_name()
     ack_filename = f"{file_key.replace('.csv', f'_BusAck_{created_at_formatted_string}.csv')}"
 
-    move_file(ack_bucket_name, f"TempAck/{ack_filename}", f"forwardedFile/{ack_filename}")
-    move_file(source_bucket_name, f"processing/{file_key}", f"archive/{file_key}")
+    move_file(
+        get_ack_bucket_name(),
+        f"{TEMP_ACK_DIR}/{ack_filename}",
+        f"{COMPLETED_ACK_DIR}/{ack_filename}"
+    )
+    move_file(
+        get_source_bucket_name(),
+        f"{BATCH_FILE_PROCESSING_DIR}/{file_key}",
+        f"{BATCH_FILE_ARCHIVE_DIR}/{file_key}"
+    )
 
     change_audit_table_status_to_processed(file_key, message_id)
 
@@ -99,8 +106,8 @@ def update_ack_file(
 ) -> None:
     """Updates the ack file with the new data row based on the given arguments"""
     ack_filename = f"{file_key.replace('.csv', f'_BusAck_{created_at_formatted_string}.csv')}"
-    temp_ack_file_key = f"TempAck/{ack_filename}"
-    archive_ack_file_key = f"forwardedFile/{ack_filename}"
+    temp_ack_file_key = f"{TEMP_ACK_DIR}/{ack_filename}"
+    archive_ack_file_key = f"{COMPLETED_ACK_DIR}/{ack_filename}"
     accumulated_csv_content = obtain_current_ack_content(temp_ack_file_key)
 
     for row in ack_data_rows:

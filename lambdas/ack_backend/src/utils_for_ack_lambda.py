@@ -13,7 +13,7 @@ def is_ack_processing_complete(batch_event_message_id: str, processed_ack_count:
     record_count = get_record_count_by_message_id(batch_event_message_id)
 
     if not record_count:
-        # Record Count is not set on the audit item until all rows have been preprocessed and sent to Kinesis
+        # Record count is not set on the audit item until all rows have been preprocessed and sent to Kinesis
         return False
 
     _BATCH_EVENT_ID_TO_RECORD_COUNT_MAP[batch_event_message_id] = record_count
