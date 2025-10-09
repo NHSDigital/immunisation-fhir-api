@@ -315,7 +315,7 @@ class TestAckProcessor(unittest.TestCase):
         time - this test checks that we cache the value as this lambda is called many times for large files"""
         mock_batch_message_id = "622cdeea-461e-4a83-acb5-7871d47ddbcd"
 
-        # Original source file had 100 records
+        # Original source file had 500 records
         add_audit_entry_to_table(self.dynamodb_client, mock_batch_message_id, record_count=500)
 
         message_one = [{**BASE_SUCCESS_MESSAGE, "row_id": f"{mock_batch_message_id}^1", "imms_id": "imms_1",
