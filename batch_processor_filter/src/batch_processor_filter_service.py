@@ -63,7 +63,7 @@ class BatchProcessorFilterService:
                 filename,
             )
             raise EventAlreadyProcessingForSupplierAndVaccTypeError(
-                f"Batch event already processing for supplier: " f"{supplier} and vacc type: {vaccine_type}"
+                f"Batch event already processing for supplier: {supplier} and vacc type: {vaccine_type}"
             )
 
         self._batch_audit_repository.update_status(message_id, FileStatus.PROCESSING)

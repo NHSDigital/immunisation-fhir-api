@@ -49,7 +49,7 @@ def get_target_disease_codes(immunization: dict):
 
 def convert_disease_codes_to_vaccine_type(
     disease_codes_input: list,
-) -> Union[str, None]:
+) -> str | None:
     """
     Takes a list of disease codes and returns the corresponding vaccine type if found,
     otherwise raises a value error

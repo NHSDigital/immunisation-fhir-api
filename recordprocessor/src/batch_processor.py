@@ -19,7 +19,6 @@ from audit_table import update_audit_table_status
 from send_to_kinesis import send_to_kinesis
 from clients import logger
 from file_level_validation import file_level_validation, file_is_empty, move_file
-from errors import NoOperationPermissions, InvalidHeaders
 from utils_for_recordprocessor import get_csv_content_dict_reader
 from typing import Optional
 
@@ -35,11 +34,7 @@ def process_csv_to_fhir(incoming_message_body: dict) -> int:
     try:
         incoming_message_body["encoder"] = encoder
         interim_message_body = file_level_validation(incoming_message_body=incoming_message_body)
-    except (
-        InvalidHeaders,
-        NoOperationPermissions,
-        Exception,
-    ) as e:  # pylint: disable=broad-exception-caught
+    except Exception as e:  # pylint: disable=broad-exception-caught
         logger.error(f"File level validation failed: {e}")  # If the file is invalid, processing should cease
         return 0
 

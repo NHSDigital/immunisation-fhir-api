@@ -11,6 +11,8 @@ from models.constants import Constants
 from models.errors import ParameterException
 from models.utils.generic_utils import nhs_number_mod11_check
 
+ERROR_MESSAGE_DUPLICATED_PARAMETERS = 'Parameters may not be duplicated. Use commas for "or".'
+
 ParamValue = list[str]
 ParamContainer = dict[str, ParamValue]
 
@@ -161,7 +163,7 @@ def process_params(aws_event: APIGatewayProxyEventV1) -> ParamContainer:
         multi_value_query_params: dict[str, list[str]],
     ) -> ParamContainer:
         if any([len(v) > 1 for k, v in multi_value_query_params.items()]):
-            raise ParameterException('Parameters may not be duplicated. Use commas for "or".')
+            raise ParameterException(ERROR_MESSAGE_DUPLICATED_PARAMETERS)
         params = [(k, split_and_flatten(v)) for k, v in multi_value_query_params.items()]
 
         return dict(params)
@@ -175,7 +177,7 @@ def process_params(aws_event: APIGatewayProxyEventV1) -> ParamContainer:
             parsed_body = parse_qs(decoded_body)
 
             if any([len(v) > 1 for k, v in parsed_body.items()]):
-                raise ParameterException('Parameters may not be duplicated. Use commas for "or".')
+                raise ParameterException(ERROR_MESSAGE_DUPLICATED_PARAMETERS)
             items = dict((k, split_and_flatten(v)) for k, v in parsed_body.items())
             return items
         return {}
@@ -184,7 +186,7 @@ def process_params(aws_event: APIGatewayProxyEventV1) -> ParamContainer:
     body_params = parse_body_params(aws_event)
 
     if len(set(query_params.keys()) & set(body_params.keys())) > 0:
-        raise ParameterException('Parameters may not be duplicated. Use commas for "or".')
+        raise ParameterException(ERROR_MESSAGE_DUPLICATED_PARAMETERS)
 
     parsed_params = {
         key: sorted(query_params.get(key, []) + body_params.get(key, []))
