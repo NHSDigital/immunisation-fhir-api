@@ -14,7 +14,7 @@ current_directory = os.path.dirname(os.path.realpath(__file__))
 
 
 def load_example(path: str) -> dict:
-    with open(f"{current_directory}/../../../utilities/specification/components/examples/{path}") as f:
+    with open(f"{current_directory}/../../utilities/specification/components/examples/{path}") as f:
         return json.load(f, parse_float=Decimal)
 
 
