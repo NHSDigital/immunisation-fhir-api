@@ -20,6 +20,7 @@ class TestProcessorEdgeCases(unittest.TestCase):
         self.mock_move_file = create_patch("file_level_validation.move_file")
         self.mock_get_permitted_operations = create_patch("file_level_validation.get_permitted_operations")
         self.mock_firehose_client = create_patch("logging_decorator.firehose_client")
+        self.mock_update_audit_table_record_count = create_patch("batch_processor.update_audit_table_record_count")
 
     def tearDown(self):
         patch.stopall()

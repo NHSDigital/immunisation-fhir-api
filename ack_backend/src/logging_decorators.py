@@ -7,7 +7,7 @@ from datetime import datetime
 from functools import wraps
 from clients import firehose_client, logger
 
-
+PREFIX = "ack_processor"
 STREAM_NAME = os.getenv("SPLUNK_FIREHOSE_NAME", "immunisation-fhir-api-internal-dev-splunk-firehose")
 
 
@@ -73,6 +73,34 @@ def convert_message_to_ack_row_logging_decorator(func):
             generate_and_send_logs(start_time, base_log_data, additional_log_data, use_ms_precision=True,
                                    is_error_log=True)
             raise
+
+    return wrapper
+
+
+def complete_batch_file_process_logging_decorator(func):
+    """This decorator logs when record processing is complete."""
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+
+        base_log_data = {
+            "function_name": f"{PREFIX}_{func.__name__}",
+            "date_time": str(datetime.now()),
+        }
+        start_time = time.time()
+
+        # NB this doesn't require a try-catch block as the wrapped function never throws an exception
+        result = func(*args, **kwargs)
+        if result is not None:
+            message_for_logs = "Record processing complete"
+            base_log_data.update(result)
+            additional_log_data = {
+                "status": "success",
+                "statusCode": 200,
+                "message": message_for_logs,
+            }
+            generate_and_send_logs(start_time, base_log_data, additional_log_data)
+        return result
 
     return wrapper
 

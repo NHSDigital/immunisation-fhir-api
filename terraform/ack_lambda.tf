@@ -134,6 +134,7 @@ resource "aws_iam_policy" "ack_lambda_exec_policy" {
         Effect = "Allow"
         Action = [
           "dynamodb:Query",
+          "dynamodb:GetItem",
           "dynamodb:UpdateItem"
         ]
         Resource = [

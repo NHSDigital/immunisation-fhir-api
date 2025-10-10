@@ -3,7 +3,7 @@
 import unittest
 from unittest.mock import patch
 from boto3 import client as boto3_client
-from moto import mock_s3, mock_firehose
+from moto import mock_aws
 
 
 from tests.utils_for_ack_backend_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT, REGION_NAME
@@ -21,8 +21,7 @@ s3_client = boto3_client("s3", region_name=REGION_NAME)
 firehose_client = boto3_client("firehose", region_name=REGION_NAME)
 
 
-@mock_firehose
-@mock_s3
+@mock_aws
 class TestAckProcessor(unittest.TestCase):
     """Tests for the ack processor lambda handler."""
 

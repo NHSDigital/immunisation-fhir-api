@@ -1,6 +1,6 @@
 """Add the filename to the audit table and check for duplicates."""
 
-from typing import Union
+from typing import Optional, Union
 from boto3.dynamodb.conditions import Key
 from clients import dynamodb_client, dynamodb_resource, logger
 from errors import UnhandledAuditTableError
@@ -47,3 +47,17 @@ def change_audit_table_status_to_processed(file_key: str, message_id: str) -> No
     except Exception as error:  # pylint: disable = broad-exception-caught
         logger.error(error)
         raise UnhandledAuditTableError(error) from error
+
+
+def get_record_count_by_message_id(event_message_id: str) -> Optional[int]:
+    """Retrieves full audit entry by unique event message ID"""
+    audit_record = dynamodb_client.get_item(
+        TableName=AUDIT_TABLE_NAME, Key={AuditTableKeys.MESSAGE_ID: {"S": event_message_id}}
+    )
+
+    record_count = audit_record.get("Item", {}).get(AuditTableKeys.RECORD_COUNT, {}).get("N")
+
+    if not record_count:
+        return None
+
+    return int(record_count)

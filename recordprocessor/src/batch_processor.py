@@ -5,6 +5,7 @@ import os
 import time
 from process_row import process_row
 from mappings import map_target_disease
+from audit_table import update_audit_table_record_count
 from send_to_kinesis import send_to_kinesis
 from clients import logger
 from file_level_validation import file_level_validation
@@ -58,6 +59,7 @@ def process_csv_to_fhir(incoming_message_body: dict) -> int:
             logger.error(f"Row Processing error: {err}")
             raise err
 
+    update_audit_table_record_count(file_key, file_id, record_count=row_count)
     return row_count
 
 

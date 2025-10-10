@@ -65,25 +65,33 @@ class TestAuditTable(TestCase):
         self.assertIsNone(get_next_queued_file_details(queue_to_check))
 
         # Test case 3: one queued file in the ravs_rsv queue
-        add_entry_to_table(MockFileDetails.ravs_rsv_2, file_status=FileStatus.QUEUED)
-        expected_table_entry = {**MockFileDetails.ravs_rsv_2.audit_table_entry, "status": {"S": FileStatus.QUEUED}}
+        add_entry_to_table(MockFileDetails.ravs_rsv_2, file_status=FileStatus.QUEUED, include_ordering=True)
+        expected_table_entry = {
+            **MockFileDetails.ravs_rsv_2.audit_table_entry,
+            "status": {"S": FileStatus.QUEUED},
+            "message_id": {"S": MockFileDetails.ravs_rsv_2.message_id_order}
+        }
         self.assertEqual(get_next_queued_file_details(queue_to_check), deserialize_dynamodb_types(expected_table_entry))
 
         # # Test case 4: multiple queued files in the RAVS_RSV queue
         # Note that ravs_rsv files 3 and 4 have later timestamps than file 2, so file 2 remains the first in the queue
-        add_entry_to_table(MockFileDetails.ravs_rsv_3, file_status=FileStatus.QUEUED)
-        add_entry_to_table(MockFileDetails.ravs_rsv_4, file_status=FileStatus.QUEUED)
+        add_entry_to_table(MockFileDetails.ravs_rsv_3, file_status=FileStatus.QUEUED, include_ordering=True)
+        add_entry_to_table(MockFileDetails.ravs_rsv_4, file_status=FileStatus.QUEUED, include_ordering=True)
         self.assertEqual(get_next_queued_file_details(queue_to_check), deserialize_dynamodb_types(expected_table_entry))
 
     def test_change_audit_table_status_to_processed(self):
         """Checks audit table correctly updates a record as processed"""
         # Test case 1: file should be updated with status of 'Processed'.
 
-        add_entry_to_table(MockFileDetails.rsv_ravs, file_status=FileStatus.QUEUED)
-        add_entry_to_table(MockFileDetails.flu_emis, file_status=FileStatus.QUEUED)
+        add_entry_to_table(MockFileDetails.rsv_ravs, file_status=FileStatus.QUEUED, include_ordering=True)
+        add_entry_to_table(MockFileDetails.flu_emis, file_status=FileStatus.QUEUED, include_ordering=True)
         table_items = dynamodb_client.scan(TableName=AUDIT_TABLE_NAME).get("Items", [])
 
-        expected_table_entry = {**MockFileDetails.rsv_ravs.audit_table_entry, "status": {"S": FileStatus.PROCESSED}}
+        expected_table_entry = {
+            **MockFileDetails.rsv_ravs.audit_table_entry,
+            "status": {"S": FileStatus.PROCESSED},
+            "message_id": {"S": MockFileDetails.rsv_ravs.message_id_order}
+        }
         ravs_rsv_test_file = FileDetails("RSV", "RAVS", "X26")
         file_key = ravs_rsv_test_file.file_key
         message_id = ravs_rsv_test_file.message_id_order

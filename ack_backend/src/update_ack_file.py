@@ -4,10 +4,20 @@ import json
 from io import StringIO, BytesIO
 from typing import Union
 from botocore.exceptions import ClientError
-from constants import ACK_HEADERS, SOURCE_BUCKET_NAME, ACK_BUCKET_NAME, FILE_NAME_PROC_LAMBDA_NAME
-from audit_table import change_audit_table_status_to_processed, get_next_queued_file_details
+from audit_table import change_audit_table_status_to_processed
 from clients import s3_client, logger, lambda_client
-from utils_for_ack_lambda import get_row_count
+from audit_table import change_audit_table_status_to_processed, get_next_queued_file_details
+from constants import (
+    ACK_HEADERS,
+    get_source_bucket_name,
+    get_ack_bucket_name,
+    COMPLETED_ACK_DIR,
+    TEMP_ACK_DIR,
+    BATCH_FILE_PROCESSING_DIR,
+    BATCH_FILE_ARCHIVE_DIR,
+    FILE_NAME_PROC_LAMBDA_NAME
+)
+from logging_decorators import complete_batch_file_process_logging_decorator
 
 
 def create_ack_data(
@@ -45,11 +55,45 @@ def create_ack_data(
     }
 
 
+@complete_batch_file_process_logging_decorator
+def complete_batch_file_process(
+    message_id: str,
+    supplier: str,
+    vaccine_type: str,
+    supplier_queue: str,
+    created_at_formatted_string: str,
+    file_key: str,
+    total_ack_rows_processed: int,
+) -> dict:
+    """Mark the batch file as processed. This involves moving the ack and original file to destinations and updating
+    the audit table status"""
+    ack_filename = f"{file_key.replace('.csv', f'_BusAck_{created_at_formatted_string}.csv')}"
+
+    move_file(get_ack_bucket_name(), f"{TEMP_ACK_DIR}/{ack_filename}", f"{COMPLETED_ACK_DIR}/{ack_filename}")
+    move_file(
+        get_source_bucket_name(), f"{BATCH_FILE_PROCESSING_DIR}/{file_key}", f"{BATCH_FILE_ARCHIVE_DIR}/{file_key}"
+    )
+
+    change_audit_table_status_to_processed(file_key, message_id)
+
+    next_queued_file_details = get_next_queued_file_details(supplier_queue)
+    if next_queued_file_details:
+        invoke_filename_lambda(next_queued_file_details["filename"], next_queued_file_details["message_id"])
+
+    return {
+        "message_id": message_id,
+        "file_key": file_key,
+        "supplier": supplier,
+        "vaccine_type": vaccine_type,
+        "row_count": total_ack_rows_processed,
+    }
+
+
 def obtain_current_ack_content(temp_ack_file_key: str) -> StringIO:
     """Returns the current ack file content if the file exists, or else initialises the content with the ack headers."""
     try:
         # If ack file exists in S3 download the contents
-        existing_ack_file = s3_client.get_object(Bucket=ACK_BUCKET_NAME, Key=temp_ack_file_key)
+        existing_ack_file = s3_client.get_object(Bucket=get_ack_bucket_name(), Key=temp_ack_file_key)
         existing_content = existing_ack_file["Body"].read().decode("utf-8")
     except ClientError as error:
         # If ack file does not exist in S3 create a new file containing the headers only
@@ -65,60 +109,27 @@ def obtain_current_ack_content(temp_ack_file_key: str) -> StringIO:
     return accumulated_csv_content
 
 
-def upload_ack_file(
-    temp_ack_file_key: str,
-    message_id: str,
-    supplier_queue: str,
-    accumulated_csv_content: StringIO,
-    ack_data_rows: list,
-    archive_ack_file_key: str,
-    file_key: str,
-) -> None:
-    """Adds the data row to the uploaded ack file"""
-    for row in ack_data_rows:
-        data_row_str = [str(item) for item in row.values()]
-        cleaned_row = "|".join(data_row_str).replace(" |", "|").replace("| ", "|").strip()
-        accumulated_csv_content.write(cleaned_row + "\n")
-    csv_file_like_object = BytesIO(accumulated_csv_content.getvalue().encode("utf-8"))
-    s3_client.upload_fileobj(csv_file_like_object, ACK_BUCKET_NAME, temp_ack_file_key)
-
-    row_count_source = get_row_count(SOURCE_BUCKET_NAME, f"processing/{file_key}")
-    row_count_destination = get_row_count(ACK_BUCKET_NAME, temp_ack_file_key)
-    # TODO: Should we check for > and if so what handling is required
-    if row_count_destination == row_count_source:
-        move_file(ACK_BUCKET_NAME, temp_ack_file_key, archive_ack_file_key)
-        move_file(SOURCE_BUCKET_NAME, f"processing/{file_key}", f"archive/{file_key}")
-
-        # Update the audit table and invoke the filename lambda with next file in the queue (if one exists)
-        change_audit_table_status_to_processed(file_key, message_id)
-        next_queued_file_details = get_next_queued_file_details(supplier_queue)
-        if next_queued_file_details:
-            invoke_filename_lambda(next_queued_file_details["filename"], next_queued_file_details["message_id"])
-
-    logger.info("Ack file updated to %s: %s", ACK_BUCKET_NAME, archive_ack_file_key)
-
-
 def update_ack_file(
     file_key: str,
-    message_id: str,
-    supplier_queue: str,
     created_at_formatted_string: str,
     ack_data_rows: list,
 ) -> None:
     """Updates the ack file with the new data row based on the given arguments"""
     ack_filename = f"{file_key.replace('.csv', f'_BusAck_{created_at_formatted_string}.csv')}"
-    temp_ack_file_key = f"TempAck/{ack_filename}"
-    archive_ack_file_key = f"forwardedFile/{ack_filename}"
+    temp_ack_file_key = f"{TEMP_ACK_DIR}/{ack_filename}"
+    archive_ack_file_key = f"{COMPLETED_ACK_DIR}/{ack_filename}"
     accumulated_csv_content = obtain_current_ack_content(temp_ack_file_key)
-    upload_ack_file(
-        temp_ack_file_key,
-        message_id,
-        supplier_queue,
-        accumulated_csv_content,
-        ack_data_rows,
-        archive_ack_file_key,
-        file_key,
-    )
+
+    for row in ack_data_rows:
+        data_row_str = [str(item) for item in row.values()]
+        cleaned_row = "|".join(data_row_str).replace(" |", "|").replace("| ", "|").strip()
+        accumulated_csv_content.write(cleaned_row + "\n")
+
+    csv_file_like_object = BytesIO(accumulated_csv_content.getvalue().encode("utf-8"))
+    ack_bucket_name = get_ack_bucket_name()
+
+    s3_client.upload_fileobj(csv_file_like_object, ack_bucket_name, temp_ack_file_key)
+    logger.info("Ack file updated to %s: %s", ack_bucket_name, archive_ack_file_key)
 
 
 def move_file(bucket_name: str, source_file_key: str, destination_file_key: str) -> None:
@@ -135,7 +146,7 @@ def invoke_filename_lambda(file_key: str, message_id: str) -> None:
     try:
         lambda_payload = {
             "Records": [
-                {"s3": {"bucket": {"name": SOURCE_BUCKET_NAME}, "object": {"key": file_key}}, "message_id": message_id}
+                {"s3": {"bucket": {"name": get_source_bucket_name()}, "object": {"key": file_key}}, "message_id": message_id}
             ]
         }
         lambda_client.invoke(

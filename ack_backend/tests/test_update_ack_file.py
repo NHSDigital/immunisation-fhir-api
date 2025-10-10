@@ -5,7 +5,7 @@ import os
 from unittest.mock import patch
 from io import StringIO
 from boto3 import client as boto3_client
-from moto import mock_s3
+from moto import mock_aws
 
 from tests.utils_for_ack_backend_tests.values_for_ack_backend_tests import ValidValues, DefaultValues
 from tests.utils_for_ack_backend_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT, BucketNames, REGION_NAME
@@ -27,7 +27,7 @@ firehose_client = boto3_client("firehose", region_name=REGION_NAME)
 
 
 @patch.dict(os.environ, MOCK_ENVIRONMENT_DICT)
-@mock_s3
+@mock_aws
 class TestUpdateAckFile(unittest.TestCase):
     """Tests for the functions in the update_ack_file module."""
 
@@ -53,7 +53,7 @@ class TestUpdateAckFile(unittest.TestCase):
         Obtains the ack file content and ensures that it matches the expected content (expected content is based
         on the incoming messages).
         """
-        actual_ack_file_content = obtain_current_ack_file_content()
+        actual_ack_file_content = obtain_current_ack_file_content(s3_client)
         expected_ack_file_content = generate_expected_ack_content(incoming_messages, existing_file_content)
         self.assertEqual(expected_ack_file_content, actual_ack_file_content)
 
@@ -102,13 +102,11 @@ class TestUpdateAckFile(unittest.TestCase):
             with self.subTest(test_case["description"]):
                 update_ack_file(
                     file_key=MOCK_MESSAGE_DETAILS.file_key,
-                    message_id=MOCK_MESSAGE_DETAILS.message_id,
-                    supplier_queue=MOCK_MESSAGE_DETAILS.queue_name,
                     created_at_formatted_string=MOCK_MESSAGE_DETAILS.created_at_formatted_string,
                     ack_data_rows=test_case["input_rows"],
                 )
 
-                actual_ack_file_content = obtain_current_ack_file_content()
+                actual_ack_file_content = obtain_current_ack_file_content(s3_client)
                 expected_ack_file_content = ValidValues.ack_headers + "\n".join(test_case["expected_rows"]) + "\n"
                 self.assertEqual(expected_ack_file_content, actual_ack_file_content)
 
@@ -123,13 +121,11 @@ class TestUpdateAckFile(unittest.TestCase):
         ack_data_rows = [ValidValues.ack_data_success_dict, ValidValues.ack_data_failure_dict]
         update_ack_file(
             file_key=MOCK_MESSAGE_DETAILS.file_key,
-            message_id=MOCK_MESSAGE_DETAILS.message_id,
-            supplier_queue=MOCK_MESSAGE_DETAILS.queue_name,
             created_at_formatted_string=MOCK_MESSAGE_DETAILS.created_at_formatted_string,
             ack_data_rows=ack_data_rows,
         )
 
-        actual_ack_file_content = obtain_current_ack_file_content()
+        actual_ack_file_content = obtain_current_ack_file_content(s3_client)
         expected_rows = [
             generate_expected_ack_file_row(success=True, imms_id=DefaultValues.imms_id),
             generate_expected_ack_file_row(success=False, imms_id="", diagnostics="DIAGNOSTICS"),

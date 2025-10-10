@@ -10,6 +10,9 @@ from tests.utils_for_recordprocessor_tests.generic_setup_and_teardown import (
     GenericSetUp,
     GenericTearDown,
 )
+from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
+    add_entry_to_table,
+)
 from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
     MockFileDetails,
     ValidMockFileContent,
@@ -19,6 +22,7 @@ from tests.utils_for_recordprocessor_tests.mock_environment_variables import MOC
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
     from batch_processor import process_csv_to_fhir
+    from constants import FileStatus
 
 dynamodb_client = boto3.client("dynamodb", region_name=REGION_NAME)
 s3_client = boto3.client("s3", region_name=REGION_NAME)
@@ -59,6 +63,7 @@ class TestProcessCsvToFhir(unittest.TestCase):
         Tests that process_csv_to_fhir sends a message to kinesis for each row in the csv when the supplier has full
         permissions
         """
+        add_entry_to_table(test_file, FileStatus.PROCESSING)
         self.upload_source_file(
             file_key=test_file.file_key, file_content=ValidMockFileContent.with_new_and_update_and_delete
         )
@@ -73,6 +78,7 @@ class TestProcessCsvToFhir(unittest.TestCase):
         Tests that process_csv_to_fhir sends a message to kinesis for each row in the csv when the supplier has
         partial permissions
         """
+        add_entry_to_table(test_file, FileStatus.PROCESSING)
         self.upload_source_file(
             file_key=test_file.file_key, file_content=ValidMockFileContent.with_new_and_update_and_delete
         )
@@ -85,6 +91,11 @@ class TestProcessCsvToFhir(unittest.TestCase):
     def test_process_csv_to_fhir_no_permissions(self):
         """Tests that process_csv_to_fhir does not send fhir_json to kinesis when the supplier has no permissions"""
         self.upload_source_file(file_key=test_file.file_key, file_content=ValidMockFileContent.with_update_and_delete)
+        add_entry_to_table(test_file, FileStatus.PROCESSING)
+        self.upload_source_file(
+            file_key=test_file.file_key,
+            file_content=ValidMockFileContent.with_update_and_delete,
+        )
 
         with patch("batch_processor.send_to_kinesis") as mock_send_to_kinesis:
             process_csv_to_fhir(deepcopy(test_file.event_create_permissions_only_dict))

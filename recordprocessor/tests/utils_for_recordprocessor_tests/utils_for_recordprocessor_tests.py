@@ -1,18 +1,31 @@
 """Utils for the recordprocessor tests"""
 
 from io import StringIO
-from tests.utils_for_recordprocessor_tests.mock_environment_variables import BucketNames, Firehose, Kinesis
-from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import MockFileDetails, FileDetails
+from utils_for_recordprocessor_tests.mock_environment_variables import (
+    BucketNames,
+    Firehose,
+    Kinesis,
+)
+from utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
+    MockFileDetails,
+    FileDetails,
+)
 from boto3.dynamodb.types import TypeDeserializer
 from boto3 import client as boto3_client
 from unittest.mock import patch
-from tests.utils_for_recordprocessor_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT
+from utils_for_recordprocessor_tests.mock_environment_variables import (
+    MOCK_ENVIRONMENT_DICT,
+)
+from typing import Optional
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from clients import REGION_NAME
     from csv import DictReader
-    from constants import AuditTableKeys, AUDIT_TABLE_NAME, FileStatus
+    from constants import (
+        AuditTableKeys,
+        AUDIT_TABLE_NAME,
+    )
 
 dynamodb_client = boto3_client("dynamodb", region_name=REGION_NAME)
 
@@ -38,7 +51,7 @@ class GenericSetUp:
     * If kinesis_client is provided, creates a kinesis stream
     """
 
-    def __init__(self, s3_client=None, firehose_client=None, kinesis_client=None):
+    def __init__(self, s3_client=None, firehose_client=None, kinesis_client=None, dynamo_db_client=None):
 
         if s3_client:
             for bucket_name in [BucketNames.SOURCE, BucketNames.DESTINATION, BucketNames.MOCK_FIREHOSE]:
@@ -60,11 +73,21 @@ class GenericSetUp:
         if kinesis_client:
             kinesis_client.create_stream(StreamName=Kinesis.STREAM_NAME, ShardCount=1)
 
+        if dynamo_db_client:
+            dynamo_db_client.create_table(
+                TableName=AUDIT_TABLE_NAME,
+                KeySchema=[{"AttributeName": AuditTableKeys.MESSAGE_ID, "KeyType": "HASH"}],
+                AttributeDefinitions=[
+                    {"AttributeName": AuditTableKeys.MESSAGE_ID, "AttributeType": "S"}
+                ],
+                ProvisionedThroughput={"ReadCapacityUnits": 5, "WriteCapacityUnits": 5}
+            )
+
 
 class GenericTearDown:
     """Performs generic tear down of mock resources"""
 
-    def __init__(self, s3_client=None, firehose_client=None, kinesis_client=None):
+    def __init__(self, s3_client=None, firehose_client=None, kinesis_client=None, dynamo_db_client=None):
 
         if s3_client:
             for bucket_name in [BucketNames.SOURCE, BucketNames.DESTINATION]:
@@ -81,10 +104,17 @@ class GenericTearDown:
             except kinesis_client.exceptions.ResourceNotFoundException:
                 pass
 
+        if dynamo_db_client:
+            dynamo_db_client.delete_table(TableName=AUDIT_TABLE_NAME)
 
-def add_entry_to_table(file_details: MockFileDetails, file_status: FileStatus) -> None:
+
+def add_entry_to_table(file_details: MockFileDetails, file_status: str, include_ordering: bool = False) -> None:
     """Add an entry to the audit table"""
     audit_table_entry = {**file_details.audit_table_entry, "status": {"S": file_status}}
+
+    if include_ordering:
+        audit_table_entry["message_id"] = {"S": file_details.message_id_order}
+
     dynamodb_client.put_item(TableName=AUDIT_TABLE_NAME, Item=audit_table_entry)
 
 
@@ -96,12 +126,17 @@ def deserialize_dynamodb_types(dynamodb_table_entry_with_types):
     return {k: TypeDeserializer().deserialize(v) for k, v in dynamodb_table_entry_with_types.items()}
 
 
-def assert_audit_table_entry(file_details: FileDetails, expected_status: FileStatus) -> None:
+def assert_audit_table_entry(file_details: FileDetails, expected_status: str, row_count: Optional[int] = None) -> None:
     """Assert that the file details are in the audit table"""
     table_entry = dynamodb_client.get_item(
         TableName=AUDIT_TABLE_NAME, Key={AuditTableKeys.MESSAGE_ID: {"S": file_details.message_id}}
     ).get("Item")
-    assert table_entry == {**file_details.audit_table_entry, "status": {"S": expected_status}}
+    expected_result = {**file_details.audit_table_entry, "status": {"S": expected_status}}
+
+    if row_count is not None:
+        expected_result["record_count"] = {"N": str(row_count)}
+
+    assert table_entry == expected_result
 
 
 def create_patch(target: str):

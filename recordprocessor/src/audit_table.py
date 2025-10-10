@@ -47,3 +47,36 @@ def get_next_queued_file_details(queue_name: str) -> Union[dict, None]:
 
     # Return the oldest queued file
     return sorted(queued_files_details, key=lambda x: x["timestamp"])[0] if queued_files_details else None
+
+
+def update_audit_table_record_count(
+    file_key: str,
+    message_id: str,
+    record_count: int,
+) -> None:
+    """Updates the status in the audit table to the requested value"""
+    update_expression = f"SET #{AuditTableKeys.RECORD_COUNT} = :{AuditTableKeys.RECORD_COUNT}"
+    expression_attr_names = {f"#{AuditTableKeys.RECORD_COUNT}": AuditTableKeys.RECORD_COUNT}
+    expression_attr_values = {f":{AuditTableKeys.RECORD_COUNT}": {"N": str(record_count)}}
+
+    try:
+        # Update the status in the audit table to "Processed"
+        dynamodb_client.update_item(
+            TableName=AUDIT_TABLE_NAME,
+            Key={AuditTableKeys.MESSAGE_ID: {"S": message_id}},
+            UpdateExpression=update_expression,
+            ExpressionAttributeNames=expression_attr_names,
+            ExpressionAttributeValues=expression_attr_values,
+            ConditionExpression=f"attribute_exists({AuditTableKeys.MESSAGE_ID})",
+        )
+
+        logger.info(
+            "The record count of %s file, with message id %s, was successfully updated to %s in the audit table",
+            file_key,
+            message_id,
+            record_count,
+        )
+
+    except Exception as error:  # pylint: disable = broad-exception-caught
+        logger.error(error)
+        raise UnhandledAuditTableError(error) from error

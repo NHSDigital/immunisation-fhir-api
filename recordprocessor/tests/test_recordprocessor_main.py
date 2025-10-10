@@ -5,14 +5,16 @@ import json
 from decimal import Decimal
 from unittest.mock import patch
 from datetime import datetime, timedelta, timezone
-from moto import mock_s3, mock_kinesis, mock_firehose
+from moto import mock_s3, mock_kinesis, mock_firehose, mock_dynamodb
 from boto3 import client as boto3_client
 
-from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
+from utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
     GenericSetUp,
     GenericTearDown,
+    add_entry_to_table,
+    assert_audit_table_entry,
 )
-from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
+from utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
     MockFileDetails,
     FileDetails,
     ValidMockFileContent,
@@ -22,21 +24,29 @@ from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests impo
     InfAckFileRows,
     REGION_NAME,
 )
-from tests.utils_for_recordprocessor_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT, BucketNames, Kinesis
-from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import create_patch
+from utils_for_recordprocessor_tests.mock_environment_variables import (
+    MOCK_ENVIRONMENT_DICT,
+    BucketNames,
+    Kinesis,
+)
+from utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
+    create_patch,
+)
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
-    from constants import Diagnostics
+    from constants import Diagnostics, FileStatus
     from batch_processor import main
 
 s3_client = boto3_client("s3", region_name=REGION_NAME)
 kinesis_client = boto3_client("kinesis", region_name=REGION_NAME)
 firehose_client = boto3_client("firehose", region_name=REGION_NAME)
+dynamo_db_client = boto3_client("dynamodb", region_name=REGION_NAME)
 yesterday = datetime.now(timezone.utc) - timedelta(days=1)
 mock_rsv_emis_file = MockFileDetails.rsv_emis
 
 
 @patch.dict("os.environ", MOCK_ENVIRONMENT_DICT)
+@mock_dynamodb
 @mock_s3
 @mock_kinesis
 @mock_firehose
@@ -44,7 +54,7 @@ class TestRecordProcessor(unittest.TestCase):
     """Tests for main function for RecordProcessor"""
 
     def setUp(self) -> None:
-        GenericSetUp(s3_client, firehose_client, kinesis_client)
+        GenericSetUp(s3_client, firehose_client, kinesis_client, dynamo_db_client)
 
         redis_patcher = patch("mappings.redis_client")
         self.addCleanup(redis_patcher.stop)
@@ -56,7 +66,7 @@ class TestRecordProcessor(unittest.TestCase):
         self.mock_logger_info = create_patch("logging.Logger.info")
 
     def tearDown(self) -> None:
-        GenericTearDown(s3_client, firehose_client, kinesis_client)
+        GenericTearDown(s3_client, firehose_client, kinesis_client, dynamo_db_client)
 
     @staticmethod
     def upload_source_files(source_file_content):  # pylint: disable=dangerous-default-value
@@ -150,7 +160,9 @@ class TestRecordProcessor(unittest.TestCase):
         Tests that file containing CREATE, UPDATE and DELETE is successfully processed when the supplier has
         full permissions.
         """
+        test_file = mock_rsv_emis_file
         self.upload_source_files(ValidMockFileContent.with_new_and_update_and_delete)
+        add_entry_to_table(test_file, FileStatus.PROCESSING)
 
         main(mock_rsv_emis_file.event_full_permissions)
 
@@ -178,12 +190,15 @@ class TestRecordProcessor(unittest.TestCase):
         ]
         self.make_inf_ack_assertions(file_details=mock_rsv_emis_file, passed_validation=True)
         self.make_kinesis_assertions(assertion_cases)
+        assert_audit_table_entry(test_file, FileStatus.PROCESSING, row_count=3)
 
     def test_e2e_partial_permissions(self):
         """
         Tests that file containing CREATE, UPDATE and DELETE is successfully processed when the supplier only has CREATE
         permissions.
         """
+        test_file = mock_rsv_emis_file
+        add_entry_to_table(test_file, FileStatus.PROCESSING)
         self.upload_source_files(ValidMockFileContent.with_new_and_update_and_delete)
 
         main(mock_rsv_emis_file.event_create_permissions_only)
@@ -228,12 +243,15 @@ class TestRecordProcessor(unittest.TestCase):
         ]
         self.make_inf_ack_assertions(file_details=mock_rsv_emis_file, passed_validation=True)
         self.make_kinesis_assertions(assertion_cases)
+        assert_audit_table_entry(test_file, FileStatus.PROCESSING, row_count=3)
 
     def test_e2e_no_required_permissions(self):
         """
         Tests that file containing UPDATE and DELETE is successfully processed when the supplier has CREATE permissions
         only.
         """
+        test_file = mock_rsv_emis_file
+        add_entry_to_table(test_file, FileStatus.PROCESSING)
         self.upload_source_files(ValidMockFileContent.with_update_and_delete)
 
         main(mock_rsv_emis_file.event_create_permissions_only)
@@ -246,6 +264,7 @@ class TestRecordProcessor(unittest.TestCase):
             self.assertIn("diagnostics", data_dict)
             self.assertNotIn("fhir_json", data_dict)
         self.make_inf_ack_assertions(file_details=mock_rsv_emis_file, passed_validation=True)
+        assert_audit_table_entry(test_file, FileStatus.PROCESSING, row_count=2)
 
     def test_e2e_no_permissions(self):
         """
