@@ -11,7 +11,7 @@ class DefaultValues:
     fixed_datetime_str = fixed_datetime.strftime("%Y-%m-%d %H:%M:%S")
 
     message_id = "test_file_id"
-    row_id = "test_file_id#1"
+    row_id = "test_file_id^1"
     local_id = "test_system_uri^testabc"
     imms_id = "test_imms_id"
     operation_requested = "CREATE"
@@ -236,7 +236,7 @@ class ValidValues:
     )
 
     upload_ack_file_expected_log = {
-        "function_name": "ack_processor_upload_ack_file",
+        "function_name": "ack_processor_complete_batch_file_process",
         "date_time": fixed_datetime.strftime("%Y-%m-%d %H:%M:%S"),
         "status": "success",
         "supplier": MOCK_MESSAGE_DETAILS.supplier,
@@ -263,7 +263,7 @@ class InvalidValues:
         "supplier": "unknown",
         "file_key": "file_key_missing",
         "vaccine_type": "unknown",
-        "message_id": "unknown",
+        "message_id": "test^1",
         "operation_requested": "unknown",
         "time_taken": "1000.0ms",
         "local_id": "unknown",

@@ -3,19 +3,19 @@
 import unittest
 import os
 from boto3 import client as boto3_client
-from moto import mock_s3
+from moto import mock_aws
 
-from tests.utils.values_for_ack_backend_tests import ValidValues, DefaultValues
-from tests.utils.mock_environment_variables import (
+from utils.values_for_ack_backend_tests import ValidValues, DefaultValues
+from utils.mock_environment_variables import (
     MOCK_ENVIRONMENT_DICT,
     BucketNames,
     REGION_NAME,
 )
-from tests.utils.generic_setup_and_teardown_for_ack_backend import (
+from utils.generic_setup_and_teardown_for_ack_backend import (
     GenericSetUp,
     GenericTearDown,
 )
-from tests.utils.utils_for_ack_backend_tests import (
+from utils.utils_for_ack_backend_tests import (
     setup_existing_ack_file,
     obtain_current_ack_file_content,
     generate_expected_ack_file_row,
@@ -38,7 +38,7 @@ firehose_client = boto3_client("firehose", region_name=REGION_NAME)
 
 
 @patch.dict(os.environ, MOCK_ENVIRONMENT_DICT)
-@mock_s3
+@mock_aws
 class TestUpdateAckFile(unittest.TestCase):
     """Tests for the functions in the update_ack_file module."""
 
@@ -131,9 +131,6 @@ class TestUpdateAckFile(unittest.TestCase):
             with self.subTest(test_case["description"]):
                 update_ack_file(
                     file_key=MOCK_MESSAGE_DETAILS.file_key,
-                    message_id=MOCK_MESSAGE_DETAILS.message_id,
-                    supplier=MOCK_MESSAGE_DETAILS.supplier,
-                    vaccine_type=MOCK_MESSAGE_DETAILS.vaccine_type,
                     created_at_formatted_string=MOCK_MESSAGE_DETAILS.created_at_formatted_string,
                     ack_data_rows=test_case["input_rows"],
                 )
@@ -159,9 +156,6 @@ class TestUpdateAckFile(unittest.TestCase):
         ]
         update_ack_file(
             file_key=MOCK_MESSAGE_DETAILS.file_key,
-            message_id=MOCK_MESSAGE_DETAILS.message_id,
-            supplier=MOCK_MESSAGE_DETAILS.supplier,
-            vaccine_type=MOCK_MESSAGE_DETAILS.vaccine_type,
             created_at_formatted_string=MOCK_MESSAGE_DETAILS.created_at_formatted_string,
             ack_data_rows=ack_data_rows,
         )
