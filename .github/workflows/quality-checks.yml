@@ -25,7 +25,7 @@ jobs:
           cache: "npm"
 
       - name: Install linting dependencies
-        run: make install-node
+        run: make install
 
       - name: Lint
         run: make lint
