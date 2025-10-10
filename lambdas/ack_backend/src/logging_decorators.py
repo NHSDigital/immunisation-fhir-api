@@ -68,7 +68,7 @@ def convert_message_to_ack_row_logging_decorator(func):
     return wrapper
 
 
-def upload_ack_file_logging_decorator(func):
+def complete_batch_file_process_logging_decorator(func):
     """This decorator logs when record processing is complete."""
 
     @wraps(func)

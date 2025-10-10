@@ -2,15 +2,8 @@
 
 import unittest
 from unittest.mock import patch
-from boto3 import client as boto3_client
-from moto import mock_s3, mock_firehose
 
-
-from tests.utils.mock_environment_variables import MOCK_ENVIRONMENT_DICT, REGION_NAME
-from tests.utils.generic_setup_and_teardown_for_ack_backend import (
-    GenericSetUp,
-    GenericTearDown,
-)
+from tests.utils.mock_environment_variables import MOCK_ENVIRONMENT_DICT
 from tests.utils.values_for_ack_backend_tests import (
     DefaultValues,
     ValidValues,
@@ -23,22 +16,9 @@ with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
         get_error_message_for_ack_file,
     )
 
-s3_client = boto3_client("s3", region_name=REGION_NAME)
-firehose_client = boto3_client("firehose", region_name=REGION_NAME)
 
-
-@mock_firehose
-@mock_s3
 class TestAckProcessor(unittest.TestCase):
     """Tests for the ack processor lambda handler."""
-
-    def setUp(self) -> None:
-        self.s3_client = boto3_client("s3", region_name=REGION_NAME)
-        self.firehose_client = boto3_client("firehose", region_name=REGION_NAME)
-        GenericSetUp(self.s3_client, self.firehose_client)
-
-    def tearDown(self) -> None:
-        GenericTearDown(self.s3_client, self.firehose_client)
 
     def test_get_error_message_for_ack_file(self):
         """Test the get_error_message_for_ack_file function."""

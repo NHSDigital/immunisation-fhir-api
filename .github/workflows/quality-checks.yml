@@ -175,7 +175,7 @@ jobs:
         working-directory: lambdas/ack_backend
         id: acklambda
         env:
-          PYTHONPATH: ${{ env.LAMBDA_PATH }}/ack_backend/src:${{ github.workspace }}/ack_backend/tests
+          PYTHONPATH: ${{ env.LAMBDA_PATH }}/ack_backend/src:tests:${{ env.SHARED_PATH }}/src
         continue-on-error: true
         run: |
           poetry install
