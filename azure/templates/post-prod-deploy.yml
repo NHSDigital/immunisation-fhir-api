@@ -19,7 +19,7 @@ steps:
       pwd
       ls -la
       cd infrastructure/terraform
-    displayName: 'Check Directory and Navigate to Terraform for AWS Deployment'
+    displayName: "Check Directory and Navigate to Terraform for AWS Deployment"
     workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)"
 
   - bash: |

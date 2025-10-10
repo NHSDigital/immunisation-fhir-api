@@ -4,10 +4,10 @@
 
 This is a specification for the _immunisation-fhir-api_ API.
 
-* `utilities/specification/` This [Open API Specification](https://swagger.io/docs/specification/about/) describes the endpoints, methods and messages exchanged by the API. Use it to generate interactive documentation; the contract between the API and its consumers.
-* `utilities/sandbox/` This NodeJS application implements a mock implementation of the service. Use it as a back-end service to the interactive documentation to illustrate interactions and concepts. It is not intended to provide an exhaustive/faithful environment suitable for full development and testing.
-* `utilities/scripts/` Utilities helpful to developers of this specification.
-* `infrastructure/proxies/` Live (connecting to another service) and sandbox (using the sandbox container) Apigee API Proxy definitions.
+- `utilities/specification/` This [Open API Specification](https://swagger.io/docs/specification/about/) describes the endpoints, methods and messages exchanged by the API. Use it to generate interactive documentation; the contract between the API and its consumers.
+- `utilities/sandbox/` This NodeJS application implements a mock implementation of the service. Use it as a back-end service to the interactive documentation to illustrate interactions and concepts. It is not intended to provide an exhaustive/faithful environment suitable for full development and testing.
+- `utilities/scripts/` Utilities helpful to developers of this specification.
+- `infrastructure/proxies/` Live (connecting to another service) and sandbox (using the sandbox container) Apigee API Proxy definitions.
 
 Consumers of the API will find developer documentation on the [NHS Digital Developer Hub](https://digital.nhs.uk/developer).
 
