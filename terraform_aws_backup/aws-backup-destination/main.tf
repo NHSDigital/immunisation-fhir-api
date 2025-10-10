@@ -13,7 +13,7 @@ terraform {
     region = "eu-west-2"
     key    = "state"
   }
-    required_version = ">= 1.5.0"
+  required_version = ">= 1.5.0"
 }
 
 provider "aws" {
@@ -21,24 +21,24 @@ provider "aws" {
   profile = "apim-dev"
   default_tags {
     tags = {
-         Environment = local.environment
-      }
+      Environment = local.environment
+    }
   }
 }
 
 data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
 
-data "aws_ssm_parameter" "src_acct_id" { 
-  name = "/imms/awsbackup/sourceacctid" 
+data "aws_ssm_parameter" "src_acct_id" {
+  name = "/imms/awsbackup/sourceacctid"
 }
 
-data "aws_ssm_parameter" "src_acct_name" { 
-  name = "/imms/awsbackup/sourceacctname" 
+data "aws_ssm_parameter" "src_acct_name" {
+  name = "/imms/awsbackup/sourceacctname"
 }
 
 module "destination" {
-  source = "./modules/aws_config"
+  source                  = "./modules/aws_config"
   source_account_id       = data.aws_ssm_parameter.src_acct_id.value
   source_account_name     = data.aws_ssm_parameter.src_acct_name.value
   account_id              = local.destination_account_id
@@ -46,10 +46,10 @@ module "destination" {
 }
 
 locals {
-  environment         = "prod"
+  environment            = "prod"
   destination_account_id = data.aws_caller_identity.current.account_id
 }
 
 variable "region" {
-    default = "eu-west-2"
+  default = "eu-west-2"
 }
