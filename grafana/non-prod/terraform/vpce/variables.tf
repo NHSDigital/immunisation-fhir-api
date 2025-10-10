@@ -1,5 +1,5 @@
 variable "aws_region" {
-    description = "Destination AWS region"
+  description = "Destination AWS region"
 }
 
 variable "tags" {

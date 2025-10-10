@@ -57,18 +57,18 @@ See https://nhsd-confluence.digital.nhs.uk/display/APM/Glossary.
 | ----------- | ------------------------------------------------------------------------------------ |
 | `e2e`       | End-to-end tests executed during PR pipelines.                                       |
 | `e2e_batch` | E2E tests specifically for batch-related functionality, also run in the PR pipeline. |
-| `tests`     | Sample e2e test.                                                                     |
 
 ---
 
 ### Utilities
 
-| Folder          | Description                                                   |
-| --------------- | ------------------------------------------------------------- |
-| `devtools`      | Helper tools and utilities for local development              |
-| `scripts`       | Standalone or reusable scripts for development and automation |
-| `specification` | Specification files to document API and related definitions   |
-| `sandbox`       | Simple sandbox API                                            |
+| Folder           | Description                                                   |
+| ---------------- | ------------------------------------------------------------- |
+| `devtools`       | Helper tools and utilities for local development              |
+| `quality_checks` | Dependencies for linting and formatting Python code           |
+| `scripts`        | Standalone or reusable scripts for development and automation |
+| `specification`  | Specification files to document API and related definitions   |
+| `sandbox`        | Simple sandbox API                                            |
 
 ---
 
