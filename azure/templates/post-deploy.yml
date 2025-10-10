@@ -28,12 +28,6 @@ steps:
             - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INT_CLIENT_ID
             - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INT_CLIENT_SECRET
 
-  - bash: |
-      make install-python
-    workingDirectory: $(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)
-    displayName: Setup pytests
-    condition: always()
-
   - template: ./aws-assume-role.yml
     parameters:
       role: "auto-ops"
