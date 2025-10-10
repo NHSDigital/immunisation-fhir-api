@@ -11,7 +11,7 @@ resource "aws_kms_key" "destination_backup_key" {
         Principal = {
           AWS = "arn:aws:iam::${var.account_id}:root"
         }
-        Action = "kms:*"
+        Action   = "kms:*"
         Resource = "*"
       }
     ]
