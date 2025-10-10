@@ -8,28 +8,27 @@ from decimal import Decimal
 from typing import Optional
 
 from aws_lambda_typing.events import APIGatewayProxyEventV1
-
 from controller.aws_apig_event_utils import (
-    get_supplier_system_header,
     get_path_parameter,
+    get_supplier_system_header,
 )
 from controller.aws_apig_response_utils import create_response
 from controller.constants import E_TAG_HEADER_NAME
 from controller.fhir_api_exception_handler import fhir_api_exception_handler
 from models.errors import (
-    Severity,
     Code,
-    create_operation_outcome,
-    UnauthorizedError,
-    ResourceNotFoundError,
-    UnhandledResponseError,
-    ValidationError,
     IdentifierDuplicationError,
     ParameterException,
+    ResourceNotFoundError,
+    Severity,
+    UnauthorizedError,
     UnauthorizedVaxError,
+    UnhandledResponseError,
+    ValidationError,
+    create_operation_outcome,
 )
 from models.utils.generic_utils import check_keys_in_sources
-from parameter_parser import process_params, process_search_params, create_query_string
+from parameter_parser import create_query_string, process_params, process_search_params
 from repository.fhir_repository import ImmunizationRepository, create_table
 from service.fhir_service import FhirService, UpdateOutcome, get_service_url
 

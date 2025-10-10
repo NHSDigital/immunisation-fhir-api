@@ -2,7 +2,7 @@
 
 from common.clients import dynamodb_client, logger
 from common.models.errors import UnhandledAuditTableError
-from constants import AUDIT_TABLE_NAME, FileStatus, AuditTableKeys
+from constants import AUDIT_TABLE_NAME, AuditTableKeys, FileStatus
 
 
 def change_audit_table_status_to_processed(file_key: str, message_id: str) -> None:

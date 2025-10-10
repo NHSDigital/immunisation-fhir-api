@@ -1,10 +1,9 @@
-from unittest.mock import patch
-from io import StringIO
-
-import update_ack_file
 import unittest
-import boto3
+from io import StringIO
+from unittest.mock import patch
 
+import boto3
+import update_ack_file
 from moto import mock_s3
 
 

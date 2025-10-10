@@ -4,14 +4,14 @@ from constants import Urls
 from models.constants import Constants
 from models.errors import MandatoryError
 from models.utils.generic_utils import (
-    get_generic_extension_value,
-    generate_field_location_for_extension,
     check_for_unknown_elements,
-    patient_name_given_field_location,
-    patient_name_family_field_location,
-    practitioner_name_given_field_location,
-    practitioner_name_family_field_location,
+    generate_field_location_for_extension,
+    get_generic_extension_value,
     patient_and_practitioner_value_and_index,
+    patient_name_family_field_location,
+    patient_name_given_field_location,
+    practitioner_name_family_field_location,
+    practitioner_name_given_field_location,
 )
 from models.utils.pre_validator_utils import PreValidation
 

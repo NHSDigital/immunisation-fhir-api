@@ -1,9 +1,9 @@
-from event_read import read_event
-from record_processor import process_record
 from common.clients import STREAM_NAME, logger
 from common.log_decorator import logging_decorator
 from common.redis_client import get_redis_client
 from common.s3_event import S3Event
+from event_read import read_event
+from record_processor import process_record
 
 """
     Event Processor
@@ -38,7 +38,6 @@ def _process_all_records(s3_records: list) -> dict:
 
 @logging_decorator(prefix="redis_sync", stream_name=STREAM_NAME)
 def handler(event, _):
-
     try:
         no_records = "No records found in event"
         # check if the event requires a read, ie {"read": "my-hashmap"}

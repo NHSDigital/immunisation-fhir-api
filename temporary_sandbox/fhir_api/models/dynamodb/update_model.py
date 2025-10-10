@@ -1,19 +1,17 @@
 """Update Model for Immunization Records"""
 
 import datetime
-
-from typing import Optional, Literal, Any
-from pydantic import BaseModel, Field
+from typing import Any, Literal, Optional
 
 import fhir_api.models.fhir_r4.code_types as code_types
-from fhir_api.models.fhir_r4.fhir_datatype_fields import FhirR4Fields
 from fhir_api.models.fhir_r4.common import (
     CodeableConceptType,
-    Reference,
     Quantity,
+    Reference,
 )
-
-from fhir_api.models.fhir_r4.immunization import Performer, ProtocolApplied, Annotation
+from fhir_api.models.fhir_r4.fhir_datatype_fields import FhirR4Fields
+from fhir_api.models.fhir_r4.immunization import Annotation, Performer, ProtocolApplied
+from pydantic import BaseModel, Field
 
 
 class UpdateImmunizationRecord(BaseModel):

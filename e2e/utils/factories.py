@@ -2,18 +2,18 @@ import os
 import uuid
 from typing import Set
 
-from lib.apigee import ApigeeService, ApigeeConfig, ApigeeApp, ApigeeProduct
+from lib.apigee import ApigeeApp, ApigeeConfig, ApigeeProduct, ApigeeService
 from lib.authentication import (
-    AppRestrictedCredentials,
     AppRestrictedAuthentication,
+    AppRestrictedCredentials,
     AuthType,
     UserRestrictedCredentials,
 )
 from lib.env import (
     get_apigee_access_token,
-    get_auth_url,
-    get_apigee_username,
     get_apigee_env,
+    get_apigee_username,
+    get_auth_url,
     get_default_app_restricted_credentials,
     get_proxy_name,
 )

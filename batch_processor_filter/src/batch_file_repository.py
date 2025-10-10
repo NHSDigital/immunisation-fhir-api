@@ -1,12 +1,11 @@
 """Module for the batch file repository"""
 
 from csv import writer
-from io import StringIO, BytesIO
+from io import BytesIO, StringIO
 
 import boto3
-
 from batch_file_created_event import BatchFileCreatedEvent
-from constants import SOURCE_BUCKET_NAME, ACK_BUCKET_NAME
+from constants import ACK_BUCKET_NAME, SOURCE_BUCKET_NAME
 
 
 class BatchFileRepository:

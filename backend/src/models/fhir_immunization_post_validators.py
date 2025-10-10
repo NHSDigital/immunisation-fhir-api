@@ -4,7 +4,7 @@ from models.errors import MandatoryError
 from models.field_locations import FieldLocations
 from models.field_names import FieldNames
 from models.mandation_functions import MandationFunctions
-from models.utils.base_utils import obtain_field_value, obtain_field_location
+from models.utils.base_utils import obtain_field_location, obtain_field_value
 from models.validation_sets import ValidationSets
 
 

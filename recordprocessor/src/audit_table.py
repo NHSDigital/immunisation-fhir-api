@@ -3,8 +3,8 @@
 from typing import Optional
 
 from clients import dynamodb_client, logger
-from errors import UnhandledAuditTableError
 from constants import AUDIT_TABLE_NAME, AuditTableKeys
+from errors import UnhandledAuditTableError
 
 
 def update_audit_table_status(file_key: str, message_id: str, status: str, error_details: Optional[str] = None) -> None:

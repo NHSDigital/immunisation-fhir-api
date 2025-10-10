@@ -1,9 +1,10 @@
 """Utils functions for the ack backend tests"""
 
 import json
+
 from boto3 import client as boto3_client
-from tests.utils.values_for_ack_backend_tests import ValidValues, MOCK_MESSAGE_DETAILS
 from tests.utils.mock_environment_variables import REGION_NAME, BucketNames
+from tests.utils.values_for_ack_backend_tests import MOCK_MESSAGE_DETAILS, ValidValues
 
 firehose_client = boto3_client("firehose", region_name=REGION_NAME)
 

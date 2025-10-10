@@ -4,22 +4,21 @@ import unittest
 import urllib
 import urllib.parse
 import uuid
-from unittest.mock import create_autospec, ANY, patch, Mock
+from unittest.mock import ANY, Mock, create_autospec, patch
 from urllib.parse import urlencode
-
-from fhir.resources.R4B.bundle import Bundle
-from fhir.resources.R4B.immunization import Immunization
 
 from controller.aws_apig_response_utils import create_response
 from controller.fhir_controller import FhirController
+from fhir.resources.R4B.bundle import Bundle
+from fhir.resources.R4B.immunization import Immunization
 from models.errors import (
-    ResourceNotFoundError,
-    UnhandledResponseError,
-    InvalidPatientId,
     CustomValidationError,
-    ParameterException,
-    UnauthorizedVaxError,
     IdentifierDuplicationError,
+    InvalidPatientId,
+    ParameterException,
+    ResourceNotFoundError,
+    UnauthorizedVaxError,
+    UnhandledResponseError,
 )
 from parameter_parser import patient_identifier_system, process_search_params
 from repository.fhir_repository import ImmunizationRepository

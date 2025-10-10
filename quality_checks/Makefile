@@ -1,8 +1,8 @@
 lint:
-	poetry run flake8 ..
+	poetry run ruff check ..
 
 format:
-	poetry run black -l 121 ..
+	poetry run ruff format ..
 
 format-check:
-	poetry run black -l 121 --check ..
+	poetry run ruff format --check ..

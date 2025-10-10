@@ -1,9 +1,11 @@
 """unit tests for redis_sync.py"""
 
-import unittest
 import importlib
+import unittest
 from unittest.mock import patch
+
 from constants import RedisCacheKey
+
 import redis_sync
 
 

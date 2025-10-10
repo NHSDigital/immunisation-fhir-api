@@ -1,13 +1,12 @@
 import boto3
 from boto3.dynamodb.conditions import Key
-
 from constants import (
-    AUDIT_TABLE_NAME,
-    REGION_NAME,
     AUDIT_TABLE_FILENAME_GSI,
+    AUDIT_TABLE_NAME,
+    AUDIT_TABLE_QUEUE_NAME_GSI,
+    REGION_NAME,
     AuditTableKeys,
     FileStatus,
-    AUDIT_TABLE_QUEUE_NAME_GSI,
 )
 
 

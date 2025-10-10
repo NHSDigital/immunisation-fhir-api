@@ -1,31 +1,32 @@
 """Tests for the ack processor lambda handler."""
 
-import unittest
-import os
 import json
-from unittest.mock import patch
+import os
+import unittest
 from io import StringIO
-from boto3 import client as boto3_client
-from moto import mock_s3, mock_firehose
+from unittest.mock import patch
 
-from tests.utils.mock_environment_variables import (
-    MOCK_ENVIRONMENT_DICT,
-    BucketNames,
-    REGION_NAME,
-)
+from boto3 import client as boto3_client
+from moto import mock_firehose, mock_s3
+
 from tests.utils.generic_setup_and_teardown_for_ack_backend import (
     GenericSetUp,
     GenericTearDown,
+)
+from tests.utils.mock_environment_variables import (
+    MOCK_ENVIRONMENT_DICT,
+    REGION_NAME,
+    BucketNames,
 )
 from tests.utils.utils_for_ack_backend_tests import (
     setup_existing_ack_file,
     validate_ack_file_content,
 )
 from tests.utils.values_for_ack_backend_tests import (
-    DiagnosticsDictionaries,
-    MOCK_MESSAGE_DETAILS,
-    ValidValues,
     EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS,
+    MOCK_MESSAGE_DETAILS,
+    DiagnosticsDictionaries,
+    ValidValues,
 )
 
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
@@ -150,7 +151,7 @@ class TestAckProcessor(unittest.TestCase):
         test_cases = [
             {
                 "description": "Multiple messages: all successful",
-                "messages": [{"row_id": f"row_{i+1}"} for i in range(10)],
+                "messages": [{"row_id": f"row_{i + 1}"} for i in range(10)],
             },
             {
                 "description": "Multiple messages: all with diagnostics (failure messages)",

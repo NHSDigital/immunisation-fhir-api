@@ -1,17 +1,18 @@
-import unittest
-from unittest.mock import patch, MagicMock
-from botocore.exceptions import ClientError
-import os
-import json
 import decimal
-from common.mappings import EventName, Operation, ActionFlag
-from utils_for_converter_tests import ValuesForTests, RecordConfig
+import json
+import os
+import unittest
+from unittest.mock import MagicMock, patch
+
 import delta
+from botocore.exceptions import ClientError
+from common.mappings import ActionFlag, EventName, Operation
 from delta import (
-    send_message,
     handler,
     process_record,
+    send_message,
 )
+from utils_for_converter_tests import RecordConfig, ValuesForTests
 
 TEST_QUEUE_URL = "https://sqs.eu-west-2.amazonaws.com/123456789012/test-queue"
 os.environ["AWS_SQS_QUEUE_URL"] = TEST_QUEUE_URL
@@ -26,7 +27,6 @@ FAIL_RESPONSE = {"ResponseMetadata": {"HTTPStatusCode": 500}}
 
 
 class DeltaHandlerTestCase(unittest.TestCase):
-
     # TODO refactor for dependency injection, eg process_record, send_firehose etc
     def setUp(self):
         self.logger_info_patcher = patch("logging.Logger.info")
@@ -501,7 +501,6 @@ class DeltaHandlerTestCase(unittest.TestCase):
 
 
 class DeltaRecordProcessorTestCase(unittest.TestCase):
-
     def setUp(self):
         self.logger_info_patcher = patch("logging.Logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
@@ -525,7 +524,6 @@ class DeltaRecordProcessorTestCase(unittest.TestCase):
         self.delta_table_patcher.stop()
 
     def test_multi_record_success(self):
-
         # Arrange
         self.mock_delta_table.put_item.return_value = SUCCESS_RESPONSE
         test_configs = [
@@ -557,7 +555,6 @@ class DeltaRecordProcessorTestCase(unittest.TestCase):
         self.assertEqual(self.mock_logger_warning.call_count, 0)
 
     def test_multi_record_success_with_fail(self):
-
         # Arrange
         expected_returns = [True, False, True]
         self.mock_delta_table.put_item.side_effect = [
@@ -589,7 +586,6 @@ class DeltaRecordProcessorTestCase(unittest.TestCase):
         self.assertEqual(self.mock_logger_error.call_count, 1)
 
     def test_single_record_table_exception(self):
-
         # Arrange
         imms_id = "exception-id"
         record = ValuesForTests.get_event_record(
@@ -613,7 +609,6 @@ class DeltaRecordProcessorTestCase(unittest.TestCase):
 
     @patch("delta.json.loads")
     def test_json_loads_called_with_parse_float_decimal(self, mock_json_loads):
-
         # Arrange
         record = ValuesForTests.get_event_record(imms_id="id", event_name=EventName.UPDATE, operation=Operation.UPDATE)
 
@@ -640,7 +635,6 @@ class TestGetDeltaTable(unittest.TestCase):
         self.logger_error_patcher.stop()
 
     def test_returns_table_on_success(self):
-
         table = delta.get_delta_table()
         self.assertIs(table, self.mock_delta_table)
         # Should cache the table

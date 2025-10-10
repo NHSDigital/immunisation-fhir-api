@@ -1,15 +1,16 @@
-import unittest
 import os
+import unittest
 from io import BytesIO
 from unittest.mock import call, patch
+
 from batch_processor import process_csv_to_fhir
+
 from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
     create_patch,
 )
 
 
 class TestProcessorEdgeCases(unittest.TestCase):
-
     def setUp(self):
         self.mock_logger_info = create_patch("logging.Logger.info")
         self.mock_logger_warning = create_patch("logging.Logger.warning")

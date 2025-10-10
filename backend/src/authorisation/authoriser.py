@@ -3,7 +3,7 @@
 import json
 
 from authorisation.api_operation_code import ApiOperationCode
-from clients import redis_client, logger
+from clients import logger, redis_client
 from constants import SUPPLIER_PERMISSIONS_HASH_KEY
 
 

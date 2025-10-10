@@ -1,11 +1,11 @@
-import unittest
-from unittest.mock import patch, MagicMock
 import json
+import unittest
+from unittest.mock import MagicMock, patch
+
 from log_firehose import FirehoseLogger
 
 
 class TestFirehoseLogger(unittest.TestCase):
-
     def setUp(self):
         # Common setup if needed
         self.context = {}

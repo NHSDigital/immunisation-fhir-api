@@ -1,6 +1,6 @@
 """Generic setup and teardown for ACK backend tests"""
 
-from tests.utils.mock_environment_variables import BucketNames, Firehose, REGION_NAME
+from tests.utils.mock_environment_variables import REGION_NAME, BucketNames, Firehose
 
 
 class GenericSetUp:
@@ -12,7 +12,6 @@ class GenericSetUp:
     """
 
     def __init__(self, s3_client=None, firehose_client=None):
-
         if s3_client:
             for bucket_name in [
                 BucketNames.SOURCE,
@@ -40,7 +39,6 @@ class GenericTearDown:
     """Performs generic tear down of mock resources"""
 
     def __init__(self, s3_client=None, firehose_client=None):
-
         if s3_client:
             for bucket_name in [
                 BucketNames.SOURCE,

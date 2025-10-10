@@ -4,6 +4,7 @@ import os
 import time
 from datetime import datetime
 from functools import wraps
+
 from common.log_decorator import generate_and_send_logs
 
 PREFIX = "ack_processor"
@@ -73,7 +74,6 @@ def upload_ack_file_logging_decorator(func):
 
     @wraps(func)
     def wrapper(*args, **kwargs):
-
         base_log_data = {
             "function_name": f"{PREFIX}_{func.__name__}",
             "date_time": str(datetime.now()),
@@ -101,7 +101,6 @@ def ack_lambda_handler_logging_decorator(func):
 
     @wraps(func)
     def wrapper(event, context, *args, **kwargs):
-
         base_log_data = {
             "function_name": f"{PREFIX}_{func.__name__}",
             "date_time": str(datetime.now()),

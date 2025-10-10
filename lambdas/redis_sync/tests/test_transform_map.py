@@ -1,7 +1,8 @@
 import unittest
 from unittest.mock import patch
-from transform_map import transform_map
+
 from constants import RedisCacheKey
+from transform_map import transform_map
 
 
 class TestTransformMap(unittest.TestCase):
