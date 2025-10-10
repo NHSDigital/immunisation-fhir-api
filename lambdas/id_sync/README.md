@@ -20,9 +20,9 @@
 ## Configuration
 
 - **Environment Variables:**
-  - `IEDS_TABLE_NAME`: Name of events table.
-  - `PDS_ENV`: Targeted PDS service environment, eg INT.
-  - `SPLUNK_FIREHOSE_NAME`: Name of the splunk firehose for logging
+    - `IEDS_TABLE_NAME`: Name of events table.
+    - `PDS_ENV`: Targeted PDS service environment, eg INT.
+    - `SPLUNK_FIREHOSE_NAME`: Name of the splunk firehose for logging
 
 ## Development
 

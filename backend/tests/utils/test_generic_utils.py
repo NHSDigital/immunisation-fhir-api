@@ -64,9 +64,6 @@ class TestFormJson(unittest.TestCase):
         raw_elements = "  ID ,  MeTa  "
         out = form_json(self.response, raw_elements, self.identifier, self.baseurl)
         res = out["entry"][0]["resource"]
-        self.assertEqual(
-            out["link"][0]["url"],
-            f"{self.baseurl}?identifier={self.identifier}&_elements={raw_elements}"
-        )
+        self.assertEqual(out["link"][0]["url"], f"{self.baseurl}?identifier={self.identifier}&_elements={raw_elements}")
         self.assertEqual(res["id"], self.response["id"])
         self.assertEqual(res["meta"]["versionId"], self.response["version"])

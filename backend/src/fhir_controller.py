@@ -81,7 +81,8 @@ class FhirController:
 
         try:
             if resource := self.fhir_service.get_immunization_by_identifier(
-                identifiers, supplier_system, identifier, element):
+                identifiers, supplier_system, identifier, element
+            ):
                 return FhirController.create_response(200, resource)
         except UnauthorizedVaxError as unauthorized:
             return self.create_response(403, unauthorized.to_operation_outcome())
@@ -129,8 +130,8 @@ class FhirController:
                     resource_id=str(uuid.uuid4()),
                     severity=Severity.error,
                     code=Code.forbidden,
-                    diagnostics="Unauthorized request"
-                )
+                    diagnostics="Unauthorized request",
+                ),
             )
 
         supplier_system = self._identify_supplier_system(aws_event)
@@ -228,11 +229,7 @@ class FhirController:
             # Validate if the imms resource to be updated is a logically deleted resource - start
             if existing_record["DeletedAt"]:
                 outcome, resource, updated_version = self.fhir_service.reinstate_immunization(
-                    imms_id,
-                    imms,
-                    existing_resource_version,
-                    existing_resource_vacc_type,
-                    supplier_system
+                    imms_id, imms, existing_resource_version, existing_resource_vacc_type, supplier_system
                 )
             # Validate if the imms resource to be updated is a logically deleted resource-end
             else:
@@ -281,21 +278,13 @@ class FhirController:
                 # Validate if resource version has changed since the last retrieve - end
 
                 # Check if the record is reinstated record - start
-                if existing_record["Reinstated"] == True:
+                if existing_record["Reinstated"] is True:
                     outcome, resource, updated_version = self.fhir_service.update_reinstated_immunization(
-                        imms_id,
-                        imms,
-                        existing_resource_version,
-                        existing_resource_vacc_type,
-                        supplier_system
+                        imms_id, imms, existing_resource_version, existing_resource_vacc_type, supplier_system
                     )
                 else:
                     outcome, resource, updated_version = self.fhir_service.update_immunization(
-                        imms_id,
-                        imms,
-                        existing_resource_version,
-                        existing_resource_vacc_type,
-                        supplier_system
+                        imms_id, imms, existing_resource_version, existing_resource_vacc_type, supplier_system
                     )
 
                 # Check if the record is reinstated record - end
@@ -310,7 +299,9 @@ class FhirController:
                 )
                 return self.create_response(400, json.dumps(exp_error))
             if outcome == UpdateOutcome.UPDATE:
-                return self.create_response(200, None, {"E-Tag": updated_version}) #include e-tag here, is it not included in the response resource
+                return self.create_response(
+                    200, None, {"E-Tag": updated_version}
+                )  # include e-tag here, is it not included in the response resource
         except ValidationError as error:
             return self.create_response(400, error.to_operation_outcome())
         except IdentifierDuplicationError as duplicate:
@@ -340,7 +331,7 @@ class FhirController:
         except ResourceNotFoundError as not_found:
             return self.create_response(404, not_found.to_operation_outcome())
         except UnhandledResponseError as unhandled_error:
-           return self.create_response(500, unhandled_error.to_operation_outcome())
+            return self.create_response(500, unhandled_error.to_operation_outcome())
         except UnauthorizedVaxError as unauthorized:
             return self.create_response(403, unauthorized.to_operation_outcome())
 
@@ -389,9 +380,7 @@ class FhirController:
                 for entry in result_json_dict["entry"]
                 if entry["resource"].get("status") not in ("not-done", "entered-in-error")
             ]
-            total_count = sum(
-                1 for entry in result_json_dict["entry"] if entry.get("search", {}).get("mode") == "match"
-            )
+            total_count = sum(1 for entry in result_json_dict["entry"] if entry.get("search", {}).get("mode") == "match")
             result_json_dict["total"] = total_count
             if request_contained_unauthorised_vaccs:
                 exp_error = create_operation_outcome(

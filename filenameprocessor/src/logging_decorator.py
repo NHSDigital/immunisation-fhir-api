@@ -25,15 +25,20 @@ def generate_and_send_logs(
     base_log_data: dict,
     additional_log_data: dict,
     use_ms_precision: bool = False,
-    is_error_log: bool = False
+    is_error_log: bool = False,
 ) -> None:
     """Generates log data which includes the base_log_data, additional_log_data, and time taken (calculated using the
     current time and given start_time) and sends them to Cloudwatch and Firehose."""
     seconds_elapsed = time.time() - start_time
-    formatted_time_elapsed = f"{round(seconds_elapsed * 1000, 5)}ms" if use_ms_precision else \
-        f"{round(seconds_elapsed, 5)}s"
+    formatted_time_elapsed = (
+        f"{round(seconds_elapsed * 1000, 5)}ms" if use_ms_precision else f"{round(seconds_elapsed, 5)}s"
+    )
 
-    log_data = {**base_log_data, "time_taken": formatted_time_elapsed, **additional_log_data}
+    log_data = {
+        **base_log_data,
+        "time_taken": formatted_time_elapsed,
+        **additional_log_data,
+    }
     log_function = logger.error if is_error_log else logger.info
     log_function(json.dumps(log_data))
     send_log_to_firehose(log_data)
@@ -50,18 +55,31 @@ def logging_decorator(func):
 
     @wraps(func)
     def wrapper(*args, **kwargs):
-        base_log_data = {"function_name": f"filename_processor_{func.__name__}", "date_time": str(datetime.now())}
+        base_log_data = {
+            "function_name": f"filename_processor_{func.__name__}",
+            "date_time": str(datetime.now()),
+        }
         start_time = time.time()
 
         try:
             result = func(*args, **kwargs)
-            generate_and_send_logs(start_time, base_log_data, additional_log_data=result, use_ms_precision=True)
+            generate_and_send_logs(
+                start_time,
+                base_log_data,
+                additional_log_data=result,
+                use_ms_precision=True,
+            )
             return result
 
         except Exception as e:
             additional_log_data = {"statusCode": 500, "error": str(e)}
-            generate_and_send_logs(start_time, base_log_data, additional_log_data, is_error_log=True,
-                                   use_ms_precision=True)
+            generate_and_send_logs(
+                start_time,
+                base_log_data,
+                additional_log_data,
+                is_error_log=True,
+                use_ms_precision=True,
+            )
             raise
 
     return wrapper

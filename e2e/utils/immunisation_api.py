@@ -1,13 +1,14 @@
-import re
-import uuid
-import time
 import random
-import requests
-from utils.resource import generate_imms_resource, delete_imms_records
-from typing import Optional, Literal, List
+import re
+import time
+import uuid
 from datetime import datetime
+from typing import Optional, Literal, List
+
+import requests
 
 from lib.authentication import BaseAuthentication
+from utils.resource import generate_imms_resource, delete_imms_records
 from .constants import patient_identifier_system
 
 
@@ -36,7 +37,8 @@ class ImmunisationApi:
         self.headers = {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/fhir+json",
-            "Accept": "application/fhir+json"}
+            "Accept": "application/fhir+json",
+        }
         self.generated_test_records = []
 
     def __str__(self):
@@ -56,7 +58,7 @@ class ImmunisationApi:
         expected_connection_failure: bool = False,
         max_retries: int = 5,
         is_status_check: bool = False,
-        **kwargs
+        **kwargs,
     ):
         for attempt in range(max_retries):
             try:
@@ -75,17 +77,19 @@ class ImmunisationApi:
                 if is_status_check:
                     body = response.json()
                     if body["status"].lower() != "pass":
-                        raise RuntimeError(f"Server status check at {url} returned status code {response.status_code}, "
-                                           f"but status is: {body['status']}")
+                        raise RuntimeError(
+                            f"Server status check at {url} returned status code {response.status_code}, "
+                            f"but status is: {body['status']}"
+                        )
 
                 # Check if the response matches the expected status code to identify potential issues
                 if response.status_code != expected_status_code:
                     if response.status_code >= 500:
-                        raise RuntimeError(f"Server error: {response.status_code} during "
-                                           f"in {http_method} {url}")
+                        raise RuntimeError(f"Server error: {response.status_code} during " f"in {http_method} {url}")
                     else:
-                        raise ValueError(f"Expected {expected_status_code} but got "
-                                         f"{response.status_code} in {http_method} {url}")
+                        raise ValueError(
+                            f"Expected {expected_status_code} but got " f"{response.status_code} in {http_method} {url}"
+                        )
 
                 return response
 
@@ -94,7 +98,7 @@ class ImmunisationApi:
                     raise
 
                 # This is will be used in the retry logic of the exponential backoff
-                delay = (3 ** attempt) + random.uniform(0, 0.5)
+                delay = (3**attempt) + random.uniform(0, 0.5)
                 print(
                     f"[{datetime.now():%Y-%m-%d %H:%M:%S}] "
                     f"[Retry {attempt + 1}] {http_method.upper()} {url} — {e} — retrying in {delay:.2f}s"
@@ -126,7 +130,7 @@ class ImmunisationApi:
             http_method="GET",
             url=f"{self.url}/Immunization/{event_id}",
             headers=self._update_headers(),
-            expected_status_code=expected_status_code
+            expected_status_code=expected_status_code,
         )
 
     # Create a new Immunization resource by sending a POST request to the API
@@ -137,7 +141,7 @@ class ImmunisationApi:
             url=f"{self.url}/Immunization",
             headers=self._update_headers(),
             expected_status_code=expected_status_code,
-            json=imms
+            json=imms,
         )
 
         if response.status_code == 201:
@@ -158,7 +162,7 @@ class ImmunisationApi:
             url=f"{self.url}/Immunization/{imms_id}",
             headers=self._update_headers(headers),
             expected_status_code=expected_status_code,
-            json=imms
+            json=imms,
         )
 
     def delete_immunization(self, imms_id, expected_status_code: int = 204):
@@ -169,41 +173,53 @@ class ImmunisationApi:
             expected_status_code=expected_status_code,
         )
 
-    def search_immunizations(self, patient_identifier: str, immunization_target: str, expected_status_code: int = 200):
+    def search_immunizations(
+        self,
+        patient_identifier: str,
+        immunization_target: str,
+        expected_status_code: int = 200,
+    ):
         return self.make_request_with_backoff(
             http_method="GET",
             url=f"{self.url}/Immunization?patient.identifier={patient_identifier_system}|{patient_identifier}"
             f"&-immunization.target={immunization_target}",
             headers=self._update_headers(),
-            expected_status_code=expected_status_code
+            expected_status_code=expected_status_code,
         )
 
     def search_immunization_by_identifier(
-            self, identifier_system: str,
-            identifier_value: str, expected_status_code: int = 200):
+        self,
+        identifier_system: str,
+        identifier_value: str,
+        expected_status_code: int = 200,
+    ):
         return self.make_request_with_backoff(
             http_method="GET",
             url=f"{self.url}/Immunization?identifier={identifier_system}|{identifier_value}",
             headers=self._update_headers(),
-            expected_status_code=expected_status_code
+            expected_status_code=expected_status_code,
         )
 
     def search_immunization_by_identifier_and_elements(
-            self, identifier_system: str,
-            identifier_value: str, expected_status_code: int = 200):
+        self,
+        identifier_system: str,
+        identifier_value: str,
+        expected_status_code: int = 200,
+    ):
         return self.make_request_with_backoff(
             http_method="GET",
             url=f"{self.url}/Immunization?identifier={identifier_system}|{identifier_value}&_elements=id,meta",
             headers=self._update_headers(),
-            expected_status_code=expected_status_code
+            expected_status_code=expected_status_code,
         )
 
     def search_immunizations_full(
-            self,
-            http_method: Literal["POST", "GET"],
-            query_string: Optional[str],
-            body: Optional[str],
-            expected_status_code: int = 200):
+        self,
+        http_method: Literal["POST", "GET"],
+        query_string: Optional[str],
+        body: Optional[str],
+        expected_status_code: int = 200,
+    ):
 
         if http_method == "POST":
             url = f"{self.url}/Immunization/_search?{query_string}"
@@ -215,18 +231,21 @@ class ImmunisationApi:
             url=url,
             headers=self._update_headers({"Content-Type": "application/x-www-form-urlencoded"}),
             expected_status_code=expected_status_code,
-            data=body
+            data=body,
         )
 
     def _update_headers(self, headers=None):
         if headers is None:
             headers = {}
-        updated = {**self.headers, **{
-            "X-Correlation-ID": str(uuid.uuid4()),
-            "X-Request-ID": str(uuid.uuid4()),
-            "E-Tag": "1",
-            "Accept": "application/fhir+json"
-        }}
+        updated = {
+            **self.headers,
+            **{
+                "X-Correlation-ID": str(uuid.uuid4()),
+                "X-Request-ID": str(uuid.uuid4()),
+                "E-Tag": "1",
+                "Accept": "application/fhir+json",
+            },
+        }
         return {**updated, **headers}
 
     def _is_valid_uuid4(self, imms_id):

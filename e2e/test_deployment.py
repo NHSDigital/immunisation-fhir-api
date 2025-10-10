@@ -3,7 +3,11 @@ from time import sleep
 
 import requests
 
-from lib.env import get_service_base_path, get_status_endpoint_api_key, get_source_commit_id
+from lib.env import (
+    get_service_base_path,
+    get_status_endpoint_api_key,
+    get_source_commit_id,
+)
 
 """Tests in this package don't really test anything. Platform created these tests to check if the current
 deployment is the latest. It works by hitting /_status endpoint and comparing the commit sha code of the
@@ -33,7 +37,7 @@ class TestDeployment(unittest.TestCase):
         self.check_and_retry(url, {"apikey": self.status_api_key}, self.expected_commit_id)
 
     def check_and_retry(self, url, headers, expected_commit_id):
-        for i in range(self.max_retries):
+        for _i in range(self.max_retries):
             resp = requests.get(url, headers=headers)
             status_code = resp.status_code
             if status_code != 200:

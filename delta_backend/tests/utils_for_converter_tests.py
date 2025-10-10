@@ -13,6 +13,7 @@ class RecordConfig:
         self.imms_id = imms_id
         self.expected_action_flag = expected_action_flag
 
+
 class ValuesForTests:
 
     MOCK_ENVIRONMENT_DICT = {
@@ -31,7 +32,12 @@ class ValuesForTests:
             {
                 "resourceType": "Patient",
                 "id": "Pat1",
-                "identifier": [{"system": "https://fhir.nhs.uk/Id/nhs-number", "value": "9000000009"}],
+                "identifier": [
+                    {
+                        "system": "https://fhir.nhs.uk/Id/nhs-number",
+                        "value": "9000000009",
+                    }
+                ],
                 "name": [{"family": "Trailor", "given": ["Sam"]}],
                 "gender": "unknown",
                 "birthDate": "1965-02-28",
@@ -50,19 +56,24 @@ class ValuesForTests:
                             "extension": [
                                 {
                                     "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-CodingSCTDescDisplay",
-                                    "valueString": "Test Value string 123456 COVID19 vaccination"
+                                    "valueString": "Test Value string 123456 COVID19 vaccination",
                                 },
                                 {
                                     "url": "http://hl7.org/fhir/StructureDefinition/coding-sctdescid",
-                                    "valueId": "5306706018"
-                                }
+                                    "valueId": "5306706018",
+                                },
                             ],
                         }
                     ]
                 },
             }
         ],
-        "identifier": [{"system": "https://supplierABC/identifiers/vacc", "value": "ACME-vacc123456"}],
+        "identifier": [
+            {
+                "system": "https://supplierABC/identifiers/vacc",
+                "value": "ACME-vacc123456",
+            }
+        ],
         "status": "completed",
         "vaccineCode": {
             "coding": [
@@ -80,7 +91,10 @@ class ValuesForTests:
         "manufacturer": {"display": "AstraZeneca Ltd"},
         "location": {
             "type": "Location",
-            "identifier": {"value": "EC1111", "system": "https://fhir.nhs.uk/Id/ods-organization-code"},
+            "identifier": {
+                "value": "EC1111",
+                "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+            },
         },
         "lotNumber": "4120Z001",
         "expirationDate": "2021-07-02",
@@ -113,7 +127,10 @@ class ValuesForTests:
             {
                 "actor": {
                     "type": "Organization",
-                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "B0C4P"},
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                        "value": "B0C4P",
+                    },
                 }
             },
         ],
@@ -139,13 +156,14 @@ class ValuesForTests:
     json_value_for_test = json.dumps(json_data)
 
     @staticmethod
-    def get_event(event_name=EventName.CREATE, operation=Operation.CREATE, supplier="EMIS", imms_id="12345"):
+    def get_event(
+        event_name=EventName.CREATE,
+        operation=Operation.CREATE,
+        supplier="EMIS",
+        imms_id="12345",
+    ):
         """Create test event for the handler function."""
-        return {
-            "Records": [
-                ValuesForTests.get_event_record(imms_id, event_name, operation, supplier)
-            ]
-        }
+        return {"Records": [ValuesForTests.get_event_record(imms_id, event_name, operation, supplier)]}
 
     @staticmethod
     def get_multi_record_event(records_config: List[RecordConfig]):
@@ -184,8 +202,8 @@ class ValuesForTests:
                         "Operation": {"S": operation},
                         "SupplierSystem": {"S": supplier},
                         "Resource": {"S": ValuesForTests.json_value_for_test},
-                    }
-                }
+                    },
+                },
             }
         else:
             return {
@@ -198,8 +216,8 @@ class ValuesForTests:
                         "PatientSK": {"S": "COVID19#ca8ba2c6-2383-4465-b456-c1174c21cf31"},
                         "SupplierSystem": {"S": supplier},
                         "Resource": {"S": ValuesForTests.json_value_for_test},
-                    }
-                }
+                    },
+                },
             }
 
     expected_static_values = {
@@ -213,44 +231,6 @@ class ValuesForTests:
     def get_expected_imms(expected_action_flag):
         """Returns expected Imms JSON data with the given action flag."""
         return {
-                "NHS_NUMBER": "9000000009",
-                "PERSON_FORENAME": "Sam",
-                "PERSON_SURNAME": "Trailor",
-                "PERSON_DOB": "19650228",
-                "PERSON_GENDER_CODE": "0",
-                "PERSON_POSTCODE": "EC1A 1BB",
-                "DATE_AND_TIME": "20210207T13281700",
-                "SITE_CODE": "B0C4P",
-                "SITE_CODE_TYPE_URI": "https://fhir.nhs.uk/Id/ods-organization-code",
-                "UNIQUE_ID": "ACME-vacc123456",
-                "UNIQUE_ID_URI": "https://supplierABC/identifiers/vacc",
-                "ACTION_FLAG": expected_action_flag,
-                "PERFORMING_PROFESSIONAL_FORENAME": "Florence",
-                "PERFORMING_PROFESSIONAL_SURNAME": "Nightingale",
-                "RECORDED_DATE": "20210207",
-                "PRIMARY_SOURCE": "TRUE",
-                "VACCINATION_PROCEDURE_CODE": "13246814444444",
-                "VACCINATION_PROCEDURE_TERM": "Test Value string 123456 COVID19 vaccination",
-                "DOSE_SEQUENCE": "1",
-                "VACCINE_PRODUCT_CODE": "39114911000001105",
-                "VACCINE_PRODUCT_TERM": "COVID-19 Vaccine Vaxzevria (ChAdOx1 S [recombinant]) not less than 2.5x100,000,000 infectious units/0.5ml dose suspension for injection multidose vials (AstraZeneca UK Ltd) (product)",
-                "VACCINE_MANUFACTURER": "AstraZeneca Ltd",
-                "BATCH_NUMBER": "4120Z001",
-                "EXPIRY_DATE": "20210702",
-                "SITE_OF_VACCINATION_CODE": "368208006",
-                "SITE_OF_VACCINATION_TERM": "Left upper arm structure (body structure)",
-                "ROUTE_OF_VACCINATION_CODE": "78421000",
-                "ROUTE_OF_VACCINATION_TERM": "Intramuscular route (qualifier value)",
-                "DOSE_AMOUNT": "0.5",
-                "DOSE_UNIT_CODE": "ml",
-                "DOSE_UNIT_TERM": "milliliter",
-                "INDICATION_CODE": "443684005",
-                "LOCATION_CODE": "EC1111",
-                "LOCATION_CODE_TYPE_URI": "https://fhir.nhs.uk/Id/ods-organization-code",
-                "CONVERSION_ERRORS": []
-            }
-
-    expected_imms = {
             "NHS_NUMBER": "9000000009",
             "PERSON_FORENAME": "Sam",
             "PERSON_SURNAME": "Trailor",
@@ -262,45 +242,7 @@ class ValuesForTests:
             "SITE_CODE_TYPE_URI": "https://fhir.nhs.uk/Id/ods-organization-code",
             "UNIQUE_ID": "ACME-vacc123456",
             "UNIQUE_ID_URI": "https://supplierABC/identifiers/vacc",
-            "ACTION_FLAG": "UPDATE",
-            "PERFORMING_PROFESSIONAL_FORENAME": "Florence",
-            "PERFORMING_PROFESSIONAL_SURNAME": "Nightingale",
-            "RECORDED_DATE": "20210207",
-            "PRIMARY_SOURCE": "TRUE",
-            "VACCINATION_PROCEDURE_CODE": "13246814444444",
-            "VACCINATION_PROCEDURE_TERM": "Administration of first dose of severe acute respiratory syndrome coronavirus 2 vaccine (procedure)",
-            "DOSE_SEQUENCE": 1,
-            "VACCINE_PRODUCT_CODE": "39114911000001105",
-            "VACCINE_PRODUCT_TERM": "COVID-19 Vaccine Vaxzevria (ChAdOx1 S [recombinant]) not less than 2.5x100,000,000 infectious units/0.5ml dose suspension for injection multidose vials (AstraZeneca UK Ltd) (product)",
-            "VACCINE_MANUFACTURER": "AstraZeneca Ltd",
-            "BATCH_NUMBER": "4120Z001",
-            "EXPIRY_DATE": "20210702",
-            "SITE_OF_VACCINATION_CODE": "368208006",
-            "SITE_OF_VACCINATION_TERM": "Left upper arm structure (body structure)",
-            "ROUTE_OF_VACCINATION_CODE": "78421000",
-            "ROUTE_OF_VACCINATION_TERM": "Intramuscular route (qualifier value)",
-            "DOSE_AMOUNT": "0.5",
-            "DOSE_UNIT_CODE": "",
-            "DOSE_UNIT_TERM": "milliliter",
-            "INDICATION_CODE": "443684005",
-            "LOCATION_CODE": "EC1111",
-            "LOCATION_CODE_TYPE_URI": "https://fhir.nhs.uk/Id/ods-organization-code",
-            "CONVERSION_ERRORS": []
-        }
-
-    expected_imms2 = {
-            "NHS_NUMBER": "9000000009",
-            "PERSON_FORENAME": "Sam",
-            "PERSON_SURNAME": "Trailor",
-            "PERSON_DOB": "19650228",
-            "PERSON_GENDER_CODE": "0",
-            "PERSON_POSTCODE": "EC1A 1BB",
-            "DATE_AND_TIME": "20210207T13281700",
-            "SITE_CODE": "B0C4P",
-            "SITE_CODE_TYPE_URI": "https://fhir.nhs.uk/Id/ods-organization-code",
-            "UNIQUE_ID": "ACME-vacc123456",
-            "UNIQUE_ID_URI": "https://supplierABC/identifiers/vacc",
-            "ACTION_FLAG": "UPDATE",
+            "ACTION_FLAG": expected_action_flag,
             "PERFORMING_PROFESSIONAL_FORENAME": "Florence",
             "PERFORMING_PROFESSIONAL_SURNAME": "Nightingale",
             "RECORDED_DATE": "20210207",
@@ -323,8 +265,84 @@ class ValuesForTests:
             "INDICATION_CODE": "443684005",
             "LOCATION_CODE": "EC1111",
             "LOCATION_CODE_TYPE_URI": "https://fhir.nhs.uk/Id/ods-organization-code",
-            "CONVERSION_ERRORS": []
+            "CONVERSION_ERRORS": [],
         }
+
+    expected_imms = {
+        "NHS_NUMBER": "9000000009",
+        "PERSON_FORENAME": "Sam",
+        "PERSON_SURNAME": "Trailor",
+        "PERSON_DOB": "19650228",
+        "PERSON_GENDER_CODE": "0",
+        "PERSON_POSTCODE": "EC1A 1BB",
+        "DATE_AND_TIME": "20210207T13281700",
+        "SITE_CODE": "B0C4P",
+        "SITE_CODE_TYPE_URI": "https://fhir.nhs.uk/Id/ods-organization-code",
+        "UNIQUE_ID": "ACME-vacc123456",
+        "UNIQUE_ID_URI": "https://supplierABC/identifiers/vacc",
+        "ACTION_FLAG": "UPDATE",
+        "PERFORMING_PROFESSIONAL_FORENAME": "Florence",
+        "PERFORMING_PROFESSIONAL_SURNAME": "Nightingale",
+        "RECORDED_DATE": "20210207",
+        "PRIMARY_SOURCE": "TRUE",
+        "VACCINATION_PROCEDURE_CODE": "13246814444444",
+        "VACCINATION_PROCEDURE_TERM": "Administration of first dose of severe acute respiratory syndrome coronavirus 2 vaccine (procedure)",
+        "DOSE_SEQUENCE": 1,
+        "VACCINE_PRODUCT_CODE": "39114911000001105",
+        "VACCINE_PRODUCT_TERM": "COVID-19 Vaccine Vaxzevria (ChAdOx1 S [recombinant]) not less than 2.5x100,000,000 infectious units/0.5ml dose suspension for injection multidose vials (AstraZeneca UK Ltd) (product)",
+        "VACCINE_MANUFACTURER": "AstraZeneca Ltd",
+        "BATCH_NUMBER": "4120Z001",
+        "EXPIRY_DATE": "20210702",
+        "SITE_OF_VACCINATION_CODE": "368208006",
+        "SITE_OF_VACCINATION_TERM": "Left upper arm structure (body structure)",
+        "ROUTE_OF_VACCINATION_CODE": "78421000",
+        "ROUTE_OF_VACCINATION_TERM": "Intramuscular route (qualifier value)",
+        "DOSE_AMOUNT": "0.5",
+        "DOSE_UNIT_CODE": "",
+        "DOSE_UNIT_TERM": "milliliter",
+        "INDICATION_CODE": "443684005",
+        "LOCATION_CODE": "EC1111",
+        "LOCATION_CODE_TYPE_URI": "https://fhir.nhs.uk/Id/ods-organization-code",
+        "CONVERSION_ERRORS": [],
+    }
+
+    expected_imms2 = {
+        "NHS_NUMBER": "9000000009",
+        "PERSON_FORENAME": "Sam",
+        "PERSON_SURNAME": "Trailor",
+        "PERSON_DOB": "19650228",
+        "PERSON_GENDER_CODE": "0",
+        "PERSON_POSTCODE": "EC1A 1BB",
+        "DATE_AND_TIME": "20210207T13281700",
+        "SITE_CODE": "B0C4P",
+        "SITE_CODE_TYPE_URI": "https://fhir.nhs.uk/Id/ods-organization-code",
+        "UNIQUE_ID": "ACME-vacc123456",
+        "UNIQUE_ID_URI": "https://supplierABC/identifiers/vacc",
+        "ACTION_FLAG": "UPDATE",
+        "PERFORMING_PROFESSIONAL_FORENAME": "Florence",
+        "PERFORMING_PROFESSIONAL_SURNAME": "Nightingale",
+        "RECORDED_DATE": "20210207",
+        "PRIMARY_SOURCE": "TRUE",
+        "VACCINATION_PROCEDURE_CODE": "13246814444444",
+        "VACCINATION_PROCEDURE_TERM": "Test Value string 123456 COVID19 vaccination",
+        "DOSE_SEQUENCE": "1",
+        "VACCINE_PRODUCT_CODE": "39114911000001105",
+        "VACCINE_PRODUCT_TERM": "COVID-19 Vaccine Vaxzevria (ChAdOx1 S [recombinant]) not less than 2.5x100,000,000 infectious units/0.5ml dose suspension for injection multidose vials (AstraZeneca UK Ltd) (product)",
+        "VACCINE_MANUFACTURER": "AstraZeneca Ltd",
+        "BATCH_NUMBER": "4120Z001",
+        "EXPIRY_DATE": "20210702",
+        "SITE_OF_VACCINATION_CODE": "368208006",
+        "SITE_OF_VACCINATION_TERM": "Left upper arm structure (body structure)",
+        "ROUTE_OF_VACCINATION_CODE": "78421000",
+        "ROUTE_OF_VACCINATION_TERM": "Intramuscular route (qualifier value)",
+        "DOSE_AMOUNT": "0.5",
+        "DOSE_UNIT_CODE": "ml",
+        "DOSE_UNIT_TERM": "milliliter",
+        "INDICATION_CODE": "443684005",
+        "LOCATION_CODE": "EC1111",
+        "LOCATION_CODE_TYPE_URI": "https://fhir.nhs.uk/Id/ods-organization-code",
+        "CONVERSION_ERRORS": [],
+    }
 
 
 class ErrorValuesForTests:
@@ -361,7 +379,12 @@ class ErrorValuesForTests:
                 },
             }
         ],
-        "identifier": [{"system": "https://supplierABC/identifiers/vacc", "value": "ACME-vacc123456"}],
+        "identifier": [
+            {
+                "system": "https://supplierABC/identifiers/vacc",
+                "value": "ACME-vacc123456",
+            }
+        ],
         "status": "completed",
         "vaccineCode": {
             "coding": [
@@ -379,7 +402,10 @@ class ErrorValuesForTests:
         "manufacturer": {"display": "AstraZeneca Ltd"},
         "location": {
             "type": "Location",
-            "identifier": {"value": "E712", "system": "https://fhir.nhs.uk/Id/ods-organization-code"},
+            "identifier": {
+                "value": "E712",
+                "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+            },
         },
         "lotNumber": "4120Z001",
         "expirationDate": "2021-07-02",
@@ -412,7 +438,10 @@ class ErrorValuesForTests:
             {
                 "actor": {
                     "type": "Organization",
-                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "B0C4P"},
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                        "value": "B0C4P",
+                    },
                 }
             },
         ],
@@ -476,6 +505,6 @@ class ErrorValuesForTests:
                 "INDICATION_CODE": "443684005",
                 "LOCATION_CODE": "E712",
                 "LOCATION_CODE_TYPE_URI": "https://fhir.nhs.uk/Id/ods-organization-code",
-                "CONVERSION_ERRORS": []
+                "CONVERSION_ERRORS": [],
             }
         ]

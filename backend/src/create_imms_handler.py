@@ -13,6 +13,7 @@ from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
 logging.basicConfig(level="INFO")
 logger = logging.getLogger()
 
+
 @function_info
 def create_imms_handler(event, _context):
     return create_immunization(event, make_controller())

@@ -6,13 +6,19 @@ from io import StringIO
 import csv
 import boto3
 from moto import mock_s3
-from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import GenericSetUp, GenericTearDown
+from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
+    GenericSetUp,
+    GenericTearDown,
+)
 from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
     MockFileDetails,
     ValidMockFileContent,
     REGION_NAME,
 )
-from tests.utils_for_recordprocessor_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT, BucketNames
+from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
+    MOCK_ENVIRONMENT_DICT,
+    BucketNames,
+)
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
     from utils_for_recordprocessor import (

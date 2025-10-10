@@ -35,7 +35,15 @@ class Constants:
             "protocolApplied",
         },
         "Practitioner": {"resourceType", "id", "name"},
-        "Patient": {"resourceType", "id", "identifier", "name", "gender", "birthDate", "address"},
+        "Patient": {
+            "resourceType",
+            "id",
+            "identifier",
+            "name",
+            "gender",
+            "birthDate",
+            "address",
+        },
     }
 
     ALLOWED_CONTAINED_RESOURCES = {"Practitioner", "Patient"}

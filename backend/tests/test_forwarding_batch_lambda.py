@@ -20,8 +20,12 @@ import json
 from utils.test_utils_for_batch import ForwarderValues, MockFhirImmsResources
 
 with patch.dict("os.environ", ForwarderValues.MOCK_ENVIRONMENT_DICT):
-    from forwarding_batch_lambda import forward_lambda_handler, create_diagnostics_dictionary, forward_request_to_dynamo, \
-    QUEUE_URL
+    from forwarding_batch_lambda import (
+        forward_lambda_handler,
+        create_diagnostics_dictionary,
+        forward_request_to_dynamo,
+        QUEUE_URL,
+    )
 
 
 @mock_aws
@@ -76,8 +80,11 @@ class TestForwardLambdaHandler(TestCase):
         if not include_fhir_json:
             return None
 
-        fhir_json = copy.deepcopy(MockFhirImmsResources.all_fields) if operation_requested != "DELETE" else (
-            copy.deepcopy(MockFhirImmsResources.delete_operation_fields))
+        fhir_json = (
+            copy.deepcopy(MockFhirImmsResources.all_fields)
+            if operation_requested != "DELETE"
+            else (copy.deepcopy(MockFhirImmsResources.delete_operation_fields))
+        )
 
         if fhir_json.get("identifier") and identifier_value is not None:
             fhir_json["identifier"][0]["value"] = identifier_value
@@ -95,9 +102,7 @@ class TestForwardLambdaHandler(TestCase):
         }
         if include_fhir_json:
             details["fhir_json"] = TestForwardLambdaHandler.generate_fhir_json(
-                include_fhir_json,
-                identifier_value,
-                operation_requested
+                include_fhir_json, identifier_value, operation_requested
             )
         return details
 
@@ -110,7 +115,7 @@ class TestForwardLambdaHandler(TestCase):
         include_fhir_json: bool = True,
         operation_requested: str = "create",
         diagnostics: dict = None,
-        supplier: str = "test_supplier"
+        supplier: str = "test_supplier",
     ):
         """Generates input rows for test_cases."""
         details_from_processing = TestForwardLambdaHandler.generate_details_from_processing(
@@ -425,7 +430,7 @@ class TestForwardLambdaHandler(TestCase):
                     identifier_value="supplier_1_system/54321",
                     operation_requested="CREATE",
                     file_key="supplier_1_rsv_test_file",
-                    supplier="supplier_1"
+                    supplier="supplier_1",
                 )
             },
             {
@@ -434,9 +439,9 @@ class TestForwardLambdaHandler(TestCase):
                     identifier_value="supplier_2_system/12345",
                     operation_requested="CREATE",
                     file_key="supplier_2_rsv_test_file",
-                    supplier="supplier_2"
+                    supplier="supplier_2",
                 )
-            }
+            },
         ]
         mock_kinesis_event = self.generate_event(mock_records)
         self.mock_redis_client.hget.return_value = "RSV"
@@ -452,30 +457,36 @@ class TestForwardLambdaHandler(TestCase):
         self.assertEqual(first_call_kwargs["MessageGroupId"], "supplier_1_rsv_test_file_2025-01-24T12:00:00Z")
         self.assertEqual(second_call_kwargs["MessageGroupId"], "supplier_2_rsv_test_file_2025-01-24T12:00:00Z")
 
-        self.assertDictEqual(json.loads(first_call_kwargs["MessageBody"])[0], {
-            "created_at_formatted_string": "2025-01-24T12:00:00Z",
-            "file_key": "supplier_1_rsv_test_file",
-            "operation_start_time": ANY,
-            "operation_end_time": ANY,
-            "imms_id": ANY,
-            "local_id": "local-1",
-            "operation_requested": "CREATE",
-            "row_id": "row-1",
-            "supplier": "supplier_1",
-            "vaccine_type": "RSV"
-        })
-        self.assertDictEqual(json.loads(second_call_kwargs["MessageBody"])[0], {
-            "created_at_formatted_string": "2025-01-24T12:00:00Z",
-            "file_key": "supplier_2_rsv_test_file",
-            "operation_start_time": ANY,
-            "operation_end_time": ANY,
-            "imms_id": ANY,
-            "local_id": "local-2",
-            "operation_requested": "CREATE",
-            "row_id": "row-2",
-            "supplier": "supplier_2",
-            "vaccine_type": "RSV"
-        })
+        self.assertDictEqual(
+            json.loads(first_call_kwargs["MessageBody"])[0],
+            {
+                "created_at_formatted_string": "2025-01-24T12:00:00Z",
+                "file_key": "supplier_1_rsv_test_file",
+                "operation_start_time": ANY,
+                "operation_end_time": ANY,
+                "imms_id": ANY,
+                "local_id": "local-1",
+                "operation_requested": "CREATE",
+                "row_id": "row-1",
+                "supplier": "supplier_1",
+                "vaccine_type": "RSV",
+            },
+        )
+        self.assertDictEqual(
+            json.loads(second_call_kwargs["MessageBody"])[0],
+            {
+                "created_at_formatted_string": "2025-01-24T12:00:00Z",
+                "file_key": "supplier_2_rsv_test_file",
+                "operation_start_time": ANY,
+                "operation_end_time": ANY,
+                "imms_id": ANY,
+                "local_id": "local-2",
+                "operation_requested": "CREATE",
+                "row_id": "row-2",
+                "supplier": "supplier_2",
+                "vaccine_type": "RSV",
+            },
+        )
 
     @patch("forwarding_batch_lambda.sqs_client.send_message")
     def test_forward_lambda_handler_update_scenarios(self, mock_send_message):

@@ -11,6 +11,7 @@ from utils.generic_utils import load_json_data, update_target_disease_code
 
 class TestGenericUtils(unittest.TestCase):
     """Tests for generic utils functions"""
+
     def setUp(self):
         """Set up for each test. This runs before every test"""
         self.json_data = load_json_data(filename="completed_mmr_immunization_event.json")
@@ -32,9 +33,9 @@ class TestGenericUtils(unittest.TestCase):
             (["14189004", "36989005", "36653000"], "MMR"),
             (["36989005", "14189004", "36653000"], "MMR"),
             (["36653000", "14189004", "36989005"], "MMR"),
-            (["55735004"], "RSV")
+            (["55735004"], "RSV"),
         ]
-        self.mock_redis_client.hget.side_effect = ['COVID19', 'FLU', 'HPV', 'MMR', 'MMR', 'MMR', 'RSV']
+        self.mock_redis_client.hget.side_effect = ["COVID19", "FLU", "HPV", "MMR", "MMR", "MMR", "RSV"]
 
         for combination, vaccine_type in valid_combinations:
             self.assertEqual(convert_disease_codes_to_vaccine_type(combination), vaccine_type)
@@ -60,7 +61,7 @@ class TestGenericUtils(unittest.TestCase):
         Test that get_vaccine_type returns the correct vaccine type when given valid json data with a
         valid combination of target disease code, or raises an appropriate error otherwise
         """
-        self.mock_redis_client.hget.return_value = 'RSV'
+        self.mock_redis_client.hget.return_value = "RSV"
         # TEST VALID DATA
         valid_json_data = load_json_data(filename=f"completed_rsv_immunization_event.json")
 
@@ -81,9 +82,7 @@ class TestGenericUtils(unittest.TestCase):
 
         # TEST INVALID DATA FOR SINGLE TARGET DISEASE
         self.mock_redis_client.hget.return_value = None  # Reset mock for invalid cases
-        covid_19_json_data = load_json_data(
-            filename=f"completed_covid19_immunization_event.json"
-        )
+        covid_19_json_data = load_json_data(filename=f"completed_covid19_immunization_event.json")
 
         # INVALID DATA, SINGLE TARGET DISEASE: No targetDisease field
         invalid_covid_19_json_data = deepcopy(covid_19_json_data)

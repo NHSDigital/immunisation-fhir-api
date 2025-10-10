@@ -1,14 +1,13 @@
-
-from decimal import Decimal
 import pprint
-from typing import NamedTuple, Literal, Optional
 import uuid
+from decimal import Decimal
+from typing import NamedTuple, Literal, Optional
+
+from lib.env import get_service_base_path
 from utils.base_test import ImmunizationBaseTest
 from utils.constants import valid_nhs_number1
-
-from utils.resource import generate_imms_resource, generate_filtered_imms_resource
 from utils.mappings import VaccineTypes
-from lib.env import get_service_base_path
+from utils.resource import generate_imms_resource, generate_filtered_imms_resource
 
 
 class TestSearchImmunizationByIdentifier(ImmunizationBaseTest):
@@ -53,9 +52,8 @@ class TestSearchImmunizationByIdentifier(ImmunizationBaseTest):
 
                 # When
                 rsv_search_response = imms_api.search_immunization_by_identifier(
-                    rsv_identifier_system,
-                    rsv_identifier_value
-                    )
+                    rsv_identifier_system, rsv_identifier_value
+                )
                 self.assertEqual(rsv_search_response.status_code, 200, search_response.text)
                 rsv_bundle = rsv_search_response.json()
                 self.assertEqual(bundle.get("resourceType"), "Bundle", rsv_bundle)
@@ -122,14 +120,19 @@ class TestSearchImmunizationByIdentifier(ImmunizationBaseTest):
                     self.assertTrue(entry["fullUrl"].startswith("https://"))
                     self.assertEqual(entry["resource"]["resourceType"], "Immunization")
                     imms_identifier = entry["resource"]["identifier"]
-                    self.assertEqual(len(imms_identifier), 1, "Immunization did not have exactly 1 identifier")
+                    self.assertEqual(
+                        len(imms_identifier),
+                        1,
+                        "Immunization did not have exactly 1 identifier",
+                    )
                     self.assertEqual(imms_identifier[0]["system"], identifier_system)
                     self.assertEqual(imms_identifier[0]["value"], identifier_value)
 
                 # Check structure of one of the imms resources
                 response_imm = next(item for item in entries if item["resource"]["id"] == imms_id)
                 self.assertEqual(
-                    response_imm["fullUrl"], f"{get_service_base_path()}/Immunization/{imms_id}"
+                    response_imm["fullUrl"],
+                    f"{get_service_base_path()}/Immunization/{imms_id}",
                 )
                 self.assertEqual(response_imm["search"], {"mode": "match"})
                 expected_imms_resource["patient"]["reference"] = response_imm["resource"]["patient"]["reference"]
@@ -137,8 +140,10 @@ class TestSearchImmunizationByIdentifier(ImmunizationBaseTest):
 
     def test_search_immunization_parameter_smoke_tests(self):
         stored_records = generate_imms_resource(
-            valid_nhs_number1, VaccineTypes.covid_19,
-            imms_identifier_value=str(uuid.uuid4()))
+            valid_nhs_number1,
+            VaccineTypes.covid_19,
+            imms_identifier_value=str(uuid.uuid4()),
+        )
 
         imms_id = self.store_records(stored_records)
         # Retrieve the resources to get the identifier system and value via read API
@@ -159,43 +164,38 @@ class TestSearchImmunizationByIdentifier(ImmunizationBaseTest):
             expected_status_code: int = 200
 
         searches = [
-                SearchTestParams(
-                    "GET",
-                    "",
-                    None,
-                    False,
-                    400
-                ),
-                # No results.
-                SearchTestParams(
-                    "GET",
-                    f"identifier={identifier_system}|{identifier_value}",
-                    None,
-                    True,
-                    200
-                ),
-                SearchTestParams(
-                    "POST",
-                    "",
-                    f"identifier={identifier_system}|{identifier_value}",
-                    True,
-                    200
-                ),
-                SearchTestParams(
-                    "POST",
-                    f"identifier={identifier_system}|{identifier_value}",
-                    f"identifier={identifier_system}|{identifier_value}",
-                    False,
-                    400
-                ),
-                ]
+            SearchTestParams("GET", "", None, False, 400),
+            # No results.
+            SearchTestParams(
+                "GET",
+                f"identifier={identifier_system}|{identifier_value}",
+                None,
+                True,
+                200,
+            ),
+            SearchTestParams(
+                "POST",
+                "",
+                f"identifier={identifier_system}|{identifier_value}",
+                True,
+                200,
+            ),
+            SearchTestParams(
+                "POST",
+                f"identifier={identifier_system}|{identifier_value}",
+                f"identifier={identifier_system}|{identifier_value}",
+                False,
+                400,
+            ),
+        ]
         for search in searches:
             pprint.pprint(search)
             response = self.default_imms_api.search_immunizations_full(
                 search.method,
                 search.query_string,
                 body=search.body,
-                expected_status_code=search.expected_status_code)
+                expected_status_code=search.expected_status_code,
+            )
 
             # Then
             assert response.ok == search.should_be_success, response.text

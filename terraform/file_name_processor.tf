@@ -276,14 +276,14 @@ resource "aws_lambda_function" "file_processor_lambda" {
 
   environment {
     variables = {
-      SOURCE_BUCKET_NAME         = aws_s3_bucket.batch_data_source_bucket.bucket
-      ACK_BUCKET_NAME            = aws_s3_bucket.batch_data_destination_bucket.bucket
-      QUEUE_URL                  = aws_sqs_queue.batch_file_created.url
-      REDIS_HOST                 = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].address
-      REDIS_PORT                 = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].port
-      SPLUNK_FIREHOSE_NAME       = module.splunk.firehose_stream_name
-      AUDIT_TABLE_NAME           = aws_dynamodb_table.audit-table.name
-      AUDIT_TABLE_TTL_DAYS       = 60
+      SOURCE_BUCKET_NAME   = aws_s3_bucket.batch_data_source_bucket.bucket
+      ACK_BUCKET_NAME      = aws_s3_bucket.batch_data_destination_bucket.bucket
+      QUEUE_URL            = aws_sqs_queue.batch_file_created.url
+      REDIS_HOST           = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].address
+      REDIS_PORT           = data.aws_elasticache_cluster.existing_redis.cache_nodes[0].port
+      SPLUNK_FIREHOSE_NAME = module.splunk.firehose_stream_name
+      AUDIT_TABLE_NAME     = aws_dynamodb_table.audit-table.name
+      AUDIT_TABLE_TTL_DAYS = 60
     }
   }
   kms_key_arn                    = data.aws_kms_key.existing_lambda_encryption_key.arn
@@ -320,7 +320,7 @@ resource "aws_cloudwatch_log_group" "file_name_processor_log_group" {
 }
 
 resource "aws_cloudwatch_log_metric_filter" "file_name_processor_error_logs" {
-  count          = var.batch_error_notifications_enabled ? 1 : 0
+  count = var.batch_error_notifications_enabled ? 1 : 0
 
   name           = "${local.short_prefix}-FilenameProcessorErrorLogsFilter"
   pattern        = "%\\[ERROR\\]%"
@@ -334,7 +334,7 @@ resource "aws_cloudwatch_log_metric_filter" "file_name_processor_error_logs" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "file_name_processor_error_alarm" {
-  count               = var.batch_error_notifications_enabled ? 1 : 0
+  count = var.batch_error_notifications_enabled ? 1 : 0
 
   alarm_name          = "${local.short_prefix}-file-name-processor-lambda-error"
   comparison_operator = "GreaterThanOrEqualToThreshold"

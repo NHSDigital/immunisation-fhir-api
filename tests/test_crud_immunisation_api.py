@@ -8,11 +8,11 @@ from .example_loader import load_example
 from .immunisation_api import ImmunisationApi, parse_location
 
 
-def create_an_imms_obj(imms_id: str = str(uuid.uuid4()), nhs_number=valid_nhs_number1) -> dict:
+def create_an_imms_obj(imms_id: str = None, nhs_number=None) -> dict:
     imms = copy.deepcopy(load_example("Immunization/POST-COVID19-Immunization.json"))
-    imms["id"] = imms_id
+    imms["id"] = imms_id or str(uuid.uuid4())
     imms["identifier"][0]["value"] = str(uuid.uuid4())
-    imms["contained"][1]["identifier"][0]["value"] = nhs_number
+    imms["contained"][1]["identifier"][0]["value"] = nhs_number or valid_nhs_number1
     return imms
 
 

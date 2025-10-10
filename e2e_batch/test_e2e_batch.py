@@ -6,11 +6,17 @@ from utils import (
     check_ack_file_content,
     validate_row_count,
     purge_sqs_queues,
-    delete_file_from_s3
+    delete_file_from_s3,
 )
 
 from clients import logger
-from scenarios import scenarios, TestCase, create_test_cases, enable_tests, generate_csv_files
+from scenarios import (
+    scenarios,
+    TestCase,
+    create_test_cases,
+    enable_tests,
+    generate_csv_files,
+)
 
 from constants import (
     SOURCE_BUCKET,
@@ -18,21 +24,24 @@ from constants import (
     ACK_BUCKET,
     environment,
     DestinationType,
-    TEMP_ACK_PREFIX
+    TEMP_ACK_PREFIX,
 )
 
 
 class TestE2EBatch(unittest.TestCase):
     def setUp(self):
         self.tests: list[TestCase] = create_test_cases(scenarios["dev"])
-        enable_tests(self.tests, [
-            "Successful Create",
-            "Successful Update",
-            "Successful Delete",
-            "Create with 1252 char",
-            "Failed Update",
-            "Failed Delete",
-        ])
+        enable_tests(
+            self.tests,
+            [
+                "Successful Create",
+                "Successful Update",
+                "Successful Delete",
+                "Create with 1252 char",
+                "Failed Update",
+                "Failed Delete",
+            ],
+        )
         generate_csv_files(self.tests)
 
     def tearDown(self):
@@ -98,16 +107,18 @@ def validate_responses(tests: list[TestCase]):
             if test.ack_keys[DestinationType.INF]:
                 count += 1
                 inf_ack_content = get_file_content_from_s3(ACK_BUCKET, test.ack_keys[DestinationType.INF])
-                check_ack_file_content(test.name, inf_ack_content, "Success", None,
-                                       test.operation_outcome)
+                check_ack_file_content(test.name, inf_ack_content, "Success", None, test.operation_outcome)
             else:
                 logger.error(f"INF ACK file not found for test: {test.name}")
                 errors = True
 
             if test.ack_keys[DestinationType.BUS]:
                 count += 1
-                validate_row_count(f"{test.name} - bus", test.file_name,
-                                   test.ack_keys[DestinationType.BUS])
+                validate_row_count(
+                    f"{test.name} - bus",
+                    test.file_name,
+                    test.ack_keys[DestinationType.BUS],
+                )
 
                 test.check_bus_file_content()
 

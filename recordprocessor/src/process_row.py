@@ -19,7 +19,10 @@ def process_row(target_disease: list, allowed_operations: set, row: dict) -> dic
 
     # Handle invalid action_flag
     if action_flag not in ("NEW", "UPDATE", "DELETE"):
-        logger.info("Invalid ACTION_FLAG '%s' - ACTION_FLAG MUST BE 'NEW', 'UPDATE' or 'DELETE'", action_flag)
+        logger.info(
+            "Invalid ACTION_FLAG '%s' - ACTION_FLAG MUST BE 'NEW', 'UPDATE' or 'DELETE'",
+            action_flag,
+        )
         return {
             "diagnostics": create_diagnostics_dictionary("INVALID_ACTION_FLAG", 400, Diagnostics.INVALID_ACTION_FLAG),
             "operation_requested": action_flag,
@@ -32,7 +35,10 @@ def process_row(target_disease: list, allowed_operations: set, row: dict) -> dic
 
     # Handle no permissions
     if operation_requested not in allowed_operations:
-        logger.info("Skipping row as supplier does not have the permissions for this operation %s", operation_requested)
+        logger.info(
+            "Skipping row as supplier does not have the permissions for this operation %s",
+            operation_requested,
+        )
         return {
             "diagnostics": create_diagnostics_dictionary("NO_PERMISSIONS", 403, Diagnostics.NO_PERMISSIONS),
             "operation_requested": operation_requested,

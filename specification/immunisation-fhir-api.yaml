@@ -26,31 +26,31 @@ info:
     - Vaccination events for the disease types found in this list {To be confirm}
       
     ### Data availability, timing and quality
- 
+
     This is a real time service, constrained by the time taken for providers to transfer vaccination events. In most cases the latest a record will be available is within 48 hours of the immunisation event.
- 
+
     The API search interaction will only return immunisation records based on a traced NHS number. Other interactions require the immunisation ID assigned by the API to interact with individual records for read, update and delete.
 
     The vaccination events for all disease types are limited to vaccinations administered on behalf of NHS England.
- 
+
     There is a limited scope of data validation upon receipt of the data. Whilst the data is generally of a good, reliable quality, consumers must be aware data is shared as received and users should consider the risk of potential absences or inaccuracies of the data. 
 
       
     ## Who can use this API 
     This API can only be used where there is a commercial, legal and clinical basis to do so. Make sure you have a valid use case before you go too far with your development.
-   
+
     You must demonstrate you have a valid use case as part of digital onboarding. As this service is disease type agnostic, there is also a shortened onboarding process for each disease type, to explain the legal, commercial and clinical justifications. 
-   
+
     You must do this before you can go live refer to the [Onboarding](https://digital.nhs.uk/developer/api-catalogue/immunisation-fhir-api#overview--onboarding).
-   
+
     ## Who can access immunisation event records
      
     Health and care organisations in England can access immunisation records.
-   
+
     Legitimate direct care examples include NHS organisations delivering healthcare, local authorities delivering care, third sector and private sector health and care organisations, and developers delivering systems to health and care organisations.
-   
+
     A future capability will be to enable patients who receive health and social care or make use of NHS services in England to access their vaccination records.
-   
+
     The immunisation event records captured via the API are used for a number of purposes including (some uses include distribution of the data by means other than this API)
      
     - supporting a patient getting a vaccination
@@ -60,7 +60,7 @@ info:
     - supporting the booking of a vaccination appointment
     - supporting the payment reconciliation process on behalf of NHS England / NHS Business Services Authority
     - supporting measuring the overall success of a vaccination campaign to help inform the success of the [NHS Vaccination Strategy](https://www.england.nhs.uk/long-read/nhs-vaccination-strategy/)
-  
+
     ## API status and roadmap
     This API is [in development](https://digital.nhs.uk/developer/guides-and-documentation/reference-guide#statuses).
      
@@ -107,7 +107,7 @@ info:
      
     To use this access mode, use the following security pattern:
     - [Application-restricted RESTful API - signed JWT authentication](https://digital.nhs.uk/developer/guides-and-documentation/security-and-authorisation/application-restricted-restful-apis-signed-jwt-authentication)
- 
+
     Access may be restricted to certain functionality based on your user need
      
     contact:
@@ -117,7 +117,7 @@ info:
       url: 'https://digital.nhs.uk/developer/help-and-support'
       
       email: api.management@nhs.net
- 
+
     ## Errors
     We use standard HTTP status codes to show whether an API request succeeded or not. They are usually in the range:
 
@@ -126,7 +126,7 @@ info:
     * 500 to 599 if it failed because of an error on our server
 
     Errors specific to each API are shown in the Endpoints section, under Response. See our [reference guide](https://digital.nhs.uk/developer/guides-and-documentation/reference-guide#http-status-codes) for more on errors.
-    
+
     ## Open source
 
     You might find the following [open source](https://digital.nhs.uk/developer/guides-and-documentation/reference-guide#open-source) resources useful:
@@ -163,29 +163,29 @@ info:
     * is for formal integration testing
     * is stateful, so persists updates
     * includes authorisation, with options for user-restricted access (with or without [smartcards](https://digital.nhs.uk/developer/guides-and-documentation/security-and-authorisation/nhs-smartcards-for-developers)) and application-restricted access     
-    
+
     For read-only testing, we will provide an Immunisation records test pack soon.
 
     To test creating, updating and deleting patient vaccination events, you must set up your own test data.
 
     For more details see [integration testing with our RESTful APIs](https://digital.nhs.uk/developer/guides-and-documentation/testing#integration-testing-with-our-restful-apis).
- 
+
     ## Onboarding
       
     You need to get your software approved by us before it can go live with this API.
     We call this onboarding.
     The onboarding process can sometimes be quite long, so it is worth planning well ahead.
-  
+
     Whilst this API is in Alpha it is not possible to onboard to this API.
     As part of this process, you need to demonstrate that you can manage risks and that your software conforms technically with the requirements for this API.
     Information on this page might impact the design of your software.
-  
+
     To understand how our online digital onboarding process works, see [digital onboarding](https://digital.nhs.uk/developer/guides-and-documentation/digital-onboarding#using-the-digital-onboarding-portal).
 
 servers:
-  - url: 'https://sandbox.api.service.nhs.uk/immunisation-fhir-api'
+  - url: "https://sandbox.api.service.nhs.uk/immunisation-fhir-api"
     description: Sandbox Server
-  - url: 'https://int.api.service.nhs.uk/immunisation-fhir-api'
+  - url: "https://int.api.service.nhs.uk/immunisation-fhir-api"
     description: Integration Server
 paths:
   /Immunization:
@@ -193,22 +193,22 @@ paths:
       summary: Record a vaccination given to a patient - yet to be released
       operationId: createImmunization
       description: |
-         ## Overview
-         Use this interaction to record the administration of a vaccination.  The immunization resource must include a targetDisease(s) matching the 'disease types' enabled in this interaction and represented by the correct SNOMED concept(s) for that 'disease type'. See another page for details and disease types and coding.  
-         You must be authorised for the create interaction and the disease type associated with the vaccination event in order to submit a new record. 
+        ## Overview
+        Use this interaction to record the administration of a vaccination.  The immunization resource must include a targetDisease(s) matching the 'disease types' enabled in this interaction and represented by the correct SNOMED concept(s) for that 'disease type'. See another page for details and disease types and coding.  
+        You must be authorised for the create interaction and the disease type associated with the vaccination event in order to submit a new record. 
 
-         ## Sandbox testing       
+        ## Sandbox testing       
 
-         | Scenario                                | Request                                                                                                                                                         | Response                                                                |
-         | ----------------------------------------| ----------------------------------------------------------------------------------------------------------------------------------------------------------------| ------------------------------------------------------------------------|
-         |                                         |                                                                                                                                                                 |                                                                         |
+        | Scenario                                | Request                                                                                                                                                         | Response                                                                |
+        | ----------------------------------------| ----------------------------------------------------------------------------------------------------------------------------------------------------------------| ------------------------------------------------------------------------|
+        |                                         |                                                                                                                                                                 |                                                                         |
 
       parameters:
-        - $ref: '#/components/parameters/CorrelationID'
-        - $ref: '#/components/parameters/RequestID'
+        - $ref: "#/components/parameters/CorrelationID"
+        - $ref: "#/components/parameters/RequestID"
       requestBody:
         type: object
-        $ref: '#/components/requestBodies/Immunization' 
+        $ref: "#/components/requestBodies/Immunization"
       responses:
         "201":
           description: Create Immunization operation successful
@@ -216,7 +216,7 @@ paths:
             Location:
               $ref: components/schemas/Location.yaml
         4XX:
-          $ref: '#/components/responses/4XX-imms'
+          $ref: "#/components/responses/4XX-imms"
     get:
       summary: Search (GET) for a patient's immunisation records
       operationId: searchViaGetImmunization
@@ -235,15 +235,15 @@ paths:
         |                                         |                                                                                                                                                                 |                                                                         |
         |  Immunisation history found             | `patient.identifier`=`https://fhir.nhs.uk/Id/nhs-number\|9000000009`                                                                                            | HTTP Status 200 with immunisation data in response body                 |
         |  Bad Request                            | Didn't pass Required fields `patient.identifier`  or  `-immunization.target`          | HTTP Status 400 Bad Request               |
-        
+
       parameters:
-        - $ref: '#/components/parameters/CorrelationID'
-        - $ref: '#/components/parameters/RequestID'
-        - $ref: '#/components/parameters/PatientIdentifier'
-        - $ref: '#/components/parameters/ImmunizationTarget'
-        - $ref: '#/components/parameters/DateFrom'
-        - $ref: '#/components/parameters/DateTo'
-        - $ref: '#/components/parameters/Include'
+        - $ref: "#/components/parameters/CorrelationID"
+        - $ref: "#/components/parameters/RequestID"
+        - $ref: "#/components/parameters/PatientIdentifier"
+        - $ref: "#/components/parameters/ImmunizationTarget"
+        - $ref: "#/components/parameters/DateFrom"
+        - $ref: "#/components/parameters/DateTo"
+        - $ref: "#/components/parameters/Include"
 
       responses:
         "200":
@@ -251,9 +251,9 @@ paths:
           content:
             application/fhir+json:
               schema:
-                $ref: '#/components/schemas/Bundle'
+                $ref: "#/components/schemas/Bundle"
         "400":
-          $ref: '#/components/responses/4XX-imms'             
+          $ref: "#/components/responses/4XX-imms"
   /Immunization/_search:
     post:
       summary: Search (POST) for a patient's immunisation records
@@ -261,7 +261,7 @@ paths:
       description: |
         ## Overview
         You may use this interaction as an alternative to a search with the GET verb. A POST search allows you to supply some or all parameters in the body of the request should you need to do so. It offers the same search functionality, see Search (GET) interaction for details.
-        
+
         ## Sandbox testing
         You can test the following scenarios in our sandbox environment:
 
@@ -270,29 +270,29 @@ paths:
         |                                         |                                                                                                                                                                 |                                                                         |
         |  Immunisation history found             | `patient.identifier`=`https://fhir.nhs.uk/Id/nhs-number\|9000000009`                                                                                            | HTTP Status 200 with immunisation data in response body                 |
         |  Bad Request                            | Didn't pass Required fields `patient.identifier`  or  -immunization.target  or  _include             | HTTP Status 400 Bad Request               |
-        
+
       parameters:
-        - $ref: '#/components/parameters/CorrelationID'
-        - $ref: '#/components/parameters/RequestID'
-        - $ref: '#/components/parameters/PatientIdentifier'
-        - $ref: '#/components/parameters/ImmunizationTarget'
-        - $ref: '#/components/parameters/DateFrom'
-        - $ref: '#/components/parameters/DateTo'
-        - $ref: '#/components/parameters/Include'
+        - $ref: "#/components/parameters/CorrelationID"
+        - $ref: "#/components/parameters/RequestID"
+        - $ref: "#/components/parameters/PatientIdentifier"
+        - $ref: "#/components/parameters/ImmunizationTarget"
+        - $ref: "#/components/parameters/DateFrom"
+        - $ref: "#/components/parameters/DateTo"
+        - $ref: "#/components/parameters/Include"
       requestBody:
-        $ref: '#/components/requestBodies/SearchImmunization' 
+        $ref: "#/components/requestBodies/SearchImmunization"
       responses:
         "200":
           description: Search immunisation operation successful
           content:
             application/fhir+json:
               schema:
-                $ref: '#/components/schemas/Bundle'
+                $ref: "#/components/schemas/Bundle"
         "400":
-          $ref: '#/components/responses/4XX-imms'
+          $ref: "#/components/responses/4XX-imms"
   /Immunization/{id}:
     get:
-      summary: Retrieve a record of an immunisation by its unique identifier 
+      summary: Retrieve a record of an immunisation by its unique identifier
       operationId: readImmunization
       description: |
         ## Overview
@@ -300,7 +300,7 @@ paths:
         The response will include an eTag for the version of the record which has been returned. If you intend to update a record, it is recommended that you use this interaction to obtain the latest version (and eTag for the version). 
         To retrieve a full vaccination history for a patient, see the search interaction. 
         You must be authorised for the read interaction and the disease type associated with the vaccination event in order to access the record. 
-        
+
         ## Sandbox testing
         You can test the following scenarios in our sandbox environment:
 
@@ -310,24 +310,23 @@ paths:
         |  Immunisation record found              | `id`=`12a33650-6f94-4e8f-a971-1c5c41da5b22`                                                                                            | HTTP Status 200 with immunisation data in response body                 |
         |  Bad Request                            | Didn't pass Required fields `id`            | HTTP Status 400 Bad Request               |
 
-
       parameters:
-        - $ref: '#/components/parameters/CorrelationID'
-        - $ref: '#/components/parameters/RequestID'
-        - $ref: '#/components/parameters/Id'
+        - $ref: "#/components/parameters/CorrelationID"
+        - $ref: "#/components/parameters/RequestID"
+        - $ref: "#/components/parameters/Id"
       responses:
         "200":
           description: Read Immunization operation successful
           content:
             application/fhir+json:
               schema:
-                $ref: '#/components/schemas/Immunization'
+                $ref: "#/components/schemas/Immunization"
         "400":
-          $ref: '#/components/responses/4XX-imms'
+          $ref: "#/components/responses/4XX-imms"
           content:
             application/fhir+json:
               schema:
-                $ref: '#/components/schemas/OperationOutcome'
+                $ref: "#/components/schemas/OperationOutcome"
               example:
                 resourceType: OperationOutcome
                 id: 3d64df5a-b753-49ec-b3df-f45c157941eb
@@ -336,7 +335,7 @@ paths:
                     code: invalid
                     details:
                       coding:
-                        - system: 'https://fhir.nhs.uk/Codesystem/http-error-codes'
+                        - system: "https://fhir.nhs.uk/Codesystem/http-error-codes"
                           code: INVALID
                     diagnostics: The provided event ID is either missing or not in the expected format.
     put:
@@ -355,14 +354,13 @@ paths:
         | ----------------------------------------| ----------------------------------------------------------------------------------------------------------------------------------------------------------------| ------------------------------------------------------------------------|
         |                                         |                                                                                                                                                                 |                                                                         |
 
-
       parameters:
-        - $ref: '#/components/parameters/CorrelationID'
-        - $ref: '#/components/parameters/RequestID'
-        - $ref: '#/components/parameters/Id'
+        - $ref: "#/components/parameters/CorrelationID"
+        - $ref: "#/components/parameters/RequestID"
+        - $ref: "#/components/parameters/Id"
       requestBody:
         type: object
-        $ref: '#/components/requestBodies/Immunization'
+        $ref: "#/components/requestBodies/Immunization"
       responses:
         "200":
           description: Update Immunization operation successful
@@ -375,7 +373,7 @@ paths:
             Location:
               $ref: components/schemas/Location.yaml
         4XX:
-          $ref: '#/components/responses/4XX-imms'
+          $ref: "#/components/responses/4XX-imms"
     delete:
       summary: Mark a record of vaccination as being entered in error - `yet to be released`
       operationId: deleteImmunization
@@ -391,12 +389,10 @@ paths:
         | ----------------------------------------| ----------------------------------------------------------------------------------------------------------------------------------------------------------------| ------------------------------------------------------------------------|
         |                                         |                                                                                                                                                                 |                                                                         |
 
-
-
       parameters:
-        - $ref: '#/components/parameters/CorrelationID'
-        - $ref: '#/components/parameters/RequestID'
-        - $ref: '#/components/parameters/Id'
+        - $ref: "#/components/parameters/CorrelationID"
+        - $ref: "#/components/parameters/RequestID"
+        - $ref: "#/components/parameters/Id"
       responses:
         "204":
           description: Delete Immunization operation successful
@@ -404,7 +400,7 @@ paths:
             Location:
               $ref: components/schemas/Location.yaml
         4XX:
-          $ref: '#/components/responses/4XX-imms'
+          $ref: "#/components/responses/4XX-imms"
 
 components:
   responses:
@@ -412,30 +408,30 @@ components:
       description: >
         Below are examples of potential HTTP status codes and their associated
         error codes, which could be returned in the event of a fault.
-        
-        
+
+
         | HTTP status | Error code                 | Description | Example      |
-        
+
         | ----------- | -------------------------- |
         --------------------------------------------- |--------------------------------------------------------------------------------------|
-        
+
         | 400         | INVALID                    | The provided event ID is
         either missing or not in the expected format. |  {"resourceType": "OperationOutcome", "id": "6f4ca309-19d7-4f61-90b3-acbd1f2eb8f8", "meta": {"profile": ["https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"]}, "issue": [{"severity": "error", "code": "invalid", "details": {"coding": [{"system": "https://fhir.nhs.uk/Codesystem/http-error-codes", "code": "INVALID"}]}, "diagnostics": "the provided event ID is either missing or not in the expected format."}]} |
-        
+
         | 400         | BAD_REQUEST                | Search could not be
         processed or failed basic FHIR validation rules  | {"resourceType": "OperationOutcome", "id": "4ff75db4-6e7d-411d-a490-c55c11f83043", "meta": {"profile": ["https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"]}, "issue": [{"severity": "error", "code": "invalid", "details": {"coding": [{"system": "https://fhir.nhs.uk/Codesystem/http-error-codes", "code": "INVALID"}]}, "diagnostics": "patient.identifier must be in the format of \"https://fhir.nhs.uk/Id/nhs-number|{NHS number}\" e.g. \"https://fhir.nhs.uk/Id/nhs-number|9000000009\""}]}  |
-        
+
         | 401         | UNAUTHORISED               | Authorization is required
         for the interaction that was attempted  | {"resourceType":"OperationOutcome","id":"a5abca2a-4eda-41da-b2cc-95d48c6b791d","meta":{"profile":["https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"]},"issue":[{"severity":"error","code":"expired","details":{"coding":[{"system":"https://fhir.nhs.uk/Codesystem/http-error-codes","code":"SEND_UNAUTHORIZED"}]},"diagnostics":"The sender has not provided a token or it has expired or is otherwise invalid."}]} |
 
         | 403         | UNAUTHORISED               | The sender does not have permissions to access this resource  | {"resourceType":"OperationOutcome","id":"a5abca2a-4eda-41da-b2cc-95d48c6b791d","meta":{"profile":["https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"]},"issue":[{"severity":"error","code":"forbidden","details":{"coding":[{"system":"https://fhir.nhs.uk/Codesystem/http-error-codes","code":"SEND_UNAUTHORIZED"}]},"diagnostics":"The sender does not have permissions to access this resource. Please check your credentials and permissions."}]} |
-        
+
         | 404         | NOT_FOUND                  | The requested resource was
         not found. | {"resourceType": "OperationOutcome", "id": "bc2c3c82-4392-4314-9d6b-a7345f82d923", "meta": {"profile": ["https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"]}, "issue": [{"severity": "error", "code": "not-found", "details": {"coding": [{"system": "https://fhir.nhs.uk/Codesystem/http-error-codes", "code": "NOT-FOUND"}]}, "diagnostics": "The requested resource was not found."}]}  |
-        
+
         | 405         | NOT_ALLOWED                | The requested method is not
         allowed  |
-        
+
         | 422         | UNPROCESSABLE_ENTITY       | The proposed resource
         violated applicable FHIR profiles or server business rules. This should
         be accompanied by an OperationOutcome resource providing additional
@@ -443,7 +439,7 @@ components:
       content:
         application/fhir+json:
           schema:
-            $ref: '#/components/schemas/OperationOutcome'
+            $ref: "#/components/schemas/OperationOutcome"
           example:
             resourceType: OperationOutcome
             id: 3d64df5a-b753-49ec-b3df-f45c157941eb
@@ -452,7 +448,7 @@ components:
                 code: invalid
                 details:
                   coding:
-                    - system: 'https://fhir.nhs.uk/Codesystem/http-error-codes'
+                    - system: "https://fhir.nhs.uk/Codesystem/http-error-codes"
                       code: INVALID
                 diagnostics: Search parameter patient.identifier/-immunization.target must have one value.
 
@@ -461,7 +457,7 @@ components:
       content:
         application/fhir+json:
           schema:
-            $ref: '#/components/schemas/Immunization'
+            $ref: "#/components/schemas/Immunization"
       required: true
     SearchImmunization:
       content:
@@ -505,8 +501,8 @@ components:
       description: >
         A required ID which you can use to identify an Immunization event
         object.
-        
-        
+
+
         Mirrored back in a response header.
       schema:
         type: string
@@ -519,10 +515,10 @@ components:
         An optional ID which you can use to track transactions across multiple
         systems. It can take any value, but we recommend avoiding `.`
         characters.
-        
-        
+
+
         Mirrored back in a response header.
-      
+
       schema:
         type: string
         pattern: >-
@@ -536,14 +532,14 @@ components:
         A globally unique identifier (GUID) for the request, which we use to
         de-duplicate repeated requests and to trace the request if you contact
         our helpdesk.
-        
-        
+
+
         Must be a universally unique identifier (UUID) (ideally version 4).
-        
-        
+
+
         Mirrored back in a response header.
-        
-        
+
+
         If you re-send a failed request, use the same value in this header.
       schema:
         type: string
@@ -758,7 +754,7 @@ components:
           pattern: '[A-Za-z0-9\-\.]{1,64}'
           description: The logical id of the resource, as used in the URL for the resource. Once assigned, this value never changes.
         meta:
-          $ref: '#/components/schemas/Meta'
+          $ref: "#/components/schemas/Meta"
           description: The metadata about the resource. This is content that is maintained by the infrastructure. Changes to the content might not always be associated with version changes to the resource.
         implicitRules:
           type: string
@@ -774,7 +770,7 @@ components:
       type: object
       properties:
         text:
-          $ref: '#/components/schemas/Narrative'
+          $ref: "#/components/schemas/Narrative"
           description: A human-readable narrative that contains a summary of the resource and can be used to represent the content of the resource to a human. The narrative need not encode all the structured data, but is required to contain sufficient detail to make it "clinically safe" for a human to just read the narrative. Resource definitions may define what content should be represented in the narrative to ensure clinical safety.
         contained:
           type: array
@@ -940,7 +936,7 @@ components:
                 pattern: '[A-Za-z0-9\-\.]{1,64}'
                 description: The logical id of the resource, as used in the URL for the resource. Once assigned, this value never changes.
               meta:
-                $ref: '#/components/schemas/Meta'
+                $ref: "#/components/schemas/Meta"
                 description: The metadata about the resource. This is content that is maintained by the infrastructure. Changes to the content might not always be associated with version changes to the resource.
               implicitRules:
                 type: string
@@ -955,15 +951,15 @@ components:
         extension:
           type: array
           items:
-            $ref: '#/components/schemas/Extension'
+            $ref: "#/components/schemas/Extension"
             description: May be used to represent additional information that is not part of the basic definition of the resource. To make the use of extensions safe and manageable, there is a strict set of governance  applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.
         modifierExtension:
           type: array
           items:
-            $ref: '#/components/schemas/Extension'
+            $ref: "#/components/schemas/Extension"
             description: |-
               May be used to represent additional information that is not part of the basic definition of the resource and that modifies the understanding of the element that contains it and/or the understanding of the containing element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension. Applications processing a resource are required to check for modifier extensions.
-              
+
               Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot change the meaning of modifierExtension itself).
     Immunization:
       type: object
@@ -973,7 +969,7 @@ components:
         - patient
       properties:
         text:
-          $ref: '#/components/schemas/Narrative'
+          $ref: "#/components/schemas/Narrative"
           description: A human-readable narrative that contains a summary of the resource and can be used to represent the content of the resource to a human. The narrative need not encode all the structured data, but is required to contain sufficient detail to make it "clinically safe" for a human to just read the narrative. Resource definitions may define what content should be represented in the narrative to ensure clinical safety.
         contained:
           type: array
@@ -991,7 +987,7 @@ components:
                 pattern: '[A-Za-z0-9\-\.]{1,64}'
                 description: The logical id of the resource, as used in the URL for the resource. Once assigned, this value never changes.
               meta:
-                $ref: '#/components/schemas/Meta'
+                $ref: "#/components/schemas/Meta"
                 description: The metadata about the resource. This is content that is maintained by the infrastructure. Changes to the content might not always be associated with version changes to the resource.
               implicitRules:
                 type: string
@@ -1006,36 +1002,36 @@ components:
         extension:
           type: array
           items:
-            $ref: '#/components/schemas/Extension'
+            $ref: "#/components/schemas/Extension"
             description: May be used to represent additional information that is not part of the basic definition of the resource. To make the use of extensions safe and manageable, there is a strict set of governance  applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.
         modifierExtension:
           type: array
           items:
-            $ref: '#/components/schemas/Extension'
+            $ref: "#/components/schemas/Extension"
             description: |-
               May be used to represent additional information that is not part of the basic definition of the resource and that modifies the understanding of the element that contains it and/or the understanding of the containing element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension. Applications processing a resource are required to check for modifier extensions.
-              
+
               Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot change the meaning of modifierExtension itself).
         identifier:
           type: array
           items:
-            $ref: '#/components/schemas/Identifier'
+            $ref: "#/components/schemas/Identifier"
             description: A unique identifier assigned to this immunization record.
         status:
           type: string
           pattern: '[^\s]+(\s[^\s]+)*'
           description: Indicates the current status of the immunization event.
         statusReason:
-          $ref: '#/components/schemas/CodeableConcept'
+          $ref: "#/components/schemas/CodeableConcept"
           description: Indicates the reason the immunization event was not performed.
         vaccineCode:
-          $ref: '#/components/schemas/CodeableConcept'
+          $ref: "#/components/schemas/CodeableConcept"
           description: Vaccine that was administered or was to be administered.
         patient:
-          $ref: '#/components/schemas/Reference'
+          $ref: "#/components/schemas/Reference"
           description: The patient who either received or did not receive the immunization.
         encounter:
-          $ref: '#/components/schemas/Reference'
+          $ref: "#/components/schemas/Reference"
           description: The visit or admission or other contact between patient and health care provider the immunization was performed as part of.
         occurrenceDateTime:
           type: string
@@ -1053,13 +1049,13 @@ components:
           type: boolean
           description: An indication that the content of the record is based on information from the person who administered the vaccine. This reflects the context under which the data was originally recorded.
         reportOrigin:
-          $ref: '#/components/schemas/CodeableConcept'
+          $ref: "#/components/schemas/CodeableConcept"
           description: The source of the data when the report of the immunization event is not based on information from the person who administered the vaccine.
         location:
-          $ref: '#/components/schemas/Reference'
+          $ref: "#/components/schemas/Reference"
           description: The service delivery location where the vaccine administration occurred.
         manufacturer:
-          $ref: '#/components/schemas/Reference'
+          $ref: "#/components/schemas/Reference"
           description: Name of vaccine manufacturer.
         lotNumber:
           type: string
@@ -1070,33 +1066,33 @@ components:
           pattern: ([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)(-(0[1-9]|1[0-2])(-(0[1-9]|[1-2][0-9]|3[0-1]))?)?
           description: Date vaccine batch expires.
         site:
-          $ref: '#/components/schemas/CodeableConcept'
+          $ref: "#/components/schemas/CodeableConcept"
           description: Body site where vaccine was administered.
         route:
-          $ref: '#/components/schemas/CodeableConcept'
+          $ref: "#/components/schemas/CodeableConcept"
           description: The path by which the vaccine product is taken into the body.
         doseQuantity:
-          $ref: '#/components/schemas/SimpleQuantity'
+          $ref: "#/components/schemas/SimpleQuantity"
           description: The quantity of vaccine product that was administered.
         performer:
           type: array
           items:
-            $ref: '#/components/schemas/Immunization_Performer'
+            $ref: "#/components/schemas/Immunization_Performer"
             description: Indicates who performed the immunization event.
         note:
           type: array
           items:
-            $ref: '#/components/schemas/Annotation'
+            $ref: "#/components/schemas/Annotation"
             description: Extra information about the immunization that is not conveyed by the other attributes.
         reasonCode:
           type: array
           items:
-            $ref: '#/components/schemas/CodeableConcept'
+            $ref: "#/components/schemas/CodeableConcept"
             description: Reasons why the vaccine was administered.
         reasonReference:
           type: array
           items:
-            $ref: '#/components/schemas/Reference'
+            $ref: "#/components/schemas/Reference"
             description: Condition, Observation or DiagnosticReport that supports why the immunization was administered.
         isSubpotent:
           type: boolean
@@ -1104,30 +1100,30 @@ components:
         subpotentReason:
           type: array
           items:
-            $ref: '#/components/schemas/CodeableConcept'
+            $ref: "#/components/schemas/CodeableConcept"
             description: Reason why a dose is considered to be subpotent.
         education:
           type: array
           items:
-            $ref: '#/components/schemas/Immunization_Education'
+            $ref: "#/components/schemas/Immunization_Education"
             description: Educational material presented to the patient (or guardian) at the time of vaccine administration.
         programEligibility:
           type: array
           items:
-            $ref: '#/components/schemas/CodeableConcept'
+            $ref: "#/components/schemas/CodeableConcept"
             description: Indicates a patient's eligibility for a funding program.
         fundingSource:
-          $ref: '#/components/schemas/CodeableConcept'
+          $ref: "#/components/schemas/CodeableConcept"
           description: Indicates the source of the vaccine actually administered. This may be different than the patient eligibility (e.g. the patient may be eligible for a publically purchased vaccine but due to inventory issues, vaccine purchased with private funds was actually administered).
         reaction:
           type: array
           items:
-            $ref: '#/components/schemas/Immunization_Reaction'
+            $ref: "#/components/schemas/Immunization_Reaction"
             description: Categorical data indicating that an adverse event is associated in time to an immunization.
         protocolApplied:
           type: array
           items:
-            $ref: '#/components/schemas/Immunization_ProtocolApplied'
+            $ref: "#/components/schemas/Immunization_ProtocolApplied"
             description: The protocol (set of recommendations) being followed by the provider who administered the dose.
       example:
         resourceType: Immunization
@@ -1142,14 +1138,14 @@ components:
           - resourceType: Patient
             id: Pat1
             identifier:
-              - system: 'https://fhir.nhs.uk/Id/nhs-number'
-                value: '9449310475'
+              - system: "https://fhir.nhs.uk/Id/nhs-number"
+                value: "9449310475"
             name:
               - family: Owler
                 given:
                   - Ozzie
             gender: unknown
-            birthDate: '1965-02-28'
+            birthDate: "1965-02-28"
             address:
               - postalCode: ZZ99 3CZ
         extension:
@@ -1157,62 +1153,62 @@ components:
               https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure
             valueCodeableConcept:
               coding:
-                - system: 'http://snomed.info/sct'
-                  code: '1303503001'
+                - system: "http://snomed.info/sct"
+                  code: "1303503001"
                   display: >-
                     Administration of RSV (respiratory syncytial virus) vaccine
         status: completed
         vaccineCode:
           coding:
-            - system: 'http://snomed.info/sct'
-              code: '42605811000001109'
+            - system: "http://snomed.info/sct"
+              code: "42605811000001109"
               display: >-
                 Abrysvo vaccine powder and solvent for solution for injection 0.5ml vials (Pfizer Ltd)
         patient:
-          reference: '#Pat1'
-        occurrenceDateTime: '2021-02-07T13:28:17.271000+00:00'
-        recorded: '2021-02-07T13:28:17.271000+00:00'
+          reference: "#Pat1"
+        occurrenceDateTime: "2021-02-07T13:28:17.271000+00:00"
+        recorded: "2021-02-07T13:28:17.271000+00:00"
         primarySource: true
         location:
           identifier:
-            system: 'urn:iso:std:iso:3166'
+            system: "urn:iso:std:iso:3166"
             value: GB
         manufacturer:
           display: AstraZeneca Ltd
         lotNumber: 4120Z001
-        expirationDate: '2021-07-02'
+        expirationDate: "2021-07-02"
         site:
           coding:
-            - system: 'http://snomed.info/sct'
-              code: '368208006'
+            - system: "http://snomed.info/sct"
+              code: "368208006"
               display: Left upper arm structure (body structure)
         route:
           coding:
-            - system: 'http://snomed.info/sct'
-              code: '78421000'
+            - system: "http://snomed.info/sct"
+              code: "78421000"
               display: Intramuscular route (qualifier value)
         doseQuantity:
           value: 0.5
           unit: milliliter
-          system: 'http://unitsofmeasure.org'
+          system: "http://unitsofmeasure.org"
           code: ml
         performer:
           - actor:
-              reference: '#Pract1'
+              reference: "#Pract1"
           - actor:
               type: Organization
               identifier:
-                system: 'https://fhir.nhs.uk/Id/ods-organization-code'
+                system: "https://fhir.nhs.uk/Id/ods-organization-code"
                 value: N2N9I
         reasonCode:
           - coding:
-              - system: 'http://snomed.info/sct'
-                code: '443684005'
+              - system: "http://snomed.info/sct"
+                code: "443684005"
         protocolApplied:
           - targetDisease:
               - coding:
-                  - system: 'http://snomed.info/sct'
-                    code: '55735004'
+                  - system: "http://snomed.info/sct"
+                    code: "55735004"
                     display: >-
                       Respiratory syncytial virus infection (disorder)
             doseNumberPositiveInt: 1
@@ -1231,25 +1227,25 @@ components:
           example: Bundle
         type:
           description: >-
-                      Indicates how the bundle is intended to be used. Always
-                      `searchset`.
+            Indicates how the bundle is intended to be used. Always
+            `searchset`.
           type: string
           example: searchset
         link:
           type: array
           items:
-            $ref: '#/components/schemas/Bundle_Link'
+            $ref: "#/components/schemas/Bundle_Link"
             description: A series of links that provide context to this bundle.
         entry:
           type: array
           items:
-            $ref: '#/components/schemas/Bundle_Entry'
+            $ref: "#/components/schemas/Bundle_Entry"
             description: An entry in a bundle resource - will either contain a resource or information about a resource (transactions and history only).
         total:
           type: integer
           format: int32
           description: If a set of search matches, this is the total number of entries of type 'match' across all pages in the search.  It does not include search.mode = 'include' or 'outcome' entries and it does not provide a count of the number of entries in the Bundle.
-      example:        
+      example:
         resourceType: Bundle
         type: searchset
         link:
@@ -1267,83 +1263,83 @@ components:
                     https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure
                   valueCodeableConcept:
                     coding:
-                      - system: 'http://snomed.info/sct'
-                        code: '1303503001'
+                      - system: "http://snomed.info/sct"
+                        code: "1303503001"
                         display: >-
                           Administration of RSV (respiratory syncytial virus) vaccine
               identifier:
                 - use: official
-                  system: 'https://supplierABC/identifiers/vacc'
+                  system: "https://supplierABC/identifiers/vacc"
                   value: e2154d29-1ead-4830-a513-0d59705078fa
               status: completed
               vaccineCode:
                 coding:
-                  - system: 'http://snomed.info/sct'
-                    code: '42605811000001109'
+                  - system: "http://snomed.info/sct"
+                    code: "42605811000001109"
                     display: >-
                       Abrysvo vaccine powder and solvent for solution for injection 0.5ml vials (Pfizer Ltd)
               patient:
-                reference: 'urn:uuid:a7a5bc28-5831-4158-8a73-0d3e6e43c1ac'
+                reference: "urn:uuid:a7a5bc28-5831-4158-8a73-0d3e6e43c1ac"
                 type: Patient
                 identifier:
-                  system: 'https://fhir.nhs.uk/Id/nhs-number'
-                  value: '9449306206'
-              occurrenceDateTime: '2021-02-07T13:28:17.271000+00:00'
-              recorded: '2021-02-07T13:28:17.271000+00:00'
+                  system: "https://fhir.nhs.uk/Id/nhs-number"
+                  value: "9449306206"
+              occurrenceDateTime: "2021-02-07T13:28:17.271000+00:00"
+              recorded: "2021-02-07T13:28:17.271000+00:00"
               primarySource: true
               location:
                 identifier:
-                  system: 'urn:iso:std:iso:3166'
+                  system: "urn:iso:std:iso:3166"
                   value: GB
               manufacturer:
                 display: AstraZeneca Ltd
               lotNumber: 4120Z001
-              expirationDate: '2021-07-02'
+              expirationDate: "2021-07-02"
               site:
                 coding:
-                  - system: 'http://snomed.info/sct'
-                    code: '368208006'
+                  - system: "http://snomed.info/sct"
+                    code: "368208006"
                     display: Left upper arm structure (body structure)
               route:
                 coding:
-                  - system: 'http://snomed.info/sct'
-                    code: '78421000'
+                  - system: "http://snomed.info/sct"
+                    code: "78421000"
                     display: Intramuscular route (qualifier value)
               doseQuantity:
                 value: 0.5
                 unit: milliliter
-                system: 'http://unitsofmeasure.org'
+                system: "http://unitsofmeasure.org"
                 code: ml
               performer:
                 - actor:
                     type: Organization
                     identifier:
-                      system: 'https://fhir.nhs.uk/Id/ods-organization-code'
+                      system: "https://fhir.nhs.uk/Id/ods-organization-code"
                       value: B0C4P
                     display: UNIVERSITY HOSPITAL OF WALES
               reasonCode:
                 - coding:
-                    - system: 'http://snomed.info/sct'
-                      code: '443684005'
+                    - system: "http://snomed.info/sct"
+                      code: "443684005"
                       display: Disease outbreak (event)
               protocolApplied:
                 - targetDisease:
                     - coding:
-                        - system: 'http://snomed.info/sct'
-                          code: '55735004'
+                        - system: "http://snomed.info/sct"
+                          code: "55735004"
                           display: >-
                             Respiratory syncytial virus infection (disorder)
                   doseNumberPositiveInt: 1
             search:
               mode: match
-          - fullUrl: 'urn:uuid:a7a5bc28-5831-4158-8a73-0d3e6e43c1ac'
+          - fullUrl: "urn:uuid:a7a5bc28-5831-4158-8a73-0d3e6e43c1ac"
             resource:
               resourceType: Patient
-              id: '9449306206'
+              id: "9449306206"
               identifier:
-                - system: 'https://fhir.nhs.uk/Id/nhs-number'
-                  value: '9449306206'
-              birthDate: '2014-03-25'
+                - system: "https://fhir.nhs.uk/Id/nhs-number"
+                  value: "9449306206"
+              birthDate: "2014-03-25"
             search:
               mode: include
         total: 1
@@ -1351,7 +1347,7 @@ components:
       type: object
       properties:
         text:
-          $ref: '#/components/schemas/Narrative'
+          $ref: "#/components/schemas/Narrative"
           description: A human-readable narrative that contains a summary of the resource and can be used to represent the content of the resource to a human. The narrative need not encode all the structured data, but is required to contain sufficient detail to make it "clinically safe" for a human to just read the narrative. Resource definitions may define what content should be represented in the narrative to ensure clinical safety.
         contained:
           type: array
@@ -1363,13 +1359,13 @@ components:
             properties:
               resourceType:
                 type: string
-                example : OperationOutcome
+                example: OperationOutcome
               id:
                 type: string
                 pattern: '[A-Za-z0-9\-\.]{1,64}'
                 description: The logical id of the resource, as used in the URL for the resource. Once assigned, this value never changes.
               meta:
-                $ref: '#/components/schemas/Meta'
+                $ref: "#/components/schemas/Meta"
                 description: The metadata about the resource. This is content that is maintained by the infrastructure. Changes to the content might not always be associated with version changes to the resource.
               issue:
                 type: array
@@ -1399,20 +1395,20 @@ components:
         extension:
           type: array
           items:
-            $ref: '#/components/schemas/Extension'
+            $ref: "#/components/schemas/Extension"
             description: May be used to represent additional information that is not part of the basic definition of the resource. To make the use of extensions safe and manageable, there is a strict set of governance  applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.
         modifierExtension:
           type: array
           items:
-            $ref: '#/components/schemas/Extension'
+            $ref: "#/components/schemas/Extension"
             description: |-
               May be used to represent additional information that is not part of the basic definition of the resource and that modifies the understanding of the element that contains it and/or the understanding of the containing element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer is allowed to define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension. Applications processing a resource are required to check for modifier extensions.
-              
+
               Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot change the meaning of modifierExtension itself).
         issue:
           type: array
           items:
-            $ref: '#/components/schemas/OperationOutcome_Issue'
+            $ref: "#/components/schemas/OperationOutcome_Issue"
             description: An error, warning, or information message that results from a system action.
           minItems: 1
       required:
@@ -1461,13 +1457,13 @@ components:
               - Uidx_swV4Z
     Bundle_Entry:
       allOf:
-        - $ref: '#/components/schemas/BackboneElement'
+        - $ref: "#/components/schemas/BackboneElement"
         - type: object
           properties:
             link:
               type: array
               items:
-                $ref: '#/components/schemas/Bundle_Link'
+                $ref: "#/components/schemas/Bundle_Link"
                 description: A series of links that provide context to this entry.
             fullUrl:
               type: string
@@ -1483,7 +1479,7 @@ components:
               pattern: '[A-Za-z0-9\-\.]{1,64}'
               description: The logical id of the resource, as used in the URL for the resource. Once assigned, this value never changes.
             meta:
-              $ref: '#/components/schemas/Meta'
+              $ref: "#/components/schemas/Meta"
               description: The metadata about the resource. This is content that is maintained by the infrastructure. Changes to the content might not always be associated with version changes to the resource.
             implicitRules:
               type: string
@@ -1494,17 +1490,17 @@ components:
               pattern: '[^\s]+(\s[^\s]+)*'
               description: The base language in which the resource is written.
             search:
-              $ref: '#/components/schemas/Bundle_Entry_Search'
+              $ref: "#/components/schemas/Bundle_Entry_Search"
               description: Information about the search process that lead to the creation of this entry.
             request:
-              $ref: '#/components/schemas/Bundle_Entry_Request'
+              $ref: "#/components/schemas/Bundle_Entry_Request"
               description: Additional information about how this entry should be processed as part of a transaction or batch.  For history, it shows how the entry was processed to create the version contained in the entry.
             response:
-              $ref: '#/components/schemas/Bundle_Entry_Response'
+              $ref: "#/components/schemas/Bundle_Entry_Response"
               description: Indicates the results of processing the corresponding 'request' entry in the batch or transaction being responded to or what the results of an operation where when returning history.
     Bundle_Entry_Response:
       allOf:
-        - $ref: '#/components/schemas/BackboneElement'
+        - $ref: "#/components/schemas/BackboneElement"
         - type: object
           properties:
             status:
@@ -1524,13 +1520,13 @@ components:
               pattern: ([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))
               description: The date/time that the resource was modified on the server.
             outcome:
-              $ref: '#/components/schemas/Resource'
+              $ref: "#/components/schemas/Resource"
               description: An OperationOutcome containing hints and warnings produced as part of processing this entry in a batch or transaction.
           required:
             - status
     Bundle_Entry_Request:
       allOf:
-        - $ref: '#/components/schemas/BackboneElement'
+        - $ref: "#/components/schemas/BackboneElement"
         - type: object
           properties:
             method:
@@ -1562,7 +1558,7 @@ components:
             - url
     Bundle_Entry_Search:
       allOf:
-        - $ref: '#/components/schemas/BackboneElement'
+        - $ref: "#/components/schemas/BackboneElement"
         - type: object
           properties:
             mode:
@@ -1589,7 +1585,7 @@ components:
             - url
     Immunization_ProtocolApplied:
       allOf:
-        - $ref: '#/components/schemas/BackboneElement'
+        - $ref: "#/components/schemas/BackboneElement"
         - type: object
           properties:
             series:
@@ -1597,12 +1593,12 @@ components:
               pattern: '[ \r\n\t\S]+'
               description: One possible path to achieve presumed immunity against a disease - within the context of an authority.
             authority:
-              $ref: '#/components/schemas/Reference'
+              $ref: "#/components/schemas/Reference"
               description: Indicates the authority who published the protocol (e.g. ACIP) that is being followed.
             targetDisease:
               type: array
               items:
-                $ref: '#/components/schemas/CodeableConcept'
+                $ref: "#/components/schemas/CodeableConcept"
                 description: The vaccine preventable disease the dose is being administered against.
             doseNumberPositiveInt:
               type: integer
@@ -1622,7 +1618,7 @@ components:
               description: The recommended number of doses to achieve immunity.
     Immunization_Reaction:
       allOf:
-        - $ref: '#/components/schemas/BackboneElement'
+        - $ref: "#/components/schemas/BackboneElement"
         - type: object
           properties:
             date:
@@ -1630,14 +1626,14 @@ components:
               pattern: ([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)(-(0[1-9]|1[0-2])(-(0[1-9]|[1-2][0-9]|3[0-1])(T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00)))?)?)?
               description: Date of reaction to the immunization.
             detail:
-              $ref: '#/components/schemas/Reference'
+              $ref: "#/components/schemas/Reference"
               description: Details of the reaction.
             reported:
               type: boolean
               description: Self-reported indicator.
     Immunization_Education:
       allOf:
-        - $ref: '#/components/schemas/BackboneElement'
+        - $ref: "#/components/schemas/BackboneElement"
         - type: object
           properties:
             documentType:
@@ -1658,20 +1654,20 @@ components:
               description: Date the educational material was given to the patient.
     Immunization_Performer:
       allOf:
-        - $ref: '#/components/schemas/BackboneElement'
+        - $ref: "#/components/schemas/BackboneElement"
         - type: object
           properties:
             function:
-              $ref: '#/components/schemas/CodeableConcept'
+              $ref: "#/components/schemas/CodeableConcept"
               description: Describes the type of performance (e.g. ordering provider, administering provider, etc.).
             actor:
-              $ref: '#/components/schemas/Reference'
+              $ref: "#/components/schemas/Reference"
               description: The practitioner or organization who performed the action.
           required:
             - actor
     OperationOutcome_Issue:
       allOf:
-        - $ref: '#/components/schemas/BackboneElement'
+        - $ref: "#/components/schemas/BackboneElement"
         - type: object
           properties:
             severity:
@@ -1683,7 +1679,7 @@ components:
               pattern: '[^\s]+(\s[^\s]+)*'
               description: Describes the type of the issue. The system that creates an OperationOutcome SHALL choose the most applicable code from the IssueType value set, and may additional provide its own code for the error in the details element.
             details:
-              $ref: '#/components/schemas/CodeableConcept'
+              $ref: "#/components/schemas/CodeableConcept"
               description: Additional details about the error. This may be a text description of the error or a system code that identifies the error.
             diagnostics:
               type: string
@@ -1714,7 +1710,7 @@ components:
         extension:
           type: array
           items:
-            $ref: '#/components/schemas/Extension'
+            $ref: "#/components/schemas/Extension"
             description: May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and manageable, there is a strict set of governance  applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.
           example:
             - url: http://example.com
@@ -1729,19 +1725,19 @@ components:
         extension:
           type: array
           items:
-            $ref: '#/components/schemas/Extension'
+            $ref: "#/components/schemas/Extension"
             description: May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and manageable, there is a strict set of governance  applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.
         modifierExtension:
           type: array
           items:
-            $ref: '#/components/schemas/Extension'
+            $ref: "#/components/schemas/Extension"
             description: |-
               May be used to represent additional information that is not part of the basic definition of the element and that modifies the understanding of the element in which it is contained and/or the understanding of the containing element's descendants. Usually modifier elements provide negation or qualification. To make the use of extensions safe and manageable, there is a strict set of governance applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension. Applications processing a resource are required to check for modifier extensions.
-              
+
               Modifier extensions SHALL NOT change the meaning of any elements on Resource or DomainResource (including cannot change the meaning of modifierExtension itself).
     Address:
       allOf:
-        - $ref: '#/components/schemas/Element'
+        - $ref: "#/components/schemas/Element"
         - type: object
           properties:
             use:
@@ -1783,20 +1779,20 @@ components:
               pattern: '[ \r\n\t\S]+'
               description: Country - a nation as commonly understood or generally accepted.
             period:
-              $ref: '#/components/schemas/Period'
+              $ref: "#/components/schemas/Period"
               description: Time period when address was/is in use.
     Age:
       allOf:
-        - $ref: '#/components/schemas/Quantity'
+        - $ref: "#/components/schemas/Quantity"
         - type: object
-          properties: { }
+          properties: {}
     Annotation:
       allOf:
-        - $ref: '#/components/schemas/Element'
+        - $ref: "#/components/schemas/Element"
         - type: object
           properties:
             authorReference:
-              $ref: '#/components/schemas/Reference'
+              $ref: "#/components/schemas/Reference"
               description: The individual responsible for making the annotation.
             authorString:
               type: string
@@ -1814,7 +1810,7 @@ components:
             - text
     Attachment:
       allOf:
-        - $ref: '#/components/schemas/Element'
+        - $ref: "#/components/schemas/Element"
         - type: object
           properties:
             contentType:
@@ -1859,12 +1855,12 @@ components:
         extension:
           type: array
           items:
-            $ref: '#/components/schemas/Extension'
+            $ref: "#/components/schemas/Extension"
             description: May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and manageable, there is a strict set of governance  applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.
         coding:
           type: array
           items:
-            $ref: '#/components/schemas/Coding'
+            $ref: "#/components/schemas/Coding"
             description: A reference to a code defined by a terminology system.
         text:
           type: string
@@ -1880,7 +1876,7 @@ components:
         extension:
           type: array
           items:
-            $ref: '#/components/schemas/Extension'
+            $ref: "#/components/schemas/Extension"
             description: May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and manageable, there is a strict set of governance  applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.
         system:
           type: string
@@ -1903,7 +1899,7 @@ components:
           description: Indicates that this coding was chosen by a user directly - e.g. off a pick list of available items (codes or displays).
     ContactPoint:
       allOf:
-        - $ref: '#/components/schemas/Element'
+        - $ref: "#/components/schemas/Element"
         - type: object
           properties:
             system:
@@ -1923,26 +1919,26 @@ components:
               format: int32
               description: Specifies a preferred order in which to use a set of contacts. ContactPoints with lower rank values are more preferred than those with higher rank values.
             period:
-              $ref: '#/components/schemas/Period'
+              $ref: "#/components/schemas/Period"
               description: Time period when the contact point was/is in use.
     Count:
       allOf:
-        - $ref: '#/components/schemas/Quantity'
+        - $ref: "#/components/schemas/Quantity"
         - type: object
-          properties: { }
+          properties: {}
     Distance:
       allOf:
-        - $ref: '#/components/schemas/Quantity'
+        - $ref: "#/components/schemas/Quantity"
         - type: object
-          properties: { }
+          properties: {}
     Duration:
       allOf:
-        - $ref: '#/components/schemas/Quantity'
+        - $ref: "#/components/schemas/Quantity"
         - type: object
-          properties: { }
+          properties: {}
     HumanName:
       allOf:
-        - $ref: '#/components/schemas/Element'
+        - $ref: "#/components/schemas/Element"
         - type: object
           properties:
             use:
@@ -1976,7 +1972,7 @@ components:
                 pattern: '[ \r\n\t\S]+'
                 description: Part of the name that is acquired as a title due to academic, legal, employment or nobility status, etc. and that appears at the end of the name.
             period:
-              $ref: '#/components/schemas/Period'
+              $ref: "#/components/schemas/Period"
               description: Indicates the period of time when this name was valid for the named person.
     Identifier:
       type: object
@@ -1988,14 +1984,14 @@ components:
         extension:
           type: array
           items:
-            $ref: '#/components/schemas/Extension'
+            $ref: "#/components/schemas/Extension"
             description: May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and manageable, there is a strict set of governance  applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.
         use:
           type: string
           pattern: '[^\s]+(\s[^\s]+)*'
           description: The purpose of this identifier.
         type:
-          $ref: '#/components/schemas/CodeableConcept'
+          $ref: "#/components/schemas/CodeableConcept"
           description: A coded type for the identifier that can be used to determine which identifier to use for a specific purpose.
         system:
           type: string
@@ -2006,10 +2002,10 @@ components:
           pattern: '[ \r\n\t\S]+'
           description: The portion of the identifier typically relevant to the user and which is unique within the context of the system.
         period:
-          $ref: '#/components/schemas/Period'
+          $ref: "#/components/schemas/Period"
           description: Time period during which identifier is/was valid for use.
         assigner:
-          $ref: '#/components/schemas/Reference'
+          $ref: "#/components/schemas/Reference"
           description: Organization that issued/manages the identifier.
           example:
             reference: Organization/123
@@ -2017,7 +2013,7 @@ components:
             display: The Assigning Organization
     Money:
       allOf:
-        - $ref: '#/components/schemas/Element'
+        - $ref: "#/components/schemas/Element"
         - type: object
           properties:
             value:
@@ -2029,12 +2025,12 @@ components:
               description: ISO 4217 Currency Code.
     MoneyQuantity:
       allOf:
-        - $ref: '#/components/schemas/Quantity'
+        - $ref: "#/components/schemas/Quantity"
         - type: object
-          properties: { }
+          properties: {}
     Period:
       allOf:
-        - $ref: '#/components/schemas/Element'
+        - $ref: "#/components/schemas/Element"
         - type: object
           properties:
             start:
@@ -2047,7 +2043,7 @@ components:
               description: The end of the period. If the end of the period is missing, it means no end was known or planned at the time the instance was created. The start may be in the past, and the end date in the future, which means that period is expected/planned to end at that time.
     Quantity:
       allOf:
-        - $ref: '#/components/schemas/Element'
+        - $ref: "#/components/schemas/Element"
         - type: object
           properties:
             value:
@@ -2071,25 +2067,25 @@ components:
               description: A computer processable form of the unit in some unit representation system.
     Range:
       allOf:
-        - $ref: '#/components/schemas/Element'
+        - $ref: "#/components/schemas/Element"
         - type: object
           properties:
             low:
-              $ref: '#/components/schemas/SimpleQuantity'
+              $ref: "#/components/schemas/SimpleQuantity"
               description: The low limit. The boundary is inclusive.
             high:
-              $ref: '#/components/schemas/SimpleQuantity'
+              $ref: "#/components/schemas/SimpleQuantity"
               description: The high limit. The boundary is inclusive.
     Ratio:
       allOf:
-        - $ref: '#/components/schemas/Element'
+        - $ref: "#/components/schemas/Element"
         - type: object
           properties:
             numerator:
-              $ref: '#/components/schemas/Quantity'
+              $ref: "#/components/schemas/Quantity"
               description: The value of the numerator.
             denominator:
-              $ref: '#/components/schemas/Quantity'
+              $ref: "#/components/schemas/Quantity"
               description: The value of the denominator.
     Reference:
       type: object
@@ -2101,7 +2097,7 @@ components:
         extension:
           type: array
           items:
-            $ref: '#/components/schemas/Extension'
+            $ref: "#/components/schemas/Extension"
             description: May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and manageable, there is a strict set of governance  applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.
         reference:
           type: string
@@ -2112,10 +2108,10 @@ components:
           pattern: \S*
           description: |-
             The expected type of the target of the reference. If both Reference.type and Reference.reference are populated and Reference.reference is a FHIR URL, both SHALL be consistent.
-            
+
             The type is the Canonical URL of Resource Definition that is the type this reference refers to. References are URLs that are relative to http://hl7.org/fhir/StructureDefinition/ e.g. "Patient" is a reference to http://hl7.org/fhir/StructureDefinition/Patient. Absolute URLs are only allowed for logical models (and can only be used in references in logical models, not resources).
         identifier:
-          $ref: '#/components/schemas/Identifier'
+          $ref: "#/components/schemas/Identifier"
           description: An identifier for the target resource. This is used when there is no way to reference the other resource directly, either because the entity it represents is not available through a FHIR server, or because there is no way for the author of the resource to convert a known identifier to an actual location. There is no requirement that a Reference.identifier point to something that is actually exposed as a FHIR instance, but it SHALL point to a business concept that would be expected to be exposed as a FHIR instance, and that instance would need to be of a FHIR resource type allowed by the reference.
         display:
           type: string
@@ -2123,11 +2119,11 @@ components:
           description: Plain text narrative that identifies the resource in addition to the resource reference.
     SampledData:
       allOf:
-        - $ref: '#/components/schemas/Element'
+        - $ref: "#/components/schemas/Element"
         - type: object
           properties:
             origin:
-              $ref: '#/components/schemas/SimpleQuantity'
+              $ref: "#/components/schemas/SimpleQuantity"
               description: The base quantity that a measured value of zero represents. In addition, this provides the units of the entire measurement series.
             period:
               type: number
@@ -2155,18 +2151,18 @@ components:
             - dimensions
     SimpleQuantity:
       allOf:
-        - $ref: '#/components/schemas/Quantity'
+        - $ref: "#/components/schemas/Quantity"
         - type: object
-          properties: { }
+          properties: {}
     Signature:
       allOf:
-        - $ref: '#/components/schemas/Element'
+        - $ref: "#/components/schemas/Element"
         - type: object
           properties:
             type:
               type: array
               items:
-                $ref: '#/components/schemas/Coding'
+                $ref: "#/components/schemas/Coding"
                 description: An indication of the reason that the entity signed this document. This may be explicitly included as part of the signature information and can be used when determining accountability for various actions concerning the document.
               minItems: 1
             when:
@@ -2174,10 +2170,10 @@ components:
               pattern: ([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00))
               description: When the digital signature was signed.
             who:
-              $ref: '#/components/schemas/Reference'
+              $ref: "#/components/schemas/Reference"
               description: A reference to an application-usable description of the identity that signed  (e.g. the signature used their private key).
             onBehalfOf:
-              $ref: '#/components/schemas/Reference'
+              $ref: "#/components/schemas/Reference"
               description: A reference to an application-usable description of the identity that is represented by the signature.
             targetFormat:
               type: string
@@ -2197,7 +2193,7 @@ components:
             - who
     Timing:
       allOf:
-        - $ref: '#/components/schemas/BackboneElement'
+        - $ref: "#/components/schemas/BackboneElement"
         - type: object
           properties:
             event:
@@ -2207,24 +2203,24 @@ components:
                 pattern: ([0-9]([0-9]([0-9][1-9]|[1-9]0)|[1-9]00)|[1-9]000)(-(0[1-9]|1[0-2])(-(0[1-9]|[1-2][0-9]|3[0-1])(T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00)))?)?)?
                 description: Identifies specific times when the event occurs.
             repeat:
-              $ref: '#/components/schemas/Timing_Repeat'
+              $ref: "#/components/schemas/Timing_Repeat"
               description: A set of rules that describe when the event is scheduled.
             code:
-              $ref: '#/components/schemas/CodeableConcept'
+              $ref: "#/components/schemas/CodeableConcept"
               description: A code for the timing schedule (or just text in code.text). Some codes such as BID are ubiquitous, but many institutions define their own additional codes. If a code is provided, the code is understood to be a complete statement of whatever is specified in the structured timing data, and either the code or the data may be used to interpret the Timing, with the exception that .repeat.bounds still applies over the code (and is not contained in the code).
     Timing_Repeat:
       allOf:
-        - $ref: '#/components/schemas/BackboneElement'
+        - $ref: "#/components/schemas/BackboneElement"
         - type: object
           properties:
             boundsDuration:
-              $ref: '#/components/schemas/Duration'
+              $ref: "#/components/schemas/Duration"
               description: Either a duration for the length of the timing schedule, a range of possible length, or outer bounds for start and/or end limits of the timing schedule.
             boundsRange:
-              $ref: '#/components/schemas/Range'
+              $ref: "#/components/schemas/Range"
               description: Either a duration for the length of the timing schedule, a range of possible length, or outer bounds for start and/or end limits of the timing schedule.
             boundsPeriod:
-              $ref: '#/components/schemas/Period'
+              $ref: "#/components/schemas/Period"
               description: Either a duration for the length of the timing schedule, a range of possible length, or outer bounds for start and/or end limits of the timing schedule.
             count:
               type: integer
@@ -2286,7 +2282,7 @@ components:
               description: The number of minutes from the event. If the event code does not indicate whether the minutes is before or after the event, then the offset is assumed to be after the event.
     ContactDetail:
       allOf:
-        - $ref: '#/components/schemas/Element'
+        - $ref: "#/components/schemas/Element"
         - type: object
           properties:
             name:
@@ -2296,11 +2292,11 @@ components:
             telecom:
               type: array
               items:
-                $ref: '#/components/schemas/ContactPoint'
+                $ref: "#/components/schemas/ContactPoint"
                 description: The contact details for the individual (if a name was provided) or the organization.
     RelatedArtifact:
       allOf:
-        - $ref: '#/components/schemas/Element'
+        - $ref: "#/components/schemas/Element"
         - type: object
           properties:
             type:
@@ -2324,7 +2320,7 @@ components:
               pattern: \S*
               description: A url for the artifact that can be followed to access the actual content.
             document:
-              $ref: '#/components/schemas/Attachment'
+              $ref: "#/components/schemas/Attachment"
               description: The document being referenced, represented as an attachment. This is exclusive with the resource element.
             resource:
               type: string
@@ -2334,29 +2330,29 @@ components:
             - type
     UsageContext:
       allOf:
-        - $ref: '#/components/schemas/Element'
+        - $ref: "#/components/schemas/Element"
         - type: object
           properties:
             code:
-              $ref: '#/components/schemas/Coding'
+              $ref: "#/components/schemas/Coding"
               description: A code that identifies the type of context being specified by this usage context.
             valueCodeableConcept:
-              $ref: '#/components/schemas/CodeableConcept'
+              $ref: "#/components/schemas/CodeableConcept"
               description: A value that defines the context specified in this context of use. The interpretation of the value is defined by the code.
             valueQuantity:
-              $ref: '#/components/schemas/Quantity'
+              $ref: "#/components/schemas/Quantity"
               description: A value that defines the context specified in this context of use. The interpretation of the value is defined by the code.
             valueRange:
-              $ref: '#/components/schemas/Range'
+              $ref: "#/components/schemas/Range"
               description: A value that defines the context specified in this context of use. The interpretation of the value is defined by the code.
             valueReference:
-              $ref: '#/components/schemas/Reference'
+              $ref: "#/components/schemas/Reference"
               description: A value that defines the context specified in this context of use. The interpretation of the value is defined by the code.
           required:
             - code
     Meta:
       allOf:
-        - $ref: '#/components/schemas/Element'
+        - $ref: "#/components/schemas/Element"
         - type: object
           properties:
             versionId:
@@ -2380,16 +2376,16 @@ components:
             security:
               type: array
               items:
-                $ref: '#/components/schemas/Coding'
+                $ref: "#/components/schemas/Coding"
                 description: Security labels applied to this resource. These tags connect specific resources to the overall security policy and infrastructure.
             tag:
               type: array
               items:
-                $ref: '#/components/schemas/Coding'
+                $ref: "#/components/schemas/Coding"
                 description: Tags applied to this resource. Tags are intended to be used to identify and relate resources to process and workflow, and applications are not required to consider the tags when interpreting the meaning of a resource.
     Narrative:
       allOf:
-        - $ref: '#/components/schemas/Element'
+        - $ref: "#/components/schemas/Element"
         - type: object
           properties:
             status:
@@ -2412,7 +2408,7 @@ components:
         extension:
           type: array
           items:
-            $ref: '#/components/schemas/Extension'
+            $ref: "#/components/schemas/Extension"
             description: May be used to represent additional information that is not part of the basic definition of the element. To make the use of extensions safe and manageable, there is a strict set of governance  applied to the definition and use of extensions. Though any implementer can define an extension, there is a set of requirements that SHALL be met as part of the definition of the extension.
         url:
           type: string
@@ -2493,79 +2489,79 @@ components:
           pattern: urn:uuid:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}
           description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueAddress:
-          $ref: '#/components/schemas/Address'
+          $ref: "#/components/schemas/Address"
           description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueAge:
-          $ref: '#/components/schemas/Age'
+          $ref: "#/components/schemas/Age"
           description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueAnnotation:
-          $ref: '#/components/schemas/Annotation'
+          $ref: "#/components/schemas/Annotation"
           description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueAttachment:
-          $ref: '#/components/schemas/Attachment'
+          $ref: "#/components/schemas/Attachment"
           description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueCodeableConcept:
-          $ref: '#/components/schemas/CodeableConcept'
+          $ref: "#/components/schemas/CodeableConcept"
           description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueCoding:
-          $ref: '#/components/schemas/Coding'
+          $ref: "#/components/schemas/Coding"
           description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueContactPoint:
-          $ref: '#/components/schemas/ContactPoint'
+          $ref: "#/components/schemas/ContactPoint"
           description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueCount:
-          $ref: '#/components/schemas/Count'
+          $ref: "#/components/schemas/Count"
           description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueDistance:
-          $ref: '#/components/schemas/Distance'
+          $ref: "#/components/schemas/Distance"
           description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueDuration:
-          $ref: '#/components/schemas/Duration'
+          $ref: "#/components/schemas/Duration"
           description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueHumanName:
-          $ref: '#/components/schemas/HumanName'
+          $ref: "#/components/schemas/HumanName"
           description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueIdentifier:
-          $ref: '#/components/schemas/Identifier'
+          $ref: "#/components/schemas/Identifier"
           description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueMoney:
-          $ref: '#/components/schemas/Money'
+          $ref: "#/components/schemas/Money"
           description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valuePeriod:
-          $ref: '#/components/schemas/Period'
+          $ref: "#/components/schemas/Period"
           description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueQuantity:
-          $ref: '#/components/schemas/Quantity'
+          $ref: "#/components/schemas/Quantity"
           description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueRange:
-          $ref: '#/components/schemas/Range'
+          $ref: "#/components/schemas/Range"
           description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueRatio:
-          $ref: '#/components/schemas/Ratio'
+          $ref: "#/components/schemas/Ratio"
           description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueReference:
-          $ref: '#/components/schemas/Reference'
+          $ref: "#/components/schemas/Reference"
           description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueSampledData:
-          $ref: '#/components/schemas/SampledData'
+          $ref: "#/components/schemas/SampledData"
           description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueSignature:
-          $ref: '#/components/schemas/Signature'
+          $ref: "#/components/schemas/Signature"
           description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueTiming:
-          $ref: '#/components/schemas/Timing'
+          $ref: "#/components/schemas/Timing"
           description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueContactDetail:
-          $ref: '#/components/schemas/ContactDetail'
+          $ref: "#/components/schemas/ContactDetail"
           description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueRelatedArtifact:
-          $ref: '#/components/schemas/RelatedArtifact'
+          $ref: "#/components/schemas/RelatedArtifact"
           description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueUsageContext:
-          $ref: '#/components/schemas/UsageContext'
+          $ref: "#/components/schemas/UsageContext"
           description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
         valueMeta:
-          $ref: '#/components/schemas/Meta'
+          $ref: "#/components/schemas/Meta"
           description: Value of extension - must be one of a constrained set of the data types (see [Extensibility](extensibility.html) for a list).
       required:
         - url

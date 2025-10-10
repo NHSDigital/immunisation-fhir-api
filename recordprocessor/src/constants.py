@@ -64,6 +64,7 @@ class FileStatus:
 
 class FileNotProcessedReason(StrEnum):
     """Reasons why a file was not processed"""
+
     UNAUTHORISED = "Unauthorised"
     EMPTY = "Empty file"
 
@@ -114,5 +115,5 @@ class Permission(StrEnum):
 permission_to_operation_map = {
     Permission.CREATE: Operation.CREATE,
     Permission.UPDATE: Operation.UPDATE,
-    Permission.DELETE: Operation.DELETE
+    Permission.DELETE: Operation.DELETE,
 }

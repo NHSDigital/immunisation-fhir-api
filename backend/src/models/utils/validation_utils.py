@@ -54,7 +54,7 @@ def convert_disease_codes_to_vaccine_type(disease_codes_input: list) -> Union[st
     """
     key = ":".join(sorted(disease_codes_input))
     vaccine_type = redis_client.hget(Constants.DISEASES_TO_VACCINE_TYPE_HASH_KEY, key)
-    
+
     if not vaccine_type:
         raise ValueError(
             f"Validation errors: protocolApplied[0].targetDisease[*].coding[?(@.system=='http://snomed.info/sct')].code - "
@@ -92,10 +92,7 @@ def check_identifier_system_value(response, imms: dict):
     identifier_system_response = resource["identifier"][0]["system"]
     identifier_value_response = resource["identifier"][0]["value"]
 
-    if (
-        identifier_system_request != identifier_system_response
-        and identifier_value_request != identifier_value_response
-    ):
+    if identifier_system_request != identifier_system_response and identifier_value_request != identifier_value_response:
         value = "Both"
         diagnostics_error = create_diagnostics_error(value)
         return diagnostics_error

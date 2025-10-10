@@ -59,7 +59,7 @@ class ValidValues:
         {"value": 3, "unit": "milliliter", "system": "http://unitsofmeasure.org", "code": "ml"},
         {"value": 2, "unit": "ml", "system": "http://snomed.info/sct", "code": "258773002"},
         {"value": 4, "unit": "ml", "system": "http://snomed.info/sct"},
-        {"value": 5, "unit": "ml" }
+        {"value": 5, "unit": "ml"},
     ]
 
     manufacturer_resource_id_Man1 = {"resourceType": "Manufacturer", "id": "Man1"}
@@ -298,8 +298,8 @@ class InvalidValues:
         "20000101",  # Date digits only (i.e. without hypens)
         "20000101000000",  # Date and time digits only
         "200001010000000000",  # Date, time and timezone digits only
-        "2000-01-01T10:34:27",        # Date with Time only
-        "2000-01-01T10:34:27.234",    # Date with Time and milliseconds
+        "2000-01-01T10:34:27",  # Date with Time only
+        "2000-01-01T10:34:27.234",  # Date with Time and milliseconds
         "2000",  # Year only
         "2000-01",  # Year and month only
         "2000-01-01T00:00:00+00",  # Date and time with GMT timezone offset only in hours
@@ -384,6 +384,5 @@ class InvalidValues:
         {"use": "official", "given": ["Florence"]},
         {"family": "Nightingale", "given": ""},
     ]
-    
+
     invalid_dose_quantity = {"value": 2, "unit": "ml", "code": "258773002"}
- 

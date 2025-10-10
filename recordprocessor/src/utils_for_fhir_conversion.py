@@ -133,7 +133,9 @@ class Generate:
         extension_item = {"url": url, "valueCodeableConcept": {}}
 
         Add.list_of_dict(
-            extension_item["valueCodeableConcept"], "coding", {"system": system, "code": code, "display": display}
+            extension_item["valueCodeableConcept"],
+            "coding",
+            {"system": system, "code": code, "display": display},
         )
 
         return extension_item

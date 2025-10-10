@@ -8,7 +8,6 @@ from models.errors import Severity, Code, create_operation_outcome
 from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
 
 
-
 class TestGetImmunisationById(unittest.TestCase):
     def setUp(self):
         self.controller = create_autospec(FhirController)

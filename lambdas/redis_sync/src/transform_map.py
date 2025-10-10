@@ -1,9 +1,10 @@
 from constants import RedisCacheKey
 from transform_configs import transform_vaccine_map, transform_supplier_permissions
 from common.clients import logger
-'''
+
+"""
 Transform config file to format required in REDIS cache.
-'''
+"""
 
 
 def transform_map(data, file_type):

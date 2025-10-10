@@ -3,10 +3,10 @@ resource "aws_iam_role" "eventbridge_forwarder_role" {
   assume_role_policy = jsonencode({
     Version : "2012-10-17",
     Statement = [{
-      Sid      = "TrustEventBridgeService",
-      Effect   = "Allow",
+      Sid       = "TrustEventBridgeService",
+      Effect    = "Allow",
       Principal = { Service = "events.amazonaws.com" },
-      Action   = "sts:AssumeRole",
+      Action    = "sts:AssumeRole",
       Condition = {
         StringEquals = {
           "aws:SourceAccount" = var.imms_account_id

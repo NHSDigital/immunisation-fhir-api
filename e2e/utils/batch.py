@@ -156,9 +156,7 @@ def _get_terraform_output(output_name: str) -> str:
         text=True,
     )
     if output.returncode != 0:
-        raise RuntimeError(
-            f"Error getting terraform output {output_name}: {output.stderr}"
-        )
+        raise RuntimeError(f"Error getting terraform output {output_name}: {output.stderr}")
     return output.stdout.strip()
 
 
@@ -254,7 +252,5 @@ class BatchFile:
 
     def upload_to_s3(self, s3_client, bucket):
         self.stream.seek(0)
-        s3_client.upload_fileobj(
-            self.stream, bucket, ExtraArgs={"ContentType": "text/plain"}
-        )
+        s3_client.upload_fileobj(self.stream, bucket, ExtraArgs={"ContentType": "text/plain"})
         self.stream.close()

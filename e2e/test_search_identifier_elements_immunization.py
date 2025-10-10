@@ -1,11 +1,12 @@
-from utils.base_test import ImmunizationBaseTest
-from lib.env import get_service_base_path
 import pprint
 import uuid
-from utils.constants import valid_nhs_number1
-from utils.resource import generate_imms_resource
-from utils.mappings import VaccineTypes
 from typing import NamedTuple, Literal, Optional
+
+from lib.env import get_service_base_path
+from utils.base_test import ImmunizationBaseTest
+from utils.constants import valid_nhs_number1
+from utils.mappings import VaccineTypes
+from utils.resource import generate_imms_resource
 
 
 class TestSearchImmunizationByIdentifier(ImmunizationBaseTest):
@@ -33,7 +34,8 @@ class TestSearchImmunizationByIdentifier(ImmunizationBaseTest):
 
                 # When
                 search_response = imms_api.search_immunization_by_identifier_and_elements(
-                    identifier_system, identifier_value)
+                    identifier_system, identifier_value
+                )
                 self.assertEqual(search_response.status_code, 200, search_response.text)
                 bundle = search_response.json()
                 self.assertEqual(bundle.get("resourceType"), "Bundle", bundle)
@@ -45,7 +47,8 @@ class TestSearchImmunizationByIdentifier(ImmunizationBaseTest):
                 self.assertEqual(entries[0]["resource"]["meta"]["versionId"], 1)
                 self.assertTrue(entries[0]["fullUrl"].startswith("https://"))
                 self.assertEqual(
-                    entries[0]["fullUrl"], f"{get_service_base_path()}/Immunization/{covid_ids}"
+                    entries[0]["fullUrl"],
+                    f"{get_service_base_path()}/Immunization/{covid_ids}",
                 )
 
     def test_search_imms_no_match_returns_empty_bundle(self):
@@ -63,8 +66,10 @@ class TestSearchImmunizationByIdentifier(ImmunizationBaseTest):
 
     def test_search_by_identifier_parameter_smoke_tests(self):
         stored_records = generate_imms_resource(
-            valid_nhs_number1, VaccineTypes.covid_19,
-            imms_identifier_value=str(uuid.uuid4()))
+            valid_nhs_number1,
+            VaccineTypes.covid_19,
+            imms_identifier_value=str(uuid.uuid4()),
+        )
 
         imms_id = self.store_records(stored_records)
         # Retrieve the resources to get the identifier system and value via read API
@@ -85,43 +90,38 @@ class TestSearchImmunizationByIdentifier(ImmunizationBaseTest):
             expected_status_code: int = 200
 
         searches = [
-                SearchTestParams(
-                    "GET",
-                    "",
-                    None,
-                    False,
-                    400
-                ),
-                # No results.
-                SearchTestParams(
-                    "GET",
-                    f"identifier={identifier_system}|{identifier_value}",
-                    None,
-                    True,
-                    200
-                ),
-                SearchTestParams(
-                    "POST",
-                    "",
-                    f"identifier={identifier_system}|{identifier_value}",
-                    True,
-                    200
-                ),
-                SearchTestParams(
-                    "POST",
-                    f"identifier={identifier_system}|{identifier_value}",
-                    f"identifier={identifier_system}|{identifier_value}",
-                    False,
-                    400
-                ),
-                ]
+            SearchTestParams("GET", "", None, False, 400),
+            # No results.
+            SearchTestParams(
+                "GET",
+                f"identifier={identifier_system}|{identifier_value}",
+                None,
+                True,
+                200,
+            ),
+            SearchTestParams(
+                "POST",
+                "",
+                f"identifier={identifier_system}|{identifier_value}",
+                True,
+                200,
+            ),
+            SearchTestParams(
+                "POST",
+                f"identifier={identifier_system}|{identifier_value}",
+                f"identifier={identifier_system}|{identifier_value}",
+                False,
+                400,
+            ),
+        ]
         for search in searches:
             pprint.pprint(search)
             response = self.default_imms_api.search_immunizations_full(
                 search.method,
                 search.query_string,
                 body=search.body,
-                expected_status_code=search.expected_status_code)
+                expected_status_code=search.expected_status_code,
+            )
 
             # Then
             assert response.ok == search.should_be_success, response.text

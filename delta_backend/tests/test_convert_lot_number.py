@@ -5,17 +5,18 @@ from utils_for_converter_tests import ValuesForTests
 from converter import Converter
 from common.mappings import ConversionFieldName
 
+
 class TestBatchNumber(unittest.TestCase):
-    
+
     def setUp(self):
         self.request_json_data = copy.deepcopy(ValuesForTests.json_data)
-        
+
     def _run_batch_number_test(self, expected_result):
         """Helper function to run the test"""
         self.converter = Converter(json.dumps(self.request_json_data))
         flat_json = self.converter.run_conversion()
         self.assertEqual(flat_json.get(ConversionFieldName.BATCH_NUMBER), expected_result)
-        
+
     def test_batch_number_present(self):
         """Should extract lotNumber when present"""
         self.request_json_data["lotNumber"] = "4120Z001"
@@ -30,5 +31,3 @@ class TestBatchNumber(unittest.TestCase):
         """Should return None when lotNumber is an empty string"""
         self.request_json_data["lotNumber"] = ""
         self._run_batch_number_test(expected_result="")
-            
-        
