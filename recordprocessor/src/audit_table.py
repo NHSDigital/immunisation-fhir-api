@@ -15,19 +15,19 @@ def update_audit_table_status(
     record_count: Optional[int] = None,
 ) -> None:
     """Updates the status in the audit table to the requested value"""
-    update_expression = f"SET #{AuditTableKeys.STATUS} = :status"
-    expression_attr_names = {f"#{AuditTableKeys.STATUS}": "status"}
-    expression_attr_values = {":status": {"S": status}}
+    update_expression = f"SET #{AuditTableKeys.STATUS} = :{AuditTableKeys.STATUS}"
+    expression_attr_names = {f"#{AuditTableKeys.STATUS}": AuditTableKeys.STATUS}
+    expression_attr_values = {f":{AuditTableKeys.STATUS}": {"S": status}}
 
     if record_count is not None:
-        update_expression = update_expression + f", #{AuditTableKeys.RECORD_COUNT} = :record_count"
-        expression_attr_names[f"#{AuditTableKeys.RECORD_COUNT}"] = "record_count"
-        expression_attr_values[":record_count"] = {"N": str(record_count)}
+        update_expression = update_expression + f", #{AuditTableKeys.RECORD_COUNT} = :{AuditTableKeys.RECORD_COUNT}"
+        expression_attr_names[f"#{AuditTableKeys.RECORD_COUNT}"] = AuditTableKeys.RECORD_COUNT
+        expression_attr_values[f":{AuditTableKeys.RECORD_COUNT}"] = {"N": str(record_count)}
 
     if error_details is not None:
-        update_expression = update_expression + f", #{AuditTableKeys.ERROR_DETAILS} = :error_details"
-        expression_attr_names[f"#{AuditTableKeys.ERROR_DETAILS}"] = "error_details"
-        expression_attr_values[":error_details"] = {"S": error_details}
+        update_expression = update_expression + f", #{AuditTableKeys.ERROR_DETAILS} = :{AuditTableKeys.ERROR_DETAILS}"
+        expression_attr_names[f"#{AuditTableKeys.ERROR_DETAILS}"] = AuditTableKeys.ERROR_DETAILS
+        expression_attr_values[f":{AuditTableKeys.ERROR_DETAILS}"] = {"S": error_details}
 
     try:
         # Update the status in the audit table to "Processed"
@@ -37,7 +37,7 @@ def update_audit_table_status(
             UpdateExpression=update_expression,
             ExpressionAttributeNames=expression_attr_names,
             ExpressionAttributeValues=expression_attr_values,
-            ConditionExpression="attribute_exists(message_id)",
+            ConditionExpression=f"attribute_exists({AuditTableKeys.MESSAGE_ID})",
         )
 
         logger.info(

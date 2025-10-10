@@ -44,12 +44,11 @@ def lambda_handler(event, _):
         for message in incoming_message_body:
             ack_data_rows.append(convert_message_to_ack_row(message, created_at_formatted_string))
 
-        # Get the row number of the final record processed
-        if i == len(event["Records"]) - 1:
-            # Format of the row id is {batch_message_id}^{row_number}
-            total_ack_rows_processed = int(incoming_message_body[-1].get("row_id", "").split("^")[1])
-
     update_ack_file(file_key, created_at_formatted_string, ack_data_rows)
+
+    # Get the row count of the final processed record
+    # Format of the row id is {batch_message_id}^{row_number}
+    total_ack_rows_processed = int(incoming_message_body[-1].get("row_id", "").split("^")[1])
 
     if is_ack_processing_complete(message_id, total_ack_rows_processed):
         complete_batch_file_process(
