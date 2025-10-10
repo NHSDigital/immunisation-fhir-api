@@ -1,17 +1,14 @@
 from unittest.mock import patch
-from io import StringIO
-
 import update_ack_file
 import unittest
 import boto3
 
-from moto import mock_s3
+from moto import mock_aws
 
 
-@mock_s3
+@mock_aws
 class TestUpdateAckFileFlow(unittest.TestCase):
     def setUp(self):
-        # Patch all AWS and external dependencies
         self.s3_client = boto3.client("s3", region_name="eu-west-2")
 
         self.ack_bucket_name = "my-ack-bucket"
@@ -37,45 +34,38 @@ class TestUpdateAckFileFlow(unittest.TestCase):
         self.logger_patcher = patch("update_ack_file.logger")
         self.mock_logger = self.logger_patcher.start()
 
-        self.get_row_count_patcher = patch("update_ack_file.get_row_count")
-        self.mock_get_row_count = self.get_row_count_patcher.start()
-
         self.change_audit_status_patcher = patch("update_ack_file.change_audit_table_status_to_processed")
         self.mock_change_audit_status = self.change_audit_status_patcher.start()
 
     def tearDown(self):
         self.logger_patcher.stop()
-        self.get_row_count_patcher.stop()
         self.change_audit_status_patcher.stop()
 
-    def test_audit_table_updated_correctly(self):
+    def test_audit_table_updated_correctly_when_ack_process_complete(self):
         """VED-167 - Test that the audit table has been updated correctly"""
         # Setup
-        self.mock_get_row_count.side_effect = [3, 3]
-        accumulated_csv_content = StringIO("header1|header2\n")
-        ack_data_rows = [
-            {"a": 1, "b": 2, "row": "audit-test-1"},
-            {"a": 3, "b": 4, "row": "audit-test-2"},
-            {"a": 5, "b": 6, "row": "audit-test-3"},
-        ]
         message_id = "msg-audit-table"
+        mock_created_at_string = "created_at_formatted_string"
         file_key = "audit_table_test.csv"
         self.s3_client.put_object(
             Bucket=self.source_bucket_name,
             Key=f"processing/{file_key}",
             Body="dummy content",
         )
+        self.s3_client.put_object(
+            Bucket=self.ack_bucket_name, Key=f"TempAck/audit_table_test_BusAck_{mock_created_at_string}.csv"
+        )
+
         # Act
-        update_ack_file.upload_ack_file(
-            temp_ack_file_key=f"TempAck/{file_key}",
+        update_ack_file.complete_batch_file_process(
             message_id=message_id,
             supplier="queue-audit-table-supplier",
             vaccine_type="vaccine-type",
-            accumulated_csv_content=accumulated_csv_content,
-            ack_data_rows=ack_data_rows,
-            archive_ack_file_key=f"forwardedFile/{file_key}",
+            created_at_formatted_string=mock_created_at_string,
             file_key=file_key,
+            total_ack_rows_processed=3,
         )
+
         # Assert: Only check audit table update
         self.mock_change_audit_status.assert_called_once_with(file_key, message_id)
 
