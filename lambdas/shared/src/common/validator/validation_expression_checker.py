@@ -127,20 +127,20 @@ class ExpressionChecker:
                 return "Schema expression not found! Check your expression type : " + expression_type
 
     # iso8086 date time validate
-    def _validate_datetime(self, rule, fieldName,  fieldValue, row):
+    def _validate_datetime(self, rule, field_name,  field_value, row):
         try:
-            datetime.date.fromisoformat(fieldValue)
+            datetime.date.fromisoformat(field_value)
         except RecordError as e:
             code = e.code if e.code is not None else ExceptionMessages.RECORD_CHECK_FAILED
             message = (e.message if e.message is not None
                        else ExceptionMessages.MESSAGES[ExceptionMessages.RECORD_CHECK_FAILED])
             if e.details is not None:
                 details = e.details
-            return RecordError(code, message, row, fieldName, details, self.summarise)
+            return RecordError(code, message, row, field_name, details, self.summarise)
         except Exception as e:
             if self.report_unexpected_exception:
                 message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return RecordError(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, fieldName, '', self.summarise)
+                return RecordError(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, '', self.summarise)
 
     # UUID validate
     def _validate_uuid(self, expressionRule, field_name,  field_value, row):

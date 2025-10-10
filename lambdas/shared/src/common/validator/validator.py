@@ -106,8 +106,9 @@ class Validator:
         except Exception as e:
             message = 'Data get values Unexpected exception [%s]: %s' % (e.__class__.__name__, e)
             error_report = ErrorReport(code=ExceptionMessages.PARSING_ERROR, message=message)
-            self._addErrorRecord(error_report,
-                                 expression_error_group, expression_name, expression_id, self.CriticalErrorLevel)
+            # original code had self.CriticalErrorLevel. Replaced with error_level
+            self._add_error_record(error_report,
+                                   expression_error_group, expression_name, expression_id, error_level)
             return error_report
 
         for value in expression_values:

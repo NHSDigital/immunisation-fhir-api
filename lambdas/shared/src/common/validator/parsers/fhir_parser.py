@@ -5,18 +5,18 @@ import json
 class FHIRParser:
     # parser variables
     def __init__(self):
-        self.FHIRResource = {}
+        self.fhir_resource = {}
 
     # -------------------------------------------
     # File Management
     # used for files
     def parse_fhir_file(self, fhir_file_name):
         with open(fhir_file_name, 'r') as json_file:
-            self.FHIRResource = json.load(json_file)
+            self.fhir_resource = json.load(json_file)
 
     # used for JSON FHIR Resource data
     def parse_fhir_data(self, fhir_data):
-        self.FHIRResource = fhir_data
+        self.fhir_resource = fhir_data
 
     # ------------------------------------------------
     # Scan and Identify
@@ -64,13 +64,13 @@ class FHIRParser:
         return result
 
     # locate a value for a key
-    def _scanForValue(self, FHIRFields):
-        fieldList = FHIRFields.split("|")
+    def _scan_for_value(self, fhir_fields):
+        field_list = fhir_fields.split("|")
         # get root field before we iterate
-        rootfield = self.FHIRResource[fieldList[0]]
-        del fieldList[0]
+        rootfield = self.fhir_resource[field_list[0]]
+        del field_list[0]
         try:
-            for field in fieldList:
+            for field in field_list:
                 if (field.startswith("#")):
                     rootfield = self._locate_list_id(rootfield, field)  # check here for default index??
                 else:
@@ -80,23 +80,23 @@ class FHIRParser:
         return rootfield
 
     # get the value list for a key
-    def getKeyValue(self, fieldName):
+    def get_key_value(self, field_name):
         value = []
         try:
-            responseValue = self._scanForValue(fieldName)
+            response_value = self._scan_for_value(field_name)
         except Exception:
-            responseValue = ''
+            response_value = ''
 
-        value.append(responseValue)
+        value.append(response_value)
         return value
 
     # get the value list for a key
-    def getKeySingleValue(self, fieldName):
+    def get_key_single_value(self, field_name):
         value = ''
         try:
-            responseValue = self._scanForValue(fieldName)
+            response_value = self._scan_for_value(field_name)
         except Exception:
-            responseValue = ''
+            response_value = ''
 
-        value = responseValue
+        value = response_value
         return value

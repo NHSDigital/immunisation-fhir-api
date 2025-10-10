@@ -1,7 +1,9 @@
 # ---------------------------------------------------------------------------------------------------------
 # main conversion lookup
 
+
 class KeyData:
+
     # data settings
     def __init__(self):
         self.procedure = ['956951000000104']
@@ -96,13 +98,13 @@ class KeyData:
                       '16857009']
 
     # Look up the term for the code
-    def findKey(self, KeySource, fieldValue):
+    def findKey(self, key_source, field_value):
         try:
-            match KeySource:
-                case "Procedure": return fieldValue in self.Procedure
-                case "Organisation": fieldValue in self.Organisation
-                case "Site": fieldValue in self.Site
-                case "Route": fieldValue in self.Route
+            match key_source:
+                case "Procedure": return field_value in self.Procedure
+                case "Organisation": field_value in self.Organisation
+                case "Site": field_value in self.Site
+                case "Route": field_value in self.Route
                 case _: return False
         except Exception:
             return False

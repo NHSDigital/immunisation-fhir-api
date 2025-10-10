@@ -13,7 +13,6 @@ PARSING_ERROR = 10
 PARENT_FAILED = 11
 KEY_CHECK_FAILED = 12
 
-
 MESSAGES = {
     UNEXPECTED_EXCEPTION: 'Unexpected exception [%s]: %s',
     VALUE_CHECK_FAILED: 'Value check failed.',

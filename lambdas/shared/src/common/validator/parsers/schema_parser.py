@@ -1,6 +1,7 @@
 # Schema Parser
 # Moved from file loading to JSON string better for elasticache
 
+
 class SchemaParser:
     def __init__(self):
         # parser variables

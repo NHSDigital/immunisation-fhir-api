@@ -3,62 +3,64 @@ import datetime
 import validator.enums.error_levels as ErrorLevels
 from dateutil import parser
 
-ErrorReport = {
-    "eventId": "",
-    "validationDate": "",
-    "validated": 'true',
-    "results": {
-        "totalErrors": 0,
-        "completeness": {
-            "errors": 0,
-            "fields": []
-            },
-        "consistency": {
-            "errors": 0,
-            "fields": []
-            },
-        "validity": {
-            "errors": 0,
-            "fields": []
-            },
-        "timeliness_processed": 0
-        }
-}
-
 
 class DQReporter:
 
+    def __init__(self):
+        # parser variables
+        self.error_report = {
+            "eventId": "",
+            "validationDate": "",
+            "validated": 'true',
+            "results": {
+                "totalErrors": 0,
+                "completeness": {
+                    "errors": 0,
+                    "fields": []
+                    },
+                "consistency": {
+                    "errors": 0,
+                    "fields": []
+                    },
+                "validity": {
+                    "errors": 0,
+                    "fields": []
+                    },
+                "timeliness_processed": 0
+                }
+        }
+
     # create the date difference for the report in minutes
     def diff_dates(self, date1, date2):
-        diffSeconds = abs(date2-date1).total_seconds()
-        diffMinutes = diffSeconds / 60
-        return diffMinutes
+        diff_seconds = abs(date2-date1).total_seconds()
+        diff_minutes = diff_seconds / 60
+        return diff_minutes
 
-    def generateErrorReport(self, eventId, Occurrence, error_records):
-        occurenceDate = Occurrence
-        occurenceDate = parser.parse(occurenceDate, ignoretz=True)
-        validationDate = datetime.datetime.now(tz=None)
+    def generate_error_report(self, event_id, occurrence, error_records):
+        occurrence_date = occurrence
+        occurrence_date = parser.parse(occurrence_date, ignoretz=True)
+        validation_date = datetime.datetime.now(tz=None)
 
-        timeTaken = self.diff_dates(occurenceDate, validationDate)
+        time_taken = self.diff_dates(occurrence_date, validation_date)
 
-        ErrorReport['validationDate'] = validationDate.isoformat()
-        ErrorReport['eventId'] = eventId
-        ErrorReport['results']['timeliness_processed'] = timeTaken
+        self.error_report['validationDate'] = validation_date.isoformat()
+        self.error_report['eventId'] = event_id
+        self.error_report['results']['timeliness_processed'] = time_taken
 
         for errorRecord in error_records:
             self.updateReport(errorRecord)
 
-        jsonErrorReport = json.dumps(ErrorReport)
-        return jsonErrorReport
+        json_error_report = json.dumps(self.error_report)
+        return json_error_report
 
-    def updateReport(self, errorData):
-        errorGroup = errorData["errorGroup"]
-        if (errorData['errorLevel'] == ErrorLevels.CRITICAL_ERROR):
-            ErrorReport['validated'] = "false"
-        totalErrors = ErrorReport['results']['totalErrors']
-        resultsErrorCount = ErrorReport['results'][errorGroup]['errors']
-        resultsErrorCount += 1
-        totalErrors += 1
-        ErrorReport['results'][errorGroup]['fields'].append(errorData["name"])
-        ErrorReport['results'][errorGroup]['errors'] = resultsErrorCount
-        ErrorReport['results']['totalErrors'] = totalErrors
+    def update_report(self, error_data):
+        error_group = error_data["errorGroup"]
+        if (error_data['errorLevel'] == ErrorLevels.CRITICAL_ERROR):
+            self.error_report['validated'] = "false"
+        total_errors = self.error_report['results']['totalErrors']
+        results_error_count = self.error_report['results'][error_group]['errors']
+        results_error_count += 1
+        total_errors += 1
+        self.error_report['results'][error_group]['fields'].append(error_data["name"])
+        self.error_report['results'][error_group]['errors'] = results_error_count
+        self.error_report['results']['totalErrors'] = total_errors
