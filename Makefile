@@ -3,19 +3,11 @@ SHELL=/usr/bin/env bash -euo pipefail
 PYTHON_PROJECT_DIRS_WITH_UNIT_TESTS = backend batch_processor_filter delta_backend filenameprocessor mesh_processor recordprocessor lambdas/ack_backend lambdas/redis_sync lambdas/id_sync lambdas/mns_subscription lambdas/shared
 PYTHON_PROJECT_DIRS = e2e e2e_batch quality_checks $(PYTHON_PROJECT_DIRS_WITH_UNIT_TESTS)
 
-.PHONY: install-python install-node install lint format format-check clean publish build-proxy release initialise-all-python-venvs update-all-python-dependencies run-all-python-unit-tests build-all-docker-images
-
-#Installs dependencies using poetry.
-install-python:
-	poetry lock --no-update
-	poetry install
+.PHONY: install lint format format-check clean publish build-proxy release initialise-all-python-venvs update-all-python-dependencies run-all-python-unit-tests build-all-docker-images
 
 #Installs dependencies using npm.
-install-node:
+install:
 	npm install --legacy-peer-deps
-
-#Condensed Target to run all targets above.
-install: install-node install-python
 
 #Run the npm linting script (specified in package.json). Used to check the syntax and formatting of files.
 lint:
@@ -45,7 +37,7 @@ build-proxy:
 
 #Files to loop over in release
 # VED-811: remove everything except for proxy related files as we move to Github Actions for backend deployment
-_dist_include="pytest.ini poetry.lock poetry.toml pyproject.toml Makefile build/. specification sandbox terraform scripts"
+_dist_include="poetry.toml Makefile build/. specification sandbox terraform scripts"
 
 #Create /dist/ sub-directory and copy files into directory
 #Ensure full dir structure is preserved for Lambdas
