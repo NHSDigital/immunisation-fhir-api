@@ -18,7 +18,7 @@ steps:
   - bash: |
       pwd
       ls -la
-      cd infrastructure/terraform
+      cd terraform
     displayName: "Check Directory and Navigate to Terraform for AWS Deployment"
     workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)"
 
@@ -35,7 +35,7 @@ steps:
         echo workspace: $workspace
         echo AWS environment: $APIGEE_ENVIRONMENT
 
-          cd infrastructure/terraform
+          cd terraform
 
         make init environment=${{ parameters.aws_account_type }} sub_environment=$workspace
         make apply environment=${{ parameters.aws_account_type }} sub_environment=$workspace

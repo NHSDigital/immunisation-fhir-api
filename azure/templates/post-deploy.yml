@@ -59,7 +59,7 @@ steps:
         echo Apigee environment: $APIGEE_ENVIRONMENT
         echo pr_no: $pr_no
 
-        cd infrastructure/terraform
+        cd terraform
         make init environment=${{ parameters.aws_account_type }} sub_environment=$workspace
         make apply environment=${{ parameters.aws_account_type }} sub_environment=$workspace
 
