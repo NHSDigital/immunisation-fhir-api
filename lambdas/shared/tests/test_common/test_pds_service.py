@@ -1,11 +1,11 @@
-import responses
 import unittest
-from responses import matchers
 from unittest.mock import create_autospec
 
+import responses
 from common.authentication import AppRestrictedAuth
 from common.models.errors import UnhandledResponseError
 from common.pds_service import PdsService
+from responses import matchers
 
 
 class TestPdsService(unittest.TestCase):

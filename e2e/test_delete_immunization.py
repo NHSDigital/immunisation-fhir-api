@@ -4,7 +4,6 @@ from utils.resource import generate_imms_resource
 
 
 class TestDeleteImmunization(ImmunizationBaseTest):
-
     def test_delete_imms(self):
         """it should delete a FHIR Immunization resource"""
         for imms_api in self.imms_apis:

@@ -1,12 +1,13 @@
 """Tests for the logging_decorator and its helper functions"""
 
-import unittest
-from unittest.mock import patch
 import json
+import unittest
 from contextlib import ExitStack
+from unittest.mock import patch
+
 from boto3 import client as boto3_client
 from botocore.exceptions import ClientError
-from moto import mock_s3, mock_firehose, mock_sqs, mock_dynamodb
+from moto import mock_dynamodb, mock_firehose, mock_s3, mock_sqs
 
 from tests.utils_for_tests.generic_setup_and_teardown import (
     GenericSetUp,
@@ -17,18 +18,18 @@ from tests.utils_for_tests.mock_environment_variables import (
     BucketNames,
     Firehose,
 )
+from tests.utils_for_tests.utils_for_filenameprocessor_tests import create_mock_hget
 from tests.utils_for_tests.values_for_tests import (
+    MOCK_BATCH_FILE_CONTENT,
     MockFileDetails,
     fixed_datetime,
-    MOCK_BATCH_FILE_CONTENT,
 )
-from tests.utils_for_tests.utils_for_filenameprocessor_tests import create_mock_hget
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from clients import REGION_NAME
     from file_name_processor import lambda_handler
-    from logging_decorator import send_log_to_firehose, generate_and_send_logs
+    from logging_decorator import generate_and_send_logs, send_log_to_firehose
 
 s3_client = boto3_client("s3", region_name=REGION_NAME)
 sqs_client = boto3_client("sqs", region_name=REGION_NAME)

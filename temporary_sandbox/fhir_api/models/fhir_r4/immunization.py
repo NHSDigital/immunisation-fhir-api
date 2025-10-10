@@ -1,17 +1,17 @@
 """Immunization Data Model based on Fhir Revision 4 spec"""
 
-from typing import Optional, Literal, Any
-from pydantic import BaseModel, PositiveInt
 import datetime
+from typing import Any, Literal, Optional
 
 import fhir_api.models.fhir_r4.code_types as code_types
-from fhir_api.models.fhir_r4.fhir_datatype_fields import FhirR4Fields
 from fhir_api.models.fhir_r4.common import (
-    Identifier,
     CodeableConceptType,
-    Reference,
+    Identifier,
     Quantity,
+    Reference,
 )
+from fhir_api.models.fhir_r4.fhir_datatype_fields import FhirR4Fields
+from pydantic import BaseModel, PositiveInt
 
 
 class Performer(BaseModel):

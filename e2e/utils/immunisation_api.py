@@ -3,12 +3,12 @@ import re
 import time
 import uuid
 from datetime import datetime
-from typing import Optional, Literal, List
+from typing import List, Literal, Optional
 
 import requests
-
 from lib.authentication import BaseAuthentication
-from utils.resource import generate_imms_resource, delete_imms_records
+from utils.resource import delete_imms_records, generate_imms_resource
+
 from .constants import patient_identifier_system
 
 
@@ -85,10 +85,10 @@ class ImmunisationApi:
                 # Check if the response matches the expected status code to identify potential issues
                 if response.status_code != expected_status_code:
                     if response.status_code >= 500:
-                        raise RuntimeError(f"Server error: {response.status_code} during " f"in {http_method} {url}")
+                        raise RuntimeError(f"Server error: {response.status_code} during in {http_method} {url}")
                     else:
                         raise ValueError(
-                            f"Expected {expected_status_code} but got " f"{response.status_code} in {http_method} {url}"
+                            f"Expected {expected_status_code} but got {response.status_code} in {http_method} {url}"
                         )
 
                 return response
@@ -220,7 +220,6 @@ class ImmunisationApi:
         body: Optional[str],
         expected_status_code: int = 200,
     ):
-
         if http_method == "POST":
             url = f"{self.url}/Immunization/_search?{query_string}"
         else:

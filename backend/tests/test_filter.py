@@ -7,9 +7,9 @@ from uuid import uuid4
 from constants import Urls
 from filter import (
     Filter,
-    remove_reference_to_contained_practitioner,
-    create_reference_to_patient_resource,
     add_use_to_identifier,
+    create_reference_to_patient_resource,
+    remove_reference_to_contained_practitioner,
     replace_address_postal_codes,
     replace_organization_values,
 )

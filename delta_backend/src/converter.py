@@ -1,12 +1,11 @@
 # Main validation engine
 import exception_messages
 from common.mappings import ActionFlag
-from conversion_layout import ConversionLayout, ConversionField
+from conversion_layout import ConversionField, ConversionLayout
 from extractor import Extractor
 
 
 class Converter:
-
     def __init__(self, fhir_data, action_flag=ActionFlag.UPDATE, report_unexpected_exception=True):
         self.converted = {}
         self.error_records = []

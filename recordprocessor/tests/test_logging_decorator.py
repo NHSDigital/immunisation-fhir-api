@@ -1,29 +1,30 @@
 """Tests for the logging_decorator and its helper functions"""
 
-import unittest
-from unittest.mock import patch
-from contextlib import ExitStack
-from datetime import datetime
 import json
+import unittest
+from contextlib import ExitStack
 from copy import deepcopy
-from boto3 import client as boto3_client
-from moto import mock_s3, mock_firehose
+from datetime import datetime
+from unittest.mock import patch
 
-from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
-    MockFileDetails,
-    ValidMockFileContent,
-)
+from boto3 import client as boto3_client
+from moto import mock_firehose, mock_s3
+
 from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
     MOCK_ENVIRONMENT_DICT,
     BucketNames,
     Firehose,
 )
+from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
+    MockFileDetails,
+    ValidMockFileContent,
+)
 
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from clients import REGION_NAME
     from errors import InvalidHeaders, NoOperationPermissions
-    from logging_decorator import send_log_to_firehose, generate_and_send_logs
     from file_level_validation import file_level_validation
+    from logging_decorator import generate_and_send_logs, send_log_to_firehose
 
 
 from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
@@ -203,7 +204,6 @@ class TestLoggingDecorator(unittest.TestCase):
             expected_error_message,
         ) in test_cases:
             with self.subTest(expected_error_message):
-
                 s3_client.put_object(
                     Bucket=BucketNames.SOURCE,
                     Key=MOCK_FILE_DETAILS.file_key,

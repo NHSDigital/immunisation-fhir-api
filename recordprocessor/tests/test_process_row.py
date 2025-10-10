@@ -1,24 +1,23 @@
 """Tests for the process_row module"""
 
 import unittest
-from unittest.mock import patch
 from copy import deepcopy
+from decimal import Decimal
+from unittest.mock import patch
+
 from boto3 import client as boto3_client
 from moto import mock_s3
-from decimal import Decimal
 
-
-from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
-    MockFieldDictionaries,
-    TargetDiseaseElements,
+from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
+    MOCK_ENVIRONMENT_DICT,
 )
-
 from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
     GenericSetUp,
     GenericTearDown,
 )
-from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
-    MOCK_ENVIRONMENT_DICT,
+from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
+    MockFieldDictionaries,
+    TargetDiseaseElements,
 )
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):

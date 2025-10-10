@@ -1,8 +1,9 @@
 """Create ack file and upload to S3 bucket"""
 
-from csv import writer
 import os
-from io import StringIO, BytesIO
+from csv import writer
+from io import BytesIO, StringIO
+
 from clients import s3_client
 
 

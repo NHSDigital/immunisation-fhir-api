@@ -1,25 +1,25 @@
 """Tests for convert_to_fhir_imms_resource"""
 
 import unittest
-from typing import Tuple, List
+from typing import List, Tuple
 from unittest.mock import patch
 
+from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
+    MOCK_ENVIRONMENT_DICT,
+)
 from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
     MockFhirImmsResources,
     MockFieldDictionaries,
     TargetDiseaseElements,
 )
-from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
-    MOCK_ENVIRONMENT_DICT,
-)
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
     from convert_to_fhir_imms_resource import (
+        ImmunizationDecorator,
         _decorate_immunization,
         _get_decorators_for_action_flag,
         all_decorators,
         convert_to_fhir_imms_resource,
-        ImmunizationDecorator,
     )
 
 

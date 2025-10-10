@@ -1,6 +1,6 @@
 """Generic helper module for Python dictionary utility functions"""
 
-from typing import Optional, Any
+from typing import Any, Optional
 
 
 def get_field(target_dict: dict, *args: str, default: Optional[Any] = None) -> Any:

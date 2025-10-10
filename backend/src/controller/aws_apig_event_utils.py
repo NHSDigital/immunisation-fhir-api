@@ -3,7 +3,6 @@
 from typing import Optional
 
 from aws_lambda_typing.events import APIGatewayProxyEventV1
-
 from controller.constants import SUPPLIER_SYSTEM_HEADER_NAME
 from models.errors import UnauthorizedError
 from utils import dict_utils

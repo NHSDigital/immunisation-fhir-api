@@ -1,11 +1,12 @@
 """unit tests for redis_sync.py"""
 
-import unittest
 import json
+import unittest
 from unittest.mock import patch
-from redis_sync import handler
-from constants import RedisCacheKey
+
 from common.s3_event import S3EventRecord
+from constants import RedisCacheKey
+from redis_sync import handler
 
 
 class TestHandlerDecorator(unittest.TestCase):

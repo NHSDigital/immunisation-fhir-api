@@ -2,25 +2,26 @@
 
 from unittest import TestCase
 from unittest.mock import patch
+
 from boto3 import client as boto3_client
 from moto import mock_dynamodb
 
-from tests.utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT
 from tests.utils_for_tests.generic_setup_and_teardown import (
     GenericSetUp,
     GenericTearDown,
 )
-from tests.utils_for_tests.values_for_tests import MockFileDetails, FileDetails
+from tests.utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT
 from tests.utils_for_tests.utils_for_filenameprocessor_tests import (
     assert_audit_table_entry,
 )
+from tests.utils_for_tests.values_for_tests import FileDetails, MockFileDetails
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
-    from constants import AUDIT_TABLE_NAME, FileStatus
     from audit_table import upsert_audit_table
-    from errors import UnhandledAuditTableError
     from clients import REGION_NAME
+    from constants import AUDIT_TABLE_NAME, FileStatus
+    from errors import UnhandledAuditTableError
 
 dynamodb_client = boto3_client("dynamodb", region_name=REGION_NAME)
 

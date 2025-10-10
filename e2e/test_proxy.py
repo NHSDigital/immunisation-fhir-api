@@ -4,13 +4,11 @@ import unittest
 import uuid
 
 import requests
-
 from lib.env import get_service_base_path, get_status_endpoint_api_key
 from utils.immunisation_api import ImmunisationApi
 
 
 class TestProxyHealthcheck(unittest.TestCase):
-
     proxy_url: str
     status_api_key: str
 
@@ -80,8 +78,7 @@ class TestMtls(unittest.TestCase):
             return res.stdout
         except FileNotFoundError:
             raise RuntimeError(
-                "Make sure you install terraform. This test can only be run if you have access to the"
-                "backend deployment"
+                "Make sure you install terraform. This test can only be run if you have access to thebackend deployment"
             )
         except RuntimeError as e:
             raise RuntimeError(f"Failed to run command\n{e}")

@@ -1,7 +1,8 @@
 """Utils for filenameprocessor lambda"""
 
 from datetime import timedelta
-from clients import s3_client, logger
+
+from clients import logger, s3_client
 from constants import AUDIT_TABLE_TTL_DAYS
 
 

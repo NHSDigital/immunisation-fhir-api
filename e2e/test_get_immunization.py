@@ -4,11 +4,10 @@ from decimal import Decimal
 from utils.base_test import ImmunizationBaseTest
 from utils.immunisation_api import parse_location
 from utils.mappings import EndpointOperationNames, VaccineTypes
-from utils.resource import generate_imms_resource, generate_filtered_imms_resource
+from utils.resource import generate_filtered_imms_resource, generate_imms_resource
 
 
 class TestGetImmunization(ImmunizationBaseTest):
-
     def test_get_imms(self):
         """it should get a FHIR Immunization resource"""
         for imms_api in self.imms_apis:

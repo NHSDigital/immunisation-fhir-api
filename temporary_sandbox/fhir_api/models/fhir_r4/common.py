@@ -1,15 +1,13 @@
 """Common FHIR Data Models"""
 
+from datetime import datetime
 from typing import (
     Optional,
 )
 
-from pydantic import BaseModel, validator, PositiveInt
-
-from datetime import datetime
-
 import fhir_api.models.fhir_r4.code_types as code_types
 from fhir_api.models.fhir_r4.fhir_datatype_fields import FhirR4Fields
+from pydantic import BaseModel, PositiveInt, validator
 
 
 class CodingType(BaseModel):

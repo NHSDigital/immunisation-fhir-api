@@ -3,24 +3,25 @@
 import json
 from unittest import TestCase
 from unittest.mock import patch
+
 from boto3 import client as boto3_client
 from moto import mock_s3
 
-from tests.utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT
 from tests.utils_for_tests.generic_setup_and_teardown import (
     GenericSetUp,
     GenericTearDown,
 )
+from tests.utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT
 from tests.utils_for_tests.utils_for_filenameprocessor_tests import create_mock_hget
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
+    from clients import REGION_NAME
     from elasticache import (
         get_supplier_permissions_from_cache,
-        get_valid_vaccine_types_from_cache,
         get_supplier_system_from_cache,
+        get_valid_vaccine_types_from_cache,
     )
-    from clients import REGION_NAME
 
 s3_client = boto3_client("s3", region_name=REGION_NAME)
 

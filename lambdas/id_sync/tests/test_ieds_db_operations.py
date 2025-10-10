@@ -1,13 +1,12 @@
 import unittest
+from unittest.mock import MagicMock, patch
 
-from ieds_db_operations import extract_patient_resource_from_item
-from unittest.mock import patch, MagicMock
-from exceptions.id_sync_exception import IdSyncException
 import ieds_db_operations
+from exceptions.id_sync_exception import IdSyncException
+from ieds_db_operations import extract_patient_resource_from_item
 
 
 class TestExtractPatientResourceFromItem(unittest.TestCase):
-
     def test_extract_from_dict_with_contained_patient(self):
         item = {
             "Resource": {
@@ -67,7 +66,6 @@ class TestIedsDbOperations(unittest.TestCase):
 
 
 class TestGetIedsTable(TestIedsDbOperations):
-
     def setUp(self):
         """Set up test fixtures"""
         super().setUp()
@@ -302,7 +300,6 @@ class TestGetIedsTable(TestIedsDbOperations):
 
 
 class TestUpdatePatientIdInIEDS(TestIedsDbOperations):
-
     def setUp(self):
         super().setUp()
         # Mock get_ieds_table() and subsequent calls
@@ -541,7 +538,6 @@ class TestUpdatePatientIdInIEDS(TestIedsDbOperations):
 
 
 class TestGetItemsToUpdate(TestIedsDbOperations):
-
     def setUp(self):
         super().setUp()
         # Mock get_ieds_table()

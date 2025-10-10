@@ -1,22 +1,23 @@
 """Utils functions for filenameprocessor tests"""
 
-from unittest.mock import patch
 from io import StringIO
-from boto3 import client as boto3_client
+from unittest.mock import patch
 
-from tests.utils_for_tests.values_for_tests import FileDetails, MockFileDetails
+from boto3 import client as boto3_client
 from tests.utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT
+from tests.utils_for_tests.values_for_tests import FileDetails, MockFileDetails
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
-    from clients import REGION_NAME
     from csv import DictReader
+
+    from clients import REGION_NAME
     from constants import (
-        AuditTableKeys,
         AUDIT_TABLE_NAME,
-        FileStatus,
-        SUPPLIER_PERMISSIONS_HASH_KEY,
         ODS_CODE_TO_SUPPLIER_SYSTEM_HASH_KEY,
+        SUPPLIER_PERMISSIONS_HASH_KEY,
+        AuditTableKeys,
+        FileStatus,
     )
 
 MOCK_ODS_CODE_TO_SUPPLIER = {"YGM41": "EMIS", "X8E5B": "RAVS"}

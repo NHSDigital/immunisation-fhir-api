@@ -2,8 +2,8 @@ import csv
 import json
 import os
 import sys
-from converter import Converter
 
+from converter import Converter
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
 

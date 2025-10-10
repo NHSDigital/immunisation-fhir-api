@@ -1,18 +1,18 @@
+import ast
+import json
+from typing import Any, Dict
+
 from common.clients import logger
-from typing import Dict, Any
-from pds_details import pds_get_patient_id, pds_get_patient_details
 from ieds_db_operations import (
-    ieds_update_patient_id,
     extract_patient_resource_from_item,
     get_items_from_patient_id,
+    ieds_update_patient_id,
 )
+from pds_details import pds_get_patient_details, pds_get_patient_id
 from utils import make_status
-import json
-import ast
 
 
 def process_record(event_record: Dict[str, Any]) -> Dict[str, Any]:
-
     logger.info("process_record. Processing record: %s", event_record)
     body_text = event_record.get("body", "")
 

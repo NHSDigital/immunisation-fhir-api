@@ -1,22 +1,22 @@
 """Patient Data Model based on Fhir Revision 4 spec"""
 
 from datetime import datetime
-from typing import Optional, Literal
-from pydantic import (
-    BaseModel,
-)
+from typing import Literal, Optional
 
 import fhir_api.models.fhir_r4.code_types as code_types
-from fhir_api.models.fhir_r4.fhir_datatype_fields import FhirR4Fields
 from fhir_api.models.fhir_r4.common import (
-    Identifier,
-    HumanName,
-    ContactPoint,
     Address,
-    CodeableConceptType,
     Attachment,
-    Reference,
+    CodeableConceptType,
+    ContactPoint,
+    HumanName,
+    Identifier,
     Period,
+    Reference,
+)
+from fhir_api.models.fhir_r4.fhir_datatype_fields import FhirR4Fields
+from pydantic import (
+    BaseModel,
 )
 
 

@@ -3,11 +3,10 @@ import json
 from datetime import datetime, timedelta, timezone
 
 import exception_messages
-from common.mappings import Gender, ConversionFieldName
+from common.mappings import ConversionFieldName, Gender
 
 
 class Extractor:
-
     # This file holds the schema/base layout that maps FHIR fields to flat JSON fields
     # Each entry tells the converter how to extract and transform a specific value
     EXTENSION_URL_VACCINATION_PRODEDURE = (
@@ -40,7 +39,6 @@ class Extractor:
         )
 
     def _get_valid_names(self, names, occurrence_time):
-
         official_names = [n for n in names if n.get("use") == "official" and self._is_current_period(n, occurrence_time)]
         if official_names:
             return official_names[0]

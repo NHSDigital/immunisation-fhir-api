@@ -1,33 +1,33 @@
 """Tests for the ack processor lambda handler."""
 
-import unittest
-import os
 import json
-from unittest.mock import patch, Mock
+import os
+import unittest
 from io import StringIO
+from unittest.mock import Mock, patch
+
 from boto3 import client as boto3_client
 from moto import mock_aws
-
-from utils.mock_environment_variables import (
-    AUDIT_TABLE_NAME,
-    MOCK_ENVIRONMENT_DICT,
-    BucketNames,
-    REGION_NAME,
-)
 from utils.generic_setup_and_teardown_for_ack_backend import (
     GenericSetUp,
     GenericTearDown,
 )
+from utils.mock_environment_variables import (
+    AUDIT_TABLE_NAME,
+    MOCK_ENVIRONMENT_DICT,
+    REGION_NAME,
+    BucketNames,
+)
 from utils.utils_for_ack_backend_tests import (
     add_audit_entry_to_table,
-    validate_ack_file_content,
     generate_sample_existing_ack_content,
+    validate_ack_file_content,
 )
 from utils.values_for_ack_backend_tests import (
-    DiagnosticsDictionaries,
-    MOCK_MESSAGE_DETAILS,
-    ValidValues,
     EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS,
+    MOCK_MESSAGE_DETAILS,
+    DiagnosticsDictionaries,
+    ValidValues,
 )
 from utils_for_ack_lambda import _BATCH_EVENT_ID_TO_RECORD_COUNT_MAP
 
@@ -184,7 +184,7 @@ class TestAckProcessor(unittest.TestCase):
         test_cases = [
             {
                 "description": "Multiple messages: all successful",
-                "messages": [{"row_id": f"row^{i+1}"} for i in range(10)],
+                "messages": [{"row_id": f"row^{i + 1}"} for i in range(10)],
             },
             {
                 "description": "Multiple messages: all with diagnostics (failure messages)",

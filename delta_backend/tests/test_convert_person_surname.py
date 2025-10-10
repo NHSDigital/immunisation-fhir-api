@@ -1,9 +1,10 @@
 import copy
 import json
 import unittest
-from utils_for_converter_tests import ValuesForTests
-from converter import Converter
+
 from common.mappings import ConversionFieldName
+from converter import Converter
+from utils_for_converter_tests import ValuesForTests
 
 
 class TestPersonSurnameToFlatJson(unittest.TestCase):

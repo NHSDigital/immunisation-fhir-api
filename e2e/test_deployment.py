@@ -2,11 +2,10 @@ import unittest
 from time import sleep
 
 import requests
-
 from lib.env import (
     get_service_base_path,
-    get_status_endpoint_api_key,
     get_source_commit_id,
+    get_status_endpoint_api_key,
 )
 
 """Tests in this package don't really test anything. Platform created these tests to check if the current

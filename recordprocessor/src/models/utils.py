@@ -1,7 +1,7 @@
 import uuid
 from dataclasses import dataclass
-from typing import Union
 from enum import Enum
+from typing import Union
 
 
 class Severity(str, Enum):

@@ -1,10 +1,12 @@
 """Tests for make_and_upload_ack_file functions"""
 
 import unittest
-from unittest.mock import patch
 from copy import deepcopy
+from unittest.mock import patch
+
 from boto3 import client as boto3_client
 from moto import mock_s3
+
 from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
     MOCK_ENVIRONMENT_DICT,
     BucketNames,
@@ -17,12 +19,12 @@ from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests impo
 )
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
+    from clients import REGION_NAME
     from make_and_upload_ack_file import (
         make_ack_data,
-        upload_ack_file,
         make_and_upload_ack_file,
+        upload_ack_file,
     )
-    from clients import REGION_NAME
 
 from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
     GenericSetUp,

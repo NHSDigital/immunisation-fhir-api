@@ -16,11 +16,11 @@ Commands:
     +startversioning       Reset version to v1.0.0-alpha
 """
 
-import os.path
 import itertools
+import os.path
+
 import git
 import semver
-
 
 SCRIPT_LOCATION = os.path.join(os.path.dirname(os.path.abspath(__file__)))
 REPO_ROOT = os.path.abspath(os.path.join(SCRIPT_LOCATION, ".."))

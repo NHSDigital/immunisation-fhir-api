@@ -1,10 +1,11 @@
 """Ack lambda handler"""
 
 import json
-from logging_decorators import ack_lambda_handler_logging_decorator
-from update_ack_file import update_ack_file, complete_batch_file_process
-from utils_for_ack_lambda import is_ack_processing_complete
+
 from convert_message_to_ack_row import convert_message_to_ack_row
+from logging_decorators import ack_lambda_handler_logging_decorator
+from update_ack_file import complete_batch_file_process, update_ack_file
+from utils_for_ack_lambda import is_ack_processing_complete
 
 
 @ack_lambda_handler_logging_decorator
@@ -26,7 +27,6 @@ def lambda_handler(event, _):
     total_ack_rows_processed = 0
 
     for i, record in enumerate(event["Records"]):
-
         try:
             incoming_message_body = json.loads(record["body"])
         except Exception as body_json_error:

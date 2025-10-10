@@ -2,9 +2,9 @@
 
 from constants import Urls
 from models.utils.generic_utils import (
-    is_actor_referencing_contained_resource,
-    get_contained_practitioner,
     get_contained_patient,
+    get_contained_practitioner,
+    is_actor_referencing_contained_resource,
 )
 
 
@@ -63,7 +63,6 @@ def replace_organization_values(imms: dict) -> dict:
     """
     for performer in imms.get("performer", [{}]):
         if performer.get("actor", {}).get("type") == "Organization":
-
             # Obfuscate or set the identifier value and system.
             identifier = performer["actor"].get("identifier", {})
             if identifier.get("value") is not None:

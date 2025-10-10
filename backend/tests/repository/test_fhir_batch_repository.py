@@ -1,19 +1,18 @@
 import os
 import unittest
-from unittest.mock import MagicMock, ANY, patch
+from unittest.mock import ANY, MagicMock, patch
 from uuid import uuid4
 
 import boto3
 import botocore.exceptions
 import simplejson as json
-from moto import mock_aws
-
 from models.errors import (
     IdentifierDuplicationError,
+    ResourceFoundError,
     ResourceNotFoundError,
     UnhandledResponseError,
-    ResourceFoundError,
 )
+from moto import mock_aws
 from repository.fhir_batch_repository import ImmunizationBatchRepository, create_table
 from testing_utils.immunization_utils import create_covid_19_immunization_dict
 
@@ -26,7 +25,6 @@ def _make_immunization_pk(_id):
 
 @mock_aws
 class TestImmunizationBatchRepository(unittest.TestCase):
-
     def setUp(self):
         os.environ["DYNAMODB_TABLE_NAME"] = "test-immunization-table"
         self.dynamodb = boto3.resource("dynamodb", region_name="eu-west-2")
@@ -47,7 +45,6 @@ class TestImmunizationBatchRepository(unittest.TestCase):
 
 
 class TestCreateImmunization(TestImmunizationBatchRepository):
-
     def modify_immunization(self, remove_nhs):
         """Modify the immunization object by removing NHS number if required"""
         if remove_nhs:
@@ -77,7 +74,7 @@ class TestCreateImmunization(TestImmunizationBatchRepository):
             },
             ConditionExpression=ANY,
         )
-        self.assertEqual(item["PK"], f'Immunization#{self.immunization["id"]}')
+        self.assertEqual(item["PK"], f"Immunization#{self.immunization['id']}")
 
     def test_create_immunization_with_nhs_number(self):
         """Test creating Immunization with NHS number."""
@@ -219,7 +216,7 @@ class TestUpdateImmunization(TestImmunizationBatchRepository):
                         ReturnValues=ANY,
                         ConditionExpression=ANY,
                     )
-                    self.assertEqual(response, f'Immunization#{self.immunization["id"]}')
+                    self.assertEqual(response, f"Immunization#{self.immunization['id']}")
 
     def test_update_immunization_not_found(self):
         """it should not update Immunization since the imms id not found"""
@@ -332,7 +329,7 @@ class TestDeleteImmunization(TestImmunizationBatchRepository):
                 ReturnValues=ANY,
                 ConditionExpression=ANY,
             )
-            self.assertEqual(response, f'Immunization#{self.immunization ["id"]}')
+            self.assertEqual(response, f"Immunization#{self.immunization['id']}")
 
     def test_delete_immunization_not_found(self):
         """it should not delete Immunization since the imms id not found"""
@@ -417,7 +414,6 @@ class TestDeleteImmunization(TestImmunizationBatchRepository):
 @mock_aws
 @patch.dict(os.environ, {"DYNAMODB_TABLE_NAME": "TestTable"})
 class TestCreateTable(TestImmunizationBatchRepository):
-
     def test_create_table_success(self):
         """Test if create_table returns a DynamoDB Table instance with the correct name"""
 

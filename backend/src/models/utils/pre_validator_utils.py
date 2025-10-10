@@ -1,12 +1,11 @@
-from datetime import datetime, date
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Union
 
-from .generic_utils import nhs_number_mod11_check, is_valid_simple_snomed
+from .generic_utils import is_valid_simple_snomed, nhs_number_mod11_check
 
 
 class PreValidation:
-
     @staticmethod
     def for_string(
         field_value: str,

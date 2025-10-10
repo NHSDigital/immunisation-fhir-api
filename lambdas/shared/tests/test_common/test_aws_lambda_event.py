@@ -1,9 +1,9 @@
 import unittest
-from common.aws_lambda_event import AwsLambdaEvent, AwsEventType
+
+from common.aws_lambda_event import AwsEventType, AwsLambdaEvent
 
 
 class TestAwsLambdaEvent(unittest.TestCase):
-
     def setUp(self):
         """Set up test fixtures"""
         self.sqs_record_dict = {

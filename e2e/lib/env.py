@@ -23,8 +23,7 @@ def get_apigee_env() -> ApigeeEnv:
             logging.error(f'the environment variable "APIGEE_ENVIRONMENT: {env}" is invalid')
     else:
         logging.warning(
-            'the environment variable "APIGEE_ENVIRONMENT" is empty, '
-            'falling back to the default value: "internal-dev"'
+            'the environment variable "APIGEE_ENVIRONMENT" is empty, falling back to the default value: "internal-dev"'
         )
         return ApigeeEnv.INTERNAL_DEV
 

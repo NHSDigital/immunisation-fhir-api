@@ -9,7 +9,6 @@ from utils.resource import generate_imms_resource, get_dynamodb_table
 
 
 class TestDeltaImmunization(ImmunizationBaseTest):
-
     CREATE_OPERATION = "CREATE"
     UPDATE_OPERATION = "UPDATE"
     DELETE_OPERATION = "DELETE"

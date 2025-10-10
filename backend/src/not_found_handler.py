@@ -11,7 +11,6 @@ def not_found_handler(event, context):
 
 
 def not_found(event, _context):
-
     if event.get("httpMethod") not in ALLOWED_METHODS:
         response = {
             "statusCode": 405,

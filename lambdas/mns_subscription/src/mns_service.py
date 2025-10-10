@@ -1,17 +1,18 @@
-import requests
+import json
+import logging
 import os
 import uuid
-import logging
-import json
+
+import requests
 from common.authentication import AppRestrictedAuth
 from common.models.errors import (
-    UnhandledResponseError,
-    ResourceNotFoundError,
-    UnauthorizedError,
-    ServerError,
     BadRequestError,
-    TokenValidationError,
     ConflictError,
+    ResourceNotFoundError,
+    ServerError,
+    TokenValidationError,
+    UnauthorizedError,
+    UnhandledResponseError,
 )
 
 SQS_ARN = os.getenv("SQS_ARN")
@@ -48,7 +49,6 @@ class MnsService:
         logging.info(f"Using SQS ARN for subscription: {SQS_ARN}")
 
     def subscribe_notification(self) -> dict | None:
-
         response = requests.post(
             MNS_URL,
             headers=self.request_headers,

@@ -1,4 +1,4 @@
-from common.clients import s3_client, logger
+from common.clients import logger, s3_client
 
 
 class S3Reader:

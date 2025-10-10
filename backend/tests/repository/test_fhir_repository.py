@@ -1,16 +1,15 @@
 import time
 import unittest
 import uuid
-from unittest.mock import MagicMock, patch, ANY
+from unittest.mock import ANY, MagicMock, patch
 
 import botocore.exceptions
 import simplejson as json
 from boto3.dynamodb.conditions import Attr, Key
-
 from models.errors import (
+    IdentifierDuplicationError,
     ResourceNotFoundError,
     UnhandledResponseError,
-    IdentifierDuplicationError,
 )
 from models.utils.validation_utils import get_vaccine_type
 from repository.fhir_repository import ImmunizationRepository

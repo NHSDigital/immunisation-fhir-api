@@ -5,7 +5,7 @@ from unittest.mock import create_autospec, patch
 from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
 from controller.fhir_controller import FhirController
 from delete_imms_handler import delete_immunization
-from models.errors import Severity, Code, create_operation_outcome
+from models.errors import Code, Severity, create_operation_outcome
 
 
 class TestDeleteImmunizationById(unittest.TestCase):

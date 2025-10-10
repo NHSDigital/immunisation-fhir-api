@@ -1,11 +1,10 @@
 import json
-from aws_lambda_typing import events, context
 
+from aws_lambda_typing import context, events
 from batch_file_created_event import BatchFileCreatedEvent
 from batch_processor_filter_service import BatchProcessorFilterService
 from exception_decorator import exception_decorator
 from exceptions import InvalidBatchSizeError
-
 
 service = BatchProcessorFilterService()
 

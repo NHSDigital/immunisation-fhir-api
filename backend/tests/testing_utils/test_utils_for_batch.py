@@ -2,7 +2,6 @@ from decimal import Decimal
 
 
 class ForwarderValues:
-
     MOCK_ENVIRONMENT_DICT = {
         "DYNAMODB_TABLE_NAME": "immunisation-batch-internal-dev-imms-test-table",
         "ENVIRONMENT": "internal-dev-test",

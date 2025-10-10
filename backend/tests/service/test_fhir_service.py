@@ -5,33 +5,32 @@ import unittest
 import uuid
 from copy import deepcopy
 from decimal import Decimal
-from unittest.mock import MagicMock
-from unittest.mock import create_autospec, patch
-
-from fhir.resources.R4B.bundle import Bundle as FhirBundle, BundleEntry
-from fhir.resources.R4B.immunization import Immunization
-from pydantic import ValidationError
-from pydantic.error_wrappers import ErrorWrapper
+from unittest.mock import MagicMock, create_autospec, patch
 
 from authorisation.api_operation_code import ApiOperationCode
 from authorisation.authoriser import Authoriser
 from constants import NHS_NUMBER_USED_IN_SAMPLE_DATA
+from fhir.resources.R4B.bundle import Bundle as FhirBundle
+from fhir.resources.R4B.bundle import BundleEntry
+from fhir.resources.R4B.immunization import Immunization
 from models.errors import (
-    InvalidPatientId,
     CustomValidationError,
-    UnauthorizedVaxError,
+    InvalidPatientId,
     ResourceNotFoundError,
+    UnauthorizedVaxError,
 )
 from models.fhir_immunization import ImmunizationValidator
 from models.utils.generic_utils import get_contained_patient
+from pydantic import ValidationError
+from pydantic.error_wrappers import ErrorWrapper
 from repository.fhir_repository import ImmunizationRepository
 from service.fhir_service import FhirService, UpdateOutcome, get_service_url
 from testing_utils.generic_utils import load_json_data
 from testing_utils.immunization_utils import (
+    VALID_NHS_NUMBER,
     create_covid_19_immunization,
     create_covid_19_immunization_dict,
     create_covid_19_immunization_dict_no_id,
-    VALID_NHS_NUMBER,
 )
 
 
@@ -51,7 +50,6 @@ class TestFhirServiceBase(unittest.TestCase):
 
 
 class TestServiceUrl(unittest.TestCase):
-
     def setUp(self):
         self.logger_info_patcher = patch("logging.Logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
@@ -379,11 +377,14 @@ class TestGetImmunizationIdentifier(unittest.TestCase):
 
         mock_resource = create_covid_19_immunization_dict(identifier)
         self.authoriser.authorise.return_value = True
-        self.imms_repo.get_immunization_by_identifier.return_value = {
-            "resource": mock_resource,
-            "id": imms_id,
-            "version": 1,
-        }, "covid19"
+        self.imms_repo.get_immunization_by_identifier.return_value = (
+            {
+                "resource": mock_resource,
+                "id": imms_id,
+                "version": 1,
+            },
+            "covid19",
+        )
 
         # When
         service_resp = self.fhir_service.get_immunization_by_identifier(
@@ -409,10 +410,13 @@ class TestGetImmunizationIdentifier(unittest.TestCase):
         identifier = "test"
         element = "id,mEta,DDD"
         self.authoriser.authorise.return_value = False
-        self.imms_repo.get_immunization_by_identifier.return_value = {
-            "id": "foo",
-            "version": 1,
-        }, "covid19"
+        self.imms_repo.get_immunization_by_identifier.return_value = (
+            {
+                "id": "foo",
+                "version": 1,
+            },
+            "covid19",
+        )
 
         with self.assertRaises(UnauthorizedVaxError):
             # When

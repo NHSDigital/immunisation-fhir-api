@@ -1,27 +1,28 @@
-import pandas as pd
+import csv
+import uuid
 from datetime import datetime, timezone
-from vax_suppliers import TestPair, OdsVax
+
+import pandas as pd
+from clients import logger
 from constants import (
+    ACK_BUCKET,
+    RAVS_URI,
     ActionFlag,
     BusRowResult,
     DestinationType,
     Operation,
-    ACK_BUCKET,
-    RAVS_URI,
     OperationOutcome,
 )
+from errors import DynamoDBMismatchError
 from utils import (
-    poll_s3_file_pattern,
-    fetch_pk_and_operation_from_dynamodb,
-    validate_fatal_error,
-    get_file_content_from_s3,
     aws_cleanup,
     create_row,
+    fetch_pk_and_operation_from_dynamodb,
+    get_file_content_from_s3,
+    poll_s3_file_pattern,
+    validate_fatal_error,
 )
-from clients import logger
-from errors import DynamoDBMismatchError
-import uuid
-import csv
+from vax_suppliers import OdsVax, TestPair
 
 
 class TestAction:
@@ -111,14 +112,12 @@ class TestCase:
             if operation_outcome and "OPERATION_OUTCOME" in row:
                 row_OPERATION_OUTCOME = row["OPERATION_OUTCOME"].strip()
                 assert row_OPERATION_OUTCOME.startswith(operation_outcome), (
-                    f"{desc}.Row {i} expected OPERATION_OUTCOME '{operation_outcome}', "
-                    f"but got '{row_OPERATION_OUTCOME}'"
+                    f"{desc}.Row {i} expected OPERATION_OUTCOME '{operation_outcome}', but got '{row_OPERATION_OUTCOME}'"
                 )
             elif row_HEADER_RESPONSE_CODE == "Fatal Error":
                 validate_fatal_error(desc, row, i, operation_outcome)
 
     def generate_csv_file(self):
-
         self.file_name = self.get_file_name(self.vax, self.ods, self.version)
         logger.info(f'Test "{self.name}" File {self.file_name}')
         data = []

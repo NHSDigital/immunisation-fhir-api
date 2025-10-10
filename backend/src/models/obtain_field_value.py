@@ -4,8 +4,8 @@ from constants import Urls
 from models.utils.generic_utils import (
     get_contained_patient,
     get_contained_practitioner,
-    is_organization,
     get_generic_extension_value,
+    is_organization,
     patient_and_practitioner_value_and_index,
 )
 

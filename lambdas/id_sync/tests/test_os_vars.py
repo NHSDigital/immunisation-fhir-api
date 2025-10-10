@@ -1,12 +1,11 @@
-import unittest
 import os
+import unittest
 from unittest.mock import patch
 
 import os_vars
 
 
 class TestOsVars(unittest.TestCase):
-
     def setUp(self):
         os_vars._ieds_table_name = None
         os_vars._delta_table_name = None

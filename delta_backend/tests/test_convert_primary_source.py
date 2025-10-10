@@ -1,13 +1,13 @@
 import copy
 import json
 import unittest
-from utils_for_converter_tests import ValuesForTests
-from converter import Converter
+
 from common.mappings import ConversionFieldName
+from converter import Converter
+from utils_for_converter_tests import ValuesForTests
 
 
 class TestPrimarySourceFlatJson(unittest.TestCase):
-
     def setUp(self):
         self.request_json_data = copy.deepcopy(ValuesForTests.json_data)
 

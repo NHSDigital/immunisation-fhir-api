@@ -5,22 +5,22 @@ import os
 import time
 from csv import DictReader
 from json import JSONDecodeError
+from typing import Optional
 
+from audit_table import update_audit_table_status
+from clients import logger
 from constants import (
-    FileStatus,
-    FileNotProcessedReason,
-    SOURCE_BUCKET_NAME,
     ARCHIVE_DIR_NAME,
     PROCESSING_DIR_NAME,
+    SOURCE_BUCKET_NAME,
+    FileNotProcessedReason,
+    FileStatus,
 )
-from process_row import process_row
+from file_level_validation import file_is_empty, file_level_validation, move_file
 from mappings import map_target_disease
-from audit_table import update_audit_table_status
+from process_row import process_row
 from send_to_kinesis import send_to_kinesis
-from clients import logger
-from file_level_validation import file_level_validation, file_is_empty, move_file
 from utils_for_recordprocessor import get_csv_content_dict_reader
-from typing import Optional
 
 
 def process_csv_to_fhir(incoming_message_body: dict) -> int:
@@ -125,9 +125,9 @@ def process_rows(
                 logger.info("MESSAGE ID : %s", row_id)
                 # Log progress every 1000 rows and the first 10 rows after a restart
                 if total_rows_processed_count % 1000 == 0:
-                    logger.info(f"Process: {total_rows_processed_count+1}")
+                    logger.info(f"Process: {total_rows_processed_count + 1}")
                 if start_row > 0 and row_count <= start_row + 10:
-                    logger.info(f"Restarted Process (log up to first 10): {total_rows_processed_count+1}")
+                    logger.info(f"Restarted Process (log up to first 10): {total_rows_processed_count + 1}")
                 # Process the row to obtain the details needed for the message_body and ack file
                 details_from_processing = process_row(target_disease, allowed_operations, row)
                 # Create the message body for sending

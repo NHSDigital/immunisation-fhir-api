@@ -1,15 +1,13 @@
 import unittest
-from unittest.mock import patch, MagicMock
-
+from unittest.mock import MagicMock, patch
 
 with patch("common.log_decorator.logging_decorator") as mock_decorator:
     mock_decorator.return_value = lambda f: f  # Pass-through decorator
-    from id_sync import handler
     from exceptions.id_sync_exception import IdSyncException
+    from id_sync import handler
 
 
 class TestIdSyncHandler(unittest.TestCase):
-
     def setUp(self):
         """Set up all patches and test fixtures"""
         # Patch all dependencies

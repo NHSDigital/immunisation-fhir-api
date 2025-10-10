@@ -1,11 +1,10 @@
 """Generic utils for tests"""
 
 import unittest
-from datetime import datetime, date
+from datetime import date, datetime
 
 from src.models.utils.generic_utils import form_json
-
-from testing_utils.generic_utils import load_json_data, format_date_types
+from testing_utils.generic_utils import format_date_types, load_json_data
 
 
 class TestFormJson(unittest.TestCase):

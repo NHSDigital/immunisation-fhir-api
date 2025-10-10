@@ -3,21 +3,21 @@
 from unittest import TestCase
 from unittest.mock import patch
 
-from tests.utils_for_tests.values_for_tests import MockFileDetails
 from tests.utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT
 from tests.utils_for_tests.utils_for_filenameprocessor_tests import (
     MOCK_ODS_CODE_TO_SUPPLIER,
     create_mock_hget,
 )
+from tests.utils_for_tests.values_for_tests import MockFileDetails
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
+    from errors import InvalidFileKeyError
     from file_validation import (
         is_file_in_directory_root,
         is_valid_datetime,
         validate_file_key,
     )
-    from errors import InvalidFileKeyError
 
 VALID_FLU_EMIS_FILE_KEY = MockFileDetails.emis_flu.file_key
 VALID_RSV_RAVS_FILE_KEY = MockFileDetails.ravs_rsv_1.file_key

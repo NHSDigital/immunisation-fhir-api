@@ -1,8 +1,8 @@
-from unittest.mock import patch
-import update_ack_file
 import unittest
-import boto3
+from unittest.mock import patch
 
+import boto3
+import update_ack_file
 from moto import mock_aws
 
 

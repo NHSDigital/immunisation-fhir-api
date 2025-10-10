@@ -1,6 +1,6 @@
 import pprint
 import uuid
-from typing import NamedTuple, Literal, Optional
+from typing import Literal, NamedTuple, Optional
 
 from lib.env import get_service_base_path
 from utils.base_test import ImmunizationBaseTest
@@ -10,7 +10,6 @@ from utils.resource import generate_imms_resource
 
 
 class TestSearchImmunizationByIdentifier(ImmunizationBaseTest):
-
     def store_records(self, *resources):
         ids = []
         for res in resources:

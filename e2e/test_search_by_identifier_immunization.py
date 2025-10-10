@@ -1,17 +1,16 @@
 import pprint
 import uuid
 from decimal import Decimal
-from typing import NamedTuple, Literal, Optional
+from typing import Literal, NamedTuple, Optional
 
 from lib.env import get_service_base_path
 from utils.base_test import ImmunizationBaseTest
 from utils.constants import valid_nhs_number1
 from utils.mappings import VaccineTypes
-from utils.resource import generate_imms_resource, generate_filtered_imms_resource
+from utils.resource import generate_filtered_imms_resource, generate_imms_resource
 
 
 class TestSearchImmunizationByIdentifier(ImmunizationBaseTest):
-
     def store_records(self, *resources):
         ids = []
         for res in resources:
@@ -68,7 +67,6 @@ class TestSearchImmunizationByIdentifier(ImmunizationBaseTest):
         """
         for imms_api in self.imms_apis:
             with self.subTest(imms_api):
-
                 stored_imms_resource = generate_imms_resource()
                 imms_identifier_value = stored_imms_resource["identifier"][0]["value"]
                 imms_id = self.store_records(stored_imms_resource)

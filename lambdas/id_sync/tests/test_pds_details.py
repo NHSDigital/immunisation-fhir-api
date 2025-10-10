@@ -1,11 +1,11 @@
 import unittest
-from unittest.mock import patch, MagicMock
-from pds_details import pds_get_patient_details, pds_get_patient_id
+from unittest.mock import MagicMock, patch
+
 from exceptions.id_sync_exception import IdSyncException
+from pds_details import pds_get_patient_details, pds_get_patient_id
 
 
 class TestGetPdsPatientDetails(unittest.TestCase):
-
     def setUp(self):
         """Set up test fixtures and mocks"""
         self.test_patient_id = "9912003888"

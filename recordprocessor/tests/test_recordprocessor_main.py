@@ -1,48 +1,46 @@
 "Tests for main function for RecordProcessor"
 
-import unittest
 import json
+import unittest
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from json import JSONDecodeError
 from unittest.mock import patch
-from datetime import datetime, timedelta, timezone
-from moto import mock_s3, mock_kinesis, mock_firehose, mock_dynamodb
-from boto3 import client as boto3_client
 
-from utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
-    GenericSetUp,
-    GenericTearDown,
-    add_entry_to_table,
-    assert_audit_table_entry,
-)
-from utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
-    MockFileDetails,
-    FileDetails,
-    ValidMockFileContent,
-    MockFhirImmsResources,
-    MockFieldDictionaries,
-    MockLocalIds,
-    InfAckFileRows,
-    REGION_NAME,
-)
+from boto3 import client as boto3_client
+from moto import mock_dynamodb, mock_firehose, mock_kinesis, mock_s3
 from utils_for_recordprocessor_tests.mock_environment_variables import (
     MOCK_ENVIRONMENT_DICT,
     BucketNames,
     Kinesis,
 )
 from utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
+    GenericSetUp,
+    GenericTearDown,
+    add_entry_to_table,
+    assert_audit_table_entry,
     create_patch,
+)
+from utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
+    REGION_NAME,
+    FileDetails,
+    InfAckFileRows,
+    MockFhirImmsResources,
+    MockFieldDictionaries,
+    MockFileDetails,
+    MockLocalIds,
+    ValidMockFileContent,
 )
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
+    from batch_processor import main
     from constants import (
-        Diagnostics,
-        FileStatus,
-        FileNotProcessedReason,
         AUDIT_TABLE_NAME,
         AuditTableKeys,
+        Diagnostics,
+        FileNotProcessedReason,
+        FileStatus,
     )
-    from batch_processor import main
 
 s3_client = boto3_client("s3", region_name=REGION_NAME)
 kinesis_client = boto3_client("kinesis", region_name=REGION_NAME)
@@ -149,10 +147,9 @@ class TestRecordProcessor(unittest.TestCase):
 
         for test_name, index, expected_kinesis_data, expect_success in test_cases:
             with self.subTest(test_name):
-
                 kinesis_record = kinesis_records[index]
                 self.assertEqual(kinesis_record["PartitionKey"], mock_rsv_emis_file.queue_name)
-                self.assertEqual(kinesis_record["SequenceNumber"], f"{index+1}")
+                self.assertEqual(kinesis_record["SequenceNumber"], f"{index + 1}")
 
                 # Ensure that arrival times are sequential
                 approximate_arrival_timestamp = kinesis_record["ApproximateArrivalTimestamp"]
@@ -164,7 +161,7 @@ class TestRecordProcessor(unittest.TestCase):
 
                 kinesis_data = json.loads(kinesis_record["Data"].decode("utf-8"), parse_float=Decimal)
                 expected_kinesis_data = {
-                    "row_id": f"{mock_rsv_emis_file.message_id}^{index+1}",
+                    "row_id": f"{mock_rsv_emis_file.message_id}^{index + 1}",
                     "file_key": mock_rsv_emis_file.file_key,
                     "supplier": mock_rsv_emis_file.supplier,
                     "vax_type": mock_rsv_emis_file.vaccine_type,
@@ -493,7 +490,6 @@ class TestRecordProcessor(unittest.TestCase):
             ),
         ]
         for description, file_content in test_cases:
-
             with self.subTest(description=description):
                 self.mock_batch_processor_logger.reset_mock()
                 test_file = mock_rsv_emis_file

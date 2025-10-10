@@ -3,10 +3,9 @@
 import json
 import os
 import unittest
-from datetime import datetime, date
+from datetime import date, datetime
 from decimal import Decimal
-from typing import Literal, Any
-from typing import Union, List
+from typing import Any, List, Literal, Union
 
 from jsonpath_ng.ext import parse
 

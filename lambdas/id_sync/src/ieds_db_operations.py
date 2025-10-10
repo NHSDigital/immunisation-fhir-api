@@ -1,10 +1,11 @@
-from boto3.dynamodb.conditions import Key
-from os_vars import get_ieds_table_name
-from common.aws_dynamodb import get_dynamodb_table
-from common.clients import logger, dynamodb_client
 import json
-from utils import make_status
+
+from boto3.dynamodb.conditions import Key
+from common.aws_dynamodb import get_dynamodb_table
+from common.clients import dynamodb_client, logger
 from exceptions.id_sync_exception import IdSyncException
+from os_vars import get_ieds_table_name
+from utils import make_status
 
 ieds_table = None
 BATCH_SIZE = 25  # DynamoDB TransactWriteItems max batch size

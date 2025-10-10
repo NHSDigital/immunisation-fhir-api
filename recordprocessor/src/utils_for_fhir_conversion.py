@@ -3,6 +3,7 @@
 import re
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
+
 from constants import Urls
 
 

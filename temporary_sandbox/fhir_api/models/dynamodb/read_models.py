@@ -1,18 +1,18 @@
 """Read Models for Dynamodb"""
 
 from typing import (
-    Union,
     Literal,
     Optional,
-)
-from pydantic import (
-    BaseModel,
-    Field,
+    Union,
 )
 
 from fhir_api.models.fhir_r4.fhir_datatype_fields import FhirR4Fields
 from fhir_api.models.fhir_r4.immunization import Immunization
 from fhir_api.models.fhir_r4.patient import Patient
+from pydantic import (
+    BaseModel,
+    Field,
+)
 
 
 class Resource(BaseModel):

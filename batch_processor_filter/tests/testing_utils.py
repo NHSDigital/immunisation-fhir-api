@@ -3,7 +3,6 @@ import json
 from aws_lambda_typing.events.sqs import SQSMessage
 from batch_file_created_event import BatchFileCreatedEvent
 
-
 MOCK_ENVIRONMENT_DICT = {
     "AUDIT_TABLE_NAME": "immunisation-batch-internal-dev-audit-table",
     "QUEUE_URL": "https://sqs.eu-west-2.amazonaws.com/123456789012/imms-batch-metadata-queue.fifo",
@@ -32,7 +31,7 @@ def add_entry_to_mock_table(
     """Add an entry to the audit table"""
     audit_table_entry = {
         "message_id": {"S": batch_file_created_event.get("message_id")},
-        "queue_name": {"S": f'{batch_file_created_event["supplier"]}_{batch_file_created_event["vaccine_type"]}'},
+        "queue_name": {"S": f"{batch_file_created_event['supplier']}_{batch_file_created_event['vaccine_type']}"},
         "filename": {"S": batch_file_created_event.get("filename")},
         "status": {"S": status},
     }

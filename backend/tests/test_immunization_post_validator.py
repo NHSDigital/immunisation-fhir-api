@@ -5,15 +5,16 @@ from copy import deepcopy
 from unittest.mock import patch
 
 from jsonpath_ng.ext import parse
-from pydantic import ValidationError
-
 from models.fhir_immunization import ImmunizationValidator
+from pydantic import ValidationError
+from testing_utils.generic_utils import (
+    load_json_data,
+    update_contained_resource_field,
+)
 from testing_utils.generic_utils import (
     # these have an underscore to avoid pytest collecting them as tests
     test_invalid_values_rejected as _test_invalid_values_rejected,
-    load_json_data,
 )
-from testing_utils.generic_utils import update_contained_resource_field
 from testing_utils.mandation_test_utils import MandationTests
 from testing_utils.values_for_tests import NameInstances
 
@@ -570,9 +571,9 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
         self.mock_redis_client.hget.side_effect = None
         self.mock_redis_client.hget.return_value = "COVID19"
         invalid_json_data = deepcopy(self.completed_json_data["COVID19"])
-        invalid_json_data["extension"][0]["valueCodeableConcept"]["coding"][0][
-            "system"
-        ] = "https://xyz/Extension-UKCore-VaccinationProcedure"
+        invalid_json_data["extension"][0]["valueCodeableConcept"]["coding"][0]["system"] = (
+            "https://xyz/Extension-UKCore-VaccinationProcedure"
+        )
 
         with self.assertRaises(Exception) as error:
             self.validator.validate(invalid_json_data)

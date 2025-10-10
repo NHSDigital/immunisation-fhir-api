@@ -1,36 +1,34 @@
+import copy
 import json
 from json import JSONDecodeError
+from unittest import TestCase
+from unittest.mock import ANY, Mock, call, patch
 
 import boto3
-import copy
-from unittest import TestCase
-from unittest.mock import patch, Mock, ANY, call
-
 import botocore
-from moto import mock_aws
-
 from batch_file_created_event import BatchFileCreatedEvent
 from exceptions import (
-    InvalidBatchSizeError,
     EventAlreadyProcessingForSupplierAndVaccTypeError,
+    InvalidBatchSizeError,
 )
+from moto import mock_aws
 from testing_utils import (
     MOCK_ENVIRONMENT_DICT,
-    make_sqs_record,
     add_entry_to_mock_table,
     get_audit_entry_status_by_id,
+    make_sqs_record,
 )
 
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
-    from lambda_handler import lambda_handler
     from constants import (
+        AUDIT_TABLE_FILENAME_GSI,
         AUDIT_TABLE_NAME,
+        AUDIT_TABLE_QUEUE_NAME_GSI,
         REGION_NAME,
         AuditTableKeys,
-        AUDIT_TABLE_FILENAME_GSI,
-        AUDIT_TABLE_QUEUE_NAME_GSI,
         FileStatus,
     )
+    from lambda_handler import lambda_handler
 
 sqs_client = boto3.client("sqs", region_name=REGION_NAME)
 dynamodb_client = boto3.client("dynamodb", region_name=REGION_NAME)
@@ -123,7 +121,7 @@ class TestLambdaHandler(TestCase):
 
         self.assertEqual(
             str(exc.exception),
-            "An error occurred (NoSuchKey) when calling the GetObject " "operation: The specified key does not exist.",
+            "An error occurred (NoSuchKey) when calling the GetObject operation: The specified key does not exist.",
         )
         archived_object = s3_client.get_object(Bucket=self.mock_source_bucket, Key=f"archive/{filename}")
         self.assertIsNotNone(archived_object)
@@ -287,7 +285,7 @@ class TestLambdaHandler(TestCase):
         )
 
         expected_success_log_message = (
-            f"File forwarded for processing by ECS. Filename: " f"{self.default_batch_file_event['filename']}"
+            f"File forwarded for processing by ECS. Filename: {self.default_batch_file_event['filename']}"
         )
         self.mock_logger.info.assert_has_calls(
             [
