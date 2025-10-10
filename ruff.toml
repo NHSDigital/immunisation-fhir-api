@@ -1,5 +1,5 @@
-src = ["."]
 line-length = 121
+target-version = "py311"
 
 [lint]
 # TODO - consider enabling more rulesets, e.g. B, C90, N, RET, S, UP
