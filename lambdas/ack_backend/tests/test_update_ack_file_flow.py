@@ -34,7 +34,7 @@ class TestUpdateAckFileFlow(unittest.TestCase):
         self.logger_patcher = patch("update_ack_file.logger")
         self.mock_logger = self.logger_patcher.start()
 
-        self.change_audit_status_patcher = patch('update_ack_file.change_audit_table_status_to_processed')
+        self.change_audit_status_patcher = patch("update_ack_file.change_audit_table_status_to_processed")
         self.mock_change_audit_status = self.change_audit_status_patcher.start()
 
     def tearDown(self):
@@ -42,7 +42,7 @@ class TestUpdateAckFileFlow(unittest.TestCase):
         self.change_audit_status_patcher.stop()
 
     def test_audit_table_updated_correctly_when_ack_process_complete(self):
-        """ VED-167 - Test that the audit table has been updated correctly"""
+        """VED-167 - Test that the audit table has been updated correctly"""
         # Setup
         message_id = "msg-audit-table"
         mock_created_at_string = "created_at_formatted_string"
@@ -53,8 +53,7 @@ class TestUpdateAckFileFlow(unittest.TestCase):
             Body="dummy content",
         )
         self.s3_client.put_object(
-            Bucket=self.ack_bucket_name,
-            Key=f"TempAck/audit_table_test_BusAck_{mock_created_at_string}.csv"
+            Bucket=self.ack_bucket_name, Key=f"TempAck/audit_table_test_BusAck_{mock_created_at_string}.csv"
         )
 
         # Act
@@ -64,7 +63,7 @@ class TestUpdateAckFileFlow(unittest.TestCase):
             vaccine_type="vaccine-type",
             created_at_formatted_string=mock_created_at_string,
             file_key=file_key,
-            total_ack_rows_processed=3
+            total_ack_rows_processed=3,
         )
 
         # Assert: Only check audit table update

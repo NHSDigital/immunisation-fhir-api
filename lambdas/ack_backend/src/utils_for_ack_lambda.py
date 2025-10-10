@@ -1,4 +1,5 @@
 """Utils for ack lambda"""
+
 from audit_table import get_record_count_by_message_id
 
 _BATCH_EVENT_ID_TO_RECORD_COUNT_MAP: dict[str, int] = {}

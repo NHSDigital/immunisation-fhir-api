@@ -41,9 +41,7 @@ class GenericSetUp:
             dynamodb_client.create_table(
                 TableName=AUDIT_TABLE_NAME,
                 KeySchema=[{"AttributeName": AuditTableKeys.MESSAGE_ID, "KeyType": "HASH"}],
-                AttributeDefinitions=[
-                    {"AttributeName": AuditTableKeys.MESSAGE_ID, "AttributeType": "S"}
-                ],
+                AttributeDefinitions=[{"AttributeName": AuditTableKeys.MESSAGE_ID, "AttributeType": "S"}],
                 ProvisionedThroughput={"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
             )
 

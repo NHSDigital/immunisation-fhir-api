@@ -52,8 +52,9 @@ def lambda_handler(event, _):
     update_ack_file(file_key, created_at_formatted_string, ack_data_rows)
 
     if is_ack_processing_complete(message_id, total_ack_rows_processed):
-        complete_batch_file_process(message_id, supplier, vaccine_type, created_at_formatted_string, file_key,
-                                    total_ack_rows_processed)
+        complete_batch_file_process(
+            message_id, supplier, vaccine_type, created_at_formatted_string, file_key, total_ack_rows_processed
+        )
 
     return {
         "statusCode": 200,

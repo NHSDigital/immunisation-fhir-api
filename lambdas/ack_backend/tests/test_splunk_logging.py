@@ -379,17 +379,18 @@ class TestLoggingDecorators(unittest.TestCase):
             patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
             patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
             patch("ack_processor.is_ack_processing_complete", return_value=False),
-            patch("update_ack_file.change_audit_table_status_to_processed")
-                as mock_change_audit_table_status_to_processed,  # noqa: E999
+            patch(
+                "update_ack_file.change_audit_table_status_to_processed"
+            ) as mock_change_audit_table_status_to_processed,  # noqa: E999
         ):  # noqa: E999
             result = lambda_handler(generate_event(messages), context={})
 
         self.assertEqual(result, EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS)
 
         expected_secondlast_logger_info_data = {
-                **ValidValues.mock_message_expected_log_value,
-                "message_id": "test^98",
-            }
+            **ValidValues.mock_message_expected_log_value,
+            "message_id": "test^98",
+        }
         expected_last_logger_info_data = self.expected_lambda_handler_logs(success=True, number_of_rows=98)
 
         all_logger_info_call_args = self.extract_all_call_args_for_logger_info(mock_logger)
@@ -419,22 +420,23 @@ class TestLoggingDecorators(unittest.TestCase):
             patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
             patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
             patch("ack_processor.is_ack_processing_complete", return_value=True),
-            patch("update_ack_file.change_audit_table_status_to_processed")
-                as mock_change_audit_table_status_to_processed,  # noqa: E999
+            patch(
+                "update_ack_file.change_audit_table_status_to_processed"
+            ) as mock_change_audit_table_status_to_processed,  # noqa: E999
         ):  # noqa: E999
             result = lambda_handler(generate_event(messages), context={})
 
         self.assertEqual(result, EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS)
 
         expected_thirdlast_logger_info_data = {
-                **ValidValues.mock_message_expected_log_value,
-                "message_id": "test^99",
-            }
+            **ValidValues.mock_message_expected_log_value,
+            "message_id": "test^99",
+        }
         expected_secondlast_logger_info_data = {
-                **ValidValues.upload_ack_file_expected_log,
-                "message_id": "test",
-                "time_taken": "1.0s"
-            }
+            **ValidValues.upload_ack_file_expected_log,
+            "message_id": "test",
+            "time_taken": "1.0s",
+        }
         expected_last_logger_info_data = self.expected_lambda_handler_logs(
             success=True, number_of_rows=99, ingestion_complete=True
         )

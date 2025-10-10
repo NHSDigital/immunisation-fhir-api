@@ -21,7 +21,7 @@ from utils.utils_for_ack_backend_tests import (
     generate_expected_ack_file_row,
     generate_sample_existing_ack_content,
     generate_expected_ack_content,
-    MOCK_MESSAGE_DETAILS
+    MOCK_MESSAGE_DETAILS,
 )
 
 from unittest.mock import patch

@@ -34,10 +34,7 @@ class TestAuditTable(unittest.TestCase):
         test_message_id = "1234"
 
         self.mock_dynamodb_client.get_item.return_value = {
-            "Item": {
-                "message_id": {"S": test_message_id},
-                "record_count": {"N": "1000"}
-            }
+            "Item": {"message_id": {"S": test_message_id}, "record_count": {"N": "1000"}}
         }
 
         self.assertEqual(audit_table.get_record_count_by_message_id(test_message_id), 1000)
@@ -46,10 +43,6 @@ class TestAuditTable(unittest.TestCase):
         """Test that if the record count has not yet been set on the audit item then None is returned"""
         test_message_id = "1234"
 
-        self.mock_dynamodb_client.get_item.return_value = {
-            "Item": {
-                "message_id": {"S": test_message_id}
-            }
-        }
+        self.mock_dynamodb_client.get_item.return_value = {"Item": {"message_id": {"S": test_message_id}}}
 
         self.assertIsNone(audit_table.get_record_count_by_message_id(test_message_id))

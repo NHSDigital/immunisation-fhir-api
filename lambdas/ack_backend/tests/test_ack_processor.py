@@ -189,53 +189,22 @@ class TestAckProcessor(unittest.TestCase):
             {
                 "description": "Multiple messages: all with diagnostics (failure messages)",
                 "messages": [
-                    {
-                        "row_id": "row^1",
-                        "diagnostics": DiagnosticsDictionaries.UNIQUE_ID_MISSING
-                    },
-                    {
-                        "row_id": "row^2",
-                        "diagnostics": DiagnosticsDictionaries.NO_PERMISSIONS
-                    },
-                    {
-                        "row_id": "row^3",
-                        "diagnostics": DiagnosticsDictionaries.RESOURCE_NOT_FOUND_ERROR
-                    },
+                    {"row_id": "row^1", "diagnostics": DiagnosticsDictionaries.UNIQUE_ID_MISSING},
+                    {"row_id": "row^2", "diagnostics": DiagnosticsDictionaries.NO_PERMISSIONS},
+                    {"row_id": "row^3", "diagnostics": DiagnosticsDictionaries.RESOURCE_NOT_FOUND_ERROR},
                 ],
             },
             {
                 "description": "Multiple messages: mixture of success and failure messages",
                 "messages": [
-                    {
-                        "row_id": "row^1",
-                        "imms_id": "TEST_IMMS_ID"
-                    },
-                    {
-                        "row_id": "row^2",
-                        "diagnostics": DiagnosticsDictionaries.UNIQUE_ID_MISSING
-                    },
-                    {
-                        "row_id": "row^3",
-                        "diagnostics": DiagnosticsDictionaries.CUSTOM_VALIDATION_ERROR
-                    },
-                    {
-                        "row_id": "row^4"
-                    },
-                    {
-                        "row_id": "row^5",
-                        "diagnostics": DiagnosticsDictionaries.CUSTOM_VALIDATION_ERROR
-                    },
-                    {
-                        "row_id": "row^6",
-                        "diagnostics": DiagnosticsDictionaries.CUSTOM_VALIDATION_ERROR
-                    },
-                    {
-                        "row_id": "row^7"
-                    },
-                    {
-                        "row_id": "row^8",
-                        "diagnostics": DiagnosticsDictionaries.IDENTIFIER_DUPLICATION_ERROR
-                    },
+                    {"row_id": "row^1", "imms_id": "TEST_IMMS_ID"},
+                    {"row_id": "row^2", "diagnostics": DiagnosticsDictionaries.UNIQUE_ID_MISSING},
+                    {"row_id": "row^3", "diagnostics": DiagnosticsDictionaries.CUSTOM_VALIDATION_ERROR},
+                    {"row_id": "row^4"},
+                    {"row_id": "row^5", "diagnostics": DiagnosticsDictionaries.CUSTOM_VALIDATION_ERROR},
+                    {"row_id": "row^6", "diagnostics": DiagnosticsDictionaries.CUSTOM_VALIDATION_ERROR},
+                    {"row_id": "row^7"},
+                    {"row_id": "row^8", "diagnostics": DiagnosticsDictionaries.IDENTIFIER_DUPLICATION_ERROR},
                 ],
             },
             {
@@ -244,12 +213,7 @@ class TestAckProcessor(unittest.TestCase):
             },
             {
                 "description": "Single row: malformed diagnostics info from forwarder",
-                "messages": [
-                    {
-                        "row_id": "row^1",
-                        "diagnostics": "SHOULD BE A DICTIONARY, NOT A STRING"
-                    }
-                ],
+                "messages": [{"row_id": "row^1", "diagnostics": "SHOULD BE A DICTIONARY, NOT A STRING"}],
             },
         ]
 
@@ -278,39 +242,34 @@ class TestAckProcessor(unittest.TestCase):
         # Original source file had 100 records
         add_audit_entry_to_table(self.dynamodb_client, mock_batch_message_id, record_count=100)
         array_of_success_messages = [
-            {**BASE_SUCCESS_MESSAGE, "row_id": f"{mock_batch_message_id}^{i}", "imms_id": f"imms_{i}",
-             "local_id": f"local^{i}"}
+            {
+                **BASE_SUCCESS_MESSAGE,
+                "row_id": f"{mock_batch_message_id}^{i}",
+                "imms_id": f"imms_{i}",
+                "local_id": f"local^{i}",
+            }
             for i in range(1, 4)
         ]
-        test_event = {
-            "Records": [
-                {"body": json.dumps(array_of_success_messages)}
-            ]
-        }
+        test_event = {"Records": [{"body": json.dumps(array_of_success_messages)}]}
 
         response = lambda_handler(event=test_event, context={})
 
         self.assertEqual(response, EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS)
         validate_ack_file_content(
             self.s3_client,
-            [
-                *array_of_success_messages
-            ],
+            [*array_of_success_messages],
             existing_file_content=ValidValues.ack_headers,
         )
         self.assert_ack_and_source_file_locations_correct(
             MOCK_MESSAGE_DETAILS.file_key,
             MOCK_MESSAGE_DETAILS.temp_ack_file_key,
             MOCK_MESSAGE_DETAILS.archive_ack_file_key,
-            is_complete=False
+            is_complete=False,
         )
         self.assert_audit_entry_status_equals(mock_batch_message_id, "Preprocessed")
 
     @patch("utils_for_ack_lambda.get_record_count_by_message_id", return_value=500)
-    def test_lambda_handler_uses_message_id_to_record_count_cache_to_reduce_ddb_calls(
-        self,
-        mock_get_record_count: Mock
-    ):
+    def test_lambda_handler_uses_message_id_to_record_count_cache_to_reduce_ddb_calls(self, mock_get_record_count: Mock):
         """The DynamoDB Audit table is used to store the total record count for each source file. To reduce calls each
         time - this test checks that we cache the value as this lambda is called many times for large files"""
         mock_batch_message_id = "622cdeea-461e-4a83-acb5-7871d47ddbcd"
@@ -318,20 +277,14 @@ class TestAckProcessor(unittest.TestCase):
         # Original source file had 500 records
         add_audit_entry_to_table(self.dynamodb_client, mock_batch_message_id, record_count=500)
 
-        message_one = [{**BASE_SUCCESS_MESSAGE, "row_id": f"{mock_batch_message_id}^1", "imms_id": "imms_1",
-                        "local_id": "local^1"}]
-        message_two = [{**BASE_SUCCESS_MESSAGE, "row_id": f"{mock_batch_message_id}^2", "imms_id": "imms_2",
-                        "local_id": "local^2"}]
-        test_event_one = {
-            "Records": [
-                {"body": json.dumps(message_one)}
-            ]
-        }
-        test_event_two = {
-            "Records": [
-                {"body": json.dumps(message_two)}
-            ]
-        }
+        message_one = [
+            {**BASE_SUCCESS_MESSAGE, "row_id": f"{mock_batch_message_id}^1", "imms_id": "imms_1", "local_id": "local^1"}
+        ]
+        message_two = [
+            {**BASE_SUCCESS_MESSAGE, "row_id": f"{mock_batch_message_id}^2", "imms_id": "imms_2", "local_id": "local^2"}
+        ]
+        test_event_one = {"Records": [{"body": json.dumps(message_one)}]}
+        test_event_two = {"Records": [{"body": json.dumps(message_two)}]}
 
         response = lambda_handler(event=test_event_one, context={})
         self.assertEqual(response, EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS)
@@ -342,16 +295,14 @@ class TestAckProcessor(unittest.TestCase):
         mock_get_record_count.assert_called_once_with(mock_batch_message_id)
         validate_ack_file_content(
             self.s3_client,
-            [
-                *message_one, *message_two
-            ],
+            [*message_one, *message_two],
             existing_file_content=ValidValues.ack_headers,
         )
         self.assert_ack_and_source_file_locations_correct(
             MOCK_MESSAGE_DETAILS.file_key,
             MOCK_MESSAGE_DETAILS.temp_ack_file_key,
             MOCK_MESSAGE_DETAILS.archive_ack_file_key,
-            is_complete=False
+            is_complete=False,
         )
         self.assertEqual(_BATCH_EVENT_ID_TO_RECORD_COUNT_MAP[mock_batch_message_id], 500)
         self.assert_audit_entry_status_equals(mock_batch_message_id, "Preprocessed")
@@ -379,32 +330,27 @@ class TestAckProcessor(unittest.TestCase):
         )
 
         array_of_success_messages = [
-            {**BASE_SUCCESS_MESSAGE, "row_id": f"{mock_batch_message_id}^{i}", "imms_id": f"imms_{i}",
-             "local_id": f"local^{i}"}
+            {
+                **BASE_SUCCESS_MESSAGE,
+                "row_id": f"{mock_batch_message_id}^{i}",
+                "imms_id": f"imms_{i}",
+                "local_id": f"local^{i}",
+            }
             for i in range(50, 101)
         ]
-        test_event = {
-            "Records": [
-                {"body": json.dumps(array_of_success_messages)}
-            ]
-        }
+        test_event = {"Records": [{"body": json.dumps(array_of_success_messages)}]}
 
         response = lambda_handler(event=test_event, context={})
 
         self.assertEqual(response, EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS)
         validate_ack_file_content(
-            self.s3_client,
-            [
-                *array_of_success_messages
-            ],
-            existing_file_content=existing_ack_content,
-            is_complete=True
+            self.s3_client, [*array_of_success_messages], existing_file_content=existing_ack_content, is_complete=True
         )
         self.assert_ack_and_source_file_locations_correct(
             MOCK_MESSAGE_DETAILS.file_key,
             MOCK_MESSAGE_DETAILS.temp_ack_file_key,
             MOCK_MESSAGE_DETAILS.archive_ack_file_key,
-            is_complete=True
+            is_complete=True,
         )
         self.assert_audit_entry_status_equals(mock_batch_message_id, "Processed")
 

@@ -178,20 +178,13 @@ def deserialize_dynamodb_types(dynamodb_table_entry_with_types):
     return {k: TypeDeserializer().deserialize(v) for k, v in dynamodb_table_entry_with_types.items()}
 
 
-def assert_audit_table_entry(
-    file_details: FileDetails,
-    expected_status: str,
-    row_count: Optional[int] = None
-) -> None:
+def assert_audit_table_entry(file_details: FileDetails, expected_status: str, row_count: Optional[int] = None) -> None:
     """Assert that the file details are in the audit table"""
     table_entry = dynamodb_client.get_item(
         TableName=AUDIT_TABLE_NAME,
         Key={AuditTableKeys.MESSAGE_ID: {"S": file_details.message_id}},
     ).get("Item")
-    expected_result = {
-        **file_details.audit_table_entry,
-        "status": {"S": expected_status}
-    }
+    expected_result = {**file_details.audit_table_entry, "status": {"S": expected_status}}
 
     if row_count is not None:
         expected_result["record_count"] = {"N": str(row_count)}
