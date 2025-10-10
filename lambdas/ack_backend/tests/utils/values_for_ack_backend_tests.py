@@ -263,7 +263,7 @@ class InvalidValues:
         "supplier": "unknown",
         "file_key": "file_key_missing",
         "vaccine_type": "unknown",
-        "message_id": "unknown",
+        "message_id": "test^1",
         "operation_requested": "unknown",
         "time_taken": "1000.0ms",
         "local_id": "unknown",

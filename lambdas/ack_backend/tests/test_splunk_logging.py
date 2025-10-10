@@ -162,7 +162,7 @@ class TestLoggingDecorators(unittest.TestCase):
             patch("common.log_decorator.logger") as mock_logger,  # noqa: E999
         ):  # noqa: E999
             with self.assertRaises(AttributeError):
-                lambda_handler(event={"Records": [{"body": json.dumps([{"": "456"}])}]}, context={})
+                lambda_handler(event={"Records": [{"body": json.dumps([{"": "456", "row_id": "test^1"}])}]}, context={})
 
             expected_first_logger_info_data = {**InvalidValues.logging_with_no_values}
 
@@ -170,7 +170,7 @@ class TestLoggingDecorators(unittest.TestCase):
                 success=False,
                 number_of_rows=1,
                 ingestion_complete=False,
-                diagnostics="list index out of range",
+                diagnostics="'NoneType' object has no attribute 'replace'",
             )
 
             first_logger_info_call_args = json.loads(self.extract_all_call_args_for_logger_info(mock_logger)[0])
