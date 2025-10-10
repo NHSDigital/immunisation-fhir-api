@@ -1,3 +1,6 @@
+lint-fix:
+	poetry run ruff check --fix ..
+
 lint:
 	poetry run ruff check ..
 
