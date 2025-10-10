@@ -1,7 +1,9 @@
 SHELL=/usr/bin/env bash -euo pipefail
 
 PYTHON_PROJECT_DIRS_WITH_UNIT_TESTS = backend batch_processor_filter delta_backend filenameprocessor mesh_processor recordprocessor lambdas/ack_backend lambdas/redis_sync lambdas/id_sync lambdas/mns_subscription lambdas/shared
-PYTHON_PROJECT_DIRS = tests/e2e tests/e2e_batch $(PYTHON_PROJECT_DIRS_WITH_UNIT_TESTS)
+PYTHON_PROJECT_DIRS = tests/e2e tests/e2e_batch quality_checks $(PYTHON_PROJECT_DIRS_WITH_UNIT_TESTS)
+
+.PHONY: install-python install-node install lint format format-check clean publish build-proxy release initialise-all-python-venvs update-all-python-dependencies run-all-python-unit-tests build-all-docker-images
 
 #Installs dependencies using poetry.
 install-python:
@@ -12,17 +14,18 @@ install-python:
 install-node:
 	npm install --legacy-peer-deps
 
-#Configures Git Hooks, which are scripts that run given a specified event.
-.git/hooks/pre-commit:
-	cp utilities/scripts/pre-commit .git/hooks/pre-commit
-
 #Condensed Target to run all targets above.
-install: install-node install-python .git/hooks/pre-commit
+install: install-node install-python
 
 #Run the npm linting script (specified in package.json). Used to check the syntax and formatting of files.
 lint:
 	npm run lint
-	find . -name '*.py' -not -path '**/.venv/*' -not -path '**/.terraform/*'| xargs poetry run flake8
+
+format:
+	npm run format
+
+format-check:
+	npm run format-check
 
 #Removes build/ + dist/ directories
 clean:
@@ -44,7 +47,6 @@ build-proxy:
 # VED-811: remove everything except for proxy related files as we move to Github Actions for backend deployment
 _dist_include="pytest.ini poetry.lock poetry.toml pyproject.toml Makefile build/. utilities/specification utilities/sandbox terraform utilities/scripts"
 
-
 #Create /dist/ sub-directory and copy files into directory
 #Ensure full dir structure is preserved for Lambdas
 release: clean publish build-proxy
@@ -54,43 +56,6 @@ release: clean publish build-proxy
 	cp ecs-proxies-deploy.yml dist/ecs-deploy-sandbox.yml
 	cp ecs-proxies-deploy.yml dist/ecs-deploy-internal-qa-sandbox.yml
 	cp ecs-proxies-deploy.yml dist/ecs-deploy-internal-dev-sandbox.yml
-
-#################
-# Test commands #
-#################
-
-TEST_CMD := @APIGEE_ACCESS_TOKEN=$(APIGEE_ACCESS_TOKEN) \
-		poetry run pytest -v \
-		--color=yes \
-		--api-name=immunisation-fhir-api \
-		--proxy-name=$(PROXY_NAME) \
-		-s
-
-PROD_TEST_CMD := $(TEST_CMD) \
-		--apigee-app-id=$(APIGEE_APP_ID) \
-		--status-endpoint-api-key=$(STATUS_ENDPOINT_API_KEY)
-
-#Command to run end-to-end smoketests post-deployment to verify the environment is working
-smoketest:
-	$(TEST_CMD) \
-	--junitxml=smoketest-report.xml \
-	-m smoketest
-
-test:
-	$(TEST_CMD) \
-	--junitxml=test-report.xml \
-
-smoketest-prod:
-	$(PROD_TEST_CMD) \
-	--junitxml=smoketest-report.xml \
-	-m smoketest
-
-test-prod:
-	$(PROD_CMD) \
-	--junitxml=test-report.xml \
-
-setup-python-envs:
-	utilities/scripts/setup-python-envs.sh
 
 initialise-all-python-venvs:
 	for dir in $(PYTHON_PROJECT_DIRS); do ( \

@@ -7,7 +7,7 @@ resource "aws_chatbot_slack_channel_configuration" "batch_processor_errors" {
 }
 
 resource "aws_iam_role" "batch_processor_errors_chatbot" {
-  name               = "${var.environment}-batch-processor-errors-chatbot-channel-role"
+  name = "${var.environment}-batch-processor-errors-chatbot-channel-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [

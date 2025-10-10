@@ -10,7 +10,7 @@ MOCK_SUPPLIER_ONE_RSV_EVENT_ONE = {
     "supplier": "supplier_one",
     "vax_type": "RSV",
     "local_id": "local-1",
-    "operation_requested": "CREATE"
+    "operation_requested": "CREATE",
 }
 
 MOCK_SUPPLIER_ONE_RSV_EVENT_TWO = {
@@ -20,7 +20,7 @@ MOCK_SUPPLIER_ONE_RSV_EVENT_TWO = {
     "supplier": "supplier_one",
     "vax_type": "RSV",
     "local_id": "local-2",
-    "operation_requested": "UPDATE"
+    "operation_requested": "UPDATE",
 }
 
 MOCK_SUPPLIER_TWO_COVID_EVENT_ONE = {
@@ -30,7 +30,7 @@ MOCK_SUPPLIER_TWO_COVID_EVENT_ONE = {
     "supplier": "supplier_two",
     "vax_type": "COVID-19",
     "local_id": "local-1",
-    "operation_requested": "CREATE"
+    "operation_requested": "CREATE",
 }
 
 
@@ -56,10 +56,10 @@ class TestBatchFilenameToEventsMapper(unittest.TestCase):
         result = self.batch_filename_to_events_mapper.get_map()
 
         self.assertIn(self.expected_key_supplier_one, result)
-        self.assertEqual(result[self.expected_key_supplier_one], [
-            MOCK_SUPPLIER_ONE_RSV_EVENT_ONE,
-            MOCK_SUPPLIER_ONE_RSV_EVENT_TWO
-        ])
+        self.assertEqual(
+            result[self.expected_key_supplier_one],
+            [MOCK_SUPPLIER_ONE_RSV_EVENT_ONE, MOCK_SUPPLIER_ONE_RSV_EVENT_TWO],
+        )
 
     def test_mapper_handles_events_from_multiple_files(self):
         self.batch_filename_to_events_mapper.add_event(MOCK_SUPPLIER_ONE_RSV_EVENT_ONE)
@@ -70,10 +70,10 @@ class TestBatchFilenameToEventsMapper(unittest.TestCase):
 
         self.assertEqual(len(result.keys()), 2)
         self.assertIn(self.expected_key_supplier_one, result)
-        self.assertEqual(result[self.expected_key_supplier_one], [
-            MOCK_SUPPLIER_ONE_RSV_EVENT_ONE,
-            MOCK_SUPPLIER_ONE_RSV_EVENT_TWO
-        ])
+        self.assertEqual(
+            result[self.expected_key_supplier_one],
+            [MOCK_SUPPLIER_ONE_RSV_EVENT_ONE, MOCK_SUPPLIER_ONE_RSV_EVENT_TWO],
+        )
         self.assertIn(self.expected_key_supplier_two, result)
         self.assertEqual(result[self.expected_key_supplier_two], [MOCK_SUPPLIER_TWO_COVID_EVENT_ONE])
 

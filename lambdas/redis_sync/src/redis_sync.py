@@ -4,10 +4,11 @@ from common.clients import STREAM_NAME, logger
 from common.log_decorator import logging_decorator
 from common.redis_client import get_redis_client
 from common.s3_event import S3Event
-'''
-    Event Processor.
+
+"""
+    Event Processor
     The Business Logic for the Redis Sync Lambda Function.
-    This module processes S3 events and iterates through each record to process them individually.'''
+    This module processes S3 events and iterates through each record to process them individually."""
 
 
 def _process_all_records(s3_records: list) -> dict:
@@ -21,12 +22,18 @@ def _process_all_records(s3_records: list) -> dict:
             error_count += 1
     if error_count > 0:
         logger.error("Processed %d records with %d errors", record_count, error_count)
-        return {"status": "error", "message": f"Processed {record_count} records with {error_count} errors",
-                "file_keys": file_keys}
+        return {
+            "status": "error",
+            "message": f"Processed {record_count} records with {error_count} errors",
+            "file_keys": file_keys,
+        }
     else:
         logger.info("Successfully processed all %d records", record_count)
-        return {"status": "success", "message": f"Successfully processed {record_count} records",
-                "file_keys": file_keys}
+        return {
+            "status": "success",
+            "message": f"Successfully processed {record_count} records",
+            "file_keys": file_keys,
+        }
 
 
 @logging_decorator(prefix="redis_sync", stream_name=STREAM_NAME)
@@ -38,7 +45,7 @@ def handler(event, _):
         if "read" in event:
             return read_event(get_redis_client(), event, logger)
         elif "Records" in event:
-            logger.info("Processing S3 event with %d records", len(event.get('Records', [])))
+            logger.info("Processing S3 event with %d records", len(event.get("Records", [])))
             s3_records = S3Event(event).get_s3_records()
             if not s3_records:
                 logger.info(no_records)

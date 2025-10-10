@@ -50,8 +50,7 @@ def ieds_update_patient_id(old_id: str, new_id: str, items_to_update: list | Non
         all_batches_successful, total_batches = execute_transaction_in_batches(transact_items)
 
         # Consolidated response handling
-        logger.info(
-            f"All batches complete. Total batches: {total_batches}, All successful: {all_batches_successful}")
+        logger.info(f"All batches complete. Total batches: {total_batches}, All successful: {all_batches_successful}")
 
         if all_batches_successful:
             return make_status(
@@ -59,7 +58,11 @@ def ieds_update_patient_id(old_id: str, new_id: str, items_to_update: list | Non
                 old_id,
             )
         else:
-            return make_status(f"Failed to update some batches for patient ID: {old_id}", old_id, "error")
+            return make_status(
+                f"Failed to update some batches for patient ID: {old_id}",
+                old_id,
+                "error",
+            )
 
     except Exception as e:
         logger.exception("Error updating patient ID")
@@ -67,7 +70,7 @@ def ieds_update_patient_id(old_id: str, new_id: str, items_to_update: list | Non
         raise IdSyncException(
             message=f"Error updating patient Id from :{old_id} to {new_id}",
             nhs_numbers=[old_id, new_id],
-            exception=e
+            exception=e,
         )
 
 
@@ -102,7 +105,7 @@ def paginate_items_for_patient_pk(patient_pk: str) -> list:
     while True:
         query_args = {
             "IndexName": "PatientGSI",
-            "KeyConditionExpression": Key('PatientPK').eq(patient_pk),
+            "KeyConditionExpression": Key("PatientPK").eq(patient_pk),
         }
         if last_evaluated_key:
             query_args["ExclusiveStartKey"] = last_evaluated_key
@@ -168,22 +171,24 @@ def build_transact_items(old_id: str, new_id: str, items_to_update: list) -> lis
     new_patient_pk = f"Patient#{new_id}"
 
     for item in items_to_update:
-        old_patient_pk = item.get('PatientPK', f"Patient#{old_id}")
+        old_patient_pk = item.get("PatientPK", f"Patient#{old_id}")
 
-        transact_items.append({
-            'Update': {
-                'TableName': ieds_table_name,
-                'Key': {
-                    'PK': {'S': item['PK']},
-                },
-                'UpdateExpression': 'SET PatientPK = :new_val',
-                "ConditionExpression": "PatientPK = :expected_old",
-                'ExpressionAttributeValues': {
-                    ':new_val': {'S': new_patient_pk},
-                    ':expected_old': {'S': old_patient_pk}
+        transact_items.append(
+            {
+                "Update": {
+                    "TableName": ieds_table_name,
+                    "Key": {
+                        "PK": {"S": item["PK"]},
+                    },
+                    "UpdateExpression": "SET PatientPK = :new_val",
+                    "ConditionExpression": "PatientPK = :expected_old",
+                    "ExpressionAttributeValues": {
+                        ":new_val": {"S": new_patient_pk},
+                        ":expected_old": {"S": old_patient_pk},
+                    },
                 }
             }
-        })
+        )
 
     return transact_items
 
@@ -197,7 +202,7 @@ def execute_transaction_in_batches(transact_items: list) -> tuple:
     total_batches = 0
 
     for i in range(0, len(transact_items), BATCH_SIZE):
-        batch = transact_items[i:i+BATCH_SIZE]
+        batch = transact_items[i : i + BATCH_SIZE]
         total_batches += 1
         logger.info(f"Transacting batch {total_batches} of size: {len(batch)}")
 
@@ -205,9 +210,8 @@ def execute_transaction_in_batches(transact_items: list) -> tuple:
         logger.info("Batch update complete. Response: %s", response)
 
         # Check each batch response
-        if response['ResponseMetadata']['HTTPStatusCode'] != 200:
+        if response["ResponseMetadata"]["HTTPStatusCode"] != 200:
             all_batches_successful = False
-            logger.error(
-                f"Batch {total_batches} failed with status: {response['ResponseMetadata']['HTTPStatusCode']}")
+            logger.error(f"Batch {total_batches} failed with status: {response['ResponseMetadata']['HTTPStatusCode']}")
 
     return all_batches_successful, total_batches

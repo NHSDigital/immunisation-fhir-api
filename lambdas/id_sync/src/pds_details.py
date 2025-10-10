@@ -1,6 +1,7 @@
-'''
-    Operations related to PDS (Patient Demographic Service)
-'''
+"""
+Operations related to PDS (Patient Demographic Service)
+"""
+
 import tempfile
 from os_vars import get_pds_env
 from common.authentication import AppRestrictedAuth, Service

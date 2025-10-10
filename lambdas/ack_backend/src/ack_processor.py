@@ -44,6 +44,16 @@ def lambda_handler(event, context):
         for message in incoming_message_body:
             ack_data_rows.append(convert_message_to_ack_row(message, created_at_formatted_string))
 
-    update_ack_file(file_key, message_id, supplier, vaccine_type, created_at_formatted_string, ack_data_rows)
+    update_ack_file(
+        file_key,
+        message_id,
+        supplier,
+        vaccine_type,
+        created_at_formatted_string,
+        ack_data_rows,
+    )
 
-    return {"statusCode": 200, "body": json.dumps("Lambda function executed successfully!")}
+    return {
+        "statusCode": 200,
+        "body": json.dumps("Lambda function executed successfully!"),
+    }

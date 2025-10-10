@@ -87,10 +87,7 @@
   },
   {
     "supplier": "OXDH",
-    "permissions": [
-      "COVID19.CRUDS",
-      "FLU.CRUDS"
-    ]
+    "permissions": ["COVID19.CRUDS", "FLU.CRUDS"]
   },
   {
     "supplier": "PINNACLE",

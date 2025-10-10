@@ -1,11 +1,11 @@
 """Generic utils for tests"""
 
 import unittest
-from src.models.utils.generic_utils import form_json
-from testing_utils.generic_utils import load_json_data, format_date_types
-
-import unittest
 from datetime import datetime, date
+
+from src.models.utils.generic_utils import form_json
+
+from testing_utils.generic_utils import load_json_data, format_date_types
 
 
 class TestFormJson(unittest.TestCase):
@@ -39,7 +39,10 @@ class TestFormJson(unittest.TestCase):
         out = form_json(self.response, "id", self.identifier, self.baseurl)
         res = out["entry"][0]["resource"]
         self.assertEqual(out["total"], 1)
-        self.assertEqual(out["link"][0]["url"], f"{self.baseurl}?identifier={self.identifier}&_elements=id")
+        self.assertEqual(
+            out["link"][0]["url"],
+            f"{self.baseurl}?identifier={self.identifier}&_elements=id",
+        )
         self.assertEqual(res["resourceType"], "Immunization")
         self.assertEqual(res["id"], self.response["id"])
         self.assertNotIn("meta", res)
@@ -48,7 +51,10 @@ class TestFormJson(unittest.TestCase):
         out = form_json(self.response, "meta", self.identifier, self.baseurl)
         res = out["entry"][0]["resource"]
         self.assertEqual(out["total"], 1)
-        self.assertEqual(out["link"][0]["url"], f"{self.baseurl}?identifier={self.identifier}&_elements=meta")
+        self.assertEqual(
+            out["link"][0]["url"],
+            f"{self.baseurl}?identifier={self.identifier}&_elements=meta",
+        )
         self.assertEqual(res["resourceType"], "Immunization")
         self.assertIn("meta", res)
         self.assertEqual(res["meta"]["versionId"], self.response["version"])
@@ -57,7 +63,10 @@ class TestFormJson(unittest.TestCase):
         out = form_json(self.response, "id,meta", self.identifier, self.baseurl)
         res = out["entry"][0]["resource"]
         self.assertEqual(out["total"], 1)
-        self.assertEqual(out["link"][0]["url"], f"{self.baseurl}?identifier={self.identifier}&_elements=id,meta")
+        self.assertEqual(
+            out["link"][0]["url"],
+            f"{self.baseurl}?identifier={self.identifier}&_elements=id,meta",
+        )
         self.assertEqual(res["resourceType"], "Immunization")
         self.assertEqual(res["id"], self.response["id"])
         self.assertIn("meta", res)
@@ -69,7 +78,7 @@ class TestFormJson(unittest.TestCase):
         res = out["entry"][0]["resource"]
         self.assertEqual(
             out["link"][0]["url"],
-            f"{self.baseurl}?identifier={self.identifier}&_elements={raw_elements}"
+            f"{self.baseurl}?identifier={self.identifier}&_elements={raw_elements}",
         )
         self.assertEqual(res["id"], self.response["id"])
         self.assertEqual(res["meta"]["versionId"], self.response["version"])

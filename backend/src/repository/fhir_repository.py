@@ -1,5 +1,3 @@
-from responses import logger
-import simplejson as json
 import os
 import time
 import uuid
@@ -8,16 +6,21 @@ from typing import Optional, Tuple
 
 import boto3
 import botocore.exceptions
+import simplejson as json
 from boto3.dynamodb.conditions import Attr, Key
 from botocore.config import Config
+from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
+from responses import logger
+
 from models.errors import (
     ResourceNotFoundError,
     UnhandledResponseError,
     IdentifierDuplicationError,
 )
-from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
-
-from models.utils.validation_utils import get_vaccine_type, check_identifier_system_value
+from models.utils.validation_utils import (
+    get_vaccine_type,
+    check_identifier_system_value,
+)
 
 
 def create_table(table_name=None, endpoint_url=None, region_name="eu-west-2"):
@@ -86,7 +89,8 @@ class ImmunizationRepository:
 
     def get_immunization_by_identifier(self, identifier_pk: str) -> tuple[Optional[dict], Optional[str]]:
         response = self.table.query(
-            IndexName="IdentifierGSI", KeyConditionExpression=Key("IdentifierPK").eq(identifier_pk)
+            IndexName="IdentifierGSI",
+            KeyConditionExpression=Key("IdentifierPK").eq(identifier_pk),
         )
 
         if "Items" in response and len(response["Items"]) > 0:
@@ -97,7 +101,7 @@ class ImmunizationRepository:
             return {
                 "resource": resource,
                 "id": resource.get("id"),
-                "version": version
+                "version": version,
             }, vaccine_type
         else:
             return None, None
@@ -284,7 +288,7 @@ class ImmunizationRepository:
                 if deleted_at_required
                 else Attr("PK").eq(attr.pk) & Attr("DeletedAt").not_exists()
             )
-            if deleted_at_required and update_reinstated == False:
+            if deleted_at_required and update_reinstated is False:
                 ExpressionAttributeValues = {
                     ":timestamp": attr.timestamp,
                     ":patient_pk": attr.patient_pk,
@@ -343,8 +347,8 @@ class ImmunizationRepository:
                 },
                 ReturnValues="ALL_NEW",
                 ConditionExpression=(
-                    Attr("PK").eq(_make_immunization_pk(imms_id)) &
-                    (Attr("DeletedAt").not_exists() | Attr("DeletedAt").eq("reinstated"))
+                    Attr("PK").eq(_make_immunization_pk(imms_id))
+                    & (Attr("DeletedAt").not_exists() | Attr("DeletedAt").eq("reinstated"))
                 ),
             )
 
@@ -370,12 +374,13 @@ class ImmunizationRepository:
             items = [x for x in raw_items if x["PatientSK"].split("#")[0] in vaccine_types]
 
             # Return a list of the FHIR immunization resource JSON items
-            final_resources = [{
-                **json.loads(item["Resource"]),
-                "meta": {"versionId": int(item.get("Version", 1))}
+            final_resources = [
+                {
+                    **json.loads(item["Resource"]),
+                    "meta": {"versionId": int(item.get("Version", 1))},
                 }
                 for item in items
-                ]
+            ]
 
             return final_resources
         else:

@@ -13,7 +13,7 @@ from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests impor
     GenericSetUp,
     GenericTearDown,
     add_entry_to_table,
-    assert_audit_table_entry
+    assert_audit_table_entry,
 )
 from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
     MockFileDetails,
@@ -25,11 +25,23 @@ from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests impo
     InfAckFileRows,
     REGION_NAME,
 )
-from tests.utils_for_recordprocessor_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT, BucketNames, Kinesis
-from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import create_patch
+from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
+    MOCK_ENVIRONMENT_DICT,
+    BucketNames,
+    Kinesis,
+)
+from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
+    create_patch,
+)
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
-    from constants import Diagnostics, FileStatus, FileNotProcessedReason, AUDIT_TABLE_NAME, AuditTableKeys
+    from constants import (
+        Diagnostics,
+        FileStatus,
+        FileNotProcessedReason,
+        AUDIT_TABLE_NAME,
+        AuditTableKeys,
+    )
     from batch_processor import main
 
 s3_client = boto3_client("s3", region_name=REGION_NAME)
@@ -56,10 +68,14 @@ class TestRecordProcessor(unittest.TestCase):
         self.addCleanup(redis_patcher.stop)
         self.mock_batch_processor_logger = batch_processor_logger_patcher.start()
         mock_redis_client = redis_patcher.start()
-        mock_redis_client.hget.return_value = json.dumps([{
-            "code": "55735004",
-            "term": "Respiratory syncytial virus infection (disorder)"
-        }])
+        mock_redis_client.hget.return_value = json.dumps(
+            [
+                {
+                    "code": "55735004",
+                    "term": "Respiratory syncytial virus infection (disorder)",
+                }
+            ]
+        )
         self.mock_logger_info = create_patch("logging.Logger.info")
 
     def tearDown(self) -> None:
@@ -67,9 +83,15 @@ class TestRecordProcessor(unittest.TestCase):
         GenericTearDown(s3_client, firehose_client, kinesis_client)
 
     @staticmethod
-    def upload_source_files(source_file_content):  # pylint: disable=dangerous-default-value
+    def upload_source_files(
+        source_file_content,
+    ):  # pylint: disable=dangerous-default-value
         """Uploads a test file with the TEST_FILE_KEY (RSV EMIS file) the given file content to the source bucket"""
-        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=mock_rsv_emis_file.file_key, Body=source_file_content)
+        s3_client.put_object(
+            Bucket=BucketNames.SOURCE,
+            Key=mock_rsv_emis_file.file_key,
+            Body=source_file_content,
+        )
 
     @staticmethod
     def get_shard_iterator():
@@ -134,7 +156,10 @@ class TestRecordProcessor(unittest.TestCase):
 
                 # Ensure that arrival times are sequential
                 approximate_arrival_timestamp = kinesis_record["ApproximateArrivalTimestamp"]
-                self.assertGreater(approximate_arrival_timestamp, previous_approximate_arrival_time_stamp)
+                self.assertGreater(
+                    approximate_arrival_timestamp,
+                    previous_approximate_arrival_time_stamp,
+                )
                 previous_approximate_arrival_time_stamp = approximate_arrival_timestamp
 
                 kinesis_data = json.loads(kinesis_record["Data"].decode("utf-8"), parse_float=Decimal)
@@ -178,19 +203,28 @@ class TestRecordProcessor(unittest.TestCase):
             (
                 "CREATE success",
                 0,
-                {"operation_requested": "CREATE", "local_id": MockLocalIds.RSV_001_RAVS},
+                {
+                    "operation_requested": "CREATE",
+                    "local_id": MockLocalIds.RSV_001_RAVS,
+                },
                 True,
             ),
             (
                 "UPDATE success",
                 1,
-                {"operation_requested": "UPDATE", "local_id": MockLocalIds.COVID19_001_RAVS},
+                {
+                    "operation_requested": "UPDATE",
+                    "local_id": MockLocalIds.COVID19_001_RAVS,
+                },
                 True,
             ),
             (
                 "DELETE success",
                 2,
-                {"operation_requested": "DELETE", "local_id": MockLocalIds.COVID19_001_RAVS},
+                {
+                    "operation_requested": "DELETE",
+                    "local_id": MockLocalIds.COVID19_001_RAVS,
+                },
                 True,
             ),
         ]
@@ -215,7 +249,10 @@ class TestRecordProcessor(unittest.TestCase):
             (
                 "CREATE success",
                 0,
-                {"operation_requested": "CREATE", "local_id": MockLocalIds.RSV_001_RAVS},
+                {
+                    "operation_requested": "CREATE",
+                    "local_id": MockLocalIds.RSV_001_RAVS,
+                },
                 True,
             ),
             (
@@ -284,15 +321,19 @@ class TestRecordProcessor(unittest.TestCase):
 
         kinesis_records = kinesis_client.get_records(ShardIterator=self.get_shard_iterator(), Limit=10)["Records"]
         table_entry = dynamo_db_client.get_item(
-            TableName=AUDIT_TABLE_NAME, Key={AuditTableKeys.MESSAGE_ID: {"S": test_file.message_id}}
+            TableName=AUDIT_TABLE_NAME,
+            Key={AuditTableKeys.MESSAGE_ID: {"S": test_file.message_id}},
         ).get("Item")
         self.assertEqual(len(kinesis_records), 0)
         self.make_inf_ack_assertions(file_details=mock_rsv_emis_file, passed_validation=False)
-        self.assertDictEqual(table_entry, {
-            **test_file.audit_table_entry,
-            "status": {"S": f"{FileStatus.NOT_PROCESSED} - {FileNotProcessedReason.UNAUTHORISED}"},
-            "error_details": {"S": "EMIS does not have permissions to perform any of the requested actions."}
-        })
+        self.assertDictEqual(
+            table_entry,
+            {
+                **test_file.audit_table_entry,
+                "status": {"S": f"{FileStatus.NOT_PROCESSED} - {FileNotProcessedReason.UNAUTHORISED}"},
+                "error_details": {"S": "EMIS does not have permissions to perform any of the requested actions."},
+            },
+        )
 
     def test_e2e_invalid_action_flags(self):
         """Tests that file is successfully processed when the ACTION_FLAG field is empty or invalid."""
@@ -317,8 +358,18 @@ class TestRecordProcessor(unittest.TestCase):
         # Assertion case tuples are stuctured as
         # (test_name, index, expected_kinesis_data_ignoring_fhir_json,expect_success)
         assertion_cases = [
-            ("Missing ACTION_FLAG", 0, {**expected_kinesis_data, "operation_requested": ""}, False),
-            ("Invalid ACTION_FLAG", 1, {**expected_kinesis_data, "operation_requested": "INVALID"}, False),
+            (
+                "Missing ACTION_FLAG",
+                0,
+                {**expected_kinesis_data, "operation_requested": ""},
+                False,
+            ),
+            (
+                "Invalid ACTION_FLAG",
+                1,
+                {**expected_kinesis_data, "operation_requested": "INVALID"},
+                False,
+            ),
         ]
         self.make_inf_ack_assertions(file_details=mock_rsv_emis_file, passed_validation=True)
         self.make_kinesis_assertions(assertion_cases)
@@ -358,8 +409,18 @@ class TestRecordProcessor(unittest.TestCase):
         # Test case tuples are stuctured as (test_name, index, expected_kinesis_data, expect_success)
         test_cases = [
             ("All fields", 0, all_fields_row_expected_kinesis_data, True),
-            ("Mandatory fields only", 1, mandatory_fields_only_row_expected_kinesis_data, True),
-            ("Critical fields only", 2, critical_fields_only_row_expected_kinesis_data, True),
+            (
+                "Mandatory fields only",
+                1,
+                mandatory_fields_only_row_expected_kinesis_data,
+                True,
+            ),
+            (
+                "Critical fields only",
+                2,
+                critical_fields_only_row_expected_kinesis_data,
+                True,
+            ),
         ]
         self.make_inf_ack_assertions(file_details=mock_rsv_emis_file, passed_validation=True)
         self.make_kinesis_assertions(test_cases)
@@ -387,7 +448,8 @@ class TestRecordProcessor(unittest.TestCase):
         # Since the failure occured at row level, not file level, the ack file should still be created
         # and firehose logs should indicate a successful file level validation
         table_entry = dynamo_db_client.get_item(
-            TableName=AUDIT_TABLE_NAME, Key={AuditTableKeys.MESSAGE_ID: {"S": test_file.message_id}}
+            TableName=AUDIT_TABLE_NAME,
+            Key={AuditTableKeys.MESSAGE_ID: {"S": test_file.message_id}},
         ).get("Item")
         self.make_inf_ack_assertions(file_details=test_file, passed_validation=True)
         expected_log_data = {
@@ -402,13 +464,18 @@ class TestRecordProcessor(unittest.TestCase):
             "message": "Successfully sent for record processing",
         }
         mock_send_log_to_firehose.assert_called_with(expected_log_data)
-        self.assertDictEqual(table_entry, {
-            **test_file.audit_table_entry,
-            "status": {"S": FileStatus.FAILED},
-            "error_details": {"S": "An error occurred (ResourceNotFoundException) when calling the PutRecord operation"
-                                   ": Stream imms-batch-internal-dev-processingdata-stream under account 123456789012"
-                                   " not found."}
-        })
+        self.assertDictEqual(
+            table_entry,
+            {
+                **test_file.audit_table_entry,
+                "status": {"S": FileStatus.FAILED},
+                "error_details": {
+                    "S": "An error occurred (ResourceNotFoundException) when calling the PutRecord operation"
+                    ": Stream imms-batch-internal-dev-processingdata-stream under account 123456789012"
+                    " not found."
+                },
+            },
+        )
 
     def test_e2e_empty_file_is_flagged_and_processed_correctly(self):
         """
@@ -416,8 +483,14 @@ class TestRecordProcessor(unittest.TestCase):
         """
         test_cases = [
             ("File containing only headers", ValidMockFileContent.headers),
-            ("File containing headers and new line", ValidMockFileContent.headers + "\n"),
-            ("File containing headers and multiple new lines", ValidMockFileContent.empty_file_with_multiple_new_lines)
+            (
+                "File containing headers and new line",
+                ValidMockFileContent.headers + "\n",
+            ),
+            (
+                "File containing headers and multiple new lines",
+                ValidMockFileContent.empty_file_with_multiple_new_lines,
+            ),
         ]
         for description, file_content in test_cases:
 
@@ -429,12 +502,13 @@ class TestRecordProcessor(unittest.TestCase):
 
                 main(test_file.event_full_permissions)
 
-                kinesis_records = kinesis_client.get_records(
-                    ShardIterator=self.get_shard_iterator(), Limit=10)["Records"]
+                kinesis_records = kinesis_client.get_records(ShardIterator=self.get_shard_iterator(), Limit=10)[
+                    "Records"
+                ]
 
                 self.mock_batch_processor_logger.warning.assert_called_once_with(
                     "File was empty: %s. Moving file to archive directory.",
-                    "RSV_Vaccinations_v5_8HK48_20210730T12000000.csv"
+                    "RSV_Vaccinations_v5_8HK48_20210730T12000000.csv",
                 )
                 self.assertListEqual(kinesis_records, [])
                 assert_audit_table_entry(test_file, "Not processed - Empty file")
@@ -443,7 +517,8 @@ class TestRecordProcessor(unittest.TestCase):
     def test_e2e_error_is_logged_if_invalid_json_provided(self):
         """This scenario should not happen. If it does, it means our batch processing system config is broken and we
         have received malformed content from SQS -> EventBridge. In this case we log the error so we will be alerted.
-        However, we cannot do anything with the AuditDB record as we cannot retrieve information from the event"""
+        However, we cannot do anything with the AuditDB record as we cannot retrieve information from the event
+        """
         malformed_event = '{"test": {}'
         main(malformed_event)
 

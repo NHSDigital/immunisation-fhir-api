@@ -3,15 +3,16 @@ import logging
 import pprint
 import uuid
 
+from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
 from controller.aws_apig_response_utils import create_response
 from controller.fhir_controller import FhirController, make_controller
 from local_lambda import load_string
-from models.errors import Severity, Code, create_operation_outcome
 from log_structure import function_info
-from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
+from models.errors import Severity, Code, create_operation_outcome
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger()
+
 
 @function_info
 def update_imms_handler(event, _context):
@@ -43,7 +44,7 @@ if __name__ == "__main__":
         "body": load_string(args.path),
         "headers": {
             "Content-Type": "application/x-www-form-urlencoded",
-            "AuthenticationType": "ApplicationRestricted"
+            "AuthenticationType": "ApplicationRestricted",
         },
     }
 

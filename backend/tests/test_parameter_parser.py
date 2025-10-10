@@ -1,9 +1,8 @@
 import base64
-import unittest
 import datetime
+import unittest
 from unittest.mock import create_autospec, patch
 
-from service.fhir_service import FhirService
 from models.errors import ParameterException
 from parameter_parser import (
     date_from_key,
@@ -11,10 +10,11 @@ from parameter_parser import (
     process_params,
     process_search_params,
     create_query_string,
-    create_query_string,
     include_key,
     SearchParams,
 )
+from service.fhir_service import FhirService
+
 
 class TestParameterParser(unittest.TestCase):
     def setUp(self):
@@ -43,7 +43,10 @@ class TestParameterParser(unittest.TestCase):
 
         processed_params = process_params(lambda_event)
 
-        expected = {self.patient_identifier_key: ["a"], self.immunization_target_key: ["b"]}
+        expected = {
+            self.patient_identifier_key: ["a"],
+            self.immunization_target_key: ["b"],
+        }
 
         self.assertEqual(expected, processed_params)
 
@@ -58,7 +61,7 @@ class TestParameterParser(unittest.TestCase):
         }
         processed_params = process_params(lambda_event)
 
-        for k, v in processed_params.items():
+        for v in processed_params.values():
             self.assertEqual(sorted(v), v)
 
     def test_process_params_does_not_process_body_on_get(self):
@@ -102,13 +105,12 @@ class TestParameterParser(unittest.TestCase):
             'e.g. "https://fhir.nhs.uk/Id/nhs-number|9000000009"',
         )
         self.mock_redis_client.hkeys.return_value = ["RSV"]
-        params = process_search_params(
+        process_search_params(
             {
                 self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
                 self.immunization_target_key: ["RSV"],
             }
         )
-        
 
     def test_process_search_params_whitelists_immunization_target(self):
         mock_redis_key = "RSV"
@@ -117,14 +119,18 @@ class TestParameterParser(unittest.TestCase):
             process_search_params(
                 {
                     self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
-                    self.immunization_target_key: ["FLU", "COVID-19", "NOT-A-REAL-VALUE"],
+                    self.immunization_target_key: [
+                        "FLU",
+                        "COVID-19",
+                        "NOT-A-REAL-VALUE",
+                    ],
                 }
             )
         self.assertEqual(
-            str(e.exception), f"immunization-target must be one or more of the following: {mock_redis_key}",
-            f"Unexpected exception message: {str(e.exception)}"
+            str(e.exception),
+            f"immunization-target must be one or more of the following: {mock_redis_key}",
+            f"Unexpected exception message: {str(e.exception)}",
         )
-
 
     def test_process_search_params_immunization_target(self):
         mock_redis_key = "RSV"
@@ -137,7 +143,6 @@ class TestParameterParser(unittest.TestCase):
         )
 
         self.assertIsNotNone(params)
-
 
     def test_search_params_date_from_must_be_before_date_to(self):
         self.mock_redis_client.hkeys.return_value = ["RSV"]
@@ -173,7 +178,10 @@ class TestParameterParser(unittest.TestCase):
                 }
             )
 
-        self.assertEqual(str(e.exception), f"Search parameter {date_from_key} must be before {date_to_key}")
+        self.assertEqual(
+            str(e.exception),
+            f"Search parameter {date_from_key} must be before {date_to_key}",
+        )
 
     def test_process_search_params_immunization_target_is_mandatory(self):
         self.mock_redis_client.hkeys.return_value = ["RSV"]
@@ -183,7 +191,10 @@ class TestParameterParser(unittest.TestCase):
                     self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
                 }
             )
-        self.assertEqual(str(e.exception), f"Search parameter -immunization.target must have one or more values.")
+        self.assertEqual(
+            str(e.exception),
+            "Search parameter -immunization.target must have one or more values.",
+        )
 
     def test_process_search_params_patient_identifier_is_mandatory(self):
         with self.assertRaises(ParameterException) as e:
@@ -192,7 +203,10 @@ class TestParameterParser(unittest.TestCase):
                     self.immunization_target_key: ["a-disease-type"],
                 }
             )
-        self.assertEqual(str(e.exception), f"Search parameter patient.identifier must have one value.")
+        self.assertEqual(
+            str(e.exception),
+            "Search parameter patient.identifier must have one value.",
+        )
 
     def test_create_query_string_with_all_params(self):
         search_params = SearchParams("a", ["b"], datetime.date(1, 2, 3), datetime.date(4, 5, 6), "c")
@@ -211,22 +225,24 @@ class TestParameterParser(unittest.TestCase):
 
         self.assertEqual(expected, query_string)
 
-    def test_create_query_string_with_multiple_immunization_targets_comma_separated(self):
+    def test_create_query_string_with_multiple_immunization_targets_comma_separated(
+        self,
+    ):
         search_params = SearchParams("a", ["b", "c"], None, None, None)
         query_string = create_query_string(search_params)
         expected = "-immunization.target=b,c&patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7Ca"
 
         self.assertEqual(expected, query_string)
 
-    def test_process_search_params_dedupes_immunization_targets_and_respects_include(self):
+    def test_process_search_params_dedupes_immunization_targets_and_respects_include(
+        self,
+    ):
         """Ensure duplicate immunization targets are deduped and include is preserved."""
         self.mock_redis_client.hkeys.return_value = ["RSV", "FLU"]
 
         params = process_search_params(
             {
-                self.patient_identifier_key: [
-                    "https://fhir.nhs.uk/Id/nhs-number|9000000009"
-                ],
+                self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
                 self.immunization_target_key: ["RSV", "RSV", "FLU"],
                 "_include": ["immunization:patient"],
             }
@@ -246,9 +262,7 @@ class TestParameterParser(unittest.TestCase):
         with self.assertRaises(ParameterException) as e:
             process_search_params(
                 {
-                    self.patient_identifier_key: [
-                        "https://fhir.nhs.uk/Id/nhs-number|9000000009"
-                    ],
+                    self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
                     self.immunization_target_key: ["RSV"],
                     self.date_from_key: ["2021-01-01", "2021-01-02"],  # too many values
                     self.date_to_key: ["invalid-date"],  # invalid format
@@ -269,14 +283,15 @@ class TestParameterParser(unittest.TestCase):
         with self.assertRaises(ParameterException) as e:
             process_search_params(
                 {
-                    self.patient_identifier_key: [
-                        "https://fhir.nhs.uk/Id/nhs-number|1234567890"  # invalid mod11
-                    ],
+                    self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|1234567890"],  # invalid mod11
                     self.immunization_target_key: ["RSV"],
                 }
             )
 
-        self.assertEqual(str(e.exception), f"Search parameter {self.patient_identifier_key} must be a valid NHS number.")
+        self.assertEqual(
+            str(e.exception),
+            f"Search parameter {self.patient_identifier_key} must be a valid NHS number.",
+        )
 
     def test_process_search_params_invalid_include_value_is_rejected(self):
         """_include may only be 'Immunization:patient' if provided."""
@@ -285,9 +300,7 @@ class TestParameterParser(unittest.TestCase):
         with self.assertRaises(ParameterException) as e:
             process_search_params(
                 {
-                    self.patient_identifier_key: [
-                        "https://fhir.nhs.uk/Id/nhs-number|9000000009"
-                    ],
+                    self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
                     self.immunization_target_key: ["RSV"],
                     "_include": ["Patient:practitioner"],
                 }

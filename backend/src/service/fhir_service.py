@@ -1,9 +1,11 @@
-import logging
-from uuid import uuid4
 import datetime
+import logging
 import os
+
+
 from enum import Enum
 from typing import Optional, Union
+from uuid import uuid4
 
 from fhir.resources.R4B.bundle import (
     Bundle as FhirBundle,
@@ -17,20 +19,41 @@ from pydantic import ValidationError
 import parameter_parser
 from authorisation.api_operation_code import ApiOperationCode
 from authorisation.authoriser import Authoriser
-from repository.fhir_repository import ImmunizationRepository
-from models.errors import InvalidPatientId, CustomValidationError, UnauthorizedVaxError, ResourceNotFoundError
-from models.fhir_immunization import ImmunizationValidator
-from models.utils.generic_utils import nhs_number_mod11_check, get_occurrence_datetime, create_diagnostics, form_json, get_contained_patient
-from models.errors import MandatoryError
-from models.utils.validation_utils import get_vaccine_type
-from timer import timed
+
 from filter import Filter
+from models.errors import (
+    InvalidPatientId,
+    CustomValidationError,
+    UnauthorizedVaxError,
+    ResourceNotFoundError,
+)
+from models.errors import MandatoryError
+from models.fhir_immunization import ImmunizationValidator
+
+from models.utils.generic_utils import (
+    nhs_number_mod11_check,
+    get_occurrence_datetime,
+    form_json,
+    get_contained_patient,
+)
+from models.utils.validation_utils import get_vaccine_type
+from repository.fhir_repository import ImmunizationRepository
+from timer import timed
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger()
 
-def get_service_url(service_env: str = os.getenv("IMMUNIZATION_ENV"), service_base_path: str = os.getenv("IMMUNIZATION_BASE_PATH")
- ) -> str:
+IMMUNIZATION_BASE_PATH = os.getenv("IMMUNIZATION_BASE_PATH")
+IMMUNIZATION_ENV = os.getenv("IMMUNIZATION_ENV")
+
+AUTHORISER = Authoriser()
+IMMUNIZATION_VALIDATOR = ImmunizationValidator()
+
+
+def get_service_url(
+    service_env: str = IMMUNIZATION_ENV,
+    service_base_path: str = IMMUNIZATION_BASE_PATH,
+) -> str:
 
     if not service_base_path:
         service_base_path = "immunisation-fhir-api/FHIR/R4"
@@ -55,8 +78,8 @@ class FhirService:
     def __init__(
         self,
         imms_repo: ImmunizationRepository,
-        authoriser: Authoriser = Authoriser(),
-        validator: ImmunizationValidator = ImmunizationValidator(),
+        authoriser: Authoriser = AUTHORISER,
+        validator: ImmunizationValidator = IMMUNIZATION_VALIDATOR,
     ):
         self.authoriser = authoriser
         self.immunization_repo = imms_repo
@@ -79,8 +102,8 @@ class FhirService:
             raise UnauthorizedVaxError()
 
         patient_full_url = f"urn:uuid:{str(uuid4())}"
-        filtered_resource = Filter.search(imms_resp['resource'], patient_full_url)
-        imms_resp['resource'] = filtered_resource
+        filtered_resource = Filter.search(imms_resp["resource"], patient_full_url)
+        imms_resp["resource"] = filtered_resource
         return form_json(imms_resp, element, identifier, base_url)
 
     def get_immunization_and_version_by_id(self, imms_id: str, supplier_system: str) -> tuple[Immunization, str]:
@@ -152,16 +175,15 @@ class FhirService:
 
         # If the user is updating the resource vaccination_type, they must have permissions for both the existing and
         # new type. In most cases it will be the same, but it is possible for users to update the vacc type
-        if not self.authoriser.authorise(supplier_system, ApiOperationCode.UPDATE,
-                                         {vaccination_type, existing_resource_vacc_type}):
+        if not self.authoriser.authorise(
+            supplier_system,
+            ApiOperationCode.UPDATE,
+            {vaccination_type, existing_resource_vacc_type},
+        ):
             raise UnauthorizedVaxError()
 
         imms, updated_version = self.immunization_repo.update_immunization(
-            imms_id,
-            immunization,
-            patient,
-            existing_resource_version,
-            supplier_system
+            imms_id, immunization, patient, existing_resource_version, supplier_system
         )
 
         return UpdateOutcome.UPDATE, Immunization.parse_obj(imms), updated_version
@@ -181,16 +203,15 @@ class FhirService:
 
         vaccination_type = get_vaccine_type(immunization)
 
-        if not self.authoriser.authorise(supplier_system, ApiOperationCode.UPDATE,
-                                         {vaccination_type, existing_resource_vacc_type}):
+        if not self.authoriser.authorise(
+            supplier_system,
+            ApiOperationCode.UPDATE,
+            {vaccination_type, existing_resource_vacc_type},
+        ):
             raise UnauthorizedVaxError()
 
         imms, updated_version = self.immunization_repo.reinstate_immunization(
-            imms_id,
-            immunization,
-            patient,
-            existing_resource_version,
-            supplier_system
+            imms_id, immunization, patient, existing_resource_version, supplier_system
         )
 
         return UpdateOutcome.UPDATE, Immunization.parse_obj(imms), updated_version
@@ -210,8 +231,11 @@ class FhirService:
 
         vaccination_type = get_vaccine_type(immunization)
 
-        if not self.authoriser.authorise(supplier_system, ApiOperationCode.UPDATE,
-                                         {vaccination_type, existing_resource_vacc_type}):
+        if not self.authoriser.authorise(
+            supplier_system,
+            ApiOperationCode.UPDATE,
+            {vaccination_type, existing_resource_vacc_type},
+        ):
             raise UnauthorizedVaxError()
 
         imms, updated_version = self.immunization_repo.update_reinstated_immunization(
@@ -240,9 +264,7 @@ class FhirService:
         if not self.authoriser.authorise(supplier_system, ApiOperationCode.DELETE, {vaccination_type}):
             raise UnauthorizedVaxError()
 
-        imms = self.immunization_repo.delete_immunization(
-            imms_id, supplier_system
-        )
+        imms = self.immunization_repo.delete_immunization(imms_id, supplier_system)
         return Immunization.parse_obj(imms)
 
     @staticmethod
@@ -309,7 +331,7 @@ class FhirService:
         # Update the immunization.target parameter
         new_immunization_target_param = f"immunization.target={','.join(vaccine_types)}"
         parameters = "&".join(
-            [new_immunization_target_param if x.startswith("-immunization.target=") else x for x in params.split("&")]
+            [(new_immunization_target_param if x.startswith("-immunization.target=") else x) for x in params.split("&")]
         )
 
         return f"{base_url}?{parameters}"
@@ -377,10 +399,12 @@ class FhirService:
 
         # Create the bundle
         fhir_bundle = FhirBundle(resourceType="Bundle", type="searchset", entry=entries)
-        fhir_bundle.link = [BundleLink(
-            relation="self",
-            url=self.create_url_for_bundle_link(params, permitted_vacc_types)
-        )]
+        fhir_bundle.link = [
+            BundleLink(
+                relation="self",
+                url=self.create_url_for_bundle_link(params, permitted_vacc_types),
+            )
+        ]
         supplier_requested_unauthorised_vaccs = len(vaccine_types) != len(permitted_vacc_types)
 
         return fhir_bundle, supplier_requested_unauthorised_vaccs

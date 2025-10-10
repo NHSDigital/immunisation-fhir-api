@@ -73,7 +73,7 @@ locals {
     Principal = {
       AWS = "arn:aws:iam::${var.mns_account_id}:${var.mns_admin_role}"
     },
-    Action = "kms:GenerateDataKey",
+    Action   = "kms:GenerateDataKey",
     Resource = "*"
   }
 }
@@ -199,17 +199,17 @@ resource "aws_kms_key" "batch_processor_errors_sns_encryption_key" {
       {
         Effect = "Allow",
         Principal = {
-          "Service": "cloudwatch.amazonaws.com"
+          "Service" : "cloudwatch.amazonaws.com"
         },
-        Action = ["kms:GenerateDataKey*", "kms:Decrypt"],
+        Action   = ["kms:GenerateDataKey*", "kms:Decrypt"],
         Resource = "*"
       },
       {
         Effect = "Allow",
         Principal = {
-          "Service": "chatbot.amazonaws.com"
+          "Service" : "chatbot.amazonaws.com"
         },
-        Action = ["kms:GenerateDataKey*", "kms:Decrypt"],
+        Action   = ["kms:GenerateDataKey*", "kms:Decrypt"],
         Resource = "*"
       }
     ]

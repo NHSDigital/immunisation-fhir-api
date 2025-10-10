@@ -3,9 +3,9 @@ parameters:
     default: aws --profile=apim-dev
   - name: is_ptl
     default: true
-  - name: 'aws_account_type'
+  - name: "aws_account_type"
     type: string
-  - name: 'deployment_type'
+  - name: "deployment_type"
     type: string
 
 steps:

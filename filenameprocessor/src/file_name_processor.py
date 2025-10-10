@@ -20,9 +20,14 @@ from errors import (
     VaccineTypePermissionsError,
     InvalidFileKeyError,
     UnhandledAuditTableError,
-    UnhandledSqsError
+    UnhandledSqsError,
 )
-from constants import FileNotProcessedReason, FileStatus, ERROR_TYPE_TO_STATUS_CODE_MAP, SOURCE_BUCKET_NAME
+from constants import (
+    FileNotProcessedReason,
+    FileStatus,
+    ERROR_TYPE_TO_STATUS_CODE_MAP,
+    SOURCE_BUCKET_NAME,
+)
 
 
 # NOTE: logging_decorator is applied to handle_record function, rather than lambda_handler, because
@@ -40,7 +45,11 @@ def handle_record(record) -> dict:
 
     except Exception as error:  # pylint: disable=broad-except
         logger.error("Error obtaining file_key: %s", error)
-        return {"statusCode": 500, "message": "Failed to download file key", "error": str(error)}
+        return {
+            "statusCode": 500,
+            "message": "Failed to download file key",
+            "error": str(error),
+        }
 
     vaccine_type = "unknown"
     supplier = "unknown"
@@ -71,10 +80,20 @@ def handle_record(record) -> dict:
 
         queue_name = f"{supplier}_{vaccine_type}"
         upsert_audit_table(
-            message_id, file_key, created_at_formatted_string, expiry_timestamp, queue_name, FileStatus.QUEUED
+            message_id,
+            file_key,
+            created_at_formatted_string,
+            expiry_timestamp,
+            queue_name,
+            FileStatus.QUEUED,
         )
         make_and_send_sqs_message(
-            file_key, message_id, permissions, vaccine_type, supplier, created_at_formatted_string
+            file_key,
+            message_id,
+            permissions,
+            vaccine_type,
+            supplier,
+            created_at_formatted_string,
         )
 
         logger.info("Lambda invocation successful for file '%s'", file_key)
@@ -102,8 +121,13 @@ def handle_record(record) -> dict:
         file_status = get_file_status_for_error(error)
 
         upsert_audit_table(
-            message_id, file_key, created_at_formatted_string, expiry_timestamp, queue_name, file_status,
-            error_details=str(error)
+            message_id,
+            file_key,
+            created_at_formatted_string,
+            expiry_timestamp,
+            queue_name,
+            file_status,
+            error_details=str(error),
         )
 
         # Create ack file
@@ -121,7 +145,7 @@ def handle_record(record) -> dict:
             "message_id": message_id,
             "error": str(error),
             "vaccine_type": vaccine_type,
-            "supplier": supplier
+            "supplier": supplier,
         }
 
 
@@ -138,19 +162,37 @@ def handle_unexpected_bucket_name(bucket_name: str, file_key: str) -> dict:
     config and overarching design"""
     try:
         vaccine_type, supplier = validate_file_key(file_key)
-        logger.error("Unable to process file %s due to unexpected bucket name %s", file_key, bucket_name)
+        logger.error(
+            "Unable to process file %s due to unexpected bucket name %s",
+            file_key,
+            bucket_name,
+        )
         message = f"Failed to process file due to unexpected bucket name {bucket_name}"
 
-        return {"statusCode": 500, "message": message, "file_key": file_key,
-                "vaccine_type": vaccine_type, "supplier": supplier}
+        return {
+            "statusCode": 500,
+            "message": message,
+            "file_key": file_key,
+            "vaccine_type": vaccine_type,
+            "supplier": supplier,
+        }
 
     except Exception as error:
-        logger.error("Unable to process file due to unexpected bucket name %s and file key %s",
-                     bucket_name, file_key)
+        logger.error(
+            "Unable to process file due to unexpected bucket name %s and file key %s",
+            bucket_name,
+            file_key,
+        )
         message = f"Failed to process file due to unexpected bucket name {bucket_name} and file key {file_key}"
 
-        return {"statusCode": 500, "message": message, "file_key": file_key,
-                "vaccine_type": "unknown", "supplier": "unknown", "error": str(error)}
+        return {
+            "statusCode": 500,
+            "message": message,
+            "file_key": file_key,
+            "vaccine_type": "unknown",
+            "supplier": "unknown",
+            "error": str(error),
+        }
 
 
 def lambda_handler(event: dict, context) -> None:  # pylint: disable=unused-argument
@@ -170,16 +212,7 @@ def run_local():
     parser.add_argument("--key", required=True, help="Object key.", type=str)
     args = parser.parse_args()
 
-    event = {
-        "Records": [
-            {
-                "s3": {
-                    "bucket": {"name": args.bucket},
-                    "object": {"key": args.key}
-                }
-            }
-        ]
-    }
+    event = {"Records": [{"s3": {"bucket": {"name": args.bucket}, "object": {"key": args.key}}}]}
     print(event)
     print(lambda_handler(event=event, context={}))
 

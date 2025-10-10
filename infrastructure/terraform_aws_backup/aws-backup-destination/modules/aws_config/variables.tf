@@ -28,7 +28,7 @@ variable "region" {
 }
 
 locals {
-    environment         = terraform.workspace
+  environment = terraform.workspace
 }
 
 variable "enable_vault_protection" {
@@ -45,7 +45,7 @@ variable "vault_lock_type" {
   # See toplevel README.md:
   #   DO NOT SET THIS TO compliance UNTIL YOU ARE SURE THAT YOU WANT TO LOCK THE VAULT PERMANENTLY
   # When you do, you will also need to set "enable_vault_protection" to true for it to take effect.
-  default     = "compliance"
+  default = "compliance"
 }
 
 variable "vault_lock_min_retention_days" {

@@ -1,10 +1,9 @@
 """Mandation test utilities"""
 
 import unittest
-from copy import deepcopy
-from pydantic import ValidationError
 
 from jsonpath_ng.ext import parse
+from pydantic import ValidationError
 
 
 class MandationTests:
@@ -61,16 +60,16 @@ class MandationTests:
 
         # Set the expected error message
         expected_error_message = (
-            expected_error_message if expected_error_message else f"Validation errors: {field_location} is a mandatory field"
+            expected_error_message
+            if expected_error_message
+            else f"Validation errors: {field_location} is a mandatory field"
         )
 
         if is_mandatory_fhir:
             # Test that correct error message is raised
             with test_instance.assertRaises(ValidationError) as error:
                 test_instance.validator.validate(invalid_json_data)
-            test_instance.assertTrue(
-                (expected_error_message + f" (type={expected_error_type})") in str(error.exception)
-            )
+            test_instance.assertTrue((expected_error_message + f" (type={expected_error_type})") in str(error.exception))
 
         else:
             # Test that correct error message is raised

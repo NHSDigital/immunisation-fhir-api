@@ -1,7 +1,11 @@
 """Functions for filtering a FHIR Immunization Resource"""
 
-from models.utils.generic_utils import is_actor_referencing_contained_resource, get_contained_practitioner, get_contained_patient
 from constants import Urls
+from models.utils.generic_utils import (
+    is_actor_referencing_contained_resource,
+    get_contained_practitioner,
+    get_contained_patient,
+)
 
 
 def remove_reference_to_contained_practitioner(imms: dict) -> dict:
@@ -14,7 +18,7 @@ def remove_reference_to_contained_practitioner(imms: dict) -> dict:
 
     # Remove reference to the contained practitioner from imms[performer]
     imms["performer"] = [
-         x for x in imms["performer"] if not is_actor_referencing_contained_resource(x, contained_practitioner["id"])
+        x for x in imms["performer"] if not is_actor_referencing_contained_resource(x, contained_practitioner["id"])
     ]
 
     return imms

@@ -1,15 +1,17 @@
 import base64
 import datetime
 from dataclasses import dataclass
-
-from aws_lambda_typing.events import APIGatewayProxyEventV1
 from typing import Optional
 from urllib.parse import parse_qs, urlencode, quote
 
-from clients import redis_client, logger
+from aws_lambda_typing.events import APIGatewayProxyEventV1
+
+from clients import redis_client
+from models.constants import Constants
 from models.errors import ParameterException
 from models.utils.generic_utils import nhs_number_mod11_check
-from models.constants import Constants
+
+ERROR_MESSAGE_DUPLICATED_PARAMETERS = 'Parameters may not be duplicated. Use commas for "or".'
 
 ParamValue = list[str]
 ParamContainer = dict[str, ParamValue]
@@ -36,6 +38,7 @@ class SearchParams:
     def __repr__(self):
         return str(self.__dict__)
 
+
 def process_patient_identifier(identifier_params: ParamContainer) -> str:
     """Validate and parse patient identifier parameter.
 
@@ -50,9 +53,11 @@ def process_patient_identifier(identifier_params: ParamContainer) -> str:
     patient_identifier_parts = patient_identifier.split("|")
     identifier_system = patient_identifier_parts[0]
     if len(patient_identifier_parts) != 2 or identifier_system != patient_identifier_system:
-        raise ParameterException("patient.identifier must be in the format of "
-                      f"\"{patient_identifier_system}|{{NHS number}}\" "
-                      f"e.g. \"{patient_identifier_system}|9000000009\"")
+        raise ParameterException(
+            "patient.identifier must be in the format of "
+            f'"{patient_identifier_system}|{{NHS number}}" '
+            f'e.g. "{patient_identifier_system}|9000000009"'
+        )
 
     nhs_number = patient_identifier_parts[1]
     if not nhs_number_mod11_check(nhs_number):
@@ -66,16 +71,18 @@ def process_immunization_target(imms_params: ParamContainer) -> list[str]:
 
     :raises ParameterException:
     """
-    vaccine_types = [vaccine_type for vaccine_type in set(imms_params.get(immunization_target_key, [])) if
-                     vaccine_type is not None]
+    vaccine_types = [
+        vaccine_type for vaccine_type in set(imms_params.get(immunization_target_key, [])) if vaccine_type is not None
+    ]
     if len(vaccine_types) < 1:
         raise ParameterException(f"Search parameter {immunization_target_key} must have one or more values.")
 
     valid_vaccine_types = redis_client.hkeys(Constants.VACCINE_TYPE_TO_DISEASES_HASH_KEY)
     if any(x not in valid_vaccine_types for x in vaccine_types):
         raise ParameterException(
-            f"immunization-target must be one or more of the following: {', '.join(valid_vaccine_types)}")
-    
+            f"immunization-target must be one or more of the following: {', '.join(valid_vaccine_types)}"
+        )
+
     return vaccine_types
 
 
@@ -92,7 +99,9 @@ def process_mandatory_params(params: ParamContainer) -> tuple[str, list[str]]:
     return patient_identifier, vaccine_types
 
 
-def process_optional_params(params: ParamContainer) -> tuple[datetime.date, datetime.date, Optional[str], list[str]]:
+def process_optional_params(
+    params: ParamContainer,
+) -> tuple[datetime.date, datetime.date, Optional[str], list[str]]:
     """Parse optional params (date.from, date.to, _include).
     Returns (date_from, date_to, include, errors).
     """
@@ -105,7 +114,9 @@ def process_optional_params(params: ParamContainer) -> tuple[datetime.date, date
         errors.append(f"Search parameter {date_from_key} may have one value at most.")
 
     try:
-        date_from = datetime.datetime.strptime(date_froms[0], "%Y-%m-%d").date() if len(date_froms) == 1 else date_from_default
+        date_from = (
+            datetime.datetime.strptime(date_froms[0], "%Y-%m-%d").date() if len(date_froms) == 1 else date_from_default
+        )
     except ValueError:
         errors.append(f"Search parameter {date_from_key} must be in format: YYYY-MM-DD")
 
@@ -124,6 +135,7 @@ def process_optional_params(params: ParamContainer) -> tuple[datetime.date, date
     include = includes[0] if len(includes) > 0 else None
 
     return date_from, date_to, include, errors
+
 
 def process_search_params(params: ParamContainer) -> SearchParams:
     """Validate and parse search parameters.
@@ -145,17 +157,14 @@ def process_params(aws_event: APIGatewayProxyEventV1) -> ParamContainer:
     """Combines query string and content parameters. Duplicates not allowed. Splits on a comma."""
 
     def split_and_flatten(input: list[str]):
-        return [x.strip()
-                for xs in input
-                for x in xs.split(",")]
+        return [x.strip() for xs in input for x in xs.split(",")]
 
     def parse_multi_value_query_parameters(
-        multi_value_query_params: dict[str, list[str]]
+        multi_value_query_params: dict[str, list[str]],
     ) -> ParamContainer:
         if any([len(v) > 1 for k, v in multi_value_query_params.items()]):
-            raise ParameterException("Parameters may not be duplicated. Use commas for \"or\".")
-        params = [(k, split_and_flatten(v))
-                  for k, v in multi_value_query_params.items()]
+            raise ParameterException(ERROR_MESSAGE_DUPLICATED_PARAMETERS)
+        params = [(k, split_and_flatten(v)) for k, v in multi_value_query_params.items()]
 
         return dict(params)
 
@@ -168,7 +177,7 @@ def process_params(aws_event: APIGatewayProxyEventV1) -> ParamContainer:
             parsed_body = parse_qs(decoded_body)
 
             if any([len(v) > 1 for k, v in parsed_body.items()]):
-                raise ParameterException("Parameters may not be duplicated. Use commas for \"or\".")
+                raise ParameterException(ERROR_MESSAGE_DUPLICATED_PARAMETERS)
             items = dict((k, split_and_flatten(v)) for k, v in parsed_body.items())
             return items
         return {}
@@ -177,25 +186,37 @@ def process_params(aws_event: APIGatewayProxyEventV1) -> ParamContainer:
     body_params = parse_body_params(aws_event)
 
     if len(set(query_params.keys()) & set(body_params.keys())) > 0:
-        raise ParameterException("Parameters may not be duplicated. Use commas for \"or\".")
+        raise ParameterException(ERROR_MESSAGE_DUPLICATED_PARAMETERS)
 
-    parsed_params = {key: sorted(query_params.get(key, []) + body_params.get(key, []))
-                     for key in (query_params.keys() | body_params.keys())}
+    parsed_params = {
+        key: sorted(query_params.get(key, []) + body_params.get(key, []))
+        for key in (query_params.keys() | body_params.keys())
+    }
 
     return parsed_params
 
 
 def create_query_string(search_params: SearchParams) -> str:
     params = [
-        (immunization_target_key, ",".join(map(quote, search_params.immunization_targets))),
-        (patient_identifier_key,
-         f"{patient_identifier_system}|{search_params.patient_identifier}"),
-        *([(date_from_key, search_params.date_from.isoformat())]
-          if search_params.date_from and search_params.date_from != date_from_default else []),
-        *([(date_to_key, search_params.date_to.isoformat())]
-          if search_params.date_to and search_params.date_to != date_to_default else []),
-        *([(include_key, search_params.include)]
-          if search_params.include else []),
+        (
+            immunization_target_key,
+            ",".join(map(quote, search_params.immunization_targets)),
+        ),
+        (
+            patient_identifier_key,
+            f"{patient_identifier_system}|{search_params.patient_identifier}",
+        ),
+        *(
+            [(date_from_key, search_params.date_from.isoformat())]
+            if search_params.date_from and search_params.date_from != date_from_default
+            else []
+        ),
+        *(
+            [(date_to_key, search_params.date_to.isoformat())]
+            if search_params.date_to and search_params.date_to != date_to_default
+            else []
+        ),
+        *([(include_key, search_params.include)] if search_params.include else []),
     ]
     search_params_qs = urlencode(sorted(params, key=lambda x: x[0]), safe=",")
     return search_params_qs

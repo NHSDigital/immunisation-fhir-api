@@ -6,8 +6,15 @@ from boto3 import client as boto3_client
 from moto import mock_s3
 
 from tests.utils.values_for_ack_backend_tests import ValidValues, DefaultValues
-from tests.utils.mock_environment_variables import MOCK_ENVIRONMENT_DICT, BucketNames, REGION_NAME
-from tests.utils.generic_setup_and_teardown_for_ack_backend import GenericSetUp, GenericTearDown
+from tests.utils.mock_environment_variables import (
+    MOCK_ENVIRONMENT_DICT,
+    BucketNames,
+    REGION_NAME,
+)
+from tests.utils.generic_setup_and_teardown_for_ack_backend import (
+    GenericSetUp,
+    GenericTearDown,
+)
 from tests.utils.utils_for_ack_backend_tests import (
     setup_existing_ack_file,
     obtain_current_ack_file_content,
@@ -21,7 +28,11 @@ from unittest.mock import patch
 from io import StringIO
 
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
-    from update_ack_file import obtain_current_ack_content, create_ack_data, update_ack_file
+    from update_ack_file import (
+        obtain_current_ack_content,
+        create_ack_data,
+        update_ack_file,
+    )
 
 firehose_client = boto3_client("firehose", region_name=REGION_NAME)
 
@@ -30,6 +41,7 @@ firehose_client = boto3_client("firehose", region_name=REGION_NAME)
 @mock_s3
 class TestUpdateAckFile(unittest.TestCase):
     """Tests for the functions in the update_ack_file module."""
+
     def setUp(self) -> None:
         self.s3_client = boto3_client("s3", region_name=REGION_NAME)
         GenericSetUp(self.s3_client)
@@ -42,14 +54,16 @@ class TestUpdateAckFile(unittest.TestCase):
             Key=f"processing/{MOCK_MESSAGE_DETAILS.file_key}",
             Body=mock_source_file_with_100_rows.getvalue(),
         )
-        self.logger_patcher = patch('update_ack_file.logger')
+        self.logger_patcher = patch("update_ack_file.logger")
         self.mock_logger = self.logger_patcher.start()
 
     def tearDown(self) -> None:
         GenericTearDown(self.s3_client)
 
     def validate_ack_file_content(
-        self, incoming_messages: list[dict], existing_file_content: str = ValidValues.ack_headers
+        self,
+        incoming_messages: list[dict],
+        existing_file_content: str = ValidValues.ack_headers,
     ) -> None:
         """
         Obtains the ack file content and ensures that it matches the expected content (expected content is based
@@ -79,7 +93,11 @@ class TestUpdateAckFile(unittest.TestCase):
                 ],
                 "expected_rows": [
                     generate_expected_ack_file_row(success=True, imms_id=DefaultValues.imms_id),
-                    generate_expected_ack_file_row(success=False, imms_id="TEST_IMMS_ID_1", diagnostics="DIAGNOSTICS"),
+                    generate_expected_ack_file_row(
+                        success=False,
+                        imms_id="TEST_IMMS_ID_1",
+                        diagnostics="DIAGNOSTICS",
+                    ),
                     generate_expected_ack_file_row(success=False, imms_id="", diagnostics="DIAGNOSTICS"),
                     generate_expected_ack_file_row(success=False, imms_id="", diagnostics="DIAGNOSTICS"),
                     generate_expected_ack_file_row(success=True, imms_id="TEST_IMMS_ID_2"),
@@ -88,9 +106,18 @@ class TestUpdateAckFile(unittest.TestCase):
             {
                 "description": "Multiple rows With different diagnostics",
                 "input_rows": [
-                    {**ValidValues.ack_data_failure_dict, "OPERATION_OUTCOME": "Error 1"},
-                    {**ValidValues.ack_data_failure_dict, "OPERATION_OUTCOME": "Error 2"},
-                    {**ValidValues.ack_data_failure_dict, "OPERATION_OUTCOME": "Error 3"},
+                    {
+                        **ValidValues.ack_data_failure_dict,
+                        "OPERATION_OUTCOME": "Error 1",
+                    },
+                    {
+                        **ValidValues.ack_data_failure_dict,
+                        "OPERATION_OUTCOME": "Error 2",
+                    },
+                    {
+                        **ValidValues.ack_data_failure_dict,
+                        "OPERATION_OUTCOME": "Error 3",
+                    },
                 ],
                 "expected_rows": [
                     generate_expected_ack_file_row(success=False, imms_id="", diagnostics="Error 1"),
@@ -115,7 +142,10 @@ class TestUpdateAckFile(unittest.TestCase):
                 expected_ack_file_content = ValidValues.ack_headers + "\n".join(test_case["expected_rows"]) + "\n"
                 self.assertEqual(expected_ack_file_content, actual_ack_file_content)
 
-                self.s3_client.delete_object(Bucket=BucketNames.DESTINATION, Key=MOCK_MESSAGE_DETAILS.temp_ack_file_key)
+                self.s3_client.delete_object(
+                    Bucket=BucketNames.DESTINATION,
+                    Key=MOCK_MESSAGE_DETAILS.temp_ack_file_key,
+                )
 
     def test_update_ack_file_existing(self):
         """Test that update_ack_file correctly updates the ack file when there was an existing ack file"""
@@ -123,7 +153,10 @@ class TestUpdateAckFile(unittest.TestCase):
         existing_content = generate_sample_existing_ack_content()
         setup_existing_ack_file(MOCK_MESSAGE_DETAILS.temp_ack_file_key, existing_content, self.s3_client)
 
-        ack_data_rows = [ValidValues.ack_data_success_dict, ValidValues.ack_data_failure_dict]
+        ack_data_rows = [
+            ValidValues.ack_data_success_dict,
+            ValidValues.ack_data_failure_dict,
+        ]
         update_ack_file(
             file_key=MOCK_MESSAGE_DETAILS.file_key,
             message_id=MOCK_MESSAGE_DETAILS.message_id,
@@ -179,8 +212,16 @@ class TestUpdateAckFile(unittest.TestCase):
         }
 
         test_cases = [
-            {"success": True, "imms_id": MOCK_MESSAGE_DETAILS.imms_id, "expected_result": success_expected_result},
-            {"success": False, "diagnostics": "test diagnostics message", "expected_result": failure_expected_result},
+            {
+                "success": True,
+                "imms_id": MOCK_MESSAGE_DETAILS.imms_id,
+                "expected_result": success_expected_result,
+            },
+            {
+                "success": False,
+                "diagnostics": "test diagnostics message",
+                "expected_result": failure_expected_result,
+            },
         ]
 
         for test_case in test_cases:

@@ -1,8 +1,12 @@
-import boto3
-import logging
 import json
+import logging
 import os
+
+import boto3
 from botocore.config import Config
+
+STREAM_NAME = os.getenv("SPLUNK_FIREHOSE_NAME")
+BOTO_CLIENT = boto3.client("firehose", config=Config(region_name="eu-west-2"))
 
 logging.basicConfig()
 logger = logging.getLogger()
@@ -12,8 +16,8 @@ logger.setLevel("INFO")
 class FirehoseLogger:
     def __init__(
         self,
-        stream_name: str = os.getenv("SPLUNK_FIREHOSE_NAME"),
-        boto_client=boto3.client("firehose", config=Config(region_name="eu-west-2")),
+        stream_name: str = STREAM_NAME,
+        boto_client=BOTO_CLIENT,
     ):
         self.firehose_client = boto_client
         self.delivery_stream_name = stream_name
@@ -24,7 +28,7 @@ class FirehoseLogger:
         try:
             response = self.firehose_client.put_record(
                 DeliveryStreamName=self.delivery_stream_name,
-                Record={"Data":encoded_log_data},
+                Record={"Data": encoded_log_data},
             )
             logger.info(f"Log sent to Firehose: {response}")
         except Exception as e:

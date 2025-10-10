@@ -1,4 +1,5 @@
 """Module for the batch file repository"""
+
 from csv import writer
 from io import StringIO, BytesIO
 
@@ -10,15 +11,18 @@ from constants import SOURCE_BUCKET_NAME, ACK_BUCKET_NAME
 
 class BatchFileRepository:
     """Repository class to handle interactions with batch files e.g. management of the source and ack files"""
+
     _ARCHIVE_FILE_DIR: str = "archive"
     _SOURCE_BUCKET_NAME: str = SOURCE_BUCKET_NAME
     _ACK_BUCKET_NAME: str = ACK_BUCKET_NAME
 
     def __init__(self):
-        self._s3_client = boto3.client('s3')
+        self._s3_client = boto3.client("s3")
 
     @staticmethod
-    def _create_ack_failure_data(batch_file_created_event: BatchFileCreatedEvent) -> dict:
+    def _create_ack_failure_data(
+        batch_file_created_event: BatchFileCreatedEvent,
+    ) -> dict:
         return {
             "MESSAGE_HEADER_ID": batch_file_created_event["message_id"],
             "HEADER_RESPONSE_CODE": "Failure",
@@ -38,15 +42,17 @@ class BatchFileRepository:
         self._s3_client.copy_object(
             Bucket=self._SOURCE_BUCKET_NAME,
             CopySource={"Bucket": self._SOURCE_BUCKET_NAME, "Key": file_key},
-            Key=f"{self._ARCHIVE_FILE_DIR}/{file_key}"
+            Key=f"{self._ARCHIVE_FILE_DIR}/{file_key}",
         )
         self._s3_client.delete_object(Bucket=self._SOURCE_BUCKET_NAME, Key=file_key)
 
     def upload_failure_ack(self, batch_file_created_event: BatchFileCreatedEvent) -> None:
         ack_failure_data = self._create_ack_failure_data(batch_file_created_event)
 
-        ack_filename = ("ack/" + batch_file_created_event["filename"]
-                        .replace(".csv", f"_InfAck_{batch_file_created_event['created_at_formatted_string']}.csv"))
+        ack_filename = "ack/" + batch_file_created_event["filename"].replace(
+            ".csv",
+            f"_InfAck_{batch_file_created_event['created_at_formatted_string']}.csv",
+        )
 
         # Create CSV file with | delimiter, filetype .csv
         csv_buffer = StringIO()

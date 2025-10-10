@@ -3,11 +3,10 @@ import os
 import unittest
 from copy import deepcopy
 from datetime import datetime
-from unittest.mock import patch, Mock
+from unittest.mock import patch
 from moto import mock_aws
 from boto3 import resource as boto3_resource
 from utils_for_converter_tests import ValuesForTests, ErrorValuesForTests
-from converter import Converter
 from common.mappings import ActionFlag, Operation, EventName
 
 MOCK_ENV_VARS = {
@@ -24,11 +23,12 @@ with patch.dict("os.environ", MOCK_ENV_VARS):
 @patch.dict("os.environ", MOCK_ENV_VARS, clear=True)
 class TestConvertToFlatJson(unittest.TestCase):
     maxDiff = None
+
     def setUp(self):
         # Start moto AWS mocks
         self.mock = mock_aws()
         self.mock.start()
-    
+
         """Set up mock DynamoDB table."""
         self.dynamodb_resource = boto3_resource("dynamodb", "eu-west-2")
         self.table = self.dynamodb_resource.create_table(
@@ -48,7 +48,10 @@ class TestConvertToFlatJson(unittest.TestCase):
                     "IndexName": "IdentifierGSI",
                     "KeySchema": [{"AttributeName": "IdentifierPK", "KeyType": "HASH"}],
                     "Projection": {"ProjectionType": "ALL"},
-                    "ProvisionedThroughput": {"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
+                    "ProvisionedThroughput": {
+                        "ReadCapacityUnits": 5,
+                        "WriteCapacityUnits": 5,
+                    },
                 },
                 {
                     "IndexName": "PatientGSI",
@@ -57,7 +60,10 @@ class TestConvertToFlatJson(unittest.TestCase):
                         {"AttributeName": "SupplierSystem", "KeyType": "RANGE"},
                     ],
                     "Projection": {"ProjectionType": "ALL"},
-                    "ProvisionedThroughput": {"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
+                    "ProvisionedThroughput": {
+                        "ReadCapacityUnits": 5,
+                        "WriteCapacityUnits": 5,
+                    },
                 },
             ],
         )
@@ -74,7 +80,7 @@ class TestConvertToFlatJson(unittest.TestCase):
         self.logger_exception_patcher.stop()
         self.logger_info_patcher.stop()
         self.mock_firehose_logger.stop()
-        
+
         self.mock.stop()
 
     @staticmethod
@@ -82,7 +88,15 @@ class TestConvertToFlatJson(unittest.TestCase):
         """Returns test event data."""
         return ValuesForTests.get_event(event_name, operation, supplier)
 
-    def assert_dynamodb_record(self, operation_flag, action_flag, items, expected_values, expected_imms, response):
+    def assert_dynamodb_record(
+        self,
+        operation_flag,
+        action_flag,
+        items,
+        expected_values,
+        expected_imms,
+        response,
+    ):
         """
         Asserts that a record with the expected structure exists in DynamoDB.
         Ignores the dynamically generated field PK.
@@ -94,13 +108,11 @@ class TestConvertToFlatJson(unittest.TestCase):
         unfiltered_items = [
             {k: v for k, v in item.items()}
             for item in items
-            if item.get("Operation") == operation_flag
-            and item.get("Imms", {}).get("ACTION_FLAG") == action_flag
+            if item.get("Operation") == operation_flag and item.get("Imms", {}).get("ACTION_FLAG") == action_flag
         ]
 
         filtered_items = [
-            {k: v for k, v in item.items() if k not in ["PK", "DateTimeStamp", "ExpiresAt"]}
-            for item in unfiltered_items
+            {k: v for k, v in item.items() if k not in ["PK", "DateTimeStamp", "ExpiresAt"]} for item in unfiltered_items
         ]
         self.assertGreater(len(filtered_items), 0, f"No matching item found for {operation_flag}")
 
@@ -136,26 +148,13 @@ class TestConvertToFlatJson(unittest.TestCase):
         errorRecords = fhir_converter.get_error_records()
 
         self.assertEqual(len(errorRecords), 0)
-        
-    def test_fhir_converter_json_direct_data(self):
-        """it should convert fhir json data to flat json"""
-        json_data = json.dumps(ValuesForTests.json_data)
-
-        fhir_converter = Converter(json_data)
-        FlatFile = fhir_converter.run_conversion()
-
-        flatJSON = json.dumps(FlatFile)
-        expected_imms_value = deepcopy(ValuesForTests.expected_imms2)  # UPDATE is currently the default action-flag
-        expected_imms = json.dumps(expected_imms_value)
-        self.assertEqual(flatJSON, expected_imms)
-
-        errorRecords = fhir_converter.get_error_records()
-
-        self.assertEqual(len(errorRecords), 0)
 
     def test_fhir_converter_json_error_scenario_reporting_on(self):
         """it should convert fhir json data to flat json - error scenarios"""
-        error_test_cases = [ErrorValuesForTests.missing_json, ErrorValuesForTests.json_dob_error]
+        error_test_cases = [
+            ErrorValuesForTests.missing_json,
+            ErrorValuesForTests.json_dob_error,
+        ]
 
         for test_case in error_test_cases:
             json_data = json.dumps(test_case)
@@ -167,10 +166,13 @@ class TestConvertToFlatJson(unittest.TestCase):
 
             # Check if bad data creates error records
             self.assertTrue(len(errorRecords) > 0)
-            
+
     def test_fhir_converter_json_error_scenario_reporting_off(self):
         """it should convert fhir json data to flat json - error scenarios"""
-        error_test_cases = [ErrorValuesForTests.missing_json, ErrorValuesForTests.json_dob_error]
+        error_test_cases = [
+            ErrorValuesForTests.missing_json,
+            ErrorValuesForTests.json_dob_error,
+        ]
 
         for test_case in error_test_cases:
             json_data = json.dumps(test_case)
@@ -182,7 +184,7 @@ class TestConvertToFlatJson(unittest.TestCase):
 
             # Check if bad data creates error records
             self.assertTrue(len(errorRecords) == 0)
-            
+
     def test_fhir_converter_json_incorrect_data_scenario_reporting_on(self):
         """it should convert fhir json data to flat json - error scenarios"""
 
@@ -190,8 +192,7 @@ class TestConvertToFlatJson(unittest.TestCase):
             fhir_converter = Converter(None)
             errorRecords = fhir_converter.get_error_records()
             self.assertTrue(len(errorRecords) > 0)
-    
-    
+
     def test_fhir_converter_json_incorrect_data_scenario_reporting_off(self):
         """it should convert fhir json data to flat json - error scenarios"""
 
@@ -205,7 +206,10 @@ class TestConvertToFlatJson(unittest.TestCase):
         expected_action_flags = [
             {"Operation": Operation.CREATE, "EXPECTED_ACTION_FLAG": ActionFlag.CREATE},
             {"Operation": Operation.UPDATE, "EXPECTED_ACTION_FLAG": ActionFlag.UPDATE},
-            {"Operation": Operation.DELETE_LOGICAL, "EXPECTED_ACTION_FLAG": ActionFlag.DELETE_LOGICAL},
+            {
+                "Operation": Operation.DELETE_LOGICAL,
+                "EXPECTED_ACTION_FLAG": ActionFlag.DELETE_LOGICAL,
+            },
         ]
 
         for test_case in expected_action_flags:
@@ -228,7 +232,7 @@ class TestConvertToFlatJson(unittest.TestCase):
                     items,
                     expected_values,
                     expected_imms,
-                    response
+                    response,
                 )
 
                 result = self.table.scan()
@@ -240,8 +244,6 @@ class TestConvertToFlatJson(unittest.TestCase):
         with self.table.batch_writer() as batch:
             for item in scan.get("Items", []):
                 batch.delete_item(Key={"PK": item["PK"]})
-        result = self.table.scan()
-        items = result.get("Items", [])
 
     if __name__ == "__main__":
         unittest.main()

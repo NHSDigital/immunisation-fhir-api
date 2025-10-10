@@ -3,7 +3,9 @@
 from unittest.mock import patch
 import json
 from decimal import Decimal
-from tests.utils_for_recordprocessor_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT
+from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
+    MOCK_ENVIRONMENT_DICT,
+)
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
     from constants import Urls, AuditTableKeys
@@ -167,10 +169,22 @@ class FileDetails:
         }
 
         # Mock the event details which would be receeived from SQS message
-        self.event_full_permissions_dict = {**self.base_event, "permission": self.full_permissions_list}
-        self.event_create_permissions_only_dict = {**self.base_event, "permission": self.create_permissions_only}
-        self.event_update_permissions_only_dict = {**self.base_event, "permission": self.update_permissions_only}
-        self.event_delete_permissions_only_dict = {**self.base_event, "permission": self.delete_permissions_only}
+        self.event_full_permissions_dict = {
+            **self.base_event,
+            "permission": self.full_permissions_list,
+        }
+        self.event_create_permissions_only_dict = {
+            **self.base_event,
+            "permission": self.create_permissions_only,
+        }
+        self.event_update_permissions_only_dict = {
+            **self.base_event,
+            "permission": self.update_permissions_only,
+        }
+        self.event_delete_permissions_only_dict = {
+            **self.base_event,
+            "permission": self.delete_permissions_only,
+        }
         self.event_no_permissions_dict = {**self.base_event, "permission": []}
         self.event_full_permissions = json.dumps(self.event_full_permissions_dict)
         self.event_create_permissions_only = json.dumps(self.event_create_permissions_only_dict)
@@ -247,7 +261,11 @@ class UnorderedFieldDictionaries:
         "INDICATION_CODE": "1037351000000105",
     }
 
-    critical_fields = {"ACTION_FLAG": "NEW", "UNIQUE_ID": "a_unique_id", "UNIQUE_ID_URI": "a_unique_id_uri"}
+    critical_fields = {
+        "ACTION_FLAG": "NEW",
+        "UNIQUE_ID": "a_unique_id",
+        "UNIQUE_ID_URI": "a_unique_id_uri",
+    }
 
 
 class MockFieldDictionaries:
@@ -365,11 +383,24 @@ class MockFhirImmsResources:
         "recorded": "2024-09-04",
         "primarySource": True,
         "manufacturer": {"display": "Sanofi Pasteur"},
-        "location": {"identifier": {"value": "RJC02", "system": "https://fhir.nhs.uk/Id/ods-organization-code"}},
+        "location": {
+            "identifier": {
+                "value": "RJC02",
+                "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+            }
+        },
         "lotNumber": "BN92478105653",
         "expirationDate": "2024-09-15",
         "site": {"coding": [{"system": Urls.SNOMED, "code": "368209003", "display": "Right arm"}]},
-        "route": {"coding": [{"system": Urls.SNOMED, "code": "1210999013", "display": "Intradermal use"}]},
+        "route": {
+            "coding": [
+                {
+                    "system": Urls.SNOMED,
+                    "code": "1210999013",
+                    "display": "Intradermal use",
+                }
+            ]
+        },
         "doseQuantity": {
             "value": Decimal("0.3"),
             "unit": "Inhalation - unit of product usage",
@@ -380,7 +411,10 @@ class MockFhirImmsResources:
             {
                 "actor": {
                     "type": "Organization",
-                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "RVVKC"},
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                        "value": "RVVKC",
+                    },
                 }
             },
             {"actor": {"reference": "#Practitioner1"}},
@@ -426,17 +460,33 @@ class MockFhirImmsResources:
             }
         ],
         "status": "completed",
-        "vaccineCode": {"coding": [{"system": Urls.NULL_FLAVOUR_CODES, "code": "NAVU", "display": "Not available"}]},
+        "vaccineCode": {
+            "coding": [
+                {
+                    "system": Urls.NULL_FLAVOUR_CODES,
+                    "code": "NAVU",
+                    "display": "Not available",
+                }
+            ]
+        },
         "patient": {"reference": "#Patient1"},
         "occurrenceDateTime": "2024-09-04T18:33:25+00:00",
         "recorded": "2024-09-04",
         "primarySource": True,
-        "location": {"identifier": {"value": "RJC02", "system": "https://fhir.nhs.uk/Id/ods-organization-code"}},
+        "location": {
+            "identifier": {
+                "value": "RJC02",
+                "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+            }
+        },
         "performer": [
             {
                 "actor": {
                     "type": "Organization",
-                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "RVVKC"},
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                        "value": "RVVKC",
+                    },
                 }
             },
         ],
@@ -451,7 +501,15 @@ class MockFhirImmsResources:
     critical_fields = {
         "resourceType": "Immunization",
         "status": "completed",
-        "vaccineCode": {"coding": [{"system": Urls.NULL_FLAVOUR_CODES, "code": "NAVU", "display": "Not available"}]},
+        "vaccineCode": {
+            "coding": [
+                {
+                    "system": Urls.NULL_FLAVOUR_CODES,
+                    "code": "NAVU",
+                    "display": "Not available",
+                }
+            ]
+        },
         "identifier": [{"system": "a_unique_id_uri", "value": "a_unique_id"}],
         "protocolApplied": [
             {
@@ -473,7 +531,7 @@ class MockFhirImmsResources:
                             {
                                 "system": "http://snomed.info/sct",
                                 "code": "55735004",
-                                "display": "Respiratory syncytial virus infection (disorder)"
+                                "display": "Respiratory syncytial virus infection (disorder)",
                             }
                         ]
                     }
@@ -481,12 +539,7 @@ class MockFhirImmsResources:
             }
         ],
         "recorded": "2024-09-04",
-        "identifier": [
-            {
-                "value": "RSV_002",
-                "system": "https://www.ravs.england.nhs.uk/"
-            }
-        ]
+        "identifier": [{"value": "RSV_002", "system": "https://www.ravs.england.nhs.uk/"}],
     }
 
 

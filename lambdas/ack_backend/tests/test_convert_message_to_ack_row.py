@@ -7,7 +7,10 @@ from moto import mock_s3, mock_firehose
 
 
 from tests.utils.mock_environment_variables import MOCK_ENVIRONMENT_DICT, REGION_NAME
-from tests.utils.generic_setup_and_teardown_for_ack_backend import GenericSetUp, GenericTearDown
+from tests.utils.generic_setup_and_teardown_for_ack_backend import (
+    GenericSetUp,
+    GenericTearDown,
+)
 from tests.utils.values_for_ack_backend_tests import (
     DefaultValues,
     ValidValues,
@@ -15,7 +18,10 @@ from tests.utils.values_for_ack_backend_tests import (
 )
 
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
-    from convert_message_to_ack_row import convert_message_to_ack_row, get_error_message_for_ack_file
+    from convert_message_to_ack_row import (
+        convert_message_to_ack_row,
+        get_error_message_for_ack_file,
+    )
 
 s3_client = boto3_client("s3", region_name=REGION_NAME)
 firehose_client = boto3_client("firehose", region_name=REGION_NAME)
@@ -44,13 +50,19 @@ class TestAckProcessor(unittest.TestCase):
         self.assertEqual(None, get_error_message_for_ack_file(None))
 
         # CASE: diagnostics is not a dictionary
-        self.assertEqual(diagnastics_unclear_error_message, get_error_message_for_ack_file("not a dict"))
+        self.assertEqual(
+            diagnastics_unclear_error_message,
+            get_error_message_for_ack_file("not a dict"),
+        )
 
         # CASE: Server error
         self.assertEqual(server_error_message, get_error_message_for_ack_file({"statusCode": 500}))
 
         # CASE: Diagnostics dictionary missing error_message
-        self.assertEqual(diagnastics_unclear_error_message, get_error_message_for_ack_file({"statusCode": 400}))
+        self.assertEqual(
+            diagnastics_unclear_error_message,
+            get_error_message_for_ack_file({"statusCode": 400}),
+        )
 
         # CASE: Correctly formatted diagnostics dictionary
         self.assertEqual(
