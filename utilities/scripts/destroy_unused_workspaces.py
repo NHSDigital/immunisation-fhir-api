@@ -29,14 +29,15 @@ def set_env(aws_profile):
     # Create the path to the terraform directory
     current_directory = os.path.dirname(os.path.abspath(__file__))
     # Construct the path to the parent directory
-    parent_directory = os.path.join(current_directory, "..")
+    parent_directory = os.path.join(current_directory, "../..")
     # Construct the path to the "terraform" directory
-    terraform_directory = os.path.join(parent_directory, "terraform")
+    terraform_directory = os.path.join(parent_directory, "infrastructure/terraform")
     # Change the working directory to the "terraform" directory
     os.chdir(terraform_directory)
     os.environ["AWS_PROFILE"] = aws_profile
     # Now you are in the terraform directory
     print("Terraform Directory:", os.getcwd())
+    exit
 
 
 def list_pr_workspaces(prefix):
