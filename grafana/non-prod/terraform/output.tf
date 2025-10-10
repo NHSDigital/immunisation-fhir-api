@@ -52,18 +52,18 @@ output "alb_listener_arn" {
 }
 
 output "prefix" {
-    value = local.prefix
+  value = local.prefix
 }
 
 output "app_image" {
-    value = local.app_image
+  value = local.app_image
 }
 
 output "app_name" {
-    value = local.app_name
+  value = local.app_name
 }
 
 output "Monitoring_Role_Arn" {
-    value = aws_iam_role.monitoring_role.arn
+  value = aws_iam_role.monitoring_role.arn
 }
 

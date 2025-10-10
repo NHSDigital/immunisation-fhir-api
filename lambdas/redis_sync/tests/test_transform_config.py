@@ -1,9 +1,10 @@
-
 import unittest
 import json
 from unittest.mock import patch
 from transform_configs import (
-    transform_vaccine_map, transform_supplier_permissions, transform_validation_rules
+    transform_vaccine_map,
+    transform_supplier_permissions,
+    transform_validation_rules,
 )
 
 
@@ -53,7 +54,10 @@ class TestTransformConfigs(unittest.TestCase):
 
     def test_empty_input(self):
         result = transform_supplier_permissions([])
-        self.assertEqual(result, {
-            "supplier_permissions": {},
-            "ods_code_to_supplier": {},
-        })
+        self.assertEqual(
+            result,
+            {
+                "supplier_permissions": {},
+                "ods_code_to_supplier": {},
+            },
+        )

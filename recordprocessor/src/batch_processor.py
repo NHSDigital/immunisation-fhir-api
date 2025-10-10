@@ -6,14 +6,19 @@ import time
 from csv import DictReader
 from json import JSONDecodeError
 
-from constants import FileStatus, FileNotProcessedReason, SOURCE_BUCKET_NAME, ARCHIVE_DIR_NAME, PROCESSING_DIR_NAME
+from constants import (
+    FileStatus,
+    FileNotProcessedReason,
+    SOURCE_BUCKET_NAME,
+    ARCHIVE_DIR_NAME,
+    PROCESSING_DIR_NAME,
+)
 from process_row import process_row
 from mappings import map_target_disease
 from audit_table import update_audit_table_status
 from send_to_kinesis import send_to_kinesis
 from clients import logger
 from file_level_validation import file_level_validation, file_is_empty, move_file
-from errors import NoOperationPermissions, InvalidHeaders
 from utils_for_recordprocessor import get_csv_content_dict_reader
 from typing import Optional
 
@@ -29,8 +34,8 @@ def process_csv_to_fhir(incoming_message_body: dict) -> int:
     try:
         incoming_message_body["encoder"] = encoder
         interim_message_body = file_level_validation(incoming_message_body=incoming_message_body)
-    except (InvalidHeaders, NoOperationPermissions, Exception) as e:  # pylint: disable=broad-exception-caught
-        logger.error(f"File level validation failed: {e}")        # If the file is invalid, processing should cease
+    except Exception as e:  # pylint: disable=broad-exception-caught
+        logger.error(f"File level validation failed: {e}")  # If the file is invalid, processing should cease
         return 0
 
     file_id = interim_message_body.get("message_id")
@@ -43,12 +48,20 @@ def process_csv_to_fhir(incoming_message_body: dict) -> int:
 
     target_disease = map_target_disease(vaccine)
 
-    row_count, err = process_rows(file_id, vaccine, supplier, file_key, allowed_operations,
-                                  created_at_formatted_string, csv_reader, target_disease)
+    row_count, err = process_rows(
+        file_id,
+        vaccine,
+        supplier,
+        file_key,
+        allowed_operations,
+        created_at_formatted_string,
+        csv_reader,
+        target_disease,
+    )
 
     if err:
         if isinstance(err, UnicodeDecodeError):
-            """ resolves encoding issue VED-754 """
+            """resolves encoding issue VED-754"""
             logger.warning(f"Encoding Error: {err}.")
             new_encoder = "cp1252"
             logger.info(f"Encode error at row {row_count} with {encoder}. Switch to {new_encoder}")
@@ -57,8 +70,17 @@ def process_csv_to_fhir(incoming_message_body: dict) -> int:
             # load alternative encoder
             csv_reader = get_csv_content_dict_reader(f"{PROCESSING_DIR_NAME}/{file_key}", encoder=encoder)
             # re-read the file and skip processed rows
-            row_count, err = process_rows(file_id, vaccine, supplier, file_key, allowed_operations,
-                                          created_at_formatted_string, csv_reader, target_disease, row_count)
+            row_count, err = process_rows(
+                file_id,
+                vaccine,
+                supplier,
+                file_key,
+                allowed_operations,
+                created_at_formatted_string,
+                csv_reader,
+                target_disease,
+                row_count,
+            )
         else:
             logger.error(f"Row Processing error: {err}")
             raise err
@@ -67,7 +89,11 @@ def process_csv_to_fhir(incoming_message_body: dict) -> int:
 
     if file_is_empty(row_count):
         logger.warning("File was empty: %s. Moving file to archive directory.", file_key)
-        move_file(SOURCE_BUCKET_NAME, f"{PROCESSING_DIR_NAME}/{file_key}", f"{ARCHIVE_DIR_NAME}/{file_key}")
+        move_file(
+            SOURCE_BUCKET_NAME,
+            f"{PROCESSING_DIR_NAME}/{file_key}",
+            f"{ARCHIVE_DIR_NAME}/{file_key}",
+        )
         file_status = f"{FileStatus.NOT_PROCESSED} - {FileNotProcessedReason.EMPTY}"
 
     update_audit_table_status(file_key, file_id, file_status)
@@ -84,7 +110,7 @@ def process_rows(
     created_at_formatted_string: str,
     csv_reader: DictReader,
     target_disease: list[dict],
-    total_rows_processed_count: int = 0
+    total_rows_processed_count: int = 0,
 ) -> tuple[int, Optional[Exception]]:
     """
     Processes each row in the csv_reader starting from start_row.
@@ -100,7 +126,7 @@ def process_rows(
                 # Log progress every 1000 rows and the first 10 rows after a restart
                 if total_rows_processed_count % 1000 == 0:
                     logger.info(f"Process: {total_rows_processed_count+1}")
-                if start_row > 0 and row_count <= start_row+10:
+                if start_row > 0 and row_count <= start_row + 10:
                     logger.info(f"Restarted Process (log up to first 10): {total_rows_processed_count+1}")
                 # Process the row to obtain the details needed for the message_body and ack file
                 details_from_processing = process_row(target_disease, allowed_operations, row)

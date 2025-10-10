@@ -35,7 +35,10 @@ class TestCreateImmunization(ImmunizationBaseTest):
         self.assertEqual(res.status_code, 200)
 
         # Check that duplicate CREATE request is rejected
-        self.assert_operation_outcome(self.default_imms_api.create_immunization(imms, expected_status_code=422), 422)
+        self.assert_operation_outcome(
+            self.default_imms_api.create_immunization(imms, expected_status_code=422),
+            422,
+        )
         self.assertEqual(res.headers["E-Tag"], "1")
 
         # Check that duplicate CREATE request is rejected after the event is updated
@@ -43,13 +46,21 @@ class TestCreateImmunization(ImmunizationBaseTest):
         self.default_imms_api.update_immunization(imms_id, imms)
         self.assertEqual(res.status_code, 200)
         del imms["id"]  # Imms fhir resource should not include an id for create
-        self.assert_operation_outcome(self.default_imms_api.create_immunization(imms, expected_status_code=422), 422)
+        self.assert_operation_outcome(
+            self.default_imms_api.create_immunization(imms, expected_status_code=422),
+            422,
+        )
 
         # Check that duplicate CREATE request is rejected after the event is updated then deleted
         self.default_imms_api.delete_immunization(imms_id)
-        self.assertEqual(self.default_imms_api.get_immunization_by_id(
-            imms_id, expected_status_code=404).status_code, 404)
-        self.assert_operation_outcome(self.default_imms_api.create_immunization(imms, expected_status_code=422), 422)
+        self.assertEqual(
+            self.default_imms_api.get_immunization_by_id(imms_id, expected_status_code=404).status_code,
+            404,
+        )
+        self.assert_operation_outcome(
+            self.default_imms_api.create_immunization(imms, expected_status_code=422),
+            422,
+        )
 
         # Check that duplicate CREATE request is rejected after the event is updated then deleted then reinstated
         imms["id"] = imms_id  # Imms fhir resource should include the id for update
@@ -57,7 +68,10 @@ class TestCreateImmunization(ImmunizationBaseTest):
         res = self.default_imms_api.get_immunization_by_id(imms_id)
         self.assertEqual(res.status_code, 200)
         del imms["id"]  # Imms fhir resource should not include an id for create
-        self.assert_operation_outcome(self.default_imms_api.create_immunization(imms, expected_status_code=422), 422)
+        self.assert_operation_outcome(
+            self.default_imms_api.create_immunization(imms, expected_status_code=422),
+            422,
+        )
         self.assertEqual(res.headers["E-Tag"], "3")
 
     def test_invalid_nhs_number(self):
@@ -116,7 +130,8 @@ class TestCreateImmunization(ImmunizationBaseTest):
     def test_create_imms_for_mandatory_fields_only(self):
         """Test that data containing only the mandatory fields is accepted for create"""
         imms = generate_imms_resource(
-            nhs_number=None, sample_data_file_name="completed_covid19_immunization_event_mandatory_fields_only"
+            nhs_number=None,
+            sample_data_file_name="completed_covid19_immunization_event_mandatory_fields_only",
         )
 
         # When
@@ -130,7 +145,8 @@ class TestCreateImmunization(ImmunizationBaseTest):
     def test_create_imms_with_missing_mandatory_field(self):
         """Test that data  is rejected for create if one of the mandatory fields is missing"""
         imms = generate_imms_resource(
-            nhs_number=None, sample_data_file_name="completed_covid19_immunization_event_mandatory_fields_only"
+            nhs_number=None,
+            sample_data_file_name="completed_covid19_immunization_event_mandatory_fields_only",
         )
         del imms["primarySource"]
 

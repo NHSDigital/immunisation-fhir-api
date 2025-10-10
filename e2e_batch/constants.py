@@ -92,6 +92,9 @@ class TestSet:
     CREATE_OK = ActionSequence("Create. OK", [ActionFlag.CREATE])
     UPDATE_OK = ActionSequence("Update. OK", [ActionFlag.CREATE, ActionFlag.UPDATE])
     DELETE_OK = ActionSequence("Delete. OK", [ActionFlag.CREATE, ActionFlag.UPDATE, ActionFlag.DELETE_LOGICAL])
-    REINSTATE_OK = ActionSequence("Reinstate. OK", [ActionFlag.CREATE, ActionFlag.DELETE_LOGICAL, ActionFlag.UPDATE])
+    REINSTATE_OK = ActionSequence(
+        "Reinstate. OK",
+        [ActionFlag.CREATE, ActionFlag.DELETE_LOGICAL, ActionFlag.UPDATE],
+    )
     DELETE_FAIL = ActionSequence("Delete without Create. Fail", [ActionFlag.DELETE_LOGICAL])
     UPDATE_FAIL = ActionSequence("Update without Create. Fail", [ActionFlag.UPDATE], outcome=ActionFlag.NONE)

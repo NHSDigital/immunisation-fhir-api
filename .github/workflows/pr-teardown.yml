@@ -23,7 +23,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
-  
+
     steps:
       - name: Connect to AWS
         uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838
@@ -37,7 +37,7 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
-        
+
       - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd
         with:
           terraform_version: "1.12.2"
@@ -55,10 +55,10 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: 3.11
-          cache: 'poetry'
+          cache: "poetry"
 
       - name: Unsubscribe MNS
-        working-directory: './lambdas/mns_subscription'
+        working-directory: "./lambdas/mns_subscription"
         env:
           SQS_ARN: ${{ env.ID_SYNC_QUEUE_ARN }}
         run: |

@@ -1,4 +1,5 @@
 """Mappings for converting vaccine type into target disease FHIR element"""
+
 import json
 from constants import Urls
 from clients import redis_client

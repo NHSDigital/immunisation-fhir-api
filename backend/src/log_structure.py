@@ -5,7 +5,6 @@ from datetime import datetime
 from functools import wraps
 
 from log_firehose import FirehoseLogger
-
 from models.utils.validation_utils import get_vaccine_type
 
 logging.basicConfig()
@@ -14,6 +13,7 @@ logger.setLevel("INFO")
 
 
 firehose_logger = FirehoseLogger()
+
 
 def _log_data_from_body(event) -> dict:
     log_data = {}

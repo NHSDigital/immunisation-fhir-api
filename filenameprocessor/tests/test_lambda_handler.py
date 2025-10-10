@@ -1,4 +1,5 @@
 """Tests for lambda_handler"""
+
 import json
 import sys
 from unittest.mock import patch, ANY
@@ -10,15 +11,26 @@ import fakeredis
 from boto3 import client as boto3_client
 from moto import mock_s3, mock_sqs, mock_firehose, mock_dynamodb
 
-from tests.utils_for_tests.generic_setup_and_teardown import GenericSetUp, GenericTearDown
+from tests.utils_for_tests.generic_setup_and_teardown import (
+    GenericSetUp,
+    GenericTearDown,
+)
 from tests.utils_for_tests.utils_for_filenameprocessor_tests import (
     assert_audit_table_entry,
     create_mock_hget,
-    MOCK_ODS_CODE_TO_SUPPLIER
+    MOCK_ODS_CODE_TO_SUPPLIER,
 )
-from tests.utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT, BucketNames, Sqs
-from tests.utils_for_tests.values_for_tests import MOCK_CREATED_AT_FORMATTED_STRING, MockFileDetails, \
-    MOCK_BATCH_FILE_CONTENT, MOCK_EXPIRES_AT
+from tests.utils_for_tests.mock_environment_variables import (
+    MOCK_ENVIRONMENT_DICT,
+    BucketNames,
+    Sqs,
+)
+from tests.utils_for_tests.values_for_tests import (
+    MOCK_CREATED_AT_FORMATTED_STRING,
+    MockFileDetails,
+    MOCK_BATCH_FILE_CONTENT,
+    MOCK_EXPIRES_AT,
+)
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
@@ -35,9 +47,7 @@ dynamodb_client = boto3_client("dynamodb", region_name=REGION_NAME)
 # for all vaccine types. This default is overridden for some specific tests.
 all_vaccine_types_in_this_test_file = ["RSV", "FLU"]
 all_suppliers_in_this_test_file = ["RAVS", "EMIS"]
-all_permissions_in_this_test_file = [
-    f"{vaccine_type}.CRUDS" for vaccine_type in all_vaccine_types_in_this_test_file
-]
+all_permissions_in_this_test_file = [f"{vaccine_type}.CRUDS" for vaccine_type in all_vaccine_types_in_this_test_file]
 
 
 @patch.dict("os.environ", MOCK_ENVIRONMENT_DICT)
@@ -55,8 +65,7 @@ class TestLambdaHandlerDataSource(TestCase):
         after the test has run.
         """
         mock_permissions_map = {
-            supplier: json.dumps(all_permissions_in_this_test_file)
-            for supplier in all_suppliers_in_this_test_file
+            supplier: json.dumps(all_permissions_in_this_test_file) for supplier in all_suppliers_in_this_test_file
         }
         mock_hget = create_mock_hget(MOCK_ODS_CODE_TO_SUPPLIER, mock_permissions_map)
 
@@ -65,13 +74,18 @@ class TestLambdaHandlerDataSource(TestCase):
             # Patch get_creation_and_expiry_times, so that the ack file key can be deduced  (it is already unittested
             # separately). Note that files numbered '1', which are predominantly used in these tests, use the
             # MOCK_CREATED_AT_FORMATTED_STRING.
-            patch("file_name_processor.get_creation_and_expiry_times",
-                  return_value=(MOCK_CREATED_AT_FORMATTED_STRING, MOCK_EXPIRES_AT)),
+            patch(
+                "file_name_processor.get_creation_and_expiry_times",
+                return_value=(MOCK_CREATED_AT_FORMATTED_STRING, MOCK_EXPIRES_AT),
+            ),
             # Patch redis_client to use a fake redis client.
             patch("elasticache.redis_client", new=fakeredis.FakeStrictRedis()),
             # Patch the permissions config to allow all suppliers full permissions for all vaccine types.
             patch("elasticache.redis_client.hget", side_effect=mock_hget),
-            patch("elasticache.redis_client.hkeys", return_value=all_vaccine_types_in_this_test_file),
+            patch(
+                "elasticache.redis_client.hkeys",
+                return_value=all_vaccine_types_in_this_test_file,
+            ),
         ]
 
         with ExitStack() as stack:
@@ -102,14 +116,20 @@ class TestLambdaHandlerDataSource(TestCase):
         Makes a record which includes a message_id, with the s3 bucket name set to BucketNames.SOURCE and
         s3 object key set to the file_key.
         """
-        return {"s3": {"bucket": {"name": BucketNames.SOURCE}, "object": {"key": file_key}}, "message_id": message_id}
+        return {
+            "s3": {"bucket": {"name": BucketNames.SOURCE}, "object": {"key": file_key}},
+            "message_id": message_id,
+        }
 
     def make_event(self, records: list):
         """Makes an event with s3 bucket name set to BucketNames.SOURCE and and s3 object key set to the file_key."""
         return {"Records": records}
 
     @staticmethod
-    def get_ack_file_key(file_key: str, created_at_formatted_string: str = MOCK_CREATED_AT_FORMATTED_STRING) -> str:
+    def get_ack_file_key(
+        file_key: str,
+        created_at_formatted_string: str = MOCK_CREATED_AT_FORMATTED_STRING,
+    ) -> str:
         """Returns the ack file key for the given file key"""
         return f"ack/{file_key.replace('.csv', '_InfAck_' + created_at_formatted_string + '.csv')}"
 
@@ -145,7 +165,8 @@ class TestLambdaHandlerDataSource(TestCase):
     def assert_not_in_audit_table(self, file_details: MockFileDetails) -> None:
         """Assert that the file is not in the audit table"""
         table_entry = dynamodb_client.get_item(
-            TableName=AUDIT_TABLE_NAME, Key={AuditTableKeys.MESSAGE_ID: {"S": file_details.message_id}}
+            TableName=AUDIT_TABLE_NAME,
+            Key={AuditTableKeys.MESSAGE_ID: {"S": file_details.message_id}},
         ).get("Item")
         self.assertIsNone(table_entry)
 
@@ -184,10 +205,17 @@ class TestLambdaHandlerDataSource(TestCase):
         for file_details in test_cases:
             with self.subTest(file_details.name):
                 # Set up the file in the source bucket
-                s3_client.put_object(Bucket=BucketNames.SOURCE, Key=file_details.file_key, Body=MOCK_BATCH_FILE_CONTENT)
+                s3_client.put_object(
+                    Bucket=BucketNames.SOURCE,
+                    Key=file_details.file_key,
+                    Body=MOCK_BATCH_FILE_CONTENT,
+                )
 
                 with (  # noqa: E999
-                    patch("file_name_processor.uuid4", return_value=file_details.message_id),  # noqa: E999
+                    patch(
+                        "file_name_processor.uuid4",
+                        return_value=file_details.message_id,
+                    ),  # noqa: E999
                 ):  # noqa: E999
                     lambda_handler(self.make_event([self.make_record(file_details.file_key)]), None)
 
@@ -208,7 +236,10 @@ class TestLambdaHandlerDataSource(TestCase):
         with (  # noqa: E999
             patch("file_name_processor.uuid4", return_value=file_details.message_id),  # noqa: E999
         ):  # noqa: E999
-            lambda_handler(self.make_event([self.make_record("folder/" + file_details.file_key)]), None)
+            lambda_handler(
+                self.make_event([self.make_record("folder/" + file_details.file_key)]),
+                None,
+            )
 
         self.assert_not_in_audit_table(file_details)
         self.assert_no_sqs_message()
@@ -222,7 +253,11 @@ class TestLambdaHandlerDataSource(TestCase):
         * The failure inf_ack file is created
         """
         invalid_file_key = "InvalidVaccineType_Vaccinations_v5_YGM41_20240708T12130100.csv"
-        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=invalid_file_key, Body=MOCK_BATCH_FILE_CONTENT)
+        s3_client.put_object(
+            Bucket=BucketNames.SOURCE,
+            Key=invalid_file_key,
+            Body=MOCK_BATCH_FILE_CONTENT,
+        )
         file_details = deepcopy(MockFileDetails.ravs_rsv_1)
         file_details.file_key = invalid_file_key
         file_details.ack_file_key = self.get_ack_file_key(invalid_file_key)
@@ -260,7 +295,11 @@ class TestLambdaHandlerDataSource(TestCase):
         * The failure inf_ack file is created
         """
         file_details = MockFileDetails.ravs_rsv_1
-        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=file_details.file_key, Body=MOCK_BATCH_FILE_CONTENT)
+        s3_client.put_object(
+            Bucket=BucketNames.SOURCE,
+            Key=file_details.file_key,
+            Body=MOCK_BATCH_FILE_CONTENT,
+        )
 
         # Mock the supplier permissions with a value which doesn't include the requested Flu permissions
         mock_hget = create_mock_hget({"X8E5B": "RAVS"}, {})
@@ -278,14 +317,16 @@ class TestLambdaHandlerDataSource(TestCase):
                 "status": {"S": "Not processed - Unauthorised"},
                 "error_details": {"S": "Initial file validation failed: RAVS does not have permissions for RSV"},
                 "timestamp": {"S": file_details.created_at_formatted_string},
-                "expires_at": {"N": str(file_details.expires_at)}
+                "expires_at": {"N": str(file_details.expires_at)},
             }
         ]
         self.assertEqual(self.get_audit_table_items(), expected_table_items)
         self.assert_no_sqs_message()
         self.assert_ack_file_contents(file_details)
 
-    def test_lambda_adds_event_to_audit_table_as_failed_when_unexpected_exception_is_caught(self):
+    def test_lambda_adds_event_to_audit_table_as_failed_when_unexpected_exception_is_caught(
+        self,
+    ):
         """
         Tests that when an unexpected error occurs e.g. an unexpected exception when validating permissions:
         * The file is added to the audit table with a status of 'Failed' and the reason
@@ -293,13 +334,18 @@ class TestLambdaHandlerDataSource(TestCase):
         * The failure inf_ack file is created
         """
         test_file_details = MockFileDetails.emis_flu
-        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=test_file_details.file_key, Body=MOCK_BATCH_FILE_CONTENT)
+        s3_client.put_object(
+            Bucket=BucketNames.SOURCE,
+            Key=test_file_details.file_key,
+            Body=MOCK_BATCH_FILE_CONTENT,
+        )
 
         with (  # noqa: E999
             patch("file_name_processor.uuid4", return_value=test_file_details.message_id),  # noqa: E999
-            patch("file_name_processor.validate_vaccine_type_permissions", side_effect=Exception(
-                "Some unexpected exception"
-            ))
+            patch(
+                "file_name_processor.validate_vaccine_type_permissions",
+                side_effect=Exception("Some unexpected exception"),
+            ),
         ):  # noqa: E999
             lambda_handler(self.make_event([self.make_record(test_file_details.file_key)]), None)
 
@@ -330,7 +376,10 @@ class TestUnexpectedBucket(TestCase):
     def setUp(self):
         GenericSetUp(s3_client, firehose_client, sqs_client, dynamodb_client)
 
-        hkeys_patcher = patch("elasticache.redis_client.hkeys", return_value=all_vaccine_types_in_this_test_file)
+        hkeys_patcher = patch(
+            "elasticache.redis_client.hkeys",
+            return_value=all_vaccine_types_in_this_test_file,
+        )
         self.addCleanup(hkeys_patcher.stop)
         hkeys_patcher.start()
 
@@ -348,7 +397,7 @@ class TestUnexpectedBucket(TestCase):
         record = {
             "s3": {
                 "bucket": {"name": "unknown-bucket"},
-                "object": {"key": ravs_record.file_key}
+                "object": {"key": ravs_record.file_key},
             }
         }
 
@@ -373,7 +422,7 @@ class TestUnexpectedBucket(TestCase):
         record = {
             "s3": {
                 "bucket": {"name": "unknown-bucket"},
-                "object": {"key": invalid_file_key}
+                "object": {"key": invalid_file_key},
             }
         }
 
@@ -398,8 +447,10 @@ class TestMainEntryPoint(TestCase):
     def test_run_local_constructs_event_and_calls_lambda_handler(self):
         test_args = [
             "file_name_processor.py",
-            "--bucket", "test-bucket",
-            "--key", "some/path/file.csv"
+            "--bucket",
+            "test-bucket",
+            "--key",
+            "some/path/file.csv",
         ]
 
         expected_event = {
@@ -407,7 +458,7 @@ class TestMainEntryPoint(TestCase):
                 {
                     "s3": {
                         "bucket": {"name": "test-bucket"},
-                        "object": {"key": "some/path/file.csv"}
+                        "object": {"key": "some/path/file.csv"},
                     }
                 }
             ]
@@ -416,9 +467,10 @@ class TestMainEntryPoint(TestCase):
         with (
             patch.object(sys, "argv", test_args),
             patch("file_name_processor.lambda_handler") as mock_lambda_handler,
-            patch("file_name_processor.print") as mock_print
+            patch("file_name_processor.print") as mock_print,
         ):
             import file_name_processor
+
             file_name_processor.run_local()
 
             mock_lambda_handler.assert_called_once_with(event=expected_event, context={})

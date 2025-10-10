@@ -1,4 +1,5 @@
 """Authoriser class"""
+
 import json
 
 from authorisation.api_operation_code import ApiOperationCode
@@ -8,13 +9,17 @@ from constants import SUPPLIER_PERMISSIONS_HASH_KEY
 
 class Authoriser:
     """Authoriser class. Used for authorising operations on FHIR vaccinations."""
+
     def __init__(self):
         self._cache_client = redis_client
 
     @staticmethod
-    def _expand_permissions(permissions: list[str]) -> dict[str, list[ApiOperationCode]]:
+    def _expand_permissions(
+        permissions: list[str],
+    ) -> dict[str, list[ApiOperationCode]]:
         """Parses and expands permissions data into a dictionary mapping vaccination types to a list of permitted
-        API operations. The raw string from Redis will be in the form VAC.PERMS e.g. COVID19.CRUDS"""
+        API operations. The raw string from Redis will be in the form VAC.PERMS e.g. COVID19.CRUDS
+        """
         expanded_permissions = {}
 
         for permission in permissions:
@@ -39,7 +44,7 @@ class Authoriser:
         self,
         supplier_system: str,
         requested_operation: ApiOperationCode,
-        vaccination_types: set[str]
+        vaccination_types: set[str],
     ) -> bool:
         """Checks that the supplier system is permitted to carry out the requested operation on the given vaccination
         type(s)"""
@@ -58,7 +63,7 @@ class Authoriser:
         self,
         supplier_system: str,
         requested_operation: ApiOperationCode,
-        vaccination_types: set[str]
+        vaccination_types: set[str],
     ) -> set[str]:
         """Returns the set of vaccine types that a given supplier can interact with for a given operation type.
         This is a more permissive form of authorisation e.g. used in search as it will filter out any requested vacc

@@ -1,10 +1,15 @@
-import unittest
+import base64
+import copy
+import json
 import os
+import unittest
 from typing import Optional
 from unittest import TestCase
 from unittest.mock import patch, MagicMock, ANY
+
 from boto3 import resource as boto3_resource
 from moto import mock_aws
+
 from models.errors import (
     MessageNotSuccessfulError,
     RecordProcessorError,
@@ -13,14 +18,13 @@ from models.errors import (
     ResourceNotFoundError,
     ResourceFoundError,
 )
-import base64
-import copy
-import json
-
 from testing_utils.test_utils_for_batch import ForwarderValues, MockFhirImmsResources
 
 with patch.dict("os.environ", ForwarderValues.MOCK_ENVIRONMENT_DICT):
-    from forwarding_batch_lambda import forward_lambda_handler, create_diagnostics_dictionary
+    from forwarding_batch_lambda import (
+        forward_lambda_handler,
+        create_diagnostics_dictionary,
+    )
 
 
 @mock_aws
@@ -46,7 +50,10 @@ class TestForwardLambdaHandler(TestCase):
                     "IndexName": "IdentifierGSI",
                     "KeySchema": [{"AttributeName": "IdentifierPK", "KeyType": "HASH"}],
                     "Projection": {"ProjectionType": "ALL"},
-                    "ProvisionedThroughput": {"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
+                    "ProvisionedThroughput": {
+                        "ReadCapacityUnits": 5,
+                        "WriteCapacityUnits": 5,
+                    },
                 },
                 {
                     "IndexName": "PatientGSI",
@@ -54,7 +61,10 @@ class TestForwardLambdaHandler(TestCase):
                         {"AttributeName": "PatientPK", "KeyType": "HASH"},
                     ],
                     "Projection": {"ProjectionType": "ALL"},
-                    "ProvisionedThroughput": {"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
+                    "ProvisionedThroughput": {
+                        "ReadCapacityUnits": 5,
+                        "WriteCapacityUnits": 5,
+                    },
                 },
             ],
         )
@@ -75,8 +85,11 @@ class TestForwardLambdaHandler(TestCase):
         if not include_fhir_json:
             return None
 
-        fhir_json = copy.deepcopy(MockFhirImmsResources.all_fields) if operation_requested != "DELETE" else (
-            copy.deepcopy(MockFhirImmsResources.delete_operation_fields))
+        fhir_json = (
+            copy.deepcopy(MockFhirImmsResources.all_fields)
+            if operation_requested != "DELETE"
+            else (copy.deepcopy(MockFhirImmsResources.delete_operation_fields))
+        )
 
         if fhir_json.get("identifier") and identifier_value is not None:
             fhir_json["identifier"][0]["value"] = identifier_value
@@ -85,7 +98,10 @@ class TestForwardLambdaHandler(TestCase):
 
     @staticmethod
     def generate_details_from_processing(
-        include_fhir_json=True, operation_requested="CREATE", local_id="local-1", identifier_value=None
+        include_fhir_json=True,
+        operation_requested="CREATE",
+        local_id="local-1",
+        identifier_value=None,
     ):
         """Helper to generate details_from_processing for row data."""
         details = {
@@ -94,9 +110,7 @@ class TestForwardLambdaHandler(TestCase):
         }
         if include_fhir_json:
             details["fhir_json"] = TestForwardLambdaHandler.generate_fhir_json(
-                include_fhir_json,
-                identifier_value,
-                operation_requested
+                include_fhir_json, identifier_value, operation_requested
             )
         return details
 
@@ -109,7 +123,7 @@ class TestForwardLambdaHandler(TestCase):
         include_fhir_json: bool = True,
         operation_requested: str = "create",
         diagnostics: dict = None,
-        supplier: str = "test_supplier"
+        supplier: str = "test_supplier",
     ):
         """Generates input rows for test_cases."""
         details_from_processing = TestForwardLambdaHandler.generate_details_from_processing(
@@ -207,7 +221,10 @@ class TestForwardLambdaHandler(TestCase):
                     identifier_value="single_test_create",
                 ),
                 "expected_keys": ForwarderValues.EXPECTED_KEYS,
-                "expected_values": {"row_id": "row-1", **ForwarderValues.EXPECTED_VALUES},
+                "expected_values": {
+                    "row_id": "row-1",
+                    **ForwarderValues.EXPECTED_VALUES,
+                },
                 "expected_dynamo_item": {
                     "IdentifierPK": "https://www.ravs.england.nhs.uk/#single_test_create",
                     "Operation": "CREATE",
@@ -217,7 +234,11 @@ class TestForwardLambdaHandler(TestCase):
                 "name": "Single Update Success",
                 "input": self.generate_input(row_id=1, operation_requested="UPDATE", include_fhir_json=True),
                 "expected_keys": ForwarderValues.EXPECTED_KEYS,
-                "expected_values": {"row_id": "row-1", "imms_id": pk_test, **ForwarderValues.EXPECTED_VALUES},
+                "expected_values": {
+                    "row_id": "row-1",
+                    "imms_id": pk_test,
+                    **ForwarderValues.EXPECTED_VALUES,
+                },
                 "expected_dynamo_item": table_item,
             },
             {
@@ -280,10 +301,16 @@ class TestForwardLambdaHandler(TestCase):
             {
                 "name": "Row 1: Create Success",
                 "input": self.generate_input(
-                    row_id=1, operation_requested="CREATE", include_fhir_json=True, identifier_value="RSV_CREATE"
+                    row_id=1,
+                    operation_requested="CREATE",
+                    include_fhir_json=True,
+                    identifier_value="RSV_CREATE",
                 ),
                 "expected_keys": ForwarderValues.EXPECTED_KEYS,
-                "expected_values": {"row_id": "row-1", **ForwarderValues.EXPECTED_VALUES},
+                "expected_values": {
+                    "row_id": "row-1",
+                    **ForwarderValues.EXPECTED_VALUES,
+                },
             },
             {
                 "name": "Row 2: Duplication Error: Create failure ",
@@ -300,19 +327,26 @@ class TestForwardLambdaHandler(TestCase):
                 "name": "Row 3: Update success",
                 "input": self.generate_input(row_id=3, operation_requested="UPDATE", include_fhir_json=True),
                 "expected_keys": ForwarderValues.EXPECTED_KEYS,
-                "expected_values": {"row_id": "row-3", "imms_id": "Immunization#4d2ac1eb-080f-4e54-9598-f2d53334681c"},
+                "expected_values": {
+                    "row_id": "row-3",
+                    "imms_id": "Immunization#4d2ac1eb-080f-4e54-9598-f2d53334681c",
+                },
             },
             {
                 "name": "Row 4: Update failure",
                 "input": self.generate_input(
-                    row_id=4, operation_requested="UPDATE", include_fhir_json=True, identifier_value="RSV_UPDATE"
+                    row_id=4,
+                    operation_requested="UPDATE",
+                    include_fhir_json=True,
+                    identifier_value="RSV_UPDATE",
                 ),
                 "expected_keys": ForwarderValues.EXPECTED_KEYS_DIAGNOSTICS,
                 "expected_values": {
                     "row_id": "row-4",
                     "diagnostics": create_diagnostics_dictionary(
                         ResourceNotFoundError(
-                            resource_type="Immunization", resource_id="https://www.ravs.england.nhs.uk/#RSV_UPDATE"
+                            resource_type="Immunization",
+                            resource_id="https://www.ravs.england.nhs.uk/#RSV_UPDATE",
                         )
                     ),
                 },
@@ -321,7 +355,10 @@ class TestForwardLambdaHandler(TestCase):
                 "name": "Row 5: Delete Success",
                 "input": self.generate_input(row_id=5, operation_requested="DELETE", include_fhir_json=True),
                 "expected_keys": ForwarderValues.EXPECTED_KEYS,
-                "expected_values": {"row_id": "row-5", "imms_id": "Immunization#4d2ac1eb-080f-4e54-9598-f2d53334681c"},
+                "expected_values": {
+                    "row_id": "row-5",
+                    "imms_id": "Immunization#4d2ac1eb-080f-4e54-9598-f2d53334681c",
+                },
             },
             {
                 "name": "Row 6: Delete Failure",
@@ -424,7 +461,7 @@ class TestForwardLambdaHandler(TestCase):
                     identifier_value="supplier_1_system/54321",
                     operation_requested="CREATE",
                     file_key="supplier_1_rsv_test_file",
-                    supplier="supplier_1"
+                    supplier="supplier_1",
                 )
             },
             {
@@ -433,9 +470,9 @@ class TestForwardLambdaHandler(TestCase):
                     identifier_value="supplier_2_system/12345",
                     operation_requested="CREATE",
                     file_key="supplier_2_rsv_test_file",
-                    supplier="supplier_2"
+                    supplier="supplier_2",
                 )
-            }
+            },
         ]
         mock_kinesis_event = self.generate_event(mock_records)
         self.mock_redis_client.hget.return_value = "RSV"
@@ -448,33 +485,45 @@ class TestForwardLambdaHandler(TestCase):
 
         # Separate calls are made for each of the respective groups
         self.assertEqual(len(sqs_calls), 2)
-        self.assertEqual(first_call_kwargs["MessageGroupId"], "supplier_1_rsv_test_file_2025-01-24T12:00:00Z")
-        self.assertEqual(second_call_kwargs["MessageGroupId"], "supplier_2_rsv_test_file_2025-01-24T12:00:00Z")
+        self.assertEqual(
+            first_call_kwargs["MessageGroupId"],
+            "supplier_1_rsv_test_file_2025-01-24T12:00:00Z",
+        )
+        self.assertEqual(
+            second_call_kwargs["MessageGroupId"],
+            "supplier_2_rsv_test_file_2025-01-24T12:00:00Z",
+        )
 
-        self.assertDictEqual(json.loads(first_call_kwargs["MessageBody"])[0], {
-            "created_at_formatted_string": "2025-01-24T12:00:00Z",
-            "file_key": "supplier_1_rsv_test_file",
-            "operation_start_time": ANY,
-            "operation_end_time": ANY,
-            "imms_id": ANY,
-            "local_id": "local-1",
-            "operation_requested": "CREATE",
-            "row_id": "row-1",
-            "supplier": "supplier_1",
-            "vaccine_type": "RSV"
-        })
-        self.assertDictEqual(json.loads(second_call_kwargs["MessageBody"])[0], {
-            "created_at_formatted_string": "2025-01-24T12:00:00Z",
-            "file_key": "supplier_2_rsv_test_file",
-            "operation_start_time": ANY,
-            "operation_end_time": ANY,
-            "imms_id": ANY,
-            "local_id": "local-2",
-            "operation_requested": "CREATE",
-            "row_id": "row-2",
-            "supplier": "supplier_2",
-            "vaccine_type": "RSV"
-        })
+        self.assertDictEqual(
+            json.loads(first_call_kwargs["MessageBody"])[0],
+            {
+                "created_at_formatted_string": "2025-01-24T12:00:00Z",
+                "file_key": "supplier_1_rsv_test_file",
+                "operation_start_time": ANY,
+                "operation_end_time": ANY,
+                "imms_id": ANY,
+                "local_id": "local-1",
+                "operation_requested": "CREATE",
+                "row_id": "row-1",
+                "supplier": "supplier_1",
+                "vaccine_type": "RSV",
+            },
+        )
+        self.assertDictEqual(
+            json.loads(second_call_kwargs["MessageBody"])[0],
+            {
+                "created_at_formatted_string": "2025-01-24T12:00:00Z",
+                "file_key": "supplier_2_rsv_test_file",
+                "operation_start_time": ANY,
+                "operation_end_time": ANY,
+                "imms_id": ANY,
+                "local_id": "local-2",
+                "operation_requested": "CREATE",
+                "row_id": "row-2",
+                "supplier": "supplier_2",
+                "vaccine_type": "RSV",
+            },
+        )
 
     @patch("forwarding_batch_lambda.sqs_client.send_message")
     def test_forward_lambda_handler_update_scenarios(self, mock_send_message):
@@ -499,7 +548,10 @@ class TestForwardLambdaHandler(TestCase):
             {
                 "name": "Row 1a: Update existing record",
                 "input": self.generate_input(
-                    row_id=1, operation_requested="UPDATE", include_fhir_json=True, identifier_value="UPDATE_TEST"
+                    row_id=1,
+                    operation_requested="UPDATE",
+                    include_fhir_json=True,
+                    identifier_value="UPDATE_TEST",
                 ),
                 "expected_keys": ForwarderValues.EXPECTED_KEYS,
                 "expected_values": {"row_id": "row-1", "imms_id": pk_test_update},
@@ -515,7 +567,10 @@ class TestForwardLambdaHandler(TestCase):
             {
                 "name": "Row 2a: Delete the updated record",
                 "input": self.generate_input(
-                    row_id=2, operation_requested="DELETE", include_fhir_json=True, identifier_value="UPDATE_TEST"
+                    row_id=2,
+                    operation_requested="DELETE",
+                    include_fhir_json=True,
+                    identifier_value="UPDATE_TEST",
                 ),
                 "expected_keys": ForwarderValues.EXPECTED_KEYS,
                 "expected_values": {"row_id": "row-2", "imms_id": pk_test_update},
@@ -531,7 +586,10 @@ class TestForwardLambdaHandler(TestCase):
             {
                 "name": "Row 3a: Delete Error to Confirm record does not exist anymore",
                 "input": self.generate_input(
-                    row_id=3, operation_requested="DELETE", include_fhir_json=True, identifier_value="UPDATE_TEST"
+                    row_id=3,
+                    operation_requested="DELETE",
+                    include_fhir_json=True,
+                    identifier_value="UPDATE_TEST",
                 ),
                 "expected_keys": ForwarderValues.EXPECTED_KEYS_DIAGNOSTICS,
                 "expected_values": {
@@ -548,7 +606,10 @@ class TestForwardLambdaHandler(TestCase):
             {
                 "name": "Row 4a: Reinstated record using Update operation",
                 "input": self.generate_input(
-                    row_id=4, operation_requested="UPDATE", include_fhir_json=True, identifier_value="UPDATE_TEST"
+                    row_id=4,
+                    operation_requested="UPDATE",
+                    include_fhir_json=True,
+                    identifier_value="UPDATE_TEST",
                 ),
                 "expected_keys": ForwarderValues.EXPECTED_KEYS,
                 "expected_values": {"row_id": "row-4", "imms_id": pk_test_update},
@@ -651,7 +712,11 @@ class TestForwardLambdaHandler(TestCase):
     @patch("forwarding_batch_lambda.create_table")
     @patch("forwarding_batch_lambda.make_batch_controller")
     def test_forward_request_to_dynamo(
-        self, mock_make_controller, mock_create_table, mock_forward_request_to_dynamo, mock_send_message
+        self,
+        mock_make_controller,
+        mock_create_table,
+        mock_forward_request_to_dynamo,
+        mock_send_message,
     ):
         """Test forward lambda handler to assert dynamo db is called,
         and diagnostics handling.
@@ -661,7 +726,7 @@ class TestForwardLambdaHandler(TestCase):
             expected_values (dict): expected output dictionary values
         """
         mock_create_table.return_value = {}
-        mock_make_controller.return_value = mock_controller = MagicMock()
+        mock_make_controller.return_value = MagicMock()
         mock_forward_request_to_dynamo.side_effect = [
             "IMMS123",
         ]

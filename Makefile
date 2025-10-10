@@ -1,7 +1,7 @@
 SHELL=/usr/bin/env bash -euo pipefail
 
 PYTHON_PROJECT_DIRS_WITH_UNIT_TESTS = backend batch_processor_filter delta_backend filenameprocessor mesh_processor recordprocessor lambdas/ack_backend lambdas/redis_sync lambdas/id_sync lambdas/mns_subscription lambdas/shared
-PYTHON_PROJECT_DIRS = e2e e2e_batch $(PYTHON_PROJECT_DIRS_WITH_UNIT_TESTS)
+PYTHON_PROJECT_DIRS = e2e e2e_batch quality_checks $(PYTHON_PROJECT_DIRS_WITH_UNIT_TESTS)
 
 #Installs dependencies using poetry.
 install-python:
@@ -12,17 +12,12 @@ install-python:
 install-node:
 	npm install --legacy-peer-deps
 
-#Configures Git Hooks, which are scripts that run given a specified event.
-.git/hooks/pre-commit:
-	cp scripts/pre-commit .git/hooks/pre-commit
-
 #Condensed Target to run all targets above.
-install: install-node install-python .git/hooks/pre-commit
+install: install-node install-python
 
 #Run the npm linting script (specified in package.json). Used to check the syntax and formatting of files.
 lint:
 	npm run lint
-	find . -name '*.py' -not -path '**/.venv/*' -not -path '**/.terraform/*'| xargs poetry run flake8
 
 #Removes build/ + dist/ directories
 clean:

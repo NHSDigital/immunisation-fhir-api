@@ -1,20 +1,24 @@
 # batch-processor-filter-lambda
 
 ## Contributing to this project
+
 You will first need to have the required setup as specified in the root README.
 
-Then, getting set up to contribute to this Lambda is the same for any others. Refer to 
+Then, getting set up to contribute to this Lambda is the same for any others. Refer to
 the `Setting up a virtual environment with poetry` section in the root README. Assuming 1 and 2 have already been done,
 then you will just need to follow steps 3-5 for this specific directory.
 
 Then run:
+
 ```
 make test
 ```
+
 to verify your setup.
 
 ## Overview
-The context of this Lambda function should be understood within the following architecture diagram: 
+
+The context of this Lambda function should be understood within the following architecture diagram:
 https://nhsd-confluence.digital.nhs.uk/spaces/Vacc/pages/1161762503/Immunisation+FHIR+API+-+Batch+Ingestion+Improvements
 
 The purpose of the batch-processor-filter Lambda function is to ensure that there is only ever one batch file event

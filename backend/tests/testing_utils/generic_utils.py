@@ -3,11 +3,12 @@
 import json
 import os
 import unittest
+from datetime import datetime, date
 from decimal import Decimal
 from typing import Literal, Any
-from jsonpath_ng.ext import parse
-from datetime import datetime, date
 from typing import Union, List
+
+from jsonpath_ng.ext import parse
 
 
 def load_json_data(filename: str):
@@ -84,7 +85,10 @@ def test_invalid_values_rejected(
 
 
 def update_contained_resource_field(
-    json_data: dict, resource_to_update: Literal["Patient", "Practitioner"], field_to_update: str, update_value: Any
+    json_data: dict,
+    resource_to_update: Literal["Patient", "Practitioner"],
+    field_to_update: str,
+    update_value: Any,
 ) -> dict:
     """
     Updates the field of the given resource within the contained resources of the json data
@@ -93,6 +97,7 @@ def update_contained_resource_field(
         {field_to_update: update_value}
     )
     return json_data
+
 
 def format_date_types(dates: List[Union[date, datetime]], mode: str = "auto") -> List[str]:
     """
@@ -106,7 +111,7 @@ def format_date_types(dates: List[Union[date, datetime]], mode: str = "auto") ->
         if mode == "datetime":
             formatted.append(future_date.isoformat())  # full datetime with timezone
         elif mode == "date":
-            formatted.append(future_date.strftime('%Y-%m-%d'))  # just date
+            formatted.append(future_date.strftime("%Y-%m-%d"))  # just date
         else:
             raise TypeError(f"Unsupported type {type(future_date)}; expected date or datetime.")
 

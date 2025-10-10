@@ -136,11 +136,11 @@ jobs:
         if: ${{ inputs.environment == 'dev' && inputs.create_mns_subscription }}
         with:
           python-version: 3.11
-          cache: 'poetry'
+          cache: "poetry"
 
       - name: Create MNS Subscription
         if: ${{ inputs.environment == 'dev' && inputs.create_mns_subscription }}
-        working-directory: './lambdas/mns_subscription'
+        working-directory: "./lambdas/mns_subscription"
         env:
           APIGEE_ENVIRONMENT: ${{ inputs.apigee_environment }}
           SQS_ARN: ${{ env.ID_SYNC_QUEUE_ARN }}

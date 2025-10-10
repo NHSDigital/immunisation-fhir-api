@@ -1,4 +1,5 @@
 """Tests for audit_table functions"""
+
 import unittest
 from unittest import TestCase
 from unittest.mock import patch
@@ -6,9 +7,17 @@ from boto3 import client as boto3_client
 from moto import mock_dynamodb
 from errors import UnhandledAuditTableError
 
-from tests.utils_for_recordprocessor_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT
-from tests.utils_for_recordprocessor_tests.generic_setup_and_teardown import GenericSetUp, GenericTearDown
-from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import MockFileDetails, FileDetails
+from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
+    MOCK_ENVIRONMENT_DICT,
+)
+from tests.utils_for_recordprocessor_tests.generic_setup_and_teardown import (
+    GenericSetUp,
+    GenericTearDown,
+)
+from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
+    MockFileDetails,
+    FileDetails,
+)
 from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
     add_entry_to_table,
 )
@@ -55,7 +64,10 @@ class TestAuditTable(TestCase):
         add_entry_to_table(MockFileDetails.rsv_ravs, file_status=FileStatus.PROCESSING)
         add_entry_to_table(MockFileDetails.flu_emis, file_status=FileStatus.QUEUED)
 
-        expected_table_entry = {**MockFileDetails.rsv_ravs.audit_table_entry, "status": {"S": FileStatus.PREPROCESSED}}
+        expected_table_entry = {
+            **MockFileDetails.rsv_ravs.audit_table_entry,
+            "status": {"S": FileStatus.PREPROCESSED},
+        }
         ravs_rsv_test_file = FileDetails("RSV", "RAVS", "X26")
         file_key = ravs_rsv_test_file.file_key
         message_id = ravs_rsv_test_file.message_id
@@ -70,16 +82,23 @@ class TestAuditTable(TestCase):
         add_entry_to_table(MockFileDetails.rsv_ravs, file_status=FileStatus.QUEUED)
         ravs_rsv_test_file = FileDetails("RSV", "RAVS", "X26")
 
-        update_audit_table_status(ravs_rsv_test_file.file_key, ravs_rsv_test_file.message_id, FileStatus.FAILED,
-                                  error_details="Test error details")
+        update_audit_table_status(
+            ravs_rsv_test_file.file_key,
+            ravs_rsv_test_file.message_id,
+            FileStatus.FAILED,
+            error_details="Test error details",
+        )
 
         table_items = dynamodb_client.scan(TableName=AUDIT_TABLE_NAME).get("Items", [])
         self.assertEqual(1, len(table_items))
-        self.assertEqual({
-            **MockFileDetails.rsv_ravs.audit_table_entry,
-            "status": {"S": FileStatus.FAILED},
-            "error_details": {"S": "Test error details"}
-        }, table_items[0])
+        self.assertEqual(
+            {
+                **MockFileDetails.rsv_ravs.audit_table_entry,
+                "status": {"S": FileStatus.FAILED},
+                "error_details": {"S": "Test error details"},
+            },
+            table_items[0],
+        )
 
     def test_update_audit_table_status_throws_exception_with_invalid_id(self):
         emis_flu_test_file_2 = FileDetails("FLU", "EMIS", "YGM41")

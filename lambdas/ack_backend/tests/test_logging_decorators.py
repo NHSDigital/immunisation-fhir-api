@@ -6,9 +6,9 @@ import logging_decorators
 class TestLoggingDecorators(unittest.TestCase):
     def setUp(self):
         # Patch logger and firehose_client
-        self.logger_patcher = patch('common.log_decorator.logger')
+        self.logger_patcher = patch("common.log_decorator.logger")
         self.mock_logger = self.logger_patcher.start()
-        self.firehose_patcher = patch('common.log_decorator.firehose_client')
+        self.firehose_patcher = patch("common.log_decorator.firehose_client")
         self.mock_firehose = self.firehose_patcher.start()
 
     def tearDown(self):
@@ -52,7 +52,7 @@ class TestLoggingDecorators(unittest.TestCase):
             "vaccine_type": "type",
             "supplier": "sup",
             "local_id": "loc",
-            "operation_requested": "op"
+            "operation_requested": "op",
         }
         result = dummy_func(message, "2024-08-20T12:00:00Z")
         self.assertEqual(result, "ok")
@@ -70,7 +70,7 @@ class TestLoggingDecorators(unittest.TestCase):
             "vaccine_type": "type",
             "supplier": "sup",
             "local_id": "loc",
-            "operation_requested": "op"
+            "operation_requested": "op",
         }
         with self.assertRaises(ValueError):
             dummy_func(message, "2024-08-20T12:00:00Z")

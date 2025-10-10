@@ -23,7 +23,11 @@ def _decorate_immunization(imms: dict, row: Dict[str, str]) -> None:
 
     Add.item(imms, "recorded", row.get("RECORDED_DATE"), Convert.date)
 
-    Add.list_of_dict(imms, "identifier", {"value": row.get("UNIQUE_ID"), "system": row.get("UNIQUE_ID_URI")})
+    Add.list_of_dict(
+        imms,
+        "identifier",
+        {"value": row.get("UNIQUE_ID"), "system": row.get("UNIQUE_ID_URI")},
+    )
 
 
 def _decorate_patient(imms: dict, row: Dict[str, str]) -> None:
@@ -51,7 +55,12 @@ def _decorate_patient(imms: dict, row: Dict[str, str]) -> None:
 
         Add.list_of_dict(patient, "address", {"postalCode": person_postcode})
 
-        Add.custom_item(patient, "identifier", nhs_number, [{"system": Urls.NHS_NUMBER, "value": nhs_number}])
+        Add.custom_item(
+            patient,
+            "identifier",
+            nhs_number,
+            [{"system": Urls.NHS_NUMBER, "value": nhs_number}],
+        )
 
         # Add patient name if there is at least one non-empty patient name value
         if any(_is_not_empty(value) for value in [person_surname, person_forename]):
@@ -71,9 +80,21 @@ def _decorate_vaccine(imms: dict, row: Dict[str, str]) -> None:
     vax_prod_system = Urls.SNOMED
     # vaccineCode is a mandatory FHIR field. If no values are supplied a default null flavour code of 'NAVU' is used.
     if not (vax_prod_code or vax_prod_term):
-        vax_prod_code, vax_prod_term, vax_prod_system = "NAVU", "Not available", Urls.NULL_FLAVOUR_CODES
+        vax_prod_code, vax_prod_term, vax_prod_system = (
+            "NAVU",
+            "Not available",
+            Urls.NULL_FLAVOUR_CODES,
+        )
     imms["vaccineCode"] = {
-        "coding": [Generate.dictionary({"system": vax_prod_system, "code": vax_prod_code, "display": vax_prod_term})]
+        "coding": [
+            Generate.dictionary(
+                {
+                    "system": vax_prod_system,
+                    "code": vax_prod_code,
+                    "display": vax_prod_term,
+                }
+            )
+        ]
     }
 
     Add.dictionary(imms, "manufacturer", {"display": row.get("VACCINE_MANUFACTURER")})
@@ -107,9 +128,19 @@ def _decorate_vaccination(imms: dict, row: Dict[str, str]) -> None:
 
     Add.item(imms, "primarySource", row.get("PRIMARY_SOURCE"), Convert.boolean)
 
-    Add.snomed(imms, "site", row.get("SITE_OF_VACCINATION_CODE"), row.get("SITE_OF_VACCINATION_TERM"))
+    Add.snomed(
+        imms,
+        "site",
+        row.get("SITE_OF_VACCINATION_CODE"),
+        row.get("SITE_OF_VACCINATION_TERM"),
+    )
 
-    Add.snomed(imms, "route", row.get("ROUTE_OF_VACCINATION_CODE"), row.get("ROUTE_OF_VACCINATION_TERM"))
+    Add.snomed(
+        imms,
+        "route",
+        row.get("ROUTE_OF_VACCINATION_CODE"),
+        row.get("ROUTE_OF_VACCINATION_TERM"),
+    )
 
     dose_quantity_values = [
         dose_amount := row.get("DOSE_AMOUNT"),
@@ -123,12 +154,22 @@ def _decorate_vaccination(imms: dict, row: Dict[str, str]) -> None:
         **({"system": Urls.SNOMED} if _is_not_empty(dose_unit_code) else {}),
         "code": dose_unit_code,
     }
-    Add.custom_item(imms, "doseQuantity", dose_quantity_values, Generate.dictionary(dose_quantity_dict))
+    Add.custom_item(
+        imms,
+        "doseQuantity",
+        dose_quantity_values,
+        Generate.dictionary(dose_quantity_dict),
+    )
 
     # If DOSE_SEQUENCE is empty, default FHIR "doseNumberString" to "Dose sequence not recorded",
     # otherwise assume the sender's intention is to supply a positive integer
     if _is_not_empty(dose_sequence := row.get("DOSE_SEQUENCE")):
-        Add.item(imms["protocolApplied"][0], "doseNumberPositiveInt", dose_sequence, Convert.integer)
+        Add.item(
+            imms["protocolApplied"][0],
+            "doseNumberPositiveInt",
+            dose_sequence,
+            Convert.integer,
+        )
     else:
         Add.item(imms["protocolApplied"][0], "doseNumberString", "Dose sequence not recorded")
 
@@ -156,7 +197,11 @@ def _decorate_performer(imms: dict, row: Dict[str, str]) -> None:
         if any(_is_not_empty(value) for value in organization_values):
             organization = {"actor": {"type": "Organization"}}
 
-            Add.dictionary(organization["actor"], "identifier", {"system": site_code_type_uri, "value": site_code})
+            Add.dictionary(
+                organization["actor"],
+                "identifier",
+                {"system": site_code_type_uri, "value": site_code},
+            )
 
             imms["performer"].append(organization)
 
@@ -165,7 +210,10 @@ def _decorate_performer(imms: dict, row: Dict[str, str]) -> None:
 
             # Set up the practitioner
             internal_practitioner_id = "Practitioner1"
-            practitioner = {"resourceType": "Practitioner", "id": internal_practitioner_id}
+            practitioner = {
+                "resourceType": "Practitioner",
+                "id": internal_practitioner_id,
+            }
             imms["performer"].append({"actor": {"reference": f"#{internal_practitioner_id}"}})
 
             # Add practitioner name if there is at least one non-empty practitioner name value
@@ -173,7 +221,10 @@ def _decorate_performer(imms: dict, row: Dict[str, str]) -> None:
                 practitioner["name"] = [{}]
                 Add.item(practitioner["name"][0], "family", performing_prof_surname)
                 Add.custom_item(
-                    practitioner["name"][0], "given", [performing_prof_forename], [performing_prof_forename]
+                    practitioner["name"][0],
+                    "given",
+                    [performing_prof_forename],
+                    [performing_prof_forename],
                 )
 
             # Add practitioner to contained list if it exists, else create a contained list and add it to imms
@@ -182,7 +233,10 @@ def _decorate_performer(imms: dict, row: Dict[str, str]) -> None:
     Add.custom_item(
         imms,
         "location",
-        [location_code := row.get("LOCATION_CODE"), location_code_type_uri := row.get("LOCATION_CODE_TYPE_URI")],
+        [
+            location_code := row.get("LOCATION_CODE"),
+            location_code_type_uri := row.get("LOCATION_CODE_TYPE_URI"),
+        ],
         {"identifier": Generate.dictionary({"value": location_code, "system": location_code_type_uri})},
     )
 
@@ -196,7 +250,9 @@ all_decorators: List[ImmunizationDecorator] = [
 ]
 
 
-def _get_decorators_for_action_flag(action_flag: Operation) -> List[ImmunizationDecorator]:
+def _get_decorators_for_action_flag(
+    action_flag: Operation,
+) -> List[ImmunizationDecorator]:
     # VED-32 DELETE action only requires the immunisation decorator
     if action_flag == Operation.DELETE:
         return [_decorate_immunization]
@@ -210,7 +266,7 @@ def convert_to_fhir_imms_resource(row: dict, target_disease: list, action_flag: 
     imms_resource = {
         "resourceType": "Immunization",
         "status": "completed",
-        "protocolApplied": [{"targetDisease": target_disease}]
+        "protocolApplied": [{"targetDisease": target_disease}],
     }
 
     required_decorators = _get_decorators_for_action_flag(action_flag)

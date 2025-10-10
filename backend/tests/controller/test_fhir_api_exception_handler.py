@@ -16,6 +16,7 @@ class TestFhirApiExceptionHandler(unittest.TestCase):
 
     def test_exception_handler_does_nothing_when_no_exception_occurs(self):
         """Test that when the wrapped function returns successfully then the wrapper does nothing"""
+
         @fhir_api_exception_handler
         def dummy_func():
             return "Hello World"
@@ -27,17 +28,26 @@ class TestFhirApiExceptionHandler(unittest.TestCase):
         """Test that custom exceptions are handled by the wrapper and a valid response is returned to the client"""
         test_cases = [
             (UnauthorizedError(), 403, "forbidden", "Unauthorized request"),
-            (UnauthorizedVaxError(), 403, "forbidden", "Unauthorized request for vaccine type"),
-            (ResourceNotFoundError(resource_type="Immunization", resource_id="123"), 404, "not-found",
-             "Immunization resource does not exist. ID: 123")
+            (
+                UnauthorizedVaxError(),
+                403,
+                "forbidden",
+                "Unauthorized request for vaccine type",
+            ),
+            (
+                ResourceNotFoundError(resource_type="Immunization", resource_id="123"),
+                404,
+                "not-found",
+                "Immunization resource does not exist. ID: 123",
+            ),
         ]
 
         for error, expected_status, expected_code, expected_message in test_cases:
             with self.subTest(msg=f"Test {error.__class__.__name__}"):
 
                 @fhir_api_exception_handler
-                def dummy_func():
-                    raise error
+                def dummy_func(e=error):
+                    raise e
 
                 response = dummy_func()
 
@@ -49,10 +59,10 @@ class TestFhirApiExceptionHandler(unittest.TestCase):
                 self.assertEqual(operation_outcome["issue"][0]["code"], expected_code)
                 self.assertEqual(operation_outcome["issue"][0]["diagnostics"], expected_message)
 
-
     def test_exception_handler_logs_exception_when_unexpected_error_occurs(self):
         """Test that when an unexpected exception occurs the exception is logged and an appropriate response is
         returned"""
+
         @fhir_api_exception_handler
         def dummy_func():
             raise Exception("Something went very wrong")
@@ -67,5 +77,5 @@ class TestFhirApiExceptionHandler(unittest.TestCase):
         self.assertEqual(operation_outcome["issue"][0]["code"], "exception")
         self.assertEqual(
             operation_outcome["issue"][0]["diagnostics"],
-            "Unable to process request. Issue may be transient."
+            "Unable to process request. Issue may be transient.",
         )

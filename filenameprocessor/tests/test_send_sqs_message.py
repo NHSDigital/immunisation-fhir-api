@@ -95,7 +95,10 @@ class TestSendSQSMessage(TestCase):
 
         # Assert that correct message has reached the queue
         messages = sqs_client.receive_message(QueueUrl=queue_url, MaxNumberOfMessages=1)
-        self.assertEqual(json_loads(messages["Messages"][0]["Body"]), deepcopy(FLU_EMIS_FILE_DETAILS.sqs_message_body))
+        self.assertEqual(
+            json_loads(messages["Messages"][0]["Body"]),
+            deepcopy(FLU_EMIS_FILE_DETAILS.sqs_message_body),
+        )
 
     def test_make_and_send_sqs_message_failure(self):
         """Test make_and_send_sqs_message function for a failure due to queue not existing"""

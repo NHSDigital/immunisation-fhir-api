@@ -3,7 +3,7 @@ from clients import redis_client
 from constants import (
     VACCINE_TYPE_TO_DISEASES_HASH_KEY,
     SUPPLIER_PERMISSIONS_HASH_KEY,
-    ODS_CODE_TO_SUPPLIER_SYSTEM_HASH_KEY
+    ODS_CODE_TO_SUPPLIER_SYSTEM_HASH_KEY,
 )
 
 

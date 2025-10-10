@@ -144,9 +144,7 @@
           "period": "$agg",
           "refId": "A",
           "region": "$region",
-          "statistics": [
-            "Sum"
-          ]
+          "statistics": ["Sum"]
         }
       ],
       "thresholds": [],
@@ -305,9 +303,7 @@
           "period": "$agg",
           "refId": "A",
           "region": "$region",
-          "statistics": [
-            "Average"
-          ]
+          "statistics": ["Average"]
         },
         {
           "alias": "{{metric}} {{stat}}",
@@ -340,9 +336,7 @@
           "period": "$agg",
           "refId": "B",
           "region": "$region",
-          "statistics": [
-            "Average"
-          ]
+          "statistics": ["Average"]
         },
         {
           "alias": "{{metric}} {{stat}}",
@@ -375,9 +369,7 @@
           "period": "$agg",
           "refId": "C",
           "region": "$region",
-          "statistics": [
-            "Maximum"
-          ]
+          "statistics": ["Maximum"]
         }
       ],
       "thresholds": [],
@@ -513,9 +505,7 @@
           "period": "",
           "refId": "A",
           "region": "$region",
-          "statistics": [
-            "Sum"
-          ]
+          "statistics": ["Sum"]
         },
         {
           "alias": "{{metric}} {{stat}}",
@@ -548,9 +538,7 @@
           "period": "",
           "refId": "B",
           "region": "$region",
-          "statistics": [
-            "Sum"
-          ]
+          "statistics": ["Sum"]
         },
         {
           "alias": "{{metric}} {{stat}}",
@@ -584,9 +572,7 @@
           "period": "",
           "refId": "E",
           "region": "$region",
-          "statistics": [
-            "Sum"
-          ]
+          "statistics": ["Sum"]
         },
         {
           "alias": "Total Error Rate",
@@ -619,9 +605,7 @@
           "period": "",
           "refId": "D",
           "region": "$region",
-          "statistics": [
-            "Sum"
-          ]
+          "statistics": ["Sum"]
         }
       ],
       "thresholds": [],
@@ -775,9 +759,7 @@
           "period": "$agg",
           "refId": "A",
           "region": "$region",
-          "statistics": [
-            "Sum"
-          ]
+          "statistics": ["Sum"]
         },
         {
           "alias": "{{metric}} {{stat}}",
@@ -811,9 +793,7 @@
           "period": "$agg",
           "refId": "B",
           "region": "$region",
-          "statistics": [
-            "Sum"
-          ]
+          "statistics": ["Sum"]
         }
       ],
       "thresholds": [],
@@ -892,10 +872,7 @@
   "refresh": false,
   "schemaVersion": 26,
   "style": "dark",
-  "tags": [
-    "monitoringartist",
-    "cloudwatch"
-  ],
+  "tags": ["monitoringartist", "cloudwatch"],
   "templating": {
     "list": [
       {
@@ -1081,17 +1058,7 @@
       "2h",
       "1d"
     ],
-    "time_options": [
-      "5m",
-      "15m",
-      "1h",
-      "6h",
-      "12h",
-      "24h",
-      "2d",
-      "7d",
-      "30d"
-    ]
+    "time_options": ["5m", "15m", "1h", "6h", "12h", "24h", "2d", "7d", "30d"]
   },
   "timezone": "browser",
   "title": "AWS API Gateway",
