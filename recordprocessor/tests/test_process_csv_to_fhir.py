@@ -83,6 +83,7 @@ class TestProcessCsvToFhir(unittest.TestCase):
         expected_table_entry = {
             **test_file.audit_table_entry,
             "status": {"S": FileStatus.PREPROCESSED},
+            "record_count": {"N": "3"},
         }
         add_entry_to_table(test_file, FileStatus.PROCESSING)
         self.upload_source_file(
@@ -106,6 +107,7 @@ class TestProcessCsvToFhir(unittest.TestCase):
         expected_table_entry = {
             **test_file.audit_table_entry,
             "status": {"S": FileStatus.PREPROCESSED},
+            "record_count": {"N": "3"},
         }
         add_entry_to_table(test_file, FileStatus.PROCESSING)
         self.upload_source_file(
@@ -126,6 +128,7 @@ class TestProcessCsvToFhir(unittest.TestCase):
         expected_table_entry = {
             **test_file.audit_table_entry,
             "status": {"S": FileStatus.PREPROCESSED},
+            "record_count": {"N": "2"},
         }
         add_entry_to_table(test_file, FileStatus.PROCESSING)
         self.upload_source_file(

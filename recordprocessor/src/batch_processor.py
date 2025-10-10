@@ -96,7 +96,7 @@ def process_csv_to_fhir(incoming_message_body: dict) -> int:
         )
         file_status = f"{FileStatus.NOT_PROCESSED} - {FileNotProcessedReason.EMPTY}"
 
-    update_audit_table_status(file_key, file_id, file_status)
+    update_audit_table_status(file_key, file_id, file_status, record_count=row_count)
     return row_count
 
 
