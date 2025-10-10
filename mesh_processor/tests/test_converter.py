@@ -10,19 +10,8 @@ from moto import mock_aws
 def invoke_lambda(file_key: str):
     # Local import so that globals can be mocked
     from converter import lambda_handler
-    return lambda_handler(
-        {
-            "Records": [
-                {
-                    "s3": {
-                        "bucket": {"name": "source-bucket"},
-                        "object": {"key": file_key}
-                    }
-                }
-            ]
-        },
-        {}
-    )
+
+    return lambda_handler({"Records": [{"s3": {"bucket": {"name": "source-bucket"}, "object": {"key": file_key}}}]}, {})
 
 
 @mock_aws
@@ -42,7 +31,7 @@ class TestLambdaHandler(TestCase):
             ContentType="text/csv",
             Metadata={
                 "mex-filename": "overridden-filename.csv",
-            }
+            },
         )
 
         result = invoke_lambda("test-csv-file.csv")
@@ -79,59 +68,67 @@ class TestLambdaHandler(TestCase):
         cases = [
             (
                 "standard",
-                "\r\n".join([
-                    "",
-                    "--12345678",
-                    'Content-Disposition: form-data; name="File"; filename="test-csv-file.csv"',
-                    "Content-Type: text/csv",
-                    "",
-                    "some CSV content",
-                    "--12345678--",
-                    ""
-                ])
+                "\r\n".join(
+                    [
+                        "",
+                        "--12345678",
+                        'Content-Disposition: form-data; name="File"; filename="test-csv-file.csv"',
+                        "Content-Type: text/csv",
+                        "",
+                        "some CSV content",
+                        "--12345678--",
+                        "",
+                    ]
+                ),
             ),
             (
                 "missing initial newline",
-                "\r\n".join([
-                    "--12345678",
-                    'Content-Disposition: form-data; name="File"; filename="test-csv-file.csv"',
-                    "Content-Type: text/csv",
-                    "",
-                    "some CSV content",
-                    "--12345678--",
-                    ""
-                ])
+                "\r\n".join(
+                    [
+                        "--12345678",
+                        'Content-Disposition: form-data; name="File"; filename="test-csv-file.csv"',
+                        "Content-Type: text/csv",
+                        "",
+                        "some CSV content",
+                        "--12345678--",
+                        "",
+                    ]
+                ),
             ),
             (
                 "missing final newline",
-                "\r\n".join([
-                    "",
-                    "--12345678",
-                    'Content-Disposition: form-data; name="File"; filename="test-csv-file.csv"',
-                    "Content-Type: text/csv",
-                    "",
-                    "some CSV content",
-                    "--12345678--",
-                ])
+                "\r\n".join(
+                    [
+                        "",
+                        "--12345678",
+                        'Content-Disposition: form-data; name="File"; filename="test-csv-file.csv"',
+                        "Content-Type: text/csv",
+                        "",
+                        "some CSV content",
+                        "--12345678--",
+                    ]
+                ),
             ),
             (
                 "multiple parts",
-                "\r\n".join([
-                    "",
-                    "--12345678",
-                    'Content-Disposition: form-data; name="File"; filename="test-csv-file.csv"',
-                    "Content-Type: text/csv",
-                    "",
-                    "some CSV content",
-                    "--12345678",
-                    'Content-Disposition: form-data; name="File"; filename="test-ignored-file"',
-                    "Content-Type: text/plain",
-                    "",
-                    "some ignored content",
-                    "--12345678--",
-                    ""
-                ])
-            )
+                "\r\n".join(
+                    [
+                        "",
+                        "--12345678",
+                        'Content-Disposition: form-data; name="File"; filename="test-csv-file.csv"',
+                        "Content-Type: text/csv",
+                        "",
+                        "some CSV content",
+                        "--12345678",
+                        'Content-Disposition: form-data; name="File"; filename="test-ignored-file"',
+                        "Content-Type: text/plain",
+                        "",
+                        "some ignored content",
+                        "--12345678--",
+                        "",
+                    ]
+                ),
+            ),
         ]
         for msg, body in cases:
             with self.subTest(msg=msg, body=body):
@@ -156,28 +153,20 @@ class TestLambdaHandler(TestCase):
         cases = [
             (
                 "no filename in header",
-                "\r\n".join([
-                    "",
-                    "--12345678",
-                    'Content-Disposition: form-data',
-                    "Content-Type: text/csv",
-                    "",
-                    "some CSV content",
-                    "--12345678--",
-                    ""
-                ])
+                "\r\n".join(
+                    [
+                        "",
+                        "--12345678",
+                        "Content-Disposition: form-data",
+                        "Content-Type: text/csv",
+                        "",
+                        "some CSV content",
+                        "--12345678--",
+                        "",
+                    ]
+                ),
             ),
-            (
-                "no header",
-                "\r\n".join([
-                    "",
-                    "--12345678",
-                    "",
-                    "some CSV content",
-                    "--12345678--",
-                    ""
-                ])
-            )
+            ("no header", "\r\n".join(["", "--12345678", "", "some CSV content", "--12345678--", ""])),
         ]
         for msg, body in cases:
             with self.subTest(msg=msg, body=body):
@@ -197,15 +186,17 @@ class TestLambdaHandler(TestCase):
                 assert body == "some CSV content"
 
     def test_multipart_content_type_without_content_type_in_headers(self):
-        body = "\r\n".join([
-            "",
-            "--12345678",
-            'Content-Disposition: form-data; name="File"; filename="test-csv-file.csv"',
-            "",
-            "some CSV content",
-            "--12345678--",
-            ""
-        ])
+        body = "\r\n".join(
+            [
+                "",
+                "--12345678",
+                'Content-Disposition: form-data; name="File"; filename="test-csv-file.csv"',
+                "",
+                "some CSV content",
+                "--12345678--",
+                "",
+            ]
+        )
         s3 = boto3.client("s3", region_name="eu-west-2")
         s3.put_object(
             Bucket="source-bucket",
@@ -224,16 +215,18 @@ class TestLambdaHandler(TestCase):
         assert content_type == "application/octet-stream"
 
     def test_multipart_content_type_with_unix_line_endings(self):
-        body = "\r\n".join([
-            "",
-            "--12345678",
-            'Content-Disposition: form-data; name="File"; filename="test-csv-file.csv"',
-            "Content-Type: text/csv",
-            "",
-            "some CSV content\nsplit across\nmultiple lines",
-            "--12345678--",
-            ""
-        ])
+        body = "\r\n".join(
+            [
+                "",
+                "--12345678",
+                'Content-Disposition: form-data; name="File"; filename="test-csv-file.csv"',
+                "Content-Type: text/csv",
+                "",
+                "some CSV content\nsplit across\nmultiple lines",
+                "--12345678--",
+                "",
+            ]
+        )
         s3 = boto3.client("s3", region_name="eu-west-2")
         s3.put_object(
             Bucket="source-bucket",

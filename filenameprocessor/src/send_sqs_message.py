@@ -11,7 +11,9 @@ def send_to_supplier_queue(message_body: dict, vaccine_type: str, supplier: str)
     try:
         queue_url = os.getenv("QUEUE_URL")
         sqs_client.send_message(
-            QueueUrl=queue_url, MessageBody=json_dumps(message_body), MessageGroupId=f"{supplier}_{vaccine_type}"
+            QueueUrl=queue_url,
+            MessageBody=json_dumps(message_body),
+            MessageGroupId=f"{supplier}_{vaccine_type}",
         )
         logger.info("Message sent to SQS queue for supplier: %s", supplier)
     except Exception as error:  # pylint: disable=broad-exception-caught
@@ -26,7 +28,7 @@ def make_and_send_sqs_message(
     permission: list[str],
     vaccine_type: str,
     supplier: str,
-    created_at_formatted_string: str
+    created_at_formatted_string: str,
 ) -> None:
     """Attempts to send a message to the SQS queue. Raises an exception if the message is not successfully sent."""
     message_body = {

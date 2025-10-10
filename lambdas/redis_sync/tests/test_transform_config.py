@@ -1,4 +1,3 @@
-
 import unittest
 import json
 from unittest.mock import patch
@@ -45,7 +44,10 @@ class TestTransformConfigs(unittest.TestCase):
 
     def test_empty_input(self):
         result = transform_supplier_permissions([])
-        self.assertEqual(result, {
-            "supplier_permissions": {},
-            "ods_code_to_supplier": {},
-        })
+        self.assertEqual(
+            result,
+            {
+                "supplier_permissions": {},
+                "ods_code_to_supplier": {},
+            },
+        )

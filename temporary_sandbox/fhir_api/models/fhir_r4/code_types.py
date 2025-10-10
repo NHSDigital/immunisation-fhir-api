@@ -1,9 +1,9 @@
-''' Literal Code types used by data models'''
+"""Literal Code types used by data models"""
 
 from typing import Literal
 
 contact_point_system_types = Literal["phone", "fax", "email", "pager", "url", "sms", "other"]
-contact_point_use_types = Literal['home', 'work', 'temp', 'old', 'mobile']
+contact_point_use_types = Literal["home", "work", "temp", "old", "mobile"]
 
 address_use_type = Literal["home", "work", "temp", "old", "billing"]
 address_type_type = Literal["postal", "physical", "both"]

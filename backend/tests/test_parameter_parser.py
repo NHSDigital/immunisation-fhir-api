@@ -14,6 +14,7 @@ from parameter_parser import (
     SearchParams,
 )
 
+
 class TestParameterParser(unittest.TestCase):
     def setUp(self):
         self.service = create_autospec(FhirService)
@@ -119,8 +120,9 @@ class TestParameterParser(unittest.TestCase):
                 }
             )
         self.assertEqual(
-            str(e.exception), f"immunization-target must be one or more of the following: {mock_redis_key}",
-            f"Unexpected exception message: {str(e.exception)}"
+            str(e.exception),
+            f"immunization-target must be one or more of the following: {mock_redis_key}",
+            f"Unexpected exception message: {str(e.exception)}",
         )
 
         params = process_search_params(

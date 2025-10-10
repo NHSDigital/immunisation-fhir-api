@@ -29,8 +29,7 @@ def setup_existing_ack_file(file_key, file_content, s3_client):
     s3_client.put_object(Bucket=BucketNames.DESTINATION, Key=file_key, Body=file_content)
 
 
-def obtain_current_ack_file_content(s3_client,
-                                    temp_ack_file_key: str = MOCK_MESSAGE_DETAILS.temp_ack_file_key) -> str:
+def obtain_current_ack_file_content(s3_client, temp_ack_file_key: str = MOCK_MESSAGE_DETAILS.temp_ack_file_key) -> str:
     """Obtains the ack file content from the destination bucket."""
     retrieved_object = s3_client.get_object(Bucket=BucketNames.DESTINATION, Key=temp_ack_file_key)
     return retrieved_object["Body"].read().decode("utf-8")
@@ -62,9 +61,7 @@ def generate_sample_existing_ack_content() -> str:
     return ValidValues.ack_headers + generate_expected_ack_file_row(success=True)
 
 
-def generate_expected_ack_content(
-    incoming_messages: list[dict], existing_content: str = ValidValues.ack_headers
-) -> str:
+def generate_expected_ack_content(incoming_messages: list[dict], existing_content: str = ValidValues.ack_headers) -> str:
     """Returns the expected_ack_file_content based on the incoming messages"""
     for message in incoming_messages:
         # Determine diagnostics based on the diagnostics value in the incoming message
@@ -80,10 +77,11 @@ def generate_expected_ack_content(
             success=diagnostics == "",
             row_id=message.get("row_id", MOCK_MESSAGE_DETAILS.row_id),
             created_at_formatted_string=message.get(
-                "created_at_formatted_string", MOCK_MESSAGE_DETAILS.created_at_formatted_string
+                "created_at_formatted_string",
+                MOCK_MESSAGE_DETAILS.created_at_formatted_string,
             ),
             local_id=message.get("local_id", MOCK_MESSAGE_DETAILS.local_id),
-            imms_id="" if diagnostics else message.get("imms_id", MOCK_MESSAGE_DETAILS.imms_id),
+            imms_id=("" if diagnostics else message.get("imms_id", MOCK_MESSAGE_DETAILS.imms_id)),
             diagnostics=diagnostics,
         )
 
@@ -95,7 +93,7 @@ def generate_expected_ack_content(
 def validate_ack_file_content(
     s3_client,
     incoming_messages: list[dict],
-    existing_file_content: str = ValidValues.ack_headers
+    existing_file_content: str = ValidValues.ack_headers,
 ) -> None:
     """
     Obtains the ack file content and ensures that it matches the expected content (expected content is based

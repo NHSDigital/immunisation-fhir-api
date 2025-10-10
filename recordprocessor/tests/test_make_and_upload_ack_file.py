@@ -5,15 +5,29 @@ from unittest.mock import patch
 from copy import deepcopy
 from boto3 import client as boto3_client
 from moto import mock_s3
-from tests.utils_for_recordprocessor_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT, BucketNames
-from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import get_csv_file_dict_reader
-from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import MockFileDetails
+from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
+    MOCK_ENVIRONMENT_DICT,
+    BucketNames,
+)
+from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
+    get_csv_file_dict_reader,
+)
+from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
+    MockFileDetails,
+)
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
-    from make_and_upload_ack_file import make_ack_data, upload_ack_file, make_and_upload_ack_file
+    from make_and_upload_ack_file import (
+        make_ack_data,
+        upload_ack_file,
+        make_and_upload_ack_file,
+    )
     from clients import REGION_NAME
 
-from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import GenericSetUp, GenericTearDown
+from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
+    GenericSetUp,
+    GenericTearDown,
+)
 
 s3_client = boto3_client("s3", region_name=REGION_NAME)
 
@@ -90,7 +104,10 @@ class TestMakeAndUploadAckFile(unittest.TestCase):
             with self.subTest():
                 self.assertEqual(
                     make_ack_data(
-                        self.message_id, validation_passed, message_delivered, self.created_at_formatted_string
+                        self.message_id,
+                        validation_passed,
+                        message_delivered,
+                        self.created_at_formatted_string,
                     ),
                     expected_result,
                 )

@@ -106,18 +106,22 @@ def forward_lambda_handler(event, _):
 
             imms_id = forward_request_to_dynamo(incoming_message_body, table, identifier_already_present, controller)
             filename_to_events_mapper.add_event(
-                { **base_outgoing_message_body,
-                 "operation_start_time": operation_start_time,
-                 "operation_end_time": str(datetime.now()),
-                 "imms_id": imms_id }
+                {
+                    **base_outgoing_message_body,
+                    "operation_start_time": operation_start_time,
+                    "operation_end_time": str(datetime.now()),
+                    "imms_id": imms_id,
+                }
             )
 
         except Exception as error:  # pylint: disable = broad-exception-caught
             filename_to_events_mapper.add_event(
-                { **base_outgoing_message_body,
-                 "operation_start_time": operation_start_time,
-                 "operation_end_time": str(datetime.now()),
-                 "diagnostics": create_diagnostics_dictionary(error) }
+                {
+                    **base_outgoing_message_body,
+                    "operation_start_time": operation_start_time,
+                    "operation_end_time": str(datetime.now()),
+                    "diagnostics": create_diagnostics_dictionary(error),
+                }
             )
             logger.error("Error processing message: %s", error)
 

@@ -1,4 +1,3 @@
-
 {
   "resourceType": "Immunization",
   "contained": [
@@ -6,39 +5,33 @@
       "resourceType": "Practitioner",
       "id": "Pract1",
       "name": [
-    {
-      "family": "Furlong old 1",
-      "given": [
-        "Darren 2", "old use value"
-      ],
-      "period": {
-        "start": "2000-01-01",
-        "end": "2030-01-01"
-      }
-    },
-    {
-      "family": "Furlong old",
-      "given": [
-        "Darren", "old use value"
-      ],
-      "use": "old",
-      "period": {
-        "start": "2000-01-01",
-        "end": "2030-01-01"
-      }
-    },
-    {
-      "family": "Furlong official",
-      "given": [
-        "Darren", "Official"
-      ],
-      "use": "official",
-      "period": {
-        "start": "2000-01-01",
-        "end": "2030-01-01"
-      }
-    }
-     ]
+        {
+          "family": "Furlong old 1",
+          "given": ["Darren 2", "old use value"],
+          "period": {
+            "start": "2000-01-01",
+            "end": "2030-01-01"
+          }
+        },
+        {
+          "family": "Furlong old",
+          "given": ["Darren", "old use value"],
+          "use": "old",
+          "period": {
+            "start": "2000-01-01",
+            "end": "2030-01-01"
+          }
+        },
+        {
+          "family": "Furlong official",
+          "given": ["Darren", "Official"],
+          "use": "official",
+          "period": {
+            "start": "2000-01-01",
+            "end": "2030-01-01"
+          }
+        }
+      ]
     },
     {
       "resourceType": "Patient",
@@ -50,106 +43,96 @@
         }
       ],
       "name": [
-            {
-                "use": "home",
-                "text": "hello pat1",
-                "family": "test10 ",
-                "given": [
-                 "test11", "test12", "test13"
-                ],
-                "period":   {
-                    "start" : "2000-01-01",
-                    "end" : "2026-01-01"
-                    }                
-            },
-            {
-                "use": "official",
-                "text": "hello pat2",
-                "family": "test12",
-                "given": [
-                 "test13", "test14", "test15"
-                ],
-                "period":   {
-                    "start" : "2000-01-01",
-                    "end" : "2026-01-01"
-                    }                
-            },
-            {
-                "use": "old",
-                "text": "hello pat3",
-                "family": "test14",
-                "given": [
-                    "test15", "test16", "test17"
-                ],
-                "period":   {
-                    "start" : "2000-01-01",
-                    "end" : "2026-01-01"
-                    }                
-            }                        
-        ],
+        {
+          "use": "home",
+          "text": "hello pat1",
+          "family": "test10 ",
+          "given": ["test11", "test12", "test13"],
+          "period": {
+            "start": "2000-01-01",
+            "end": "2026-01-01"
+          }
+        },
+        {
+          "use": "official",
+          "text": "hello pat2",
+          "family": "test12",
+          "given": ["test13", "test14", "test15"],
+          "period": {
+            "start": "2000-01-01",
+            "end": "2026-01-01"
+          }
+        },
+        {
+          "use": "old",
+          "text": "hello pat3",
+          "family": "test14",
+          "given": ["test15", "test16", "test17"],
+          "period": {
+            "start": "2000-01-01",
+            "end": "2026-01-01"
+          }
+        }
+      ],
       "gender": "other",
       "birthDate": "2026-03-10",
       "address": [
-    {
-      "use": "work",
-      "type": "both",
-      "text": "Validate Obf",
-      "line": [
-        "1, work_2"
-      ],
-      "city": "work_3",
-      "district": "work_4",
-      "state": "work_5",
-      "country": "work_7",
-      "postalCode": "LS8 4ED",
-      "period": {
-        "start": "2000-01-01",
-        "end": "2030-01-01"
-      }
-    },
-    {
-      "use": "Home",
-      "type": "Physical",
-      "text": "Validate Obf",
-      "line": [
-        "1, obf_2"
-      ],
-      "city": "obf_3",
-      "district": "obf_4",
-      "state": "obf_5",
-      "postalCode": "WF8 4ED",
-      "country": "obf_7",
-      "period": {
-        "start": "2000-01-01",
-        "end": "2030-01-01"
-      }
-    }
-  ]
+        {
+          "use": "work",
+          "type": "both",
+          "text": "Validate Obf",
+          "line": ["1, work_2"],
+          "city": "work_3",
+          "district": "work_4",
+          "state": "work_5",
+          "country": "work_7",
+          "postalCode": "LS8 4ED",
+          "period": {
+            "start": "2000-01-01",
+            "end": "2030-01-01"
+          }
+        },
+        {
+          "use": "Home",
+          "type": "Physical",
+          "text": "Validate Obf",
+          "line": ["1, obf_2"],
+          "city": "obf_3",
+          "district": "obf_4",
+          "state": "obf_5",
+          "postalCode": "WF8 4ED",
+          "country": "obf_7",
+          "period": {
+            "start": "2000-01-01",
+            "end": "2030-01-01"
+          }
+        }
+      ]
     }
   ],
   "extension": [
     {
       "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure",
       "valueCodeableConcept": {
-          "coding": [
-              {
-                  "code": "956951000000105",
-                  "display": "Seasonal influenza vaccination (procedure)",
-                  "system": "http://snomed.info/test"
-              },
-              {
-                  "code": "956951000000104",
-                  "display": "Seasonal influenza vaccination (procedure)",
-                  "system": "http://snomed.info/sct"
-              },
-              {
-                  "code": "NEG",
-                  "display": "Seasonal influenza vaccination (procedure)",
-                  "system": "https://acme.lab/resultcodes"
-              }
-          ]
-        }
+        "coding": [
+          {
+            "code": "956951000000105",
+            "display": "Seasonal influenza vaccination (procedure)",
+            "system": "http://snomed.info/test"
+          },
+          {
+            "code": "956951000000104",
+            "display": "Seasonal influenza vaccination (procedure)",
+            "system": "http://snomed.info/sct"
+          },
+          {
+            "code": "NEG",
+            "display": "Seasonal influenza vaccination (procedure)",
+            "system": "https://acme.lab/resultcodes"
+          }
+        ]
       }
+    }
   ],
   "identifier": [
     {

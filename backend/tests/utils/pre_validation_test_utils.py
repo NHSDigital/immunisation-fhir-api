@@ -197,8 +197,7 @@ class ValidatorModelTests:
                     valid_json_data,
                     field_location=field_location,
                     invalid_value=invalid_length_list,
-                    expected_error_message=f"{field_location} must be an array of length "
-                    + f"{predefined_list_length}",
+                    expected_error_message=f"{field_location} must be an array of length " + f"{predefined_list_length}",
                 )
         else:
             test_invalid_values_rejected(
@@ -336,10 +335,10 @@ class ValidatorModelTests:
         )
 
         if is_occurrence_date_time:
-             expected_error_message += "Only '+00:00' and '+01:00' are accepted as valid timezone offsets.\n"
-             expected_error_message += f"Note that partial dates are not allowed for {field_location} in this service."
-             valid_datetime_formats = ValidValues.for_date_times_strict_timezones
-             invalid_datetime_formats = InvalidValues.for_date_time_string_formats_for_strict_timezone
+            expected_error_message += "Only '+00:00' and '+01:00' are accepted as valid timezone offsets.\n"
+            expected_error_message += f"Note that partial dates are not allowed for {field_location} in this service."
+            valid_datetime_formats = ValidValues.for_date_times_strict_timezones
+            invalid_datetime_formats = InvalidValues.for_date_time_string_formats_for_strict_timezone
         else:
             # For recorded, skip values that are valid ISO with non-restricted timezone
             valid_datetime_formats = ValidValues.for_date_times_relaxed_timezones

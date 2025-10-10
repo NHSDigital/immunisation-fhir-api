@@ -13,7 +13,11 @@ class RedisCacher:
     @staticmethod
     def upload(bucket_name: str, file_key: str) -> dict:
         try:
-            logger.info("Upload from s3 to Redis cache. file '%s'. bucket '%s'", file_key, bucket_name)
+            logger.info(
+                "Upload from s3 to Redis cache. file '%s'. bucket '%s'",
+                file_key,
+                bucket_name,
+            )
 
             # get from s3
             config_file_content = S3Reader.read(bucket_name, file_key)
@@ -27,10 +31,7 @@ class RedisCacher:
 
             redis_client = get_redis_client()
             for key, mapping in redis_mappings.items():
-                safe_mapping = {
-                    k: json.dumps(v) if isinstance(v, list) else v
-                    for k, v in mapping.items()
-                }
+                safe_mapping = {k: json.dumps(v) if isinstance(v, list) else v for k, v in mapping.items()}
                 existing_mapping = redis_client.hgetall(key)
                 logger.info("Existing mapping for %s: %s", key, existing_mapping)
                 redis_client.hmset(key, safe_mapping)
@@ -40,7 +41,10 @@ class RedisCacher:
                     redis_client.hdel(key, *fields_to_delete)
                     logger.info("Deleted mapping fields for %s: %s", key, fields_to_delete)
 
-            return {"status": "success", "message": f"File {file_key} uploaded to Redis cache."}
+            return {
+                "status": "success",
+                "message": f"File {file_key} uploaded to Redis cache.",
+            }
         except Exception:
             msg = f"Error uploading file '{file_key}' to Redis cache"
             logger.exception(msg)

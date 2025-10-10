@@ -23,4 +23,8 @@ def get_csv_content_dict_reader(file_key: str, encoder="utf-8") -> DictReader:
 
 def create_diagnostics_dictionary(error_type, status_code, error_message) -> dict:
     """Returns a dictionary containing the error_type, statusCode, and error_message"""
-    return {"error_type": error_type, "statusCode": status_code, "error_message": error_message}
+    return {
+        "error_type": error_type,
+        "statusCode": status_code,
+        "error_message": error_message,
+    }

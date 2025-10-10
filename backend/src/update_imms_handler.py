@@ -13,6 +13,7 @@ from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
 logging.basicConfig(level="INFO")
 logger = logging.getLogger()
 
+
 @function_info
 def update_imms_handler(event, _context):
     return update_imms(event, make_controller())
@@ -41,12 +42,8 @@ if __name__ == "__main__":
     event = {
         "pathParameters": {"id": args.id},
         "body": load_string(args.path),
-        "headers": {
-            "Content-Type": "application/x-www-form-urlencoded",
-            "AuthenticationType": "ApplicationRestricted"
-        },
+        "headers": {"Content-Type": "application/x-www-form-urlencoded", "AuthenticationType": "ApplicationRestricted"},
     }
 
     pprint.pprint(event)
     pprint.pprint(update_imms_handler(event, {}))
- 

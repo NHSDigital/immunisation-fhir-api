@@ -8,9 +8,20 @@ from boto3 import client as boto3_client
 from botocore.exceptions import ClientError
 from moto import mock_s3, mock_firehose, mock_sqs, mock_dynamodb
 
-from tests.utils_for_tests.generic_setup_and_teardown import GenericSetUp, GenericTearDown
-from tests.utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT, BucketNames, Firehose
-from tests.utils_for_tests.values_for_tests import MockFileDetails, fixed_datetime, MOCK_BATCH_FILE_CONTENT
+from tests.utils_for_tests.generic_setup_and_teardown import (
+    GenericSetUp,
+    GenericTearDown,
+)
+from tests.utils_for_tests.mock_environment_variables import (
+    MOCK_ENVIRONMENT_DICT,
+    BucketNames,
+    Firehose,
+)
+from tests.utils_for_tests.values_for_tests import (
+    MockFileDetails,
+    fixed_datetime,
+    MOCK_BATCH_FILE_CONTENT,
+)
 from tests.utils_for_tests.utils_for_filenameprocessor_tests import create_mock_hget
 
 # Ensure environment variables are mocked before importing from src files
@@ -26,7 +37,14 @@ dynamodb_client = boto3_client("dynamodb", region_name=REGION_NAME)
 
 FILE_DETAILS = MockFileDetails.emis_flu
 MOCK_VACCINATION_EVENT = {
-    "Records": [{"s3": {"bucket": {"name": BucketNames.SOURCE}, "object": {"key": FILE_DETAILS.file_key}}}]
+    "Records": [
+        {
+            "s3": {
+                "bucket": {"name": BucketNames.SOURCE},
+                "object": {"key": FILE_DETAILS.file_key},
+            }
+        }
+    ]
 }
 
 
@@ -41,7 +59,11 @@ class TestLoggingDecorator(unittest.TestCase):
     def setUp(self):
         """Set up the mock AWS environment and upload a valid FLU/EMIS file example"""
         GenericSetUp(s3_client, firehose_client, sqs_client, dynamodb_client)
-        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=FILE_DETAILS.file_key, Body=MOCK_BATCH_FILE_CONTENT)
+        s3_client.put_object(
+            Bucket=BucketNames.SOURCE,
+            Key=FILE_DETAILS.file_key,
+            Body=MOCK_BATCH_FILE_CONTENT,
+        )
 
     def tearDown(self):
         """Clean the mock AWS environment"""
@@ -68,7 +90,7 @@ class TestLoggingDecorator(unittest.TestCase):
             # Time is incremented by 1.0 for each call to time.time for ease of testing.
             # Range is set to a large number (100) due to many calls being made to time.time for some tests.
             patch("logging_decorator.time.time", side_effect=[0.0 + i for i in range(100)]),
-            patch("clients.redis_client.hkeys", return_value=["FLU"])
+            patch("clients.redis_client.hkeys", return_value=["FLU"]),
         ]
 
         # Set up the ExitStack. Note that patches need to be explicitly started so that they will be applied even when
@@ -111,12 +133,36 @@ class TestLoggingDecorator(unittest.TestCase):
         start_time = 1672531200
 
         test_cases = [
-            ("Using standard log and seconds precision", False, False,
-             {"base_key": "base_value", "time_taken": "0.12346s", "additional_key": "additional_value"}),
-            ("Using error log and seconds precision", True, False,
-             {"base_key": "base_value", "time_taken": "0.12346s", "additional_key": "additional_value"}),
-            ("Using standard log and milliseconds precision", False, True,
-             {"base_key": "base_value", "time_taken": "123.456ms", "additional_key": "additional_value"})
+            (
+                "Using standard log and seconds precision",
+                False,
+                False,
+                {
+                    "base_key": "base_value",
+                    "time_taken": "0.12346s",
+                    "additional_key": "additional_value",
+                },
+            ),
+            (
+                "Using error log and seconds precision",
+                True,
+                False,
+                {
+                    "base_key": "base_value",
+                    "time_taken": "0.12346s",
+                    "additional_key": "additional_value",
+                },
+            ),
+            (
+                "Using standard log and milliseconds precision",
+                False,
+                True,
+                {
+                    "base_key": "base_value",
+                    "time_taken": "123.456ms",
+                    "additional_key": "additional_value",
+                },
+            ),
         ]
 
         for test_desc, use_error_log, use_ms_precision, expected_log_data in test_cases:
@@ -127,8 +173,13 @@ class TestLoggingDecorator(unittest.TestCase):
                     patch("logging_decorator.time") as mock_time,  # noqa: E999
                 ):  # noqa: E999
                     mock_time.time.return_value = 1672531200.123456  # Mocks end time to be 0.123456s after start
-                    generate_and_send_logs(start_time, base_log_data, additional_log_data, is_error_log=use_error_log,
-                                           use_ms_precision=use_ms_precision)
+                    generate_and_send_logs(
+                        start_time,
+                        base_log_data,
+                        additional_log_data,
+                        is_error_log=use_error_log,
+                        use_ms_precision=use_ms_precision,
+                    )
 
                     if use_error_log:
                         log_data = json.loads(mock_logger.error.call_args[0][0])
@@ -141,10 +192,7 @@ class TestLoggingDecorator(unittest.TestCase):
     def test_logging_successful_validation(self):
         """Tests that the correct logs are sent to cloudwatch and splunk when file validation is successful"""
         # Mock full permissions so that validation will pass
-        mock_hget = create_mock_hget(
-            {"YGM41": "EMIS"},
-            {"EMIS": json.dumps(["FLU.CRUDS"])}
-        )
+        mock_hget = create_mock_hget({"YGM41": "EMIS"}, {"EMIS": json.dumps(["FLU.CRUDS"])})
         with (  # noqa: E999
             patch("file_name_processor.uuid4", return_value=FILE_DETAILS.message_id),  # noqa: E999
             patch("elasticache.redis_client.hget", side_effect=mock_hget),  # noqa: E999
@@ -173,10 +221,7 @@ class TestLoggingDecorator(unittest.TestCase):
     def test_logging_failed_validation(self):
         """Tests that the correct logs are sent to cloudwatch and splunk when file validation fails"""
         # Set up permissions for COVID19 only (file is for FLU), so that validation will fail
-        mock_hget = create_mock_hget(
-            {"YGM41": "EMIS"},
-            {"EMIS": json.dumps(["COVID19.CRUDS"])}
-        )
+        mock_hget = create_mock_hget({"YGM41": "EMIS"}, {"EMIS": json.dumps(["COVID19.CRUDS"])})
         with (  # noqa: E999
             patch("file_name_processor.uuid4", return_value=FILE_DETAILS.message_id),  # noqa: E999
             patch("elasticache.redis_client.hget", side_effect=mock_hget),  # noqa: E999
@@ -195,7 +240,7 @@ class TestLoggingDecorator(unittest.TestCase):
             "message_id": FILE_DETAILS.message_id,
             "error": "Initial file validation failed: EMIS does not have permissions for FLU",
             "vaccine_type": "FLU",
-            "supplier": "EMIS"
+            "supplier": "EMIS",
         }
 
         log_data = json.loads(mock_logger.info.call_args[0][0])
@@ -207,17 +252,17 @@ class TestLoggingDecorator(unittest.TestCase):
         """Tests that exception is caught when failing to send message to Firehose"""
         firehose_exception = ClientError(
             error_response={"Error": {"Code": "ServiceUnavailable", "Message": "Service down"}},
-            operation_name="PutRecord"
+            operation_name="PutRecord",
         )
 
-        mock_hget = create_mock_hget(
-            {"YGM41": "EMIS"},
-            {"EMIS": json.dumps(["FLU.CRUDS"])}
-        )
+        mock_hget = create_mock_hget({"YGM41": "EMIS"}, {"EMIS": json.dumps(["FLU.CRUDS"])})
         with (
             patch("file_name_processor.uuid4", return_value=FILE_DETAILS.message_id),
             patch("elasticache.redis_client.hget", side_effect=mock_hget),
-            patch("logging_decorator.firehose_client.put_record", side_effect=firehose_exception),
+            patch(
+                "logging_decorator.firehose_client.put_record",
+                side_effect=firehose_exception,
+            ),
             patch("logging_decorator.logger") as mock_logger,
         ):
             lambda_handler(MOCK_VACCINATION_EVENT, context=None)

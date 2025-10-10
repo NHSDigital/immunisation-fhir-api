@@ -11,9 +11,7 @@ def read_and_delete_messages(queue_url):
     sqs_client = boto3.client("sqs")
     try:
         # Receive messages with a maximum of 10 messages per request
-        response = sqs_client.receive_message(
-            QueueUrl=queue_url, MaxNumberOfMessages=10
-        )
+        response = sqs_client.receive_message(QueueUrl=queue_url, MaxNumberOfMessages=10)
 
         # Check if there are any messages
         if "Messages" not in response:

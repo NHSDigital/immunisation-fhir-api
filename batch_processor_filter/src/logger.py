@@ -1,4 +1,5 @@
 """Module for the batch processor filter Lambda logger"""
+
 import logging
 
 

@@ -21,7 +21,6 @@ class TestUpdateImmunizations(unittest.TestCase):
     def tearDown(self):
         patch.stopall()
 
-
     def test_update_immunization(self):
         """it should call service update method"""
         lambda_event = {"pathParameters": {"id": "an-id"}}
@@ -67,8 +66,6 @@ class TestUpdateImmunizations(unittest.TestCase):
         self.assertEqual(code, "exception")
         self.assertEqual(diagnostics, GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE)
         self.assertEqual(act_res, mock_response)
-
-        
 
     def test_update_imms_with_duplicated_identifier_returns_error(self):
         """Should return an IdentifierDuplication error"""

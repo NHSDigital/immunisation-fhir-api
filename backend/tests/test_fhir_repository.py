@@ -8,14 +8,10 @@ import botocore.exceptions
 from boto3.dynamodb.conditions import Attr, Key
 from fhir_repository import ImmunizationRepository
 from models.utils.validation_utils import get_vaccine_type
-from models.errors import (
-    ResourceNotFoundError,
-    UnhandledResponseError,
-    IdentifierDuplicationError,
-    UnauthorizedVaxError
-)
+from models.errors import ResourceNotFoundError, UnhandledResponseError, IdentifierDuplicationError, UnauthorizedVaxError
 from tests.utils.generic_utils import update_target_disease_code
 from tests.utils.immunization_utils import create_covid_19_immunization_dict
+
 
 def _make_immunization_pk(_id):
     return f"Immunization#{_id}"
@@ -23,6 +19,7 @@ def _make_immunization_pk(_id):
 
 def _make_patient_pk(_id):
     return f"Patient#{_id}"
+
 
 class TestFhirRepositoryBase(unittest.TestCase):
     """Base class for all tests to set up common fixtures"""
@@ -244,9 +241,7 @@ class TestCreateImmunizationMainIndex(TestFhirRepositoryBase):
 
         with self.assertRaises(UnhandledResponseError) as e:
             # When
-            self.repository.create_immunization(
-                create_covid_19_immunization_dict("an-id"), self.patient, "Test"
-            )
+            self.repository.create_immunization(create_covid_19_immunization_dict("an-id"), self.patient, "Test")
 
         # Then
         self.assertDictEqual(e.exception.response, response)
@@ -274,7 +269,6 @@ class TestCreateImmunizationPatientIndex(TestFhirRepositoryBase):
         self.table = MagicMock()
         self.repository = ImmunizationRepository(table=self.table)
         self.patient = {"id": "a-patient-id"}
-
 
     def test_create_patient_gsi(self):
         """create Immunization method should create Patient index with nhs-number as ID and no system"""
@@ -338,9 +332,7 @@ class TestUpdateImmunization(TestFhirRepositoryBase):
             mock_time.return_value = now_epoch
             # When
 
-            act_resource, updated_version = self.repository.update_immunization(
-                imms_id, imms, self.patient, 1, "Test"
-            )
+            act_resource, updated_version = self.repository.update_immunization(imms_id, imms, self.patient, 1, "Test")
 
         # Then
         self.assertDictEqual(act_resource, resource)
@@ -422,9 +414,7 @@ class TestUpdateImmunization(TestFhirRepositoryBase):
         }
 
         with patch("time.time", return_value=123456):
-            result, version = self.repository.reinstate_immunization(
-                imms_id, imms, self.patient, 1, "Test"
-            )
+            result, version = self.repository.reinstate_immunization(imms_id, imms, self.patient, 1, "Test")
 
         self.assertEqual(result, resource)
         self.assertEqual(version, 2)
@@ -443,9 +433,7 @@ class TestUpdateImmunization(TestFhirRepositoryBase):
         }
 
         with patch("time.time", return_value=123456):
-            result, version = self.repository.update_reinstated_immunization(
-                imms_id, imms, self.patient, 1, "Test"
-            )
+            result, version = self.repository.update_reinstated_immunization(imms_id, imms, self.patient, 1, "Test")
 
         self.assertEqual(result, resource)
         self.assertEqual(version, 2)
@@ -584,16 +572,8 @@ class TestFindImmunizations(unittest.TestCase):
         imms1 = {"id": 1, "meta": {"versionId": 1}}
         imms2 = {"id": 2, "meta": {"versionId": 1}}
         items = [
-            {
-                "Resource": json.dumps(imms1),
-                "PatientSK": "COVID19#some_other_text",
-                "Version": "1"
-            },
-            {
-                "Resource": json.dumps(imms2),
-                "PatientSK": "COVID19#some_other_text",
-                "Version": "1"
-            },
+            {"Resource": json.dumps(imms1), "PatientSK": "COVID19#some_other_text", "Version": "1"},
+            {"Resource": json.dumps(imms2), "PatientSK": "COVID19#some_other_text", "Version": "1"},
         ]
 
         dynamo_response = {"ResponseMetadata": {"HTTPStatusCode": 200}, "Items": items}
@@ -627,7 +607,6 @@ class TestImmunizationDecimals(TestFhirRepositoryBase):
         self.table = MagicMock()
         self.repository = ImmunizationRepository(table=self.table)
         self.patient = {"id": "a-patient-id", "identifier": {"value": "an-identifier"}}
-
 
     def test_decimal_on_create(self):
         """it should create Immunization, and preserve decimal value"""
@@ -677,9 +656,7 @@ class TestImmunizationDecimals(TestFhirRepositoryBase):
         now_epoch = 123456
         with patch("time.time") as mock_time:
             mock_time.return_value = now_epoch
-            act_resource, act_version = self.repository.update_immunization(
-                imms_id, imms, self.patient, 1, "Test"
-            )
+            act_resource, act_version = self.repository.update_immunization(imms_id, imms, self.patient, 1, "Test")
         self.assertDictEqual(act_resource, resource)
         self.assertEqual(act_version, 2)
 

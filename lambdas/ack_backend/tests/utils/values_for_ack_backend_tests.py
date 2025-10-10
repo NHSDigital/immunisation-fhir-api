@@ -134,7 +134,10 @@ class MessageDetails:
 
         self.success_message = {**self.base_message, "imms_id": imms_id}
 
-        self.failure_message = {**self.base_message, "diagnostics": DiagnosticsDictionaries.NO_PERMISSIONS}
+        self.failure_message = {
+            **self.base_message,
+            "diagnostics": DiagnosticsDictionaries.NO_PERMISSIONS,
+        }
 
 
 class MockMessageDetails:

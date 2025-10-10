@@ -17,6 +17,7 @@ import urllib.parse
 logging.basicConfig(level="INFO")
 logger = logging.getLogger()
 
+
 @function_info
 def search_imms_handler(event: events.APIGatewayProxyEventV1, _context: context_):
     return search_imms(event, make_controller())
@@ -30,11 +31,9 @@ def search_imms(event: events.APIGatewayProxyEventV1, controller: FhirController
         query_string_has_immunization_identifier = False
         query_string_has_element = False
         body_has_immunization_element = False
-        if not (query_params == None and body == None):
+        if not (query_params is None and body is None):
             if query_params:
-                query_string_has_immunization_identifier = "identifier" in event.get(
-                    "queryStringParameters", {}
-                )
+                query_string_has_immunization_identifier = "identifier" in event.get("queryStringParameters", {})
                 query_string_has_element = "_elements" in event.get("queryStringParameters", {})
             # Decode body from base64
             if body:
@@ -117,10 +116,7 @@ if __name__ == "__main__":
             "_elements": [args._element] if args._element else [],
         },
         "httpMethod": "POST",
-        "headers": {
-            "Content-Type": "application/x-www-form-urlencoded",
-            "AuthenticationType": "ApplicationRestricted"
-        },
+        "headers": {"Content-Type": "application/x-www-form-urlencoded", "AuthenticationType": "ApplicationRestricted"},
         "body": None,
         "resource": None,
         "isBase64Encoded": None,

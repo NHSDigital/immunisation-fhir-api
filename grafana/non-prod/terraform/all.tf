@@ -19,7 +19,7 @@ resource "aws_alb_target_group" "app" {
     protocol            = "HTTP"
     matcher             = "200"
     timeout             = 3
-    path                =  "/api/health" # Grafana health check endpoint
+    path                = "/api/health" # Grafana health check endpoint
     unhealthy_threshold = 2
   }
 }
@@ -99,36 +99,36 @@ resource "aws_appautoscaling_policy" "down" {
 # ecs.tf
 
 resource "aws_ecs_cluster" "main" {
-    name = "${local.prefix}-cluster"
+  name = "${local.prefix}-cluster"
 }
 
 data "template_file" "grafana_app" {
-    template = file("${path.module}/templates/ecs/grafana_app.json.tpl")
+  template = file("${path.module}/templates/ecs/grafana_app.json.tpl")
 
-    vars = {
-        app_image      = local.app_image
-        app_name       = local.app_name
-        app_port       = var.app_port
-        fargate_cpu    = var.fargate_cpu
-        fargate_memory = var.fargate_memory
-        aws_region     = var.aws_region
-        log_group      = local.log_group
-        health_check_path = var.health_check_path
-    }
+  vars = {
+    app_image         = local.app_image
+    app_name          = local.app_name
+    app_port          = var.app_port
+    fargate_cpu       = var.fargate_cpu
+    fargate_memory    = var.fargate_memory
+    aws_region        = var.aws_region
+    log_group         = local.log_group
+    health_check_path = var.health_check_path
+  }
 }
 
 resource "aws_ecs_task_definition" "app" {
-    family                   = "${local.prefix}-app"
-    execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
-    task_role_arn            = aws_iam_role.ecs_task_role.arn    
-    network_mode             = "awsvpc"
-    requires_compatibilities = ["FARGATE"]
-    cpu                      = var.fargate_cpu
-    memory                   = var.fargate_memory
-    container_definitions    = data.template_file.grafana_app.rendered
-    tags = merge(var.tags, {
-        Name = "${local.prefix}-task"
-    })
+  family                   = "${local.prefix}-app"
+  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
+  task_role_arn            = aws_iam_role.ecs_task_role.arn
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = var.fargate_cpu
+  memory                   = var.fargate_memory
+  container_definitions    = data.template_file.grafana_app.rendered
+  tags = merge(var.tags, {
+    Name = "${local.prefix}-task"
+  })
 
 }
 
@@ -209,16 +209,16 @@ resource "aws_iam_policy" "ecs_task_execution_policy" {
     Statement = [
       {
         Effect = "Allow",
-  "Action": [
-    "ecr:GetDownloadUrlForLayer",
-    "ecr:BatchGetImage",
-    "ecr:BatchCheckLayerAvailability",
-    "ecr:GetAuthorizationToken",
-        "logs:CreateLogGroup",
-    "logs:CreateLogStream",
-    "logs:PutLogEvents",
-    "s3:*"
-  ],
+        "Action" : [
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetAuthorizationToken",
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "s3:*"
+        ],
         Resource = "*"
       }
     ]
@@ -260,7 +260,7 @@ resource "aws_iam_role" "ecs_task_role" {
 EOF
 }
 
-        # Resource = ${aws_iam_role.monitoring_role.arn}
+# Resource = ${aws_iam_role.monitoring_role.arn}
 
 
 resource "aws_iam_policy" "ecs_task_policy" {
@@ -273,9 +273,9 @@ resource "aws_iam_policy" "ecs_task_policy" {
         Effect = "Allow",
         Action = [
           "logs:CreateLogGroup",
-           "logs:CreateLogStream",
-           "logs:PutLogEvents",
-         ],
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+        ],
         Resource = "*"
       }
     ]
@@ -292,7 +292,7 @@ resource "aws_iam_role_policy_attachment" "task_s3" {
 data "aws_iam_policy_document" "ecs_auto_scale_role" {
   version = "2012-10-17"
   statement {
-    effect = "Allow"
+    effect  = "Allow"
     actions = ["sts:AssumeRole"]
 
     principals {
@@ -303,7 +303,7 @@ data "aws_iam_policy_document" "ecs_auto_scale_role" {
 }
 # ECS auto scale role
 resource "aws_iam_role" "ecs_auto_scale_role" {
-  name = "${local.prefix}-ecs_role"
+  name               = "${local.prefix}-ecs_role"
   assume_role_policy = data.aws_iam_policy_document.ecs_auto_scale_role.json
 }
 # ECS auto scale role policy attachment
@@ -318,13 +318,13 @@ resource "aws_iam_role" "monitoring_role" {
   name = "${local.prefix}-monitoring-role"
 
   assume_role_policy = jsonencode({
-    "Version": "2012-10-17",
-    "Statement": [
+    "Version" : "2012-10-17",
+    "Statement" : [
       {
-        "Effect": "Allow",
-        "Action": "sts:AssumeRole",
-        "Principal": {
-          "Service": "ecs-tasks.amazonaws.com"
+        "Effect" : "Allow",
+        "Action" : "sts:AssumeRole",
+        "Principal" : {
+          "Service" : "ecs-tasks.amazonaws.com"
         }
       },
       {
@@ -339,16 +339,16 @@ resource "aws_iam_role" "monitoring_role" {
 }
 
 resource "aws_iam_role_policy" "monitoring_policy" {
-  name   = "${local.prefix}-monitoring-policy"
-  role   = aws_iam_role.monitoring_role.id
+  name = "${local.prefix}-monitoring-policy"
+  role = aws_iam_role.monitoring_role.id
 
   policy = jsonencode({
-    "Version": "2012-10-17",
-    "Statement": [
+    "Version" : "2012-10-17",
+    "Statement" : [
       {
-        "Sid": "AllowReadingMetricsFromCloudWatch",
-        "Effect": "Allow",
-        "Action": [
+        "Sid" : "AllowReadingMetricsFromCloudWatch",
+        "Effect" : "Allow",
+        "Action" : [
           "cloudwatch:DescribeAlarmsForMetric",
           "cloudwatch:DescribeAlarmHistory",
           "cloudwatch:DescribeAlarms",
@@ -356,18 +356,18 @@ resource "aws_iam_role_policy" "monitoring_policy" {
           "cloudwatch:GetMetricData",
           "cloudwatch:GetInsightRuleReport"
         ],
-        "Resource": "*"
+        "Resource" : "*"
       },
       {
-        "Sid": "AllowReadingResourceMetricsFromPerformanceInsights",
-        "Effect": "Allow",
-        "Action": "pi:GetResourceMetrics",
-        "Resource": "*"
+        "Sid" : "AllowReadingResourceMetricsFromPerformanceInsights",
+        "Effect" : "Allow",
+        "Action" : "pi:GetResourceMetrics",
+        "Resource" : "*"
       },
       {
-        "Sid": "AllowReadingLogsFromCloudWatch",
-        "Effect": "Allow",
-        "Action": [
+        "Sid" : "AllowReadingLogsFromCloudWatch",
+        "Effect" : "Allow",
+        "Action" : [
           "logs:DescribeLogGroups",
           "logs:DescribeLogStreams",
           "logs:GetLogEvents",
@@ -377,23 +377,23 @@ resource "aws_iam_role_policy" "monitoring_policy" {
           "logs:StopQuery",
           "logs:GetQueryResults"
         ],
-        "Resource": "*"
+        "Resource" : "*"
       },
       {
-        "Sid": "AllowReadingTagsInstancesRegionsFromEC2",
-        "Effect": "Allow",
-        "Action": [
+        "Sid" : "AllowReadingTagsInstancesRegionsFromEC2",
+        "Effect" : "Allow",
+        "Action" : [
           "ec2:DescribeTags",
           "ec2:DescribeInstances",
           "ec2:DescribeRegions"
         ],
-        "Resource": "*"
+        "Resource" : "*"
       },
       {
-        "Sid": "AllowReadingResourcesForTags",
-        "Effect": "Allow",
-        "Action": "tag:GetResources",
-        "Resource": "*"
+        "Sid" : "AllowReadingResourcesForTags",
+        "Effect" : "Allow",
+        "Action" : "tag:GetResources",
+        "Resource" : "*"
       }
     ]
   })
@@ -405,69 +405,69 @@ resource "aws_iam_role_policy" "monitoring_policy" {
 data "aws_availability_zones" "available" {}
 
 resource "aws_vpc" "grafana_main" {
-    cidr_block = var.cidr_block
-    // enable dns resolution
-    enable_dns_support = true
-    enable_dns_hostnames = true
-    tags = {
-        Name = "${local.prefix}-vpc"
-    }
+  cidr_block = var.cidr_block
+  // enable dns resolution
+  enable_dns_support   = true
+  enable_dns_hostnames = true
+  tags = {
+    Name = "${local.prefix}-vpc"
+  }
 }
 
 
 # Create var.az_count private subnets, each in a different AZ
 resource "aws_subnet" "grafana_private" {
-    count             = var.az_count
-    cidr_block        = cidrsubnet(aws_vpc.grafana_main.cidr_block, 8, count.index)
-    availability_zone = data.aws_availability_zones.available.names[count.index]
-    vpc_id            = aws_vpc.grafana_main.id
-    tags = merge(var.tags, {
-        Name = "${local.prefix}-private-subnet-${count.index}"
-    })
+  count             = var.az_count
+  cidr_block        = cidrsubnet(aws_vpc.grafana_main.cidr_block, 8, count.index)
+  availability_zone = data.aws_availability_zones.available.names[count.index]
+  vpc_id            = aws_vpc.grafana_main.id
+  tags = merge(var.tags, {
+    Name = "${local.prefix}-private-subnet-${count.index}"
+  })
 }
 
 
 # Create var.az_count public subnets, each in a different AZ
 resource "aws_subnet" "grafana_public" {
-    count                   = var.az_count
-    cidr_block              = cidrsubnet(aws_vpc.grafana_main.cidr_block, 8, var.az_count + count.index)
-    availability_zone       = data.aws_availability_zones.available.names[count.index]
-    vpc_id                  = aws_vpc.grafana_main.id
-    map_public_ip_on_launch = true
-    tags = merge(var.tags, {
-        Name = "${local.prefix}-public-subnet-${count.index}"
-    })
+  count                   = var.az_count
+  cidr_block              = cidrsubnet(aws_vpc.grafana_main.cidr_block, 8, var.az_count + count.index)
+  availability_zone       = data.aws_availability_zones.available.names[count.index]
+  vpc_id                  = aws_vpc.grafana_main.id
+  map_public_ip_on_launch = true
+  tags = merge(var.tags, {
+    Name = "${local.prefix}-public-subnet-${count.index}"
+  })
 }
 
 
 # Internet Gateway for the public subnet
 resource "aws_internet_gateway" "gw" {
-    vpc_id = aws_vpc.grafana_main.id
-    tags = merge(var.tags, {
-        Name = "${local.prefix}-igw"
-    })
+  vpc_id = aws_vpc.grafana_main.id
+  tags = merge(var.tags, {
+    Name = "${local.prefix}-igw"
+  })
 }
 
 # Route the public subnet traffic through the IGW
 resource "aws_route" "internet_access" {
-    route_table_id         = aws_vpc.grafana_main.main_route_table_id
-    destination_cidr_block = "0.0.0.0/0"
-    gateway_id             = aws_internet_gateway.gw.id    
+  route_table_id         = aws_vpc.grafana_main.main_route_table_id
+  destination_cidr_block = "0.0.0.0/0"
+  gateway_id             = aws_internet_gateway.gw.id
 }
 
 # Create a new route table for the private subnets
 resource "aws_route_table" "private" {
-    count  = var.az_count
-    vpc_id = aws_vpc.grafana_main.id
-    tags = merge(var.tags, {
-        Name = "${local.prefix}-private-rt-${count.index}"
-    })
+  count  = var.az_count
+  vpc_id = aws_vpc.grafana_main.id
+  tags = merge(var.tags, {
+    Name = "${local.prefix}-private-rt-${count.index}"
+  })
 }
 
 # Route the private subnet traffic through the NAT Gateway
 resource "aws_route" "private_nat_gateway" {
-  count          = var.az_count
-  route_table_id = element(aws_route_table.private[*].id, count.index)
+  count                  = var.az_count
+  route_table_id         = element(aws_route_table.private[*].id, count.index)
   destination_cidr_block = "0.0.0.0/0"
   nat_gateway_id         = aws_nat_gateway.nat.id
 }
@@ -475,9 +475,9 @@ resource "aws_route" "private_nat_gateway" {
 
 # Explicitly associate the newly created route tables to the private subnets (so they don't default to the main route table)
 resource "aws_route_table_association" "private" {
-    count          = var.az_count
-    subnet_id      = element(aws_subnet.grafana_private[*].id, count.index)
-    route_table_id = element(aws_route_table.private[*].id, count.index)
+  count          = var.az_count
+  subnet_id      = element(aws_subnet.grafana_private[*].id, count.index)
+  route_table_id = element(aws_route_table.private[*].id, count.index)
 }
 
 
@@ -544,7 +544,7 @@ resource "aws_eip" "nat" {
 
 resource "aws_nat_gateway" "nat" {
   allocation_id = aws_eip.nat.id
-  subnet_id     = element(aws_subnet.grafana_public[*].id, 0) 
+  subnet_id     = element(aws_subnet.grafana_public[*].id, 0)
   tags = merge(var.tags, {
     Name = "${local.prefix}-nat-gw"
   })

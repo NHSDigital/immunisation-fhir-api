@@ -1,7 +1,9 @@
 import json
+
 from log_structure import function_info
 
 ALLOWED_METHODS = ["GET", "POST", "DELETE", "PUT"]
+
 
 @function_info
 def not_found_handler(event, context):
@@ -22,9 +24,7 @@ def not_found(event, _context):
                     "resourceType": "OperationOutcome",
                     "id": "a5abca2a-4eda-41da-b2cc-95d48c6b791d",
                     "meta": {
-                        "profile": [
-                            "https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"
-                        ]
+                        "profile": ["https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"]
                     },
                     "issue": [
                         {
@@ -57,9 +57,7 @@ def not_found(event, _context):
                     "resourceType": "OperationOutcome",
                     "id": "a5abca2a-4eda-41da-b2cc-95d48c6b791d",
                     "meta": {
-                        "profile": [
-                            "https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"
-                        ]
+                        "profile": ["https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"]
                     },
                     "issue": [
                         {
