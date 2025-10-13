@@ -5,9 +5,9 @@ from unittest import TestCase
 from unittest.mock import patch
 
 from boto3 import client as boto3_client
-from errors import UnhandledAuditTableError
 from moto import mock_dynamodb
 
+from errors import UnhandledAuditTableError
 from tests.utils_for_recordprocessor_tests.generic_setup_and_teardown import (
     GenericSetUp,
     GenericTearDown,

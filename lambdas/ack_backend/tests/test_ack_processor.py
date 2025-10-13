@@ -8,6 +8,7 @@ from unittest.mock import Mock, patch
 
 from boto3 import client as boto3_client
 from moto import mock_aws
+
 from utils.generic_setup_and_teardown_for_ack_backend import (
     GenericSetUp,
     GenericTearDown,

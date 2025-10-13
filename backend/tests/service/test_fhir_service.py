@@ -7,12 +7,15 @@ from copy import deepcopy
 from decimal import Decimal
 from unittest.mock import MagicMock, create_autospec, patch
 
-from authorisation.api_operation_code import ApiOperationCode
-from authorisation.authoriser import Authoriser
-from constants import NHS_NUMBER_USED_IN_SAMPLE_DATA
 from fhir.resources.R4B.bundle import Bundle as FhirBundle
 from fhir.resources.R4B.bundle import BundleEntry
 from fhir.resources.R4B.immunization import Immunization
+from pydantic import ValidationError
+from pydantic.error_wrappers import ErrorWrapper
+
+from authorisation.api_operation_code import ApiOperationCode
+from authorisation.authoriser import Authoriser
+from constants import NHS_NUMBER_USED_IN_SAMPLE_DATA
 from models.errors import (
     CustomValidationError,
     InvalidPatientId,
@@ -21,8 +24,6 @@ from models.errors import (
 )
 from models.fhir_immunization import ImmunizationValidator
 from models.utils.generic_utils import get_contained_patient
-from pydantic import ValidationError
-from pydantic.error_wrappers import ErrorWrapper
 from repository.fhir_repository import ImmunizationRepository
 from service.fhir_service import FhirService, UpdateOutcome, get_service_url
 from testing_utils.generic_utils import load_json_data

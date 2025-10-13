@@ -9,6 +9,7 @@ from unittest.mock import patch
 
 from boto3 import client as boto3_client
 from moto import mock_dynamodb, mock_firehose, mock_kinesis, mock_s3
+
 from utils_for_recordprocessor_tests.mock_environment_variables import (
     MOCK_ENVIRONMENT_DICT,
     BucketNames,

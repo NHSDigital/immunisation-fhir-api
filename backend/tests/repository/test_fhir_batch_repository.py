@@ -6,13 +6,14 @@ from uuid import uuid4
 import boto3
 import botocore.exceptions
 import simplejson as json
+from moto import mock_aws
+
 from models.errors import (
     IdentifierDuplicationError,
     ResourceFoundError,
     ResourceNotFoundError,
     UnhandledResponseError,
 )
-from moto import mock_aws
 from repository.fhir_batch_repository import ImmunizationBatchRepository, create_table
 from testing_utils.immunization_utils import create_covid_19_immunization_dict
 
