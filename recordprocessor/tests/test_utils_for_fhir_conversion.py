@@ -88,7 +88,7 @@ class TestBatchUtilsConvert(unittest.TestCase):
             self.assertEqual(Convert.gender_code(code), expected)
 
         # Invalid gender codes
-        for value in [1, "3", "1290", "invalid", None]:
+        for value in [1, "3", "1290", "male", "invalid", None]:
             self.assertEqual(Convert.gender_code(value), "invalid")
 
     def test_convert_boolean(self):
