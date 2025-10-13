@@ -4,18 +4,19 @@ import base64
 import datetime
 import json
 import urllib.parse
-from typing import Literal, Union, Optional, Dict, Any
+from typing import Any, Dict, Literal, Optional, Union
 
 from fhir.resources.R4B.bundle import (
     Bundle as FhirBundle,
+)
+from fhir.resources.R4B.bundle import (
     BundleEntry,
-    BundleLink,
     BundleEntrySearch,
+    BundleLink,
 )
 from fhir.resources.R4B.immunization import Immunization
-from stdnum.verhoeff import validate
-
 from models.constants import Constants
+from stdnum.verhoeff import validate
 
 
 def get_contained_resource(imms: dict, resource: Literal["Patient", "Practitioner", "QuestionnaireResponse"]):

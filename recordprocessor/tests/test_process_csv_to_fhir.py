@@ -2,31 +2,32 @@
 
 import json
 import unittest
-from unittest.mock import patch
 from copy import deepcopy
+from unittest.mock import patch
+
 import boto3
-from moto import mock_s3, mock_firehose, mock_dynamodb
+from moto import mock_dynamodb, mock_firehose, mock_s3
 
 from tests.utils_for_recordprocessor_tests.generic_setup_and_teardown import (
     GenericSetUp,
     GenericTearDown,
 )
-from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
-    add_entry_to_table,
-)
-from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
-    MockFileDetails,
-    ValidMockFileContent,
-    REGION_NAME,
-)
 from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
     MOCK_ENVIRONMENT_DICT,
     BucketNames,
 )
+from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
+    add_entry_to_table,
+)
+from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
+    REGION_NAME,
+    MockFileDetails,
+    ValidMockFileContent,
+)
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
-    from constants import FileStatus, AUDIT_TABLE_NAME
     from batch_processor import process_csv_to_fhir
+    from constants import AUDIT_TABLE_NAME, FileStatus
 
 dynamodb_client = boto3.client("dynamodb", region_name=REGION_NAME)
 s3_client = boto3.client("s3", region_name=REGION_NAME)

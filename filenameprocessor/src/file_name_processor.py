@@ -8,26 +8,27 @@ NOTE: The expected file format for incoming files from the data sources bucket i
 
 import argparse
 from uuid import uuid4
-from utils_for_filenameprocessor import get_creation_and_expiry_times, move_file
-from file_validation import validate_file_key, is_file_in_directory_root
-from send_sqs_message import make_and_send_sqs_message
-from make_and_upload_ack_file import make_and_upload_the_ack_file
+
 from audit_table import upsert_audit_table
 from clients import logger, s3_client
-from logging_decorator import logging_decorator
-from supplier_permissions import validate_vaccine_type_permissions
+from constants import (
+    ERROR_TYPE_TO_STATUS_CODE_MAP,
+    SOURCE_BUCKET_NAME,
+    FileNotProcessedReason,
+    FileStatus,
+)
 from errors import (
-    VaccineTypePermissionsError,
     InvalidFileKeyError,
     UnhandledAuditTableError,
     UnhandledSqsError,
+    VaccineTypePermissionsError,
 )
-from constants import (
-    FileNotProcessedReason,
-    FileStatus,
-    ERROR_TYPE_TO_STATUS_CODE_MAP,
-    SOURCE_BUCKET_NAME,
-)
+from file_validation import is_file_in_directory_root, validate_file_key
+from logging_decorator import logging_decorator
+from make_and_upload_ack_file import make_and_upload_the_ack_file
+from send_sqs_message import make_and_send_sqs_message
+from supplier_permissions import validate_vaccine_type_permissions
+from utils_for_filenameprocessor import get_creation_and_expiry_times, move_file
 
 
 # NOTE: logging_decorator is applied to handle_record function, rather than lambda_handler, because

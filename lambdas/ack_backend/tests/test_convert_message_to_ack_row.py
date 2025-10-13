@@ -6,8 +6,8 @@ from unittest.mock import patch
 from tests.utils.mock_environment_variables import MOCK_ENVIRONMENT_DICT
 from tests.utils.values_for_ack_backend_tests import (
     DefaultValues,
-    ValidValues,
     DiagnosticsDictionaries,
+    ValidValues,
 )
 
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):

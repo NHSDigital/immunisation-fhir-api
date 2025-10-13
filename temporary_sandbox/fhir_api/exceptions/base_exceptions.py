@@ -3,14 +3,16 @@
 # pylint: disable=W0231
 
 from typing import Type
+
 import fastapi
 from fastapi.responses import JSONResponse
+
 from fhir_api.models.errors import (
-    NotFoundError,
     AlreadyExistsError,
-    WebSocketError,
     BaseError,
     BaseIdentifiedError,
+    NotFoundError,
+    WebSocketError,
 )
 
 

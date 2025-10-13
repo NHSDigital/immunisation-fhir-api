@@ -1,20 +1,20 @@
 import unittest
 import uuid
 from unittest.mock import Mock, create_autospec
-from tests.utils.immunization_utils import create_covid_19_immunization
-from fhir_batch_service import ImmunizationBatchService
+
+from fhir_batch_controller import ImmunizationBatchController
 from fhir_batch_repository import ImmunizationBatchRepository
+from fhir_batch_service import ImmunizationBatchService
 from models.errors import (
-    ResourceNotFoundError,
-    UnhandledResponseError,
     CustomValidationError,
     IdentifierDuplicationError,
+    ResourceNotFoundError,
+    UnhandledResponseError,
 )
-from fhir_batch_controller import ImmunizationBatchController
+from tests.utils.immunization_utils import create_covid_19_immunization
 
 
 class TestCreateImmunizationBatchController(unittest.TestCase):
-
     def setUp(self):
         self.mock_repo = create_autospec(ImmunizationBatchRepository)
         self.mock_service = create_autospec(ImmunizationBatchService)
@@ -131,7 +131,6 @@ class TestCreateImmunizationBatchController(unittest.TestCase):
 
 
 class TestUpdateImmunizationBatchController(unittest.TestCase):
-
     def setUp(self):
         self.mock_repo = create_autospec(ImmunizationBatchRepository)
         self.mock_service = create_autospec(ImmunizationBatchService)
@@ -247,7 +246,6 @@ class TestUpdateImmunizationBatchController(unittest.TestCase):
 
 
 class TestDeleteImmunizationBatchController(unittest.TestCase):
-
     def setUp(self):
         self.mock_repo = create_autospec(ImmunizationBatchRepository)
         self.mock_service = create_autospec(ImmunizationBatchService)

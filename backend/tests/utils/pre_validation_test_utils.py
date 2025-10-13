@@ -2,12 +2,12 @@
 
 import unittest
 from copy import deepcopy
-from decimal import Decimal
 
 from jsonpath_ng.ext import parse
+
 from .generic_utils import (
-    test_valid_values_accepted,
     test_invalid_values_rejected,
+    test_valid_values_accepted,
 )
 from .values_for_tests import InvalidDataTypes, InvalidValues, ValidValues
 

@@ -2,10 +2,10 @@ import json
 import unittest
 from unittest.mock import create_autospec, patch
 
+from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
 from create_imms_handler import create_immunization
 from fhir_controller import FhirController
-from models.errors import Severity, Code, create_operation_outcome
-from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
+from models.errors import Code, Severity, create_operation_outcome
 
 
 class TestCreateImmunizationById(unittest.TestCase):

@@ -1,33 +1,32 @@
-import json
-import uuid
 import datetime
-import unittest
+import json
 import os
-from unittest.mock import MagicMock, patch
+import unittest
+import uuid
 from copy import deepcopy
-from unittest.mock import create_autospec, patch
 from decimal import Decimal
-
-from fhir.resources.R4B.bundle import Bundle as FhirBundle, BundleEntry
-from fhir.resources.R4B.immunization import Immunization
+from unittest.mock import MagicMock, create_autospec, patch
 
 from authorisation.api_operation_code import ApiOperationCode
 from authorisation.authoriser import Authoriser
+from constants import NHS_NUMBER_USED_IN_SAMPLE_DATA
+from fhir.resources.R4B.bundle import Bundle as FhirBundle
+from fhir.resources.R4B.bundle import BundleEntry
+from fhir.resources.R4B.immunization import Immunization
 from fhir_repository import ImmunizationRepository
 from fhir_service import FhirService, UpdateOutcome, get_service_url
-from models.errors import InvalidPatientId, CustomValidationError, UnauthorizedVaxError, ResourceNotFoundError
+from models.errors import CustomValidationError, InvalidPatientId, ResourceNotFoundError, UnauthorizedVaxError
 from models.fhir_immunization import ImmunizationValidator
 from models.utils.generic_utils import get_contained_patient
 from pydantic import ValidationError
 from pydantic.error_wrappers import ErrorWrapper
+from tests.utils.generic_utils import load_json_data
 from tests.utils.immunization_utils import (
+    VALID_NHS_NUMBER,
     create_covid_19_immunization,
     create_covid_19_immunization_dict,
     create_covid_19_immunization_dict_no_id,
-    VALID_NHS_NUMBER,
 )
-from tests.utils.generic_utils import load_json_data
-from constants import NHS_NUMBER_USED_IN_SAMPLE_DATA
 
 
 class TestFhirServiceBase(unittest.TestCase):
@@ -46,7 +45,6 @@ class TestFhirServiceBase(unittest.TestCase):
 
 
 class TestServiceUrl(unittest.TestCase):
-
     def setUp(self):
         self.logger_info_patcher = patch("logging.Logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
@@ -360,11 +358,14 @@ class TestGetImmunizationIdentifier(unittest.TestCase):
 
         mock_resource = create_covid_19_immunization_dict(identifier)
         self.authoriser.authorise.return_value = True
-        self.imms_repo.get_immunization_by_identifier.return_value = {
-            "resource": mock_resource,
-            "id": imms_id,
-            "version": 1,
-        }, "covid19"
+        self.imms_repo.get_immunization_by_identifier.return_value = (
+            {
+                "resource": mock_resource,
+                "id": imms_id,
+                "version": 1,
+            },
+            "covid19",
+        )
 
         # When
         service_resp = self.fhir_service.get_immunization_by_identifier(
@@ -1121,7 +1122,6 @@ class TestSearchImmunizations(unittest.TestCase):
 
         imms_ids = ["imms-1", "imms-2"]
         imms_list = [create_covid_19_immunization_dict(imms_id) for imms_id in imms_ids]
-        patient = next(contained for contained in imms_list[0]["contained"] if contained["resourceType"] == "Patient")
         self.imms_repo.find_immunizations.return_value = imms_list
         nhs_number = VALID_NHS_NUMBER
         vaccine_types = ["COVID19"]
@@ -1139,7 +1139,6 @@ class TestSearchImmunizations(unittest.TestCase):
 
         imms_ids = ["imms-1", "imms-2"]
         imms_list = [create_covid_19_immunization_dict(imms_id) for imms_id in imms_ids]
-        patient = next(contained for contained in imms_list[0]["contained"] if contained["resourceType"] == "Patient")
         self.imms_repo.find_immunizations.return_value = imms_list
         nhs_number = VALID_NHS_NUMBER
         vaccine_types = ["COVID19"]

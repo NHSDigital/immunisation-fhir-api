@@ -1,8 +1,8 @@
 """Generic setup and teardown for ACK backend tests"""
 
-from tests.utils.mock_environment_variables import AUDIT_TABLE_NAME, BucketNames, Firehose, REGION_NAME
-
 from constants import AuditTableKeys
+
+from tests.utils.mock_environment_variables import AUDIT_TABLE_NAME, REGION_NAME, BucketNames, Firehose
 
 
 class GenericSetUp:
@@ -14,7 +14,6 @@ class GenericSetUp:
     """
 
     def __init__(self, s3_client=None, firehose_client=None, dynamodb_client=None):
-
         if s3_client:
             for bucket_name in [
                 BucketNames.SOURCE,
@@ -50,7 +49,6 @@ class GenericTearDown:
     """Performs generic tear down of mock resources"""
 
     def __init__(self, s3_client=None, firehose_client=None, dynamodb_client=None):
-
         if s3_client:
             for bucket_name in [
                 BucketNames.SOURCE,

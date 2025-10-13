@@ -1,13 +1,14 @@
 import os
-import uuid
-import boto3
 import time
-import simplejson as json
-from clients import logger
+import uuid
 from dataclasses import dataclass
+
+import boto3
 import botocore.exceptions
-from boto3.dynamodb.conditions import Key, Attr
-from models.errors import UnhandledResponseError, IdentifierDuplicationError, ResourceNotFoundError, ResourceFoundError
+import simplejson as json
+from boto3.dynamodb.conditions import Attr, Key
+from clients import logger
+from models.errors import IdentifierDuplicationError, ResourceFoundError, ResourceNotFoundError, UnhandledResponseError
 
 
 def create_table(region_name="eu-west-2"):

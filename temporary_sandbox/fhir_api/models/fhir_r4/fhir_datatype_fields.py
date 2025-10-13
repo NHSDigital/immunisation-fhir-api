@@ -1,14 +1,14 @@
 """Generic Fields for FHIR Revision 4"""
 
 import datetime
-
-from typing import Union
 from functools import partial
+from typing import Union
+
 from pydantic import (
-    Field,
     AnyUrl,
-    conint,
+    Field,
     PositiveInt,
+    conint,
 )
 
 

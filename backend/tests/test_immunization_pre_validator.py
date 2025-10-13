@@ -6,26 +6,27 @@ from decimal import Decimal
 from unittest.mock import patch
 
 from jsonpath_ng.ext import parse
-
-from clients import redis_client
 from models.fhir_immunization import ImmunizationValidator
-from models.utils.generic_utils import get_generic_extension_value
+from models.fhir_immunization_pre_validators import PreValidators
+from models.utils.generic_utils import (
+    get_generic_extension_value,
+    patient_name_family_field_location,
+    patient_name_given_field_location,
+    practitioner_name_family_field_location,
+    practitioner_name_given_field_location,
+)
+from utils.generic_utils import (
+    load_json_data,
+)
+from utils.generic_utils import (
+    test_invalid_values_rejected as _test_invalid_values_rejected,
+)
 from utils.generic_utils import (
     # these have an underscore to avoid pytest collecting them as tests
     test_valid_values_accepted as _test_valid_values_accepted,
-    test_invalid_values_rejected as _test_invalid_values_rejected,
-    load_json_data,
-)
-from models.utils.generic_utils import (
-    patient_name_given_field_location,
-    patient_name_family_field_location,
-    practitioner_name_given_field_location,
-    practitioner_name_family_field_location,
 )
 from utils.pre_validation_test_utils import ValidatorModelTests
-from utils.values_for_tests import ValidValues, InvalidValues
-from models.constants import Constants
-from models.fhir_immunization_pre_validators import PreValidators
+from utils.values_for_tests import InvalidValues, ValidValues
 
 
 class TestImmunizationModelPreValidationRules(unittest.TestCase):

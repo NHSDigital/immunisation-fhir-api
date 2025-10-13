@@ -4,7 +4,8 @@ import json
 import os
 import unittest
 from decimal import Decimal
-from typing import Literal, Any
+from typing import Any, Literal
+
 from jsonpath_ng.ext import parse
 
 

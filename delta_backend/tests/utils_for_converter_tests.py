@@ -1,8 +1,9 @@
+import json
 import uuid
 from decimal import Decimal
-import json
-from common.mappings import EventName, Operation
 from typing import List
+
+from common.mappings import EventName, Operation
 
 
 class RecordConfig:
@@ -15,7 +16,6 @@ class RecordConfig:
 
 
 class ValuesForTests:
-
     MOCK_ENVIRONMENT_DICT = {
         "DYNAMODB_TABLE_NAME": "immunisation-batch-internal-dev-imms-test-table",
         "ENVIRONMENT": "internal-dev-test",
@@ -346,7 +346,6 @@ class ValuesForTests:
 
 
 class ErrorValuesForTests:
-
     json_dob_error = {
         "resourceType": "Immunization",
         "contained": [

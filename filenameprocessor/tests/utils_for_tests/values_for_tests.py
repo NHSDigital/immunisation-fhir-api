@@ -1,7 +1,7 @@
 """File of values which can be used for testing"""
 
-from unittest.mock import patch
 from datetime import datetime
+from unittest.mock import patch
 
 from tests.utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT
 

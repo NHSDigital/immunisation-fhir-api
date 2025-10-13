@@ -1,32 +1,32 @@
 """Utils for the recordprocessor tests"""
 
 from io import StringIO
+from typing import Optional
+from unittest.mock import patch
+
+from boto3 import client as boto3_client
+from boto3.dynamodb.types import TypeDeserializer
 from utils_for_recordprocessor_tests.mock_environment_variables import (
+    MOCK_ENVIRONMENT_DICT,
     BucketNames,
     Firehose,
     Kinesis,
 )
 from utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
-    MockFileDetails,
     FileDetails,
+    MockFileDetails,
 )
-from boto3.dynamodb.types import TypeDeserializer
-from boto3 import client as boto3_client
-from unittest.mock import patch
-from utils_for_recordprocessor_tests.mock_environment_variables import (
-    MOCK_ENVIRONMENT_DICT,
-)
-from typing import Optional
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
-    from clients import REGION_NAME
     from csv import DictReader
+
+    from clients import REGION_NAME
     from constants import (
-        AuditTableKeys,
-        AUDIT_TABLE_NAME,
         AUDIT_TABLE_FILENAME_GSI,
+        AUDIT_TABLE_NAME,
         AUDIT_TABLE_QUEUE_NAME_GSI,
+        AuditTableKeys,
     )
 
 dynamodb_client = boto3_client("dynamodb", region_name=REGION_NAME)
@@ -60,7 +60,6 @@ class GenericSetUp:
         kinesis_client=None,
         dynamo_db_client=None,
     ):
-
         if s3_client:
             for bucket_name in [
                 BucketNames.SOURCE,
@@ -144,7 +143,6 @@ class GenericTearDown:
         kinesis_client=None,
         dynamo_db_client=None,
     ):
-
         if s3_client:
             for bucket_name in [BucketNames.SOURCE, BucketNames.DESTINATION]:
                 for obj in s3_client.list_objects_v2(Bucket=bucket_name).get("Contents", []):

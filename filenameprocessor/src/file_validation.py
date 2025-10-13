@@ -1,11 +1,12 @@
 """Functions for file key validation"""
 
-from re import match
 from datetime import datetime
+from re import match
+
 from constants import VALID_VERSIONS
 from elasticache import (
-    get_valid_vaccine_types_from_cache,
     get_supplier_system_from_cache,
+    get_valid_vaccine_types_from_cache,
 )
 from errors import InvalidFileKeyError
 
