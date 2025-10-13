@@ -1,6 +1,6 @@
 import json
 import datetime
-import validator.enums.error_levels as ErrorLevels
+import common.validator.enums.error_levels as ErrorLevels
 from dateutil import parser
 
 

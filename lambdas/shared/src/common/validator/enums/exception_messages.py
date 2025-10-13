@@ -1,3 +1,5 @@
+
+
 # all exceptions and messgaes
 UNEXPECTED_EXCEPTION = 0
 VALUE_CHECK_FAILED = 1

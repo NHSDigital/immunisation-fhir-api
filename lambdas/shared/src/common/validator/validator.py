@@ -1,35 +1,29 @@
 # Main validation engine
 
-import validator.enums.exception_messages as ExceptionMessages
-import validator.enums.error_levels as ErrorLevels
-from validator.parsers.csv_parser import CSVParser
-from validator.parsers.csv_line_parser import CSVLineParser
-from validator.parsers.fhir_parser import FHIRParser
-from validator.parsers.schema_parser import SchemaParser
-from validator.validation_expression_checker import ExpressionChecker, ErrorReport
-from validator.reporter.dq_reporter import DQReporter
-
-
-FilePath = ''
-JSONData = {}
-# SchemaFile = {}  # Doesnt seem to be used
-CSVRow = ''
-CSVHeader = ''
-error_records: list[ErrorReport] = []
-isCSV = True
-dataType = 'FHIR'  # 'FHIR', 'FHIRJSON', 'CSV', 'CSVROW'
-dataParser = any
+import common.validator.enums.exception_messages as ExceptionMessages
+import common.validator.enums.error_levels as ErrorLevels
+from common.validator.parsers.csv_parser import CSVParser
+from common.validator.parsers.csv_line_parser import CSVLineParser
+from common.validator.parsers.fhir_parser import FHIRParser
+from common.validator.parsers.schema_parser import SchemaParser
+from common.validator.expression_checker import ExpressionChecker
+from common.validator.record_error import ErrorReport
+from common.validator.reporter.dq_reporter import DQReporter
 
 
 class Validator:
 
-    def __init__(self, filepath, json_data, schemafile, csv_row, csv_header, data_type):
+    def __init__(self,
+                 filepath='', json_data={}, schemafile={}, csv_row='',
+                 csv_header='', data_type='FHIR', data_parser=None):
         self.filepath = filepath
         self.json_data = json_data
         self.schema_file = schemafile
         self.csv_row = csv_row
         self.csv_header = csv_header
         self.data_type = data_type
+        self.data_parser = data_parser
+        self.error_records: list[ErrorReport] = []
 
     def _get_csv_line_parser(self, csv_row, csv_header):
         csv_parser = CSVLineParser()
@@ -63,11 +57,11 @@ class Validator:
             error_record.name = expression_name
             error_record.id = expression_id
             error_record.error_level = error_level
-            error_records.append(error_record)
+            self.error_records.append(error_record)
 
     # Function to help identify a parent failure in the error list
     def _check_error_record_for_fail(self, expression_id):
-        for error_record in error_records:
+        for error_record in self.error_records:
             if (error_record.id == expression_id):
                 return True
         return False
@@ -102,7 +96,7 @@ class Validator:
                 return error_record
 
         try:
-            expression_values = self.data_parser.getKeyValue(expression_fieldname)
+            expression_values = self.data_parser.get_key_value(expression_fieldname)
         except Exception as e:
             message = 'Data get values Unexpected exception [%s]: %s' % (e.__class__.__name__, e)
             error_report = ErrorReport(code=ExceptionMessages.PARSING_ERROR, message=message)
@@ -124,20 +118,20 @@ class Validator:
     def run_validation(self, summarise=False, report_unexpected_exception=True,
                        inc_header_in_row_count=True) -> list[ErrorReport]:
         try:
-            error_records.clear()
+            self.error_records.clear()
 
-            match self.dataType:  # 'FHIR', 'FHIRJSON', 'CSV', 'CSVROW'
+            match self.data_type:  # 'FHIR', 'FHIRJSON', 'CSV', 'CSVROW'
                 case 'FHIR':
-                    self.dataParser = self._getFHIRParser(self.FilePath)
+                    self.data_parser = self._get_fhir_parser(self.filepath)
                     self.isCSV = False
                 case 'FHIRJSON':
-                    self.dataParser = self._getFHIRJSONParser(self.JSONData)
+                    self.data_parser = self._get_fhir_json_parser(self.json_data)
                     self.isCSV = False
                 case 'CSV':
-                    self.dataParser = self._getCSVParser(self.FilePath)
+                    self.data_parser = self._get_csv_parser(self.filepath)
                     self.isCSV = True
                 case 'CSVROW':
-                    self.dataParser = self._getCSVLineParser(self.CSVRow, self.CSVHeader)
+                    self.data_parser = self._get_csv_line_parser(self.csv_row, self.csv_header)
                     self.isCSV = True
 
         except Exception as e:
@@ -146,14 +140,14 @@ class Validator:
                 return [ErrorReport(code=0, message=message)]
 
         try:
-            schemaParser = self._getSchemaParser(self.SchemaFile)
+            schemaParser = self._get_schema_parser(self.schema_file)
         except Exception as e:
             if report_unexpected_exception:
                 message = 'Schema Parser Unexpected exception [%s]: %s' % (e.__class__.__name__, e)
                 return [ErrorReport(code=0, message=message)]
 
         try:
-            expression_validate = ExpressionChecker(dataParser, summarise, report_unexpected_exception)
+            expression_validate = ExpressionChecker(self.data_parser, summarise, report_unexpected_exception)
         except Exception as e:
             if report_unexpected_exception:
                 message = 'Expression Checker Unexpected exception [%s]: %s' % (e.__class__.__name__, e)
@@ -161,7 +155,7 @@ class Validator:
 
         # get list of expressions
         try:
-            expressions = schemaParser.getExpressions()
+            expressions = schemaParser.get_expressions()
         except Exception as e:
             if report_unexpected_exception:
                 message = 'Expression Getter Unexpected exception [%s]: %s' % (e.__class__.__name__, e)
@@ -171,21 +165,21 @@ class Validator:
             # rows = self._validate_expression(expression_validate, expression, inc_header_in_row_count)
             self._validate_expression(expression_validate, expression, inc_header_in_row_count)
 
-        return error_records
+        return self.error_records
 
     # -------------------------------------------------------------------------
     # Report Generation
     # Build the error Report
-    def buildErrorReport(self, eventId):
-        OccurrenceDateTime = self.dataParser.getKeySingleValue('occurrenceDateTime')
-        dqReporter = DQReporter()
-        dqReport = dqReporter.generateErrorReport(eventId, OccurrenceDateTime, error_records)
+    def build_error_report(self, eventId):
+        OccurrenceDateTime = self.data_parser.get_key_single_value('occurrenceDateTime')
+        dq_reporter = DQReporter()
+        dq_report = dq_reporter.generate_error_report(eventId, OccurrenceDateTime, self.error_records)
 
-        return dqReport
+        return dq_report
 
     # Check all errors to see if we have a critical error that would fail the validation
-    def hasValidationFailed(self):
-        for errorRecord in error_records:
-            if (errorRecord['errorLevel'] == ErrorLevels.CRITICAL_ERROR):
+    def has_validation_failed(self):
+        for error_record in self.error_records:
+            if (error_record.error_level == ErrorLevels.CRITICAL_ERROR):
                 return True
         return False

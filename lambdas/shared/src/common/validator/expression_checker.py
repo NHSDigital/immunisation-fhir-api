@@ -1,66 +1,14 @@
 # Root and base type expression checker functions
-import validator.enums.exception_messages as ExceptionMessages
+import common.validator.enums.exception_messages as ExceptionMessages
 import datetime
 import uuid
 import re
-from validator.lookup.lookup_data import LookUpData
-from validator.lookup.key_data import KeyData
+from common.validator.lookup.lookup_data import LookUpData
+from common.validator.lookup.key_data import KeyData
+from common.validator.record_error import RecordError, ErrorReport
 
 
-class ErrorReport():
-    def __init__(self, code: int, message: str, row: int = None, field: str = None, details: str = None,
-                 summarise: bool = False):
-        self.code = code
-        self.message = message
-        if not summarise:
-            self.row = row
-            self.field = field
-            self.details = details
-        self.summarise = summarise
-        # these are set when the error is added to the report
-        self.error_group = None
-        self.name = None
-        self.id = None
-        self.error_level = None
-
-    # function to return the object as a dictionary
-    def to_dict(self):
-        ret = {
-                'code': self.code,
-                'message': self.message
-            }
-        if not self.summarise:
-            ret.update({
-                'row': self.row,
-                'field': self.field,
-                'details': self.details
-            })
-        return ret
-
-
-# record exception capture
-class RecordError(Exception):
-
-    def __init__(self, code=None, message=None, details=None):
-        self.code = code
-        self.message = message
-        self.details = details
-
-    def __str__(self):
-        return repr((self.code, self.message, self.details))
-
-    def __repr__(self):
-        return repr((self.code, self.message, self.details))
-
-
-# main expressions checker
 class ExpressionChecker:
-    # validation settings
-    # summarise = False
-    # report_unexpected_exception = True
-    # dataParser = any
-    # dataLookUp = any
-    # keyData = any
 
     def __init__(self, data_parser, summarise, report_unexpected_exception):
         self.data_parser = data_parser  # FHIR data parser for additional functions
@@ -160,9 +108,26 @@ class ExpressionChecker:
 
     # Integer Validate
     def _validate_integer(self, expression_rule, field_name,
-                          field_value, row, summarise) -> ErrorReport:
+                          field_value, row, summarise=False) -> ErrorReport:
         try:
             int(field_value)
+            if expression_rule:
+                # TODO - code is incomplete here. It appears there should be a check
+                # against expression_rule but it's not implemented. eg max, min, equal etc
+                # eg "1" means value must be 1
+                # "1:10" means value must be between 1 to 10
+                # "1,10" means value must be either 1 or 10
+                # ":10" means value must be less than or equal to 10
+                # "1:" means value must be greater than or equal to 1
+                # ">10" means value must be greater than 10
+                # "<10" means value must be less than 10
+
+                check_value = int(expression_rule)
+                if field_value != check_value:
+                    raise RecordError(ExceptionMessages.RECORD_CHECK_FAILED,
+                                      "Value integer check failed",
+                                      "Value does not equal expected value, Expected- " + expression_rule
+                                      + " found- " + field_value)
         except RecordError as e:
             code = e.code if e.code is not None else ExceptionMessages.RECORD_CHECK_FAILED
             message = (e.message if e.message is not None

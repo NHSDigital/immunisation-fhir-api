@@ -1,6 +1,6 @@
 # Test application file
 from pathlib import Path
-from validator.validator import Validator
+from common.validator.validator import Validator
 import json
 import time
 
