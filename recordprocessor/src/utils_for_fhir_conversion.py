@@ -68,9 +68,9 @@ class Convert:
 
     @staticmethod
     def gender_code(code: any) -> any:
-        """Converts gender code to fhir gender if the code is recognised. Otherwise returns the original code."""
+        """Converts gender code to fhir gender if the code is recognised. Otherwise returns 'invalid'."""
         code_to_fhir = {"1": "male", "2": "female", "9": "other", "0": "unknown"}
-        return code_to_fhir.get(code, code)
+        return code_to_fhir.get(code, 'invalid')
 
     @staticmethod
     def boolean(value: any) -> any:
