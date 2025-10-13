@@ -4,8 +4,9 @@ import importlib
 import unittest
 from unittest.mock import patch
 
-import redis_sync
 from constants import RedisCacheKey
+
+import redis_sync
 
 
 class TestHandler(unittest.TestCase):
