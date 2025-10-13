@@ -4,9 +4,8 @@ import json
 from io import StringIO, BytesIO
 from typing import Union
 from botocore.exceptions import ClientError
-from audit_table import change_audit_table_status_to_processed
-from clients import s3_client, logger, lambda_client
 from audit_table import change_audit_table_status_to_processed, get_next_queued_file_details
+from clients import s3_client, logger, lambda_client
 from constants import (
     ACK_HEADERS,
     get_source_bucket_name,
