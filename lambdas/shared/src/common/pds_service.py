@@ -1,6 +1,6 @@
-import requests
 import uuid
 
+import requests
 from common.authentication import AppRestrictedAuth
 from common.clients import logger
 from common.models.errors import UnhandledResponseError

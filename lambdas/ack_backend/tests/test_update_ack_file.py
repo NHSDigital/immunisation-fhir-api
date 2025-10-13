@@ -1,36 +1,35 @@
 """Tests for the functions in the update_ack_file module."""
 
-import unittest
 import os
+import unittest
+from io import StringIO
+from unittest.mock import patch
+
 from boto3 import client as boto3_client
 from moto import mock_aws
-
-from utils.values_for_ack_backend_tests import ValidValues, DefaultValues
-from utils.mock_environment_variables import (
-    MOCK_ENVIRONMENT_DICT,
-    BucketNames,
-    REGION_NAME,
-)
 from utils.generic_setup_and_teardown_for_ack_backend import (
     GenericSetUp,
     GenericTearDown,
 )
+from utils.mock_environment_variables import (
+    MOCK_ENVIRONMENT_DICT,
+    REGION_NAME,
+    BucketNames,
+)
 from utils.utils_for_ack_backend_tests import (
-    setup_existing_ack_file,
-    obtain_current_ack_file_content,
+    MOCK_MESSAGE_DETAILS,
+    generate_expected_ack_content,
     generate_expected_ack_file_row,
     generate_sample_existing_ack_content,
-    generate_expected_ack_content,
-    MOCK_MESSAGE_DETAILS,
+    obtain_current_ack_file_content,
+    setup_existing_ack_file,
 )
-
-from unittest.mock import patch
-from io import StringIO
+from utils.values_for_ack_backend_tests import DefaultValues, ValidValues
 
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from update_ack_file import (
-        obtain_current_ack_content,
         create_ack_data,
+        obtain_current_ack_content,
         update_ack_file,
     )
 

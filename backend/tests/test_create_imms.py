@@ -5,7 +5,7 @@ from unittest.mock import create_autospec, patch
 from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
 from controller.fhir_controller import FhirController
 from create_imms_handler import create_immunization
-from models.errors import Severity, Code, create_operation_outcome
+from models.errors import Code, Severity, create_operation_outcome
 
 
 class TestCreateImmunizationById(unittest.TestCase):

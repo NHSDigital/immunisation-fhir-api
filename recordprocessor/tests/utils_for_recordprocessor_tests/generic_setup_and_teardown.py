@@ -3,20 +3,20 @@
 from unittest.mock import patch
 
 from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
-    BucketNames,
     MOCK_ENVIRONMENT_DICT,
-    Sqs,
+    BucketNames,
     Firehose,
+    Sqs,
 )
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from clients import REGION_NAME
     from constants import (
-        AuditTableKeys,
-        AUDIT_TABLE_QUEUE_NAME_GSI,
         AUDIT_TABLE_FILENAME_GSI,
         AUDIT_TABLE_NAME,
+        AUDIT_TABLE_QUEUE_NAME_GSI,
+        AuditTableKeys,
     )
 
 
@@ -120,7 +120,6 @@ class GenericTearDown:
         sqs_client=None,
         dynamodb_client=None,
     ):
-
         if s3_client:
             for bucket_name in [
                 BucketNames.SOURCE,

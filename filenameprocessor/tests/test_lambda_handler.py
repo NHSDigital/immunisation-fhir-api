@@ -2,41 +2,42 @@
 
 import json
 import sys
-from unittest.mock import patch, ANY
-from unittest import TestCase
-from json import loads as json_loads
 from contextlib import ExitStack
 from copy import deepcopy
+from json import loads as json_loads
+from unittest import TestCase
+from unittest.mock import ANY, patch
+
 import fakeredis
 from boto3 import client as boto3_client
-from moto import mock_s3, mock_sqs, mock_firehose, mock_dynamodb
+from moto import mock_dynamodb, mock_firehose, mock_s3, mock_sqs
 
 from tests.utils_for_tests.generic_setup_and_teardown import (
     GenericSetUp,
     GenericTearDown,
-)
-from tests.utils_for_tests.utils_for_filenameprocessor_tests import (
-    assert_audit_table_entry,
-    create_mock_hget,
-    MOCK_ODS_CODE_TO_SUPPLIER,
 )
 from tests.utils_for_tests.mock_environment_variables import (
     MOCK_ENVIRONMENT_DICT,
     BucketNames,
     Sqs,
 )
+from tests.utils_for_tests.utils_for_filenameprocessor_tests import (
+    MOCK_ODS_CODE_TO_SUPPLIER,
+    assert_audit_table_entry,
+    create_mock_hget,
+)
 from tests.utils_for_tests.values_for_tests import (
-    MOCK_CREATED_AT_FORMATTED_STRING,
-    MockFileDetails,
     MOCK_BATCH_FILE_CONTENT,
+    MOCK_CREATED_AT_FORMATTED_STRING,
     MOCK_EXPIRES_AT,
+    MockFileDetails,
 )
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
-    from file_name_processor import lambda_handler, handle_record
     from clients import REGION_NAME
-    from constants import AUDIT_TABLE_NAME, FileStatus, AuditTableKeys
+    from constants import AUDIT_TABLE_NAME, AuditTableKeys, FileStatus
+    from file_name_processor import handle_record, lambda_handler
 
 s3_client = boto3_client("s3", region_name=REGION_NAME)
 sqs_client = boto3_client("sqs", region_name=REGION_NAME)
@@ -443,7 +444,6 @@ class TestUnexpectedBucket(TestCase):
 
 
 class TestMainEntryPoint(TestCase):
-
     def test_run_local_constructs_event_and_calls_lambda_handler(self):
         test_args = [
             "file_name_processor.py",

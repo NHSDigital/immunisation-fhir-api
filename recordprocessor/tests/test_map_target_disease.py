@@ -3,6 +3,7 @@
 import json
 import unittest
 from unittest.mock import patch
+
 from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
     MOCK_ENVIRONMENT_DICT,
 )

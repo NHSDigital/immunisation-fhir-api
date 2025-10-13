@@ -1,37 +1,38 @@
-import time
 import csv
-import pandas as pd
-import uuid
-import json
-import random
 import io
+import json
 import os
-from botocore.exceptions import ClientError
-from boto3.dynamodb.conditions import Key
-from io import StringIO
+import random
+import time
+import uuid
 from datetime import datetime, timezone
+from io import StringIO
+
+import pandas as pd
+from boto3.dynamodb.conditions import Key
+from botocore.exceptions import ClientError
 from clients import (
+    ack_metadata_queue_url,
+    audit_table,
+    batch_fifo_queue_url,
+    events_table,
     logger,
     s3_client,
-    audit_table,
-    events_table,
     sqs_client,
-    batch_fifo_queue_url,
-    ack_metadata_queue_url,
 )
-from errors import AckFileNotFoundError, DynamoDBMismatchError
 from constants import (
     ACK_BUCKET,
-    FORWARDEDFILE_PREFIX,
-    SOURCE_BUCKET,
-    DUPLICATE,
     ACK_PREFIX,
+    DUPLICATE,
     FILE_NAME_VAL_ERROR,
+    FORWARDEDFILE_PREFIX,
     HEADER_RESPONSE_CODE_COLUMN,
     RAVS_URI,
+    SOURCE_BUCKET,
     ActionFlag,
     environment,
 )
+from errors import AckFileNotFoundError, DynamoDBMismatchError
 
 
 def upload_file_to_s3(file_name, bucket, prefix):
@@ -313,9 +314,9 @@ def validate_row_count(desc, source_file_name, ack_file_name):
     """
     source_file_row_count = fetch_row_count(SOURCE_BUCKET, f"archive/{source_file_name}")
     ack_file_row_count = fetch_row_count(ACK_BUCKET, ack_file_name)
-    assert (
-        source_file_row_count == ack_file_row_count
-    ), f"{desc}. Row count mismatch: Input ({source_file_row_count}) vs Ack ({ack_file_row_count})"
+    assert source_file_row_count == ack_file_row_count, (
+        f"{desc}. Row count mismatch: Input ({source_file_row_count}) vs Ack ({ack_file_row_count})"
+    )
 
 
 def fetch_row_count(bucket, file_name):
@@ -430,7 +431,6 @@ def verify_final_ack_file(file_key):
 
 
 def delete_filename_from_audit_table(filename) -> bool:
-
     # 1. Query the GSI to get all items with the given filename
     try:
         response = audit_table.query(
@@ -449,7 +449,6 @@ def delete_filename_from_audit_table(filename) -> bool:
 
 
 def delete_filename_from_events_table(identifier) -> bool:
-
     # 1. Query the GSI to get all items with the given filename
     try:
         identifier_pk = f"{RAVS_URI}#{identifier}"

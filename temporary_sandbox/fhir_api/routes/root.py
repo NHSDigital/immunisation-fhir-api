@@ -3,7 +3,6 @@ import os
 from fastapi import APIRouter
 from fastapi.responses import PlainTextResponse
 
-
 router = APIRouter()
 
 

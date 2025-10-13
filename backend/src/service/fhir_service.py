@@ -1,42 +1,39 @@
 import datetime
 import logging
 import os
-
-
 from enum import Enum
 from typing import Optional, Union
 from uuid import uuid4
 
-from fhir.resources.R4B.bundle import (
-    Bundle as FhirBundle,
-    BundleEntry,
-    BundleLink,
-    BundleEntrySearch,
-)
-from fhir.resources.R4B.immunization import Immunization
-from pydantic import ValidationError
-
 import parameter_parser
 from authorisation.api_operation_code import ApiOperationCode
 from authorisation.authoriser import Authoriser
-
+from fhir.resources.R4B.bundle import (
+    Bundle as FhirBundle,
+)
+from fhir.resources.R4B.bundle import (
+    BundleEntry,
+    BundleEntrySearch,
+    BundleLink,
+)
+from fhir.resources.R4B.immunization import Immunization
 from filter import Filter
 from models.errors import (
-    InvalidPatientId,
     CustomValidationError,
-    UnauthorizedVaxError,
+    InvalidPatientId,
+    MandatoryError,
     ResourceNotFoundError,
+    UnauthorizedVaxError,
 )
-from models.errors import MandatoryError
 from models.fhir_immunization import ImmunizationValidator
-
 from models.utils.generic_utils import (
-    nhs_number_mod11_check,
-    get_occurrence_datetime,
     form_json,
     get_contained_patient,
+    get_occurrence_datetime,
+    nhs_number_mod11_check,
 )
 from models.utils.validation_utils import get_vaccine_type
+from pydantic import ValidationError
 from repository.fhir_repository import ImmunizationRepository
 from timer import timed
 
@@ -54,7 +51,6 @@ def get_service_url(
     service_env: str = IMMUNIZATION_ENV,
     service_base_path: str = IMMUNIZATION_BASE_PATH,
 ) -> str:
-
     if not service_base_path:
         service_base_path = "immunisation-fhir-api/FHIR/R4"
 

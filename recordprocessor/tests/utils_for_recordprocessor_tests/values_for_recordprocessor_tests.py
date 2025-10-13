@@ -1,14 +1,15 @@
 """Values for use in tests"""
 
-from unittest.mock import patch
 import json
 from decimal import Decimal
+from unittest.mock import patch
+
 from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
     MOCK_ENVIRONMENT_DICT,
 )
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
-    from constants import Urls, AuditTableKeys
+    from constants import AuditTableKeys, Urls
 
 
 REGION_NAME = "eu-west-2"

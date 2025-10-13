@@ -4,10 +4,11 @@ import unittest
 from copy import deepcopy
 from datetime import datetime
 from unittest.mock import patch
-from moto import mock_aws
+
 from boto3 import resource as boto3_resource
-from utils_for_converter_tests import ValuesForTests, ErrorValuesForTests
-from common.mappings import ActionFlag, Operation, EventName
+from common.mappings import ActionFlag, EventName, Operation
+from moto import mock_aws
+from utils_for_converter_tests import ErrorValuesForTests, ValuesForTests
 
 MOCK_ENV_VARS = {
     "AWS_SQS_QUEUE_URL": "https://sqs.eu-west-2.amazonaws.com/123456789012/test-queue",
@@ -17,7 +18,7 @@ MOCK_ENV_VARS = {
 }
 request_json_data = ValuesForTests.json_data
 with patch.dict("os.environ", MOCK_ENV_VARS):
-    from delta import handler, Converter
+    from delta import Converter, handler
 
 
 @patch.dict("os.environ", MOCK_ENV_VARS, clear=True)
@@ -214,7 +215,6 @@ class TestConvertToFlatJson(unittest.TestCase):
 
         for test_case in expected_action_flags:
             with self.subTest(test_case["Operation"]):
-
                 event = self.get_event(operation=test_case["Operation"])
 
                 response = handler(event, None)

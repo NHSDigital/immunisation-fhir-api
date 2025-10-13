@@ -5,32 +5,32 @@ NOTE: testing protected methods is not ideal. But in this case, we are testing t
 NOTE: the public function `decorate` is tested in `TestDecorate` class.
 """
 
-from decimal import Decimal
 import copy
 import unittest
+from decimal import Decimal
 from unittest.mock import patch
 
 from tests.utils_for_recordprocessor_tests.decorator_constants import (
+    RSV_TARGET_DISEASE_ELEMENT,
     AllHeaders,
     AllHeadersExpectedOutput,
     ExtensionItems,
-    RSV_TARGET_DISEASE_ELEMENT,
-)
-from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
-    MockFieldDictionaries,
 )
 from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
     MOCK_ENVIRONMENT_DICT,
+)
+from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
+    MockFieldDictionaries,
 )
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
     from constants import Urls
     from convert_to_fhir_imms_resource import (
+        _decorate_immunization,
         _decorate_patient,
+        _decorate_performer,
         _decorate_vaccination,
         _decorate_vaccine,
-        _decorate_performer,
-        _decorate_immunization,
     )
 
 empty_csv_data = {k: "" for k in MockFieldDictionaries.all_fields}

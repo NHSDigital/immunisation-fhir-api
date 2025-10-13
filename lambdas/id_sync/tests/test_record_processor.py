@@ -1,10 +1,10 @@
 import unittest
 from unittest.mock import patch
+
 from record_processor import process_record
 
 
 class TestRecordProcessor(unittest.TestCase):
-
     def setUp(self):
         """Set up test fixtures and mocks"""
         # Patch logger
