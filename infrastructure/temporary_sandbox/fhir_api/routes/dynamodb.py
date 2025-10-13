@@ -1,9 +1,9 @@
 """DynamoDB Router Methods"""
 
 import json
+from typing import Optional
 
 from fastapi import APIRouter
-from typing import Optional
 
 from fhir_api.models.dynamodb.read_models import BatchImmunizationRead
 
@@ -24,7 +24,6 @@ def read_immunization_record(
     to_date: Optional[str] = "9999-01-01",
     include_record: Optional[str] = None,
 ) -> BatchImmunizationRead:
-
     with open("/sandbox/fhir_api/sandbox_data.json", "r") as input:
         data = json.load(input)
 

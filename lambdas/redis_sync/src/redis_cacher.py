@@ -1,10 +1,11 @@
 "Upload the content from a config file in S3 to ElastiCache (Redis)"
 
 import json
-from transform_map import transform_map
+
 from common.clients import logger
 from common.redis_client import get_redis_client
 from common.s3_reader import S3Reader
+from transform_map import transform_map
 
 
 class RedisCacher:

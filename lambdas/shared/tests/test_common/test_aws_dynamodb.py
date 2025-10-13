@@ -1,10 +1,10 @@
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
 from common.aws_dynamodb import get_dynamodb_table
 
 
 class TestGetIedsTable(unittest.TestCase):
-
     AWS_REGION = "eu-west-2"  # Add this missing constant
 
     def setUp(self):

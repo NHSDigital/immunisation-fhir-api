@@ -6,14 +6,13 @@ from dataclasses import dataclass
 import boto3
 import botocore.exceptions
 import simplejson as json
-from boto3.dynamodb.conditions import Key, Attr
-
+from boto3.dynamodb.conditions import Attr, Key
 from clients import logger
 from models.errors import (
-    UnhandledResponseError,
     IdentifierDuplicationError,
-    ResourceNotFoundError,
     ResourceFoundError,
+    ResourceNotFoundError,
+    UnhandledResponseError,
 )
 
 
@@ -94,7 +93,6 @@ class RecordAttributes:
 
 
 class ImmunizationBatchRepository:
-
     def create_immunization(
         self,
         immunization: any,

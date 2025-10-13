@@ -7,7 +7,6 @@ import time
 from datetime import datetime
 
 import simplejson as json
-
 from batch.batch_filename_to_events_mapper import BatchFilenameToEventsMapper
 from clients import sqs_client
 from controller.fhir_batch_controller import (
@@ -15,12 +14,12 @@ from controller.fhir_batch_controller import (
     make_batch_controller,
 )
 from models.errors import (
-    MessageNotSuccessfulError,
-    RecordProcessorError,
     CustomValidationError,
     IdentifierDuplicationError,
-    ResourceNotFoundError,
+    MessageNotSuccessfulError,
+    RecordProcessorError,
     ResourceFoundError,
+    ResourceNotFoundError,
 )
 from repository.fhir_batch_repository import create_table
 

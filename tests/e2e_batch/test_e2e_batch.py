@@ -1,30 +1,29 @@
 import time
 import unittest
-from utils import (
-    upload_file_to_s3,
-    get_file_content_from_s3,
-    check_ack_file_content,
-    validate_row_count,
-    purge_sqs_queues,
-    delete_file_from_s3,
-)
 
 from clients import logger
+from constants import (
+    ACK_BUCKET,
+    INPUT_PREFIX,
+    SOURCE_BUCKET,
+    TEMP_ACK_PREFIX,
+    DestinationType,
+    environment,
+)
 from scenarios import (
-    scenarios,
     TestCase,
     create_test_cases,
     enable_tests,
     generate_csv_files,
+    scenarios,
 )
-
-from constants import (
-    SOURCE_BUCKET,
-    INPUT_PREFIX,
-    ACK_BUCKET,
-    environment,
-    DestinationType,
-    TEMP_ACK_PREFIX,
+from utils import (
+    check_ack_file_content,
+    delete_file_from_s3,
+    get_file_content_from_s3,
+    purge_sqs_queues,
+    upload_file_to_s3,
+    validate_row_count,
 )
 
 

@@ -4,10 +4,10 @@ import os
 from enum import StrEnum
 
 from errors import (
-    VaccineTypePermissionsError,
     InvalidFileKeyError,
     UnhandledAuditTableError,
     UnhandledSqsError,
+    VaccineTypePermissionsError,
 )
 
 SOURCE_BUCKET_NAME = os.getenv("SOURCE_BUCKET_NAME")

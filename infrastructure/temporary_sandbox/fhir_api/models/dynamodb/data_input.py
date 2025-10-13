@@ -1,11 +1,11 @@
 """Data input model for DynamoDB"""
 
 from typing import Optional
+
+from fhir_api.models.fhir_r4.fhir_datatype_fields import FhirR4Fields
 from pydantic import (
     BaseModel,
 )
-
-from fhir_api.models.fhir_r4.fhir_datatype_fields import FhirR4Fields
 
 
 class DataInput(BaseModel):

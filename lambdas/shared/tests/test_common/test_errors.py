@@ -1,10 +1,10 @@
 import unittest
 from unittest.mock import patch
+
 import src.common.models.errors as errors
 
 
 class TestErrors(unittest.TestCase):
-
     def setUp(self):
         TEST_UUID = "01234567-89ab-cdef-0123-4567890abcde"
         # Patch uuid4

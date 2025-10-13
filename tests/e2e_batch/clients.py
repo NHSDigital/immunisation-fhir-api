@@ -3,15 +3,16 @@ should be initialised ONCE ONLY (in this file) and then imported into the files 
 """
 
 import logging
+
+from boto3 import client as boto3_client
+from boto3 import resource as boto3_resource
 from constants import (
-    environment,
     REGION,
-    batch_fifo_queue_name,
     ack_metadata_queue_name,
     audit_table_name,
+    batch_fifo_queue_name,
+    environment,
 )
-from boto3 import client as boto3_client, resource as boto3_resource
-
 
 # AWS Clients and Resources
 

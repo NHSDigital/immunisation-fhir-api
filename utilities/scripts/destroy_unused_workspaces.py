@@ -1,5 +1,5 @@
-import subprocess
 import os
+import subprocess
 
 
 def execute_terraform_command(command, cwd=None):
@@ -60,7 +60,7 @@ def list_pr_workspaces(prefix):
 
 def destroy_workspace(workspace_name, project_name, project_short_name):
     command_select = f"terraform workspace select {workspace_name}"
-    tf_vars = f"-var=project_name={project_name} " f"-var=project_short_name={project_short_name} "
+    tf_vars = f"-var=project_name={project_name} -var=project_short_name={project_short_name} "
     command_destroy = f"terraform destroy {tf_vars} -auto-approve"
     command_delete = f"terraform workspace select default && terraform workspace delete {workspace_name}"
 

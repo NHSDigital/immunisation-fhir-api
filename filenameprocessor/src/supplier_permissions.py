@@ -1,8 +1,8 @@
 """Functions for fetching supplier permissions"""
 
 from clients import logger
-from errors import VaccineTypePermissionsError
 from elasticache import get_supplier_permissions_from_cache
+from errors import VaccineTypePermissionsError
 
 
 def validate_vaccine_type_permissions(vaccine_type: str, supplier: str) -> list:

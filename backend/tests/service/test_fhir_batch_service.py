@@ -27,7 +27,6 @@ class TestFhirBatchServiceBase(unittest.TestCase):
 
 
 class TestCreateImmunizationBatchService(TestFhirBatchServiceBase):
-
     def setUp(self):
         super().setUp()
         self.mock_repo = create_autospec(ImmunizationBatchRepository)
@@ -98,7 +97,6 @@ class TestCreateImmunizationBatchService(TestFhirBatchServiceBase):
 
 
 class TestUpdateImmunizationBatchService(TestFhirBatchServiceBase):
-
     def setUp(self):
         super().setUp()
         self.mock_repo = create_autospec(ImmunizationBatchRepository)
@@ -170,7 +168,6 @@ class TestUpdateImmunizationBatchService(TestFhirBatchServiceBase):
 
 
 class TestDeleteImmunizationBatchService(unittest.TestCase):
-
     def setUp(self):
         self.mock_repo = create_autospec(ImmunizationBatchRepository)
         self.mock_validator = create_autospec(ImmunizationValidator)

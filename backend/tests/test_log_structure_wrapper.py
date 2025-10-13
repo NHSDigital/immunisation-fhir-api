@@ -8,7 +8,6 @@ from log_structure import function_info
 @patch("log_structure.firehose_logger")
 @patch("log_structure.logger")
 class TestFunctionInfoWrapper(unittest.TestCase):
-
     def setUp(self):
         self.redis_patcher = patch("models.utils.validation_utils.redis_client")
         self.mock_redis_client = self.redis_patcher.start()
