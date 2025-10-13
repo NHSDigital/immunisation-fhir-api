@@ -2,10 +2,7 @@ import unittest
 import uuid
 from typing import List
 
-from utils.constants import cis2_user
-from utils.immunisation_api import ImmunisationApi
-
-from lib.apigee import ApigeeService, ApigeeApp, ApigeeProduct
+from lib.apigee import ApigeeApp, ApigeeProduct, ApigeeService
 from lib.authentication import (
     AppRestrictedAuthentication,
     Cis2Authentication,
@@ -16,12 +13,14 @@ from lib.env import (
     get_proxy_name,
     get_service_base_path,
 )
+from utils.constants import cis2_user
 from utils.factories import (
+    make_apigee_product,
     make_apigee_service,
     make_app_restricted_app,
     make_cis2_app,
-    make_apigee_product,
 )
+from utils.immunisation_api import ImmunisationApi
 
 
 class ImmunizationBaseTest(unittest.TestCase):

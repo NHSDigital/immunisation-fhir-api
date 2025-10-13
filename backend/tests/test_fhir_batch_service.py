@@ -2,11 +2,12 @@ import unittest
 import uuid
 from copy import deepcopy
 from unittest.mock import Mock, create_autospec, patch
-from tests.utils.immunization_utils import create_covid_19_immunization_dict_no_id
-from models.errors import CustomValidationError
-from models.fhir_immunization import ImmunizationValidator
+
 from fhir_batch_repository import ImmunizationBatchRepository
 from fhir_batch_service import ImmunizationBatchService
+from models.errors import CustomValidationError
+from models.fhir_immunization import ImmunizationValidator
+from tests.utils.immunization_utils import create_covid_19_immunization_dict_no_id
 
 
 class TestFhirBatchServiceBase(unittest.TestCase):
@@ -26,7 +27,6 @@ class TestFhirBatchServiceBase(unittest.TestCase):
 
 
 class TestCreateImmunizationBatchService(TestFhirBatchServiceBase):
-
     def setUp(self):
         super().setUp()
         self.mock_repo = create_autospec(ImmunizationBatchRepository)
@@ -97,7 +97,6 @@ class TestCreateImmunizationBatchService(TestFhirBatchServiceBase):
 
 
 class TestUpdateImmunizationBatchService(TestFhirBatchServiceBase):
-
     def setUp(self):
         super().setUp()
         self.mock_repo = create_autospec(ImmunizationBatchRepository)
@@ -169,7 +168,6 @@ class TestUpdateImmunizationBatchService(TestFhirBatchServiceBase):
 
 
 class TestDeleteImmunizationBatchService(unittest.TestCase):
-
     def setUp(self):
         self.mock_repo = create_autospec(ImmunizationBatchRepository)
         self.mock_validator = create_autospec(ImmunizationValidator)

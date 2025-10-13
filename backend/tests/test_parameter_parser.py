@@ -1,17 +1,17 @@
 import base64
-import unittest
 import datetime
+import unittest
 from unittest.mock import create_autospec, patch
 
 from fhir_service import FhirService
 from models.errors import ParameterException
 from parameter_parser import (
+    SearchParams,
+    create_query_string,
     date_from_key,
     date_to_key,
     process_params,
     process_search_params,
-    create_query_string,
-    SearchParams,
 )
 
 
@@ -178,7 +178,7 @@ class TestParameterParser(unittest.TestCase):
                     self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
                 }
             )
-        self.assertEqual(str(e.exception), f"Search parameter -immunization.target must have one or more values.")
+        self.assertEqual(str(e.exception), "Search parameter -immunization.target must have one or more values.")
 
     def test_process_search_params_patient_identifier_is_mandatory(self):
         with self.assertRaises(ParameterException) as e:
@@ -187,7 +187,7 @@ class TestParameterParser(unittest.TestCase):
                     self.immunization_target_key: ["a-disease-type"],
                 }
             )
-        self.assertEqual(str(e.exception), f"Search parameter patient.identifier must have one value.")
+        self.assertEqual(str(e.exception), "Search parameter patient.identifier must have one value.")
 
     def test_create_query_string_with_all_params(self):
         search_params = SearchParams("a", ["b"], datetime.date(1, 2, 3), datetime.date(4, 5, 6), "c")

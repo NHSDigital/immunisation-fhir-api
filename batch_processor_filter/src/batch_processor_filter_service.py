@@ -1,14 +1,12 @@
 """Batch processor filter service module"""
 
-import boto3
 import json
 
+import boto3
 from batch_audit_repository import BatchAuditRepository
-
 from batch_file_created_event import BatchFileCreatedEvent
 from batch_file_repository import BatchFileRepository
-
-from constants import REGION_NAME, FileStatus, QUEUE_URL, FileNotProcessedReason
+from constants import QUEUE_URL, REGION_NAME, FileNotProcessedReason, FileStatus
 from exceptions import EventAlreadyProcessingForSupplierAndVaccTypeError
 from logger import logger
 from send_log_to_firehose import send_log_to_firehose

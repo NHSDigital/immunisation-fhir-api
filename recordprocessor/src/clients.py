@@ -4,7 +4,8 @@ import logging
 import os
 
 import redis
-from boto3 import client as boto3_client, resource as boto3_resource
+from boto3 import client as boto3_client
+from boto3 import resource as boto3_resource
 from botocore.config import Config
 
 REGION_NAME = "eu-west-2"

@@ -1,30 +1,29 @@
 import base64
-import urllib
-
 import json
 import unittest
+import urllib
+import urllib.parse
 import uuid
+from unittest.mock import ANY, Mock, create_autospec, patch
+from urllib.parse import urlencode
 
 from fhir.resources.R4B.bundle import Bundle
 from fhir.resources.R4B.immunization import Immunization
-from unittest.mock import create_autospec, ANY, patch, Mock
-from urllib.parse import urlencode
-import urllib.parse
 from fhir_controller import FhirController
 from fhir_repository import ImmunizationRepository
 from fhir_service import FhirService, UpdateOutcome
 from models.errors import (
-    ResourceNotFoundError,
-    UnhandledResponseError,
-    InvalidPatientId,
     CustomValidationError,
-    ParameterException,
-    UnauthorizedVaxError,
     IdentifierDuplicationError,
+    InvalidPatientId,
+    ParameterException,
+    ResourceNotFoundError,
+    UnauthorizedVaxError,
+    UnhandledResponseError,
 )
-from tests.utils.immunization_utils import create_covid_19_immunization
 from parameter_parser import patient_identifier_system, process_search_params
 from tests.utils.generic_utils import load_json_data
+from tests.utils.immunization_utils import create_covid_19_immunization
 
 
 class TestFhirControllerBase(unittest.TestCase):
@@ -1617,7 +1616,7 @@ class TestSearchImmunizations(TestFhirControllerBase):
     def test_post_search_immunizations_for_unauthorized_vaccine_type_search_403(self):
         """it should return 403 as the user doesnt have vaccinetype permission"""
         search_result = load_json_data("sample_immunization_response _for _not_done_event.json")
-        bundle = Bundle.parse_obj(search_result)
+        Bundle.parse_obj(search_result)
         self.service.search_immunizations.side_effect = UnauthorizedVaxError()
 
         vaccine_type = ["COVID19", "FLU"]

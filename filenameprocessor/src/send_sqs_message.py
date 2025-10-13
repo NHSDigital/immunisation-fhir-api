@@ -2,7 +2,8 @@
 
 import os
 from json import dumps as json_dumps
-from clients import sqs_client, logger
+
+from clients import logger, sqs_client
 from errors import UnhandledSqsError
 
 

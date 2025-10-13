@@ -1,7 +1,7 @@
 """Function to send the request directly to lambda (or return appropriate diagnostics if this is not possible)"""
 
-from fhir_batch_service import ImmunizationBatchService
 from fhir_batch_repository import ImmunizationBatchRepository
+from fhir_batch_service import ImmunizationBatchService
 
 
 def make_batch_controller():

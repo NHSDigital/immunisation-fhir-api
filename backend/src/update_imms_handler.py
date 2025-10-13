@@ -3,12 +3,11 @@ import logging
 import pprint
 import uuid
 
-
+from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
 from fhir_controller import FhirController, make_controller
 from local_lambda import load_string
-from models.errors import Severity, Code, create_operation_outcome
 from log_structure import function_info
-from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
+from models.errors import Code, Severity, create_operation_outcome
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger()

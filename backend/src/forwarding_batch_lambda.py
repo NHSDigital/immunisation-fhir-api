@@ -1,25 +1,24 @@
 """Lambda Handler which streams batch file entries from Kinesis and forwards to the Imms FHIR API"""
 
-import os
-import simplejson as json
 import base64
-import time
 import logging
+import os
+import time
 from datetime import datetime
 
+import simplejson as json
 from batch.batch_filename_to_events_mapper import BatchFilenameToEventsMapper
-from fhir_batch_repository import create_table
-from fhir_batch_controller import ImmunizationBatchController, make_batch_controller
 from clients import sqs_client
+from fhir_batch_controller import ImmunizationBatchController, make_batch_controller
+from fhir_batch_repository import create_table
 from models.errors import (
-    MessageNotSuccessfulError,
-    RecordProcessorError,
     CustomValidationError,
     IdentifierDuplicationError,
-    ResourceNotFoundError,
+    MessageNotSuccessfulError,
+    RecordProcessorError,
     ResourceFoundError,
+    ResourceNotFoundError,
 )
-
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger()

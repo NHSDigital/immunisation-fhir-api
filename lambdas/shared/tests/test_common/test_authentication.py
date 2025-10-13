@@ -1,13 +1,13 @@
 import base64
 import json
-import responses
 import time
 import unittest
-from responses import matchers
-from unittest.mock import MagicMock, patch, ANY
+from unittest.mock import ANY, MagicMock, patch
 
+import responses
 from common.authentication import AppRestrictedAuth, Service
 from common.models.errors import UnhandledResponseError
+from responses import matchers
 
 
 class TestAuthenticator(unittest.TestCase):

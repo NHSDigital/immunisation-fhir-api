@@ -1,6 +1,8 @@
-import os
 import logging
-from boto3 import client as boto3_client, resource as boto3_resource
+import os
+
+from boto3 import client as boto3_client
+from boto3 import resource as boto3_resource
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()

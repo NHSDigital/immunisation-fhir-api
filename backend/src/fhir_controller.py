@@ -2,30 +2,30 @@ import base64
 import json
 import os
 import re
+import urllib.parse
 import uuid
 from decimal import Decimal
 from typing import Optional
-from aws_lambda_typing.events import APIGatewayProxyEventV1
-from fhir.resources.R4B.immunization import Immunization
-from boto3 import client as boto3_client
 
+from aws_lambda_typing.events import APIGatewayProxyEventV1
+from boto3 import client as boto3_client
+from fhir.resources.R4B.immunization import Immunization
 from fhir_repository import ImmunizationRepository, create_table
 from fhir_service import FhirService, UpdateOutcome, get_service_url
 from models.errors import (
-    Severity,
     Code,
-    create_operation_outcome,
-    UnauthorizedError,
-    ResourceNotFoundError,
-    UnhandledResponseError,
-    ValidationError,
     IdentifierDuplicationError,
     ParameterException,
+    ResourceNotFoundError,
+    Severity,
+    UnauthorizedError,
     UnauthorizedVaxError,
+    UnhandledResponseError,
+    ValidationError,
+    create_operation_outcome,
 )
 from models.utils.generic_utils import check_keys_in_sources
-from parameter_parser import process_params, process_search_params, create_query_string
-import urllib.parse
+from parameter_parser import create_query_string, process_params, process_search_params
 
 sqs_client = boto3_client("sqs", region_name="eu-west-2")
 queue_url = os.getenv("SQS_QUEUE_URL", "Queue_url")

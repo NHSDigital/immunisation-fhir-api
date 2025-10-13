@@ -1,37 +1,34 @@
-import unittest
-import os
-from typing import Optional
-from unittest import TestCase
-from unittest.mock import patch, MagicMock, call, ANY
-from boto3 import resource as boto3_resource
-from moto import mock_aws
-from models.errors import (
-    MessageNotSuccessfulError,
-    RecordProcessorError,
-    CustomValidationError,
-    IdentifierDuplicationError,
-    ResourceNotFoundError,
-    ResourceFoundError,
-)
 import base64
 import copy
 import json
+import os
+import unittest
+from typing import Optional
+from unittest import TestCase
+from unittest.mock import ANY, MagicMock, patch
 
+from boto3 import resource as boto3_resource
+from models.errors import (
+    CustomValidationError,
+    IdentifierDuplicationError,
+    MessageNotSuccessfulError,
+    RecordProcessorError,
+    ResourceFoundError,
+    ResourceNotFoundError,
+)
+from moto import mock_aws
 from utils.test_utils_for_batch import ForwarderValues, MockFhirImmsResources
 
 with patch.dict("os.environ", ForwarderValues.MOCK_ENVIRONMENT_DICT):
     from forwarding_batch_lambda import (
-        forward_lambda_handler,
         create_diagnostics_dictionary,
-        forward_request_to_dynamo,
-        QUEUE_URL,
+        forward_lambda_handler,
     )
 
 
 @mock_aws
 @patch.dict(os.environ, ForwarderValues.MOCK_ENVIRONMENT_DICT)
 class TestForwardLambdaHandler(TestCase):
-
     def setUp(self):
         """Set up dynamodb table test values to be used for the tests"""
         self.dynamodb_resource = boto3_resource("dynamodb", "eu-west-2")
@@ -673,7 +670,7 @@ class TestForwardLambdaHandler(TestCase):
             expected_values (dict): expected output dictionary values
         """
         mock_create_table.return_value = {}
-        mock_make_controller.return_value = mock_controller = MagicMock()
+        mock_make_controller.return_value = MagicMock()
         mock_forward_request_to_dynamo.side_effect = [
             "IMMS123",
         ]

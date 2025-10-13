@@ -1,6 +1,6 @@
 import unittest
 
-from models.errors import Severity, Code, create_operation_outcome
+from models.errors import Code, Severity, create_operation_outcome
 
 "test"
 

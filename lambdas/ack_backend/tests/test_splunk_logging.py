@@ -1,26 +1,26 @@
 """Tests for ack lambda logging decorators"""
 
-import unittest
-from unittest.mock import patch, call
 import json
-from io import StringIO
+import unittest
 from contextlib import ExitStack
-from moto import mock_aws
-from boto3 import client as boto3_client
-from common.log_decorator import generate_and_send_logs, send_log_to_firehose
+from io import StringIO
+from unittest.mock import call, patch
 
-from tests.utils.values_for_ack_backend_tests import (
-    ValidValues,
-    InvalidValues,
-    DiagnosticsDictionaries,
-    EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS,
-)
-from tests.utils.mock_environment_variables import MOCK_ENVIRONMENT_DICT, BucketNames
+from boto3 import client as boto3_client
+from moto import mock_aws
+
 from tests.utils.generic_setup_and_teardown_for_ack_backend import (
     GenericSetUp,
     GenericTearDown,
 )
+from tests.utils.mock_environment_variables import MOCK_ENVIRONMENT_DICT, BucketNames
 from tests.utils.utils_for_ack_backend_tests import generate_event
+from tests.utils.values_for_ack_backend_tests import (
+    EXPECTED_ACK_LAMBDA_RESPONSE_FOR_SUCCESS,
+    DiagnosticsDictionaries,
+    InvalidValues,
+    ValidValues,
+)
 
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from ack_processor import lambda_handler

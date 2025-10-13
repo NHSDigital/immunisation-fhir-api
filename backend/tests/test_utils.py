@@ -1,9 +1,8 @@
 """Tests for generic utils"""
 
 import unittest
-import json
-from unittest.mock import patch, MagicMock
 from copy import deepcopy
+from unittest.mock import patch
 
 from models.utils.validation_utils import convert_disease_codes_to_vaccine_type, get_vaccine_type
 from utils.generic_utils import load_json_data, update_target_disease_code
@@ -63,14 +62,14 @@ class TestGenericUtils(unittest.TestCase):
         """
         self.mock_redis_client.hget.return_value = "RSV"
         # TEST VALID DATA
-        valid_json_data = load_json_data(filename=f"completed_rsv_immunization_event.json")
+        valid_json_data = load_json_data(filename="completed_rsv_immunization_event.json")
 
         vac_type = get_vaccine_type(valid_json_data)
         self.assertEqual(vac_type, "RSV")
 
         self.mock_redis_client.hget.return_value = "FLU"
         # VALID DATA: coding field with multiple coding systems including SNOMED
-        flu_json_data = load_json_data(filename=f"completed_flu_immunization_event.json")
+        flu_json_data = load_json_data(filename="completed_flu_immunization_event.json")
         valid_target_disease_element = {
             "coding": [
                 {"system": "ANOTHER_SYSTEM_URL", "code": "ANOTHER_CODE", "display": "Influenza"},
@@ -82,7 +81,7 @@ class TestGenericUtils(unittest.TestCase):
 
         # TEST INVALID DATA FOR SINGLE TARGET DISEASE
         self.mock_redis_client.hget.return_value = None  # Reset mock for invalid cases
-        covid_19_json_data = load_json_data(filename=f"completed_covid19_immunization_event.json")
+        covid_19_json_data = load_json_data(filename="completed_covid19_immunization_event.json")
 
         # INVALID DATA, SINGLE TARGET DISEASE: No targetDisease field
         invalid_covid_19_json_data = deepcopy(covid_19_json_data)
@@ -126,7 +125,7 @@ class TestGenericUtils(unittest.TestCase):
         )
 
         # TEST INVALID DATA FOR MULTIPLE TARGET DISEASES
-        mmr_json_data = load_json_data(filename=f"completed_mmr_immunization_event.json")
+        mmr_json_data = load_json_data(filename="completed_mmr_immunization_event.json")
 
         # INVALID DATA, MULTIPLE TARGET DISEASES: Invalid code combination
         invalid_mmr_json_data = deepcopy(mmr_json_data)

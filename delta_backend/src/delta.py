@@ -3,13 +3,12 @@ import json
 import logging
 import os
 import time
-from datetime import datetime, timedelta, UTC
+from datetime import UTC, datetime, timedelta
 
 import boto3
 from boto3.dynamodb.conditions import Attr
 from botocore.exceptions import ClientError
-
-from common.mappings import ActionFlag, Operation, EventName
+from common.mappings import ActionFlag, EventName, Operation
 from converter import Converter
 from log_firehose import FirehoseLogger
 

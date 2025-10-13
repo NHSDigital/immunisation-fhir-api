@@ -1,9 +1,9 @@
-from record_processor import process_record
 import unittest
 from unittest.mock import patch
 
-from constants import RedisCacheKey
 from common.s3_event import S3EventRecord
+from constants import RedisCacheKey
+from record_processor import process_record
 
 
 class TestRecordProcessor(unittest.TestCase):

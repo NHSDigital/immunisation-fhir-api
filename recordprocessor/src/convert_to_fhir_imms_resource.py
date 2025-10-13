@@ -1,10 +1,9 @@
 """Decorators to add the relevant fields to the FHIR immunization resource from the batch stream"""
 
-from typing import List, Callable, Dict
+from typing import Callable, Dict, List
 
-from utils_for_fhir_conversion import _is_not_empty, Generate, Add, Convert
 from constants import Operation, Urls
-
+from utils_for_fhir_conversion import Add, Convert, Generate, _is_not_empty
 
 ImmunizationDecorator = Callable[[Dict, Dict[str, str]], None]
 """
@@ -43,7 +42,6 @@ def _decorate_patient(imms: dict, row: Dict[str, str]) -> None:
 
     # Add patient if there is at least one non-empty patient value
     if any(_is_not_empty(value) for value in patient_values):
-
         # Set up patient
         internal_patient_id = "Patient1"
         imms["patient"] = {"reference": f"#{internal_patient_id}"}
@@ -207,7 +205,6 @@ def _decorate_performer(imms: dict, row: Dict[str, str]) -> None:
 
         # Add practitioner if there is at least one practitioner value
         if any(_is_not_empty(value) for value in practitioner_values):
-
             # Set up the practitioner
             internal_practitioner_id = "Practitioner1"
             practitioner = {

@@ -1,17 +1,16 @@
-import unittest
-from unittest.mock import patch
 import json
+import unittest
 from datetime import datetime
+from unittest.mock import patch
 
 from common.log_decorator import (
-    logging_decorator,
     generate_and_send_logs,
+    logging_decorator,
     send_log_to_firehose,
 )
 
 
 class TestLogDecorator(unittest.TestCase):
-
     def setUp(self):
         self.test_stream = "test-stream"
         self.test_prefix = "test"

@@ -1,10 +1,10 @@
 import unittest
 from unittest.mock import patch
+
 from redis_cacher import RedisCacher
 
 
 class TestRedisCacher(unittest.TestCase):
-
     def setUp(self):
         # mock s3_reader and transform_map
         self.s3_reader_patcher = patch("redis_cacher.S3Reader")

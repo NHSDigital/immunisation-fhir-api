@@ -1,6 +1,7 @@
 """Generic utils for tests"""
 
 import unittest
+
 from src.models.utils.generic_utils import form_json
 from tests.utils.generic_utils import load_json_data
 
