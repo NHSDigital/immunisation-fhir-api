@@ -42,7 +42,7 @@ See https://nhsd-confluence.digital.nhs.uk/display/APM/Glossary.
 
 | Folder                 | Description                                                                                            |
 | ---------------------- | ------------------------------------------------------------------------------------------------------ |
-| `global`                | Base infrastructure components.                                                                       |
+| `global`               | Base infrastructure components.                                                                        |
 | `grafana`              | Terraform configuration for Grafana, built on top of core infra.                                       |
 | `terraform`            | Core Terraform infrastructure code. This is run in each PR and sets up lambdas associated with the PR. |
 | `terraform_sandbox`    | Sandbox environment for testing infrastructure changes.                                                |
