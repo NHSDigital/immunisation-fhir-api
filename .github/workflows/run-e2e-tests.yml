@@ -32,6 +32,9 @@ on:
       sub_environment:
         type: string
         description: Set the sub environment name e.g. pr-xxx, or green/blue in higher environments
+  # TODO - remove
+  pull_request:
+    types: [opened]
 
 jobs:
   e2e-tests:
@@ -39,9 +42,9 @@ jobs:
     environment:
       name: ${{ inputs.environment }}
     env: # Sonarcloud - do not allow direct usage of untrusted data
-      APIGEE_ENVIRONMENT: ${{ inputs.apigee_environment }}
-      BACKEND_ENVIRONMENT: ${{ inputs.environment }}
-      BACKEND_SUB_ENVIRONMENT: ${{ inputs.sub_environment }}
+      APIGEE_ENVIRONMENT: internal-dev
+      BACKEND_ENVIRONMENT: dev
+      BACKEND_SUB_ENVIRONMENT: internal-dev
       APIGEE_USERNAME: ${{ vars.APIGEE_USERNAME }}
     permissions:
       id-token: write
