@@ -81,6 +81,10 @@ jobs:
             -H "Accept: application/json;charset=utf-8" \
             -H "Authorization: Basic $APIGEE_BASIC_AUTH_TOKEN" \
             -d "username=$APIGEE_USERNAME&password=$APIGEE_PASSWORD&mfa_token=$CODE&grant_type=password")
+
+          # TODO - REMOVE
+          echo "$response"
+
           token=$(echo "$response" | jq -e -r '.access_token')
           if [[ -z "$token" ]]; then
             echo "Failed to retrieve access token"
