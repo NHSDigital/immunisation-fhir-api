@@ -73,7 +73,7 @@ updates:
   - package-ecosystem: "terraform"
     directories:
       - "/infrastructure/grafana/non-prod/terraform"
-      - "/infrastructure/global"
+      - "/infrastructure/account"
       - "/infrastructure/terraform"
       - "/infrastructure/terraform_aws_backup/**"
     schedule:
