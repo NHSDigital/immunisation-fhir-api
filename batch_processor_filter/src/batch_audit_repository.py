@@ -1,5 +1,6 @@
 import boto3
 from boto3.dynamodb.conditions import Key
+
 from constants import (
     AUDIT_TABLE_FILENAME_GSI,
     AUDIT_TABLE_NAME,

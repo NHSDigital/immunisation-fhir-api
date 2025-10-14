@@ -6,6 +6,7 @@ import logging
 
 from boto3 import client as boto3_client
 from boto3 import resource as boto3_resource
+
 from constants import (
     REGION,
     ack_metadata_queue_name,

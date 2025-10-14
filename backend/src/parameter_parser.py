@@ -5,6 +5,7 @@ from typing import Optional
 from urllib.parse import parse_qs, quote, urlencode
 
 from aws_lambda_typing.events import APIGatewayProxyEventV1
+
 from clients import redis_client
 from models.constants import Constants
 from models.errors import ParameterException

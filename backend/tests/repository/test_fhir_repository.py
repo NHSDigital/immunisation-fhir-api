@@ -6,6 +6,7 @@ from unittest.mock import ANY, MagicMock, patch
 import botocore.exceptions
 import simplejson as json
 from boto3.dynamodb.conditions import Attr, Key
+
 from models.errors import (
     IdentifierDuplicationError,
     ResourceNotFoundError,

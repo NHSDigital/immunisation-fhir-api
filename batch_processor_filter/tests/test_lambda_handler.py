@@ -6,12 +6,13 @@ from unittest.mock import ANY, Mock, call, patch
 
 import boto3
 import botocore
+from moto import mock_aws
+
 from batch_file_created_event import BatchFileCreatedEvent
 from exceptions import (
     EventAlreadyProcessingForSupplierAndVaccTypeError,
     InvalidBatchSizeError,
 )
-from moto import mock_aws
 from testing_utils import (
     MOCK_ENVIRONMENT_DICT,
     add_entry_to_mock_table,
