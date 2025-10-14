@@ -4,6 +4,8 @@ import unittest
 from copy import deepcopy
 from uuid import uuid4
 
+from tests.utils.generic_utils import load_json_data
+
 from constants import Urls
 from filter import (
     Filter,
@@ -13,7 +15,6 @@ from filter import (
     replace_address_postal_codes,
     replace_organization_values,
 )
-from tests.utils.generic_utils import load_json_data
 
 
 class TestFilter(unittest.TestCase):

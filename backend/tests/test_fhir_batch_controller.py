@@ -2,6 +2,8 @@ import unittest
 import uuid
 from unittest.mock import Mock, create_autospec
 
+from tests.utils.immunization_utils import create_covid_19_immunization
+
 from fhir_batch_controller import ImmunizationBatchController
 from fhir_batch_repository import ImmunizationBatchRepository
 from fhir_batch_service import ImmunizationBatchService
@@ -11,7 +13,6 @@ from models.errors import (
     ResourceNotFoundError,
     UnhandledResponseError,
 )
-from tests.utils.immunization_utils import create_covid_19_immunization
 
 
 class TestCreateImmunizationBatchController(unittest.TestCase):

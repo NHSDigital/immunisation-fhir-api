@@ -4,8 +4,9 @@ import os
 import unittest
 from unittest.mock import MagicMock, patch
 
-import delta
 from botocore.exceptions import ClientError
+
+import delta
 from common.mappings import ActionFlag, EventName, Operation
 from delta import (
     handler,

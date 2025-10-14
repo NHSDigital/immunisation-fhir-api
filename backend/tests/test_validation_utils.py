@@ -2,6 +2,7 @@ import unittest
 from copy import deepcopy
 
 from jsonpath_ng.ext import parse
+
 from models.fhir_immunization import ImmunizationValidator
 from models.obtain_field_value import ObtainFieldValue
 from models.utils.generic_utils import (

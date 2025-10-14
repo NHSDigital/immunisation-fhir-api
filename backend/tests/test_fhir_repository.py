@@ -6,11 +6,12 @@ from unittest.mock import ANY, MagicMock, patch
 import botocore.exceptions
 import simplejson as json
 from boto3.dynamodb.conditions import Attr, Key
+from tests.utils.generic_utils import update_target_disease_code
+from tests.utils.immunization_utils import create_covid_19_immunization_dict
+
 from fhir_repository import ImmunizationRepository
 from models.errors import IdentifierDuplicationError, ResourceNotFoundError, UnhandledResponseError
 from models.utils.validation_utils import get_vaccine_type
-from tests.utils.generic_utils import update_target_disease_code
-from tests.utils.immunization_utils import create_covid_19_immunization_dict
 
 
 def _make_immunization_pk(_id):

@@ -7,17 +7,9 @@ from copy import deepcopy
 from decimal import Decimal
 from unittest.mock import MagicMock, create_autospec, patch
 
-from authorisation.api_operation_code import ApiOperationCode
-from authorisation.authoriser import Authoriser
-from constants import NHS_NUMBER_USED_IN_SAMPLE_DATA
 from fhir.resources.R4B.bundle import Bundle as FhirBundle
 from fhir.resources.R4B.bundle import BundleEntry
 from fhir.resources.R4B.immunization import Immunization
-from fhir_repository import ImmunizationRepository
-from fhir_service import FhirService, UpdateOutcome, get_service_url
-from models.errors import CustomValidationError, InvalidPatientId, ResourceNotFoundError, UnauthorizedVaxError
-from models.fhir_immunization import ImmunizationValidator
-from models.utils.generic_utils import get_contained_patient
 from pydantic import ValidationError
 from pydantic.error_wrappers import ErrorWrapper
 from tests.utils.generic_utils import load_json_data
@@ -27,6 +19,15 @@ from tests.utils.immunization_utils import (
     create_covid_19_immunization_dict,
     create_covid_19_immunization_dict_no_id,
 )
+
+from authorisation.api_operation_code import ApiOperationCode
+from authorisation.authoriser import Authoriser
+from constants import NHS_NUMBER_USED_IN_SAMPLE_DATA
+from fhir_repository import ImmunizationRepository
+from fhir_service import FhirService, UpdateOutcome, get_service_url
+from models.errors import CustomValidationError, InvalidPatientId, ResourceNotFoundError, UnauthorizedVaxError
+from models.fhir_immunization import ImmunizationValidator
+from models.utils.generic_utils import get_contained_patient
 
 
 class TestFhirServiceBase(unittest.TestCase):

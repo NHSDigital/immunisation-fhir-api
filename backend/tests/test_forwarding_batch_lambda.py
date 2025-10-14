@@ -8,6 +8,8 @@ from unittest import TestCase
 from unittest.mock import ANY, MagicMock, patch
 
 from boto3 import resource as boto3_resource
+from moto import mock_aws
+
 from models.errors import (
     CustomValidationError,
     IdentifierDuplicationError,
@@ -16,7 +18,6 @@ from models.errors import (
     ResourceFoundError,
     ResourceNotFoundError,
 )
-from moto import mock_aws
 from utils.test_utils_for_batch import ForwarderValues, MockFhirImmsResources
 
 with patch.dict("os.environ", ForwarderValues.MOCK_ENVIRONMENT_DICT):

@@ -1,6 +1,7 @@
 """Immunization FHIR R4B validator"""
 
 from fhir.resources.R4B.immunization import Immunization
+
 from models.fhir_immunization_post_validators import PostValidators
 from models.fhir_immunization_pre_validators import PreValidators
 from models.utils.validation_utils import get_vaccine_type
