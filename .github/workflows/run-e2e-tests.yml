@@ -61,20 +61,19 @@ jobs:
           cache: "poetry"
 
       - name: Install e2e test dependencies
-        run: poetry install --no-root
         working-directory: e2e
-
-      - name: Install oathtool
-        run: sudo apt-get update && sudo apt-get install -y oathtool
+        run: poetry install --no-root
 
       - name: Get Apigee access token
+        working-directory: e2e
         env:
           APIGEE_PASSWORD: ${{ secrets.APIGEE_PASSWORD }}
           APIGEE_BASIC_AUTH_TOKEN: ${{ secrets.APIGEE_BASIC_AUTH_TOKEN }}
           APIGEE_OTP_KEY: ${{ secrets.APIGEE_OTP_KEY }}
         run: |
-          CODE=$(oathtool --totp -b "$APIGEE_OTP_KEY")
+          CODE=$(poetry run python utils/compute_totp_code.py "$APIGEE_OTP_KEY")
           echo "::add-mask::$CODE"
+
           echo "Requesting access token from Apigee..."
           response=$(curl -s -X POST "https://login.apigee.com/oauth/token" \
             -H "Content-Type: application/x-www-form-urlencoded" \
@@ -82,14 +81,7 @@ jobs:
             -H "Authorization: Basic $APIGEE_BASIC_AUTH_TOKEN" \
             -d "username=$APIGEE_USERNAME&password=$APIGEE_PASSWORD&mfa_token=$CODE&grant_type=password")
 
-          # TODO - REMOVE
-          echo "$response"
-
-          token=$(echo "$response" | jq -e -r '.access_token')
-          if [[ -z "$token" ]]; then
-            echo "Failed to retrieve access token"
-            exit 1
-          fi
+          token=$(jq -e -r '.access_token' <<<"$response")
           echo "::add-mask::$token"
           echo "APIGEE_ACCESS_TOKEN=$token" >> $GITHUB_ENV
 
@@ -98,4 +90,11 @@ jobs:
         run: |
           export PROXY_NAME=immunisation-fhir-api-internal-dev
           export SERVICE_BASE_PATH=immunisation-fhir-api/FHIR/R4
+
+          export IMMS_DELTA_TABLE_NAME=imms-internal-dev-delta
+          export AWS_DOMAIN_NAME=internal-dev.imms.dev.vds.platform.nhs.uk
+          export DYNAMODB_TABLE_NAME=imms-internal-dev-imms-events
+          export AWS_SQS_QUEUE_NAME=imms-internal-dev-delta-dlq
+          export AWS_SNS_TOPIC_NAME=imms-internal-dev-delta-sns
+
           make run-immunization
