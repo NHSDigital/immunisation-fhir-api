@@ -95,7 +95,7 @@ resource "aws_iam_role_policy_attachment" "attach_s3_kms_to_specific_lambdas" {
     if local.imms_endpoints[i] == "create_imms" || local.imms_endpoints[i] == "update_imms"
   }
 
-  role       = each.value.lambda_role_name
+  role       = each.value.lambda_role
   policy_arn = aws_iam_policy.imms_s3_kms_policy.arn
 }
 
