@@ -4,7 +4,7 @@
 
 This is a specification for the _immunisation-fhir-api_ API.
 
-- `utilities/specification/` This [Open API Specification](https://swagger.io/docs/specification/about/) describes the endpoints, methods and messages exchanged by the API. Use it to generate interactive documentation; the contract between the API and its consumers.
+- `specification/` This [Open API Specification](https://swagger.io/docs/specification/about/) describes the endpoints, methods and messages exchanged by the API. Use it to generate interactive documentation; the contract between the API and its consumers.
 - `sandbox/` This NodeJS application implements a mock implementation of the service. Use it as a back-end service to the interactive documentation to illustrate interactions and concepts. It is not intended to provide an exhaustive/faithful environment suitable for full development and testing.
 - `utilities/scripts/` Utilities helpful to developers of this specification.
 - `infrastructure/proxies/` Live (connecting to another service) and sandbox (using the sandbox container) Apigee API Proxy definitions.
@@ -155,7 +155,7 @@ For more information about building sandbox APIs see the [API Producer Zone conf
 
 Contains useful scripts that are used throughout the project, for example in Makefile and Github workflows
 
-#### `utilities/specification`:
+#### `specification`:
 
 Create an OpenAPI Specification to document your API. For more information about developing specifications see the [API Producer Zone confluence](https://nhsd-confluence.digital.nhs.uk/display/APM/Documenting+your+API).
 
