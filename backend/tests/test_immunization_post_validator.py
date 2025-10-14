@@ -5,7 +5,6 @@ from copy import deepcopy
 from unittest.mock import patch
 
 from jsonpath_ng.ext import parse
-from models.fhir_immunization import ImmunizationValidator
 from pydantic import ValidationError
 from tests.utils.generic_utils import (
     load_json_data,
@@ -17,6 +16,8 @@ from tests.utils.generic_utils import (
 )
 from tests.utils.mandation_test_utils import MandationTests
 from tests.utils.values_for_tests import NameInstances
+
+from models.fhir_immunization import ImmunizationValidator
 
 
 class TestImmunizationModelPostValidationRules(unittest.TestCase):

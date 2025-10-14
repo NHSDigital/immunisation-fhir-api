@@ -9,6 +9,9 @@ import botocore.exceptions
 import simplejson as json
 from boto3.dynamodb.conditions import Attr, Key
 from botocore.config import Config
+from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
+from responses import logger
+
 from models.errors import (
     IdentifierDuplicationError,
     ResourceNotFoundError,
@@ -18,8 +21,6 @@ from models.utils.validation_utils import (
     check_identifier_system_value,
     get_vaccine_type,
 )
-from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
-from responses import logger
 
 
 def create_table(table_name=None, endpoint_url=None, region_name="eu-west-2"):

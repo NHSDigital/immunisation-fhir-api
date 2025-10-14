@@ -10,6 +10,7 @@ from typing import Optional
 from aws_lambda_typing.events import APIGatewayProxyEventV1
 from boto3 import client as boto3_client
 from fhir.resources.R4B.immunization import Immunization
+
 from fhir_repository import ImmunizationRepository, create_table
 from fhir_service import FhirService, UpdateOutcome, get_service_url
 from models.errors import (

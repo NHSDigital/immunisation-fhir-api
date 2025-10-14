@@ -3,6 +3,7 @@
 import json
 
 import boto3
+
 from batch_audit_repository import BatchAuditRepository
 from batch_file_created_event import BatchFileCreatedEvent
 from batch_file_repository import BatchFileRepository

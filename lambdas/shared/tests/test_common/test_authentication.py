@@ -5,9 +5,10 @@ import unittest
 from unittest.mock import ANY, MagicMock, patch
 
 import responses
+from responses import matchers
+
 from common.authentication import AppRestrictedAuth, Service
 from common.models.errors import UnhandledResponseError
-from responses import matchers
 
 
 class TestAuthenticator(unittest.TestCase):

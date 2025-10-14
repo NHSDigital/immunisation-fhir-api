@@ -9,6 +9,9 @@ from urllib.parse import urlencode
 
 from fhir.resources.R4B.bundle import Bundle
 from fhir.resources.R4B.immunization import Immunization
+from tests.utils.generic_utils import load_json_data
+from tests.utils.immunization_utils import create_covid_19_immunization
+
 from fhir_controller import FhirController
 from fhir_repository import ImmunizationRepository
 from fhir_service import FhirService, UpdateOutcome
@@ -22,8 +25,6 @@ from models.errors import (
     UnhandledResponseError,
 )
 from parameter_parser import patient_identifier_system, process_search_params
-from tests.utils.generic_utils import load_json_data
-from tests.utils.immunization_utils import create_covid_19_immunization
 
 
 class TestFhirControllerBase(unittest.TestCase):

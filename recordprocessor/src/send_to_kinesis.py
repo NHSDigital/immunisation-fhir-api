@@ -4,6 +4,7 @@ import os
 
 import simplejson as json
 from botocore.exceptions import ClientError
+
 from clients import kinesis_client, logger
 
 

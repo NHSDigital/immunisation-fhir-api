@@ -6,10 +6,11 @@ from uuid import uuid4
 import boto3
 import botocore.exceptions
 import simplejson as json
-from fhir_batch_repository import ImmunizationBatchRepository, create_table
-from models.errors import IdentifierDuplicationError, ResourceFoundError, ResourceNotFoundError, UnhandledResponseError
 from moto import mock_aws
 from tests.utils.immunization_utils import create_covid_19_immunization_dict
+
+from fhir_batch_repository import ImmunizationBatchRepository, create_table
+from models.errors import IdentifierDuplicationError, ResourceFoundError, ResourceNotFoundError, UnhandledResponseError
 
 imms_id = str(uuid4())
 
