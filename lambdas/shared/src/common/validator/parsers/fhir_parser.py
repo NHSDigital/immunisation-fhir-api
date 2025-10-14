@@ -11,7 +11,7 @@ class FHIRParser:
     # File Management
     # used for files
     def parse_fhir_file(self, fhir_file_name):
-        with open(fhir_file_name, 'r') as json_file:
+        with open(fhir_file_name) as json_file:
             self.fhir_resource = json.load(json_file)
 
     # used for JSON FHIR Resource data

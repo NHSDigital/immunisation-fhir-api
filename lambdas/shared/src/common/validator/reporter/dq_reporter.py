@@ -1,7 +1,10 @@
-import json
 import datetime
-import common.validator.enums.error_levels as ErrorLevels
+import json
+
 from dateutil import parser
+
+import common.validator.enums.error_levels as ErrorLevels
+from common.validator.record_error import ErrorReport
 
 
 class DQReporter:
@@ -36,7 +39,7 @@ class DQReporter:
         diff_minutes = diff_seconds / 60
         return diff_minutes
 
-    def generate_error_report(self, event_id, occurrence, error_records):
+    def generate_error_report(self, event_id, occurrence, error_records: list[ErrorReport]):
         occurrence_date = occurrence
         occurrence_date = parser.parse(occurrence_date, ignoretz=True)
         validation_date = datetime.datetime.now(tz=None)
@@ -48,19 +51,19 @@ class DQReporter:
         self.error_report['results']['timeliness_processed'] = time_taken
 
         for errorRecord in error_records:
-            self.updateReport(errorRecord)
+            self.update_report(errorRecord)
 
         json_error_report = json.dumps(self.error_report)
         return json_error_report
 
-    def update_report(self, error_data):
-        error_group = error_data["errorGroup"]
-        if (error_data['errorLevel'] == ErrorLevels.CRITICAL_ERROR):
+    def update_report(self, error_data: ErrorReport):
+        error_group = error_data.error_group
+        if (error_data.error_level == ErrorLevels.CRITICAL_ERROR):
             self.error_report['validated'] = "false"
         total_errors = self.error_report['results']['totalErrors']
         results_error_count = self.error_report['results'][error_group]['errors']
         results_error_count += 1
         total_errors += 1
-        self.error_report['results'][error_group]['fields'].append(error_data["name"])
+        self.error_report['results'][error_group]['fields'].append(error_data.name)
         self.error_report['results'][error_group]['errors'] = results_error_count
         self.error_report['results']['totalErrors'] = total_errors

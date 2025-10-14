@@ -29,7 +29,24 @@ pyjwt = "^2.10.1"
 
 [tool.poetry.group.dev.dependencies]
 coverage = "^7.10.7"
+ruff = "^0.14.0"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "B", "C4", "I", "UP"]  # Common sensible defaults
+ignore = ["E501"]  # Ignore line-too-long if needed
+
+[tool.ruff.lint.isort]
+force-single-line = true  # Optional: force single-line imports
+
+[tool.ruff.format]
+quote-style = "double"  # Or "single", depending on your code style
+indent-style = "space"
+line-ending = "lf"

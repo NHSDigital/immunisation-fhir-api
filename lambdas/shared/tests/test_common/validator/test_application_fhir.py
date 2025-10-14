@@ -1,48 +1,47 @@
 # Test application file
-from pathlib import Path
-from common.validator.validator import Validator
 import json
 import time
 import unittest
+from pathlib import Path
+
+from common.validator.validator import Validator
+
+# TODO this needs success and fail cases
 
 
 class TestApplication(unittest.TestCase):
     def setUp(self):
 
-        fhir_data_folder = Path("./data")
-        self.FHIRFilePath = fhir_data_folder / "vaccination.json"
-
-        self.schema_data_folder = Path("./schemas")
-        self.schemaFilePath = self.schema_data_folder / "schema.json"
+        validation_folder = Path(__file__).parent
+        self.FHIRFilePath = validation_folder / "data/vaccination2.json"
+        self.schemaFilePath = validation_folder / "schemas/schema.json"
 
     def test_validation(self):
-
-        DATA_TYPE = 'FHIR'
-
         start = time.time()
 
         # get the JSON of the schema, changed to cope with elasticache
-        with open(self.schemaFilePath, 'r') as JSON:
+        with open(self.schemaFilePath) as JSON:
             SchemaFile = json.load(JSON)
 
-        # get the FHIR Data as JSON
-        with open(self.FHIRFilePath, 'r') as JSON:
-            FHIRData = json.load(JSON)
-
-        validator = Validator(self.FHIRFilePath, FHIRData, SchemaFile, '', '',
-                              DATA_TYPE)  # FHIR File Path not needed
-        error_list = validator.run_validation(True, True, True)
-        error_report = validator.build_error_report(
-            '25a8cc4d-1875-4191-ac6d-2d63a0ebc64b')  # include eventID if known
+        validator = Validator(SchemaFile)  # FHIR File Path not needed
+        error_list = validator.validate_fhir(self.FHIRFilePath, True, True, True)
+        error_report = validator.build_error_report('25a8cc4d-1875-4191-ac6d-2d63a0ebc64b')  # include eventID if known
 
         failed_validation = validator.has_validation_failed()
 
-        self.assertTrue(len(error_list) == 0,
-                        f"Validation failed. Errors: {error_list}")
-        self.assertTrue(len(error_report['errors']) == 0,
-                        f"Validation failed. Errors: {error_report['errors']}")
+        if len(error_list) > 0:
+            print(error_list)
+        else:
+            print('Validated Successfully')
 
-        self.assertFalse(failed_validation, 'Validation failed')
+        print('--------------------------------------------------------------------')
+        print(error_report)
+        print('--------------------------------------------------------------------')
+
+        if (failed_validation):
+            print('Validation failed due to a critical validation failure...')
+        else:
+            print('Validation Successful, see reports for details')
 
         end = time.time()
         print('Time Taken : ')

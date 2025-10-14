@@ -20,7 +20,7 @@ class CSVParser:
     # ---------------------------------------------
     # Scan and retrieve values
     # retrieve a column of data to work with
-    def get_key_values(self, field_name):
+    def get_key_value(self, field_name):
         # creating empty lists
         data = self.csv_file_data[field_name]
         return data

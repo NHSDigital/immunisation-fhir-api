@@ -15,7 +15,7 @@ class CSVLineParser:
         self.csv_file_data = dict(map(lambda i, j: (i, j), keys, values))
 
     # retrieve a column of data to work with
-    def get_key_values(self, field_name):
+    def get_key_value(self, field_name):
         # creating empty lists, convert to list
         data = [self.csv_file_data[field_name]]
         return data

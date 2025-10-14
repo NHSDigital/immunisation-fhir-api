@@ -1,14 +1,14 @@
 # Test application file
 import unittest
-
 from pathlib import Path
+
 from common.validator.parsers.fhir_parser import FHIRParser
 
 
 class TestParse(unittest.TestCase):
 
     def setUp(self):
-        self.fhir_data_folder = Path("./data")
+        self.fhir_data_folder = Path(__file__).parent / "data"
 
     def test_parse_fhir_key_exists(self):
 

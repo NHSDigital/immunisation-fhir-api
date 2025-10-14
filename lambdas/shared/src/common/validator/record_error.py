@@ -1,14 +1,13 @@
 
 
-class ErrorReport():
+class ErrorReport:
     def __init__(self, code: int = None, message: str = None, row: int = None, field: str = None, details: str = None,
                  summarise: bool = False, error_level: int = None):
         self.code = code
         self.message = message
-        if not summarise:
-            self.row = row
-            self.field = field
-            self.details = details
+        self.row = row
+        self.field = field
+        self.details = details
         self.summarise = summarise
         # these are set when the error is added to the report
         self.error_group = None
@@ -35,6 +34,7 @@ class ErrorReport():
 class RecordError(Exception):
 
     def __init__(self, code=None, message=None, details=None):
+        super().__init__(message)
         self.code = code
         self.message = message
         self.details = details

@@ -1,11 +1,43 @@
 # Root and base type expression checker functions
-import common.validator.enums.exception_messages as ExceptionMessages
 import datetime
-import uuid
 import re
-from common.validator.lookup.lookup_data import LookUpData
+import uuid
+from enum import Enum
+
+import common.validator.enums.exception_messages as ExceptionMessages
 from common.validator.lookup.key_data import KeyData
-from common.validator.record_error import RecordError, ErrorReport
+from common.validator.lookup.lookup_data import LookUpData
+from common.validator.record_error import ErrorReport
+from common.validator.record_error import RecordError
+
+
+class ExpressionType(Enum):
+    DATETIME = 'DATETIME'
+    DATE = 'DATE'
+    UUID = 'UUID'
+    INT = 'INT'
+    FLOAT = 'FLOAT'
+    REGEX = 'REGEX'
+    EQUAL = 'EQUAL'
+    NOTEQUAL = 'NOTEQUAL'
+    IN = 'IN'
+    NRANGE = 'NRANGE'
+    INARRAY = 'INARRAY'
+    UPPER = 'UPPER'
+    LOWER = 'LOWER'
+    LENGTH = 'LENGTH'
+    STARTSWITH = 'STARTSWITH'
+    ENDSWITH = 'ENDSWITH'
+    EMPTY = 'EMPTY'
+    NOTEMPTY = 'NOTEMPTY'
+    POSITIVE = 'POSITIVE'
+    GENDER = 'GENDER'
+    NHSNUMBER = 'NHSNUMBER'
+    MAXOBJECTS = 'MAXOBJECTS'
+    POSTCODE = 'POSTCODE'
+    ONLYIF = 'ONLYIF'
+    LOOKUP = 'LOOKUP'
+    KEYCHECK = 'KEYCHECK'
 
 
 class ExpressionChecker:
@@ -17,7 +49,7 @@ class ExpressionChecker:
         self.summarise = summarise
         self.report_unexpected_exception = report_unexpected_exception
 
-    def validateExpression(self, expression_type, rule, field_name,  field_value, row) -> ErrorReport:
+    def validate_expression(self, expression_type: str, rule, field_name,  field_value, row) -> ErrorReport:
         match expression_type:
             case "DATETIME":
                 return self._validate_datetime(rule, field_name, field_value, row)
@@ -75,7 +107,7 @@ class ExpressionChecker:
                 return "Schema expression not found! Check your expression type : " + expression_type
 
     # iso8086 date time validate
-    def _validate_datetime(self, rule, field_name,  field_value, row):
+    def _validate_datetime(self, rule, field_name,  field_value, row) -> ErrorReport:
         try:
             datetime.date.fromisoformat(field_value)
             # TODO - rule is not used - could be date only, date time, past, future etc
@@ -88,14 +120,14 @@ class ExpressionChecker:
                        else ExceptionMessages.MESSAGES[ExceptionMessages.RECORD_CHECK_FAILED])
             if e.details is not None:
                 details = e.details
-            return RecordError(code, message, row, field_name, details, self.summarise)
+            return ErrorReport(code, message, row, field_name, details, self.summarise)
         except Exception as e:
             if self.report_unexpected_exception:
                 message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return RecordError(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, '', self.summarise)
+                return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, '', self.summarise)
 
     # UUID validate
-    def _validate_uuid(self, expressionRule, field_name,  field_value, row):
+    def _validate_uuid(self, expressionRule, field_name,  field_value, row) -> ErrorReport:
         try:
             uuid.UUID(str(field_value))
         except RecordError as e:
@@ -112,7 +144,7 @@ class ExpressionChecker:
 
     # Integer Validate
     def _validate_integer(self, expression_rule, field_name,
-                          field_value, row, summarise=False) -> ErrorReport:
+                          field_value, row) -> ErrorReport:
         try:
             int(field_value)
             if expression_rule:
@@ -138,14 +170,14 @@ class ExpressionChecker:
                        else ExceptionMessages.MESSAGES[ExceptionMessages.RECORD_CHECK_FAILED])
             if e.details is not None:
                 details = e.details
-            return RecordError(code, message, row, field_name, details, self.summarise)
+            return ErrorReport(code, message, row, field_name, details, self.summarise)
         except Exception as e:
             if self.report_unexpected_exception:
                 message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
                 return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, '', self.summarise)
 
     #  Float Validate
-    def _validate_float(self, expression_rule, field_name,  field_value, row, summarise):
+    def _validate_float(self, expression_rule, field_name,  field_value, row) -> ErrorReport:
         try:
             float(field_value)
         except RecordError as e:
@@ -154,7 +186,7 @@ class ExpressionChecker:
                        else ExceptionMessages.MESSAGES[ExceptionMessages.RECORD_CHECK_FAILED])
             if e.details is not None:
                 details = e.details
-            return RecordError(code, message, row, field_name, details, self.summarise)
+            return ErrorReport(code, message, row, field_name, details, self.summarise)
         except Exception as e:
             if self.report_unexpected_exception:
                 message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
@@ -183,7 +215,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, '', self.summarise)
 
     # Regex Validate
-    def _validate_regex(self, expression_rule, field_name,  field_value, row, summarise) -> ErrorReport:
+    def _validate_regex(self, expression_rule, field_name,  field_value, row) -> ErrorReport:
         try:
             result = re.search(expression_rule, field_value)
             if not result:
@@ -197,7 +229,7 @@ class ExpressionChecker:
             )
             if e.details is not None:
                 details = e.details
-            return RecordError(code, message, row, field_name, details, self.summarise)
+            return ErrorReport(code, message, row, field_name, details, self.summarise)
         except Exception as e:
             if self.report_unexpected_exception:
                 message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
@@ -273,6 +305,7 @@ class ExpressionChecker:
                 raise RecordError(ExceptionMessages.RECORD_CHECK_FAILED,
                                   "Value range check failed", "Value is not within the number range, data- "
                                   + field_value)
+            return None
         except RecordError as e:
             code = e.code if e.code is not None else ExceptionMessages.RECORD_CHECK_FAILED
             message = (
@@ -348,7 +381,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, '', self.summarise)
 
     # Starts With Validate
-    def _validate_starts_with(self, expression_rule, field_name, field_value, row, summarise) -> ErrorReport:
+    def _validate_starts_with(self, expression_rule, field_name, field_value, row) -> ErrorReport:
         try:
             result = field_value.startswith(expression_rule)
             if not result:
@@ -369,7 +402,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, '', self.summarise)
 
     # Ends With Validate
-    def _validate_ends_with(self, expression_rule, field_name, field_value, row, summarise) -> ErrorReport:
+    def _validate_ends_with(self, expression_rule, field_name, field_value, row) -> ErrorReport:
         try:
             result = field_value.endswith(expression_rule)
             if not result:
@@ -390,7 +423,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, '', self.summarise)
 
     # Empty Validate
-    def _validate_empty(self, expression_rule, field_name, field_value, row, summarise) -> ErrorReport:
+    def _validate_empty(self, expression_rule, field_name, field_value, row) -> ErrorReport:
         try:
             if field_value:
                 raise RecordError(ExceptionMessages.RECORD_CHECK_FAILED,
@@ -409,7 +442,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, '', self.summarise)
 
     # Not Empty Validate
-    def _validate_not_empty(self, expression_rule, field_name, field_value, row, summarise) -> ErrorReport:
+    def _validate_not_empty(self, expression_rule, field_name, field_value, row) -> ErrorReport:
         try:
             if not field_value:
                 raise RecordError(ExceptionMessages.RECORD_CHECK_FAILED,
@@ -428,7 +461,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, '', self.summarise)
 
     # Positive Validate
-    def _validate_positive(self, expressionRule, fieldName,  fieldValue, row, summarise) -> ErrorReport:
+    def _validate_positive(self, expressionRule, fieldName,  fieldValue, row) -> ErrorReport:
         try:
             value = float(fieldValue)
             if value < 0:
@@ -448,7 +481,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, fieldName, '', self.summarise)
 
     # NHSNumber Validate
-    def _validate_nhs_number(self, expressionRule, fieldName,  fieldValue, row, summarise) -> ErrorReport:
+    def _validate_nhs_number(self, expressionRule, fieldName,  fieldValue, row) -> ErrorReport:
         try:
             regexRule = '^6[0-9]{10}$'
             result = re.search(regexRule, fieldValue)
@@ -469,7 +502,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, fieldName, '', self.summarise)
 
     # Gender Validate
-    def _validate_gender(self, expressionRule, fieldName,  fieldValue, row, summarise) -> ErrorReport:
+    def _validate_gender(self, expressionRule, fieldName,  fieldValue, row) -> ErrorReport:
         try:
             ruleList = ['0', '1', '2', '9']
 
@@ -490,7 +523,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, fieldName, '', self.summarise)
 
     # PostCode Validate
-    def _validate_post_code(self, expressionRule, fieldName,  fieldValue, row, summarise) -> ErrorReport:
+    def _validate_post_code(self, expressionRule, fieldName,  fieldValue, row) -> ErrorReport:
         try:
             regexRule = '^([Gg][Ii][Rr] 0[Aa]{2})|((([A-Za-z][0-9]{1,2})|(([A-Za-z][A-Ha-hJ-Yj-y]'
             '[0-9]{1,2})|(([AZa-z][0-9][A-Za-z])|([A-Za-z][A-Ha-hJ-Yj-y][0-9]?[A-Za-z])))) [0-9][A-Za-z]{2})$'
@@ -512,7 +545,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, fieldName, '', self.summarise)
 
     # Max Objects Validate
-    def _validate_max_objects(self, expressionRule, fieldName,  fieldValue, row, summarise) -> ErrorReport:
+    def _validate_max_objects(self, expressionRule, fieldName,  fieldValue, row) -> ErrorReport:
         try:
             value = len(fieldValue)
             if value > int(expressionRule):
@@ -556,7 +589,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, fieldName, '', self.summarise)
 
     # Check with Lookup
-    def _validate_against_lookup(self, expressionRule, fieldName,  fieldValue, row, summarise) -> ErrorReport:
+    def _validate_against_lookup(self, expressionRule, fieldName,  fieldValue, row) -> ErrorReport:
         try:
             result = self.dataLookUp.findLookUp(fieldValue)
             if not result:
@@ -576,7 +609,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, fieldName, '', self.summarise)
 
     # Check with Key Lookup
-    def _validate_against_key(self, expressionRule, fieldName,  fieldValue, row, summarise) -> ErrorReport:
+    def _validate_against_key(self, expressionRule, fieldName,  fieldValue, row) -> ErrorReport:
         try:
             result = self.KeyData.findKey(expressionRule, fieldValue)
             if not result:

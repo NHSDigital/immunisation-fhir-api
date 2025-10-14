@@ -1,28 +1,35 @@
 # Main validation engine
 
-import common.validator.enums.exception_messages as ExceptionMessages
+from enum import Enum
+
 import common.validator.enums.error_levels as ErrorLevels
-from common.validator.parsers.csv_parser import CSVParser
+import common.validator.enums.exception_messages as ExceptionMessages
+from common.validator.expression_checker import ExpressionChecker
 from common.validator.parsers.csv_line_parser import CSVLineParser
+from common.validator.parsers.csv_parser import CSVParser
 from common.validator.parsers.fhir_parser import FHIRParser
 from common.validator.parsers.schema_parser import SchemaParser
-from common.validator.expression_checker import ExpressionChecker
 from common.validator.record_error import ErrorReport
 from common.validator.reporter.dq_reporter import DQReporter
 
 
+class DataType(Enum):
+    FHIR = 'FHIR'
+    FHIRJSON = 'FHIRJSON'
+    CSV = 'CSV'
+    CSVROW = 'CSVROW'
+
+
 class Validator:
 
-    def __init__(self,
-                 filepath='', json_data={}, schemafile={}, csv_row='',
-                 csv_header='', data_type='FHIR', data_parser=None):
+    def __init__(self, schema_file = '', data_type: DataType = None, filepath = ''):
         self.filepath = filepath
-        self.json_data = json_data
-        self.schema_file = schemafile
-        self.csv_row = csv_row
-        self.csv_header = csv_header
+        self.json_data = {}
+        self.schema_file = schema_file
+        self.csv_row = ''
+        self.csv_header = ''
         self.data_type = data_type
-        self.data_parser = data_parser
+        self.data_parser = ''
         self.error_records: list[ErrorReport] = []
 
     def _get_csv_line_parser(self, csv_row, csv_header):
@@ -67,7 +74,7 @@ class Validator:
         return False
 
     #  validate a single expression against the data file
-    def _validate_expression(self, expression_validate, expression,
+    def _validate_expression(self, expression_validator: ExpressionChecker, expression,
                              inc_header_in_row_count) -> ErrorReport | int:
         row = 1
         if inc_header_in_row_count:
@@ -98,7 +105,7 @@ class Validator:
         try:
             expression_values = self.data_parser.get_key_value(expression_fieldname)
         except Exception as e:
-            message = 'Data get values Unexpected exception [%s]: %s' % (e.__class__.__name__, e)
+            message = f'Data get values Unexpected exception [{e.__class__.__name__}]: {e}'
             error_report = ErrorReport(code=ExceptionMessages.PARSING_ERROR, message=message)
             # original code had self.CriticalErrorLevel. Replaced with error_level
             self._add_error_record(error_report,
@@ -106,13 +113,43 @@ class Validator:
             return error_report
 
         for value in expression_values:
-            error_record: ErrorReport = expression_validate.validate_expression(
-                expression_type, expression_rule, expression_fieldname, value, row)
-            if error_record is not None:
-                self._addErrorRecord(error_record, expression_error_group,
-                                     expression_name, expression_id, error_level)
+            error_record: ErrorReport | None = None
+            try:
+                error_record = expression_validator.validate_expression(
+                    expression_type, expression_rule, expression_fieldname, value, row)
+                if error_record is not None:
+                    self._add_error_record(error_record, expression_error_group,
+                                        expression_name, expression_id, error_level)
+            except Exception:
+                print(f'Exception validating expression {expression_id} on row {row}: {error_record}')
             row += 1
         return row
+
+
+    def validate_fhir(self, filepath, summarise=False, report_unexpected_exception=True,
+                       inc_header_in_row_count=True) -> list[ErrorReport]:
+        self.data_type = DataType.FHIR
+        self.filepath = filepath
+        return self.run_validation(summarise, report_unexpected_exception, inc_header_in_row_count)
+
+    def validate_csv(self, filepath, summarise=False, report_unexpected_exception=True,
+                       inc_header_in_row_count=True) -> list[ErrorReport]:
+        self.data_type = DataType.CSV
+        self.filepath = filepath
+        return self.run_validation(summarise, report_unexpected_exception, inc_header_in_row_count)
+
+    def validate_csv_row(self, csv_row, csv_header, summarise=False, report_unexpected_exception=True,
+                       inc_header_in_row_count=True) -> list[ErrorReport]:
+        self.data_type = DataType.CSVROW
+        self.csv_row = csv_row
+        self.csv_header = csv_header
+        return self.run_validation(summarise, report_unexpected_exception, inc_header_in_row_count)
+
+    def validate_fhir_json(self, json_data, summarise=False, report_unexpected_exception=True,
+                       inc_header_in_row_count=True) -> list[ErrorReport]:
+        self.data_type = DataType.FHIRJSON
+        self.json_data = json_data
+        return self.validate_fhir_json(json_data, summarise, report_unexpected_exception, inc_header_in_row_count)
 
     # run the validation against the data
     def run_validation(self, summarise=False, report_unexpected_exception=True,
@@ -121,36 +158,36 @@ class Validator:
             self.error_records.clear()
 
             match self.data_type:  # 'FHIR', 'FHIRJSON', 'CSV', 'CSVROW'
-                case 'FHIR':
+                case DataType.FHIR:
                     self.data_parser = self._get_fhir_parser(self.filepath)
                     self.isCSV = False
-                case 'FHIRJSON':
+                case DataType.FHIRJSON:
                     self.data_parser = self._get_fhir_json_parser(self.json_data)
                     self.isCSV = False
-                case 'CSV':
+                case DataType.CSV:
                     self.data_parser = self._get_csv_parser(self.filepath)
                     self.isCSV = True
-                case 'CSVROW':
+                case DataType.CSVROW:
                     self.data_parser = self._get_csv_line_parser(self.csv_row, self.csv_header)
                     self.isCSV = True
 
         except Exception as e:
             if report_unexpected_exception:
-                message = 'Data Parser Unexpected exception [%s]: %s' % (e.__class__.__name__, e)
+                message = f'Data Parser Unexpected exception [{e.__class__.__name__}]: {e}'
                 return [ErrorReport(code=0, message=message)]
 
         try:
             schemaParser = self._get_schema_parser(self.schema_file)
         except Exception as e:
             if report_unexpected_exception:
-                message = 'Schema Parser Unexpected exception [%s]: %s' % (e.__class__.__name__, e)
+                message = f'Schema Parser Unexpected exception [{e.__class__.__name__}]: {e}'
                 return [ErrorReport(code=0, message=message)]
 
         try:
-            expression_validate = ExpressionChecker(self.data_parser, summarise, report_unexpected_exception)
+            expression_validator = ExpressionChecker(self.data_parser, summarise, report_unexpected_exception)
         except Exception as e:
             if report_unexpected_exception:
-                message = 'Expression Checker Unexpected exception [%s]: %s' % (e.__class__.__name__, e)
+                message = f'Expression Checker Unexpected exception [{e.__class__.__name__}]: {e}'
                 return [ErrorReport(code=0, message=message)]
 
         # get list of expressions
@@ -158,12 +195,11 @@ class Validator:
             expressions = schemaParser.get_expressions()
         except Exception as e:
             if report_unexpected_exception:
-                message = 'Expression Getter Unexpected exception [%s]: %s' % (e.__class__.__name__, e)
+                message = f'Expression Getter Unexpected exception [{e.__class__.__name__}]: {e}'
                 return [ErrorReport(code=0, message=message)]
 
         for expression in expressions:
-            # rows = self._validate_expression(expression_validate, expression, inc_header_in_row_count)
-            self._validate_expression(expression_validate, expression, inc_header_in_row_count)
+            self._validate_expression(expression_validator, expression, inc_header_in_row_count)
 
         return self.error_records
 
