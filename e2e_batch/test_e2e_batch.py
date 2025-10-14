@@ -1,6 +1,14 @@
 import time
 import unittest
 
+from scenarios import (
+    TestCase,
+    create_test_cases,
+    enable_tests,
+    generate_csv_files,
+    scenarios,
+)
+
 from clients import logger
 from constants import (
     ACK_BUCKET,
@@ -9,13 +17,6 @@ from constants import (
     TEMP_ACK_PREFIX,
     DestinationType,
     environment,
-)
-from scenarios import (
-    TestCase,
-    create_test_cases,
-    enable_tests,
-    generate_csv_files,
-    scenarios,
 )
 from utils import (
     check_ack_file_content,

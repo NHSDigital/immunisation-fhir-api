@@ -5,9 +5,6 @@ from enum import Enum
 from typing import Optional, Union
 from uuid import uuid4
 
-import parameter_parser
-from authorisation.api_operation_code import ApiOperationCode
-from authorisation.authoriser import Authoriser
 from fhir.resources.R4B.bundle import (
     Bundle as FhirBundle,
 )
@@ -17,6 +14,11 @@ from fhir.resources.R4B.bundle import (
     BundleLink,
 )
 from fhir.resources.R4B.immunization import Immunization
+from pydantic import ValidationError
+
+import parameter_parser
+from authorisation.api_operation_code import ApiOperationCode
+from authorisation.authoriser import Authoriser
 from filter import Filter
 from models.errors import (
     CustomValidationError,
@@ -33,7 +35,6 @@ from models.utils.generic_utils import (
     nhs_number_mod11_check,
 )
 from models.utils.validation_utils import get_vaccine_type
-from pydantic import ValidationError
 from repository.fhir_repository import ImmunizationRepository
 from timer import timed
 
