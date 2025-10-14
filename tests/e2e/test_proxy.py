@@ -64,8 +64,8 @@ class TestMtls(unittest.TestCase):
         if url := os.getenv("AWS_DOMAIN_NAME"):
             return url
 
-        terraform_path = f"{os.getcwd()}/../terraform"
-        "make -C ../terraform -s output name=service_domain_name"
+        terraform_path = f"{os.getcwd()}/../../instance"
+        "make -C ../../instance -s output name=service_domain_name"
         cmd = ["make", "-C", terraform_path, "-s", "output", "name=service_domain_name"]
         try:
             res = subprocess.run(cmd, stdout=subprocess.PIPE, text=True)

@@ -74,7 +74,7 @@ updates:
     directories:
       - "/infrastructure/grafana/non-prod/terraform"
       - "/infrastructure/account"
-      - "/infrastructure/terraform"
+      - "/infrastructure/instance"
       - "/infrastructure/terraform_aws_backup/**"
     schedule:
       interval: "daily"
