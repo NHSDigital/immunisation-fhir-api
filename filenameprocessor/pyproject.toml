@@ -9,8 +9,8 @@ packages = [{ include = "src" }]
 [tool.poetry.dependencies]
 python = "~3.11"
 "fhir.resources" = "~7.0.2"
-boto3 = "~1.40.45"
-boto3-stubs-lite = { extras = ["dynamodb"], version = "~1.40.45" }
+boto3 = "~1.40.51"
+boto3-stubs-lite = { extras = ["dynamodb"], version = "~1.40.51" }
 aws-lambda-typing = "~2.20.0"
 moto = "^4"
 requests = "~2.32.5"
@@ -25,7 +25,7 @@ structlog = "^24.1.0"
 redis = "^5.1.1"
 coverage = "^7.10.7"
 freezegun = "^1.5.5"
-fakeredis = "^2.31.3" 
+fakeredis = "^2.32.0" 
 
 [build-system]
 requires = ["poetry-core >= 1.5.0"]
