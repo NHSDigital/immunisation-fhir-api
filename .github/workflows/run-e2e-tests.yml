@@ -96,8 +96,6 @@ jobs:
       - name: Run e2e tests
         working-directory: e2e
         run: |
-          # export PROXY_NAME=immunisation-fhir-api-${{ inputs.sub_environment }}
-          # export SERVICE_BASE_PATH=immunisation-fhir-api/FHIR/R4-${{ inputs.sub_environment }}
           export PROXY_NAME=immunisation-fhir-api-internal-dev
           export SERVICE_BASE_PATH=immunisation-fhir-api/FHIR/R4
           make run-immunization
