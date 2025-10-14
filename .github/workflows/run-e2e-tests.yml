@@ -1,0 +1,96 @@
+name: Run e2e Tests
+
+on:
+  workflow_call:
+    inputs:
+      apigee_environment:
+        required: true
+        type: string
+      environment:
+        required: true
+        type: string
+      sub_environment:
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      apigee_environment:
+        type: choice
+        description: Select the Apigee proxy environment
+        options:
+          - internal-dev
+          - int
+          - ref
+          - prod
+      environment:
+        type: string
+        description: Select the backend environment
+        options:
+          - dev
+          - preprod
+          - prod
+      sub_environment:
+        type: string
+        description: Set the sub environment name e.g. pr-xxx, or green/blue in higher environments
+
+jobs:
+  e2e-tests:
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment }}
+    env: # Sonarcloud - do not allow direct usage of untrusted data
+      APIGEE_ENVIRONMENT: ${{ inputs.apigee_environment }}
+      BACKEND_ENVIRONMENT: ${{ inputs.environment }}
+      BACKEND_SUB_ENVIRONMENT: ${{ inputs.sub_environment }}
+      APIGEE_USERNAME: ${{ vars.APIGEE_USERNAME }}
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+
+      - name: Install poetry
+        run: pip install poetry==2.1.4
+
+      - uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c
+        with:
+          python-version: 3.11
+          cache: "poetry"
+
+      - name: Install e2e test dependencies
+        run: poetry install --no-root
+        working-directory: e2e
+
+      - name: Install oathtool
+        run: sudo apt-get update && sudo apt-get install -y oathtool
+
+      - name: Get Apigee access token
+        env:
+          APIGEE_PASSWORD: ${{ secrets.APIGEE_PASSWORD }}
+          APIGEE_OAUTH_TOKEN: ${{ secrets.APIGEE_BASIC_AUTH_TOKEN }}
+          APIGEE_OTP_SECRET: ${{ secrets.APIGEE_OTP_KEY }}
+        run: |
+          CODE=$(oathtool --totp -b "$APIGEE_OTP_SECRET")
+          echo "::add-mask::$CODE"
+          echo "Requesting access token from Apigee..."
+          response=$(curl -s -X POST "https://login.apigee.com/oauth/token" \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            -H "Accept: application/json;charset=utf-8" \
+            -H "Authorization: Basic $APIGEE_BASIC_AUTH_TOKEN" \
+            -d "username=$APIGEE_USERNAME&password=$APIGEE_PASSWORD&mfa_token=$CODE&grant_type=password")
+          token=$(echo "$response" | jq -e -r '.access_token')
+          if [[ -z "$token" ]]; then
+            echo "Failed to retrieve access token"
+            exit 1
+          fi
+          echo "::add-mask::$token"
+          echo "APIGEE_ACCESS_TOKEN=$token" >> $GITHUB_ENV
+
+      - name: Run e2e tests
+        working-directory: e2e
+        run: |
+          # export PROXY_NAME=immunisation-fhir-api-${{ inputs.sub_environment }}
+          # export SERVICE_BASE_PATH=immunisation-fhir-api/FHIR/R4-${{ inputs.sub_environment }}
+          export PROXY_NAME=immunisation-fhir-api-internal-dev
+          export SERVICE_BASE_PATH=immunisation-fhir-api/FHIR/R4
+          make run-immunization
