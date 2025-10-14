@@ -32,20 +32,16 @@ on:
       sub_environment:
         type: string
         description: Set the sub environment name e.g. pr-xxx, or green/blue in higher environments
-  # TODO - remove
-  pull_request:
-    types: [labeled, opened, synchronize, reopened, unlabeled]
 
 jobs:
   e2e-tests:
     runs-on: ubuntu-latest
     environment:
-      # name: ${{ inputs.environment }}
-      name: internal-dev
+      name: ${{ inputs.environment }}
     env: # Sonarcloud - do not allow direct usage of untrusted data
-      APIGEE_ENVIRONMENT: internal-dev
-      BACKEND_ENVIRONMENT: dev
-      BACKEND_SUB_ENVIRONMENT: internal-dev
+      APIGEE_ENVIRONMENT: ${{ inputs.apigee_environment }}
+      BACKEND_ENVIRONMENT: ${{ inputs.environment }}
+      BACKEND_SUB_ENVIRONMENT: ${{ inputs.sub_environment }}
       APIGEE_USERNAME: ${{ vars.APIGEE_USERNAME }}
     permissions:
       id-token: write
@@ -59,6 +55,14 @@ jobs:
           role-session-name: github-actions
 
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd
+        with:
+          terraform_version: "1.12.2"
+
+      - name: Terraform Init
+        working-directory: terraform
+        run: make init apigee_environment=$APIGEE_ENVIRONMENT environment=$BACKEND_ENVIRONMENT sub_environment=$BACKEND_SUB_ENVIRONMENT
 
       - name: Install poetry
         run: pip install poetry==2.1.4
@@ -99,10 +103,56 @@ jobs:
           export PROXY_NAME=immunisation-fhir-api-internal-dev
           export SERVICE_BASE_PATH=immunisation-fhir-api/FHIR/R4
 
-          export IMMS_DELTA_TABLE_NAME=imms-internal-dev-delta
-          export AWS_DOMAIN_NAME=internal-dev.imms.dev.vds.platform.nhs.uk
-          export DYNAMODB_TABLE_NAME=imms-internal-dev-imms-events
-          export AWS_SQS_QUEUE_NAME=imms-internal-dev-delta-dlq
-          export AWS_SNS_TOPIC_NAME=imms-internal-dev-delta-sns
+          # export IMMS_DELTA_TABLE_NAME=imms-internal-dev-delta
+          # export AWS_DOMAIN_NAME=internal-dev.imms.dev.vds.platform.nhs.uk
+          # export DYNAMODB_TABLE_NAME=imms-internal-dev-imms-events
+          # export AWS_SQS_QUEUE_NAME=imms-internal-dev-delta-dlq
+          # export AWS_SNS_TOPIC_NAME=imms-internal-dev-delta-sns
 
-          poetry run python -m unittest -c -v
+          # poetry run python -m unittest -c -v
+          make run
+
+  batch-e2e-tests:
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment }}
+    env: # Sonarcloud - do not allow direct usage of untrusted data
+      APIGEE_ENVIRONMENT: ${{ inputs.apigee_environment }}
+      BACKEND_ENVIRONMENT: ${{ inputs.environment }}
+      BACKEND_SUB_ENVIRONMENT: ${{ inputs.sub_environment }}
+      APIGEE_USERNAME: ${{ vars.APIGEE_USERNAME }}
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Connect to AWS
+        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838
+        with:
+          aws-region: eu-west-2
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/auto-ops
+          role-session-name: github-actions
+
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+
+      - name: Install poetry
+        run: pip install poetry==2.1.4
+
+      - uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c
+        with:
+          python-version: 3.11
+          cache: "poetry"
+
+      - name: Install e2e test dependencies
+        working-directory: e2e_batch
+        run: poetry install --no-root
+
+      - name: Run batch e2e tests
+        working-directory: e2e_batch
+        env:
+          ENVIRONMENT: ${{ inputs.sub_environment }}
+        run: |
+          # export PROXY_NAME=immunisation-fhir-api-internal-dev
+          # export SERVICE_BASE_PATH=immunisation-fhir-api/FHIR/R4
+
+          # poetry run python -m unittest -c -v
+          make test

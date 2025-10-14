@@ -73,18 +73,18 @@ jobs:
           terraform_version: "1.12.2"
 
       - name: Terraform Init
-        working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
+        working-directory: terraform
         run: make init apigee_environment=$APIGEE_ENVIRONMENT environment=$BACKEND_ENVIRONMENT sub_environment=$BACKEND_SUB_ENVIRONMENT
 
       - name: Terraform Plan
-        working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
+        working-directory: terraform
         run: make plan-ci apigee_environment=$APIGEE_ENVIRONMENT environment=$BACKEND_ENVIRONMENT sub_environment=$BACKEND_SUB_ENVIRONMENT
 
       - name: Save Terraform Plan
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: tfplan
-          path: ${{ vars.TERRAFORM_DIR_PATH }}/tfplan
+          path: terraform/tfplan
 
   terraform-apply:
     needs: terraform-plan
@@ -116,14 +116,14 @@ jobs:
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
         with:
           name: tfplan
-          path: ${{ vars.TERRAFORM_DIR_PATH }}
+          path: terraform
 
       - name: Terraform Init
-        working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
+        working-directory: terraform
         run: make init apigee_environment=$APIGEE_ENVIRONMENT environment=$BACKEND_ENVIRONMENT sub_environment=$BACKEND_SUB_ENVIRONMENT
 
       - name: Terraform Apply
-        working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
+        working-directory: terraform
         run: |
           make apply-ci apigee_environment=$APIGEE_ENVIRONMENT environment=$BACKEND_ENVIRONMENT sub_environment=$BACKEND_SUB_ENVIRONMENT
           echo "ID_SYNC_QUEUE_ARN=$(make -s output name=id_sync_queue_arn)" >> $GITHUB_ENV
