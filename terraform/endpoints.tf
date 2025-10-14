@@ -61,7 +61,7 @@ data "aws_iam_policy_document" "imms_policy_document" {
 data "aws_iam_policy_document" "imms_s3_kms_doc" {
   source_policy_documents = [
     templatefile("${local.policy_path}/aws_s3_and_kms_access.json", {
-      kms_key_arn    = data.aws_kms_key.existing_s3_encryption_key.arn
+      kms_key_arn = data.aws_kms_key.existing_s3_encryption_key.arn
     })
   ]
 }
