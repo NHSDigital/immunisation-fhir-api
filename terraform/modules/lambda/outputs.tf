@@ -7,3 +7,6 @@ output "lambda_arn" {
 output "invoke_arn" {
   value = module.lambda_function_container_image.lambda_function_invoke_arn
 }
+output "lambda_role" {
+  value = module.lambda_function_container_image.lambda_function_invoke_arn
+}
