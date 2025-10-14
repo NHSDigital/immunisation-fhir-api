@@ -70,10 +70,10 @@ jobs:
       - name: Get Apigee access token
         env:
           APIGEE_PASSWORD: ${{ secrets.APIGEE_PASSWORD }}
-          APIGEE_OAUTH_TOKEN: ${{ secrets.APIGEE_BASIC_AUTH_TOKEN }}
-          APIGEE_OTP_SECRET: ${{ secrets.APIGEE_OTP_KEY }}
+          APIGEE_BASIC_AUTH_TOKEN: ${{ secrets.APIGEE_BASIC_AUTH_TOKEN }}
+          APIGEE_OTP_KEY: ${{ secrets.APIGEE_OTP_KEY }}
         run: |
-          CODE=$(oathtool --totp -b "$APIGEE_OTP_SECRET")
+          CODE=$(oathtool --totp -b "$APIGEE_OTP_KEY")
           echo "::add-mask::$CODE"
           echo "Requesting access token from Apigee..."
           response=$(curl -s -X POST "https://login.apigee.com/oauth/token" \
