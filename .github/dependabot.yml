@@ -14,7 +14,6 @@ updates:
       - "/mesh_processor"
       - "/recordprocessor"
       - "/utilities/sandbox"
-      - "/infrastructure/temporary_sandbox"
     schedule:
       interval: "daily"
     open-pull-requests-limit: 1
