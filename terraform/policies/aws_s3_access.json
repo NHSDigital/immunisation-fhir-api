@@ -4,9 +4,7 @@
     {
       "Sid": "S3Access",
       "Effect": "Allow",
-      "Action": [
-        "s3:PutObject"
-      ],
+      "Action": ["s3:PutObject"],
       "Resource": [
         "arn:aws:s3:::${s3_bucket_name}",
         "arn:aws:s3:::${s3_bucket_name}/*"
