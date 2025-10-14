@@ -1,10 +1,10 @@
 """Store values for use in tests"""
 
 from dataclasses import dataclass
-from decimal import Decimal
-from .generic_utils import format_date_types
 from datetime import datetime, timedelta
+from decimal import Decimal
 
+from .generic_utils import format_date_types
 
 # Lists of data types for 'invalid data type' testing
 integers = [-1, 0, 1]
@@ -56,13 +56,27 @@ class ValidValues:
     )
 
     # Not a valid snomed code, but is valid coding format for format testing
-    snomed_coding_element = {"system": "http://snomed.info/sct", "code": "ABC123", "display": "test"}
+    snomed_coding_element = {
+        "system": "http://snomed.info/sct",
+        "code": "ABC123",
+        "display": "test",
+    }
 
     valid_dose_quantity = [
-        {"value": 3, "unit": "milliliter", "system": "http://unitsofmeasure.org", "code": "ml"},
-        {"value": 2, "unit": "ml", "system": "http://snomed.info/sct", "code": "258773002"},
+        {
+            "value": 3,
+            "unit": "milliliter",
+            "system": "http://unitsofmeasure.org",
+            "code": "ml",
+        },
+        {
+            "value": 2,
+            "unit": "ml",
+            "system": "http://snomed.info/sct",
+            "code": "258773002",
+        },
         {"value": 4, "unit": "ml", "system": "http://snomed.info/sct"},
-        {"value": 5, "unit": "ml" }
+        {"value": 5, "unit": "ml"},
     ]
 
     manufacturer_resource_id_Man1 = {"resourceType": "Manufacturer", "id": "Man1"}
@@ -75,20 +89,39 @@ class ValidValues:
 
     patient_resource_id_Pat2 = {"resourceType": "Patient", "id": "Pat2"}
 
-    questionnnaire_resource_id_QR1 = {"resourceType": "QuestionnaireResponse", "id": "QR1", "status": "completed"}
+    questionnnaire_resource_id_QR1 = {
+        "resourceType": "QuestionnaireResponse",
+        "id": "QR1",
+        "status": "completed",
+    }
 
-    questionnaire_immunisation = {"linkId": "Immunisation", "answer": [{"valueReference": {"reference": "#"}}]}
+    questionnaire_immunisation = {
+        "linkId": "Immunisation",
+        "answer": [{"valueReference": {"reference": "#"}}],
+    }
 
-    questionnaire_reduce_validation_true = {"linkId": "ReduceValidation", "answer": [{"valueBoolean": True}]}
+    questionnaire_reduce_validation_true = {
+        "linkId": "ReduceValidation",
+        "answer": [{"valueBoolean": True}],
+    }
 
-    questionnaire_reduce_validation_false = {"linkId": "ReduceValidation", "answer": [{"valueBoolean": False}]}
+    questionnaire_reduce_validation_false = {
+        "linkId": "ReduceValidation",
+        "answer": [{"valueBoolean": False}],
+    }
 
-    questionnaire_ip_address = {"linkId": "IpAddress", "answer": [{"valueString": "IP_ADDRESS"}]}
+    questionnaire_ip_address = {
+        "linkId": "IpAddress",
+        "answer": [{"valueString": "IP_ADDRESS"}],
+    }
 
     performer_actor_organization = {
         "actor": {
             "type": "Organization",
-            "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "B0C4P"},
+            "identifier": {
+                "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                "value": "B0C4P",
+            },
             "display": "Acme Healthcare",
         }
     }
@@ -97,7 +130,10 @@ class ValidValues:
 
     performer_actor_reference_internal_Pract2 = {"actor": {"reference": "#Pract2"}}
 
-    performer = [{"actor": {"reference": "#Pract1"}}, {"actor": {"type": "Organization", "display": "Acme Healthcare"}}]
+    performer = [
+        {"actor": {"reference": "#Pract1"}},
+        {"actor": {"type": "Organization", "display": "Acme Healthcare"}},
+    ]
 
     vaccination_procedure_coding_with_one_snomed_code = [
         {
@@ -124,7 +160,11 @@ class ValidValues:
     ]
 
     dummy_coding_with_one_snomed_code = [
-        {"system": "http://snomed.info/sct", "code": "DUMMY CODE 1", "display": "DUMMY TERM 1"},
+        {
+            "system": "http://snomed.info/sct",
+            "code": "DUMMY CODE 1",
+            "display": "DUMMY TERM 1",
+        },
     ]
 
     vaccination_procedure_with_one_snomed_code = {
@@ -173,7 +213,10 @@ class ValidValues:
             "use": "official",
             "family": "Taylor",
             "given": ["Sarah"],
-            "period": {"start": date_before_occurenceDateTime, "end": date_after_occurenceDateatetime},
+            "period": {
+                "start": date_before_occurenceDateTime,
+                "end": date_after_occurenceDateatetime,
+            },
         },
         {"family": "Taylor", "given": ["Sar"]},
         {"use": "old", "family": "Tray", "given": ["Sarah"]},
@@ -190,7 +233,10 @@ class ValidValues:
             "use": "official",
             "family": "Night",
             "given": ["Florence"],
-            "period": {"start": date_before_occurenceDateTime, "end": date_after_occurenceDateatetime},
+            "period": {
+                "start": date_before_occurenceDateTime,
+                "end": date_after_occurenceDateatetime,
+            },
         },
         {"family": "Night", "given": ["Florence"]},
         {"use": "old", "family": "Tray", "given": ["Florence"]},
@@ -205,7 +251,11 @@ class NameInstances:
 
         given_and_family_only = {"given": ["a_given_name"], "family": "a_family_name"}
 
-        with_use_official = {"given": ["a_given_name"], "family": "a_family_name", "use": "official"}
+        with_use_official = {
+            "given": ["a_given_name"],
+            "family": "a_family_name",
+            "use": "official",
+        }
 
         with_period_start = {
             "given": ["a_given_name"],
@@ -234,7 +284,11 @@ class NameInstances:
     class ValidNonCurrent:
         """Name instances which are valid but not current"""
 
-        before_period_start = {"given": ["a_given_name"], "family": "a_family_name", "period": {"start": "2100-01-01"}}
+        before_period_start = {
+            "given": ["a_given_name"],
+            "family": "a_family_name",
+            "period": {"start": "2100-01-01"},
+        }
 
         after_period_end = {
             "given": ["a_given_name"],
@@ -249,7 +303,10 @@ class NameInstances:
 
         given_name_only = {"given": ["a_given_name"]}
 
-        family_name_only_with_use_official = {"family": "a_family_name", "use": "official"}
+        family_name_only_with_use_official = {
+            "family": "a_family_name",
+            "use": "official",
+        }
 
         family_name_only_with_use_official_and_period_start_and_end = {
             "family": "a_family_name",
@@ -298,21 +355,21 @@ class InvalidValues:
     sample_inputs = [
         now + timedelta(days=1),
         now + timedelta(days=365),
-        now + timedelta(days=730)
+        now + timedelta(days=730),
     ]
 
-    for_future_dates = format_date_types(sample_inputs, mode = "date")
+    for_future_dates = format_date_types(sample_inputs, mode="date")
 
     # Strings which are not in acceptable date time format
     for_date_time_string_formats_for_relaxed_timezone = [
         "",  # Empty string
         "invalid",  # Invalid format
-        *format_date_types(sample_inputs, mode = "datetime"),
+        *format_date_types(sample_inputs, mode="datetime"),
         "20000101",  # Date digits only (i.e. without hypens)
         "20000101000000",  # Date and time digits only
         "200001010000000000",  # Date, time and timezone digits only
-        "2000-01-01T10:34:27",        # Date with Time only
-        "2000-01-01T10:34:27.234",    # Date with Time and milliseconds
+        "2000-01-01T10:34:27",  # Date with Time only
+        "2000-01-01T10:34:27.234",  # Date with Time and milliseconds
         "2000",  # Year only
         "2000-01",  # Year and month only
         "2000-01-01T00:00:00+00",  # Date and time with GMT timezone offset only in hours
@@ -375,8 +432,16 @@ class InvalidValues:
     practitioner_resource_with_no_id = {"resourceType": "Practitioner"}
 
     dummy_coding_with_two_snomed_codes = [
-        {"system": "http://snomed.info/sct", "code": "DUMMY SNOMED CODE 1", "display": "DUMMY SNOMED TERM 1"},
-        {"system": "http://snomed.info/sct", "code": "DUMMY SNOMED CODE 2", "display": "DUMMY SNOMED TERM 2"},
+        {
+            "system": "http://snomed.info/sct",
+            "code": "DUMMY SNOMED CODE 1",
+            "display": "DUMMY SNOMED TERM 1",
+        },
+        {
+            "system": "http://snomed.info/sct",
+            "code": "DUMMY SNOMED CODE 2",
+            "display": "DUMMY SNOMED TERM 2",
+        },
     ]
 
     vaccination_situation_with_two_snomed_codes = {

@@ -1,23 +1,24 @@
 """Tests for the process_row module"""
 
 import unittest
-from unittest.mock import patch
 from copy import deepcopy
+from decimal import Decimal
+from unittest.mock import patch
+
 from boto3 import client as boto3_client
 from moto import mock_s3
-from decimal import Decimal
 
-
-from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
-    MockFieldDictionaries,
-    TargetDiseaseElements
+from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
+    MOCK_ENVIRONMENT_DICT,
 )
-
 from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
     GenericSetUp,
     GenericTearDown,
 )
-from tests.utils_for_recordprocessor_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT
+from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
+    MockFieldDictionaries,
+    TargetDiseaseElements,
+)
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
     from clients import REGION_NAME
@@ -48,16 +49,22 @@ class TestProcessRow(unittest.TestCase):
         expected_result = {
             "resourceType": "Immunization",
             "status": "completed",
-            "protocolApplied": [{
-                "targetDisease": [{
-                    "coding": [{
-                        "system": "http://snomed.info/sct",
-                        "code": "55735004",
-                        "display": "Respiratory syncytial virus infection (disorder)"
-                    }]
-                }],
-                "doseNumberPositiveInt": 1
-            }],
+            "protocolApplied": [
+                {
+                    "targetDisease": [
+                        {
+                            "coding": [
+                                {
+                                    "system": "http://snomed.info/sct",
+                                    "code": "55735004",
+                                    "display": "Respiratory syncytial virus infection (disorder)",
+                                }
+                            ]
+                        }
+                    ],
+                    "doseNumberPositiveInt": 1,
+                }
+            ],
             "reasonCode": [{"coding": [{"system": "http://snomed.info/sct", "code": "1037351000000105"}]}],
             "recorded": "2024-09-04",
             "identifier": [{"value": "RSV_002", "system": "https://www.ravs.england.nhs.uk/"}],
@@ -69,7 +76,12 @@ class TestProcessRow(unittest.TestCase):
                     "birthDate": "2008-02-17",
                     "gender": "male",
                     "address": [{"postalCode": "WD25 0DZ"}],
-                    "identifier": [{"system": "https://fhir.nhs.uk/Id/nhs-number", "value": "9732928395"}],
+                    "identifier": [
+                        {
+                            "system": "https://fhir.nhs.uk/Id/nhs-number",
+                            "value": "9732928395",
+                        }
+                    ],
                     "name": [{"family": "PEEL", "given": ["PHYLIS"]}],
                 },
                 {
@@ -106,9 +118,23 @@ class TestProcessRow(unittest.TestCase):
             ],
             "occurrenceDateTime": "2024-09-04T18:33:25+00:00",
             "primarySource": True,
-            "site": {"coding": [{"system": "http://snomed.info/sct", "code": "368209003", "display": "Right arm"}]},
+            "site": {
+                "coding": [
+                    {
+                        "system": "http://snomed.info/sct",
+                        "code": "368209003",
+                        "display": "Right arm",
+                    }
+                ]
+            },
             "route": {
-                "coding": [{"system": "http://snomed.info/sct", "code": "1210999013", "display": "Intradermal use"}]
+                "coding": [
+                    {
+                        "system": "http://snomed.info/sct",
+                        "code": "1210999013",
+                        "display": "Intradermal use",
+                    }
+                ]
             },
             "doseQuantity": {
                 "value": Decimal("0.3"),
@@ -120,12 +146,20 @@ class TestProcessRow(unittest.TestCase):
                 {
                     "actor": {
                         "type": "Organization",
-                        "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "RVVKC"},
+                        "identifier": {
+                            "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                            "value": "RVVKC",
+                        },
                     }
                 },
                 {"actor": {"reference": "#Practitioner1"}},
             ],
-            "location": {"identifier": {"value": "RJC02", "system": "https://fhir.nhs.uk/Id/ods-organization-code"}},
+            "location": {
+                "identifier": {
+                    "value": "RJC02",
+                    "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                }
+            },
         }
 
         self.maxDiff = None
@@ -205,7 +239,10 @@ class TestProcessRow(unittest.TestCase):
         # call 'process_row' with required details
         response = process_row(TargetDiseaseElements.RSV, Allowed_Operations, Mock_Row)
 
-        self.assertEqual(response["diagnostics"]["error_message"], "UNIQUE_ID or UNIQUE_ID_URI is missing")
+        self.assertEqual(
+            response["diagnostics"]["error_message"],
+            "UNIQUE_ID or UNIQUE_ID_URI is missing",
+        )
         self.assertEqual(response["diagnostics"]["statusCode"], 400)
 
 

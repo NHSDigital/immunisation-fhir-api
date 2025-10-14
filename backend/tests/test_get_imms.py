@@ -5,7 +5,6 @@ from controller.fhir_controller import FhirController
 from get_imms_handler import get_immunization_by_id
 
 
-
 class TestGetImmunisationById(unittest.TestCase):
     def setUp(self):
         self.controller = create_autospec(FhirController)

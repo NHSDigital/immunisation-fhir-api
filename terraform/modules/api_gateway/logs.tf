@@ -65,7 +65,7 @@ resource "aws_iam_policy" "api_logs_subscription_policy" {
     Version = "2012-10-17",
     Statement = [
       {
-        Sid = "AllowPutAPIGSubFilter"
+        Sid    = "AllowPutAPIGSubFilter"
         Effect = "Allow"
         Action = [
           "logs:PutSubscriptionFilter"

@@ -2,15 +2,15 @@
 
 import json
 
-from typing import Union
-from .generic_utils import create_diagnostics_error
-from models.utils.base_utils import obtain_field_location
-from models.obtain_field_value import ObtainFieldValue
-from models.field_names import FieldNames
-from models.errors import MandatoryError
+from clients import redis_client
 from constants import Urls
 from models.constants import Constants
-from clients import redis_client
+from models.errors import MandatoryError
+from models.field_names import FieldNames
+from models.obtain_field_value import ObtainFieldValue
+from models.utils.base_utils import obtain_field_location
+
+from .generic_utils import create_diagnostics_error
 
 
 def get_target_disease_codes(immunization: dict):
@@ -28,7 +28,6 @@ def get_target_disease_codes(immunization: dict):
 
     # For each item in the target disease list, extract the snomed code
     for i, element in enumerate(target_disease):
-
         try:
             code = [x["code"] for x in element["coding"] if x.get("system") == Urls.snomed][0]
         except (KeyError, IndexError) as error:
@@ -47,7 +46,9 @@ def get_target_disease_codes(immunization: dict):
     return target_disease_codes
 
 
-def convert_disease_codes_to_vaccine_type(disease_codes_input: list) -> Union[str, None]:
+def convert_disease_codes_to_vaccine_type(
+    disease_codes_input: list,
+) -> str | None:
     """
     Takes a list of disease codes and returns the corresponding vaccine type if found,
     otherwise raises a value error
@@ -57,8 +58,9 @@ def convert_disease_codes_to_vaccine_type(disease_codes_input: list) -> Union[st
 
     if not vaccine_type:
         raise ValueError(
-            f"Validation errors: protocolApplied[0].targetDisease[*].coding[?(@.system=='http://snomed.info/sct')].code - "
-            f"{disease_codes_input} is not a valid combination of disease codes for this service"
+            "Validation errors: protocolApplied[0].targetDisease[*].coding[?(@.system=='"
+            "http://snomed.info/sct"
+            f"')].code - {disease_codes_input} is not a valid combination of disease codes for this service"
         )
     return vaccine_type
 
@@ -92,10 +94,7 @@ def check_identifier_system_value(response, imms: dict):
     identifier_system_response = resource["identifier"][0]["system"]
     identifier_value_response = resource["identifier"][0]["value"]
 
-    if (
-        identifier_system_request != identifier_system_response
-        and identifier_value_request != identifier_value_response
-    ):
+    if identifier_system_request != identifier_system_response and identifier_value_request != identifier_value_response:
         value = "Both"
         diagnostics_error = create_diagnostics_error(value)
         return diagnostics_error

@@ -1,38 +1,22 @@
 [
   {
     "supplier": "DPSFULL",
-    "permissions": [
-      "FLU.CRUDS",
-      "HPV.CRUDS",
-      "MMR.CRUDS",
-      "RSV.CRUDS"
-    ],
+    "permissions": ["FLU.CRUDS", "HPV.CRUDS", "MMR.CRUDS", "RSV.CRUDS"],
     "ods_codes": ["DPSFULL"]
   },
   {
     "supplier": "DPSREDUCED",
-    "permissions": [
-      "FLU.CRUDS",
-      "HPV.CRUDS",
-      "MMR.CRUDS",
-      "RSV.CRUDS"
-    ],
+    "permissions": ["FLU.CRUDS", "HPV.CRUDS", "MMR.CRUDS", "RSV.CRUDS"],
     "ods_codes": ["DPSREDUCED"]
   },
   {
     "supplier": "RAVS",
-    "permissions": [
-      "MMR.CRUDS",
-      "RSV.RS"
-    ],
+    "permissions": ["MMR.CRUDS", "RSV.RS"],
     "ods_codes": ["X26", "X8E5B"]
   },
   {
     "supplier": "MAVIS",
-    "permissions": [
-      "FLU.CRUDS",
-      "HPV.CUD"
-    ],
+    "permissions": ["FLU.CRUDS", "HPV.CUD"],
     "ods_codes": ["V0V8L"]
   },
   {

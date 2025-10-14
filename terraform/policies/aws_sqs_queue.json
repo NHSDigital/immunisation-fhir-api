@@ -1,15 +1,10 @@
 {
-    "Version": "2012-10-17",
-    "Statement": [
-      {
-        "Effect": "Allow",
-        "Action": [
-          "sqs:SendMessage" 
-        ],
-        "Resource": [
-          "arn:aws:sqs:*:*:${aws_sqs_queue_name}"
-        ]
-      }
-    ]
-  }
-  
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["sqs:SendMessage"],
+      "Resource": ["arn:aws:sqs:*:*:${aws_sqs_queue_name}"]
+    }
+  ]
+}

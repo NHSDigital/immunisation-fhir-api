@@ -1,19 +1,19 @@
 "FHIR Immunization Pre Validators"
-from typing import Union
+
+from constants import Urls
 from models.constants import Constants
+from models.errors import MandatoryError
 from models.utils.generic_utils import (
-    get_generic_extension_value,
-    generate_field_location_for_extension,
     check_for_unknown_elements,
-    patient_name_given_field_location,
-    patient_name_family_field_location,
-    practitioner_name_given_field_location,
-    practitioner_name_family_field_location,
+    generate_field_location_for_extension,
+    get_generic_extension_value,
     patient_and_practitioner_value_and_index,
+    patient_name_family_field_location,
+    patient_name_given_field_location,
+    practitioner_name_family_field_location,
+    practitioner_name_given_field_location,
 )
 from models.utils.pre_validator_utils import PreValidation
-from models.errors import MandatoryError
-from constants import Urls
 
 
 class PreValidators:
@@ -239,9 +239,7 @@ class PreValidators:
         practitioner_references = [x for x in performer_internal_references if x == "#" + practitioner_id]
 
         if len(practitioner_references) == 0:
-            raise ValueError(
-                f"contained Practitioner resource id '{practitioner_id}' must be referenced from performer"
-            )
+            raise ValueError(f"contained Practitioner resource id '{practitioner_id}' must be referenced from performer")
         elif len(practitioner_references) > 1:
             raise ValueError(
                 f"contained Practitioner resource id '{practitioner_id}' must only be referenced once from performer"
@@ -252,8 +250,6 @@ class PreValidators:
         Pre-validate that if contained[?(@.resourceType=='Patient')].identifier[0] contains
         an extension field, it raises a validation error.
         """
-        field_location = "contained[?(@.resourceType=='Patient')].identifier[0].extension"
-
         try:
             patient = [x for x in values["contained"] if x.get("resourceType") == "Patient"][0]
             identifier = patient["identifier"][0]
@@ -522,7 +518,7 @@ class PreValidators:
         """
         try:
             recorded = values["recorded"]
-            PreValidation.for_date_time(recorded, "recorded",strict_timezone=False)
+            PreValidation.for_date_time(recorded, "recorded", strict_timezone=False)
         except KeyError:
             pass
 
@@ -535,40 +531,50 @@ class PreValidators:
             PreValidation.for_boolean(primary_source, "primarySource")
         except KeyError:
             pass
-    
-
 
     def pre_validate_value_codeable_concept(self, values: dict) -> dict:
         """Pre-validate that valueCodeableConcept with coding exists within extension"""
         if "extension" not in values:
             raise MandatoryError("Validation errors: extension is a mandatory field")
-        
+
         # Iterate over each extension and check for valueCodeableConcept and coding
         for extension in values["extension"]:
             if "valueCodeableConcept" not in extension:
-                raise MandatoryError("Validation errors: extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept is a mandatory field")
-            
+                raise MandatoryError(
+                    "Validation errors: extension[?(@.url=='"
+                    "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure"
+                    "')].valueCodeableConcept is a mandatory field"
+                )
+
             # Check that coding exists within valueCodeableConcept
             if "coding" not in extension["valueCodeableConcept"]:
-                raise MandatoryError("Validation errors: extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding is a mandatory field")    
-    
+                raise MandatoryError(
+                    "Validation errors: extension[?(@.url=='"
+                    "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure"
+                    "')].valueCodeableConcept.coding is a mandatory field"
+                )
+
     def pre_validate_extension_length(self, values: dict) -> dict:
-            """Pre-validate that, if extension exists, then the length of the list should be 1"""
-            try:
-                field_value = values["extension"]
-                PreValidation.for_list(field_value, "extension", defined_length=1)
-                # Call the second validation method if the first validation passes
-                self.pre_validate_extension_url(values)
-            except KeyError:
-                pass 
+        """Pre-validate that, if extension exists, then the length of the list should be 1"""
+        try:
+            field_value = values["extension"]
+            PreValidation.for_list(field_value, "extension", defined_length=1)
+            # Call the second validation method if the first validation passes
+            self.pre_validate_extension_url(values)
+        except KeyError:
+            pass
 
     def pre_validate_extension_url(self, values: dict) -> dict:
-            """Pre-validate that, if extension exists, then its url should be a valid one"""
-            try:
-                field_value = values["extension"][0]["url"]
-                PreValidation.for_string(field_value, "extension[0].url", predefined_values=Constants.EXTENSION_URL)
-            except KeyError:
-                pass
+        """Pre-validate that, if extension exists, then its url should be a valid one"""
+        try:
+            field_value = values["extension"][0]["url"]
+            PreValidation.for_string(
+                field_value,
+                "extension[0].url",
+                predefined_values=Constants.EXTENSION_URL,
+            )
+        except KeyError:
+            pass
 
     def pre_validate_vaccination_procedure_code(self, values: dict) -> dict:
         """
@@ -626,7 +632,9 @@ class PreValidators:
             PreValidation.for_list(field_value, "protocolApplied", defined_length=1)
         except KeyError:
             pass
+
     DOSE_NUMBER_MAX_VALUE = 9
+
     def pre_validate_dose_number_positive_int(self, values: dict) -> dict:
         """
         Pre-validate that, if protocolApplied[0].doseNumberPositiveInt (legacy CSV field : dose_sequence)
@@ -824,10 +832,10 @@ class PreValidators:
         """
         try:
             field_value = values["doseQuantity"]["system"]
-            PreValidation.for_string(field_value, "doseQuantity.system")            
+            PreValidation.for_string(field_value, "doseQuantity.system")
         except KeyError:
             pass
-    
+
     def pre_validate_dose_quantity_code(self, values: dict) -> dict:
         """
         Pre-validate that, if doseQuantity.code (legacy CSV field name: DOSE_UNIT_CODE) exists,
@@ -847,11 +855,9 @@ class PreValidators:
         dose_quantity = values.get("doseQuantity", {})
         code = dose_quantity.get("code")
         system = dose_quantity.get("system")
-        
-        PreValidation.require_system_when_code_present(
-            code, system, "doseQuantity.code", "doseQuantity.system"
-            )
-    
+
+        PreValidation.require_system_when_code_present(code, system, "doseQuantity.code", "doseQuantity.system")
+
         return values
 
     def pre_validate_dose_quantity_unit(self, values: dict) -> dict:
@@ -946,4 +952,3 @@ class PreValidators:
             PreValidation.for_snomed_code(field_value, field_location)
         except (KeyError, IndexError):
             pass
-

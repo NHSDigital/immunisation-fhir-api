@@ -4,7 +4,6 @@ from utils import dict_utils
 
 
 class TestDictUtils(unittest.TestCase):
-
     def test_get_field_returns_none_if_value_is_not_dict(self):
         """Test that the default None value is returned if the provided argument is not a dict"""
         result = dict_utils.get_field(["test"], "test_key")

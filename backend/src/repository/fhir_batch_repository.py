@@ -1,13 +1,19 @@
 import os
-import uuid
-import boto3
 import time
-import simplejson as json
-from clients import logger
+import uuid
 from dataclasses import dataclass
+
+import boto3
 import botocore.exceptions
-from boto3.dynamodb.conditions import Key, Attr
-from models.errors import UnhandledResponseError, IdentifierDuplicationError, ResourceNotFoundError, ResourceFoundError
+import simplejson as json
+from boto3.dynamodb.conditions import Attr, Key
+from clients import logger
+from models.errors import (
+    IdentifierDuplicationError,
+    ResourceFoundError,
+    ResourceNotFoundError,
+    UnhandledResponseError,
+)
 
 
 def create_table(region_name="eu-west-2"):
@@ -87,9 +93,13 @@ class RecordAttributes:
 
 
 class ImmunizationBatchRepository:
-
     def create_immunization(
-        self, immunization: any, supplier_system: str, vax_type: str, table: any, is_present: bool
+        self,
+        immunization: any,
+        supplier_system: str,
+        vax_type: str,
+        table: any,
+        is_present: bool,
     ) -> dict:
         new_id = str(uuid.uuid4())
         immunization["id"] = new_id
@@ -129,7 +139,12 @@ class ImmunizationBatchRepository:
             )
 
     def update_immunization(
-        self, immunization: any, supplier_system: str, vax_type: str, table: any, is_present: bool
+        self,
+        immunization: any,
+        supplier_system: str,
+        vax_type: str,
+        table: any,
+        is_present: bool,
     ) -> dict:
         identifier = self._identifier_response(immunization)
         query_response = _query_identifier(table, "IdentifierGSI", "IdentifierPK", identifier, is_present)
@@ -144,11 +159,20 @@ class ImmunizationBatchRepository:
         update_exp = self._build_update_expression(is_reinstate=is_reinstate)
 
         return self._perform_dynamo_update(
-            update_exp, attr, deleted_at_required=deleted_at_required, update_reinstated=update_reinstated, table=table
+            update_exp,
+            attr,
+            deleted_at_required=deleted_at_required,
+            update_reinstated=update_reinstated,
+            table=table,
         )
 
     def delete_immunization(
-        self, immunization: any, supplier_system: str, vax_type: str, table: any, is_present: bool
+        self,
+        immunization: any,
+        supplier_system: str,
+        vax_type: str,
+        table: any,
+        is_present: bool,
     ) -> dict:
         identifier = self._identifier_response(immunization)
         query_response = _query_identifier(table, "IdentifierGSI", "IdentifierPK", identifier, is_present)
@@ -249,7 +273,7 @@ class ImmunizationBatchRepository:
                 if deleted_at_required
                 else Attr("PK").eq(attr.pk) & Attr("DeletedAt").not_exists()
             )
-            if deleted_at_required and update_reinstated == False:
+            if deleted_at_required and update_reinstated is False:
                 expression_attribute_values = {
                     ":timestamp": attr.timestamp,
                     ":patient_pk": attr.patient_pk,

@@ -1,30 +1,32 @@
-import unittest
-from unittest.mock import patch, MagicMock
-from botocore.exceptions import ClientError
-import os
-import json
 import decimal
-from common.mappings import EventName, Operation, ActionFlag
-from utils_for_converter_tests import ValuesForTests, RecordConfig
+import json
+import os
+import unittest
+from unittest.mock import MagicMock, patch
+
+import delta
+from botocore.exceptions import ClientError
+from common.mappings import ActionFlag, EventName, Operation
+from delta import (
+    handler,
+    process_record,
+    send_message,
+)
+from utils_for_converter_tests import RecordConfig, ValuesForTests
 
 TEST_QUEUE_URL = "https://sqs.eu-west-2.amazonaws.com/123456789012/test-queue"
-
-# Set environment variables before importing the module
-## @TODO: # Note: Environment variables shared across tests, thus aligned
 os.environ["AWS_SQS_QUEUE_URL"] = TEST_QUEUE_URL
 os.environ["DELTA_TABLE_NAME"] = "my_delta_table"
 os.environ["DELTA_TTL_DAYS"] = "14"
 os.environ["SOURCE"] = "my_source"
-
-from delta import send_message, handler, process_record  # Import after setting environment variables
 
 SUCCESS_RESPONSE = {"ResponseMetadata": {"HTTPStatusCode": 200}}
 DUPLICATE_RESPONSE = ClientError({"Error": {"Code": "ConditionalCheckFailedException"}}, "PutItem")
 EXCEPTION_RESPONSE = ClientError({"Error": {"Code": "InternalServerError"}}, "PutItem")
 FAIL_RESPONSE = {"ResponseMetadata": {"HTTPStatusCode": 500}}
 
-class DeltaHandlerTestCase(unittest.TestCase):
 
+class DeltaHandlerTestCase(unittest.TestCase):
     # TODO refactor for dependency injection, eg process_record, send_firehose etc
     def setUp(self):
         self.logger_info_patcher = patch("logging.Logger.info")
@@ -45,7 +47,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         self.sqs_client_patcher = patch("delta.sqs_client")
         self.mock_sqs_client = self.sqs_client_patcher.start()
 
-        self.delta_table_patcher=patch("delta.delta_table")
+        self.delta_table_patcher = patch("delta.delta_table")
         self.mock_delta_table = self.delta_table_patcher.start()
 
     def tearDown(self):
@@ -67,9 +69,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         send_message(record, sqs_queue_url)
 
         # Assert
-        self.mock_sqs_client.send_message.assert_called_once_with(
-            QueueUrl=sqs_queue_url, MessageBody=json.dumps(record)
-        )
+        self.mock_sqs_client.send_message.assert_called_once_with(QueueUrl=sqs_queue_url, MessageBody=json.dumps(record))
 
     def test_send_message_client_error(self):
         # Arrange
@@ -91,7 +91,12 @@ class DeltaHandlerTestCase(unittest.TestCase):
         suppliers = ["RAVS", "EMIS"]
         for supplier in suppliers:
             imms_id = f"test-insert-imms-{supplier}-id"
-            event = ValuesForTests.get_event(event_name=EventName.CREATE, operation=Operation.CREATE, imms_id=imms_id, supplier=supplier)
+            event = ValuesForTests.get_event(
+                event_name=EventName.CREATE,
+                operation=Operation.CREATE,
+                imms_id=imms_id,
+                supplier=supplier,
+            )
 
             # Act
             result = handler(event, None)
@@ -99,8 +104,8 @@ class DeltaHandlerTestCase(unittest.TestCase):
             # Assert
             self.assertTrue(result)
             self.mock_delta_table.put_item.assert_called()
-            self.mock_firehose_logger.send_log.assert_called() # check logged
-            put_item_call_args = self.mock_delta_table.put_item.call_args # check data written to DynamoDB
+            self.mock_firehose_logger.send_log.assert_called()  # check logged
+            put_item_call_args = self.mock_delta_table.put_item.call_args  # check data written to DynamoDB
             put_item_data = put_item_call_args.kwargs["Item"]
             self.assertIn("Imms", put_item_data)
             self.assertEqual(put_item_data["Imms"]["ACTION_FLAG"], ActionFlag.CREATE)
@@ -143,8 +148,8 @@ class DeltaHandlerTestCase(unittest.TestCase):
         # Assert
         self.assertTrue(result)
         self.mock_delta_table.put_item.assert_called()
-        self.mock_firehose_logger.send_log.assert_called() # check logged
-        put_item_call_args = self.mock_delta_table.put_item.call_args # check data written to DynamoDB
+        self.mock_firehose_logger.send_log.assert_called()  # check logged
+        put_item_call_args = self.mock_delta_table.put_item.call_args  # check data written to DynamoDB
         put_item_data = put_item_call_args.kwargs["Item"]
         self.assertIn("Imms", put_item_data)
         self.assertEqual(put_item_data["Imms"]["ACTION_FLAG"], ActionFlag.UPDATE)
@@ -156,7 +161,11 @@ class DeltaHandlerTestCase(unittest.TestCase):
         # Arrange
         self.mock_delta_table.put_item.return_value = SUCCESS_RESPONSE
         imms_id = "test-update-imms-id"
-        event = ValuesForTests.get_event(event_name=EventName.DELETE_PHYSICAL, operation=Operation.DELETE_PHYSICAL, imms_id=imms_id)
+        event = ValuesForTests.get_event(
+            event_name=EventName.DELETE_PHYSICAL,
+            operation=Operation.DELETE_PHYSICAL,
+            imms_id=imms_id,
+        )
 
         # Act
         result = handler(event, None)
@@ -164,30 +173,32 @@ class DeltaHandlerTestCase(unittest.TestCase):
         # Assert
         self.assertTrue(result)
         self.mock_delta_table.put_item.assert_called()
-        self.mock_firehose_logger.send_log.assert_called() # check logged
-        put_item_call_args = self.mock_delta_table.put_item.call_args # check data written to DynamoDB
+        self.mock_firehose_logger.send_log.assert_called()  # check logged
+        put_item_call_args = self.mock_delta_table.put_item.call_args  # check data written to DynamoDB
         put_item_data = put_item_call_args.kwargs["Item"]
         self.assertIn("Imms", put_item_data)
         self.assertEqual(put_item_data["Operation"], Operation.DELETE_PHYSICAL)
         self.assertEqual(put_item_data["ImmsID"], imms_id)
-        self.assertEqual(put_item_data["Imms"], "")     # check imms has been blanked out
+        self.assertEqual(put_item_data["Imms"], "")  # check imms has been blanked out
         self.mock_sqs_client.send_message.assert_not_called()
 
     def test_handler_success_delete_logical(self):
         # Arrange
         self.mock_delta_table.put_item.return_value = SUCCESS_RESPONSE
         imms_id = "test-update-imms-id"
-        event = ValuesForTests.get_event(event_name=EventName.UPDATE,
-                                         operation=Operation.DELETE_LOGICAL,
-                                         imms_id=imms_id)
+        event = ValuesForTests.get_event(
+            event_name=EventName.UPDATE,
+            operation=Operation.DELETE_LOGICAL,
+            imms_id=imms_id,
+        )
         # Act
         result = handler(event, None)
 
         # Assert
         self.assertTrue(result)
         self.mock_delta_table.put_item.assert_called()
-        self.mock_firehose_logger.send_log.assert_called() # check logged
-        put_item_call_args = self.mock_delta_table.put_item.call_args # check data written to DynamoDB
+        self.mock_firehose_logger.send_log.assert_called()  # check logged
+        put_item_call_args = self.mock_delta_table.put_item.call_args  # check data written to DynamoDB
         put_item_data = put_item_call_args.kwargs["Item"]
         self.assertIn("Imms", put_item_data)
         self.assertEqual(put_item_data["Imms"]["ACTION_FLAG"], ActionFlag.DELETE_LOGICAL)
@@ -211,7 +222,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
     @patch("delta.Converter")
     def test_partial_success_with_errors(self, mock_converter):
         mock_converter_instance = MagicMock()
-        mock_converter_instance.run_conversion.return_value = {"ABC":"DEF"}
+        mock_converter_instance.run_conversion.return_value = {"ABC": "DEF"}
         mock_converter_instance.get_error_records.return_value = [{"error": "Invalid field"}]
         mock_converter.return_value = mock_converter_instance
 
@@ -238,7 +249,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         # Assert the expected message is present
         self.assertIn(
             "Partial success: successfully synced into delta, but issues found within record",
-            status_desc
+            status_desc,
         )
 
     def test_send_message_multi_records_diverse(self):
@@ -247,7 +258,12 @@ class DeltaHandlerTestCase(unittest.TestCase):
         records_config = [
             RecordConfig(EventName.CREATE, Operation.CREATE, "id1", ActionFlag.CREATE),
             RecordConfig(EventName.UPDATE, Operation.UPDATE, "id2", ActionFlag.UPDATE),
-            RecordConfig(EventName.DELETE_LOGICAL, Operation.DELETE_LOGICAL, "id3", ActionFlag.DELETE_LOGICAL),
+            RecordConfig(
+                EventName.DELETE_LOGICAL,
+                Operation.DELETE_LOGICAL,
+                "id3",
+                ActionFlag.DELETE_LOGICAL,
+            ),
             RecordConfig(EventName.DELETE_PHYSICAL, Operation.DELETE_PHYSICAL, "id4"),
         ]
         event = ValuesForTests.get_multi_record_event(records_config)
@@ -261,13 +277,19 @@ class DeltaHandlerTestCase(unittest.TestCase):
         self.assertEqual(self.mock_firehose_logger.send_log.call_count, len(records_config))
 
     def test_send_message_skipped_records_diverse(self):
-        '''Check skipped records sent to firehose but not to DynamoDB'''
+        """Check skipped records sent to firehose but not to DynamoDB"""
         # Arrange
         self.mock_delta_table.put_item.return_value = SUCCESS_RESPONSE
         records_config = [
             RecordConfig(EventName.CREATE, Operation.CREATE, "id1", ActionFlag.CREATE),
             RecordConfig(EventName.UPDATE, Operation.UPDATE, "id2", ActionFlag.UPDATE),
-            RecordConfig(EventName.CREATE, Operation.CREATE, "id-skip", ActionFlag.CREATE, "DPSFULL"),
+            RecordConfig(
+                EventName.CREATE,
+                Operation.CREATE,
+                "id-skip",
+                ActionFlag.CREATE,
+                "DPSFULL",
+            ),
             RecordConfig(EventName.DELETE_PHYSICAL, Operation.DELETE_PHYSICAL, "id4"),
         ]
         event = ValuesForTests.get_multi_record_event(records_config)
@@ -286,7 +308,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         records_config = [
             RecordConfig(EventName.CREATE, Operation.CREATE, "create-id1", ActionFlag.CREATE),
             RecordConfig(EventName.CREATE, Operation.CREATE, "create-id2", ActionFlag.CREATE),
-            RecordConfig(EventName.CREATE, Operation.CREATE, "create-id3", ActionFlag.CREATE)
+            RecordConfig(EventName.CREATE, Operation.CREATE, "create-id3", ActionFlag.CREATE),
         ]
         event = ValuesForTests.get_multi_record_event(records_config)
 
@@ -298,14 +320,13 @@ class DeltaHandlerTestCase(unittest.TestCase):
         self.assertEqual(self.mock_delta_table.put_item.call_count, 3)
         self.assertEqual(self.mock_firehose_logger.send_log.call_count, 3)
 
-
     def test_send_message_multi_update(self):
         # Arrange
         self.mock_delta_table.put_item.return_value = SUCCESS_RESPONSE
         records_config = [
             RecordConfig(EventName.UPDATE, Operation.UPDATE, "update-id1", ActionFlag.UPDATE),
             RecordConfig(EventName.UPDATE, Operation.UPDATE, "update-id2", ActionFlag.UPDATE),
-            RecordConfig(EventName.UPDATE, Operation.UPDATE, "update-id3", ActionFlag.UPDATE)
+            RecordConfig(EventName.UPDATE, Operation.UPDATE, "update-id3", ActionFlag.UPDATE),
         ]
         event = ValuesForTests.get_multi_record_event(records_config)
 
@@ -322,9 +343,24 @@ class DeltaHandlerTestCase(unittest.TestCase):
         self.mock_delta_table.put_item.return_value = SUCCESS_RESPONSE
 
         records_config = [
-            RecordConfig(EventName.DELETE_LOGICAL, Operation.DELETE_LOGICAL, "delete-id1", ActionFlag.DELETE_LOGICAL),
-            RecordConfig(EventName.DELETE_LOGICAL, Operation.DELETE_LOGICAL, "delete-id2", ActionFlag.DELETE_LOGICAL),
-            RecordConfig(EventName.DELETE_LOGICAL, Operation.DELETE_LOGICAL, "delete-id3", ActionFlag.DELETE_LOGICAL)
+            RecordConfig(
+                EventName.DELETE_LOGICAL,
+                Operation.DELETE_LOGICAL,
+                "delete-id1",
+                ActionFlag.DELETE_LOGICAL,
+            ),
+            RecordConfig(
+                EventName.DELETE_LOGICAL,
+                Operation.DELETE_LOGICAL,
+                "delete-id2",
+                ActionFlag.DELETE_LOGICAL,
+            ),
+            RecordConfig(
+                EventName.DELETE_LOGICAL,
+                Operation.DELETE_LOGICAL,
+                "delete-id3",
+                ActionFlag.DELETE_LOGICAL,
+            ),
         ]
         event = ValuesForTests.get_multi_record_event(records_config)
 
@@ -342,7 +378,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         records_config = [
             RecordConfig(EventName.DELETE_PHYSICAL, Operation.DELETE_PHYSICAL, "remove-id1"),
             RecordConfig(EventName.DELETE_PHYSICAL, Operation.DELETE_PHYSICAL, "remove-id2"),
-            RecordConfig(EventName.DELETE_PHYSICAL, Operation.DELETE_PHYSICAL, "remove-id3")
+            RecordConfig(EventName.DELETE_PHYSICAL, Operation.DELETE_PHYSICAL, "remove-id3"),
         ]
         event = ValuesForTests.get_multi_record_event(records_config)
 
@@ -356,7 +392,11 @@ class DeltaHandlerTestCase(unittest.TestCase):
 
     def test_single_error_in_multi(self):
         # Arrange
-        self.mock_delta_table.put_item.side_effect = [SUCCESS_RESPONSE, FAIL_RESPONSE, SUCCESS_RESPONSE]
+        self.mock_delta_table.put_item.side_effect = [
+            SUCCESS_RESPONSE,
+            FAIL_RESPONSE,
+            SUCCESS_RESPONSE,
+        ]
 
         records_config = [
             RecordConfig(EventName.CREATE, Operation.CREATE, "ok-id1", ActionFlag.CREATE),
@@ -377,7 +417,11 @@ class DeltaHandlerTestCase(unittest.TestCase):
     def test_single_exception_in_multi(self):
         # Arrange
         # 2nd record fails
-        self.mock_delta_table.put_item.side_effect = [SUCCESS_RESPONSE, EXCEPTION_RESPONSE, SUCCESS_RESPONSE]
+        self.mock_delta_table.put_item.side_effect = [
+            SUCCESS_RESPONSE,
+            EXCEPTION_RESPONSE,
+            SUCCESS_RESPONSE,
+        ]
 
         records_config = [
             RecordConfig(EventName.CREATE, Operation.CREATE, "ok-id2.1", ActionFlag.CREATE),
@@ -396,7 +440,11 @@ class DeltaHandlerTestCase(unittest.TestCase):
 
     def test_single_duplicate_in_multi(self):
         # Arrange
-        self.mock_delta_table.put_item.side_effect = [SUCCESS_RESPONSE, DUPLICATE_RESPONSE, SUCCESS_RESPONSE]
+        self.mock_delta_table.put_item.side_effect = [
+            SUCCESS_RESPONSE,
+            DUPLICATE_RESPONSE,
+            SUCCESS_RESPONSE,
+        ]
 
         records_config = [
             RecordConfig(EventName.CREATE, Operation.CREATE, "ok-id2.1", ActionFlag.CREATE),
@@ -417,13 +465,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
     @patch("delta.send_firehose")
     def test_handler_calls_process_record_for_each_event(self, mock_send_firehose, mock_process_record):
         # Arrange
-        event = {
-            "Records": [
-                { "a": "record1" },
-                { "a": "record2" },
-                { "a": "record3" }
-            ]
-        }
+        event = {"Records": [{"a": "record1"}, {"a": "record2"}, {"a": "record3"}]}
         # Mock process_record to always return True
         mock_process_record.return_value = True, {}
         mock_send_firehose.return_value = None
@@ -442,13 +484,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         # Arrange
 
         # event with 3 records
-        event = {
-            "Records": [
-                { "a": "record1" },
-                { "a": "record2" },
-                { "a": "record3" }
-            ]
-        }
+        event = {"Records": [{"a": "record1"}, {"a": "record2"}, {"a": "record3"}]}
         return_ok = (True, {})
         return_fail = (False, {})
         mock_send_firehose.return_value = None
@@ -463,8 +499,8 @@ class DeltaHandlerTestCase(unittest.TestCase):
         # check that all records were sent to firehose
         self.assertEqual(mock_send_firehose.call_count, len(event["Records"]))
 
-class DeltaRecordProcessorTestCase(unittest.TestCase):
 
+class DeltaRecordProcessorTestCase(unittest.TestCase):
     def setUp(self):
         self.logger_info_patcher = patch("logging.Logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
@@ -478,7 +514,7 @@ class DeltaRecordProcessorTestCase(unittest.TestCase):
         self.logger_exception_patcher = patch("logging.Logger.exception")
         self.mock_logger_exception = self.logger_exception_patcher.start()
 
-        self.delta_table_patcher=patch("delta.delta_table")
+        self.delta_table_patcher = patch("delta.delta_table")
         self.mock_delta_table = self.delta_table_patcher.start()
 
     def tearDown(self):
@@ -488,7 +524,6 @@ class DeltaRecordProcessorTestCase(unittest.TestCase):
         self.delta_table_patcher.stop()
 
     def test_multi_record_success(self):
-
         # Arrange
         self.mock_delta_table.put_item.return_value = SUCCESS_RESPONSE
         test_configs = [
@@ -520,10 +555,13 @@ class DeltaRecordProcessorTestCase(unittest.TestCase):
         self.assertEqual(self.mock_logger_warning.call_count, 0)
 
     def test_multi_record_success_with_fail(self):
-
         # Arrange
-        expected_returns = [ True, False, True]
-        self.mock_delta_table.put_item.side_effect = [SUCCESS_RESPONSE, FAIL_RESPONSE, SUCCESS_RESPONSE]
+        expected_returns = [True, False, True]
+        self.mock_delta_table.put_item.side_effect = [
+            SUCCESS_RESPONSE,
+            FAIL_RESPONSE,
+            SUCCESS_RESPONSE,
+        ]
         test_configs = [
             RecordConfig(EventName.CREATE, Operation.CREATE, "ok-id.1", ActionFlag.CREATE),
             RecordConfig(EventName.UPDATE, Operation.UPDATE, "fail-id.2", ActionFlag.UPDATE),
@@ -542,14 +580,12 @@ class DeltaRecordProcessorTestCase(unittest.TestCase):
             result, _ = process_record(record)
 
             # Assert
-            self.assertEqual(result, expected_returns[test_index-1])
+            self.assertEqual(result, expected_returns[test_index - 1])
             self.assertEqual(self.mock_delta_table.put_item.call_count, test_index)
 
         self.assertEqual(self.mock_logger_error.call_count, 1)
 
-
     def test_single_record_table_exception(self):
-
         # Arrange
         imms_id = "exception-id"
         record = ValuesForTests.get_event_record(
@@ -573,13 +609,8 @@ class DeltaRecordProcessorTestCase(unittest.TestCase):
 
     @patch("delta.json.loads")
     def test_json_loads_called_with_parse_float_decimal(self, mock_json_loads):
-
         # Arrange
-        record = ValuesForTests.get_event_record(
-            imms_id="id",
-            event_name=EventName.UPDATE,
-            operation=Operation.UPDATE
-        )
+        record = ValuesForTests.get_event_record(imms_id="id", event_name=EventName.UPDATE, operation=Operation.UPDATE)
 
         self.mock_delta_table.put_item.return_value = SUCCESS_RESPONSE
         # Act
@@ -589,11 +620,9 @@ class DeltaRecordProcessorTestCase(unittest.TestCase):
         mock_json_loads.assert_any_call(ValuesForTests.json_value_for_test, parse_float=decimal.Decimal)
 
 
-import delta
-
 class TestGetDeltaTable(unittest.TestCase):
     def setUp(self):
-        self.delta_table_patcher=patch("delta.delta_table")
+        self.delta_table_patcher = patch("delta.delta_table")
         self.mock_delta_table = self.delta_table_patcher.start()
         self.logger_info_patcher = patch("logging.Logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
@@ -606,7 +635,6 @@ class TestGetDeltaTable(unittest.TestCase):
         self.logger_error_patcher.stop()
 
     def test_returns_table_on_success(self):
-
         table = delta.get_delta_table()
         self.assertIs(table, self.mock_delta_table)
         # Should cache the table
@@ -630,7 +658,6 @@ class TestGetDeltaTable(unittest.TestCase):
         self.assertIsNone(table)
         self.mock_logger_error.assert_called()
 
-import delta
 
 class TestGetSqsClient(unittest.TestCase):
     def setUp(self):
@@ -673,8 +700,6 @@ class TestGetSqsClient(unittest.TestCase):
         self.assertIsNone(client)
         self.mock_logger_error.assert_called()
 
-
-import delta
 
 class TestSendMessage(unittest.TestCase):
     def setUp(self):

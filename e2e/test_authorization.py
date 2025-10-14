@@ -1,5 +1,5 @@
-import uuid
 import unittest
+import uuid
 from typing import Set
 
 from lib.apigee import ApigeeApp
@@ -11,16 +11,15 @@ from lib.authentication import (
 from lib.env import get_auth_url, get_proxy_name, get_service_base_path
 from utils.authorization import Permission, app_full_access
 from utils.base_test import ImmunizationBaseTest
-from utils.constants import valid_nhs_number1, cis2_user
+from utils.constants import cis2_user, valid_nhs_number1
 from utils.factories import make_app_restricted_app, make_cis2_app
 from utils.immunisation_api import ImmunisationApi
-from utils.resource import generate_imms_resource
 from utils.mappings import VaccineTypes
+from utils.resource import generate_imms_resource
 
 
 @unittest.skip("Skipping this entire test suite for now")
 class TestApplicationRestrictedAuthorization(ImmunizationBaseTest):
-
     my_app: ApigeeApp
     my_imms_api: ImmunisationApi
 

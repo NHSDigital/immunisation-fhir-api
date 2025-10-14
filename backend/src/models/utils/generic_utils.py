@@ -1,18 +1,21 @@
 """Generic utilities"""
 
+import base64
 import datetime
 import json
-from typing import Literal, Union, Optional, Dict, Any
+import urllib.parse
+from typing import Any, Dict, Literal, Optional, Union
+
 from fhir.resources.R4B.bundle import (
     Bundle as FhirBundle,
+)
+from fhir.resources.R4B.bundle import (
     BundleEntry,
-    BundleLink,
     BundleEntrySearch,
+    BundleLink,
 )
 from fhir.resources.R4B.immunization import Immunization
 from models.constants import Constants
-import urllib.parse
-import base64
 from stdnum.verhoeff import validate
 
 
@@ -82,7 +85,7 @@ def is_valid_simple_snomed(simple_snomed: str) -> bool:
     return (
         simple_snomed is not None
         and simple_snomed.isdigit()
-        and simple_snomed[0] != '0'
+        and simple_snomed[0] != "0"
         and min_snomed_length <= len(simple_snomed) <= max_snomed_length
         and validate(simple_snomed)
         and (simple_snomed[-3:-1] in ("00", "10"))
@@ -126,19 +129,21 @@ def get_occurrence_datetime(immunization: dict) -> Optional[datetime.datetime]:
 
 
 def create_diagnostics():
-    diagnostics = f"Validation errors: contained[?(@.resourceType=='Patient')].identifier[0].value does not exists."
+    diagnostics = "Validation errors: contained[?(@.resourceType=='Patient')].identifier[0].value does not exists."
     exp_error = {"diagnostics": diagnostics}
     return exp_error
+
 
 def create_diagnostics_error(value):
     if value == "Both":
         diagnostics = (
-            f"Validation errors: identifier[0].system and identifier[0].value doesn't match with the stored content"
+            "Validation errors: identifier[0].system and identifier[0].value doesn't match with the stored content"
         )
     else:
         diagnostics = f"Validation errors: identifier[0].{value} doesn't match with the stored content"
     exp_error = {"diagnostics": diagnostics}
     return exp_error
+
 
 def make_empty_bundle(self_url: str) -> Dict[str, Any]:
     return {
@@ -146,8 +151,9 @@ def make_empty_bundle(self_url: str) -> Dict[str, Any]:
         "type": "searchset",
         "link": [{"relation": "self", "url": self_url}],
         "entry": [],
-        "total": 0, 
+        "total": 0,
     }
+
 
 def form_json(response, _elements, identifier, baseurl):
     self_url = f"{baseurl}?identifier={identifier}" + (f"&_elements={_elements}" if _elements else "")
@@ -157,32 +163,39 @@ def form_json(response, _elements, identifier, baseurl):
 
     meta = {"versionId": response["version"]} if "version" in response else {}
 
-    # Full Immunization payload to be returned if only the identifier parameter was provided and truncated when _elements is used
+    # Full Immunization payload to be returned if only the identifier parameter was provided and truncated
+    # when _elements is used
     if _elements:
         elements = {e.strip().lower() for e in _elements.split(",") if e.strip()}
         resource = {"resourceType": "Immunization"}
-        if "id" in elements: resource["id"] = response["id"]
-        if "meta" in elements and meta: resource["meta"] = meta
+        if "id" in elements:
+            resource["id"] = response["id"]
+        if "meta" in elements and meta:
+            resource["meta"] = meta
 
     else:
         resource = response["resource"]
         resource["meta"] = meta
 
-    entry = BundleEntry(fullUrl=f"{baseurl}/{response['id']}",
-        resource=Immunization.construct(**resource) if _elements else Immunization.parse_obj(resource),
+    entry = BundleEntry(
+        fullUrl=f"{baseurl}/{response['id']}",
+        resource=(Immunization.construct(**resource) if _elements else Immunization.parse_obj(resource)),
         search=BundleEntrySearch.construct(mode="match") if not _elements else None,
     )
 
     fhir_bundle = FhirBundle(
-        resourceType="Bundle", type="searchset", 
-        link = [BundleLink(relation="self", url=self_url)], 
-        entry=[entry], 
-        total=1)
+        resourceType="Bundle",
+        type="searchset",
+        link=[BundleLink(relation="self", url=self_url)],
+        entry=[entry],
+        total=1,
+    )
 
     # Reassigned total to ensure it appears last in the response to match expected output
     data = json.loads(fhir_bundle.json(by_alias=True))
     data["total"] = data.pop("total")
     return data
+
 
 def check_keys_in_sources(event, not_required_keys):
     # Decode and parse the body, assuming it is JSON and base64-encoded

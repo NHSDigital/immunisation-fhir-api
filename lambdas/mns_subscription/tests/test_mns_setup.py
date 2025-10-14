@@ -1,10 +1,10 @@
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
 from mns_setup import get_mns_service
 
 
 class TestGetMnsService(unittest.TestCase):
-
     @patch("mns_setup.boto3.client")
     @patch("mns_setup.AppRestrictedAuth")
     @patch("mns_setup.MnsService")
@@ -24,7 +24,7 @@ class TestGetMnsService(unittest.TestCase):
 
         # Assert
         self.assertEqual(result, mock_mns_instance)
-        mock_boto_client.assert_called_once_with("secretsmanager", config=mock_boto_client.call_args[1]['config'])
+        mock_boto_client.assert_called_once_with("secretsmanager", config=mock_boto_client.call_args[1]["config"])
         mock_app_auth.assert_called_once()
         mock_mns_service.assert_called_once_with(mock_auth_instance)
 

@@ -1,26 +1,33 @@
 """Add the filename to the audit table and check for duplicates."""
+
 from typing import Optional
 
 from clients import dynamodb_client, logger
-from errors import UnhandledAuditTableError
 from constants import AUDIT_TABLE_NAME, AuditTableKeys
+from errors import UnhandledAuditTableError
 
 
 def update_audit_table_status(
     file_key: str,
     message_id: str,
     status: str,
-    error_details: Optional[str] = None
+    error_details: Optional[str] = None,
+    record_count: Optional[int] = None,
 ) -> None:
     """Updates the status in the audit table to the requested value"""
-    update_expression = f"SET #{AuditTableKeys.STATUS} = :status"
-    expression_attr_names = {f"#{AuditTableKeys.STATUS}": "status"}
-    expression_attr_values = {":status": {"S": status}}
+    update_expression = f"SET #{AuditTableKeys.STATUS} = :{AuditTableKeys.STATUS}"
+    expression_attr_names = {f"#{AuditTableKeys.STATUS}": AuditTableKeys.STATUS}
+    expression_attr_values = {f":{AuditTableKeys.STATUS}": {"S": status}}
+
+    if record_count is not None:
+        update_expression = update_expression + f", #{AuditTableKeys.RECORD_COUNT} = :{AuditTableKeys.RECORD_COUNT}"
+        expression_attr_names[f"#{AuditTableKeys.RECORD_COUNT}"] = AuditTableKeys.RECORD_COUNT
+        expression_attr_values[f":{AuditTableKeys.RECORD_COUNT}"] = {"N": str(record_count)}
 
     if error_details is not None:
-        update_expression = update_expression + f", #{AuditTableKeys.ERROR_DETAILS} = :error_details"
-        expression_attr_names[f"#{AuditTableKeys.ERROR_DETAILS}"] = "error_details"
-        expression_attr_values[":error_details"] = {"S": error_details}
+        update_expression = update_expression + f", #{AuditTableKeys.ERROR_DETAILS} = :{AuditTableKeys.ERROR_DETAILS}"
+        expression_attr_names[f"#{AuditTableKeys.ERROR_DETAILS}"] = AuditTableKeys.ERROR_DETAILS
+        expression_attr_values[f":{AuditTableKeys.ERROR_DETAILS}"] = {"S": error_details}
 
     try:
         # Update the status in the audit table to "Processed"
@@ -30,14 +37,14 @@ def update_audit_table_status(
             UpdateExpression=update_expression,
             ExpressionAttributeNames=expression_attr_names,
             ExpressionAttributeValues=expression_attr_values,
-            ConditionExpression="attribute_exists(message_id)",
+            ConditionExpression=f"attribute_exists({AuditTableKeys.MESSAGE_ID})",
         )
 
         logger.info(
             "The status of %s file, with message id %s, was successfully updated to %s in the audit table",
             file_key,
             message_id,
-            status
+            status,
         )
 
     except Exception as error:  # pylint: disable = broad-exception-caught

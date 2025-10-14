@@ -3,10 +3,12 @@ Initialise clients, resources and logger. Note that all clients, resources and l
 lambda should be initialised ONCE ONLY (in this file) and then imported into the files where they are needed.
 """
 
-import os
 import logging
+import os
+
 import redis
-from boto3 import client as boto3_client, resource as boto3_resource
+from boto3 import client as boto3_client
+from boto3 import resource as boto3_resource
 
 # AWS Clients and Resources.
 REGION_NAME = "eu-west-2"

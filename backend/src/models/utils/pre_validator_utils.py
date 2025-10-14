@@ -1,14 +1,11 @@
-import re
-from datetime import datetime, timedelta
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Union
-from datetime import datetime, date
 
-from .generic_utils import nhs_number_mod11_check, is_valid_simple_snomed
+from .generic_utils import is_valid_simple_snomed, nhs_number_mod11_check
 
 
 class PreValidation:
-
     @staticmethod
     def for_string(
         field_value: str,
@@ -94,9 +91,7 @@ class PreValidation:
         try:
             parsed_date = datetime.strptime(field_value, "%Y-%m-%d").date()
         except ValueError as value_error:
-            raise ValueError(
-                f'{field_location} must be a valid date string in the format "YYYY-MM-DD"'
-            ) from value_error
+            raise ValueError(f'{field_location} must be a valid date string in the format "YYYY-MM-DD"') from value_error
 
         # Enforce future date rule using central checker after successful parse
         if not future_date_allowed and PreValidation.check_if_future_date(parsed_date):
@@ -127,14 +122,20 @@ class PreValidation:
             error_message += (
                 "Only '+00:00' and '+01:00' are accepted as valid timezone offsets.\n"
                 f"Note that partial dates are not allowed for {field_location} in this service.\n"
-                )
+            )
 
-        allowed_suffixes = {"+00:00", "+01:00", "+0000", "+0100",}
+        allowed_suffixes = {
+            "+00:00",
+            "+01:00",
+            "+0000",
+            "+0100",
+        }
 
         # List of accepted strict formats
         formats = [
             "%Y-%m-%d",
-            "%Y-%m-%dT%H:%M:%S%z", "%Y-%m-%dT%H:%M:%S.%f%z",
+            "%Y-%m-%dT%H:%M:%S%z",
+            "%Y-%m-%dT%H:%M:%S.%f%z",
         ]
 
         for fmt in formats:
@@ -159,17 +160,14 @@ class PreValidation:
         Apply prevalidation to snomed code to ensure that its a valid one.
         """
 
-        error_message = (
-            f"{field_location} is not a valid snomed code"
-        )
-        
+        error_message = f"{field_location} is not a valid snomed code"
+
         try:
-            is_valid = is_valid_simple_snomed(field_value)  
+            is_valid = is_valid_simple_snomed(field_value)
         except Exception:
             raise ValueError(error_message)
         if not is_valid:
             raise ValueError(error_message)
-
 
     @staticmethod
     def for_boolean(field_value: str, field_location: str):
@@ -183,7 +181,8 @@ class PreValidation:
         Apply pre-validation to an integer field to ensure that it is a positive integer,
         which does not exceed the maximum allowed value (if applicable)
         """
-        if type(field_value) != int:  # pylint: disable=unidiomatic-typecheck
+        # This check uses type() instead of isinstance() because bool is a subclass of int.
+        if type(field_value) is not int:  # pylint: disable=unidiomatic-typecheck
             raise TypeError(f"{field_location} must be a positive integer")
 
         if field_value <= 0:
@@ -200,18 +199,19 @@ class PreValidation:
         which does not exceed the maximum allowed number of decimal places (if applicable)
         """
         if not (
+            # This check uses type() instead of isinstance() because bool is a subclass of int.
             type(field_value) is int  # pylint: disable=unidiomatic-typecheck
             or type(field_value) is Decimal  # pylint: disable=unidiomatic-typecheck
         ):
             raise TypeError(f"{field_location} must be a number")
-    
+
     @staticmethod
     def require_system_when_code_present(
-        code_value:str, 
-        system_value:str,
-        code_location:str,
-        system_location:str,
-        ) -> None:
+        code_value: str,
+        system_value: str,
+        code_location: str,
+        system_location: str,
+    ) -> None:
         """
         If code is present (non-empty), system must also be present (non-empty).
         """

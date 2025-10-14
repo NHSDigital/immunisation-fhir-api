@@ -1,14 +1,13 @@
-from decimal import Decimal
 import uuid
+from decimal import Decimal
 
 from utils.base_test import ImmunizationBaseTest
 from utils.immunisation_api import parse_location
-from utils.resource import generate_imms_resource, generate_filtered_imms_resource
 from utils.mappings import EndpointOperationNames, VaccineTypes
+from utils.resource import generate_filtered_imms_resource, generate_imms_resource
 
 
 class TestGetImmunization(ImmunizationBaseTest):
-
     def test_get_imms(self):
         """it should get a FHIR Immunization resource"""
         for imms_api in self.imms_apis:
@@ -22,19 +21,21 @@ class TestGetImmunization(ImmunizationBaseTest):
                         "data": generate_imms_resource(imms_identifier_value=covid_uuid),
                         "expected": generate_filtered_imms_resource(
                             crud_operation_to_filter_for=EndpointOperationNames.READ,
-                            imms_identifier_value=covid_uuid)
+                            imms_identifier_value=covid_uuid,
+                        ),
                     },
                     {
                         "data": generate_imms_resource(
                             sample_data_file_name="completed_rsv_immunization_event",
                             vaccine_type=VaccineTypes.rsv,
-                            imms_identifier_value=rsv_uuid),
+                            imms_identifier_value=rsv_uuid,
+                        ),
                         "expected": generate_filtered_imms_resource(
                             crud_operation_to_filter_for=EndpointOperationNames.READ,
                             vaccine_type=VaccineTypes.rsv,
-                            imms_identifier_value=rsv_uuid
-                        )
-                    }
+                            imms_identifier_value=rsv_uuid,
+                        ),
+                    },
                 ]
 
                 # Create immunizations and capture IDs

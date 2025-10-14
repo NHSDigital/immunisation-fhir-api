@@ -1,12 +1,18 @@
 import boto3
 from boto3.dynamodb.conditions import Key
-
-from constants import AUDIT_TABLE_NAME, REGION_NAME, AUDIT_TABLE_FILENAME_GSI, AuditTableKeys, FileStatus, \
-    AUDIT_TABLE_QUEUE_NAME_GSI
+from constants import (
+    AUDIT_TABLE_FILENAME_GSI,
+    AUDIT_TABLE_NAME,
+    AUDIT_TABLE_QUEUE_NAME_GSI,
+    REGION_NAME,
+    AuditTableKeys,
+    FileStatus,
+)
 
 
 class BatchAuditRepository:
     """Batch audit repository class."""
+
     _DUPLICATE_CHECK_FILE_STATUS_CONDITION = (
         Key(AuditTableKeys.STATUS).eq(FileStatus.PROCESSED)
         | Key(AuditTableKeys.STATUS).eq(FileStatus.PREPROCESSED)
@@ -21,7 +27,7 @@ class BatchAuditRepository:
         matching_files = self._batch_audit_table.query(
             IndexName=AUDIT_TABLE_FILENAME_GSI,
             KeyConditionExpression=Key(AuditTableKeys.FILENAME).eq(file_key),
-            FilterExpression=self._DUPLICATE_CHECK_FILE_STATUS_CONDITION
+            FilterExpression=self._DUPLICATE_CHECK_FILE_STATUS_CONDITION,
         ).get("Items", [])
 
         return len(matching_files) > 0
@@ -32,8 +38,8 @@ class BatchAuditRepository:
         for status in self._PROCESSING_AND_FAILED_STATUSES:
             files_in_queue = self._batch_audit_table.query(
                 IndexName=AUDIT_TABLE_QUEUE_NAME_GSI,
-                KeyConditionExpression=Key(AuditTableKeys.QUEUE_NAME).eq(queue_name) & Key(AuditTableKeys.STATUS)
-                .eq(status)
+                KeyConditionExpression=Key(AuditTableKeys.QUEUE_NAME).eq(queue_name)
+                & Key(AuditTableKeys.STATUS).eq(status),
             ).get("Items", [])
 
             if len(files_in_queue) > 0:
@@ -47,5 +53,5 @@ class BatchAuditRepository:
             UpdateExpression="SET #status = :status",
             ExpressionAttributeNames={"#status": "status"},
             ExpressionAttributeValues={":status": updated_status},
-            ConditionExpression="attribute_exists(message_id)"
+            ConditionExpression="attribute_exists(message_id)",
         )

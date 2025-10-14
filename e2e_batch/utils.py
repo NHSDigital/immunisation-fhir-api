@@ -1,32 +1,38 @@
-import time
 import csv
-import pandas as pd
-import uuid
-import json
-import random
 import io
+import json
 import os
-from botocore.exceptions import ClientError
-from boto3.dynamodb.conditions import Key
-from io import StringIO
+import random
+import time
+import uuid
 from datetime import datetime, timezone
+from io import StringIO
+
+import pandas as pd
+from boto3.dynamodb.conditions import Key
+from botocore.exceptions import ClientError
 from clients import (
-    logger, s3_client, audit_table, events_table, sqs_client,
-    batch_fifo_queue_url, ack_metadata_queue_url
+    ack_metadata_queue_url,
+    audit_table,
+    batch_fifo_queue_url,
+    events_table,
+    logger,
+    s3_client,
+    sqs_client,
 )
-from errors import AckFileNotFoundError, DynamoDBMismatchError
 from constants import (
     ACK_BUCKET,
-    FORWARDEDFILE_PREFIX,
-    SOURCE_BUCKET,
-    DUPLICATE,
     ACK_PREFIX,
+    DUPLICATE,
     FILE_NAME_VAL_ERROR,
+    FORWARDEDFILE_PREFIX,
     HEADER_RESPONSE_CODE_COLUMN,
     RAVS_URI,
+    SOURCE_BUCKET,
     ActionFlag,
-    environment
+    environment,
 )
+from errors import AckFileNotFoundError, DynamoDBMismatchError
 
 
 def upload_file_to_s3(file_name, bucket, prefix):
@@ -157,7 +163,8 @@ def check_ack_file_content(desc, content, response_code, operation_outcome, oper
                 row_HEADER_RESPONSE_CODE = row["HEADER_RESPONSE_CODE"].strip()
                 assert row_HEADER_RESPONSE_CODE == response_code, (
                     f"{desc}.Row {i} expected HEADER_RESPONSE_CODE '{response_code}', "
-                    f"but got '{row_HEADER_RESPONSE_CODE}'")
+                    f"but got '{row_HEADER_RESPONSE_CODE}'"
+                )
             if operation_outcome and "OPERATION_OUTCOME" in row:
                 assert row["OPERATION_OUTCOME"].strip() == operation_outcome, (
                     f"Row {i} expected OPERATION_OUTCOME '{operation_outcome}', "
@@ -286,7 +293,11 @@ def fetch_pk_and_operation_from_dynamodb(identifier_pk):
             items = response["Items"]
             if items:
                 if "DeletedAt" in items[0]:
-                    return (items[0]["PK"], items[0]["Operation"], items[0]["DeletedAt"])
+                    return (
+                        items[0]["PK"],
+                        items[0]["Operation"],
+                        items[0]["DeletedAt"],
+                    )
                 return (items[0]["PK"], items[0]["Operation"], None)
         return (identifier_pk, ActionFlag.NONE, None)
 
@@ -303,9 +314,9 @@ def validate_row_count(desc, source_file_name, ack_file_name):
     """
     source_file_row_count = fetch_row_count(SOURCE_BUCKET, f"archive/{source_file_name}")
     ack_file_row_count = fetch_row_count(ACK_BUCKET, ack_file_name)
-    assert (
-        source_file_row_count == ack_file_row_count
-    ), f"{desc}. Row count mismatch: Input ({source_file_row_count}) vs Ack ({ack_file_row_count})"
+    assert source_file_row_count == ack_file_row_count, (
+        f"{desc}. Row count mismatch: Input ({source_file_row_count}) vs Ack ({ack_file_row_count})"
+    )
 
 
 def fetch_row_count(bucket, file_name):
@@ -337,13 +348,25 @@ def generate_csv_with_ordered_100000_rows(file_name=None):
     # Generate first 300 rows as structured NEW → UPDATE → DELETE sets
     for i in range(special_row_count // 3):  # 100 sets
         new_row = create_row(
-            unique_id=unique_ids[i], fore_name="PHYLIS", dose_amount="0.3", action_flag="NEW", header="NHS_NUMBER"
+            unique_id=unique_ids[i],
+            fore_name="PHYLIS",
+            dose_amount="0.3",
+            action_flag="NEW",
+            header="NHS_NUMBER",
         )
         update_row = create_row(
-            unique_id=unique_ids[i], fore_name="PHYLIS", dose_amount="0.4", action_flag="UPDATE", header="NHS_NUMBER"
+            unique_id=unique_ids[i],
+            fore_name="PHYLIS",
+            dose_amount="0.4",
+            action_flag="UPDATE",
+            header="NHS_NUMBER",
         )
         delete_row = create_row(
-            unique_id=unique_ids[i], fore_name="PHYLIS", dose_amount="0.1", action_flag="DELETE", header="NHS_NUMBER"
+            unique_id=unique_ids[i],
+            fore_name="PHYLIS",
+            dose_amount="0.1",
+            action_flag="DELETE",
+            header="NHS_NUMBER",
         )
 
         special_data.append((new_row, update_row, delete_row))  # Keep them as ordered tuples
@@ -357,7 +380,11 @@ def generate_csv_with_ordered_100000_rows(file_name=None):
     # Generate remaining 99,700 rows as CREATE operations
     create_data = [
         create_row(
-            unique_id=str(uuid.uuid4()), action_flag="NEW", dose_amount="0.3", fore_name="PHYLIS", header="NHS_NUMBER"
+            unique_id=str(uuid.uuid4()),
+            action_flag="NEW",
+            dose_amount="0.3",
+            fore_name="PHYLIS",
+            header="NHS_NUMBER",
         )
         for _ in range(total_rows - special_row_count)
     ]
@@ -369,7 +396,13 @@ def generate_csv_with_ordered_100000_rows(file_name=None):
     random.shuffle(full_data)
 
     # Sort data so that within each unique ID, "NEW" appears before "UPDATE" and "DELETE"
-    full_data.sort(key=lambda x: (x["UNIQUE_ID"], x["ACTION_FLAG"] != "NEW", x["ACTION_FLAG"] == "DELETE"))
+    full_data.sort(
+        key=lambda x: (
+            x["UNIQUE_ID"],
+            x["ACTION_FLAG"] != "NEW",
+            x["ACTION_FLAG"] == "DELETE",
+        )
+    )
 
     # Convert to DataFrame and save as CSV
     df = pd.DataFrame(full_data)
@@ -398,12 +431,11 @@ def verify_final_ack_file(file_key):
 
 
 def delete_filename_from_audit_table(filename) -> bool:
-
     # 1. Query the GSI to get all items with the given filename
     try:
         response = audit_table.query(
             IndexName="filename_index",
-            KeyConditionExpression=Key("filename").eq(filename)
+            KeyConditionExpression=Key("filename").eq(filename),
         )
         items = response.get("Items", [])
 
@@ -417,13 +449,12 @@ def delete_filename_from_audit_table(filename) -> bool:
 
 
 def delete_filename_from_events_table(identifier) -> bool:
-
     # 1. Query the GSI to get all items with the given filename
     try:
         identifier_pk = f"{RAVS_URI}#{identifier}"
         response = events_table.query(
             IndexName="IdentifierGSI",
-            KeyConditionExpression=Key("IdentifierPK").eq(identifier_pk)
+            KeyConditionExpression=Key("IdentifierPK").eq(identifier_pk),
         )
         items = response.get("Items", [])
 
@@ -478,7 +509,7 @@ def purge_sqs_queues() -> bool:
 def create_row(unique_id, dose_amount, action_flag: str, header, inject_cp1252=None):
     """Helper function to create a single row with the specified UNIQUE_ID and ACTION_FLAG."""
 
-    name = "James" if not inject_cp1252 else b'Jam\xe9s'
+    name = "James" if not inject_cp1252 else b"Jam\xe9s"
     return {
         header: "9732928395",
         "PERSON_FORENAME": "PHYLIS",

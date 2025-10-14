@@ -1,13 +1,16 @@
-import unittest
 import os
+import unittest
 from io import BytesIO
 from unittest.mock import call, patch
+
 from batch_processor import process_csv_to_fhir
-from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import create_patch
+
+from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
+    create_patch,
+)
 
 
 class TestProcessorEdgeCases(unittest.TestCase):
-
     def setUp(self):
         self.mock_logger_info = create_patch("logging.Logger.info")
         self.mock_logger_warning = create_patch("logging.Logger.warning")
@@ -33,13 +36,11 @@ class TestProcessorEdgeCases(unittest.TestCase):
             header = data[0:1]
             body = data[1:] * multiplier
             data = header + body
-            data = data[:num_rows + 1]
+            data = data[: num_rows + 1]
         return data
 
     def create_test_data_from_file(self, file_name: str) -> list[bytes]:
-        test_csv_path = os.path.join(
-            os.path.dirname(__file__), "test_data", file_name
-        )
+        test_csv_path = os.path.join(os.path.dirname(__file__), "test_data", file_name)
         with open(test_csv_path, "rb") as f:
             data = f.readlines()
         return data
@@ -56,21 +57,21 @@ class TestProcessorEdgeCases(unittest.TestCase):
         return data
 
     def test_process_large_file_cp1252(self):
-        """ Test processing a large file with cp1252 encoding """
+        """Test processing a large file with cp1252 encoding"""
         n_rows = 500
         data = self.create_test_data_from_file("test-batch-data.csv")
         data = self.expand_test_data(data, n_rows)
-        data = self.insert_cp1252_at_end(data, b'D\xe9cembre', 2)
+        data = self.insert_cp1252_at_end(data, b"D\xe9cembre", 2)
         ret1 = {"Body": BytesIO(b"".join(data))}
         ret2 = {"Body": BytesIO(b"".join(data))}
         self.mock_s3_get_object.side_effect = [ret1, ret2]
         self.mock_map_target_disease.return_value = "some disease"
 
         message_body = {
-                    "vaccine_type": "vax-type-1",
-                    "supplier": "test-supplier",
-                    "filename": "test-filename"
-                }
+            "vaccine_type": "vax-type-1",
+            "supplier": "test-supplier",
+            "filename": "test-filename",
+        }
         self.mock_map_target_disease.return_value = "some disease"
 
         n_rows_processed = process_csv_to_fhir(message_body)
@@ -80,13 +81,15 @@ class TestProcessorEdgeCases(unittest.TestCase):
         self.mock_logger_warning.assert_called()
         warning_call_args = self.mock_logger_warning.call_args[0][0]
         self.assertTrue(warning_call_args.startswith("Encoding Error: 'utf-8' codec can't decode byte 0xe9"))
-        self.mock_s3_get_object.assert_has_calls([
-            call(Bucket=None, Key="test-filename"),
-            call(Bucket=None, Key="processing/test-filename"),
-        ])
+        self.mock_s3_get_object.assert_has_calls(
+            [
+                call(Bucket=None, Key="test-filename"),
+                call(Bucket=None, Key="processing/test-filename"),
+            ]
+        )
 
     def test_process_large_file_utf8(self):
-        """ Test processing a large file with utf-8 encoding """
+        """Test processing a large file with utf-8 encoding"""
         n_rows = 500
         data = self.create_test_data_from_file("test-batch-data.csv")
         data = self.expand_test_data(data, n_rows)
@@ -96,9 +99,9 @@ class TestProcessorEdgeCases(unittest.TestCase):
         self.mock_map_target_disease.return_value = "some disease"
 
         message_body = {
-                    "vaccine_type": "vax-type-1",
-                    "supplier": "test-supplier",
-                }
+            "vaccine_type": "vax-type-1",
+            "supplier": "test-supplier",
+        }
         self.mock_map_target_disease.return_value = "some disease"
 
         n_rows_processed = process_csv_to_fhir(message_body)
@@ -108,9 +111,9 @@ class TestProcessorEdgeCases(unittest.TestCase):
         self.mock_logger_error.assert_not_called()
 
     def test_process_small_file_cp1252(self):
-        """ Test processing a small file with cp1252 encoding """
+        """Test processing a small file with cp1252 encoding"""
         data = self.create_test_data_from_file("test-batch-data-cp1252.csv")
-        data = self.insert_cp1252_at_end(data, b'D\xe9cembre', 2)
+        data = self.insert_cp1252_at_end(data, b"D\xe9cembre", 2)
         data = [line if line.endswith(b"\n") else line + b"\n" for line in data]
         n_rows = len(data) - 1  # Exclude header
 
@@ -120,9 +123,9 @@ class TestProcessorEdgeCases(unittest.TestCase):
         self.mock_map_target_disease.return_value = "some disease"
 
         message_body = {
-                    "vaccine_type": "vax-type-1",
-                    "supplier": "test-supplier",
-                }
+            "vaccine_type": "vax-type-1",
+            "supplier": "test-supplier",
+        }
 
         self.mock_map_target_disease.return_value = "some disease"
 
@@ -134,7 +137,7 @@ class TestProcessorEdgeCases(unittest.TestCase):
         self.assertTrue(warning_call_args.startswith("Invalid Encoding detected"))
 
     def test_process_small_file_utf8(self):
-        """ Test processing a small file with utf-8 encoding """
+        """Test processing a small file with utf-8 encoding"""
         data = self.create_test_data_from_file("test-batch-data.csv")
         data = [line if line.endswith(b"\n") else line + b"\n" for line in data]
         n_rows = len(data) - 1  # Exclude header
@@ -145,9 +148,9 @@ class TestProcessorEdgeCases(unittest.TestCase):
         self.mock_map_target_disease.return_value = "some disease"
 
         message_body = {
-                    "vaccine_type": "vax-type-1",
-                    "supplier": "test-supplier",
-                }
+            "vaccine_type": "vax-type-1",
+            "supplier": "test-supplier",
+        }
         self.mock_map_target_disease.return_value = "some disease"
 
         n_rows_processed = process_csv_to_fhir(message_body)

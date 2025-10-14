@@ -1,10 +1,10 @@
 parameters:
   - name: service_name
     type: string
-    default: 'immunisation-fhir-api'
+    default: "immunisation-fhir-api"
   - name: short_service_name
     type: string
-    default: 'ifa'
+    default: "ifa"
 
 stages:
   - stage: Prod_Green_Deployment_Approval
@@ -20,10 +20,10 @@ stages:
           short_service_name: ${{ parameters.short_service_name }}
           environment: prod
           post_init:
-              - template: post-prod-deploy.yml
-                parameters:
-                  aws_account_type: 'prod'
-                  deployment_type: 'green'
+            - template: post-prod-deploy.yml
+              parameters:
+                aws_account_type: "prod"
+                deployment_type: "green"
   - stage: Prod_Blue_Deployment_Approval
     isSkippable: false
     dependsOn: []
@@ -38,7 +38,7 @@ stages:
           short_service_name: ${{ parameters.short_service_name }}
           environment: prod
           post_init:
-              - template: post-prod-deploy.yml
-                parameters:
-                  aws_account_type: 'prod'
-                  deployment_type: 'blue'
+            - template: post-prod-deploy.yml
+              parameters:
+                aws_account_type: "prod"
+                deployment_type: "blue"

@@ -1,4 +1,4 @@
 schema:
   type: string
-  example: '29dc4e84-7e72-11ee-b962-0242ac120002'
+  example: "29dc4e84-7e72-11ee-b962-0242ac120002"
 description: The location of the resource.

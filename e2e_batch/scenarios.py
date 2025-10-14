@@ -1,29 +1,37 @@
-import pandas as pd
+import csv
+import uuid
 from datetime import datetime, timezone
-from vax_suppliers import TestPair, OdsVax
+
+import pandas as pd
+from clients import logger
 from constants import (
-    ActionFlag, BusRowResult, DestinationType, Operation,
     ACK_BUCKET,
     RAVS_URI,
-    OperationOutcome
+    ActionFlag,
+    BusRowResult,
+    DestinationType,
+    Operation,
+    OperationOutcome,
 )
+from errors import DynamoDBMismatchError
 from utils import (
-    poll_s3_file_pattern, fetch_pk_and_operation_from_dynamodb,
-    validate_fatal_error,
-    get_file_content_from_s3,
     aws_cleanup,
     create_row,
+    fetch_pk_and_operation_from_dynamodb,
+    get_file_content_from_s3,
+    poll_s3_file_pattern,
+    validate_fatal_error,
 )
-from clients import logger
-from errors import DynamoDBMismatchError
-import uuid
-import csv
+from vax_suppliers import OdsVax, TestPair
 
 
 class TestAction:
-    def __init__(self, action: ActionFlag,
-                 expected_header_response_code=BusRowResult.SUCCESS,
-                 expected_operation_outcome=''):
+    def __init__(
+        self,
+        action: ActionFlag,
+        expected_header_response_code=BusRowResult.SUCCESS,
+        expected_operation_outcome="",
+    ):
         self.action = action
         self.expected_header_response_code = expected_header_response_code
         self.expected_operation_outcome = expected_operation_outcome
@@ -45,9 +53,9 @@ class TestCase:
         self.enabled = scenario.get("enabled", False)
         self.ack_keys = {DestinationType.INF: None, DestinationType.BUS: None}
         # initialise attribs to be set later
-        self.key = None             # S3 key of the uploaded file
-        self.file_name = None       # name of the generated CSV file
-        self.identifier = None      # unique identifier of subject in the CSV file rows
+        self.key = None  # S3 key of the uploaded file
+        self.file_name = None  # name of the generated CSV file
+        self.identifier = None  # unique identifier of subject in the CSV file rows
 
     def get_poll_destinations(self, pending: bool) -> bool:
         # loop through keys in test (inf and bus)
@@ -104,20 +112,24 @@ class TestCase:
             if operation_outcome and "OPERATION_OUTCOME" in row:
                 row_OPERATION_OUTCOME = row["OPERATION_OUTCOME"].strip()
                 assert row_OPERATION_OUTCOME.startswith(operation_outcome), (
-                    f"{desc}.Row {i} expected OPERATION_OUTCOME '{operation_outcome}', "
-                    f"but got '{row_OPERATION_OUTCOME}'"
+                    f"{desc}.Row {i} expected OPERATION_OUTCOME '{operation_outcome}', but got '{row_OPERATION_OUTCOME}'"
                 )
             elif row_HEADER_RESPONSE_CODE == "Fatal Error":
                 validate_fatal_error(desc, row, i, operation_outcome)
 
     def generate_csv_file(self):
-
         self.file_name = self.get_file_name(self.vax, self.ods, self.version)
-        logger.info(f"Test \"{self.name}\" File {self.file_name}")
+        logger.info(f'Test "{self.name}" File {self.file_name}')
         data = []
         self.identifier = str(uuid.uuid4())
         for action in self.actions:
-            row = create_row(self.identifier, self.dose_amount, action.action, self.header, self.inject_cp1252)
+            row = create_row(
+                self.identifier,
+                self.dose_amount,
+                action.action,
+                self.header,
+                self.inject_cp1252,
+            )
             logger.info(f" > {action.action} - {self.vax}/{self.ods} - {self.identifier}")
             data.append(row)
         df = pd.DataFrame(data)
@@ -164,39 +176,50 @@ scenarios = {
             "ods_vax": TestPair.E8HA94_COVID19_CUD,
             "operation_outcome": ActionFlag.CREATE,
             "actions": [TestAction(ActionFlag.CREATE)],
-            "description": "Successful Create"
+            "description": "Successful Create",
         },
         {
             "name": "Successful Update",
             "description": "Successful Create,Update",
             "ods_vax": TestPair.DPSFULL_COVID19_CRUDS,
             "operation_outcome": ActionFlag.UPDATE,
-            "actions": [TestAction(ActionFlag.CREATE), TestAction(ActionFlag.UPDATE)]
+            "actions": [TestAction(ActionFlag.CREATE), TestAction(ActionFlag.UPDATE)],
         },
         {
             "name": "Successful Delete",
             "description": "Successful Create,Update, Delete",
             "ods_vax": TestPair.V0V8L_FLU_CRUDS,
             "operation_outcome": ActionFlag.DELETE_LOGICAL,
-            "actions": [TestAction(ActionFlag.CREATE), TestAction(ActionFlag.DELETE_LOGICAL)]
+            "actions": [
+                TestAction(ActionFlag.CREATE),
+                TestAction(ActionFlag.DELETE_LOGICAL),
+            ],
         },
         {
             "name": "Failed Update",
             "description": "Failed Update - resource does not exist",
             "ods_vax": TestPair.V0V8L_3IN1_CRUDS,
-            "actions": [TestAction(ActionFlag.UPDATE,
-                                   expected_header_response_code=BusRowResult.FATAL_ERROR,
-                                   expected_operation_outcome=OperationOutcome.IMMS_NOT_FOUND)],
-            "operation_outcome": ActionFlag.NONE
+            "actions": [
+                TestAction(
+                    ActionFlag.UPDATE,
+                    expected_header_response_code=BusRowResult.FATAL_ERROR,
+                    expected_operation_outcome=OperationOutcome.IMMS_NOT_FOUND,
+                )
+            ],
+            "operation_outcome": ActionFlag.NONE,
         },
         {
             "name": "Failed Delete",
             "description": "Failed Delete - resource does not exist",
             "ods_vax": TestPair.X26_MMR_CRUDS,
-            "actions": [TestAction(ActionFlag.DELETE_LOGICAL,
-                                   expected_header_response_code=BusRowResult.FATAL_ERROR,
-                                   expected_operation_outcome=OperationOutcome.IMMS_NOT_FOUND)],
-            "operation_outcome": ActionFlag.NONE
+            "actions": [
+                TestAction(
+                    ActionFlag.DELETE_LOGICAL,
+                    expected_header_response_code=BusRowResult.FATAL_ERROR,
+                    expected_operation_outcome=OperationOutcome.IMMS_NOT_FOUND,
+                )
+            ],
+            "operation_outcome": ActionFlag.NONE,
         },
         {
             "name": "Create with 1252 char",
@@ -204,8 +227,8 @@ scenarios = {
             "ods_vax": TestPair.YGA_MENACWY_CRUDS,
             "operation_outcome": ActionFlag.CREATE,
             "actions": [TestAction(ActionFlag.CREATE)],
-            "create_with_cp1252_encoded_character": True
-        }
-      ],
-    "ref": []
-  }
+            "create_with_cp1252_encoded_character": True,
+        },
+    ],
+    "ref": [],
+}

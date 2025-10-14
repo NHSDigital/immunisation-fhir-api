@@ -1,8 +1,7 @@
-from common.clients import s3_client, logger
+from common.clients import logger, s3_client
 
 
 class S3Reader:
-
     """
     Fetch the file from S3 using the specified bucket and key.
     The file is expected to be a UTF-8 encoded text file (e.g., JSON or plain text).
