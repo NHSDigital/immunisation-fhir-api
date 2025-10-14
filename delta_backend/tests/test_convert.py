@@ -6,8 +6,9 @@ from datetime import datetime
 from unittest.mock import patch
 
 from boto3 import resource as boto3_resource
-from common.mappings import ActionFlag, EventName, Operation
 from moto import mock_aws
+
+from common.mappings import ActionFlag, EventName, Operation
 from utils_for_converter_tests import ErrorValuesForTests, ValuesForTests
 
 MOCK_ENV_VARS = {

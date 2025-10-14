@@ -1,6 +1,7 @@
 import os
 
 import redis
+
 from common.clients import logger
 
 REDIS_HOST = os.getenv("REDIS_HOST", "")

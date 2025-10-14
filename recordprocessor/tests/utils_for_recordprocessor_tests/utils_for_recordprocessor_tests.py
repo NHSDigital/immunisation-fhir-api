@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 from boto3 import client as boto3_client
 from boto3.dynamodb.types import TypeDeserializer
+
 from utils_for_recordprocessor_tests.mock_environment_variables import (
     MOCK_ENVIRONMENT_DICT,
     BucketNames,

@@ -1,7 +1,6 @@
 """Generic setup and teardown for ACK backend tests"""
 
 from constants import AuditTableKeys
-
 from tests.utils.mock_environment_variables import AUDIT_TABLE_NAME, REGION_NAME, BucketNames, Firehose
 
 
