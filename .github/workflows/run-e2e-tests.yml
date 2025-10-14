@@ -40,7 +40,8 @@ jobs:
   e2e-tests:
     runs-on: ubuntu-latest
     environment:
-      name: ${{ inputs.environment }}
+      # name: ${{ inputs.environment }}
+      name: internal-dev
     env: # Sonarcloud - do not allow direct usage of untrusted data
       APIGEE_ENVIRONMENT: internal-dev
       BACKEND_ENVIRONMENT: dev
