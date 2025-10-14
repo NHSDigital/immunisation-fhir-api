@@ -4,10 +4,10 @@ import os
 from enum import StrEnum
 
 from errors import (
-    VaccineTypePermissionsError,
     InvalidFileKeyError,
     UnhandledAuditTableError,
-    UnhandledSqsError
+    UnhandledSqsError,
+    VaccineTypePermissionsError,
 )
 
 SOURCE_BUCKET_NAME = os.getenv("SOURCE_BUCKET_NAME")
@@ -40,6 +40,7 @@ class FileStatus(StrEnum):
 
 class FileNotProcessedReason(StrEnum):
     """Reasons why a file was not processed"""
+
     EMPTY = "Empty file"
     UNAUTHORISED = "Unauthorised"
 

@@ -1,19 +1,18 @@
 """
-File containing the field location strings for identifying the location of a field within the FHIR immunization 
+File containing the field location strings for identifying the location of a field within the FHIR immunization
 resource json data
 """
 
 from dataclasses import dataclass, field
 
+from constants import Urls
 from models.utils.generic_utils import (
     generate_field_location_for_extension,
-    patient_name_given_field_location,
     patient_name_family_field_location,
-    practitioner_name_given_field_location,
+    patient_name_given_field_location,
     practitioner_name_family_field_location,
+    practitioner_name_given_field_location,
 )
-
-from constants import Urls
 
 
 @dataclass
@@ -31,7 +30,7 @@ class FieldLocations:
     patient_name_given: str = field(init=False)
     patient_name_family: str = field(init=False)
     patient_birth_date = "contained[?(@.resourceType=='Patient')].birthDate"
-    patient_gender = "contained[?(@.resourceType=='Patient')].gender"    
+    patient_gender = "contained[?(@.resourceType=='Patient')].gender"
     patient_address_postal_code = "contained[?(@.resourceType=='Patient')].address[0].postalCode"
     occurrence_date_time = "occurrenceDateTime"
     organization_identifier_value = "performer[?(@.actor.type=='Organization')].actor.identifier.value"

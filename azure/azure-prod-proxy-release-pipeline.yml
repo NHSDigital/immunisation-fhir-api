@@ -11,11 +11,11 @@ resources:
       ref: refs/heads/edge
       endpoint: NHSDigital
   pipelines:
-  - pipeline: build_pipeline
-    source: "Immunisation-Fhir-Api-Build"
+    - pipeline: build_pipeline
+      source: "Immunisation-Fhir-Api-Build"
 
 pool:
-  name: 'AWS-ECS'
+  name: "AWS-ECS"
 
 variables:
   - template: project.yml
@@ -26,8 +26,8 @@ parameters:
     type: string
     default: blue
     values:
-    - blue
-    - green
+      - blue
+      - green
 
 extends:
   template: azure/common/apigee-deployment.yml@common

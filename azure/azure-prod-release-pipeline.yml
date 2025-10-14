@@ -11,15 +11,15 @@ resources:
       ref: refs/heads/edge
       endpoint: NHSDigital
   pipelines:
-  - pipeline: build_pipeline
-    source: "Immunisation-Fhir-Api-Build"
-    trigger:
-      branches:
-        include:
-          - refs/tags/v*
+    - pipeline: build_pipeline
+      source: "Immunisation-Fhir-Api-Build"
+      trigger:
+        branches:
+          include:
+            - refs/tags/v*
 
 pool:
-  name: 'AWS-ECS'
+  name: "AWS-ECS"
 
 variables:
   - template: project.yml
@@ -27,5 +27,5 @@ variables:
 extends:
   template: ./templates/deploy-stages.yml
   parameters:
-    service_name: ${{ variables.service_name }} 
+    service_name: ${{ variables.service_name }}
     short_service_name: ${{ variables.short_service_name }}

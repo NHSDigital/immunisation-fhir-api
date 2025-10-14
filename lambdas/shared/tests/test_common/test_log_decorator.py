@@ -1,13 +1,16 @@
-import unittest
-from unittest.mock import patch
 import json
+import unittest
 from datetime import datetime
+from unittest.mock import patch
 
-from common.log_decorator import logging_decorator, generate_and_send_logs, send_log_to_firehose
+from common.log_decorator import (
+    generate_and_send_logs,
+    logging_decorator,
+    send_log_to_firehose,
+)
 
 
 class TestLogDecorator(unittest.TestCase):
-
     def setUp(self):
         self.test_stream = "test-stream"
         self.test_prefix = "test"
@@ -38,8 +41,7 @@ class TestLogDecorator(unittest.TestCase):
         # Assert
         expected_record = {"Data": json.dumps({"event": test_log_data}).encode("utf-8")}
         self.mock_firehose_client.put_record.assert_called_once_with(
-            DeliveryStreamName=self.test_stream,
-            Record=expected_record
+            DeliveryStreamName=self.test_stream, Record=expected_record
         )
 
     def test_send_log_to_firehose_exception(self):
@@ -55,7 +57,7 @@ class TestLogDecorator(unittest.TestCase):
         self.mock_firehose_client.put_record.assert_called_once()
         self.mock_logger_exception.assert_called_once_with(
             "Error sending log to Firehose: %s",
-            self.mock_firehose_client.put_record.side_effect
+            self.mock_firehose_client.put_record.side_effect,
         )
 
     @patch("time.time")
@@ -77,7 +79,7 @@ class TestLogDecorator(unittest.TestCase):
             "date_time": "2023-01-01",
             "time_taken": "0.5s",
             "statusCode": 200,
-            "result": "success"
+            "result": "success",
         }
         self.mock_logger_error.assert_not_called()
         mock_send_log.assert_called_once_with(self.test_stream, expected_log_data)
@@ -93,7 +95,13 @@ class TestLogDecorator(unittest.TestCase):
         additional_log_data = {"statusCode": 200, "result": "success"}
 
         # Act
-        generate_and_send_logs(self.test_stream, start_time, base_log_data, additional_log_data, use_ms_precision=True)
+        generate_and_send_logs(
+            self.test_stream,
+            start_time,
+            base_log_data,
+            additional_log_data,
+            use_ms_precision=True,
+        )
 
         # Assert
         expected_log_data = {
@@ -101,7 +109,7 @@ class TestLogDecorator(unittest.TestCase):
             "date_time": "2023-01-01",
             "time_taken": "500.0ms",
             "statusCode": 200,
-            "result": "success"
+            "result": "success",
         }
         self.mock_logger_error.assert_not_called()
         mock_send_log.assert_called_once_with(self.test_stream, expected_log_data)
@@ -117,7 +125,13 @@ class TestLogDecorator(unittest.TestCase):
         additional_log_data = {"statusCode": 500, "error": "Test error"}
 
         # Act
-        generate_and_send_logs(self.test_stream, start_time, base_log_data, additional_log_data, is_error_log=True)
+        generate_and_send_logs(
+            self.test_stream,
+            start_time,
+            base_log_data,
+            additional_log_data,
+            is_error_log=True,
+        )
 
         # Assert
         expected_log_data = {
@@ -125,7 +139,7 @@ class TestLogDecorator(unittest.TestCase):
             "date_time": "2023-01-01",
             "time_taken": "0.75s",
             "statusCode": 500,
-            "error": "Test error"
+            "error": "Test error",
         }
         self.mock_logger_error.assert_called_once_with(json.dumps(expected_log_data))
         mock_send_log.assert_called_once_with(self.test_stream, expected_log_data)
@@ -156,7 +170,7 @@ class TestLogDecorator(unittest.TestCase):
         self.assertEqual(call_args[0], self.test_stream)  # stream_name
         self.assertEqual(call_args[1], 1000.0)  # start_time
         self.assertEqual(call_args[2]["function_name"], f"{self.test_prefix}_test_function")  # base_log_data
-        self.assertEqual(call_kwargs['additional_log_data'], {"statusCode": 200, "result": 5})  # additional_log_data
+        self.assertEqual(call_kwargs["additional_log_data"], {"statusCode": 200, "result": 5})  # additional_log_data
         self.assertNotIn("is_error_log", call_kwargs)  # Should not be error log
 
     @patch("common.log_decorator.time")
@@ -183,7 +197,10 @@ class TestLogDecorator(unittest.TestCase):
 
         self.assertEqual(call_args[0], self.test_stream)  # stream_name
         self.assertEqual(call_args[1], 1000.0)  # start_time
-        self.assertEqual(call_args[2]["function_name"], f"{self.test_prefix}_test_function_with_error")  # base_log_data
+        self.assertEqual(
+            call_args[2]["function_name"],
+            f"{self.test_prefix}_test_function_with_error",
+        )  # base_log_data
         self.assertEqual(call_args[3], {"statusCode": 500, "error": "Test error"})  # additional_log_data
         self.assertTrue(call_kwargs.get("is_error_log", False))  # Should be error log
 
@@ -215,12 +232,8 @@ class TestLogDecorator(unittest.TestCase):
         # Verify firehose_client.put_record was called
         expected_record = {"Data": json.dumps({"event": test_log_data}).encode("utf-8")}
         self.mock_firehose_client.put_record.assert_called_once_with(
-            DeliveryStreamName=self.test_stream,
-            Record=expected_record
+            DeliveryStreamName=self.test_stream, Record=expected_record
         )
 
         # Verify logger.exception was called with the correct message and error
-        self.mock_logger_exception.assert_called_once_with(
-            "Error sending log to Firehose: %s",
-            test_error
-        )
+        self.mock_logger_exception.assert_called_once_with("Error sending log to Firehose: %s", test_error)

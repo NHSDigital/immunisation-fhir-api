@@ -1,7 +1,9 @@
 import unittest
 
-from models.errors import Severity, Code, create_operation_outcome
+from models.errors import Code, Severity, create_operation_outcome
+
 "test"
+
 
 class TestApiErrors(unittest.TestCase):
     def test_error_to_uk_core2(self):

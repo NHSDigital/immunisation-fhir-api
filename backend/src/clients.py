@@ -1,9 +1,10 @@
 """Initialise s3, kinesis, lambda and redis clients"""
 
-from boto3 import client as boto3_client
-import os
 import logging
+import os
+
 import redis
+from boto3 import client as boto3_client
 
 REGION_NAME = os.getenv("AWS_REGION", "eu-west-2")
 

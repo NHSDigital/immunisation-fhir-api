@@ -11,24 +11,17 @@ DESTINATION_BUCKET_NAME = os.getenv("DESTINATION_BUCKET_NAME")
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
 
-s3_client = boto3.client('s3')
+s3_client = boto3.client("s3")
 
 
 def parse_headers(headers_str: str) -> dict[str, str]:
-    headers = dict(
-        header_str.split(":", 1)
-        for header_str in headers_str.split("\r\n")
-        if ":" in header_str
-    )
+    headers = dict(header_str.split(":", 1) for header_str in headers_str.split("\r\n") if ":" in header_str)
     return {k.strip(): v.strip() for k, v in headers.items()}
 
 
 def parse_header_value(header_value: str) -> tuple[str, dict[str, str]]:
     main_value, *params = header_value.split(";")
-    parsed_params = dict(
-        param.strip().split("=", 1)
-        for param in params
-    )
+    parsed_params = dict(param.strip().split("=", 1) for param in params)
     parsed_params = {k: v.strip('"') for k, v in parsed_params.items()}
     return main_value, parsed_params
 
@@ -41,7 +34,7 @@ def read_until_part_start(input_file: BinaryIO, boundary: bytes) -> None:
 
 
 def read_headers_bytes(input_file: BinaryIO) -> bytes:
-    headers_bytes = b''
+    headers_bytes = b""
     while line := input_file.readline():
         if line == b"\r\n":
             return headers_bytes
@@ -68,7 +61,7 @@ def stream_part_body(input_file: BinaryIO, boundary: bytes, output_file: BinaryI
         if previous_line is not None:
             if found_part_end:
                 # The final \r\n is part of the encapsulation boundary, so should not be included
-                output_file.write(previous_line.rstrip(b'\r\n'))
+                output_file.write(previous_line.rstrip(b"\r\n"))
                 return
             else:
                 output_file.write(previous_line)
@@ -83,21 +76,17 @@ def move_file(source_bucket: str, source_key: str, destination_bucket: str, dest
         Bucket=destination_bucket,
         Key=destination_key,
         ExpectedBucketOwner=EXPECTED_BUCKET_OWNER_ACCOUNT,
-        ExpectedSourceBucketOwner=EXPECTED_BUCKET_OWNER_ACCOUNT
+        ExpectedSourceBucketOwner=EXPECTED_BUCKET_OWNER_ACCOUNT,
     )
     s3_client.delete_object(
         Bucket=source_bucket,
         Key=source_key,
-        ExpectedBucketOwner=EXPECTED_BUCKET_OWNER_ACCOUNT
+        ExpectedBucketOwner=EXPECTED_BUCKET_OWNER_ACCOUNT,
     )
 
 
 def transfer_multipart_content(bucket_name: str, file_key: str, boundary: bytes, filename: str) -> None:
-    with open(
-        f"s3://{bucket_name}/{file_key}",
-        "rb",
-        transport_params={"client": s3_client}
-    ) as input_file:
+    with open(f"s3://{bucket_name}/{file_key}", "rb", transport_params={"client": s3_client}) as input_file:
         read_until_part_start(input_file, boundary)
 
         headers = read_part_headers(input_file)
@@ -112,16 +101,17 @@ def transfer_multipart_content(bucket_name: str, file_key: str, boundary: bytes,
             "wb",
             transport_params={
                 "client": s3_client,
-                "client_kwargs": {
-                    "S3.Client.create_multipart_upload": {
-                        "ContentType": content_type
-                    }
-                }
-            }
+                "client_kwargs": {"S3.Client.create_multipart_upload": {"ContentType": content_type}},
+            },
         ) as output_file:
             stream_part_body(input_file, boundary, output_file)
 
-        move_file(DESTINATION_BUCKET_NAME, f"streaming/{filename}", DESTINATION_BUCKET_NAME, filename)
+        move_file(
+            DESTINATION_BUCKET_NAME,
+            f"streaming/{filename}",
+            DESTINATION_BUCKET_NAME,
+            filename,
+        )
 
 
 def process_record(record: dict) -> None:
@@ -132,9 +122,9 @@ def process_record(record: dict) -> None:
     response = s3_client.head_object(
         Bucket=bucket_name,
         Key=file_key,
-        ExpectedBucketOwner=EXPECTED_BUCKET_OWNER_ACCOUNT
+        ExpectedBucketOwner=EXPECTED_BUCKET_OWNER_ACCOUNT,
     )
-    content_type = response['ContentType']
+    content_type = response["ContentType"]
     media_type, content_type_params = parse_header_value(content_type)
     filename = response["Metadata"].get("mex-filename") or file_key
 
@@ -149,7 +139,7 @@ def process_record(record: dict) -> None:
             CopySource={"Bucket": bucket_name, "Key": file_key},
             Key=filename,
             ExpectedBucketOwner=EXPECTED_BUCKET_OWNER_ACCOUNT,
-            ExpectedSourceBucketOwner=EXPECTED_BUCKET_OWNER_ACCOUNT
+            ExpectedSourceBucketOwner=EXPECTED_BUCKET_OWNER_ACCOUNT,
         )
 
     logger.info(f"Transfer complete for {file_key}")
@@ -169,10 +159,8 @@ def lambda_handler(event: dict, _context: dict) -> dict:
             logger.exception("Failed to process record")
             success = False
 
-    return {
-        'statusCode': 200,
-        'body': 'Files converted and uploaded successfully!'
-    } if success else {
-        'statusCode': 500,
-        'body': 'Errors occurred during processing'
-    }
+    return (
+        {"statusCode": 200, "body": "Files converted and uploaded successfully!"}
+        if success
+        else {"statusCode": 500, "body": "Errors occurred during processing"}
+    )

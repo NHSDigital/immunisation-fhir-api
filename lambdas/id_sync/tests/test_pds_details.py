@@ -1,37 +1,37 @@
 import unittest
-from unittest.mock import patch, MagicMock
-from pds_details import pds_get_patient_details, pds_get_patient_id
+from unittest.mock import MagicMock, patch
+
 from exceptions.id_sync_exception import IdSyncException
+from pds_details import pds_get_patient_details, pds_get_patient_id
 
 
 class TestGetPdsPatientDetails(unittest.TestCase):
-
     def setUp(self):
         """Set up test fixtures and mocks"""
         self.test_patient_id = "9912003888"
 
         # Patch all external dependencies
-        self.logger_patcher = patch('pds_details.logger')
+        self.logger_patcher = patch("pds_details.logger")
         self.mock_logger = self.logger_patcher.start()
 
-        self.secrets_manager_patcher = patch('pds_details.secrets_manager_client')
+        self.secrets_manager_patcher = patch("pds_details.secrets_manager_client")
         self.mock_secrets_manager = self.secrets_manager_patcher.start()
 
-        self.pds_env_patcher = patch('pds_details.get_pds_env')
+        self.pds_env_patcher = patch("pds_details.get_pds_env")
         self.mock_pds_env = self.pds_env_patcher.start()
         self.mock_pds_env.return_value = "test-env"
 
-        self.cache_patcher = patch('pds_details.Cache')
+        self.cache_patcher = patch("pds_details.Cache")
         self.mock_cache_class = self.cache_patcher.start()
         self.mock_cache_instance = MagicMock()
         self.mock_cache_class.return_value = self.mock_cache_instance
 
-        self.auth_patcher = patch('pds_details.AppRestrictedAuth')
+        self.auth_patcher = patch("pds_details.AppRestrictedAuth")
         self.mock_auth_class = self.auth_patcher.start()
         self.mock_auth_instance = MagicMock()
         self.mock_auth_class.return_value = self.mock_auth_instance
 
-        self.pds_service_patcher = patch('pds_details.PdsService')
+        self.pds_service_patcher = patch("pds_details.PdsService")
         self.mock_pds_service_class = self.pds_service_patcher.start()
         self.mock_pds_service_instance = MagicMock()
         self.mock_pds_service_class.return_value = self.mock_pds_service_instance
@@ -44,12 +44,10 @@ class TestGetPdsPatientDetails(unittest.TestCase):
         """Test successful retrieval of patient details"""
         # Arrange
         expected_patient_data = {
-            "identifier": [
-                {"value": "9912003888"}
-            ],
+            "identifier": [{"value": "9912003888"}],
             "name": "John Doe",
             "birthDate": "1990-01-01",
-            "gender": "male"
+            "gender": "male",
         }
         self.mock_pds_service_instance.get_patient_details.return_value = expected_patient_data
 
@@ -103,12 +101,16 @@ class TestGetPdsPatientDetails(unittest.TestCase):
 
         # Assert
         self.assertEqual(exception.inner_exception, mock_exception)
-        self.assertEqual(exception.message, f"Error getting PDS patient details for {self.test_patient_id}")
+        self.assertEqual(
+            exception.message,
+            f"Error getting PDS patient details for {self.test_patient_id}",
+        )
         self.assertEqual(exception.nhs_numbers, None)
 
         # Verify exception was logged
         self.mock_logger.exception.assert_called_once_with(
-            f"Error getting PDS patient details for {self.test_patient_id}")
+            f"Error getting PDS patient details for {self.test_patient_id}"
+        )
 
         self.mock_pds_service_instance.get_patient_details.assert_called_once_with(self.test_patient_id)
 
@@ -123,12 +125,16 @@ class TestGetPdsPatientDetails(unittest.TestCase):
 
         # Assert
         exception = context.exception
-        self.assertEqual(exception.message, f"Error getting PDS patient details for {self.test_patient_id}")
+        self.assertEqual(
+            exception.message,
+            f"Error getting PDS patient details for {self.test_patient_id}",
+        )
         self.assertEqual(exception.nhs_numbers, None)
 
         # Verify exception was logged
         self.mock_logger.exception.assert_called_once_with(
-            f"Error getting PDS patient details for {self.test_patient_id}")
+            f"Error getting PDS patient details for {self.test_patient_id}"
+        )
 
         self.mock_cache_class.assert_called_once()
 
@@ -143,12 +149,16 @@ class TestGetPdsPatientDetails(unittest.TestCase):
 
         # Assert
         exception = context.exception
-        self.assertEqual(exception.message, f"Error getting PDS patient details for {self.test_patient_id}")
+        self.assertEqual(
+            exception.message,
+            f"Error getting PDS patient details for {self.test_patient_id}",
+        )
         self.assertEqual(exception.nhs_numbers, None)
 
         # Verify exception was logged
         self.mock_logger.exception.assert_called_once_with(
-            f"Error getting PDS patient details for {self.test_patient_id}")
+            f"Error getting PDS patient details for {self.test_patient_id}"
+        )
 
     def test_pds_get_patient_details_exception(self):
         """Test when logger.info throws an exception"""
@@ -164,11 +174,13 @@ class TestGetPdsPatientDetails(unittest.TestCase):
         exception = context.exception
         # Assert
         self.assertEqual(exception.inner_exception, test_exception)
-        self.assertEqual(exception.message, f"Error getting PDS patient details for {test_nhs_number}")
+        self.assertEqual(
+            exception.message,
+            f"Error getting PDS patient details for {test_nhs_number}",
+        )
         self.assertEqual(exception.nhs_numbers, None)
         # Verify logger.exception was called due to the caught exception
-        self.mock_logger.exception.assert_called_once_with(
-            f"Error getting PDS patient details for {test_nhs_number}")
+        self.mock_logger.exception.assert_called_once_with(f"Error getting PDS patient details for {test_nhs_number}")
 
     def test_pds_get_patient_details_different_patient_ids(self):
         """Test with different patient ID formats"""
@@ -216,10 +228,10 @@ class TestGetPdsPatientId(unittest.TestCase):
         self.test_nhs_number = "9912003888"
 
         # Patch all external dependencies
-        self.logger_patcher = patch('pds_details.logger')
+        self.logger_patcher = patch("pds_details.logger")
         self.mock_logger = self.logger_patcher.start()
 
-        self.pds_get_patient_details_patcher = patch('pds_details.pds_get_patient_details')
+        self.pds_get_patient_details_patcher = patch("pds_details.pds_get_patient_details")
         self.mock_pds_get_patient_details = self.pds_get_patient_details_patcher.start()
 
     def tearDown(self):
@@ -243,7 +255,7 @@ class TestGetPdsPatientId(unittest.TestCase):
         # Arrange
         patient_data_empty_identifier = {
             "identifier": [],  # Empty array
-            "name": "John Doe"
+            "name": "John Doe",
         }
         self.mock_pds_get_patient_details.return_value = patient_data_empty_identifier
 
@@ -253,5 +265,8 @@ class TestGetPdsPatientId(unittest.TestCase):
 
         # Assert
         exception = context.exception
-        self.assertEqual(exception.message, f"Error getting PDS patient ID for {self.test_nhs_number}")
+        self.assertEqual(
+            exception.message,
+            f"Error getting PDS patient ID for {self.test_nhs_number}",
+        )
         self.assertEqual(exception.nhs_numbers, None)

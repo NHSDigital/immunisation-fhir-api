@@ -68,15 +68,13 @@
   "manufacturer": {
     "display": "Sanofi"
   },
-  "location": 
-  {
-  "type":"Location",
-  "identifier": {
+  "location": {
+    "type": "Location",
+    "identifier": {
       "value": "X99999",
       "system": "https://fhir.nhs.uk/Id/ods-organization-code"
     }
-  }
-,
+  },
   "lotNumber": "41925TJ61",
   "expirationDate": "2021-07-02",
   "site": {

@@ -4,6 +4,7 @@ import os
 import time
 from datetime import datetime
 from functools import wraps
+
 from common.log_decorator import generate_and_send_logs
 
 PREFIX = "ack_processor"
@@ -15,7 +16,10 @@ def convert_message_to_ack_row_logging_decorator(func):
 
     @wraps(func)
     def wrapper(message, created_at_formatted_string):
-        base_log_data = {"function_name": f"{PREFIX}_{func.__name__}", "date_time": str(datetime.now())}
+        base_log_data = {
+            "function_name": f"{PREFIX}_{func.__name__}",
+            "date_time": str(datetime.now()),
+        }
         start_time = time.time()
 
         try:
@@ -36,26 +40,44 @@ def convert_message_to_ack_row_logging_decorator(func):
                 "operation_requested": message.get("operation_requested", "unknown"),
                 **process_diagnostics(diagnostics, file_key, message_id),
             }
-            generate_and_send_logs(STREAM_NAME, start_time, base_log_data, additional_log_data, use_ms_precision=True)
+            generate_and_send_logs(
+                STREAM_NAME,
+                start_time,
+                base_log_data,
+                additional_log_data,
+                use_ms_precision=True,
+            )
 
             return result
 
         except Exception as error:
-            additional_log_data = {"status": "fail", "statusCode": 500, "diagnostics": str(error)}
-            generate_and_send_logs(STREAM_NAME, start_time, base_log_data, additional_log_data, use_ms_precision=True,
-                                   is_error_log=True)
+            additional_log_data = {
+                "status": "fail",
+                "statusCode": 500,
+                "diagnostics": str(error),
+            }
+            generate_and_send_logs(
+                STREAM_NAME,
+                start_time,
+                base_log_data,
+                additional_log_data,
+                use_ms_precision=True,
+                is_error_log=True,
+            )
             raise
 
     return wrapper
 
 
-def upload_ack_file_logging_decorator(func):
+def complete_batch_file_process_logging_decorator(func):
     """This decorator logs when record processing is complete."""
 
     @wraps(func)
     def wrapper(*args, **kwargs):
-
-        base_log_data = {"function_name": f"{PREFIX}_{func.__name__}", "date_time": str(datetime.now())}
+        base_log_data = {
+            "function_name": f"{PREFIX}_{func.__name__}",
+            "date_time": str(datetime.now()),
+        }
         start_time = time.time()
 
         # NB this doesn't require a try-catch block as the wrapped function never throws an exception
@@ -63,7 +85,11 @@ def upload_ack_file_logging_decorator(func):
         if result is not None:
             message_for_logs = "Record processing complete"
             base_log_data.update(result)
-            additional_log_data = {"status": "success", "statusCode": 200, "message": message_for_logs}
+            additional_log_data = {
+                "status": "success",
+                "statusCode": 200,
+                "message": message_for_logs,
+            }
             generate_and_send_logs(STREAM_NAME, start_time, base_log_data, additional_log_data)
         return result
 
@@ -75,20 +101,36 @@ def ack_lambda_handler_logging_decorator(func):
 
     @wraps(func)
     def wrapper(event, context, *args, **kwargs):
-
-        base_log_data = {"function_name": f"{PREFIX}_{func.__name__}", "date_time": str(datetime.now())}
+        base_log_data = {
+            "function_name": f"{PREFIX}_{func.__name__}",
+            "date_time": str(datetime.now()),
+        }
         start_time = time.time()
 
         try:
             result = func(event, context, *args, **kwargs)
             message_for_logs = "Lambda function executed successfully!"
-            additional_log_data = {"status": "success", "statusCode": 200, "message": message_for_logs}
+            additional_log_data = {
+                "status": "success",
+                "statusCode": 200,
+                "message": message_for_logs,
+            }
             generate_and_send_logs(STREAM_NAME, start_time, base_log_data, additional_log_data)
             return result
 
         except Exception as error:
-            additional_log_data = {"status": "fail", "statusCode": 500, "diagnostics": str(error)}
-            generate_and_send_logs(STREAM_NAME, start_time, base_log_data, additional_log_data, is_error_log=True)
+            additional_log_data = {
+                "status": "fail",
+                "statusCode": 500,
+                "diagnostics": str(error),
+            }
+            generate_and_send_logs(
+                STREAM_NAME,
+                start_time,
+                base_log_data,
+                additional_log_data,
+                is_error_log=True,
+            )
             raise
 
     return wrapper
@@ -99,7 +141,7 @@ def process_diagnostics(diagnostics, file_key, message_id):
     if diagnostics is not None:
         return {
             "status": "fail",
-            "statusCode": diagnostics.get("statusCode") if isinstance(diagnostics, dict) else 500,
+            "statusCode": (diagnostics.get("statusCode") if isinstance(diagnostics, dict) else 500),
             "diagnostics": (
                 diagnostics.get("error_message")
                 if isinstance(diagnostics, dict)
@@ -111,4 +153,8 @@ def process_diagnostics(diagnostics, file_key, message_id):
         diagnostics = "An unhandled error occurred during batch processing"
         return {"status": "fail", "statusCode": 500, "diagnostics": diagnostics}
 
-    return {"status": "success", "statusCode": 200, "diagnostics": "Operation completed successfully"}
+    return {
+        "status": "success",
+        "statusCode": 200,
+        "diagnostics": "Operation completed successfully",
+    }

@@ -1,10 +1,10 @@
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
 from common.aws_dynamodb import get_dynamodb_table
 
 
 class TestGetIedsTable(unittest.TestCase):
-
     AWS_REGION = "eu-west-2"  # Add this missing constant
 
     def setUp(self):
@@ -17,11 +17,9 @@ class TestGetIedsTable(unittest.TestCase):
 
         self.getenv_patch = patch("os.getenv")
         self.mock_getenv = self.getenv_patch.start()
-        self.mock_getenv.side_effect = lambda key, default=None: {
-            "AWS_REGION": self.AWS_REGION
-        }.get(key, default)
+        self.mock_getenv.side_effect = lambda key, default=None: {"AWS_REGION": self.AWS_REGION}.get(key, default)
 
-        self.dynamodb_resource_patcher = patch('common.aws_dynamodb.dynamodb_resource')
+        self.dynamodb_resource_patcher = patch("common.aws_dynamodb.dynamodb_resource")
         self.mock_dynamodb_resource = self.dynamodb_resource_patcher.start()
 
     def tearDown(self):

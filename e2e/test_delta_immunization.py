@@ -1,14 +1,14 @@
+import copy
+import os
+import time
 from datetime import datetime
+
 from utils.base_test import ImmunizationBaseTest
 from utils.immunisation_api import parse_location
 from utils.resource import generate_imms_resource, get_dynamodb_table
-import time
-import copy
-import os
 
 
 class TestDeltaImmunization(ImmunizationBaseTest):
-
     CREATE_OPERATION = "CREATE"
     UPDATE_OPERATION = "UPDATE"
     DELETE_OPERATION = "DELETE"

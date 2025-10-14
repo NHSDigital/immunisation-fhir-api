@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import Any, Dict
 
 
 def make_status(msg: str, nhs_number: str | None = None, status: str = "success") -> Dict[str, Any]:

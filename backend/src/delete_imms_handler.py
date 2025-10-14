@@ -3,14 +3,15 @@ import logging
 import pprint
 import uuid
 
+from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
 from controller.aws_apig_response_utils import create_response
 from controller.fhir_controller import FhirController, make_controller
-from models.errors import Severity, Code, create_operation_outcome
 from log_structure import function_info
-from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
+from models.errors import Code, Severity, create_operation_outcome
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger()
+
 
 @function_info
 def delete_imms_handler(event, _context):
@@ -40,7 +41,7 @@ if __name__ == "__main__":
         "pathParameters": {"id": args.id},
         "headers": {
             "Content-Type": "application/x-www-form-urlencoded",
-            "AuthenticationType": "ApplicationRestricted"
+            "AuthenticationType": "ApplicationRestricted",
         },
     }
     pprint.pprint(delete_imms_handler(event, {}))

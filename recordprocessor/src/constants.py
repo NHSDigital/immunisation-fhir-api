@@ -64,6 +64,7 @@ class FileStatus:
 
 class FileNotProcessedReason(StrEnum):
     """Reasons why a file was not processed"""
+
     UNAUTHORISED = "Unauthorised"
     EMPTY = "Empty file"
 
@@ -74,6 +75,7 @@ class AuditTableKeys:
     FILENAME = "filename"
     MESSAGE_ID = "message_id"
     QUEUE_NAME = "queue_name"
+    RECORD_COUNT = "record_count"
     STATUS = "status"
     TIMESTAMP = "timestamp"
     ERROR_DETAILS = "error_details"
@@ -114,5 +116,5 @@ class Permission(StrEnum):
 permission_to_operation_map = {
     Permission.CREATE: Operation.CREATE,
     Permission.UPDATE: Operation.UPDATE,
-    Permission.DELETE: Operation.DELETE
+    Permission.DELETE: Operation.DELETE,
 }

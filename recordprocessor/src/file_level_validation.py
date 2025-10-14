@@ -2,16 +2,25 @@
 Functions for completing file-level validation
 (validating headers and ensuring that the supplier has permission to perform at least one of the requested operations)
 """
+
 from csv import DictReader
 
+from audit_table import update_audit_table_status
 from clients import logger, s3_client
-from make_and_upload_ack_file import make_and_upload_ack_file
-from utils_for_recordprocessor import get_csv_content_dict_reader
+from constants import (
+    ARCHIVE_DIR_NAME,
+    EXPECTED_CSV_HEADERS,
+    PROCESSING_DIR_NAME,
+    SOURCE_BUCKET_NAME,
+    FileNotProcessedReason,
+    FileStatus,
+    Permission,
+    permission_to_operation_map,
+)
 from errors import InvalidHeaders, NoOperationPermissions
 from logging_decorator import file_level_validation_logging_decorator
-from audit_table import update_audit_table_status
-from constants import SOURCE_BUCKET_NAME, EXPECTED_CSV_HEADERS, permission_to_operation_map, FileStatus, Permission, \
-    FileNotProcessedReason, ARCHIVE_DIR_NAME, PROCESSING_DIR_NAME
+from make_and_upload_ack_file import make_and_upload_ack_file
+from utils_for_recordprocessor import get_csv_content_dict_reader
 
 
 def validate_content_headers(csv_content_reader: DictReader) -> None:
@@ -25,9 +34,7 @@ def file_is_empty(row_count: int) -> bool:
     return row_count == 0
 
 
-def get_permitted_operations(
-    supplier: str, vaccine_type: str, allowed_permissions_list: list
-) -> set:
+def get_permitted_operations(supplier: str, vaccine_type: str, allowed_permissions_list: list) -> set:
     # Check if supplier has permission for the subject vaccine type and extract permissions
     permission_strs_for_vaccine_type = {
         permission_str
@@ -45,14 +52,11 @@ def get_permitted_operations(
 
     # Map Permission key to action flag
     permitted_operations_for_vaccine_type = {
-        permission_to_operation_map[permission].value
-        for permission in permissions_for_vaccine_type
+        permission_to_operation_map[permission].value for permission in permissions_for_vaccine_type
     }
 
     if not permitted_operations_for_vaccine_type:
-        raise NoOperationPermissions(
-            f"{supplier} does not have permissions to perform any of the requested actions."
-        )
+        raise NoOperationPermissions(f"{supplier} does not have permissions to perform any of the requested actions.")
 
     return permitted_operations_for_vaccine_type
 
@@ -121,8 +125,11 @@ def file_level_validation(incoming_message_body: dict) -> dict:
         file_key = file_key or "Unable to ascertain file_key"
         created_at_formatted_string = created_at_formatted_string or "Unable to ascertain created_at_formatted_string"
         make_and_upload_ack_file(message_id, file_key, False, False, created_at_formatted_string)
-        file_status = f"{FileStatus.NOT_PROCESSED} - {FileNotProcessedReason.UNAUTHORISED}"\
-            if isinstance(error, NoOperationPermissions) else FileStatus.FAILED
+        file_status = (
+            f"{FileStatus.NOT_PROCESSED} - {FileNotProcessedReason.UNAUTHORISED}"
+            if isinstance(error, NoOperationPermissions)
+            else FileStatus.FAILED
+        )
 
         try:
             move_file(SOURCE_BUCKET_NAME, file_key, f"{ARCHIVE_DIR_NAME}/{file_key}")

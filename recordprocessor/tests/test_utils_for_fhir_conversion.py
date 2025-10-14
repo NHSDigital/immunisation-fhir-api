@@ -1,13 +1,16 @@
 """Unit tests for batch utils"""
 
 import unittest
-from unittest.mock import patch
 from decimal import Decimal
-from tests.utils_for_recordprocessor_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT
+from unittest.mock import patch
+
+from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
+    MOCK_ENVIRONMENT_DICT,
+)
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
     from constants import Urls
-    from utils_for_fhir_conversion import _is_not_empty, Generate, Add, Convert
+    from utils_for_fhir_conversion import Add, Convert, Generate, _is_not_empty
 
 
 class TestBatchUtils(unittest.TestCase):
@@ -60,7 +63,14 @@ class TestBatchUtilsConvert(unittest.TestCase):
         self.assertEqual(Convert.date("19821115"), "1982-11-15")
 
         # Invalid_dates
-        for value in ["2000-01-01", 20000101, "20000230", "2000011", "990101", "20000101T00:00"]:
+        for value in [
+            "2000-01-01",
+            20000101,
+            "20000230",
+            "2000011",
+            "990101",
+            "20000101T00:00",
+        ]:
             self.assertEqual(Convert.date(value), value)
 
     def test_convert_gender_code(self):
@@ -69,7 +79,12 @@ class TestBatchUtilsConvert(unittest.TestCase):
         the original value if this is not possible
         """
         # Valid gender codes
-        for code, expected in [("1", "male"), ("2", "female"), ("9", "other"), ("0", "unknown")]:
+        for code, expected in [
+            ("1", "male"),
+            ("2", "female"),
+            ("9", "other"),
+            ("0", "unknown"),
+        ]:
             self.assertEqual(Convert.gender_code(code), expected)
 
         # Invalid gender codes
@@ -186,7 +201,12 @@ class TestBatchUtilsAdd(unittest.TestCase):
     """Tests for the batch utils Add functions"""
 
     def setUp(self):
-        self.test_dict_some_empty = {"key1": "value1", "key2": None, "key3": False, "key4": ""}
+        self.test_dict_some_empty = {
+            "key1": "value1",
+            "key2": None,
+            "key3": False,
+            "key4": "",
+        }
         self.test_dict_none_empty = {"key1": "value1", "key3": False}
         self.test_dict_empty = {"key5": "", "key6": None, "key7": []}
 

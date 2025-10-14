@@ -1,27 +1,26 @@
 """Utils functions for filenameprocessor tests"""
-from unittest.mock import patch
-from io import StringIO
-from boto3 import client as boto3_client
 
-from tests.utils_for_tests.values_for_tests import FileDetails, MockFileDetails
+from io import StringIO
+from unittest.mock import patch
+
+from boto3 import client as boto3_client
 from tests.utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT
+from tests.utils_for_tests.values_for_tests import FileDetails, MockFileDetails
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
-    from clients import REGION_NAME
     from csv import DictReader
+
+    from clients import REGION_NAME
     from constants import (
-        AuditTableKeys,
         AUDIT_TABLE_NAME,
-        FileStatus,
+        ODS_CODE_TO_SUPPLIER_SYSTEM_HASH_KEY,
         SUPPLIER_PERMISSIONS_HASH_KEY,
-        ODS_CODE_TO_SUPPLIER_SYSTEM_HASH_KEY
+        AuditTableKeys,
+        FileStatus,
     )
 
-MOCK_ODS_CODE_TO_SUPPLIER = {
-    "YGM41": "EMIS",
-    "X8E5B": "RAVS"
-}
+MOCK_ODS_CODE_TO_SUPPLIER = {"YGM41": "EMIS", "X8E5B": "RAVS"}
 
 dynamodb_client = boto3_client("dynamodb", region_name=REGION_NAME)
 
@@ -42,9 +41,13 @@ def add_entry_to_table(file_details: MockFileDetails, file_status: FileStatus) -
 def assert_audit_table_entry(file_details: FileDetails, expected_status: str) -> None:
     """Assert that the file details are in the audit table"""
     table_entry = dynamodb_client.get_item(
-        TableName=AUDIT_TABLE_NAME, Key={AuditTableKeys.MESSAGE_ID: {"S": file_details.message_id}}
+        TableName=AUDIT_TABLE_NAME,
+        Key={AuditTableKeys.MESSAGE_ID: {"S": file_details.message_id}},
     ).get("Item")
-    assert table_entry == {**file_details.audit_table_entry, "status": {"S": expected_status}}
+    assert table_entry == {
+        **file_details.audit_table_entry,
+        "status": {"S": expected_status},
+    }
 
 
 def create_mock_hget(
@@ -57,4 +60,5 @@ def create_mock_hget(
         if key == SUPPLIER_PERMISSIONS_HASH_KEY:
             return mock_supplier_permissions.get(field)
         return None
+
     return mock_hget

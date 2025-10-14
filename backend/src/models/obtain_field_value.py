@@ -1,18 +1,13 @@
 """Functions for obtaining a field value from the FHIR immunization resource json data"""
 
-from datetime import datetime
+from constants import Urls
 from models.utils.generic_utils import (
     get_contained_patient,
     get_contained_practitioner,
-    is_organization,
     get_generic_extension_value,
-    generate_field_location_for_name,
-    get_occurrence_datetime,
-    obtain_current_name_period,
-    get_current_name_instance,
+    is_organization,
     patient_and_practitioner_value_and_index,
 )
-from constants import Urls
 
 
 class ObtainFieldValue:
@@ -71,10 +66,10 @@ class ObtainFieldValue:
     def patient_address_postal_code(imms: dict):
         """Obtains patient_address_postal_code value"""
         patient = get_contained_patient(imms)
-        contained_patient_postalCode = [
-                    x for x in patient.get("address") if len(x.get("postalCode", "")) >= 1
-                ][0]["postalCode"]        
-        return contained_patient_postalCode
+        contained_patient_postal_code = [x for x in patient.get("address") if len(x.get("postalCode", "")) >= 1][0][
+            "postalCode"
+        ]
+        return contained_patient_postal_code
 
     @staticmethod
     def organization_identifier_value(imms: dict):

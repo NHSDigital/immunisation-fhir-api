@@ -1,16 +1,17 @@
-import unittest
 import os
-from unittest.mock import patch, MagicMock, Mock, create_autospec
-from mns_service import MnsService, MNS_URL
+import unittest
+from unittest.mock import MagicMock, Mock, create_autospec, patch
+
 from common.authentication import AppRestrictedAuth
 from common.models.errors import (
-    ServerError,
-    UnhandledResponseError,
-    TokenValidationError,
     BadRequestError,
+    ResourceNotFoundError,
+    ServerError,
+    TokenValidationError,
     UnauthorizedError,
-    ResourceNotFoundError)
-
+    UnhandledResponseError,
+)
+from mns_service import MNS_URL, MnsService
 
 SQS_ARN = "arn:aws:sqs:eu-west-2:123456789012:my-queue"
 
@@ -28,7 +29,6 @@ class TestMnsService(unittest.TestCase):
     @patch("mns_service.requests.post")
     @patch("mns_service.requests.get")
     def test_successful_subscription(self, mock_get, mock_post):
-
         # Arrange GET to return no subscription found
         mock_get_response = MagicMock()
         mock_get_response.status_code = 200
@@ -85,14 +85,7 @@ class TestMnsService(unittest.TestCase):
         # Arrange a bundle with a matching entry
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {"entry": [
-                {
-                    "channel": {
-                        "endpoint": SQS_ARN
-                    },
-                    "id": "123"
-                    }]
-                }
+        mock_response.json.return_value = {"entry": [{"channel": {"endpoint": SQS_ARN}, "id": "123"}]}
         mock_get.return_value = mock_response
 
         service = MnsService(self.authenticator)
@@ -155,11 +148,7 @@ class TestMnsService(unittest.TestCase):
         service = MnsService(self.authenticator)
         result = service.delete_subscription("sub-id-123")
         self.assertTrue(result)
-        mock_delete.assert_called_with(
-            f"{MNS_URL}/sub-id-123",
-            headers=service.request_headers,
-            timeout=10
-        )
+        mock_delete.assert_called_with(f"{MNS_URL}/sub-id-123", headers=service.request_headers, timeout=10)
 
     @patch("mns_service.requests.delete")
     def test_delete_subscription_401(self, mock_delete):
@@ -274,7 +263,10 @@ class TestMnsService(unittest.TestCase):
         with self.assertRaises(BadRequestError) as context:
             MnsService.raise_error_response(resp)
         self.assertIn("Bad request: Resource type or parameters incorrect", str(context.exception))
-        self.assertEqual(context.exception.message, "Bad request: Resource type or parameters incorrect")
+        self.assertEqual(
+            context.exception.message,
+            "Bad request: Resource type or parameters incorrect",
+        )
         self.assertEqual(context.exception.response, {"resource": "Invalid"})
 
     def test_unhandled_status_code(self):

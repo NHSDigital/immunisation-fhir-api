@@ -1,11 +1,11 @@
+import importlib
 import unittest
 from unittest.mock import patch
+
 import common.redis_client as redis_client
-import importlib
 
 
 class TestRedisClient(unittest.TestCase):
-
     REDIS_HOST = "mock-redis-host"
     REDIS_PORT = 6379
 
@@ -14,7 +14,7 @@ class TestRedisClient(unittest.TestCase):
         self.mock_getenv = self.getenv_patch.start()
         self.mock_getenv.side_effect = lambda key, default=None: {
             "REDIS_HOST": self.REDIS_HOST,
-            "REDIS_PORT": self.REDIS_PORT
+            "REDIS_PORT": self.REDIS_PORT,
         }.get(key, default)
 
         self.redis_patch = patch("redis.StrictRedis")
@@ -32,15 +32,15 @@ class TestRedisClient(unittest.TestCase):
         self.assertEqual(redis_client.REDIS_PORT, self.REDIS_PORT)
 
     def test_redis_client(self):
-        ''' Test redis client is not initialized on import '''
+        """Test redis client is not initialized on import"""
         importlib.reload(redis_client)
         self.mock_redis.assert_not_called()
 
     def test_redis_client_initialization(self):
-        ''' Test redis client is initialized exactly once even with multiple invocations'''
+        """Test redis client is initialized exactly once even with multiple invocations"""
         importlib.reload(redis_client)
         redis_client.get_redis_client()
         redis_client.get_redis_client()
         self.mock_redis.assert_called_once_with(host=self.REDIS_HOST, port=self.REDIS_PORT, decode_responses=True)
-        self.assertTrue(hasattr(redis_client, 'redis_client'))
+        self.assertTrue(hasattr(redis_client, "redis_client"))
         self.assertIsInstance(redis_client.redis_client, self.mock_redis.return_value.__class__)

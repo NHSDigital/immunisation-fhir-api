@@ -1,8 +1,8 @@
 from enum import Enum
 
-""" 
-    Enums for event names, operations, and action flags. 
-    
+"""
+    Enums for event names, operations, and action flags.
+
     # case            eventName operation actionFlag
     ----------------- --------- --------- ----------
     create            INSERT    CREATE    NEW
@@ -11,29 +11,34 @@ from enum import Enum
     physical delete   REMOVE    REMOVE    N/A
 """
 
-class EventName():
+
+class EventName:
     CREATE = "INSERT"
     UPDATE = "MODIFY"
     DELETE_LOGICAL = "MODIFY"
     DELETE_PHYSICAL = "REMOVE"
 
-class Operation():
+
+class Operation:
     CREATE = "CREATE"
     UPDATE = "UPDATE"
     DELETE_LOGICAL = "DELETE"
     DELETE_PHYSICAL = "REMOVE"
 
-class ActionFlag():
+
+class ActionFlag:
     CREATE = "NEW"
     UPDATE = "UPDATE"
     DELETE_LOGICAL = "DELETE"
-    
+
+
 class Gender(Enum):
     MALE = "1"
     FEMALE = "2"
     OTHER = "9"
     UNKNOWN = "0"
-    
+
+
 class ConversionFieldName(str, Enum):
     NHS_NUMBER = "NHS_NUMBER"
     PERSON_FORENAME = "PERSON_FORENAME"

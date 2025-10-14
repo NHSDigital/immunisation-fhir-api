@@ -1,28 +1,31 @@
-''' unit tests for redis_sync.py '''
-import unittest
+"""unit tests for redis_sync.py"""
+
 import json
+import unittest
 from unittest.mock import patch
-from redis_sync import handler
-from constants import RedisCacheKey
+
 from common.s3_event import S3EventRecord
+from constants import RedisCacheKey
+from redis_sync import handler
 
 
 class TestHandlerDecorator(unittest.TestCase):
-    """ Unit tests for the handler decorator in redis_sync.py
-        these will check what is sent to firehose and the logging
-        Note: test_handler.py will check the actual business logic of the handler
-        the decorator is used to log the function execution and send logs to firehose
+    """Unit tests for the handler decorator in redis_sync.py
+    these will check what is sent to firehose and the logging
+    Note: test_handler.py will check the actual business logic of the handler
+    the decorator is used to log the function execution and send logs to firehose
     """
+
     s3_vaccine = {
-        's3': {
-            'bucket': {'name': 'test-bucket1'},
-            'object': {'key': RedisCacheKey.DISEASE_MAPPING_FILE_KEY}
+        "s3": {
+            "bucket": {"name": "test-bucket1"},
+            "object": {"key": RedisCacheKey.DISEASE_MAPPING_FILE_KEY},
         }
     }
     s3_supplier = {
-        's3': {
-            'bucket': {'name': 'test-bucket1'},
-            'object': {'key': RedisCacheKey.PERMISSIONS_CONFIG_FILE_KEY}
+        "s3": {
+            "bucket": {"name": "test-bucket1"},
+            "object": {"key": RedisCacheKey.PERMISSIONS_CONFIG_FILE_KEY},
         }
     }
 
@@ -45,14 +48,16 @@ class TestHandlerDecorator(unittest.TestCase):
         patch.stopall()
 
     def test_handler_decorator_success(self):
-        mock_event = {'Records': [self.s3_vaccine]}
+        mock_event = {"Records": [self.s3_vaccine]}
         self.mock_get_s3_records.return_value = [self.s3_vaccine]
-        bucket_name = self.s3_vaccine['s3']['bucket']['name']
-        file_key = self.s3_vaccine['s3']['object']['key']
-        self.mock_record_processor.return_value = {'status': 'success',
-                                                   'message': 'Successfully processed 1 records',
-                                                   'bucket_name': bucket_name,
-                                                   'file_key': file_key}
+        bucket_name = self.s3_vaccine["s3"]["bucket"]["name"]
+        file_key = self.s3_vaccine["s3"]["object"]["key"]
+        self.mock_record_processor.return_value = {
+            "status": "success",
+            "message": "Successfully processed 1 records",
+            "bucket_name": bucket_name,
+            "file_key": file_key,
+        }
 
         handler(mock_event, None)
 
@@ -72,16 +77,18 @@ class TestHandlerDecorator(unittest.TestCase):
         self.assertEqual(event["file_keys"], [file_key])
 
     def test_handler_decorator_failure(self):
-        mock_event = {'Records': [self.s3_vaccine]}
+        mock_event = {"Records": [self.s3_vaccine]}
 
         self.mock_get_s3_records.return_value = [self.s3_vaccine]
-        bucket_name = self.s3_vaccine['s3']['bucket']['name']
-        file_key = self.s3_vaccine['s3']['object']['key']
+        bucket_name = self.s3_vaccine["s3"]["bucket"]["name"]
+        file_key = self.s3_vaccine["s3"]["object"]["key"]
         with patch("redis_sync.process_record") as mock_record_processor:
-            mock_record_processor.return_value = {'status': 'error',
-                                                  'message': 'my-error',
-                                                  'bucket_name': bucket_name,
-                                                  'file_key': file_key}
+            mock_record_processor.return_value = {
+                "status": "error",
+                "message": "my-error",
+                "bucket_name": bucket_name,
+                "file_key": file_key,
+            }
 
             handler(mock_event, None)
 
@@ -96,14 +103,17 @@ class TestHandlerDecorator(unittest.TestCase):
             self.assertIn("function_name", event)
             self.assertEqual(event["function_name"], "redis_sync_handler")
             self.assertEqual(event["status"], "error")
-            self.assertEqual(event["message"], 'Processed 1 records with 1 errors')
+            self.assertEqual(event["message"], "Processed 1 records with 1 errors")
             self.assertEqual(event["file_keys"], [file_key])
 
     def test_handler_decorator_no_records1(self):
-        mock_event = {'Records': []}
+        mock_event = {"Records": []}
 
         self.mock_get_s3_records.return_value = []
-        self.mock_record_processor.return_value = {'status': 'success', 'message': 'No records found in event'}
+        self.mock_record_processor.return_value = {
+            "status": "success",
+            "message": "No records found in event",
+        }
 
         handler(mock_event, None)
 
@@ -123,7 +133,7 @@ class TestHandlerDecorator(unittest.TestCase):
         self.assertNotIn("file_key", event)
 
     def test_handler_decorator_exception(self):
-        mock_event = {'Records': [self.s3_vaccine]}
+        mock_event = {"Records": [self.s3_vaccine]}
         self.mock_get_s3_records.side_effect = Exception("Test exception")
 
         handler(mock_event, None)
@@ -159,17 +169,25 @@ class TestHandlerDecorator(unittest.TestCase):
         self.assertEqual(event["message"], "No records found in event")
 
     def test_handler_multi_record(self):
-        mock_event = {'Records': [self.s3_vaccine, self.s3_supplier]}
+        mock_event = {"Records": [self.s3_vaccine, self.s3_supplier]}
 
         self.mock_get_s3_records.return_value = [
-            S3EventRecord(self.s3_vaccine), S3EventRecord(self.s3_supplier)]
+            S3EventRecord(self.s3_vaccine),
+            S3EventRecord(self.s3_supplier),
+        ]
 
         # Mock the return value for each record
         self.mock_record_processor.side_effect = [
-            {'status': 'success', 'message': 'Processed successfully',
-                'file_key': RedisCacheKey.DISEASE_MAPPING_FILE_KEY},
-            {'status': 'success', 'message': 'Processed successfully',
-                'file_key': RedisCacheKey.PERMISSIONS_CONFIG_FILE_KEY}
+            {
+                "status": "success",
+                "message": "Processed successfully",
+                "file_key": RedisCacheKey.DISEASE_MAPPING_FILE_KEY,
+            },
+            {
+                "status": "success",
+                "message": "Processed successfully",
+                "file_key": RedisCacheKey.PERMISSIONS_CONFIG_FILE_KEY,
+            },
         ]
 
         handler(mock_event, None)
@@ -188,12 +206,12 @@ class TestHandlerDecorator(unittest.TestCase):
 
     # test to check that event_read is called when "read" key is passed in the event
     def test_handler_read_event(self):
-        mock_event = {'read': 'myhash'}
-        return_key = 'field1'
-        return_value = 'value1'
+        mock_event = {"read": "myhash"}
+        return_key = "field1"
+        return_value = "value1"
         mock_read_event_response = {return_key: return_value}
 
-        with patch('redis_sync.read_event') as mock_read_event:
+        with patch("redis_sync.read_event") as mock_read_event:
             mock_read_event.return_value = mock_read_event_response
             handler(mock_event, None)
 

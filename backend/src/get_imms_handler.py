@@ -1,16 +1,13 @@
 import argparse
 import logging
 import pprint
-import uuid
-
 
 from controller.fhir_controller import FhirController, make_controller
-from models.errors import Severity, Code, create_operation_outcome
 from log_structure import function_info
-from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger()
+
 
 @function_info
 def get_imms_handler(event, _context):

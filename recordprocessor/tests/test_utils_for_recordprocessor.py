@@ -1,26 +1,34 @@
 """Tests for the utils_for_recordprocessor module"""
 
-import unittest
-from unittest.mock import patch
-from io import StringIO
 import csv
+import unittest
+from io import StringIO
+from unittest.mock import patch
+
 import boto3
 from moto import mock_s3
-from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import GenericSetUp, GenericTearDown
+
+from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
+    MOCK_ENVIRONMENT_DICT,
+    BucketNames,
+)
+from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
+    GenericSetUp,
+    GenericTearDown,
+)
 from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
+    REGION_NAME,
     MockFileDetails,
     ValidMockFileContent,
-    REGION_NAME,
 )
-from tests.utils_for_recordprocessor_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT, BucketNames
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
-    from utils_for_recordprocessor import (
-        get_environment,
-        get_csv_content_dict_reader,
-        create_diagnostics_dictionary,
-    )
     from file_level_validation import move_file
+    from utils_for_recordprocessor import (
+        create_diagnostics_dictionary,
+        get_csv_content_dict_reader,
+        get_environment,
+    )
 
 s3_client = boto3.client("s3", region_name=REGION_NAME)
 test_file = MockFileDetails.rsv_emis

@@ -1,24 +1,28 @@
-import requests
+import json
+import logging
 import os
 import uuid
-import logging
-import json
+
+import requests
 from common.authentication import AppRestrictedAuth
 from common.models.errors import (
-    UnhandledResponseError,
-    ResourceNotFoundError,
-    UnauthorizedError,
-    ServerError,
     BadRequestError,
+    ConflictError,
+    ResourceNotFoundError,
+    ServerError,
     TokenValidationError,
-    ConflictError
+    UnauthorizedError,
+    UnhandledResponseError,
 )
 
 SQS_ARN = os.getenv("SQS_ARN")
 
 apigee_env = os.getenv("APIGEE_ENVIRONMENT", "int")
-MNS_URL = "https://api.service.nhs.uk/multicast-notification-service/subscriptions" \
-    if apigee_env == "prod" else "https://int.api.service.nhs.uk/multicast-notification-service/subscriptions"
+MNS_URL = (
+    "https://api.service.nhs.uk/multicast-notification-service/subscriptions"
+    if apigee_env == "prod"
+    else "https://int.api.service.nhs.uk/multicast-notification-service/subscriptions"
+)
 
 
 class MnsService:
@@ -26,9 +30,9 @@ class MnsService:
         self.authenticator = authenticator
         self.access_token = self.authenticator.get_access_token()
         self.request_headers = {
-            'Content-Type': 'application/fhir+json',
-            'Authorization': f'Bearer {self.access_token}',
-            'X-Correlation-ID': str(uuid.uuid4())
+            "Content-Type": "application/fhir+json",
+            "Authorization": f"Bearer {self.access_token}",
+            "X-Correlation-ID": str(uuid.uuid4()),
         }
         self.subscription_payload = {
             "resourceType": "Subscription",
@@ -38,17 +42,19 @@ class MnsService:
             "channel": {
                 "type": "message",
                 "endpoint": SQS_ARN,
-                "payload": "application/json"
-                }
-            }
+                "payload": "application/json",
+            },
+        }
 
         logging.info(f"Using SQS ARN for subscription: {SQS_ARN}")
 
     def subscribe_notification(self) -> dict | None:
-
         response = requests.post(
-            MNS_URL, headers=self.request_headers,
-            data=json.dumps(self.subscription_payload), timeout=15)
+            MNS_URL,
+            headers=self.request_headers,
+            data=json.dumps(self.subscription_payload),
+            timeout=15,
+        )
         if response.status_code in (200, 201):
             return response.json()
         else:
@@ -119,15 +125,22 @@ class MnsService:
     def raise_error_response(response):
         error_mapping = {
             401: (TokenValidationError, "Token validation failed for the request"),
-            400: (BadRequestError, "Bad request: Resource type or parameters incorrect"),
-            403: (UnauthorizedError, "You don't have the right permissions for this request"),
+            400: (
+                BadRequestError,
+                "Bad request: Resource type or parameters incorrect",
+            ),
+            403: (
+                UnauthorizedError,
+                "You don't have the right permissions for this request",
+            ),
             500: (ServerError, "Internal Server Error"),
             404: (ResourceNotFoundError, "Subscription or Resource not found"),
-            409: (ConflictError, "SQS Queue Already Subscribed, can't re-subscribe")
+            409: (ConflictError, "SQS Queue Already Subscribed, can't re-subscribe"),
         }
         exception_class, error_message = error_mapping.get(
             response.status_code,
-            (UnhandledResponseError, f"Unhandled error: {response.status_code}"))
+            (UnhandledResponseError, f"Unhandled error: {response.status_code}"),
+        )
 
         if response.status_code == 404:
             raise exception_class(resource_type=response.json(), resource_id=error_message)

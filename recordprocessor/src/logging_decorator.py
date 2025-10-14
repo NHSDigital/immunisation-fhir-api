@@ -5,8 +5,9 @@ import os
 import time
 from datetime import datetime
 from functools import wraps
+
 from clients import firehose_client, logger
-from errors import NoOperationPermissions, InvalidHeaders
+from errors import InvalidHeaders, NoOperationPermissions
 
 STREAM_NAME = os.getenv("SPLUNK_FIREHOSE_NAME", "immunisation-fhir-api-internal-dev-splunk-firehose")
 
@@ -22,11 +23,18 @@ def send_log_to_firehose(log_data: dict) -> None:
 
 
 def generate_and_send_logs(
-    start_time, base_log_data: dict, additional_log_data: dict, is_error_log: bool = False
+    start_time,
+    base_log_data: dict,
+    additional_log_data: dict,
+    is_error_log: bool = False,
 ) -> None:
     """Generates log data which includes the base_log_data, additional_log_data, and time taken (calculated using the
     current time and given start_time) and sends them to Cloudwatch and Firehose."""
-    log_data = {**base_log_data, "time_taken": f"{round(time.time() - start_time, 5)}s", **additional_log_data}
+    log_data = {
+        **base_log_data,
+        "time_taken": f"{round(time.time() - start_time, 5)}s",
+        **additional_log_data,
+    }
     log_function = logger.error if is_error_log else logger.info
     log_function(json.dumps(log_data))
     send_log_to_firehose(log_data)
@@ -53,7 +61,10 @@ def file_level_validation_logging_decorator(func):
 
         try:
             result = func(*args, **kwargs)
-            additional_log_data = {"statusCode": 200, "message": "Successfully sent for record processing"}
+            additional_log_data = {
+                "statusCode": 200,
+                "message": "Successfully sent for record processing",
+            }
             generate_and_send_logs(start_time, base_log_data, additional_log_data=additional_log_data)
             return result
 
@@ -61,10 +72,12 @@ def file_level_validation_logging_decorator(func):
             message = (
                 str(e) if (isinstance(e, InvalidHeaders) or isinstance(e, NoOperationPermissions)) else "Server error"
             )
-            status_code = (
-                400 if isinstance(e, InvalidHeaders) else 403 if isinstance(e, NoOperationPermissions) else 500
-            )
-            additional_log_data = {"statusCode": status_code, "message": message, "error": str(e)}
+            status_code = 400 if isinstance(e, InvalidHeaders) else 403 if isinstance(e, NoOperationPermissions) else 500
+            additional_log_data = {
+                "statusCode": status_code,
+                "message": message,
+                "error": str(e),
+            }
             generate_and_send_logs(start_time, base_log_data, additional_log_data, is_error_log=True)
             raise
 

@@ -6,28 +6,31 @@ from decimal import Decimal
 from unittest.mock import patch
 
 from jsonpath_ng.ext import parse
-
 from models.fhir_immunization import ImmunizationValidator
-from models.utils.generic_utils import get_generic_extension_value
+from models.fhir_immunization_pre_validators import PreValidators
+from models.utils.generic_utils import (
+    get_generic_extension_value,
+    patient_name_family_field_location,
+    patient_name_given_field_location,
+    practitioner_name_family_field_location,
+    practitioner_name_given_field_location,
+)
+from testing_utils.generic_utils import (
+    load_json_data,
+)
+from testing_utils.generic_utils import (
+    test_invalid_values_rejected as _test_invalid_values_rejected,
+)
 from testing_utils.generic_utils import (
     # these have an underscore to avoid pytest collecting them as tests
     test_valid_values_accepted as _test_valid_values_accepted,
-    test_invalid_values_rejected as _test_invalid_values_rejected,
-    load_json_data,
-)
-from models.utils.generic_utils import (
-    patient_name_given_field_location,
-    patient_name_family_field_location,
-    practitioner_name_given_field_location,
-    practitioner_name_family_field_location,
 )
 from testing_utils.pre_validation_test_utils import ValidatorModelTests
-from testing_utils.values_for_tests import ValidValues, InvalidValues
-from models.fhir_immunization_pre_validators import PreValidators
+from testing_utils.values_for_tests import InvalidValues, ValidValues
+
 
 class TestImmunizationModelPreValidationRules(unittest.TestCase):
     """Test immunization pre validation rules on the FHIR model using the covid sample data"""
-
 
     def setUp(self):
         """Set up for each test. This runs before every test"""
@@ -248,7 +251,10 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         full_error_message = str(error.exception)
         actual_error_messages = full_error_message.replace("Validation errors: ", "").split("; ")
 
-        self.assertIn("The contained Patient resource must have an 'id' field", actual_error_messages)
+        self.assertIn(
+            "The contained Patient resource must have an 'id' field",
+            actual_error_messages,
+        )
 
         # REJECT: Missing practitioner id
         invalid_json_data = deepcopy(self.json_data)
@@ -260,7 +266,10 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         full_error_message = str(error.exception)
         actual_error_messages = full_error_message.replace("Validation errors: ", "").split("; ")
 
-        self.assertIn("The contained Practitioner resource must have an 'id' field", actual_error_messages)
+        self.assertIn(
+            "The contained Practitioner resource must have an 'id' field",
+            actual_error_messages,
+        )
 
         # REJECT: Duplicate id
         invalid_json_data = deepcopy(self.json_data)
@@ -272,7 +281,10 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         full_error_message = str(error.exception)
         actual_error_messages = full_error_message.replace("Validation errors: ", "").split("; ")
 
-        self.assertIn("ids must not be duplicated amongst contained resources", actual_error_messages)
+        self.assertIn(
+            "ids must not be duplicated amongst contained resources",
+            actual_error_messages,
+        )
 
     def test_pre_validate_patient_reference(self):
         """Test pre_validate_patient_reference accepts valid values and rejects invalid values"""
@@ -326,7 +338,10 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         valid_organization = {
             "actor": {
                 "type": "Organization",
-                "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "B0C4P"},
+                "identifier": {
+                    "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                    "value": "B0C4P",
+                },
             }
         }
         valid_practitioner_reference = {"actor": {"reference": "#Pract1"}}
@@ -363,7 +378,11 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
             self,
             valid_json_data=deepcopy(valid_json_data),
             field_location=field_location,
-            invalid_value=[valid_organization, valid_practitioner_reference, invalid_practitioner_reference],
+            invalid_value=[
+                valid_organization,
+                valid_practitioner_reference,
+                invalid_practitioner_reference,
+            ],
             expected_error_message="performer must not contain any internal references other than"
             + " to the contained Practitioner resource",
         )
@@ -390,7 +409,11 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
             self,
             valid_json_data=deepcopy(valid_json_data),
             field_location=field_location,
-            invalid_value=[valid_organization, valid_practitioner_reference, valid_practitioner_reference],
+            invalid_value=[
+                valid_organization,
+                valid_practitioner_reference,
+                valid_practitioner_reference,
+            ],
             expected_error_message="contained Practitioner resource id 'Pract1' must only be referenced once"
             + " from performer",
         )
@@ -453,7 +476,11 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
                 [
                     {"family": "Test1", "given": ["TestA"]},
                     {"use": "official", "family": "Test2", "given": ["TestB"]},
-                    {"family": "ATest3", "given": ["TestA"], "period": {"start": "2021-02-07T13:28:17+00:00"}},
+                    {
+                        "family": "ATest3",
+                        "given": ["TestA"],
+                        "period": {"start": "2021-02-07T13:28:17+00:00"},
+                    },
                 ]
             ],
             valid_list_element=[{"family": "Test", "given": ["TestA"]}],
@@ -500,7 +527,13 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         ValidatorModelTests.test_list_value(
             self,
             field_location="contained[?(@.resourceType=='Patient')].address",
-            valid_lists_to_test=[[{"postalCode": "AA1 1AA"}, {"postalCode": "75007"}, {"postalCode": "AA11AA"}]],
+            valid_lists_to_test=[
+                [
+                    {"postalCode": "AA1 1AA"},
+                    {"postalCode": "75007"},
+                    {"postalCode": "AA11AA"},
+                ]
+            ],
             valid_list_element={"family": "Test"},
         )
 
@@ -513,8 +546,8 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
                     "address": [
                         {"city": ""},
                         {"postalCode": ""},
-                        {"postalCode": "LS1 MH3"}
-                    ]
+                        {"postalCode": "LS1 MH3"},
+                    ],
                 }
             ]
         }
@@ -523,9 +556,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
 
     def test_pre_validate_occurrence_date_time(self):
         """Test pre_validate_occurrence_date_time accepts valid values and rejects invalid values"""
-        ValidatorModelTests.test_date_time_value(
-            self, field_location="occurrenceDateTime", is_occurrence_date_time=True
-        )
+        ValidatorModelTests.test_date_time_value(self, field_location="occurrenceDateTime", is_occurrence_date_time=True)
 
     def test_pre_validate_performer(self):
         """Test pre_validate_performer accepts valid values and rejects invalid values"""
@@ -681,7 +712,10 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
 
         full_error_message = str(error.exception)
         actual_error_messages = full_error_message.replace("Validation errors: ", "").split("; ")
-        self.assertIn("extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept is a mandatory field", actual_error_messages)
+        self.assertIn(
+            "extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept is a mandatory field",
+            actual_error_messages,
+        )
 
     def test_pre_validate_missing_valueCodeableConcept2(self):
         # Test case: missing "coding" within "valueCodeableConcept"
@@ -693,7 +727,10 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
 
         full_error_message = str(error.exception)
         actual_error_messages = full_error_message.replace("Validation errors: ", "").split("; ")
-        self.assertIn("extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding is a mandatory field", actual_error_messages)
+        self.assertIn(
+            "extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding is a mandatory field",
+            actual_error_messages,
+        )
 
     def test_pre_validate_missing_valueCodeableConcept3(self):
         # Test case: valid data (should not raise an exception)
@@ -704,23 +741,24 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         except Exception as error:
             self.fail(f"Validation unexpectedly raised an exception: {error}")
 
-
     def test_pre_validate_extension_length(self):
         """Test test_pre_validate_extension_length accepts valid length of 1  and rejects invalid length for extension"""
         # Test case: missing "extension"
         invalid_json_data = deepcopy(self.json_data)
-        invalid_json_data["extension"].append({
-        "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure",
-        "valueCodeableConcept": {
-            "coding": [
+        invalid_json_data["extension"].append(
             {
-                "system": "http://snomed.info/sct",
-                "code": "1324681000000101",
-                "display": "Administration of first dose of severe acute respiratory syndrome coronavirus 2 vaccine (procedure)"
+                "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure",
+                "valueCodeableConcept": {
+                    "coding": [
+                        {
+                            "system": "http://snomed.info/sct",
+                            "code": "1324681000000101",
+                            "display": "Administration of first dose of severe acute respiratory syndrome coronavirus 2 vaccine (procedure)",
+                        }
+                    ]
+                },
             }
-            ]
-        }
-        })
+        )
 
         with self.assertRaises(Exception) as error:
             self.validator.validate(invalid_json_data)
@@ -733,20 +771,30 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         """Test test_pre_validate_extension_url accepts valid values and rejects invalid values for extension[0].url"""
         # Test case: missing "extension"
         invalid_json_data = deepcopy(self.json_data)
-        invalid_json_data["extension"][0]["url"]='https://xyz/Extension-UKCore-VaccinationProcedure'
+        invalid_json_data["extension"][0]["url"] = "https://xyz/Extension-UKCore-VaccinationProcedure"
 
         with self.assertRaises(Exception) as error:
             self.validator.validate(invalid_json_data)
 
         full_error_message = str(error.exception)
         actual_error_messages = full_error_message.replace("Validation errors: ", "").split("; ")
-        self.assertIn("extension[0].url must be one of the following: https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure", actual_error_messages)
+        self.assertIn(
+            "extension[0].url must be one of the following: https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure",
+            actual_error_messages,
+        )
 
     def test_pre_validate_extension_snomed_code(self):
         """Test test_pre_validate_extension_url accepts valid values and rejects invalid values for extension[0].url"""
         # Test case: missing "extension"
         invalid_json_data = deepcopy(self.json_data)
-        test_values = ["12345abc", "12345", "1234567890123456789", "12345671", "1324681000000111", "0101291008"]
+        test_values = [
+            "12345abc",
+            "12345",
+            "1234567890123456789",
+            "12345671",
+            "1324681000000111",
+            "0101291008",
+        ]
         for values in test_values:
             invalid_json_data["extension"][0]["valueCodeableConcept"]["coding"][0]["code"] = values
 
@@ -755,38 +803,45 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
 
             full_error_message = str(error.exception)
             actual_error_messages = full_error_message.replace("Validation errors: ", "").split("; ")
-            self.assertIn("extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding[?(@.system=='http://snomed.info/sct')].code is not a valid snomed code", actual_error_messages)
+            self.assertIn(
+                "extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding[?(@.system=='http://snomed.info/sct')].code is not a valid snomed code",
+                actual_error_messages,
+            )
 
     def test_pre_validate_extension_to_extract_the_coding_code_value(self):
         "Test the array length for extension and it should be length 1"
         invalid_json_data = deepcopy(self.json_data)
 
         # Adding a new SNOMED code and testing if a specific code is retrieved
-        invalid_json_data["extension"][0]["valueCodeableConcept"]["coding"].append({
-            "system": "http://snomed.info/sct",
-            "code": "1324681000000102",
-            "display": "Administration of first dose of severe acute respiratory syndrome coronavirus 2 vaccine (procedure)"
-        })
+        invalid_json_data["extension"][0]["valueCodeableConcept"]["coding"].append(
+            {
+                "system": "http://snomed.info/sct",
+                "code": "1324681000000102",
+                "display": "Administration of first dose of severe acute respiratory syndrome coronavirus 2 vaccine (procedure)",
+            }
+        )
         actual_value = get_generic_extension_value(
             invalid_json_data,
             "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure",
             "http://snomed.info/sct",
-            "code"
+            "code",
         )
         self.assertIn("1324681000000101", actual_value)
 
         # Updating system and adding another SNOMED code to verify the updated value
         invalid_json_data["extension"][0]["valueCodeableConcept"]["coding"][0]["system"] = "http://xyz.info/sct"
-        invalid_json_data["extension"][0]["valueCodeableConcept"]["coding"].append({
-            "system": "http://snomed.info/sct",
-            "code": "1324681000000103",
-            "display": "Administration of first dose of severe acute respiratory syndrome coronavirus 2 vaccine (procedure)"
-        })
+        invalid_json_data["extension"][0]["valueCodeableConcept"]["coding"].append(
+            {
+                "system": "http://snomed.info/sct",
+                "code": "1324681000000103",
+                "display": "Administration of first dose of severe acute respiratory syndrome coronavirus 2 vaccine (procedure)",
+            }
+        )
         actual_value = get_generic_extension_value(
             invalid_json_data,
             "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure",
             "http://snomed.info/sct",
-            "code"
+            "code",
         )
         self.assertIn("1324681000000102", actual_value)
 
@@ -821,11 +876,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         rejects invalid values
         """
         for value in range(1, PreValidators.DOSE_NUMBER_MAX_VALUE + 1):
-            data = {
-                "protocolApplied": [
-                    {"doseNumberPositiveInt": value}
-                ]
-            }
+            data = {"protocolApplied": [{"doseNumberPositiveInt": value}]}
             validator = PreValidators(data)
             # Should not raise
             validator.pre_validate_dose_number_positive_int(data)
@@ -833,11 +884,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
     def test_out_of_range_dose_number(self):
         # Invalid: doseNumberPositiveInt < 1 or > 9
         for value in [0, PreValidators.DOSE_NUMBER_MAX_VALUE + 1, -1]:
-            data = {
-                "protocolApplied": [
-                    {"doseNumberPositiveInt": value}
-                ]
-            }
+            data = {"protocolApplied": [{"doseNumberPositiveInt": value}]}
             validator = PreValidators(data)
             with self.assertRaises(ValueError):
                 validator.pre_validate_dose_number_positive_int(data)
@@ -1060,8 +1107,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         # Test data with single disease_type_coding_code
         ValidatorModelTests.test_string_value(
             self,
-            field_location="protocolApplied[0].targetDisease[0]."
-            + "coding[?(@.system=='http://snomed.info/sct')].code",
+            field_location="protocolApplied[0].targetDisease[0]." + "coding[?(@.system=='http://snomed.info/sct')].code",
             valid_strings_to_test=[
                 "840539006",
                 "6142004",
@@ -1094,7 +1140,10 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         ValidatorModelTests.test_string_value(
             self,
             field_location="lotNumber",
-            valid_strings_to_test=["sample", ValidValues.for_strings_with_any_length_chars],
+            valid_strings_to_test=[
+                "sample",
+                ValidValues.for_strings_with_any_length_chars,
+            ],
             invalid_strings_to_test=["", None, 42, 3.889],
         )
 
@@ -1164,6 +1213,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
                 Decimal("1.123456789"),  # 9 decimal place
             ],
         )
+
     def test_pre_validate_dose_quantity_system(self):
         """Test pre_validate_dose_quantity_system accepts valid values and rejects invalid values"""
 
@@ -1192,7 +1242,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
             valid_json_data=deepcopy(self.json_data),
             field_location=field_location,
             invalid_value=InvalidValues.invalid_dose_quantity,
-            expected_error_message="If doseQuantity.code is present, doseQuantity.system must also be present"
+            expected_error_message="If doseQuantity.code is present, doseQuantity.system must also be present",
         )
 
     def test_pre_validate_dose_quantity_unit(self):
@@ -1209,7 +1259,12 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
             ValidatorModelTests.test_list_value(
                 self,
                 field_location=f"reasonCode[{i}].coding",
-                valid_lists_to_test=[[{"code": "ABC123", "display": "test"}, {"code": "ABC123", "display": "test"}]],
+                valid_lists_to_test=[
+                    [
+                        {"code": "ABC123", "display": "test"},
+                        {"code": "ABC123", "display": "test"},
+                    ]
+                ],
                 valid_list_element={"code": "ABC123", "display": "test"},
             )
 
@@ -1253,7 +1308,14 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
     def test_pre_validate_vaccine_code(self):
         """Test pre_validate_vaccine_code accepts valid values and rejects invalid values for vaccineCode.coding[0].code"""
         invalid_json_data = deepcopy(self.json_data)
-        test_values = ["12345abc", "12345", "1234567890123456789", "12345671", "1324681000000111", "0101291008"]
+        test_values = [
+            "12345abc",
+            "12345",
+            "1234567890123456789",
+            "12345671",
+            "1324681000000111",
+            "0101291008",
+        ]
         for values in test_values:
             invalid_json_data["vaccineCode"]["coding"][0]["code"] = values
 
@@ -1262,7 +1324,10 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
 
             full_error_message = str(error.exception)
             actual_error_messages = full_error_message.replace("Validation errors: ", "").split("; ")
-            self.assertIn("vaccineCode.coding[?(@.system=='http://snomed.info/sct')].code is not a valid snomed code", actual_error_messages)
+            self.assertIn(
+                "vaccineCode.coding[?(@.system=='http://snomed.info/sct')].code is not a valid snomed code",
+                actual_error_messages,
+            )
 
 
 class TestImmunizationModelPreValidationRulesForReduceValidation(unittest.TestCase):

@@ -1,35 +1,38 @@
 import copy
 import json
 import unittest
-from utils_for_converter_tests import ValuesForTests
-from converter import Converter
+
 from common.mappings import ConversionFieldName
+from converter import Converter
+from utils_for_converter_tests import ValuesForTests
+
 
 class TestSiteCodeToFlatJson(unittest.TestCase):
-    
     def setUp(self):
         self.request_json_data = copy.deepcopy(ValuesForTests.json_data)
-    
+
     def test_site_code_not_exists(self):
         self.request_json_data["performer"] = None
         self._run_site_code_test("")
-        
+
     def test_site_code_actor_empty(self):
         self.request_json_data["performer"] = [{"actor": {}}]
         self._run_site_code_test("")
-        
+
     def test_site_code_single_performer(self):
         """Test case where only one performer instance exists"""
         self.request_json_data["performer"] = [
             {
                 "actor": {
                     "type": "Organization",
-                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "B0C4P"},
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                        "value": "B0C4P",
+                    },
                 }
             },
             {"actor": {"reference": "#Pract1"}},
         ]
-        {"actor": {"value": "OTHER123"}},
         expected_site_code = "B0C4P"
         self._run_site_code_test(expected_site_code)
 
@@ -38,19 +41,28 @@ class TestSiteCodeToFlatJson(unittest.TestCase):
         self.request_json_data["performer"] = [
             {
                 "actor": {
-                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "code1"},
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                        "value": "code1",
+                    },
                 }
             },
             {
                 "actor": {
                     "type": "Organization",
-                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "code2"},
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                        "value": "code2",
+                    },
                 }
             },
             {
                 "actor": {
                     "type": "Organization",
-                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "code3"},
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                        "value": "code3",
+                    },
                 }
             },
             {"actor": {"reference": "#Pract1"}},
@@ -63,19 +75,28 @@ class TestSiteCodeToFlatJson(unittest.TestCase):
         self.request_json_data["performer"] = [
             {
                 "actor": {
-                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organizatdion-code", "value": "code1"},
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/ods-organizatdion-code",
+                        "value": "code1",
+                    },
                 }
             },
             {
                 "actor": {
                     "type": "Organization",
-                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-nhs-code", "value": "code2"},
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/ods-nhs-code",
+                        "value": "code2",
+                    },
                 }
             },
             {
                 "actor": {
                     "type": "Organization",
-                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-nhss-code", "value": "code3"},
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/ods-nhss-code",
+                        "value": "code3",
+                    },
                 }
             },
             {"actor": {"reference": "#Pract1"}},
@@ -88,22 +109,34 @@ class TestSiteCodeToFlatJson(unittest.TestCase):
         self.request_json_data["performer"] = [
             {
                 "actor": {
-                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-nhs-code", "value": "code2"},
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/ods-nhs-code",
+                        "value": "code2",
+                    },
                 }
             },
             {
                 "actor": {
-                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "code1"},
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                        "value": "code1",
+                    },
                 }
             },
             {
                 "actor": {
-                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "code4"},
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                        "value": "code4",
+                    },
                 }
             },
             {
                 "actor": {
-                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-nhss-code", "value": "code3"},
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/ods-nhss-code",
+                        "value": "code3",
+                    },
                 }
             },
             {"actor": {"reference": "#Pract1"}},
@@ -116,12 +149,18 @@ class TestSiteCodeToFlatJson(unittest.TestCase):
         self.request_json_data["performer"] = [
             {
                 "actor": {
-                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-nhs-code", "value": "code1"},
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/ods-nhs-code",
+                        "value": "code1",
+                    },
                 }
             },
             {
                 "actor": {
-                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-nhss-code", "value": "code2"},
+                    "identifier": {
+                        "system": "https://fhir.nhs.uk/Id/ods-nhss-code",
+                        "value": "code2",
+                    },
                 }
             },
             {"actor": {"reference": "#Pract1"}},

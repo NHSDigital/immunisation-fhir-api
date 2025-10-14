@@ -1,25 +1,27 @@
 """Lambda Handler which streams batch file entries from Kinesis and forwards to the Imms FHIR API"""
 
-import os
-import simplejson as json
 import base64
-import time
 import logging
+import os
+import time
 from datetime import datetime
 
+import simplejson as json
 from batch.batch_filename_to_events_mapper import BatchFilenameToEventsMapper
-from repository.fhir_batch_repository import create_table
-from controller.fhir_batch_controller import ImmunizationBatchController, make_batch_controller
 from clients import sqs_client
+from controller.fhir_batch_controller import (
+    ImmunizationBatchController,
+    make_batch_controller,
+)
 from models.errors import (
-    MessageNotSuccessfulError,
-    RecordProcessorError,
     CustomValidationError,
     IdentifierDuplicationError,
-    ResourceNotFoundError,
+    MessageNotSuccessfulError,
+    RecordProcessorError,
     ResourceFoundError,
+    ResourceNotFoundError,
 )
-
+from repository.fhir_batch_repository import create_table
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger()
@@ -50,7 +52,10 @@ def create_diagnostics_dictionary(error: Exception) -> dict:
 
 
 def forward_request_to_dynamo(
-    message_body: any, table: any, is_present: bool, batch_controller: ImmunizationBatchController
+    message_body: any,
+    table: any,
+    is_present: bool,
+    batch_controller: ImmunizationBatchController,
 ):
     """Forwards the request to the Imms API (where possible) and updates the ack file with the outcome"""
     row_id = message_body.get("row_id")
@@ -106,18 +111,22 @@ def forward_lambda_handler(event, _):
 
             imms_id = forward_request_to_dynamo(incoming_message_body, table, identifier_already_present, controller)
             filename_to_events_mapper.add_event(
-                { **base_outgoing_message_body,
-                 "operation_start_time": operation_start_time,
-                 "operation_end_time": str(datetime.now()),
-                 "imms_id": imms_id }
+                {
+                    **base_outgoing_message_body,
+                    "operation_start_time": operation_start_time,
+                    "operation_end_time": str(datetime.now()),
+                    "imms_id": imms_id,
+                }
             )
 
         except Exception as error:  # pylint: disable = broad-exception-caught
             filename_to_events_mapper.add_event(
-                { **base_outgoing_message_body,
-                 "operation_start_time": operation_start_time,
-                 "operation_end_time": str(datetime.now()),
-                 "diagnostics": create_diagnostics_dictionary(error) }
+                {
+                    **base_outgoing_message_body,
+                    "operation_start_time": operation_start_time,
+                    "operation_end_time": str(datetime.now()),
+                    "diagnostics": create_diagnostics_dictionary(error),
+                }
             )
             logger.error("Error processing message: %s", error)
 
@@ -126,7 +135,11 @@ def forward_lambda_handler(event, _):
         sqs_message_body = json.dumps(events)
         logger.info(f"total message length:{len(sqs_message_body)}")
 
-        sqs_client.send_message(QueueUrl=QUEUE_URL, MessageBody=sqs_message_body, MessageGroupId=filename_key)
+        sqs_client.send_message(
+            QueueUrl=QUEUE_URL,
+            MessageBody=sqs_message_body,
+            MessageGroupId=filename_key,
+        )
 
 
 if __name__ == "__main__":

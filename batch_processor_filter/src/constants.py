@@ -24,6 +24,7 @@ class FileStatus(StrEnum):
 
 class FileNotProcessedReason(StrEnum):
     """Reasons why a file was not processed"""
+
     DUPLICATE = "Duplicate"
 
 

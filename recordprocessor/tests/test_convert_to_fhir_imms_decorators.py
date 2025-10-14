@@ -5,28 +5,32 @@ NOTE: testing protected methods is not ideal. But in this case, we are testing t
 NOTE: the public function `decorate` is tested in `TestDecorate` class.
 """
 
-from decimal import Decimal
 import copy
 import unittest
+from decimal import Decimal
 from unittest.mock import patch
 
 from tests.utils_for_recordprocessor_tests.decorator_constants import (
+    RSV_TARGET_DISEASE_ELEMENT,
     AllHeaders,
     AllHeadersExpectedOutput,
     ExtensionItems,
-    RSV_TARGET_DISEASE_ELEMENT,
 )
-from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import MockFieldDictionaries
-from tests.utils_for_recordprocessor_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT
+from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
+    MOCK_ENVIRONMENT_DICT,
+)
+from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
+    MockFieldDictionaries,
+)
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
     from constants import Urls
     from convert_to_fhir_imms_resource import (
+        _decorate_immunization,
         _decorate_patient,
+        _decorate_performer,
         _decorate_vaccination,
         _decorate_vaccine,
-        _decorate_performer,
-        _decorate_immunization,
     )
 
 empty_csv_data = {k: "" for k in MockFieldDictionaries.all_fields}
@@ -119,7 +123,13 @@ class TestVaccineDecorator(unittest.TestCase):
                 "status": "completed",
                 "protocolApplied": [{"targetDisease": RSV_TARGET_DISEASE_ELEMENT}],
                 "vaccineCode": {
-                    "coding": [{"system": Urls.NULL_FLAVOUR_CODES, "code": "NAVU", "display": "Not available"}]
+                    "coding": [
+                        {
+                            "system": Urls.NULL_FLAVOUR_CODES,
+                            "code": "NAVU",
+                            "display": "Not available",
+                        }
+                    ]
                 },
             },
         )
@@ -157,7 +167,10 @@ class TestVaccinationDecorator(unittest.TestCase):
             "resourceType": "Immunization",
             "status": "completed",
             "protocolApplied": [
-                {"targetDisease": RSV_TARGET_DISEASE_ELEMENT, "doseNumberString": "Dose sequence not recorded"}
+                {
+                    "targetDisease": RSV_TARGET_DISEASE_ELEMENT,
+                    "doseNumberString": "Dose sequence not recorded",
+                }
             ],
         }
         self.assertDictEqual(self.imms, expected_output)
@@ -202,9 +215,18 @@ class TestVaccinationDecorator(unittest.TestCase):
 
     def test_dose_quantity(self):
         """Test that only non-empty dose_quantity values (dose_amount, dose_unit_term and dose_unit_code) are added"""
-        dose_quantity = {"system": Urls.SNOMED, "value": Decimal("0.5"), "unit": "t", "code": "code"}
+        dose_quantity = {
+            "system": Urls.SNOMED,
+            "value": Decimal("0.5"),
+            "unit": "t",
+            "code": "code",
+        }
         # dose: _amount non-empty, _unit_term non-empty, _unit_code empty
-        headers = {"DOSE_AMOUNT": "0.5", "DOSE_UNIT_TERM": "a_dose_unit_term", "DOSE_UNIT_CODE": ""}
+        headers = {
+            "DOSE_AMOUNT": "0.5",
+            "DOSE_UNIT_TERM": "a_dose_unit_term",
+            "DOSE_UNIT_CODE": "",
+        }
         _decorate_vaccination(self.imms, headers)
         dose_quantity = {"value": Decimal("0.5"), "unit": "a_dose_unit_term"}
         self.assertDictEqual(self.imms["doseQuantity"], dose_quantity)
@@ -212,13 +234,24 @@ class TestVaccinationDecorator(unittest.TestCase):
         # dose: _amount non-empty, _unit_term empty, _unit_code non-empty
         headers = {"DOSE_AMOUNT": "0.5", "DOSE_UNIT_CODE": "a_dose_unit_code"}
         _decorate_vaccination(self.imms, headers)
-        dose_quantity = {"system": Urls.SNOMED, "value": Decimal("0.5"), "code": "a_dose_unit_code"}
+        dose_quantity = {
+            "system": Urls.SNOMED,
+            "value": Decimal("0.5"),
+            "code": "a_dose_unit_code",
+        }
         self.assertDictEqual(self.imms["doseQuantity"], dose_quantity)
 
         # dose: _amount empty, _unit_term non-empty, _unit_code non-empty
-        headers = {"DOSE_UNIT_TERM": "a_dose_unit_term", "DOSE_UNIT_CODE": "a_dose_unit_code"}
+        headers = {
+            "DOSE_UNIT_TERM": "a_dose_unit_term",
+            "DOSE_UNIT_CODE": "a_dose_unit_code",
+        }
         _decorate_vaccination(self.imms, headers)
-        dose_quantity = {"system": Urls.SNOMED, "code": "a_dose_unit_code", "unit": "a_dose_unit_term"}
+        dose_quantity = {
+            "system": Urls.SNOMED,
+            "code": "a_dose_unit_code",
+            "unit": "a_dose_unit_term",
+        }
         self.assertDictEqual(self.imms["doseQuantity"], dose_quantity)
 
         # dose: _amount non-empty, _unit_term empty, _unit_code empty
@@ -263,7 +296,14 @@ class TestPerformerDecorator(unittest.TestCase):
             "resourceType": "Immunization",
             "status": "completed",
             "protocolApplied": [{"targetDisease": RSV_TARGET_DISEASE_ELEMENT}],
-            "performer": [{"actor": {"type": "Organization", "identifier": {"value": "a_site_code"}}}],
+            "performer": [
+                {
+                    "actor": {
+                        "type": "Organization",
+                        "identifier": {"value": "a_site_code"},
+                    }
+                }
+            ],
         }
         self.assertDictEqual(self.imms, expected_output)
 

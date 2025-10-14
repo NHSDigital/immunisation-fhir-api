@@ -1,16 +1,15 @@
 """Tests for Filter class"""
 
+import unittest
 from copy import deepcopy
 from uuid import uuid4
-
-import unittest
 
 from constants import Urls
 from filter import (
     Filter,
-    remove_reference_to_contained_practitioner,
-    create_reference_to_patient_resource,
     add_use_to_identifier,
+    create_reference_to_patient_resource,
+    remove_reference_to_contained_practitioner,
     replace_address_postal_codes,
     replace_organization_values,
 )
@@ -76,10 +75,16 @@ class TestFilter(unittest.TestCase):
         expected_output = {
             "reference": patient_uuid,
             "type": "Patient",
-            "identifier": {"system": "https://fhir.nhs.uk/Id/nhs-number", "value": "9000000009"},
+            "identifier": {
+                "system": "https://fhir.nhs.uk/Id/nhs-number",
+                "value": "9000000009",
+            },
         }
 
-        self.assertEqual(create_reference_to_patient_resource(patient_uuid, input_data), expected_output)
+        self.assertEqual(
+            create_reference_to_patient_resource(patient_uuid, input_data),
+            expected_output,
+        )
 
     def test_add_use_to_identifier(self):
         """Test that a use of "offical" is added to identifier[0] is no use already given"""
@@ -117,7 +122,10 @@ class TestFilter(unittest.TestCase):
         # TEST CASE: Input data has organization identifier value and system
         input_imms_data = deepcopy(input_imms)
         expected_output_data = deepcopy(expected_output)
-        expected_organization_identifier = {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "N2N9I"}
+        expected_organization_identifier = {
+            "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+            "value": "N2N9I",
+        }
         expected_output_data["performer"][1]["actor"]["identifier"] = expected_organization_identifier
         self.assertEqual(replace_organization_values(deepcopy(input_imms)), expected_output_data)
 
@@ -125,7 +133,10 @@ class TestFilter(unittest.TestCase):
         input_imms_data = deepcopy(input_imms)
         del input_imms_data["performer"][1]["actor"]["identifier"]["system"]
         expected_output_data = deepcopy(expected_output)
-        expected_organization_identifier = {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "N2N9I"}
+        expected_organization_identifier = {
+            "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+            "value": "N2N9I",
+        }
         expected_output_data["performer"][1]["actor"]["identifier"] = expected_organization_identifier
         self.assertEqual(replace_organization_values(input_imms_data), expected_output_data)
 

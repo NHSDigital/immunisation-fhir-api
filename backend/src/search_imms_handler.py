@@ -1,21 +1,22 @@
 import argparse
+import base64
 import json
 import logging
 import pprint
+import urllib.parse
 import uuid
 
-from aws_lambda_typing import context as context_, events
-
+from aws_lambda_typing import context as context_
+from aws_lambda_typing import events
+from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE, MAX_RESPONSE_SIZE_BYTES
 from controller.aws_apig_response_utils import create_response
 from controller.fhir_controller import FhirController, make_controller
-from models.errors import Severity, Code, create_operation_outcome
-from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE, MAX_RESPONSE_SIZE_BYTES
 from log_structure import function_info
-import base64
-import urllib.parse
+from models.errors import Code, Severity, create_operation_outcome
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger()
+
 
 @function_info
 def search_imms_handler(event: events.APIGatewayProxyEventV1, _context: context_):
@@ -30,11 +31,9 @@ def search_imms(event: events.APIGatewayProxyEventV1, controller: FhirController
         query_string_has_immunization_identifier = False
         query_string_has_element = False
         body_has_immunization_element = False
-        if not (query_params == None and body == None):
+        if not (query_params is None and body is None):
             if query_params:
-                query_string_has_immunization_identifier = "identifier" in event.get(
-                    "queryStringParameters", {}
-                )
+                query_string_has_immunization_identifier = "identifier" in event.get("queryStringParameters", {})
                 query_string_has_element = "_elements" in event.get("queryStringParameters", {})
             # Decode body from base64
             if body:
@@ -103,7 +102,13 @@ if __name__ == "__main__":
         required=False,
         dest="identifier",
     )
-    parser.add_argument("--elements", help="Identifier of System", type=str, required=False, dest="_elements")
+    parser.add_argument(
+        "--elements",
+        help="Identifier of System",
+        type=str,
+        required=False,
+        dest="_elements",
+    )
     args = parser.parse_args()
 
     event: events.APIGatewayProxyEventV1 = {
@@ -113,13 +118,13 @@ if __name__ == "__main__":
             "-date.from": [args.date_from] if args.date_from else [],
             "-date.to": [args.date_to] if args.date_to else [],
             "_include": ["Immunization:patient"],
-            "identifier": [args.immunization_identifier] if args.immunization_identifier else [],
+            "identifier": ([args.immunization_identifier] if args.immunization_identifier else []),
             "_elements": [args._element] if args._element else [],
         },
         "httpMethod": "POST",
         "headers": {
             "Content-Type": "application/x-www-form-urlencoded",
-            "AuthenticationType": "ApplicationRestricted"
+            "AuthenticationType": "ApplicationRestricted",
         },
         "body": None,
         "resource": None,
