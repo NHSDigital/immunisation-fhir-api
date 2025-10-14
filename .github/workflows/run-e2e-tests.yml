@@ -34,7 +34,7 @@ on:
         description: Set the sub environment name e.g. pr-xxx, or green/blue in higher environments
   # TODO - remove
   pull_request:
-    types: [opened]
+    types: [labeled, opened, synchronize, reopened, unlabeled]
 
 jobs:
   e2e-tests:
