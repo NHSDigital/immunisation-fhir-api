@@ -21,3 +21,14 @@ provider "aws" {
     }
   }
 }
+
+provider "aws" {
+  alias  = "use1"
+  region = "us-east-1"
+  default_tags {
+    tags = {
+      Project     = "immunisation-fhir-api"
+      Environment = var.environment
+    }
+  }
+}

@@ -1,12 +1,12 @@
 import json
 import unittest
+from pathlib import Path
 from unittest.mock import create_autospec, patch
 
-from controller.fhir_controller import FhirController
-from models.errors import Severity, Code, create_operation_outcome
-from search_imms_handler import search_imms
-from pathlib import Path
 from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
+from controller.fhir_controller import FhirController
+from models.errors import Code, Severity, create_operation_outcome
+from search_imms_handler import search_imms
 
 script_location = Path(__file__).absolute().parent
 
@@ -79,7 +79,11 @@ class TestSearchImmunizations(unittest.TestCase):
 
     def test_search_immunizations_get_id_from_body_passing_none(self):
         """it should enter search_immunizations as both the request params are none"""
-        lambda_event = {"pathParameters": {"id": "an-id"}, "body": None, "queryStringParameters": None}
+        lambda_event = {
+            "pathParameters": {"id": "an-id"},
+            "body": None,
+            "queryStringParameters": None,
+        }
         exp_res = {"a-key": "a-value"}
 
         self.controller.search_immunizations.return_value = exp_res

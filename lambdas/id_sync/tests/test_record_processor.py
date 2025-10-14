@@ -1,27 +1,27 @@
 import unittest
 from unittest.mock import patch
+
 from record_processor import process_record
 
 
 class TestRecordProcessor(unittest.TestCase):
-
     def setUp(self):
         """Set up test fixtures and mocks"""
         # Patch logger
-        self.logger_patcher = patch('record_processor.logger')
+        self.logger_patcher = patch("record_processor.logger")
         self.mock_logger = self.logger_patcher.start()
 
         # PDS helpers
-        self.pds_get_patient_id_patcher = patch('record_processor.pds_get_patient_id')
+        self.pds_get_patient_id_patcher = patch("record_processor.pds_get_patient_id")
         self.mock_pds_get_patient_id = self.pds_get_patient_id_patcher.start()
 
-        self.pds_get_patient_details_patcher = patch('record_processor.pds_get_patient_details')
+        self.pds_get_patient_details_patcher = patch("record_processor.pds_get_patient_details")
         self.mock_pds_get_patient_details = self.pds_get_patient_details_patcher.start()
 
-        self.ieds_update_patient_id_patcher = patch('record_processor.ieds_update_patient_id')
+        self.ieds_update_patient_id_patcher = patch("record_processor.ieds_update_patient_id")
         self.mock_ieds_update_patient_id = self.ieds_update_patient_id_patcher.start()
 
-        self.get_items_from_patient_id_patcher = patch('record_processor.get_items_from_patient_id')
+        self.get_items_from_patient_id_patcher = patch("record_processor.get_items_from_patient_id")
         self.mock_get_items_from_patient_id = self.get_items_from_patient_id_patcher.start()
 
     def tearDown(self):
@@ -75,7 +75,7 @@ class TestRecordProcessor(unittest.TestCase):
                         "gender": "male",
                         "birthDate": "1980-01-01",
                     }
-                ]
+                ],
             }
         }
         self.mock_get_items_from_patient_id.return_value = [matching_item]
@@ -116,12 +116,12 @@ class TestRecordProcessor(unittest.TestCase):
                         "gender": "male",
                         "birthDate": "1990-01-01",
                     }
-                ]
+                ],
             }
         }
         self.mock_get_items_from_patient_id.return_value = [non_matching_item]
 
-    # Act
+        # Act
         result = process_record(test_sqs_record)
 
         # Assert
@@ -162,7 +162,8 @@ class TestRecordProcessor(unittest.TestCase):
         self.mock_get_items_from_patient_id.return_value = [{"Resource": {}}]
         self.mock_pds_get_patient_details.return_value = {
             "name": [{"given": ["J"], "family": "K"}],
-            "gender": "male", "birthDate": "2000-01-01"
+            "gender": "male",
+            "birthDate": "2000-01-01",
         }
         self.mock_get_items_from_patient_id.side_effect = Exception("dynamo fail")
 
@@ -177,24 +178,24 @@ class TestRecordProcessor(unittest.TestCase):
         test_sqs_record = {"body": {"subject": nhs_number}}
         self.mock_pds_get_patient_id.return_value = pds_id
         self.mock_pds_get_patient_details.return_value = {
-            "name": [
-                {
-                    "given": ["Sarah"],
-                    "family": "Fowley"}
-                ],
+            "name": [{"given": ["Sarah"], "family": "Fowley"}],
             "gender": "male",
-            "birthDate": "1956-07-09"
+            "birthDate": "1956-07-09",
         }
         item = {
             "Resource": {
                 "resourceType": "Immunization",
-                "contained": [{
-                    "resourceType": "Patient",
-                    "id": "PatM",
-                    "name": [{"given": ["Sarah"], "family": "Fowley"}],
-                    "gender": "male", "birthDate": "1956-07-09"}
-                ]}
+                "contained": [
+                    {
+                        "resourceType": "Patient",
+                        "id": "PatM",
+                        "name": [{"given": ["Sarah"], "family": "Fowley"}],
+                        "gender": "male",
+                        "birthDate": "1956-07-09",
+                    }
+                ],
             }
+        }
         self.mock_get_items_from_patient_id.return_value = [item]
         self.mock_ieds_update_patient_id.return_value = {"status": "success"}
 
@@ -219,7 +220,7 @@ class TestRecordProcessor(unittest.TestCase):
         self.mock_pds_get_patient_id.assert_called_once()
 
     def test_process_record_pds_returns_none_id(self):
-        """Test when PDS returns none """
+        """Test when PDS returns none"""
         # Arrange
         test_id = "12345a"
         self.mock_pds_get_patient_id.return_value = None
@@ -257,21 +258,25 @@ class TestRecordProcessor(unittest.TestCase):
         # Mock demographics so update proceeds
         self.mock_pds_get_patient_details.return_value = {
             "name": [{"given": ["A"], "family": "B"}],
-            "gender": "female", "birthDate": "1990-01-01"
+            "gender": "female",
+            "birthDate": "1990-01-01",
         }
-        self.mock_get_items_from_patient_id.return_value = [{
-            "Resource": {
-                "resourceType": "Immunization",
-                "contained": [
-                    {
-                        "resourceType": "Patient",
-                        "id": "Pat3",
-                        "name": [{"given": ["A"], "family": "B"}],
-                        "gender": "female", "birthDate": "1990-01-01"
-                    }
-                ]
+        self.mock_get_items_from_patient_id.return_value = [
+            {
+                "Resource": {
+                    "resourceType": "Immunization",
+                    "contained": [
+                        {
+                            "resourceType": "Patient",
+                            "id": "Pat3",
+                            "name": [{"given": ["A"], "family": "B"}],
+                            "gender": "female",
+                            "birthDate": "1990-01-01",
+                        }
+                    ],
+                }
             }
-        }]
+        ]
         self.mock_ieds_update_patient_id.return_value = {"status": "success"}
         # Act
         result = process_record(test_record)
@@ -300,15 +305,11 @@ class TestRecordProcessor(unittest.TestCase):
                     {
                         "resourceType": "Patient",
                         "id": "PatX",
-                        "name":
-                        [{
-                            "given": ["John"],
-                            "family": "Doe"
-                        }],
+                        "name": [{"given": ["John"], "family": "Doe"}],
                         "gender": "male",
-                        "birthDate": "1980-01-02"
+                        "birthDate": "1980-01-02",
                     }
-                ]
+                ],
             }
         }
         self.mock_get_items_from_patient_id.return_value = [item]
@@ -338,14 +339,11 @@ class TestRecordProcessor(unittest.TestCase):
                     {
                         "resourceType": "Patient",
                         "id": "PatY",
-                        "name": [{
-                            "given": ["Alex"],
-                            "family": "Smith"
-                        }],
+                        "name": [{"given": ["Alex"], "family": "Smith"}],
                         "gender": "male",
-                        "birthDate": "1992-03-03"
+                        "birthDate": "1992-03-03",
                     }
-                ]
+                ],
             }
         }
         self.mock_get_items_from_patient_id.return_value = [item]
@@ -371,14 +369,11 @@ class TestRecordProcessor(unittest.TestCase):
                     {
                         "resourceType": "Patient",
                         "id": "PatZ",
-                        "name": [{
-                            "given": ["Zoe"],
-                            "family": "Lee"
-                        }],
+                        "name": [{"given": ["Zoe"], "family": "Lee"}],
                         "gender": "female",
-                        "birthDate": "2000-01-01"
+                        "birthDate": "2000-01-01",
                     }
-                ]
+                ],
             }
         }
         self.mock_get_items_from_patient_id.return_value = [item]

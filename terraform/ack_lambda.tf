@@ -19,11 +19,11 @@ resource "aws_ecr_repository" "ack_lambda_repository" {
 
 # Module for building and pushing Docker image to ECR
 module "ack_processor_docker_image" {
-  source  = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version = "8.1.0"
+  source           = "terraform-aws-modules/lambda/aws//modules/docker-build"
+  version          = "8.1.0"
   docker_file_path = "./ack_backend/Dockerfile"
-  create_ecr_repo = false
-  ecr_repo        = aws_ecr_repository.ack_lambda_repository.name
+  create_ecr_repo  = false
+  ecr_repo         = aws_ecr_repository.ack_lambda_repository.name
   ecr_repo_lifecycle_policy = jsonencode({
     "rules" : [
       {
@@ -43,7 +43,7 @@ module "ack_processor_docker_image" {
 
   platform      = "linux/amd64"
   use_image_tag = false
-  source_path = abspath("${path.root}/../lambdas")
+  source_path   = abspath("${path.root}/../lambdas")
   triggers = {
     dir_sha        = local.ack_lambda_dir_sha
     shared_dir_sha = local.shared_dir_sha
@@ -130,6 +130,7 @@ resource "aws_iam_policy" "ack_lambda_exec_policy" {
       {
         Effect = "Allow"
         Action = [
+          "dynamodb:GetItem",
           "dynamodb:UpdateItem"
         ]
         Resource = [
@@ -212,10 +213,10 @@ resource "aws_lambda_function" "ack_processor_lambda" {
 
   environment {
     variables = {
-      ACK_BUCKET_NAME            = aws_s3_bucket.batch_data_destination_bucket.bucket
-      SPLUNK_FIREHOSE_NAME       = module.splunk.firehose_stream_name
-      SOURCE_BUCKET_NAME         = aws_s3_bucket.batch_data_source_bucket.bucket
-      AUDIT_TABLE_NAME           = aws_dynamodb_table.audit-table.name
+      ACK_BUCKET_NAME      = aws_s3_bucket.batch_data_destination_bucket.bucket
+      SPLUNK_FIREHOSE_NAME = module.splunk.firehose_stream_name
+      SOURCE_BUCKET_NAME   = aws_s3_bucket.batch_data_source_bucket.bucket
+      AUDIT_TABLE_NAME     = aws_dynamodb_table.audit-table.name
     }
   }
 

@@ -1,6 +1,8 @@
 """Generic setup and teardown for ACK backend tests"""
 
-from tests.utils.mock_environment_variables import BucketNames, Firehose, REGION_NAME
+from constants import AuditTableKeys
+
+from tests.utils.mock_environment_variables import AUDIT_TABLE_NAME, REGION_NAME, BucketNames, Firehose
 
 
 class GenericSetUp:
@@ -11,12 +13,16 @@ class GenericSetUp:
     * If firehose_client is provided, creates a firehose delivery stream
     """
 
-    def __init__(self, s3_client=None, firehose_client=None):
-
+    def __init__(self, s3_client=None, firehose_client=None, dynamodb_client=None):
         if s3_client:
-            for bucket_name in [BucketNames.SOURCE, BucketNames.DESTINATION, BucketNames.MOCK_FIREHOSE]:
+            for bucket_name in [
+                BucketNames.SOURCE,
+                BucketNames.DESTINATION,
+                BucketNames.MOCK_FIREHOSE,
+            ]:
                 s3_client.create_bucket(
-                    Bucket=bucket_name, CreateBucketConfiguration={"LocationConstraint": REGION_NAME}
+                    Bucket=bucket_name,
+                    CreateBucketConfiguration={"LocationConstraint": REGION_NAME},
                 )
 
         if firehose_client:
@@ -30,17 +36,31 @@ class GenericSetUp:
                 },
             )
 
+        if dynamodb_client:
+            dynamodb_client.create_table(
+                TableName=AUDIT_TABLE_NAME,
+                KeySchema=[{"AttributeName": AuditTableKeys.MESSAGE_ID, "KeyType": "HASH"}],
+                AttributeDefinitions=[{"AttributeName": AuditTableKeys.MESSAGE_ID, "AttributeType": "S"}],
+                ProvisionedThroughput={"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
+            )
+
 
 class GenericTearDown:
     """Performs generic tear down of mock resources"""
 
-    def __init__(self, s3_client=None, firehose_client=None):
-
+    def __init__(self, s3_client=None, firehose_client=None, dynamodb_client=None):
         if s3_client:
-            for bucket_name in [BucketNames.SOURCE, BucketNames.DESTINATION, BucketNames.MOCK_FIREHOSE]:
+            for bucket_name in [
+                BucketNames.SOURCE,
+                BucketNames.DESTINATION,
+                BucketNames.MOCK_FIREHOSE,
+            ]:
                 for obj in s3_client.list_objects_v2(Bucket=bucket_name).get("Contents", []):
                     s3_client.delete_object(Bucket=bucket_name, Key=obj["Key"])
                 s3_client.delete_bucket(Bucket=bucket_name)
 
         if firehose_client:
             firehose_client.delete_delivery_stream(DeliveryStreamName=Firehose.STREAM_NAME)
+
+        if dynamodb_client:
+            dynamodb_client.delete_table(TableName=AUDIT_TABLE_NAME)

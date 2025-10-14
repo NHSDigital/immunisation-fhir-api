@@ -199,9 +199,7 @@
     "name": [
       {
         "family": "test",
-        "given": [
-          "test"
-        ]
+        "given": ["test"]
       }
     ],
     "gender": "1",
@@ -296,9 +294,7 @@
       "name": [
         {
           "family": "test",
-          "given": [
-            "test"
-          ]
+          "given": ["test"]
         }
       ]
     }

@@ -1,20 +1,20 @@
+import ast
+import json
+from typing import Any, Dict
+
 from common.clients import logger
-from typing import Dict, Any
-from pds_details import pds_get_patient_id, pds_get_patient_details
 from ieds_db_operations import (
-    ieds_update_patient_id,
     extract_patient_resource_from_item,
     get_items_from_patient_id,
+    ieds_update_patient_id,
 )
+from pds_details import pds_get_patient_details, pds_get_patient_id
 from utils import make_status
-import json
-import ast
 
 
 def process_record(event_record: Dict[str, Any]) -> Dict[str, Any]:
-
     logger.info("process_record. Processing record: %s", event_record)
-    body_text = event_record.get('body', '')
+    body_text = event_record.get("body", "")
 
     # convert body to json (try JSON first, then fall back to Python literal)
     if isinstance(body_text, str):
@@ -57,7 +57,10 @@ def process_nhs_number(nhs_number: str) -> Dict[str, Any]:
         logger.exception("process_nhs_number: failed to fetch demographic details: %s", e)
         return make_status(str(e), nhs_number, "error")
 
-    logger.info("Fetched IEDS resources. IEDS count: %d", len(ieds_resources) if ieds_resources else 0)
+    logger.info(
+        "Fetched IEDS resources. IEDS count: %d",
+        len(ieds_resources) if ieds_resources else 0,
+    )
 
     if not ieds_resources:
         logger.info("No IEDS records returned for NHS number: %s", nhs_number)
@@ -77,9 +80,7 @@ def process_nhs_number(nhs_number: str) -> Dict[str, Any]:
         logger.info("No records matched PDS demographics: %d", discarded_count)
         return make_status("No records matched PDS demographics; update skipped", nhs_number)
 
-    response = ieds_update_patient_id(
-        nhs_number, new_nhs_number, items_to_update=matching_records
-    )
+    response = ieds_update_patient_id(nhs_number, new_nhs_number, items_to_update=matching_records)
     response["nhs_number"] = nhs_number
     # add counts for observability
     response["matched"] = len(matching_records)
@@ -93,13 +94,19 @@ def fetch_pds_and_ieds_resources(nhs_number: str):
     try:
         pds = pds_get_patient_details(nhs_number)
     except Exception as e:
-        logger.exception("fetch_pds_and_ieds_resources: failed to fetch PDS details for %s", nhs_number)
+        logger.exception(
+            "fetch_pds_and_ieds_resources: failed to fetch PDS details for %s",
+            nhs_number,
+        )
         raise RuntimeError("Failed to fetch PDS details") from e
 
     try:
         ieds = get_items_from_patient_id(nhs_number)
     except Exception as e:
-        logger.exception("fetch_pds_and_ieds_resources: failed to fetch IEDS items for %s", nhs_number)
+        logger.exception(
+            "fetch_pds_and_ieds_resources: failed to fetch IEDS items for %s",
+            nhs_number,
+        )
         raise RuntimeError("Failed to fetch IEDS items") from e
 
     return pds, ieds
@@ -133,6 +140,7 @@ def demographics_match(pds_details: dict, ieds_item: dict) -> bool:
     If required fields are missing or unparsable on the IEDS side the function returns False.
     """
     try:
+
         def normalize_strings(item: Any) -> str | None:
             return str(item).strip().lower() if item else None
 
@@ -140,8 +148,12 @@ def demographics_match(pds_details: dict, ieds_item: dict) -> bool:
         pds_name = normalize_strings(extract_normalized_name_from_patient(pds_details))
         pds_gender = normalize_strings(pds_details.get("gender"))
         pds_birth = normalize_strings(pds_details.get("birthDate"))
-        logger.debug("demographics_match: demographics match for name=%s, gender=%s, birthDate=%s",
-                     pds_name, pds_gender, pds_birth)
+        logger.debug(
+            "demographics_match: demographics match for name=%s, gender=%s, birthDate=%s",
+            pds_name,
+            pds_gender,
+            pds_birth,
+        )
 
         # Retrieve patient resource from IEDS item
         patient = extract_patient_resource_from_item(ieds_item)

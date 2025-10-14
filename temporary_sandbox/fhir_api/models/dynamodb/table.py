@@ -1,4 +1,4 @@
-''' Models for interacting with tables '''
+"""Models for interacting with tables"""
 
 from pydantic import (
     BaseModel,

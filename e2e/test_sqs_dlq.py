@@ -1,14 +1,14 @@
 import json
-import boto3
-import unittest
 import os
+import unittest
+
+import boto3
+from botocore.exceptions import ClientError  # Handle potential errors
 from utils.delete_sqs_messages import read_and_delete_messages
 from utils.get_sqs_url import get_queue_url
-from botocore.exceptions import ClientError  # Handle potential errors
 
 
 class TestSQS(unittest.TestCase):
-
     def setUp(self):
         # Get SQS queue url
         self.queue_name = os.environ["AWS_SQS_QUEUE_NAME"]
@@ -22,9 +22,7 @@ class TestSQS(unittest.TestCase):
         sqs_client = boto3.client("sqs")
         try:
             # Send the message to the queue
-            response = sqs_client.send_message(
-                QueueUrl=self.queue_url, MessageBody=json.dumps(message_body)
-            )
+            response = sqs_client.send_message(QueueUrl=self.queue_url, MessageBody=json.dumps(message_body))
             read_and_delete_messages(self.queue_url)
             # Assert successful message sending
             self.assertIn("MessageId", response)

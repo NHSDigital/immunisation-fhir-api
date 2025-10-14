@@ -1,7 +1,8 @@
-import unittest
-from unittest.mock import patch, MagicMock
-import logging
 import importlib
+import logging
+import unittest
+from unittest.mock import MagicMock, patch
+
 import common.clients as clients
 
 
@@ -61,12 +62,12 @@ class TestClients(unittest.TestCase):
         self.mock_logger_instance.setLevel.assert_called_once_with(logging.INFO)
 
     def test_global_s3_client(self):
-        ''' Test global_s3_client is not initialized on import '''
+        """Test global_s3_client is not initialized on import"""
         importlib.reload(clients)
         self.assertEqual(clients.global_s3_client, None)
 
     def test_global_s3_client_initialization(self):
-        ''' Test global_s3_client is initialized exactly once even with multiple invocations'''
+        """Test global_s3_client is initialized exactly once even with multiple invocations"""
         importlib.reload(clients)
         clients.get_s3_client()
         self.assertNotEqual(clients.global_s3_client, None)

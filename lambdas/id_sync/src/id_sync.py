@@ -6,8 +6,9 @@
 """
 
 from typing import Any, Dict
+
 from common.aws_lambda_event import AwsLambdaEvent
-from common.clients import logger, STREAM_NAME
+from common.clients import STREAM_NAME, logger
 from common.log_decorator import logging_decorator
 from exceptions.id_sync_exception import IdSyncException
 from record_processor import process_record
@@ -39,14 +40,16 @@ def handler(event_data: Dict[str, Any], _context) -> Dict[str, Any]:
                 error_count += 1
 
         if error_count > 0:
-            raise IdSyncException(message=f"Processed {len(records)} records with {error_count} errors",
-                                  nhs_numbers=nhs_numbers)
+            raise IdSyncException(
+                message=f"Processed {len(records)} records with {error_count} errors",
+                nhs_numbers=nhs_numbers,
+            )
 
         response = {
             "status": "success",
             "message": f"Successfully processed {len(records)} records",
-            "nhs_numbers": nhs_numbers
-            }
+            "nhs_numbers": nhs_numbers,
+        }
 
         logger.info("id_sync handler completed: %s", response)
         return response

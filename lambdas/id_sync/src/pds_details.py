@@ -1,13 +1,15 @@
-'''
-    Operations related to PDS (Patient Demographic Service)
-'''
+"""
+Operations related to PDS (Patient Demographic Service)
+"""
+
 import tempfile
-from os_vars import get_pds_env
+
 from common.authentication import AppRestrictedAuth, Service
 from common.cache import Cache
 from common.clients import logger, secrets_manager_client
 from common.pds_service import PdsService
 from exceptions.id_sync_exception import IdSyncException
+from os_vars import get_pds_env
 
 pds_env = get_pds_env()
 safe_tmp_dir = tempfile.mkdtemp(dir="/tmp")  # NOSONAR

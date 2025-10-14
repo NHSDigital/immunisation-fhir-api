@@ -1,7 +1,7 @@
 import json
-import boto3
 
-from constants import SPLUNK_FIREHOSE_STREAM_NAME, REGION_NAME
+import boto3
+from constants import REGION_NAME, SPLUNK_FIREHOSE_STREAM_NAME
 
 firehose_client = boto3.client("firehose", region_name=REGION_NAME)
 

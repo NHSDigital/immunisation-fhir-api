@@ -1,48 +1,40 @@
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
-
-with patch('common.log_decorator.logging_decorator') as mock_decorator:
+with patch("common.log_decorator.logging_decorator") as mock_decorator:
     mock_decorator.return_value = lambda f: f  # Pass-through decorator
-    from id_sync import handler
     from exceptions.id_sync_exception import IdSyncException
+    from id_sync import handler
 
 
 class TestIdSyncHandler(unittest.TestCase):
-
     def setUp(self):
         """Set up all patches and test fixtures"""
         # Patch all dependencies
-        self.aws_lambda_event_patcher = patch('id_sync.AwsLambdaEvent')
+        self.aws_lambda_event_patcher = patch("id_sync.AwsLambdaEvent")
         self.mock_aws_lambda_event = self.aws_lambda_event_patcher.start()
 
-        self.process_record_patcher = patch('id_sync.process_record')
+        self.process_record_patcher = patch("id_sync.process_record")
         self.mock_process_record = self.process_record_patcher.start()
 
-        self.logger_patcher = patch('id_sync.logger')
+        self.logger_patcher = patch("id_sync.logger")
         self.mock_logger = self.logger_patcher.start()
         # Set up test data
-        self.single_sqs_event = {
-            'Records': [
-                {
-                    'body': '{"source":"aws:sqs","data":"test-data"}'
-                }
-            ]
-        }
+        self.single_sqs_event = {"Records": [{"body": '{"source":"aws:sqs","data":"test-data"}'}]}
 
         self.multi_sqs_event = {
-            'Records': [
+            "Records": [
                 {
-                    'body': ('{"source":"aws:sqs","data":"a"}'),
+                    "body": ('{"source":"aws:sqs","data":"a"}'),
                 },
                 {
-                    'body': ('{"source":"aws:sqs","data":"b"}'),
-                }
+                    "body": ('{"source":"aws:sqs","data":"b"}'),
+                },
             ]
         }
 
-        self.empty_event = {'Records': []}
-        self.no_records_event = {'someOtherKey': 'value'}
+        self.empty_event = {"Records": []}
+        self.no_records_event = {"someOtherKey": "value"}
 
     def tearDown(self):
         """Stop all patches"""
@@ -57,7 +49,7 @@ class TestIdSyncHandler(unittest.TestCase):
 
         self.mock_process_record.return_value = {
             "status": "success",
-            "nhs_number": "test-nhs-number"
+            "nhs_number": "test-nhs-number",
         }
 
         # Call handler
@@ -80,7 +72,7 @@ class TestIdSyncHandler(unittest.TestCase):
 
         self.mock_process_record.side_effect = [
             {"status": "success", "nhs_number": "test-nhs-number-1"},
-            {"status": "success", "nhs_number": "test-nhs-number-2"}
+            {"status": "success", "nhs_number": "test-nhs-number-2"},
         ]
 
         # Call handler
@@ -101,7 +93,7 @@ class TestIdSyncHandler(unittest.TestCase):
 
         self.mock_process_record.return_value = {
             "status": "error",
-            "nhs_number": "failed-nhs-number"
+            "nhs_number": "failed-nhs-number",
         }
 
         # Call handler
@@ -126,7 +118,7 @@ class TestIdSyncHandler(unittest.TestCase):
         self.mock_process_record.side_effect = [
             {"status": "success", "nhs_number": "test-nhs-number-1"},
             {"status": "error", "nhs_number": "test-nhs-number-2"},
-            {"status": "success", "nhs_number": "test-nhs-number-3"}
+            {"status": "success", "nhs_number": "test-nhs-number-3"},
         ]
 
         # Call handler
@@ -138,7 +130,10 @@ class TestIdSyncHandler(unittest.TestCase):
         self.assertEqual(self.mock_process_record.call_count, 3)
 
         self.assertEqual(error.message, "Processed 3 records with 1 errors")
-        self.assertEqual(error.nhs_numbers, ["test-nhs-number-1", "test-nhs-number-2", "test-nhs-number-3"])
+        self.assertEqual(
+            error.nhs_numbers,
+            ["test-nhs-number-1", "test-nhs-number-2", "test-nhs-number-3"],
+        )
 
     def test_handler_all_records_fail(self):
         """Test handler when all records fail"""
@@ -149,7 +144,7 @@ class TestIdSyncHandler(unittest.TestCase):
 
         self.mock_process_record.side_effect = [
             {"status": "error", "nhs_number": "test-nhs-number-1"},
-            {"status": "error", "nhs_number": "test-nhs-number-2"}
+            {"status": "error", "nhs_number": "test-nhs-number-2"},
         ]
 
         # Call handler
@@ -245,7 +240,7 @@ class TestIdSyncHandler(unittest.TestCase):
         # Return result without 'nhs_number' but with an 'error' status
         self.mock_process_record.return_value = {
             "status": "error",
-            "message": "Missing NHS number"
+            "message": "Missing NHS number",
             # No 'nhs_number'
         }
 
@@ -269,7 +264,7 @@ class TestIdSyncHandler(unittest.TestCase):
 
         self.mock_process_record.return_value = {
             "status": "success",
-            "nhs_number": "nnhs-number-01"
+            "nhs_number": "nnhs-number-01",
         }
 
         # Call handler with mock context
@@ -295,7 +290,7 @@ class TestIdSyncHandler(unittest.TestCase):
             {"status": "success", "nhs_number": good_num1},
             {"status": "error", "nhs_number": bad_num1},
             {"status": "error", "nhs_number": bad_num2},
-            {"status": "success", "nhs_number": good_num2}
+            {"status": "success", "nhs_number": good_num2},
         ]
 
         # Call handler
@@ -305,9 +300,5 @@ class TestIdSyncHandler(unittest.TestCase):
         # Assertions - should track 2 errors out of 4 records
         self.assertEqual(self.mock_process_record.call_count, 4)
 
-        self.assertEqual(exception.nhs_numbers,
-                         [good_num1,
-                          bad_num1,
-                          bad_num2,
-                          good_num2])
+        self.assertEqual(exception.nhs_numbers, [good_num1, bad_num1, bad_num2, good_num2])
         self.assertEqual(exception.message, "Processed 4 records with 2 errors")

@@ -2,18 +2,18 @@ import os
 import uuid
 from typing import Set
 
-from lib.apigee import ApigeeService, ApigeeConfig, ApigeeApp, ApigeeProduct
+from lib.apigee import ApigeeApp, ApigeeConfig, ApigeeProduct, ApigeeService
 from lib.authentication import (
-    AppRestrictedCredentials,
     AppRestrictedAuthentication,
+    AppRestrictedCredentials,
     AuthType,
     UserRestrictedCredentials,
 )
 from lib.env import (
     get_apigee_access_token,
-    get_auth_url,
-    get_apigee_username,
     get_apigee_env,
+    get_apigee_username,
+    get_auth_url,
     get_default_app_restricted_credentials,
     get_proxy_name,
 )
@@ -50,9 +50,7 @@ def make_app_restricted_auth(
     return AppRestrictedAuthentication(auth_url=get_auth_url(), config=config)
 
 
-def make_apigee_product(
-    apigee: ApigeeService = None, product: ApigeeProduct = None
-) -> ApigeeProduct:
+def make_apigee_product(apigee: ApigeeService = None, product: ApigeeProduct = None) -> ApigeeProduct:
     if not apigee:
         apigee = make_apigee_service()
     if not product:
@@ -95,9 +93,7 @@ def make_app_restricted_app(
         key_id = f"{key_id_prefix}-{str(uuid.uuid4())}"
 
         jwks_data = JwksData(key_id)
-        jwks_url = jwks_data.get_jwks_url(
-            base_url="https://api.service.nhs.uk/mock-jwks"
-        )
+        jwks_url = jwks_data.get_jwks_url(base_url="https://api.service.nhs.uk/mock-jwks")
         app.add_attribute("jwks-resource-url", jwks_url)
 
         if permissions := permissions or app_full_access():
@@ -113,7 +109,7 @@ def make_app_restricted_app(
                 "VaccineTypePermissions",
                 "flu:create,covid19:create,mmr:create,hpv:create,covid19:update,flu:read,covid19:read,flu:delete,"
                 "covid19:delete,mmr:delete,flu:search,covid19:search,mmr:search,rsv:create,rsv:search,rsv:update,"
-                "rsv:read,rsv:delete"
+                "rsv:read,rsv:delete",
             )
 
         app.add_product(f"identity-service-{get_apigee_env()}")
@@ -157,7 +153,7 @@ def _make_user_restricted_app(
                 "VaccineTypePermissions",
                 "flu:create,covid19:create,mmr:create,hpv:create,covid19:update,flu:read,covid19:read,flu:delete,"
                 "covid19:delete,mmr:delete,flu:search,covid19:search,mmr:search,rsv:create,rsv:search,rsv:update,"
-                "rsv:read,rsv:delete"
+                "rsv:read,rsv:delete",
             )
         app.add_product(f"identity-service-{get_apigee_env()}")
 
@@ -171,9 +167,7 @@ def make_cis2_app(
     permissions: Set[Permission] = None,
     vaxx_type_perms: Set = None,
 ) -> (ApigeeApp, UserRestrictedCredentials):
-    stored_app = _make_user_restricted_app(
-        AuthType.CIS2, apigee, app, permissions, vaxx_type_perms
-    )
+    stored_app = _make_user_restricted_app(AuthType.CIS2, apigee, app, permissions, vaxx_type_perms)
     credentials = UserRestrictedCredentials(
         client_id=stored_app.get_client_id(),
         client_secret=stored_app.get_client_secret(),

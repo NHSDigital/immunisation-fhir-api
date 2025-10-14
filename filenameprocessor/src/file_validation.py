@@ -1,14 +1,18 @@
 """Functions for file key validation"""
 
-from re import match
 from datetime import datetime
+from re import match
+
 from constants import VALID_VERSIONS
-from elasticache import get_valid_vaccine_types_from_cache, get_supplier_system_from_cache
+from elasticache import (
+    get_supplier_system_from_cache,
+    get_valid_vaccine_types_from_cache,
+)
 from errors import InvalidFileKeyError
 
 
 def is_file_in_directory_root(file_key: str) -> bool:
-    """"
+    """ "
     Checks that a given file is in the bucket root rather than a child directory e.g. archive/xyz.csv
     """
     return "/" not in file_key

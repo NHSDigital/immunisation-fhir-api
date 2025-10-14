@@ -1,0 +1,7 @@
+# This is a template, not a valid YAML file
+/manifest_template.yml
+
+# We hit compile errors in Apigee if these are auto formatted
+# TODO - investigate
+/proxies/live/apiproxy/resources/jsc/
+/proxies/sandbox/apiproxy/resources/jsc/

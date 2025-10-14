@@ -1,11 +1,11 @@
 "FHIR Immunization Post Validators"
 
 from models.errors import MandatoryError
-from models.validation_sets import ValidationSets
-from models.mandation_functions import MandationFunctions
-from models.field_names import FieldNames
 from models.field_locations import FieldLocations
-from models.utils.base_utils import obtain_field_value, obtain_field_location
+from models.field_names import FieldNames
+from models.mandation_functions import MandationFunctions
+from models.utils.base_utils import obtain_field_location, obtain_field_value
+from models.validation_sets import ValidationSets
 
 
 class PostValidators:
@@ -126,7 +126,11 @@ class PostValidators:
         mandation_functions = MandationFunctions(self.imms, self.vaccine_type)
 
         # Obtain the relevant validation set
-        validation_set = getattr(ValidationSets, self.vaccine_type.lower(), ValidationSets.vaccine_type_agnostic)
+        validation_set = getattr(
+            ValidationSets,
+            self.vaccine_type.lower(),
+            ValidationSets.vaccine_type_agnostic,
+        )
 
         # Create an instance of FieldLocations and set dynamic fields
         field_locations = FieldLocations()

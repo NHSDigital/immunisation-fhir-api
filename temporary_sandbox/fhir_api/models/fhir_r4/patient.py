@@ -1,27 +1,28 @@
-''' Patient Data Model based on Fhir Revision 4 spec '''
+"""Patient Data Model based on Fhir Revision 4 spec"""
 
 from datetime import datetime
-from typing import Optional, Literal
+from typing import Literal, Optional
+
+import fhir_api.models.fhir_r4.code_types as code_types
+from fhir_api.models.fhir_r4.common import (
+    Address,
+    Attachment,
+    CodeableConceptType,
+    ContactPoint,
+    HumanName,
+    Identifier,
+    Period,
+    Reference,
+)
+from fhir_api.models.fhir_r4.fhir_datatype_fields import FhirR4Fields
 from pydantic import (
     BaseModel,
 )
 
-import fhir_api.models.fhir_r4.code_types as code_types
-from fhir_api.models.fhir_r4.fhir_datatype_fields import FhirR4Fields
-from fhir_api.models.fhir_r4.common import (
-    Identifier,
-    HumanName,
-    ContactPoint,
-    Address,
-    CodeableConceptType,
-    Attachment,
-    Reference,
-    Period,
-)
-
 
 class Contact(BaseModel):
-    ''' Contact Model '''
+    """Contact Model"""
+
     relationship: Optional[list[CodeableConceptType]]
     name: Optional[HumanName]
     telecom: Optional[list[ContactPoint]]
@@ -32,19 +33,22 @@ class Contact(BaseModel):
 
 
 class Communication(BaseModel):
-    ''' Communication Model '''
+    """Communication Model"""
+
     language: CodeableConceptType
     preferred: Optional[bool] = FhirR4Fields.boolean
 
 
 class Link(BaseModel):
-    ''' Link Model '''
+    """Link Model"""
+
     other: Reference
     type: code_types.link_code
 
 
 class Patient(BaseModel):
-    ''' Patient Base Model '''
+    """Patient Base Model"""
+
     resourceType: Literal["Patient"]
     identifier: Optional[list[Identifier]]
     active: bool = FhirR4Fields.boolean

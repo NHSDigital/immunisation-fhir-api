@@ -4,6 +4,11 @@ import os
 
 AUDIT_TABLE_NAME = os.getenv("AUDIT_TABLE_NAME")
 
+COMPLETED_ACK_DIR = "forwardedFile"
+TEMP_ACK_DIR = "TempAck"
+BATCH_FILE_PROCESSING_DIR = "processing"
+BATCH_FILE_ARCHIVE_DIR = "archive"
+
 
 def get_source_bucket_name() -> str:
     """Get the SOURCE_BUCKET_NAME environment from environment variables."""
@@ -30,6 +35,7 @@ class AuditTableKeys:
     FILENAME = "filename"
     MESSAGE_ID = "message_id"
     QUEUE_NAME = "queue_name"
+    RECORD_COUNT = "record_count"
     STATUS = "status"
     TIMESTAMP = "timestamp"
 

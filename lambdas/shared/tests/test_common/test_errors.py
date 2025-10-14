@@ -1,10 +1,10 @@
 import unittest
 from unittest.mock import patch
+
 import src.common.models.errors as errors
 
 
 class TestErrors(unittest.TestCase):
-
     def setUp(self):
         TEST_UUID = "01234567-89ab-cdef-0123-4567890abcde"
         # Patch uuid4
@@ -21,7 +21,7 @@ class TestErrors(unittest.TestCase):
         self.assertEqual(context.exception.resource_id, resource_id)
 
     def assert_operation_outcome(self, outcome):
-        self.assertEqual(outcome.get('resourceType'), "OperationOutcome")
+        self.assertEqual(outcome.get("resourceType"), "OperationOutcome")
 
     def test_errors_unauthorized_error(self):
         """Test correct operation of UnauthorizedError"""
@@ -34,10 +34,10 @@ class TestErrors(unittest.TestCase):
         self.assertEqual(str(context.exception), f"{test_message}\n{test_response}")
         outcome = context.exception.to_operation_outcome()
         self.assert_operation_outcome(outcome)
-        issue = outcome.get('issue')[0]
-        self.assertEqual(issue.get('severity'), errors.Severity.error)
-        self.assertEqual(issue.get('code'), errors.Code.forbidden)
-        self.assertEqual(issue.get('diagnostics'), "Unauthorized request")
+        issue = outcome.get("issue")[0]
+        self.assertEqual(issue.get("severity"), errors.Severity.error)
+        self.assertEqual(issue.get("code"), errors.Code.forbidden)
+        self.assertEqual(issue.get("diagnostics"), "Unauthorized request")
 
     def test_errors_unauthorized_vax_error(self):
         """Test correct operation of UnauthorizedVaxError"""
@@ -50,10 +50,10 @@ class TestErrors(unittest.TestCase):
         self.assertEqual(str(context.exception), f"{test_message}\n{test_response}")
         outcome = context.exception.to_operation_outcome()
         self.assert_operation_outcome(outcome)
-        issue = outcome.get('issue')[0]
-        self.assertEqual(issue.get('severity'), errors.Severity.error)
-        self.assertEqual(issue.get('code'), errors.Code.forbidden)
-        self.assertEqual(issue.get('diagnostics'), "Unauthorized request for vaccine type")
+        issue = outcome.get("issue")[0]
+        self.assertEqual(issue.get("severity"), errors.Severity.error)
+        self.assertEqual(issue.get("code"), errors.Code.forbidden)
+        self.assertEqual(issue.get("diagnostics"), "Unauthorized request for vaccine type")
 
     def test_errors_unauthorized_vax_on_record_error(self):
         """Test correct operation of UnauthorizedVaxOnRecordError"""
@@ -66,12 +66,12 @@ class TestErrors(unittest.TestCase):
         self.assertEqual(str(context.exception), f"{test_message}\n{test_response}")
         outcome = context.exception.to_operation_outcome()
         self.assert_operation_outcome(outcome)
-        issue = outcome.get('issue')[0]
-        self.assertEqual(issue.get('severity'), errors.Severity.error)
-        self.assertEqual(issue.get('code'), errors.Code.forbidden)
+        issue = outcome.get("issue")[0]
+        self.assertEqual(issue.get("severity"), errors.Severity.error)
+        self.assertEqual(issue.get("code"), errors.Code.forbidden)
         self.assertEqual(
-            issue.get('diagnostics'),
-            "Unauthorized request for vaccine type present in the stored immunization resource"
+            issue.get("diagnostics"),
+            "Unauthorized request for vaccine type present in the stored immunization resource",
         )
 
     def test_errors_token_validation_error(self):
@@ -85,10 +85,10 @@ class TestErrors(unittest.TestCase):
         self.assertEqual(str(context.exception), f"{test_message}\n{test_response}")
         outcome = context.exception.to_operation_outcome()
         self.assert_operation_outcome(outcome)
-        issue = outcome.get('issue')[0]
-        self.assertEqual(issue.get('severity'), errors.Severity.error)
-        self.assertEqual(issue.get('code'), errors.Code.invalid)
-        self.assertEqual(issue.get('diagnostics'), "Missing/Invalid Token")
+        issue = outcome.get("issue")[0]
+        self.assertEqual(issue.get("severity"), errors.Severity.error)
+        self.assertEqual(issue.get("code"), errors.Code.invalid)
+        self.assertEqual(issue.get("diagnostics"), "Missing/Invalid Token")
 
     def test_errors_conflict_error(self):
         """Test correct operation of ConflictError"""
@@ -101,10 +101,10 @@ class TestErrors(unittest.TestCase):
         self.assertEqual(str(context.exception), f"{test_message}\n{test_response}")
         outcome = context.exception.to_operation_outcome()
         self.assert_operation_outcome(outcome)
-        issue = outcome.get('issue')[0]
-        self.assertEqual(issue.get('severity'), errors.Severity.error)
-        self.assertEqual(issue.get('code'), errors.Code.duplicate)
-        self.assertEqual(issue.get('diagnostics'), "Conflict")
+        issue = outcome.get("issue")[0]
+        self.assertEqual(issue.get("severity"), errors.Severity.error)
+        self.assertEqual(issue.get("code"), errors.Code.duplicate)
+        self.assertEqual(issue.get("diagnostics"), "Conflict")
 
     def test_errors_resource_not_found_error(self):
         """Test correct operation of ResourceNotFoundError"""
@@ -116,16 +116,16 @@ class TestErrors(unittest.TestCase):
         self.assert_resource_type_and_id(context, test_resource_type, test_resource_id)
         self.assertEqual(
             str(context.exception),
-            f"{test_resource_type} resource does not exist. ID: {test_resource_id}"
+            f"{test_resource_type} resource does not exist. ID: {test_resource_id}",
         )
         outcome = context.exception.to_operation_outcome()
         self.assert_operation_outcome(outcome)
-        issue = outcome.get('issue')[0]
-        self.assertEqual(issue.get('severity'), errors.Severity.error)
-        self.assertEqual(issue.get('code'), errors.Code.not_found)
+        issue = outcome.get("issue")[0]
+        self.assertEqual(issue.get("severity"), errors.Severity.error)
+        self.assertEqual(issue.get("code"), errors.Code.not_found)
         self.assertEqual(
-            issue.get('diagnostics'),
-            f"{test_resource_type} resource does not exist. ID: {test_resource_id}"
+            issue.get("diagnostics"),
+            f"{test_resource_type} resource does not exist. ID: {test_resource_id}",
         )
 
     def test_errors_resource_found_error(self):
@@ -138,16 +138,16 @@ class TestErrors(unittest.TestCase):
         self.assert_resource_type_and_id(context, test_resource_type, test_resource_id)
         self.assertEqual(
             str(context.exception),
-            f"{test_resource_type} resource does exist. ID: {test_resource_id}"
+            f"{test_resource_type} resource does exist. ID: {test_resource_id}",
         )
         outcome = context.exception.to_operation_outcome()
         self.assert_operation_outcome(outcome)
-        issue = outcome.get('issue')[0]
-        self.assertEqual(issue.get('severity'), errors.Severity.error)
-        self.assertEqual(issue.get('code'), errors.Code.not_found)
+        issue = outcome.get("issue")[0]
+        self.assertEqual(issue.get("severity"), errors.Severity.error)
+        self.assertEqual(issue.get("code"), errors.Code.not_found)
         self.assertEqual(
-            issue.get('diagnostics'),
-            f"{test_resource_type} resource does exist. ID: {test_resource_id}"
+            issue.get("diagnostics"),
+            f"{test_resource_type} resource does exist. ID: {test_resource_id}",
         )
 
     def test_errors_unhandled_response_error(self):
@@ -161,10 +161,10 @@ class TestErrors(unittest.TestCase):
         self.assertEqual(str(context.exception), f"{test_message}\n{test_response}")
         outcome = context.exception.to_operation_outcome()
         self.assert_operation_outcome(outcome)
-        issue = outcome.get('issue')[0]
-        self.assertEqual(issue.get('severity'), errors.Severity.error)
-        self.assertEqual(issue.get('code'), errors.Code.exception)
-        self.assertEqual(issue.get('diagnostics'), f"{test_message}\n{test_response}")
+        issue = outcome.get("issue")[0]
+        self.assertEqual(issue.get("severity"), errors.Severity.error)
+        self.assertEqual(issue.get("code"), errors.Code.exception)
+        self.assertEqual(issue.get("diagnostics"), f"{test_message}\n{test_response}")
 
     def test_errors_bad_request_error(self):
         """Test correct operation of BadRequestError"""
@@ -177,10 +177,10 @@ class TestErrors(unittest.TestCase):
         self.assertEqual(str(context.exception), f"{test_message}\n{test_response}")
         outcome = context.exception.to_operation_outcome()
         self.assert_operation_outcome(outcome)
-        issue = outcome.get('issue')[0]
-        self.assertEqual(issue.get('severity'), errors.Severity.error)
-        self.assertEqual(issue.get('code'), errors.Code.incomplete)
-        self.assertEqual(issue.get('diagnostics'), f"{test_message}\n{test_response}")
+        issue = outcome.get("issue")[0]
+        self.assertEqual(issue.get("severity"), errors.Severity.error)
+        self.assertEqual(issue.get("code"), errors.Code.incomplete)
+        self.assertEqual(issue.get("diagnostics"), f"{test_message}\n{test_response}")
 
     def test_errors_mandatory_error(self):
         """Test correct operation of MandatoryError"""
@@ -213,16 +213,16 @@ class TestErrors(unittest.TestCase):
         self.assertEqual(context.exception.patient_identifier, test_patient_identifier)
         self.assertEqual(
             str(context.exception),
-            f"NHS Number: {test_patient_identifier} is invalid or it doesn't exist."
+            f"NHS Number: {test_patient_identifier} is invalid or it doesn't exist.",
         )
         outcome = context.exception.to_operation_outcome()
         self.assert_operation_outcome(outcome)
-        issue = outcome.get('issue')[0]
-        self.assertEqual(issue.get('severity'), errors.Severity.error)
-        self.assertEqual(issue.get('code'), errors.Code.exception)
+        issue = outcome.get("issue")[0]
+        self.assertEqual(issue.get("severity"), errors.Severity.error)
+        self.assertEqual(issue.get("code"), errors.Code.exception)
         self.assertEqual(
-            issue.get('diagnostics'),
-            f"NHS Number: {test_patient_identifier} is invalid or it doesn't exist."
+            issue.get("diagnostics"),
+            f"NHS Number: {test_patient_identifier} is invalid or it doesn't exist.",
         )
 
     def test_errors_inconsistent_id_error(self):
@@ -234,16 +234,16 @@ class TestErrors(unittest.TestCase):
         self.assertEqual(context.exception.imms_id, test_imms_id)
         self.assertEqual(
             str(context.exception),
-            f"The provided id:{test_imms_id} doesn't match with the content of the message"
+            f"The provided id:{test_imms_id} doesn't match with the content of the message",
         )
         outcome = context.exception.to_operation_outcome()
         self.assert_operation_outcome(outcome)
-        issue = outcome.get('issue')[0]
-        self.assertEqual(issue.get('severity'), errors.Severity.error)
-        self.assertEqual(issue.get('code'), errors.Code.exception)
+        issue = outcome.get("issue")[0]
+        self.assertEqual(issue.get("severity"), errors.Severity.error)
+        self.assertEqual(issue.get("code"), errors.Code.exception)
         self.assertEqual(
-            issue.get('diagnostics'),
-            f"The provided id:{test_imms_id} doesn't match with the content of the message"
+            issue.get("diagnostics"),
+            f"The provided id:{test_imms_id} doesn't match with the content of the message",
         )
 
     def test_errors_custom_validation_error(self):
@@ -256,10 +256,10 @@ class TestErrors(unittest.TestCase):
         self.assertEqual(str(context.exception), test_message)
         outcome = context.exception.to_operation_outcome()
         self.assert_operation_outcome(outcome)
-        issue = outcome.get('issue')[0]
-        self.assertEqual(issue.get('severity'), errors.Severity.error)
-        self.assertEqual(issue.get('code'), errors.Code.invariant)
-        self.assertEqual(issue.get('diagnostics'), test_message)
+        issue = outcome.get("issue")[0]
+        self.assertEqual(issue.get("severity"), errors.Severity.error)
+        self.assertEqual(issue.get("code"), errors.Code.invariant)
+        self.assertEqual(issue.get("diagnostics"), test_message)
 
     def test_errors_identifier_duplication_error(self):
         """Test correct operation of IdentifierDuplicationError"""
@@ -270,16 +270,16 @@ class TestErrors(unittest.TestCase):
         self.assertEqual(context.exception.identifier, test_identifier)
         self.assertEqual(
             str(context.exception),
-            f"The provided identifier: {test_identifier} is duplicated"
+            f"The provided identifier: {test_identifier} is duplicated",
         )
         outcome = context.exception.to_operation_outcome()
         self.assert_operation_outcome(outcome)
-        issue = outcome.get('issue')[0]
-        self.assertEqual(issue.get('severity'), errors.Severity.error)
-        self.assertEqual(issue.get('code'), errors.Code.duplicate)
+        issue = outcome.get("issue")[0]
+        self.assertEqual(issue.get("severity"), errors.Severity.error)
+        self.assertEqual(issue.get("code"), errors.Code.duplicate)
         self.assertEqual(
-            issue.get('diagnostics'),
-            f"The provided identifier: {test_identifier} is duplicated"
+            issue.get("diagnostics"),
+            f"The provided identifier: {test_identifier} is duplicated",
         )
 
     def test_errors_server_error(self):
@@ -293,10 +293,10 @@ class TestErrors(unittest.TestCase):
         self.assertEqual(str(context.exception), f"{test_message}\n{test_response}")
         outcome = context.exception.to_operation_outcome()
         self.assert_operation_outcome(outcome)
-        issue = outcome.get('issue')[0]
-        self.assertEqual(issue.get('severity'), errors.Severity.error)
-        self.assertEqual(issue.get('code'), errors.Code.server_error)
-        self.assertEqual(issue.get('diagnostics'), f"{test_message}\n{test_response}")
+        issue = outcome.get("issue")[0]
+        self.assertEqual(issue.get("severity"), errors.Severity.error)
+        self.assertEqual(issue.get("code"), errors.Code.server_error)
+        self.assertEqual(issue.get("diagnostics"), f"{test_message}\n{test_response}")
 
     def test_errors_parameter_exception(self):
         """Test correct operation of ParameterException"""
@@ -317,10 +317,10 @@ class TestErrors(unittest.TestCase):
         self.assertEqual(str(context.exception), test_message)
         outcome = context.exception.to_operation_outcome()
         self.assert_operation_outcome(outcome)
-        issue = outcome.get('issue')[0]
-        self.assertEqual(issue.get('severity'), errors.Severity.error)
-        self.assertEqual(issue.get('code'), errors.Code.forbidden)
-        self.assertEqual(issue.get('diagnostics'), test_message)
+        issue = outcome.get("issue")[0]
+        self.assertEqual(issue.get("severity"), errors.Severity.error)
+        self.assertEqual(issue.get("code"), errors.Code.forbidden)
+        self.assertEqual(issue.get("diagnostics"), test_message)
 
     def test_errors_unauthorized_system_error_no_message(self):
         """Test correct operation of UnauthorizedSystemError with no message"""
@@ -331,10 +331,10 @@ class TestErrors(unittest.TestCase):
         self.assertEqual(str(context.exception), "Unauthorized system")
         outcome = context.exception.to_operation_outcome()
         self.assert_operation_outcome(outcome)
-        issue = outcome.get('issue')[0]
-        self.assertEqual(issue.get('severity'), errors.Severity.error)
-        self.assertEqual(issue.get('code'), errors.Code.forbidden)
-        self.assertEqual(issue.get('diagnostics'), "Unauthorized system")
+        issue = outcome.get("issue")[0]
+        self.assertEqual(issue.get("severity"), errors.Severity.error)
+        self.assertEqual(issue.get("code"), errors.Code.forbidden)
+        self.assertEqual(issue.get("diagnostics"), "Unauthorized system")
 
     def test_errors_message_not_successful_error(self):
         """Test correct operation of MessageNotSuccessfulError"""
@@ -353,9 +353,7 @@ class TestErrors(unittest.TestCase):
 
     def test_errors_record_processor_error(self):
         """Test correct operation of RecordProcessorError"""
-        test_diagnostics = {
-            "test_diagnostic": "test_value"
-        }
+        test_diagnostics = {"test_diagnostic": "test_value"}
 
         with self.assertRaises(errors.RecordProcessorError) as context:
             raise errors.RecordProcessorError(test_diagnostics)

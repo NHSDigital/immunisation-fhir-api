@@ -29,8 +29,8 @@ class JwksData:
 
             pub_key = serialization.load_pem_public_key(self.public_key.encode(), backend=default_backend())
             n = pub_key.public_numbers().n
-            n_bytes = n.to_bytes((n.bit_length() + 7) // 8, byteorder='big')
-            self.encoded_n = base64.urlsafe_b64encode(n_bytes).decode('utf-8')
+            n_bytes = n.to_bytes((n.bit_length() + 7) // 8, byteorder="big")
+            self.encoded_n = base64.urlsafe_b64encode(n_bytes).decode("utf-8")
 
     def get_jwk(self):
         return {
@@ -38,7 +38,8 @@ class JwksData:
             "n": self.encoded_n,
             "e": "AQAB",
             "alg": "RS512",
-            "kid": self.key_id}
+            "kid": self.key_id,
+        }
 
     def get_jwks_url(self, base_url: str) -> str:
         jwks = json.dumps({"keys": [self.get_jwk()]})
@@ -52,21 +53,20 @@ def _make_key_pair_n(key_size=4096) -> (str, str, str):
     prv = private_key.private_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PrivateFormat.PKCS8,
-        encryption_algorithm=serialization.NoEncryption())
+        encryption_algorithm=serialization.NoEncryption(),
+    )
 
     public_key = private_key.public_key()
-    pub = public_key.public_bytes(
-        encoding=serialization.Encoding.PEM,
-        format=serialization.PublicFormat.PKCS1)
+    pub = public_key.public_bytes(encoding=serialization.Encoding.PEM, format=serialization.PublicFormat.PKCS1)
 
     n = public_key.public_numbers().n
-    n_bytes = n.to_bytes((n.bit_length() + 7) // 8, byteorder='big')
-    n_encoded = base64.urlsafe_b64encode(n_bytes).decode('utf-8')
+    n_bytes = n.to_bytes((n.bit_length() + 7) // 8, byteorder="big")
+    n_encoded = base64.urlsafe_b64encode(n_bytes).decode("utf-8")
 
     return prv.decode(), pub.decode(), n_encoded
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     p = "/Users/jalal/tmp/imms-batch-key"
     kid = "ecf6452b-96a5-44b9-95cd-6dae700e85a8"
     pk = f"{p}/imms-batch.key"

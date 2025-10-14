@@ -2,11 +2,12 @@ import unittest
 import uuid
 from copy import deepcopy
 from unittest.mock import Mock, create_autospec, patch
-from testing_utils.immunization_utils import  create_covid_19_immunization_dict_no_id
+
 from models.errors import CustomValidationError
 from models.fhir_immunization import ImmunizationValidator
 from repository.fhir_batch_repository import ImmunizationBatchRepository
 from service.fhir_batch_service import ImmunizationBatchService
+from testing_utils.immunization_utils import create_covid_19_immunization_dict_no_id
 
 
 class TestFhirBatchServiceBase(unittest.TestCase):
@@ -26,7 +27,6 @@ class TestFhirBatchServiceBase(unittest.TestCase):
 
 
 class TestCreateImmunizationBatchService(TestFhirBatchServiceBase):
-
     def setUp(self):
         super().setUp()
         self.mock_repo = create_autospec(ImmunizationBatchRepository)
@@ -55,7 +55,7 @@ class TestCreateImmunizationBatchService(TestFhirBatchServiceBase):
             supplier_system="test_supplier",
             vax_type="test_vax",
             table=self.mock_table,
-            is_present=True
+            is_present=True,
         )
         self.assertEqual(result, imms_id)
 
@@ -71,7 +71,7 @@ class TestCreateImmunizationBatchService(TestFhirBatchServiceBase):
                 supplier_system="test_supplier",
                 vax_type="test_vax",
                 table=self.mock_table,
-                is_present=True
+                is_present=True,
             )
         self.assertTrue(expected_msg in error.exception.message)
         self.mock_repo.create_immunization.assert_not_called()
@@ -90,14 +90,13 @@ class TestCreateImmunizationBatchService(TestFhirBatchServiceBase):
                 supplier_system="test_supplier",
                 vax_type="test_vax",
                 table=self.mock_table,
-                is_present=True
+                is_present=True,
             )
         self.assertTrue(expected_msg in error.exception.message)
         self.mock_repo.create_immunization.assert_not_called()
 
 
 class TestUpdateImmunizationBatchService(TestFhirBatchServiceBase):
-
     def setUp(self):
         super().setUp()
         self.mock_repo = create_autospec(ImmunizationBatchRepository)
@@ -126,7 +125,7 @@ class TestUpdateImmunizationBatchService(TestFhirBatchServiceBase):
             supplier_system="test_supplier",
             vax_type="test_vax",
             table=self.mock_table,
-            is_present=True
+            is_present=True,
         )
         self.assertEqual(result, imms_id)
 
@@ -142,7 +141,7 @@ class TestUpdateImmunizationBatchService(TestFhirBatchServiceBase):
                 supplier_system="test_supplier",
                 vax_type="test_vax",
                 table=self.mock_table,
-                is_present=True
+                is_present=True,
             )
         self.assertTrue(expected_msg in error.exception.message)
         self.mock_repo.update_immunization.assert_not_called()
@@ -162,14 +161,13 @@ class TestUpdateImmunizationBatchService(TestFhirBatchServiceBase):
                 supplier_system="test_supplier",
                 vax_type="test_vax",
                 table=self.mock_table,
-                is_present=True
+                is_present=True,
             )
         self.assertTrue(expected_msg in error.exception.message)
         self.mock_repo.update_immunization.assert_not_called()
 
 
 class TestDeleteImmunizationBatchService(unittest.TestCase):
-
     def setUp(self):
         self.mock_repo = create_autospec(ImmunizationBatchRepository)
         self.mock_validator = create_autospec(ImmunizationValidator)
@@ -189,11 +187,10 @@ class TestDeleteImmunizationBatchService(unittest.TestCase):
             supplier_system="test_supplier",
             vax_type="test_vax",
             table=self.mock_table,
-            is_present=True
+            is_present=True,
         )
         self.assertEqual(result, imms_id)
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

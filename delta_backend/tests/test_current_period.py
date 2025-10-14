@@ -1,6 +1,7 @@
 import unittest
 from datetime import datetime, timezone
-from extractor import Extractor 
+
+from extractor import Extractor
 
 
 class TestIsCurrentPeriod(unittest.TestCase):
@@ -33,5 +34,6 @@ class TestIsCurrentPeriod(unittest.TestCase):
         result = self.extractor._is_current_period(name, self.occurrence)
         self.assertTrue(result)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

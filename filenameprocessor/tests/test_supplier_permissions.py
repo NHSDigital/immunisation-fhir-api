@@ -7,12 +7,13 @@ from tests.utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DI
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
-    from supplier_permissions import validate_vaccine_type_permissions
     from errors import VaccineTypePermissionsError
+    from supplier_permissions import validate_vaccine_type_permissions
 
 
 class TestSupplierPermissions(TestCase):
     """Tests for validate_vaccine_type_permissions function and its helper functions"""
+
     def test_validate_vaccine_type_permissions(self):
         """
         Tests that validate_vaccine_type_permissions returns True if supplier has permissions
@@ -34,9 +35,13 @@ class TestSupplierPermissions(TestCase):
 
         for vaccine_type, vaccine_permissions in success_test_cases:
             with self.subTest():
-                with patch("supplier_permissions.get_supplier_permissions_from_cache", return_value=vaccine_permissions):
+                with patch(
+                    "supplier_permissions.get_supplier_permissions_from_cache",
+                    return_value=vaccine_permissions,
+                ):
                     self.assertEqual(
-                        validate_vaccine_type_permissions(vaccine_type, "TEST_SUPPLIER"), vaccine_permissions
+                        validate_vaccine_type_permissions(vaccine_type, "TEST_SUPPLIER"),
+                        vaccine_permissions,
                     )
 
         # Test case tuples are stuctured as (vaccine_type, vaccine_permissions)
@@ -48,7 +53,10 @@ class TestSupplierPermissions(TestCase):
 
         for vaccine_type, vaccine_permissions in failure_test_cases:
             with self.subTest():
-                with patch("supplier_permissions.get_supplier_permissions_from_cache", return_value=vaccine_permissions):
+                with patch(
+                    "supplier_permissions.get_supplier_permissions_from_cache",
+                    return_value=vaccine_permissions,
+                ):
                     with self.assertRaises(VaccineTypePermissionsError) as context:
                         validate_vaccine_type_permissions(vaccine_type, "TEST_SUPPLIER")
                 self.assertEqual(

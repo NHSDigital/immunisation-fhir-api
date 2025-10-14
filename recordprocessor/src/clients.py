@@ -4,7 +4,8 @@ import logging
 import os
 
 import redis
-from boto3 import client as boto3_client, resource as boto3_resource
+from boto3 import client as boto3_client
+from boto3 import resource as boto3_resource
 from botocore.config import Config
 
 REGION_NAME = "eu-west-2"
@@ -13,7 +14,9 @@ REDIS_PORT = os.getenv("REDIS_PORT", 6379)
 
 s3_client = boto3_client("s3", region_name=REGION_NAME)
 kinesis_client = boto3_client(
-    "kinesis", region_name=REGION_NAME, config=Config(retries={"max_attempts": 3, "mode": "standard"})
+    "kinesis",
+    region_name=REGION_NAME,
+    config=Config(retries={"max_attempts": 3, "mode": "standard"}),
 )
 sqs_client = boto3_client("sqs", region_name=REGION_NAME)
 firehose_client = boto3_client("firehose", region_name=REGION_NAME)

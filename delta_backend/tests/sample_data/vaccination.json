@@ -2,31 +2,29 @@
   "resourceType": "Immunization",
   "id": "d11c69d8-7a50-4a54-a848-7648121e995f",
   "contained": [
-	{
-		"resourceType": "Patient",
-		"id" : "Pat1",
-		"identifier": [
-			{
-				"system": "https://fhir.nhs.uk/Id/nhs-number",
-				"value": "9000000009"
-			}
-		],
-		"name": [
-			{
-				"family": "Taylor",
-				"given": [
-					"Sarah"
-				]
-			}
-		],
-		"gender": "unknown",
-		"birthDate": "1965-02-28",
-		"address": [
-			{
-				"postalCode": "EC1A 1BB"
-			}
-		]
-	}
+    {
+      "resourceType": "Patient",
+      "id": "Pat1",
+      "identifier": [
+        {
+          "system": "https://fhir.nhs.uk/Id/nhs-number",
+          "value": "9000000009"
+        }
+      ],
+      "name": [
+        {
+          "family": "Taylor",
+          "given": ["Sarah"]
+        }
+      ],
+      "gender": "unknown",
+      "birthDate": "1965-02-28",
+      "address": [
+        {
+          "postalCode": "EC1A 1BB"
+        }
+      ]
+    }
   ],
   "extension": [
     {
@@ -53,7 +51,7 @@
     ]
   },
   "patient": {
-	"reference" : "#Pat1"
+    "reference": "#Pat1"
   },
   "occurrenceDateTime": "2021-02-07T13:28:17.271+00:00",
   "recorded": "2021-02-07",
@@ -92,40 +90,40 @@
     "code": "258773002"
   },
   "performer": [
-	{
-        "actor" : {
-			"type" : "Organization",
-			"identifier": {
-				"system": "https://fhir.nhs.uk/Id/ods-organization-code",
-				"value": "B0C4P"
-			}
+    {
+      "actor": {
+        "type": "Organization",
+        "identifier": {
+          "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+          "value": "B0C4P"
         }
+      }
     }
   ],
   "reasonCode": [
     {
-		"coding": [
-			{
-				"code": "443684005",
-				"system": "http://snomed.info/sct"
-			}
-		]
+      "coding": [
+        {
+          "code": "443684005",
+          "system": "http://snomed.info/sct"
+        }
+      ]
     }
   ],
   "protocolApplied": [
     {
-		"targetDisease": [
-			{
-				"coding": [
-					{
-						"system": "http://snomed.info/sct",
-						"code": "840539006",
-						"display": "Disease caused by severe acute respiratory syndrome coronavirus 2 (disorder)"
-					}
-				]
-			}
-		],
-		"doseNumberPositiveInt": 1
+      "targetDisease": [
+        {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "840539006",
+              "display": "Disease caused by severe acute respiratory syndrome coronavirus 2 (disorder)"
+            }
+          ]
+        }
+      ],
+      "doseNumberPositiveInt": 1
     }
   ]
 }

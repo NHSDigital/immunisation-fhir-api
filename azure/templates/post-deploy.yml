@@ -3,7 +3,7 @@ parameters:
     default: aws --profile=apim-dev
   - name: is_ptl
     default: true
-  - name: 'aws_account_type'
+  - name: "aws_account_type"
     type: string
   - name: subscribe_to_mns
     type: boolean
@@ -11,28 +11,22 @@ parameters:
 
 steps:
   - ${{ if parameters.is_ptl }}:
-    - template: "azure/components/aws-assume-role.yml@common"
-      parameters:
-        role: "auto-ops"
-        profile: "apm_ptl"
+      - template: "azure/components/aws-assume-role.yml@common"
+        parameters:
+          role: "auto-ops"
+          profile: "apm_ptl"
 
-    - template: "azure/components/get-aws-secrets-and-ssm-params.yml@common"
-      parameters:
-        secret_file_ids:
-          - ptl/app-credentials/jwt_testing/non-prod/JWT_TESTING_PRIVATE_KEY
-        secret_ids:
-          - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INTROSPECTION_CLIENT_ID
-          - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INTROSPECTION_CLIENT_SECRET
-          - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INTROSPECTION_CLIENT_ID_INT
-          - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INTROSPECTION_CLIENT_SECRET_INT
-          - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INT_CLIENT_ID
-          - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INT_CLIENT_SECRET
-
-  - bash: |
-      make install-python
-    workingDirectory: $(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)
-    displayName: Setup pytests
-    condition: always()
+      - template: "azure/components/get-aws-secrets-and-ssm-params.yml@common"
+        parameters:
+          secret_file_ids:
+            - ptl/app-credentials/jwt_testing/non-prod/JWT_TESTING_PRIVATE_KEY
+          secret_ids:
+            - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INTROSPECTION_CLIENT_ID
+            - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INTROSPECTION_CLIENT_SECRET
+            - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INTROSPECTION_CLIENT_ID_INT
+            - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INTROSPECTION_CLIENT_SECRET_INT
+            - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INT_CLIENT_ID
+            - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INT_CLIENT_SECRET
 
   - template: ./aws-assume-role.yml
     parameters:
@@ -81,21 +75,21 @@ steps:
     retryCountOnTaskFailure: 2
 
   - ${{ if eq(parameters.subscribe_to_mns, true) }}:
-    - bash: |
-        export AWS_PROFILE=apim-dev
-        echo "Subscribing SQS to MNS for notifications."
-        pyenv install -s 3.11.11
-        pyenv local 3.11.11
-        echo "Setting up poetry environment..."
-        poetry env use 3.11
-        poetry install --no-root
+      - bash: |
+          export AWS_PROFILE=apim-dev
+          echo "Subscribing SQS to MNS for notifications."
+          pyenv install -s 3.11.11
+          pyenv local 3.11.11
+          echo "Setting up poetry environment..."
+          poetry env use 3.11
+          poetry install --no-root
 
-        echo "Subscribing SQS to MNS for notifications..."
-        make subscribe
-      displayName: "Run MNS Subscription"
-      workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/lambdas/mns_subscription"
-      env:
-        SQS_ARN: "$(ID_SYNC_QUEUE_ARN)"
+          echo "Subscribing SQS to MNS for notifications..."
+          make subscribe
+        displayName: "Run MNS Subscription"
+        workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/lambdas/mns_subscription"
+        env:
+          SQS_ARN: "$(ID_SYNC_QUEUE_ARN)"
 
   - bash: |
       set -ex
@@ -227,8 +221,8 @@ steps:
     workingDirectory: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/e2e_batch"
 
   - task: PublishTestResults@2
-    displayName: 'Publish test results'
+    displayName: "Publish test results"
     condition: always()
     inputs:
-      testResultsFiles: '$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/tests/test-report.xml'
+      testResultsFiles: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/tests/test-report.xml"
       failTaskOnFailedTests: true

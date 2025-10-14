@@ -8,7 +8,7 @@ suppliers = {
             "HPV": "CRUDS",
             "MENACWY": "CRUDS",
             "MMR": "CRUDS",
-            "RSV": "CRUDS"
+            "RSV": "CRUDS",
         }
     },
     "DPSREDUCED": {
@@ -19,7 +19,7 @@ suppliers = {
             "HPV": "CRUDS",
             "MENACWY": "CRUDS",
             "MMR": "CRUDS",
-            "RSV": "CRUDS"
+            "RSV": "CRUDS",
         }
     },
     "MAVIS": {
@@ -28,28 +28,14 @@ suppliers = {
             "FLU": "CRUDS",
             "HPV": "CRUDS",
             "MENACWY": "CRUDS",
-            "MMR": "CRUDS"
+            "MMR": "CRUDS",
         }
     },
-    "SONAR": {
-        "8HK48": {
-            "FLU": "CD"
-        }
-    },
-    "EVA": {
-        "8HA94": {
-            "COVID19": "CUD"
-        }
-    },
+    "SONAR": {"8HK48": {"FLU": "CD"}},
+    "EVA": {"8HA94": {"COVID19": "CUD"}},
     "RAVS": {
-        "X26": {
-            "MMR": "CRUDS",
-            "RSV": "CRUDS"
-        },
-        "X8E5B": {
-            "MMR": "CRUDS",
-            "RSV": "CRUDS"
-        }
+        "X26": {"MMR": "CRUDS", "RSV": "CRUDS"},
+        "X8E5B": {"MMR": "CRUDS", "RSV": "CRUDS"},
     },
     "EMIS": {
         "YGM41": {
@@ -58,7 +44,7 @@ suppliers = {
             "HPV": "CRUDS",
             "MENACWY": "CRUDS",
             "MMR": "CRUDS",
-            "RSV": "CRUDS"
+            "RSV": "CRUDS",
         },
         "YGJ": {
             "3IN1": "CRUDS",
@@ -66,8 +52,8 @@ suppliers = {
             "HPV": "CRUDS",
             "MENACWY": "CRUDS",
             "MMR": "CRUDS",
-            "RSV": "CRUDS"
-        }
+            "RSV": "CRUDS",
+        },
     },
     "TPP": {
         "YGA": {
@@ -75,7 +61,7 @@ suppliers = {
             "HPV": "CRUDS",
             "MENACWY": "CRUDS",
             "MMR": "CRUDS",
-            "RSV": "CRUDS"
+            "RSV": "CRUDS",
         }
     },
     "MEDICUS": {
@@ -84,9 +70,9 @@ suppliers = {
             "HPV": "CRUDS",
             "MENACWY": "CRUDS",
             "MMR": "CRUDS",
-            "RSV": "CRUDS"
+            "RSV": "CRUDS",
         }
-    }
+    },
 }
 
 
@@ -98,13 +84,14 @@ class OdsVax:
 
 class TestPair:
     """
-            "ods_vax": TestPair.E8HA94_COVID19_CUD,
-            "ods_vax": TestPair.DPSFULL_COVID19_CRUDS,
-            "ods_vax": TestPair.V0V8L_FLU_CRUDS,
-            "ods_vax": TestPair.V0V8L_3IN1_CRUDS,
-            "ods_vax": TestPair.X26_MMR_CRUDS,
-            "ods_vax": TestPair.YGA_MENACWY_CRUDS,
+    "ods_vax": TestPair.E8HA94_COVID19_CUD,
+    "ods_vax": TestPair.DPSFULL_COVID19_CRUDS,
+    "ods_vax": TestPair.V0V8L_FLU_CRUDS,
+    "ods_vax": TestPair.V0V8L_3IN1_CRUDS,
+    "ods_vax": TestPair.X26_MMR_CRUDS,
+    "ods_vax": TestPair.YGA_MENACWY_CRUDS,
     """
+
     X26_MMR_CRUDS = OdsVax("X26", "MMR")
     # X26_RSV_CRUDS = OdsVax("X26", "RSV")
     # X8E5B_MMR_CRUDS = OdsVax("X8E5B", "MMR")

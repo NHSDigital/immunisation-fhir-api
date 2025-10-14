@@ -1,14 +1,16 @@
 import json
 import os
 import uuid
-import boto3
 from copy import deepcopy
 from decimal import Decimal
-from typing import Union, Literal
-from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
+from typing import Literal, Union
+
+import boto3
 from botocore.config import Config
-from .mappings import vaccine_type_mappings, VaccineTypes
+from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
+
 from .constants import valid_nhs_number1
+from .mappings import VaccineTypes, vaccine_type_mappings
 
 current_directory = os.path.dirname(os.path.realpath(__file__))
 
@@ -167,7 +169,4 @@ def delete_imms_records(identifiers: list[str]) -> None:
             failure_count = total  # Assume all failed if batch writer fails
 
         if failure_count > 0:
-            print(
-                f"[teardown warning] Deleted {success_count} records out of {total}, "
-                f"failed to delete {failure_count}"
-            )
+            print(f"[teardown warning] Deleted {success_count} records out of {total}, failed to delete {failure_count}")

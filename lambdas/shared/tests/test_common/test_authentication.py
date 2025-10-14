@@ -1,13 +1,13 @@
 import base64
 import json
-import responses
 import time
 import unittest
-from responses import matchers
-from unittest.mock import MagicMock, patch, ANY
+from unittest.mock import ANY, MagicMock, patch
 
+import responses
 from common.authentication import AppRestrictedAuth, Service
 from common.models.errors import UnhandledResponseError
+from responses import matchers
 
 
 class TestAuthenticator(unittest.TestCase):
@@ -18,7 +18,11 @@ class TestAuthenticator(unittest.TestCase):
         # The private key must be stored as base64 encoded in secret-manager
         b64_private_key = base64.b64encode(self.private_key.encode()).decode()
 
-        pds_secret = {"private_key_b64": b64_private_key, "kid": self.kid, "api_key": self.api_key}
+        pds_secret = {
+            "private_key_b64": b64_private_key,
+            "kid": self.kid,
+            "api_key": self.api_key,
+        }
         secret_response = {"SecretString": json.dumps(pds_secret)}
 
         self.secret_manager_client = MagicMock()
@@ -36,13 +40,18 @@ class TestAuthenticator(unittest.TestCase):
         """it should send a POST request to oauth2 service"""
         _jwt = "a-jwt"
         request_data = {
-            'grant_type': 'client_credentials',
-            'client_assertion_type': 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
-            'client_assertion': _jwt
+            "grant_type": "client_credentials",
+            "client_assertion_type": "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
+            "client_assertion": _jwt,
         }
         access_token = "an-access-token"
-        responses.add(responses.POST, self.url, status=200, json={"access_token": access_token},
-                      match=[matchers.urlencoded_params_matcher(request_data)])
+        responses.add(
+            responses.POST,
+            self.url,
+            status=200,
+            json={"access_token": access_token},
+            match=[matchers.urlencoded_params_matcher(request_data)],
+        )
 
         with patch("common.authentication.jwt.encode") as mock_jwt:
             mock_jwt.return_value = _jwt
@@ -61,7 +70,7 @@ class TestAuthenticator(unittest.TestCase):
             "aud": self.url,
             "iat": ANY,
             "exp": ANY,
-            "jti": ANY
+            "jti": ANY,
         }
         _jwt = "a-jwt"
         access_token = "an-access-token"
@@ -73,8 +82,7 @@ class TestAuthenticator(unittest.TestCase):
             # When
             self.authenticator.get_access_token()
             # Then
-            mock_jwt.assert_called_once_with(claims, self.private_key,
-                                             algorithm="RS512", headers={"kid": self.kid})
+            mock_jwt.assert_called_once_with(claims, self.private_key, algorithm="RS512", headers={"kid": self.kid})
 
     def test_env_mapping(self):
         """it should target int environment for none-prod environment, otherwise int"""
@@ -92,7 +100,7 @@ class TestAuthenticator(unittest.TestCase):
         """it should return cached token"""
         cached_token = {
             "token": "a-cached-access-token",
-            "expires_at": int(time.time()) + 99999  # make sure it's not expired
+            "expires_at": int(time.time()) + 99999,  # make sure it's not expired
         }
         self.cache.get.return_value = cached_token
 
@@ -108,10 +116,7 @@ class TestAuthenticator(unittest.TestCase):
         """it should update cached token"""
         self.cache.get.return_value = None
         token = "a-new-access-token"
-        cached_token = {
-            "token": token,
-            "expires_at": ANY
-        }
+        cached_token = {"token": token, "expires_at": ANY}
         responses.add(responses.POST, self.url, status=200, json={"access_token": token})
 
         with patch("jwt.encode") as mock_jwt:
@@ -147,7 +152,7 @@ class TestAuthenticator(unittest.TestCase):
         # Then
         exp_cached_token = {
             "token": new_token,
-            "expires_at": new_now + self.authenticator.expiry
+            "expires_at": new_now + self.authenticator.expiry,
         }
         self.cache.put.assert_called_once_with(ANY, exp_cached_token)
 

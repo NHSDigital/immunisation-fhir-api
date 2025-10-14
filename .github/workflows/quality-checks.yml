@@ -12,48 +12,82 @@ env:
   LAMBDA_PATH: ${{ github.workspace }}/lambdas
 
 jobs:
-  lint:
-    name: Lint specification and Python projects
+  lint-specification:
+    name: Lint specification
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: "23.11.0"
+          cache: "npm"
+
+      - name: Install linting dependencies
+        run: make install
+
+      - name: Lint
+        run: make lint
+
+      - name: Check formatting
+        run: make format-check
+
+  lint-python:
+    name: Lint Python projects
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
 
       - name: Install poetry
         run: pip install poetry==2.1.4
 
-      # Base linting requires 3.8 due to APIM package dependencies. See root README for details under linting.
-      # Consider upgrading this and poetry deps if we move away from Azure DevOps to using the Proxygen tool.
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c
         with:
-          python-version: 3.8
-          cache: 'poetry'
-
-      - uses: actions/setup-node@v5
-        with:
-          node-version: '23.11.0'
-          cache: 'npm'
+          python-version: 3.11
+          cache: "poetry"
 
       - name: Install linting dependencies
-        run: make install-node && poetry install --no-root
+        run: poetry install --no-root
+        working-directory: quality_checks
 
       - name: Lint
-        run: make lint
+        run: poetry run make lint
+        working-directory: quality_checks
+
+      - name: Check formatting
+        run: poetry run make format-check
+        working-directory: quality_checks
+
+  lint-terraform:
+    name: Lint Terraform projects
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd
+        with:
+          terraform_version: "1.12.2"
+
+      - name: Check formatting
+        run: terraform fmt -check -recursive
 
   testcoverage_and_sonarcloud:
     name: Test Coverage and SonarCloud
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
 
       - name: Install poetry
         run: pip install poetry==2.1.4
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c
         with:
           python-version: 3.11
-          cache: 'poetry'
+          cache: "poetry"
 
       - name: Set up AWS credentials
         env:
@@ -110,7 +144,7 @@ jobs:
         working-directory: delta_backend
         id: delta
         env:
-            PYTHONPATH: delta_backend/src:delta_backend/tests
+          PYTHONPATH: delta_backend/src:delta_backend/tests
         continue-on-error: true
         run: |
           poetry install
@@ -141,12 +175,12 @@ jobs:
         working-directory: lambdas/ack_backend
         id: acklambda
         env:
-          PYTHONPATH: ${{ env.LAMBDA_PATH }}/ack_backend/src:${{ github.workspace }}/ack_backend/tests
+          PYTHONPATH: ${{ env.LAMBDA_PATH }}/ack_backend/src:tests:${{ env.SHARED_PATH }}/src
         continue-on-error: true
         run: |
-            poetry install
-            poetry run coverage run --source=src -m unittest discover || echo "ack-lambda tests failed" >> ../../failed_tests.txt
-            poetry run coverage xml -o ../../ack-lambda-coverage.xml
+          poetry install
+          poetry run coverage run --source=src -m unittest discover || echo "ack-lambda tests failed" >> ../../failed_tests.txt
+          poetry run coverage xml -o ../../ack-lambda-coverage.xml
 
       - name: Run unittest with coverage-mns-subscription
         working-directory: lambdas/mns_subscription

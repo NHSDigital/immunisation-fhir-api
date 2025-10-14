@@ -1,7 +1,7 @@
 """Function to send the request directly to lambda (or return appropriate diagnostics if this is not possible)"""
 
-from service.fhir_batch_service import ImmunizationBatchService
 from repository.fhir_batch_repository import ImmunizationBatchRepository
+from service.fhir_batch_service import ImmunizationBatchService
 
 
 def make_batch_controller():
@@ -33,5 +33,9 @@ class ImmunizationBatchController:
             "DELETE": self.fhir_service.delete_immunization,
         }
         return function_map[operation_requested](
-            immunization=fhir_json, supplier_system=supplier, vax_type=vax_type, table=table, is_present=is_present
+            immunization=fhir_json,
+            supplier_system=supplier,
+            vax_type=vax_type,
+            table=table,
+            is_present=is_present,
         )

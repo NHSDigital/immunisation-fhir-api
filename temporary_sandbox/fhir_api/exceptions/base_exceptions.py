@@ -1,22 +1,24 @@
-""" Base Exceptions that can be used across all collections """
-
+"""Base Exceptions that can be used across all collections"""
 
 # pylint: disable=W0231
 
 from typing import Type
+
 import fastapi
 from fastapi.responses import JSONResponse
+
 from fhir_api.models.errors import (
-    NotFoundError,
     AlreadyExistsError,
-    WebSocketError,
     BaseError,
-    BaseIdentifiedError
+    BaseIdentifiedError,
+    NotFoundError,
+    WebSocketError,
 )
 
 
 class BaseAPIException(Exception):
-    """ Base Error for custom API exceptions """
+    """Base Error for custom API exceptions"""
+
     message = "Exception Occured"
     code = fastapi.status.HTTP_500_INTERNAL_SERVER_ERROR
     model = BaseError
@@ -27,10 +29,7 @@ class BaseAPIException(Exception):
         self.data = self.model(**kwargs)
 
     def response(self):
-        return JSONResponse(
-            content=self.data.dict(),
-            status_code=self.code
-        )
+        return JSONResponse(content=self.data.dict(), status_code=self.code)
 
     @classmethod
     def response_model(cls):
@@ -39,6 +38,7 @@ class BaseAPIException(Exception):
 
 class BaseIdentifiedException(BaseAPIException):
     """Base error for exceptions related with entities, uniquely identified"""
+
     message = "Entity error"
     code = fastapi.status.HTTP_500_INTERNAL_SERVER_ERROR
     model = BaseIdentifiedError
@@ -49,6 +49,7 @@ class BaseIdentifiedException(BaseAPIException):
 
 class NotFoundException(BaseIdentifiedException):
     """Base error for exceptions raised because an entity does not exist"""
+
     message = "The entity does not exist"
     code = fastapi.status.HTTP_404_NOT_FOUND
     model = NotFoundError
@@ -56,20 +57,22 @@ class NotFoundException(BaseIdentifiedException):
 
 class AlreadyExistsException(BaseIdentifiedException):
     """Base error for exceptions raised because an entity already exists"""
+
     message = "The entity already exists"
     code = fastapi.status.HTTP_409_CONFLICT
     model = AlreadyExistsError
 
 
 class WebSocketException(BaseAPIException):
-    """ Base Error for websocket exceptions """
+    """Base Error for websocket exceptions"""
+
     message = "Websocket encountered an error"
     code = fastapi.status.HTTP_418_IM_A_TEAPOT
     model = WebSocketError
 
 
 def get_exception_responses(*args: Type[BaseAPIException]) -> dict:
-    """ return a dict of responses used on FastAPI endpoint """
+    """return a dict of responses used on FastAPI endpoint"""
     responses = {}
     for cls in args:
         responses.update(cls.response_model())

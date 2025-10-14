@@ -1,11 +1,11 @@
-import responses
 import unittest
-from responses import matchers
 from unittest.mock import create_autospec
 
+import responses
 from common.authentication import AppRestrictedAuth
 from common.models.errors import UnhandledResponseError
 from common.pds_service import PdsService
+from responses import matchers
 
 
 class TestPdsService(unittest.TestCase):
@@ -23,12 +23,15 @@ class TestPdsService(unittest.TestCase):
         """it should send a GET request to PDS"""
         patient_id = "900000009"
         act_res = {"id": patient_id}
-        exp_header = {
-            'Authorization': f'Bearer {self.access_token}'
-        }
+        exp_header = {"Authorization": f"Bearer {self.access_token}"}
         pds_url = f"{self.base_url}/{patient_id}"
-        responses.add(responses.GET, pds_url, json=act_res, status=200,
-                      match=[matchers.header_matcher(exp_header)])
+        responses.add(
+            responses.GET,
+            pds_url,
+            json=act_res,
+            status=200,
+            match=[matchers.header_matcher(exp_header)],
+        )
 
         # When
         patient = self.pds_service.get_patient_details(patient_id)

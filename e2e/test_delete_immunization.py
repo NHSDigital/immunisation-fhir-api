@@ -4,7 +4,6 @@ from utils.resource import generate_imms_resource
 
 
 class TestDeleteImmunization(ImmunizationBaseTest):
-
     def test_delete_imms(self):
         """it should delete a FHIR Immunization resource"""
         for imms_api in self.imms_apis:
@@ -12,7 +11,7 @@ class TestDeleteImmunization(ImmunizationBaseTest):
                 # Given
                 immunization_data_list = [
                     generate_imms_resource(),
-                    generate_imms_resource(sample_data_file_name="completed_rsv_immunization_event")
+                    generate_imms_resource(sample_data_file_name="completed_rsv_immunization_event"),
                 ]
 
                 created_ids = []

@@ -1,7 +1,9 @@
 """Utils for backend src code"""
 
-from models.obtain_field_value import ObtainFieldValue
 from models.field_locations import FieldLocations
+from models.obtain_field_value import ObtainFieldValue
+
+FIELD_LOCATIONS = FieldLocations()
 
 
 def obtain_field_value(imms: dict, field_name: str) -> any:
@@ -19,7 +21,7 @@ def obtain_field_value(imms: dict, field_name: str) -> any:
     return field_value
 
 
-def obtain_field_location(field_name: str, field_locations: FieldLocations = FieldLocations()) -> str:
+def obtain_field_location(field_name: str, field_locations: FieldLocations = FIELD_LOCATIONS) -> str:
     """
     Obtains the field location of the given field from an instance of the FieldLocations class.
     NOTE: Some field locations need to be dynamically set. If this is required then
