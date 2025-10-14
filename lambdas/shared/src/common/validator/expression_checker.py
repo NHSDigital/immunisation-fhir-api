@@ -78,6 +78,10 @@ class ExpressionChecker:
     def _validate_datetime(self, rule, field_name,  field_value, row):
         try:
             datetime.date.fromisoformat(field_value)
+            # TODO - rule is not used - could be date only, date time, past, future etc
+            if rule:
+                pass
+
         except RecordError as e:
             code = e.code if e.code is not None else ExceptionMessages.RECORD_CHECK_FAILED
             message = (e.message if e.message is not None
