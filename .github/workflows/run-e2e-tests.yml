@@ -33,15 +33,17 @@ on:
         type: string
         description: Set the sub environment name e.g. pr-xxx, or green/blue in higher environments
 
+env:
+  APIGEE_ENVIRONMENT: ${{ inputs.apigee_environment }}
+  BACKEND_ENVIRONMENT: ${{ inputs.environment }}
+  BACKEND_SUB_ENVIRONMENT: ${{ inputs.sub_environment }}
+
 jobs:
   e2e-tests:
     runs-on: ubuntu-latest
     environment:
       name: ${{ inputs.environment }}
     env: # Sonarcloud - do not allow direct usage of untrusted data
-      APIGEE_ENVIRONMENT: ${{ inputs.apigee_environment }}
-      BACKEND_ENVIRONMENT: ${{ inputs.environment }}
-      BACKEND_SUB_ENVIRONMENT: ${{ inputs.sub_environment }}
       APIGEE_USERNAME: ${{ vars.APIGEE_USERNAME }}
     permissions:
       id-token: write
@@ -63,6 +65,15 @@ jobs:
       - name: Terraform Init
         working-directory: terraform
         run: make init apigee_environment=$APIGEE_ENVIRONMENT environment=$BACKEND_ENVIRONMENT sub_environment=$BACKEND_SUB_ENVIRONMENT
+
+      - name: Read Terraform outputs
+        working-directory: terraform
+        run: |
+          echo "IMMS_DELTA_TABLE_NAME=$(make -s output name=imms_delta_table_name)" >> $GITHUB_ENV
+          echo "AWS_DOMAIN_NAME=$(make -s output name=service_domain_name)" >> $GITHUB_ENV
+          echo "DYNAMODB_TABLE_NAME=$(make -s output name=dynamodb_table_name)" >> $GITHUB_ENV
+          echo "AWS_SQS_QUEUE_NAME=$(make -s output name=aws_sqs_queue_name)" >> $GITHUB_ENV
+          echo "AWS_SNS_TOPIC_NAME=$(make -s output name=aws_sns_topic_name)" >> $GITHUB_ENV
 
       - name: Install poetry
         run: pip install poetry==2.1.4
@@ -99,29 +110,20 @@ jobs:
 
       - name: Run e2e tests
         working-directory: e2e
+        env:
+          SOURCE_COMMIT_ID: ${{ github.sha }}
+          # STATUS_API_KEY: ${{ secrets.STATUS_API_KEY }}
         run: |
-          export PROXY_NAME=immunisation-fhir-api-internal-dev
+          # TODO - handle PR deployments
           export SERVICE_BASE_PATH=immunisation-fhir-api/FHIR/R4
 
-          # export IMMS_DELTA_TABLE_NAME=imms-internal-dev-delta
-          # export AWS_DOMAIN_NAME=internal-dev.imms.dev.vds.platform.nhs.uk
-          # export DYNAMODB_TABLE_NAME=imms-internal-dev-imms-events
-          # export AWS_SQS_QUEUE_NAME=imms-internal-dev-delta-dlq
-          # export AWS_SNS_TOPIC_NAME=imms-internal-dev-delta-sns
-
-          # poetry run python -m unittest -c -v
-          make run
+          poetry run python -m unittest -c -v
 
   batch-e2e-tests:
     needs: [e2e-tests]
     runs-on: ubuntu-latest
     environment:
       name: ${{ inputs.environment }}
-    env: # Sonarcloud - do not allow direct usage of untrusted data
-      APIGEE_ENVIRONMENT: ${{ inputs.apigee_environment }}
-      BACKEND_ENVIRONMENT: ${{ inputs.environment }}
-      BACKEND_SUB_ENVIRONMENT: ${{ inputs.sub_environment }}
-      APIGEE_USERNAME: ${{ vars.APIGEE_USERNAME }}
     permissions:
       id-token: write
       contents: read
@@ -151,8 +153,4 @@ jobs:
         working-directory: e2e_batch
         env:
           ENVIRONMENT: ${{ inputs.sub_environment }}
-        run: |
-          # export PROXY_NAME=immunisation-fhir-api-internal-dev
-          # export SERVICE_BASE_PATH=immunisation-fhir-api/FHIR/R4
-
-          poetry run python -m unittest -c -v
+        run: poetry run python -m unittest -c -v
