@@ -97,4 +97,4 @@ jobs:
           export AWS_SQS_QUEUE_NAME=imms-internal-dev-delta-dlq
           export AWS_SNS_TOPIC_NAME=imms-internal-dev-delta-sns
 
-          make run-immunization
+          poetry run python -m unittest -c -v
