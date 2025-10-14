@@ -55,7 +55,7 @@ jobs:
       id-token: write
       contents: read
     environment:
-      name: int
+      name: preprod
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
