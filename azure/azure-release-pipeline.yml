@@ -48,7 +48,7 @@ extends:
           - internal_dev_sandbox
       - environment: ref
         jinja_templates:
-            DOMAIN_ENDPOINT: https://ref.imms.dev.vds.platform.nhs.uk
+          DOMAIN_ENDPOINT: https://ref.imms.dev.vds.platform.nhs.uk
       - environment: int
         jinja_templates:
           DOMAIN_ENDPOINT: https://int.imms.dev.vds.platform.nhs.uk

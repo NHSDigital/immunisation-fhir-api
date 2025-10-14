@@ -4,22 +4,22 @@ parameters:
 
 steps:
   - ${{ if parameters.is_ptl }}:
-    - template: "azure/components/aws-assume-role.yml@common"
-      parameters:
-        role: "auto-ops"
-        profile: "apm_ptl"
+      - template: "azure/components/aws-assume-role.yml@common"
+        parameters:
+          role: "auto-ops"
+          profile: "apm_ptl"
 
-    - template: "azure/components/get-aws-secrets-and-ssm-params.yml@common"
-      parameters:
-        secret_file_ids:
-          - ptl/app-credentials/jwt_testing/non-prod/JWT_TESTING_PRIVATE_KEY
-        secret_ids:
-          - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INTROSPECTION_CLIENT_ID
-          - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INTROSPECTION_CLIENT_SECRET
-          - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INTROSPECTION_CLIENT_ID_INT
-          - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INTROSPECTION_CLIENT_SECRET_INT
-          - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INT_CLIENT_ID
-          - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INT_CLIENT_SECRET
+      - template: "azure/components/get-aws-secrets-and-ssm-params.yml@common"
+        parameters:
+          secret_file_ids:
+            - ptl/app-credentials/jwt_testing/non-prod/JWT_TESTING_PRIVATE_KEY
+          secret_ids:
+            - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INTROSPECTION_CLIENT_ID
+            - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INTROSPECTION_CLIENT_SECRET
+            - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INTROSPECTION_CLIENT_ID_INT
+            - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INTROSPECTION_CLIENT_SECRET_INT
+            - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INT_CLIENT_ID
+            - ptl/app-credentials/immunisation-fhir-api-testing-app/non-prod/INT_CLIENT_SECRET
 
   - bash: |
       make install-python
@@ -92,8 +92,8 @@ steps:
     displayName: Run Sandbox Test Suite
 
   - task: PublishTestResults@2
-    displayName: 'Publish test results'
+    displayName: "Publish test results"
     condition: always()
     inputs:
-      testResultsFiles: '$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/tests/test-report.xml'
+      testResultsFiles: "$(Pipeline.Workspace)/s/$(SERVICE_NAME)/$(SERVICE_ARTIFACT_NAME)/tests/test-report.xml"
       failTaskOnFailedTests: true
