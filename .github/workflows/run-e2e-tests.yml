@@ -35,8 +35,8 @@ on:
 
 env:
   APIGEE_ENVIRONMENT: ${{ inputs.apigee_environment }}
-  BACKEND_ENVIRONMENT: ${{ inputs.environment }}
-  BACKEND_SUB_ENVIRONMENT: ${{ inputs.sub_environment }}
+  ENVIRONMENT: ${{ inputs.environment }}
+  SUB_ENVIRONMENT: ${{ inputs.sub_environment }}
 
 jobs:
   e2e-tests:
@@ -64,7 +64,7 @@ jobs:
 
       - name: Terraform Init
         working-directory: terraform
-        run: make init apigee_environment=$APIGEE_ENVIRONMENT environment=$BACKEND_ENVIRONMENT sub_environment=$BACKEND_SUB_ENVIRONMENT
+        run: make init
 
       - name: Read Terraform outputs
         working-directory: terraform
