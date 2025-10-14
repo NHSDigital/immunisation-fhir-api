@@ -1,19 +1,3 @@
-# import unittest
-# from unittest.mock import patch, MagicMock
-# from common.validator.validator import Validator
-# from common.validator.enums.exception_messages import PARSING_ERROR, PARENT_FAILED
-# from common.validator.enums.error_levels import CRITICAL_ERROR
-# from common.validator.validation_expression_checker import ErrorReport
-
-
-# class TestValidator(unittest.TestCase):
-
-#     def setUp(self):
-#         self.mock_logger_info = patch("validator.logger.info").start()
-#         self.mock_csv_parser = patch("validator.parsers.csv_parser").start()
-#         self.mock_schema_parser = patch("validator.parsers.schema_parser").start()
-#         self.mock_expression_checker = patch("validator.validation_expression_checker.ExpressionChecker").start()
-
 import unittest
 from unittest.mock import MagicMock
 from unittest.mock import patch
