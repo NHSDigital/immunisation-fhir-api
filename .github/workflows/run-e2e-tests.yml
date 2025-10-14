@@ -66,6 +66,10 @@ jobs:
         working-directory: terraform
         run: make init
 
+      - name: Set Terraform workspace
+        working-directory: terraform
+        run: make workspace
+
       - name: Read Terraform outputs
         working-directory: terraform
         run: |
