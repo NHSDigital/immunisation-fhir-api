@@ -120,6 +120,7 @@ jobs:
         run: |
           # TODO - handle PR deployments
           export SERVICE_BASE_PATH=immunisation-fhir-api/FHIR/R4
+          export PROXY_NAME=immunisation-fhir-api-internal-dev
 
           poetry run python -m unittest -c -v
 
