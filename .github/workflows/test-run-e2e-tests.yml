@@ -10,3 +10,4 @@ jobs:
       environment: dev
       sub_environment: internal-dev
       apigee_environment: internal-dev
+    secrets: inherit
