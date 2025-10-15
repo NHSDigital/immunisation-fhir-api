@@ -137,6 +137,9 @@ jobs:
         with:
           python-version: 3.11
           cache: "poetry"
+          cache-dependency-path: |
+            lambdas/mns_subscription/poetry.lock
+            lambdas/shared/poetry.lock
 
       - name: Create MNS Subscription
         if: ${{ inputs.environment == 'dev' && inputs.create_mns_subscription }}
