@@ -69,7 +69,7 @@ data "aws_iam_policy_document" "imms_data_quality_s3_doc" {
 
 resource "aws_iam_policy" "imms_s3_kms_policy" {
   name   = "${local.short_prefix}-s3-kms-policy"
-  policy = data.aws_iam_policy_document.imms_s3_kms_doc.json
+  policy = data.aws_iam_policy_document.imms_data_quality_s3_doc.json
 }
 
 module "imms_event_endpoint_lambdas" {

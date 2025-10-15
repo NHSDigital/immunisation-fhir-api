@@ -5,7 +5,7 @@
       "Sid": "S3Access",
       "Effect": "Allow",
       "Action": ["s3:PutObject"],
-      "Resource": ["${s3_bucket_name}/*"]
+      "Resource": ["${s3_bucket_arn}/*"]
     },
     {
       "Sid": "KMSAccessForS3Encryption",
