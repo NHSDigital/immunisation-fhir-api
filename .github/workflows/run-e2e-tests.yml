@@ -37,17 +37,59 @@ env:
   APIGEE_ENVIRONMENT: ${{ inputs.apigee_environment }}
   ENVIRONMENT: ${{ inputs.environment }}
   SUB_ENVIRONMENT: ${{ inputs.sub_environment }}
+  # TODO - handle PR deployments
+  SERVICE_BASE_PATH: "immunisation-fhir-api/FHIR/R4"
+  STATUS_API_KEY: ${{ secrets.STATUS_API_KEY }}
 
 permissions:
   id-token: write
   contents: read
 
 jobs:
+  wait-for-deployment:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Wait for API to be available
+        run: |
+          set -ex
+
+          endpoint=""
+          if [[ $APIGEE_ENVIRONMENT =~ "prod" ]]; then
+            endpoint="https://api.service.nhs.uk/${SERVICE_BASE_PATH}/_status"
+          else
+            endpoint="https://${APIGEE_ENVIRONMENT}.api.service.nhs.uk/${SERVICE_BASE_PATH}/_status"
+          fi
+
+          counter=0
+          while [[ $counter -lt 31 ]]; do
+            response=$(curl -H "apikey: ${STATUS_API_KEY}" -s "$endpoint")
+            response_code=$(jq -r '.checks.healthcheck.responseCode' <<< "$response")
+            response_body=$(jq -r '.checks.healthcheck.outcome' <<< "$response")
+            status=$(jq -r '.status' <<< "$response")
+            if [ "$response_code" -eq 200 ] && [ "$response_body" == "OK" ] && [ "$status" == "pass" ]; then
+                echo "Status test successful"
+                break
+            else
+                echo "Waiting for $endpoint to return a 200 response with 'OK' body..."
+                ((counter=counter+1)) # Increment counter by 1
+                echo "Attempt $counter"
+                sleep 30
+            fi
+          done
+
+          if [ $counter -eq 31 ]; then
+              echo "Status test failed: Maximum number of attempts reached"
+              echo "Last response received:"
+              echo "$response"
+              exit 1
+          fi
+
   e2e-tests:
     runs-on: ubuntu-latest
-    environment:
-      name: ${{ inputs.environment }}
-    env: # Sonarcloud - do not allow direct usage of untrusted data
+    needs: [wait-for-deployment]
+    environment: ${{ inputs.environment }}
+    env:
       APIGEE_USERNAME: ${{ vars.APIGEE_USERNAME }}
     steps:
       - name: Connect to AWS
@@ -118,20 +160,16 @@ jobs:
         working-directory: e2e
         env:
           SOURCE_COMMIT_ID: ${{ github.sha }}
-          # STATUS_API_KEY: ${{ secrets.STATUS_API_KEY }}
-        run: |
           # TODO - handle PR deployments
-          export SERVICE_BASE_PATH=immunisation-fhir-api/FHIR/R4
-          export PROXY_NAME=immunisation-fhir-api-internal-dev
-
+          PROXY_NAME: "immunisation-fhir-api-internal-dev"
+        run: |
           poetry run python -m unittest -c -v
 
   batch-e2e-tests:
     needs: [e2e-tests]
-    if: ${{ always() }}
+    if: ${{ !cancelled() && jobs.wait-for-deployment.result == 'success' }}
     runs-on: ubuntu-latest
-    environment:
-      name: ${{ inputs.environment }}
+    environment: ${{ inputs.environment }}
     steps:
       - name: Connect to AWS
         uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838
