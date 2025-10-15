@@ -61,7 +61,7 @@ data "aws_iam_policy_document" "imms_policy_document" {
 data "aws_iam_policy_document" "imms_data_quality_s3_doc" {
   source_policy_documents = [
     templatefile("${local.policy_path}/s3_data_quality_access.json", {
-      s3_bucket_name = aws_s3_bucket.data_quality_reports_bucket.arn
+      s3_bucket_arn = aws_s3_bucket.data_quality_reports_bucket.arn
       kms_key_arn    = data.aws_kms_key.existing_s3_encryption_key.arn
     })
   ]
