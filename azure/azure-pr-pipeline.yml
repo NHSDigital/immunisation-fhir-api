@@ -36,6 +36,10 @@ extends:
       - environment: internal-dev
         jinja_templates:
           DOMAIN_ENDPOINT: https://pr-${{ variables.pr_number }}.imms.dev.vds.platform.nhs.uk
+      # Think I previously discovered this did not work. May need to merge in PR first.
+      - environment: internal-qa
+        jinja_templates:
+          DOMAIN_ENDPOINT: https://internal-qa.imms.dev.vds.platform.nhs.uk
       - environment: internal-dev-sandbox
         proxy_path: sandbox
         jinja_templates:
