@@ -58,10 +58,10 @@ data "aws_iam_policy_document" "imms_policy_document" {
   ]
 }
 
-data "aws_iam_policy_document" "imms_s3_kms_doc" {
+data "aws_iam_policy_document" "imms_data_quality_s3_doc" {
   source_policy_documents = [
-    templatefile("${local.policy_path}/aws_s3_and_kms_access.json", {
-      s3_bucket_name = aws_s3_bucket.data_quality_reports_bucket.bucket
+    templatefile("${local.policy_path}/s3_data_quality_access.json", {
+      s3_bucket_name = aws_s3_bucket.data_quality_reports_bucket.arn
       kms_key_arn    = data.aws_kms_key.existing_s3_encryption_key.arn
     })
   ]
@@ -87,8 +87,8 @@ module "imms_event_endpoint_lambdas" {
 }
 
 
-# Attach S3 and KMS policy only to "create_imms" and "update_imms" endpoints
-resource "aws_iam_role_policy_attachment" "attach_s3_kms_to_specific_lambdas" {
+# Attach data quality report S3 bucket and KMS policy only to "create_imms" and "update_imms" endpoints
+resource "aws_iam_role_policy_attachment" "attach_data_quality_s3_to_specific_lambdas" {
   for_each = {
     for i, mod in module.imms_event_endpoint_lambdas :
     local.imms_endpoints[i] => mod
