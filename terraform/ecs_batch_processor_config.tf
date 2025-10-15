@@ -157,7 +157,14 @@ resource "aws_iam_policy" "ecs_task_exec_policy" {
           "firehose:PutRecordBatch"
         ],
         "Resource" : "arn:aws:firehose:*:*:deliverystream/${module.splunk.firehose_stream_name}"
-      }
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "s3:PutObject",
+        ],
+        Resource = "${aws_s3_bucket.data_quality_reports_bucket.arn}/*"
+      },
     ]
   })
 }
