@@ -42,10 +42,9 @@ See https://nhsd-confluence.digital.nhs.uk/display/APM/Glossary.
 
 | Folder                 | Description                                                                                            |
 | ---------------------- | ------------------------------------------------------------------------------------------------------ |
-| `infra`                | Base infrastructure components.                                                                        |
+| `account`              | Base infrastructure components.                                                                        |
 | `grafana`              | Terraform configuration for Grafana, built on top of core infra.                                       |
-| `terraform`            | Core Terraform infrastructure code. This is run in each PR and sets up lambdas associated with the PR. |
-| `terraform_sandbox`    | Sandbox environment for testing infrastructure changes.                                                |
+| `instance`             | Core Terraform infrastructure code. This is run in each PR and sets up lambdas associated with the PR. |
 | `terraform_aws_backup` | Streamlined backup processing with AWS.                                                                |
 | `proxies`              | Apigee API proxy definitions.                                                                          |
 
@@ -251,7 +250,8 @@ run a different set of tests. To do this:
 - In Project Structure add an existing virtualenv SDK for `.direnv/python-x.x.x/bin/python`.
 - Set the project SDK and the default root module SDK to the one created above.
     - Add `tests` as sources.
-    - Add `.direnv`, `terraform/.terraform`, and `terraform/build` as exclusions if they're not already.
+    - Add `.direnv`, `infrastructure/instance/.terraform`, and `infrastructure/instance/build`
+      as exclusions if they're not already.
 - Add another existing virtualenv SDK for `backend/.direnv/python-x.x.x/bin/python`.
 - Import a module pointed at the `backend` directory, set the SDK created above.
     - Add the `src` and `tests` directories as sources.

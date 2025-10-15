@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: Immunization-fhir-api
-  version: Computed and injected at build time by `scripts/set_version.py`
+  version: Computed and injected at build time by `utilities/scripts/set_version.py`
   description: |
     ## Overview
      

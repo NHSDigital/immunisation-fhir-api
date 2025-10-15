@@ -146,7 +146,7 @@ def _make_row_entry(record: OrderedDict[str, str], stream: io.BytesIO):
 
 def _get_terraform_output(output_name: str) -> str:
     # NOTE: We need to run make target to get output values from our deployment
-    terraform_dir = f"{os.path.abspath(os.path.dirname(__file__))}/../../terraform"
+    terraform_dir = f"{os.path.abspath(os.path.dirname(__file__))}/../../../instance"
     terraform = shutil.which("terraform")
     output = subprocess.run(
         [terraform, f"-chdir={terraform_dir}", "output", "-raw", output_name],

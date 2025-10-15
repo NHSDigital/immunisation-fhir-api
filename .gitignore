@@ -17,7 +17,7 @@ __pycache__/
 .envrc
 smoketest-report.xml
 lambda_typescript/**/*.js
-terraform/zips
+instance/zips
 .dir-locals.el
 *.pyc
 .python-version
