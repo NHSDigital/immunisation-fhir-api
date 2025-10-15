@@ -69,6 +69,11 @@ resource "aws_dynamodb_table" "delta-dynamodb-table" {
   }
 
   attribute {
+    name = "ImmsID"
+    type = "S"
+  }
+
+  attribute {
     name = "Operation"
     type = "S"
   }
@@ -99,6 +104,12 @@ resource "aws_dynamodb_table" "delta-dynamodb-table" {
     name            = "SecondarySearchIndex"
     hash_key        = "SupplierSystem"
     range_key       = "VaccineType"
+    projection_type = "ALL"
+  }
+
+  global_secondary_index {
+    name            = "ImmunisationIdIndex"
+    hash_key        = "ImmsID"
     projection_type = "ALL"
   }
 
