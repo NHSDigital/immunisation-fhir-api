@@ -37,8 +37,8 @@ env:
   APIGEE_ENVIRONMENT: ${{ inputs.apigee_environment }}
   ENVIRONMENT: ${{ inputs.environment }}
   SUB_ENVIRONMENT: ${{ inputs.sub_environment }}
-  # TODO - handle PR deployments
-  SERVICE_BASE_PATH: "immunisation-fhir-api/FHIR/R4"
+  SERVICE_BASE_PATH: ${{ startsWith(inputs.sub_environment, 'pr-') && format('immunisation-fhir-api/FHIR/R4-{0}', inputs.sub_environment) || 'immunisation-fhir-api/FHIR/R4' }}
+  PROXY_NAME: ${{ startsWith(inputs.sub_environment, 'pr-') && format('immunisation-fhir-api-{0}', inputs.sub_environment) || format('immunisation-fhir-api-{0}', inputs.apigee_environment) }}
   STATUS_API_KEY: ${{ secrets.STATUS_API_KEY }}
 
 permissions:
@@ -160,8 +160,6 @@ jobs:
         working-directory: e2e
         env:
           SOURCE_COMMIT_ID: ${{ github.sha }}
-          # TODO - handle PR deployments
-          PROXY_NAME: "immunisation-fhir-api-internal-dev"
         run: |
           poetry run python -m unittest -c -v
 
