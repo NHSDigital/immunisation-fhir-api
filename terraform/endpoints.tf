@@ -68,7 +68,7 @@ data "aws_iam_policy_document" "imms_s3_kms_doc" {
 }
 
 resource "aws_iam_policy" "imms_s3_kms_policy" {
-  name   = "imms-s3-kms-policy"
+  name   = "${local.prefix}-s3-kms-policy"
   policy = data.aws_iam_policy_document.imms_s3_kms_doc.json
 }
 
