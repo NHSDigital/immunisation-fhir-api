@@ -166,8 +166,9 @@ jobs:
           poetry run python -m unittest -c -v
 
   batch-e2e-tests:
-    needs: [e2e-tests]
-    if: ${{ !cancelled() && jobs.wait-for-deployment.result == 'success' }}
+    needs: [wait-for-deployment, e2e-tests]
+    # Only actually depend on wait-for-deployment, but run after e2e-tests
+    if: ${{ !cancelled() && needs.wait-for-deployment.result == 'success' }}
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     steps:
