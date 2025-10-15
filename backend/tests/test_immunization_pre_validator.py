@@ -506,7 +506,9 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         ValidatorModelTests.test_string_value(
             self,
             field_location=patient_name_family_field_location(valid_json_data),
-            valid_strings_to_test=["test"],
+            valid_strings_to_test=["test", "Quitelongsurname", "Surnamewithjustthirtyfivecharacters"],
+            max_length=PreValidators.PERSON_SURNAME_MAX_LENGTH,
+            invalid_length_strings_to_test=["Surnamethathasgotthirtysixcharacters"],
         )
 
     def test_pre_validate_patient_birth_date(self):

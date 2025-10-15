@@ -23,6 +23,9 @@ class PreValidation:
         if not isinstance(field_value, str):
             raise TypeError(f"{field_location} must be a string")
 
+        if field_value.isspace():
+            raise ValueError(f"{field_location} must be a non-empty string")
+
         if defined_length:
             if len(field_value) != defined_length:
                 raise ValueError(f"{field_location} must be {defined_length} characters")
