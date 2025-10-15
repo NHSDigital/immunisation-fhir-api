@@ -91,6 +91,7 @@ jobs:
     environment: ${{ inputs.environment }}
     env:
       APIGEE_USERNAME: ${{ vars.APIGEE_USERNAME }}
+      SOURCE_COMMIT_ID: ${{ github.sha }}
     steps:
       - name: Connect to AWS
         uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838
@@ -152,21 +153,33 @@ jobs:
             -H "Authorization: Basic $APIGEE_BASIC_AUTH_TOKEN" \
             -d "username=$APIGEE_USERNAME&password=$APIGEE_PASSWORD&mfa_token=$CODE&grant_type=password")
 
-          token=$(jq -e -r '.access_token' <<<"$response")
+          token=$(jq -e -r '.access_token' <<< "$response")
           echo "::add-mask::$token"
           echo "APIGEE_ACCESS_TOKEN=$token" >> $GITHUB_ENV
 
-      - name: Run e2e tests
+      - name: Run proxy deployment e2e test suite
         working-directory: e2e
-        env:
-          SOURCE_COMMIT_ID: ${{ github.sha }}
-        run: |
-          poetry run python -m unittest -c -v
+        run: poetry run python -m unittest test_deployment
+
+      - name: Run proxy e2e test suite
+        if: ${{ vars.RUN_PROXY_E2E_TESTS == 'true' }}
+        working-directory: e2e
+        run: poetry run python -m unittest test_proxy
+
+      - name: Run sandbox e2e test suite
+        if: ${{ vars.RUN_SANDBOX_E2E_TESTS == 'true' }}
+        working-directory: e2e
+        run: poetry run python -m unittest test_proxy.TestProxyHealthcheck
+
+      - name: Run full e2e test suite
+        if: ${{ vars.RUN_FULL_E2E_TESTS == 'true' }}
+        working-directory: e2e
+        run: poetry run python -m unittest
 
   batch-e2e-tests:
     needs: [wait-for-deployment, e2e-tests]
     # Only actually depend on wait-for-deployment, but run after e2e-tests
-    if: ${{ !cancelled() && needs.wait-for-deployment.result == 'success' }}
+    if: ${{ !cancelled() && needs.wait-for-deployment.result == 'success' && vars.RUN_BATCH_E2E_TESTS == 'true' }}
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     steps:
@@ -192,7 +205,7 @@ jobs:
         working-directory: e2e_batch
         run: poetry install --no-root
 
-      - name: Run batch e2e tests
+      - name: Run batch e2e test suite
         working-directory: e2e_batch
         env:
           ENVIRONMENT: ${{ inputs.sub_environment }}
