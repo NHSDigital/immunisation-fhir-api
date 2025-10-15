@@ -12,9 +12,11 @@ class CSVParser:
     # parse the CSV into a Dictionary
     def parse_csv_file(self, csv_filename):
         input_file = csv.DictReader(open(csv_filename))
+        input_file = csv.DictReader(open(csv_filename), delimiter="|")
         self.csv_file_data = {elem: [] for elem in input_file.fieldnames}
+        keys = self.csv_file_data.keys()
         for row in input_file:
-            for key in self.csv_file_data.keys():
+            for key in keys:
                 self.csv_file_data[key].append(row[key])
 
     # ---------------------------------------------

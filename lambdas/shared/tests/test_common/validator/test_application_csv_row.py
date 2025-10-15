@@ -11,7 +11,6 @@ CSV_HEADER = 'academic_year,time_period,time_identifier,geographic_level,' \
 'approved_educational_activity,overall_absence,authorised_absence,unauthorised_absence,' \
 'late_sessions,possible_sessions,reason_present_am,reason_present_pm,reason_present,' \
 'reason_l_present_late_before_registers_closed'
-DATA_TYPE = 'CSVROW'
 
 schema_data_folder = Path(__file__).parent / "schemas"
 schemaFilePath = schema_data_folder / "test_school_schema.json"
