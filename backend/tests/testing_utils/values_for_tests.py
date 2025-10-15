@@ -319,6 +319,12 @@ class NameInstances:
 class InvalidValues:
     """Store lists of invalid values for tests"""
 
+    for_whitespace_strings = [
+        " ",  # All spaces
+        " \n ",  # Spaces and newlines
+        "\r\n\t",  # CR, LF and tabs
+    ]
+
     for_postal_codes = [
         "SW1  1AA",  # Too many spaces in divider
         "SW 1 1A",  # Too many space dividers
