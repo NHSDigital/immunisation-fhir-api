@@ -13,6 +13,11 @@ jobs:
       create_mns_subscription: true
       environment: dev
       sub_environment: internal-dev
+    secrets:
+      APIGEE_PASSWORD: ${{ secrets.APIGEE_PASSWORD }}
+      APIGEE_BASIC_AUTH_TOKEN: ${{ secrets.APIGEE_BASIC_AUTH_TOKEN }}
+      APIGEE_OTP_KEY: ${{ secrets.APIGEE_OTP_KEY }}
+      STATUS_API_KEY: ${{ secrets.STATUS_API_KEY }}
 
   deploy-internal-dev-sandbox:
     uses: ./.github/workflows/deploy-backend.yml
@@ -20,6 +25,11 @@ jobs:
       apigee_environment: internal-dev-sandbox
       environment: dev
       sub_environment: internal-dev-sandbox
+    secrets:
+      APIGEE_PASSWORD: ${{ secrets.APIGEE_PASSWORD }}
+      APIGEE_BASIC_AUTH_TOKEN: ${{ secrets.APIGEE_BASIC_AUTH_TOKEN }}
+      APIGEE_OTP_KEY: ${{ secrets.APIGEE_OTP_KEY }}
+      STATUS_API_KEY: ${{ secrets.STATUS_API_KEY }}
 
   deploy-sandbox:
     needs: [deploy-internal-dev-sandbox]
@@ -28,6 +38,11 @@ jobs:
       apigee_environment: sandbox
       environment: dev
       sub_environment: sandbox
+    secrets:
+      APIGEE_PASSWORD: ${{ secrets.APIGEE_PASSWORD }}
+      APIGEE_BASIC_AUTH_TOKEN: ${{ secrets.APIGEE_BASIC_AUTH_TOKEN }}
+      APIGEE_OTP_KEY: ${{ secrets.APIGEE_OTP_KEY }}
+      STATUS_API_KEY: ${{ secrets.STATUS_API_KEY }}
 
   deploy-higher-dev-envs:
     needs: [deploy-internal-dev]
@@ -40,3 +55,8 @@ jobs:
       create_mns_subscription: true
       environment: dev
       sub_environment: ${{ matrix.sub_environment_name }}
+    secrets:
+      APIGEE_PASSWORD: ${{ secrets.APIGEE_PASSWORD }}
+      APIGEE_BASIC_AUTH_TOKEN: ${{ secrets.APIGEE_BASIC_AUTH_TOKEN }}
+      APIGEE_OTP_KEY: ${{ secrets.APIGEE_OTP_KEY }}
+      STATUS_API_KEY: ${{ secrets.STATUS_API_KEY }}

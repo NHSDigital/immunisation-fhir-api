@@ -15,3 +15,8 @@ jobs:
       create_mns_subscription: true
       environment: dev
       sub_environment: pr-${{github.event.pull_request.number}}
+    secrets:
+      APIGEE_PASSWORD: ${{ secrets.APIGEE_PASSWORD }}
+      APIGEE_BASIC_AUTH_TOKEN: ${{ secrets.APIGEE_BASIC_AUTH_TOKEN }}
+      APIGEE_OTP_KEY: ${{ secrets.APIGEE_OTP_KEY }}
+      STATUS_API_KEY: ${{ secrets.STATUS_API_KEY }}

@@ -16,6 +16,15 @@ on:
       sub_environment:
         required: true
         type: string
+    secrets:
+      APIGEE_PASSWORD:
+        required: true
+      APIGEE_BASIC_AUTH_TOKEN:
+        required: true
+      APIGEE_OTP_KEY:
+        required: true
+      STATUS_API_KEY:
+        required: true
   workflow_dispatch:
     inputs:
       apigee_environment:
@@ -148,8 +157,15 @@ jobs:
           make subscribe
 
   run-e2e-tests:
+    needs: [terraform-apply]
+    if: ${{ needs.terraform-apply.result == 'success' || needs.terraform-apply.result == 'skipped' }}
     uses: ./.github/workflows/run-e2e-tests.yml
     with:
       apigee_environment: ${{ inputs.apigee_environment }}
       environment: ${{ inputs.environment }}
       sub_environment: ${{ inputs.sub_environment }}
+    secrets:
+      APIGEE_PASSWORD: ${{ secrets.APIGEE_PASSWORD }}
+      APIGEE_BASIC_AUTH_TOKEN: ${{ secrets.APIGEE_BASIC_AUTH_TOKEN }}
+      APIGEE_OTP_KEY: ${{ secrets.APIGEE_OTP_KEY }}
+      STATUS_API_KEY: ${{ secrets.STATUS_API_KEY }}

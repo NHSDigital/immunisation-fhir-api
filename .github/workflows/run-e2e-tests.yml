@@ -12,6 +12,15 @@ on:
       sub_environment:
         required: true
         type: string
+    secrets:
+      APIGEE_PASSWORD:
+        required: true
+      APIGEE_BASIC_AUTH_TOKEN:
+        required: true
+      APIGEE_OTP_KEY:
+        required: true
+      STATUS_API_KEY:
+        required: true
   workflow_dispatch:
     inputs:
       apigee_environment:
