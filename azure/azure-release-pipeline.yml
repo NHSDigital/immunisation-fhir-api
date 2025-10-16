@@ -38,8 +38,6 @@ extends:
         proxy_path: sandbox
         jinja_templates:
           DOMAIN_ENDPOINT: just-dummy-value-for-successful-build
-        post_deploy:
-          - template: ./templates/sandbox-post-deploy.yml
       - environment: sandbox
         proxy_path: sandbox
         jinja_templates:
@@ -47,8 +45,12 @@ extends:
         depends_on:
           - internal_dev_sandbox
       - environment: ref
+        depends_on:
+          - internal_dev
         jinja_templates:
           DOMAIN_ENDPOINT: https://ref.imms.dev.vds.platform.nhs.uk
       - environment: int
+        depends_on:
+          - internal_dev
         jinja_templates:
           DOMAIN_ENDPOINT: https://int.imms.dev.vds.platform.nhs.uk

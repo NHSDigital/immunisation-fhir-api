@@ -40,5 +40,3 @@ extends:
         proxy_path: sandbox
         jinja_templates:
           DOMAIN_ENDPOINT: just-dummy-value-for-successful-build
-        post_deploy:
-          - template: ./templates/sandbox-post-deploy.yml

@@ -46,7 +46,6 @@ on:
 
 env: # Sonarcloud - do not allow direct usage of untrusted data
   APIGEE_ENVIRONMENT: ${{ inputs.apigee_environment }}
-  BACKEND_REQUIRED: ${{ !(inputs.apigee_environment == 'internal-dev-sandbox' || inputs.apigee_environment == 'sandbox') }}
   ENVIRONMENT: ${{ inputs.environment }}
   SUB_ENVIRONMENT: ${{ inputs.sub_environment }}
 
@@ -56,7 +55,7 @@ permissions:
 
 jobs:
   terraform-plan:
-    if: ${{ env.BACKEND_REQUIRED == 'true' }}
+    if: ${{ !(inputs.apigee_environment == 'internal-dev-sandbox' || inputs.apigee_environment == 'sandbox') }}
     runs-on: ubuntu-latest
     environment:
       name: ${{ inputs.environment }}
@@ -90,7 +89,7 @@ jobs:
           path: terraform/tfplan
 
   terraform-apply:
-    if: ${{ env.BACKEND_REQUIRED == 'true' }}
+    if: ${{ !(inputs.apigee_environment == 'internal-dev-sandbox' || inputs.apigee_environment == 'sandbox') }}
     needs: terraform-plan
     runs-on: ubuntu-latest
     environment:

@@ -6,11 +6,34 @@ on:
       - master
 
 jobs:
-  deploy_all:
+  deploy-internal-dev:
+    uses: ./.github/workflows/deploy-backend.yml
+    with:
+      apigee_environment: internal-dev
+      create_mns_subscription: true
+      environment: dev
+      sub_environment: internal-dev
+
+  deploy-internal-dev-sandbox:
+    uses: ./.github/workflows/deploy-backend.yml
+    with:
+      apigee_environment: internal-dev-sandbox
+      environment: dev
+      sub_environment: internal-dev-sandbox
+
+  deploy-sandbox:
+    needs: [deploy-internal-dev-sandbox]
+    uses: ./.github/workflows/deploy-backend.yml
+    with:
+      apigee_environment: sandbox
+      environment: dev
+      sub_environment: sandbox
+
+  deploy-higher-dev-envs:
+    needs: [deploy-internal-dev]
     strategy:
       matrix:
-        sub_environment_name:
-          [internal-dev, internal-dev-sandbox, sandbox, ref, int]
+        sub_environment_name: [ref, int]
     uses: ./.github/workflows/deploy-backend.yml
     with:
       apigee_environment: ${{ matrix.sub_environment_name }}

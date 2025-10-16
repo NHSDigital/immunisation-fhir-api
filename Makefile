@@ -36,8 +36,7 @@ build-proxy:
 	scripts/build_proxy.sh
 
 #Files to loop over in release
-# VED-811: remove everything except for proxy related files as we move to Github Actions for backend deployment
-_dist_include="poetry.toml Makefile build/. specification sandbox scripts e2e"
+_dist_include="poetry.toml Makefile build/. specification sandbox scripts"
 
 #Create /dist/ sub-directory and copy files into directory
 #Ensure full dir structure is preserved for Lambdas
