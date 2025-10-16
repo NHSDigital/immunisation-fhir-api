@@ -49,6 +49,9 @@ jobs:
   wait-for-deployment:
     runs-on: ubuntu-latest
     environment: ${{ inputs.apigee_environment }}
+    outputs:
+      # Workaround for environment-level variables being unavailable in `jobs.<job-id>.if`.
+      RUN_BATCH_E2E_TESTS: ${{ vars.RUN_BATCH_E2E_TESTS }}
     steps:
       - name: Wait for API to be available
         run: |
@@ -183,7 +186,7 @@ jobs:
   batch-e2e-tests:
     needs: [wait-for-deployment, e2e-tests]
     # Only actually depend on wait-for-deployment, but run after e2e-tests
-    if: ${{ !cancelled() && needs.wait-for-deployment.result == 'success' && vars.RUN_BATCH_E2E_TESTS == 'true' }}
+    if: ${{ !cancelled() && needs.wait-for-deployment.result == 'success' && needs.wait-for-deployment.outputs.RUN_BATCH_E2E_TESTS == 'true' }}
     runs-on: ubuntu-latest
     environment: ${{ inputs.apigee_environment }}
     steps:
