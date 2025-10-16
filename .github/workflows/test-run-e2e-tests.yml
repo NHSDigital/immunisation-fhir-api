@@ -8,6 +8,6 @@ jobs:
     uses: ./.github/workflows/run-e2e-tests.yml
     with:
       environment: dev
-      sub_environment: internal-dev
+      sub_environment: pr-905
       apigee_environment: internal-dev
     secrets: inherit
