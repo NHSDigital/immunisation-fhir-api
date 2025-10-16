@@ -23,6 +23,8 @@ on:
         description: Select the Apigee proxy environment
         options:
           - internal-dev
+          - internal-dev-sandbox
+          - sandbox
           - int
           - ref
           - prod
@@ -44,6 +46,7 @@ on:
 
 env: # Sonarcloud - do not allow direct usage of untrusted data
   APIGEE_ENVIRONMENT: ${{ inputs.apigee_environment }}
+  BACKEND_REQUIRED: ${{ !(inputs.apigee_environment == 'internal-dev-sandbox' || inputs.apigee_environment == 'sandbox') }}
   ENVIRONMENT: ${{ inputs.environment }}
   SUB_ENVIRONMENT: ${{ inputs.sub_environment }}
 
@@ -53,6 +56,7 @@ permissions:
 
 jobs:
   terraform-plan:
+    if: ${{ env.BACKEND_REQUIRED == 'true' }}
     runs-on: ubuntu-latest
     environment:
       name: ${{ inputs.environment }}
@@ -86,6 +90,7 @@ jobs:
           path: terraform/tfplan
 
   terraform-apply:
+    if: ${{ env.BACKEND_REQUIRED == 'true' }}
     needs: terraform-plan
     runs-on: ubuntu-latest
     environment:
@@ -143,7 +148,9 @@ jobs:
           echo "Subscribing SQS to MNS for notifications..."
           make subscribe
 
-      # Need steps for e2e tests: VED-812
-      # Will need to wait for API and ensure proxy is deployed with same commit ID as proxy pipelines
-      # will be running and deploying at the same time in Azure
-      # may need a variable for different commands as we only run certain tests in different environments
+  run-e2e-tests:
+    uses: ./.github/workflows/run-e2e-tests.yml
+    with:
+      apigee_environment: ${{ inputs.apigee_environment }}
+      environment: ${{ inputs.environment }}
+      sub_environment: ${{ inputs.sub_environment }}

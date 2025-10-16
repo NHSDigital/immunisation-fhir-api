@@ -9,7 +9,8 @@ jobs:
   deploy_all:
     strategy:
       matrix:
-        sub_environment_name: [internal-dev, ref, int]
+        sub_environment_name:
+          [internal-dev, internal-dev-sandbox, sandbox, ref, int]
     uses: ./.github/workflows/deploy-backend.yml
     with:
       apigee_environment: ${{ matrix.sub_environment_name }}

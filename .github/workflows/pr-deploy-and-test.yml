@@ -5,10 +5,13 @@ on:
     types: [opened, synchronize, reopened]
 
 jobs:
-  deploy-pr-env:
+  deploy-pr-envs:
+    strategy:
+      matrix:
+        apigee_environment_name: [internal-dev, internal-dev-sandbox]
     uses: ./.github/workflows/deploy-backend.yml
     with:
-      apigee_environment: internal-dev
+      apigee_environment: ${{ matrix.apigee_environment_name }}
       create_mns_subscription: true
       environment: dev
       sub_environment: pr-${{github.event.pull_request.number}}

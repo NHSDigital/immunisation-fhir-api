@@ -19,6 +19,8 @@ on:
         description: Select the Apigee proxy environment
         options:
           - internal-dev
+          - internal-dev-sandbox
+          - sandbox
           - int
           - ref
           - prod
@@ -173,6 +175,7 @@ jobs:
           echo "::add-mask::$token"
           echo "APIGEE_ACCESS_TOKEN=$token" >> $GITHUB_ENV
 
+      # Consider removing - todo
       - name: Run proxy deployment e2e test suite
         working-directory: e2e
         run: poetry run python -m unittest test_deployment
