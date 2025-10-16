@@ -40,6 +40,7 @@ env:
   SERVICE_BASE_PATH: ${{ startsWith(inputs.sub_environment, 'pr-') && format('immunisation-fhir-api/FHIR/R4-{0}', inputs.sub_environment) || 'immunisation-fhir-api/FHIR/R4' }}
   PROXY_NAME: ${{ startsWith(inputs.sub_environment, 'pr-') && format('immunisation-fhir-api-{0}', inputs.sub_environment) || format('immunisation-fhir-api-{0}', inputs.apigee_environment) }}
   STATUS_API_KEY: ${{ secrets.STATUS_API_KEY }}
+  SOURCE_COMMIT_ID: ${{ github.sha }}
 
 permissions:
   id-token: write
@@ -65,18 +66,27 @@ jobs:
           counter=0
           while [[ ${counter} -lt 31 ]]; do
             response=$(curl -H "apikey: ${STATUS_API_KEY}" -s "${endpoint}")
+
             response_code=$(jq -r '.checks.healthcheck.responseCode' <<< "${response}")
             response_body=$(jq -r '.checks.healthcheck.outcome' <<< "${response}")
             status=$(jq -r '.status' <<< "${response}")
+            commitId=$(jq -r '.commitId' <<< "${response}")
+
             if [[ "${response_code}" -eq 200 ]] && [[ "${response_body}" == "OK" ]] && [[ "${status}" == "pass" ]]; then
-                echo "Status test successful"
+              echo "Status test successful"
+              if [[ "${commitId}" == "${SOURCE_COMMIT_ID}" ]]; then
+                echo "Commit hash test successful"
                 break
+              else
+                echo "Waiting for ${endpoint} to return the correct commit hash..."
+              fi
             else
-                echo "Waiting for ${endpoint} to return a 200 response with 'OK' body..."
-                ((counter=counter+1)) # Increment counter by 1
-                echo "Attempt ${counter}"
-                sleep 30
+              echo "Waiting for ${endpoint} to return a 200 response with 'OK' body..."
             fi
+
+            ((counter=counter+1)) # Increment counter by 1
+            echo "Attempt ${counter}"
+            sleep 30
           done
 
           if [[ ${counter} -eq 31 ]]; then
@@ -92,7 +102,6 @@ jobs:
     environment: ${{ inputs.apigee_environment }}
     env:
       APIGEE_USERNAME: ${{ vars.APIGEE_USERNAME }}
-      SOURCE_COMMIT_ID: ${{ github.sha }}
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
 
