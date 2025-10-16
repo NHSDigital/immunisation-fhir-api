@@ -43,7 +43,7 @@ jobs:
           terraform_version: "1.12.2"
 
       - name: Terraform Init and extract MNS SQS QUEUE ARN
-        working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
+        working-directory: terraform
         run: |
           make init apigee_environment=$APIGEE_ENVIRONMENT environment=$BACKEND_ENVIRONMENT sub_environment=$BACKEND_SUB_ENVIRONMENT
           make workspace apigee_environment=$APIGEE_ENVIRONMENT environment=$BACKEND_ENVIRONMENT sub_environment=$BACKEND_SUB_ENVIRONMENT
@@ -56,6 +56,9 @@ jobs:
         with:
           python-version: 3.11
           cache: "poetry"
+          cache-dependency-path: |
+            lambdas/mns_subscription/poetry.lock
+            lambdas/shared/poetry.lock
 
       - name: Unsubscribe MNS
         working-directory: "./lambdas/mns_subscription"
@@ -68,6 +71,6 @@ jobs:
           make unsubscribe
 
       - name: Terraform Destroy
-        working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
+        working-directory: terraform
         run: |
           make destroy apigee_environment=$APIGEE_ENVIRONMENT environment=$BACKEND_ENVIRONMENT sub_environment=$BACKEND_SUB_ENVIRONMENT

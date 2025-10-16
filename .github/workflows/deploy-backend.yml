@@ -42,19 +42,24 @@ on:
         type: string
         description: Set the sub environment name e.g. pr-xxx, or green/blue in higher environments
 
+env: # Sonarcloud - do not allow direct usage of untrusted data
+  APIGEE_ENVIRONMENT: ${{ inputs.apigee_environment }}
+  ENVIRONMENT: ${{ inputs.environment }}
+  SUB_ENVIRONMENT: ${{ inputs.sub_environment }}
+
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   terraform-plan:
     runs-on: ubuntu-latest
     environment:
       name: ${{ inputs.environment }}
-    env: # Sonarcloud - do not allow direct usage of untrusted data
-      APIGEE_ENVIRONMENT: ${{ inputs.apigee_environment }}
-      BACKEND_ENVIRONMENT: ${{ inputs.environment }}
-      BACKEND_SUB_ENVIRONMENT: ${{ inputs.sub_environment }}
-    permissions:
-      id-token: write
-      contents: read
     steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+
       - name: Connect to AWS
         uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838
         with:
@@ -62,42 +67,29 @@ jobs:
           role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/auto-ops
           role-session-name: github-actions
 
-      - name: Whoami
-        run: aws sts get-caller-identity
-
-      - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
-
       - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd
         with:
           terraform_version: "1.12.2"
 
       - name: Terraform Init
-        working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
-        run: make init apigee_environment=$APIGEE_ENVIRONMENT environment=$BACKEND_ENVIRONMENT sub_environment=$BACKEND_SUB_ENVIRONMENT
+        working-directory: terraform
+        run: make init
 
       - name: Terraform Plan
-        working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
-        run: make plan-ci apigee_environment=$APIGEE_ENVIRONMENT environment=$BACKEND_ENVIRONMENT sub_environment=$BACKEND_SUB_ENVIRONMENT
+        working-directory: terraform
+        run: make plan-ci
 
       - name: Save Terraform Plan
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: tfplan
-          path: ${{ vars.TERRAFORM_DIR_PATH }}/tfplan
+          path: terraform/tfplan
 
   terraform-apply:
     needs: terraform-plan
     runs-on: ubuntu-latest
     environment:
       name: ${{ inputs.environment }}
-    env: # Sonarcloud - do not allow direct usage of untrusted data
-      APIGEE_ENVIRONMENT: ${{ inputs.apigee_environment }}
-      BACKEND_ENVIRONMENT: ${{ inputs.environment }}
-      BACKEND_SUB_ENVIRONMENT: ${{ inputs.sub_environment }}
-    permissions:
-      id-token: write
-      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
@@ -116,16 +108,16 @@ jobs:
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
         with:
           name: tfplan
-          path: ${{ vars.TERRAFORM_DIR_PATH }}
+          path: terraform
 
       - name: Terraform Init
-        working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
-        run: make init apigee_environment=$APIGEE_ENVIRONMENT environment=$BACKEND_ENVIRONMENT sub_environment=$BACKEND_SUB_ENVIRONMENT
+        working-directory: terraform
+        run: make init
 
       - name: Terraform Apply
-        working-directory: ${{ vars.TERRAFORM_DIR_PATH }}
+        working-directory: terraform
         run: |
-          make apply-ci apigee_environment=$APIGEE_ENVIRONMENT environment=$BACKEND_ENVIRONMENT sub_environment=$BACKEND_SUB_ENVIRONMENT
+          make apply-ci
           echo "ID_SYNC_QUEUE_ARN=$(make -s output name=id_sync_queue_arn)" >> $GITHUB_ENV
 
       - name: Install poetry
@@ -137,12 +129,14 @@ jobs:
         with:
           python-version: 3.11
           cache: "poetry"
+          cache-dependency-path: |
+            lambdas/mns_subscription/poetry.lock
+            lambdas/shared/poetry.lock
 
       - name: Create MNS Subscription
         if: ${{ inputs.environment == 'dev' && inputs.create_mns_subscription }}
         working-directory: "./lambdas/mns_subscription"
         env:
-          APIGEE_ENVIRONMENT: ${{ inputs.apigee_environment }}
           SQS_ARN: ${{ env.ID_SYNC_QUEUE_ARN }}
         run: |
           poetry install --no-root

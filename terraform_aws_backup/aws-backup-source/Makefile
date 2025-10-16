@@ -20,13 +20,13 @@ lock-provider:
 	$(tf_cmd) providers lock -platform=darwin_arm64 -platform=darwin_amd64 -platform=linux_amd64 -platform=windows_amd64
 
 workspace:
-	$(tf_cmd) workspace new $(environment) || $(tf_cmd) workspace select $(environment) && echo "Switched to workspace/environment: $(environment)"
+	$(tf_cmd) workspace select -or-create $(environment) && echo "Switched to workspace/environment: $(environment)"
 
 init:
-	$(tf_cmd) init $(tf_state) -upgrade  
+	$(tf_cmd) init $(tf_state) -upgrade
 
 plan: workspace
-	 $(tf_cmd) plan 
+	 $(tf_cmd) plan
 
 plan-changes: workspace
 	 $(tf_cmd) plan  -out=plan && $(tf_cmd) show -no-color -json plan | jq -r '.resource_changes[] | select(.change.actions[0]=="update" or .change.actions[0]=="create" or .change.actions[0]=="add") | .address'
