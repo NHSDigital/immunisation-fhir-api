@@ -8,6 +8,7 @@ from decimal import Decimal
 from typing import Optional
 
 from aws_lambda_typing.events import APIGatewayProxyEventV1
+
 from controller.aws_apig_event_utils import (
     get_path_parameter,
     get_supplier_system_header,

@@ -1,5 +1,6 @@
 line-length = 121
 target-version = "py311"
+src = ["**/src", "**/tests"]
 
 [lint]
 # TODO - consider enabling more rulesets, e.g. B, C90, N, RET, S, UP

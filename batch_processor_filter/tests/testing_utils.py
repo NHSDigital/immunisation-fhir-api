@@ -1,6 +1,7 @@
 import json
 
 from aws_lambda_typing.events.sqs import SQSMessage
+
 from batch_file_created_event import BatchFileCreatedEvent
 
 MOCK_ENVIRONMENT_DICT = {
