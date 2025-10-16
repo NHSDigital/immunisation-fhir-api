@@ -14,7 +14,7 @@ lock-provider:
 	$(tf_cmd) providers lock -platform=darwin_arm64 -platform=darwin_amd64 -platform=linux_amd64 -platform=windows_amd64
 
 workspace:
-	$(tf_cmd) workspace new $(ENVIRONMENT) || $(tf_cmd) workspace select $(ENVIRONMENT) && echo "Switched to workspace/environment: $(ENVIRONMENT)"
+	$(tf_cmd) workspace select -or-create $(ENVIRONMENT) && echo "Switched to workspace/environment: $(ENVIRONMENT)"
 
 init:
 	$(tf_cmd) init $(tf_state) -upgrade $(tf_vars)
@@ -42,7 +42,7 @@ ifndef name
 endif
 	$(tf_cmd) output -raw $(name)
 
-import: 
+import:
 	$(tf_cmd) import $(tf_vars) $(to) $(id)
 
 tf-%:
