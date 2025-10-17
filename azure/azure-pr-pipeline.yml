@@ -40,6 +40,9 @@ extends:
           - template: ./templates/post-deploy.yml
             parameters:
               aws_account_type: "dev"
+      - environment: internal-qa
+        jinja_templates:
+          DOMAIN_ENDPOINT: https://internal-qa.imms.dev.vds.platform.nhs.uk
       - environment: internal-dev-sandbox
         proxy_path: sandbox
         jinja_templates:
