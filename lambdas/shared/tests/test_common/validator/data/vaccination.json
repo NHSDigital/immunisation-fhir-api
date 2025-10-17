@@ -1,174 +1,170 @@
 {
-	"resourceType": "Immunization",
-	"status": "completed",
-	"protocolApplied": [
-		{
-			"targetDisease": [
-				{
-					"coding": [
-						{
-							"system": "http://snomed.info/sct",
-							"code": "14189004",
-							"display": "Measles (disorder)"
-						}
-					]
-				},
-				{
-					"coding": [
-						{
-							"system": "http://snomed.info/sct",
-							"code": "36989005",
-							"display": "Mumps (disorder)"
-						}
-					]
-				},
-				{
-					"coding": [
-						{
-							"system": "http://snomed.info/sct",
-							"code": "36653000",
-							"display": "Rubella (disorder)"
-						}
-					]
-				}
-			],
-			"doseNumberPositiveInt": 1
-		}
-	],
-	"reasonCode": [
-		{
-			"coding": [
-				{
-					"system": "http://snomed.info/sct",
-					"code": "1037351000000105"
-				}
-			]
-		}
-	],
-	"recorded": "2025-09-15T09:49:38+00:00",
-	"identifier": [
-		{
-			"value": "48a4dde2-929a-47dc-ae9e-0234d6efc40a",
-			"system": "https://www.ravs.england.nhs.uk/"
-		}
-	],
-	"patient": {
-		"reference": "#Patient1"
-	},
-	"contained": [
-		{
-			"id": "Patient1",
-			"resourceType": "Patient",
-			"birthDate": "2013-01-08",
-			"gender": "male",
-			"address": [
-				{
-					"postalCode": "SP6 4WE"
-				}
-			],
-			"identifier": [
-				{
-					"system": "https://fhir.nhs.uk/Id/nhs-number",
-					"value": "9489927848"
-				}
-			],
-			"name": [
-				{
-					"family": "Taylor",
-					"given": [
-						"Laura"
-					]
-				}
-			]
-		},
-		{
-			"resourceType": "Practitioner",
-			"id": "Practitioner1",
-			"name": [
-				{
-					"family": "Taylor",
-					"given": [
-						"Anthony"
-					]
-				}
-			]
-		}
-	],
-	"vaccineCode": {
-		"coding": [
-			{
-				"system": "http://snomed.info/sct",
-				"code": "42223111000001107",
-				"display": "Influenza Tetra MYL vaccine suspension for injection 0.5ml pre-filled syringes (Mylan)"
-			}
-		]
-	},
-	"manufacturer": {
-		"display": "Mylan"
-	},
-	"expirationDate": "2025-09-20",
-	"lotNumber": "BN40379485850",
-	"extension": [
-		{
-			"url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure",
-			"valueCodeableConcept": {
-				"coding": [
-					{
-						"system": "http://snomed.info/sct",
-						"code": "956951000000104",
-						"display": "RSV vaccination in pregnancy (procedure)"
-					}
-				]
-			}
-		}
-	],
-	"occurrenceDateTime": "2025-09-11T07:14:25+00:00",
-	"primarySource": true,
-	"site": {
-		"coding": [
-			{
-				"system": "http://snomed.info/sct",
-				"code": "368209003",
-				"display": "Right arm"
-			}
-		]
-	},
-	"route": {
-		"coding": [
-			{
-				"system": "http://snomed.info/sct",
-				"code": "1210999013",
-				"display": "Intradermal use"
-			}
-		]
-	},
-	"doseQuantity": {
-		"value": 0.3,
-		"unit": "Inhalation - unit of product usage",
-		"system": "http://snomed.info/sct",
-		"code": "2622896019"
-	},
-	"performer": [
-		{
-			"actor": {
-				"type": "Organization",
-				"identifier": {
-					"system": "https://fhir.nhs.uk/Id/ods-organization-code",
-					"value": "RJ1"
-				}
-			}
-		},
-		{
-			"actor": {
-				"reference": "#Practitioner1"
-			}
-		}
-	],
-	"location": {
-		"identifier": {
-			"value": "RJC02",
-			"system": "https://fhir.nhs.uk/Id/ods-organization-code"
-		}
-	},
-	"id": "976ccbf1-5ced-4541-8664-3953bf2ff026"
+  "resourceType": "Immunization",
+  "status": "completed",
+  "protocolApplied": [
+    {
+      "targetDisease": [
+        {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "14189004",
+              "display": "Measles (disorder)"
+            }
+          ]
+        },
+        {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "36989005",
+              "display": "Mumps (disorder)"
+            }
+          ]
+        },
+        {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "36653000",
+              "display": "Rubella (disorder)"
+            }
+          ]
+        }
+      ],
+      "doseNumberPositiveInt": 1
+    }
+  ],
+  "reasonCode": [
+    {
+      "coding": [
+        {
+          "system": "http://snomed.info/sct",
+          "code": "1037351000000105"
+        }
+      ]
+    }
+  ],
+  "recorded": "2025-09-15T09:49:38+00:00",
+  "identifier": [
+    {
+      "value": "48a4dde2-929a-47dc-ae9e-0234d6efc40a",
+      "system": "https://www.ravs.england.nhs.uk/"
+    }
+  ],
+  "patient": {
+    "reference": "#Patient1"
+  },
+  "contained": [
+    {
+      "id": "Patient1",
+      "resourceType": "Patient",
+      "birthDate": "2013-01-08",
+      "gender": "male",
+      "address": [
+        {
+          "postalCode": "SP6 4WE"
+        }
+      ],
+      "identifier": [
+        {
+          "system": "https://fhir.nhs.uk/Id/nhs-number",
+          "value": "9489927848"
+        }
+      ],
+      "name": [
+        {
+          "family": "Taylor",
+          "given": ["Laura"]
+        }
+      ]
+    },
+    {
+      "resourceType": "Practitioner",
+      "id": "Practitioner1",
+      "name": [
+        {
+          "family": "Taylor",
+          "given": ["Anthony"]
+        }
+      ]
+    }
+  ],
+  "vaccineCode": {
+    "coding": [
+      {
+        "system": "http://snomed.info/sct",
+        "code": "42223111000001107",
+        "display": "Influenza Tetra MYL vaccine suspension for injection 0.5ml pre-filled syringes (Mylan)"
+      }
+    ]
+  },
+  "manufacturer": {
+    "display": "Mylan"
+  },
+  "expirationDate": "2025-09-20",
+  "lotNumber": "BN40379485850",
+  "extension": [
+    {
+      "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure",
+      "valueCodeableConcept": {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "956951000000104",
+            "display": "RSV vaccination in pregnancy (procedure)"
+          }
+        ]
+      }
+    }
+  ],
+  "occurrenceDateTime": "2025-09-11T07:14:25+00:00",
+  "primarySource": true,
+  "site": {
+    "coding": [
+      {
+        "system": "http://snomed.info/sct",
+        "code": "368209003",
+        "display": "Right arm"
+      }
+    ]
+  },
+  "route": {
+    "coding": [
+      {
+        "system": "http://snomed.info/sct",
+        "code": "1210999013",
+        "display": "Intradermal use"
+      }
+    ]
+  },
+  "doseQuantity": {
+    "value": 0.3,
+    "unit": "Inhalation - unit of product usage",
+    "system": "http://snomed.info/sct",
+    "code": "2622896019"
+  },
+  "performer": [
+    {
+      "actor": {
+        "type": "Organization",
+        "identifier": {
+          "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+          "value": "RJ1"
+        }
+      }
+    },
+    {
+      "actor": {
+        "reference": "#Practitioner1"
+      }
+    }
+  ],
+  "location": {
+    "identifier": {
+      "value": "RJC02",
+      "system": "https://fhir.nhs.uk/Id/ods-organization-code"
+    }
+  },
+  "id": "976ccbf1-5ced-4541-8664-3953bf2ff026"
 }

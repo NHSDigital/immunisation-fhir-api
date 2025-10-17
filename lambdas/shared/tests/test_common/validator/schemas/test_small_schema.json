@@ -4,10 +4,11 @@
   "version": 1.0,
   "releaseDate": "2024-07-17T00:00:00.000Z",
   "expressions": [
-        { "expressionId" : "check_1",
+    {
+      "expressionId": "check_1",
       "fieldNameCSV": "NHS_NUMBER",
       "fieldNameFlat": "NHS_NUMBER",
-      "errorLevel" : 0,
+      "errorLevel": 0,
       "expression": {
         "expressionName": "NHS Number Not Empty Check",
         "expressionType": "NOTEMPTY",
@@ -16,10 +17,10 @@
       "errorGroup": "validity"
     },
     {
-      "expressionId" : "check_2",
+      "expressionId": "check_2",
       "fieldNameCSV": "PERSON_FORENAME",
       "fieldNameFlat": "PERSON_FORENAME",
-      "errorLevel" : 0,
+      "errorLevel": 0,
       "expression": {
         "expressionName": "Person Forname Not Empty Check",
         "expressionType": "NOTEMPTY",
@@ -28,10 +29,10 @@
       "errorGroup": "completeness"
     },
     {
-      "expressionId" : "check_3",
+      "expressionId": "check_3",
       "fieldNameCSV": "PERSON_SURNAME",
       "fieldNameFlat": "PERSON_SURNAME",
-      "errorLevel" : 0,
+      "errorLevel": 0,
       "parentExpression": "check_1",
       "expression": {
         "expressionName": "Person Surname Not Empty Check",
@@ -41,10 +42,10 @@
       "errorGroup": "completeness"
     },
     {
-      "expressionId" : "check_3",
+      "expressionId": "check_3",
       "fieldNameCSV": "PERSON_DOB",
       "fieldNameFlat": "PERSON_DOB",
-      "errorLevel" : 0,
+      "errorLevel": 0,
       "parentExpression": "check_1",
       "expression": {
         "expressionName": "Person DOB Not Empty Check",
@@ -54,10 +55,10 @@
       "errorGroup": "completeness"
     },
     {
-      "expressionId" : "check_4",
+      "expressionId": "check_4",
       "fieldNameCSV": "PERSON_DOB",
       "fieldNameFlat": "PERSON_DOB",
-      "errorLevel" : 0,
+      "errorLevel": 0,
       "parentExpression": "check_1",
       "expression": {
         "expressionName": "Person DOB Valid Date Check",
@@ -66,5 +67,5 @@
       },
       "errorGroup": "completeness"
     }
-   ]
+  ]
 }
