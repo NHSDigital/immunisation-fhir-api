@@ -27,12 +27,12 @@ on:
           - ref
           - prod
       create_mns_subscription:
-        description: Create an MNS Subscription. Only available in dev
+        description: Create an MNS Subscription programatically. Only available in AWS dev
         required: false
         type: boolean
         default: true
       environment:
-        type: string
+        type: choice
         description: Select the backend environment
         options:
           - dev

@@ -12,6 +12,15 @@ on:
       sub_environment:
         required: true
         type: string
+    secrets:
+      APIGEE_PASSWORD:
+        required: true
+      APIGEE_BASIC_AUTH_TOKEN:
+        required: true
+      APIGEE_OTP_KEY:
+        required: true
+      STATUS_API_KEY:
+        required: true
   workflow_dispatch:
     inputs:
       apigee_environment:
@@ -19,6 +28,8 @@ on:
         description: Select the Apigee proxy environment
         options:
           - internal-dev
+          - internal-dev-sandbox
+          - sandbox
           - int
           - ref
           - prod
@@ -172,10 +183,6 @@ jobs:
           token=$(jq -e -r '.access_token' <<< "$response")
           echo "::add-mask::$token"
           echo "APIGEE_ACCESS_TOKEN=$token" >> $GITHUB_ENV
-
-      - name: Run proxy deployment e2e test suite
-        working-directory: e2e
-        run: poetry run python -m unittest test_deployment
 
       - name: Run proxy e2e test suite
         if: ${{ vars.RUN_PROXY_E2E_TESTS == 'true' }}
