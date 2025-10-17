@@ -32,13 +32,11 @@ on:
         description: Select the Apigee proxy environment
         options:
           - internal-dev
-          - internal-dev-sandbox
-          - sandbox
           - int
           - ref
           - prod
       create_mns_subscription:
-        description: Create an MNS Subscription. Only available in dev
+        description: Create an MNS Subscription programatically. Only available in AWS dev
         required: false
         type: boolean
         default: true
@@ -64,7 +62,6 @@ permissions:
 
 jobs:
   terraform-plan:
-    if: ${{ !(inputs.apigee_environment == 'internal-dev-sandbox' || inputs.apigee_environment == 'sandbox') }}
     runs-on: ubuntu-latest
     environment:
       name: ${{ inputs.environment }}
@@ -98,7 +95,6 @@ jobs:
           path: terraform/tfplan
 
   terraform-apply:
-    if: ${{ !(inputs.apigee_environment == 'internal-dev-sandbox' || inputs.apigee_environment == 'sandbox') }}
     needs: terraform-plan
     runs-on: ubuntu-latest
     environment:
@@ -155,17 +151,3 @@ jobs:
           poetry install --no-root
           echo "Subscribing SQS to MNS for notifications..."
           make subscribe
-
-  run-e2e-tests:
-    needs: [terraform-apply]
-    if: ${{ needs.terraform-apply.result == 'success' && needs.terraform-apply.result == null }}
-    uses: ./.github/workflows/run-e2e-tests.yml
-    with:
-      apigee_environment: ${{ inputs.apigee_environment }}
-      environment: ${{ inputs.environment }}
-      sub_environment: ${{ inputs.sub_environment }}
-    secrets:
-      APIGEE_PASSWORD: ${{ secrets.APIGEE_PASSWORD }}
-      APIGEE_BASIC_AUTH_TOKEN: ${{ secrets.APIGEE_BASIC_AUTH_TOKEN }}
-      APIGEE_OTP_KEY: ${{ secrets.APIGEE_OTP_KEY }}
-      STATUS_API_KEY: ${{ secrets.STATUS_API_KEY }}
