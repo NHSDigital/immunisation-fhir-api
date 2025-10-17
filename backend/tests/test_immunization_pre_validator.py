@@ -6,6 +6,7 @@ from decimal import Decimal
 from unittest.mock import patch
 
 from jsonpath_ng.ext import parse
+
 from models.fhir_immunization import ImmunizationValidator
 from models.fhir_immunization_pre_validators import PreValidators
 from models.utils.generic_utils import (
@@ -505,7 +506,9 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         ValidatorModelTests.test_string_value(
             self,
             field_location=patient_name_family_field_location(valid_json_data),
-            valid_strings_to_test=["test"],
+            valid_strings_to_test=["test", "Quitelongsurname", "Surnamewithjustthirtyfivecharacters"],
+            max_length=PreValidators.PERSON_SURNAME_MAX_LENGTH,
+            invalid_length_strings_to_test=["Surnamethathasgotthirtysixcharacters"],
         )
 
     def test_pre_validate_patient_birth_date(self):

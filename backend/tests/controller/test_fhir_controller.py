@@ -7,10 +7,11 @@ import uuid
 from unittest.mock import ANY, Mock, create_autospec, patch
 from urllib.parse import urlencode
 
-from controller.aws_apig_response_utils import create_response
-from controller.fhir_controller import FhirController
 from fhir.resources.R4B.bundle import Bundle
 from fhir.resources.R4B.immunization import Immunization
+
+from controller.aws_apig_response_utils import create_response
+from controller.fhir_controller import FhirController
 from models.errors import (
     CustomValidationError,
     IdentifierDuplicationError,

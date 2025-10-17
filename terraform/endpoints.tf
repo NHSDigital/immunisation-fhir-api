@@ -4,6 +4,7 @@ locals {
   policy_path = "${path.root}/policies"
 }
 
+# Select the Policy folder
 data "aws_iam_policy_document" "logs_policy_document" {
   source_policy_documents = [templatefile("${local.policy_path}/log.json", {})]
 }
@@ -57,6 +58,20 @@ data "aws_iam_policy_document" "imms_policy_document" {
   ]
 }
 
+data "aws_iam_policy_document" "imms_data_quality_s3_doc" {
+  source_policy_documents = [
+    templatefile("${local.policy_path}/s3_data_quality_access.json", {
+      s3_bucket_arn = aws_s3_bucket.data_quality_reports_bucket.arn
+      kms_key_arn   = data.aws_kms_key.existing_s3_encryption_key.arn
+    })
+  ]
+}
+
+resource "aws_iam_policy" "imms_s3_kms_policy" {
+  name   = "${local.short_prefix}-s3-kms-policy"
+  policy = data.aws_iam_policy_document.imms_data_quality_s3_doc.json
+}
+
 module "imms_event_endpoint_lambdas" {
   source = "./modules/lambda"
   count  = length(local.imms_endpoints)
@@ -69,6 +84,19 @@ module "imms_event_endpoint_lambdas" {
   environment_variables  = local.imms_lambda_env_vars
   vpc_subnet_ids         = local.private_subnet_ids
   vpc_security_group_ids = [data.aws_security_group.existing_securitygroup.id]
+}
+
+
+# Attach data quality report S3 bucket and KMS policy only to "create_imms" and "update_imms" endpoints
+resource "aws_iam_role_policy_attachment" "attach_data_quality_s3_to_specific_lambdas" {
+  for_each = {
+    for i, mod in module.imms_event_endpoint_lambdas :
+    local.imms_endpoints[i] => mod
+    if local.imms_endpoints[i] == "create_imms" || local.imms_endpoints[i] == "update_imms"
+  }
+
+  role       = each.value.lambda_role_name
+  policy_arn = aws_iam_policy.imms_s3_kms_policy.arn
 }
 
 locals {

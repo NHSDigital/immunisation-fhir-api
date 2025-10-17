@@ -2,6 +2,7 @@ import logging
 
 import boto3
 from botocore.config import Config
+
 from common.authentication import AppRestrictedAuth, Service
 from common.cache import Cache
 from mns_service import MnsService

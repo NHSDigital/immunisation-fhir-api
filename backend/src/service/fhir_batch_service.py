@@ -1,6 +1,7 @@
+from pydantic import ValidationError
+
 from models.errors import CustomValidationError, MandatoryError
 from models.fhir_immunization import ImmunizationValidator
-from pydantic import ValidationError
 from repository.fhir_batch_repository import ImmunizationBatchRepository
 
 IMMUNIZATION_VALIDATOR = ImmunizationValidator()

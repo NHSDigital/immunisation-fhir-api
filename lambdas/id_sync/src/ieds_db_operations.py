@@ -1,6 +1,7 @@
 import json
 
 from boto3.dynamodb.conditions import Key
+
 from common.aws_dynamodb import get_dynamodb_table
 from common.clients import dynamodb_client, logger
 from exceptions.id_sync_exception import IdSyncException

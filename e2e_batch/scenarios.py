@@ -3,6 +3,8 @@ import uuid
 from datetime import datetime, timezone
 
 import pandas as pd
+from vax_suppliers import OdsVax, TestPair
+
 from clients import logger
 from constants import (
     ACK_BUCKET,
@@ -22,7 +24,6 @@ from utils import (
     poll_s3_file_pattern,
     validate_fatal_error,
 )
-from vax_suppliers import OdsVax, TestPair
 
 
 class TestAction:

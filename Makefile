@@ -36,15 +36,13 @@ build-proxy:
 	scripts/build_proxy.sh
 
 #Files to loop over in release
-# VED-811: remove everything except for proxy related files as we move to Github Actions for backend deployment
-_dist_include="poetry.toml Makefile build/. specification sandbox terraform scripts"
+_dist_include="poetry.toml Makefile build/. specification sandbox scripts"
 
 #Create /dist/ sub-directory and copy files into directory
 #Ensure full dir structure is preserved for Lambdas
 release: clean publish build-proxy
 	mkdir -p dist
 	for f in $(_dist_include); do cp -r $$f dist; done
-	for f in $(PYTHON_PROJECT_DIRS); do cp --parents -r $$f dist; done
 	cp ecs-proxies-deploy.yml dist/ecs-deploy-sandbox.yml
 	cp ecs-proxies-deploy.yml dist/ecs-deploy-internal-qa-sandbox.yml
 	cp ecs-proxies-deploy.yml dist/ecs-deploy-internal-dev-sandbox.yml

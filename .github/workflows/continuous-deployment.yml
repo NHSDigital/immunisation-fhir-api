@@ -1,0 +1,84 @@
+name: Continuous Deployment Pipeline
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy-internal-dev-backend:
+    uses: ./.github/workflows/deploy-backend.yml
+    with:
+      apigee_environment: internal-dev
+      create_mns_subscription: true
+      environment: dev
+      sub_environment: internal-dev
+
+  run-internal-dev-sandbox-tests:
+    # Technically the first step is not a pre-requisite - sandbox backend deployment is handled by APIM
+    # Stipulating this condition simply makes it more likely the environment will be ready when tests are invoked
+    needs: [deploy-internal-dev-backend]
+    uses: ./.github/workflows/run-e2e-tests.yml
+    with:
+      apigee_environment: internal-dev-sandbox
+      environment: dev
+      sub_environment: internal-dev-sandbox
+    secrets:
+      APIGEE_PASSWORD: ${{ secrets.APIGEE_PASSWORD }}
+      APIGEE_BASIC_AUTH_TOKEN: ${{ secrets.APIGEE_BASIC_AUTH_TOKEN }}
+      APIGEE_OTP_KEY: ${{ secrets.APIGEE_OTP_KEY }}
+      STATUS_API_KEY: ${{ secrets.STATUS_API_KEY }}
+
+  run-sandbox-tests:
+    needs: [run-internal-dev-sandbox-tests]
+    uses: ./.github/workflows/run-e2e-tests.yml
+    with:
+      apigee_environment: sandbox
+      environment: dev
+      sub_environment: sandbox
+    secrets:
+      APIGEE_PASSWORD: ${{ secrets.APIGEE_PASSWORD }}
+      APIGEE_BASIC_AUTH_TOKEN: ${{ secrets.APIGEE_BASIC_AUTH_TOKEN }}
+      APIGEE_OTP_KEY: ${{ secrets.APIGEE_OTP_KEY }}
+      STATUS_API_KEY: ${{ secrets.STATUS_API_KEY }}
+
+  run-internal-dev-tests:
+    needs: [deploy-internal-dev-backend]
+    uses: ./.github/workflows/run-e2e-tests.yml
+    with:
+      apigee_environment: internal-dev
+      environment: dev
+      sub_environment: internal-dev
+    secrets:
+      APIGEE_PASSWORD: ${{ secrets.APIGEE_PASSWORD }}
+      APIGEE_BASIC_AUTH_TOKEN: ${{ secrets.APIGEE_BASIC_AUTH_TOKEN }}
+      APIGEE_OTP_KEY: ${{ secrets.APIGEE_OTP_KEY }}
+      STATUS_API_KEY: ${{ secrets.STATUS_API_KEY }}
+
+  deploy-higher-dev-envs:
+    needs: [run-internal-dev-tests]
+    strategy:
+      matrix:
+        sub_environment_name: [ref, int]
+    uses: ./.github/workflows/deploy-backend.yml
+    with:
+      apigee_environment: ${{ matrix.sub_environment_name }}
+      create_mns_subscription: true
+      environment: dev
+      sub_environment: ${{ matrix.sub_environment_name }}
+
+  run-higher-dev-env-tests:
+    needs: [deploy-higher-dev-envs]
+    strategy:
+      matrix:
+        sub_environment_name: [ref, int]
+    uses: ./.github/workflows/run-e2e-tests.yml
+    with:
+      apigee_environment: ${{ matrix.sub_environment_name }}
+      environment: dev
+      sub_environment: ${{ matrix.sub_environment_name }}
+    secrets:
+      APIGEE_PASSWORD: ${{ secrets.APIGEE_PASSWORD }}
+      APIGEE_BASIC_AUTH_TOKEN: ${{ secrets.APIGEE_BASIC_AUTH_TOKEN }}
+      APIGEE_OTP_KEY: ${{ secrets.APIGEE_OTP_KEY }}
+      STATUS_API_KEY: ${{ secrets.STATUS_API_KEY }}
