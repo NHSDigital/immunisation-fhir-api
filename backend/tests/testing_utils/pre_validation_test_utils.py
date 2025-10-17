@@ -158,7 +158,7 @@ class ValidatorModelTests:
             that a valid list element must be supplied when a predefined list length is given as
             the valid element will be used to populate lists of incorrect length to ensure
             that the error is being raised due to length, not due to use of an invalid list element)
-        * If there is no predfined list length: Empty list
+        * If there is no predefined list length: Empty list
         * If is a list of strings: Lists with non-string or empty string elements
         * If is a list of dicts: Lists with non-dict or empty dict elements
 

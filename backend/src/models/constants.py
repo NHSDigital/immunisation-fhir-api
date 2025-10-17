@@ -48,6 +48,11 @@ class Constants:
 
     ALLOWED_CONTAINED_RESOURCES = {"Practitioner", "Patient"}
 
+    # As per Personal Demographics Service FHIR API, the maximum length of a given name element or surname is 35 chars.
+    # Given name is a list with a maximum 5 elements. For more info see:
+    # https://digital.nhs.uk/developer/api-catalogue/personal-demographics-service-fhir#post-/Patient
+    PERSON_NAME_ELEMENT_MAX_LENGTH = 35
+
     SUPPLIER_PERMISSIONS_KEY = "supplier_permissions"
     VACCINE_TYPE_TO_DISEASES_HASH_KEY = "vacc_to_diseases"
     DISEASES_TO_VACCINE_TYPE_HASH_KEY = "diseases_to_vacc"
