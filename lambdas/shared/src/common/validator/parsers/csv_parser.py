@@ -3,8 +3,8 @@ import csv
 
 
 class CSVParser:
+    """File Management"""
 
-    """ File Management"""
     # parser variables
     def __init__(self):
         self.csv_file_data = {}

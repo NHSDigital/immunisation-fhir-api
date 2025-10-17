@@ -10,11 +10,11 @@ class SchemaParser:
 
     def parse_schema(self, schema_file):  # changed to accept JSON better for cache
         self.schema_file = schema_file
-        self.expressions = self.schema_file['expressions']
+        self.expressions = self.schema_file["expressions"]
 
     def expression_count(self):
         count = 0
-        count = sum([1 for d in self.expressions if 'expression' in d])
+        count = sum([1 for d in self.expressions if "expression" in d])
         return count
 
     def get_expressions(self):

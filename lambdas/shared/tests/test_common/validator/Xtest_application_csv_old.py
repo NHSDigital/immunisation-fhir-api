@@ -11,7 +11,7 @@ parent_folder = Path(__file__).parent
 data_folder = parent_folder / "data"
 csvFilePath = data_folder / "test_data_ok.csv"  # Passes
 
-dataType = 'CSV'
+dataType = "CSV"
 
 schemaFilePath = parent_folder / "schemas/test_school_schema.json"
 
@@ -28,7 +28,7 @@ error_report = validator.validate_csv(csvFilePath, False, True, True)
 if len(error_report) > 0:
     print(error_report)
 else:
-    print('Validated Successfully')
+    print("Validated Successfully")
 
 end = time.time()
 print(end - start)

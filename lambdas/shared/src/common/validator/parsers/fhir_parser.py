@@ -24,7 +24,7 @@ class FHIRParser:
     def _scan_values_for_match(self, parent, match_value):
         try:
             for key in parent:
-                if (parent[key] == match_value):
+                if parent[key] == match_value:
                     return True
             return False
         except Exception:
@@ -38,7 +38,7 @@ class FHIRParser:
         try:
             while index < len(parent):
                 for key in parent[index]:
-                    if ((parent[index][key] == field_list[1]) or (key == field_list[1])):
+                    if (parent[index][key] == field_list[1]) or (key == field_list[1]):
                         node_id = index
                         break
                     else:
@@ -47,7 +47,7 @@ class FHIRParser:
                             break
                 index += 1
         except Exception:
-            return ''
+            return ""
         return parent[node_id]
 
     # identify a node in the FHIR data
@@ -60,7 +60,7 @@ class FHIRParser:
                 child = int(child)
                 result = parent[child]
             except Exception:
-                result = ''
+                result = ""
         return result
 
     # locate a value for a key
@@ -71,12 +71,12 @@ class FHIRParser:
         del field_list[0]
         try:
             for field in field_list:
-                if (field.startswith("#")):
+                if field.startswith("#"):
                     rootfield = self._locate_list_id(rootfield, field)  # check here for default index??
                 else:
                     rootfield = self._get_node(rootfield, field)
         except Exception:
-            rootfield = ''
+            rootfield = ""
         return rootfield
 
     # get the value list for a key
@@ -85,18 +85,18 @@ class FHIRParser:
         try:
             response_value = self._scan_for_value(field_name)
         except Exception:
-            response_value = ''
+            response_value = ""
 
         value.append(response_value)
         return value
 
     # get the value list for a key
     def get_key_single_value(self, field_name):
-        value = ''
+        value = ""
         try:
             response_value = self._scan_for_value(field_name)
         except Exception:
-            response_value = ''
+            response_value = ""
 
         value = response_value
         return value

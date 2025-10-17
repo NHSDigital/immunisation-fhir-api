@@ -1,8 +1,14 @@
-
-
 class ErrorReport:
-    def __init__(self, code: int = None, message: str = None, row: int = None, field: str = None, details: str = None,
-                 summarise: bool = False, error_level: int = None):
+    def __init__(
+        self,
+        code: int = None,
+        message: str = None,
+        row: int = None,
+        field: str = None,
+        details: str = None,
+        summarise: bool = False,
+        error_level: int = None,
+    ):
         self.code = code
         self.message = message
         self.row = row
@@ -17,22 +23,14 @@ class ErrorReport:
 
     # function to return the object as a dictionary
     def to_dict(self):
-        ret = {
-                'code': self.code,
-                'message': self.message
-            }
+        ret = {"code": self.code, "message": self.message}
         if not self.summarise:
-            ret.update({
-                'row': self.row,
-                'field': self.field,
-                'details': self.details
-            })
+            ret.update({"row": self.row, "field": self.field, "details": self.details})
         return ret
 
 
 # record exception capture
 class RecordError(Exception):
-
     def __init__(self, code=None, message=None, details=None):
         super().__init__(message)
         self.code = code

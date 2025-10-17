@@ -9,7 +9,8 @@ from unittest.mock import patch
 import responses
 from responses import matchers
 
-from common.authentication import AppRestrictedAuth, Service
+from common.authentication import AppRestrictedAuth
+from common.authentication import Service
 from common.models.errors import UnhandledResponseError
 
 
