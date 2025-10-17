@@ -5,8 +5,9 @@ from copy import deepcopy
 from unittest.mock import patch
 
 from jsonpath_ng.ext import parse
-from models.fhir_immunization import ImmunizationValidator
 from pydantic import ValidationError
+
+from models.fhir_immunization import ImmunizationValidator
 from testing_utils.generic_utils import (
     load_json_data,
     update_contained_resource_field,

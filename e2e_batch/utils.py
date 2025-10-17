@@ -11,6 +11,7 @@ from io import StringIO
 import pandas as pd
 from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
+
 from clients import (
     ack_metadata_queue_url,
     audit_table,

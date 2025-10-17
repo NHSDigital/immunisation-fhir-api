@@ -6,6 +6,7 @@ from enum import Enum
 
 import jwt
 import requests
+
 from common.clients import logger
 from common.models.errors import UnhandledResponseError
 

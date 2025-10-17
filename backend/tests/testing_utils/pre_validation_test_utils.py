@@ -76,6 +76,16 @@ class ValidatorModelTests:
                 expected_error_message=f"{field_location} must be a string",
             )
 
+        # Test whitespace
+        for invalid_whitespace_string in InvalidValues.for_whitespace_strings:
+            test_invalid_values_rejected(
+                test_instance,
+                valid_json_data,
+                field_location=field_location,
+                invalid_value=invalid_whitespace_string,
+                expected_error_message=f"{field_location} must be a non-empty string",
+            )
+
         # If there is a predefined string length, then test invalid string lengths,
         # otherwise check the empty string only
         if defined_length:
