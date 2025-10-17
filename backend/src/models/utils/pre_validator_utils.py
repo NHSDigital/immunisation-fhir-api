@@ -69,9 +69,8 @@ class PreValidation:
             if len(field_value) == 0:
                 raise ValueError(f"{field_location} must be a non-empty array")
 
-        if max_length:
-            if len(field_value) > max_length:
-                raise ValueError(f"{field_location} must be an array of maximum length {max_length}")
+        if max_length is not None and len(field_value) > max_length:
+            raise ValueError(f"{field_location} must be an array of maximum length {max_length}")
 
         if elements_are_strings:
             for idx, element in enumerate(field_value):
