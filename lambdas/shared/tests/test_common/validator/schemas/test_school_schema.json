@@ -1,0 +1,164 @@
+{
+  "id": "01K5EGR0C85TPNZT71MJ10VKAA",
+  "schemaName": "School Attendance Data Validation",
+  "version": 1.0,
+  "releaseDate": "2024-07-17T00:00:00.000Z",
+  "expressions": [
+    {
+      "expressionId": "check1",
+      "fieldNameCSV": "academic_year",
+      "fieldNameFlat": "ACADEMIC_YEAR",
+      "errorLevel": 0,
+      "expression": {
+        "expressionName": "Academic Year Not Empty Check",
+        "expressionType": "NOTEMPTY",
+        "expressionRule": ""
+      },
+      "errorGroup": "completeness"
+    },
+    {
+      "expressionId": "check2",
+      "fieldNameCSV": "time_period",
+      "fieldNameFlat": "TIME_PERIOD",
+      "errorLevel": 0,
+      "expression": {
+        "expressionName": "Time Period Not Empty Check",
+        "expressionType": "NOTEMPTY",
+        "expressionRule": ""
+      },
+      "errorGroup": "completeness"
+    },
+    {
+      "expressionId": "check3",
+      "fieldNameCSV": "country_code",
+      "fieldNameFlat": "COUNTRY_CODE",
+      "errorLevel": 0,
+      "expression": {
+        "expressionName": "Country Code Not Empty Check",
+        "expressionType": "NOTEMPTY",
+        "expressionRule": ""
+      },
+      "errorGroup": "completeness"
+    },
+    {
+      "expressionId": "check4",
+      "fieldNameCSV": "country_name",
+      "fieldNameFlat": "COUNTRY_NAME",
+      "errorLevel": 1,
+      "expression": {
+        "expressionName": "Country Name Not Empty Check",
+        "expressionType": "NOTEMPTY",
+        "expressionRule": ""
+      },
+      "errorGroup": "completeness"
+    },
+    {
+      "expressionId": "check5",
+      "fieldNameCSV": "new_la_code",
+      "fieldNameFlat": "NEW_LA_CODE",
+      "errorLevel": 0,
+      "expression": {
+        "expressionName": "LA Code Not Empty Check",
+        "expressionType": "NOTEMPTY",
+        "expressionRule": ""
+      },
+      "errorGroup": "completeness"
+    },
+    {
+      "expressionId": "check6",
+      "fieldNameCSV": "la_name",
+      "fieldNameFlat": "LA_NAME",
+      "errorLevel": 1,
+      "expression": {
+        "expressionName": "LA Name Not Empty Check",
+        "expressionType": "NOTEMPTY",
+        "expressionRule": ""
+      },
+      "errorGroup": "completeness"
+    },
+    {
+      "expressionId": "check7",
+      "fieldNameCSV": "school_type",
+      "fieldNameFlat": "SCHOOL_TYPE",
+      "errorLevel": 0,
+      "expression": {
+        "expressionName": "School Type Not Empty Check",
+        "expressionType": "NOTEMPTY",
+        "expressionRule": ""
+      },
+      "errorGroup": "completeness"
+    },
+    {
+      "expressionId": "check8",
+      "fieldNameCSV": "num_schools",
+      "fieldNameFlat": "NUM_SCHOOLS",
+      "errorLevel": 1,
+      "expression": {
+        "expressionName": "Number of Schools Numeric Check",
+        "expressionType": "INT",
+        "expressionRule": ""
+      },
+      "errorGroup": "validity"
+    },
+    {
+      "expressionId": "check9",
+      "fieldNameCSV": "enrolments",
+      "fieldNameFlat": "ENROLMENTS",
+      "errorLevel": 1,
+      "expression": {
+        "expressionName": "Enrolments Numeric Check",
+        "expressionType": "INT",
+        "expressionRule": ""
+      },
+      "errorGroup": "validity"
+    },
+    {
+      "expressionId": "check10",
+      "fieldNameCSV": "overall_attendance",
+      "fieldNameFlat": "OVERALL_ATTENDANCE",
+      "errorLevel": 0,
+      "expression": {
+        "expressionName": "Overall Attendance Numeric Check",
+        "expressionType": "INT",
+        "expressionRule": ""
+      },
+      "errorGroup": "validity"
+    },
+    {
+      "expressionId": "check11",
+      "fieldNameCSV": "overall_absence",
+      "fieldNameFlat": "OVERALL_ABSENCE",
+      "errorLevel": 0,
+      "expression": {
+        "expressionName": "Overall Absence Numeric Check",
+        "expressionType": "INT",
+        "expressionRule": ""
+      },
+      "errorGroup": "validity"
+    },
+    {
+      "expressionId": "check12",
+      "fieldNameCSV": "authorised_absence",
+      "fieldNameFlat": "AUTHORISED_ABSENCE",
+      "errorLevel": 1,
+      "expression": {
+        "expressionName": "Authorised Absence Numeric Check",
+        "expressionType": "INT",
+        "expressionRule": ""
+      },
+      "errorGroup": "validity"
+    },
+    {
+      "expressionId": "check13",
+      "fieldNameCSV": "unauthorised_absence",
+      "fieldNameFlat": "UNAUTHORISED_ABSENCE",
+      "errorLevel": 1,
+      "expression": {
+        "expressionName": "Unauthorised Absence Numeric Check",
+        "expressionType": "INT",
+        "expressionRule": ""
+      },
+      "errorGroup": "validity"
+    }
+  ]
+}

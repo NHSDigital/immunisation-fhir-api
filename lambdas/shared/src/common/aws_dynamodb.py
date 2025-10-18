@@ -1,4 +1,5 @@
-from common.clients import dynamodb_resource, logger
+from common.clients import dynamodb_resource
+from common.clients import logger
 
 
 def get_dynamodb_table(table_name):

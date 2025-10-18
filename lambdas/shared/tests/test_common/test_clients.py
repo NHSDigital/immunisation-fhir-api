@@ -1,7 +1,8 @@
 import importlib
 import logging
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
+from unittest.mock import patch
 
 import common.clients as clients
 

@@ -9,7 +9,8 @@ import time
 from datetime import datetime
 from functools import wraps
 
-from common.clients import firehose_client, logger
+from common.clients import firehose_client
+from common.clients import logger
 
 
 def send_log_to_firehose(stream_name, log_data: dict) -> None:

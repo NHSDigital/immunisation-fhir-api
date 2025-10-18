@@ -3,11 +3,9 @@ import unittest
 from datetime import datetime
 from unittest.mock import patch
 
-from common.log_decorator import (
-    generate_and_send_logs,
-    logging_decorator,
-    send_log_to_firehose,
-)
+from common.log_decorator import generate_and_send_logs
+from common.log_decorator import logging_decorator
+from common.log_decorator import send_log_to_firehose
 
 
 class TestLogDecorator(unittest.TestCase):
