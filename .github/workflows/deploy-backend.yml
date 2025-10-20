@@ -72,18 +72,18 @@ jobs:
           terraform_version: "1.12.2"
 
       - name: Terraform Init
-        working-directory: terraform
+        working-directory: infrastructure/instance
         run: make init
 
       - name: Terraform Plan
-        working-directory: terraform
+        working-directory: infrastructure/instance
         run: make plan-ci
 
       - name: Save Terraform Plan
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: ${{ env.ENVIRONMENT }}-${{ env.SUB_ENVIRONMENT }}-tfplan
-          path: terraform/tfplan
+          path: infrastructure/instance/tfplan
 
   terraform-apply:
     needs: terraform-plan
@@ -108,14 +108,14 @@ jobs:
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
         with:
           name: ${{ env.ENVIRONMENT }}-${{ env.SUB_ENVIRONMENT }}-tfplan
-          path: terraform
+          path: infrastructure/instance
 
       - name: Terraform Init
-        working-directory: terraform
+        working-directory: infrastructure/instance
         run: make init
 
       - name: Terraform Apply
-        working-directory: terraform
+        working-directory: infrastructure/instance
         run: |
           make apply-ci
           echo "ID_SYNC_QUEUE_ARN=$(make -s output name=id_sync_queue_arn)" >> $GITHUB_ENV
