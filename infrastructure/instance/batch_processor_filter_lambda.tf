@@ -1,6 +1,6 @@
 # Define the directory containing the Docker image and calculate its SHA-256 hash for triggering redeployments
 locals {
-  batch_processor_filter_lambda_dir     = abspath("${path.root}/../batch_processor_filter")
+  batch_processor_filter_lambda_dir     = abspath("${path.root}/../../batch_processor_filter")
   batch_processor_filter_lambda_files   = fileset(local.batch_processor_filter_lambda_dir, "**")
   batch_processor_filter_lambda_dir_sha = sha1(join("", [for f in local.batch_processor_filter_lambda_files : filesha1("${local.batch_processor_filter_lambda_dir}/${f}")]))
 }
@@ -17,6 +17,7 @@ resource "aws_ecr_repository" "batch_processor_filter_lambda_repository" {
 module "batch_processor_filter_docker_image" {
   source  = "terraform-aws-modules/lambda/aws//modules/docker-build"
   version = "8.1.0"
+  docker_file_path = "../Dockerfile"
 
   create_ecr_repo = false
   ecr_repo        = aws_ecr_repository.batch_processor_filter_lambda_repository.name

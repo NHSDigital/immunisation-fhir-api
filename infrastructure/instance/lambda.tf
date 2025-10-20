@@ -1,5 +1,5 @@
 locals {
-  lambda_dir    = abspath("${path.root}/../backend")
+  lambda_dir    = abspath("${path.root}/../../backend")
   source_path   = local.lambda_dir
   path_include  = ["**"]
   path_exclude  = ["**/__pycache__/**"]
@@ -25,7 +25,7 @@ module "docker_image" {
 
   create_ecr_repo  = false
   ecr_repo         = "${local.prefix}-operation-lambda-repo"
-  docker_file_path = "lambda.Dockerfile"
+  docker_file_path = "../lambda.Dockerfile"
   ecr_repo_lifecycle_policy = jsonencode({
     "rules" : [
       {

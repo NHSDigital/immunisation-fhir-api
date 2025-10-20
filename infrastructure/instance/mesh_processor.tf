@@ -1,6 +1,6 @@
 # Define the directory containing the Docker image and calculate its SHA-256 hash for triggering redeployments
 locals {
-  mesh_processor_lambda_dir     = abspath("${path.root}/../mesh_processor")
+  mesh_processor_lambda_dir     = abspath("${path.root}/../../mesh_processor")
   mesh_processor_lambda_files   = fileset(local.mesh_processor_lambda_dir, "**")
   mesh_processor_lambda_dir_sha = sha1(join("", [for f in local.mesh_processor_lambda_files : filesha1("${local.mesh_processor_lambda_dir}/${f}")]))
   # This should match the prefix used in the global Terraform
@@ -35,6 +35,7 @@ module "mesh_processor_docker_image" {
 
   source  = "terraform-aws-modules/lambda/aws//modules/docker-build"
   version = "8.1.0"
+  docker_file_path = "../Dockerfile"
 
   create_ecr_repo = false
   ecr_repo        = aws_ecr_repository.mesh_file_converter_lambda_repository[0].name

@@ -1,5 +1,5 @@
 locals {
-  delta_lambda_dir = abspath("${path.root}/../delta_backend")
+  delta_lambda_dir = abspath("${path.root}/../../delta_backend")
   delta_files      = fileset(local.delta_lambda_dir, "**")
   delta_dir_sha    = sha1(join("", [for f in local.delta_files : filesha1("${local.delta_lambda_dir}/${f}")]))
   function_name    = "delta"

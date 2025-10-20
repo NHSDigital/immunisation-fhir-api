@@ -5,7 +5,7 @@ resource "aws_ecs_cluster" "ecs_cluster" {
 
 # Locals for Lambda processing paths and hash
 locals {
-  processing_lambda_dir     = abspath("${path.root}/../recordprocessor")
+  processing_lambda_dir     = abspath("${path.root}/../../recordprocessor")
   processing_path_include   = ["**"]
   processing_path_exclude   = ["**/__pycache__/**"]
   processing_files_include  = setunion([for f in local.processing_path_include : fileset(local.processing_lambda_dir, f)]...)
@@ -29,7 +29,7 @@ module "processing_docker_image" {
   source  = "terraform-aws-modules/lambda/aws//modules/docker-build"
   version = "8.1.0"
 
-  docker_file_path = "Dockerfile"
+  docker_file_path = "../Dockerfile"
   create_ecr_repo  = false
   ecr_repo         = aws_ecr_repository.processing_repository.name
   ecr_repo_lifecycle_policy = jsonencode({
