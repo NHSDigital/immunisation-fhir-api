@@ -157,7 +157,7 @@ jobs:
         with:
           python-version: 3.11
           cache: "poetry"
-          cache-dependency-path: "../tests/e2e/poetry.lock"
+          cache-dependency-path: tests/e2e/poetry.lock
 
       - name: Install e2e test dependencies
         working-directory: tests/e2e
@@ -223,7 +223,7 @@ jobs:
         with:
           python-version: 3.11
           cache: "poetry"
-          cache-dependency-path: "../tests/e2e_batch/poetry.lock"
+          cache-dependency-path: tests/e2e_batch/poetry.lock
 
       - name: Install e2e test dependencies
         working-directory: tests/e2e_batch
