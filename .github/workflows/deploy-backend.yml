@@ -27,12 +27,12 @@ on:
           - ref
           - prod
       create_mns_subscription:
-        description: Create an MNS Subscription. Only available in dev
+        description: Create an MNS Subscription programatically. Only available in AWS dev
         required: false
         type: boolean
         default: true
       environment:
-        type: string
+        type: choice
         description: Select the backend environment
         options:
           - dev
@@ -82,7 +82,7 @@ jobs:
       - name: Save Terraform Plan
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: tfplan
+          name: ${{ env.ENVIRONMENT }}-${{ env.SUB_ENVIRONMENT }}-tfplan
           path: terraform/tfplan
 
   terraform-apply:
@@ -107,7 +107,7 @@ jobs:
       - name: Retrieve Terraform Plan
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
         with:
-          name: tfplan
+          name: ${{ env.ENVIRONMENT }}-${{ env.SUB_ENVIRONMENT }}-tfplan
           path: terraform
 
       - name: Terraform Init
