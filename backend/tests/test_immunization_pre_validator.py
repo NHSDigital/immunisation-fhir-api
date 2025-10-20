@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 from jsonpath_ng.ext import parse
 
+from models.constants import Constants
 from models.fhir_immunization import ImmunizationValidator
 from models.fhir_immunization_pre_validators import PreValidators
 from models.utils.generic_utils import (
@@ -487,18 +488,55 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
             valid_list_element=[{"family": "Test", "given": ["TestA"]}],
         )
 
-    def test_pre_validate_patient_name_given(self):
-        """Test pre_validate_patient_name_given accepts valid values and rejects invalid values"""
-        valid_json_data = deepcopy(self.json_data)
-        # invalid_json
+    def test_pre_validate_patient_name_given_rejects_invalid_input(self):
+        """Test pre_validate_patient_name_given rejects invalid values"""
+        given_name_field_loc = patient_name_given_field_location(self.json_data)
 
-        ValidatorModelTests.test_list_value(
-            self,
-            field_location=patient_name_given_field_location(valid_json_data),
-            valid_lists_to_test=[["Test"], ["Test test"]],
-            valid_list_element="Test",
-            is_list_of_strings=True,
-        )
+        test_cases = [
+            ([None], "contained[?(@.resourceType=='Patient')].name[0].given[0] must be a string"),
+            ([], "contained[?(@.resourceType=='Patient')].name[0].given must be a non-empty array"),
+            ([""], "contained[?(@.resourceType=='Patient')].name[0].given[0] must be a non-empty string"),
+            (["   \n"], "contained[?(@.resourceType=='Patient')].name[0].given[0] must be a non-empty string"),
+            (["Test", "    "], "contained[?(@.resourceType=='Patient')].name[0].given[1] must be a non-empty string"),
+            (
+                ["Too", "many", "items", "1", "2", "5"],
+                "contained[?(@.resourceType=='Patient')].name[0].given must be an array of maximum length 5",
+            ),
+            (
+                ["Stringtoolongeruti olgkriahfyrtoiuhg"],
+                "contained[?(@.resourceType=='Patient')].name[0].given[0] must be 35 or fewer characters",
+            ),
+        ]
+
+        for invalid_data, expected_error in test_cases:
+            with self.subTest():
+                invalid_json_data = deepcopy(self.json_data)
+                parse(given_name_field_loc).update(invalid_json_data, invalid_data)
+
+            with self.assertRaises(Exception) as error:
+                PreValidators(invalid_json_data).pre_validate_patient_name_given(values=invalid_json_data)
+
+            self.assertEqual(str(error.exception), expected_error)
+            self.assertIsInstance(error.exception, (ValueError, TypeError))
+
+    def test_pre_validate_patient_name_given_accepts_valid_input(self):
+        """Test pre_validate_patient_name_given accepts valid values"""
+        given_name_field_loc = patient_name_given_field_location(self.json_data)
+
+        test_cases = [
+            ["Test"],
+            ["Multiple test", "values"],
+            ["One", "Two", "Three", "Four", "Five"],
+            ["  Can have spaces "],
+            ["Exactlythirtyfivecharactersuiopasdf"],
+        ]
+
+        for valid_input in test_cases:
+            with self.subTest():
+                valid_json_data = deepcopy(self.json_data)
+                parse(given_name_field_loc).update(valid_json_data, valid_input)
+
+                PreValidators(valid_json_data).pre_validate_patient_name_given(values=valid_json_data)
 
     def test_pre_validate_patient_name_family(self):
         """Test pre_validate_patient_name_family accepts valid values and rejects invalid values"""
@@ -507,7 +545,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
             self,
             field_location=patient_name_family_field_location(valid_json_data),
             valid_strings_to_test=["test", "Quitelongsurname", "Surnamewithjustthirtyfivecharacters"],
-            max_length=PreValidators.PERSON_SURNAME_MAX_LENGTH,
+            max_length=Constants.PERSON_NAME_ELEMENT_MAX_LENGTH,
             invalid_length_strings_to_test=["Surnamethathasgotthirtysixcharacters"],
         )
 
@@ -666,16 +704,50 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
             valid_list_element={"family": "Test"},
         )
 
-    def test_pre_validate_practitioner_name_given(self):
-        """Test pre_validate_practitioner_name_given accepts valid values and rejects invalid values"""
-        valid_json_data = deepcopy(self.json_data)
-        ValidatorModelTests.test_list_value(
-            self,
-            field_location=practitioner_name_given_field_location(valid_json_data),
-            valid_lists_to_test=[["Test"], ["Test test"]],
-            valid_list_element="Test",
-            is_list_of_strings=True,
-        )
+    def test_pre_validate_practitioner_name_given_rejects_invalid_data(self):
+        """Test pre_validate_practitioner_name_given rejects invalid values"""
+        practitioner_name_field_loc = practitioner_name_given_field_location(self.json_data)
+
+        test_cases = [
+            ([None], "contained[?(@.resourceType=='Practitioner')].name[0].given[0] must be a string"),
+            ([123, 456], "contained[?(@.resourceType=='Practitioner')].name[0].given[0] must be a string"),
+            ([], "contained[?(@.resourceType=='Practitioner')].name[0].given must be a non-empty array"),
+            ([""], "contained[?(@.resourceType=='Practitioner')].name[0].given[0] must be a non-empty string"),
+            (["   \n"], "contained[?(@.resourceType=='Practitioner')].name[0].given[0] must be a non-empty string"),
+            (
+                ["Test", "    "],
+                "contained[?(@.resourceType=='Practitioner')].name[0].given[1] must be a non-empty string",
+            ),
+        ]
+
+        for invalid_data, expected_error in test_cases:
+            with self.subTest():
+                invalid_json_data = deepcopy(self.json_data)
+                parse(practitioner_name_field_loc).update(invalid_json_data, invalid_data)
+
+            with self.assertRaises(Exception) as error:
+                PreValidators(invalid_json_data).pre_validate_practitioner_name_given(values=invalid_json_data)
+
+            self.assertEqual(str(error.exception), expected_error)
+            self.assertIsInstance(error.exception, (ValueError, TypeError))
+
+    def test_pre_validate_practitioner_name_given_accepts_valid_input(self):
+        """Test pre_validate_practitioner_name_given accepts valid values"""
+        practitioner_name_field_loc = practitioner_name_given_field_location(self.json_data)
+
+        test_cases = [
+            ["Test"],
+            ["Multiple test", "values"],
+            ["One", "Two", "Three", "Four", "Five", "Very many not restricted by length"],
+            ["  Can have spaces "],
+        ]
+
+        for valid_input in test_cases:
+            with self.subTest():
+                valid_json_data = deepcopy(self.json_data)
+                parse(practitioner_name_field_loc).update(valid_json_data, valid_input)
+
+                PreValidators(valid_json_data).pre_validate_practitioner_name_given(values=valid_json_data)
 
     def test_pre_validate_practitioner_name_family(self):
         """Test pre_validate_practitioner_name_family accepts valid values and rejects invalid values"""
