@@ -24,7 +24,7 @@ module "forwarding_docker_image" {
 
   create_ecr_repo  = false
   ecr_repo         = aws_ecr_repository.forwarder_lambda_repository.name
-  docker_file_path = "../batch.Dockerfile"
+  docker_file_path = "batch.Dockerfile"
   ecr_repo_lifecycle_policy = jsonencode({
     rules = [
       {

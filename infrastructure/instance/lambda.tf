@@ -25,7 +25,7 @@ module "docker_image" {
 
   create_ecr_repo  = false
   ecr_repo         = "${local.prefix}-operation-lambda-repo"
-  docker_file_path = "../lambda.Dockerfile"
+  docker_file_path = "lambda.Dockerfile"
   ecr_repo_lifecycle_policy = jsonencode({
     "rules" : [
       {
