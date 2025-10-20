@@ -25,7 +25,7 @@ class TestApplication(unittest.TestCase):
 
         print("Current working directory:", os.getcwd())
         print("Test file directory:", Path(__file__).parent)
-        print("Schema file exists:", (Path(__file__).parent / "schemas" / "schema.json").exists())
+        print("Schema file exists:", (Path(__file__).parent / "schemas" / "test_schema.json").exists())
 
         validator = Validator(SchemaFile)  # FHIR File Path not needed
         error_list = validator.validate_fhir(self.FHIRFilePath, True, True, True)
