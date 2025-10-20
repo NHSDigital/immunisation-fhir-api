@@ -29,8 +29,8 @@ module "processing_docker_image" {
   source  = "terraform-aws-modules/lambda/aws//modules/docker-build"
   version = "8.1.0"
 
-  create_ecr_repo  = false
-  ecr_repo         = aws_ecr_repository.processing_repository.name
+  create_ecr_repo = false
+  ecr_repo        = aws_ecr_repository.processing_repository.name
   ecr_repo_lifecycle_policy = jsonencode({
     "rules" : [
       {
