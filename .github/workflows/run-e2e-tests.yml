@@ -132,17 +132,17 @@ jobs:
 
       - name: Terraform Init
         if: ${{ env.TF_OUTPUTS_REQUIRED == 'true' }}
-        working-directory: terraform
+        working-directory: infrastructure/instance
         run: make init
 
       - name: Set Terraform workspace
         if: ${{ env.TF_OUTPUTS_REQUIRED == 'true' }}
-        working-directory: terraform
+        working-directory: infrastructure/instance
         run: make workspace
 
       - name: Read Terraform outputs
         if: ${{ env.TF_OUTPUTS_REQUIRED == 'true' }}
-        working-directory: terraform
+        working-directory: infrastructure/instance
         run: |
           echo "IMMS_DELTA_TABLE_NAME=$(make -s output name=imms_delta_table_name)" >> $GITHUB_ENV
           echo "AWS_DOMAIN_NAME=$(make -s output name=service_domain_name)" >> $GITHUB_ENV
@@ -160,12 +160,12 @@ jobs:
           cache-dependency-path: "e2e/poetry.lock"
 
       - name: Install e2e test dependencies
-        working-directory: e2e
+        working-directory: tests/e2e
         run: poetry install --no-root
 
       - name: Get Apigee access token
         if: ${{ vars.RUN_FULL_E2E_TESTS == 'true' }}
-        working-directory: e2e
+        working-directory: tests/e2e
         env:
           APIGEE_PASSWORD: ${{ secrets.APIGEE_PASSWORD }}
           APIGEE_BASIC_AUTH_TOKEN: ${{ secrets.APIGEE_BASIC_AUTH_TOKEN }}
@@ -187,17 +187,17 @@ jobs:
 
       - name: Run proxy e2e test suite
         if: ${{ vars.RUN_PROXY_E2E_TESTS == 'true' }}
-        working-directory: e2e
+        working-directory: tests/e2e
         run: poetry run python -m unittest test_proxy
 
       - name: Run sandbox e2e test suite
         if: ${{ vars.RUN_SANDBOX_E2E_TESTS == 'true' }}
-        working-directory: e2e
+        working-directory: tests/e2e
         run: poetry run python -m unittest test_proxy.TestProxyHealthcheck
 
       - name: Run full e2e test suite
         if: ${{ vars.RUN_FULL_E2E_TESTS == 'true' }}
-        working-directory: e2e
+        working-directory: tests/e2e
         run: poetry run python -m unittest
 
   batch-e2e-tests:
@@ -226,11 +226,11 @@ jobs:
           cache-dependency-path: "e2e_batch/poetry.lock"
 
       - name: Install e2e test dependencies
-        working-directory: e2e_batch
+        working-directory: tests/e2e_batch
         run: poetry install --no-root
 
       - name: Run batch e2e test suite
-        working-directory: e2e_batch
+        working-directory: tests/e2e_batch
         env:
           ENVIRONMENT: ${{ inputs.sub_environment }}
         run: poetry run python -m unittest -c -v

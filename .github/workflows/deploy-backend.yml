@@ -72,11 +72,11 @@ jobs:
           terraform_version: "1.12.2"
 
       - name: Terraform Init
-        working-directory: terraform
+        working-directory: infrastructure/instance
         run: make init
 
       - name: Terraform Plan
-        working-directory: terraform
+        working-directory: infrastructure/instance
         run: make plan-ci
 
       - name: Save Terraform Plan
@@ -111,11 +111,11 @@ jobs:
           path: terraform
 
       - name: Terraform Init
-        working-directory: terraform
+        working-directory: infrastructure/instance
         run: make init
 
       - name: Terraform Apply
-        working-directory: terraform
+        working-directory: infrastructure/instance
         run: |
           make apply-ci
           echo "ID_SYNC_QUEUE_ARN=$(make -s output name=id_sync_queue_arn)" >> $GITHUB_ENV
