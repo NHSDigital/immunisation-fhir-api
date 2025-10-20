@@ -186,7 +186,7 @@ jobs:
         working-directory: lambdas/mns_subscription
         id: mns_subscription
         env:
-          PYTHONPATH: ${{ env.LAMBDA_PATH }}/mns_subscription/src:${{ env.SHARED_PATH }}/src
+          PYTHONPATH: ${{ env.LAMBDA_PATH }}/mns_subscription/src:tests:${{ env.SHARED_PATH }}/src
         continue-on-error: true
         run: |
           poetry install
@@ -198,7 +198,7 @@ jobs:
         working-directory: lambdas/redis_sync
         id: redis_sync
         env:
-          PYTHONPATH: ${{ env.LAMBDA_PATH }}/redis_sync/src:${{ env.SHARED_PATH }}/src
+          PYTHONPATH: ${{ env.LAMBDA_PATH }}/redis_sync/src:tests:${{ env.SHARED_PATH }}/src
         continue-on-error: true
         run: |
           poetry install
@@ -220,7 +220,7 @@ jobs:
         working-directory: lambdas/id_sync
         id: id_sync
         env:
-          PYTHONPATH: ${{ env.LAMBDA_PATH }}/id_sync/src:${{ env.SHARED_PATH }}/src
+          PYTHONPATH: ${{ env.LAMBDA_PATH }}/id_sync/src:tests:${{ env.SHARED_PATH }}/src
         continue-on-error: true
         run: |
           poetry install
