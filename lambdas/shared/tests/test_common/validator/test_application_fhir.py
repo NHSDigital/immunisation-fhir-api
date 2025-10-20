@@ -1,5 +1,6 @@
 # Test application file
 import json
+import os
 import time
 import unittest
 from pathlib import Path
@@ -11,7 +12,7 @@ from common.validator.validator import Validator
 
 class TestApplication(unittest.TestCase):
     def setUp(self):
-        validation_folder = Path(__file__).parent
+        validation_folder = Path(__file__).resolve().parent
         self.FHIRFilePath = validation_folder / "data/vaccination2.json"
         self.schemaFilePath = validation_folder / "schemas/schema.json"
 
@@ -21,6 +22,10 @@ class TestApplication(unittest.TestCase):
         # get the JSON of the schema, changed to cope with elasticache
         with open(self.schemaFilePath) as JSON:
             SchemaFile = json.load(JSON)
+
+        print("Current working directory:", os.getcwd())
+        print("Test file directory:", Path(__file__).parent)
+        print("Schema file exists:", (Path(__file__).parent / "schemas" / "schema.json").exists())
 
         validator = Validator(SchemaFile)  # FHIR File Path not needed
         error_list = validator.validate_fhir(self.FHIRFilePath, True, True, True)
