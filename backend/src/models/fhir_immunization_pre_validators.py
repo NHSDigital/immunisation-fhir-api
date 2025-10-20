@@ -297,22 +297,26 @@ class PreValidators:
         except (KeyError, IndexError):
             pass
 
-    def pre_validate_patient_name_given(self, values: dict) -> dict:
+    def pre_validate_patient_name_given(self, values: dict) -> None:
         """
         Pre-validate that, if contained[?(@.resourceType=='Patient')].name[{index}].given index dynamically determined
-        (legacy CSV field name:PERSON_FORENAME) exists, then it is a an array containing a single non-empty string
+        (legacy CSV field name:PERSON_FORENAME) exists, then it is an array containing a single non-empty string
         """
         field_location = patient_name_given_field_location(values)
 
         try:
             field_value, _ = patient_and_practitioner_value_and_index(values, "given", "Patient")
-            PreValidation.for_list(field_value, field_location, elements_are_strings=True)
+            PreValidation.for_list(
+                field_value,
+                field_location,
+                elements_are_strings=True,
+                max_length=5,
+                string_element_max_length=Constants.PERSON_NAME_ELEMENT_MAX_LENGTH,
+            )
         except (KeyError, IndexError, AttributeError):
             pass
 
-    PERSON_SURNAME_MAX_LENGTH = 35
-
-    def pre_validate_patient_name_family(self, values: dict) -> dict:
+    def pre_validate_patient_name_family(self, values: dict) -> None:
         """
         Pre-validate that, if a contained[?(@.resourceType=='Patient')].name[{index}].family (legacy CSV field name:
         PERSON_SURNAME) exists, index dynamically determined then it is a non-empty string of maximum length
@@ -321,7 +325,7 @@ class PreValidators:
         field_location = patient_name_family_field_location(values)
         try:
             field_value, _ = patient_and_practitioner_value_and_index(values, "family", "Patient")
-            PreValidation.for_string(field_value, field_location, max_length=self.PERSON_SURNAME_MAX_LENGTH)
+            PreValidation.for_string(field_value, field_location, max_length=Constants.PERSON_NAME_ELEMENT_MAX_LENGTH)
         except (KeyError, IndexError, AttributeError):
             pass
 
@@ -489,8 +493,8 @@ class PreValidators:
     def pre_validate_practitioner_name_given(self, values: dict) -> dict:
         """
         Pre-validate that, if contained[?(@.resourceType=='Practitioner')].name[{index}].given index dynamically
-        determined (legacy CSV field name:PERSON_FORENAME) exists,
-        then it is a an array containing a single non-empty string
+        determined (legacy CSV field name:PERSON_FORENAME) exists, then it is an array containing a single non-empty
+        string
         """
         field_location = practitioner_name_given_field_location(values)
         try:
