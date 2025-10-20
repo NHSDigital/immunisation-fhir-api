@@ -113,11 +113,12 @@ jobs:
     environment: ${{ inputs.apigee_environment }}
     env:
       APIGEE_USERNAME: ${{ vars.APIGEE_USERNAME }}
+      TF_OUTPUTS_REQUIRED: ${{ vars.RUN_FULL_E2E_TESTS == 'true' || vars.RUN_PROXY_E2E_TESTS == 'true' }}
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
 
       - name: Connect to AWS
-        if: ${{ vars.RUN_FULL_E2E_TESTS == 'true' }}
+        if: ${{ env.TF_OUTPUTS_REQUIRED == 'true' }}
         uses: aws-actions/configure-aws-credentials@00943011d9042930efac3dcd3a170e4273319bc8
         with:
           aws-region: eu-west-2
@@ -125,22 +126,22 @@ jobs:
           role-session-name: github-actions
 
       - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd
-        if: ${{ vars.RUN_FULL_E2E_TESTS == 'true' }}
+        if: ${{ env.TF_OUTPUTS_REQUIRED == 'true' }}
         with:
           terraform_version: "1.12.2"
 
       - name: Terraform Init
-        if: ${{ vars.RUN_FULL_E2E_TESTS == 'true' }}
+        if: ${{ env.TF_OUTPUTS_REQUIRED == 'true' }}
         working-directory: terraform
         run: make init
 
       - name: Set Terraform workspace
-        if: ${{ vars.RUN_FULL_E2E_TESTS == 'true' }}
+        if: ${{ env.TF_OUTPUTS_REQUIRED == 'true' }}
         working-directory: terraform
         run: make workspace
 
       - name: Read Terraform outputs
-        if: ${{ vars.RUN_FULL_E2E_TESTS == 'true' }}
+        if: ${{ env.TF_OUTPUTS_REQUIRED == 'true' }}
         working-directory: terraform
         run: |
           echo "IMMS_DELTA_TABLE_NAME=$(make -s output name=imms_delta_table_name)" >> $GITHUB_ENV
