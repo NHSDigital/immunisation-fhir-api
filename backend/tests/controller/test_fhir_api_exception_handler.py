@@ -3,7 +3,13 @@ import unittest
 from unittest.mock import patch
 
 from controller.fhir_api_exception_handler import fhir_api_exception_handler
-from models.errors import ResourceNotFoundError, UnauthorizedError, UnauthorizedVaxError
+from models.errors import (
+    CustomValidationError,
+    InvalidJsonError,
+    ResourceNotFoundError,
+    UnauthorizedError,
+    UnauthorizedVaxError,
+)
 
 
 class TestFhirApiExceptionHandler(unittest.TestCase):
@@ -27,6 +33,8 @@ class TestFhirApiExceptionHandler(unittest.TestCase):
     def test_exception_handler_handles_custom_exception_and_returns_fhir_response(self):
         """Test that custom exceptions are handled by the wrapper and a valid response is returned to the client"""
         test_cases = [
+            (InvalidJsonError("Invalid JSON provided"), 400, "invalid", "Invalid JSON provided"),
+            (CustomValidationError("This field was invalid"), 400, "invariant", "This field was invalid"),
             (UnauthorizedError(), 403, "forbidden", "Unauthorized request"),
             (
                 UnauthorizedVaxError(),

@@ -10,18 +10,26 @@ from controller.aws_apig_response_utils import create_response
 from models.errors import (
     Code,
     InvalidImmunizationId,
+    CustomValidationError,
+    IdentifierDuplicationError,
+    InvalidJsonError,
     ResourceNotFoundError,
     Severity,
     UnauthorizedError,
     UnauthorizedVaxError,
+    UnhandledResponseError,
     create_operation_outcome,
 )
 
 _CUSTOM_EXCEPTION_TO_STATUS_MAP: dict[Type[Exception], int] = {
     InvalidImmunizationId: 400,
+    InvalidJsonError: 400,
+    CustomValidationError: 400,
     UnauthorizedError: 403,
     UnauthorizedVaxError: 403,
     ResourceNotFoundError: 404,
+    IdentifierDuplicationError: 422,
+    UnhandledResponseError: 500,
 }
 
 
