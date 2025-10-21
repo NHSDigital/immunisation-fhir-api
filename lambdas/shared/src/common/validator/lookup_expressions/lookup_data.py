@@ -1,5 +1,13 @@
-# --------------------------------------------------------------------------------------------------------
-# main conversion lookup
+"""
+Provides human-readable descriptions for coded values such as SNOMED codes.
+For LOOKUP expressions to return the text meaning of a code
+(e.g., "368208006" -> "Left upper arm structure").
+
+Example:
+>>> lookup = LookUpData()
+>>> lookup.find_lookup("368208006")
+'Left upper arm structure'
+"""
 
 
 class LookUpData:
@@ -9,7 +17,7 @@ class LookUpData:
 
     # data settings
     def __init__(self):
-        self.all_data = {
+        self.all_data: dict[str, str] = {
             "368208006": "Left upper arm structure",
             "279549004": "Nasal cavity structure",
             "74262004": "Oral cavity structure",
@@ -105,7 +113,7 @@ class LookUpData:
         }
 
     # Look up the term for the code
-    def find_lookup(self, field_value):
+    def find_lookup(self, field_value: str) -> str:
         try:
             lookup_value = self.all_data[field_value]
         except Exception:
