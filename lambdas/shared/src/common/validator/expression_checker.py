@@ -5,8 +5,8 @@ import uuid
 from enum import Enum
 
 import common.validator.enums.exception_messages as ExceptionMessages
-from common.validator.lookup.key_data import KeyData
-from common.validator.lookup.lookup_data import LookUpData
+from common.validator.lookup_expressions.key_data import KeyData
+from common.validator.lookup_expressions.lookup_data import LookUpData
 from common.validator.record_error import ErrorReport
 from common.validator.record_error import RecordError
 

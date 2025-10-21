@@ -1,15 +1,29 @@
-# ---------------------------------------------------------------------------------------------------------
-# main conversion lookup
+"""
+Stores predefined code lists and checks if a given code
+exists in one of them by using KEYCHECK expressions to validate whether a code
+(field value) is part of the Procedure, Organisation, Site,
+or Route lists.
+
+Attributes:
+    procedure - list of valid medical procedure codes
+    organisation - list of valid organisation codes.
+    site - list of valid body site or anatomical location codes
+    route - list of valid administration routes (e.g., oral, nasal, intramuscular)
+
+Example:
+    >>> key_data = KeyData()
+    >>> key_data.findKey("Site", "368208006")
+    True
+"""
 
 
 class KeyData:
-    # data settings
     def __init__(self):
-        self.procedure = ["956951000000104"]
+        """Initializes code lists for Procedure, Organisation, Site, and Route."""
 
-        self.organisation = ["RJ1", "RJC02"]
-
-        self.site = [
+        self.procedure: list[str] = ["956951000000104"]
+        self.organisation: list[str] = ["RJ1", "RJC02"]
+        self.site: list[str] = [
             "368208006",
             "279549004",
             "74262004",
@@ -107,18 +121,17 @@ class KeyData:
             "16857009",
         ]
 
-    # Look up the term for the code
-    def findKey(self, key_source, field_value):
+    def findKey(self, key_source: str, field_value: str) -> bool:
         try:
             match key_source:
                 case "Procedure":
-                    return field_value in self.Procedure
+                    return field_value in self.procedure
                 case "Organisation":
-                    return field_value in self.Organisation
+                    return field_value in self.organisation
                 case "Site":
-                    return field_value in self.Site
+                    return field_value in self.site
                 case "Route":
-                    return field_value in self.Route
+                    return field_value in self.route
                 case _:
                     return False
         except Exception:

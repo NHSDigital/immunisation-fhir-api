@@ -3,6 +3,10 @@
 
 
 class LookUpData:
+    """
+    Returns the human-readable description of a SNOMED or coded value.
+    """
+
     # data settings
     def __init__(self):
         self.all_data = {
