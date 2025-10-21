@@ -148,7 +148,6 @@ class FhirService:
         if not self.authoriser.authorise(supplier_system, ApiOperationCode.CREATE, {vaccination_type}):
             raise UnauthorizedVaxError()
 
-        # TODO - consider only using FHIR entities in service layer
         identifier_system = immunization["identifier"][0]["system"]
         identifier_value = immunization["identifier"][0]["value"]
 
