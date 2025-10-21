@@ -104,11 +104,10 @@ class TestExpressionCheckerMore(unittest.TestCase):
         data = {"loc": "VAL"}
         ec = self.make_checker(data)
         # expressionRule format: location|expected
-        # Due to current implementation details, both branches return an ErrorReport
-        # This still exercises the ONLYIF code path.
+        # Matching value should pass (None), mismatch should return ErrorReport
         res1 = ec.validate_expression("ONLYIF", "loc|VAL", "f", "any", 1)
         res2 = ec.validate_expression("ONLYIF", "loc|NOPE", "f", "any", 1)
-        self.assertIsInstance(res1, ErrorReport)
+        self.assertIsNone(res1)
         self.assertIsInstance(res2, ErrorReport)
 
 

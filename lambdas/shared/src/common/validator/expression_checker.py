@@ -105,7 +105,7 @@ class ExpressionChecker:
             case _:
                 return "Schema expression not found! Check your expression type : " + expression_type
 
-    # iso8086 date time validate
+    # ISO 8601 date/datetime validate (currently date-only)
     def _validate_datetime(self, rule, field_name, field_value, row) -> ErrorReport:
         try:
             datetime.date.fromisoformat(field_value)
@@ -163,7 +163,7 @@ class ExpressionChecker:
                 # "<10" means value must be less than 10
 
                 check_value = int(expression_rule)
-                if field_value != check_value:
+                if int(field_value) != check_value:
                     raise RecordError(
                         ExceptionMessages.RECORD_CHECK_FAILED,
                         "Value integer check failed",
@@ -306,7 +306,7 @@ class ExpressionChecker:
     # In Validate
     def _validate_in(self, expression_rule, field_name, field_value, row) -> ErrorReport:
         try:
-            if expression_rule.lower() in field_value.lower():
+            if expression_rule.lower() not in field_value.lower():
                 raise RecordError(
                     ExceptionMessages.RECORD_CHECK_FAILED,
                     "Data not in Value failed",
@@ -335,7 +335,7 @@ class ExpressionChecker:
             range1 = float(rule[0])
             range2 = float(rule[1])
 
-            if range1 <= value >= range2:
+            if not (range1 <= value <= range2):
                 raise RecordError(
                     ExceptionMessages.RECORD_CHECK_FAILED,
                     "Value range check failed",
@@ -611,8 +611,8 @@ class ExpressionChecker:
     # PostCode Validate
     def _validate_post_code(self, expressionRule, fieldName, fieldValue, row) -> ErrorReport:
         try:
-            regexRule = "^([Gg][Ii][Rr] 0[Aa]{2})|((([A-Za-z][0-9]{1,2})|(([A-Za-z][A-Ha-hJ-Yj-y]"
-            "[0-9]{1,2})|(([AZa-z][0-9][A-Za-z])|([A-Za-z][A-Ha-hJ-Yj-y][0-9]?[A-Za-z])))) [0-9][A-Za-z]{2})$"
+            # UK postcode regex (allows optional space)
+            regexRule = r"^(GIR\s?0AA|(?:(?:[A-PR-UWYZ][0-9]{1,2})|(?:[A-PR-UWYZ][A-HK-Y][0-9]{1,2})|(?:[A-PR-UWYZ][0-9][A-HJKS-UW])|(?:[A-PR-UWYZ][A-HK-Y][0-9][ABEHMNPRV-Y]))\s?[0-9][ABD-HJLNP-UW-Z]{2})$"
             result = re.search(regexRule, fieldValue)
             if not result:
                 raise RecordError(
@@ -664,7 +664,7 @@ class ExpressionChecker:
             conversionList = expressionRule.split("|")
             location = conversionList[0]
             valueCheck = conversionList[1]
-            dataValue = self.dataParser.getKeyValue(location)
+            dataValue = self.data_parser.get_key_value(location)
 
             if dataValue[0] != valueCheck:
                 raise RecordError(
@@ -690,7 +690,7 @@ class ExpressionChecker:
     # Check with Lookup
     def _validate_against_lookup(self, expressionRule, fieldName, fieldValue, row) -> ErrorReport:
         try:
-            result = self.dataLookUp.findLookUp(fieldValue)
+            result = self.data_look_up.find_lookup(fieldValue)
             if not result:
                 raise RecordError(
                     ExceptionMessages.RECORD_CHECK_FAILED,
@@ -715,7 +715,7 @@ class ExpressionChecker:
     # Check with Key Lookup
     def _validate_against_key(self, expressionRule, fieldName, fieldValue, row) -> ErrorReport:
         try:
-            result = self.KeyData.findKey(expressionRule, fieldValue)
+            result = self.key_data.findKey(expressionRule, fieldValue)
             if not result:
                 raise RecordError(
                     ExceptionMessages.KEY_CHECK_FAILED,
