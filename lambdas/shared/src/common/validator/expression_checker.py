@@ -109,7 +109,7 @@ class ExpressionChecker:
     def _validate_datetime(self, rule, field_name, field_value, row) -> ErrorReport:
         try:
             datetime.date.fromisoformat(field_value)
-            # TODO - rule is not used - could be date only, date time, past, future etc
+            # rule is not used - could be date only, date time, past, future etc
             if rule:
                 pass
 
