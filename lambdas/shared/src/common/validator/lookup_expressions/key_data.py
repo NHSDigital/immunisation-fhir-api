@@ -35,7 +35,7 @@ class KeyData:
             "420254004",
         ]
 
-        self.route = [
+        self.route: list[str] = [
             "54471007",
             "372449004",
             "372450004",

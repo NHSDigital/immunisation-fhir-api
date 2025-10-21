@@ -1,6 +1,5 @@
 # Test application file
 import json
-import os
 import time
 import unittest
 from pathlib import Path
@@ -22,10 +21,6 @@ class TestApplication(unittest.TestCase):
         # get the JSON of the schema, changed to cope with elasticache
         with open(self.schemaFilePath) as JSON:
             SchemaFile = json.load(JSON)
-
-        print("Current working directory:", os.getcwd())
-        print("Test file directory:", Path(__file__).parent)
-        print("Schema file exists:", (Path(__file__).parent / "schemas" / "test_schema.json").exists())
 
         validator = Validator(SchemaFile)  # FHIR File Path not needed
         error_list = validator.validate_fhir(self.FHIRFilePath, True, True, True)
