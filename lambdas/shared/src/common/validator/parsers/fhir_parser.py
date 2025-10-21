@@ -1,4 +1,7 @@
-# FHIR JSON importer and data access
+"""
+A parser for navigating and extracting data from FHIR JSON resources.
+"""
+
 import json
 
 
