@@ -159,7 +159,7 @@ class Validator:
     ) -> list[ErrorReport]:
         self.data_type = DataType.FHIRJSON
         self.json_data = json_data
-        return self.validate_fhir_json(json_data, summarise, report_unexpected_exception, inc_header_in_row_count)
+        return self.run_validation(json_data, summarise, report_unexpected_exception, inc_header_in_row_count)
 
     # run the validation against the data
     def run_validation(
