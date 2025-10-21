@@ -7,7 +7,6 @@ from common.log_decorator import (
     generate_and_send_logs,
     logging_decorator,
 )
-from common.log_firehose import send_log_to_firehose
 
 
 class TestLogDecorator(unittest.TestCase):

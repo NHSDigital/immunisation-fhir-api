@@ -1,6 +1,5 @@
 import json
 import unittest
-from datetime import datetime
 from unittest.mock import patch
 
 from common.log_firehose import send_log_to_firehose
