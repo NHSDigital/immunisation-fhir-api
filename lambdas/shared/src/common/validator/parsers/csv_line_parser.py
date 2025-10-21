@@ -30,5 +30,5 @@ class CSVLineParser:
 
     # Retrieves the value of a specific column name as a list.
     def get_key_value(self, field_name: str) -> list[str]:
-        data = [self.csv_file_data[field_name]]
-        return data
+        retrieve_column_data = [self.csv_file_data[field_name]]
+        return retrieve_column_data
