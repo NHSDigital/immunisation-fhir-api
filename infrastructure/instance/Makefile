@@ -53,6 +53,9 @@ destroy: workspace
 	$(tf_cmd) workspace select default
 	$(tf_cmd) workspace delete $(sub_environment)
 
+graph: workspace
+	$(tf_cmd) graph 
+
 output:
 	$(tf_cmd) output -raw $(name)
 

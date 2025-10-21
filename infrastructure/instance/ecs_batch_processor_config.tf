@@ -258,6 +258,7 @@ resource "aws_iam_role" "fifo_pipe_role" {
     ]
   })
 }
+
 resource "aws_iam_policy" "fifo_pipe_policy" {
   name = "${local.short_prefix}-fifo-pipe-policy"
   policy = jsonencode({
@@ -356,6 +357,10 @@ resource "aws_pipes_pipe" "fifo_pipe" {
       log_group_arn = aws_cloudwatch_log_group.pipe_log_group.arn
     }
   }
+
+  depends_on = [
+    aws_iam_role_policy_attachment.fifo_pipe_policy_attachment
+  ]
 }
 
 # Custom Log Group
