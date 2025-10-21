@@ -262,6 +262,10 @@ resource "aws_s3_bucket_notification" "config_lambda_notification" {
     lambda_function_arn = aws_lambda_function.redis_sync_lambda.arn
     events              = ["s3:ObjectCreated:*"]
   }
+
+  depends_on = [
+    aws_lambda_function.redis_sync_lambda
+  ]
 }
 
 # Permission for the new S3 bucket to invoke the Lambda function
