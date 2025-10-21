@@ -1,6 +1,6 @@
 import unittest
 
-from utils import is_valid_simple_snomed
+from common.utils import is_valid_simple_snomed
 
 
 class TestIsValidSimpleSnomed(unittest.TestCase):
