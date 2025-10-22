@@ -45,7 +45,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         self.send_log_to_firehose_patcher = patch("delta.send_log_to_firehose")
         self.mock_send_log_to_firehose = self.send_log_to_firehose_patcher.start()
 
-        self.sqs_client_patcher = patch("delta.sqs_client")
+        self.sqs_client_patcher = patch("common.clients.global_sqs_client")
         self.mock_sqs_client = self.sqs_client_patcher.start()
 
         self.delta_table_patcher = patch("delta.delta_table")
@@ -657,48 +657,6 @@ class TestGetDeltaTable(unittest.TestCase):
         mock_boto3_resource.side_effect = Exception("fail")
         table = delta.get_delta_table()
         self.assertIsNone(table)
-        self.mock_logger_error.assert_called()
-
-
-class TestGetSqsClient(unittest.TestCase):
-    def setUp(self):
-        # Patch logger.info and logger.error
-        self.logger_info_patcher = patch("logging.Logger.info")
-        self.mock_logger_info = self.logger_info_patcher.start()
-        self.logger_error_patcher = patch("logging.Logger.error")
-        self.mock_logger_error = self.logger_error_patcher.start()
-        self.sqs_client_patcher = patch("delta.boto3.client")
-        self.mock_sqs_client = self.sqs_client_patcher.start()
-        # Reset the global sqs_client before each test
-        delta.sqs_client = None
-
-    def tearDown(self):
-        self.logger_info_patcher.stop()
-        self.logger_error_patcher.stop()
-        self.sqs_client_patcher.stop()
-
-    def test_returns_client_on_success(self):
-        mock_client = MagicMock()
-        self.mock_sqs_client.return_value = mock_client
-
-        client = delta.get_sqs_client()
-        self.assertIs(client, mock_client)
-        # Should cache the client
-        self.assertIs(delta.sqs_client, mock_client)
-
-    def test_returns_cached_client(self):
-        mock_client = MagicMock()
-        delta.sqs_client = mock_client
-
-        client = delta.get_sqs_client()
-        self.assertIs(client, mock_client)
-        # Should not re-initialize
-        self.mock_sqs_client.assert_not_called()
-
-    def test_returns_none_on_exception(self):
-        self.mock_sqs_client.side_effect = Exception("fail")
-        client = delta.get_sqs_client()
-        self.assertIsNone(client)
         self.mock_logger_error.assert_called()
 
 

@@ -8,7 +8,7 @@ import boto3
 from boto3.dynamodb.conditions import Attr
 from botocore.exceptions import ClientError
 
-from common.clients import STREAM_NAME, logger
+from common.clients import STREAM_NAME, get_sqs_client, logger
 from common.log_firehose import send_log_to_firehose
 from converter import Converter
 from mappings import ActionFlag, EventName, Operation
@@ -36,24 +36,6 @@ def get_delta_table():
             logger.error(f"Error initializing Delta Table: {e}")
             delta_table = None
     return delta_table
-
-
-sqs_client = None
-
-
-def get_sqs_client():
-    """
-    Initialize the SQS client with exception handling.
-    """
-    global sqs_client
-    if not sqs_client:
-        try:
-            logger.info("Initializing SQS Client")
-            sqs_client = boto3.client("sqs", region_name)
-        except Exception:
-            logger.exception("Error initializing SQS Client")
-            sqs_client = None
-    return sqs_client
 
 
 def send_message(record, queue_url=failure_queue_url):

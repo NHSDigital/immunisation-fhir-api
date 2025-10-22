@@ -25,6 +25,18 @@ def get_s3_client():
         global_s3_client = boto3_client("s3", region_name=REGION_NAME)
     return global_s3_client
 
+sqs_client = boto3_client("sqs", region_name=REGION_NAME)
+
+# for lambdas which require a global sqs_client
+global_sqs_client = None
+
+
+def get_sqs_client():
+    global global_sqs_client
+    if global_sqs_client is None:
+        global_sqs_client = boto3_client("sqs", region_name=REGION_NAME)
+    return global_sqs_client
+
 
 firehose_client = boto3_client("firehose", region_name=REGION_NAME)
 secrets_manager_client = boto3_client("secretsmanager", region_name=REGION_NAME)
