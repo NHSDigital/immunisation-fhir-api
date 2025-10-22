@@ -586,7 +586,7 @@ class ExpressionChecker:
     # NHSNumber Validate
     def _validate_nhs_number(self, _expression_rule, field_name, field_value, row) -> ErrorReport:
         try:
-            regex_rule = "^6[0-9]{10}$"
+            regex_rule = r"^6\d{10}$"
             result = re.search(regex_rule, field_value)
             if not result:
                 raise RecordError(

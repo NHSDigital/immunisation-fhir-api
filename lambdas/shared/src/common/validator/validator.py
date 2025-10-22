@@ -81,7 +81,7 @@ class Validator:
         if inc_header_in_row_count:
             row = 2
 
-        if self.isCSV:
+        if self.is_csv:
             expression_fieldname = expression["fieldNameCSV"]
         else:
             expression_fieldname = expression["fieldNameFHIR"]
@@ -171,16 +171,16 @@ class Validator:
             match self.data_type:  # 'FHIR', 'FHIRJSON', 'CSV', 'CSVROW'
                 case DataType.FHIR:
                     self.data_parser = self._get_fhir_parser(self.filepath)
-                    self.isCSV = False
+                    self.is_csv = False
                 case DataType.FHIRJSON:
                     self.data_parser = self._get_fhir_json_parser(self.json_data)
-                    self.isCSV = False
+                    self.is_csv = False
                 case DataType.CSV:
                     self.data_parser = self._get_csv_parser(self.filepath)
-                    self.isCSV = True
+                    self.is_csv = True
                 case DataType.CSVROW:
                     self.data_parser = self._get_csv_line_parser(self.csv_row, self.csv_header)
-                    self.isCSV = True
+                    self.is_csv = True
 
         except Exception as e:
             if report_unexpected_exception:
@@ -188,7 +188,7 @@ class Validator:
                 return [ErrorReport(code=0, message=message)]
 
         try:
-            schemaParser = self._get_schema_parser(self.schema_file)
+            schema_parser = self._get_schema_parser(self.schema_file)
         except Exception as e:
             if report_unexpected_exception:
                 message = f"Schema Parser Unexpected exception [{e.__class__.__name__}]: {e}"
@@ -203,7 +203,7 @@ class Validator:
 
         # get list of expressions
         try:
-            expressions = schemaParser.get_expressions()
+            expressions = schema_parser.get_expressions()
         except Exception as e:
             if report_unexpected_exception:
                 message = f"Expression Getter Unexpected exception [{e.__class__.__name__}]: {e}"
@@ -217,10 +217,10 @@ class Validator:
     # -------------------------------------------------------------------------
     # Report Generation
     # Build the error Report
-    def build_error_report(self, eventId):
-        OccurrenceDateTime = self.data_parser.get_key_single_value("occurrenceDateTime")
+    def build_error_report(self, event_id):
+        occurrence_date_time = self.data_parser.get_key_single_value("occurrenceDateTime")
         dq_reporter = DQReporter()
-        dq_report = dq_reporter.generate_error_report(eventId, OccurrenceDateTime, self.error_records)
+        dq_report = dq_reporter.generate_error_report(event_id, occurrence_date_time, self.error_records)
 
         return dq_report
 

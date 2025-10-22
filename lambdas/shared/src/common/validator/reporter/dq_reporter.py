@@ -40,8 +40,8 @@ class DQReporter:
         self.error_report["eventId"] = event_id
         self.error_report["results"]["timeliness_processed"] = time_taken
 
-        for errorRecord in error_records:
-            self.update_report(errorRecord)
+        for error_record in error_records:
+            self.update_report(error_record)
 
         json_error_report = json.dumps(self.error_report)
         return json_error_report
