@@ -4,10 +4,10 @@ import os
 import time
 from datetime import UTC, datetime, timedelta
 
-import boto3
 from boto3.dynamodb.conditions import Attr
 from botocore.exceptions import ClientError
 
+from common.aws_dynamodb import get_dynamodb_table
 from common.clients import STREAM_NAME, get_sqs_client, logger
 from common.log_firehose import send_log_to_firehose
 from converter import Converter
@@ -30,8 +30,7 @@ def get_delta_table():
     if not delta_table:
         try:
             logger.info("Initializing Delta Table")
-            dynamodb = boto3.resource("dynamodb", region_name)
-            delta_table = dynamodb.Table(delta_table_name)
+            delta_table = get_dynamodb_table(delta_table_name)
         except Exception as e:
             logger.error(f"Error initializing Delta Table: {e}")
             delta_table = None

@@ -641,20 +641,20 @@ class TestGetDeltaTable(unittest.TestCase):
         # Should cache the table
         self.assertIs(delta.delta_table, self.mock_delta_table)
 
-    @patch("boto3.resource")
-    def test_returns_cached_table(self, mock_boto3_resource):
+    @patch("delta.get_dynamodb_table")
+    def test_returns_cached_table(self, mock_get_dynamodb_table):
         delta.delta_table = self.mock_delta_table
 
         table = delta.get_delta_table()
         self.assertIs(table, self.mock_delta_table)
-        # Should not call boto3 again
-        mock_boto3_resource.assert_not_called()
+        # Should not call get_dynamodb_table again
+        mock_get_dynamodb_table.assert_not_called()
 
-    # mock boto3.resource to raise an exception
-    @patch("boto3.resource")
-    def test_returns_none_on_exception(self, mock_boto3_resource):
+    # mock get_dynamodb_table to raise an exception
+    @patch("delta.get_dynamodb_table")
+    def test_returns_none_on_exception(self, mock_get_dynamodb_table):
         delta.delta_table = None
-        mock_boto3_resource.side_effect = Exception("fail")
+        mock_get_dynamodb_table.side_effect = Exception("fail")
         table = delta.get_delta_table()
         self.assertIsNone(table)
         self.mock_logger_error.assert_called()
