@@ -1,4 +1,4 @@
-from common.mappings import ConversionFieldName
+from mappings import ConversionFieldName
 from extractor import Extractor
 
 

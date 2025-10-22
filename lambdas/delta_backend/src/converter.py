@@ -1,6 +1,6 @@
 # Main validation engine
 import exception_messages
-from common.mappings import ActionFlag
+from mappings import ActionFlag
 from conversion_layout import ConversionField, ConversionLayout
 from extractor import Extractor
 

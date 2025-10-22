@@ -3,7 +3,7 @@ import uuid
 from decimal import Decimal
 from typing import List
 
-from common.mappings import EventName, Operation
+from mappings import EventName, Operation
 
 
 class RecordConfig:

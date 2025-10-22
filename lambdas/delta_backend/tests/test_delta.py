@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 from botocore.exceptions import ClientError
 
 import delta
-from common.mappings import ActionFlag, EventName, Operation
+from mappings import ActionFlag, EventName, Operation
 from delta import (
     handler,
     process_record,

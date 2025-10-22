@@ -3,7 +3,7 @@ import json
 from datetime import datetime, timedelta, timezone
 
 import exception_messages
-from common.mappings import ConversionFieldName, Gender
+from mappings import ConversionFieldName, Gender
 
 
 class Extractor:
