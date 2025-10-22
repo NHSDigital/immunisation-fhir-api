@@ -42,8 +42,8 @@ class DeltaHandlerTestCase(unittest.TestCase):
         self.logger_error_patcher = patch("logging.Logger.error")
         self.mock_logger_error = self.logger_error_patcher.start()
 
-        self.firehose_logger_patcher = patch("delta.firehose_logger")
-        self.mock_firehose_logger = self.firehose_logger_patcher.start()
+        self.send_log_to_firehose_patcher = patch("delta.send_log_to_firehose")
+        self.mock_send_log_to_firehose = self.send_log_to_firehose_patcher.start()
 
         self.sqs_client_patcher = patch("delta.sqs_client")
         self.mock_sqs_client = self.sqs_client_patcher.start()
@@ -56,7 +56,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         self.logger_warning_patcher.stop()
         self.logger_error_patcher.stop()
         self.logger_info_patcher.stop()
-        self.mock_firehose_logger.stop()
+        self.mock_send_log_to_firehose.stop()
         self.sqs_client_patcher.stop()
         self.delta_table_patcher.stop()
 
@@ -105,7 +105,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
             # Assert
             self.assertTrue(result)
             self.mock_delta_table.put_item.assert_called()
-            self.mock_firehose_logger.send_log.assert_called()  # check logged
+            self.mock_send_log_to_firehose.assert_called()  # check logged
             put_item_call_args = self.mock_delta_table.put_item.call_args  # check data written to DynamoDB
             put_item_data = put_item_call_args.kwargs["Item"]
             self.assertIn("Imms", put_item_data)
@@ -149,7 +149,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         # Assert
         self.assertTrue(result)
         self.mock_delta_table.put_item.assert_called()
-        self.mock_firehose_logger.send_log.assert_called()  # check logged
+        self.mock_send_log_to_firehose.assert_called()  # check logged
         put_item_call_args = self.mock_delta_table.put_item.call_args  # check data written to DynamoDB
         put_item_data = put_item_call_args.kwargs["Item"]
         self.assertIn("Imms", put_item_data)
@@ -174,7 +174,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         # Assert
         self.assertTrue(result)
         self.mock_delta_table.put_item.assert_called()
-        self.mock_firehose_logger.send_log.assert_called()  # check logged
+        self.mock_send_log_to_firehose.assert_called()  # check logged
         put_item_call_args = self.mock_delta_table.put_item.call_args  # check data written to DynamoDB
         put_item_data = put_item_call_args.kwargs["Item"]
         self.assertIn("Imms", put_item_data)
@@ -198,7 +198,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         # Assert
         self.assertTrue(result)
         self.mock_delta_table.put_item.assert_called()
-        self.mock_firehose_logger.send_log.assert_called()  # check logged
+        self.mock_send_log_to_firehose.assert_called()  # check logged
         put_item_call_args = self.mock_delta_table.put_item.call_args  # check data written to DynamoDB
         put_item_data = put_item_call_args.kwargs["Item"]
         self.assertIn("Imms", put_item_data)
@@ -217,7 +217,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
 
         # Check logging and Firehose were called
         mock_logger_info.assert_called_with("Record from DPS skipped")
-        self.mock_firehose_logger.send_log.assert_called()
+        self.mock_send_log_to_firehose.assert_called()
         self.mock_sqs_client.send_message.assert_not_called()
 
     @patch("delta.Converter")
@@ -237,15 +237,15 @@ class DeltaHandlerTestCase(unittest.TestCase):
         self.assertTrue(response)
         # Check logging and Firehose were called
         self.mock_logger_info.assert_called()
-        self.assertEqual(self.mock_firehose_logger.send_log.call_count, 1)
-        self.mock_firehose_logger.send_log.assert_called_once()
+        self.assertEqual(self.mock_send_log_to_firehose.call_count, 1)
+        self.mock_send_log_to_firehose.assert_called_once()
 
-        # Get the actual argument passed to send_log
-        args, kwargs = self.mock_firehose_logger.send_log.call_args
-        sent_payload = args[0]  # First positional arg
+        # Get the actual argument passed to send_log_to_firehose
+        args, kwargs = self.mock_send_log_to_firehose.call_args
+        sent_payload = args[1]  # Second positional arg
 
         # Navigate to the specific message
-        status_desc = sent_payload["event"]["operation_outcome"]["statusDesc"]
+        status_desc = sent_payload["operation_outcome"]["statusDesc"]
 
         # Assert the expected message is present
         self.assertIn(
@@ -275,7 +275,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         # Assert
         self.assertTrue(result)
         self.assertEqual(self.mock_delta_table.put_item.call_count, len(records_config))
-        self.assertEqual(self.mock_firehose_logger.send_log.call_count, len(records_config))
+        self.assertEqual(self.mock_send_log_to_firehose.call_count, len(records_config))
 
     def test_send_message_skipped_records_diverse(self):
         """Check skipped records sent to firehose but not to DynamoDB"""
@@ -301,7 +301,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         # Assert
         self.assertTrue(result)
         self.assertEqual(self.mock_delta_table.put_item.call_count, 3)
-        self.assertEqual(self.mock_firehose_logger.send_log.call_count, len(records_config))
+        self.assertEqual(self.mock_send_log_to_firehose.call_count, len(records_config))
 
     def test_send_message_multi_create(self):
         # Arrange
@@ -319,7 +319,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         # Assert
         self.assertTrue(result)
         self.assertEqual(self.mock_delta_table.put_item.call_count, 3)
-        self.assertEqual(self.mock_firehose_logger.send_log.call_count, 3)
+        self.assertEqual(self.mock_send_log_to_firehose.call_count, 3)
 
     def test_send_message_multi_update(self):
         # Arrange
@@ -337,7 +337,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         # Assert
         self.assertTrue(result)
         self.assertEqual(self.mock_delta_table.put_item.call_count, 3)
-        self.assertEqual(self.mock_firehose_logger.send_log.call_count, 3)
+        self.assertEqual(self.mock_send_log_to_firehose.call_count, 3)
 
     def test_send_message_multi_logical_delete(self):
         # Arrange
@@ -371,7 +371,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         # Assert
         self.assertTrue(result)
         self.assertEqual(self.mock_delta_table.put_item.call_count, 3)
-        self.assertEqual(self.mock_firehose_logger.send_log.call_count, 3)
+        self.assertEqual(self.mock_send_log_to_firehose.call_count, 3)
 
     def test_send_message_multi_physical_delete(self):
         # Arrange
@@ -389,7 +389,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         # Assert
         self.assertTrue(result)
         self.assertEqual(self.mock_delta_table.put_item.call_count, 3)
-        self.assertEqual(self.mock_firehose_logger.send_log.call_count, 3)
+        self.assertEqual(self.mock_send_log_to_firehose.call_count, 3)
 
     def test_single_error_in_multi(self):
         # Arrange
@@ -412,7 +412,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         # Assert
         self.assertFalse(result)
         self.assertEqual(self.mock_delta_table.put_item.call_count, 3)
-        self.assertEqual(self.mock_firehose_logger.send_log.call_count, 3)
+        self.assertEqual(self.mock_send_log_to_firehose.call_count, 3)
         self.assertEqual(self.mock_logger_error.call_count, 1)
 
     def test_single_exception_in_multi(self):
@@ -437,7 +437,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         # Assert
         self.assertFalse(result)
         self.assertEqual(self.mock_delta_table.put_item.call_count, len(records_config))
-        self.assertEqual(self.mock_firehose_logger.send_log.call_count, len(records_config))
+        self.assertEqual(self.mock_send_log_to_firehose.call_count, len(records_config))
 
     def test_single_duplicate_in_multi(self):
         # Arrange
@@ -460,16 +460,16 @@ class DeltaHandlerTestCase(unittest.TestCase):
         # Assert
         self.assertTrue(result)
         self.assertEqual(self.mock_delta_table.put_item.call_count, len(records_config))
-        self.assertEqual(self.mock_firehose_logger.send_log.call_count, len(records_config))
+        self.assertEqual(self.mock_send_log_to_firehose.call_count, len(records_config))
 
     @patch("delta.process_record")
-    @patch("delta.send_firehose")
-    def test_handler_calls_process_record_for_each_event(self, mock_send_firehose, mock_process_record):
+    @patch("delta.send_log_to_firehose")
+    def test_handler_calls_process_record_for_each_event(self, mock_send_log_to_firehose, mock_process_record):
         # Arrange
         event = {"Records": [{"a": "record1"}, {"a": "record2"}, {"a": "record3"}]}
         # Mock process_record to always return True
         mock_process_record.return_value = True, {}
-        mock_send_firehose.return_value = None
+        mock_send_log_to_firehose.return_value = None
 
         # Act
         result = handler(event, {})
@@ -480,15 +480,15 @@ class DeltaHandlerTestCase(unittest.TestCase):
 
     # TODO depedency injection needed here
     @patch("delta.process_record")
-    @patch("delta.send_firehose")
-    def test_handler_sends_all_to_firehose(self, mock_send_firehose, mock_process_record):
+    @patch("delta.send_log_to_firehose")
+    def test_handler_sends_all_to_firehose(self, mock_send_log_to_firehose, mock_process_record):
         # Arrange
 
         # event with 3 records
         event = {"Records": [{"a": "record1"}, {"a": "record2"}, {"a": "record3"}]}
         return_ok = (True, {})
         return_fail = (False, {})
-        mock_send_firehose.return_value = None
+        mock_send_log_to_firehose.return_value = None
         mock_process_record.side_effect = [return_ok, return_fail, return_ok]
 
         # Act
@@ -498,7 +498,7 @@ class DeltaHandlerTestCase(unittest.TestCase):
         self.assertFalse(result)
         self.assertEqual(mock_process_record.call_count, len(event["Records"]))
         # check that all records were sent to firehose
-        self.assertEqual(mock_send_firehose.call_count, len(event["Records"]))
+        self.assertEqual(mock_send_log_to_firehose.call_count, len(event["Records"]))
 
 
 class DeltaRecordProcessorTestCase(unittest.TestCase):

@@ -1,6 +1,5 @@
 import decimal
 import json
-import logging
 import os
 import time
 from datetime import UTC, datetime, timedelta
@@ -9,19 +8,16 @@ import boto3
 from boto3.dynamodb.conditions import Attr
 from botocore.exceptions import ClientError
 
+from common.clients import STREAM_NAME, logger
+from common.log_firehose import send_log_to_firehose
 from common.mappings import ActionFlag, EventName, Operation
 from converter import Converter
-from log_firehose import FirehoseLogger
 
 failure_queue_url = os.environ["AWS_SQS_QUEUE_URL"]
 delta_table_name = os.environ["DELTA_TABLE_NAME"]
 delta_source = os.environ["SOURCE"]
 delta_ttl_days = os.environ["DELTA_TTL_DAYS"]
 region_name = "eu-west-2"
-logging.basicConfig()
-logger = logging.getLogger()
-logger.setLevel("INFO")
-firehose_logger = FirehoseLogger()
 
 delta_table = None
 
@@ -85,14 +81,6 @@ def get_creation_and_expiry_times(creation_timestamp: float) -> (str, int):
     expiry_datetime = creation_datetime + timedelta(days=int(delta_ttl_days))
     expiry_timestamp = int(expiry_datetime.timestamp())
     return creation_datetime.isoformat(), expiry_timestamp
-
-
-def send_firehose(log_data):
-    try:
-        firehose_log = {"event": log_data}
-        firehose_logger.send_log(firehose_log)
-    except Exception:
-        logger.exception("Error sending log to Firehose")
 
 
 def handle_dynamodb_response(response, error_records):
@@ -248,14 +236,13 @@ def handler(event, _context):
             success, operation_outcome = process_record(record)
             overall_success = overall_success and success
             end = time.time()
-            send_firehose(
-                {
-                    "function_name": "delta_sync",
-                    "operation_outcome": operation_outcome,
-                    "date_time": datetime_str,
-                    "time_taken": f"{round(end - start, 5)}s",
-                }
-            )
+            log_data = {
+                "function_name": "delta_sync",
+                "operation_outcome": operation_outcome,
+                "date_time": datetime_str,
+                "time_taken": f"{round(end - start, 5)}s",
+            }
+            send_log_to_firehose(STREAM_NAME, log_data)
     except Exception:
         overall_success = False
         operation_outcome = {
@@ -265,7 +252,8 @@ def handler(event, _context):
         }
         logger.exception(operation_outcome["diagnostics"])
         send_message(event)  # Send failed records to DLQ
-        send_firehose({"function_name": "delta_sync", "operation_outcome": operation_outcome})
+        log_data = {"function_name": "delta_sync", "operation_outcome": operation_outcome}
+        send_log_to_firehose(STREAM_NAME, log_data)
 
     if not overall_success:
         send_message(event)
