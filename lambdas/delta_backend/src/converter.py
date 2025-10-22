@@ -1,8 +1,8 @@
 # Main validation engine
 import exception_messages
-from mappings import ActionFlag
 from conversion_layout import ConversionField, ConversionLayout
 from extractor import Extractor
+from mappings import ActionFlag
 
 
 class Converter:

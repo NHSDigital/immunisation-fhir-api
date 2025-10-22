@@ -2,8 +2,8 @@ import copy
 import json
 import unittest
 
-from mappings import ConversionFieldName
 from converter import Converter
+from mappings import ConversionFieldName
 from utils_for_converter_tests import ValuesForTests
 
 

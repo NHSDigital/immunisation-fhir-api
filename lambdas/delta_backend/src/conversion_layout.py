@@ -1,5 +1,5 @@
-from mappings import ConversionFieldName
 from extractor import Extractor
+from mappings import ConversionFieldName
 
 
 class ConversionField:
