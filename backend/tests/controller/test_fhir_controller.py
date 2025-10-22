@@ -861,7 +861,7 @@ class TestCreateImmunization(unittest.TestCase):
         self.assertEqual(response["statusCode"], 403)
 
     def test_create_immunization_for_unauthorized(self):
-        """it should return an unauthorized error when the service finds that use lacks permissions"""
+        """it should return an unauthorized error when the service finds that user lacks permissions"""
         # Given
         imms_id = str(uuid.uuid4())
         imms = create_covid_19_immunization(imms_id)
