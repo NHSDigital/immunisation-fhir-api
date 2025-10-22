@@ -129,7 +129,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # UUID validate
-    def _validate_uuid(self, expressionRule, field_name, field_value, row) -> ErrorReport:
+    def _validate_uuid(self, _expression_rule, field_name, field_value, row) -> ErrorReport:
         try:
             uuid.UUID(str(field_value))
         except RecordError as e:
@@ -185,7 +185,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     #  Float Validate
-    def _validate_float(self, expression_rule, field_name, field_value, row) -> ErrorReport:
+    def _validate_float(self, _expression_rule, field_name, field_value, row) -> ErrorReport:
         try:
             float(field_value)
         except RecordError as e:
@@ -384,7 +384,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # Upper Validate
-    def _validate_upper(self, expression_rule, field_name, field_value, row) -> ErrorReport:
+    def _validate_upper(self, _expression_rule, field_name, field_value, row) -> ErrorReport:
         try:
             result = field_value.isupper()
 
@@ -410,7 +410,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     #  Lower Validate
-    def _validate_lower(self, expression_rule, field_name, field_value, row) -> ErrorReport:
+    def _validate_lower(self, _expression_rule, field_name, field_value, row) -> ErrorReport:
         try:
             result = field_value.islower()
 
@@ -486,7 +486,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # Empty Validate
-    def _validate_empty(self, expression_rule, field_name, field_value, row) -> ErrorReport:
+    def _validate_empty(self, _expression_rule, field_name, field_value, row) -> ErrorReport:
         try:
             if field_value:
                 raise RecordError(
@@ -510,7 +510,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # Not Empty Validate
-    def _validate_not_empty(self, expression_rule, field_name, field_value, row) -> ErrorReport:
+    def _validate_not_empty(self, _expression_rule, field_name, field_value, row) -> ErrorReport:
         try:
             if not field_value:
                 raise RecordError(
@@ -532,7 +532,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # Positive Validate
-    def _validate_positive(self, expressionRule, fieldName, fieldValue, row) -> ErrorReport:
+    def _validate_positive(self, _expression_rule, fieldName, fieldValue, row) -> ErrorReport:
         try:
             value = float(fieldValue)
             if value < 0:
@@ -557,7 +557,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, fieldName, "", self.summarise)
 
     # NHSNumber Validate
-    def _validate_nhs_number(self, expressionRule, fieldName, fieldValue, row) -> ErrorReport:
+    def _validate_nhs_number(self, _expression_rule, fieldName, fieldValue, row) -> ErrorReport:
         try:
             regexRule = "^6[0-9]{10}$"
             result = re.search(regexRule, fieldValue)
@@ -583,7 +583,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, fieldName, "", self.summarise)
 
     # Gender Validate
-    def _validate_gender(self, expressionRule, fieldName, fieldValue, row) -> ErrorReport:
+    def _validate_gender(self, _expression_rule, fieldName, fieldValue, row) -> ErrorReport:
         try:
             ruleList = ["0", "1", "2", "9"]
 
@@ -609,7 +609,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, fieldName, "", self.summarise)
 
     # PostCode Validate
-    def _validate_post_code(self, expressionRule, fieldName, fieldValue, row) -> ErrorReport:
+    def _validate_post_code(self, _expression_rule, fieldName, fieldValue, row) -> ErrorReport:
         try:
             # UK postcode regex (allows optional space)
             regexRule = r"^(GIR\s?0AA|(?:(?:[A-PR-UWYZ][0-9]{1,2})|(?:[A-PR-UWYZ][A-HK-Y][0-9]{1,2})|(?:[A-PR-UWYZ][0-9][A-HJKS-UW])|(?:[A-PR-UWYZ][A-HK-Y][0-9][ABEHMNPRV-Y]))\s?[0-9][ABD-HJLNP-UW-Z]{2})$"
@@ -688,7 +688,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, fieldName, "", self.summarise)
 
     # Check with Lookup
-    def _validate_against_lookup(self, expressionRule, fieldName, fieldValue, row) -> ErrorReport:
+    def _validate_against_lookup(self, _expression_rule, fieldName, fieldValue, row) -> ErrorReport:
         try:
             result = self.data_look_up.find_lookup(fieldValue)
             if not result:
