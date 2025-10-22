@@ -89,6 +89,43 @@ class TestGetImmunizationByIdentifier(TestFhirRepositoryBase):
         self.assertIsNone(immunisation)
         self.assertIsNone(immunisation_type)
 
+    def test_check_immunization_identifier_exists_returns_true(self):
+        """it should return true when a record does exist with the given identifier"""
+        imms_id = "https://system.com#id-123"
+        self.table.query = MagicMock(
+            return_value={
+                "Items": [
+                    {
+                        "Resource": json.dumps({"item": "exists"}),
+                        "Version": 1,
+                        "PatientSK": "COVID19#2516525251",
+                        "IdentifierPK": "https://system.com#id-123",
+                    }
+                ]
+            }
+        )
+
+        result = self.repository.check_immunization_identifier_exists("https://system.com", "id-123")
+
+        self.table.query.assert_called_once_with(
+            IndexName="IdentifierGSI",
+            KeyConditionExpression=Key("IdentifierPK").eq(imms_id),
+        )
+        self.assertTrue(result)
+
+    def test_check_immunization_identifier_exists_returns_false_when_no_record_exists(self):
+        """it should return false when a record does not exist with the given identifier"""
+        imms_id = "https://system.com#id-123"
+        self.table.query = MagicMock(return_value={})
+
+        result = self.repository.check_immunization_identifier_exists("https://system.com", "id-123")
+
+        self.table.query.assert_called_once_with(
+            IndexName="IdentifierGSI",
+            KeyConditionExpression=Key("IdentifierPK").eq(imms_id),
+        )
+        self.assertFalse(result)
+
 
 class TestGetImmunization(unittest.TestCase):
     def setUp(self):
