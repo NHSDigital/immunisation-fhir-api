@@ -6,6 +6,7 @@ from unittest.mock import ANY, MagicMock, patch
 import botocore.exceptions
 import simplejson as json
 from boto3.dynamodb.conditions import Attr, Key
+from fhir.resources.R4B.immunization import Immunization
 
 from models.errors import (
     IdentifierDuplicationError,
@@ -195,7 +196,7 @@ class TestCreateImmunizationMainIndex(TestFhirRepositoryBase):
 
     def test_create_immunization(self):
         """it should create Immunization, and return created object unique ID"""
-        imms = create_covid_19_immunization_dict(imms_id=self._MOCK_CREATED_UUID)
+        imms = Immunization.parse_obj(create_covid_19_immunization_dict(imms_id=self._MOCK_CREATED_UUID))
 
         self.table.put_item = MagicMock(return_value={"ResponseMetadata": {"HTTPStatusCode": 200}})
         self.mock_redis_client.hget.return_value = "COVID19"
@@ -208,7 +209,7 @@ class TestCreateImmunizationMainIndex(TestFhirRepositoryBase):
                 "PK": f"Immunization#{self._MOCK_CREATED_UUID}",
                 "PatientPK": "Patient#9990548609",
                 "PatientSK": f"COVID19#{self._MOCK_CREATED_UUID}",
-                "Resource": json.dumps(imms),
+                "Resource": imms.json(),
                 "IdentifierPK": "https://supplierABC/identifiers/vacc#ACME-vacc123456",
                 "Operation": "CREATE",
                 "Version": 1,
@@ -225,7 +226,9 @@ class TestCreateImmunizationMainIndex(TestFhirRepositoryBase):
 
         with self.assertRaises(UnhandledResponseError) as e:
             # When
-            self.repository.create_immunization(create_covid_19_immunization_dict("an-id"), "Test")
+            self.repository.create_immunization(
+                Immunization.parse_obj(create_covid_19_immunization_dict("an-id")), "Test"
+            )
 
         # Then
         self.assertDictEqual(e.exception.response, response)
@@ -251,7 +254,7 @@ class TestCreateImmunizationPatientIndex(TestFhirRepositoryBase):
         self.table.query = MagicMock(return_value={})
 
         # When
-        _ = self.repository.create_immunization(imms, "Test")
+        _ = self.repository.create_immunization(Immunization.parse_obj(imms), "Test")
 
         # Then
         item = self.table.put_item.call_args.kwargs["Item"]
@@ -268,7 +271,7 @@ class TestCreateImmunizationPatientIndex(TestFhirRepositoryBase):
         self.table.put_item = MagicMock(return_value={"ResponseMetadata": {"HTTPStatusCode": 200}})
 
         # When
-        _ = self.repository.create_immunization(imms, "Test")
+        _ = self.repository.create_immunization(Immunization.parse_obj(imms), "Test")
 
         # Then
         item = self.table.put_item.call_args.kwargs["Item"]
@@ -584,12 +587,12 @@ class TestImmunizationDecimals(TestFhirRepositoryBase):
     def test_decimal_on_create(self):
         """it should create Immunization, and preserve decimal value"""
         imms = create_covid_19_immunization_dict(imms_id="an-id")
-        imms["doseQuantity"] = 0.7477
+        imms["doseQuantity"]["value"] = 0.7477
 
         self.table.put_item = MagicMock(return_value={"ResponseMetadata": {"HTTPStatusCode": 200}})
         self.table.query = MagicMock(return_value={})
 
-        res_imms = self.repository.create_immunization(imms, "Test")
+        res_imms = self.repository.create_immunization(Immunization.parse_obj(imms), "Test")
 
         self.assertEqual(res_imms, "an-id")
 
@@ -599,7 +602,7 @@ class TestImmunizationDecimals(TestFhirRepositoryBase):
             "PK": ANY,
             "PatientPK": ANY,
             "PatientSK": ANY,
-            "Resource": json.dumps(imms, use_decimal=True),
+            "Resource": Immunization.parse_obj(imms).json(use_decimal=True),
             "IdentifierPK": ANY,
             "Operation": "CREATE",
             "Version": 1,
@@ -612,7 +615,7 @@ class TestImmunizationDecimals(TestFhirRepositoryBase):
 
         resource_from_item = json.loads(item_passed_to_put_item["Resource"])
         self.assertEqual(
-            resource_from_item["doseQuantity"],
+            resource_from_item["doseQuantity"]["value"],
             0.7477,
         )
 

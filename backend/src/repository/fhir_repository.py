@@ -8,6 +8,8 @@ import botocore.exceptions
 import simplejson as json
 from boto3.dynamodb.conditions import Attr, Key
 from botocore.config import Config
+from fhir.resources.R4B.fhirtypes import Id
+from fhir.resources.R4B.immunization import Immunization
 from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
 from responses import logger
 
@@ -163,17 +165,19 @@ class ImmunizationRepository:
 
         return False
 
-    def create_immunization(self, immunization: dict, supplier_system: str) -> str:
+    def create_immunization(self, immunization: Immunization, supplier_system: str) -> Id:
         """Creates a new immunization record returning the unique id if successful."""
-        patient = get_contained_patient(immunization)
-        attr = RecordAttributes(immunization, patient)
+        immunization_as_dict = immunization.dict()
+
+        patient = get_contained_patient(immunization_as_dict)
+        attr = RecordAttributes(immunization_as_dict, patient)
 
         response = self.table.put_item(
             Item={
                 "PK": attr.pk,
                 "PatientPK": attr.patient_pk,
                 "PatientSK": attr.patient_sk,
-                "Resource": json.dumps(attr.resource, use_decimal=True),
+                "Resource": immunization.json(use_decimal=True),
                 "IdentifierPK": attr.identifier,
                 "Operation": "CREATE",
                 "Version": 1,
@@ -184,7 +188,7 @@ class ImmunizationRepository:
         if response["ResponseMetadata"]["HTTPStatusCode"] != 200:
             raise UnhandledResponseError(message="Non-200 response from dynamodb", response=dict(response))
 
-        return immunization.get("id")
+        return immunization.id
 
     def update_immunization(
         self,

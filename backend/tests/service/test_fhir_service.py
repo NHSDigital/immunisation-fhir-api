@@ -481,7 +481,7 @@ class TestCreateImmunization(TestFhirServiceBase):
         self.imms_repo.check_immunization_identifier_exists.assert_called_once_with(
             "https://supplierABC/identifiers/vacc", "ACME-vacc123456"
         )
-        self.imms_repo.create_immunization.assert_called_once_with(req_imms, "Test")
+        self.imms_repo.create_immunization.assert_called_once_with(Immunization.parse_obj(req_imms), "Test")
 
         self.validator.validate.assert_called_once_with(req_imms)
         self.assertEqual(self._MOCK_NEW_UUID, created_id)
