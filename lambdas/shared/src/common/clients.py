@@ -25,6 +25,7 @@ def get_s3_client():
         global_s3_client = boto3_client("s3", region_name=REGION_NAME)
     return global_s3_client
 
+
 sqs_client = boto3_client("sqs", region_name=REGION_NAME)
 
 # for lambdas which require a global sqs_client
