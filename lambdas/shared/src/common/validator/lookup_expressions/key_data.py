@@ -121,7 +121,7 @@ class KeyData:
             "16857009",
         ]
 
-    def findKey(self, key_source: str, field_value: str) -> bool:
+    def find_key(self, key_source: str, field_value: str) -> bool:
         try:
             match key_source:
                 case "Procedure":

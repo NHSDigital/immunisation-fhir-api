@@ -174,7 +174,7 @@ class ExpressionChecker:
                     raise RecordError(
                         ExceptionMessages.RECORD_CHECK_FAILED,
                         "Value integer check failed",
-                        "Value does not equal expected value, "
+                        MessageLabel.VALUE_MISMATCH_MSG
                         + MessageLabel.EXPECTED_LABEL
                         + expression_rule
                         + " "
@@ -271,7 +271,7 @@ class ExpressionChecker:
                 raise RecordError(
                     ExceptionMessages.RECORD_CHECK_FAILED,
                     "Value equals check failed",
-                    "Value does not equal expected value, "
+                    MessageLabel.VALUE_MISMATCH_MSG
                     + MessageLabel.EXPECTED_LABEL
                     + expression_rule
                     + " "
@@ -586,8 +586,8 @@ class ExpressionChecker:
     # NHSNumber Validate
     def _validate_nhs_number(self, _expression_rule, field_name, field_value, row) -> ErrorReport:
         try:
-            regexRule = "^6[0-9]{10}$"
-            result = re.search(regexRule, field_value)
+            regex_rule = "^6[0-9]{10}$"
+            result = re.search(regex_rule, field_value)
             if not result:
                 raise RecordError(
                     ExceptionMessages.RECORD_CHECK_FAILED,
@@ -612,9 +612,9 @@ class ExpressionChecker:
     # Gender Validate
     def _validate_gender(self, _expression_rule, field_name, field_value, row) -> ErrorReport:
         try:
-            ruleList = ["0", "1", "2", "9"]
+            rule_list = ["0", "1", "2", "9"]
 
-            if field_value not in ruleList:
+            if field_value not in rule_list:
                 raise RecordError(
                     ExceptionMessages.RECORD_CHECK_FAILED,
                     "Gender check failed",
@@ -639,8 +639,8 @@ class ExpressionChecker:
     def _validate_post_code(self, _expression_rule, field_name, field_value, row) -> ErrorReport:
         try:
             # UK postcode regex (allows optional space)
-            regexRule = r"^(GIR\s?0AA|(?:(?:[A-PR-UWYZ][0-9]{1,2})|(?:[A-PR-UWYZ][A-HK-Y][0-9]{1,2})|(?:[A-PR-UWYZ][0-9][A-HJKS-UW])|(?:[A-PR-UWYZ][A-HK-Y][0-9][ABEHMNPRV-Y]))\s?[0-9][ABD-HJLNP-UW-Z]{2})$"
-            result = re.search(regexRule, field_value)
+            regex_rule = r"^[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}$"
+            result = re.search(regex_rule, field_value)
             if not result:
                 raise RecordError(
                     ExceptionMessages.RECORD_CHECK_FAILED, "Postcode check failed", "Postcode does not meet regex rules"
@@ -661,10 +661,10 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # Max Objects Validate
-    def _validate_max_objects(self, expressionRule, field_name, field_value, row) -> ErrorReport:
+    def _validate_max_objects(self, expression_rule, field_name, field_value, row) -> ErrorReport:
         try:
             value = len(field_value)
-            if value > int(expressionRule):
+            if value > int(expression_rule):
                 raise RecordError(
                     ExceptionMessages.RECORD_CHECK_FAILED,
                     "Max Objects failure",
@@ -686,14 +686,14 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # Default to Validate
-    def _validate_only_if(self, expressionRule, field_name, field_value, row) -> ErrorReport:
+    def _validate_only_if(self, expression_rule, field_name, _field_value, row) -> ErrorReport:
         try:
-            conversionList = expressionRule.split("|")
-            location = conversionList[0]
-            valueCheck = conversionList[1]
-            dataValue = self.data_parser.get_key_value(location)
+            conversion_list = expression_rule.split("|")
+            location = conversion_list[0]
+            value_check = conversion_list[1]
+            data_value = self.data_parser.get_key_value(location)
 
-            if dataValue[0] != valueCheck:
+            if data_value[0] != value_check:
                 raise RecordError(
                     ExceptionMessages.RECORD_CHECK_FAILED,
                     "Validate Only If failure",
@@ -745,9 +745,9 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # Check with Key Lookup
-    def _validate_against_key(self, expressionRule, field_name, field_value, row) -> ErrorReport:
+    def _validate_against_key(self, expression_rule, field_name, field_value, row) -> ErrorReport:
         try:
-            result = self.key_data.findKey(expressionRule, field_value)
+            result = self.key_data.find_key(expression_rule, field_value)
             if not result:
                 raise RecordError(
                     ExceptionMessages.KEY_CHECK_FAILED,
