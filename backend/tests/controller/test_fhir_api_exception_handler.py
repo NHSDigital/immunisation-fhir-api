@@ -5,10 +5,12 @@ from unittest.mock import patch
 from controller.fhir_api_exception_handler import fhir_api_exception_handler
 from models.errors import (
     CustomValidationError,
+    IdentifierDuplicationError,
     InvalidJsonError,
     ResourceNotFoundError,
     UnauthorizedError,
     UnauthorizedVaxError,
+    UnhandledResponseError,
 )
 
 
@@ -47,6 +49,18 @@ class TestFhirApiExceptionHandler(unittest.TestCase):
                 404,
                 "not-found",
                 "Immunization resource does not exist. ID: 123",
+            ),
+            (
+                IdentifierDuplicationError("system#id"),
+                422,
+                "duplicate",
+                "The provided identifier: system#id is duplicated",
+            ),
+            (
+                UnhandledResponseError(message="Critical error", response={"outcome": "critical error"}),
+                500,
+                "exception",
+                "Critical error\n{'outcome': 'critical error'}",
             ),
         ]
 
