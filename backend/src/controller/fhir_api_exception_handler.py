@@ -9,9 +9,9 @@ from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
 from controller.aws_apig_response_utils import create_response
 from models.errors import (
     Code,
-    InvalidImmunizationId,
     CustomValidationError,
     IdentifierDuplicationError,
+    InvalidImmunizationId,
     InvalidJsonError,
     ResourceNotFoundError,
     Severity,

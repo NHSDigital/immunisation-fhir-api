@@ -26,7 +26,6 @@ from models.errors import (
     Severity,
     UnauthorizedError,
     UnauthorizedVaxError,
-    UnhandledResponseError,
     ValidationError,
     create_operation_outcome,
 )
