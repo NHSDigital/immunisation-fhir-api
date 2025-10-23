@@ -27,7 +27,7 @@ from tests.utils_for_tests.values_for_tests import (
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
-    from clients import REGION_NAME
+    from common.clients import REGION_NAME
     from file_name_processor import lambda_handler
     from logging_decorator import generate_and_send_logs, send_log_to_firehose
 
@@ -91,7 +91,7 @@ class TestLoggingDecorator(unittest.TestCase):
             # Time is incremented by 1.0 for each call to time.time for ease of testing.
             # Range is set to a large number (100) due to many calls being made to time.time for some tests.
             patch("logging_decorator.time.time", side_effect=[0.0 + i for i in range(100)]),
-            patch("clients.redis_client.hkeys", return_value=["FLU"]),
+            patch("common.redis_client.redis_client.hkeys", return_value=["FLU"]),
         ]
 
         # Set up the ExitStack. Note that patches need to be explicitly started so that they will be applied even when

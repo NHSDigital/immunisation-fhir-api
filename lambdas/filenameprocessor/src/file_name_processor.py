@@ -10,18 +10,18 @@ import argparse
 from uuid import uuid4
 
 from audit_table import upsert_audit_table
-from clients import logger, s3_client
+from common.clients import logger, s3_client
+from common.models.errors import (
+    InvalidFileKeyError,
+    UnhandledAuditTableError,
+    UnhandledSqsError,
+    VaccineTypePermissionsError,
+)
 from constants import (
     ERROR_TYPE_TO_STATUS_CODE_MAP,
     SOURCE_BUCKET_NAME,
     FileNotProcessedReason,
     FileStatus,
-)
-from errors import (
-    InvalidFileKeyError,
-    UnhandledAuditTableError,
-    UnhandledSqsError,
-    VaccineTypePermissionsError,
 )
 from file_validation import is_file_in_directory_root, validate_file_key
 from logging_decorator import logging_decorator

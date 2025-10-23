@@ -12,7 +12,7 @@ from tests.utils_for_tests.values_for_tests import MockFileDetails
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
-    from errors import InvalidFileKeyError
+    from common.models.errors import InvalidFileKeyError
     from file_validation import (
         is_file_in_directory_root,
         is_valid_datetime,

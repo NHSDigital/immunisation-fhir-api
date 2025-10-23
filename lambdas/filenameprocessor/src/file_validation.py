@@ -8,7 +8,7 @@ from elasticache import (
     get_supplier_system_from_cache,
     get_valid_vaccine_types_from_cache,
 )
-from errors import InvalidFileKeyError
+from common.models.errors import InvalidFileKeyError
 
 
 def is_file_in_directory_root(file_key: str) -> bool:

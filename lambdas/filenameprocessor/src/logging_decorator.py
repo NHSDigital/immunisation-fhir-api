@@ -6,7 +6,7 @@ import time
 from datetime import datetime
 from functools import wraps
 
-from clients import firehose_client, logger
+from common.clients import firehose_client, logger
 
 STREAM_NAME = os.getenv("SPLUNK_FIREHOSE_NAME", "immunisation-fhir-api-internal-dev-splunk-firehose")
 

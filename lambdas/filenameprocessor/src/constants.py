@@ -3,7 +3,7 @@
 import os
 from enum import StrEnum
 
-from errors import (
+from common.models.errors import (
     InvalidFileKeyError,
     UnhandledAuditTableError,
     UnhandledSqsError,
