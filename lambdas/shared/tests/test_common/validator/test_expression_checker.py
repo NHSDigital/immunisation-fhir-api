@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
-import common.validator.enums.exception_messages as ExceptionMessages
+from common.validator.enums.exception_messages import ExceptionLevels
 from common.validator.expression_checker import ExpressionChecker
 
 # TODO this needs to be expanded to cover all expression types
@@ -29,9 +29,10 @@ class TestExpressionChecker(unittest.TestCase):
             "DATETIME", rule="", field_name="timestamp", field_value="2022-01-01T12:00:00", row={}
         )
         self.assertEqual(
-            result.message, "Unexpected exception [ValueError]: Invalid isoformat string: '2022-01-01T12:00:00'"
+            result.message,
+            "Unexpected exception [ValueError]: Invalid isoformat string: '2022-01-01T12:00:00'",
         )
-        self.assertEqual(result.code, ExceptionMessages.UNEXPECTED_EXCEPTION)
+        self.assertEqual(result.code, ExceptionLevels.UNEXPECTED_EXCEPTION)
         self.assertEqual(result.field, "timestamp")
 
     def test_validate_uuid_valid(self):
@@ -44,7 +45,7 @@ class TestExpressionChecker(unittest.TestCase):
         result = self.expression_checker.validate_expression(
             "INT", rule="", field_name="age", field_value="hello world", row={}
         )
-        self.assertEqual(result.code, ExceptionMessages.UNEXPECTED_EXCEPTION)
+        self.assertEqual(result.code, ExceptionLevels.UNEXPECTED_EXCEPTION)
         self.assertEqual(result.field, "age")
         self.assertIn("invalid literal for int()", result.message)
 

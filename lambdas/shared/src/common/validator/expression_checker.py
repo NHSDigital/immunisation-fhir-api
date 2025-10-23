@@ -5,7 +5,8 @@ import uuid
 from enum import Enum
 from enum import StrEnum
 
-import common.validator.enums.exception_messages as ExceptionMessages
+from common.validator.enums.exception_messages import MESSAGES
+from common.validator.enums.exception_messages import ExceptionLevels
 from common.validator.lookup_expressions.key_data import KeyData
 from common.validator.lookup_expressions.lookup_data import LookUpData
 from common.validator.record_error import ErrorReport
@@ -115,44 +116,37 @@ class ExpressionChecker:
     # ISO 8601 date/datetime validate (currently date-only)
     def _validate_datetime(self, rule, field_name, field_value, row) -> ErrorReport:
         try:
+            # Current behavior expects date-only; datetime raises and is handled below
             datetime.date.fromisoformat(field_value)
             # rule is not used - could be date only, date time, past, future etc
             if rule:
                 pass
 
         except RecordError as e:
-            code = e.code if e.code is not None else ExceptionMessages.RECORD_CHECK_FAILED
-            message = (
-                e.message
-                if e.message is not None
-                else ExceptionMessages.MESSAGES[ExceptionMessages.RECORD_CHECK_FAILED]
-            )
+            code = e.code if e.code is not None else ExceptionLevels.RECORD_CHECK_FAILED
+            message = e.message if e.message is not None else MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
             if e.details is not None:
                 details = e.details
             return ErrorReport(code, message, row, field_name, details, self.summarise)
         except Exception as e:
             if self.report_unexpected_exception:
-                message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
+                message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # UUID validate
     def _validate_uuid(self, _expression_rule, field_name, field_value, row) -> ErrorReport:
         try:
             uuid.UUID(str(field_value))
         except RecordError as e:
-            code = e.code if e.code is not None else ExceptionMessages.RECORD_CHECK_FAILED
-            message = (
-                e.message
-                if e.message is not None
-                else ExceptionMessages.MESSAGES[ExceptionMessages.RECORD_CHECK_FAILED]
-            )
+            code = e.code if e.code is not None else ExceptionLevels.RECORD_CHECK_FAILED
+            message = e.message if e.message is not None else MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
             if e.details is not None:
                 details = e.details
             return ErrorReport(code, message, row, field_name, details, self.summarise)
         except Exception as e:
             if self.report_unexpected_exception:
-                message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
+                message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # Integer Validate
     def _validate_integer(self, expression_rule, field_name, field_value, row) -> ErrorReport:
@@ -172,7 +166,7 @@ class ExpressionChecker:
                 check_value = int(expression_rule)
                 if int(field_value) != check_value:
                     raise RecordError(
-                        ExceptionMessages.RECORD_CHECK_FAILED,
+                        ExceptionLevels.RECORD_CHECK_FAILED,
                         "Value integer check failed",
                         MessageLabel.VALUE_MISMATCH_MSG
                         + MessageLabel.EXPECTED_LABEL
@@ -182,38 +176,30 @@ class ExpressionChecker:
                         + field_value,
                     )
         except RecordError as e:
-            code = e.code if e.code is not None else ExceptionMessages.RECORD_CHECK_FAILED
-            message = (
-                e.message
-                if e.message is not None
-                else ExceptionMessages.MESSAGES[ExceptionMessages.RECORD_CHECK_FAILED]
-            )
+            code = e.code if e.code is not None else ExceptionLevels.RECORD_CHECK_FAILED
+            message = e.message if e.message is not None else MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
             if e.details is not None:
                 details = e.details
             return ErrorReport(code, message, row, field_name, details, self.summarise)
         except Exception as e:
             if self.report_unexpected_exception:
-                message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
+                message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     #  Float Validate
     def _validate_float(self, _expression_rule, field_name, field_value, row) -> ErrorReport:
         try:
             float(field_value)
         except RecordError as e:
-            code = e.code if e.code is not None else ExceptionMessages.RECORD_CHECK_FAILED
-            message = (
-                e.message
-                if e.message is not None
-                else ExceptionMessages.MESSAGES[ExceptionMessages.RECORD_CHECK_FAILED]
-            )
+            code = e.code if e.code is not None else ExceptionLevels.RECORD_CHECK_FAILED
+            message = e.message if e.message is not None else MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
             if e.details is not None:
                 details = e.details
             return ErrorReport(code, message, row, field_name, details, self.summarise)
         except Exception as e:
             if self.report_unexpected_exception:
-                message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
+                message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # Length Validate
     def _validate_length(self, expression_rule, field_name, field_value, row) -> ErrorReport:
@@ -222,22 +208,18 @@ class ExpressionChecker:
             check_length = int(expression_rule)
             if str_len > check_length:
                 raise RecordError(
-                    ExceptionMessages.RECORD_CHECK_FAILED, "Value length check failed", "Value is longer than expected"
+                    ExceptionLevels.RECORD_CHECK_FAILED, "Value length check failed", "Value is longer than expected"
                 )
         except RecordError as e:
-            code = e.code if e.code is not None else ExceptionMessages.RECORD_CHECK_FAILED
-            message = (
-                e.message
-                if e.message is not None
-                else ExceptionMessages.MESSAGES[ExceptionMessages.RECORD_CHECK_FAILED]
-            )
+            code = e.code if e.code is not None else ExceptionLevels.RECORD_CHECK_FAILED
+            message = e.message if e.message is not None else MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
             if e.details is not None:
                 details = e.details
             return ErrorReport(code, message, row, field_name, details, self.summarise)
         except Exception as e:
             if self.report_unexpected_exception:
-                message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
+                message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # Regex Validate
     def _validate_regex(self, expression_rule, field_name, field_value, row) -> ErrorReport:
@@ -245,31 +227,27 @@ class ExpressionChecker:
             result = re.search(expression_rule, field_value)
             if not result:
                 raise RecordError(
-                    ExceptionMessages.RECORD_CHECK_FAILED,
+                    ExceptionLevels.RECORD_CHECK_FAILED,
                     "String REGEX check failed",
                     "Value does not meet regex rules",
                 )
         except RecordError as e:
-            code = e.code if e.code is not None else ExceptionMessages.RECORD_CHECK_FAILED
-            message = (
-                e.message
-                if e.message is not None
-                else ExceptionMessages.MESSAGES[ExceptionMessages.RECORD_CHECK_FAILED]
-            )
+            code = e.code if e.code is not None else ExceptionLevels.RECORD_CHECK_FAILED
+            message = e.message if e.message is not None else MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
             if e.details is not None:
                 details = e.details
             return ErrorReport(code, message, row, field_name, details, self.summarise)
         except Exception as e:
             if self.report_unexpected_exception:
-                message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
+                message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # Equal Validate
     def _validate_equal(self, expression_rule, field_name, field_value, row) -> ErrorReport:
         try:
             if field_value != expression_rule:
                 raise RecordError(
-                    ExceptionMessages.RECORD_CHECK_FAILED,
+                    ExceptionLevels.RECORD_CHECK_FAILED,
                     "Value equals check failed",
                     MessageLabel.VALUE_MISMATCH_MSG
                     + MessageLabel.EXPECTED_LABEL
@@ -279,26 +257,22 @@ class ExpressionChecker:
                     + field_value,
                 )
         except RecordError as e:
-            code = e.code if e.code is not None else ExceptionMessages.RECORD_CHECK_FAILED
-            message = (
-                e.message
-                if e.message is not None
-                else ExceptionMessages.MESSAGES[ExceptionMessages.RECORD_CHECK_FAILED]
-            )
+            code = e.code if e.code is not None else ExceptionLevels.RECORD_CHECK_FAILED
+            message = e.message if e.message is not None else MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
             if e.details is not None:
                 details = e.details
             return ErrorReport(code, message, row, field_name, details, self.summarise)
         except Exception as e:
             if self.report_unexpected_exception:
-                message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
+                message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # Not Equal Validate
     def _validate_not_equal(self, expression_rule, field_name, field_value, row) -> ErrorReport:
         try:
             if field_value == expression_rule:
                 raise RecordError(
-                    ExceptionMessages.RECORD_CHECK_FAILED,
+                    ExceptionLevels.RECORD_CHECK_FAILED,
                     "Value not equals check failed",
                     "Value equals expected value when it should not, Expected- "
                     + expression_rule
@@ -306,43 +280,35 @@ class ExpressionChecker:
                     + field_value,
                 )
         except RecordError as e:
-            code = e.code if e.code is not None else ExceptionMessages.RECORD_CHECK_FAILED
-            message = (
-                e.message
-                if e.message is not None
-                else ExceptionMessages.MESSAGES[ExceptionMessages.RECORD_CHECK_FAILED]
-            )
+            code = e.code if e.code is not None else ExceptionLevels.RECORD_CHECK_FAILED
+            message = e.message if e.message is not None else MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
             if e.details is not None:
                 details = e.details
             return ErrorReport(code, message, row, field_name, details, self.summarise)
         except Exception as e:
             if self.report_unexpected_exception:
-                message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
+                message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # In Validate
     def _validate_in(self, expression_rule, field_name, field_value, row) -> ErrorReport:
         try:
             if expression_rule.lower() not in field_value.lower():
                 raise RecordError(
-                    ExceptionMessages.RECORD_CHECK_FAILED,
+                    ExceptionLevels.RECORD_CHECK_FAILED,
                     "Data not in Value failed",
                     "Check Data not found in Value, List- " + expression_rule + " Data- " + field_value,
                 )
         except RecordError as e:
-            code = e.code if e.code is not None else ExceptionMessages.RECORD_CHECK_FAILED
-            message = (
-                e.message
-                if e.message is not None
-                else ExceptionMessages.MESSAGES[ExceptionMessages.RECORD_CHECK_FAILED]
-            )
+            code = e.code if e.code is not None else ExceptionLevels.RECORD_CHECK_FAILED
+            message = e.message if e.message is not None else MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
             if e.details is not None:
                 details = e.details
             return ErrorReport(code, message, row, field_name, details, self.summarise)
         except Exception as e:
             if self.report_unexpected_exception:
-                message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
+                message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # NRange Validate
     def _validate_n_range(self, expression_rule, field_name, field_value, row) -> ErrorReport:
@@ -354,25 +320,21 @@ class ExpressionChecker:
 
             if not (range1 <= value <= range2):
                 raise RecordError(
-                    ExceptionMessages.RECORD_CHECK_FAILED,
+                    ExceptionLevels.RECORD_CHECK_FAILED,
                     "Value range check failed",
                     "Value is not within the number range, data- " + field_value,
                 )
             return None
         except RecordError as e:
-            code = e.code if e.code is not None else ExceptionMessages.RECORD_CHECK_FAILED
-            message = (
-                e.message
-                if e.message is not None
-                else ExceptionMessages.MESSAGES[ExceptionMessages.RECORD_CHECK_FAILED]
-            )
+            code = e.code if e.code is not None else ExceptionLevels.RECORD_CHECK_FAILED
+            message = e.message if e.message is not None else MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
             if e.details is not None:
                 details = e.details
             return ErrorReport(code, message, row, field_name, details, self.summarise)
         except Exception as e:
             if self.report_unexpected_exception:
-                message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
+                message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # InArray Validate
     def _validate_in_array(self, expression_rule, field_name, field_value, row) -> ErrorReport:
@@ -381,24 +343,20 @@ class ExpressionChecker:
 
             if field_value not in rule_list:
                 raise RecordError(
-                    ExceptionMessages.RECORD_CHECK_FAILED,
+                    ExceptionLevels.RECORD_CHECK_FAILED,
                     "Value not in array check failed",
                     "Check Value not found in data array",
                 )
         except RecordError as e:
-            code = e.code if e.code is not None else ExceptionMessages.RECORD_CHECK_FAILED
-            message = (
-                e.message
-                if e.message is not None
-                else ExceptionMessages.MESSAGES[ExceptionMessages.RECORD_CHECK_FAILED]
-            )
+            code = e.code if e.code is not None else ExceptionLevels.RECORD_CHECK_FAILED
+            message = e.message if e.message is not None else MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
             if e.details is not None:
                 details = e.details
             return ErrorReport(code, message, row, field_name, details, self.summarise)
         except Exception as e:
             if self.report_unexpected_exception:
-                message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
+                message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # Upper Validate
     def _validate_upper(self, _expression_rule, field_name, field_value, row) -> ErrorReport:
@@ -407,24 +365,20 @@ class ExpressionChecker:
 
             if not result:
                 raise RecordError(
-                    ExceptionMessages.RECORD_CHECK_FAILED,
+                    ExceptionLevels.RECORD_CHECK_FAILED,
                     "Value not uppercase",
                     "Check Value not found to be uppercase, value- " + field_value,
                 )
         except RecordError as e:
-            code = e.code if e.code is not None else ExceptionMessages.RECORD_CHECK_FAILED
-            message = (
-                e.message
-                if e.message is not None
-                else ExceptionMessages.MESSAGES[ExceptionMessages.RECORD_CHECK_FAILED]
-            )
+            code = e.code if e.code is not None else ExceptionLevels.RECORD_CHECK_FAILED
+            message = e.message if e.message is not None else MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
             if e.details is not None:
                 details = e.details
             return ErrorReport(code, message, row, field_name, details, self.summarise)
         except Exception as e:
             if self.report_unexpected_exception:
-                message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
+                message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     #  Lower Validate
     def _validate_lower(self, _expression_rule, field_name, field_value, row) -> ErrorReport:
@@ -433,24 +387,20 @@ class ExpressionChecker:
 
             if not result:
                 raise RecordError(
-                    ExceptionMessages.RECORD_CHECK_FAILED,
+                    ExceptionLevels.RECORD_CHECK_FAILED,
                     "Value not lowercase",
                     "Check Value not found to be lowercase, data- " + field_value,
                 )
         except RecordError as e:
-            code = e.code if e.code is not None else ExceptionMessages.RECORD_CHECK_FAILED
-            message = (
-                e.message
-                if e.message is not None
-                else ExceptionMessages.MESSAGES[ExceptionMessages.RECORD_CHECK_FAILED]
-            )
+            code = e.code if e.code is not None else ExceptionLevels.RECORD_CHECK_FAILED
+            message = e.message if e.message is not None else MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
             if e.details is not None:
                 details = e.details
             return ErrorReport(code, message, row, field_name, details, self.summarise)
         except Exception as e:
             if self.report_unexpected_exception:
-                message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
+                message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # Starts With Validate
     def _validate_starts_with(self, expression_rule, field_name, field_value, row) -> ErrorReport:
@@ -458,7 +408,7 @@ class ExpressionChecker:
             result = field_value.startswith(expression_rule)
             if not result:
                 raise RecordError(
-                    ExceptionMessages.RECORD_CHECK_FAILED,
+                    ExceptionLevels.RECORD_CHECK_FAILED,
                     "Value starts with failure",
                     "Value does not start as expected, "
                     + MessageLabel.EXPECTED_LABEL
@@ -468,19 +418,15 @@ class ExpressionChecker:
                     + field_value,
                 )
         except RecordError as e:
-            code = e.code if e.code is not None else ExceptionMessages.RECORD_CHECK_FAILED
-            message = (
-                e.message
-                if e.message is not None
-                else ExceptionMessages.MESSAGES[ExceptionMessages.RECORD_CHECK_FAILED]
-            )
+            code = e.code if e.code is not None else ExceptionLevels.RECORD_CHECK_FAILED
+            message = e.message if e.message is not None else MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
             if e.details is not None:
                 details = e.details
             return ErrorReport(code, message, row, field_name, details, self.summarise)
         except Exception as e:
             if self.report_unexpected_exception:
-                message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
+                message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # Ends With Validate
     def _validate_ends_with(self, expression_rule, field_name, field_value, row) -> ErrorReport:
@@ -488,7 +434,7 @@ class ExpressionChecker:
             result = field_value.endswith(expression_rule)
             if not result:
                 raise RecordError(
-                    ExceptionMessages.RECORD_CHECK_FAILED,
+                    ExceptionLevels.RECORD_CHECK_FAILED,
                     "Value ends with failure",
                     "Value does not end as expected, "
                     + MessageLabel.EXPECTED_LABEL
@@ -498,65 +444,53 @@ class ExpressionChecker:
                     + field_value,
                 )
         except RecordError as e:
-            code = e.code if e.code is not None else ExceptionMessages.RECORD_CHECK_FAILED
-            message = (
-                e.message
-                if e.message is not None
-                else ExceptionMessages.MESSAGES[ExceptionMessages.RECORD_CHECK_FAILED]
-            )
+            code = e.code if e.code is not None else ExceptionLevels.RECORD_CHECK_FAILED
+            message = e.message if e.message is not None else MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
             if e.details is not None:
                 details = e.details
             return ErrorReport(code, message, row, field_name, details, self.summarise)
         except Exception as e:
             if self.report_unexpected_exception:
-                message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
+                message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # Empty Validate
     def _validate_empty(self, _expression_rule, field_name, field_value, row) -> ErrorReport:
         try:
             if field_value:
                 raise RecordError(
-                    ExceptionMessages.RECORD_CHECK_FAILED,
+                    ExceptionLevels.RECORD_CHECK_FAILED,
                     "Value is empty failure",
                     "Value has data, not as expected, data- " + field_value,
                 )
         except RecordError as e:
-            code = e.code if e.code is not None else ExceptionMessages.RECORD_CHECK_FAILED
-            message = (
-                e.message
-                if e.message is not None
-                else ExceptionMessages.MESSAGES[ExceptionMessages.RECORD_CHECK_FAILED]
-            )
+            code = e.code if e.code is not None else ExceptionLevels.RECORD_CHECK_FAILED
+            message = e.message if e.message is not None else MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
             if e.details is not None:
                 details = e.details
             return ErrorReport(code, message, row, field_name, details, self.summarise)
         except Exception as e:
             if self.report_unexpected_exception:
-                message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
+                message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # Not Empty Validate
     def _validate_not_empty(self, _expression_rule, field_name, field_value, row) -> ErrorReport:
         try:
             if not field_value:
                 raise RecordError(
-                    ExceptionMessages.RECORD_CHECK_FAILED, "Value not empty failure", "Value is empty, not as expected"
+                    ExceptionLevels.RECORD_CHECK_FAILED, "Value not empty failure", "Value is empty, not as expected"
                 )
         except RecordError as e:
-            code = e.code if e.code is not None else ExceptionMessages.RECORD_CHECK_FAILED
-            message = (
-                e.message
-                if e.message is not None
-                else ExceptionMessages.MESSAGES[ExceptionMessages.RECORD_CHECK_FAILED]
-            )
+            code = e.code if e.code is not None else ExceptionLevels.RECORD_CHECK_FAILED
+            message = e.message if e.message is not None else MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
             if e.details is not None:
                 details = e.details
             return ErrorReport(code, message, row, field_name, details, self.summarise)
         except Exception as e:
             if self.report_unexpected_exception:
-                message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
+                message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # Positive Validate
     def _validate_positive(self, _expression_rule, field_name, field_value, row) -> ErrorReport:
@@ -564,24 +498,20 @@ class ExpressionChecker:
             value = float(field_value)
             if value < 0:
                 raise RecordError(
-                    ExceptionMessages.RECORD_CHECK_FAILED,
+                    ExceptionLevels.RECORD_CHECK_FAILED,
                     "Value is not positive failure",
                     "Value is not positive as expected, data- " + field_value,
                 )
         except RecordError as e:
-            code = e.code if e.code is not None else ExceptionMessages.RECORD_CHECK_FAILED
-            message = (
-                e.message
-                if e.message is not None
-                else ExceptionMessages.MESSAGES[ExceptionMessages.RECORD_CHECK_FAILED]
-            )
+            code = e.code if e.code is not None else ExceptionLevels.RECORD_CHECK_FAILED
+            message = e.message if e.message is not None else MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
             if e.details is not None:
                 details = e.details
             return ErrorReport(code, message, row, field_name, details, self.summarise)
         except Exception as e:
             if self.report_unexpected_exception:
-                message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
+                message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # NHSNumber Validate
     def _validate_nhs_number(self, _expression_rule, field_name, field_value, row) -> ErrorReport:
@@ -590,24 +520,20 @@ class ExpressionChecker:
             result = re.search(regex_rule, field_value)
             if not result:
                 raise RecordError(
-                    ExceptionMessages.RECORD_CHECK_FAILED,
+                    ExceptionLevels.RECORD_CHECK_FAILED,
                     "NHS Number check failed",
                     "NHS Number does not meet regex rules, data- " + field_value,
                 )
         except RecordError as e:
-            code = e.code if e.code is not None else ExceptionMessages.RECORD_CHECK_FAILED
-            message = (
-                e.message
-                if e.message is not None
-                else ExceptionMessages.MESSAGES[ExceptionMessages.RECORD_CHECK_FAILED]
-            )
+            code = e.code if e.code is not None else ExceptionLevels.RECORD_CHECK_FAILED
+            message = e.message if e.message is not None else MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
             if e.details is not None:
                 details = e.details
             return ErrorReport(code, message, row, field_name, details, self.summarise)
         except Exception as e:
             if self.report_unexpected_exception:
-                message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
+                message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # Gender Validate
     def _validate_gender(self, _expression_rule, field_name, field_value, row) -> ErrorReport:
@@ -616,24 +542,20 @@ class ExpressionChecker:
 
             if field_value not in rule_list:
                 raise RecordError(
-                    ExceptionMessages.RECORD_CHECK_FAILED,
+                    ExceptionLevels.RECORD_CHECK_FAILED,
                     "Gender check failed",
                     "Gender value not found in array, data- " + field_value,
                 )
         except RecordError as e:
-            code = e.code if e.code is not None else ExceptionMessages.RECORD_CHECK_FAILED
-            message = (
-                e.message
-                if e.message is not None
-                else ExceptionMessages.MESSAGES[ExceptionMessages.RECORD_CHECK_FAILED]
-            )
+            code = e.code if e.code is not None else ExceptionLevels.RECORD_CHECK_FAILED
+            message = e.message if e.message is not None else MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
             if e.details is not None:
                 details = e.details
             return ErrorReport(code, message, row, field_name, details, self.summarise)
         except Exception as e:
             if self.report_unexpected_exception:
-                message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
+                message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # PostCode Validate
     def _validate_post_code(self, _expression_rule, field_name, field_value, row) -> ErrorReport:
@@ -643,22 +565,18 @@ class ExpressionChecker:
             result = re.search(regex_rule, field_value)
             if not result:
                 raise RecordError(
-                    ExceptionMessages.RECORD_CHECK_FAILED, "Postcode check failed", "Postcode does not meet regex rules"
+                    ExceptionLevels.RECORD_CHECK_FAILED, "Postcode check failed", "Postcode does not meet regex rules"
                 )
         except RecordError as e:
-            code = e.code if e.code is not None else ExceptionMessages.RECORD_CHECK_FAILED
-            message = (
-                e.message
-                if e.message is not None
-                else ExceptionMessages.MESSAGES[ExceptionMessages.RECORD_CHECK_FAILED]
-            )
+            code = e.code if e.code is not None else ExceptionLevels.RECORD_CHECK_FAILED
+            message = e.message if e.message is not None else MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
             if e.details is not None:
                 details = e.details
             return ErrorReport(code, message, row, field_name, details, self.summarise)
         except Exception as e:
             if self.report_unexpected_exception:
-                message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
+                message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # Max Objects Validate
     def _validate_max_objects(self, expression_rule, field_name, field_value, row) -> ErrorReport:
@@ -666,24 +584,20 @@ class ExpressionChecker:
             value = len(field_value)
             if value > int(expression_rule):
                 raise RecordError(
-                    ExceptionMessages.RECORD_CHECK_FAILED,
+                    ExceptionLevels.RECORD_CHECK_FAILED,
                     "Max Objects failure",
                     "Number of objects is greater than expected",
                 )
         except RecordError as e:
-            code = e.code if e.code is not None else ExceptionMessages.RECORD_CHECK_FAILED
-            message = (
-                e.message
-                if e.message is not None
-                else ExceptionMessages.MESSAGES[ExceptionMessages.RECORD_CHECK_FAILED]
-            )
+            code = e.code if e.code is not None else ExceptionLevels.RECORD_CHECK_FAILED
+            message = e.message if e.message is not None else MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
             if e.details is not None:
                 details = e.details
             return ErrorReport(code, message, row, field_name, details, self.summarise)
         except Exception as e:
             if self.report_unexpected_exception:
-                message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
+                message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # Default to Validate
     def _validate_only_if(self, expression_rule, field_name, _field_value, row) -> ErrorReport:
@@ -695,24 +609,20 @@ class ExpressionChecker:
 
             if data_value[0] != value_check:
                 raise RecordError(
-                    ExceptionMessages.RECORD_CHECK_FAILED,
+                    ExceptionLevels.RECORD_CHECK_FAILED,
                     "Validate Only If failure",
                     "Value was not found at that position",
                 )
         except RecordError as e:
-            code = e.code if e.code is not None else ExceptionMessages.RECORD_CHECK_FAILED
-            message = (
-                e.message
-                if e.message is not None
-                else ExceptionMessages.MESSAGES[ExceptionMessages.RECORD_CHECK_FAILED]
-            )
+            code = e.code if e.code is not None else ExceptionLevels.RECORD_CHECK_FAILED
+            message = e.message if e.message is not None else MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
             if e.details is not None:
                 details = e.details
             return ErrorReport(code, message, row, field_name, details, self.summarise)
         except Exception as e:
             if self.report_unexpected_exception:
-                message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
+                message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # Check with Lookup
     def _validate_against_lookup(self, _expression_rule, field_name, field_value, row) -> ErrorReport:
@@ -720,7 +630,7 @@ class ExpressionChecker:
             result = self.data_look_up.find_lookup(field_value)
             if not result:
                 raise RecordError(
-                    ExceptionMessages.RECORD_CHECK_FAILED,
+                    ExceptionLevels.RECORD_CHECK_FAILED,
                     "Value lookup failure",
                     "Value was not found in Lookup List, "
                     + MessageLabel.EXPECTED_LABEL
@@ -730,19 +640,15 @@ class ExpressionChecker:
                     + "nothing",
                 )
         except RecordError as e:
-            code = e.code if e.code is not None else ExceptionMessages.RECORD_CHECK_FAILED
-            message = (
-                e.message
-                if e.message is not None
-                else ExceptionMessages.MESSAGES[ExceptionMessages.RECORD_CHECK_FAILED]
-            )
+            code = e.code if e.code is not None else ExceptionLevels.RECORD_CHECK_FAILED
+            message = e.message if e.message is not None else MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
             if e.details is not None:
                 details = e.details
             return ErrorReport(code, message, row, field_name, details, self.summarise)
         except Exception as e:
             if self.report_unexpected_exception:
-                message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
+                message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # Check with Key Lookup
     def _validate_against_key(self, expression_rule, field_name, field_value, row) -> ErrorReport:
@@ -750,7 +656,7 @@ class ExpressionChecker:
             result = self.key_data.find_key(expression_rule, field_value)
             if not result:
                 raise RecordError(
-                    ExceptionMessages.KEY_CHECK_FAILED,
+                    ExceptionLevels.KEY_CHECK_FAILED,
                     "Key lookup failure",
                     "Value was not found in Key List, "
                     + MessageLabel.EXPECTED_LABEL
@@ -760,14 +666,12 @@ class ExpressionChecker:
                     + "nothing",
                 )
         except RecordError as e:
-            code = e.code if e.code is not None else ExceptionMessages.KEY_CHECK_FAILED
-            message = (
-                e.message if e.message is not None else ExceptionMessages.MESSAGES[ExceptionMessages.KEY_CHECK_FAILED]
-            )
+            code = e.code if e.code is not None else ExceptionLevels.KEY_CHECK_FAILED
+            message = e.message if e.message is not None else MESSAGES[ExceptionLevels.KEY_CHECK_FAILED]
             if e.details is not None:
                 details = e.details
             return ErrorReport(code, message, row, field_name, details, self.summarise)
         except Exception as e:
             if self.report_unexpected_exception:
-                message = ExceptionMessages.MESSAGES[ExceptionMessages.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return ErrorReport(ExceptionMessages.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
+                message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)

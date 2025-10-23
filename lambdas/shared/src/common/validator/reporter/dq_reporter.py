@@ -3,7 +3,7 @@ import json
 
 from dateutil import parser
 
-import common.validator.enums.error_levels as ErrorLevels
+from common.validator.enums.error_levels import ErrorLevels
 from common.validator.record_error import ErrorReport
 
 

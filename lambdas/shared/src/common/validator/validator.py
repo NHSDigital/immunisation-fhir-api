@@ -2,8 +2,9 @@
 
 from enum import Enum
 
-import common.validator.enums.error_levels as ErrorLevels
-import common.validator.enums.exception_messages as ExceptionMessages
+from common.validator.enums.error_levels import ErrorLevels
+from common.validator.enums.exception_messages import MESSAGES
+from common.validator.enums.exception_messages import ExceptionLevels
 from common.validator.expression_checker import ExpressionChecker
 from common.validator.parsers.csv_line_parser import CSVLineParser
 from common.validator.parsers.csv_parser import CSVParser
@@ -98,10 +99,8 @@ class Validator:
             parent_expression = expression["parentExpression"]
             if self._check_error_record_for_fail(parent_expression):
                 error_record = {
-                    "code": ExceptionMessages.PARENT_FAILED,
-                    "message": ExceptionMessages.MESSAGES[ExceptionMessages.PARENT_FAILED]
-                    + ", Parent ID: "
-                    + parent_expression,
+                    "code": ExceptionLevels.PARENT_FAILED,
+                    "message": MESSAGES[ExceptionLevels.PARENT_FAILED] + ", Parent ID: " + parent_expression,
                 }
                 self._add_error_record(
                     error_record, expression_error_group, expression_name, expression_id, error_level
@@ -112,7 +111,7 @@ class Validator:
             expression_values = self.data_parser.get_key_value(expression_fieldname)
         except Exception as e:
             message = f"Data get values Unexpected exception [{e.__class__.__name__}]: {e}"
-            error_report = ErrorReport(code=ExceptionMessages.PARSING_ERROR, message=message)
+            error_report = ErrorReport(code=ExceptionLevels.PARSING_ERROR, message=message)
             # original code had self.CriticalErrorLevel. Replaced with error_level
             self._add_error_record(error_report, expression_error_group, expression_name, expression_id, error_level)
             return error_report

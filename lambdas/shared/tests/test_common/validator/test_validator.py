@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
-import common.validator.enums.error_levels as ErrorLevels
+from common.validator.enums.error_levels import ErrorLevels
 from common.validator.record_error import ErrorReport
 from common.validator.validator import DataType
 from common.validator.validator import Validator

@@ -1,5 +1,7 @@
 """
 A parser for navigating and extracting data from FHIR JSON resources.
+
+Identifiy a path to a node using '|' to separate levels and
 """
 
 import json

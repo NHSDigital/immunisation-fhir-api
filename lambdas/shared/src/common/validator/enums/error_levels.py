@@ -1,11 +1,15 @@
 # all error Levels
-CRITICAL_ERROR = 0
-WARNING = 1
-NOTIFICATION = 2
+from enum import IntEnum
+
+
+class ErrorLevels(IntEnum):
+    CRITICAL_ERROR = 0
+    WARNING = 1
+    NOTIFICATION = 2
 
 
 MESSAGES = {
-    CRITICAL_ERROR: "Critical Validation Error [%s]: %s",
-    WARNING: "Non-Critical Validation Error [%s]: %s",
-    NOTIFICATION: "Quality Issue Found [%s]: %s",
+    ErrorLevels.CRITICAL_ERROR: "Critical Validation Error [%s]: %s",
+    ErrorLevels.WARNING: "Non-Critical Validation Error [%s]: %s",
+    ErrorLevels.NOTIFICATION: "Quality Issue Found [%s]: %s",
 }
