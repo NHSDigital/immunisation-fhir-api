@@ -9,6 +9,7 @@ from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
 from controller.aws_apig_response_utils import create_response
 from models.errors import (
     Code,
+    InvalidImmunizationId,
     ResourceNotFoundError,
     Severity,
     UnauthorizedError,
@@ -16,7 +17,9 @@ from models.errors import (
     create_operation_outcome,
 )
 
+# Include the 500
 _CUSTOM_EXCEPTION_TO_STATUS_MAP: dict[Type[Exception], int] = {
+    InvalidImmunizationId: 400,
     UnauthorizedError: 403,
     UnauthorizedVaxError: 403,
     ResourceNotFoundError: 404,

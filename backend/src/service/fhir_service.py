@@ -245,11 +245,10 @@ class FhirService:
 
         return UpdateOutcome.UPDATE, Immunization.parse_obj(imms), updated_version
 
-    def delete_immunization(self, imms_id: str, supplier_system: str) -> Immunization:
+    def delete_immunization(self, imms_id: str, supplier_system: str) -> None:
         """
-        Delete an Immunization if it exits and return the ID back if successful.
-        Exception will be raised if resource does not exist. Multiple calls to this method won't change
-        the record in the database.
+        Delete an Immunization if it exists and return the ID back if successful. An exception will be raised if the
+        resource does not exist.
         """
         existing_immunisation, _ = self.immunization_repo.get_immunization_and_version_by_id(imms_id)
 
@@ -261,8 +260,7 @@ class FhirService:
         if not self.authoriser.authorise(supplier_system, ApiOperationCode.DELETE, {vaccination_type}):
             raise UnauthorizedVaxError()
 
-        imms = self.immunization_repo.delete_immunization(imms_id, supplier_system)
-        return Immunization.parse_obj(imms)
+        self.immunization_repo.delete_immunization(imms_id, supplier_system)
 
     @staticmethod
     def is_valid_date_from(immunization: dict, date_from: Union[datetime.date, None]):

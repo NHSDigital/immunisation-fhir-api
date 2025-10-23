@@ -130,6 +130,15 @@ class TestGetImmunization(unittest.TestCase):
         self.assertIsNone(imms)
         self.assertIsNone(version)
 
+    def test_immunization_not_found_when_record_is_logically_deleted(self):
+        """it should return None if Immunization is logically deleted"""
+        imms_id = "a-deleted-id"
+        self.table.get_item = MagicMock(return_value={"Item": {"Resource": "{}", "DeletedAt": time.time()}})
+
+        imms, version = self.repository.get_immunization_and_version_by_id(imms_id)
+        self.assertIsNone(imms)
+        self.assertIsNone(version)
+
 
 def _make_a_patient(nhs_number="1234567890") -> dict:
     return {
@@ -455,17 +464,8 @@ class TestDeleteImmunization(unittest.TestCase):
     def tearDown(self):
         patch.stopall()
 
-    def test_get_deleted_immunization(self):
-        """it should return None if Immunization is logically deleted"""
-        imms_id = "a-deleted-id"
-        self.table.get_item = MagicMock(return_value={"Item": {"Resource": "{}", "DeletedAt": time.time()}})
-
-        imms, version = self.repository.get_immunization_and_version_by_id(imms_id)
-        self.assertIsNone(imms)
-        self.assertIsNone(version)
-
     def test_delete_immunization(self):
-        """it should logical delete Immunization by setting DeletedAt attribute"""
+        """it should logically delete Immunization by setting DeletedAt attribute"""
         imms_id = "an-id"
         dynamo_response = {
             "ResponseMetadata": {"HTTPStatusCode": 200},
@@ -488,7 +488,6 @@ class TestDeleteImmunization(unittest.TestCase):
                 ":operation": "DELETE",
                 ":supplier_system": "Test",
             },
-            ReturnValues=ANY,
             ConditionExpression=ANY,
         )
 
@@ -509,7 +508,6 @@ class TestDeleteImmunization(unittest.TestCase):
             Key=ANY,
             UpdateExpression=ANY,
             ExpressionAttributeValues=ANY,
-            ReturnValues=ANY,
             ConditionExpression=Attr("PK").eq(_make_immunization_pk(imms_id))
             & (Attr("DeletedAt").not_exists() | Attr("DeletedAt").eq("reinstated")),
         )
@@ -519,18 +517,20 @@ class TestDeleteImmunization(unittest.TestCase):
         self.assertEqual(e.exception.resource_type, "Immunization")
 
     def test_delete_throws_error_when_response_can_not_be_handled(self):
-        """it should throw UnhandledResponse when the response from dynamodb can't be handled"""
+        """it should re-raise the exception to be handled at the controller layer when an unexpected exception occurs
+        interacting with DynamoDB"""
         imms_id = "an-id"
-        bad_request = 400
-        response = {"ResponseMetadata": {"HTTPStatusCode": bad_request}}
-        self.table.update_item = MagicMock(return_value=response)
+        error_res = {"Error": {"Code": "UnexpectedError e.g. service down"}}
+        self.table.update_item.side_effect = botocore.exceptions.ClientError(
+            error_response=error_res, operation_name="an-op"
+        )
 
-        with self.assertRaises(UnhandledResponseError) as e:
+        with self.assertRaises(botocore.exceptions.ClientError) as e:
             # When
             self.repository.delete_immunization(imms_id, "Test")
 
         # Then
-        self.assertDictEqual(e.exception.response, response)
+        self.assertEqual(e.exception.response, error_res)
 
 
 class TestFindImmunizations(unittest.TestCase):
