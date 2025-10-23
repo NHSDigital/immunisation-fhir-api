@@ -19,8 +19,8 @@ from controller.fhir_api_exception_handler import fhir_api_exception_handler
 from models.errors import (
     Code,
     IdentifierDuplicationError,
+    InvalidImmunizationId,
     ParameterException,
-    ResourceNotFoundError,
     Severity,
     UnauthorizedError,
     UnauthorizedVaxError,
@@ -96,8 +96,8 @@ class FhirController:
     def get_immunization_by_id(self, aws_event: APIGatewayProxyEventV1) -> dict:
         imms_id = get_path_parameter(aws_event, "id")
 
-        if id_error := self._validate_id(imms_id):
-            return create_response(400, id_error)
+        if not self._is_valid_immunization_id(imms_id):
+            raise InvalidImmunizationId()
 
         supplier_system = get_supplier_system_header(aws_event)
 
@@ -157,10 +157,20 @@ class FhirController:
 
         supplier_system = self._identify_supplier_system(aws_event)
 
-        # Validate the imms id - start
-        if id_error := self._validate_id(imms_id):
-            return create_response(400, json.dumps(id_error))
-        # Validate the imms id - end
+        # Refactor to raise InvalidImmunizationId when working on VED-747
+        if not self._is_valid_immunization_id(imms_id):
+            return create_response(
+                400,
+                json.dumps(
+                    create_operation_outcome(
+                        resource_id=str(uuid.uuid4()),
+                        severity=Severity.error,
+                        code=Code.invalid,
+                        diagnostics="Validation errors: the provided event ID is either missing or not in the expected "
+                        "format.",
+                    )
+                ),
+            )
 
         # Validate the body of the request - start
         try:
@@ -320,31 +330,18 @@ class FhirController:
         except UnauthorizedVaxError as unauthorized:
             return create_response(403, unauthorized.to_operation_outcome())
 
-    def delete_immunization(self, aws_event):
-        try:
-            if aws_event.get("headers"):
-                imms_id = aws_event["pathParameters"]["id"]
-            else:
-                raise UnauthorizedError()
-        except UnauthorizedError as unauthorized:
-            return create_response(403, unauthorized.to_operation_outcome())
+    @fhir_api_exception_handler
+    def delete_immunization(self, aws_event: APIGatewayProxyEventV1) -> dict:
+        imms_id = get_path_parameter(aws_event, "id")
 
-        # Validate the imms id
-        if id_error := self._validate_id(imms_id):
-            return create_response(400, json.dumps(id_error))
+        if not self._is_valid_immunization_id(imms_id):
+            raise InvalidImmunizationId()
 
-        supplier_system = self._identify_supplier_system(aws_event)
+        supplier_system = get_supplier_system_header(aws_event)
 
-        try:
-            self.fhir_service.delete_immunization(imms_id, supplier_system)
-            return create_response(204)
+        self.fhir_service.delete_immunization(imms_id, supplier_system)
 
-        except ResourceNotFoundError as not_found:
-            return create_response(404, not_found.to_operation_outcome())
-        except UnhandledResponseError as unhandled_error:
-            return create_response(500, unhandled_error.to_operation_outcome())
-        except UnauthorizedVaxError as unauthorized:
-            return create_response(403, unauthorized.to_operation_outcome())
+        return create_response(204)
 
     def search_immunizations(self, aws_event: APIGatewayProxyEventV1) -> dict:
         try:
@@ -406,17 +403,9 @@ class FhirController:
             result_json_dict["total"] = 0
         return create_response(200, json.dumps(result_json_dict))
 
-    def _validate_id(self, _id: str) -> Optional[dict]:
-        if not re.match(self.immunization_id_pattern, _id):
-            msg = "Validation errors: the provided event ID is either missing or not in the expected format."
-            return create_operation_outcome(
-                resource_id=str(uuid.uuid4()),
-                severity=Severity.error,
-                code=Code.invalid,
-                diagnostics=msg,
-            )
-
-        return None
+    def _is_valid_immunization_id(self, immunization_id: str) -> bool:
+        """Validates if the given unique Immunization ID is valid."""
+        return False if not re.match(self.immunization_id_pattern, immunization_id) else True
 
     def _validate_identifier_system(self, _id: str, _elements: str) -> Optional[dict]:
         if not _id:

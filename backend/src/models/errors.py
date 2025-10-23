@@ -128,6 +128,19 @@ class ValidationError(RuntimeError):
 
 
 @dataclass
+class InvalidImmunizationId(ValidationError):
+    """Use this when the unique Immunization ID is invalid"""
+
+    def to_operation_outcome(self) -> dict:
+        return create_operation_outcome(
+            resource_id=str(uuid.uuid4()),
+            severity=Severity.error,
+            code=Code.invalid,
+            diagnostics="Validation errors: the provided event ID is either missing or not in the expected format.",
+        )
+
+
+@dataclass
 class InvalidPatientId(ValidationError):
     """Use this when NHS Number is invalid or doesn't exist"""
 
