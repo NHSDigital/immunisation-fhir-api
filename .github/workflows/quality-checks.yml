@@ -97,15 +97,6 @@ jobs:
           aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
           aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
 
-      - name: Run unittest with filenameprocessor-coverage
-        working-directory: filenameprocessor
-        id: filenameprocessor
-        continue-on-error: true
-        run: |
-          poetry install
-          poetry run coverage run -m unittest discover || echo "filenameprocessor tests failed" >> ../failed_tests.txt
-          poetry run coverage xml -o ../filenameprocessor-coverage.xml
-
       - name: Run unittest with batchprocessorfilter-coverage
         working-directory: batch_processor_filter
         id: batchprocessorfilter
@@ -182,6 +173,28 @@ jobs:
           poetry run coverage run -m unittest discover || echo "delta tests failed" >> ../../failed_tests.txt
           poetry run coverage xml -o ../../delta-coverage.xml
 
+      - name: Run unittest with filenameprocessor-coverage
+        working-directory: lambdas/filenameprocessor
+        id: filenameprocessor
+        env:
+          PYTHONPATH: ${{ env.LAMBDA_PATH }}/filenameprocessor/src:${{ env.LAMBDA_PATH }}/filenameprocessor/tests:${{ env.SHARED_PATH }}/src
+        continue-on-error: true
+        run: |
+          poetry install
+          poetry run coverage run -m unittest discover || echo "filenameprocessor tests failed" >> ../../failed_tests.txt
+          poetry run coverage xml -o ../../filenameprocessor-coverage.xml
+
+      - name: Run unittest with id_sync
+        working-directory: lambdas/id_sync
+        id: id_sync
+        env:
+          PYTHONPATH: ${{ env.LAMBDA_PATH }}/id_sync/src:${{ env.LAMBDA_PATH }}/id_sync/tests:${{ env.SHARED_PATH }}/src
+        continue-on-error: true
+        run: |
+          poetry install
+          poetry run coverage run --rcfile=.coveragerc --source=src -m unittest discover || echo "id_sync tests failed" >> ../../failed_tests.txt
+          poetry run coverage xml -o ../../id_sync-coverage.xml
+
       - name: Run unittest with coverage-mns-subscription
         working-directory: lambdas/mns_subscription
         id: mns_subscription
@@ -215,17 +228,6 @@ jobs:
           poetry install
           poetry run coverage run --rcfile=.coveragerc --source=src -m unittest discover -s tests -p "test_*.py" -v || echo "shared tests failed" >> ../../failed_tests.txt
           poetry run coverage xml -o ../../shared-coverage.xml
-
-      - name: Run unittest with id_sync
-        working-directory: lambdas/id_sync
-        id: id_sync
-        env:
-          PYTHONPATH: ${{ env.LAMBDA_PATH }}/id_sync/src:${{ env.LAMBDA_PATH }}/id_sync/tests:${{ env.SHARED_PATH }}/src
-        continue-on-error: true
-        run: |
-          poetry install
-          poetry run coverage run --rcfile=.coveragerc --source=src -m unittest discover || echo "id_sync tests failed" >> ../../failed_tests.txt
-          poetry run coverage xml -o ../../id_sync-coverage.xml
 
       - name: Run Test Failure Summary
         id: check_failure
