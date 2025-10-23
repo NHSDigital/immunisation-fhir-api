@@ -14,7 +14,7 @@ class Extractor:
     )
     EXTENSION_URL_SCT_DESC_DISPLAY = "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-CodingSCTDescDisplay"
 
-    CODING_SYSTEM_URL_SNOMED = "http://snomed.info/sct" # removed directive
+    CODING_SYSTEM_URL_SNOMED = "http://snomed.info/sct"  # removed directive
     ODS_ORG_CODE_SYSTEM_URL = "https://fhir.nhs.uk/Id/ods-organization-code"
     DEFAULT_LOCATION = "X99999"
     NHS_NUMBER_SYSTEM_URL = "https://fhir.nhs.uk/Id/nhs-number"
