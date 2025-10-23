@@ -14,7 +14,7 @@ class TestParse(unittest.TestCase):
 
         fhir_parser = FHIRParser()
         fhir_parser.parse_fhir_file(fhirFilePath)
-        my_value = fhir_parser.get_key_value("vaccineCode|coding|0|code")
+        my_value = fhir_parser.get_fhir_value_list("vaccineCode|coding|0|code")
         self.assertEqual(my_value, ["42223111000001107"])
 
     def test_parse_fhir_key_not_exists(self):
@@ -22,7 +22,7 @@ class TestParse(unittest.TestCase):
 
         fhir_parser = FHIRParser()
         fhir_parser.parse_fhir_file(fhirFilePath)
-        my_value = fhir_parser.get_key_value("vaccineCode|coding|1")
+        my_value = fhir_parser.get_fhir_value_list("vaccineCode|coding|1")
         self.assertEqual(my_value, [""])
-        my_value = fhir_parser.get_key_value("vaccineCode|coding|1|codes")
+        my_value = fhir_parser.get_fhir_value_list("vaccineCode|coding|1|codes")
         self.assertEqual(my_value, [""])

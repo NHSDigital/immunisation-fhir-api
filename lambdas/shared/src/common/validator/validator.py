@@ -98,10 +98,10 @@ class Validator:
         if "parentExpression" in expression:
             parent_expression = expression["parentExpression"]
             if self._check_error_record_for_fail(parent_expression):
-                error_record = {
-                    "code": ExceptionLevels.PARENT_FAILED,
-                    "message": MESSAGES[ExceptionLevels.PARENT_FAILED] + ", Parent ID: " + parent_expression,
-                }
+                error_record = ErrorReport(
+                    code=ExceptionLevels.PARENT_FAILED,
+                    message=MESSAGES[ExceptionLevels.PARENT_FAILED] + ", Parent ID: " + parent_expression,
+                )
                 self._add_error_record(
                     error_record, expression_error_group, expression_name, expression_id, error_level
                 )
@@ -217,7 +217,7 @@ class Validator:
     # Report Generation
     # Build the error Report
     def build_error_report(self, event_id):
-        occurrence_date_time = self.data_parser.get_key_single_value("occurrenceDateTime")
+        occurrence_date_time = self.data_parser.get_fhir_value("occurrenceDateTime")
         dq_reporter = DQReporter()
         dq_report = dq_reporter.generate_error_report(event_id, occurrence_date_time, self.error_records)
 
