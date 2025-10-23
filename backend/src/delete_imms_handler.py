@@ -1,13 +1,9 @@
 import argparse
 import logging
 import pprint
-import uuid
 
-from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
-from controller.aws_apig_response_utils import create_response
 from controller.fhir_controller import FhirController, make_controller
 from log_structure import function_info
-from models.errors import Code, Severity, create_operation_outcome
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger()
@@ -19,17 +15,7 @@ def delete_imms_handler(event, _context):
 
 
 def delete_immunization(event, controller: FhirController):
-    try:
-        return controller.delete_immunization(event)
-    except Exception:  # pylint: disable = broad-exception-caught
-        logger.exception("Unhandled exception")
-        exp_error = create_operation_outcome(
-            resource_id=str(uuid.uuid4()),
-            severity=Severity.error,
-            code=Code.server_error,
-            diagnostics=GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE,
-        )
-        return create_response(500, exp_error)
+    return controller.delete_immunization(event)
 
 
 if __name__ == "__main__":
