@@ -3,12 +3,12 @@
 from datetime import datetime
 from re import match
 
+from common.models.errors import InvalidFileKeyError
 from constants import VALID_VERSIONS
 from elasticache import (
     get_supplier_system_from_cache,
     get_valid_vaccine_types_from_cache,
 )
-from common.models.errors import InvalidFileKeyError
 
 
 def is_file_in_directory_root(file_key: str) -> bool:
