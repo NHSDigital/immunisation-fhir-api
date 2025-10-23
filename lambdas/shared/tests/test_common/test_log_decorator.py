@@ -3,10 +3,8 @@ import unittest
 from datetime import datetime
 from unittest.mock import patch
 
-from common.log_decorator import (
-    generate_and_send_logs,
-    logging_decorator,
-)
+from common.log_decorator import generate_and_send_logs
+from common.log_decorator import logging_decorator
 
 
 class TestLogDecorator(unittest.TestCase):
