@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.INFO)
 
 def get_mns_service(mns_env: str = "int"):
     boto_config = Config(region_name="eu-west-2")
-    cache = Cache(directory="/tmp")
+    cache = Cache(directory="/tmp")  # NOSONAR(S5443) safe tmp directory
     logging.info("Creating authenticator...")
     # TODO: MNS and PDS need separate secrets
     authenticator = AppRestrictedAuth(
