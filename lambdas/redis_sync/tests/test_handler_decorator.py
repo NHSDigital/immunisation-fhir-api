@@ -40,7 +40,7 @@ class TestHandlerDecorator(unittest.TestCase):
         self.mock_get_s3_records = self.get_s3_records_patcher.start()
         self.record_processor_patcher = patch("redis_sync.process_record")
         self.mock_record_processor = self.record_processor_patcher.start()
-        self.firehose_patcher = patch("common.log_decorator.firehose_client")
+        self.firehose_patcher = patch("common.log_firehose.firehose_client")
         self.mock_firehose_client = self.firehose_patcher.start()
         self.mock_firehose_client.put_record.return_value = True
 
