@@ -756,17 +756,15 @@ class TestDeleteImmunization(TestFhirServiceBase):
         self.mock_redis_client.hget.return_value = "COVID19"
         self.authoriser.authorise.return_value = True
         self.imms_repo.get_immunization_and_version_by_id.return_value = (imms, "1")
-        self.imms_repo.delete_immunization.return_value = imms
+        self.imms_repo.delete_immunization.return_value = None
 
         # When
-        act_imms = self.fhir_service.delete_immunization(self.TEST_IMMUNISATION_ID, "Test")
+        self.fhir_service.delete_immunization(self.TEST_IMMUNISATION_ID, "Test")
 
         # Then
         self.imms_repo.get_immunization_and_version_by_id.assert_called_once_with(self.TEST_IMMUNISATION_ID)
         self.imms_repo.delete_immunization.assert_called_once_with(self.TEST_IMMUNISATION_ID, "Test")
         self.authoriser.authorise.assert_called_once_with("Test", ApiOperationCode.DELETE, {"COVID19"})
-        self.assertIsInstance(act_imms, Immunization)
-        self.assertEqual(act_imms.id, self.TEST_IMMUNISATION_ID)
 
     def test_delete_immunization_throws_not_found_exception_if_does_not_exist(self):
         """it should raise a ResourceNotFound exception if the immunisation does not exist"""
@@ -783,6 +781,7 @@ class TestDeleteImmunization(TestFhirServiceBase):
     def test_delete_immunization_throws_authorisation_exception_if_does_not_have_required_permissions(
         self,
     ):
+        """it should raise an UnauthorizedVaxError when the client does not have permissions for the given vacc type"""
         imms = json.loads(create_covid_19_immunization(self.TEST_IMMUNISATION_ID).json())
         self.mock_redis_client.hget.return_value = "FLU"
         self.authoriser.authorise.return_value = False
