@@ -17,7 +17,6 @@ from models.errors import (
     create_operation_outcome,
 )
 
-# Include the 500
 _CUSTOM_EXCEPTION_TO_STATUS_MAP: dict[Type[Exception], int] = {
     InvalidImmunizationId: 400,
     UnauthorizedError: 403,
