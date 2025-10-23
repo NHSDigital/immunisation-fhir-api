@@ -11,6 +11,7 @@ from common.pds_service import PdsService
 from exceptions.id_sync_exception import IdSyncException
 from os_vars import get_pds_env
 
+# Just adding a comment
 pds_env = get_pds_env()
 safe_tmp_dir = tempfile.mkdtemp(dir="/tmp")  # NOSONAR
 
