@@ -1,6 +1,7 @@
 import unittest
 
-from common.aws_lambda_event import AwsEventType, AwsLambdaEvent
+from common.aws_lambda_event import AwsEventType
+from common.aws_lambda_event import AwsLambdaEvent
 
 
 class TestAwsLambdaEvent(unittest.TestCase):
