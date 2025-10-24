@@ -97,14 +97,11 @@ class TestLambdaHandlerDataSource(TestCase):
     def setUp(self):
         GenericSetUp(s3_client, firehose_client, sqs_client, dynamodb_client)
         self.logger_patcher = patch("file_name_processor.logger")
-        self.decorator_logger_patcher = patch("logging_decorator.logger")
         self.mock_logger = self.logger_patcher.start()
-        self.mock_decorator_logger = self.decorator_logger_patcher.start()
 
     def tearDown(self):
         GenericTearDown(s3_client, firehose_client, sqs_client, dynamodb_client)
         self.logger_patcher.stop()
-        self.decorator_logger_patcher.stop()
 
     @staticmethod
     def make_record(file_key: str):

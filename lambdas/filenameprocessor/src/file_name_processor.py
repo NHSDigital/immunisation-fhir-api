@@ -10,7 +10,8 @@ import argparse
 from uuid import uuid4
 
 from audit_table import upsert_audit_table
-from common.clients import logger, s3_client
+from common.clients import STREAM_NAME, logger, s3_client
+from common.log_decorator import logging_decorator
 from common.models.errors import (
     InvalidFileKeyError,
     UnhandledAuditTableError,
@@ -24,7 +25,6 @@ from constants import (
     FileStatus,
 )
 from file_validation import is_file_in_directory_root, validate_file_key
-from logging_decorator import logging_decorator
 from make_and_upload_ack_file import make_and_upload_the_ack_file
 from send_sqs_message import make_and_send_sqs_message
 from supplier_permissions import validate_vaccine_type_permissions
@@ -34,7 +34,7 @@ from utils_for_filenameprocessor import get_creation_and_expiry_times, move_file
 # NOTE: logging_decorator is applied to handle_record function, rather than lambda_handler, because
 # the logging_decorator is for an individual record, whereas the lambda_handler could potentially be handling
 # multiple records.
-@logging_decorator
+@logging_decorator(prefix="filename_processor", stream_name=STREAM_NAME)
 def handle_record(record) -> dict:
     """
     Processes a single record based on whether it came from the 'data-sources' or 'config' bucket.
