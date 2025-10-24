@@ -8,18 +8,16 @@ from unittest.mock import Mock, patch
 import boto3
 from moto import mock_dynamodb, mock_firehose, mock_s3
 
-from tests.utils_for_recordprocessor_tests.generic_setup_and_teardown import (
-    GenericSetUp,
-    GenericTearDown,
-)
-from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
+from utils_for_recordprocessor_tests.mock_environment_variables import (
     MOCK_ENVIRONMENT_DICT,
     BucketNames,
 )
-from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
+from utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
+    GenericSetUp,
+    GenericTearDown,
     add_entry_to_table,
 )
-from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
+from utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
     REGION_NAME,
     MockFileDetails,
     ValidMockFileContent,
@@ -46,7 +44,7 @@ class TestProcessCsvToFhir(unittest.TestCase):
         GenericSetUp(
             s3_client=s3_client,
             firehose_client=firehose_client,
-            dynamodb_client=dynamodb_client,
+            dynamo_db_client=dynamodb_client,
         )
 
         redis_getter_patcher = patch("mappings.get_redis_client")
@@ -67,7 +65,7 @@ class TestProcessCsvToFhir(unittest.TestCase):
         GenericTearDown(
             s3_client=s3_client,
             firehose_client=firehose_client,
-            dynamodb_client=dynamodb_client,
+            dynamo_db_client=dynamodb_client,
         )
 
     @staticmethod

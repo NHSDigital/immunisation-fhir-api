@@ -40,6 +40,5 @@ MOCK_ENVIRONMENT_DICT = {
     "SPLUNK_FIREHOSE_NAME": Firehose.STREAM_NAME,
     "KINESIS_STREAM_NAME": Kinesis.STREAM_NAME,
     "KINESIS_STREAM_ARN": f"arn:aws:kinesis:{REGION_NAME}:123456789012:stream/{Kinesis.STREAM_NAME}",
-    "FIREHOSE_STREAM_NAME": Firehose.STREAM_NAME,
     "AUDIT_TABLE_NAME": "immunisation-batch-internal-dev-audit-table",
 }

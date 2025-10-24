@@ -3,12 +3,11 @@
 import os
 from enum import StrEnum
 
+# Once Python projects are moved to /lambdas consider consolidating constants common to batch in
+# /shared/src/common/constants/batch_constants.py
 SOURCE_BUCKET_NAME = os.getenv("SOURCE_BUCKET_NAME")
 ACK_BUCKET_NAME = os.getenv("ACK_BUCKET_NAME")
 AUDIT_TABLE_NAME = os.getenv("AUDIT_TABLE_NAME")
-AUDIT_TABLE_FILENAME_GSI = "filename_index"
-AUDIT_TABLE_QUEUE_NAME_GSI = "queue_name_index"
-FILE_NAME_PROC_LAMBDA_NAME = os.getenv("FILE_NAME_PROC_LAMBDA_NAME")
 
 ARCHIVE_DIR_NAME = "archive"
 PROCESSING_DIR_NAME = "processing"

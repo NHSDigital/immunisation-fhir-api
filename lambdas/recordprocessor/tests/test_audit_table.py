@@ -7,15 +7,13 @@ from unittest.mock import patch
 from boto3 import client as boto3_client
 from moto import mock_dynamodb
 
-from errors import UnhandledAuditTableError
-from utils_for_recordprocessor_tests.generic_setup_and_teardown import (
-    GenericSetUp,
-    GenericTearDown,
-)
+from common.models.errors import UnhandledAuditTableError
 from utils_for_recordprocessor_tests.mock_environment_variables import (
     MOCK_ENVIRONMENT_DICT,
 )
 from utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
+    GenericSetUp,
+    GenericTearDown,
     add_entry_to_table,
 )
 from utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
@@ -47,11 +45,11 @@ class TestAuditTable(TestCase):
         """Set up test values to be used for the tests"""
         self.logger_patcher = patch("audit_table.logger")
         self.mock_logger = self.logger_patcher.start()
-        GenericSetUp(dynamodb_client=dynamodb_client)
+        GenericSetUp(dynamo_db_client=dynamodb_client)
 
     def tearDown(self):
         """Tear down the test values"""
-        GenericTearDown(dynamodb_client=dynamodb_client)
+        GenericTearDown(dynamo_db_client=dynamodb_client)
         self.mock_logger.stop()
 
     @staticmethod
