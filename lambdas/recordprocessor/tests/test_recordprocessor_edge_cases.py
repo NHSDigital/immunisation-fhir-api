@@ -4,7 +4,7 @@ from io import BytesIO
 from unittest.mock import call, patch
 
 from batch_processor import process_csv_to_fhir
-from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
+from utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
     create_patch,
 )
 
@@ -21,7 +21,7 @@ class TestProcessorEdgeCases(unittest.TestCase):
         self.mock_make_and_move = create_patch("file_level_validation.make_and_upload_ack_file")
         self.mock_move_file = create_patch("file_level_validation.move_file")
         self.mock_get_permitted_operations = create_patch("file_level_validation.get_permitted_operations")
-        self.mock_firehose_client = create_patch("logging_decorator.firehose_client")
+        self.mock_firehose_client = create_patch("common.log_firehose.firehose_client")
         self.mock_update_audit_table_status = create_patch("batch_processor.update_audit_table_status")
 
     def tearDown(self):

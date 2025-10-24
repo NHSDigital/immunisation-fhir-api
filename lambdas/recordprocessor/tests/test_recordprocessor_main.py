@@ -13,6 +13,7 @@ from moto import mock_dynamodb, mock_firehose, mock_kinesis, mock_s3
 from utils_for_recordprocessor_tests.mock_environment_variables import (
     MOCK_ENVIRONMENT_DICT,
     BucketNames,
+    Firehose,
     Kinesis,
 )
 from utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
@@ -437,15 +438,17 @@ class TestRecordProcessor(unittest.TestCase):
         kinesis_client.delete_stream(StreamName=Kinesis.STREAM_NAME, EnforceConsumerDeletion=True)
 
         with (  # noqa: E999
-            patch("logging_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
+            patch("common.log_decorator.send_log_to_firehose") as mock_send_log_to_firehose,  # noqa: E999
             patch("logging_decorator.datetime") as mock_datetime,  # noqa: E999
-            patch("logging_decorator.time") as mock_time,  # noqa: E999
+            patch("logging_decorator.time") as mock_start_time,  # noqa: E999
+            patch("common.log_decorator.time") as mock_end_time,  # noqa: E999
         ):  # noqa: E999
-            mock_time.time.side_effect = [1672531200, 1672531200.123456]
+            mock_start_time.time.return_value = 1672531200
+            mock_end_time.time.return_value = 1672531200.123456
             mock_datetime.now.return_value = datetime(2024, 1, 1, 12, 0, 0)
             main(test_file.event_full_permissions)
 
-        # Since the failure occured at row level, not file level, the ack file should still be created
+        # Since the failure occurred at row level, not file level, the ack file should still be created
         # and firehose logs should indicate a successful file level validation
         table_entry = dynamo_db_client.get_item(
             TableName=AUDIT_TABLE_NAME,
@@ -463,7 +466,7 @@ class TestRecordProcessor(unittest.TestCase):
             "statusCode": 200,
             "message": "Successfully sent for record processing",
         }
-        mock_send_log_to_firehose.assert_called_with(expected_log_data)
+        mock_send_log_to_firehose.assert_called_with(Firehose.STREAM_NAME, expected_log_data)
         self.assertDictEqual(
             table_entry,
             {
