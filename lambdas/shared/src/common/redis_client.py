@@ -7,6 +7,9 @@ from common.clients import logger
 REDIS_HOST = os.getenv("REDIS_HOST", "")
 REDIS_PORT = os.getenv("REDIS_PORT", 6379)
 
+# TODO: use global_redis_client in every instance.
+# this will require considerable refactoring of filenameprocessor unit tests
+
 redis_client = redis.StrictRedis(host=os.getenv("REDIS_HOST"), port=os.getenv("REDIS_PORT"), decode_responses=True)
 
 # for lambdas which require a global redis_client
