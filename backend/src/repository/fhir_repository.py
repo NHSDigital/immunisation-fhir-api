@@ -320,22 +320,24 @@ class ImmunizationRepository:
                 ReturnValues="ALL_NEW",
                 ConditionExpression=condition_expression,
             )
-            return self._handle_dynamo_response(response), updated_version
         except botocore.exceptions.ClientError as error:
             # Either resource didn't exist or it has already been deleted. See ConditionExpression in the request
             if error.response["Error"]["Code"] == "ConditionalCheckFailedException":
                 raise ResourceNotFoundError(resource_type="Immunization", resource_id=imms_id)
             else:
+                # VED-747: consider refactoring to simply re-raise the exception and handle in controller
                 raise UnhandledResponseError(
                     message=f"Unhandled error from dynamodb: {error.response['Error']['Code']}",
                     response=error.response,
                 )
 
-    def delete_immunization(self, imms_id: str, supplier_system: str) -> dict:
+        return json.loads(response["Attributes"]["Resource"]), updated_version
+
+    def delete_immunization(self, imms_id: str, supplier_system: str) -> None:
         now_timestamp = int(time.time())
 
         try:
-            response = self.table.update_item(
+            self.table.update_item(
                 Key={"PK": _make_immunization_pk(imms_id)},
                 UpdateExpression=(
                     "SET DeletedAt = :timestamp, Operation = :operation, SupplierSystem = :supplier_system"
@@ -345,22 +347,16 @@ class ImmunizationRepository:
                     ":operation": "DELETE",
                     ":supplier_system": supplier_system,
                 },
-                ReturnValues="ALL_NEW",
                 ConditionExpression=(
                     Attr("PK").eq(_make_immunization_pk(imms_id))
                     & (Attr("DeletedAt").not_exists() | Attr("DeletedAt").eq("reinstated"))
                 ),
             )
-
-            return self._handle_dynamo_response(response)
         except botocore.exceptions.ClientError as error:
             if error.response["Error"]["Code"] == "ConditionalCheckFailedException":
                 raise ResourceNotFoundError(resource_type="Immunization", resource_id=imms_id)
             else:
-                raise UnhandledResponseError(
-                    message=f"Unhandled error from dynamodb: {error.response['Error']['Code']}",
-                    response=error.response,
-                )
+                raise error
 
     def find_immunizations(self, patient_identifier: str, vaccine_types: set):
         """it should find all of the specified patient's Immunization events for all of the specified vaccine_types"""
@@ -413,13 +409,6 @@ class ImmunizationRepository:
                 break
 
         return all_items
-
-    @staticmethod
-    def _handle_dynamo_response(response):
-        if response["ResponseMetadata"]["HTTPStatusCode"] == 200:
-            return json.loads(response["Attributes"]["Resource"])
-        else:
-            raise UnhandledResponseError(message="Non-200 response from dynamodb", response=response)
 
     @staticmethod
     def _vaccine_type(patientsk) -> str:
