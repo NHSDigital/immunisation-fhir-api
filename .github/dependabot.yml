@@ -7,12 +7,13 @@ version: 2
 updates:
   - package-ecosystem: "docker"
     directories:
-      - "/lambdas/ack_backend"
-      - "/lambdas/delta_backend"
+      - "/batch_processor_filter"
       - "/filenameprocessor"
       - "/infrastructure/grafana/non-prod/docker"
+      - "/lambdas/ack_backend"
+      - "/lambdas/delta_backend"
+      - "/lambdas/recordprocessor"
       - "/mesh_processor"
-      - "/recordprocessor"
       - "/sandbox"
     schedule:
       interval: "daily"
@@ -54,7 +55,7 @@ updates:
       - "/tests/e2e_batch"
       - "/filenameprocessor"
       - "/mesh_processor"
-      - "/recordprocessor"
+      - "/lambdas/recordprocessor"
       - "/lambdas/ack_backend"
       - "/lambdas/delta_backend"
       - "/lambdas/redis_sync"

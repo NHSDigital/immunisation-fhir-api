@@ -14,8 +14,8 @@ from common.log_firehose import send_log_to_firehose
 
 
 def generate_and_send_logs(
-    stream_name,
-    start_time,
+    stream_name: str,
+    start_time: float,
     base_log_data: dict,
     additional_log_data: dict,
     use_ms_precision: bool = False,

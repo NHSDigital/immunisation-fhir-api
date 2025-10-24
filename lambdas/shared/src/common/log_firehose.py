@@ -6,7 +6,7 @@ from common.clients import (
 )
 
 
-def send_log_to_firehose(stream_name, log_data: dict) -> None:
+def send_log_to_firehose(stream_name: str, log_data: dict) -> None:
     """Sends the log_message to Firehose"""
     try:
         record = {"Data": json.dumps({"event": log_data}).encode("utf-8")}
