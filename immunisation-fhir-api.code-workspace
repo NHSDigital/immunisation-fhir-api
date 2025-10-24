@@ -10,7 +10,7 @@
             "path": "filenameprocessor",
         },
         {
-            "path": "recordprocessor",
+            "path": "lambdas/recordprocessor",
         },
         {
             "path": "mesh_processor",
