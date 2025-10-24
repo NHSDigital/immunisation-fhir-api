@@ -7,7 +7,7 @@ from tests.utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DI
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
-    from errors import VaccineTypePermissionsError
+    from common.models.errors import VaccineTypePermissionsError
     from supplier_permissions import validate_vaccine_type_permissions
 
 

@@ -11,7 +11,7 @@ from tests.utils_for_tests.values_for_tests import FileDetails, MockFileDetails
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from csv import DictReader
 
-    from clients import REGION_NAME
+    from common.clients import REGION_NAME
     from constants import (
         AUDIT_TABLE_NAME,
         ODS_CODE_TO_SUPPLIER_SYSTEM_HASH_KEY,

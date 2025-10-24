@@ -3,8 +3,8 @@
 import os
 from json import dumps as json_dumps
 
-from clients import logger, sqs_client
-from errors import UnhandledSqsError
+from common.clients import logger, sqs_client
+from common.models.errors import UnhandledSqsError
 
 
 def send_to_supplier_queue(message_body: dict, vaccine_type: str, supplier: str) -> None:

@@ -2,9 +2,12 @@
 name = "filenameprocessor"
 version = "0.1.0"
 description = ""
-readme = "README.md"
 authors = ["Your Name <you@example.com>"]
-packages = [{ include = "src" }]
+readme = "README.md"
+packages = [
+    {include = "src"},
+    {include = "common", from = "../shared/src"}
+]
 
 [tool.poetry.dependencies]
 python = "~3.11"

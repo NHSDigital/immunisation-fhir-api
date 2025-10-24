@@ -16,7 +16,7 @@ from tests.utils_for_tests.utils_for_filenameprocessor_tests import create_mock_
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
-    from clients import REGION_NAME
+    from common.clients import REGION_NAME
     from elasticache import (
         get_supplier_permissions_from_cache,
         get_supplier_system_from_cache,

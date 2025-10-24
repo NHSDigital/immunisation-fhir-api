@@ -35,7 +35,7 @@ from tests.utils_for_tests.values_for_tests import (
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
-    from clients import REGION_NAME
+    from common.clients import REGION_NAME
     from constants import AUDIT_TABLE_NAME, AuditTableKeys, FileStatus
     from file_name_processor import handle_record, lambda_handler
 
@@ -97,14 +97,11 @@ class TestLambdaHandlerDataSource(TestCase):
     def setUp(self):
         GenericSetUp(s3_client, firehose_client, sqs_client, dynamodb_client)
         self.logger_patcher = patch("file_name_processor.logger")
-        self.decorator_logger_patcher = patch("logging_decorator.logger")
         self.mock_logger = self.logger_patcher.start()
-        self.mock_decorator_logger = self.decorator_logger_patcher.start()
 
     def tearDown(self):
         GenericTearDown(s3_client, firehose_client, sqs_client, dynamodb_client)
         self.logger_patcher.stop()
-        self.decorator_logger_patcher.stop()
 
     @staticmethod
     def make_record(file_key: str):
