@@ -27,5 +27,4 @@ RUN chmod 644 $(find . -type f) && chmod 755 $(find . -type d)
 
 # Switch to the non-root user for running the container
 USER 1001:1001
-CMD ["python", "batch_processor.py"]
 ENTRYPOINT ["python", "batch_processor.py"]

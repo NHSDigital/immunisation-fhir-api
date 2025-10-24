@@ -8,17 +8,17 @@ from boto3 import client as boto3_client
 from moto import mock_dynamodb
 
 from errors import UnhandledAuditTableError
-from tests.utils_for_recordprocessor_tests.generic_setup_and_teardown import (
+from utils_for_recordprocessor_tests.generic_setup_and_teardown import (
     GenericSetUp,
     GenericTearDown,
 )
-from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
+from utils_for_recordprocessor_tests.mock_environment_variables import (
     MOCK_ENVIRONMENT_DICT,
 )
-from tests.utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
+from utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
     add_entry_to_table,
 )
-from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
+from utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
     FileDetails,
     MockFileDetails,
 )
@@ -26,7 +26,7 @@ from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests impo
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from audit_table import update_audit_table_status
-    from clients import REGION_NAME
+    from common.clients import REGION_NAME
     from constants import (
         AUDIT_TABLE_NAME,
         FileStatus,
@@ -45,11 +45,14 @@ class TestAuditTable(TestCase):
 
     def setUp(self):
         """Set up test values to be used for the tests"""
+        self.logger_patcher = patch("audit_table.logger")
+        self.mock_logger = self.logger_patcher.start()
         GenericSetUp(dynamodb_client=dynamodb_client)
 
     def tearDown(self):
         """Tear down the test values"""
         GenericTearDown(dynamodb_client=dynamodb_client)
+        self.mock_logger.stop()
 
     @staticmethod
     def get_table_items() -> list:
@@ -76,6 +79,12 @@ class TestAuditTable(TestCase):
         table_items = dynamodb_client.scan(TableName=AUDIT_TABLE_NAME).get("Items", [])
 
         self.assertIn(expected_table_entry, table_items)
+        self.mock_logger.info.assert_called_once_with(
+            "The status of %s file, with message id %s, was successfully updated to %s in the audit table",
+            "RSV_Vaccinations_v5_X26_20210730T12000000.csv",
+            "rsv_ravs_test_id",
+            "Preprocessed",
+        )
 
     def test_update_audit_table_status_including_error_details(self):
         """Checks audit table correctly updates a record including some error details"""
@@ -99,15 +108,23 @@ class TestAuditTable(TestCase):
             },
             table_items[0],
         )
+        self.mock_logger.info.assert_called_once_with(
+            "The status of %s file, with message id %s, was successfully updated to %s in the audit table",
+            "RSV_Vaccinations_v5_X26_20210730T12000000.csv",
+            "rsv_ravs_test_id",
+            "Failed",
+        )
 
     def test_update_audit_table_status_throws_exception_with_invalid_id(self):
         emis_flu_test_file_2 = FileDetails("FLU", "EMIS", "YGM41")
 
         message_id = emis_flu_test_file_2.message_id
-        file_key = (emis_flu_test_file_2.file_key,)
+        file_key = emis_flu_test_file_2.file_key
 
         with self.assertRaises(UnhandledAuditTableError):
             update_audit_table_status(file_key, message_id, FileStatus.PROCESSED)
+
+        self.mock_logger.error.assert_called_once()
 
 
 if __name__ == "__main__":

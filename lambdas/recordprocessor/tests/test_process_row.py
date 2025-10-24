@@ -21,7 +21,7 @@ from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests impo
 )
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
-    from clients import REGION_NAME
+    from common.clients import REGION_NAME
     from process_row import process_row
 
 s3_client = boto3_client("s3", region_name=REGION_NAME)

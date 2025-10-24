@@ -2,9 +2,9 @@
 
 import json
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
-from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
+from utils_for_recordprocessor_tests.mock_environment_variables import (
     MOCK_ENVIRONMENT_DICT,
 )
 
@@ -12,16 +12,17 @@ with patch("os.environ", MOCK_ENVIRONMENT_DICT):
     from mappings import map_target_disease
 
 
-@patch("mappings.redis_client")
+@patch("mappings.get_redis_client")
 class TestMapTargetDisease(unittest.TestCase):
     """
     Test that map_target_disease returns the correct target disease element for valid vaccine types, or [] for
     invalid vaccine types.
     """
 
-    def test_map_target_disease_valid(self, mock_redis_client):
+    def test_map_target_disease_valid(self, mock_get_redis_client):
         """Tests map_target_disease returns the disease coding information when using valid vaccine types"""
-        mock_redis_client.hget.return_value = json.dumps(
+        mock_redis = Mock()
+        mock_redis.hget.return_value = json.dumps(
             [
                 {
                     "code": "55735004",
@@ -29,6 +30,7 @@ class TestMapTargetDisease(unittest.TestCase):
                 }
             ]
         )
+        mock_get_redis_client.return_value = mock_redis
 
         self.assertEqual(
             map_target_disease("RSV"),
@@ -45,16 +47,17 @@ class TestMapTargetDisease(unittest.TestCase):
             ],
         )
 
-        mock_redis_client.hget.assert_called_with("vacc_to_diseases", "RSV")
+        mock_redis.hget.assert_called_with("vacc_to_diseases", "RSV")
 
-    def test_map_target_disease_invalid(self, mock_redis_client):
+    def test_map_target_disease_invalid(self, mock_get_redis_client):
         """Tests map_target_disease does not return the disease coding information when using invalid vaccine types."""
-
-        mock_redis_client.hget.return_value = None
+        mock_redis = Mock()
+        mock_redis.hget.return_value = None
+        mock_get_redis_client.return_value = mock_redis
 
         self.assertEqual(map_target_disease("invalid_vaccine"), [])
 
-        mock_redis_client.hget.assert_called_with("vacc_to_diseases", "invalid_vaccine")
+        mock_redis.hget.assert_called_with("vacc_to_diseases", "invalid_vaccine")
 
 
 if __name__ == "__main__":

@@ -3,7 +3,7 @@
 import json
 import unittest
 from copy import deepcopy
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import boto3
 from moto import mock_dynamodb, mock_firehose, mock_s3
@@ -49,10 +49,11 @@ class TestProcessCsvToFhir(unittest.TestCase):
             dynamodb_client=dynamodb_client,
         )
 
-        redis_patcher = patch("mappings.redis_client")
-        self.addCleanup(redis_patcher.stop)
-        mock_redis_client = redis_patcher.start()
-        mock_redis_client.hget.return_value = json.dumps(
+        redis_getter_patcher = patch("mappings.get_redis_client")
+        self.addCleanup(redis_getter_patcher.stop)
+        mock_redis = Mock()
+        mock_redis_getter = redis_getter_patcher.start()
+        mock_redis.hget.return_value = json.dumps(
             [
                 {
                     "code": "55735004",
@@ -60,6 +61,7 @@ class TestProcessCsvToFhir(unittest.TestCase):
                 }
             ]
         )
+        mock_redis_getter.return_value = mock_redis
 
     def tearDown(self) -> None:
         GenericTearDown(

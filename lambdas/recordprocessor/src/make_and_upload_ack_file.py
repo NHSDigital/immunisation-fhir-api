@@ -3,7 +3,7 @@
 from csv import writer
 from io import BytesIO, StringIO
 
-from clients import s3_client
+from common.clients import s3_client
 from constants import ACK_BUCKET_NAME
 
 

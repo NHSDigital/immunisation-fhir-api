@@ -19,7 +19,7 @@ from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests impo
 )
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
-    from clients import REGION_NAME
+    from common.clients import REGION_NAME
     from make_and_upload_ack_file import (
         make_ack_data,
         make_and_upload_ack_file,

@@ -11,7 +11,7 @@ from tests.utils_for_recordprocessor_tests.mock_environment_variables import (
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
-    from clients import REGION_NAME
+    from common.clients import REGION_NAME
     from constants import (
         AUDIT_TABLE_FILENAME_GSI,
         AUDIT_TABLE_NAME,

@@ -5,7 +5,7 @@ import os
 import simplejson as json
 from botocore.exceptions import ClientError
 
-from clients import kinesis_client, logger
+from common.clients import kinesis_client, logger
 
 
 def send_to_kinesis(supplier: str, message_body: dict, vaccine_type: str) -> bool:

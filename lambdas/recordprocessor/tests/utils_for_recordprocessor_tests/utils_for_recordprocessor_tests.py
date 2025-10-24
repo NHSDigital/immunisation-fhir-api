@@ -22,7 +22,7 @@ from utils_for_recordprocessor_tests.values_for_recordprocessor_tests import (
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from csv import DictReader
 
-    from clients import REGION_NAME
+    from common.clients import REGION_NAME
     from constants import (
         AUDIT_TABLE_FILENAME_GSI,
         AUDIT_TABLE_NAME,

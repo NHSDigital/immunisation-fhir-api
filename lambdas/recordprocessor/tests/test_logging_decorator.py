@@ -21,7 +21,7 @@ from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests impo
 )
 
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
-    from clients import REGION_NAME
+    from common.clients import REGION_NAME
     from errors import InvalidHeaders, NoOperationPermissions
     from file_level_validation import file_level_validation
     from logging_decorator import generate_and_send_logs, send_log_to_firehose

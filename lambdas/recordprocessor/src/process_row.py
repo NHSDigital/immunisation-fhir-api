@@ -1,6 +1,6 @@
 """Function to process a single row of a csv file"""
 
-from clients import logger
+from common.clients import logger
 from constants import Diagnostics
 from convert_to_fhir_imms_resource import convert_to_fhir_imms_resource
 from utils_for_recordprocessor import create_diagnostics_dictionary

@@ -8,7 +8,7 @@ from json import JSONDecodeError
 from typing import Optional
 
 from audit_table import update_audit_table_status
-from clients import logger
+from common.clients import logger
 from constants import (
     ARCHIVE_DIR_NAME,
     PROCESSING_DIR_NAME,

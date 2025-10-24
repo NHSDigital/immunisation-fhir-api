@@ -5,7 +5,7 @@ import unittest
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from json import JSONDecodeError
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from boto3 import client as boto3_client
 from moto import mock_dynamodb, mock_firehose, mock_kinesis, mock_s3
@@ -62,12 +62,13 @@ class TestRecordProcessor(unittest.TestCase):
     def setUp(self) -> None:
         GenericSetUp(s3_client, firehose_client, kinesis_client, dynamo_db_client)
 
-        redis_patcher = patch("mappings.redis_client")
+        mock_redis = Mock()
+        redis_getter_patcher = patch("mappings.get_redis_client")
         batch_processor_logger_patcher = patch("batch_processor.logger")
-        self.addCleanup(redis_patcher.stop)
+        self.addCleanup(redis_getter_patcher.stop)
         self.mock_batch_processor_logger = batch_processor_logger_patcher.start()
-        mock_redis_client = redis_patcher.start()
-        mock_redis_client.hget.return_value = json.dumps(
+        mock_redis_getter = redis_getter_patcher.start()
+        mock_redis.hget.return_value = json.dumps(
             [
                 {
                     "code": "55735004",
@@ -75,6 +76,7 @@ class TestRecordProcessor(unittest.TestCase):
                 }
             ]
         )
+        mock_redis_getter.return_value = mock_redis
         self.mock_logger_info = create_patch("logging.Logger.info")
 
     def tearDown(self) -> None:
