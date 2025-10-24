@@ -1,8 +1,9 @@
 import datetime
 import logging
 import os
+import uuid
 from enum import Enum
-from typing import Optional, Union
+from typing import Optional, Union, cast
 from uuid import uuid4
 
 from fhir.resources.R4B.bundle import (
@@ -13,6 +14,8 @@ from fhir.resources.R4B.bundle import (
     BundleEntrySearch,
     BundleLink,
 )
+from fhir.resources.R4B.fhirtypes import Id
+from fhir.resources.R4B.identifier import Identifier
 from fhir.resources.R4B.immunization import Immunization
 from pydantic import ValidationError
 
@@ -22,6 +25,7 @@ from authorisation.authoriser import Authoriser
 from filter import Filter
 from models.errors import (
     CustomValidationError,
+    IdentifierDuplicationError,
     InvalidPatientId,
     MandatoryError,
     ResourceNotFoundError,
@@ -132,7 +136,7 @@ class FhirService:
         imms_resp = self.immunization_repo.get_immunization_by_id_all(imms_id, imms)
         return imms_resp
 
-    def create_immunization(self, immunization: dict, supplier_system: str) -> dict | Immunization:
+    def create_immunization(self, immunization: dict, supplier_system: str) -> Id:
         if immunization.get("id") is not None:
             raise CustomValidationError("id field must not be present for CREATE operation")
 
@@ -140,18 +144,22 @@ class FhirService:
             self.validator.validate(immunization)
         except (ValidationError, ValueError, MandatoryError) as error:
             raise CustomValidationError(message=str(error)) from error
-        patient = self._validate_patient(immunization)
-
-        if "diagnostics" in patient:
-            return patient
 
         vaccination_type = get_vaccine_type(immunization)
 
         if not self.authoriser.authorise(supplier_system, ApiOperationCode.CREATE, {vaccination_type}):
             raise UnauthorizedVaxError()
 
-        immunisation = self.immunization_repo.create_immunization(immunization, patient, supplier_system)
-        return Immunization.parse_obj(immunisation)
+        # Set ID for the requested new record
+        immunization["id"] = str(uuid.uuid4())
+
+        immunization_fhir_entity = Immunization.parse_obj(immunization)
+        identifier = cast(Identifier, immunization_fhir_entity.identifier[0])
+
+        if self.immunization_repo.check_immunization_identifier_exists(identifier.system, identifier.value):
+            raise IdentifierDuplicationError(identifier=f"{identifier.system}#{identifier.value}")
+
+        return self.immunization_repo.create_immunization(immunization_fhir_entity, supplier_system)
 
     def update_immunization(
         self,

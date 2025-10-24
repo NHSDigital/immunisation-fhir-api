@@ -1,6 +1,5 @@
 import os
 import time
-import uuid
 from dataclasses import dataclass
 from typing import Optional, Tuple
 
@@ -9,6 +8,8 @@ import botocore.exceptions
 import simplejson as json
 from boto3.dynamodb.conditions import Attr, Key
 from botocore.config import Config
+from fhir.resources.R4B.fhirtypes import Id
+from fhir.resources.R4B.immunization import Immunization
 from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
 from responses import logger
 
@@ -17,6 +18,7 @@ from models.errors import (
     ResourceNotFoundError,
     UnhandledResponseError,
 )
+from models.utils.generic_utils import get_contained_patient
 from models.utils.validation_utils import (
     check_identifier_system_value,
     get_vaccine_type,
@@ -151,22 +153,31 @@ class ImmunizationRepository:
         else:
             return None
 
-    def create_immunization(self, immunization: dict, patient: any, supplier_system: str) -> dict:
-        new_id = str(uuid.uuid4())
-        immunization["id"] = new_id
-        attr = RecordAttributes(immunization, patient)
+    def check_immunization_identifier_exists(self, system: str, unique_id: str) -> bool:
+        """Checks whether an immunization with the given immunization identifier (system + local ID) exists."""
+        response = self.table.query(
+            IndexName="IdentifierGSI",
+            KeyConditionExpression=Key("IdentifierPK").eq(f"{system}#{unique_id}"),
+        )
 
-        query_response = _query_identifier(self.table, "IdentifierGSI", "IdentifierPK", attr.identifier)
+        if "Items" in response and len(response["Items"]) > 0:
+            return True
 
-        if query_response is not None:
-            raise IdentifierDuplicationError(identifier=attr.identifier)
+        return False
+
+    def create_immunization(self, immunization: Immunization, supplier_system: str) -> Id:
+        """Creates a new immunization record returning the unique id if successful."""
+        immunization_as_dict = immunization.dict()
+
+        patient = get_contained_patient(immunization_as_dict)
+        attr = RecordAttributes(immunization_as_dict, patient)
 
         response = self.table.put_item(
             Item={
                 "PK": attr.pk,
                 "PatientPK": attr.patient_pk,
                 "PatientSK": attr.patient_sk,
-                "Resource": json.dumps(attr.resource, use_decimal=True),
+                "Resource": immunization.json(use_decimal=True),
                 "IdentifierPK": attr.identifier,
                 "Operation": "CREATE",
                 "Version": 1,
@@ -174,10 +185,10 @@ class ImmunizationRepository:
             }
         )
 
-        if response["ResponseMetadata"]["HTTPStatusCode"] == 200:
-            return immunization
-        else:
-            raise UnhandledResponseError(message="Non-200 response from dynamodb", response=response)
+        if response["ResponseMetadata"]["HTTPStatusCode"] != 200:
+            raise UnhandledResponseError(message="Non-200 response from dynamodb", response=dict(response))
+
+        return immunization.id
 
     def update_immunization(
         self,

@@ -15,7 +15,6 @@ from controller.fhir_controller import FhirController
 from models.errors import (
     CustomValidationError,
     IdentifierDuplicationError,
-    InvalidPatientId,
     ParameterException,
     ResourceNotFoundError,
     UnauthorizedVaxError,
@@ -841,7 +840,7 @@ class TestCreateImmunization(unittest.TestCase):
             "headers": {"SupplierSystem": "Test"},
             "body": imms.json(),
         }
-        self.service.create_immunization.return_value = imms
+        self.service.create_immunization.return_value = imms_id
 
         response = self.controller.create_immunization(aws_event)
 
@@ -851,16 +850,18 @@ class TestCreateImmunization(unittest.TestCase):
         self.assertTrue("body" not in response)
         self.assertTrue(response["headers"]["Location"].endswith(f"Immunization/{imms_id}"))
 
-    def test_unauthorised_create_immunization(self):
-        """it should return authorization error"""
+    def test_create_immunization_returns_unauthorised_error_when_supplier_system_header_missing(self):
+        """it should return unauthorized error"""
         imms_id = str(uuid.uuid4())
         imms = create_covid_19_immunization(imms_id)
         aws_event = {"body": imms.json()}
+
         response = self.controller.create_immunization(aws_event)
+
         self.assertEqual(response["statusCode"], 403)
 
     def test_create_immunization_for_unauthorized(self):
-        """It should create Immunization and return resource's location"""
+        """it should return an unauthorized error when the service finds that user lacks permissions"""
         # Given
         imms_id = str(uuid.uuid4())
         imms = create_covid_19_immunization(imms_id)
@@ -893,28 +894,8 @@ class TestCreateImmunization(unittest.TestCase):
         outcome = json.loads(response["body"])
         self.assertEqual(outcome["resourceType"], "OperationOutcome")
 
-    def test_create_bad_request_for_superseded_number_for_create_immunization(self):
-        """it should return 400 if json has superseded nhs number."""
-        # Given
-        create_result = {
-            "diagnostics": "Validation errors: contained[?(@.resourceType=='Patient')].identifier[0].value does not exists"
-        }
-        self.service.create_immunization.return_value = create_result
-        imms_id = str(uuid.uuid4())
-        imms = create_covid_19_immunization(imms_id)
-        aws_event = {
-            "headers": {"SupplierSystem": "Test"},
-            "body": imms.json(),
-        }
-        # When
-        response = self.controller.create_immunization(aws_event)
-
-        self.assertEqual(response["statusCode"], 400)
-        body = json.loads(response["body"])
-        self.assertEqual(body["resourceType"], "OperationOutcome")
-
-    def test_invalid_nhs_number(self):
-        """it should handle ValidationError when patient doesn't exist"""
+    def test_custom_validation_error(self):
+        """it should handle ValidationError when patient NHS Number is invalid"""
         # Given
         imms = Immunization.construct()
         aws_event = {
@@ -922,7 +903,9 @@ class TestCreateImmunization(unittest.TestCase):
             "body": imms.json(),
         }
         invalid_nhs_num = "a-bad-id"
-        self.service.create_immunization.side_effect = InvalidPatientId(patient_identifier=invalid_nhs_num)
+        self.service.create_immunization.side_effect = CustomValidationError(
+            f"{invalid_nhs_num} is not a valid NHS number"
+        )
 
         response = self.controller.create_immunization(aws_event)
 

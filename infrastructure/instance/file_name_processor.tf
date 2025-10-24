@@ -312,6 +312,10 @@ resource "aws_s3_bucket_notification" "datasources_lambda_notification" {
     lambda_function_arn = aws_lambda_function.file_processor_lambda.arn
     events              = ["s3:ObjectCreated:*"]
   }
+
+  depends_on = [
+    aws_lambda_permission.s3_invoke_permission
+  ]
 }
 
 resource "aws_cloudwatch_log_group" "file_name_processor_log_group" {
