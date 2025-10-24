@@ -6,44 +6,71 @@ from pathlib import Path
 from common.validator.validator import Validator
 
 CSV_HEADER = (
-    "academic_year,time_period,time_identifier,geographic_level,"
-    "country_code,country_name,region_code,region_name,new_la_code,la_name,"
-    "old_la_code,school_type,num_schools,enrolments,present_sessions,overall_attendance,"
-    "approved_educational_activity,overall_absence,authorised_absence,unauthorised_absence,"
-    "late_sessions,possible_sessions,reason_present_am,reason_present_pm,reason_present,"
-    "reason_l_present_late_before_registers_closed"
+    "NHS_NUMBER,PERSON_FORENAME,PERSON_SURNAME,SITE_CODE,"
+    "PERFORMING_PROFESSIONAL_FORENAME,PERFORMING_PROFESSIONAL_SURNAME,PRIMARY_SOURCE,"
+    "VACCINATION_PROCEDURE_CODE,VACCINATION_PROCEDURE_TERM,DOSE_SEQUENCE,"
+    "VACCINE_PRODUCT_CODE,VACCINE_PRODUCT_TERM,VACCINE_MANUFACTURER,BATCH_NUMBER"
 )
 
 schema_data_folder = Path(__file__).parent / "schemas"
-schemaFilePath = schema_data_folder / "test_school_schema.json"
+schemaFilePath = schema_data_folder / "test_schema.json"
 
 
 class TestValidator(unittest.TestCase):
+    @staticmethod
+    def build_row(header: str, values: dict) -> str:
+        cols = header.split(",")
+        return ",".join(str(values.get(col, "")) for col in cols)
+
     def setUp(self):
         with open(schemaFilePath) as JSON:
             SchemaFile = json.load(JSON)
         self.validator = Validator(SchemaFile)
 
     def test_run_validation_csv_row_success(self):
-        good_row = (
-            "202223,202223,Spring term,Local authority,E92000001,England,E12000004,"
-            "East Midlands,E06000016,Leicester,856,Primary,66,23057,2367094,"
-            "2380687,13593,166808,99826,66982,34090,2547495,1157575,1180365,2337940,29154"
-        )
+        values = {
+            "NHS_NUMBER": "9000000009",
+            "PERSON_FORENAME": "JOHN",
+            "PERSON_SURNAME": "DOE",
+            "SITE_CODE": "RJ1",
+            "PERFORMING_PROFESSIONAL_FORENAME": "ALICE",
+            "PERFORMING_PROFESSIONAL_SURNAME": "SMITH",
+            "PRIMARY_SOURCE": "true",
+            "VACCINATION_PROCEDURE_CODE": "PROC123",
+            "VACCINATION_PROCEDURE_TERM": "Procedure Term",
+            "DOSE_SEQUENCE": 1,
+            "VACCINE_PRODUCT_CODE": "VACC123",
+            "VACCINE_PRODUCT_TERM": "Vaccine Term",
+            "VACCINE_MANUFACTURER": "Manufacturer XYZ",
+            "BATCH_NUMBER": "BATCH001",
+        }
+        good_row = self.build_row(CSV_HEADER, values)
         error_report = self.validator.validate_csv_row(good_row, CSV_HEADER, True, True, True)
-        self.assertTrue(error_report == [])
+        self.assertEqual(error_report, [])
 
     def test_run_validation_csv_row_failure(self):
-        # empty time_period
-        bad_row = (
-            "202223,,Spring term,Local authority,E92000001,England,E12000004,"
-            "East Midlands,E06000016,Leicester,856,Primary,66,23057,2367094,"
-            "2380687,13593,166808,99826,66982,34090,2547495,1157575,1180365,2337940,29154"
-        )
+        # With fieldNameFlat used for CSV, empty NHS_NUMBER should fail the NOTEMPTY check
+        values = {
+            "NHS_NUMBER": "",
+            "PERSON_FORENAME": "JOHN",
+            "PERSON_SURNAME": "DOE",
+            "SITE_CODE": "RJ1",
+            "PERFORMING_PROFESSIONAL_FORENAME": "ALICE",
+            "PERFORMING_PROFESSIONAL_SURNAME": "SMITH",
+            "PRIMARY_SOURCE": "true",
+            "VACCINATION_PROCEDURE_CODE": "PROC123",
+            "VACCINATION_PROCEDURE_TERM": "Procedure Term",
+            "DOSE_SEQUENCE": 1,
+            "VACCINE_PRODUCT_CODE": "VACC123",
+            "VACCINE_PRODUCT_TERM": "Vaccine Term",
+            "VACCINE_MANUFACTURER": "Manufacturer XYZ",
+            "BATCH_NUMBER": "BATCH001",
+        }
+        bad_row = self.build_row(CSV_HEADER, values)
         error_report = self.validator.validate_csv_row(bad_row, CSV_HEADER, True, True, True)
         self.assertTrue(len(error_report) > 0)
-        error = error_report[0]
-        self.assertEqual(error.id, "check2")
-        self.assertEqual(error.message, "Value not empty failure")
-        self.assertEqual(error.name, "Time Period Not Empty Check")
-        self.assertEqual(error.details, "Value is empty, not as expected")
+        # Assert the NHS Number NOTEMPTY error is present
+        messages = [(e.name, e.message, e.details) for e in error_report]
+        self.assertIn(
+            ("NHS Number Not Empty Check", "Value not empty failure", "Value is empty, not as expected"), messages
+        )

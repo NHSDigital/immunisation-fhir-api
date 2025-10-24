@@ -83,7 +83,7 @@ class Validator:
             row = 2
 
         if self.is_csv:
-            expression_fieldname = expression["fieldNameCSV"]
+            expression_fieldname = expression["fieldNameFlat"]
         else:
             expression_fieldname = expression["fieldNameFHIR"]
 
