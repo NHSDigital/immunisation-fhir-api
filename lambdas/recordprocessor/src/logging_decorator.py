@@ -39,11 +39,17 @@ def file_level_validation_logging_decorator(func):
             generate_and_send_logs(STREAM_NAME, start_time, base_log_data, additional_log_data)
             return result
 
-        except (InvalidHeaders, NoOperationPermissions, Exception) as e:
-            message = (
-                str(e) if (isinstance(e, InvalidHeaders) or isinstance(e, NoOperationPermissions)) else "Server error"
-            )
-            status_code = 400 if isinstance(e, InvalidHeaders) else 403 if isinstance(e, NoOperationPermissions) else 500
+        except Exception as e:
+            if isinstance(e, InvalidHeaders):
+                message = str(e)
+                status_code = 400
+            elif isinstance(e, NoOperationPermissions):
+                message = str(e)
+                status_code = 403
+            else:
+                message = "Server error"
+                status_code = 500
+
             additional_log_data = {
                 "statusCode": status_code,
                 "message": message,

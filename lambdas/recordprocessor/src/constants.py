@@ -4,7 +4,7 @@ import os
 from enum import StrEnum
 
 # Once Python projects are moved to /lambdas consider consolidating constants common to batch in
-# /shared/src/common/constants/batch_constants.py
+# /shared/src/common/constants/batch_constants.py (VED-881)
 SOURCE_BUCKET_NAME = os.getenv("SOURCE_BUCKET_NAME")
 ACK_BUCKET_NAME = os.getenv("ACK_BUCKET_NAME")
 AUDIT_TABLE_NAME = os.getenv("AUDIT_TABLE_NAME")

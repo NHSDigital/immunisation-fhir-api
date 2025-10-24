@@ -117,7 +117,7 @@ def file_level_validation(incoming_message_body: dict) -> dict:
             "csv_dict_reader": csv_reader,
         }
 
-    except (InvalidHeaders, NoOperationPermissions, Exception) as error:
+    except Exception as error:
         logger.error("Error in file_level_validation: %s", error)
 
         # NOTE: The Exception may occur before the file_id, file_key and created_at_formatted_string are assigned

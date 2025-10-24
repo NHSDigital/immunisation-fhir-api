@@ -1,7 +1,6 @@
 import uuid
 from dataclasses import dataclass
 from enum import Enum
-from typing import Union
 
 
 class Severity(str, Enum):
@@ -25,7 +24,7 @@ class Code(str, Enum):
 class UnhandledResponseError(RuntimeError):
     """Use this error when the response from an external service (ex: dynamodb) can't be handled"""
 
-    response: Union[dict, str]
+    response: dict | str
     message: str
 
     def __str__(self):
@@ -53,7 +52,7 @@ class ImmunizationApiError(RuntimeError):
 
     status_code: int
     request: dict
-    response: Union[dict, str]
+    response: dict | str
 
 
 def create_operation_outcome(resource_id: str, severity: Severity, code: Code, diagnostics: str) -> dict:
