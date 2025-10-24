@@ -12,8 +12,8 @@ from common.validator.validator import Validator
 class TestApplication(unittest.TestCase):
     def setUp(self):
         validation_folder = Path(__file__).resolve().parent
-        self.FHIRFilePath = validation_folder / "data/vaccination2.json"
-        self.schemaFilePath = validation_folder / "schemas/test_schema.json"
+        self.FHIRFilePath = validation_folder / "sample_data/vaccination2.json"
+        self.schemaFilePath = validation_folder / "test_schemas/test_schema.json"
 
     def test_validation(self):
         start = time.time()

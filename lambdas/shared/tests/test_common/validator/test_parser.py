@@ -7,7 +7,7 @@ from common.validator.parsers.fhir_parser import FHIRParser
 
 class TestParse(unittest.TestCase):
     def setUp(self):
-        self.fhir_data_folder = Path(__file__).parent / "data"
+        self.fhir_data_folder = Path(__file__).parent / "sample_data"
 
     def test_parse_fhir_key_exists(self):
         fhirFilePath = self.fhir_data_folder / "vaccination.json"
