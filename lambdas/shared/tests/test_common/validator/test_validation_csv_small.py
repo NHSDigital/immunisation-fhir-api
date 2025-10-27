@@ -6,6 +6,10 @@ from common.validator.validator import Validator
 
 
 class TestValidator(unittest.TestCase):
+    """
+    Unit tests for the CSV validation logic using the Validator class with a small CSV schema.
+    """
+
     def setUp(self):
         self.parent_folder = Path(__file__).parent
         schema_file_path = self.parent_folder / "test_schemas/test_small_schema.json"

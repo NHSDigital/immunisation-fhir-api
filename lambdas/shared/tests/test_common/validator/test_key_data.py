@@ -4,6 +4,10 @@ from common.validator.lookup_expressions.key_data import KeyData
 
 
 class TestKeyData(unittest.TestCase):
+    """
+    Unit tests for the KeyData lookup class to ensure correct key code validation
+    """
+
     def setUp(self):
         self.kd = KeyData()
 

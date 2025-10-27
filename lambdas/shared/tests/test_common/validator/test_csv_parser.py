@@ -8,6 +8,10 @@ from common.validator.parsers.csv_parser import CSVParser
 
 
 class TestCSVParser(unittest.TestCase):
+    """
+    Unit tests for the CSVParser class to ensure correct parsing of Full CSV files
+    """
+
     def _write_temp_csv(self, content: str) -> str:
         fd, path = tempfile.mkstemp(suffix=".csv")
         Path(path).write_text(content, encoding="utf-8")
@@ -24,13 +28,12 @@ class TestCSVParser(unittest.TestCase):
             Path(path).unlink(missing_ok=True)
 
     def test_missing_column_raises_keyerror(self):
-        csv_content = "a|b\n1|2\n"
-        path = self._write_temp_csv(csv_content)
+        path = self._write_temp_csv(CSV_FILE)
         try:
             p = CSVParser()
             p.parse_csv_file(path, delimiter="|")
             with self.assertRaises(KeyError):
-                _ = p.get_key_value("c")
+                _ = p.get_key_value("NHS_CODE")
         finally:
             Path(path).unlink(missing_ok=True)
 

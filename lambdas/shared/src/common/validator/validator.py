@@ -1,4 +1,8 @@
-# Main validation engine
+"""
+1. Runs the CSV and FHIR Parsers (where Extraction of the values occurs and collates extraction error reports)
+2. Runs the Expresssion Checker against each expression in the schema
+3. Collects all error records and builds the final error report
+"""
 
 from enum import Enum
 
@@ -213,7 +217,6 @@ class Validator:
 
         return self.error_records
 
-    # -------------------------------------------------------------------------
     # Report Generation
     # Build the error Report
     def build_error_report(self, event_id):

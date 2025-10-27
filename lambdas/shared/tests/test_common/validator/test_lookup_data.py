@@ -4,6 +4,10 @@ from common.validator.lookup_expressions.lookup_data import LookUpData
 
 
 class TestLookUpData(unittest.TestCase):
+    """
+    Unit tests for the LookUpData lookup class to ensure correct lookup code validation
+    """
+
     def setUp(self):
         self.lookup = LookUpData()
 
