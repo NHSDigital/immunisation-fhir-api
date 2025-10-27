@@ -71,7 +71,7 @@ locals {
     Sid    = "AllowMNSLambdaDelivery",
     Effect = "Allow",
     Principal = {
-      AWS = "arn:aws:iam::${var.mns_account_id}:${var.mns_admin_role}"
+      AWS = "arn:aws:iam::${var.mns_account_id}:${var.mns_delivery_role}"
     },
     Action   = "kms:GenerateDataKey",
     Resource = "*"
