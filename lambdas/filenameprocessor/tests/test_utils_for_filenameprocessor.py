@@ -7,13 +7,13 @@ from unittest.mock import patch
 from boto3 import client as boto3_client
 from moto import mock_s3
 
-from utils_for_tests.utils_for_filenameprocessor_tests import (
-    GenericSetUp,
-    GenericTearDown,
-)
 from utils_for_tests.mock_environment_variables import (
     MOCK_ENVIRONMENT_DICT,
     BucketNames,
+)
+from utils_for_tests.utils_for_filenameprocessor_tests import (
+    GenericSetUp,
+    GenericTearDown,
 )
 
 # Ensure environment variables are mocked before importing from src files

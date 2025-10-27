@@ -12,10 +12,6 @@ import fakeredis
 from boto3 import client as boto3_client
 from moto import mock_dynamodb, mock_firehose, mock_s3, mock_sqs
 
-from utils_for_tests.utils_for_filenameprocessor_tests import (
-    GenericSetUp,
-    GenericTearDown,
-)
 from utils_for_tests.mock_environment_variables import (
     MOCK_ENVIRONMENT_DICT,
     BucketNames,
@@ -23,6 +19,8 @@ from utils_for_tests.mock_environment_variables import (
 )
 from utils_for_tests.utils_for_filenameprocessor_tests import (
     MOCK_ODS_CODE_TO_SUPPLIER,
+    GenericSetUp,
+    GenericTearDown,
     assert_audit_table_entry,
     create_mock_hget,
 )

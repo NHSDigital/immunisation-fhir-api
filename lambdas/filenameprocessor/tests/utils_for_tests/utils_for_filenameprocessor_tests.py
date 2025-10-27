@@ -4,6 +4,7 @@ from io import StringIO
 from unittest.mock import patch
 
 from boto3 import client as boto3_client
+
 from utils_for_tests.mock_environment_variables import (
     MOCK_ENVIRONMENT_DICT,
     BucketNames,

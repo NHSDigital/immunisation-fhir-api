@@ -6,12 +6,10 @@ from unittest.mock import patch
 from boto3 import client as boto3_client
 from moto import mock_dynamodb
 
+from utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT
 from utils_for_tests.utils_for_filenameprocessor_tests import (
     GenericSetUp,
     GenericTearDown,
-)
-from utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT
-from utils_for_tests.utils_for_filenameprocessor_tests import (
     assert_audit_table_entry,
 )
 from utils_for_tests.values_for_tests import FileDetails, MockFileDetails
