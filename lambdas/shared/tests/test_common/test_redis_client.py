@@ -31,16 +31,16 @@ class TestRedisClient(unittest.TestCase):
         self.assertEqual(redis_client.REDIS_HOST, self.REDIS_HOST)
         self.assertEqual(redis_client.REDIS_PORT, self.REDIS_PORT)
 
-    def test_global_redis_client(self):
-        """Test global_redis_client is not initialized on import"""
+    def test_redis_client(self):
+        """Test redis client is not initialized on import"""
         importlib.reload(redis_client)
-        self.assertEqual(redis_client.global_redis_client, None)
+        self.mock_redis.assert_not_called()
 
-    def test_global_redis_client_initialization(self):
-        """Test global_redis_client is initialized exactly once even with multiple invocations"""
+    def test_redis_client_initialization(self):
+        """Test redis client is initialized exactly once even with multiple invocations"""
         importlib.reload(redis_client)
         redis_client.get_redis_client()
-        self.assertNotEqual(redis_client.global_redis_client, None)
-        call_count = self.mock_redis.call_count
         redis_client.get_redis_client()
-        self.assertEqual(self.mock_redis.call_count, call_count)
+        self.mock_redis.assert_called_once_with(host=self.REDIS_HOST, port=self.REDIS_PORT, decode_responses=True)
+        self.assertTrue(hasattr(redis_client, "redis_client"))
+        self.assertIsInstance(redis_client.redis_client, self.mock_redis.return_value.__class__)

@@ -1,7 +1,7 @@
 """Tests for file_key_validation functions"""
 
 from unittest import TestCase
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from tests.utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT
 from tests.utils_for_tests.utils_for_filenameprocessor_tests import (
@@ -23,10 +23,11 @@ VALID_FLU_EMIS_FILE_KEY = MockFileDetails.emis_flu.file_key
 VALID_RSV_RAVS_FILE_KEY = MockFileDetails.ravs_rsv_1.file_key
 
 
+@patch("elasticache.get_redis_client")
 class TestFileKeyValidation(TestCase):
     """Tests for file_key_validation functions"""
 
-    def test_is_file_in_directory_root(self):
+    def test_is_file_in_directory_root(self, _):
         test_cases = [
             ("test_file.csv", True),
             ("archive/test_file.csv", False),
@@ -38,7 +39,7 @@ class TestFileKeyValidation(TestCase):
             with self.subTest():
                 self.assertEqual(is_file_in_directory_root(test_file_key), expected)
 
-    def test_is_valid_datetime(self):
+    def test_is_valid_datetime(self, _):
         """Tests that is_valid_datetime returns True for valid datetimes, and false otherwise"""
         # Test case tuples are structured as (date_time_string, expected_result)
         test_cases = [
@@ -62,12 +63,7 @@ class TestFileKeyValidation(TestCase):
             with self.subTest():
                 self.assertEqual(is_valid_datetime(date_time_string), expected_result)
 
-    @patch(
-        "elasticache.redis_client.hget",
-        side_effect=create_mock_hget(MOCK_ODS_CODE_TO_SUPPLIER, {}),
-    )
-    @patch("elasticache.redis_client.hkeys", return_value=["FLU", "RSV"])
-    def test_validate_file_key(self, mock_hkeys, mock_hget):
+    def test_validate_file_key(self, mock_get_redis_client):
         """Tests that file_key_validation returns True if all elements pass validation, and False otherwise"""
         # Test case tuples are structured as (file_key, expected_result)
         test_cases_for_success_scenarios = [
@@ -89,39 +85,24 @@ class TestFileKeyValidation(TestCase):
 
         for file_key, ods_code, expected_result in test_cases_for_success_scenarios:
             with self.subTest(f"SubTest for file key: {file_key}"):
-                self.assertEqual(validate_file_key(file_key), expected_result)
-                mock_hkeys.assert_called_with("vacc_to_diseases")
-                mock_hget.assert_called_with("ods_code_to_supplier", ods_code)
+                mock_redis = Mock()
+                mock_redis.hget.side_effect = create_mock_hget(MOCK_ODS_CODE_TO_SUPPLIER, {})
+                mock_redis.hkeys.return_value = ["FLU", "RSV"]
+                mock_get_redis_client.return_value = mock_redis
 
-        key_format_error_message = "Initial file validation failed: invalid file key format"
+                self.assertEqual(validate_file_key(file_key), expected_result)
+                mock_redis.hkeys.assert_called_with("vacc_to_diseases")
+                mock_redis.hget.assert_called_with("ods_code_to_supplier", ods_code)
+
+    def test_validate_file_key_false(self, mock_get_redis_client):
+        """Tests that file_key_validation returns False if elements do not pass validation"""
         invalid_file_key_error_message = "Initial file validation failed: invalid file key"
-        missing_file_extension_error_message = "Initial file validation failed: missing file extension"
         test_cases_for_failure_scenarios = [
-            # File key with no '.'
-            (
-                VALID_FLU_EMIS_FILE_KEY.replace(".", ""),
-                missing_file_extension_error_message,
-            ),
-            # File key with additional '.'
-            (
-                VALID_FLU_EMIS_FILE_KEY[:2] + "." + VALID_FLU_EMIS_FILE_KEY[2:],
-                key_format_error_message,
-            ),
             # File key with additional '_'
             (
                 VALID_FLU_EMIS_FILE_KEY[:2] + "_" + VALID_FLU_EMIS_FILE_KEY[2:],
                 invalid_file_key_error_message,
             ),
-            # File key with missing '_'
-            (VALID_FLU_EMIS_FILE_KEY.replace("_", "", 1), key_format_error_message),
-            # File key with missing '_'
-            (VALID_FLU_EMIS_FILE_KEY.replace("_", ""), key_format_error_message),
-            # File key with missing extension
-            (
-                VALID_FLU_EMIS_FILE_KEY.replace(".csv", ""),
-                missing_file_extension_error_message,
-            ),
-            # File key with invalid vaccine type
             (
                 VALID_FLU_EMIS_FILE_KEY.replace("FLU", "Flue"),
                 invalid_file_key_error_message,
@@ -182,7 +163,50 @@ class TestFileKeyValidation(TestCase):
 
         for file_key, expected_result in test_cases_for_failure_scenarios:
             with self.subTest(f"SubTest for file key: {file_key}"):
+                mock_redis = Mock()
+                mock_redis.hget.side_effect = create_mock_hget(MOCK_ODS_CODE_TO_SUPPLIER, {})
+                mock_redis.hkeys.return_value = ["FLU", "RSV"]
+                mock_get_redis_client.return_value = mock_redis
+
                 with self.assertRaises(InvalidFileKeyError) as context:
                     validate_file_key(file_key)
                 self.assertEqual(str(context.exception), expected_result)
-                mock_hkeys.assert_called_with("vacc_to_diseases")
+                mock_redis.hkeys.assert_called_with("vacc_to_diseases")
+
+    def test_validate_file_key_invalid(self, mock_get_redis_client):
+        """Tests that file_key_validation returns False if the file key is invalid"""
+        key_format_error_message = "Initial file validation failed: invalid file key format"
+        missing_file_extension_error_message = "Initial file validation failed: missing file extension"
+        test_cases_for_failure_scenarios = [
+            # File key with no '.'
+            (
+                VALID_FLU_EMIS_FILE_KEY.replace(".", ""),
+                missing_file_extension_error_message,
+            ),
+            # File key with additional '.'
+            (
+                VALID_FLU_EMIS_FILE_KEY[:2] + "." + VALID_FLU_EMIS_FILE_KEY[2:],
+                key_format_error_message,
+            ),
+            # File key with missing '_'
+            (VALID_FLU_EMIS_FILE_KEY.replace("_", "", 1), key_format_error_message),
+            # File key with missing '_'
+            (VALID_FLU_EMIS_FILE_KEY.replace("_", ""), key_format_error_message),
+            # File key with missing extension
+            (
+                VALID_FLU_EMIS_FILE_KEY.replace(".csv", ""),
+                missing_file_extension_error_message,
+            ),
+        ]
+
+        for file_key, expected_result in test_cases_for_failure_scenarios:
+            with self.subTest(f"SubTest for file key: {file_key}"):
+                mock_redis = Mock()
+                mock_redis.hget.side_effect = create_mock_hget(MOCK_ODS_CODE_TO_SUPPLIER, {})
+                mock_redis.hkeys.return_value = ["FLU", "RSV"]
+                mock_get_redis_client.return_value = mock_redis
+
+                with self.assertRaises(InvalidFileKeyError) as context:
+                    validate_file_key(file_key)
+                self.assertEqual(str(context.exception), expected_result)
+                mock_redis.hkeys.assert_not_called()

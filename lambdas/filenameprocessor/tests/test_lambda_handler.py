@@ -6,7 +6,7 @@ from contextlib import ExitStack
 from copy import deepcopy
 from json import loads as json_loads
 from unittest import TestCase
-from unittest.mock import ANY, patch
+from unittest.mock import ANY, Mock, patch
 
 import fakeredis
 from boto3 import client as boto3_client
@@ -68,7 +68,7 @@ class TestLambdaHandlerDataSource(TestCase):
         mock_permissions_map = {
             supplier: json.dumps(all_permissions_in_this_test_file) for supplier in all_suppliers_in_this_test_file
         }
-        mock_hget = create_mock_hget(MOCK_ODS_CODE_TO_SUPPLIER, mock_permissions_map)
+        self.mock_hget = create_mock_hget(MOCK_ODS_CODE_TO_SUPPLIER, mock_permissions_map)
 
         # Set up common patches to be applied to all tests in the class (these can be overridden in individual tests.)
         common_patches = [
@@ -78,14 +78,6 @@ class TestLambdaHandlerDataSource(TestCase):
             patch(
                 "file_name_processor.get_creation_and_expiry_times",
                 return_value=(MOCK_CREATED_AT_FORMATTED_STRING, MOCK_EXPIRES_AT),
-            ),
-            # Patch redis_client to use a fake redis client.
-            patch("elasticache.redis_client", new=fakeredis.FakeStrictRedis()),
-            # Patch the permissions config to allow all suppliers full permissions for all vaccine types.
-            patch("elasticache.redis_client.hget", side_effect=mock_hget),
-            patch(
-                "elasticache.redis_client.hkeys",
-                return_value=all_vaccine_types_in_this_test_file,
             ),
         ]
 
@@ -192,13 +184,19 @@ class TestLambdaHandlerDataSource(TestCase):
 
         self.mock_logger.error.assert_called_once_with("Error obtaining file_key: %s", ANY)
 
-    def test_lambda_handler_new_file_success_and_first_in_queue(self):
+    @patch("elasticache.get_redis_client")
+    def test_lambda_handler_new_file_success_and_first_in_queue(self, mock_get_redis_client):
         """
         Tests that for a new file, which passes validation:
         * The file is added to the audit table with a status of 'processing'
         * The message is sent to SQS
         * The make_and_upload_the_ack_file method is not called
         """
+        mock_redis = fakeredis.FakeStrictRedis()
+        mock_redis.hget = Mock(side_effect=self.mock_hget)
+        mock_redis.hkeys = Mock(return_value=all_vaccine_types_in_this_test_file)
+        mock_get_redis_client.return_value = mock_redis
+
         test_cases = [MockFileDetails.emis_flu, MockFileDetails.ravs_rsv_1]
         for file_details in test_cases:
             with self.subTest(file_details.name):
@@ -243,13 +241,19 @@ class TestLambdaHandlerDataSource(TestCase):
         self.assert_no_sqs_message()
         self.assert_no_ack_file(file_details)
 
-    def test_lambda_invalid_file_key_no_other_files_in_queue(self):
+    @patch("elasticache.get_redis_client")
+    def test_lambda_invalid_file_key_no_other_files_in_queue(self, mock_get_redis_client):
         """
         Tests that when the file_key is invalid:
         * The file is added to the audit table with a status of 'Not processed - Invalid filename'
         * The message is not sent to SQS
         * The failure inf_ack file is created
         """
+        mock_redis = fakeredis.FakeStrictRedis()
+        mock_redis.hget = Mock(side_effect=self.mock_hget)
+        mock_redis.hkeys = Mock(return_value=all_vaccine_types_in_this_test_file)
+        mock_get_redis_client.return_value = mock_redis
+
         invalid_file_key = "InvalidVaccineType_Vaccinations_v5_YGM41_20240708T12130100.csv"
         s3_client.put_object(
             Bucket=BucketNames.SOURCE,
@@ -285,25 +289,30 @@ class TestLambdaHandlerDataSource(TestCase):
         self.assert_ack_file_contents(file_details)
         self.assert_no_sqs_message()
 
-    def test_lambda_invalid_permissions(self):
+    @patch("elasticache.get_redis_client")
+    def test_lambda_invalid_permissions(self, mock_get_redis_client):
         """
         Tests that when the file permissions are invalid:
         * The file is added to the audit table with a status of 'Not processed - Unauthorised'
         * The message is not sent to SQS
         * The failure inf_ack file is created
         """
-        file_details = MockFileDetails.ravs_rsv_1
+        mock_redis = fakeredis.FakeStrictRedis()
+        # Mock the supplier permissions with a value which doesn't include the requested Flu permissions
+        mock_hget = create_mock_hget({"X8E5B": "RAVS"}, {})
+        mock_redis.hget = Mock(side_effect=mock_hget)
+        mock_redis.hkeys = Mock(return_value=all_vaccine_types_in_this_test_file)
+        mock_get_redis_client.return_value = mock_redis
+
+        file_details = deepcopy(MockFileDetails.ravs_rsv_1)
         s3_client.put_object(
             Bucket=BucketNames.SOURCE,
             Key=file_details.file_key,
             Body=MOCK_BATCH_FILE_CONTENT,
         )
 
-        # Mock the supplier permissions with a value which doesn't include the requested Flu permissions
-        mock_hget = create_mock_hget({"X8E5B": "RAVS"}, {})
         with (  # noqa: E999
             patch("file_name_processor.uuid4", return_value=file_details.message_id),  # noqa: E999
-            patch("elasticache.redis_client.hget", side_effect=mock_hget),  # noqa: E999
         ):  # noqa: E999
             lambda_handler(self.make_event([self.make_record(file_details.file_key)]), None)
 
@@ -322,15 +331,19 @@ class TestLambdaHandlerDataSource(TestCase):
         self.assert_no_sqs_message()
         self.assert_ack_file_contents(file_details)
 
-    def test_lambda_adds_event_to_audit_table_as_failed_when_unexpected_exception_is_caught(
-        self,
-    ):
+    @patch("elasticache.get_redis_client")
+    def test_lambda_adds_event_to_audit_table_as_failed_when_unexpected_exception_is_caught(self, mock_get_redis_client):
         """
         Tests that when an unexpected error occurs e.g. an unexpected exception when validating permissions:
         * The file is added to the audit table with a status of 'Failed' and the reason
         * The message is not sent to SQS
         * The failure inf_ack file is created
         """
+        mock_redis = fakeredis.FakeStrictRedis()
+        mock_redis.hget = Mock(side_effect=self.mock_hget)
+        mock_redis.hkeys = Mock(return_value=all_vaccine_types_in_this_test_file)
+        mock_get_redis_client.return_value = mock_redis
+
         test_file_details = MockFileDetails.emis_flu
         s3_client.put_object(
             Bucket=BucketNames.SOURCE,
@@ -374,23 +387,17 @@ class TestUnexpectedBucket(TestCase):
     def setUp(self):
         GenericSetUp(s3_client, firehose_client, sqs_client, dynamodb_client)
 
-        hkeys_patcher = patch(
-            "elasticache.redis_client.hkeys",
-            return_value=all_vaccine_types_in_this_test_file,
-        )
-        self.addCleanup(hkeys_patcher.stop)
-        hkeys_patcher.start()
-
-        mock_hget = create_mock_hget({"X8E5B": "RAVS"}, {})
-        hget_patcher = patch("elasticache.redis_client.hget", side_effect=mock_hget)
-        self.addCleanup(hget_patcher.stop)
-        hget_patcher.start()
-
     def tearDown(self):
         GenericTearDown(s3_client, firehose_client, sqs_client, dynamodb_client)
 
-    def test_unexpected_bucket_name(self):
-        """Tests if unkown bucket name is handled in lambda_handler"""
+    @patch("elasticache.get_redis_client")
+    def test_unexpected_bucket_name(self, mock_get_redis_client):
+        """Tests if unknown bucket name is handled in lambda_handler"""
+        mock_redis = Mock()
+        mock_redis.hget.side_effect = create_mock_hget({"X8E5B": "RAVS"}, {})
+        mock_redis.hkeys.return_value = all_vaccine_types_in_this_test_file
+        mock_get_redis_client.return_value = mock_redis
+
         ravs_record = MockFileDetails.ravs_rsv_1
         record = {
             "s3": {
