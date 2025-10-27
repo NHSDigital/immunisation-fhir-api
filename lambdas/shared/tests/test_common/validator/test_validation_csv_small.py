@@ -1,4 +1,3 @@
-# Test application file
 import json
 import unittest
 from pathlib import Path
@@ -10,8 +9,8 @@ class TestValidator(unittest.TestCase):
     def setUp(self):
         self.parent_folder = Path(__file__).parent
         schema_file_path = self.parent_folder / "test_schemas/test_small_schema.json"
-        with open(schema_file_path) as JSON:
-            self.schema = json.load(JSON)
+        with open(schema_file_path) as file:
+            self.schema = json.load(file)
 
     def test_run_validation_csv_success(self):
         good_file_path = self.parent_folder / "sample_data/test_small_ok.csv"

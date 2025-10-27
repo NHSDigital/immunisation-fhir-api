@@ -2,6 +2,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from test_common.validator.testing_utils.constants import CSV_DELIMITER_SAMPLE as CSV_FILE
+
 from common.validator.parsers.csv_parser import CSVParser
 
 
@@ -12,13 +14,12 @@ class TestCSVParser(unittest.TestCase):
         return path
 
     def test_parse_file_with_pipe_delimiter(self):
-        csv_content = "nhs|name|age\n9011011|Tom|32\n9011012|Ana|27\n"
-        path = self._write_temp_csv(csv_content)
+        path = self._write_temp_csv(CSV_FILE)
         try:
             p = CSVParser()
             p.parse_csv_file(path, delimiter="|")
-            self.assertEqual(p.get_key_value("name"), ["Tom", "Ana"])
-            self.assertEqual(p.get_key_value("nhs"), ["9011011", "9011012"])
+            self.assertEqual(p.get_key_value("NHS_NUMBER"), ["9990548609", "9990548617"])
+            self.assertEqual(p.get_key_value("PERSON_FORENAME"), ["Emily", "James"])
         finally:
             Path(path).unlink(missing_ok=True)
 
