@@ -1,11 +1,9 @@
 imms_account_id = "084828561157"
 dspp_account_id = "603871901111"
 mns_account_id  = "631615744739"
-csoc_account_id = "693466633220"
 # admin_role               = "role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_PREPROD-IMMS-Admin_acce656dcacf6f4c"
 admin_role       = "root"
 dev_ops_role     = "role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_PREPROD-IMMS-Devops_1d28e4f37b940bcd"
 dspp_admin_role  = "root"
-mns_admin_role   = "role/nhs-mns-events-lambda-delivery"
 environment      = "preprod"
 blue_green_split = true
