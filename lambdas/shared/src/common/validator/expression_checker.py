@@ -2,23 +2,19 @@
 import datetime
 import re
 import uuid
-from enum import StrEnum
 
 from common.validator.constants.enums import MESSAGES
 from common.validator.constants.enums import ExceptionLevels
+from common.validator.constants.enums import MessageLabel
 from common.validator.lookup_expressions.key_data import KeyData
 from common.validator.lookup_expressions.lookup_data import LookUpData
 from common.validator.record_error import ErrorReport
 from common.validator.record_error import RecordError
 
 
-class MessageLabel(StrEnum):
-    EXPECTED_LABEL = "Expected- "
-    FOUND_LABEL = "Found- "
-    VALUE_MISMATCH_MSG = "Value does not equal expected value, "
-
-
 class ExpressionChecker:
+    """ """
+
     def __init__(self, data_parser, summarise, report_unexpected_exception):
         self.data_parser = data_parser  # FHIR data parser for additional functions
         self.data_look_up = LookUpData()  # used for generic look up

@@ -4,9 +4,8 @@
 3. Collects all error records and builds the final error report
 """
 
-from enum import Enum
-
 from common.validator.constants.enums import MESSAGES
+from common.validator.constants.enums import DataType
 from common.validator.constants.enums import ErrorLevels
 from common.validator.constants.enums import ExceptionLevels
 from common.validator.expression_checker import ExpressionChecker
@@ -16,13 +15,6 @@ from common.validator.parsers.fhir_parser import FHIRParser
 from common.validator.parsers.schema_parser import SchemaParser
 from common.validator.record_error import ErrorReport
 from common.validator.reporter.dq_reporter import DQReporter
-
-
-class DataType(Enum):
-    FHIR = "FHIR"
-    FHIRJSON = "FHIRJSON"
-    CSV = "CSV"
-    CSVROW = "CSVROW"
 
 
 class Validator:
@@ -171,7 +163,7 @@ class Validator:
         try:
             self.error_records.clear()
 
-            match self.data_type:  # 'FHIR', 'FHIRJSON', 'CSV', 'CSVROW'
+            match self.data_type:
                 case DataType.FHIR:
                     self.data_parser = self._get_fhir_parser(self.filepath)
                     self.is_csv = False
@@ -217,7 +209,6 @@ class Validator:
 
         return self.error_records
 
-    # Report Generation
     # Build the error Report
     def build_error_report(self, event_id):
         occurrence_date_time = self.data_parser.get_fhir_value("occurrenceDateTime")

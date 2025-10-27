@@ -54,3 +54,10 @@ MESSAGES = {
     ExceptionLevels.PARENT_FAILED: "Parent Failed [%s]: %s",
     ExceptionLevels.KEY_CHECK_FAILED: "Key Check Failed [%s]: %s",
 }
+
+
+class DataType(StrEnum):
+    FHIR = "FHIR"
+    FHIRJSON = "FHIRJSON"
+    CSV = "CSV"
+    CSVROW = "CSVROW"
