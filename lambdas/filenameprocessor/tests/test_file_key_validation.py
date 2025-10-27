@@ -3,12 +3,12 @@
 from unittest import TestCase
 from unittest.mock import Mock, patch
 
-from tests.utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT
-from tests.utils_for_tests.utils_for_filenameprocessor_tests import (
+from utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT
+from utils_for_tests.utils_for_filenameprocessor_tests import (
     MOCK_ODS_CODE_TO_SUPPLIER,
     create_mock_hget,
 )
-from tests.utils_for_tests.values_for_tests import MockFileDetails
+from utils_for_tests.values_for_tests import MockFileDetails
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):

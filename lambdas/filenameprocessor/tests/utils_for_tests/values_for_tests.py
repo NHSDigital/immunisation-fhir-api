@@ -3,7 +3,7 @@
 from datetime import datetime
 from unittest.mock import patch
 
-from tests.utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT
+from utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT
 
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from constants import AuditTableKeys

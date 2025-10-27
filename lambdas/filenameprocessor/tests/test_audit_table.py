@@ -6,15 +6,15 @@ from unittest.mock import patch
 from boto3 import client as boto3_client
 from moto import mock_dynamodb
 
-from tests.utils_for_tests.utils_for_filenameprocessor_tests import (
+from utils_for_tests.utils_for_filenameprocessor_tests import (
     GenericSetUp,
     GenericTearDown,
 )
-from tests.utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT
-from tests.utils_for_tests.utils_for_filenameprocessor_tests import (
+from utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT
+from utils_for_tests.utils_for_filenameprocessor_tests import (
     assert_audit_table_entry,
 )
-from tests.utils_for_tests.values_for_tests import FileDetails, MockFileDetails
+from utils_for_tests.values_for_tests import FileDetails, MockFileDetails
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
