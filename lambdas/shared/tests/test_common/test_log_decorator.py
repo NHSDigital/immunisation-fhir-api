@@ -6,7 +6,6 @@ from unittest.mock import patch
 from common.log_decorator import (
     generate_and_send_logs,
     logging_decorator,
-    send_log_to_firehose,
 )
 
 
@@ -14,51 +13,13 @@ class TestLogDecorator(unittest.TestCase):
     def setUp(self):
         self.test_stream = "test-stream"
         self.test_prefix = "test"
-        self.logger_info_patcher = patch("common.log_decorator.logger.info")
-        self.mock_logger_info = self.logger_info_patcher.start()
-        self.logger_exception_patcher = patch("common.log_decorator.logger.exception")
-        self.mock_logger_exception = self.logger_exception_patcher.start()
         self.logger_error_patcher = patch("common.log_decorator.logger.error")
         self.mock_logger_error = self.logger_error_patcher.start()
-        self.firehose_client_patcher = patch("common.log_decorator.firehose_client")
-        self.mock_firehose_client = self.firehose_client_patcher.start()
         # patch common.log_decorator.time
         self.mock_generate_send = patch("common.log_decorator.generate_and_send_logs").start()
 
     def tearDown(self):
         patch.stopall()
-
-    def test_send_log_to_firehose_success(self):
-        """Test send_log_to_firehose with successful firehose response"""
-        # Arrange
-        test_log_data = {"function_name": "test_func", "result": "success"}
-        mock_response = {"ResponseMetadata": {"HTTPStatusCode": 200}}
-        self.mock_firehose_client.put_record.return_value = mock_response
-
-        # Act
-        send_log_to_firehose(self.test_stream, test_log_data)
-
-        # Assert
-        expected_record = {"Data": json.dumps({"event": test_log_data}).encode("utf-8")}
-        self.mock_firehose_client.put_record.assert_called_once_with(
-            DeliveryStreamName=self.test_stream, Record=expected_record
-        )
-
-    def test_send_log_to_firehose_exception(self):
-        """Test send_log_to_firehose with firehose exception"""
-        # Arrange
-        test_log_data = {"function_name": "test_func", "result": "error"}
-        self.mock_firehose_client.put_record.side_effect = Exception("Firehose error")
-
-        # Act
-        send_log_to_firehose(self.test_stream, test_log_data)
-
-        # Assert
-        self.mock_firehose_client.put_record.assert_called_once()
-        self.mock_logger_exception.assert_called_once_with(
-            "Error sending log to Firehose: %s",
-            self.mock_firehose_client.put_record.side_effect,
-        )
 
     @patch("time.time")
     @patch("common.log_decorator.send_log_to_firehose")
@@ -217,23 +178,3 @@ class TestLogDecorator(unittest.TestCase):
         # Act & Assert
         self.assertEqual(documented_function.__name__, "documented_function")
         self.assertEqual(documented_function.__doc__, "This is a test function with documentation")
-
-    def test_send_log_to_firehose_exception_logging(self):
-        """Test that logger.exception is called when firehose_client.put_record throws an error"""
-        # Arrange
-        test_log_data = {"function_name": "test_func", "result": "error"}
-        test_error = Exception("Firehose connection failed")
-        self.mock_firehose_client.put_record.side_effect = test_error
-
-        # Act
-        send_log_to_firehose(self.test_stream, test_log_data)
-
-        # Assert
-        # Verify firehose_client.put_record was called
-        expected_record = {"Data": json.dumps({"event": test_log_data}).encode("utf-8")}
-        self.mock_firehose_client.put_record.assert_called_once_with(
-            DeliveryStreamName=self.test_stream, Record=expected_record
-        )
-
-        # Verify logger.exception was called with the correct message and error
-        self.mock_logger_exception.assert_called_once_with("Error sending log to Firehose: %s", test_error)

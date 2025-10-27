@@ -244,6 +244,10 @@ resource "aws_s3_bucket_notification" "mesh_datasources_lambda_notification" {
     events              = ["s3:ObjectCreated:*"]
     filter_prefix       = "inbound/"
   }
+
+  depends_on = [
+    aws_lambda_permission.mesh_s3_invoke_permission
+  ]
 }
 
 resource "aws_cloudwatch_log_group" "mesh_file_converter_log_group" {

@@ -1,5 +1,5 @@
 locals {
-  delta_lambda_dir = abspath("${path.root}/../../delta_backend")
+  delta_lambda_dir = abspath("${path.root}/../../lambdas/delta_backend")
   delta_files      = fileset(local.delta_lambda_dir, "**")
   delta_dir_sha    = sha1(join("", [for f in local.delta_files : filesha1("${local.delta_lambda_dir}/${f}")]))
   function_name    = "delta"
@@ -16,8 +16,9 @@ resource "aws_ecr_repository" "delta_lambda_repository" {
 }
 
 module "delta_docker_image" {
-  source  = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version = "8.1.0"
+  source           = "terraform-aws-modules/lambda/aws//modules/docker-build"
+  version          = "8.1.0"
+  docker_file_path = "./delta_backend/Dockerfile"
 
   create_ecr_repo = false
   ecr_repo        = "${local.prefix}-delta-lambda-repo"
@@ -40,9 +41,10 @@ module "delta_docker_image" {
 
   platform      = "linux/amd64"
   use_image_tag = false
-  source_path   = local.delta_lambda_dir
+  source_path   = abspath("${path.root}/../../lambdas")
   triggers = {
-    dir_sha = local.delta_dir_sha
+    dir_sha        = local.delta_dir_sha
+    shared_dir_sha = local.shared_dir_sha
   }
 
 }

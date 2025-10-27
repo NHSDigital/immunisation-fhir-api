@@ -13,9 +13,6 @@
             "path": "recordprocessor",
         },
         {
-            "path": "delta_backend",
-        },
-        {
             "path": "mesh_processor",
         },
         {
@@ -26,6 +23,9 @@
         },
         {
             "path": "lambdas/ack_backend",
+        },
+        {
+            "path": "lambdas/delta_backend",
         },
         {
             "path": "lambdas/redis_sync",

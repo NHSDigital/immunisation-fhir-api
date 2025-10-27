@@ -15,7 +15,6 @@ from controller.fhir_controller import FhirController
 from models.errors import (
     CustomValidationError,
     IdentifierDuplicationError,
-    InvalidPatientId,
     ParameterException,
     ResourceNotFoundError,
     UnauthorizedVaxError,
@@ -841,7 +840,7 @@ class TestCreateImmunization(unittest.TestCase):
             "headers": {"SupplierSystem": "Test"},
             "body": imms.json(),
         }
-        self.service.create_immunization.return_value = imms
+        self.service.create_immunization.return_value = imms_id
 
         response = self.controller.create_immunization(aws_event)
 
@@ -851,16 +850,18 @@ class TestCreateImmunization(unittest.TestCase):
         self.assertTrue("body" not in response)
         self.assertTrue(response["headers"]["Location"].endswith(f"Immunization/{imms_id}"))
 
-    def test_unauthorised_create_immunization(self):
-        """it should return authorization error"""
+    def test_create_immunization_returns_unauthorised_error_when_supplier_system_header_missing(self):
+        """it should return unauthorized error"""
         imms_id = str(uuid.uuid4())
         imms = create_covid_19_immunization(imms_id)
         aws_event = {"body": imms.json()}
+
         response = self.controller.create_immunization(aws_event)
+
         self.assertEqual(response["statusCode"], 403)
 
     def test_create_immunization_for_unauthorized(self):
-        """It should create Immunization and return resource's location"""
+        """it should return an unauthorized error when the service finds that user lacks permissions"""
         # Given
         imms_id = str(uuid.uuid4())
         imms = create_covid_19_immunization(imms_id)
@@ -893,28 +894,8 @@ class TestCreateImmunization(unittest.TestCase):
         outcome = json.loads(response["body"])
         self.assertEqual(outcome["resourceType"], "OperationOutcome")
 
-    def test_create_bad_request_for_superseded_number_for_create_immunization(self):
-        """it should return 400 if json has superseded nhs number."""
-        # Given
-        create_result = {
-            "diagnostics": "Validation errors: contained[?(@.resourceType=='Patient')].identifier[0].value does not exists"
-        }
-        self.service.create_immunization.return_value = create_result
-        imms_id = str(uuid.uuid4())
-        imms = create_covid_19_immunization(imms_id)
-        aws_event = {
-            "headers": {"SupplierSystem": "Test"},
-            "body": imms.json(),
-        }
-        # When
-        response = self.controller.create_immunization(aws_event)
-
-        self.assertEqual(response["statusCode"], 400)
-        body = json.loads(response["body"])
-        self.assertEqual(body["resourceType"], "OperationOutcome")
-
-    def test_invalid_nhs_number(self):
-        """it should handle ValidationError when patient doesn't exist"""
+    def test_custom_validation_error(self):
+        """it should handle ValidationError when patient NHS Number is invalid"""
         # Given
         imms = Immunization.construct()
         aws_event = {
@@ -922,7 +903,9 @@ class TestCreateImmunization(unittest.TestCase):
             "body": imms.json(),
         }
         invalid_nhs_num = "a-bad-id"
-        self.service.create_immunization.side_effect = InvalidPatientId(patient_identifier=invalid_nhs_num)
+        self.service.create_immunization.side_effect = CustomValidationError(
+            f"{invalid_nhs_num} is not a valid NHS number"
+        )
 
         response = self.controller.create_immunization(aws_event)
 
@@ -1388,11 +1371,15 @@ class TestUpdateImmunization(unittest.TestCase):
 
 
 class TestDeleteImmunization(unittest.TestCase):
+    _MOCK_IMMS_ID = "1d8f5656-ef12-4d43-aaff-3cc54ae1970b"
+
     def setUp(self):
         self.service = create_autospec(FhirService)
         self.controller = FhirController(self.service)
         self.logger_info_patcher = patch("logging.Logger.info")
+        self.exception_wrapper_logger_patcher = patch("controller.fhir_api_exception_handler.logger")
         self.mock_logger_info = self.logger_info_patcher.start()
+        self.mock_exception_wrapper_logger = self.exception_wrapper_logger_patcher.start()
 
     def tearDown(self):
         patch.stopall()
@@ -1412,37 +1399,35 @@ class TestDeleteImmunization(unittest.TestCase):
         self.assertEqual(outcome["resourceType"], "OperationOutcome")
 
     def test_unauthorised_delete_immunization(self):
-        """it should return authorization error"""
-        aws_event = {"body": ()}
+        """it should return authorization error when the Supplier System header is not present"""
+        aws_event = {"pathParameters": {"id": self._MOCK_IMMS_ID}, "headers": {}}
         response = self.controller.delete_immunization(aws_event)
         self.assertEqual(response["statusCode"], 403)
 
     def test_delete_immunization(self):
+        """it should mark the record as deleted successfully"""
         # Given
-
-        imms_id = "an-id"
-        self.service.delete_immunization.return_value = Immunization.construct()
+        self.service.delete_immunization.return_value = None
         lambda_event = {
             "headers": {"E-Tag": 1, "SupplierSystem": "Test"},
-            "pathParameters": {"id": imms_id},
+            "pathParameters": {"id": self._MOCK_IMMS_ID},
         }
 
         # When
         response = self.controller.delete_immunization(lambda_event)
 
         # Then
-        self.service.delete_immunization.assert_called_once_with(imms_id, "Test")
+        self.service.delete_immunization.assert_called_once_with(self._MOCK_IMMS_ID, "Test")
 
         self.assertEqual(response["statusCode"], 204)
         self.assertTrue("body" not in response)
 
     def test_delete_immunization_unauthorised_vax(self):
         # Given
-        imms_id = "an-id"
         self.service.delete_immunization.side_effect = UnauthorizedVaxError()
         lambda_event = {
-            "headers": {"SupplierSystem": "Test", "operation_requested": "delete"},
-            "pathParameters": {"id": imms_id},
+            "headers": {"SupplierSystem": "Test"},
+            "pathParameters": {"id": self._MOCK_IMMS_ID},
         }
 
         # When
@@ -1457,7 +1442,7 @@ class TestDeleteImmunization(unittest.TestCase):
         error = ResourceNotFoundError(resource_type="Immunization", resource_id="an-error-id")
         self.service.delete_immunization.side_effect = error
         lambda_event = {
-            "headers": {"E-Tag": 1, "SupplierSystem": "Test"},
+            "headers": {"SupplierSystem": "Test"},
             "pathParameters": {"id": "a-non-existing-id"},
         }
 
@@ -1467,17 +1452,34 @@ class TestDeleteImmunization(unittest.TestCase):
         # Then
         self.assertEqual(response["statusCode"], 404)
         body = json.loads(response["body"])
-        self.assertEqual(body["resourceType"], "OperationOutcome")
-        self.assertEqual(body["issue"][0]["code"], "not-found")
+        self.assertDictEqual(
+            body,
+            {
+                "id": ANY,
+                "issue": [
+                    {
+                        "code": "not-found",
+                        "details": {
+                            "coding": [
+                                {"code": "NOT-FOUND", "system": "https://fhir.nhs.uk/Codesystem/http-error-codes"}
+                            ]
+                        },
+                        "diagnostics": "Immunization resource does not exist. ID: an-error-id",
+                        "severity": "error",
+                    }
+                ],
+                "meta": {"profile": ["https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"]},
+                "resourceType": "OperationOutcome",
+            },
+        )
 
     def test_immunization_unhandled_error(self):
-        """it should return server-error OperationOutcome if service throws UnhandledResponseError"""
+        """it should return error OperationOutcome if an unhandled exception is thrown"""
         # Given
-
-        error = UnhandledResponseError(message="a message", response={})
+        error = Exception("Unhandled exception")
         self.service.delete_immunization.side_effect = error
         lambda_event = {
-            "headers": {"E-Tag": 1, "SupplierSystem": "Test"},
+            "headers": {"SupplierSystem": "Test"},
             "pathParameters": {"id": "a-non-existing-id"},
         }
 
@@ -1487,8 +1489,27 @@ class TestDeleteImmunization(unittest.TestCase):
         # Then
         self.assertEqual(response["statusCode"], 500)
         body = json.loads(response["body"])
-        self.assertEqual(body["resourceType"], "OperationOutcome")
-        self.assertEqual(body["issue"][0]["code"], "exception")
+        self.assertDictEqual(
+            body,
+            {
+                "id": ANY,
+                "issue": [
+                    {
+                        "code": "exception",
+                        "details": {
+                            "coding": [
+                                {"code": "EXCEPTION", "system": "https://fhir.nhs.uk/Codesystem/http-error-codes"}
+                            ]
+                        },
+                        "diagnostics": "Unable to process request. Issue may be transient.",
+                        "severity": "error",
+                    }
+                ],
+                "meta": {"profile": ["https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"]},
+                "resourceType": "OperationOutcome",
+            },
+        )
+        self.mock_exception_wrapper_logger.exception.assert_called_once_with("Unhandled exception")
 
 
 class TestSearchImmunizations(TestFhirControllerBase):

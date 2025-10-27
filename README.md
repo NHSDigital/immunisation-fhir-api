@@ -130,8 +130,15 @@ Steps:
     ```
 
 7. Install poetry
+
     ```
     pip install poetry
+    ```
+
+8. Install pre-commit hooks. Ensure you have installed nodejs at the same version or later as per .tool-versions and
+   then, from the repo root, run:
+    ```
+    npm install
     ```
 
 ### Setting up a virtual environment with poetry

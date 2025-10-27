@@ -74,3 +74,17 @@ class TestClients(unittest.TestCase):
         call_count = self.mock_boto3_client.call_count
         clients.get_s3_client()
         self.assertEqual(self.mock_boto3_client.call_count, call_count)
+
+    def test_global_sqs_client(self):
+        """Test global_sqs_client is not initialized on import"""
+        importlib.reload(clients)
+        self.assertEqual(clients.global_sqs_client, None)
+
+    def test_global_sqs_client_initialization(self):
+        """Test global_sqs_client is initialized exactly once even with multiple invocations"""
+        importlib.reload(clients)
+        clients.get_sqs_client()
+        self.assertNotEqual(clients.global_sqs_client, None)
+        call_count = self.mock_boto3_client.call_count
+        clients.get_sqs_client()
+        self.assertEqual(self.mock_boto3_client.call_count, call_count)
