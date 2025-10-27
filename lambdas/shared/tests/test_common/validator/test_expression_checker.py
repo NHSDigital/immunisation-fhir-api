@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
-from common.validator.enums.exception_messages import ExceptionLevels
+from common.validator.constants.enums import ExceptionLevels
 from common.validator.expression_checker import ExpressionChecker
 from common.validator.record_error import ErrorReport
 
@@ -31,8 +31,7 @@ class TestExpressionChecker(unittest.TestCase):
         """Helper to create an ExpressionChecker with mock parser data."""
         return ExpressionChecker(MockParser(mock_data), summarise, report)
 
-    # --- DATETIME & UUID -------------------------------------------------
-
+    # Date Time Check
     def test_datetime_valid(self):
         """Valid ISO date should pass without error."""
         checker = self.make_checker({"date_field": "2025-01-01"})
@@ -52,8 +51,7 @@ class TestExpressionChecker(unittest.TestCase):
         self.assertIsNone(checker.validate_expression("UUID", None, "uuid_field", valid_uuid, 1))
         self.assertIsInstance(checker.validate_expression("UUID", None, "uuid_field", "not-a-uuid", 1), ErrorReport)
 
-    # --- NUMERIC, LENGTH, REGEX ------------------------------------------
-
+    # Numeric Length and Regex
     def test_integer_length_and_regex_rules(self):
         """Test integer, length, and regex-based validations."""
         checker = self.make_checker()
@@ -67,8 +65,7 @@ class TestExpressionChecker(unittest.TestCase):
         # REGEX mismatch -> Error
         self.assertIsInstance(checker.validate_expression("REGEX", r"^abc$", "regex_field", "abcd", 1), ErrorReport)
 
-    # --- CASE & STRING POSITION RULES ------------------------------------
-
+    # Case & String Position Rules
     def test_upper_lower_startswith_endswith_rules(self):
         """Validate case and string boundary conditions."""
         checker = self.make_checker()

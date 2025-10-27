@@ -2,44 +2,14 @@
 import datetime
 import re
 import uuid
-from enum import Enum
 from enum import StrEnum
 
-from common.validator.enums.exception_messages import MESSAGES
-from common.validator.enums.exception_messages import ExceptionLevels
+from common.validator.constants.enums import MESSAGES
+from common.validator.constants.enums import ExceptionLevels
 from common.validator.lookup_expressions.key_data import KeyData
 from common.validator.lookup_expressions.lookup_data import LookUpData
 from common.validator.record_error import ErrorReport
 from common.validator.record_error import RecordError
-
-
-class ExpressionType(Enum):
-    DATETIME = "DATETIME"
-    DATE = "DATE"
-    UUID = "UUID"
-    INT = "INT"
-    FLOAT = "FLOAT"
-    REGEX = "REGEX"
-    EQUAL = "EQUAL"
-    NOTEQUAL = "NOTEQUAL"
-    IN = "IN"
-    NRANGE = "NRANGE"
-    INARRAY = "INARRAY"
-    UPPER = "UPPER"
-    LOWER = "LOWER"
-    LENGTH = "LENGTH"
-    STARTSWITH = "STARTSWITH"
-    ENDSWITH = "ENDSWITH"
-    EMPTY = "EMPTY"
-    NOTEMPTY = "NOTEMPTY"
-    POSITIVE = "POSITIVE"
-    GENDER = "GENDER"
-    NHSNUMBER = "NHSNUMBER"
-    MAXOBJECTS = "MAXOBJECTS"
-    POSTCODE = "POSTCODE"
-    ONLYIF = "ONLYIF"
-    LOOKUP = "LOOKUP"
-    KEYCHECK = "KEYCHECK"
 
 
 class MessageLabel(StrEnum):

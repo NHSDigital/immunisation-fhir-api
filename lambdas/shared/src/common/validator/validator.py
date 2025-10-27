@@ -6,9 +6,9 @@
 
 from enum import Enum
 
-from common.validator.enums.error_levels import ErrorLevels
-from common.validator.enums.exception_messages import MESSAGES
-from common.validator.enums.exception_messages import ExceptionLevels
+from common.validator.constants.enums import MESSAGES
+from common.validator.constants.enums import ErrorLevels
+from common.validator.constants.enums import ExceptionLevels
 from common.validator.expression_checker import ExpressionChecker
 from common.validator.parsers.csv_line_parser import CSVLineParser
 from common.validator.parsers.csv_parser import CSVParser

@@ -1,5 +1,26 @@
-# all exceptions and messgaes
 from enum import IntEnum
+from enum import StrEnum
+
+
+# Used for error report messages in DQ Reporter to categorize error levels
+class ErrorLevels(IntEnum):
+    CRITICAL_ERROR = 0
+    WARNING = 1
+    NOTIFICATION = 2
+
+
+MESSAGES = {
+    ErrorLevels.CRITICAL_ERROR: "Critical Validation Error [%s]: %s",
+    ErrorLevels.WARNING: "Non-Critical Validation Error [%s]: %s",
+    ErrorLevels.NOTIFICATION: "Quality Issue Found [%s]: %s",
+}
+
+
+# Constants for error report messages used in Expression Checker
+class MessageLabel(StrEnum):
+    EXPECTED_LABEL = "Expected- "
+    FOUND_LABEL = "Found- "
+    VALUE_MISMATCH_MSG = "Value does not equal expected value, "
 
 
 class ExceptionLevels(IntEnum):
