@@ -1,4 +1,4 @@
-# main.tf 
+# main.tf
 terraform {
   required_providers {
     aws = {
@@ -15,8 +15,9 @@ terraform {
     }
   }
   backend "s3" {
-    bucket = "immunisation-grafana-terraform-state"
-    region = "eu-west-2"
+    bucket       = "immunisation-grafana-terraform-state"
+    region       = "eu-west-2"
+    use_lockfile = true
   }
   required_version = ">= 1.5.0"
 }
