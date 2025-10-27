@@ -11,9 +11,13 @@ variable "dspp_account_id" {
   type        = string
 }
 variable "csoc_account_id" {
-  description = "CSOC Core AWS account ID"
+  description = "CSOC AWS account ID - destination for log forwarding"
   type        = string
-
+  default     = "693466633220"
+}
+variable "mns_account_id" {
+  type        = string
+  description = "MNS AWS account ID - trusted source for MNS notifications"
 }
 
 variable "auto_ops_role" {
@@ -30,6 +34,11 @@ variable "dev_ops_role" {
 variable "dspp_admin_role" {
   type = string
 }
+variable "mns_delivery_role" {
+  type    = string
+  default = "role/nhs-mns-events-lambda-delivery"
+}
+
 variable "build_agent_account_id" {
   type    = string
   default = "958002497996"
@@ -44,6 +53,3 @@ variable "blue_green_split" {
   description = "Whether this account uses blue / green split deployments"
   default     = false
 }
-
-variable "mns_account_id" {}
-variable "mns_admin_role" {}
