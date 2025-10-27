@@ -12,7 +12,7 @@ import fakeredis
 from boto3 import client as boto3_client
 from moto import mock_dynamodb, mock_firehose, mock_s3, mock_sqs
 
-from tests.utils_for_tests.generic_setup_and_teardown import (
+from tests.utils_for_tests.utils_for_filenameprocessor_tests import (
     GenericSetUp,
     GenericTearDown,
 )
