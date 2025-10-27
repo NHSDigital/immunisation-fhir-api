@@ -6,8 +6,9 @@ terraform {
     }
   }
   backend "s3" {
-    region = "eu-west-2"
-    key    = "state"
+    region       = "eu-west-2"
+    key          = "state"
+    use_lockfile = true
   }
   required_version = ">= 1.5.0"
 }
