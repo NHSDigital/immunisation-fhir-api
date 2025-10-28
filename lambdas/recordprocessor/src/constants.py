@@ -94,9 +94,9 @@ class Diagnostics:
 class Urls:
     """Urls"""
 
-    SNOMED = "http://snomed.info/sct"
+    SNOMED = "http://snomed.info/sct"  # NOSONAR(S5332)
     NHS_NUMBER = "https://fhir.nhs.uk/Id/nhs-number"
-    NULL_FLAVOUR_CODES = "http://terminology.hl7.org/CodeSystem/v3-NullFlavor"
+    NULL_FLAVOUR_CODES = "http://terminology.hl7.org/CodeSystem/v3-NullFlavor"  # NOSONAR(S5332)
     VACCINATION_PROCEDURE = "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure"
 
 
