@@ -1,7 +1,6 @@
 environment                       = "dev"
 immunisation_account_id           = "345594581768"
 dspp_core_account_id              = "603871901111"
-csoc_account_id                   = "693466633220"
 pds_environment                   = "ref"
 batch_error_notifications_enabled = true
 pds_check_enabled                 = true
