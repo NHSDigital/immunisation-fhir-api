@@ -10,7 +10,7 @@ import argparse
 from uuid import uuid4
 
 from audit_table import upsert_audit_table
-from common.clients import STREAM_NAME, logger, get_s3_client
+from common.clients import STREAM_NAME, get_s3_client, logger
 from common.log_decorator import logging_decorator
 from common.models.errors import (
     InvalidFileKeyError,
