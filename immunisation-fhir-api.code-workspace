@@ -10,9 +10,6 @@
             "path": "mesh_processor",
         },
         {
-            "path": "recordprocessor",
-        },
-        {
             "path": "lambdas/ack_backend",
         },
         {
@@ -26,6 +23,9 @@
         },
         {
             "path": "lambdas/mns_subscription",
+        },
+        {
+            "path": "lambdas/recordprocessor",
         },
         {
             "path": "lambdas/redis_sync",
