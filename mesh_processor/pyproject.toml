@@ -8,7 +8,7 @@ packages    = [{include = "src"}]
 
 [tool.poetry.dependencies]
 python = "~3.11"
-boto3 = "~1.40.45"
+boto3 = "~1.40.57"
 mypy-boto3-dynamodb = "^1.40.44"
 moto = {extras = ["s3"], version = "^5.1.14"}
 coverage = "^7.10.7"
