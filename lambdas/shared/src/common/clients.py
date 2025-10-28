@@ -3,6 +3,7 @@ import os
 
 from boto3 import client as boto3_client
 from boto3 import resource as boto3_resource
+from botocore.config import Config
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
@@ -43,3 +44,8 @@ firehose_client = boto3_client("firehose", region_name=REGION_NAME)
 secrets_manager_client = boto3_client("secretsmanager", region_name=REGION_NAME)
 dynamodb_client = boto3_client("dynamodb", region_name=REGION_NAME)
 dynamodb_resource = boto3_resource("dynamodb", region_name=REGION_NAME)
+kinesis_client = boto3_client(
+    "kinesis",
+    region_name=REGION_NAME,
+    config=Config(retries={"max_attempts": 3, "mode": "standard"}),
+)

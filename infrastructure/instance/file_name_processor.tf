@@ -1,10 +1,9 @@
 # Define the directory containing the Docker image and calculate its SHA-256 hash for triggering redeployments
 locals {
-  filename_lambda_dir     = abspath("${path.root}/../../filenameprocessor")
+  filename_lambda_dir     = abspath("${path.root}/../../lambdas/filenameprocessor")
   filename_lambda_files   = fileset(local.filename_lambda_dir, "**")
   filename_lambda_dir_sha = sha1(join("", [for f in local.filename_lambda_files : filesha1("${local.filename_lambda_dir}/${f}")]))
 }
-
 
 resource "aws_ecr_repository" "file_name_processor_lambda_repository" {
   image_scanning_configuration {
@@ -16,8 +15,9 @@ resource "aws_ecr_repository" "file_name_processor_lambda_repository" {
 
 # Module for building and pushing Docker image to ECR
 module "file_processor_docker_image" {
-  source  = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version = "8.1.0"
+  source           = "terraform-aws-modules/lambda/aws//modules/docker-build"
+  version          = "8.1.0"
+  docker_file_path = "./filenameprocessor/Dockerfile"
 
   create_ecr_repo = false
   ecr_repo        = aws_ecr_repository.file_name_processor_lambda_repository.name
@@ -40,9 +40,10 @@ module "file_processor_docker_image" {
 
   platform      = "linux/amd64"
   use_image_tag = false
-  source_path   = local.filename_lambda_dir
+  source_path   = abspath("${path.root}/../../lambdas")
   triggers = {
-    dir_sha = local.filename_lambda_dir_sha
+    dir_sha        = local.filename_lambda_dir_sha
+    shared_dir_sha = local.shared_dir_sha
   }
 }
 
