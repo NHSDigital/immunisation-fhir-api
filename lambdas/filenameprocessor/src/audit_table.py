@@ -2,9 +2,9 @@
 
 from typing import Optional
 
-from clients import dynamodb_client, logger
+from common.clients import dynamodb_client, logger
+from common.models.errors import UnhandledAuditTableError
 from constants import AUDIT_TABLE_NAME, AuditTableKeys
-from errors import UnhandledAuditTableError
 
 
 def upsert_audit_table(

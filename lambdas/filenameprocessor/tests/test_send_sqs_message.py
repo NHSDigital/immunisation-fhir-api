@@ -8,13 +8,13 @@ from unittest.mock import patch
 from boto3 import client as boto3_client
 from moto import mock_sqs
 
-from tests.utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT, Sqs
-from tests.utils_for_tests.values_for_tests import MockFileDetails
+from utils_for_tests.mock_environment_variables import MOCK_ENVIRONMENT_DICT, Sqs
+from utils_for_tests.values_for_tests import MockFileDetails
 
 # Ensure environment variables are mocked before importing from src files
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
-    from clients import REGION_NAME
-    from errors import UnhandledSqsError
+    from common.clients import REGION_NAME
+    from common.models.errors import UnhandledSqsError
     from send_sqs_message import make_and_send_sqs_message, send_to_supplier_queue
 
 sqs_client = boto3_client("sqs", region_name=REGION_NAME)

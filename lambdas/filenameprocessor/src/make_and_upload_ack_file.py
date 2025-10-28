@@ -4,7 +4,7 @@ import os
 from csv import writer
 from io import BytesIO, StringIO
 
-from clients import s3_client
+from common.clients import s3_client
 
 
 def make_the_ack_data(message_id: str, message_delivered: bool, created_at_formatted_string: str) -> dict:
