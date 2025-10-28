@@ -1,6 +1,6 @@
 # Define the directory containing the Docker image and calculate its SHA-256 hash for triggering redeployments
 locals {
-  mesh_processor_lambda_dir     = abspath("${path.root}/../../mesh_processor")
+  mesh_processor_lambda_dir     = abspath("${path.root}/../../lambdas/mesh_processor")
   mesh_processor_lambda_files   = fileset(local.mesh_processor_lambda_dir, "**")
   mesh_processor_lambda_dir_sha = sha1(join("", [for f in local.mesh_processor_lambda_files : filesha1("${local.mesh_processor_lambda_dir}/${f}")]))
   # This should match the prefix used in the global Terraform
@@ -33,8 +33,9 @@ resource "aws_ecr_repository" "mesh_file_converter_lambda_repository" {
 module "mesh_processor_docker_image" {
   count = var.create_mesh_processor ? 1 : 0
 
-  source  = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version = "8.1.0"
+  source         = "terraform-aws-modules/lambda/aws//modules/docker-build"
+  version        = "8.1.0"
+  dockerfilepath = "./meshprocessor/Dockerfile"
 
   create_ecr_repo = false
   ecr_repo        = aws_ecr_repository.mesh_file_converter_lambda_repository[0].name
@@ -57,9 +58,10 @@ module "mesh_processor_docker_image" {
 
   platform      = "linux/amd64"
   use_image_tag = false
-  source_path   = local.mesh_processor_lambda_dir
+  source_path   = abspath("${path.root}/../../lambdas")
   triggers = {
     dir_sha = local.mesh_processor_lambda_dir_sha
+    shared_dir_sha = local.shared_dir_sha
   }
 }
 
