@@ -46,6 +46,8 @@ class TestClients(unittest.TestCase):
 
     def test_boto3_client_created_for_s3(self):
         """Test that S3 boto3 client is created with correct region"""
+        importlib.reload(clients)
+        clients.get_s3_client()
         self.mock_boto3_client.assert_any_call("s3", region_name=self.AWS_REGION)
 
     def test_boto3_client_created_for_firehose(self):

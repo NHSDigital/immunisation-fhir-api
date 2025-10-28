@@ -1,10 +1,11 @@
 import os
 import unittest
 from io import BytesIO
-from unittest.mock import call, patch
+from unittest.mock import Mock, call, patch
 
 from batch_processor import process_csv_to_fhir
 from utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
+    BucketNames,
     create_patch,
 )
 
@@ -16,8 +17,7 @@ class TestProcessorEdgeCases(unittest.TestCase):
         self.mock_logger_error = create_patch("logging.Logger.error")
         self.mock_send_to_kinesis = create_patch("batch_processor.send_to_kinesis")
         self.mock_map_target_disease = create_patch("batch_processor.map_target_disease")
-        self.mock_s3_get_object = create_patch("utils_for_recordprocessor.s3_client.get_object")
-        self.mock_s3_put_object = create_patch("utils_for_recordprocessor.s3_client.put_object")
+        self.mock_get_s3_client = create_patch("utils_for_recordprocessor.get_s3_client")
         self.mock_make_and_move = create_patch("file_level_validation.make_and_upload_ack_file")
         self.mock_move_file = create_patch("file_level_validation.move_file")
         self.mock_get_permitted_operations = create_patch("file_level_validation.get_permitted_operations")
@@ -63,7 +63,9 @@ class TestProcessorEdgeCases(unittest.TestCase):
         data = self.insert_cp1252_at_end(data, b"D\xe9cembre", 2)
         ret1 = {"Body": BytesIO(b"".join(data))}
         ret2 = {"Body": BytesIO(b"".join(data))}
-        self.mock_s3_get_object.side_effect = [ret1, ret2]
+        mock_s3 = Mock()
+        mock_s3.get_object.side_effect = [ret1, ret2]
+        self.mock_get_s3_client.return_value = mock_s3
         self.mock_map_target_disease.return_value = "some disease"
 
         message_body = {
@@ -80,10 +82,11 @@ class TestProcessorEdgeCases(unittest.TestCase):
         self.mock_logger_warning.assert_called()
         warning_call_args = self.mock_logger_warning.call_args[0][0]
         self.assertTrue(warning_call_args.startswith("Encoding Error: 'utf-8' codec can't decode byte 0xe9"))
-        self.mock_s3_get_object.assert_has_calls(
+        # TODO: when running all tests this expects Bucket=None. not clear why.
+        mock_s3.get_object.assert_has_calls(
             [
-                call(Bucket=None, Key="test-filename"),
-                call(Bucket=None, Key="processing/test-filename"),
+                call(Bucket=BucketNames.SOURCE, Key="test-filename"),
+                call(Bucket=BucketNames.SOURCE, Key="processing/test-filename"),
             ]
         )
 
@@ -94,7 +97,9 @@ class TestProcessorEdgeCases(unittest.TestCase):
         data = self.expand_test_data(data, n_rows)
         ret1 = {"Body": BytesIO(b"".join(data))}
         ret2 = {"Body": BytesIO(b"".join(data))}
-        self.mock_s3_get_object.side_effect = [ret1, ret2]
+        mock_s3 = Mock()
+        mock_s3.get_object.side_effect = [ret1, ret2]
+        self.mock_get_s3_client.return_value = mock_s3
         self.mock_map_target_disease.return_value = "some disease"
 
         message_body = {
@@ -118,7 +123,9 @@ class TestProcessorEdgeCases(unittest.TestCase):
 
         ret1 = {"Body": BytesIO(b"".join(data))}
         ret2 = {"Body": BytesIO(b"".join(data))}
-        self.mock_s3_get_object.side_effect = [ret1, ret2]
+        mock_s3 = Mock()
+        mock_s3.get_object.side_effect = [ret1, ret2]
+        self.mock_get_s3_client.return_value = mock_s3
         self.mock_map_target_disease.return_value = "some disease"
 
         message_body = {
@@ -143,7 +150,9 @@ class TestProcessorEdgeCases(unittest.TestCase):
 
         ret1 = {"Body": BytesIO(b"".join(data))}
         ret2 = {"Body": BytesIO(b"".join(data))}
-        self.mock_s3_get_object.side_effect = [ret1, ret2]
+        mock_s3 = Mock()
+        mock_s3.get_object.side_effect = [ret1, ret2]
+        self.mock_get_s3_client.return_value = mock_s3
         self.mock_map_target_disease.return_value = "some disease"
 
         message_body = {
