@@ -264,7 +264,7 @@ resource "aws_s3_bucket_notification" "config_lambda_notification" {
   }
 
   depends_on = [
-    aws_lambda_function.redis_sync_lambda
+    aws_lambda_permission.new_s3_invoke_permission
   ]
 }
 
