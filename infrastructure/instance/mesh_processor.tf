@@ -35,7 +35,6 @@ module "mesh_processor_docker_image" {
 
   source           = "terraform-aws-modules/lambda/aws//modules/docker-build"
   version          = "8.1.2"
-  docker_file_path = "./mesh_processor/Dockerfile"
 
   create_ecr_repo = false
   ecr_repo        = aws_ecr_repository.mesh_file_converter_lambda_repository[0].name
@@ -58,7 +57,7 @@ module "mesh_processor_docker_image" {
 
   platform      = "linux/amd64"
   use_image_tag = false
-  source_path   = abspath("${path.root}/../../lambdas")
+  source_path   = local.mesh_processor_lambda_dir
   triggers = {
     dir_sha = local.mesh_processor_lambda_dir_sha
   }
