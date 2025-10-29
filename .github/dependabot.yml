@@ -12,10 +12,7 @@ updates:
       - "/lambdas/batch_processor_filter"
       - "/lambdas/delta_backend"
       - "/lambdas/filenameprocessor"
-<<<<<<< HEAD
-=======
       - "/lambdas/mesh_processor"
->>>>>>> master
       - "/lambdas/recordprocessor"
       - "/sandbox"
     schedule:
