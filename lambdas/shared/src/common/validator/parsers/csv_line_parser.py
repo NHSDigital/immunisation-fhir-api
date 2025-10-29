@@ -26,7 +26,7 @@ class CSVLineParser:
         # create a key value mapping
         keys = list(csv.reader([csv_header]))[0]
         values = list(csv.reader([csv_row]))[0]
-        self.csv_file_data = dict(map(lambda i, j: (i, j), keys, values))
+        self.csv_file_data = dict(zip(keys, values, strict=False))
 
     # Retrieves the value of a specific column name as a list.
     def get_key_value(self, field_name: str) -> list[str]:

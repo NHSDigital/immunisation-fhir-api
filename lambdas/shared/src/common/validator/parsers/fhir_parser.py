@@ -29,7 +29,7 @@ class FHIRParser:
         except Exception:
             return False
 
-    def _locate_fhir_item_in_list(self, fhir_resource: list, fhir_field: str) -> dict:
+    def _locate_fhir_item_in_list(self, fhir_resource: list, fhir_field: str) -> dict | str:
         """
         Locates and returns the first FHIR item (dictionary) in a list that contains
         the specified FHIR field name or value.
@@ -43,13 +43,14 @@ class FHIRParser:
         try:
             while index < len(fhir_resource):
                 for key in fhir_resource[index]:
-                    if (fhir_resource[index][key] == field_list[1]) or (key == field_list[1]):
+                    fhir_value = fhir_resource[index][key]
+                    if (
+                        fhir_value == field_list[1]
+                        or key == field_list[1]
+                        or self._locate_fhir_item_in_dict(fhir_value, field_list[1])
+                    ):
                         node_id = index
                         break
-                    else:
-                        if self._locate_fhir_item_in_dict(fhir_resource[index][key], field_list[1]):
-                            node_id = index
-                            break
                 index += 1
         except Exception:
             return ""
