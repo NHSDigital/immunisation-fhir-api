@@ -7,10 +7,10 @@ RUN mkdir -p /home/appuser && \
     chown -R 1001:1001 /home/appuser && pip install "poetry~=2.1.4"
 
 # Install Poetry dependencies
-# Copy ack_backend Poetry files
+# Copy delta_backend Poetry files
 COPY ./delta_backend/poetry.lock ./delta_backend/pyproject.toml ./delta_backend/README.md ./
 
-# Install ack_backend dependencies
+# Install delta_backend dependencies
 WORKDIR /var/task
 RUN poetry config virtualenvs.create false && poetry install --no-interaction --no-ansi --no-root --only main
 

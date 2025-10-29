@@ -7,19 +7,7 @@
             "path": "backend",
         },
         {
-            "path": "filenameprocessor",
-        },
-        {
-            "path": "recordprocessor",
-        },
-        {
             "path": "mesh_processor",
-        },
-        {
-            "path": "tests/e2e",
-        },
-        {
-            "path": "tests/e2e_batch",
         },
         {
             "path": "lambdas/ack_backend",
@@ -28,7 +16,7 @@
             "path": "lambdas/delta_backend",
         },
         {
-            "path": "lambdas/redis_sync",
+            "path": "lambdas/filenameprocessor",
         },
         {
             "path": "lambdas/id_sync",
@@ -37,7 +25,19 @@
             "path": "lambdas/mns_subscription",
         },
         {
+            "path": "lambdas/recordprocessor",
+        },
+        {
+            "path": "lambdas/redis_sync",
+        },
+        {
             "path": "lambdas/shared",
+        },
+        {
+            "path": "tests/e2e",
+        },
+        {
+            "path": "tests/e2e_batch",
         },
     ],
     "settings": {},

@@ -19,7 +19,7 @@ resource "aws_ecr_repository" "id_sync_lambda_repository" {
 # Module for building and pushing Docker image to ECR
 module "id_sync_docker_image" {
   source           = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version          = "8.1.0"
+  version          = "8.1.2"
   docker_file_path = "./id_sync/Dockerfile"
   create_ecr_repo  = false
   ecr_repo         = aws_ecr_repository.id_sync_lambda_repository.name
@@ -181,7 +181,7 @@ resource "aws_iam_policy" "id_sync_lambda_exec_policy" {
           "sqs:DeleteMessage",
           "sqs:GetQueueAttributes"
         ],
-        Resource = "arn:aws:sqs:eu-west-2:${var.immunisation_account_id}:${local.short_prefix}-id-sync-queue"
+        Resource = aws_sqs_queue.id_sync_queue.arn
       },
       # NB anomaly: in redis_sync this appears in "redis_sync_lambda_kms_access_policy"
       {
@@ -313,8 +313,8 @@ resource "aws_cloudwatch_log_group" "id_sync_log_group" {
 
 # NEW
 resource "aws_lambda_event_source_mapping" "id_sync_sqs_trigger" {
-  event_source_arn = "arn:aws:sqs:eu-west-2:${var.immunisation_account_id}:${local.short_prefix}-id-sync-queue"
-  function_name    = aws_lambda_function.id_sync_lambda.arn # TODO
+  event_source_arn = aws_sqs_queue.id_sync_queue.arn
+  function_name    = aws_lambda_function.id_sync_lambda.arn
 
   # Optional: Configure batch size and other settings
   batch_size                         = 10
