@@ -16,9 +16,9 @@ s3_client = boto3.client("s3")
 
 
 def parse_headers(headers_str: str) -> dict[str, str]:
-    headers = dict(
+    headers = dict(  # NOSONAR(S7494) force this to dict
         header_str.split(":", 1) for header_str in headers_str.split("\r\n") if ":" in header_str
-    )  # NOSONAR(S7494) force this to dict
+    )
     return {k.strip(): v.strip() for k, v in headers.items()}
 
 
