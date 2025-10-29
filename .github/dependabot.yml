@@ -12,8 +12,11 @@ updates:
       - "/lambdas/batch_processor_filter"
       - "/lambdas/delta_backend"
       - "/lambdas/filenameprocessor"
+<<<<<<< HEAD
+=======
+      - "/lambdas/mesh_processor"
+>>>>>>> master
       - "/lambdas/recordprocessor"
-      - "/mesh_processor"
       - "/sandbox"
     schedule:
       interval: "daily"
@@ -50,12 +53,12 @@ updates:
     directories:
       - "/"
       - "/backend"
-      - "/mesh_processor"
       - "/lambdas/ack_backend"
       - "/lambdas/batch_processor_filter"
       - "/lambdas/delta_backend"
       - "/lambdas/filenameprocessor"
       - "/lambdas/id_sync"
+      - "/lambdas/mesh_processor"
       - "/lambdas/mns_subscription"
       - "/lambdas/recordprocessor"
       - "/lambdas/redis_sync"

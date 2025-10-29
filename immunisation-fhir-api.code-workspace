@@ -7,9 +7,6 @@
             "path": "backend",
         },
         {
-            "path": "mesh_processor",
-        },
-        {
             "path": "lambdas/ack_backend",
         },
         {
@@ -20,6 +17,9 @@
         },
         {
             "path": "lambdas/id_sync",
+        },
+        {
+            "path": "lambdas/mesh_processor",
         },
         {
             "path": "lambdas/mns_subscription",

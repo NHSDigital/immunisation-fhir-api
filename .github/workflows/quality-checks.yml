@@ -131,15 +131,6 @@ jobs:
           poetry run coverage run -m unittest discover || echo "fhir-api tests failed" >> ../failed_tests.txt
           poetry run coverage xml -o ../backend-coverage.xml
 
-      - name: Run unittest with coverage-mesh-processor
-        working-directory: mesh_processor
-        id: meshprocessor
-        continue-on-error: true
-        run: |
-          poetry install
-          poetry run coverage run -m unittest discover || echo "mesh_processor tests failed" >> ../failed_tests.txt
-          poetry run coverage xml -o ../mesh_processor-coverage.xml
-
       - name: Run unittest with coverage-ack-lambda
         working-directory: lambdas/ack_backend
         id: acklambda
@@ -194,6 +185,15 @@ jobs:
           poetry install
           poetry run coverage run --rcfile=.coveragerc --source=src -m unittest discover || echo "id_sync tests failed" >> ../../failed_tests.txt
           poetry run coverage xml -o ../../id_sync-coverage.xml
+
+      - name: Run unittest with coverage-mesh-processor
+        working-directory: lambdas/mesh_processor
+        id: meshprocessor
+        continue-on-error: true
+        run: |
+          poetry install
+          poetry run coverage run -m unittest discover || echo "mesh_processor tests failed" >> ../../failed_tests.txt
+          poetry run coverage xml -o ../../mesh_processor-coverage.xml
 
       - name: Run unittest with coverage-mns-subscription
         working-directory: lambdas/mns_subscription
