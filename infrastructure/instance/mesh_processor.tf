@@ -61,7 +61,6 @@ module "mesh_processor_docker_image" {
   source_path   = abspath("${path.root}/../../lambdas")
   triggers = {
     dir_sha        = local.mesh_processor_lambda_dir_sha
-    shared_dir_sha = local.shared_dir_sha
   }
 }
 
