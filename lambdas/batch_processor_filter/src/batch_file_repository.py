@@ -37,7 +37,6 @@ class BatchFileRepository:
             "MESSAGE_DELIVERY": False,
         }
 
-    # TODO: can refactor to move_file()
     def move_source_file_to_archive(self, file_key: str) -> None:
         self._s3_client.copy_object(
             Bucket=self._SOURCE_BUCKET_NAME,
