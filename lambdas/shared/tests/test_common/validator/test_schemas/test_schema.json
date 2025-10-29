@@ -8,6 +8,7 @@
       "expressionId": "01K5EGR0C7Y1WJ0BC803SQDWK4",
       "fieldNameFHIR": "contained|#:Patient|identifier|#:https://fhir.nhs.uk/Id/nhs-number|value",
       "fieldNameFlat": "NHS_NUMBER",
+      "fieldNumber": 1,
       "errorLevel": 0,
       "expression": {
         "expressionName": "NHS Number Not Empty Check",
@@ -20,6 +21,7 @@
       "expressionId": "01K5EGR0C7QCEJMWH1R4MBPGQA",
       "fieldNameFHIR": "contained|#:Patient|name|#:official|given|0",
       "fieldNameFlat": "PERSON_FORENAME",
+      "fieldNumber": 2,
       "errorLevel": 0,
       "expression": {
         "expressionName": "Person Forname Not Empty Check",
@@ -32,6 +34,7 @@
       "expressionId": "01K5EGR0C7RRG9F6FVHJ8HE4QX",
       "fieldNameFHIR": "contained|#:Patient|name|#:official|family",
       "fieldNameFlat": "PERSON_SURNAME",
+      "fieldNumber": 3,
       "errorLevel": 0,
       "parentExpression": "01K5EGR0C7Y1WJ0BC803SQDWK4",
       "expression": {
@@ -42,21 +45,62 @@
       "errorGroup": "completeness"
     },
     {
-      "expressionId": "01K5EGR0C8WSJ9N8RV6T8RJJ4W",
-      "fieldNameFHIR": "performer|#:Organization|actor|identifier|value",
-      "fieldNameFlat": "SITE_CODE",
+      "expressionId": "01K8RW1DF635S4FRZ1WF9GDS1T",
+      "fieldNameFHIR": "contained|#:Patient|birthDate",
+      "fieldNameFlat": "PERSON_DOB",
+      "fieldNumber": 4,
       "errorLevel": 1,
       "expression": {
-        "expressionName": "Organisation Not Empty Check",
+        "expressionName": "Date of Birth Not Empty Check",
         "expressionType": "NOTEMPTY",
         "expressionRule": ""
       },
+      "errorGroup": "consistency"
+    },
+    {
+      "expressionId": "01K8RW2ATXRM572BFG19S8TFJ2",
+      "fieldNameFHIR": "contained|#:Patient|gender",
+      "fieldNameFlat": "PERSON_GENDER_CODE",
+      "fieldNumber": 5,
+      "errorLevel": 1,
+      "expression": {
+        "expressionName": "Gender Valid Check",
+        "expressionType": "NOTEMPTY",
+        "expressionRule": ""
+      },
+      "errorGroup": "consistency"
+    },
+    {
+      "expressionId": "01K8RW2MYFNE6YZJ99RC8B3XES",
+      "fieldNameFHIR": "contained|#:Patient|address|#:postalCode|postalCode",
+      "fieldNameFlat": "PERSON_POSTCODE",
+      "fieldNumber": 6,
+      "errorLevel": 2,
+      "expression": {
+        "expressionName": "Defaults to",
+        "expressionType": "",
+        "expressionRule": "NOTEMPTY"
+      },
       "errorGroup": "completeness"
+    },
+    {
+      "expressionId": "EXP007",
+      "fieldNameFHIR": "occurrenceDateTime",
+      "fieldNameFlat": "DATE_AND_TIME",
+      "fieldNumber": 6,
+      "errorLevel": 0,
+      "expression": {
+        "expressionName": "Date Convert",
+        "expressionType": "",
+        "expressionRule": ""
+      },
+      "errorGroup": "consistency"
     },
     {
       "expressionId": "01K5EGR0C8M1MVNKTQCE6MSG68",
       "fieldNameFHIR": "performer|#:Organization|actor|identifier|value",
       "fieldNameFlat": "SITE_CODE",
+      "fieldNumber": 7,
       "errorLevel": 0,
       "expression": {
         "expressionName": "Organisation Look Up Check",
@@ -64,6 +108,58 @@
         "expressionRule": "Organisation"
       },
       "errorGroup": "consistency"
+    },
+    {
+      "expressionId": "EXP009",
+      "fieldNameFHIR": "performer|#:Organization|actor|identifier|system",
+      "fieldNameFlat": "SITE_CODE_TYPE_URI",
+      "fieldNumber": 8,
+      "errorLevel": 1,
+      "expression": {
+        "expressionName": "Defaults to",
+        "expressionType": "DEFAULT",
+        "expressionRule": ""
+      },
+      "errorGroup": "consistency"
+    },
+    {
+      "expressionId": "EXP010",
+      "fieldNameFHIR": "identifier|0|value",
+      "fieldNameFlat": "UNIQUE_ID",
+      "fieldNumber": 9,
+      "errorLevel": 0,
+      "expression": {
+        "expressionName": "Unique ID Not Empty Check",
+        "expressionType": "NOTEMPTY",
+        "expressionRule": ""
+      },
+      "errorGroup": "validity"
+    },
+    {
+      "expressionId": "EXP011",
+      "fieldNameFHIR": "identifier|0|system",
+      "fieldNameFlat": "UNIQUE_ID_URI",
+      "fieldNumber": 10,
+      "errorLevel": 0,
+      "expression": {
+        "expressionName": "Unique ID URI Not Empty Check",
+        "expressionType": "NOTEMPTY",
+        "expressionRule": ""
+      },
+      "errorGroup": "validity"
+    },
+    {
+      "expressionId": "EXP012",
+      "fieldNameFHIR": "id",
+      "fieldNameFlat": "ACTION_FLAG",
+      "fieldNumber": 11,
+      "errorLevel": 1,
+      "expression": {
+        "expressionName": "Change To",
+        "expressionType": "",
+        "expressionRule": "NOTEMPTY"
+      },
+      "errorGroup": "validity"
     },
     {
       "expressionId": "01K5EGR0C8SDQBTNCEP8TJNCCW",

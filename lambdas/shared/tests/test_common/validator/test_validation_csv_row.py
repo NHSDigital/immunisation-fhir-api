@@ -26,6 +26,8 @@ class TestValidator(unittest.TestCase):
     def test_run_validation_on_valid_csv_row(self):
         valid_rows = build_row(CSV_HEADER, CSV_VALUES)
         error_report = self.validator.validate_csv_row(valid_rows, CSV_HEADER, True, True, True)
+        print(f"Error Report: {error_report}")
+        self.maxDiff = None
         self.assertEqual(error_report, [])
 
     def test_run_validation_on_invalid_csv_row(self):
@@ -38,4 +40,8 @@ class TestValidator(unittest.TestCase):
             "Value not empty failure",
             "Value is empty, not as expected",
         )
+        self.maxDiff = None
+        print(f"Error Report: {error_report}")
+        print(f"Messages: {messages}")
+        print(f"Expected Error: {expected_error}")
         self.assertIn(expected_error, messages)
