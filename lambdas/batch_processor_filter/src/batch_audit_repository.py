@@ -5,7 +5,6 @@ from constants import (
     AUDIT_TABLE_FILENAME_GSI,
     AUDIT_TABLE_NAME,
     AUDIT_TABLE_QUEUE_NAME_GSI,
-    REGION_NAME,
     AuditTableKeys,
     FileStatus,
 )
