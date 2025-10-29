@@ -1,6 +1,6 @@
-import boto3
 from boto3.dynamodb.conditions import Key
 
+from common.aws_dynamodb import get_dynamodb_table
 from constants import (
     AUDIT_TABLE_FILENAME_GSI,
     AUDIT_TABLE_NAME,
@@ -22,7 +22,7 @@ class BatchAuditRepository:
     _PROCESSING_AND_FAILED_STATUSES = {FileStatus.PROCESSING, FileStatus.FAILED}
 
     def __init__(self):
-        self._batch_audit_table = boto3.resource("dynamodb", region_name=REGION_NAME).Table(AUDIT_TABLE_NAME)
+        self._batch_audit_table = get_dynamodb_table(AUDIT_TABLE_NAME)
 
     def is_duplicate_file(self, file_key: str) -> bool:
         matching_files = self._batch_audit_table.query(
