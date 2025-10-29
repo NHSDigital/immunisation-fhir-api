@@ -7,6 +7,7 @@ from smart_open import open
 
 EXPECTED_BUCKET_OWNER_ACCOUNT = os.getenv("ACCOUNT_ID")
 DESTINATION_BUCKET_NAME = os.getenv("DESTINATION_BUCKET_NAME")
+UNEXPECTED_EOF_ERROR = "Unexpected EOF"
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
@@ -15,13 +16,16 @@ s3_client = boto3.client("s3")
 
 
 def parse_headers(headers_str: str) -> dict[str, str]:
-    headers = dict(header_str.split(":", 1) for header_str in headers_str.split("\r\n") if ":" in header_str)
+    headers = dict(
+        header_str.split(":", 1) for header_str in headers_str.split("\r\n") 
+        if ":" in header_str
+    )  # NOSONAR(S7494) force this to dict
     return {k.strip(): v.strip() for k, v in headers.items()}
 
 
 def parse_header_value(header_value: str) -> tuple[str, dict[str, str]]:
     main_value, *params = header_value.split(";")
-    parsed_params = dict(param.strip().split("=", 1) for param in params)
+    parsed_params = dict(param.strip().split("=", 1) for param in params)  # NOSONAR(S7494) force this to dict
     parsed_params = {k: v.strip('"') for k, v in parsed_params.items()}
     return main_value, parsed_params
 
@@ -30,7 +34,7 @@ def read_until_part_start(input_file: BinaryIO, boundary: bytes) -> None:
     while line := input_file.readline():
         if line == b"--" + boundary + b"\r\n":
             return
-    raise ValueError("Unexpected EOF")
+    raise ValueError(UNEXPECTED_EOF_ERROR)
 
 
 def read_headers_bytes(input_file: BinaryIO) -> bytes:
@@ -39,7 +43,7 @@ def read_headers_bytes(input_file: BinaryIO) -> bytes:
         if line == b"\r\n":
             return headers_bytes
         headers_bytes += line
-    raise ValueError("Unexpected EOF")
+    raise ValueError(UNEXPECTED_EOF_ERROR)
 
 
 def read_part_headers(input_file: BinaryIO) -> dict[str, str]:
@@ -67,7 +71,7 @@ def stream_part_body(input_file: BinaryIO, boundary: bytes, output_file: BinaryI
                 output_file.write(previous_line)
 
         previous_line = line
-    raise ValueError("Unexpected EOF")
+    raise ValueError(UNEXPECTED_EOF_ERROR)
 
 
 def move_file(source_bucket: str, source_key: str, destination_bucket: str, destination_key: str) -> None:
