@@ -7,10 +7,10 @@ import boto3
 from batch_audit_repository import BatchAuditRepository
 from batch_file_created_event import BatchFileCreatedEvent
 from batch_file_repository import BatchFileRepository
-from constants import QUEUE_URL, REGION_NAME, FileNotProcessedReason, FileStatus
-from exceptions import EventAlreadyProcessingForSupplierAndVaccTypeError
 from common.clients import logger
 from common.log_firehose import send_log_to_firehose
+from constants import QUEUE_URL, REGION_NAME, FileNotProcessedReason, FileStatus
+from exceptions import EventAlreadyProcessingForSupplierAndVaccTypeError
 
 BATCH_AUDIT_REPOSITORY = BatchAuditRepository()
 BATCH_FILE_REPOSITORY = BatchFileRepository()
