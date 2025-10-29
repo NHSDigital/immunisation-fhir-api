@@ -41,18 +41,18 @@ class ExceptionLevels(IntEnum):
 
 MESSAGES = {
     ExceptionLevels.UNEXPECTED_EXCEPTION: "Unexpected exception [%s]: %s",
-    ExceptionLevels.VALUE_CHECK_FAILED: "Value Check Failed [%s]: %s",
-    ExceptionLevels.HEADER_CHECK_FAILED: "Header Check Failed [%s]: %s",
-    ExceptionLevels.RECORD_LENGTH_CHECK_FAILED: "Record Length Check Failed [%s]: %s",
-    ExceptionLevels.RECORD_CHECK_FAILED: "Record Check Failed [%s]: %s",
-    ExceptionLevels.VALUE_PREDICATE_FALSE: "Value Predicate False [%s]: %s",
-    ExceptionLevels.RECORD_PREDICATE_FALSE: "Record Predicate False [%s]: %s",
-    ExceptionLevels.UNIQUE_CHECK_FAILED: "Unique Check Failed [%s]: %s",
-    ExceptionLevels.ASSERT_CHECK_FAILED: "Assert Check Failed [%s]: %s",
-    ExceptionLevels.FINALLY_ASSERT_CHECK_FAILED: "Finally Assert Check Failed [%s]: %s",
-    ExceptionLevels.PARSING_ERROR: "Parsing Error [%s]: %s",
-    ExceptionLevels.PARENT_FAILED: "Parent Failed [%s]: %s",
-    ExceptionLevels.KEY_CHECK_FAILED: "Key Check Failed [%s]: %s",
+    ExceptionLevels.VALUE_CHECK_FAILED: "Value Check Failed",
+    ExceptionLevels.HEADER_CHECK_FAILED: "Header Check Failed",
+    ExceptionLevels.RECORD_LENGTH_CHECK_FAILED: "Record Length Check Failed",
+    ExceptionLevels.RECORD_CHECK_FAILED: "Record Check Failed",
+    ExceptionLevels.VALUE_PREDICATE_FALSE: "Value Predicate False",
+    ExceptionLevels.RECORD_PREDICATE_FALSE: "Record Predicate False",
+    ExceptionLevels.UNIQUE_CHECK_FAILED: "Unique Check Failed",
+    ExceptionLevels.ASSERT_CHECK_FAILED: "Assert Check Failed",
+    ExceptionLevels.FINALLY_ASSERT_CHECK_FAILED: "Finally Assert Check Failed",
+    ExceptionLevels.PARSING_ERROR: "Parsing Error",
+    ExceptionLevels.PARENT_FAILED: "Parent Failed",
+    ExceptionLevels.KEY_CHECK_FAILED: "Key Check Failed",
 }
 
 

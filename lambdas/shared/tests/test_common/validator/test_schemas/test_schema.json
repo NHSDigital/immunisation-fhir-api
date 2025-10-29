@@ -84,10 +84,10 @@
       "errorGroup": "completeness"
     },
     {
-      "expressionId": "EXP007",
+      "expressionId": "01K8S0WRNSPQ42RBD8420Q9G7Y",
       "fieldNameFHIR": "occurrenceDateTime",
       "fieldNameFlat": "DATE_AND_TIME",
-      "fieldNumber": 6,
+      "fieldNumber": 7,
       "errorLevel": 0,
       "expression": {
         "expressionName": "Date Convert",
@@ -100,7 +100,7 @@
       "expressionId": "01K5EGR0C8M1MVNKTQCE6MSG68",
       "fieldNameFHIR": "performer|#:Organization|actor|identifier|value",
       "fieldNameFlat": "SITE_CODE",
-      "fieldNumber": 7,
+      "fieldNumber": 8,
       "errorLevel": 0,
       "expression": {
         "expressionName": "Organisation Look Up Check",
@@ -110,10 +110,10 @@
       "errorGroup": "consistency"
     },
     {
-      "expressionId": "EXP009",
+      "expressionId": "01K8S0X5AJ9048PAFEN3XVZ7YC",
       "fieldNameFHIR": "performer|#:Organization|actor|identifier|system",
       "fieldNameFlat": "SITE_CODE_TYPE_URI",
-      "fieldNumber": 8,
+      "fieldNumber": 9,
       "errorLevel": 1,
       "expression": {
         "expressionName": "Defaults to",
@@ -123,10 +123,10 @@
       "errorGroup": "consistency"
     },
     {
-      "expressionId": "EXP010",
+      "expressionId": "01K8S0XF2Y2WP22017N9KE6VJA",
       "fieldNameFHIR": "identifier|0|value",
       "fieldNameFlat": "UNIQUE_ID",
-      "fieldNumber": 9,
+      "fieldNumber": 10,
       "errorLevel": 0,
       "expression": {
         "expressionName": "Unique ID Not Empty Check",
@@ -136,10 +136,10 @@
       "errorGroup": "validity"
     },
     {
-      "expressionId": "EXP011",
+      "expressionId": "01K8S0XQYHDKMCA1P1GK4W5JHP",
       "fieldNameFHIR": "identifier|0|system",
       "fieldNameFlat": "UNIQUE_ID_URI",
-      "fieldNumber": 10,
+      "fieldNumber": 11,
       "errorLevel": 0,
       "expression": {
         "expressionName": "Unique ID URI Not Empty Check",
@@ -149,15 +149,15 @@
       "errorGroup": "validity"
     },
     {
-      "expressionId": "EXP012",
+      "expressionId": "01K8S0Y0TN3NZA6VBB3HM1PDR1",
       "fieldNameFHIR": "id",
       "fieldNameFlat": "ACTION_FLAG",
-      "fieldNumber": 11,
+      "fieldNumber": 12,
       "errorLevel": 1,
       "expression": {
-        "expressionName": "Change To",
-        "expressionType": "",
-        "expressionRule": "NOTEMPTY"
+        "expressionName": "Action Flag Not Empty Check",
+        "expressionType": "NOTEMPTY",
+        "expressionRule": ""
       },
       "errorGroup": "validity"
     },
@@ -165,6 +165,7 @@
       "expressionId": "01K5EGR0C8SDQBTNCEP8TJNCCW",
       "fieldNameFHIR": "contained|#:Practitioner|name|0|given|0",
       "fieldNameFlat": "PERFORMING_PROFESSIONAL_FORENAME",
+      "fieldNumber": 13,
       "errorLevel": 1,
       "expression": {
         "expressionName": "Practitioner Forename Not Empty Check",
@@ -174,9 +175,10 @@
       "errorGroup": "completeness"
     },
     {
-      "expressionId": "01K5EGR0C822RC96QJRR2YX18S",
+      "expressionId": "01K5EGR0C8T3Z6X6h3W7D1F4VY",
       "fieldNameFHIR": "contained|#:Practitioner|name|0|family",
       "fieldNameFlat": "PERFORMING_PROFESSIONAL_SURNAME",
+      "fieldNumber": 14,
       "errorLevel": 1,
       "expression": {
         "expressionName": "Practitioner Surname Not Empty Check",
@@ -186,10 +188,24 @@
       "errorGroup": "completeness"
     },
     {
+      "expressionId": "01K8S0Y8TX8HTX6YGW61RDCATK",
+      "fieldNameFHIR": "recorded",
+      "fieldNameFlat": "RECORDED_DATE",
+      "fieldNumber": 15,
+      "errorLevel": 1,
+      "expression": {
+        "expressionName": "Recorded Date Convert",
+        "expressionType": "DATECONVERT",
+        "expressionRule": ""
+      },
+      "errorGroup": "consistency"
+    },
+    {
       "expressionId": "01K5EGR0C84CCDRR0VFSWQNFZP",
       "fieldNameFHIR": "primarySource",
       "fieldNameFlat": "PRIMARY_SOURCE",
-      "errorLevel": 1,
+      "fieldNumber": 16,
+      "errorLevel": 0,
       "expression": {
         "expressionName": "Primary Source Not Empty Check",
         "expressionType": "NOTEMPTY",
@@ -198,9 +214,10 @@
       "errorGroup": "completeness"
     },
     {
-      "expressionId": "01K5EGR0C8VCX8FX8A7ZV7MQ5J",
+      "expressionId": "01K8S0YYGDFWJXN2W3THYG24EZ",
       "fieldNameFHIR": "extension|0|valueCodeableConcept|coding|0|code",
       "fieldNameFlat": "VACCINATION_PROCEDURE_CODE",
+      "fieldNumber": 17,
       "errorLevel": 0,
       "expression": {
         "expressionName": "Procedure Code Not Empty Check",
@@ -213,6 +230,7 @@
       "expressionId": "01K5EGR0C85HY6MDNN6TTR1K48",
       "fieldNameFHIR": "extension|0|valueCodeableConcept|coding|0|display",
       "fieldNameFlat": "VACCINATION_PROCEDURE_TERM",
+      "fieldNumber": 18,
       "errorLevel": 1,
       "expression": {
         "expressionName": "Procedure Term Not Empty Check",
@@ -225,6 +243,7 @@
       "expressionId": "01K5EGR0C84DDGW567G14AYBC6",
       "fieldNameFHIR": "protocolApplied|0|doseNumberPositiveInt",
       "fieldNameFlat": "DOSE_SEQUENCE",
+      "fieldNumber": 19,
       "errorLevel": 1,
       "expression": {
         "expressionName": "Dose Sequence Not Empty Check",
@@ -237,6 +256,7 @@
       "expressionId": "01K5EGR0C8W3HXFYR80ENW73SS",
       "fieldNameFHIR": "vaccineCode|coding|#:http://snomed.info/sct|code",
       "fieldNameFlat": "VACCINE_PRODUCT_CODE",
+      "fieldNumber": 20,
       "errorLevel": 0,
       "expression": {
         "expressionName": "Produce Code Not Empty Check",
@@ -249,6 +269,7 @@
       "expressionId": "01K5EGR0C885N7MMW2J5JKHTT2",
       "fieldNameFHIR": "vaccineCode|coding|#:http://snomed.info/sct|display",
       "fieldNameFlat": "VACCINE_PRODUCT_TERM",
+      "fieldNumber": 21,
       "errorLevel": 1,
       "expression": {
         "expressionName": "Produce Term Not Empty Check",
@@ -261,6 +282,7 @@
       "expressionId": "01K5EGR0C86XN0AF0M9DJYFGCD",
       "fieldNameFHIR": "manufacturer|display",
       "fieldNameFlat": "VACCINE_MANUFACTURER",
+      "fieldNumber": 22,
       "errorLevel": 0,
       "expression": {
         "expressionName": "Manufacturer Display Not Empty Check",
@@ -273,6 +295,7 @@
       "expressionId": "01K5EGR0C89M4CV68B7XAKDCHG",
       "fieldNameFHIR": "lotNumber",
       "fieldNameFlat": "BATCH_NUMBER",
+      "fieldNumber": 23,
       "errorLevel": 0,
       "expression": {
         "expressionName": "Batch Number Not Empty Check",
@@ -280,6 +303,139 @@
         "expressionRule": ""
       },
       "errorGroup": "completeness"
+    },
+    {
+      "expressionId": "01K8S2AG0CR7S28QB29XY14J71",
+      "fieldNameFHIR": "expirationDate",
+      "fieldNameFlat": "EXPIRY_DATE",
+      "fieldNumber": 24,
+      "errorLevel": 1,
+      "expression": {
+        "expressionName": "Date Convert",
+        "expressionType": "NOTEMPTY",
+        "expressionRule": ""
+      },
+      "errorGroup": "consistency"
+    },
+    {
+      "expressionId": "01K8S2AS6TD0146EZN8ZDM9AGD",
+      "fieldNameFHIR": "site|coding|#:http://snomed.info/sct|code",
+      "fieldNameFlat": "SITE_OF_VACCINATION_CODE",
+      "errorLevel": 0,
+      "expression": {
+        "expressionName": "Site of Vaccination Code Not Empty Check",
+        "expressionType": "NOTEMPTY",
+        "expressionRule": ""
+      },
+      "errorGroup": "completeness"
+    },
+    {
+      "expressionId": "01K8S2AZQ7XXTTF2AF7ZMM609C",
+      "fieldNameFHIR": "site|coding|#:http://snomed.info/sct|display",
+      "fieldNameFlat": "SITE_OF_VACCINATION_TERM",
+      "errorLevel": 1,
+      "expression": {
+        "expressionName": "Site of Vaccination Term Lookup Check",
+        "expressionType": "NOTEMPTY",
+        "expressionRule": ""
+      },
+      "errorGroup": "consistency"
+    },
+    {
+      "expressionId": "01K8S2B78X58EB9XAZYX3M4VPP",
+      "fieldNameFHIR": "route|coding|#:http://snomed.info/sct|code",
+      "fieldNameFlat": "ROUTE_OF_VACCINATION_CODE",
+      "errorLevel": 0,
+      "expression": {
+        "expressionName": "Route of Vaccination Code Not Empty Check",
+        "expressionType": "NOTEMPTY",
+        "expressionRule": ""
+      },
+      "errorGroup": "completeness"
+    },
+    {
+      "expressionId": "01K8S2BEP9C9KHNJTKPP6SH1G0",
+      "fieldNameFHIR": "route|coding|#:http://snomed.info/sct|display",
+      "fieldNameFlat": "ROUTE_OF_VACCINATION_TERM",
+      "errorLevel": 1,
+      "expression": {
+        "expressionName": "Route of Vaccination Term Lookup Check",
+        "expressionType": "NOTEMPTY",
+        "expressionRule": ""
+      },
+      "errorGroup": "consistency"
+    },
+    {
+      "expressionId": "01K8S2BNT5MET8E29GBT83AP0P",
+      "fieldNameFHIR": "doseQuantity|value",
+      "fieldNameFlat": "DOSE_AMOUNT",
+      "errorLevel": 1,
+      "expression": {
+        "expressionName": "Dose Amount Default Check",
+        "expressionType": "NOTEMPTY",
+        "expressionRule": ""
+      },
+      "errorGroup": "completeness"
+    },
+    {
+      "expressionId": "01K8S2BY1S0TXETJY78H418XQG",
+      "fieldNameFHIR": "doseQuantity|code",
+      "fieldNameFlat": "DOSE_UNIT_CODE",
+      "errorLevel": 1,
+      "expression": {
+        "expressionName": "Dose Unit Only If System Check",
+        "expressionType": "NOTEMPTY",
+        "expressionRule": ""
+      },
+      "errorGroup": "consistency"
+    },
+    {
+      "expressionId": "01K8S2C3XTDW9RK9Y2FQ9YM5WJ",
+      "fieldNameFHIR": "doseQuantity|unit",
+      "fieldNameFlat": "DOSE_UNIT_TERM",
+      "errorLevel": 0,
+      "expression": {
+        "expressionName": "Dose Unit Term Not Empty Check",
+        "expressionType": "NOTEMPTY",
+        "expressionRule": ""
+      },
+      "errorGroup": "completeness"
+    },
+    {
+      "expressionId": "01K8S2CANK2PFNDANX3D04W2NR",
+      "fieldNameFHIR": "reasonCode|#:http://snomed.info/sct|coding|#:http://snomed.info/sct|code",
+      "fieldNameFlat": "INDICATION_CODE",
+      "errorLevel": 0,
+      "expression": {
+        "expressionName": "Indication Code Not Empty Check",
+        "expressionType": "NOTEMPTY",
+        "expressionRule": ""
+      },
+      "errorGroup": "completeness"
+    },
+    {
+      "expressionId": "01K8S2CKK8FCVJ6049EW5G563P",
+      "fieldNameFHIR": "location|identifier|value",
+      "fieldNameFlat": "LOCATION_CODE",
+      "errorLevel": 1,
+      "expression": {
+        "expressionName": "Location Code Default Check",
+        "expressionType": "NOTEMPTY",
+        "expressionRule": ""
+      },
+      "errorGroup": "consistency"
+    },
+    {
+      "expressionId": "01K8S2CSWYXJ5WDS7K59A045JR",
+      "fieldNameFHIR": "location|identifier|system",
+      "fieldNameFlat": "LOCATION_CODE_TYPE_URI",
+      "errorLevel": 1,
+      "expression": {
+        "expressionName": "Location Code Type URI Default Check",
+        "expressionType": "DEFAULT",
+        "expressionRule": ""
+      },
+      "errorGroup": "consistency"
     }
   ]
 }
