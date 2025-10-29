@@ -3,9 +3,8 @@
 from csv import writer
 from io import BytesIO, StringIO
 
-import boto3
-
 from batch_file_created_event import BatchFileCreatedEvent
+from common.clients import get_s3_client
 from constants import ACK_BUCKET_NAME, SOURCE_BUCKET_NAME
 
 
@@ -17,7 +16,7 @@ class BatchFileRepository:
     _ACK_BUCKET_NAME: str = ACK_BUCKET_NAME
 
     def __init__(self):
-        self._s3_client = boto3.client("s3")
+        self._s3_client = get_s3_client()
 
     @staticmethod
     def _create_ack_failure_data(
@@ -38,6 +37,7 @@ class BatchFileRepository:
             "MESSAGE_DELIVERY": False,
         }
 
+    # TODO: can refactor to move_file()
     def move_source_file_to_archive(self, file_key: str) -> None:
         self._s3_client.copy_object(
             Bucket=self._SOURCE_BUCKET_NAME,
