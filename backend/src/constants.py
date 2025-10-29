@@ -11,7 +11,7 @@ class Urls:
 
     nhs_number = "https://fhir.nhs.uk/Id/nhs-number"
     vaccination_procedure = "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure"
-    snomed = "http://snomed.info/sct"
+    snomed = "http://snomed.info/sct"  # NOSONAR(S5332)
     nhs_number_verification_status_structure_definition = (
         "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-NHSNumberVerificationStatus"
     )
