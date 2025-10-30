@@ -96,6 +96,7 @@ class PreValidators:
             self.pre_validate_value_codeable_concept,
             self.pre_validate_extension_length,
             self.pre_validate_vaccination_procedure_code,
+            self.pre_validate_vaccination_procedure_display,
             self.pre_validate_vaccine_code,
         ]
 
@@ -597,6 +598,22 @@ class PreValidators:
             field_value = get_generic_extension_value(values, url, system, field_type)
             PreValidation.for_string(field_value, field_location)
             PreValidation.for_snomed_code(field_value, field_location)
+        except (KeyError, IndexError):
+            pass
+
+    def pre_validate_vaccination_procedure_display(self, values: dict) -> dict:
+        """
+        Pre-validate that, if extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-
+        VaccinationProcedure')].valueCodeableConcept.coding[?(@.system=='http://snomed.info/sct')].display
+        (legacy CSV field name: VACCINATION_PROCEDURE_TERM) exists, then it is a non-empty string
+        """
+        url = "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-" + "VaccinationProcedure"
+        system = "http://snomed.info/sct"
+        field_type = "display"
+        field_location = generate_field_location_for_extension(url, system, field_type)
+        try:
+            field_value = get_generic_extension_value(values, url, system, field_type)
+            PreValidation.for_string(field_value, field_location)
         except (KeyError, IndexError):
             pass
 
