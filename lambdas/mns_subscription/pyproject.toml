@@ -10,7 +10,7 @@ packages = [
 
 [tool.poetry.dependencies]
 python                  = "~3.11"
-boto3                   = "~1.40.45"
+boto3                   = "~1.40.62"
 pyjwt                   = "~2.10.1"
 moto                    = "^5.1.14"
 coverage                = "^7.10.7"
