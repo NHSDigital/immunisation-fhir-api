@@ -9,7 +9,7 @@ test:
 	@PYTHONPATH=src:tests python -m unittest
 
 coverage-run:
-	@PYTHONPATH=src:tests coverage run -m unittest discover
+	@PYTHONPATH=src:tests coverage run --source=src -m unittest discover
 
 coverage-report:
 	coverage report -m
