@@ -70,11 +70,6 @@ def get_service_url(
     return f"https://{subdomain}api.service.nhs.uk/{service_base_path}"
 
 
-class UpdateOutcome(Enum):
-    UPDATE = 0
-    CREATE = 1
-
-
 class FhirService:
     def __init__(
         self,
@@ -168,13 +163,13 @@ class FhirService:
         existing_resource_version: int,
         existing_resource_vacc_type: str,
         supplier_system: str,
-    ) -> tuple[Optional[UpdateOutcome], Immunization | dict, Optional[int]]:
+    ) -> tuple[bool, Immunization | dict, Optional[int]]:
         # VED-747 - TODO - this and the below 2 methods are duplicated. We should streamline the update journey
         immunization["id"] = imms_id
 
         patient = self._validate_patient(immunization)
         if "diagnostics" in patient:
-            return None, patient, None
+            return False, patient, None
 
         vaccination_type = get_vaccine_type(immunization)
 
@@ -191,7 +186,7 @@ class FhirService:
             imms_id, immunization, patient, existing_resource_version, supplier_system
         )
 
-        return UpdateOutcome.UPDATE, Immunization.parse_obj(imms), updated_version
+        return True, Immunization.parse_obj(imms), updated_version
 
     def reinstate_immunization(
         self,
@@ -200,11 +195,11 @@ class FhirService:
         existing_resource_version: int,
         existing_resource_vacc_type: str,
         supplier_system: str,
-    ) -> tuple[Optional[UpdateOutcome], Immunization | dict, Optional[int]]:
+    ) -> tuple[bool, Immunization | dict, Optional[int]]:
         immunization["id"] = imms_id
         patient = self._validate_patient(immunization)
         if "diagnostics" in patient:
-            return None, patient, None
+            return False, patient, None
 
         vaccination_type = get_vaccine_type(immunization)
 
@@ -219,7 +214,7 @@ class FhirService:
             imms_id, immunization, patient, existing_resource_version, supplier_system
         )
 
-        return UpdateOutcome.UPDATE, Immunization.parse_obj(imms), updated_version
+        return True, Immunization.parse_obj(imms), updated_version
 
     def update_reinstated_immunization(
         self,
@@ -228,11 +223,11 @@ class FhirService:
         existing_resource_version: int,
         existing_resource_vacc_type: str,
         supplier_system: str,
-    ) -> tuple[Optional[UpdateOutcome], Immunization | dict, Optional[int]]:
+    ) -> tuple[bool, Immunization | dict, Optional[int]]:
         immunization["id"] = imms_id
         patient = self._validate_patient(immunization)
         if "diagnostics" in patient:
-            return None, patient, None
+            return False, patient, None
 
         vaccination_type = get_vaccine_type(immunization)
 
@@ -251,7 +246,7 @@ class FhirService:
             supplier_system,
         )
 
-        return UpdateOutcome.UPDATE, Immunization.parse_obj(imms), updated_version
+        return True, Immunization.parse_obj(imms), updated_version
 
     def delete_immunization(self, imms_id: str, supplier_system: str) -> None:
         """
