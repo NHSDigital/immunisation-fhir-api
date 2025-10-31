@@ -1404,6 +1404,14 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
                 actual_error_messages,
             )
 
+    def test_pre_validate_vaccination_procedure_display(self):
+        """Test test_pre_validate_vaccination_procedure_display accepts valid values and rejects invalid values"""
+        ValidatorModelTests.test_string_value(
+            self,
+            field_location="extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')].valueCodeableConcept.coding[?(@.system=='http://snomed.info/sct')].display",
+            valid_strings_to_test=["DUMMY"],
+        )
+
 
 class TestImmunizationModelPreValidationRulesForReduceValidation(unittest.TestCase):
     """Test immunization pre validation rules on the FHIR model using the status="reduce validation" data"""

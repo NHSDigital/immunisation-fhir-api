@@ -10,6 +10,9 @@
             "path": "lambdas/ack_backend",
         },
         {
+            "path": "lambdas/batch_processor_filter",
+        },
+        {
             "path": "lambdas/delta_backend",
         },
         {
