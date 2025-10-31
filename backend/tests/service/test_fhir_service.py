@@ -26,7 +26,7 @@ from models.errors import (
 from models.fhir_immunization import ImmunizationValidator
 from models.utils.generic_utils import get_contained_patient
 from repository.fhir_repository import ImmunizationRepository
-from service.fhir_service import FhirService, UpdateOutcome, get_service_url
+from service.fhir_service import FhirService, get_service_url
 from testing_utils.generic_utils import load_json_data
 from testing_utils.immunization_utils import (
     VALID_NHS_NUMBER,
@@ -638,7 +638,7 @@ class TestUpdateImmunization(TestFhirServiceBase):
         outcome, _, _ = self.fhir_service.update_immunization(imms_id, req_imms, 1, "COVID19", "Test")
 
         # Then
-        self.assertEqual(outcome, UpdateOutcome.UPDATE)
+        self.assertTrue(outcome)
         self.imms_repo.update_immunization.assert_called_once_with(imms_id, req_imms, req_patient, 1, "Test")
         self.authoriser.authorise.assert_called_once_with("Test", ApiOperationCode.UPDATE, {"COVID19"})
 
@@ -700,7 +700,7 @@ class TestUpdateImmunization(TestFhirServiceBase):
 
         outcome, resource, version = self.fhir_service.reinstate_immunization(imms_id, req_imms, 1, "COVID19", "Test")
 
-        self.assertEqual(outcome, UpdateOutcome.UPDATE)
+        self.assertTrue(outcome)
         self.assertEqual(version, 5)
 
     def test_reinstate_immunization_raises_exception_when_missing_authz(self):
@@ -728,7 +728,7 @@ class TestUpdateImmunization(TestFhirServiceBase):
             imms_id, req_imms, 1, "COVID19", "Test"
         )
 
-        self.assertEqual(outcome, UpdateOutcome.UPDATE)
+        self.assertTrue(outcome)
         self.assertEqual(version, 9)
 
     def test_reinstate_immunization_with_diagnostics(self):
@@ -739,7 +739,7 @@ class TestUpdateImmunization(TestFhirServiceBase):
 
         outcome, resource, version = self.fhir_service.reinstate_immunization(imms_id, req_imms, 1, "COVID19", "Test")
 
-        self.assertIsNone(outcome)
+        self.assertFalse(outcome)
         self.assertEqual(resource, {"diagnostics": "invalid patient"})
         self.assertIsNone(version)
         self.imms_repo.reinstate_immunization.assert_not_called()
@@ -754,7 +754,7 @@ class TestUpdateImmunization(TestFhirServiceBase):
             imms_id, req_imms, 1, "COVID19", "Test"
         )
 
-        self.assertIsNone(outcome)
+        self.assertFalse(outcome)
         self.assertEqual(resource, {"diagnostics": "invalid patient"})
         self.assertIsNone(version)
         self.imms_repo.update_reinstated_immunization.assert_not_called()
