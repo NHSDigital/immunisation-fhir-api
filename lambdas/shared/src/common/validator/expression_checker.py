@@ -80,7 +80,7 @@ class ExpressionChecker:
                 return "Schema expression not found! Check your expression type : " + expression_type
 
     # ISO 8601 date/datetime validate (currently date-only)
-    def _validate_datetime(self, rule, field_name, field_value, row) -> ErrorReport:
+    def _validate_datetime(self, _expression_rule, field_name, field_value, row) -> ErrorReport:
         try:
             # Current behavior expects date-only; datetime raises and is handled below
             datetime.date.fromisoformat(field_value)
