@@ -3,8 +3,8 @@
 from functools import wraps
 from typing import Callable
 
+from common.clients import logger
 from exceptions import EventAlreadyProcessingForSupplierAndVaccTypeError
-from logger import logger
 
 
 def exception_decorator(func: Callable):

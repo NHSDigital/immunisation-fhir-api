@@ -2,15 +2,13 @@
 
 import json
 
-import boto3
-
 from batch_audit_repository import BatchAuditRepository
 from batch_file_created_event import BatchFileCreatedEvent
 from batch_file_repository import BatchFileRepository
-from constants import QUEUE_URL, REGION_NAME, FileNotProcessedReason, FileStatus
+from common.clients import get_sqs_client, logger
+from common.log_firehose import send_log_to_firehose
+from constants import QUEUE_URL, FileNotProcessedReason, FileStatus
 from exceptions import EventAlreadyProcessingForSupplierAndVaccTypeError
-from logger import logger
-from send_log_to_firehose import send_log_to_firehose
 
 BATCH_AUDIT_REPOSITORY = BatchAuditRepository()
 BATCH_FILE_REPOSITORY = BatchFileRepository()
@@ -26,7 +24,7 @@ class BatchProcessorFilterService:
     ):
         self._batch_audit_repository = audit_repo
         self._batch_file_repo = batch_file_repo
-        self._queue_client = boto3.client("sqs", region_name=REGION_NAME)
+        self._queue_client = get_sqs_client()
 
     def _is_duplicate_file(self, file_key: str) -> bool:
         """Checks if a file with the same name has already been processed or marked for processing"""

@@ -7,9 +7,9 @@ version: 2
 updates:
   - package-ecosystem: "docker"
     directories:
-      - "/batch_processor_filter"
       - "/infrastructure/grafana/non-prod/docker"
       - "/lambdas/ack_backend"
+      - "/lambdas/batch_processor_filter"
       - "/lambdas/delta_backend"
       - "/lambdas/filenameprocessor"
       - "/lambdas/mesh_processor"
@@ -50,8 +50,8 @@ updates:
     directories:
       - "/"
       - "/backend"
-      - "/batch_processor_filter"
       - "/lambdas/ack_backend"
+      - "/lambdas/batch_processor_filter"
       - "/lambdas/delta_backend"
       - "/lambdas/filenameprocessor"
       - "/lambdas/id_sync"
