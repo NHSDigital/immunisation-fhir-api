@@ -21,11 +21,11 @@ from testing_utils import (
 )
 
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
+    from common.clients import REGION_NAME
     from constants import (
         AUDIT_TABLE_FILENAME_GSI,
         AUDIT_TABLE_NAME,
         AUDIT_TABLE_QUEUE_NAME_GSI,
-        REGION_NAME,
         AuditTableKeys,
         FileStatus,
     )
