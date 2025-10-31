@@ -7,10 +7,10 @@
             "path": "backend",
         },
         {
-            "path": "mesh_processor",
+            "path": "lambdas/ack_backend",
         },
         {
-            "path": "lambdas/ack_backend",
+            "path": "lambdas/batch_processor_filter",
         },
         {
             "path": "lambdas/delta_backend",
@@ -20,6 +20,9 @@
         },
         {
             "path": "lambdas/id_sync",
+        },
+        {
+            "path": "lambdas/mesh_processor",
         },
         {
             "path": "lambdas/mns_subscription",

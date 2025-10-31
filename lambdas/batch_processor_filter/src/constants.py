@@ -1,7 +1,6 @@
 import os
 from enum import StrEnum
 
-REGION_NAME = "eu-west-2"
 AUDIT_TABLE_NAME = os.getenv("AUDIT_TABLE_NAME")
 AUDIT_TABLE_FILENAME_GSI = os.getenv("FILE_NAME_GSI")
 AUDIT_TABLE_QUEUE_NAME_GSI = os.getenv("QUEUE_NAME_GSI")
