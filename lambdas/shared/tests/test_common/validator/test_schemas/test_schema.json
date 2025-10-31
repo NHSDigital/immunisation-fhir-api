@@ -321,6 +321,7 @@
       "expressionId": "01K8S2AS6TD0146EZN8ZDM9AGD",
       "fieldNameFHIR": "site|coding|#:http://snomed.info/sct|code",
       "fieldNameFlat": "SITE_OF_VACCINATION_CODE",
+      "fieldNumber": 25,
       "errorLevel": 0,
       "expression": {
         "expressionName": "Site of Vaccination Code Not Empty Check",
@@ -333,6 +334,7 @@
       "expressionId": "01K8S2AZQ7XXTTF2AF7ZMM609C",
       "fieldNameFHIR": "site|coding|#:http://snomed.info/sct|display",
       "fieldNameFlat": "SITE_OF_VACCINATION_TERM",
+      "fieldNumber": 26,
       "errorLevel": 1,
       "expression": {
         "expressionName": "Site of Vaccination Term Lookup Check",
@@ -345,6 +347,7 @@
       "expressionId": "01K8S2B78X58EB9XAZYX3M4VPP",
       "fieldNameFHIR": "route|coding|#:http://snomed.info/sct|code",
       "fieldNameFlat": "ROUTE_OF_VACCINATION_CODE",
+      "fieldNumber": 27,
       "errorLevel": 0,
       "expression": {
         "expressionName": "Route of Vaccination Code Not Empty Check",
@@ -357,6 +360,7 @@
       "expressionId": "01K8S2BEP9C9KHNJTKPP6SH1G0",
       "fieldNameFHIR": "route|coding|#:http://snomed.info/sct|display",
       "fieldNameFlat": "ROUTE_OF_VACCINATION_TERM",
+      "fieldNumber": 28,
       "errorLevel": 1,
       "expression": {
         "expressionName": "Route of Vaccination Term Lookup Check",
@@ -369,6 +373,7 @@
       "expressionId": "01K8S2BNT5MET8E29GBT83AP0P",
       "fieldNameFHIR": "doseQuantity|value",
       "fieldNameFlat": "DOSE_AMOUNT",
+      "fieldNumber": 29,
       "errorLevel": 1,
       "expression": {
         "expressionName": "Dose Amount Default Check",
@@ -381,6 +386,7 @@
       "expressionId": "01K8S2BY1S0TXETJY78H418XQG",
       "fieldNameFHIR": "doseQuantity|code",
       "fieldNameFlat": "DOSE_UNIT_CODE",
+      "fieldNumber": 30,
       "errorLevel": 1,
       "expression": {
         "expressionName": "Dose Unit Only If System Check",
@@ -393,6 +399,7 @@
       "expressionId": "01K8S2C3XTDW9RK9Y2FQ9YM5WJ",
       "fieldNameFHIR": "doseQuantity|unit",
       "fieldNameFlat": "DOSE_UNIT_TERM",
+      "fieldNumber": 31,
       "errorLevel": 0,
       "expression": {
         "expressionName": "Dose Unit Term Not Empty Check",
@@ -405,6 +412,7 @@
       "expressionId": "01K8S2CANK2PFNDANX3D04W2NR",
       "fieldNameFHIR": "reasonCode|#:http://snomed.info/sct|coding|#:http://snomed.info/sct|code",
       "fieldNameFlat": "INDICATION_CODE",
+      "fieldNumber": 32,
       "errorLevel": 0,
       "expression": {
         "expressionName": "Indication Code Not Empty Check",
@@ -417,6 +425,7 @@
       "expressionId": "01K8S2CKK8FCVJ6049EW5G563P",
       "fieldNameFHIR": "location|identifier|value",
       "fieldNameFlat": "LOCATION_CODE",
+      "fieldNumber": 33,
       "errorLevel": 1,
       "expression": {
         "expressionName": "Location Code Default Check",
@@ -429,6 +438,7 @@
       "expressionId": "01K8S2CSWYXJ5WDS7K59A045JR",
       "fieldNameFHIR": "location|identifier|system",
       "fieldNameFlat": "LOCATION_CODE_TYPE_URI",
+      "fieldNumber": 34,
       "errorLevel": 1,
       "expression": {
         "expressionName": "Location Code Type URI Default Check",

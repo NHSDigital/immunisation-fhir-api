@@ -10,9 +10,9 @@ class ErrorLevels(IntEnum):
 
 
 MESSAGES = {
-    ErrorLevels.CRITICAL_ERROR: "Critical Validation Error [%s]: %s",
-    ErrorLevels.WARNING: "Non-Critical Validation Error [%s]: %s",
-    ErrorLevels.NOTIFICATION: "Quality Issue Found [%s]: %s",
+    ErrorLevels.CRITICAL_ERROR: "Critical Validation Error",
+    ErrorLevels.WARNING: "Non-Critical Validation Error",
+    ErrorLevels.NOTIFICATION: "Quality Issue Found",
 }
 
 
