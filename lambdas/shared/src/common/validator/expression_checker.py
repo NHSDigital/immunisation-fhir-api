@@ -84,10 +84,6 @@ class ExpressionChecker:
         try:
             # Current behavior expects date-only; datetime raises and is handled below
             datetime.date.fromisoformat(field_value)
-            # rule is not used - could be date only, date time, past, future etc
-            if rule:
-                pass
-
         except RecordError as e:
             code = e.code if e.code is not None else ExceptionLevels.RECORD_CHECK_FAILED
             message = e.message if e.message is not None else MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
@@ -119,16 +115,6 @@ class ExpressionChecker:
         try:
             int(field_value)
             if expression_rule:
-                # TODO - code is incomplete here. It appears there should be a check
-                # against expression_rule but it's not implemented. eg max, min, equal etc
-                # eg "1" means value must be 1
-                # "1:10" means value must be between 1 to 10
-                # "1,10" means value must be either 1 or 10
-                # ":10" means value must be less than or equal to 10
-                # "1:" means value must be greater than or equal to 1
-                # ">10" means value must be greater than 10
-                # "<10" means value must be less than 10
-
                 check_value = int(expression_rule)
                 if int(field_value) != check_value:
                     raise RecordError(
