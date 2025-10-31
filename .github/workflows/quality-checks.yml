@@ -117,7 +117,7 @@ jobs:
         continue-on-error: true
         run: |
           poetry install
-          poetry run coverage run -m unittest discover -p "*batch*.py" || echo "recordforwarder tests failed" >> ../failed_tests.txt
+          poetry run coverage run --source=src -m unittest discover -p "*batch*.py" || echo "recordforwarder tests failed" >> ../failed_tests.txt
           poetry run coverage xml -o ../recordforwarder-coverage.xml
 
       - name: Run unittest with coverage-fhir-api
@@ -128,7 +128,7 @@ jobs:
         continue-on-error: true
         run: |
           poetry install
-          poetry run coverage run -m unittest discover || echo "fhir-api tests failed" >> ../failed_tests.txt
+          poetry run coverage run --source=src -m unittest discover || echo "fhir-api tests failed" >> ../failed_tests.txt
           poetry run coverage xml -o ../backend-coverage.xml
 
       - name: Run unittest with coverage-ack-lambda
@@ -150,7 +150,7 @@ jobs:
         continue-on-error: true
         run: |
           poetry install
-          poetry run coverage run -m unittest discover || echo "batchprocessorfilter tests failed" >> ../../failed_tests.txt
+          poetry run coverage run --source=src -m unittest discover || echo "batchprocessorfilter tests failed" >> ../../failed_tests.txt
           poetry run coverage xml -o ../../batchprocessorfilter-coverage.xml
 
       - name: Run unittest with coverage-delta
@@ -161,7 +161,7 @@ jobs:
         continue-on-error: true
         run: |
           poetry install
-          poetry run coverage run -m unittest discover || echo "delta tests failed" >> ../../failed_tests.txt
+          poetry run coverage run --source=src -m unittest discover || echo "delta tests failed" >> ../../failed_tests.txt
           poetry run coverage xml -o ../../delta-coverage.xml
 
       - name: Run unittest with filenameprocessor-coverage
@@ -172,7 +172,7 @@ jobs:
         continue-on-error: true
         run: |
           poetry install
-          poetry run coverage run -m unittest discover || echo "filenameprocessor tests failed" >> ../../failed_tests.txt
+          poetry run coverage run --source=src -m unittest discover || echo "filenameprocessor tests failed" >> ../../failed_tests.txt
           poetry run coverage xml -o ../../filenameprocessor-coverage.xml
 
       - name: Run unittest with id_sync
@@ -192,7 +192,7 @@ jobs:
         continue-on-error: true
         run: |
           poetry install
-          poetry run coverage run -m unittest discover || echo "mesh_processor tests failed" >> ../../failed_tests.txt
+          poetry run coverage run --source=src -m unittest discover || echo "mesh_processor tests failed" >> ../../failed_tests.txt
           poetry run coverage xml -o ../../mesh_processor-coverage.xml
 
       - name: Run unittest with coverage-mns-subscription
@@ -203,7 +203,7 @@ jobs:
         continue-on-error: true
         run: |
           poetry install
-          poetry run coverage run -m unittest discover || echo "mns_subscription tests failed" >> ../../failed_tests.txt
+          poetry run coverage run --source=src -m unittest discover || echo "mns_subscription tests failed" >> ../../failed_tests.txt
           poetry run coverage report -m
           poetry run coverage xml -o ../../mns_subscription-coverage.xml
 

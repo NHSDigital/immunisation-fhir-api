@@ -4,7 +4,7 @@ test:
 	$(TEST_ENV) python -m unittest
 
 coverage-run:
-	$(TEST_ENV) coverage run -m unittest discover -v
+	$(TEST_ENV) coverage run --source=src -m unittest discover -v
 
 coverage-report:
 	$(TEST_ENV) coverage report -m
