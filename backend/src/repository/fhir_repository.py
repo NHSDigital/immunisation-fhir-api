@@ -262,7 +262,6 @@ class ImmunizationRepository:
                     "#imms_resource": "Resource",
                 },
                 ExpressionAttributeValues=expression_attribute_values,
-                ReturnValues="ALL_NEW",
                 ConditionExpression=condition_expression,
             )
         except botocore.exceptions.ClientError as error:
