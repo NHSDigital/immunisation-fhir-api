@@ -22,7 +22,7 @@ from models.errors import (
 )
 from parameter_parser import patient_identifier_system, process_search_params
 from repository.fhir_repository import ImmunizationRepository
-from service.fhir_service import FhirService, UpdateOutcome
+from service.fhir_service import FhirService
 from testing_utils.generic_utils import load_json_data
 from testing_utils.immunization_utils import create_covid_immunization
 
@@ -951,7 +951,7 @@ class TestUpdateImmunization(unittest.TestCase):
             "pathParameters": {"id": imms_id},
         }
         self.service.update_immunization.return_value = (
-            UpdateOutcome.UPDATE,
+            True,
             "value doesn't matter",
             2,
         )
@@ -1055,7 +1055,7 @@ class TestUpdateImmunization(unittest.TestCase):
             "pathParameters": {"id": imms_id},
         }
         self.service.update_immunization.return_value = (
-            UpdateOutcome.UPDATE,
+            True,
             "value doesn't matter",
         )
         self.service.get_immunization_by_id_all.return_value = None
@@ -1104,7 +1104,7 @@ class TestUpdateImmunization(unittest.TestCase):
             "body": imms,
             "pathParameters": {"id": imms_id},
         }
-        self.service.reinstate_immunization.return_value = UpdateOutcome.UPDATE, {}, 2
+        self.service.reinstate_immunization.return_value = True, {}, 2
         self.service.get_immunization_by_id_all.return_value = {
             "resource": "new_value",
             "Version": 1,
@@ -1128,7 +1128,7 @@ class TestUpdateImmunization(unittest.TestCase):
             "body": imms,
             "pathParameters": {"id": imms_id},
         }
-        self.service.reinstate_immunization.return_value = UpdateOutcome.UPDATE, {}, 2
+        self.service.reinstate_immunization.return_value = True, {}, 2
         self.service.get_immunization_by_id_all.return_value = {
             "resource": "new_value",
             "Version": 1,
@@ -1311,7 +1311,7 @@ class TestUpdateImmunization(unittest.TestCase):
             "pathParameters": {"id": imms_id},
         }
         self.service.update_reinstated_immunization.return_value = (
-            UpdateOutcome.UPDATE,
+            True,
             {},
             3,
         )
@@ -1359,7 +1359,7 @@ class TestUpdateImmunization(unittest.TestCase):
             "VaccineType": "COVID",
         }
         self.service.reinstate_immunization.return_value = (
-            None,
+            False,
             {"diagnostics": "Patient NHS number has been superseded"},
             None,
         )
