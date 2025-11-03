@@ -121,7 +121,7 @@ class TestParameterParser(unittest.TestCase):
                     self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
                     self.immunization_target_key: [
                         "FLU",
-                        "COVID-19",
+                        "COVID",
                         "NOT-A-REAL-VALUE",
                     ],
                 }

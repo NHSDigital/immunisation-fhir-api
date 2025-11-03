@@ -11,7 +11,7 @@ class EndpointOperationNames:
 class VaccineTypes:
     """Vaccine types"""
 
-    covid_19: str = "COVID19"
+    covid: str = "COVID"
     flu: str = "FLU"
     hpv: str = "HPV"
     mmr: str = "MMR"
@@ -19,7 +19,7 @@ class VaccineTypes:
 
 
 vaccine_type_mappings = [
-    (["840539006"], VaccineTypes.covid_19),
+    (["840539006"], VaccineTypes.covid),
     (["6142004"], VaccineTypes.flu),
     (["240532009"], VaccineTypes.hpv),
     (["14189004", "36653000", "36989005"], VaccineTypes.mmr),

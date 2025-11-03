@@ -194,7 +194,7 @@ class ValidValues:
     }
 
     test_unique_id_uri = "https://www.ravs.england.nhs.uk/"
-    test_local_id = f"0002_COVID19_v1_DOSE_1^{test_unique_id_uri}"
+    test_local_id = f"0002_COVID_v1_DOSE_1^{test_unique_id_uri}"
 
     occurrenceDateTime = "2021-02-07T13:28:17+00:00"
 

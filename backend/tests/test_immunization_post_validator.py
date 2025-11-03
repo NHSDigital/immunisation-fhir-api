@@ -27,14 +27,14 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
         """Set up for each test. This runs before every test"""
         self.validator = ImmunizationValidator()
         self.completed_json_data = {
-            "COVID19": load_json_data("completed_covid19_immunization_event.json"),
+            "COVID": load_json_data("completed_covid_immunization_event.json"),
             "FLU": load_json_data("completed_flu_immunization_event.json"),
             "HPV": load_json_data("completed_hpv_immunization_event.json"),
             "MMR": load_json_data("completed_mmr_immunization_event.json"),
             "RSV": load_json_data("completed_rsv_immunization_event.json"),
         }
         self.all_vaccine_types = [
-            "COVID19",
+            "COVID",
             "FLU",
             "HPV",
             "MMR",
@@ -50,14 +50,14 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
     def test_collected_errors(self):
         """Test that when passed multiple validation errors, it returns a list of all expected errors"""
 
-        covid_19_json_data = deepcopy(self.completed_json_data["COVID19"])
-        self.mock_redis_client.hget.return_value = "COVID19"
-        for patient in covid_19_json_data["contained"]:
+        covid_json_data = deepcopy(self.completed_json_data["COVID"])
+        self.mock_redis_client.hget.return_value = "COVID"
+        for patient in covid_json_data["contained"]:
             if patient["resourceType"] == "Patient":
                 for name in patient["name"]:
                     del name["family"]
 
-        for performer in covid_19_json_data["performer"]:
+        for performer in covid_json_data["performer"]:
             if performer["actor"].get("type") == "Organization":
                 if performer["actor"]["identifier"].get("system") == "https://fhir.nhs.uk/Id/ods-organization-code":
                     del performer["actor"]["identifier"]["system"]
@@ -69,7 +69,7 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
 
         # assert ValueError raised
         with self.assertRaises(ValueError) as cm:
-            self.validator.validate(covid_19_json_data)
+            self.validator.validate(covid_json_data)
 
         # extract the error messages from the exception
         actual_errors = str(cm.exception).split("; ")
@@ -83,7 +83,7 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
 
     def test_sample_data(self):
         """Test that each piece of valid sample data passes post validation"""
-        self.mock_redis_client.hget.return_value = "COVID19"
+        self.mock_redis_client.hget.return_value = "COVID"
         for json_data in list(self.completed_json_data.values()):
             self.assertIsNone(self.validator.validate(json_data))
 
@@ -100,7 +100,7 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
         )
 
         self.mock_redis_client.hget.side_effect = [
-            "COVID19",
+            "COVID",
             "FLU",
             "HPV",
             "MMR",
@@ -109,7 +109,7 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
         ]
         # Test that a valid combination of disease codes is accepted
         for vaccine_type in [
-            "COVID19",
+            "COVID",
             "FLU",
             "HPV",
             "MMR",
@@ -120,7 +120,7 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
         # Test that an invalid single disease code is rejected
         _test_invalid_values_rejected(
             self,
-            valid_json_data=deepcopy(self.completed_json_data["COVID19"]),
+            valid_json_data=deepcopy(self.completed_json_data["COVID"]),
             field_location=all_target_disease_codes_field_location,
             invalid_value="INVALID_VALUE",
             expected_error_message=f"{all_target_disease_codes_field_location}"
@@ -162,7 +162,7 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
 
         _test_invalid_values_rejected(
             self,
-            valid_json_data=deepcopy(self.completed_json_data["COVID19"]),
+            valid_json_data=deepcopy(self.completed_json_data["COVID"]),
             field_location="protocolApplied[0].targetDisease",
             invalid_value=invalid_target_disease,
             expected_error_message=f"{all_target_disease_codes_field_location} - "
@@ -178,7 +178,7 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
 
     def test_post_vaccination_procedure_code(self):
         """Test that the JSON data is rejected if it does not contain vaccination_procedure_code"""
-        self.mock_redis_client.hget.return_value = "COVID19"
+        self.mock_redis_client.hget.return_value = "COVID"
         field_location = (
             "extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure')]"
             + ".valueCodeableConcept.coding[?(@.system=='http://snomed.info/sct')].code"
@@ -201,7 +201,7 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
         Test that the JSON data is accepted when it does not contain patient_identifier_value
         """
         field_location = "contained[?(@.resourceType=='Patient')].identifier[0].value"
-        self.mock_redis_client.hget.return_value = "COVID19"
+        self.mock_redis_client.hget.return_value = "COVID"
         MandationTests.test_missing_field_accepted(self, field_location)
 
     def test_post_patient_name_given(self):
@@ -249,7 +249,7 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
     def test_post_patient_name_family(self):
         """Test that the JSON data is rejected if it does not contain patient_name_family"""
         valid_json_data = deepcopy(self.completed_json_data["RSV"])
-        self.mock_redis_client.hget.return_value = "COVID19"
+        self.mock_redis_client.hget.return_value = "COVID"
         patient_name_family_field_location = "contained[?(@.resourceType=='Patient')].name[0].family"
         expected_error_message = f"{patient_name_family_field_location} is a mandatory field"
 
@@ -280,17 +280,17 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
 
     def test_post_patient_birth_date(self):
         """Test that the JSON data is rejected if it does not contain patient_birth_date"""
-        self.mock_redis_client.hget.return_value = "COVID19"
+        self.mock_redis_client.hget.return_value = "COVID"
         MandationTests.test_missing_mandatory_field_rejected(self, "contained[?(@.resourceType=='Patient')].birthDate")
 
     def test_post_patient_gender(self):
         """Test that the JSON data is rejected if it does not contain patient_gender"""
-        self.mock_redis_client.hget.return_value = "COVID19"
+        self.mock_redis_client.hget.return_value = "COVID"
         MandationTests.test_missing_mandatory_field_rejected(self, "contained[?(@.resourceType=='Patient')].gender")
 
     def test_post_patient_address_postal_code(self):
         """Test that the JSON data is rejected if it does not contain patient_address_postal_code"""
-        self.mock_redis_client.hget.return_value = "COVID19"
+        self.mock_redis_client.hget.return_value = "COVID"
         field_location = "contained[?(@.resourceType=='Patient')].address[0].postalCode"
         MandationTests.test_missing_mandatory_field_rejected(self, field_location)
 
@@ -307,19 +307,19 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
 
     def test_post_organization_identifier_value(self):
         """Test that the JSON data is rejected if it does not contain organization_identifier_value"""
-        self.mock_redis_client.hget.return_value = "COVID19"
+        self.mock_redis_client.hget.return_value = "COVID"
         MandationTests.test_missing_mandatory_field_rejected(
             self, "performer[?(@.actor.type=='Organization')].actor.identifier.value"
         )
 
     def test_post_identifer_value(self):
         """Test that the JSON data is rejected if it does not contain identifier_value"""
-        self.mock_redis_client.hget.return_value = "COVID19"
+        self.mock_redis_client.hget.return_value = "COVID"
         MandationTests.test_missing_mandatory_field_rejected(self, "identifier[0].value")
 
     def test_post_identifer_system(self):
         """Test that the JSON data is rejected if it does not contain identifier_system"""
-        self.mock_redis_client.hget.return_value = "COVID19"
+        self.mock_redis_client.hget.return_value = "COVID"
         MandationTests.test_missing_mandatory_field_rejected(self, "identifier[0].system")
 
     def test_post_practitioner_name_given(self):
@@ -372,12 +372,12 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
 
     def test_post_recorded(self):
         """Test that the JSON data is rejected if it does not contain recorded"""
-        self.mock_redis_client.hget.return_value = "COVID19"
+        self.mock_redis_client.hget.return_value = "COVID"
         MandationTests.test_missing_mandatory_field_rejected(self, "recorded")
 
     def test_post_primary_source(self):
         """Test that the JSON data is rejected if it does not contain primary_source"""
-        self.mock_redis_client.hget.return_value = "COVID19"
+        self.mock_redis_client.hget.return_value = "COVID"
         MandationTests.test_missing_mandatory_field_rejected(self, "primarySource")
 
     # TODO: To confirm with imms if dose number string validation is correct (current working assumption is yes)
@@ -420,7 +420,7 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
             # dose_number_positive_int exists, dose_number_string does not exist
             valid_json_data = deepcopy(self.completed_json_data[vaccine_type])
             self.mock_redis_client.hget.side_effect = None
-            self.mock_redis_client.hget.return_value = "COVID19"
+            self.mock_redis_client.hget.return_value = "COVID"
             MandationTests.test_present_field_accepted(self, valid_json_data)
 
             # dose_number_positive_int does not exist, dose_number_string exists
@@ -447,7 +447,7 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
         as appropriate dependent on other fields
         """
         self.mock_redis_client.hget.side_effect = None
-        self.mock_redis_client.hget.return_value = "COVID19"
+        self.mock_redis_client.hget.return_value = "COVID"
         field_location = "manufacturer.display"
         for vaccine_type in self.all_vaccine_types:
             MandationTests.test_missing_field_accepted(self, field_location, self.completed_json_data[vaccine_type])
@@ -455,7 +455,7 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
     def test_post_lot_number(self):
         """Test that present or absent lot_number is accepted or rejected as appropriate dependent on other fields"""
         self.mock_redis_client.hget.side_effect = [
-            "COVID19",
+            "COVID",
             "FLU",
             "HPV",
             "MMR",
@@ -471,7 +471,7 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
         as appropriate dependent on other fields
         """
         self.mock_redis_client.hget.side_effect = [
-            "COVID19",
+            "COVID",
             "FLU",
             "HPV",
             "MMR",
@@ -515,7 +515,7 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
         Test that present or absent dose_quantity_value is accepted or rejected as appropriate dependent on other fields
         """
         self.mock_redis_client.hget.side_effect = [
-            "COVID19",
+            "COVID",
             "FLU",
             "HPV",
             "MMR",
@@ -530,7 +530,7 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
         Test that present or absent dose_quantity_code is accepted or rejected as appropriate dependent on other fields
         """
         self.mock_redis_client.hget.side_effect = [
-            "COVID19",
+            "COVID",
             "FLU",
             "HPV",
             "MMR",
@@ -543,20 +543,20 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
     def test_post_dose_quantity_unit(self):
         """Test that the JSON data is accepted when dose_quantity_unit is absent"""
         self.mock_redis_client.hget.side_effect = None
-        self.mock_redis_client.hget.return_value = "COVID19"
+        self.mock_redis_client.hget.return_value = "COVID"
         MandationTests.test_missing_field_accepted(self, "doseQuantity.unit")
 
     # NOTE: THIS TEST IS COMMENTED OUT AS IT IS TESTING A REQUIRED ELEMENT (VALIDATION SHOULD ALWAYS PASS),
     # AND THE MEANS TO ACCESS THE VALUE HAS NOT BEEN CONFIRMED. DO NOT DELETE THE TEST, IT MAY NEED REINSTATED LATER.
     # def test_post_reason_code_coding_code(self):
     #     """Test that the JSON data is accepted when reason_code_coding_code is absent"""
-    #     for index in range(len(self.completed_json_data["COVID19"]["reasonCode"])):
+    #     for index in range(len(self.completed_json_data["COVID"]["reasonCode"])):
     #         MandationTests.test_missing_field_accepted(self, f"reasonCode[{index}].coding[0].code")
 
     def test_post_organization_identifier_system(self):
         """Test that the JSON data is rejected if it does not contain organization_identifier_system"""
         self.mock_redis_client.hget.side_effect = None
-        self.mock_redis_client.hget.return_value = "COVID19"
+        self.mock_redis_client.hget.return_value = "COVID"
         MandationTests.test_missing_mandatory_field_rejected(
             self, "performer[?(@.actor.type=='Organization')].actor.identifier.system"
         )
@@ -570,8 +570,8 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
         """
         # Test case: missing "extension"
         self.mock_redis_client.hget.side_effect = None
-        self.mock_redis_client.hget.return_value = "COVID19"
-        invalid_json_data = deepcopy(self.completed_json_data["COVID19"])
+        self.mock_redis_client.hget.return_value = "COVID"
+        invalid_json_data = deepcopy(self.completed_json_data["COVID"])
         invalid_json_data["extension"][0]["valueCodeableConcept"]["coding"][0]["system"] = (
             "https://xyz/Extension-UKCore-VaccinationProcedure"
         )
@@ -592,16 +592,16 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
         location_identifier_value as appropriate
         """
         self.mock_redis_client.hget.side_effect = [
-            "COVID19",
+            "COVID",
             "FLU",
             "HPV",
             "MMR",
             "RSV",
         ]
         field_location = "location.identifier.value"
-        # Test cases for COVID-19, FLU, HPV and MMR where it is mandatory
+        # Test cases for COVID, FLU, HPV and MMR where it is mandatory
         for vaccine_type in (
-            "COVID19",
+            "COVID",
             "FLU",
             "HPV",
             "MMR",
@@ -615,16 +615,16 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
         Test that the JSON data is rejected if it does and does not contain location_identifier_system as appropriate
         """
         self.mock_redis_client.hget.side_effect = [
-            "COVID19",
+            "COVID",
             "FLU",
             "HPV",
             "MMR",
             "RSV",
         ]
         field_location = "location.identifier.system"
-        # Test cases for COVID-19, FLU, HPV and MMR where it is mandatory
+        # Test cases for COVID, FLU, HPV and MMR where it is mandatory
         for vaccine_type in (
-            "COVID19",
+            "COVID",
             "FLU",
             "HPV",
             "MMR",
@@ -636,8 +636,8 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
     def test_post_no_snomed_code(self):
         """test that only snomed system is accepted"""
         self.mock_redis_client.hget.side_effect = None
-        self.mock_redis_client.return_value = "COVID19"
-        covid_19_json_data = deepcopy(self.completed_json_data["COVID19"])
+        self.mock_redis_client.return_value = "COVID"
+        covid_json_data = deepcopy(self.completed_json_data["COVID"])
 
         invalid_target_disease_value = [
             {
@@ -660,7 +660,7 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
                 ]
             },
         ]
-        covid_19_json_data["protocolApplied"][0]["targetDisease"] = invalid_target_disease_value
+        covid_json_data["protocolApplied"][0]["targetDisease"] = invalid_target_disease_value
 
         expected_error_message = (
             "protocolApplied[0].targetDisease[1].coding[?(@.system=='http://snomed.info/sct')].code"
@@ -668,7 +668,7 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
         )
 
         with self.assertRaises(ValueError) as cm:
-            self.validator.validate(covid_19_json_data)
+            self.validator.validate(covid_json_data)
 
         actual_error_message = str(cm.exception)
         self.assertIn(expected_error_message, actual_error_message)

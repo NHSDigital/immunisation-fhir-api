@@ -174,7 +174,7 @@ scenarios = {
     "dev": [
         {
             "name": "Successful Create",
-            "ods_vax": TestPair.E8HA94_COVID19_CUD,
+            "ods_vax": TestPair.E8HA94_COVID_CUD,
             "operation_outcome": ActionFlag.CREATE,
             "actions": [TestAction(ActionFlag.CREATE)],
             "description": "Successful Create",
@@ -182,7 +182,7 @@ scenarios = {
         {
             "name": "Successful Update",
             "description": "Successful Create,Update",
-            "ods_vax": TestPair.DPSFULL_COVID19_CRUDS,
+            "ods_vax": TestPair.DPSFULL_COVID_CRUDS,
             "operation_outcome": ActionFlag.UPDATE,
             "actions": [TestAction(ActionFlag.CREATE), TestAction(ActionFlag.UPDATE)],
         },

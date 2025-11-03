@@ -67,7 +67,7 @@ class TargetDiseaseElements:
     """
 
     rsv_display = "Respiratory syncytial virus infection (disorder)"
-    covid19_display = "Disease caused by severe acute respiratory syndrome coronavirus 2"
+    covid_display = "Disease caused by severe acute respiratory syndrome coronavirus 2"
 
     RSV = [{"coding": [{"system": Urls.SNOMED, "code": "55735004", "display": rsv_display}]}]
     Decimal_number = Decimal("0.3")

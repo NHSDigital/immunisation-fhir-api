@@ -51,11 +51,11 @@ class TestElasticache(TestCase):
 
     def test_get_supplier_permissions_from_cache(self, mock_get_redis_client):
         mock_redis = Mock()
-        mock_redis.hget.side_effect = create_mock_hget({}, {"TEST_SUPPLIER": json.dumps(["COVID19.CRUDS", "RSV.CRUDS"])})
+        mock_redis.hget.side_effect = create_mock_hget({}, {"TEST_SUPPLIER": json.dumps(["COVID.CRUDS", "RSV.CRUDS"])})
         mock_get_redis_client.return_value = mock_redis
 
         result = get_supplier_permissions_from_cache("TEST_SUPPLIER")
-        self.assertEqual(result, ["COVID19.CRUDS", "RSV.CRUDS"])
+        self.assertEqual(result, ["COVID.CRUDS", "RSV.CRUDS"])
         mock_redis.hget.assert_called_once_with("supplier_permissions", "TEST_SUPPLIER")
 
     def test_get_supplier_permissions_from_cache_not_found(self, mock_get_redis_client):
@@ -69,9 +69,9 @@ class TestElasticache(TestCase):
 
     def test_get_valid_vaccine_types_from_cache(self, mock_get_redis_client):
         mock_redis = Mock()
-        mock_redis.hkeys.return_value = ["COVID19", "RSV", "FLU"]
+        mock_redis.hkeys.return_value = ["COVID", "RSV", "FLU"]
         mock_get_redis_client.return_value = mock_redis
 
         result = get_valid_vaccine_types_from_cache()
-        self.assertEqual(result, ["COVID19", "RSV", "FLU"])
+        self.assertEqual(result, ["COVID", "RSV", "FLU"])
         mock_redis.hkeys.assert_called_once_with("vacc_to_diseases")
