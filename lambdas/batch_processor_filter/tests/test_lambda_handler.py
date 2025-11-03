@@ -26,6 +26,7 @@ with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
         AUDIT_TABLE_FILENAME_GSI,
         AUDIT_TABLE_NAME,
         AUDIT_TABLE_QUEUE_NAME_GSI,
+        SPLUNK_FIREHOSE_STREAM_NAME,
         AuditTableKeys,
         FileStatus,
     )
@@ -299,7 +300,8 @@ class TestLambdaHandler(TestCase):
             ]
         )
         self.mock_firehose_send_log.assert_called_once_with(
-            {**self.default_batch_file_event, "message": expected_success_log_message}
+            stream_name=SPLUNK_FIREHOSE_STREAM_NAME,
+            log_data={**self.default_batch_file_event, "message": expected_success_log_message},
         )
 
     def test_lambda_handler_processes_event_successfully_when_event_for_same_supplier_and_vacc_already_processed(
@@ -345,4 +347,6 @@ class TestLambdaHandler(TestCase):
                 call(expected_success_log_message),
             ]
         )
-        self.mock_firehose_send_log.assert_called_once_with({**test_event, "message": expected_success_log_message})
+        self.mock_firehose_send_log.assert_called_once_with(
+            stream_name=SPLUNK_FIREHOSE_STREAM_NAME, log_data={**test_event, "message": expected_success_log_message}
+        )

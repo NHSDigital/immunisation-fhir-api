@@ -25,10 +25,10 @@ MOCK_SUPPLIER_ONE_RSV_EVENT_TWO = {
 
 MOCK_SUPPLIER_TWO_COVID_EVENT_ONE = {
     "row_id": "row-1",
-    "file_key": "supplier_two_covid19_file_key",
+    "file_key": "supplier_two_covid_file_key",
     "created_at_formatted_string": "2025-01-24T14:00:00Z",
     "supplier": "supplier_two",
-    "vax_type": "COVID-19",
+    "vax_type": "COVID",
     "local_id": "local-1",
     "operation_requested": "CREATE",
 }
@@ -36,7 +36,7 @@ MOCK_SUPPLIER_TWO_COVID_EVENT_ONE = {
 
 class TestBatchFilenameToEventsMapper(unittest.TestCase):
     expected_key_supplier_one = "supplier_one_rsv_file_key_2025-01-24T12:00:00Z"
-    expected_key_supplier_two = "supplier_two_covid19_file_key_2025-01-24T14:00:00Z"
+    expected_key_supplier_two = "supplier_two_covid_file_key_2025-01-24T14:00:00Z"
 
     def setUp(self) -> None:
         self.batch_filename_to_events_mapper = BatchFilenameToEventsMapper()

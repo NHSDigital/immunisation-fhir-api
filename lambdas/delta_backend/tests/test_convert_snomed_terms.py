@@ -52,7 +52,7 @@ class TestSNOMEDTermsToFlatJson(unittest.TestCase):
         self.request_json_data["extension"][0]["valueCodeableConcept"].pop("text", None)  # Remove text
         self._run_snomed_test(
             ConversionFieldName.VACCINATION_PROCEDURE_TERM,
-            "Test Value string 123456 COVID19 vaccination",
+            "Test Value string 123456 COVID vaccination",
         )
 
     def test_vaccination_procedure_term_from_display_fallback(self):
@@ -84,7 +84,7 @@ class TestSNOMEDTermsToFlatJson(unittest.TestCase):
         )
         self._run_snomed_test(
             ConversionFieldName.VACCINATION_PROCEDURE_TERM,
-            "Test Value string 123456 COVID19 vaccination",
+            "Test Value string 123456 COVID vaccination",
         )
 
     def test_vaccine_product_term_uses_first_snomed_value_string(self):

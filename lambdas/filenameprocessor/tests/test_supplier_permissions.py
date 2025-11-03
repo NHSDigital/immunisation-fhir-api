@@ -21,12 +21,12 @@ class TestSupplierPermissions(TestCase):
         """
         # Test case tuples are stuctured as (vaccine_type, vaccine_permissions)
         success_test_cases = [
-            ("FLU", ["COVID19.C", "FLU.CRUDS"]),  # Full permissions for flu
+            ("FLU", ["COVID.C", "FLU.CRUDS"]),  # Full permissions for flu
             ("FLU", ["FLU.C"]),  # Create permissions for flu
             ("FLU", ["FLU.U"]),  # Update permissions for flu
             ("FLU", ["FLU.D"]),  # Delete permissions for flu
-            ("COVID19", ["COVID19.CRUDS", "FLU.CRUDS"]),  # Full permissions for COVID19
-            ("COVID19", ["COVID19.C", "FLU.CRUDS"]),  # Create permissions for COVID19
+            ("COVID", ["COVID.CRUDS", "FLU.CRUDS"]),  # Full permissions for COVID
+            ("COVID", ["COVID.C", "FLU.CRUDS"]),  # Create permissions for COVID
             ("RSV", ["FLU.C", "RSV.CRUDS"]),  # Full permissions for rsv
             ("RSV", ["RSV.C"]),  # Create permissions for rsv
             ("RSV", ["RSV.U"]),  # Update permissions for rsv
@@ -46,9 +46,9 @@ class TestSupplierPermissions(TestCase):
 
         # Test case tuples are stuctured as (vaccine_type, vaccine_permissions)
         failure_test_cases = [
-            ("FLU", ["COVID19.CRUDS"]),  # No permissions for flu
-            ("COVID19", ["FLU.C"]),  # No permissions for COVID19
-            ("RSV", ["COVID19.CRUDS"]),  # No permissions for rsv
+            ("FLU", ["COVID.CRUDS"]),  # No permissions for flu
+            ("COVID", ["FLU.C"]),  # No permissions for COVID
+            ("RSV", ["COVID.CRUDS"]),  # No permissions for rsv
         ]
 
         for vaccine_type, vaccine_permissions in failure_test_cases:

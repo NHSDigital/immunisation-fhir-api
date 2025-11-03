@@ -56,7 +56,7 @@ class ValuesForTests:
                             "extension": [
                                 {
                                     "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-CodingSCTDescDisplay",
-                                    "valueString": "Test Value string 123456 COVID19 vaccination",
+                                    "valueString": "Test Value string 123456 COVID vaccination",
                                 },
                                 {
                                     "url": "http://hl7.org/fhir/StructureDefinition/coding-sctdescid",
@@ -197,7 +197,7 @@ class ValuesForTests:
                     "ApproximateCreationDateTime": 1690896000,
                     "NewImage": {
                         "PK": {"S": pk},
-                        "PatientSK": {"S": "COVID19#ca8ba2c6-2383-4465-b456-c1174c21cf31"},
+                        "PatientSK": {"S": "COVID#ca8ba2c6-2383-4465-b456-c1174c21cf31"},
                         "IdentifierPK": {"S": "system#1"},
                         "Operation": {"S": operation},
                         "SupplierSystem": {"S": supplier},
@@ -213,7 +213,7 @@ class ValuesForTests:
                     "ApproximateCreationDateTime": 1690896000,
                     "Keys": {
                         "PK": {"S": pk},
-                        "PatientSK": {"S": "COVID19#ca8ba2c6-2383-4465-b456-c1174c21cf31"},
+                        "PatientSK": {"S": "COVID#ca8ba2c6-2383-4465-b456-c1174c21cf31"},
                         "SupplierSystem": {"S": supplier},
                         "Resource": {"S": ValuesForTests.json_value_for_test},
                     },
@@ -221,7 +221,7 @@ class ValuesForTests:
             }
 
     expected_static_values = {
-        "VaccineType": "covid19",
+        "VaccineType": "covid",
         "SupplierSystem": "EMIS",
         "Source": "test-source",
         "ImmsID": "12345",
@@ -248,7 +248,7 @@ class ValuesForTests:
             "RECORDED_DATE": "20210207",
             "PRIMARY_SOURCE": "TRUE",
             "VACCINATION_PROCEDURE_CODE": "13246814444444",
-            "VACCINATION_PROCEDURE_TERM": "Test Value string 123456 COVID19 vaccination",
+            "VACCINATION_PROCEDURE_TERM": "Test Value string 123456 COVID vaccination",
             "DOSE_SEQUENCE": "1",
             "VACCINE_PRODUCT_CODE": "39114911000001105",
             "VACCINE_PRODUCT_TERM": "COVID-19 Vaccine Vaxzevria (ChAdOx1 S [recombinant]) not less than 2.5x100,000,000 infectious units/0.5ml dose suspension for injection multidose vials (AstraZeneca UK Ltd) (product)",
@@ -324,7 +324,7 @@ class ValuesForTests:
         "RECORDED_DATE": "20210207",
         "PRIMARY_SOURCE": "TRUE",
         "VACCINATION_PROCEDURE_CODE": "13246814444444",
-        "VACCINATION_PROCEDURE_TERM": "Test Value string 123456 COVID19 vaccination",
+        "VACCINATION_PROCEDURE_TERM": "Test Value string 123456 COVID vaccination",
         "DOSE_SEQUENCE": "1",
         "VACCINE_PRODUCT_CODE": "39114911000001105",
         "VACCINE_PRODUCT_TERM": "COVID-19 Vaccine Vaxzevria (ChAdOx1 S [recombinant]) not less than 2.5x100,000,000 infectious units/0.5ml dose suspension for injection multidose vials (AstraZeneca UK Ltd) (product)",

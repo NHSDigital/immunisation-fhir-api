@@ -18,7 +18,7 @@ class Authoriser:
         permissions: list[str],
     ) -> dict[str, list[ApiOperationCode]]:
         """Parses and expands permissions data into a dictionary mapping vaccination types to a list of permitted
-        API operations. The raw string from Redis will be in the form VAC.PERMS e.g. COVID19.CRUDS
+        API operations. The raw string from Redis will be in the form VAC.PERMS e.g. COVID.CRUDS
         """
         expanded_permissions = {}
 

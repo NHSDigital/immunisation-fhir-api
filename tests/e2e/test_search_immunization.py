@@ -31,16 +31,16 @@ class TestSearchImmunization(ImmunizationBaseTest):
         """it should search records given nhs-number and vaccine type"""
         for imms_api in self.imms_apis:
             with self.subTest(imms_api):
-                # Given two patients each with one covid_19
-                covid_19_p1 = generate_imms_resource(valid_nhs_number1, VaccineTypes.covid_19)
-                covid_19_p2 = generate_imms_resource(valid_nhs_number2, VaccineTypes.covid_19)
+                # Given two patients each with one covid
+                covid_p1 = generate_imms_resource(valid_nhs_number1, VaccineTypes.covid)
+                covid_p2 = generate_imms_resource(valid_nhs_number2, VaccineTypes.covid)
                 rsv_p1 = generate_imms_resource(valid_nhs_number1, VaccineTypes.rsv)
                 rsv_p2 = generate_imms_resource(valid_nhs_number2, VaccineTypes.rsv)
-                covid_19_p1_id, covid_19_p2_id = self.store_records(covid_19_p1, covid_19_p2)
+                covid_p1_id, covid_p2_id = self.store_records(covid_p1, covid_p2)
                 rsv_p1_id, rsv_p2_id = self.store_records(rsv_p1, rsv_p2)
 
                 # When
-                response = imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.covid_19)
+                response = imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.covid)
                 response_rsv = imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.rsv)
 
                 # Then
@@ -49,8 +49,8 @@ class TestSearchImmunization(ImmunizationBaseTest):
                 self.assertEqual(body["resourceType"], "Bundle")
 
                 resource_ids = [entity["resource"]["id"] for entity in body["entry"]]
-                self.assertTrue(covid_19_p1_id in resource_ids)
-                self.assertTrue(covid_19_p2_id not in resource_ids)
+                self.assertTrue(covid_p1_id in resource_ids)
+                self.assertTrue(covid_p2_id not in resource_ids)
 
                 self.assertEqual(response_rsv.status_code, 200, response_rsv.text)
                 body_rsv = response_rsv.json()
@@ -62,27 +62,27 @@ class TestSearchImmunization(ImmunizationBaseTest):
 
     def test_search_patient_multiple_diseases(self):
         # Given patient has two vaccines
-        covid_19 = generate_imms_resource(valid_nhs_number1, VaccineTypes.covid_19)
+        covid = generate_imms_resource(valid_nhs_number1, VaccineTypes.covid)
         flu = generate_imms_resource(valid_nhs_number1, VaccineTypes.flu)
-        covid_19_id, flu_id = self.store_records(covid_19, flu)
+        covid_id, flu_id = self.store_records(covid, flu)
 
         # When
-        response = self.default_imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.covid_19)
+        response = self.default_imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.covid)
 
         # Then
         self.assertEqual(response.status_code, 200, response.text)
         body = response.json()
 
         resource_ids = [entity["resource"]["id"] for entity in body["entry"]]
-        self.assertIn(covid_19_id, resource_ids)
+        self.assertIn(covid_id, resource_ids)
         self.assertNotIn(flu_id, resource_ids)
 
     def test_search_backwards_compatible(self):
         """Test that SEARCH 200 response body is backwards compatible with Immunisation History FHIR API"""
         for imms_api in self.imms_apis:
             with self.subTest(imms_api):
-                # Given that the patient has a covid_19 vaccine event stored in the IEDS
-                stored_imms_resource = generate_imms_resource(valid_nhs_number1, VaccineTypes.covid_19)
+                # Given that the patient has a covid vaccine event stored in the IEDS
+                stored_imms_resource = generate_imms_resource(valid_nhs_number1, VaccineTypes.covid)
                 imms_identifier_value = stored_imms_resource["identifier"][0]["value"]
                 imms_id = self.store_records(stored_imms_resource)
 
@@ -92,13 +92,13 @@ class TestSearchImmunization(ImmunizationBaseTest):
                     crud_operation_to_filter_for="SEARCH",
                     imms_identifier_value=imms_identifier_value,
                     nhs_number=valid_nhs_number1,
-                    vaccine_type=VaccineTypes.covid_19,
+                    vaccine_type=VaccineTypes.covid,
                 )
                 expected_imms_resource["id"] = imms_id
                 expected_imms_resource["meta"] = {"versionId": "1"}
 
                 # When
-                response = imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.covid_19)
+                response = imms_api.search_immunizations(valid_nhs_number1, VaccineTypes.covid)
 
                 # Then
                 self.assertEqual(response.status_code, 200, response.text)
@@ -184,18 +184,18 @@ class TestSearchImmunization(ImmunizationBaseTest):
             ),
             generate_imms_resource(
                 valid_nhs_number1,
-                VaccineTypes.covid_19,
+                VaccineTypes.covid,
                 imms_identifier_value=str(uuid.uuid4()),
             ),
             generate_imms_resource(
                 valid_nhs_number1,
-                VaccineTypes.covid_19,
+                VaccineTypes.covid,
                 occurrence_date_time=time_1,
                 imms_identifier_value=str(uuid.uuid4()),
             ),
             generate_imms_resource(
                 valid_nhs_number1,
-                VaccineTypes.covid_19,
+                VaccineTypes.covid,
                 occurrence_date_time=time_2,
                 imms_identifier_value=str(uuid.uuid4()),
             ),
@@ -206,7 +206,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
             ),
             generate_imms_resource(
                 valid_nhs_number2,
-                VaccineTypes.covid_19,
+                VaccineTypes.covid,
                 imms_identifier_value=str(uuid.uuid4()),
             ),
         ]
@@ -302,7 +302,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
             # Date
             SearchTestParams(
                 "GET",
-                f"patient.identifier={valid_patient_identifier1}&-immunization.target={VaccineTypes.covid_19}",
+                f"patient.identifier={valid_patient_identifier1}&-immunization.target={VaccineTypes.covid}",
                 None,
                 True,
                 [2, 3, 4],
@@ -310,7 +310,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
             ),
             SearchTestParams(
                 "GET",
-                f"patient.identifier={valid_patient_identifier1}&-immunization.target={VaccineTypes.covid_19}"
+                f"patient.identifier={valid_patient_identifier1}&-immunization.target={VaccineTypes.covid}"
                 f"&-date.from=2024-01-30",
                 None,
                 True,
@@ -319,7 +319,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
             ),
             SearchTestParams(
                 "GET",
-                f"patient.identifier={valid_patient_identifier1}&-immunization.target={VaccineTypes.covid_19}"
+                f"patient.identifier={valid_patient_identifier1}&-immunization.target={VaccineTypes.covid}"
                 f"&-date.to=2024-01-30",
                 None,
                 True,
@@ -328,7 +328,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
             ),
             SearchTestParams(
                 "GET",
-                f"patient.identifier={valid_patient_identifier1}&-immunization.target={VaccineTypes.covid_19}"
+                f"patient.identifier={valid_patient_identifier1}&-immunization.target={VaccineTypes.covid}"
                 f"&-date.from=2024-01-01&-date.to=2024-01-30",
                 None,
                 True,
@@ -338,7 +338,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
             # "from" after "to" is an error.
             SearchTestParams(
                 "GET",
-                f"patient.identifier={valid_patient_identifier1}&-immunization.target={VaccineTypes.covid_19}"
+                f"patient.identifier={valid_patient_identifier1}&-immunization.target={VaccineTypes.covid}"
                 f"&-date.from=2024-02-01&-date.to=2024-01-30",
                 None,
                 False,
