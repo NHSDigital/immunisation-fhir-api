@@ -16,7 +16,7 @@ from models.errors import (
 from models.utils.validation_utils import get_vaccine_type
 from repository.fhir_repository import ImmunizationRepository
 from testing_utils.generic_utils import update_target_disease_code
-from testing_utils.immunization_utils import create_covid_19_immunization_dict
+from testing_utils.immunization_utils import create_covid_immunization_dict
 
 
 def _make_immunization_pk(_id):
@@ -63,7 +63,7 @@ class TestGetImmunizationByIdentifier(TestFhirRepositoryBase):
                     {
                         "Resource": json.dumps({"foo": "bar", "id": "test"}),
                         "Version": 1,
-                        "PatientSK": "COVID19#2516525251",
+                        "PatientSK": "COVID#2516525251",
                     }
                 ]
             }
@@ -79,7 +79,7 @@ class TestGetImmunizationByIdentifier(TestFhirRepositoryBase):
         self.assertDictEqual(immunisation["resource"], resource["Resource"])
         self.assertEqual(immunisation["version"], 1)
         self.assertEqual(immunisation["id"], "test")
-        self.assertEqual(immunisation_type, "covid19")
+        self.assertEqual(immunisation_type, "covid")
 
     def test_immunization_not_found(self):
         """it should return None if Immunization doesn't exist"""
@@ -99,7 +99,7 @@ class TestGetImmunizationByIdentifier(TestFhirRepositoryBase):
                     {
                         "Resource": json.dumps({"item": "exists"}),
                         "Version": 1,
-                        "PatientSK": "COVID19#2516525251",
+                        "PatientSK": "COVID#2516525251",
                         "IdentifierPK": "https://system.com#id-123",
                     }
                 ]
@@ -148,7 +148,7 @@ class TestGetImmunization(unittest.TestCase):
                 "Item": {
                     "Resource": json.dumps(expected_resource),
                     "Version": expected_version,
-                    "PatientSK": "COVID19#2516525251",
+                    "PatientSK": "COVID#2516525251",
                 }
             }
         )
@@ -196,10 +196,10 @@ class TestCreateImmunizationMainIndex(TestFhirRepositoryBase):
 
     def test_create_immunization(self):
         """it should create Immunization, and return created object unique ID"""
-        imms = Immunization.parse_obj(create_covid_19_immunization_dict(imms_id=self._MOCK_CREATED_UUID))
+        imms = Immunization.parse_obj(create_covid_immunization_dict(imms_id=self._MOCK_CREATED_UUID))
 
         self.table.put_item = MagicMock(return_value={"ResponseMetadata": {"HTTPStatusCode": 200}})
-        self.mock_redis_client.hget.return_value = "COVID19"
+        self.mock_redis_client.hget.return_value = "COVID"
 
         created_id = self.repository.create_immunization(imms, "Test")
 
@@ -208,7 +208,7 @@ class TestCreateImmunizationMainIndex(TestFhirRepositoryBase):
             Item={
                 "PK": f"Immunization#{self._MOCK_CREATED_UUID}",
                 "PatientPK": "Patient#9990548609",
-                "PatientSK": f"COVID19#{self._MOCK_CREATED_UUID}",
+                "PatientSK": f"COVID#{self._MOCK_CREATED_UUID}",
                 "Resource": imms.json(),
                 "IdentifierPK": "https://supplierABC/identifiers/vacc#ACME-vacc123456",
                 "Operation": "CREATE",
@@ -226,9 +226,7 @@ class TestCreateImmunizationMainIndex(TestFhirRepositoryBase):
 
         with self.assertRaises(UnhandledResponseError) as e:
             # When
-            self.repository.create_immunization(
-                Immunization.parse_obj(create_covid_19_immunization_dict("an-id")), "Test"
-            )
+            self.repository.create_immunization(Immunization.parse_obj(create_covid_immunization_dict("an-id")), "Test")
 
         # Then
         self.assertDictEqual(e.exception.response, response)
@@ -245,7 +243,7 @@ class TestCreateImmunizationPatientIndex(TestFhirRepositoryBase):
 
     def test_create_patient_gsi(self):
         """create Immunization method should create Patient index with nhs-number as ID and no system"""
-        imms = create_covid_19_immunization_dict("an-id")
+        imms = create_covid_immunization_dict("an-id")
 
         nhs_number = "1234567890"
         imms["contained"][1]["identifier"][0]["value"] = nhs_number
@@ -262,7 +260,7 @@ class TestCreateImmunizationPatientIndex(TestFhirRepositoryBase):
 
     def test_create_patient_with_vaccine_type(self):
         """Patient record should have a sort-key based on vaccine-type"""
-        imms = create_covid_19_immunization_dict("an-id")
+        imms = create_covid_immunization_dict("an-id")
 
         update_target_disease_code(imms, "FLU")
         vaccine_type = get_vaccine_type(imms)
@@ -289,7 +287,7 @@ class TestUpdateImmunization(TestFhirRepositoryBase):
         """it should update record by replacing both Immunization and Patient"""
 
         imms_id = "an-imms-id"
-        imms = create_covid_19_immunization_dict(imms_id)
+        imms = create_covid_immunization_dict(imms_id)
         imms["patient"] = self.patient
 
         resource = {"foo": "bar"}  # making sure we return updated imms from dynamodb
@@ -340,7 +338,7 @@ class TestUpdateImmunization(TestFhirRepositoryBase):
     def test_update_throws_error_when_response_can_not_be_handled(self):
         """it should throw UnhandledResponse when the response from dynamodb can't be handled"""
         imms_id = "an-id"
-        imms = create_covid_19_immunization_dict(imms_id)
+        imms = create_covid_immunization_dict(imms_id)
         imms["patient"] = self.patient
 
         error_res = {"Error": {"Code": "UnexpectedError during update e.g. service down"}}
@@ -360,7 +358,7 @@ class TestUpdateImmunization(TestFhirRepositoryBase):
         """it should throw IdentifierDuplicationError when trying to update an immunization with an identfier that is already stored"""
 
         imms_id = "an-id"
-        imms = create_covid_19_immunization_dict(imms_id)
+        imms = create_covid_immunization_dict(imms_id)
         imms["patient"] = self.patient
         identifier = f"{imms['identifier'][0]['system']}#{imms['identifier'][0]['value']}"
         self.table.query = MagicMock(return_value={"Items": [{"Resource": '{"id": "different-id"}'}], "Count": 1})
@@ -375,7 +373,7 @@ class TestUpdateImmunization(TestFhirRepositoryBase):
     def test_reinstate_immunization_success(self):
         """it should reinstate an immunization successfully"""
         imms_id = "reinstate-id"
-        imms = create_covid_19_immunization_dict(imms_id)
+        imms = create_covid_immunization_dict(imms_id)
         imms["patient"] = self.patient
         resource = {"reinstate": "ok"}
         self.table.query.return_value = {}
@@ -394,7 +392,7 @@ class TestUpdateImmunization(TestFhirRepositoryBase):
     def test_update_reinstated_immunization_success(self):
         """it should update a reinstated immunization successfully"""
         imms_id = "reinstated-id"
-        imms = create_covid_19_immunization_dict(imms_id)
+        imms = create_covid_immunization_dict(imms_id)
         imms["patient"] = self.patient
         resource = {"reinstated": "ok"}
         self.table.query.return_value = {}
@@ -511,7 +509,7 @@ class TestFindImmunizations(unittest.TestCase):
         condition = Key("PatientPK").eq(_make_patient_pk(nhs_number))
 
         # When
-        _ = self.repository.find_immunizations(nhs_number, vaccine_types={"COVID19"})
+        _ = self.repository.find_immunizations(nhs_number, vaccine_types={"COVID"})
 
         # Then
         self.table.query.assert_called_once_with(
@@ -528,7 +526,7 @@ class TestFindImmunizations(unittest.TestCase):
         is_ = Attr("DeletedAt").not_exists() | Attr("DeletedAt").eq("reinstated")
 
         # When
-        _ = self.repository.find_immunizations("an-id", {"COVID19"})
+        _ = self.repository.find_immunizations("an-id", {"COVID"})
 
         # Then
         self.table.query.assert_called_once_with(
@@ -542,12 +540,12 @@ class TestFindImmunizations(unittest.TestCase):
         items = [
             {
                 "Resource": json.dumps(imms1),
-                "PatientSK": "COVID19#some_other_text",
+                "PatientSK": "COVID#some_other_text",
                 "Version": "1",
             },
             {
                 "Resource": json.dumps(imms2),
-                "PatientSK": "COVID19#some_other_text",
+                "PatientSK": "COVID#some_other_text",
                 "Version": "1",
             },
         ]
@@ -556,7 +554,7 @@ class TestFindImmunizations(unittest.TestCase):
         self.table.query = MagicMock(return_value=dynamo_response)
 
         # When
-        results = self.repository.find_immunizations("an-id", {"COVID19"})
+        results = self.repository.find_immunizations("an-id", {"COVID"})
 
         # Then
         self.assertListEqual(results, [imms1, imms2])
@@ -569,7 +567,7 @@ class TestFindImmunizations(unittest.TestCase):
 
         with self.assertRaises(UnhandledResponseError) as e:
             # When
-            self.repository.find_immunizations("an-id", {"COVID19"})
+            self.repository.find_immunizations("an-id", {"COVID"})
 
         # Then
         self.assertDictEqual(e.exception.response, response)
@@ -586,7 +584,7 @@ class TestImmunizationDecimals(TestFhirRepositoryBase):
 
     def test_decimal_on_create(self):
         """it should create Immunization, and preserve decimal value"""
-        imms = create_covid_19_immunization_dict(imms_id="an-id")
+        imms = create_covid_immunization_dict(imms_id="an-id")
         imms["doseQuantity"]["value"] = 0.7477
 
         self.table.put_item = MagicMock(return_value={"ResponseMetadata": {"HTTPStatusCode": 200}})
@@ -671,7 +669,7 @@ class TestImmunizationDecimals(TestFhirRepositoryBase):
     def test_decimal_on_update(self):
         """it should update record when replacing doseQuantity and keep decimal precision"""
         imms_id = "an-imms-id"
-        imms = create_covid_19_immunization_dict(imms_id)
+        imms = create_covid_immunization_dict(imms_id)
         imms["doseQuantity"] = 1.5556
         updated_dose_quantity = 0.7566
         imms["doseQuantity"] = updated_dose_quantity
@@ -682,7 +680,7 @@ class TestImmunizationDecimals(TestFhirRepositoryBase):
     def test_decimal_on_update_patient(self):
         """it should update record by replacing both Immunization and Patient and dose quantity"""
         imms_id = "an-imms-id"
-        imms = create_covid_19_immunization_dict(imms_id)
+        imms = create_covid_immunization_dict(imms_id)
         imms["doseQuantity"] = 1.590
         imms["patient"] = self.patient
         resource = {"doseQuantity": 1.590, "foo": "bar"}

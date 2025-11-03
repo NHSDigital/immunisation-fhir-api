@@ -24,7 +24,7 @@ class MockUniqueIdUris:
 class MockUniqueIds:
     """Class containing mock unique IDs for use in tests"""
 
-    COVID19_001 = "COVID_19_001"
+    COVID_001 = "COVID_001"
     RSV_001 = "RSV_001"
     RSV_002 = "RSV_002"
 
@@ -37,7 +37,7 @@ class MockLocalIds:
         """Create a mock local ID. Default is to use the test unique ID URI."""
         return f"{unique_id}^{unique_id_uri}"
 
-    COVID19_001_RAVS = create_local_id(MockUniqueIds.COVID19_001, MockUniqueIdUris.RAVS)
+    COVID_001_RAVS = create_local_id(MockUniqueIds.COVID_001, MockUniqueIdUris.RAVS)
     RSV_001_RAVS = create_local_id(MockUniqueIds.RSV_001, MockUniqueIdUris.RAVS)
     RSV_002_RAVS = create_local_id(MockUniqueIds.RSV_002, MockUniqueIdUris.RAVS)
 
@@ -49,11 +49,11 @@ class TargetDiseaseElements:
     """
 
     rsv_display = "Respiratory syncytial virus infection (disorder)"
-    covid19_display = "Disease caused by severe acute respiratory syndrome coronavirus 2"
+    covid_display = "Disease caused by severe acute respiratory syndrome coronavirus 2"
 
     RSV = [{"coding": [{"system": Urls.SNOMED, "code": "55735004", "display": rsv_display}]}]
 
-    COVID19 = [{"coding": [{"system": Urls.SNOMED, "code": "840539006", "display": covid19_display}]}]
+    COVID = [{"coding": [{"system": Urls.SNOMED, "code": "840539006", "display": covid_display}]}]
 
     FLU = [{"coding": [{"system": Urls.SNOMED, "code": "6142004", "display": "Influenza"}]}]
 
@@ -91,7 +91,7 @@ class MockFileRows:
 
     UPDATE = (
         '1234567890|"JOHN"|"DOE"|"19801231"|"1"|"AB12 3CD"|"20240611T120000"|"J82068"|'
-        f'"https://fhir.nhs.uk/Id/ods-organization-code"|"{MockUniqueIds.COVID19_001}"|"{MockUniqueIdUris.RAVS}"|'
+        f'"https://fhir.nhs.uk/Id/ods-organization-code"|"{MockUniqueIds.COVID_001}"|"{MockUniqueIdUris.RAVS}"|'
         '"update"|"Jane"|"Smith"|"20240610"|"FALSE"|"1324657890"|'
         '"Administration of COVID-19 vaccine product (procedure)"|'
         '1|"1234567890"|'
@@ -104,7 +104,7 @@ class MockFileRows:
 
     DELETE = (
         '1234567890|"JOHN"|"DOE"|"19801231"|"1"|"AB12 3CD"|"20240611T120000"|"J82068"|'
-        f'"https://fhir.nhs.uk/Id/ods-organization-code"|"{MockUniqueIds.COVID19_001}"|"{MockUniqueIdUris.RAVS}"|'
+        f'"https://fhir.nhs.uk/Id/ods-organization-code"|"{MockUniqueIds.COVID_001}"|"{MockUniqueIdUris.RAVS}"|'
         '"delete"|"Jane"|"Smith"|"20240610"|"FALSE"|"1324657890"|'
         '"Administration of COVID-19 vaccine product (procedure)"|'
         '1|"1234567890"|'

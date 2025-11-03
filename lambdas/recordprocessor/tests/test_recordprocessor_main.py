@@ -215,7 +215,7 @@ class TestRecordProcessor(unittest.TestCase):
                 1,
                 {
                     "operation_requested": "UPDATE",
-                    "local_id": MockLocalIds.COVID19_001_RAVS,
+                    "local_id": MockLocalIds.COVID_001_RAVS,
                 },
                 True,
             ),
@@ -224,7 +224,7 @@ class TestRecordProcessor(unittest.TestCase):
                 2,
                 {
                     "operation_requested": "DELETE",
-                    "local_id": MockLocalIds.COVID19_001_RAVS,
+                    "local_id": MockLocalIds.COVID_001_RAVS,
                 },
                 True,
             ),
@@ -266,7 +266,7 @@ class TestRecordProcessor(unittest.TestCase):
                         "error_message": Diagnostics.NO_PERMISSIONS,
                     },
                     "operation_requested": "UPDATE",
-                    "local_id": MockLocalIds.COVID19_001_RAVS,
+                    "local_id": MockLocalIds.COVID_001_RAVS,
                 },
                 False,
             ),
@@ -280,7 +280,7 @@ class TestRecordProcessor(unittest.TestCase):
                         "error_message": Diagnostics.NO_PERMISSIONS,
                     },
                     "operation_requested": "DELETE",
-                    "local_id": MockLocalIds.COVID19_001_RAVS,
+                    "local_id": MockLocalIds.COVID_001_RAVS,
                 },
                 False,
             ),
@@ -353,7 +353,7 @@ class TestRecordProcessor(unittest.TestCase):
                 "error_message": Diagnostics.INVALID_ACTION_FLAG,
             },
             "operation_requested": "TO DEFINE",
-            "local_id": MockLocalIds.COVID19_001_RAVS,
+            "local_id": MockLocalIds.COVID_001_RAVS,
         }
 
         # Assertion case tuples are stuctured as

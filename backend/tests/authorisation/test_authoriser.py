@@ -22,63 +22,59 @@ class TestAuthoriser(unittest.TestCase):
 
     def test_authorise_returns_true_if_supplier_has_permissions(self):
         """Authoriser().authorise should return true if the supplier has the required permissions"""
-        self.mock_cache_client.hget.return_value = '["COVID19.RS"]'
+        self.mock_cache_client.hget.return_value = '["COVID.RS"]'
 
-        result = self.test_authoriser.authorise(self.MOCK_SUPPLIER_NAME, ApiOperationCode.READ, {"COVID19"})
+        result = self.test_authoriser.authorise(self.MOCK_SUPPLIER_NAME, ApiOperationCode.READ, {"COVID"})
 
         self.assertTrue(result)
         self.mock_cache_client.hget.assert_called_once_with("supplier_permissions", self.MOCK_SUPPLIER_NAME)
         self.mock_logger.info.assert_called_once_with(
-            "operation: r, supplier_permissions: {'covid19': ['r', 's']}, vaccine_types: {'COVID19'}"
+            "operation: r, supplier_permissions: {'covid': ['r', 's']}, vaccine_types: {'COVID'}"
         )
 
     def test_authorise_returns_false_if_supplier_does_not_have_any_permissions(self):
         """Authoriser().authorise should return false if the supplier does not have any permissions in the cache"""
         self.mock_cache_client.hget.return_value = ""
 
-        result = self.test_authoriser.authorise(self.MOCK_SUPPLIER_NAME, ApiOperationCode.CREATE, {"COVID19"})
+        result = self.test_authoriser.authorise(self.MOCK_SUPPLIER_NAME, ApiOperationCode.CREATE, {"COVID"})
 
         self.assertFalse(result)
         self.mock_cache_client.hget.assert_called_once_with("supplier_permissions", self.MOCK_SUPPLIER_NAME)
-        self.mock_logger.info.assert_called_once_with(
-            "operation: c, supplier_permissions: {}, vaccine_types: {'COVID19'}"
-        )
+        self.mock_logger.info.assert_called_once_with("operation: c, supplier_permissions: {}, vaccine_types: {'COVID'}")
 
     def test_authorise_returns_false_if_supplier_does_not_have_permission_for_operation(
         self,
     ):
         """Authoriser().authorise should return false if the supplier does not have permission for the operation"""
-        self.mock_cache_client.hget.return_value = '["COVID19.RS"]'
+        self.mock_cache_client.hget.return_value = '["COVID.RS"]'
 
-        result = self.test_authoriser.authorise(self.MOCK_SUPPLIER_NAME, ApiOperationCode.CREATE, {"COVID19"})
+        result = self.test_authoriser.authorise(self.MOCK_SUPPLIER_NAME, ApiOperationCode.CREATE, {"COVID"})
 
         self.assertFalse(result)
         self.mock_cache_client.hget.assert_called_once_with("supplier_permissions", self.MOCK_SUPPLIER_NAME)
         self.mock_logger.info.assert_called_once_with(
-            "operation: c, supplier_permissions: {'covid19': ['r', 's']}, vaccine_types: {'COVID19'}"
+            "operation: c, supplier_permissions: {'covid': ['r', 's']}, vaccine_types: {'COVID'}"
         )
 
     def test_authorise_returns_false_if_no_permission_for_vaccination_type(self):
         """Authoriser().authorise should return false if the supplier does not have permission for the vaccination
         type"""
-        self.mock_cache_client.hget.return_value = '["COVID19.RS"]'
+        self.mock_cache_client.hget.return_value = '["COVID.RS"]'
 
         result = self.test_authoriser.authorise(self.MOCK_SUPPLIER_NAME, ApiOperationCode.READ, {"FLU"})
 
         self.assertFalse(result)
         self.mock_cache_client.hget.assert_called_once_with("supplier_permissions", self.MOCK_SUPPLIER_NAME)
         self.mock_logger.info.assert_called_once_with(
-            "operation: r, supplier_permissions: {'covid19': ['r', 's']}, vaccine_types: {'FLU'}"
+            "operation: r, supplier_permissions: {'covid': ['r', 's']}, vaccine_types: {'FLU'}"
         )
 
     def test_authorise_returns_false_multiple_vaccs_scenario(self):
         """Authoriser().authorise should return false if the supplier is missing a permission for any of the vaccs in
         the list provided"""
-        self.mock_cache_client.hget.return_value = '["COVID19.RS", "FLU.CRUDS"]'
+        self.mock_cache_client.hget.return_value = '["COVID.RS", "FLU.CRUDS"]'
 
-        result = self.test_authoriser.authorise(
-            self.MOCK_SUPPLIER_NAME, ApiOperationCode.READ, {"FLU", "COVID19", "RSV"}
-        )
+        result = self.test_authoriser.authorise(self.MOCK_SUPPLIER_NAME, ApiOperationCode.READ, {"FLU", "COVID", "RSV"})
 
         self.assertFalse(result)
         self.mock_cache_client.hget.assert_called_once_with("supplier_permissions", self.MOCK_SUPPLIER_NAME)
@@ -87,8 +83,8 @@ class TestAuthoriser(unittest.TestCase):
         self,
     ):
         """The same set of vaccination types will be returned if the supplier has the required permissions"""
-        self.mock_cache_client.hget.return_value = '["COVID19.RS", "FLU.CRUDS", "RSV.CRUDS"]'
-        requested_vacc_types = {"FLU", "COVID19", "RSV"}
+        self.mock_cache_client.hget.return_value = '["COVID.RS", "FLU.CRUDS", "RSV.CRUDS"]'
+        requested_vacc_types = {"FLU", "COVID", "RSV"}
 
         result = self.test_authoriser.filter_permitted_vacc_types(
             self.MOCK_SUPPLIER_NAME, ApiOperationCode.SEARCH, requested_vacc_types
@@ -103,11 +99,11 @@ class TestAuthoriser(unittest.TestCase):
     ):
         """Filter permitted vacc types method will filter out any vaccination types that the user cannot interact
         with"""
-        self.mock_cache_client.hget.return_value = '["COVID19.RS", "FLU.CRUDS", "RSV.R"]'
+        self.mock_cache_client.hget.return_value = '["COVID.RS", "FLU.CRUDS", "RSV.R"]'
 
         result = self.test_authoriser.filter_permitted_vacc_types(
-            self.MOCK_SUPPLIER_NAME, ApiOperationCode.SEARCH, {"FLU", "COVID19", "RSV"}
+            self.MOCK_SUPPLIER_NAME, ApiOperationCode.SEARCH, {"FLU", "COVID", "RSV"}
         )
 
-        self.assertSetEqual(result, {"FLU", "COVID19"})
+        self.assertSetEqual(result, {"FLU", "COVID"})
         self.mock_cache_client.hget.assert_called_once_with("supplier_permissions", self.MOCK_SUPPLIER_NAME)

@@ -12,12 +12,12 @@
       },
       {
         "code": "76902006",
-        "term": "Tetanus (disorder)"
+        "term": "Tetanus"
       }
     ]
   },
   {
-    "vacc_type": "COVID19",
+    "vacc_type": "COVID",
     "diseases": [
       {
         "code": "840539006",
@@ -30,7 +30,7 @@
     "diseases": [
       {
         "code": "6142004",
-        "term": "Influenza caused by seasonal influenza virus (disorder)"
+        "term": "Influenza"
       }
     ]
   },
@@ -39,7 +39,7 @@
     "diseases": [
       {
         "code": "240532009",
-        "term": "Human papillomavirus infection"
+        "term": "Human papilloma virus infection"
       }
     ]
   },
@@ -57,15 +57,54 @@
     "diseases": [
       {
         "code": "14189004",
-        "term": "Measles (disorder)"
+        "term": "Measles"
       },
       {
         "code": "36989005",
-        "term": "Mumps (disorder)"
+        "term": "Mumps"
       },
       {
         "code": "36653000",
-        "term": "Rubella (disorder)"
+        "term": "Rubella"
+      }
+    ]
+  },
+  {
+    "vacc_type": "MMRV",
+    "diseases": [
+      {
+        "code": "14189004",
+        "term": "Measles"
+      },
+      {
+        "code": "36989005",
+        "term": "Mumps"
+      },
+      {
+        "code": "36653000",
+        "term": "Rubella"
+      },
+      {
+        "code": "38907003",
+        "term": "Varicella"
+      }
+    ]
+  },
+  {
+    "vacc_type": "PCV13",
+    "diseases": [
+      {
+        "code": "16814004",
+        "term": "Pneumococcal infectious disease"
+      }
+    ]
+  },
+  {
+    "vacc_type": "PERTUSSIS",
+    "diseases": [
+      {
+        "code": "27836007",
+        "term": "Pertussis"
       }
     ]
   },
@@ -74,7 +113,16 @@
     "diseases": [
       {
         "code": "55735004",
-        "term": "Respiratory syncytial virus infection (disorder)"
+        "term": "Respiratory syncytial virus infection"
+      }
+    ]
+  },
+  {
+    "vacc_type": "SHINGLES",
+    "diseases": [
+      {
+        "code": "4740000",
+        "term": "Herpes zoster"
       }
     ]
   }

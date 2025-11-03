@@ -3,7 +3,7 @@
     "supplier": "DPSFULL",
     "permissions": [
       "3IN1.CRUDS",
-      "COVID19.CRUDS",
+      "COVID.CRUDS",
       "FLU.CRUDS",
       "HPV.CRUDS",
       "MENACWY.CRUDS",
@@ -16,7 +16,7 @@
     "supplier": "DPSREDUCED",
     "permissions": [
       "3IN1.CRUDS",
-      "COVID19.CRUDS",
+      "COVID.CRUDS",
       "FLU.CRUDS",
       "HPV.CRUDS",
       "MENACWY.CRUDS",
@@ -43,7 +43,7 @@
   },
   {
     "supplier": "EVA",
-    "permissions": ["COVID19.CUD"],
+    "permissions": ["COVID.CUD"],
     "ods_codes": ["8HA94"]
   },
   {
@@ -55,7 +55,7 @@
     "supplier": "EMIS",
     "permissions": [
       "3IN1.CRUDS",
-      "COVID19.CRUDS",
+      "COVID.CRUDS",
       "HPV.CRUDS",
       "MENACWY.CRUDS",
       "MMR.CRUDS",
@@ -87,7 +87,7 @@
   },
   {
     "supplier": "OXDH",
-    "permissions": ["COVID19.CRUDS", "FLU.CRUDS"]
+    "permissions": ["COVID.CRUDS", "FLU.CRUDS"]
   },
   {
     "supplier": "PINNACLE",
@@ -137,7 +137,7 @@
     "supplier": "Test_App",
     "permissions": [
       "3IN1.CRUDS",
-      "COVID19.CRUDS",
+      "COVID.CRUDS",
       "FLU.CRUDS",
       "HPV.CRUDS",
       "MENACWY.CRUDS",
@@ -149,7 +149,7 @@
     "supplier": "Postman_Auth",
     "permissions": [
       "3IN1.CRUDS",
-      "COVID19.CRUDS",
+      "COVID.CRUDS",
       "FLU.CRUDS",
       "HPV.CRUDS",
       "MENACWY.CRUDS",

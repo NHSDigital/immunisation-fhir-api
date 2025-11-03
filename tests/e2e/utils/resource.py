@@ -22,7 +22,7 @@ def load_example(path: str) -> dict:
 
 def generate_imms_resource(
     nhs_number=valid_nhs_number1,
-    vaccine_type=VaccineTypes.covid_19,
+    vaccine_type=VaccineTypes.covid,
     imms_identifier_value: str = None,
     occurrence_date_time: str = None,
     sample_data_file_name: str = "completed_[vaccine_type]_immunization_event",
@@ -52,7 +52,7 @@ def generate_filtered_imms_resource(
     crud_operation_to_filter_for: Literal["READ", "SEARCH", ""] = "",
     nhs_number=valid_nhs_number1,
     imms_identifier_value: str = None,
-    vaccine_type=VaccineTypes.covid_19,
+    vaccine_type=VaccineTypes.covid,
     occurrence_date_time: str = None,
 ) -> dict:
     """
