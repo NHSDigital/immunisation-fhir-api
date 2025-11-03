@@ -1,7 +1,7 @@
 import uuid
 from dataclasses import dataclass
 from enum import Enum
-from typing import Union
+from typing import Any, Union
 
 
 class Severity(str, Enum):
@@ -99,6 +99,24 @@ class ResourceFoundError(RuntimeError):
 
 
 @dataclass
+class ResourceVersionNotProvided(RuntimeError):
+    """Return this error when client has failed to provide the FHIR resource version where required"""
+
+    resource_type: str
+
+    def __str__(self):
+        return f"Validation errors: {self.resource_type} resource version not specified in the request headers"
+
+    def to_operation_outcome(self) -> dict:
+        return create_operation_outcome(
+            resource_id=str(uuid.uuid4()),
+            severity=Severity.error,
+            code=Code.invariant,
+            diagnostics=self.__str__(),
+        )
+
+
+@dataclass
 class UnhandledResponseError(RuntimeError):
     """Use this error when the response from an external service (ex: dynamodb) can't be handled"""
 
@@ -159,6 +177,34 @@ class InvalidPatientId(ValidationError):
 
 
 @dataclass
+class InvalidResourceVersion(ValidationError):
+    """Use this when the resource version is invalid"""
+
+    resource_version: Any
+
+    def to_operation_outcome(self) -> dict:
+        return create_operation_outcome(
+            resource_id=str(uuid.uuid4()),
+            severity=Severity.error,
+            code=Code.invariant,
+            diagnostics=f"Validation errors: Immunization resource version:{self.resource_version} in the request "
+            f"headers is invalid.",
+        )
+
+
+@dataclass
+class InconsistentIdentifierError(ValidationError):
+    """Use this when the local identifier in the payload does not match the existing identifier for the update."""
+
+    msg: str
+
+    def to_operation_outcome(self) -> dict:
+        return create_operation_outcome(
+            resource_id=str(uuid.uuid4()), severity=Severity.error, code=Code.invariant, diagnostics=self.msg
+        )
+
+
+@dataclass
 class InconsistentIdError(ValidationError):
     """Use this when the specified id in the message is inconsistent with the path
     see: http://hl7.org/fhir/R4/http.html#update"""
@@ -166,14 +212,32 @@ class InconsistentIdError(ValidationError):
     imms_id: str
 
     def __str__(self):
-        return f"The provided id:{self.imms_id} doesn't match with the content of the message"
+        return (
+            f"Validation errors: The provided immunization id:{self.imms_id} doesn't match with the content of the "
+            f"request body"
+        )
 
     def to_operation_outcome(self) -> dict:
         return create_operation_outcome(
             resource_id=str(uuid.uuid4()),
             severity=Severity.error,
-            code=Code.server_error,
+            code=Code.invariant,
             diagnostics=self.__str__(),
+        )
+
+
+@dataclass
+class InconsistentResourceVersion(ValidationError):
+    """Use this when the resource version in the request and actual resource version do not match"""
+
+    message: str
+
+    def to_operation_outcome(self) -> dict:
+        return create_operation_outcome(
+            resource_id=str(uuid.uuid4()),
+            severity=Severity.error,
+            code=Code.invariant,
+            diagnostics=self.message,
         )
 
 

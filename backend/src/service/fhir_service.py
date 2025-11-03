@@ -25,7 +25,6 @@ from filter import Filter
 from models.errors import (
     CustomValidationError,
     IdentifierDuplicationError,
-    InvalidPatientId,
     MandatoryError,
     ResourceNotFoundError,
     UnauthorizedVaxError,
@@ -35,11 +34,9 @@ from models.utils.generic_utils import (
     form_json,
     get_contained_patient,
     get_occurrence_datetime,
-    nhs_number_mod11_check,
 )
-from models.utils.validation_utils import get_vaccine_type
+from models.utils.validation_utils import get_vaccine_type, validate_identifiers_match, validate_resource_version_matches
 from repository.fhir_repository import ImmunizationRepository
-from timer import timed
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger()
@@ -105,7 +102,7 @@ class FhirService:
         """
         Get an Immunization by its ID. Returns the immunization entity and version number.
         """
-        resource, version = self.immunization_repo.get_immunization_and_version_by_id(imms_id)
+        resource, resource_metadata = self.immunization_repo.get_immunization_and_resource_meta_by_id(imms_id)
 
         if resource is None:
             raise ResourceNotFoundError(resource_type="Immunization", resource_id=imms_id)
@@ -115,20 +112,7 @@ class FhirService:
         if not self.authoriser.authorise(supplier_system, ApiOperationCode.READ, {vaccination_type}):
             raise UnauthorizedVaxError()
 
-        return Immunization.parse_obj(resource), version
-
-    def get_immunization_by_id_all(self, imms_id: str, imms: dict) -> Optional[dict]:
-        """
-        Get an Immunization by its ID. Return None if not found. If the patient doesn't have an NHS number,
-        return the Immunization.
-        """
-        imms["id"] = imms_id
-        try:
-            self.validator.validate(imms)
-        except (ValidationError, ValueError, MandatoryError) as error:
-            raise CustomValidationError(message=str(error)) from error
-        imms_resp = self.immunization_repo.get_immunization_by_id_all(imms_id, imms)
-        return imms_resp
+        return Immunization.parse_obj(resource), str(resource_metadata.resource_version)
 
     def create_immunization(self, immunization: dict, supplier_system: str) -> Id:
         if immunization.get("id") is not None:
@@ -155,104 +139,41 @@ class FhirService:
 
         return self.immunization_repo.create_immunization(immunization_fhir_entity, supplier_system)
 
-    def update_immunization(
-        self,
-        imms_id: str,
-        immunization: dict,
-        existing_resource_version: int,
-        existing_resource_vacc_type: str,
-        supplier_system: str,
-    ) -> tuple[bool, Immunization | dict, Optional[int]]:
-        # VED-747 - TODO - this and the below 2 methods are duplicated. We should streamline the update journey
-        immunization["id"] = imms_id
+    def update_immunization(self, imms_id: str, immunization: dict, supplier_system: str, resource_version: int) -> int:
+        try:
+            self.validator.validate(immunization)
+        except (ValidationError, ValueError, MandatoryError) as error:
+            raise CustomValidationError(message=str(error)) from error
 
-        patient = self._validate_patient(immunization)
-        if "diagnostics" in patient:
-            return False, patient, None
+        existing_immunization, existing_resource_meta = self.immunization_repo.get_immunization_and_resource_meta_by_id(
+            imms_id, include_deleted=True
+        )
 
-        vaccination_type = get_vaccine_type(immunization)
+        if not existing_immunization:
+            raise ResourceNotFoundError(resource_type="Immunization", resource_id=imms_id)
 
         # If the user is updating the resource vaccination_type, they must have permissions for both the existing and
         # new type. In most cases it will be the same, but it is possible for users to update the vacc type
         if not self.authoriser.authorise(
             supplier_system,
             ApiOperationCode.UPDATE,
-            {vaccination_type, existing_resource_vacc_type},
+            {get_vaccine_type(immunization), get_vaccine_type(existing_immunization)},
         ):
             raise UnauthorizedVaxError()
 
-        imms, updated_version = self.immunization_repo.update_immunization(
-            imms_id, immunization, patient, existing_resource_version, supplier_system
-        )
+        validate_identifiers_match(immunization, existing_immunization)
 
-        return True, Immunization.parse_obj(imms), updated_version
+        if not existing_resource_meta.is_deleted:
+            validate_resource_version_matches(resource_version, existing_resource_meta.resource_version, imms_id)
 
-    def reinstate_immunization(
-        self,
-        imms_id: str,
-        immunization: dict,
-        existing_resource_version: int,
-        existing_resource_vacc_type: str,
-        supplier_system: str,
-    ) -> tuple[bool, Immunization | dict, Optional[int]]:
-        immunization["id"] = imms_id
-        patient = self._validate_patient(immunization)
-        if "diagnostics" in patient:
-            return False, patient, None
-
-        vaccination_type = get_vaccine_type(immunization)
-
-        if not self.authoriser.authorise(
-            supplier_system,
-            ApiOperationCode.UPDATE,
-            {vaccination_type, existing_resource_vacc_type},
-        ):
-            raise UnauthorizedVaxError()
-
-        imms, updated_version = self.immunization_repo.reinstate_immunization(
-            imms_id, immunization, patient, existing_resource_version, supplier_system
-        )
-
-        return True, Immunization.parse_obj(imms), updated_version
-
-    def update_reinstated_immunization(
-        self,
-        imms_id: str,
-        immunization: dict,
-        existing_resource_version: int,
-        existing_resource_vacc_type: str,
-        supplier_system: str,
-    ) -> tuple[bool, Immunization | dict, Optional[int]]:
-        immunization["id"] = imms_id
-        patient = self._validate_patient(immunization)
-        if "diagnostics" in patient:
-            return False, patient, None
-
-        vaccination_type = get_vaccine_type(immunization)
-
-        if not self.authoriser.authorise(
-            supplier_system,
-            ApiOperationCode.UPDATE,
-            {vaccination_type, existing_resource_vacc_type},
-        ):
-            raise UnauthorizedVaxError()
-
-        imms, updated_version = self.immunization_repo.update_reinstated_immunization(
-            imms_id,
-            immunization,
-            patient,
-            existing_resource_version,
-            supplier_system,
-        )
-
-        return True, Immunization.parse_obj(imms), updated_version
+        return self.immunization_repo.update_immunization(imms_id, immunization, existing_resource_meta, supplier_system)
 
     def delete_immunization(self, imms_id: str, supplier_system: str) -> None:
         """
         Delete an Immunization if it exists and return the ID back if successful. An exception will be raised if the
         resource does not exist.
         """
-        existing_immunisation, _ = self.immunization_repo.get_immunization_and_version_by_id(imms_id)
+        existing_immunisation, _ = self.immunization_repo.get_immunization_and_resource_meta_by_id(imms_id)
 
         if not existing_immunisation:
             raise ResourceNotFoundError(resource_type="Immunization", resource_id=imms_id)
@@ -405,25 +326,3 @@ class FhirService:
         supplier_requested_unauthorised_vaccs = len(vaccine_types) != len(permitted_vacc_types)
 
         return fhir_bundle, supplier_requested_unauthorised_vaccs
-
-    @timed
-    def _validate_patient(self, imms: dict) -> dict:
-        """
-        Get the NHS number from the contained Patient resource and validate it.
-
-        If the NHS number doesn't exist, return an empty dict.
-        If the NHS number exists, check it's valid, and return the patient details.
-        """
-        try:
-            contained_patient = get_contained_patient(imms)
-            nhs_number = contained_patient["identifier"][0]["value"]
-        except (KeyError, IndexError):
-            return {}
-
-        if not nhs_number:
-            return {}
-
-        if nhs_number_mod11_check(nhs_number):
-            return contained_patient
-
-        raise InvalidPatientId(patient_identifier=nhs_number)
