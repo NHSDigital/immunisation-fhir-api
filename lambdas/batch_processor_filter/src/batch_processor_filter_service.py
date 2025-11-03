@@ -7,7 +7,7 @@ from batch_file_created_event import BatchFileCreatedEvent
 from batch_file_repository import BatchFileRepository
 from common.clients import get_sqs_client, logger
 from common.log_firehose import send_log_to_firehose
-from constants import QUEUE_URL, FileNotProcessedReason, FileStatus
+from constants import QUEUE_URL, SPLUNK_FIREHOSE_STREAM_NAME, FileNotProcessedReason, FileStatus
 from exceptions import EventAlreadyProcessingForSupplierAndVaccTypeError
 
 BATCH_AUDIT_REPOSITORY = BatchAuditRepository()
@@ -72,4 +72,7 @@ class BatchProcessorFilterService:
 
         successful_log_message = f"File forwarded for processing by ECS. Filename: {filename}"
         logger.info(successful_log_message)
-        send_log_to_firehose({**batch_file_created_event, "message": successful_log_message})
+        send_log_to_firehose(
+            stream_name=SPLUNK_FIREHOSE_STREAM_NAME,
+            log_data={**batch_file_created_event, "message": successful_log_message},
+        )

@@ -4,6 +4,9 @@ from common.clients import firehose_client
 from common.clients import logger
 
 
+# Not keen on including blocking calls in function code to forward log data to Splunk (via Firehose)
+# Consider simply logging and setting up CW subscription filters to forward to Firehose
+# https://docs.aws.amazon.com/firehose/latest/dev/writing-with-cloudwatch-logs.html
 def send_log_to_firehose(stream_name: str, log_data: dict) -> None:
     """Sends the log_message to Firehose"""
     try:
