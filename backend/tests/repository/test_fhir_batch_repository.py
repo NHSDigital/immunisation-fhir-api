@@ -15,7 +15,7 @@ from models.errors import (
     UnhandledResponseError,
 )
 from repository.fhir_batch_repository import ImmunizationBatchRepository, create_table
-from testing_utils.immunization_utils import create_covid_19_immunization_dict
+from testing_utils.immunization_utils import create_covid_immunization_dict
 
 imms_id = str(uuid4())
 
@@ -34,7 +34,7 @@ class TestImmunizationBatchRepository(unittest.TestCase):
         self.repository = ImmunizationBatchRepository()
         self.table.put_item = MagicMock(return_value={"ResponseMetadata": {"HTTPStatusCode": 200}})
         self.table.query = MagicMock(return_value={})
-        self.immunization = create_covid_19_immunization_dict(imms_id)
+        self.immunization = create_covid_immunization_dict(imms_id)
         self.table.update_item = MagicMock(return_value={"ResponseMetadata": {"HTTPStatusCode": 200}})
         self.redis_patcher = patch("models.utils.validation_utils.redis_client")
         self.mock_redis_client = self.redis_patcher.start()
@@ -56,7 +56,7 @@ class TestCreateImmunization(TestImmunizationBatchRepository):
 
     def create_immunization_test_logic(self, is_present, remove_nhs):
         """Common logic for testing immunization creation."""
-        self.mock_redis_client.hget.side_effect = ["COVID19"]
+        self.mock_redis_client.hget.side_effect = ["COVID"]
         self.modify_immunization(remove_nhs)
 
         self.repository.create_immunization(self.immunization, "supplier", "vax-type", self.table, is_present)

@@ -20,8 +20,8 @@ class TestSearchImmunizationByIdentifier(ImmunizationBaseTest):
     def test_search_imms(self):
         for imms_api in self.imms_apis:
             with self.subTest(imms_api):
-                covid19_imms_data = generate_imms_resource()
-                covid_ids = self.store_records(covid19_imms_data)
+                covid_imms_data = generate_imms_resource()
+                covid_ids = self.store_records(covid_imms_data)
 
                 # Retrieve the resources to get the identifier system and value via read API
                 covid_resource = imms_api.get_immunization_by_id(covid_ids).json()
@@ -66,7 +66,7 @@ class TestSearchImmunizationByIdentifier(ImmunizationBaseTest):
     def test_search_by_identifier_parameter_smoke_tests(self):
         stored_records = generate_imms_resource(
             valid_nhs_number1,
-            VaccineTypes.covid_19,
+            VaccineTypes.covid,
             imms_identifier_value=str(uuid.uuid4()),
         )
 

@@ -29,7 +29,7 @@ class TestGenericUtils(unittest.TestCase):
         If the mock returns a vaccine type, convert_disease_codes_to_vaccine_type returns that vaccine type.
         """
         valid_combinations = [
-            (["840539006"], "COVID19"),
+            (["840539006"], "COVID"),
             (["6142004"], "FLU"),
             (["240532009"], "HPV"),
             (["14189004", "36989005", "36653000"], "MMR"),
@@ -38,7 +38,7 @@ class TestGenericUtils(unittest.TestCase):
             (["55735004"], "RSV"),
         ]
         self.mock_redis_client.hget.side_effect = [
-            "COVID19",
+            "COVID",
             "FLU",
             "HPV",
             "MMR",
@@ -100,13 +100,13 @@ class TestGenericUtils(unittest.TestCase):
 
         # TEST INVALID DATA FOR SINGLE TARGET DISEASE
         self.mock_redis_client.hget.return_value = None  # Reset mock for invalid cases
-        covid_19_json_data = load_json_data(filename="completed_covid19_immunization_event.json")
+        covid_json_data = load_json_data(filename="completed_covid_immunization_event.json")
 
         # INVALID DATA, SINGLE TARGET DISEASE: No targetDisease field
-        invalid_covid_19_json_data = deepcopy(covid_19_json_data)
-        del invalid_covid_19_json_data["protocolApplied"][0]["targetDisease"]
+        invalid_covid_json_data = deepcopy(covid_json_data)
+        del invalid_covid_json_data["protocolApplied"][0]["targetDisease"]
         with self.assertRaises(ValueError) as error:
-            get_vaccine_type(invalid_covid_19_json_data)
+            get_vaccine_type(invalid_covid_json_data)
         self.assertEqual(
             str(error.exception),
             "Validation errors: protocolApplied[0].targetDisease[0].coding[?(@.system=='http://snomed.info/sct')].code"
@@ -130,10 +130,10 @@ class TestGenericUtils(unittest.TestCase):
             {"coding": [{"system": "http://snomed.info/sct", "display": "Influenza"}]},
         ]
         for invalid_target_disease in invalid_target_disease_elements:
-            invalid_covid_19_json_data = deepcopy(covid_19_json_data)
-            invalid_covid_19_json_data["protocolApplied"][0]["targetDisease"][0] = invalid_target_disease
+            invalid_covid_json_data = deepcopy(covid_json_data)
+            invalid_covid_json_data["protocolApplied"][0]["targetDisease"][0] = invalid_target_disease
             with self.assertRaises(ValueError) as error:
-                get_vaccine_type(invalid_covid_19_json_data)
+                get_vaccine_type(invalid_covid_json_data)
             self.assertEqual(
                 str(error.exception),
                 "protocolApplied[0].targetDisease[0].coding[?(@.system=='http://snomed.info/sct')].code"
@@ -141,10 +141,10 @@ class TestGenericUtils(unittest.TestCase):
             )
 
         # INVALID DATA, SINGLE TARGET DISEASE: Invalid code
-        invalid_covid_19_json_data = deepcopy(covid_19_json_data)
-        update_target_disease_code(invalid_covid_19_json_data, "INVALID_CODE")
+        invalid_covid_json_data = deepcopy(covid_json_data)
+        update_target_disease_code(invalid_covid_json_data, "INVALID_CODE")
         with self.assertRaises(ValueError) as error:
-            get_vaccine_type(invalid_covid_19_json_data)
+            get_vaccine_type(invalid_covid_json_data)
         self.assertEqual(
             str(error.exception),
             "Validation errors: protocolApplied[0].targetDisease[*].coding[?(@.system=='http://snomed.info/sct')].code"

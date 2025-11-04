@@ -4,7 +4,7 @@
   "link": [
     {
       "relation": "self",
-      "url": "https://internal-dev.api.service.nhs.uk/immunisation-fhir-api-pr-179/Immunization?-date.from=2021-02-06&-date.to=2021-02-08&-immunization.target=COVID19&_include=Immunization%3Apatient&patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7C9693632109"
+      "url": "https://internal-dev.api.service.nhs.uk/immunisation-fhir-api-pr-179/Immunization?-date.from=2021-02-06&-date.to=2021-02-08&-immunization.target=COVID&_include=Immunization%3Apatient&patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7C9693632109"
     }
   ],
   "entry": [

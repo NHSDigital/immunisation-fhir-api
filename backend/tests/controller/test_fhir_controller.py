@@ -22,9 +22,9 @@ from models.errors import (
 )
 from parameter_parser import patient_identifier_system, process_search_params
 from repository.fhir_repository import ImmunizationRepository
-from service.fhir_service import FhirService, UpdateOutcome
+from service.fhir_service import FhirService
 from testing_utils.generic_utils import load_json_data
-from testing_utils.immunization_utils import create_covid_19_immunization
+from testing_utils.immunization_utils import create_covid_immunization
 
 
 class TestFhirControllerBase(unittest.TestCase):
@@ -133,7 +133,7 @@ class TestFhirControllerGetImmunizationByIdentifier(unittest.TestCase):
             "link": [
                 {
                     "relation": "self",
-                    "url": "https://internal-dev.api.service.nhs.uk/immunisation-fhir-api-pr-224/Immunization?immunization.target=COVID19&patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7C1345678940",
+                    "url": "https://internal-dev.api.service.nhs.uk/immunisation-fhir-api-pr-224/Immunization?immunization.target=COVID&patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7C1345678940",
                 }
             ],
             "entry": [],
@@ -450,7 +450,7 @@ class TestFhirControllerGetImmunizationByIdentifierPost(unittest.TestCase):
             "link": [
                 {
                     "relation": "self",
-                    "url": "https://internal-dev.api.service.nhs.uk/immunisation-fhir-api-pr-224/Immunization?immunization.target=COVID19&patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7C1345678940",
+                    "url": "https://internal-dev.api.service.nhs.uk/immunisation-fhir-api-pr-224/Immunization?immunization.target=COVID&patient.identifier=https%3A%2F%2Ffhir.nhs.uk%2FId%2Fnhs-number%7C1345678940",
                 }
             ],
             "entry": [],
@@ -835,7 +835,7 @@ class TestCreateImmunization(unittest.TestCase):
     def test_create_immunization(self):
         """it should create Immunization and return resource's location"""
         imms_id = str(uuid.uuid4())
-        imms = create_covid_19_immunization(imms_id)
+        imms = create_covid_immunization(imms_id)
         aws_event = {
             "headers": {"SupplierSystem": "Test"},
             "body": imms.json(),
@@ -853,7 +853,7 @@ class TestCreateImmunization(unittest.TestCase):
     def test_create_immunization_returns_unauthorised_error_when_supplier_system_header_missing(self):
         """it should return unauthorized error"""
         imms_id = str(uuid.uuid4())
-        imms = create_covid_19_immunization(imms_id)
+        imms = create_covid_immunization(imms_id)
         aws_event = {"body": imms.json()}
 
         response = self.controller.create_immunization(aws_event)
@@ -864,7 +864,7 @@ class TestCreateImmunization(unittest.TestCase):
         """it should return an unauthorized error when the service finds that user lacks permissions"""
         # Given
         imms_id = str(uuid.uuid4())
-        imms = create_covid_19_immunization(imms_id)
+        imms = create_covid_immunization(imms_id)
         aws_event = {
             "headers": {
                 "SupplierSystem": "test",
@@ -951,7 +951,7 @@ class TestUpdateImmunization(unittest.TestCase):
             "pathParameters": {"id": imms_id},
         }
         self.service.update_immunization.return_value = (
-            UpdateOutcome.UPDATE,
+            True,
             "value doesn't matter",
             2,
         )
@@ -960,11 +960,11 @@ class TestUpdateImmunization(unittest.TestCase):
             "Version": 1,
             "DeletedAt": False,
             "Reinstated": False,
-            "VaccineType": "COVID19",
+            "VaccineType": "COVID",
         }
         response = self.controller.update_immunization(aws_event)
 
-        self.service.update_immunization.assert_called_once_with(imms_id, json.loads(imms), 1, "COVID19", "Test")
+        self.service.update_immunization.assert_called_once_with(imms_id, json.loads(imms), 1, "COVID", "Test")
         self.assertEqual(response["statusCode"], 200)
         self.assertEqual(response["headers"]["E-Tag"], 2)
 
@@ -976,7 +976,7 @@ class TestUpdateImmunization(unittest.TestCase):
         self.service.get_immunization_by_id_all.return_value = {
             "id": imms_id,
             "Version": 1,
-            "VaccineType": "COVID19",
+            "VaccineType": "COVID",
             "DeletedAt": False,
         }
         aws_event = {
@@ -1011,7 +1011,7 @@ class TestUpdateImmunization(unittest.TestCase):
             "Version": 1,
             "DeletedAt": False,
             "Reinstated": False,
-            "VaccineType": "COVID19",
+            "VaccineType": "COVID",
         }
         response = self.controller.update_immunization(aws_event)
         self.assertEqual(response["statusCode"], 422)
@@ -1035,7 +1035,7 @@ class TestUpdateImmunization(unittest.TestCase):
             "Version": 1,
             "DeletedAt": False,
             "Reinstated": False,
-            "VaccineType": "COVID19",
+            "VaccineType": "COVID",
         }
         response = self.controller.update_immunization(aws_event)
         self.assertEqual(response["statusCode"], 403)
@@ -1055,13 +1055,13 @@ class TestUpdateImmunization(unittest.TestCase):
             "pathParameters": {"id": imms_id},
         }
         self.service.update_immunization.return_value = (
-            UpdateOutcome.UPDATE,
+            True,
             "value doesn't matter",
         )
         self.service.get_immunization_by_id_all.return_value = None
         response = self.controller.update_immunization(aws_event)
 
-        # self.service.update_immunization.assert_called_once_with(imms_id, json.loads(imms), 1, "COVID19.CRUDS", "Test", False)
+        # self.service.update_immunization.assert_called_once_with(imms_id, json.loads(imms), 1, "COVID.CRUDS", "Test", False)
         self.assertEqual(response["statusCode"], 404)
         self.assertIn(
             "The requested immunization resource with id:valid-id was not found.",
@@ -1089,7 +1089,7 @@ class TestUpdateImmunization(unittest.TestCase):
             "Version": 1,
             "DeletedAt": False,
             "Reinstated": False,
-            "VaccineType": "COVID19",
+            "VaccineType": "COVID",
         }
         response = self.controller.update_immunization(aws_event)
 
@@ -1104,17 +1104,17 @@ class TestUpdateImmunization(unittest.TestCase):
             "body": imms,
             "pathParameters": {"id": imms_id},
         }
-        self.service.reinstate_immunization.return_value = UpdateOutcome.UPDATE, {}, 2
+        self.service.reinstate_immunization.return_value = True, {}, 2
         self.service.get_immunization_by_id_all.return_value = {
             "resource": "new_value",
             "Version": 1,
             "DeletedAt": True,
             "Reinstated": False,
-            "VaccineType": "COVID19",
+            "VaccineType": "COVID",
         }
         response = self.controller.update_immunization(aws_event)
 
-        self.service.reinstate_immunization.assert_called_once_with(imms_id, json.loads(imms), 1, "COVID19", "Test")
+        self.service.reinstate_immunization.assert_called_once_with(imms_id, json.loads(imms), 1, "COVID", "Test")
         self.assertEqual(response["statusCode"], 200)
         self.assertEqual(response["headers"]["E-Tag"], 2)
 
@@ -1128,17 +1128,17 @@ class TestUpdateImmunization(unittest.TestCase):
             "body": imms,
             "pathParameters": {"id": imms_id},
         }
-        self.service.reinstate_immunization.return_value = UpdateOutcome.UPDATE, {}, 2
+        self.service.reinstate_immunization.return_value = True, {}, 2
         self.service.get_immunization_by_id_all.return_value = {
             "resource": "new_value",
             "Version": 1,
             "DeletedAt": True,
             "Reinstated": False,
-            "VaccineType": "COVID19",
+            "VaccineType": "COVID",
         }
         response = self.controller.update_immunization(aws_event)
 
-        self.service.reinstate_immunization.assert_called_once_with(imms_id, json.loads(imms), 1, "COVID19", "Test")
+        self.service.reinstate_immunization.assert_called_once_with(imms_id, json.loads(imms), 1, "COVID", "Test")
         self.assertEqual(response["statusCode"], 200)
         self.assertEqual(response["headers"]["E-Tag"], 2)
 
@@ -1157,7 +1157,7 @@ class TestUpdateImmunization(unittest.TestCase):
             "Version": 1,
             "DeletedAt": False,
             "Reinstated": False,
-            "VaccineType": "COVID19",
+            "VaccineType": "COVID",
         }
         response = self.controller.update_immunization(aws_event)
 
@@ -1184,7 +1184,7 @@ class TestUpdateImmunization(unittest.TestCase):
             "Version": 1,
             "DeletedAt": False,
             "Reinstated": False,
-            "VaccineType": "COVID19",
+            "VaccineType": "COVID",
         }
         response = self.controller.update_immunization(aws_event)
         self.assertEqual(400, response["statusCode"])
@@ -1211,7 +1211,7 @@ class TestUpdateImmunization(unittest.TestCase):
             "Version": 1,
             "DeletedAt": False,
             "Reinstated": False,
-            "VaccineType": "COVID19",
+            "VaccineType": "COVID",
         }
         # When
         response = self.controller.update_immunization(aws_event)
@@ -1228,7 +1228,7 @@ class TestUpdateImmunization(unittest.TestCase):
         aws_event = {
             "headers": {
                 "E-Tag": 1,
-                "VaccineTypePermissions": "COVID19.CRUDS",
+                "VaccineTypePermissions": "COVID.CRUDS",
                 "SupplierSystem": "Test",
             },
             "body": req_imms,
@@ -1261,7 +1261,7 @@ class TestUpdateImmunization(unittest.TestCase):
             "resource": "new_value",
             "Version": 2,
             "DeletedAt": False,
-            "VaccineType": "COVID19",
+            "VaccineType": "COVID",
         }
         # When
         response = self.controller.update_immunization(aws_event)
@@ -1311,7 +1311,7 @@ class TestUpdateImmunization(unittest.TestCase):
             "pathParameters": {"id": imms_id},
         }
         self.service.update_reinstated_immunization.return_value = (
-            UpdateOutcome.UPDATE,
+            True,
             {},
             3,
         )
@@ -1320,13 +1320,13 @@ class TestUpdateImmunization(unittest.TestCase):
             "Version": 1,
             "DeletedAt": False,
             "Reinstated": True,
-            "VaccineType": "COVID19",
+            "VaccineType": "COVID",
         }
 
         response = self.controller.update_immunization(aws_event)
 
         self.service.update_reinstated_immunization.assert_called_once_with(
-            imms_id, json.loads(imms), 1, "COVID19", "Test"
+            imms_id, json.loads(imms), 1, "COVID", "Test"
         )
         self.assertEqual(response["statusCode"], 200)
         self.assertEqual(response["headers"]["E-Tag"], int("3"))
@@ -1356,10 +1356,10 @@ class TestUpdateImmunization(unittest.TestCase):
             "Version": 1,
             "DeletedAt": True,
             "Reinstated": False,
-            "VaccineType": "COVID19",
+            "VaccineType": "COVID",
         }
         self.service.reinstate_immunization.return_value = (
-            None,
+            False,
             {"diagnostics": "Patient NHS number has been superseded"},
             None,
         )
@@ -1516,13 +1516,13 @@ class TestSearchImmunizations(TestFhirControllerBase):
     MOCK_REDIS_V2D_HKEYS = {
         "PERTUSSIS",
         "RSV",
-        "3in1",
+        "3IN1",
         "MMR",
         "HPV",
         "MMRV",
         "PCV13",
         "SHINGLES",
-        "COVID19",
+        "COVID",
         "FLU",
         "MENACWY",
     }
@@ -1544,7 +1544,7 @@ class TestSearchImmunizations(TestFhirControllerBase):
         search_result = Bundle.construct()
         self.service.search_immunizations.return_value = search_result, False
 
-        vaccine_type = "COVID19"
+        vaccine_type = "COVID"
         params = f"{self.immunization_target_key}={vaccine_type}&" + urllib.parse.urlencode(
             [
                 (
@@ -1579,7 +1579,7 @@ class TestSearchImmunizations(TestFhirControllerBase):
         """it should return a 403 error if the service raises an unauthorized error"""
         self.service.search_immunizations.side_effect = UnauthorizedVaxError()
 
-        vaccine_type = "COVID19"
+        vaccine_type = "COVID"
         lambda_event = {
             "SupplierSystem": "test",
             "multiValueQueryStringParameters": {
@@ -1604,7 +1604,7 @@ class TestSearchImmunizations(TestFhirControllerBase):
         bundle = Bundle.parse_obj(search_result)
         self.service.search_immunizations.return_value = bundle, True
 
-        vaccine_type = ["COVID19", "FLU"]
+        vaccine_type = ["COVID", "FLU"]
         vaccine_type = ",".join(vaccine_type)
 
         lambda_event = {
@@ -1662,7 +1662,7 @@ class TestSearchImmunizations(TestFhirControllerBase):
         search_result = Bundle.construct()
         self.service.search_immunizations.return_value = search_result, False
 
-        vaccine_type = "COVID19"
+        vaccine_type = "COVID"
         params = f"{self.immunization_target_key}={vaccine_type}&" + urllib.parse.urlencode(
             [
                 (
@@ -1705,7 +1705,7 @@ class TestSearchImmunizations(TestFhirControllerBase):
         bundle = Bundle.parse_obj(search_result)
         self.service.search_immunizations.return_value = bundle, True
 
-        vaccine_type = "COVID19", "FLU"
+        vaccine_type = "COVID", "FLU"
         vaccine_type = ",".join(vaccine_type)
         # Construct the application/x-www-form-urlencoded body
         body = {
@@ -1775,7 +1775,7 @@ class TestSearchImmunizations(TestFhirControllerBase):
         """it should return 403 as the user doesnt have vaccinetype permission"""
         self.service.search_immunizations.side_effect = UnauthorizedVaxError()
 
-        vaccine_type = ["COVID19", "FLU"]
+        vaccine_type = ["COVID", "FLU"]
         vaccine_type = ",".join(vaccine_type)
 
         # Construct the application/x-www-form-urlencoded body
@@ -1847,7 +1847,7 @@ class TestSearchImmunizations(TestFhirControllerBase):
         }
         self.service.search_immunizations.return_value = search_result, False
 
-        vaccine_type = "COVID19"
+        vaccine_type = "COVID"
         lambda_event = {
             "headers": {
                 "Content-Type": "application/x-www-form-urlencoded",
@@ -1871,7 +1871,7 @@ class TestSearchImmunizations(TestFhirControllerBase):
         search_result = load_json_data("sample_immunization_response _for _not_done_event.json")
         bundle = Bundle.parse_obj(search_result)
         self.service.search_immunizations.return_value = bundle, False
-        vaccine_type = "COVID19"
+        vaccine_type = "COVID"
         lambda_event = {
             "headers": {
                 "Content-Type": "application/x-www-form-urlencoded",
@@ -1894,7 +1894,7 @@ class TestSearchImmunizations(TestFhirControllerBase):
     def test_self_link_excludes_extraneous_params(self):
         search_result = Bundle.construct()
         self.service.search_immunizations.return_value = search_result, False
-        vaccine_type = "COVID19"
+        vaccine_type = "COVID"
         params = f"{self.immunization_target_key}={vaccine_type}&" + urllib.parse.urlencode(
             [
                 (

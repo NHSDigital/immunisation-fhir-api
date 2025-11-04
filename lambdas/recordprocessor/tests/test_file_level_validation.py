@@ -67,10 +67,10 @@ class TestFileLevelValidation(unittest.TestCase):
             ("FLU", ["FLU.U"], {"UPDATE"}),
             # FLU, partial permissions (delete)
             ("FLU", ["FLU.D"], {"DELETE"}),
-            # COVID19, full permissions
-            ("COVID19", ["COVID19.CRUD"], {"CREATE", "UPDATE", "DELETE"}),
-            # COVID19, partial permissions
-            ("COVID19", ["COVID19.U"], {"UPDATE"}),
+            # COVID, full permissions
+            ("COVID", ["COVID.CRUD"], {"CREATE", "UPDATE", "DELETE"}),
+            # COVID, partial permissions
+            ("COVID", ["COVID.U"], {"UPDATE"}),
             # RSV, full permissions
             ("RSV", ["RSV.CRUD"], {"CREATE", "UPDATE", "DELETE"}),
             # RSV, partial permissions
@@ -89,8 +89,8 @@ class TestFileLevelValidation(unittest.TestCase):
         # Case: Supplier has no permissions to perform any of the requested operations
         # Test case tuples are stuctured as (vaccine_type, vaccine_permissions, file_content)
         invalid_cases = [
-            # COVID19, no permissions
-            ("COVID19", ["FLU.CRUDS", "RSV.CUD"]),
+            # COVID, no permissions
+            ("COVID", ["FLU.CRUDS", "RSV.CUD"]),
             # RSV, no valid permissions
             ("RSV", ["FLU.C", "RSV.XYZ"]),
         ]

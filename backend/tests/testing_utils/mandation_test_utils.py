@@ -11,8 +11,8 @@ class MandationTests:
 
     @staticmethod
     def prepare_json_data(test_instance: unittest.TestCase, json_data: dict = None) -> dict:
-        """Returns json_data if given json_data, otherwise returns the complete covid19 json data as a default"""
-        return json_data if json_data else test_instance.completed_json_data["COVID19"]
+        """Returns json_data if given json_data, otherwise returns the complete covid json data as a default"""
+        return json_data if json_data else test_instance.completed_json_data["COVID"]
 
     @staticmethod
     def test_present_field_accepted(test_instance: unittest.TestCase, valid_json_data: dict = None):
