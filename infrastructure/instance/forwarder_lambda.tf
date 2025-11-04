@@ -15,7 +15,6 @@ resource "aws_ecr_repository" "forwarder_lambda_repository" {
 module "forwarding_docker_image" {
   source           = "terraform-aws-modules/lambda/aws//modules/docker-build"
   version          = "8.1.2"
-  docker_file_path = "./recordforwarder/Dockerfile"
 
   create_ecr_repo = false
   ecr_repo        = aws_ecr_repository.forwarder_lambda_repository.name
