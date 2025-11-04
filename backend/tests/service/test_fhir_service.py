@@ -441,7 +441,7 @@ class TestUpdateImmunization(TestFhirServiceBase):
         self.authoriser = create_autospec(Authoriser)
         self.imms_repo = create_autospec(ImmunizationRepository)
         self.fhir_service = FhirService(self.imms_repo, self.authoriser)
-        self.mock_redis_client.hget.return_value = "COVID19"
+        self.mock_redis_client.hget.return_value = "COVID"
 
     def test_update_immunization(self):
         """it should update Immunization and validate NHS number"""

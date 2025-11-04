@@ -687,7 +687,7 @@ class TestImmunizationDecimals(TestFhirRepositoryBase):
     def test_decimal_on_update(self):
         """it should update record when replacing doseQuantity and keep decimal precision"""
         imms_id = "an-imms-id"
-        imms = create_covid_19_immunization_dict(imms_id, VALID_NHS_NUMBER)
+        imms = create_covid_immunization_dict(imms_id, VALID_NHS_NUMBER)
         updated_dose_quantity = 0.7566
         imms["doseQuantity"]["value"] = updated_dose_quantity
         self.run_update_immunization_test(imms_id, imms, updated_dose_quantity)
@@ -695,7 +695,7 @@ class TestImmunizationDecimals(TestFhirRepositoryBase):
     def test_decimal_on_update_patient(self):
         """it should update record by replacing both Immunization and Patient and dose quantity"""
         imms_id = "an-imms-id"
-        imms = create_covid_19_immunization_dict(imms_id, VALID_NHS_NUMBER)
+        imms = create_covid_immunization_dict(imms_id, VALID_NHS_NUMBER)
         updated_dose_quantity = 0.7566
         imms["doseQuantity"]["value"] = updated_dose_quantity
         imms["patient"] = self.patient
