@@ -1,3 +1,4 @@
+# Define the directory containing the Docker image and calculate its SHA-256 hash for triggering redeployments
 locals {
   forwarder_lambda_dir     = abspath("${path.root}/../../lambdas/recordforwarder")
   forwarder_lambda_files   = fileset(local.forwarder_lambda_dir, "**")
@@ -12,9 +13,11 @@ resource "aws_ecr_repository" "forwarder_lambda_repository" {
   force_delete = local.is_temp
 }
 
+# Module for building and pushing Docker image to ECR
 module "forwarding_docker_image" {
   source  = "terraform-aws-modules/lambda/aws//modules/docker-build"
   version = "8.1.2"
+  docker_file_path = "./recordforwarder/Dockerfile"
 
   create_ecr_repo = false
   ecr_repo        = aws_ecr_repository.forwarder_lambda_repository.name
@@ -37,9 +40,10 @@ module "forwarding_docker_image" {
 
   platform      = "linux/amd64"
   use_image_tag = false
-  source_path   = local.forwarder_lambda_dir
+  source_path   = abspath("${path.root}/../../lambdas")
   triggers = {
     dir_sha = local.forwarder_lambda_dir_sha
+    shared_dir_sha = local.shared_dir_sha
   }
 }
 
