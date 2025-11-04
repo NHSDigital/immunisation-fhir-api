@@ -3,7 +3,6 @@ Operations related to PDS (Patient Demographic Service)
 """
 
 import tempfile
-from typing import Optional
 
 from common.authentication import AppRestrictedAuth, Service
 from common.cache import Cache
@@ -35,22 +34,7 @@ def pds_get_patient_details(nhs_number: str) -> dict:
         raise IdSyncException(message=msg, exception=e)
 
 
-# Extract Patient identifier value from PDS patient details
-def pds_get_patient_id(nhs_number: str) -> Optional[str]:
-    """
-    Get PDS patient ID from NHS number.
-    :param nhs_number: NHS number of the patient
-    :return: PDS patient ID
-    """
-    try:
-        patient_details = pds_get_patient_details(nhs_number)
-
-        if not patient_details:
-            return None
-
-        return patient_details["identifier"][0]["value"]
-
-    except Exception as e:
-        msg = "Error retrieving patient details from PDS"
-        logger.exception(msg)
-        raise IdSyncException(message=msg, exception=e)
+def get_nhs_number_from_pds_resource(pds_resource: dict) -> str:
+    """Simple helper to get the NHS Number from a PDS Resource. No handling as this is a mandatory field in the PDS
+    response. Must only use where we have ensured an object has been returned."""
+    return pds_resource["identifier"][0]["value"]

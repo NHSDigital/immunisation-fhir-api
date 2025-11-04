@@ -2,10 +2,17 @@ import json
 import unittest
 from unittest.mock import patch
 
+from exceptions.id_sync_exception import IdSyncException
 from record_processor import process_record
 
 
 class TestRecordProcessor(unittest.TestCase):
+    DEFAULT_DEMOGRAPHIC_DATA = {
+        "name": [{"given": ["John"], "family": "Doe"}],
+        "gender": "male",
+        "birthDate": "1980-01-01",
+    }
+
     def setUp(self):
         """Set up test fixtures and mocks"""
         # Patch logger
@@ -13,9 +20,6 @@ class TestRecordProcessor(unittest.TestCase):
         self.mock_logger = self.logger_patcher.start()
 
         # PDS helpers
-        self.pds_get_patient_id_patcher = patch("record_processor.pds_get_patient_id")
-        self.mock_pds_get_patient_id = self.pds_get_patient_id_patcher.start()
-
         self.pds_get_patient_details_patcher = patch("record_processor.pds_get_patient_details")
         self.mock_pds_get_patient_details = self.pds_get_patient_details_patcher.start()
 
@@ -35,7 +39,14 @@ class TestRecordProcessor(unittest.TestCase):
         # Simulate IEDS items exist
         self.mock_get_items_from_patient_id.return_value = [{"Resource": {}}]
         test_record = {"body": json.dumps({"subject": test_id})}
-        self.mock_pds_get_patient_id.return_value = test_id
+        self.mock_pds_get_patient_details.return_value = {
+            "identifier": [
+                {
+                    "system": "https://fhir.nhs.uk/Id/nhs-number",
+                    "value": test_id,
+                }
+            ]
+        }
 
         # Act
         result = process_record(test_record)
@@ -45,7 +56,7 @@ class TestRecordProcessor(unittest.TestCase):
         self.assertEqual(result["status"], "success")
 
         # Verify calls
-        self.mock_pds_get_patient_id.assert_called_once_with(test_id)
+        self.mock_pds_get_patient_details.assert_called_once_with(test_id)
 
     def test_process_record_success_update_required(self):
         """Test successful processing when patient ID differs and demographics match"""
@@ -54,13 +65,16 @@ class TestRecordProcessor(unittest.TestCase):
         nhs_number = "9000000009"
 
         test_sqs_record = {"body": json.dumps({"subject": nhs_number})}
-        self.mock_pds_get_patient_id.return_value = pds_id
 
         # pds_get_patient_details should return details used by demographics_match
         self.mock_pds_get_patient_details.return_value = {
-            "name": [{"given": ["John"], "family": "Doe"}],
-            "gender": "male",
-            "birthDate": "1980-01-01",
+            **self.DEFAULT_DEMOGRAPHIC_DATA,
+            "identifier": [
+                {
+                    "system": "https://fhir.nhs.uk/Id/nhs-number",
+                    "value": pds_id,
+                }
+            ],
         }
 
         # Provide one IEDS item that will match demographics via demographics_match
@@ -88,7 +102,7 @@ class TestRecordProcessor(unittest.TestCase):
 
         # Assert
         self.assertEqual(result, success_response)
-        self.mock_pds_get_patient_id.assert_called_once_with(nhs_number)
+        self.mock_pds_get_patient_details.assert_called_once_with(nhs_number)
 
     def test_process_record_demographics_mismatch_skips_update(self):
         """If no IEDS item matches demographics, the update should be skipped"""
@@ -97,11 +111,16 @@ class TestRecordProcessor(unittest.TestCase):
         nhs_number = "nhs-1"
         test_sqs_record = {"body": json.dumps({"subject": nhs_number})}
 
-        self.mock_pds_get_patient_id.return_value = pds_id
         self.mock_pds_get_patient_details.return_value = {
             "name": [{"given": ["Alice"], "family": "Smith"}],
             "gender": "female",
             "birthDate": "1995-05-05",
+            "identifier": [
+                {
+                    "system": "https://fhir.nhs.uk/Id/nhs-number",
+                    "value": pds_id,
+                }
+            ],
         }
 
         # IEDS items exist but do not match demographics
@@ -146,24 +165,28 @@ class TestRecordProcessor(unittest.TestCase):
         nhs_number = "nhs-exc-1"
         test_sqs_record = {"body": json.dumps({"subject": nhs_number})}
         # pds returns a different id to force update path
-        self.mock_pds_get_patient_id.return_value = "pds-new"
         self.mock_get_items_from_patient_id.return_value = [{"Resource": {}}]
-        self.mock_pds_get_patient_details.side_effect = Exception("pds fail")
+        self.mock_pds_get_patient_details.side_effect = IdSyncException("Error retrieving patient details from PDS")
 
         result = process_record(test_sqs_record)
         self.assertEqual(result["status"], "error")
-        self.assertIn("Failed to fetch PDS details", result["message"])
+        self.assertIn("Error retrieving patient details from PDS", result["message"])
 
     def test_get_items_exception_aborts_update(self):
         """If fetching IEDS items raises, function should return error"""
         nhs_number = "nhs-exc-2"
         test_sqs_record = {"body": json.dumps({"subject": nhs_number})}
-        self.mock_pds_get_patient_id.return_value = "pds-new"
         self.mock_get_items_from_patient_id.return_value = [{"Resource": {}}]
         self.mock_pds_get_patient_details.return_value = {
             "name": [{"given": ["J"], "family": "K"}],
             "gender": "male",
             "birthDate": "2000-01-01",
+            "identifier": [
+                {
+                    "system": "https://fhir.nhs.uk/Id/nhs-number",
+                    "value": "1234",
+                }
+            ],
         }
         self.mock_get_items_from_patient_id.side_effect = Exception("dynamo fail")
 
@@ -176,11 +199,16 @@ class TestRecordProcessor(unittest.TestCase):
         pds_id = "pds-match"
         nhs_number = "nhs-match"
         test_sqs_record = {"body": json.dumps({"subject": nhs_number})}
-        self.mock_pds_get_patient_id.return_value = pds_id
         self.mock_pds_get_patient_details.return_value = {
             "name": [{"given": ["Sarah"], "family": "Fowley"}],
             "gender": "male",
             "birthDate": "1956-07-09",
+            "identifier": [
+                {
+                    "system": "https://fhir.nhs.uk/Id/nhs-number",
+                    "value": pds_id,
+                }
+            ],
         }
         item = {
             "Resource": {
@@ -217,13 +245,13 @@ class TestRecordProcessor(unittest.TestCase):
         self.assertEqual(result["message"], "No records returned for NHS Number")
 
         # Verify PDS was not called
-        self.mock_pds_get_patient_id.assert_called_once()
+        self.mock_pds_get_patient_details.assert_called_once()
 
     def test_process_record_pds_returns_none_id(self):
         """Test when PDS returns none"""
         # Arrange
         test_id = "12345a"
-        self.mock_pds_get_patient_id.return_value = None
+        self.mock_pds_get_patient_details.return_value = None
         test_record = {"body": json.dumps({"subject": test_id})}
 
         # Act & Assert
@@ -239,7 +267,17 @@ class TestRecordProcessor(unittest.TestCase):
         # Arrange
         test_id = "12345a"
         pds_id = "pds-id-1"
-        self.mock_pds_get_patient_id.return_value = pds_id
+        self.mock_pds_get_patient_details.return_value = {
+            "name": [{"given": ["Sarah"], "family": "Fowley"}],
+            "gender": "male",
+            "birthDate": "1956-07-09",
+            "identifier": [
+                {
+                    "system": "https://fhir.nhs.uk/Id/nhs-number",
+                    "value": pds_id,
+                }
+            ],
+        }
         # Simulate no items returned from IEDS
         self.mock_get_items_from_patient_id.return_value = []
 
@@ -262,12 +300,16 @@ class TestRecordProcessor(unittest.TestCase):
         test_record = {"body": '{"subject": "nhs-number-1"}'}
         new_test_id = "nhs-number-2"
 
-        self.mock_pds_get_patient_id.return_value = new_test_id
-        # Mock demographics so update proceeds
         self.mock_pds_get_patient_details.return_value = {
             "name": [{"given": ["A"], "family": "B"}],
             "gender": "female",
             "birthDate": "1990-01-01",
+            "identifier": [
+                {
+                    "system": "https://fhir.nhs.uk/Id/nhs-number",
+                    "value": new_test_id,
+                }
+            ],
         }
         self.mock_get_items_from_patient_id.return_value = [
             {
@@ -298,11 +340,14 @@ class TestRecordProcessor(unittest.TestCase):
         nhs_number = "nhs-2"
         test_sqs_record = {"body": json.dumps({"subject": nhs_number})}
 
-        self.mock_pds_get_patient_id.return_value = pds_id
         self.mock_pds_get_patient_details.return_value = {
-            "name": [{"given": ["John"], "family": "Doe"}],
-            "gender": "male",
-            "birthDate": "1980-01-01",
+            **self.DEFAULT_DEMOGRAPHIC_DATA,
+            "identifier": [
+                {
+                    "system": "https://fhir.nhs.uk/Id/nhs-number",
+                    "value": pds_id,
+                }
+            ],
         }
 
         # IEDS has different birthDate
@@ -332,11 +377,16 @@ class TestRecordProcessor(unittest.TestCase):
         nhs_number = "nhs-3"
         test_sqs_record = {"body": json.dumps({"subject": nhs_number})}
 
-        self.mock_pds_get_patient_id.return_value = pds_id
         self.mock_pds_get_patient_details.return_value = {
             "name": [{"given": ["Alex"], "family": "Smith"}],
             "gender": "female",
             "birthDate": "1992-03-03",
+            "identifier": [
+                {
+                    "system": "https://fhir.nhs.uk/Id/nhs-number",
+                    "value": pds_id,
+                }
+            ],
         }
 
         # IEDS has different gender
@@ -362,13 +412,18 @@ class TestRecordProcessor(unittest.TestCase):
 
     def test_process_record_no_comparable_fields_skips_update(self):
         """If PDS provides no comparable fields, do not update (skip)"""
-        pds_id = "pds-4"
         nhs_number = "nhs-4"
         test_sqs_record = {"body": json.dumps({"subject": nhs_number})}
 
-        self.mock_pds_get_patient_id.return_value = pds_id
         # PDS returns minimal/empty details
-        self.mock_pds_get_patient_details.return_value = {}
+        self.mock_pds_get_patient_details.return_value = {
+            "identifier": [
+                {
+                    "system": "https://fhir.nhs.uk/Id/nhs-number",
+                    "value": "123456789012",
+                }
+            ]
+        }
 
         item = {
             "Resource": {

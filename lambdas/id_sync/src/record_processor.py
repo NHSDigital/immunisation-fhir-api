@@ -2,12 +2,13 @@ import json
 from typing import Any, Dict
 
 from common.clients import logger
+from exceptions.id_sync_exception import IdSyncException
 from ieds_db_operations import (
     extract_patient_resource_from_item,
     get_items_from_patient_id,
     ieds_update_patient_id,
 )
-from pds_details import pds_get_patient_details, pds_get_patient_id
+from pds_details import get_nhs_number_from_pds_resource, pds_get_patient_details
 from utils import make_status
 
 
@@ -32,10 +33,15 @@ def process_record(event_record: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def process_nhs_number(nhs_number: str) -> Dict[str, Any]:
-    new_nhs_number = pds_get_patient_id(nhs_number)
+    try:
+        pds_patient_resource = pds_get_patient_details(nhs_number)
+    except IdSyncException as e:
+        return make_status(str(e), status="error")
 
-    if not new_nhs_number:
+    if not pds_patient_resource:
         return make_status("No patient ID found for NHS number")
+
+    new_nhs_number = get_nhs_number_from_pds_resource(pds_patient_resource)
 
     if new_nhs_number == nhs_number:
         return make_status("No update required")
@@ -43,10 +49,10 @@ def process_nhs_number(nhs_number: str) -> Dict[str, Any]:
     logger.info("NHS Number has changed. Performing updates on relevant IEDS records")
 
     try:
-        # Fetch PDS Patient resource and IEDS resources for the old NHS number
-        pds_patient_resource, ieds_resources = fetch_pds_and_ieds_resources(nhs_number)
+        # Fetch the IEDS resources for the old NHS number
+        ieds_resources = fetch_ieds_resources(nhs_number)
     except Exception as e:
-        logger.exception("process_nhs_number: failed to fetch demographic details: %s", e)
+        logger.exception("process_nhs_number: failed to fetch ieds resources: %s", e)
         return make_status(str(e), status="error")
 
     logger.info(
@@ -78,21 +84,15 @@ def process_nhs_number(nhs_number: str) -> Dict[str, Any]:
     return response
 
 
-# Function to fetch PDS Patient details and IEDS Immunisation records.
-def fetch_pds_and_ieds_resources(nhs_number: str):
+def fetch_ieds_resources(nhs_number: str) -> list[dict]:
+    """Retrieves IEDS records by patient NHS Number"""
     try:
-        pds = pds_get_patient_details(nhs_number)
-    except Exception as e:
-        logger.exception("fetch_pds_and_ieds_resources: failed to fetch PDS details")
-        raise RuntimeError("Failed to fetch PDS details") from e
-
-    try:
-        ieds = get_items_from_patient_id(nhs_number)
+        ieds_records = get_items_from_patient_id(nhs_number)
     except Exception as e:
         logger.exception("fetch_pds_and_ieds_resources: failed to fetch IEDS items")
         raise RuntimeError("Failed to fetch IEDS items") from e
 
-    return pds, ieds
+    return ieds_records
 
 
 def extract_normalized_name_from_patient(patient: dict) -> str | None:
