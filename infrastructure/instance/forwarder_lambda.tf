@@ -39,8 +39,7 @@ module "forwarding_docker_image" {
   use_image_tag = false
   source_path   = local.forwarder_lambda_dir
   triggers = {
-    dir_sha        = local.forwarder_lambda_dir_sha
-    shared_dir_sha = local.shared_dir_sha
+    dir_sha = local.forwarder_lambda_dir_sha
   }
 }
 
