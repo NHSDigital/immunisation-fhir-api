@@ -57,7 +57,7 @@ def convert_disease_codes_to_vaccine_type(
     vaccine_type = redis_client.hget(Constants.DISEASES_TO_VACCINE_TYPE_HASH_KEY, key)
 
     if not vaccine_type:
-        raise ValueError(
+        raise ValueError(  # NOSONAR(S5332)
             "Validation errors: protocolApplied[0].targetDisease[*].coding[?(@.system=='"
             "http://snomed.info/sct"
             f"')].code - {disease_codes_input} is not a valid combination of disease codes for this service"
