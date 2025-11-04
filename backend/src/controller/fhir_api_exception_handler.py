@@ -28,8 +28,8 @@ from models.errors import (
 
 _CUSTOM_EXCEPTION_TO_STATUS_MAP: dict[Type[Exception], int] = {
     InconsistentResourceVersion: 400,
-    InconsistentIdentifierError: 400,
-    InconsistentIdError: 400,
+    InconsistentIdentifierError: 400,  # Identifier refers to the local FHIR identifier composed of system and value.
+    InconsistentIdError: 400,  # ID refers to the top-level ID of the FHIR resource.
     InvalidImmunizationId: 400,
     InvalidJsonError: 400,
     InvalidResourceVersion: 400,

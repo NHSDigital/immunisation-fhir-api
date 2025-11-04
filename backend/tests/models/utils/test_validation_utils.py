@@ -12,7 +12,7 @@ from models.utils.generic_utils import (
     obtain_name_field_location,
     patient_and_practitioner_value_and_index,
 )
-from models.utils.validation_utils import validate_identifiers_match, validate_resource_version_matches
+from models.utils.validation_utils import validate_identifiers_match, validate_resource_versions_match
 from testing_utils.generic_utils import (
     load_json_data,
 )
@@ -280,12 +280,12 @@ class TestValidatorUtils(unittest.TestCase):
             result = obtain_name_field_location(imms, resource_type, name_value)
             self.assertEqual(result, expected_location)
 
-    def test_validate_resource_version_matches_passes_when_version_matches(self):
-        """Tests validate_resource_version_matches passes when the resource versions match"""
-        self.assertIsNone(validate_resource_version_matches(3, 3, "12345-id"))
+    def test_validate_resource_versions_match_passes_when_version_matches(self):
+        """Tests validate_resource_versions_match passes when the resource versions match"""
+        self.assertIsNone(validate_resource_versions_match(3, 3, "12345-id"))
 
-    def test_validate_resource_version_matches_raises_error_when_versions_do_not_match(self):
-        """Tests validate_resource_version_matches raises a InconsistentResourceVersion when the versions do not
+    def test_validate_resource_versions_match_raises_error_when_versions_do_not_match(self):
+        """Tests validate_resource_versions_match raises a InconsistentResourceVersion when the versions do not
         match"""
         test_cases = [
             (
@@ -299,7 +299,7 @@ class TestValidatorUtils(unittest.TestCase):
         for actual_version, expected_error in test_cases:
             with self.subTest(actual_version=actual_version, expected_error=expected_error):
                 with self.assertRaises(InconsistentResourceVersion) as error:
-                    validate_resource_version_matches(3, actual_version, "12345-id")
+                    validate_resource_versions_match(3, actual_version, "12345-id")
 
                 self.assertEqual(str(error.exception), expected_error)
 

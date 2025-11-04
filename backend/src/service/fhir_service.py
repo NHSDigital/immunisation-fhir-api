@@ -35,7 +35,7 @@ from models.utils.generic_utils import (
     get_contained_patient,
     get_occurrence_datetime,
 )
-from models.utils.validation_utils import get_vaccine_type, validate_identifiers_match, validate_resource_version_matches
+from models.utils.validation_utils import get_vaccine_type, validate_identifiers_match, validate_resource_versions_match
 from repository.fhir_repository import ImmunizationRepository
 
 logging.basicConfig(level="INFO")
@@ -164,7 +164,7 @@ class FhirService:
         validate_identifiers_match(immunization, existing_immunization)
 
         if not existing_resource_meta.is_deleted:
-            validate_resource_version_matches(resource_version, existing_resource_meta.resource_version, imms_id)
+            validate_resource_versions_match(resource_version, existing_resource_meta.resource_version, imms_id)
 
         return self.immunization_repo.update_immunization(imms_id, immunization, existing_resource_meta, supplier_system)
 

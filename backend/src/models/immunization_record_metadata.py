@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 @dataclass
 class ImmunizationRecordMetadata:
-    """Simple class to hold data for the Immunization Record Metadata"""
+    """Simple data class for the Immunization Record Metadata"""
 
     resource_version: int
     is_deleted: bool

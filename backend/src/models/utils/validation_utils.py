@@ -105,7 +105,7 @@ def validate_identifiers_match(new_immunization: dict, existing_immunization: di
     return None
 
 
-def validate_resource_version_matches(
+def validate_resource_versions_match(
     resource_version_in_request: int, actual_resource_version: int, imms_id: str
 ) -> None:
     """Checks if the resource version in the request and the resource version of the actual Immunization record matches.
