@@ -15,7 +15,6 @@ from responses import logger
 
 from models.constants import Constants
 from models.errors import (
-    IdentifierDuplicationError,
     ResourceNotFoundError,
     UnhandledResponseError,
 )
@@ -175,6 +174,7 @@ class ImmunizationRepository:
         existing_record_meta: ImmunizationRecordMetadata,
         supplier_system: str,
     ) -> int:
+        # VED-898 - consider refactoring to pass FHIR Immunization object rather than dict between Service -> Repository
         patient = get_contained_patient(immunization)
         attr = RecordAttributes(immunization, patient)
         reinstate_operation_required = existing_record_meta.is_deleted
@@ -205,15 +205,6 @@ class ImmunizationRepository:
                 "PatientSK = :patient_sk, #imms_resource = :imms_resource_val, "
                 "Operation = :operation, Version = :version, SupplierSystem = :supplier_system "
             )
-
-    def _check_duplicate_identifier(self, attr: RecordAttributes) -> dict:
-        queryresponse = _query_identifier(self.table, "IdentifierGSI", "IdentifierPK", attr.identifier)
-        if queryresponse is not None:
-            items = queryresponse.get("Items", [])
-            resource_dict = json.loads(items[0]["Resource"])
-            if resource_dict["id"] != attr.resource["id"]:
-                raise IdentifierDuplicationError(identifier=attr.identifier)
-        return queryresponse
 
     def _perform_dynamo_update(
         self,
