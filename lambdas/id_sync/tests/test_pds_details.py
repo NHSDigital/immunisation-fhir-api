@@ -103,14 +103,12 @@ class TestGetPdsPatientDetails(unittest.TestCase):
         self.assertEqual(exception.inner_exception, mock_exception)
         self.assertEqual(
             exception.message,
-            f"Error getting PDS patient details for {self.test_patient_id}",
+            "Error retrieving patient details from PDS",
         )
         self.assertEqual(exception.nhs_numbers, None)
 
         # Verify exception was logged
-        self.mock_logger.exception.assert_called_once_with(
-            f"Error getting PDS patient details for {self.test_patient_id}"
-        )
+        self.mock_logger.exception.assert_called_once_with("Error retrieving patient details from PDS")
 
         self.mock_pds_service_instance.get_patient_details.assert_called_once_with(self.test_patient_id)
 
@@ -127,14 +125,12 @@ class TestGetPdsPatientDetails(unittest.TestCase):
         exception = context.exception
         self.assertEqual(
             exception.message,
-            f"Error getting PDS patient details for {self.test_patient_id}",
+            "Error retrieving patient details from PDS",
         )
         self.assertEqual(exception.nhs_numbers, None)
 
         # Verify exception was logged
-        self.mock_logger.exception.assert_called_once_with(
-            f"Error getting PDS patient details for {self.test_patient_id}"
-        )
+        self.mock_logger.exception.assert_called_once_with("Error retrieving patient details from PDS")
 
         self.mock_cache_class.assert_called_once()
 
@@ -151,14 +147,12 @@ class TestGetPdsPatientDetails(unittest.TestCase):
         exception = context.exception
         self.assertEqual(
             exception.message,
-            f"Error getting PDS patient details for {self.test_patient_id}",
+            "Error retrieving patient details from PDS",
         )
         self.assertEqual(exception.nhs_numbers, None)
 
         # Verify exception was logged
-        self.mock_logger.exception.assert_called_once_with(
-            f"Error getting PDS patient details for {self.test_patient_id}"
-        )
+        self.mock_logger.exception.assert_called_once_with("Error retrieving patient details from PDS")
 
     def test_pds_get_patient_details_exception(self):
         """Test when logger.info throws an exception"""
@@ -176,11 +170,11 @@ class TestGetPdsPatientDetails(unittest.TestCase):
         self.assertEqual(exception.inner_exception, test_exception)
         self.assertEqual(
             exception.message,
-            f"Error getting PDS patient details for {test_nhs_number}",
+            "Error retrieving patient details from PDS",
         )
         self.assertEqual(exception.nhs_numbers, None)
         # Verify logger.exception was called due to the caught exception
-        self.mock_logger.exception.assert_called_once_with(f"Error getting PDS patient details for {test_nhs_number}")
+        self.mock_logger.exception.assert_called_once_with("Error retrieving patient details from PDS")
 
     def test_pds_get_patient_details_different_patient_ids(self):
         """Test with different patient ID formats"""
@@ -267,6 +261,6 @@ class TestGetPdsPatientId(unittest.TestCase):
         exception = context.exception
         self.assertEqual(
             exception.message,
-            f"Error getting PDS patient ID for {self.test_nhs_number}",
+            "Error retrieving patient details from PDS",
         )
         self.assertEqual(exception.nhs_numbers, None)

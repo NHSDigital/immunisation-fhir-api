@@ -349,9 +349,8 @@ class TestUpdatePatientIdInIEDS(TestIedsDbOperations):
         # Assert - Update expected message to match actual implementation
         expected_result = {
             "status": "success",
-            "message": f"IEDS update, patient ID: {old_id}=>{new_id}. {len(mock_items)} updated 1.",
+            "message": f"IEDS update. {len(mock_items)} item(s) updated in 1 batch(es).",
         }
-        expected_result["nhs_number"] = old_id
         self.assertEqual(result, expected_result)
 
         # Verify get_items_from_patient_id was called
@@ -380,9 +379,8 @@ class TestUpdatePatientIdInIEDS(TestIedsDbOperations):
         # Assert
         expected_result = {
             "status": "error",
-            "message": f"Failed to update some batches for patient ID: {old_id}",
+            "message": "Failed to update some batches for patient ID",
         }
-        expected_result["nhs_number"] = old_id
         self.assertEqual(result, expected_result)
 
         # Verify transact_write_items was called (not update_item)
@@ -403,9 +401,8 @@ class TestUpdatePatientIdInIEDS(TestIedsDbOperations):
         # Assert
         expected_result = {
             "status": "success",
-            "message": f"No items found to update for patient ID: {old_id}",
+            "message": "No items found to update for patient ID",
         }
-        expected_result["nhs_number"] = old_id
         self.assertEqual(result, expected_result)
 
         # Verify get_items_from_patient_id was called
@@ -428,7 +425,6 @@ class TestUpdatePatientIdInIEDS(TestIedsDbOperations):
             "status": "error",
             "message": "Old ID and New ID cannot be empty",
         }
-        expected_result["nhs_number"] = old_id
         self.assertEqual(result, expected_result)
 
         # Verify no update was attempted
@@ -449,7 +445,6 @@ class TestUpdatePatientIdInIEDS(TestIedsDbOperations):
             "status": "error",
             "message": "Old ID and New ID cannot be empty",
         }
-        expected_result["nhs_number"] = old_id
         self.assertEqual(result, expected_result)
 
         # Verify no update was attempted
@@ -467,9 +462,8 @@ class TestUpdatePatientIdInIEDS(TestIedsDbOperations):
         # Assert
         expected_result = {
             "status": "success",
-            "message": f"No change in patient ID: {patient_id}",
+            "message": "No change in patient ID",
         }
-        expected_result["nhs_number"] = patient_id
         self.assertEqual(result, expected_result)
 
         # Verify no update was attempted
@@ -500,8 +494,7 @@ class TestUpdatePatientIdInIEDS(TestIedsDbOperations):
 
         exception = context.exception
         self.assertIsInstance(exception, IdSyncException)
-        self.assertEqual(exception.message, f"Error updating patient Id from :{old_id} to {new_id}")
-        self.assertEqual(exception.nhs_numbers, [old_id, new_id])
+        self.assertEqual(exception.message, "Error updating patient ID")
         self.assertEqual(exception.inner_exception, test_exception)
 
         # Verify transact was attempted
@@ -530,7 +523,7 @@ class TestUpdatePatientIdInIEDS(TestIedsDbOperations):
         self.assertEqual(result["status"], "success")
         self.assertEqual(
             result["message"],
-            f"IEDS update, patient ID: {old_id}=>{new_id}. {len(mock_items)} updated 1.",
+            f"IEDS update. {len(mock_items)} item(s) updated in 1 batch(es).",
         )
 
         # Verify transact_write_items was called with special characters

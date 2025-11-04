@@ -26,15 +26,11 @@ def handler(event_data: Dict[str, Any], _context) -> Dict[str, Any]:
         logger.info("id_sync processing event with %d records", len(records))
 
         results = []
-        nhs_numbers = []
         error_count = 0
 
         for record in records:
             result = process_record(record)
             results.append(result)
-
-            if "nhs_number" in result:
-                nhs_numbers.append(result["nhs_number"])
 
             if result.get("status") == "error":
                 error_count += 1
@@ -42,14 +38,9 @@ def handler(event_data: Dict[str, Any], _context) -> Dict[str, Any]:
         if error_count > 0:
             raise IdSyncException(
                 message=f"Processed {len(records)} records with {error_count} errors",
-                nhs_numbers=nhs_numbers,
             )
 
-        response = {
-            "status": "success",
-            "message": f"Successfully processed {len(records)} records",
-            "nhs_numbers": nhs_numbers,
-        }
+        response = {"status": "success", "message": f"Successfully processed {len(records)} records"}
 
         logger.info("id_sync handler completed: %s", response)
         return response
