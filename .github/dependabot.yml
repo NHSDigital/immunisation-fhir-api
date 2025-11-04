@@ -13,6 +13,7 @@ updates:
       - "/lambdas/delta_backend"
       - "/lambdas/filenameprocessor"
       - "/lambdas/mesh_processor"
+      - "/lambdas/recordforwarder"
       - "/lambdas/recordprocessor"
       - "/sandbox"
     schedule:
@@ -57,6 +58,7 @@ updates:
       - "/lambdas/id_sync"
       - "/lambdas/mesh_processor"
       - "/lambdas/mns_subscription"
+      - "/lambdas/recordforwarder"
       - "/lambdas/recordprocessor"
       - "/lambdas/redis_sync"
       - "/lambdas/shared"

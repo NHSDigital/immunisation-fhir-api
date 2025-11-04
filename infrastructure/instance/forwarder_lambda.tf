@@ -1,13 +1,7 @@
 locals {
-  forwarder_lambda_dir    = abspath("${path.root}/../../backend")
-  forwarder_source_path   = local.forwarder_lambda_dir
-  forwarder_path_include  = ["**"]
-  forwarder_path_exclude  = ["**/__pycache__/**"]
-  forwarder_files_include = setunion([for f in local.forwarder_path_include : fileset(local.forwarder_source_path, f)]...)
-  forwarder_files_exclude = setunion([for f in local.forwarder_path_exclude : fileset(local.forwarder_source_path, f)]...)
-  forwarder_files         = sort(setsubtract(local.forwarder_files_include, local.forwarder_files_exclude))
-
-  forwarder_dir_sha = sha1(join("", [for f in local.forwarder_files : filesha1("${local.forwarder_source_path}/${f}")]))
+  forwarder_lambda_dir     = abspath("${path.root}/../../lambdas/recordforwarder")
+  forwarder_lambda_files   = fileset(local.forwarder_lambda_dir, "**")
+  forwarder_lambda_dir_sha = sha1(join("", [for f in local.forwarder_lambda_files : filesha1("${local.forwarder_lambda_dir}/${f}")]))
 }
 
 resource "aws_ecr_repository" "forwarder_lambda_repository" {
@@ -19,12 +13,12 @@ resource "aws_ecr_repository" "forwarder_lambda_repository" {
 }
 
 module "forwarding_docker_image" {
-  source  = "terraform-aws-modules/lambda/aws//modules/docker-build"
-  version = "8.1.2"
+  source           = "terraform-aws-modules/lambda/aws//modules/docker-build"
+  version          = "8.1.2"
+  docker_file_path = "./recordforwarder/Dockerfile"
 
-  create_ecr_repo  = false
-  ecr_repo         = aws_ecr_repository.forwarder_lambda_repository.name
-  docker_file_path = "batch.Dockerfile"
+  create_ecr_repo = false
+  ecr_repo        = aws_ecr_repository.forwarder_lambda_repository.name
   ecr_repo_lifecycle_policy = jsonencode({
     rules = [
       {
@@ -46,7 +40,8 @@ module "forwarding_docker_image" {
   use_image_tag = false
   source_path   = local.forwarder_lambda_dir
   triggers = {
-    dir_sha = local.forwarder_dir_sha
+    dir_sha        = local.forwarder_lambda_dir_sha
+    shared_dir_sha = local.shared_dir_sha
   }
 }
 

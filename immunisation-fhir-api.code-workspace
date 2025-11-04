@@ -28,6 +28,9 @@
             "path": "lambdas/mns_subscription",
         },
         {
+            "path": "lambdas/recordforwarder",
+        },
+        {
             "path": "lambdas/recordprocessor",
         },
         {
