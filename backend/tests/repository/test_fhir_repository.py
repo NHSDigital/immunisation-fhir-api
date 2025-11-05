@@ -9,14 +9,14 @@ from boto3.dynamodb.conditions import Attr, Key
 from fhir.resources.R4B.immunization import Immunization
 
 from models.errors import (
-    IdentifierDuplicationError,
     ResourceNotFoundError,
     UnhandledResponseError,
 )
+from models.immunization_record_metadata import ImmunizationRecordMetadata
 from models.utils.validation_utils import get_vaccine_type
 from repository.fhir_repository import ImmunizationRepository
 from testing_utils.generic_utils import update_target_disease_code
-from testing_utils.immunization_utils import create_covid_immunization_dict
+from testing_utils.immunization_utils import VALID_NHS_NUMBER, create_covid_immunization_dict
 
 
 def _make_immunization_pk(_id):
@@ -142,7 +142,7 @@ class TestGetImmunization(unittest.TestCase):
         """it should find an Immunization by id"""
         imms_id = "an-id"
         expected_resource = {"foo": "bar"}
-        expected_version = "1"
+        expected_version = 1
         self.table.get_item = MagicMock(
             return_value={
                 "Item": {
@@ -152,11 +152,63 @@ class TestGetImmunization(unittest.TestCase):
                 }
             }
         )
-        immunisation, version = self.repository.get_immunization_and_version_by_id(imms_id)
+        immunisation, resource_meta = self.repository.get_immunization_and_resource_meta_by_id(imms_id)
 
         # Validate the results
         self.assertDictEqual(expected_resource, immunisation)
-        self.assertEqual(version, expected_version)
+        self.assertEqual(resource_meta.resource_version, expected_version)
+        self.assertEqual(resource_meta.is_deleted, False)
+        self.assertEqual(resource_meta.is_reinstated, False)
+        self.table.get_item.assert_called_once_with(Key={"PK": _make_immunization_pk(imms_id)})
+
+    def test_get_immunization_by_id_returns_reinstated_records(self):
+        """it should find an Immunization by id, including reinstated records by default"""
+        imms_id = "an-id"
+        expected_resource = {"foo": "bar"}
+        expected_version = 1
+        self.table.get_item = MagicMock(
+            return_value={
+                "Item": {
+                    "Resource": json.dumps(expected_resource),
+                    "Version": expected_version,
+                    "DeletedAt": "reinstated",
+                    "PatientSK": "COVID19#2516525251",
+                }
+            }
+        )
+        immunisation, resource_meta = self.repository.get_immunization_and_resource_meta_by_id(imms_id)
+
+        # Validate the results
+        self.assertDictEqual(expected_resource, immunisation)
+        self.assertEqual(resource_meta.resource_version, expected_version)
+        self.assertEqual(resource_meta.is_deleted, False)
+        self.assertEqual(resource_meta.is_reinstated, True)
+        self.table.get_item.assert_called_once_with(Key={"PK": _make_immunization_pk(imms_id)})
+
+    def test_get_immunization_by_id_returns_deleted_records_when_flag_is_set(self):
+        """it should find an Immunization by id, including deleted records when the include_deleted flag is set True"""
+        imms_id = "an-id"
+        expected_resource = {"foo": "bar"}
+        expected_version = 4
+        self.table.get_item = MagicMock(
+            return_value={
+                "Item": {
+                    "Resource": json.dumps(expected_resource),
+                    "Version": expected_version,
+                    "DeletedAt": time.time(),
+                    "PatientSK": "COVID19#2516525251",
+                }
+            }
+        )
+        immunisation, resource_meta = self.repository.get_immunization_and_resource_meta_by_id(
+            imms_id, include_deleted=True
+        )
+
+        # Validate the results
+        self.assertDictEqual(expected_resource, immunisation)
+        self.assertEqual(resource_meta.resource_version, expected_version)
+        self.assertEqual(resource_meta.is_deleted, True)
+        self.assertEqual(resource_meta.is_reinstated, False)
         self.table.get_item.assert_called_once_with(Key={"PK": _make_immunization_pk(imms_id)})
 
     def test_immunization_not_found(self):
@@ -164,16 +216,17 @@ class TestGetImmunization(unittest.TestCase):
         imms_id = "non-existent-id"
         self.table.get_item = MagicMock(return_value={})
 
-        imms, version = self.repository.get_immunization_and_version_by_id(imms_id)
+        imms, version = self.repository.get_immunization_and_resource_meta_by_id(imms_id)
         self.assertIsNone(imms)
         self.assertIsNone(version)
 
     def test_immunization_not_found_when_record_is_logically_deleted(self):
-        """it should return None if Immunization is logically deleted"""
+        """it should return None if Immunization is logically deleted and the include_deleted flag is set to False
+        (default behaviour)"""
         imms_id = "a-deleted-id"
         self.table.get_item = MagicMock(return_value={"Item": {"Resource": "{}", "DeletedAt": time.time()}})
 
-        imms, version = self.repository.get_immunization_and_version_by_id(imms_id)
+        imms, version = self.repository.get_immunization_and_resource_meta_by_id(imms_id, include_deleted=False)
         self.assertIsNone(imms)
         self.assertIsNone(version)
 
@@ -281,33 +334,20 @@ class TestUpdateImmunization(TestFhirRepositoryBase):
         super().setUp()
         self.table = MagicMock()
         self.repository = ImmunizationRepository(table=self.table)
-        self.patient = _make_a_patient("update-patient-id")
 
-    def test_update1(self):
-        """it should update record by replacing both Immunization and Patient"""
-
+    def test_update_immunisation_is_successful(self):
+        """it should update the immunisation record"""
         imms_id = "an-imms-id"
-        imms = create_covid_immunization_dict(imms_id)
-        imms["patient"] = self.patient
+        imms = create_covid_immunization_dict(imms_id, VALID_NHS_NUMBER)
+        existing_record_metadata = ImmunizationRecordMetadata(resource_version=1, is_deleted=False, is_reinstated=False)
 
-        resource = {"foo": "bar"}  # making sure we return updated imms from dynamodb
-        dynamo_response = {
-            "ResponseMetadata": {"HTTPStatusCode": 200},
-            "Attributes": {"Resource": json.dumps(resource)},
-        }
+        dynamo_response = {"ResponseMetadata": {"HTTPStatusCode": 200}}
         self.table.update_item = MagicMock(return_value=dynamo_response)
-        self.table.query = MagicMock(return_value={})
 
-        now_epoch = 123456
-        with patch("time.time") as mock_time:
-            mock_time.return_value = now_epoch
-            # When
-
-            act_resource, updated_version = self.repository.update_immunization(imms_id, imms, self.patient, 1, "Test")
+        # When
+        updated_version = self.repository.update_immunization(imms_id, imms, existing_record_metadata, "Test")
 
         # Then
-        self.assertDictEqual(act_resource, resource)
-
         update_exp = (
             "SET UpdatedAt = :timestamp, PatientPK = :patient_pk, "
             "PatientSK = :patient_sk, #imms_resource = :imms_resource_val, "
@@ -315,7 +355,6 @@ class TestUpdateImmunization(TestFhirRepositoryBase):
         )
         patient_id = imms["contained"][1]["identifier"][0]["value"]
         vaccine_type = get_vaccine_type(imms)
-
         patient_sk = f"{vaccine_type}#{imms_id}"
 
         self.table.update_item.assert_called_once_with(
@@ -323,7 +362,7 @@ class TestUpdateImmunization(TestFhirRepositoryBase):
             UpdateExpression=update_exp,
             ExpressionAttributeNames={"#imms_resource": "Resource"},
             ExpressionAttributeValues={
-                ":timestamp": now_epoch,
+                ":timestamp": ANY,
                 ":patient_pk": _make_patient_pk(patient_id),
                 ":patient_sk": patient_sk,
                 ":imms_resource_val": json.dumps(imms),
@@ -331,82 +370,68 @@ class TestUpdateImmunization(TestFhirRepositoryBase):
                 ":version": 2,
                 ":supplier_system": "Test",
             },
-            ReturnValues=ANY,
             ConditionExpression=ANY,
         )
+        self.assertEqual(updated_version, 2)
+
+    def test_update_immunisation_is_successful_when_record_needs_to_be_reinstated(self):
+        """it should reinstate a deleted record when requested via the update operation"""
+        imms_id = "an-imms-id"
+        imms = create_covid_immunization_dict(imms_id, VALID_NHS_NUMBER)
+        existing_record_metadata = ImmunizationRecordMetadata(resource_version=2, is_deleted=True, is_reinstated=False)
+
+        dynamo_response = {"ResponseMetadata": {"HTTPStatusCode": 200}}
+        self.table.update_item = MagicMock(return_value=dynamo_response)
+
+        # When
+        updated_version = self.repository.update_immunization(imms_id, imms, existing_record_metadata, "Test")
+
+        # Then
+        update_exp = (
+            "SET UpdatedAt = :timestamp, PatientPK = :patient_pk, PatientSK = :patient_sk, "
+            "#imms_resource = :imms_resource_val, Operation = :operation, Version = :version, DeletedAt = :respawn, "
+            "SupplierSystem = :supplier_system "
+        )
+        patient_id = imms["contained"][1]["identifier"][0]["value"]
+        vaccine_type = get_vaccine_type(imms)
+        patient_sk = f"{vaccine_type}#{imms_id}"
+
+        self.table.update_item.assert_called_once_with(
+            Key={"PK": _make_immunization_pk(imms_id)},
+            UpdateExpression=update_exp,
+            ExpressionAttributeNames={"#imms_resource": "Resource"},
+            ExpressionAttributeValues={
+                ":timestamp": ANY,
+                ":patient_pk": _make_patient_pk(patient_id),
+                ":patient_sk": patient_sk,
+                ":imms_resource_val": json.dumps(imms),
+                ":operation": "UPDATE",
+                ":version": 3,
+                ":supplier_system": "Test",
+                ":respawn": "reinstated",
+            },
+            ConditionExpression=ANY,
+        )
+        self.assertEqual(updated_version, 3)
 
     def test_update_throws_error_when_response_can_not_be_handled(self):
-        """it should throw UnhandledResponse when the response from dynamodb can't be handled"""
+        """it should throw a ResourceNotFoundError when the conditional check fails. (This is a fairly unlikely race
+        condition, as a check is made first to retrieve the record."""
         imms_id = "an-id"
-        imms = create_covid_immunization_dict(imms_id)
-        imms["patient"] = self.patient
+        imms = create_covid_immunization_dict(imms_id, VALID_NHS_NUMBER)
+        existing_record_metadata = ImmunizationRecordMetadata(resource_version=2, is_deleted=True, is_reinstated=False)
 
-        error_res = {"Error": {"Code": "UnexpectedError during update e.g. service down"}}
+        error_res = {"Error": {"Code": "ConditionalCheckFailedException"}}
         self.table.update_item.side_effect = botocore.exceptions.ClientError(
             error_response=error_res, operation_name="Update"
         )
-        self.table.query = MagicMock(return_value={})
 
-        with self.assertRaises(UnhandledResponseError) as e:
+        with self.assertRaises(ResourceNotFoundError) as e:
             # When
-            self.repository.update_immunization(imms_id, imms, self.patient, 1, "Test")
+            self.repository.update_immunization(imms_id, imms, existing_record_metadata, "Test")
 
         # Then
-        self.assertDictEqual(e.exception.response, error_res)
-
-    def test_update_throws_error_when_identifier_already_in_dynamodb(self):
-        """it should throw IdentifierDuplicationError when trying to update an immunization with an identfier that is already stored"""
-
-        imms_id = "an-id"
-        imms = create_covid_immunization_dict(imms_id)
-        imms["patient"] = self.patient
-        identifier = f"{imms['identifier'][0]['system']}#{imms['identifier'][0]['value']}"
-        self.table.query = MagicMock(return_value={"Items": [{"Resource": '{"id": "different-id"}'}], "Count": 1})
-
-        with self.assertRaises(IdentifierDuplicationError) as e:
-            # When
-
-            self.repository.update_immunization(imms_id, imms, self.patient, 1, "Test")
-
-        self.assertEqual(str(e.exception), f"The provided identifier: {identifier} is duplicated")
-
-    def test_reinstate_immunization_success(self):
-        """it should reinstate an immunization successfully"""
-        imms_id = "reinstate-id"
-        imms = create_covid_immunization_dict(imms_id)
-        imms["patient"] = self.patient
-        resource = {"reinstate": "ok"}
-        self.table.query.return_value = {}
-
-        self.table.update_item.return_value = {
-            "ResponseMetadata": {"HTTPStatusCode": 200},
-            "Attributes": {"Resource": json.dumps(resource)},
-        }
-
-        with patch("time.time", return_value=123456):
-            result, version = self.repository.reinstate_immunization(imms_id, imms, self.patient, 1, "Test")
-
-        self.assertEqual(result, resource)
-        self.assertEqual(version, 2)
-
-    def test_update_reinstated_immunization_success(self):
-        """it should update a reinstated immunization successfully"""
-        imms_id = "reinstated-id"
-        imms = create_covid_immunization_dict(imms_id)
-        imms["patient"] = self.patient
-        resource = {"reinstated": "ok"}
-        self.table.query.return_value = {}
-
-        self.table.update_item.return_value = {
-            "ResponseMetadata": {"HTTPStatusCode": 200},
-            "Attributes": {"Resource": json.dumps(resource)},
-        }
-
-        with patch("time.time", return_value=123456):
-            result, version = self.repository.update_reinstated_immunization(imms_id, imms, self.patient, 1, "Test")
-
-        self.assertEqual(result, resource)
-        self.assertEqual(version, 2)
+        self.assertEqual(str(e.exception), "Immunization resource does not exist. ID: an-id")
 
 
 class TestDeleteImmunization(unittest.TestCase):
@@ -619,26 +644,20 @@ class TestImmunizationDecimals(TestFhirRepositoryBase):
 
         self.table.put_item.assert_called_once()
 
-    def run_update_immunization_test(self, imms_id, imms, resource, updated_dose_quantity=None):
-        dynamo_response = {
-            "ResponseMetadata": {"HTTPStatusCode": 200},
-            "Attributes": {"Resource": json.dumps(resource)},
-        }
+    def run_update_immunization_test(self, imms_id, imms, updated_dose_quantity=None):
+        dynamo_response = {"ResponseMetadata": {"HTTPStatusCode": 200}}
         self.table.update_item = MagicMock(return_value=dynamo_response)
-        self.table.query = MagicMock(return_value={})
-        now_epoch = 123456
-        with patch("time.time") as mock_time:
-            mock_time.return_value = now_epoch
-            act_resource, act_version = self.repository.update_immunization(imms_id, imms, self.patient, 1, "Test")
-        self.assertDictEqual(act_resource, resource)
-        self.assertEqual(act_version, 2)
+        existing_record_metadata = ImmunizationRecordMetadata(resource_version=1, is_deleted=False, is_reinstated=False)
+
+        # When
+        updated_version = self.repository.update_immunization(imms_id, imms, existing_record_metadata, "Test")
+        self.assertEqual(updated_version, 2)
 
         update_exp = (
             "SET UpdatedAt = :timestamp, PatientPK = :patient_pk, "
             "PatientSK = :patient_sk, #imms_resource = :imms_resource_val, "
             "Operation = :operation, Version = :version, SupplierSystem = :supplier_system "
         )
-        patient_id = self.patient["identifier"]["value"]
         patient_id = imms["contained"][1]["identifier"][0]["value"]
         vaccine_type = get_vaccine_type(imms)
         patient_sk = f"{vaccine_type}#{imms_id}"
@@ -648,7 +667,7 @@ class TestImmunizationDecimals(TestFhirRepositoryBase):
             UpdateExpression=update_exp,
             ExpressionAttributeNames={"#imms_resource": "Resource"},
             ExpressionAttributeValues={
-                ":timestamp": now_epoch,
+                ":timestamp": ANY,
                 ":patient_pk": _make_patient_pk(patient_id),
                 ":patient_sk": patient_sk,
                 ":imms_resource_val": json.dumps(imms, use_decimal=True),
@@ -656,7 +675,6 @@ class TestImmunizationDecimals(TestFhirRepositoryBase):
                 ":version": 2,
                 ":supplier_system": "Test",
             },
-            ReturnValues=ANY,
             ConditionExpression=ANY,
         )
 
@@ -664,24 +682,21 @@ class TestImmunizationDecimals(TestFhirRepositoryBase):
             imms_resource_val = json.loads(
                 self.table.update_item.call_args.kwargs["ExpressionAttributeValues"][":imms_resource_val"]
             )
-            self.assertEqual(imms_resource_val["doseQuantity"], updated_dose_quantity)
+            self.assertEqual(imms_resource_val["doseQuantity"]["value"], updated_dose_quantity)
 
     def test_decimal_on_update(self):
         """it should update record when replacing doseQuantity and keep decimal precision"""
         imms_id = "an-imms-id"
-        imms = create_covid_immunization_dict(imms_id)
-        imms["doseQuantity"] = 1.5556
+        imms = create_covid_immunization_dict(imms_id, VALID_NHS_NUMBER)
         updated_dose_quantity = 0.7566
-        imms["doseQuantity"] = updated_dose_quantity
-        imms["patient"] = self.patient
-        resource = imms
-        self.run_update_immunization_test(imms_id, imms, resource, updated_dose_quantity)
+        imms["doseQuantity"]["value"] = updated_dose_quantity
+        self.run_update_immunization_test(imms_id, imms, updated_dose_quantity)
 
     def test_decimal_on_update_patient(self):
         """it should update record by replacing both Immunization and Patient and dose quantity"""
         imms_id = "an-imms-id"
-        imms = create_covid_immunization_dict(imms_id)
-        imms["doseQuantity"] = 1.590
+        imms = create_covid_immunization_dict(imms_id, VALID_NHS_NUMBER)
+        updated_dose_quantity = 0.7566
+        imms["doseQuantity"]["value"] = updated_dose_quantity
         imms["patient"] = self.patient
-        resource = {"doseQuantity": 1.590, "foo": "bar"}
-        self.run_update_immunization_test(imms_id, imms, resource)
+        self.run_update_immunization_test(imms_id, imms, updated_dose_quantity)

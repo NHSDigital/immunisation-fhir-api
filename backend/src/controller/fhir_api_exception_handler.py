@@ -11,9 +11,14 @@ from models.errors import (
     Code,
     CustomValidationError,
     IdentifierDuplicationError,
+    InconsistentIdentifierError,
+    InconsistentIdError,
+    InconsistentResourceVersion,
     InvalidImmunizationId,
     InvalidJsonError,
+    InvalidResourceVersion,
     ResourceNotFoundError,
+    ResourceVersionNotProvided,
     Severity,
     UnauthorizedError,
     UnauthorizedVaxError,
@@ -22,9 +27,14 @@ from models.errors import (
 )
 
 _CUSTOM_EXCEPTION_TO_STATUS_MAP: dict[Type[Exception], int] = {
+    InconsistentResourceVersion: 400,
+    InconsistentIdentifierError: 400,  # Identifier refers to the local FHIR identifier composed of system and value.
+    InconsistentIdError: 400,  # ID refers to the top-level ID of the FHIR resource.
     InvalidImmunizationId: 400,
     InvalidJsonError: 400,
+    InvalidResourceVersion: 400,
     CustomValidationError: 400,
+    ResourceVersionNotProvided: 400,
     UnauthorizedError: 403,
     UnauthorizedVaxError: 403,
     ResourceNotFoundError: 404,
