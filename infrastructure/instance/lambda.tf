@@ -40,7 +40,7 @@ module "docker_image" {
 
   platform      = "linux/amd64"
   use_image_tag = false
-  source_path   = local.lambda_dir
+  source_path   = abspath("${path.root}/../../lambdas")
   triggers = {
     dir_sha        = local.lambda_dir_sha
     shared_dir_sha = local.shared_dir_sha
