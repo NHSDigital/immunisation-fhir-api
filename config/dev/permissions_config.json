@@ -59,7 +59,11 @@
       "HPV.CRUDS",
       "MENACWY.CRUDS",
       "MMR.CRUDS",
-      "RSV.CRUDS"
+      "MMRV.CRUDS",
+      "PCV13.CRUDS",
+      "PERTUSSIS.CRUDS",
+      "RSV.CRUDS",
+      "SHINGLES.CRUDS"
     ],
     "ods_codes": ["YGM41", "YGJ"]
   },
@@ -70,7 +74,11 @@
       "HPV.CRUDS",
       "MENACWY.CRUDS",
       "MMR.CRUDS",
-      "RSV.CRUDS"
+      "MMRV.CRUDS",
+      "PCV13.CRUDS",
+      "PERTUSSIS.CRUDS",
+      "RSV.CRUDS",
+      "SHINGLES.CRUDS"
     ],
     "ods_codes": ["YGA"]
   },
@@ -142,7 +150,11 @@
       "HPV.CRUDS",
       "MENACWY.CRUDS",
       "MMR.CRUDS",
-      "RSV.CRUDS"
+      "MMRV.CRUDS",
+      "PCV13.CRUDS",
+      "PERTUSSIS.CRUDS",
+      "RSV.CRUDS",
+      "SHINGLES.CRUDS"
     ]
   },
   {
@@ -154,7 +166,11 @@
       "HPV.CRUDS",
       "MENACWY.CRUDS",
       "MMR.CRUDS",
-      "RSV.CRUDS"
+      "MMRV.CRUDS",
+      "PCV13.CRUDS",
+      "PERTUSSIS.CRUDS",
+      "RSV.CRUDS",
+      "SHINGLES.CRUDS"
     ]
   }
 ]
