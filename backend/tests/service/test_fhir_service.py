@@ -5,13 +5,11 @@ import unittest
 import uuid
 from copy import deepcopy
 from decimal import Decimal
-from unittest.mock import MagicMock, create_autospec, patch
+from unittest.mock import create_autospec, patch
 
 from fhir.resources.R4B.bundle import Bundle as FhirBundle
 from fhir.resources.R4B.bundle import BundleEntry
 from fhir.resources.R4B.immunization import Immunization
-from pydantic import ValidationError
-from pydantic.error_wrappers import ErrorWrapper
 
 from authorisation.api_operation_code import ApiOperationCode
 from authorisation.authoriser import Authoriser
@@ -19,12 +17,13 @@ from constants import NHS_NUMBER_USED_IN_SAMPLE_DATA
 from models.errors import (
     CustomValidationError,
     IdentifierDuplicationError,
-    InvalidPatientId,
+    InconsistentIdentifierError,
+    InconsistentResourceVersion,
     ResourceNotFoundError,
     UnauthorizedVaxError,
 )
 from models.fhir_immunization import ImmunizationValidator
-from models.utils.generic_utils import get_contained_patient
+from models.immunization_record_metadata import ImmunizationRecordMetadata
 from repository.fhir_repository import ImmunizationRepository
 from service.fhir_service import FhirService, get_service_url
 from testing_utils.generic_utils import load_json_data
@@ -82,114 +81,6 @@ class TestServiceUrl(unittest.TestCase):
         self.assertEqual(url, f"https://internal-dev.api.service.nhs.uk/{base_path}")
 
 
-class TestGetImmunizationByAll(TestFhirServiceBase):
-    """Tests for FhirService.get_immunization_by_id"""
-
-    def setUp(self):
-        super().setUp()
-        self.authoriser = create_autospec(Authoriser)
-        self.imms_repo = create_autospec(ImmunizationRepository)
-        self.validator = create_autospec(ImmunizationValidator)
-        self.fhir_service = FhirService(self.imms_repo, self.authoriser, self.validator)
-        self.logger_info_patcher = patch("logging.Logger.info")
-        self.mock_logger_info = self.logger_info_patcher.start()
-
-    def tearDown(self):
-        patch.stopall()
-
-    def test_get_immunization_by_id_by_all(self):
-        """it should find an Immunization by id"""
-        imms_id = "an-id"
-        self.imms_repo.get_immunization_by_id_all.return_value = {"Resource": create_covid_immunization(imms_id).dict()}
-
-        # When
-        service_resp = self.fhir_service.get_immunization_by_id_all(imms_id, create_covid_immunization(imms_id).dict())
-        act_imms = service_resp["Resource"]
-
-        # Then
-        self.imms_repo.get_immunization_by_id_all.assert_called_once_with(
-            imms_id, create_covid_immunization(imms_id).dict()
-        )
-
-        self.assertEqual(act_imms["id"], imms_id)
-
-    def test_immunization_not_found(self):
-        """it should return None if Immunization doesn't exist"""
-        imms_id = "none-existent-id"
-        self.imms_repo.get_immunization_by_id_all.return_value = None
-
-        # When
-        act_imms = self.fhir_service.get_immunization_by_id_all(imms_id, create_covid_immunization(imms_id).dict())
-
-        # Then
-        self.imms_repo.get_immunization_by_id_all.assert_called_once_with(
-            imms_id, create_covid_immunization(imms_id).dict()
-        )
-        self.assertEqual(act_imms, None)
-
-    def test_pre_validation_failed(self):
-        """it should throw exception if Immunization is not valid"""
-        imms_id = "an-id"
-        imms = create_covid_immunization_dict(imms_id)
-        imms["patient"] = {"identifier": {"value": VALID_NHS_NUMBER}}
-
-        self.imms_repo.get_immunization_by_id_all.return_value = {}
-
-        validation_error = ValidationError(
-            [
-                ErrorWrapper(TypeError("bad type"), "/type"),
-            ],
-            Immunization,
-        )
-        self.validator.validate.side_effect = validation_error
-        expected_msg = str(validation_error)
-
-        with self.assertRaises(CustomValidationError) as error:
-            # When
-            self.fhir_service.get_immunization_by_id_all("an-id", imms)
-
-        # Then
-        self.assertEqual(error.exception.message, expected_msg)
-        self.imms_repo.update_immunization.assert_not_called()
-
-    def test_post_validation_failed_get_by_all_invalid_target_disease(self):
-        """it should raise CustomValidationError for invalid target disease code"""
-        self.mock_redis_client.hget.return_value = None
-        valid_imms = create_covid_immunization_dict("an-id", VALID_NHS_NUMBER)
-
-        bad_target_disease_imms = deepcopy(valid_imms)
-        bad_target_disease_imms["protocolApplied"][0]["targetDisease"][0]["coding"][0]["code"] = "bad-code"
-        bad_target_disease_msg = (
-            "Validation errors: protocolApplied[0].targetDisease[*].coding[?(@.system=='http://snomed.info/sct')]"
-            + ".code - ['bad-code'] is not a valid combination of disease codes for this service"
-        )
-
-        fhir_service = FhirService(self.imms_repo)
-
-        with self.assertRaises(CustomValidationError) as error:
-            fhir_service.get_immunization_by_id_all("an-id", bad_target_disease_imms)
-
-        self.assertEqual(bad_target_disease_msg, error.exception.message)
-        self.imms_repo.get_immunization_by_id_all.assert_not_called()
-
-    def test_post_validation_failed_get_by_all_missing_patient_name(self):
-        """it should raise CustomValidationError for missing patient name"""
-        self.mock_redis_client.hget.return_value = "COVID"
-        valid_imms = create_covid_immunization_dict("an-id", VALID_NHS_NUMBER)
-
-        bad_patient_name_imms = deepcopy(valid_imms)
-        del bad_patient_name_imms["contained"][1]["name"][0]["given"]
-        bad_patient_name_msg = "contained[?(@.resourceType=='Patient')].name[0].given is a mandatory field"
-
-        fhir_service = FhirService(self.imms_repo)
-
-        with self.assertRaises(CustomValidationError) as error:
-            fhir_service.get_immunization_by_id_all("an-id", bad_patient_name_imms)
-
-        self.assertTrue(bad_patient_name_msg in error.exception.message)
-        self.imms_repo.get_immunization_by_id_all.assert_not_called()
-
-
 class TestGetImmunization(TestFhirServiceBase):
     """Tests for FhirService.get_immunization_by_id"""
 
@@ -210,9 +101,9 @@ class TestGetImmunization(TestFhirServiceBase):
         imms_id = "an-id"
         self.mock_redis_client.hget.return_value = "COVID"
         self.authoriser.authorise.return_value = True
-        self.imms_repo.get_immunization_and_version_by_id.return_value = (
+        self.imms_repo.get_immunization_and_resource_meta_by_id.return_value = (
             create_covid_immunization(imms_id).dict(),
-            "",
+            ImmunizationRecordMetadata(resource_version=1, is_deleted=False, is_reinstated=False),
         )
 
         # When
@@ -220,22 +111,22 @@ class TestGetImmunization(TestFhirServiceBase):
 
         # Then
         self.authoriser.authorise.assert_called_once_with("Test Supplier", ApiOperationCode.READ, {"COVID"})
-        self.imms_repo.get_immunization_and_version_by_id.assert_called_once_with(imms_id)
+        self.imms_repo.get_immunization_and_resource_meta_by_id.assert_called_once_with(imms_id)
 
         self.assertEqual(immunisation.id, imms_id)
-        self.assertEqual(version, "")
+        self.assertEqual(version, "1")
 
     def test_immunization_not_found(self):
         """it should return None if Immunization doesn't exist"""
         imms_id = "non-existent-id"
-        self.imms_repo.get_immunization_and_version_by_id.return_value = None, None
+        self.imms_repo.get_immunization_and_resource_meta_by_id.return_value = None, None
 
         # When
         with self.assertRaises(ResourceNotFoundError) as error:
             self.fhir_service.get_immunization_and_version_by_id(imms_id, "Test Supplier")
 
         # Then
-        self.imms_repo.get_immunization_and_version_by_id.assert_called_once_with(imms_id)
+        self.imms_repo.get_immunization_and_resource_meta_by_id.assert_called_once_with(imms_id)
         self.assertEqual(
             "Immunization resource does not exist. ID: non-existent-id",
             str(error.exception),
@@ -251,9 +142,9 @@ class TestGetImmunization(TestFhirServiceBase):
         immunization_data = load_json_data("completed_covid_immunization_event.json")
         self.mock_redis_client.hget.return_value = "COVID"
         self.authoriser.authorise.return_value = True
-        self.imms_repo.get_immunization_and_version_by_id.return_value = (
+        self.imms_repo.get_immunization_and_resource_meta_by_id.return_value = (
             immunization_data,
-            "2",
+            ImmunizationRecordMetadata(resource_version=2, is_deleted=False, is_reinstated=False),
         )
 
         expected_imms = load_json_data("completed_covid_immunization_event_for_read.json")
@@ -264,43 +155,18 @@ class TestGetImmunization(TestFhirServiceBase):
 
         # Then
         self.authoriser.authorise.assert_called_once_with("Test Supplier", ApiOperationCode.READ, {"COVID"})
-        self.imms_repo.get_immunization_and_version_by_id.assert_called_once_with(imms_id)
+        self.imms_repo.get_immunization_and_resource_meta_by_id.assert_called_once_with(imms_id)
         self.assertEqual(actual_output, expected_output)
         self.assertEqual(version, "2")
-
-    def test_pre_validation_failed(self):
-        """it should throw exception if Immunization is not valid"""
-        imms_id = "an-id"
-        imms = create_covid_immunization_dict(imms_id)
-        imms["patient"] = {"identifier": {"value": VALID_NHS_NUMBER}}
-
-        self.imms_repo.get_immunization_by_id_all.return_value = {}
-
-        validation_error = ValidationError(
-            [
-                ErrorWrapper(TypeError("bad type"), "/type"),
-            ],
-            Immunization,
-        )
-        self.validator.validate.side_effect = validation_error
-        expected_msg = str(validation_error)
-
-        with self.assertRaises(CustomValidationError) as error:
-            # When
-            self.fhir_service.get_immunization_by_id_all("an-id", imms)
-
-        # Then
-        self.assertEqual(error.exception.message, expected_msg)
-        self.imms_repo.update_immunization.assert_not_called()
 
     def test_unauthorised_error_raised_when_user_lacks_permissions(self):
         """it should throw an exception when user lacks permissions"""
         imms_id = "an-id"
         self.mock_redis_client.hget.return_value = "COVID"
         self.authoriser.authorise.return_value = False
-        self.imms_repo.get_immunization_and_version_by_id.return_value = (
+        self.imms_repo.get_immunization_and_resource_meta_by_id.return_value = (
             create_covid_immunization(imms_id).dict(),
-            1,
+            ImmunizationRecordMetadata(resource_version=1, is_deleted=False, is_reinstated=False),
         )
 
         with self.assertRaises(UnauthorizedVaxError):
@@ -309,46 +175,7 @@ class TestGetImmunization(TestFhirServiceBase):
 
         # Then
         self.authoriser.authorise.assert_called_once_with("Test Supplier", ApiOperationCode.READ, {"COVID"})
-        self.imms_repo.get_immunization_and_version_by_id.assert_called_once_with(imms_id)
-
-
-def test_post_validation_failed_get_invalid_target_disease(self):
-    """it should raise CustomValidationError for invalid target disease code on get"""
-    self.mock_redis_client.hget.return_value = None
-    valid_imms = create_covid_immunization_dict("an-id", VALID_NHS_NUMBER)
-
-    bad_target_disease_imms = deepcopy(valid_imms)
-    bad_target_disease_imms["protocolApplied"][0]["targetDisease"][0]["coding"][0]["code"] = "bad-code"
-    bad_target_disease_msg = (
-        "Validation errors: protocolApplied[0].targetDisease[*].coding[?(@.system=='http://snomed.info/sct')].code"
-        + " - ['bad-code'] is not a valid combination of disease codes for this service"
-    )
-
-    fhir_service = FhirService(self.imms_repo)
-
-    with self.assertRaises(CustomValidationError) as error:
-        fhir_service.get_immunization_by_id_all("an-id", bad_target_disease_imms)
-
-    self.assertEqual(bad_target_disease_msg, error.exception.message)
-    self.imms_repo.get_immunization_by_id_all.assert_not_called()
-
-
-def test_post_validation_failed_get_missing_patient_name(self):
-    """it should raise CustomValidationError for missing patient name on get"""
-    self.mock_redis_client.hget.return_value = "COVID"
-    valid_imms = create_covid_immunization_dict("an-id", VALID_NHS_NUMBER)
-
-    bad_patient_name_imms = deepcopy(valid_imms)
-    del bad_patient_name_imms["contained"][1]["name"][0]["given"]
-    bad_patient_name_msg = "contained[?(@.resourceType=='Patient')].name[0].given is a mandatory field"
-
-    fhir_service = FhirService(self.imms_repo)
-
-    with self.assertRaises(CustomValidationError) as error:
-        fhir_service.get_immunization_by_id_all("an-id", bad_patient_name_imms)
-
-    self.assertTrue(bad_patient_name_msg in error.exception.message)
-    self.imms_repo.get_immunization_by_id_all.assert_not_called()
+        self.imms_repo.get_immunization_and_resource_meta_by_id.assert_called_once_with(imms_id)
 
 
 class TestGetImmunizationIdentifier(unittest.TestCase):
@@ -613,147 +440,137 @@ class TestUpdateImmunization(TestFhirServiceBase):
         super().setUp()
         self.authoriser = create_autospec(Authoriser)
         self.imms_repo = create_autospec(ImmunizationRepository)
-        self.validator = create_autospec(ImmunizationValidator)
-        self.fhir_service = FhirService(self.imms_repo, self.authoriser, self.validator)
+        self.fhir_service = FhirService(self.imms_repo, self.authoriser)
+        self.mock_redis_client.hget.return_value = "COVID"
 
     def test_update_immunization(self):
         """it should update Immunization and validate NHS number"""
         imms_id = "an-id"
-        self.imms_repo.update_immunization.return_value = (
-            create_covid_immunization_dict(imms_id),
-            2,
+        original_immunisation = create_covid_immunization_dict(imms_id, VALID_NHS_NUMBER)
+        updated_immunisation = create_covid_immunization_dict(imms_id, VALID_NHS_NUMBER, "2021-02-07T13:28:00+00:00")
+        existing_resource_meta = ImmunizationRecordMetadata(resource_version=1, is_deleted=False, is_reinstated=False)
+
+        self.imms_repo.get_immunization_and_resource_meta_by_id.return_value = (
+            original_immunisation,
+            existing_resource_meta,
         )
-        self.mock_redis_client.hget.return_value = "COVID"
+        self.imms_repo.update_immunization.return_value = 2
         self.authoriser.authorise.return_value = True
 
-        nhs_number = VALID_NHS_NUMBER
-        req_imms = create_covid_immunization_dict(imms_id, nhs_number)
-        req_patient = get_contained_patient(req_imms)
-
         # When
-        outcome, _, _ = self.fhir_service.update_immunization(imms_id, req_imms, 1, "COVID", "Test")
+        updated_version = self.fhir_service.update_immunization(imms_id, updated_immunisation, "Test", 1)
 
         # Then
-        self.assertTrue(outcome)
-        self.imms_repo.update_immunization.assert_called_once_with(imms_id, req_imms, req_patient, 1, "Test")
+        self.assertEqual(updated_version, 2)
+        self.imms_repo.get_immunization_and_resource_meta_by_id.assert_called_once_with(imms_id, include_deleted=True)
+        self.imms_repo.update_immunization.assert_called_once_with(
+            imms_id, updated_immunisation, existing_resource_meta, "Test"
+        )
         self.authoriser.authorise.assert_called_once_with("Test", ApiOperationCode.UPDATE, {"COVID"})
 
-    def test_id_not_present(self):
-        """it should populate id in the message if it is not present"""
-        req_imms_id = "an-id"
-        self.imms_repo.update_immunization.return_value = (
-            create_covid_immunization_dict(req_imms_id),
-            2,
-        )
-        self.authoriser.authorise.return_value = True
-
-        req_imms = create_covid_immunization_dict("we-will-remove-this-id")
-        del req_imms["id"]
+    def test_update_immunization_raises_validation_exception_when_nhs_number_invalid(self):
+        """it should raise a CustomValidationError when the patient's NHS number in the payload is invalid"""
+        imms_id = "an-id"
+        invalid_imms = create_covid_immunization_dict(imms_id, "12345678")
 
         # When
-        self.fhir_service.update_immunization(req_imms_id, req_imms, 1, "COVID", "Test")
+        with self.assertRaises(CustomValidationError) as error:
+            self.fhir_service.update_immunization(imms_id, invalid_imms, "Test", 1)
 
         # Then
-        passed_imms = self.imms_repo.update_immunization.call_args.args[1]
-        self.assertEqual(passed_imms["id"], req_imms_id)
-
-    def test_patient_error(self):
-        """it should throw error when patient ID is invalid"""
-        imms_id = "an-id"
-        invalid_nhs_number = "a-bad-patient-id"
-        bad_patient_imms = create_covid_immunization_dict(imms_id, invalid_nhs_number)
-
-        with self.assertRaises(InvalidPatientId) as e:
-            # When
-            self.fhir_service.update_immunization(imms_id, bad_patient_imms, 1, "COVID", "Test")
-
-        # Then
-        self.assertEqual(e.exception.patient_identifier, invalid_nhs_number)
+        self.imms_repo.get_immunization_and_resource_meta_by_id.assert_not_called()
         self.imms_repo.update_immunization.assert_not_called()
+        self.assertEqual(
+            error.exception.message,
+            "Validation errors: contained[?(@.resourceType=='Patient')].identifier[0].value must be 10 characters",
+        )
 
-    def test_patient_error_invalid_nhs_number(self):
-        """it should throw error when NHS number checksum is incorrect"""
-        imms_id = "an-id"
-        invalid_nhs_number = "9434765911"  # check digit 1 doesn't match result (9)
-        bad_patient_imms = create_covid_immunization_dict(imms_id, invalid_nhs_number)
+    def test_update_immunization_raises_not_found_error_when_no_existing_immunisation(self):
+        """it should raise a ResourceNotFoundError exception if no immunisation exists for the given ID"""
+        imms_id = "non-existent-id-123"
+        requested_imms = create_covid_immunization_dict(imms_id, VALID_NHS_NUMBER)
 
-        with self.assertRaises(InvalidPatientId) as e:
-            # When
-            self.fhir_service.update_immunization(imms_id, bad_patient_imms, 1, "COVID", "Test")
+        self.imms_repo.get_immunization_and_resource_meta_by_id.return_value = (None, None)
+
+        # When
+        with self.assertRaises(ResourceNotFoundError) as error:
+            self.fhir_service.update_immunization(imms_id, requested_imms, "Test", 1)
 
         # Then
-        self.assertEqual(e.exception.patient_identifier, invalid_nhs_number)
+        self.imms_repo.get_immunization_and_resource_meta_by_id.assert_called_once_with(imms_id, include_deleted=True)
         self.imms_repo.update_immunization.assert_not_called()
+        self.assertEqual(str(error.exception), "Immunization resource does not exist. ID: non-existent-id-123")
 
-    def test_reinstate_immunization_returns_updated_version(self):
-        """it should return updated version from reinstate"""
-        imms_id = "an-id"
-        req_imms = create_covid_immunization_dict(imms_id)
-        self.fhir_service._validate_patient = MagicMock(return_value={})
-        self.authoriser.authorise.return_value = True
-        self.mock_redis_client.hget.return_value = "COVID"
-        self.imms_repo.reinstate_immunization.return_value = (req_imms, 5)
+    def test_update_immunization_raises_unauthorized_exception_when_user_lacks_permissions(self):
+        """it should raise an UnauthorizedVaxError exception if the user does not have permissions for the Update
+        interaction with the target vaccination"""
+        imms_id = "test-id"
+        original_immunisation = create_covid_immunization_dict(imms_id, VALID_NHS_NUMBER)
+        updated_immunisation = create_covid_immunization_dict(imms_id, VALID_NHS_NUMBER, "2021-02-07T13:28:00+00:00")
 
-        outcome, resource, version = self.fhir_service.reinstate_immunization(imms_id, req_imms, 1, "COVID", "Test")
-
-        self.assertTrue(outcome)
-        self.assertEqual(version, 5)
-
-    def test_reinstate_immunization_raises_exception_when_missing_authz(self):
-        """it should raise an unauthorised error when missing authorisation"""
-        imms_id = "an-id"
-        req_imms = create_covid_immunization_dict(imms_id)
-        self.fhir_service._validate_patient = MagicMock(return_value={})
+        self.imms_repo.get_immunization_and_resource_meta_by_id.return_value = (
+            original_immunisation,
+            ImmunizationRecordMetadata(resource_version=1, is_deleted=False, is_reinstated=True),
+        )
         self.authoriser.authorise.return_value = False
-        self.mock_redis_client.hget.return_value = "FLU"
 
+        # When
         with self.assertRaises(UnauthorizedVaxError):
-            self.fhir_service.reinstate_immunization(imms_id, req_imms, 1, "FLU", "Test")
+            self.fhir_service.update_immunization(imms_id, updated_immunisation, "Test", 1)
 
-        self.authoriser.authorise.assert_called_once_with("Test", ApiOperationCode.UPDATE, {"FLU"})
+        # Then
+        self.imms_repo.get_immunization_and_resource_meta_by_id.assert_called_once_with(imms_id, include_deleted=True)
+        self.imms_repo.update_immunization.assert_not_called()
 
-    def test_update_reinstated_immunization_returns_updated_version(self):
-        """it should return updated version from update_reinstated"""
-        imms_id = "an-id"
-        req_imms = create_covid_immunization_dict(imms_id)
+    def test_update_immunization_raises_invalid_error_if_identifiers_do_not_match(self):
+        """it should raise an InconsistentIdentifierError if the local identifier in the update does not match that in
+        the stored resource"""
+        imms_id = "test-id"
+        original_immunisation = create_covid_immunization_dict(imms_id, VALID_NHS_NUMBER)
+        original_immunisation["identifier"][0]["system"] = "legacyUri.com"
+        updated_immunisation = create_covid_immunization_dict(imms_id, VALID_NHS_NUMBER, "2021-02-07T13:28:00+00:00")
+
+        self.imms_repo.get_immunization_and_resource_meta_by_id.return_value = (
+            original_immunisation,
+            ImmunizationRecordMetadata(resource_version=1, is_deleted=False, is_reinstated=False),
+        )
         self.authoriser.authorise.return_value = True
-        self.fhir_service._validate_patient = MagicMock(return_value={})
-        self.imms_repo.update_reinstated_immunization.return_value = (req_imms, 9)
 
-        outcome, resource, version = self.fhir_service.update_reinstated_immunization(
-            imms_id, req_imms, 1, "COVID", "Test"
+        # When
+        with self.assertRaises(InconsistentIdentifierError) as error:
+            self.fhir_service.update_immunization(imms_id, updated_immunisation, "Test", 1)
+
+        # Then
+        self.imms_repo.get_immunization_and_resource_meta_by_id.assert_called_once_with(imms_id, include_deleted=True)
+        self.imms_repo.update_immunization.assert_not_called()
+        self.assertEqual(
+            str(error.exception), "Validation errors: identifier[0].system doesn't match with the stored content"
         )
 
-        self.assertTrue(outcome)
-        self.assertEqual(version, 9)
+    def test_update_immunization_raises_invalid_error_if_resource_version_does_not_match(self):
+        """it should raise an InconsistentResourceVersion if the resource version provided in the request does not match
+        the current version of the stored resource"""
+        imms_id = "test-id"
+        original_immunisation = create_covid_immunization_dict(imms_id, VALID_NHS_NUMBER)
+        updated_immunisation = create_covid_immunization_dict(imms_id, VALID_NHS_NUMBER, "2021-02-07T13:28:00+00:00")
 
-    def test_reinstate_immunization_with_diagnostics(self):
-        """it should return error if patient has diagnostics in reinstate"""
-        imms_id = "an-id"
-        req_imms = create_covid_immunization_dict(imms_id)
-        self.fhir_service._validate_patient = MagicMock(return_value={"diagnostics": "invalid patient"})
-
-        outcome, resource, version = self.fhir_service.reinstate_immunization(imms_id, req_imms, 1, "COVID", "Test")
-
-        self.assertFalse(outcome)
-        self.assertEqual(resource, {"diagnostics": "invalid patient"})
-        self.assertIsNone(version)
-        self.imms_repo.reinstate_immunization.assert_not_called()
-
-    def test_update_reinstated_immunization_with_diagnostics(self):
-        """it should return error if patient has diagnostics in update_reinstated"""
-        imms_id = "an-id"
-        req_imms = create_covid_immunization_dict(imms_id)
-        self.fhir_service._validate_patient = MagicMock(return_value={"diagnostics": "invalid patient"})
-
-        outcome, resource, version = self.fhir_service.update_reinstated_immunization(
-            imms_id, req_imms, 1, "COVID", "Test"
+        self.imms_repo.get_immunization_and_resource_meta_by_id.return_value = (
+            original_immunisation,
+            ImmunizationRecordMetadata(resource_version=4, is_deleted=False, is_reinstated=False),
         )
+        self.authoriser.authorise.return_value = True
 
-        self.assertFalse(outcome)
-        self.assertEqual(resource, {"diagnostics": "invalid patient"})
-        self.assertIsNone(version)
-        self.imms_repo.update_reinstated_immunization.assert_not_called()
+        # When
+        with self.assertRaises(InconsistentResourceVersion) as error:
+            self.fhir_service.update_immunization(imms_id, updated_immunisation, "Test", 2)
+
+        # Then
+        self.imms_repo.get_immunization_and_resource_meta_by_id.assert_called_once_with(imms_id, include_deleted=True)
+        self.imms_repo.update_immunization.assert_not_called()
+        self.assertEqual(
+            str(error.exception),
+            "Validation errors: The requested immunization resource test-id has changed since the last retrieve.",
+        )
 
 
 class TestDeleteImmunization(TestFhirServiceBase):
@@ -773,27 +590,30 @@ class TestDeleteImmunization(TestFhirServiceBase):
         imms = json.loads(create_covid_immunization(self.TEST_IMMUNISATION_ID).json())
         self.mock_redis_client.hget.return_value = "COVID"
         self.authoriser.authorise.return_value = True
-        self.imms_repo.get_immunization_and_version_by_id.return_value = (imms, "1")
+        self.imms_repo.get_immunization_and_resource_meta_by_id.return_value = (
+            imms,
+            ImmunizationRecordMetadata(resource_version=1, is_deleted=False, is_reinstated=False),
+        )
         self.imms_repo.delete_immunization.return_value = None
 
         # When
         self.fhir_service.delete_immunization(self.TEST_IMMUNISATION_ID, "Test")
 
         # Then
-        self.imms_repo.get_immunization_and_version_by_id.assert_called_once_with(self.TEST_IMMUNISATION_ID)
+        self.imms_repo.get_immunization_and_resource_meta_by_id.assert_called_once_with(self.TEST_IMMUNISATION_ID)
         self.imms_repo.delete_immunization.assert_called_once_with(self.TEST_IMMUNISATION_ID, "Test")
         self.authoriser.authorise.assert_called_once_with("Test", ApiOperationCode.DELETE, {"COVID"})
 
     def test_delete_immunization_throws_not_found_exception_if_does_not_exist(self):
         """it should raise a ResourceNotFound exception if the immunisation does not exist"""
-        self.imms_repo.get_immunization_and_version_by_id.return_value = (None, None)
+        self.imms_repo.get_immunization_and_resource_meta_by_id.return_value = (None, None)
 
         # When
         with self.assertRaises(ResourceNotFoundError):
             self.fhir_service.delete_immunization(self.TEST_IMMUNISATION_ID, "Test")
 
         # Then
-        self.imms_repo.get_immunization_and_version_by_id.assert_called_once_with(self.TEST_IMMUNISATION_ID)
+        self.imms_repo.get_immunization_and_resource_meta_by_id.assert_called_once_with(self.TEST_IMMUNISATION_ID)
         self.imms_repo.delete_immunization.assert_not_called()
 
     def test_delete_immunization_throws_authorisation_exception_if_does_not_have_required_permissions(
@@ -803,14 +623,17 @@ class TestDeleteImmunization(TestFhirServiceBase):
         imms = json.loads(create_covid_immunization(self.TEST_IMMUNISATION_ID).json())
         self.mock_redis_client.hget.return_value = "FLU"
         self.authoriser.authorise.return_value = False
-        self.imms_repo.get_immunization_and_version_by_id.return_value = (imms, "1")
+        self.imms_repo.get_immunization_and_resource_meta_by_id.return_value = (
+            imms,
+            ImmunizationRecordMetadata(resource_version=2, is_deleted=False, is_reinstated=False),
+        )
 
         # When
         with self.assertRaises(UnauthorizedVaxError):
             self.fhir_service.delete_immunization(self.TEST_IMMUNISATION_ID, "Test")
 
         # Then
-        self.imms_repo.get_immunization_and_version_by_id.assert_called_once_with(self.TEST_IMMUNISATION_ID)
+        self.imms_repo.get_immunization_and_resource_meta_by_id.assert_called_once_with(self.TEST_IMMUNISATION_ID)
         self.imms_repo.delete_immunization.assert_not_called()
         self.authoriser.authorise.assert_called_once_with("Test", ApiOperationCode.DELETE, {"FLU"})
 

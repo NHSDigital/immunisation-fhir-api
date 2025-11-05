@@ -12,6 +12,7 @@ from aws_lambda_typing.events import APIGatewayProxyEventV1
 
 from controller.aws_apig_event_utils import (
     get_path_parameter,
+    get_resource_version_header,
     get_supplier_system_header,
 )
 from controller.aws_apig_response_utils import create_response
@@ -19,14 +20,14 @@ from controller.constants import E_TAG_HEADER_NAME
 from controller.fhir_api_exception_handler import fhir_api_exception_handler
 from models.errors import (
     Code,
-    IdentifierDuplicationError,
+    InconsistentIdError,
     InvalidImmunizationId,
     InvalidJsonError,
+    InvalidResourceVersion,
     ParameterException,
     Severity,
     UnauthorizedError,
     UnauthorizedVaxError,
-    ValidationError,
     create_operation_outcome,
 )
 from models.utils.generic_utils import check_keys_in_sources
@@ -124,189 +125,31 @@ class FhirController:
             headers={"Location": f"{self._API_SERVICE_URL}/Immunization/{created_resource_id}", "E-Tag": "1"},
         )
 
-    def update_immunization(self, aws_event):
-        try:
-            if aws_event.get("headers"):
-                imms_id = aws_event["pathParameters"]["id"]
-            else:
-                raise UnauthorizedError()
-        except UnauthorizedError as unauthorized:
-            return create_response(403, unauthorized.to_operation_outcome())
+    @fhir_api_exception_handler
+    def update_immunization(self, aws_event: APIGatewayProxyEventV1) -> dict:
+        imms_id = get_path_parameter(aws_event, "id")
+        supplier_system = get_supplier_system_header(aws_event)
+        resource_version = get_resource_version_header(aws_event)
 
-        supplier_system = self._identify_supplier_system(aws_event)
-
-        # Refactor to raise InvalidImmunizationId when working on VED-747
         if not self._is_valid_immunization_id(imms_id):
-            return create_response(
-                400,
-                json.dumps(
-                    create_operation_outcome(
-                        resource_id=str(uuid.uuid4()),
-                        severity=Severity.error,
-                        code=Code.invalid,
-                        diagnostics="Validation errors: the provided event ID is either missing or not in the expected "
-                        "format.",
-                    )
-                ),
-            )
+            raise InvalidImmunizationId()
 
-        # Validate the body of the request - start
+        if not self._is_valid_resource_version(resource_version):
+            raise InvalidResourceVersion(resource_version=resource_version)
+
         try:
-            imms = json.loads(aws_event["body"], parse_float=Decimal)
-            # Validate the imms id in the path params and body of request - start
-            if imms.get("id") != imms_id:
-                exp_error = create_operation_outcome(
-                    resource_id=str(uuid.uuid4()),
-                    severity=Severity.error,
-                    code=Code.invariant,
-                    diagnostics=(
-                        f"Validation errors: The provided immunization id:{imms_id} doesn't match with the content of "
-                        "the request body"
-                    ),
-                )
-                return create_response(400, json.dumps(exp_error))
-            # Validate the imms id in the path params and body of request - end
+            immunization = json.loads(aws_event["body"], parse_float=Decimal)
         except JSONDecodeError as e:
-            return self._create_bad_request(f"Request's body contains malformed JSON: {e}")
-        except Exception as e:
-            return self._create_bad_request(f"Request's body contains string: {e}")
-        # Validate the body of the request - end
+            # Consider moving the start of the message into a const
+            raise InvalidJsonError(message=str(f"Request's body contains malformed JSON: {e}"))
 
-        # Validate if the imms resource does not exist - start
-        try:
-            existing_record = self.fhir_service.get_immunization_by_id_all(imms_id, imms)
-            if not existing_record:
-                exp_error = create_operation_outcome(
-                    resource_id=str(uuid.uuid4()),
-                    severity=Severity.error,
-                    code=Code.not_found,
-                    diagnostics=(
-                        f"Validation errors: The requested immunization resource with id:{imms_id} was not found."
-                    ),
-                )
-                return create_response(404, json.dumps(exp_error))
+        if immunization.get("id") != imms_id:
+            raise InconsistentIdError(imms_id=imms_id)
 
-            if "diagnostics" in existing_record:
-                exp_error = create_operation_outcome(
-                    resource_id=str(uuid.uuid4()),
-                    severity=Severity.error,
-                    code=Code.invariant,
-                    diagnostics=existing_record["diagnostics"],
-                )
-                return create_response(400, json.dumps(exp_error))
-        except ValidationError as error:
-            return create_response(400, error.to_operation_outcome())
-        # Validate if the imms resource does not exist - end
-
-        existing_resource_version = int(existing_record["Version"])
-        existing_resource_vacc_type = existing_record["VaccineType"]
-
-        try:
-            # Validate if the imms resource to be updated is a logically deleted resource - start
-            if existing_record["DeletedAt"]:
-                outcome, resource, updated_version = self.fhir_service.reinstate_immunization(
-                    imms_id,
-                    imms,
-                    existing_resource_version,
-                    existing_resource_vacc_type,
-                    supplier_system,
-                )
-            # Validate if the imms resource to be updated is a logically deleted resource-end
-            else:
-                # Validate if imms resource version is part of the request - start
-                if "E-Tag" not in aws_event["headers"]:
-                    exp_error = create_operation_outcome(
-                        resource_id=str(uuid.uuid4()),
-                        severity=Severity.error,
-                        code=Code.invariant,
-                        diagnostics=(
-                            "Validation errors: Immunization resource version not specified in the request headers"
-                        ),
-                    )
-                    return create_response(400, json.dumps(exp_error))
-                # Validate if imms resource version is part of the request - end
-
-                # Validate the imms resource version provided in the request headers - start
-                try:
-                    resource_version_header = int(aws_event["headers"]["E-Tag"])
-                except (TypeError, ValueError):
-                    resource_version = aws_event["headers"]["E-Tag"]
-                    exp_error = create_operation_outcome(
-                        resource_id=str(uuid.uuid4()),
-                        severity=Severity.error,
-                        code=Code.invariant,
-                        diagnostics=(
-                            f"Validation errors: Immunization resource version:{resource_version} in the request "
-                            "headers is invalid."
-                        ),
-                    )
-                    return create_response(400, json.dumps(exp_error))
-                # Validate the imms resource version provided in the request headers - end
-
-                # Validate if resource version has changed since the last retrieve - start
-                if existing_resource_version > resource_version_header:
-                    exp_error = create_operation_outcome(
-                        resource_id=str(uuid.uuid4()),
-                        severity=Severity.error,
-                        code=Code.invariant,
-                        diagnostics=(
-                            f"Validation errors: The requested immunization resource {imms_id} has changed since the "
-                            "last retrieve."
-                        ),
-                    )
-                    return create_response(400, json.dumps(exp_error))
-                if existing_resource_version < resource_version_header:
-                    exp_error = create_operation_outcome(
-                        resource_id=str(uuid.uuid4()),
-                        severity=Severity.error,
-                        code=Code.invariant,
-                        diagnostics=(
-                            f"Validation errors: The requested immunization resource {imms_id} version is inconsistent "
-                            "with the existing version."
-                        ),
-                    )
-                    return create_response(400, json.dumps(exp_error))
-                # Validate if resource version has changed since the last retrieve - end
-
-                # Check if the record is reinstated record - start
-                if existing_record["Reinstated"] is True:
-                    outcome, resource, updated_version = self.fhir_service.update_reinstated_immunization(
-                        imms_id,
-                        imms,
-                        existing_resource_version,
-                        existing_resource_vacc_type,
-                        supplier_system,
-                    )
-                else:
-                    outcome, resource, updated_version = self.fhir_service.update_immunization(
-                        imms_id,
-                        imms,
-                        existing_resource_version,
-                        existing_resource_vacc_type,
-                        supplier_system,
-                    )
-
-                # Check if the record is reinstated record - end
-
-            # Check for errors returned on update
-            if "diagnostics" in resource:
-                exp_error = create_operation_outcome(
-                    resource_id=str(uuid.uuid4()),
-                    severity=Severity.error,
-                    code=Code.invariant,
-                    diagnostics=resource["diagnostics"],
-                )
-                return create_response(400, json.dumps(exp_error))
-            if outcome:
-                return create_response(
-                    200, None, {"E-Tag": updated_version}
-                )  # include e-tag here, is it not included in the response resource
-        except ValidationError as error:
-            return create_response(400, error.to_operation_outcome())
-        except IdentifierDuplicationError as duplicate:
-            return create_response(422, duplicate.to_operation_outcome())
-        except UnauthorizedVaxError as unauthorized:
-            return create_response(403, unauthorized.to_operation_outcome())
+        updated_resource_version = self.fhir_service.update_immunization(
+            imms_id, immunization, supplier_system, int(resource_version)
+        )
+        return create_response(200, None, {E_TAG_HEADER_NAME: updated_resource_version})
 
     @fhir_api_exception_handler
     def delete_immunization(self, aws_event: APIGatewayProxyEventV1) -> dict:
@@ -384,6 +227,10 @@ class FhirController:
     def _is_valid_immunization_id(self, immunization_id: str) -> bool:
         """Validates if the given unique Immunization ID is valid."""
         return False if not re.match(self._IMMUNIZATION_ID_PATTERN, immunization_id) else True
+
+    @staticmethod
+    def _is_valid_resource_version(resource_version: str) -> bool:
+        return resource_version.isdigit() and int(resource_version) > 0
 
     def _validate_identifier_system(self, _id: str, _elements: str) -> Optional[dict]:
         if not _id:
