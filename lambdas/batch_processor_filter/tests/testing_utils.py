@@ -10,6 +10,7 @@ MOCK_ENVIRONMENT_DICT = {
     "FILE_NAME_GSI": "filename_index",
     "QUEUE_NAME_GSI": "queue_name_index",
     "SOURCE_BUCKET_NAME": "immunisation-batch-internal-dev-data-sources",
+    "SPLUNK_FIREHOSE_STREAM_NAME": "immunisation-batch-internal-dev-splunk-stream",
     "ACK_BUCKET_NAME": "immunisation-batch-internal-dev-data-destinations",
 }
 

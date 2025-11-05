@@ -98,6 +98,7 @@ class PreValidators:
             self.pre_validate_vaccination_procedure_code,
             self.pre_validate_vaccination_procedure_display,
             self.pre_validate_vaccine_code,
+            self.pre_validate_vaccine_display,
         ]
 
         for method in validation_methods:
@@ -974,5 +975,18 @@ class PreValidators:
             field_value = [x for x in values["vaccineCode"]["coding"] if x.get("system") == url][0]["code"]
             PreValidation.for_string(field_value, field_location)
             PreValidation.for_snomed_code(field_value, field_location)
+        except (KeyError, IndexError):
+            pass
+
+    def pre_validate_vaccine_display(self, values: dict) -> dict:
+        """
+        Pre-validate that, if vaccineCode.coding[?(@.system=='http://snomed.info/sct')].display
+        (legacy CSV field : VACCINE_PRODUCT_TERM) exists, then it is a non-empty string
+        """
+        url = Urls.snomed
+        field_location = f"vaccineCode.coding[?(@.system=='{url}')].display"
+        try:
+            field_value = [x for x in values["vaccineCode"]["coding"] if x.get("system") == url][0]["display"]
+            PreValidation.for_string(field_value, field_location)
         except (KeyError, IndexError):
             pass
