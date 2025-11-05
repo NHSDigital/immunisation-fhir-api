@@ -21,27 +21,15 @@ def get_ieds_table():
     return ieds_table
 
 
-def ieds_update_patient_id(old_id: str, new_id: str, items_to_update: list | None = None) -> dict:
+def ieds_update_patient_id(old_id: str, new_id: str, items_to_update: list) -> dict:
     """Update the patient ID (new NHS number) in the IEDS table."""
-    if not old_id or not new_id or not old_id.strip() or not new_id.strip():
-        return make_status("Old ID and New ID cannot be empty", status="error")
+    if not items_to_update:
+        logger.info("No items found to update for patient NHS Number")
+        return make_status("No items found to update for patient ID")
 
-    if old_id == new_id:
-        return make_status("No change in patient ID")
+    logger.info(f"Items to update: {len(items_to_update)}")
 
     try:
-        if items_to_update is None:
-            logger.info("Getting items to update in IEDS table...")
-            items_to_update = get_items_from_patient_id(old_id)
-        else:
-            logger.info("Using provided items_to_update list, size=%d", len(items_to_update))
-
-        if not items_to_update:
-            logger.warning("No items found to update for patient NHS Number")
-            return make_status("No items found to update for patient ID")
-
-        logger.info(f"Items to update: {len(items_to_update)}")
-
         # Build transact items and execute them in batches via helpers to keep
         # the top-level function easy to read and test.
         transact_items = build_transact_items(old_id, new_id, items_to_update)
@@ -61,12 +49,9 @@ def ieds_update_patient_id(old_id: str, new_id: str, items_to_update: list | Non
 
     except Exception as e:
         logger.exception("Error updating patient ID")
-        logger.info("Error details: %s", e)
         raise IdSyncException(
             message="Error updating patient ID",
-            nhs_numbers=[old_id, new_id],
-            exception=e,
-        )
+        ) from e
 
 
 def get_items_from_patient_id(id: str) -> list:
@@ -80,12 +65,10 @@ def get_items_from_patient_id(id: str) -> list:
         return paginate_items_for_patient_pk(patient_pk)
     except IdSyncException:
         raise
-    except Exception as e:
+    except Exception:
         logger.exception("Error querying items for patient PK")
         raise IdSyncException(
             message="Error querying items for patient PK",
-            nhs_numbers=[patient_pk],
-            exception=e,
         )
 
 
@@ -111,8 +94,6 @@ def paginate_items_for_patient_pk(patient_pk: str) -> list:
             logger.exception("Unexpected DynamoDB response: missing 'Items'")
             raise IdSyncException(
                 message="No Items in DynamoDB response",
-                nhs_numbers=[patient_pk],
-                exception=response,
             )
 
         items = response.get("Items", [])

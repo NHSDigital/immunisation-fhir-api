@@ -196,7 +196,6 @@ class TestIdSyncHandler(unittest.TestCase):
         self.mock_logger.exception.assert_called_once_with("Error processing id_sync event")
         self.mock_process_record.assert_not_called()
 
-        self.assertEqual(result.nhs_numbers, None)
         self.assertEqual(result.message, "Error processing id_sync event")
 
     def test_handler_process_record_exception(self):
@@ -216,7 +215,6 @@ class TestIdSyncHandler(unittest.TestCase):
         self.mock_process_record.assert_called_once_with(mock_event.records[0])
         self.mock_logger.exception.assert_called_once_with("Error processing id_sync event")
 
-        self.assertEqual(exception.nhs_numbers, None)
         self.assertEqual(exception.message, "Error processing id_sync event")
 
     def test_handler_process_record_missing_nhs_number(self):
@@ -241,7 +239,6 @@ class TestIdSyncHandler(unittest.TestCase):
         exception = exception_context.exception
 
         self.assertIsInstance(exception, IdSyncException)
-        self.assertIsNone(exception.nhs_numbers)
         self.assertEqual(exception.message, "Processed 1 records with 1 errors")
         self.mock_logger.exception.assert_called_once_with(f"id_sync error: {exception.message}")
 

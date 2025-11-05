@@ -31,7 +31,7 @@ def pds_get_patient_details(nhs_number: str) -> dict:
     except Exception as e:
         msg = "Error retrieving patient details from PDS"
         logger.exception(msg)
-        raise IdSyncException(message=msg, exception=e)
+        raise IdSyncException(message=msg) from e
 
 
 def get_nhs_number_from_pds_resource(pds_resource: dict) -> str:

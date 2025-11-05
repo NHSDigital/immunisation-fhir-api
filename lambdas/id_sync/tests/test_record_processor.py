@@ -229,7 +229,7 @@ class TestRecordProcessor(unittest.TestCase):
 
         result = process_record(test_sqs_record)
         self.assertEqual(result["status"], "success")
-        self.mock_ieds_update_patient_id.assert_called_once_with(nhs_number, pds_id, items_to_update=[item])
+        self.mock_ieds_update_patient_id.assert_called_once_with(nhs_number, pds_id, [item])
 
     def test_process_record_no_records_exist(self):
         """Test when no records exist for the patient ID"""
