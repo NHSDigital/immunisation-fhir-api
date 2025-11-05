@@ -4,10 +4,7 @@
 3. Collects all error records and builds the final error report
 """
 
-from common.validator.constants.enums import MESSAGES
-from common.validator.constants.enums import DataType
-from common.validator.constants.enums import ErrorLevels
-from common.validator.constants.enums import ExceptionLevels
+from common.validator.constants.enums import MESSAGES, DataType, ErrorLevels, ExceptionLevels
 from common.validator.expression_checker import ExpressionChecker
 from common.validator.parsers.csv_line_parser import CSVLineParser
 from common.validator.parsers.csv_parser import CSVParser
@@ -98,9 +95,7 @@ class Validator:
                     code=ExceptionLevels.PARENT_FAILED,
                     message=MESSAGES[ExceptionLevels.PARENT_FAILED] + ", Parent ID: " + parent_expression,
                 )
-                self._add_error_record(
-                    error_record, expression_error_group, expression_name, expression_id, error_level
-                )
+                self._add_error_record(error_record, expression_error_group, expression_name, expression_id, error_level)
                 return error_record
 
         try:

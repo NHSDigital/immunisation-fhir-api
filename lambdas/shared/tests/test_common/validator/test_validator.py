@@ -1,11 +1,9 @@
 import unittest
-from unittest.mock import MagicMock
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from common.validator.constants.enums import ErrorLevels
 from common.validator.record_error import ErrorReport
-from common.validator.validator import DataType
-from common.validator.validator import Validator
+from common.validator.validator import DataType, Validator
 
 
 class TestValidator(unittest.TestCase):

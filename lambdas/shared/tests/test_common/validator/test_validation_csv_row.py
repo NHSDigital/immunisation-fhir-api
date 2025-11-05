@@ -3,11 +3,9 @@ import json
 import unittest
 from pathlib import Path
 
-from test_common.validator.testing_utils.constants import CSV_HEADER
-from test_common.validator.testing_utils.constants import CSV_VALUES
-from test_common.validator.testing_utils.csv_utils import build_row
-
 from common.validator.validator import Validator
+from test_common.validator.testing_utils.constants import CSV_HEADER, CSV_VALUES
+from test_common.validator.testing_utils.csv_utils import build_row
 
 schema_data_folder = Path(__file__).parent / "test_schemas"
 schemaFilePath = schema_data_folder / "test_schema.json"

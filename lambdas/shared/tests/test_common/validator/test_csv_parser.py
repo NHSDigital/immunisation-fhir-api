@@ -2,9 +2,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from test_common.validator.testing_utils.constants import CSV_DELIMITER_SAMPLE as CSV_FILE
-
 from common.validator.parsers.csv_parser import CSVParser
+from test_common.validator.testing_utils.constants import CSV_DELIMITER_SAMPLE as CSV_FILE
 
 
 class TestCSVParser(unittest.TestCase):

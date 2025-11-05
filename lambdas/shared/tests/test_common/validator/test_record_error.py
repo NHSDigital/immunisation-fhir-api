@@ -1,7 +1,6 @@
 import unittest
 
-from common.validator.record_error import ErrorReport
-from common.validator.record_error import RecordError
+from common.validator.record_error import ErrorReport, RecordError
 
 
 class TestRecordError(unittest.TestCase):

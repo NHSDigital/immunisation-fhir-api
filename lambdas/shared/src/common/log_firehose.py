@@ -1,7 +1,6 @@
 import json
 
-from common.clients import firehose_client
-from common.clients import logger
+from common.clients import firehose_client, logger
 
 
 def send_log_to_firehose(stream_name: str, log_data: dict) -> None:

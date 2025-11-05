@@ -2,15 +2,12 @@ import base64
 import json
 import time
 import unittest
-from unittest.mock import ANY
-from unittest.mock import MagicMock
-from unittest.mock import patch
+from unittest.mock import ANY, MagicMock, patch
 
 import responses
 from responses import matchers
 
-from common.authentication import AppRestrictedAuth
-from common.authentication import Service
+from common.authentication import AppRestrictedAuth, Service
 from common.models.errors import UnhandledResponseError
 
 

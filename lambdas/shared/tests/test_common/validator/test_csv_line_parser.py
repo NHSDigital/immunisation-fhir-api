@@ -6,11 +6,9 @@ Rows mean values and headers are keys
 
 import unittest
 
-from test_common.validator.testing_utils.constants import CSV_HEADER
-from test_common.validator.testing_utils.constants import CSV_VALUES
-from test_common.validator.testing_utils.csv_utils import build_row
-
 from common.validator.parsers.csv_line_parser import CSVLineParser
+from test_common.validator.testing_utils.constants import CSV_HEADER, CSV_VALUES
+from test_common.validator.testing_utils.csv_utils import build_row
 
 
 class TestCSVLineParser(unittest.TestCase):

@@ -1,5 +1,4 @@
-from enum import IntEnum
-from enum import StrEnum
+from enum import IntEnum, StrEnum
 
 
 # Used for error report messages in DQ Reporter to categorize error levels

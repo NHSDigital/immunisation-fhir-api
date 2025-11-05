@@ -18,7 +18,7 @@ class CSVParser:
     # parse the CSV into a Dictionary
     """
     Takes a CSV file with numerous fields (that uses pipe delimiter) and parses it into a list of dictionaries using csv.DictReader.
-    Then create a key for each header and attached a list of all the value to that key. So a one to many relationship 
+    Then create a key for each header and attached a list of all the value to that key. So a one to many relationship
     is created between the header and the values.
     """
 

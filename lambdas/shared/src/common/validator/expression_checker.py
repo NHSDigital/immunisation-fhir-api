@@ -3,13 +3,10 @@ import datetime
 import re
 import uuid
 
-from common.validator.constants.enums import MESSAGES
-from common.validator.constants.enums import ExceptionLevels
-from common.validator.constants.enums import MessageLabel
+from common.validator.constants.enums import MESSAGES, ExceptionLevels, MessageLabel
 from common.validator.lookup_expressions.key_data import KeyData
 from common.validator.lookup_expressions.lookup_data import LookUpData
-from common.validator.record_error import ErrorReport
-from common.validator.record_error import RecordError
+from common.validator.record_error import ErrorReport, RecordError
 
 
 class ExpressionChecker:
