@@ -98,7 +98,7 @@ jobs:
           aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
 
       - name: Run unittest with coverage-fhir-api
-        working-directory: backend
+        working-directory: lambdas/backend
         env:
           PYTHONPATH: ${{ env.LAMBDA_PATH }}/backend/src:${{ env.LAMBDA_PATH }}/backend/tests:${{ env.SHARED_PATH }}/src
         id: fhirapi
