@@ -25,12 +25,10 @@ def handler(event_data: Dict[str, Any], _context) -> Dict[str, Any]:
 
         logger.info("id_sync processing event with %d records", len(records))
 
-        results = []
         error_count = 0
 
         for record in records:
             result = process_record(record)
-            results.append(result)
 
             if result.get("status") == "error":
                 error_count += 1
