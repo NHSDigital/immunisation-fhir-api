@@ -7,8 +7,8 @@ csv_header : The header line defining column names
                     ("nhs_number,name,age").
 
 Example:
-    >>> parser = CSVRowParser()
-    >>> parser.parse_row_to_dict("9011011,Tom,32", "nhs_number,name,age")
+    >>> parser = CSVLineParser()
+    >>> parser.parse_csv_line("9011011,Tom,32", "nhs_number,name,age")
     >>> parser.csv_file_data
     {'nhs_number': '9011011', 'name': 'Tom', 'age': '32'}
 """

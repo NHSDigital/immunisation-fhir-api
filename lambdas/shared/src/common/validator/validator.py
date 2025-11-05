@@ -18,6 +18,7 @@ class Validator:
     def __init__(self, schema_file="", data_type: DataType = None, filepath=""):
         self.filepath = filepath
         self.json_data = {}
+        self.fhir_data = {}
         self.schema_file = schema_file
         self.csv_row = ""
         self.csv_header = ""
@@ -25,34 +26,36 @@ class Validator:
         self.data_parser = ""
         self.error_records: list[ErrorReport] = []
 
-    def _get_csv_line_parser(self, csv_row, csv_header):
-        csv_parser = CSVLineParser()
-        csv_parser.parse_csv_line(csv_row, csv_header)
-        return csv_parser
-
-    def _get_csv_parser(self, filepath):
+    # Retrieve all the Parsers,
+    def _get_csv_parser(self, filepath: str) -> CSVParser:
         csv_parser = CSVParser()
         csv_parser.parse_csv_file(filepath)
         return csv_parser
 
-    def _get_fhir_parser(self, filepath):
-        fhir_parser = FHIRParser()
-        fhir_parser.parse_fhir_file(filepath)
-        return fhir_parser
+    def _get_csv_line_parser(self, csv_row, csv_header) -> CSVLineParser:
+        csv_line_parser = CSVLineParser()
+        csv_line_parser.parse_csv_line(csv_row, csv_header)
+        return csv_line_parser
 
-    def _get_fhir_json_parser(self, fhir_data):
+    def _get_fhir_parser(self, fhir_data: dict) -> FHIRParser:
         fhir_parser = FHIRParser()
         fhir_parser.parse_fhir_data(fhir_data)
         return fhir_parser
 
-    def _get_schema_parser(self, schemafile):
+    def _get_schema_parser(self, schemafile: str) -> SchemaParser:
         schema_parser = SchemaParser()
         schema_parser.parse_schema(schemafile)
         return schema_parser
 
+    # Collect and add error record to the list
     def _add_error_record(
-        self, error_record: ErrorReport, expression_error_group, expression_name, expression_id, error_level
-    ):
+        self,
+        error_record: ErrorReport,
+        expression_error_group: str,
+        expression_name: str,
+        expression_id: str,
+        error_level: ErrorLevels,
+    ) -> None:
         if error_record is not None:
             error_record.error_group = expression_error_group
             error_record.name = expression_name
@@ -61,15 +64,15 @@ class Validator:
             self.error_records.append(error_record)
 
     # Function to help identify a parent failure in the error list
-    def _check_error_record_for_fail(self, expression_id):
+    def _check_error_record_for_fail(self, expression_identifier: str) -> bool:
         for error_record in self.error_records:
-            if error_record.id == expression_id:
+            if error_record.id == expression_identifier:
                 return True
         return False
 
     #  validate a single expression against the data file
     def _validate_expression(
-        self, expression_validator: ExpressionChecker, expression, inc_header_in_row_count
+        self, expression_validator: ExpressionChecker, expression: dict, inc_header_in_row_count: bool
     ) -> ErrorReport | int:
         row = 1
         if inc_header_in_row_count:
@@ -123,32 +126,38 @@ class Validator:
         return row
 
     def validate_fhir(
-        self, filepath, summarise=False, report_unexpected_exception=True, inc_header_in_row_count=True
+        self,
+        fhir_data: dict,
+        summarise: bool = False,
+        report_unexpected_exception: bool = True,
+        inc_header_in_row_count: bool = True,
     ) -> list[ErrorReport]:
         self.data_type = DataType.FHIR
-        self.filepath = filepath
+        self.fhir_data = fhir_data
         return self.run_validation(summarise, report_unexpected_exception, inc_header_in_row_count)
 
     def validate_csv(
-        self, filepath, summarise=False, report_unexpected_exception=True, inc_header_in_row_count=True
+        self,
+        filepath: str,
+        summarise: bool = False,
+        report_unexpected_exception: bool = True,
+        inc_header_in_row_count: bool = True,
     ) -> list[ErrorReport]:
         self.data_type = DataType.CSV
         self.filepath = filepath
         return self.run_validation(summarise, report_unexpected_exception, inc_header_in_row_count)
 
     def validate_csv_row(
-        self, csv_row, csv_header, summarise=False, report_unexpected_exception=True, inc_header_in_row_count=True
+        self,
+        csv_row: str,
+        csv_header: list[str],
+        summarise: bool = False,
+        report_unexpected_exception: bool = True,
+        inc_header_in_row_count: bool = True,
     ) -> list[ErrorReport]:
         self.data_type = DataType.CSVROW
         self.csv_row = csv_row
         self.csv_header = csv_header
-        return self.run_validation(summarise, report_unexpected_exception, inc_header_in_row_count)
-
-    def validate_fhir_json(
-        self, json_data, summarise=False, report_unexpected_exception=True, inc_header_in_row_count=True
-    ) -> list[ErrorReport]:
-        self.data_type = DataType.FHIRJSON
-        self.json_data = json_data
         return self.run_validation(summarise, report_unexpected_exception, inc_header_in_row_count)
 
     # run the validation against the data
@@ -160,10 +169,7 @@ class Validator:
 
             match self.data_type:
                 case DataType.FHIR:
-                    self.data_parser = self._get_fhir_parser(self.filepath)
-                    self.is_csv = False
-                case DataType.FHIRJSON:
-                    self.data_parser = self._get_fhir_json_parser(self.json_data)
+                    self.data_parser = self._get_fhir_parser(self.fhir_data)
                     self.is_csv = False
                 case DataType.CSV:
                     self.data_parser = self._get_csv_parser(self.filepath)

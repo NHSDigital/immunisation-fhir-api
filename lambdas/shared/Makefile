@@ -3,7 +3,7 @@ TEST_ENV := @PYTHONPATH=src:tests:src/common
 test:
 	$(TEST_ENV) python -m unittest discover -s tests -p "test_*.py" -v
 
-testv:
+test-validator:
 	$(TEST_ENV) python -m unittest discover -s tests/test_common/validator -p "test_*.py" -v
 
 test-list:
