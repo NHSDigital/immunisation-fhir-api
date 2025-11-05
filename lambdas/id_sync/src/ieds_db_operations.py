@@ -104,7 +104,7 @@ def paginate_items_for_patient_pk(patient_pk: str) -> list:
             break
 
     if not all_items:
-        logger.warning("No items found for patient PK: %s", patient_pk)
+        logger.info("No items found for patient PK in VEDS database")
         return []
 
     return all_items
