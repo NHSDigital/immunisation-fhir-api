@@ -211,7 +211,7 @@ class Validator:
         return self.error_records
 
     # Build the error Report
-    def build_error_report(self, event_id):
+    def build_error_report(self, event_id: str) -> dict:
         occurrence_date_time = self.data_parser.get_fhir_value("occurrenceDateTime")
         dq_reporter = DQReporter()
         dq_report = dq_reporter.generate_error_report(event_id, occurrence_date_time, self.error_records)
@@ -219,7 +219,7 @@ class Validator:
         return dq_report
 
     # Check all errors to see if we have a critical error that would fail the validation
-    def has_validation_failed(self):
+    def has_validation_failed(self) -> bool:
         for error_record in self.error_records:
             if error_record.error_level == ErrorLevels.CRITICAL_ERROR:
                 return True

@@ -8,7 +8,7 @@ import unittest
 
 from common.validator.parsers.csv_line_parser import CSVLineParser
 from test_common.validator.testing_utils.constants import CSV_HEADER, CSV_VALUES
-from test_common.validator.testing_utils.csv_utils import build_row
+from tests.test_common.validator.testing_utils.csv_fhir_utils import build_row
 
 
 class TestCSVLineParser(unittest.TestCase):

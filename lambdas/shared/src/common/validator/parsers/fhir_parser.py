@@ -1,14 +1,6 @@
-import json
-
-
 class FHIRParser:
     def __init__(self):
         self.fhir_resources = {}
-
-    # This opens a file with FHIR resource data
-    def parse_fhir_file(self, fhir_file_name: str) -> None:
-        with open(fhir_file_name) as json_file:
-            self.fhir_resources = json.load(json_file)
 
     # This is used to parse FHIR data events passed in as a dictionary
     def parse_fhir_data(self, fhir_data: dict) -> None:

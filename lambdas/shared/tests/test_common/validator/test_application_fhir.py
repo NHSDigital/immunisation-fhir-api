@@ -1,10 +1,10 @@
 # Test application file
-import json
 import time
 import unittest
 from pathlib import Path
 
 from common.validator.validator import Validator
+from tests.test_common.validator.testing_utils.csv_fhir_utils import parse_test_file
 
 # TODO this needs success and fail cases
 
@@ -20,11 +20,9 @@ class TestApplication(unittest.TestCase):
         start = time.time()
 
         # get the JSON of the schema, changed to cope with elasticache
-        with open(self.schemaFilePath) as JSON:
-            SchemaFile = json.load(JSON)
+        SchemaFile = parse_test_file(self.schemaFilePath)
 
-        with open(self.FHIRFilePath) as json_file:
-            self.fhir_resources = json.load(json_file)
+        self.fhir_resources = parse_test_file(self.FHIRFilePath)
 
         validator = Validator(SchemaFile)  # FHIR File Path not needed
         print(f"FHIR Resources Loaded: {len(self.fhir_resources.get('entry', []))} entries")

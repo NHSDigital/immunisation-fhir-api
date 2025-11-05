@@ -10,69 +10,73 @@ from common.validator.record_error import ErrorReport, RecordError
 
 
 class ExpressionChecker:
-    """ """
+    """
+    Validates FHIR and CSV data fields against the expressions defined in the schema
+    """
 
-    def __init__(self, data_parser, summarise, report_unexpected_exception):
+    def __init__(self, data_parser, summarise: bool, report_unexpected_exception: bool):
         self.data_parser = data_parser  # FHIR data parser for additional functions
-        self.data_look_up = LookUpData()  # used for generic look up
-        self.key_data = KeyData()  # used for key check on data we know (Snomed / ODS etc)
+        self.data_look_up = LookUpData()
+        self.key_data = KeyData()
         self.summarise = summarise
         self.report_unexpected_exception = report_unexpected_exception
 
-    def validate_expression(self, expression_type: str, rule, field_name, field_value, row) -> ErrorReport:
+    def validate_expression(
+        self, expression_type: str, expression_rule: str, field_name: str, field_value: str, row: dict
+    ) -> ErrorReport:
         match expression_type:
             case "DATETIME":
-                return self._validate_datetime(rule, field_name, field_value, row)
+                return self._validate_datetime(expression_rule, field_name, field_value, row)
             case "DATE":
-                return self._validate_datetime(rule, field_name, field_value, row)
+                return self._validate_datetime(expression_rule, field_name, field_value, row)
             case "UUID":
-                return self._validate_uuid(rule, field_name, field_value, row)
+                return self._validate_uuid(expression_rule, field_name, field_value, row)
             case "INT":
-                return self._validate_integer(rule, field_name, field_value, row)
+                return self._validate_integer(expression_rule, field_name, field_value, row)
             case "FLOAT":
-                return self._validate_float(rule, field_name, field_value, row)
+                return self._validate_float(expression_rule, field_name, field_value, row)
             case "REGEX":
-                return self._validate_regex(rule, field_name, field_value, row)
+                return self._validate_regex(expression_rule, field_name, field_value, row)
             case "EQUAL":
-                return self._validate_equal(rule, field_name, field_value, row)
+                return self._validate_equal(expression_rule, field_name, field_value, row)
             case "NOTEQUAL":
-                return self._validate_not_equal(rule, field_name, field_value, row)
+                return self._validate_not_equal(expression_rule, field_name, field_value, row)
             case "IN":
-                return self._validate_in(rule, field_name, field_value, row)
+                return self._validate_in(expression_rule, field_name, field_value, row)
             case "NRANGE":
-                return self._validate_n_range(rule, field_name, field_value, row)
+                return self._validate_n_range(expression_rule, field_name, field_value, row)
             case "INARRAY":
-                return self._validate_in_array(rule, field_name, field_value, row)
+                return self._validate_in_array(expression_rule, field_name, field_value, row)
             case "UPPER":
-                return self._validate_upper(rule, field_name, field_value, row)
+                return self._validate_upper(expression_rule, field_name, field_value, row)
             case "LOWER":
-                return self._validate_lower(rule, field_name, field_value, row)
+                return self._validate_lower(expression_rule, field_name, field_value, row)
             case "LENGTH":
-                return self._validate_length(rule, field_name, field_value, row)
+                return self._validate_length(expression_rule, field_name, field_value, row)
             case "STARTSWITH":
-                return self._validate_starts_with(rule, field_name, field_value, row)
+                return self._validate_starts_with(expression_rule, field_name, field_value, row)
             case "ENDSWITH":
-                return self._validate_ends_with(rule, field_name, field_value, row)
+                return self._validate_ends_with(expression_rule, field_name, field_value, row)
             case "EMPTY":
-                return self._validate_empty(rule, field_name, field_value, row)
+                return self._validate_empty(expression_rule, field_name, field_value, row)
             case "NOTEMPTY":
-                return self._validate_not_empty(rule, field_name, field_value, row)
+                return self._validate_not_empty(expression_rule, field_name, field_value, row)
             case "POSITIVE":
-                return self._validate_positive(rule, field_name, field_value, row)
+                return self._validate_positive(expression_rule, field_name, field_value, row)
             case "POSTCODE":
-                return self._validate_post_code(rule, field_name, field_value, row)
+                return self._validate_post_code(expression_rule, field_name, field_value, row)
             case "GENDER":
-                return self._validate_gender(rule, field_name, field_value, row)
+                return self._validate_gender(expression_rule, field_name, field_value, row)
             case "NHSNUMBER":
-                return self._validate_nhs_number(rule, field_name, field_value, row)
+                return self._validate_nhs_number(expression_rule, field_name, field_value, row)
             case "MAXOBJECTS":
-                return self._validate_max_objects(rule, field_name, field_value, row)
+                return self._validate_max_objects(expression_rule, field_name, field_value, row)
             case "ONLYIF":
-                return self._validate_only_if(rule, field_name, field_value, row)
+                return self._validate_only_if(expression_rule, field_name, field_value, row)
             case "LOOKUP":
-                return self._validate_against_lookup(rule, field_name, field_value, row)
+                return self._validate_against_lookup(expression_rule, field_name, field_value, row)
             case "KEYCHECK":
-                return self._validate_against_key(rule, field_name, field_value, row)
+                return self._validate_against_key(expression_rule, field_name, field_value, row)
             case _:
                 return "Schema expression not found! Check your expression type : " + expression_type
 
@@ -93,7 +97,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # UUID validate
-    def _validate_uuid(self, _expression_rule, field_name, field_value, row) -> ErrorReport:
+    def _validate_uuid(self, _expression_rule: str, field_name: str, field_value: str, row: dict) -> ErrorReport:
         try:
             uuid.UUID(str(field_value))
         except RecordError as e:
@@ -108,7 +112,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # Integer Validate
-    def _validate_integer(self, expression_rule, field_name, field_value, row) -> ErrorReport:
+    def _validate_integer(self, expression_rule: str, field_name: str, field_value: str, row: dict) -> ErrorReport:
         try:
             int(field_value)
             if expression_rule:
@@ -136,7 +140,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     #  Float Validate
-    def _validate_float(self, _expression_rule, field_name, field_value, row) -> ErrorReport:
+    def _validate_float(self, _expression_rule: str, field_name: str, field_value: str, row: dict) -> ErrorReport:
         try:
             float(field_value)
         except RecordError as e:
@@ -151,7 +155,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # Length Validate
-    def _validate_length(self, expression_rule, field_name, field_value, row) -> ErrorReport:
+    def _validate_length(self, expression_rule: str, field_name: str, field_value: str, row: dict) -> ErrorReport:
         try:
             str_len = len(field_value)
             check_length = int(expression_rule)
@@ -171,7 +175,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # Regex Validate
-    def _validate_regex(self, expression_rule, field_name, field_value, row) -> ErrorReport:
+    def _validate_regex(self, expression_rule: str, field_name: str, field_value: str, row: dict) -> ErrorReport:
         try:
             result = re.search(expression_rule, field_value)
             if not result:
@@ -192,7 +196,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # Equal Validate
-    def _validate_equal(self, expression_rule, field_name, field_value, row) -> ErrorReport:
+    def _validate_equal(self, expression_rule: str, field_name: str, field_value: str, row: dict) -> ErrorReport:
         try:
             if field_value != expression_rule:
                 raise RecordError(
@@ -217,7 +221,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # Not Equal Validate
-    def _validate_not_equal(self, expression_rule, field_name, field_value, row) -> ErrorReport:
+    def _validate_not_equal(self, expression_rule: str, field_name: str, field_value: str, row: dict) -> ErrorReport:
         try:
             if field_value == expression_rule:
                 raise RecordError(
@@ -240,7 +244,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # In Validate
-    def _validate_in(self, expression_rule, field_name, field_value, row) -> ErrorReport:
+    def _validate_in(self, expression_rule: str, field_name: str, field_value: str, row: dict) -> ErrorReport:
         try:
             if expression_rule.lower() not in field_value.lower():
                 raise RecordError(
@@ -260,7 +264,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # NRange Validate
-    def _validate_n_range(self, expression_rule, field_name, field_value, row) -> ErrorReport:
+    def _validate_n_range(self, expression_rule: str, field_name: str, field_value: str, row: dict) -> ErrorReport:
         try:
             value = float(field_value)
             rule = expression_rule.split(",")
@@ -286,7 +290,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # InArray Validate
-    def _validate_in_array(self, expression_rule, field_name, field_value, row) -> ErrorReport:
+    def _validate_in_array(self, expression_rule: str, field_name: str, field_value: str, row: dict) -> ErrorReport:
         try:
             rule_list = expression_rule.split(",")
 
@@ -308,7 +312,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # Upper Validate
-    def _validate_upper(self, _expression_rule, field_name, field_value, row) -> ErrorReport:
+    def _validate_upper(self, _expression_rule: str, field_name: str, field_value: str, row: dict) -> ErrorReport:
         try:
             result = field_value.isupper()
 
@@ -330,7 +334,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     #  Lower Validate
-    def _validate_lower(self, _expression_rule, field_name, field_value, row) -> ErrorReport:
+    def _validate_lower(self, _expression_rule: str, field_name: str, field_value: str, row: dict) -> ErrorReport:
         try:
             result = field_value.islower()
 
@@ -352,7 +356,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # Starts With Validate
-    def _validate_starts_with(self, expression_rule, field_name, field_value, row) -> ErrorReport:
+    def _validate_starts_with(self, expression_rule: str, field_name: str, field_value: str, row: dict) -> ErrorReport:
         try:
             result = field_value.startswith(expression_rule)
             if not result:
@@ -378,7 +382,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # Ends With Validate
-    def _validate_ends_with(self, expression_rule, field_name, field_value, row) -> ErrorReport:
+    def _validate_ends_with(self, expression_rule: str, field_name: str, field_value: str, row: dict) -> ErrorReport:
         try:
             result = field_value.endswith(expression_rule)
             if not result:
@@ -404,7 +408,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # Empty Validate
-    def _validate_empty(self, _expression_rule, field_name, field_value, row) -> ErrorReport:
+    def _validate_empty(self, _expression_rule: str, field_name: str, field_value: str, row: dict) -> ErrorReport:
         try:
             if field_value:
                 raise RecordError(
@@ -424,7 +428,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # Not Empty Validate
-    def _validate_not_empty(self, _expression_rule, field_name, field_value, row) -> ErrorReport:
+    def _validate_not_empty(self, _expression_rule: str, field_name: str, field_value: str, row: dict) -> ErrorReport:
         try:
             if not field_value:
                 raise RecordError(
@@ -442,7 +446,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # Positive Validate
-    def _validate_positive(self, _expression_rule, field_name, field_value, row) -> ErrorReport:
+    def _validate_positive(self, _expression_rule: str, field_name: str, field_value: str, row: dict) -> ErrorReport:
         try:
             value = float(field_value)
             if value < 0:
@@ -463,7 +467,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # NHSNumber Validate
-    def _validate_nhs_number(self, _expression_rule, field_name, field_value, row) -> ErrorReport:
+    def _validate_nhs_number(self, _expression_rule: str, field_name: str, field_value: str, row: dict) -> ErrorReport:
         try:
             regex_rule = r"^6\d{10}$"
             result = re.search(regex_rule, field_value)
@@ -485,7 +489,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # Gender Validate
-    def _validate_gender(self, _expression_rule, field_name, field_value, row) -> ErrorReport:
+    def _validate_gender(self, _expression_rule: str, field_name: str, field_value: str, row: dict) -> ErrorReport:
         try:
             rule_list = ["0", "1", "2", "9"]
 
@@ -507,7 +511,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # PostCode Validate
-    def _validate_post_code(self, _expression_rule, field_name, field_value, row) -> ErrorReport:
+    def _validate_post_code(self, _expression_rule: str, field_name: str, field_value: str, row: dict) -> ErrorReport:
         try:
             # UK postcode regex (allows optional space)
             regex_rule = r"^[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}$"
@@ -528,7 +532,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # Max Objects Validate
-    def _validate_max_objects(self, expression_rule, field_name, field_value, row) -> ErrorReport:
+    def _validate_max_objects(self, expression_rule: str, field_name: str, field_value: str, row: dict) -> ErrorReport:
         try:
             value = len(field_value)
             if value > int(expression_rule):
@@ -549,7 +553,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # Default to Validate
-    def _validate_only_if(self, expression_rule, field_name, _field_value, row) -> ErrorReport:
+    def _validate_only_if(self, expression_rule: str, field_name: str, _field_value: str, row: dict) -> ErrorReport:
         try:
             conversion_list = expression_rule.split("|")
             location = conversion_list[0]
@@ -574,7 +578,9 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # Check with Lookup
-    def _validate_against_lookup(self, _expression_rule, field_name, field_value, row) -> ErrorReport:
+    def _validate_against_lookup(
+        self, _expression_rule: str, field_name: str, field_value: str, row: dict
+    ) -> ErrorReport:
         try:
             result = self.data_look_up.find_lookup(field_value)
             if not result:
@@ -600,7 +606,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # Check with Key Lookup
-    def _validate_against_key(self, expression_rule, field_name, field_value, row) -> ErrorReport:
+    def _validate_against_key(self, expression_rule: str, field_name: str, field_value: str, row: dict) -> ErrorReport:
         try:
             result = self.key_data.find_key(expression_rule, field_value)
             if not result:

@@ -1,11 +1,10 @@
 # Test application file
-import json
 import unittest
 from pathlib import Path
 
 from common.validator.validator import Validator
 from test_common.validator.testing_utils.constants import CSV_HEADER, CSV_VALUES
-from test_common.validator.testing_utils.csv_utils import build_row
+from tests.test_common.validator.testing_utils.csv_fhir_utils import build_row, parse_test_file
 
 schema_data_folder = Path(__file__).parent / "test_schemas"
 schemaFilePath = schema_data_folder / "test_schema.json"
@@ -17,9 +16,7 @@ class TestValidator(unittest.TestCase):
     """
 
     def setUp(self):
-        with open(schemaFilePath, encoding="utf-8") as file:
-            schema_file = json.load(file)
-        self.validator = Validator(schema_file)
+        self.validator = Validator(parse_test_file(schemaFilePath))
 
     def test_run_validation_on_valid_csv_row(self):
         valid_rows = build_row(CSV_HEADER, CSV_VALUES)
