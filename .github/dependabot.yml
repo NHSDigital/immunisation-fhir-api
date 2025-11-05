@@ -50,7 +50,7 @@ updates:
   - package-ecosystem: "pip"
     directories:
       - "/"
-      - "/backend"
+      - "/lambdas/backend"
       - "/lambdas/ack_backend"
       - "/lambdas/batch_processor_filter"
       - "/lambdas/delta_backend"

@@ -1,13 +1,8 @@
+# Define the directory containing the Docker image and calculate its SHA-256 hash for triggering redeployments
 locals {
-  lambda_dir    = abspath("${path.root}/../../backend")
-  source_path   = local.lambda_dir
-  path_include  = ["**"]
-  path_exclude  = ["**/__pycache__/**"]
-  files_include = setunion([for f in local.path_include : fileset(local.source_path, f)]...)
-  files_exclude = setunion([for f in local.path_exclude : fileset(local.source_path, f)]...)
-  files         = sort(setsubtract(local.files_include, local.files_exclude))
-
-  dir_sha = sha1(join("", [for f in local.files : filesha1("${local.source_path}/${f}")]))
+  lambda_dir     = abspath("${path.root}/../../lambdas/backend")
+  lambda_files   = fileset(local.lambda_dir, "**")
+  lambda_dir_sha = sha1(join("", [for f in local.lambda_files : filesha1("${local.lambda_dir}/${f}")]))
 }
 
 resource "aws_ecr_repository" "operation_lambda_repository" {
@@ -18,14 +13,14 @@ resource "aws_ecr_repository" "operation_lambda_repository" {
   force_delete = local.is_temp
 }
 
-#resource "docker_image" "lambda_function_docker" {
+# Module for building and pushing Docker image to ECR
 module "docker_image" {
   source  = "terraform-aws-modules/lambda/aws//modules/docker-build"
   version = "8.1.2"
 
   create_ecr_repo  = false
   ecr_repo         = "${local.prefix}-operation-lambda-repo"
-  docker_file_path = "lambda.Dockerfile"
+  docker_file_path = "./backend/Dockerfile"
   ecr_repo_lifecycle_policy = jsonencode({
     "rules" : [
       {
@@ -47,7 +42,8 @@ module "docker_image" {
   use_image_tag = false
   source_path   = local.lambda_dir
   triggers = {
-    dir_sha = local.dir_sha
+    dir_sha        = local.lambda_dir_sha
+    shared_dir_sha = local.shared_dir_sha
   }
 }
 

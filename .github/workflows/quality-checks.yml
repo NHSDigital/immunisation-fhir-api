@@ -100,13 +100,13 @@ jobs:
       - name: Run unittest with coverage-fhir-api
         working-directory: backend
         env:
-          PYTHONPATH: ${{ github.workspace }}/backend/src:${{ github.workspace }}/backend/tests
+          PYTHONPATH: ${{ env.LAMBDA_PATH }}/backend/src:${{ env.LAMBDA_PATH }}/backend/tests:${{ env.SHARED_PATH }}/src
         id: fhirapi
         continue-on-error: true
         run: |
           poetry install
-          poetry run coverage run --source=src -m unittest discover || echo "fhir-api tests failed" >> ../failed_tests.txt
-          poetry run coverage xml -o ../backend-coverage.xml
+          poetry run coverage run --source=src -m unittest discover || echo "fhir-api tests failed" >> ../../failed_tests.txt
+          poetry run coverage xml -o ../../backend-coverage.xml
 
       - name: Run unittest with coverage-ack-lambda
         working-directory: lambdas/ack_backend
