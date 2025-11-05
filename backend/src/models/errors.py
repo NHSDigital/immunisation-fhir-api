@@ -1,7 +1,7 @@
 import uuid
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Union
+from typing import Any
 
 
 class Severity(str, Enum):
@@ -120,7 +120,7 @@ class ResourceVersionNotProvided(RuntimeError):
 class UnhandledResponseError(RuntimeError):
     """Use this error when the response from an external service (ex: dynamodb) can't be handled"""
 
-    response: Union[dict, str]
+    response: dict | str
     message: str
 
     def __str__(self):
