@@ -1,16 +1,12 @@
 """Utils for backend folder"""
 
-import json
-
 from clients import redis_client
 from constants import Urls
 from models.constants import Constants
-from models.errors import MandatoryError
+from models.errors import InconsistentIdentifierError, InconsistentResourceVersion, MandatoryError
 from models.field_names import FieldNames
 from models.obtain_field_value import ObtainFieldValue
 from models.utils.base_utils import obtain_field_location
-
-from .generic_utils import create_diagnostics_error
 
 
 def get_target_disease_codes(immunization: dict):
@@ -84,25 +80,45 @@ def get_vaccine_type(immunization: dict):
     return convert_disease_codes_to_vaccine_type(target_diseases)
 
 
-def check_identifier_system_value(response, imms: dict):
-    """Returns diagnostics if identifier's system and value does not match with the stored content"""
+def validate_identifiers_match(new_immunization: dict, existing_immunization: dict) -> None:
+    """Checks if the local identifier system and values match for an existing and new immunization record. Raises an
+    InconsistentIdentifierError if there is a mismatch. Use this function in the Update Imms journey"""
 
-    identifier_system_request = imms["identifier"][0]["system"]
-    identifier_value_request = imms["identifier"][0]["value"]
-    resource_str = response["Item"]["Resource"]
-    resource = json.loads(resource_str)
-    identifier_system_response = resource["identifier"][0]["system"]
-    identifier_value_response = resource["identifier"][0]["value"]
+    new_system = new_immunization["identifier"][0]["system"]
+    new_value = new_immunization["identifier"][0]["value"]
+    existing_system = existing_immunization["identifier"][0]["system"]
+    existing_value = existing_immunization["identifier"][0]["value"]
 
-    if identifier_system_request != identifier_system_response and identifier_value_request != identifier_value_response:
-        value = "Both"
-        diagnostics_error = create_diagnostics_error(value)
-        return diagnostics_error
-    if identifier_system_request != identifier_system_response:
-        value = "system"
-        diagnostics_error = create_diagnostics_error(value)
-        return diagnostics_error
-    if identifier_value_request != identifier_value_response:
-        value = "value"
-        diagnostics_error = create_diagnostics_error(value)
-        return diagnostics_error
+    if new_system != existing_system and new_value != existing_value:
+        raise InconsistentIdentifierError(
+            "Validation errors: identifier[0].system and identifier[0].value doesn't match with the stored content"
+        )
+
+    if new_system != existing_system:
+        raise InconsistentIdentifierError(
+            "Validation errors: identifier[0].system doesn't match with the stored content"
+        )
+
+    if new_value != existing_value:
+        raise InconsistentIdentifierError("Validation errors: identifier[0].value doesn't match with the stored content")
+
+    return None
+
+
+def validate_resource_versions_match(
+    resource_version_in_request: int, actual_resource_version: int, imms_id: str
+) -> None:
+    """Checks if the resource version in the request and the resource version of the actual Immunization record matches.
+    Raises a InconsistentResourceVersion if they do not match."""
+    if actual_resource_version > resource_version_in_request:
+        raise InconsistentResourceVersion(
+            f"Validation errors: The requested immunization resource {imms_id} has changed since the last retrieve."
+        )
+
+    if actual_resource_version < resource_version_in_request:
+        raise InconsistentResourceVersion(
+            f"Validation errors: The requested immunization resource {imms_id} version is inconsistent with the "
+            f"existing version."
+        )
+
+    return None

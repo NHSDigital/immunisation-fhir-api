@@ -4,8 +4,8 @@ from typing import Optional
 
 from aws_lambda_typing.events import APIGatewayProxyEventV1
 
-from controller.constants import SUPPLIER_SYSTEM_HEADER_NAME
-from models.errors import UnauthorizedError
+from controller.constants import E_TAG_HEADER_NAME, SUPPLIER_SYSTEM_HEADER_NAME
+from models.errors import ResourceVersionNotProvided, UnauthorizedError
 from utils import dict_utils
 
 
@@ -14,7 +14,7 @@ def get_path_parameter(event: APIGatewayProxyEventV1, param_name: str) -> str:
 
 
 def get_supplier_system_header(event: APIGatewayProxyEventV1) -> str:
-    """Retrieves the supplier system header from the API Gateway event"""
+    """Retrieves the supplier system header from the API Gateway event. Raises an Unauthorized error if not present."""
     supplier_system: Optional[str] = dict_utils.get_field(dict(event), "headers", SUPPLIER_SYSTEM_HEADER_NAME)
 
     if supplier_system is None:
@@ -22,3 +22,14 @@ def get_supplier_system_header(event: APIGatewayProxyEventV1) -> str:
         raise UnauthorizedError()
 
     return supplier_system
+
+
+def get_resource_version_header(event: APIGatewayProxyEventV1) -> str:
+    """Retrieves the resource version header from the API Gateway event. Raises a ResourceVersionNotProvided if not
+    present."""
+    resource_version_header: Optional[str] = dict_utils.get_field(dict(event), "headers", E_TAG_HEADER_NAME)
+
+    if resource_version_header is None:
+        raise ResourceVersionNotProvided(resource_type="Immunization")
+
+    return resource_version_header
