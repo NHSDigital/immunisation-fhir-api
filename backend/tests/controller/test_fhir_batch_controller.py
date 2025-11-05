@@ -11,7 +11,7 @@ from models.errors import (
 )
 from repository.fhir_batch_repository import ImmunizationBatchRepository
 from service.fhir_batch_service import ImmunizationBatchService
-from testing_utils.immunization_utils import create_covid_19_immunization
+from testing_utils.immunization_utils import create_covid_immunization
 
 
 class TestCreateImmunizationBatchController(unittest.TestCase):
@@ -25,7 +25,7 @@ class TestCreateImmunizationBatchController(unittest.TestCase):
         """it should create Immunization and return imms id location"""
 
         imms_id = str(uuid.uuid4())
-        imms = create_covid_19_immunization(imms_id)
+        imms = create_covid_immunization(imms_id)
         message_body = {
             "supplier": "test_supplier",
             "fhir_json": imms.json(),
@@ -50,7 +50,7 @@ class TestCreateImmunizationBatchController(unittest.TestCase):
         """it should return error since it got failed in initial validation"""
 
         imms_id = str(uuid.uuid4())
-        imms = create_covid_19_immunization(imms_id)
+        imms = create_covid_immunization(imms_id)
         create_result = CustomValidationError(
             message="Validation errors: contained[?(@.resourceType=='Patient')].identifier[0].value does not exists"
         )
@@ -79,7 +79,7 @@ class TestCreateImmunizationBatchController(unittest.TestCase):
         """it should not create the Immunization since its a duplicate record"""
 
         imms_id = str(uuid.uuid4())
-        imms = create_covid_19_immunization(imms_id)
+        imms = create_covid_immunization(imms_id)
         create_result = IdentifierDuplicationError(identifier="test#123")
         message_body = {
             "supplier": "test_supplier",
@@ -105,7 +105,7 @@ class TestCreateImmunizationBatchController(unittest.TestCase):
         """it should not create the Immunization since the error occoured in db"""
 
         imms_id = str(uuid.uuid4())
-        imms = create_covid_19_immunization(imms_id)
+        imms = create_covid_immunization(imms_id)
         update_result = UnhandledResponseError(response="Non-200 response from dynamodb", message="connection timeout")
         message_body = {
             "supplier": "test_supplier",
@@ -141,7 +141,7 @@ class TestUpdateImmunizationBatchController(unittest.TestCase):
         """it should update Immunization and return imms id"""
 
         imms_id = str(uuid.uuid4())
-        imms = create_covid_19_immunization(imms_id)
+        imms = create_covid_immunization(imms_id)
         message_body = {
             "supplier": "test_supplier",
             "fhir_json": imms.json(),
@@ -166,7 +166,7 @@ class TestUpdateImmunizationBatchController(unittest.TestCase):
         """it should return error since it got failed in initial validation"""
 
         imms_id = str(uuid.uuid4())
-        imms = create_covid_19_immunization(imms_id)
+        imms = create_covid_immunization(imms_id)
         update_result = CustomValidationError(
             message="Validation errors: contained[?(@.resourceType=='Patient')].identifier[0].value does not exists"
         )
@@ -194,7 +194,7 @@ class TestUpdateImmunizationBatchController(unittest.TestCase):
         """it should not update the Immunization since no resource found for the record"""
 
         imms_id = str(uuid.uuid4())
-        imms = create_covid_19_immunization(imms_id)
+        imms = create_covid_immunization(imms_id)
         update_result = ResourceNotFoundError("Immunization", "test#123")
         message_body = {
             "supplier": "test_supplier",
@@ -220,7 +220,7 @@ class TestUpdateImmunizationBatchController(unittest.TestCase):
         """it should not update the Immunization since the error occoured in db"""
 
         imms_id = str(uuid.uuid4())
-        imms = create_covid_19_immunization(imms_id)
+        imms = create_covid_immunization(imms_id)
         update_result = UnhandledResponseError(response="Non-200 response from dynamodb", message="connection timeout")
         message_body = {
             "supplier": "test_supplier",
@@ -256,7 +256,7 @@ class TestDeleteImmunizationBatchController(unittest.TestCase):
         """it should delete Immunization and return imms id"""
 
         imms_id = str(uuid.uuid4())
-        imms = create_covid_19_immunization(imms_id)
+        imms = create_covid_immunization(imms_id)
         message_body = {
             "supplier": "test_supplier",
             "fhir_json": imms.json(),
@@ -281,7 +281,7 @@ class TestDeleteImmunizationBatchController(unittest.TestCase):
         """it should return error since it got failed in initial validation"""
 
         imms_id = str(uuid.uuid4())
-        imms = create_covid_19_immunization(imms_id)
+        imms = create_covid_immunization(imms_id)
         update_result = CustomValidationError(
             message="Validation errors: contained[?(@.resourceType=='Patient')].identifier[0].value does not exists"
         )
@@ -309,7 +309,7 @@ class TestDeleteImmunizationBatchController(unittest.TestCase):
         """it should not delete the Immunization since no resource found for the record"""
 
         imms_id = str(uuid.uuid4())
-        imms = create_covid_19_immunization(imms_id)
+        imms = create_covid_immunization(imms_id)
         update_result = ResourceNotFoundError("Immunization", "test#123")
         message_body = {
             "supplier": "test_supplier",
@@ -335,7 +335,7 @@ class TestDeleteImmunizationBatchController(unittest.TestCase):
         """it should not delete the Immunization since the error occoured in db"""
 
         imms_id = str(uuid.uuid4())
-        imms = create_covid_19_immunization(imms_id)
+        imms = create_covid_immunization(imms_id)
         update_result = UnhandledResponseError(response="Non-200 response from dynamodb", message="connection timeout")
         message_body = {
             "supplier": "test_supplier",

@@ -13,7 +13,7 @@ class TestFormJson(unittest.TestCase):
         self.baseurl = "https://api.service.nhs.uk/immunisation-fhir-api/Immunization"
         self.identifier = "https://supplierABC/identifiers/vacc|f10b59b3-fc73-4616-99c9-9e882ab31184"
         self.response = {
-            "resource": load_json_data("completed_covid19_immunization_event.json"),
+            "resource": load_json_data("completed_covid_immunization_event.json"),
             "id": "f10b59b3-fc73-4616-99c9-9e882ab31184",
             "version": "2",
         }

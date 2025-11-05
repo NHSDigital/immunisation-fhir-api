@@ -32,7 +32,7 @@ from models.errors import (
 from models.utils.generic_utils import check_keys_in_sources
 from parameter_parser import create_query_string, process_params, process_search_params
 from repository.fhir_repository import ImmunizationRepository, create_table
-from service.fhir_service import FhirService, UpdateOutcome, get_service_url
+from service.fhir_service import FhirService, get_service_url
 
 IMMUNIZATION_ENV = os.getenv("IMMUNIZATION_ENV")
 
@@ -297,7 +297,7 @@ class FhirController:
                     diagnostics=resource["diagnostics"],
                 )
                 return create_response(400, json.dumps(exp_error))
-            if outcome == UpdateOutcome.UPDATE:
+            if outcome:
                 return create_response(
                     200, None, {"E-Tag": updated_version}
                 )  # include e-tag here, is it not included in the response resource

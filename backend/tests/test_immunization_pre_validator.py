@@ -36,7 +36,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
 
     def setUp(self):
         """Set up for each test. This runs before every test"""
-        self.json_data = load_json_data(filename="completed_covid19_immunization_event.json")
+        self.json_data = load_json_data(filename="completed_covid_immunization_event.json")
         self.validator = ImmunizationValidator(add_post_validators=False)
         self.redis_patcher = patch("models.utils.validation_utils.redis_client")
         self.mock_redis_client = self.redis_patcher.start()
@@ -809,7 +809,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
 
     def test_pre_validate_missing_valueCodeableConcept3(self):
         # Test case: valid data (should not raise an exception)
-        self.mock_redis_client.hget.return_value = "COVID19"
+        self.mock_redis_client.hget.return_value = "COVID"
         valid_json_data = deepcopy(self.json_data)
         try:
             self.validator.validate(valid_json_data)
@@ -1188,7 +1188,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
                 "6142004",
                 "240532009",
             ],
-            valid_json_data=load_json_data(filename="completed_covid19_immunization_event.json"),
+            valid_json_data=load_json_data(filename="completed_covid_immunization_event.json"),
         )
 
         # Test data with multiple disease_type_coding_codes
