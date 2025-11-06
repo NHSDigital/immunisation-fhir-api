@@ -3,16 +3,16 @@ from copy import deepcopy
 
 from jsonpath_ng.ext import parse
 
-from models.errors import InconsistentIdentifierError, InconsistentResourceVersion
-from models.fhir_immunization import ImmunizationValidator
-from models.obtain_field_value import ObtainFieldValue
-from models.utils.generic_utils import (
+from common.models.errors import InconsistentIdentifierError, InconsistentResourceVersion
+from common.models.fhir_immunization import ImmunizationValidator
+from common.models.obtain_field_value import ObtainFieldValue
+from common.models.utils.generic_utils import (
     get_current_name_instance,
     obtain_current_name_period,
     obtain_name_field_location,
     patient_and_practitioner_value_and_index,
 )
-from models.utils.validation_utils import validate_identifiers_match, validate_resource_versions_match
+from common.models.utils.validation_utils import validate_identifiers_match, validate_resource_versions_match
 from testing_utils.generic_utils import (
     load_json_data,
 )

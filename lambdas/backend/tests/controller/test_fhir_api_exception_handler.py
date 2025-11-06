@@ -3,7 +3,7 @@ import unittest
 from unittest.mock import patch
 
 from controller.fhir_api_exception_handler import fhir_api_exception_handler
-from models.errors import (
+from common.models.errors import (
     CustomValidationError,
     IdentifierDuplicationError,
     InconsistentIdentifierError,

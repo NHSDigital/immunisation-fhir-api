@@ -8,12 +8,12 @@ import simplejson as json
 from boto3.dynamodb.conditions import Attr, Key
 from fhir.resources.R4B.immunization import Immunization
 
-from models.errors import (
+from common.models.errors import (
     ResourceNotFoundError,
     UnhandledResponseError,
 )
-from models.immunization_record_metadata import ImmunizationRecordMetadata
-from models.utils.validation_utils import get_vaccine_type
+from common.models.immunization_record_metadata import ImmunizationRecordMetadata
+from common.models.utils.validation_utils import get_vaccine_type
 from repository.fhir_repository import ImmunizationRepository
 from testing_utils.generic_utils import update_target_disease_code
 from testing_utils.immunization_utils import VALID_NHS_NUMBER, create_covid_immunization_dict
@@ -32,8 +32,9 @@ class TestFhirRepositoryBase(unittest.TestCase):
 
     def setUp(self):
         super().setUp()
-        self.redis_patcher = patch("models.utils.validation_utils.redis_client")
-        self.mock_redis_client = self.redis_patcher.start()
+        self.mock_redis = Mock()
+        self.redis_getter_patcher = patch("common.models.utils.validation_utils.get_redis_client")
+        self.mock_redis_getter = self.redis_getter_patcher.start()
         self.logger_info_patcher = patch("logging.Logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
 
@@ -252,7 +253,8 @@ class TestCreateImmunizationMainIndex(TestFhirRepositoryBase):
         imms = Immunization.parse_obj(create_covid_immunization_dict(imms_id=self._MOCK_CREATED_UUID))
 
         self.table.put_item = MagicMock(return_value={"ResponseMetadata": {"HTTPStatusCode": 200}})
-        self.mock_redis_client.hget.return_value = "COVID"
+        self.mock_redis.hget.return_value = "COVID"
+        self.mock_redis_getter.return_value = self.mock_redis
 
         created_id = self.repository.create_immunization(imms, "Test")
 

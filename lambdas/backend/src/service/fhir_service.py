@@ -22,20 +22,20 @@ import parameter_parser
 from authorisation.api_operation_code import ApiOperationCode
 from authorisation.authoriser import Authoriser
 from filter import Filter
-from models.errors import (
+from common.models.errors import (
     CustomValidationError,
     IdentifierDuplicationError,
     MandatoryError,
     ResourceNotFoundError,
     UnauthorizedVaxError,
 )
-from models.fhir_immunization import ImmunizationValidator
-from models.utils.generic_utils import (
+from common.models.fhir_immunization import ImmunizationValidator
+from common.models.utils.generic_utils import (
     form_json,
     get_contained_patient,
     get_occurrence_datetime,
 )
-from models.utils.validation_utils import get_vaccine_type, validate_identifiers_match, validate_resource_versions_match
+from common.models.utils.validation_utils import get_vaccine_type, validate_identifiers_match, validate_resource_versions_match
 from repository.fhir_repository import ImmunizationRepository
 
 logging.basicConfig(level="INFO")

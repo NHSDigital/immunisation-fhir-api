@@ -12,7 +12,7 @@ from fhir.resources.R4B.immunization import Immunization
 
 from controller.aws_apig_response_utils import create_response
 from controller.fhir_controller import FhirController
-from models.errors import (
+from common.models.errors import (
     CustomValidationError,
     ParameterException,
     ResourceNotFoundError,
@@ -31,13 +31,14 @@ class TestFhirControllerBase(unittest.TestCase):
 
     def setUp(self):
         super().setUp()
-        self.redis_patcher = patch("parameter_parser.redis_client")
-        self.mock_redis_client = self.redis_patcher.start()
+        self.mock_redis = Mock()
+        self.redis_getter_patcher = patch("parameter_parser.get_redis_client")
+        self.mock_redis_getter = self.redis_getter_patcher.start()
         self.logger_info_patcher = patch("logging.Logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
 
     def tearDown(self):
-        self.redis_patcher.stop()
+        self.redis_getter_patcher.stop()
         self.logger_info_patcher.stop()
         super().tearDown()
 
@@ -1270,7 +1271,8 @@ class TestSearchImmunizations(TestFhirControllerBase):
         self.date_to_key = "-date.to"
         self.nhs_number_valid_value = "9000000009"
         self.patient_identifier_valid_value = f"{patient_identifier_system}|{self.nhs_number_valid_value}"
-        self.mock_redis_client.hkeys.return_value = self.MOCK_REDIS_V2D_HKEYS
+        self.mock_redis.hkeys.return_value = self.MOCK_REDIS_V2D_HKEYS
+        self.mock_redis_getter.return_value = self.mock_redis
 
     def test_get_search_immunizations(self):
         """it should search based on patient_identifier and immunization_target"""
@@ -1537,7 +1539,8 @@ class TestSearchImmunizations(TestFhirControllerBase):
 
     @patch("controller.fhir_controller.process_search_params", wraps=process_search_params)
     def test_uses_parameter_parser(self, process_search_params: Mock):
-        self.mock_redis_client.hkeys.return_value = self.MOCK_REDIS_V2D_HKEYS
+        self.mock_redis.hkeys.return_value = self.MOCK_REDIS_V2D_HKEYS
+        self.mock_redis_getter.return_value = self.mock_redis
         lambda_event = {
             "multiValueQueryStringParameters": {
                 self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],

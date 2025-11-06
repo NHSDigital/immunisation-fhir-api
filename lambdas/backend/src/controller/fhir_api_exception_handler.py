@@ -7,7 +7,7 @@ from typing import Callable, Type
 from clients import logger
 from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
 from controller.aws_apig_response_utils import create_response
-from models.errors import (
+from common.models.errors import (
     Code,
     CustomValidationError,
     IdentifierDuplicationError,

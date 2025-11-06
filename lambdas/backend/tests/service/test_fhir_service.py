@@ -14,7 +14,7 @@ from fhir.resources.R4B.immunization import Immunization
 from authorisation.api_operation_code import ApiOperationCode
 from authorisation.authoriser import Authoriser
 from constants import NHS_NUMBER_USED_IN_SAMPLE_DATA
-from models.errors import (
+from common.models.errors import (
     CustomValidationError,
     IdentifierDuplicationError,
     InconsistentIdentifierError,
@@ -22,8 +22,8 @@ from models.errors import (
     ResourceNotFoundError,
     UnauthorizedVaxError,
 )
-from models.fhir_immunization import ImmunizationValidator
-from models.immunization_record_metadata import ImmunizationRecordMetadata
+from common.models.fhir_immunization import ImmunizationValidator
+from common.models.immunization_record_metadata import ImmunizationRecordMetadata
 from repository.fhir_repository import ImmunizationRepository
 from service.fhir_service import FhirService, get_service_url
 from testing_utils.generic_utils import load_json_data
@@ -40,8 +40,9 @@ class TestFhirServiceBase(unittest.TestCase):
 
     def setUp(self):
         super().setUp()
-        self.redis_patcher = patch("models.utils.validation_utils.redis_client")
-        self.mock_redis_client = self.redis_patcher.start()
+        self.mock_redis = Mock()
+        self.redis_getter_patcher = patch("common.models.utils.validation_utils.get_redis_client")
+        self.mock_redis_getter = self.redis_getter_patcher.start()
         self.logger_info_patcher = patch("logging.Logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
 
@@ -99,7 +100,8 @@ class TestGetImmunization(TestFhirServiceBase):
     def test_get_immunization_by_id(self):
         """it should find an Immunization by id"""
         imms_id = "an-id"
-        self.mock_redis_client.hget.return_value = "COVID"
+        self.mock_redis.hget.return_value = "COVID"
+        self.mock_redis_getter.return_value = self.mock_redis
         self.authoriser.authorise.return_value = True
         self.imms_repo.get_immunization_and_resource_meta_by_id.return_value = (
             create_covid_immunization(imms_id).dict(),
@@ -140,7 +142,8 @@ class TestGetImmunization(TestFhirServiceBase):
         imms_id = "non_restricted_id"
 
         immunization_data = load_json_data("completed_covid_immunization_event.json")
-        self.mock_redis_client.hget.return_value = "COVID"
+        self.mock_redis.hget.return_value = "COVID"
+        self.mock_redis_getter.return_value = self.mock_redis
         self.authoriser.authorise.return_value = True
         self.imms_repo.get_immunization_and_resource_meta_by_id.return_value = (
             immunization_data,
@@ -162,7 +165,8 @@ class TestGetImmunization(TestFhirServiceBase):
     def test_unauthorised_error_raised_when_user_lacks_permissions(self):
         """it should throw an exception when user lacks permissions"""
         imms_id = "an-id"
-        self.mock_redis_client.hget.return_value = "COVID"
+        self.mock_redis.hget.return_value = "COVID"
+        self.mock_redis_getter.return_value = self.mock_redis
         self.authoriser.authorise.return_value = False
         self.imms_repo.get_immunization_and_resource_meta_by_id.return_value = (
             create_covid_immunization(imms_id).dict(),
@@ -288,7 +292,8 @@ class TestCreateImmunization(TestFhirServiceBase):
 
     def test_create_immunization(self):
         """it should create Immunization and validate it"""
-        self.mock_redis_client.hget.return_value = "COVID"
+        self.mock_redis.hget.return_value = "COVID"
+        self.mock_redis_getter.return_value = self.mock_redis
         self.authoriser.authorise.return_value = True
         self.imms_repo.check_immunization_identifier_exists.return_value = False
         self.imms_repo.create_immunization.return_value = self._MOCK_NEW_UUID
@@ -338,7 +343,8 @@ class TestCreateImmunization(TestFhirServiceBase):
 
     def test_post_validation_failed_create_invalid_target_disease(self):
         """it should raise CustomValidationError for invalid target disease code on create"""
-        self.mock_redis_client.hget.return_value = None
+        self.mock_redis.hget.return_value = None
+        self.mock_redis_getter.return_value = self.mock_redis
         valid_imms = create_covid_immunization_dict_no_id(VALID_NHS_NUMBER)
 
         bad_target_disease_imms = deepcopy(valid_imms)
@@ -358,7 +364,8 @@ class TestCreateImmunization(TestFhirServiceBase):
 
     def test_post_validation_failed_create_missing_patient_name(self):
         """it should raise CustomValidationError for missing patient name on create"""
-        self.mock_redis_client.hget.return_value = "COVID"
+        self.mock_redis.hget.return_value = "COVID"
+        self.mock_redis_getter.return_value = self.mock_redis
         valid_imms = create_covid_immunization_dict_no_id(VALID_NHS_NUMBER)
 
         bad_patient_name_imms = deepcopy(valid_imms)
@@ -391,7 +398,8 @@ class TestCreateImmunization(TestFhirServiceBase):
 
     def test_unauthorised_error_raised_when_user_lacks_permissions(self):
         """it should raise error when user lacks permissions"""
-        self.mock_redis_client.hget.return_value = "COVID"
+        self.mock_redis.hget.return_value = "COVID"
+        self.mock_redis_getter.return_value = self.mock_redis
         self.authoriser.authorise.return_value = False
         self.imms_repo.create_immunization.return_value = create_covid_immunization_dict_no_id()
 
@@ -409,7 +417,8 @@ class TestCreateImmunization(TestFhirServiceBase):
 
     def test_raises_duplicate_error_if_identifier_already_exits(self):
         """it should raise a duplicate error if the immunisation identifier (system + local ID) already exists"""
-        self.mock_redis_client.hget.return_value = "COVID"
+        self.mock_redis.hget.return_value = "COVID"
+        self.mock_redis_getter.return_value = self.mock_redis
         self.authoriser.authorise.return_value = True
         self.imms_repo.check_immunization_identifier_exists.return_value = True
 
@@ -441,7 +450,8 @@ class TestUpdateImmunization(TestFhirServiceBase):
         self.authoriser = create_autospec(Authoriser)
         self.imms_repo = create_autospec(ImmunizationRepository)
         self.fhir_service = FhirService(self.imms_repo, self.authoriser)
-        self.mock_redis_client.hget.return_value = "COVID"
+        self.mock_redis.hget.return_value = "COVID"
+        self.mock_redis_getter.return_value = self.mock_redis
 
     def test_update_immunization(self):
         """it should update Immunization and validate NHS number"""
@@ -588,7 +598,8 @@ class TestDeleteImmunization(TestFhirServiceBase):
     def test_delete_immunization(self):
         """it should delete Immunization record"""
         imms = json.loads(create_covid_immunization(self.TEST_IMMUNISATION_ID).json())
-        self.mock_redis_client.hget.return_value = "COVID"
+        self.mock_redis.hget.return_value = "COVID"
+        self.mock_redis_getter.return_value = self.mock_redis
         self.authoriser.authorise.return_value = True
         self.imms_repo.get_immunization_and_resource_meta_by_id.return_value = (
             imms,
@@ -621,7 +632,8 @@ class TestDeleteImmunization(TestFhirServiceBase):
     ):
         """it should raise an UnauthorizedVaxError when the client does not have permissions for the given vacc type"""
         imms = json.loads(create_covid_immunization(self.TEST_IMMUNISATION_ID).json())
-        self.mock_redis_client.hget.return_value = "FLU"
+        self.mock_redis.hget.return_value = "FLU"
+        self.mock_redis_getter.return_value = self.mock_redis
         self.authoriser.authorise.return_value = False
         self.imms_repo.get_immunization_and_resource_meta_by_id.return_value = (
             imms,
