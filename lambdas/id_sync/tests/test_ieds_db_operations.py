@@ -331,31 +331,23 @@ class TestUpdatePatientIdInIEDS(TestIedsDbOperations):
 
         # Mock items to update
         mock_items = [
-            {"PK": "Patient#old-patient-123", "PatientPK": "Patient#old-patient-123"},
-            {
-                "PK": "Patient#old-patient-123#record1",
-                "PatientPK": "Patient#old-patient-123",
-            },
+            {"PK": "Immunization#old-patient-123", "PatientPK": "Patient#old-patient-123"},
+            {"PK": "Patient#old-patient-123#record1", "PatientPK": "Patient#old-patient-123"},
         ]
-        self.mock_get_items_from_patient_id.return_value = mock_items
 
         # Mock successful transact_write_items response
         mock_transact_response = {"ResponseMetadata": {"HTTPStatusCode": 200}}
         self.mock_dynamodb_client_patcher.transact_write_items.return_value = mock_transact_response
 
         # Act
-        result = ieds_db_operations.ieds_update_patient_id(old_id, new_id)
+        result = ieds_db_operations.ieds_update_patient_id(old_id, new_id, mock_items)
 
         # Assert - Update expected message to match actual implementation
         expected_result = {
             "status": "success",
-            "message": f"IEDS update, patient ID: {old_id}=>{new_id}. {len(mock_items)} updated 1.",
+            "message": f"IEDS update. {len(mock_items)} item(s) updated in 1 batch(es).",
         }
-        expected_result["nhs_number"] = old_id
         self.assertEqual(result, expected_result)
-
-        # Verify get_items_from_patient_id was called
-        self.mock_get_items_from_patient_id.assert_called_once_with(old_id)
 
         # Verify transact_write_items was called
         self.mock_dynamodb_client_patcher.transact_write_items.assert_called_once()
@@ -368,21 +360,19 @@ class TestUpdatePatientIdInIEDS(TestIedsDbOperations):
 
         # Mock items to update
         mock_items = [{"PK": "Patient#old-patient-123", "PatientPK": "Patient#old-patient-123"}]
-        self.mock_get_items_from_patient_id.return_value = mock_items
 
         # Mock failed transact_write_items response (not update_item)
         mock_transact_response = {"ResponseMetadata": {"HTTPStatusCode": 400}}
         self.mock_dynamodb_client_patcher.transact_write_items.return_value = mock_transact_response
 
         # Act
-        result = ieds_db_operations.ieds_update_patient_id(old_id, new_id)
+        result = ieds_db_operations.ieds_update_patient_id(old_id, new_id, mock_items)
 
         # Assert
         expected_result = {
             "status": "error",
-            "message": f"Failed to update some batches for patient ID: {old_id}",
+            "message": "Failed to update some batches for patient ID",
         }
-        expected_result["nhs_number"] = old_id
         self.assertEqual(result, expected_result)
 
         # Verify transact_write_items was called (not update_item)
@@ -394,87 +384,18 @@ class TestUpdatePatientIdInIEDS(TestIedsDbOperations):
         old_id = "old-patient-123"
         new_id = "new-patient-456"
 
-        # Mock empty items list
-        self.mock_get_items_from_patient_id.return_value = []
-
         # Act
-        result = ieds_db_operations.ieds_update_patient_id(old_id, new_id)
+        result = ieds_db_operations.ieds_update_patient_id(old_id, new_id, [])
 
         # Assert
         expected_result = {
             "status": "success",
-            "message": f"No items found to update for patient ID: {old_id}",
+            "message": "No items found to update for patient ID",
         }
-        expected_result["nhs_number"] = old_id
         self.assertEqual(result, expected_result)
-
-        # Verify get_items_from_patient_id was called
-        self.mock_get_items_from_patient_id.assert_called_once_with(old_id)
 
         # Verify no transact operation was attempted
         self.mock_table.transact_write_items.assert_not_called()
-
-    def test_ieds_update_patient_id_empty_old_id(self):
-        """Test update with empty old_id"""
-        # Arrange
-        old_id = ""
-        new_id = "new-patient-456"
-
-        # Act
-        result = ieds_db_operations.ieds_update_patient_id(old_id, new_id)
-
-        # Assert
-        expected_result = {
-            "status": "error",
-            "message": "Old ID and New ID cannot be empty",
-        }
-        expected_result["nhs_number"] = old_id
-        self.assertEqual(result, expected_result)
-
-        # Verify no update was attempted
-        self.mock_table.transact_write_items.assert_not_called()
-        self.mock_get_ieds_table_patcher.assert_not_called()
-
-    def test_ieds_update_patient_id_empty_new_id(self):
-        """Test update with empty new_id"""
-        # Arrange
-        old_id = "old-patient-123"
-        new_id = ""
-
-        # Act
-        result = ieds_db_operations.ieds_update_patient_id(old_id, new_id)
-
-        # Assert
-        expected_result = {
-            "status": "error",
-            "message": "Old ID and New ID cannot be empty",
-        }
-        expected_result["nhs_number"] = old_id
-        self.assertEqual(result, expected_result)
-
-        # Verify no update was attempted
-        self.mock_table.transact_write_items.assert_not_called()
-        self.mock_get_ieds_table_patcher.assert_not_called()
-
-    def test_ieds_update_patient_id_same_old_and_new_id(self):
-        """Test update when old_id and new_id are the same"""
-        # Arrange
-        patient_id = "same-patient-id"
-
-        # Act
-        result = ieds_db_operations.ieds_update_patient_id(patient_id, patient_id)
-
-        # Assert
-        expected_result = {
-            "status": "success",
-            "message": f"No change in patient ID: {patient_id}",
-        }
-        expected_result["nhs_number"] = patient_id
-        self.assertEqual(result, expected_result)
-
-        # Verify no update was attempted
-        self.mock_table.transact_write_items.assert_not_called()
-        self.mock_get_ieds_table_patcher.assert_not_called()
 
     def test_ieds_update_patient_id_update_exception(self):
         """Test exception handling during transact_write_items"""
@@ -489,52 +410,23 @@ class TestUpdatePatientIdInIEDS(TestIedsDbOperations):
                 "PatientPK": "Patient#old-patient-error",
             }
         ]
-        self.mock_get_items_from_patient_id.return_value = mock_items
 
         test_exception = Exception("DynamoDB transact failed")
         self.mock_dynamodb_client_patcher.transact_write_items.side_effect = test_exception
 
         # Act & Assert
         with self.assertRaises(Exception) as context:
-            ieds_db_operations.ieds_update_patient_id(old_id, new_id)
+            ieds_db_operations.ieds_update_patient_id(old_id, new_id, mock_items)
 
         exception = context.exception
         self.assertIsInstance(exception, IdSyncException)
-        self.assertEqual(exception.message, f"Error updating patient Id from :{old_id} to {new_id}")
-        self.assertEqual(exception.nhs_numbers, [old_id, new_id])
-        self.assertEqual(exception.inner_exception, test_exception)
+        self.assertEqual(exception.message, "Error updating patient ID")
 
         # Verify transact was attempted
         self.mock_dynamodb_client_patcher.transact_write_items.assert_called_once()
 
         # Verify logger exception was called
         self.mock_logger.exception.assert_called_once_with("Error updating patient ID")
-
-    def test_ieds_update_patient_id_special_characters(self):
-        """Test update with special characters in IDs"""
-        # Arrange
-        old_id = "old-patient@123#$%"
-        new_id = "new-patient&456*()+"
-
-        # Mock items to update
-        mock_items = [{"PK": f"Patient#{old_id}", "PatientPK": f"Patient#{old_id}"}]
-        self.mock_get_items_from_patient_id.return_value = mock_items
-
-        mock_transact_response = {"ResponseMetadata": {"HTTPStatusCode": 200}}
-        self.mock_dynamodb_client_patcher.transact_write_items.return_value = mock_transact_response
-
-        # Act
-        result = ieds_db_operations.ieds_update_patient_id(old_id, new_id)
-
-        # Assert
-        self.assertEqual(result["status"], "success")
-        self.assertEqual(
-            result["message"],
-            f"IEDS update, patient ID: {old_id}=>{new_id}. {len(mock_items)} updated 1.",
-        )
-
-        # Verify transact_write_items was called with special characters
-        self.mock_dynamodb_client_patcher.transact_write_items.assert_called_once()
 
 
 class TestGetItemsToUpdate(TestIedsDbOperations):
@@ -607,14 +499,6 @@ class TestIedsDbOperationsConditional(unittest.TestCase):
 
     def tearDown(self):
         patch.stopall()
-
-    def test_ieds_update_patient_id_empty_inputs(self):
-        res = ieds_db_operations.ieds_update_patient_id("", "")
-        self.assertEqual(res["status"], "error")
-
-    def test_ieds_update_patient_id_same_ids(self):
-        res = ieds_db_operations.ieds_update_patient_id("a", "a")
-        self.assertEqual(res["status"], "success")
 
     def test_ieds_update_with_items_to_update_uses_provided_list(self):
         items = [{"PK": "Patient#1"}, {"PK": "Patient#1#r2"}]

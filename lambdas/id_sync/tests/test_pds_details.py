@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from exceptions.id_sync_exception import IdSyncException
-from pds_details import pds_get_patient_details, pds_get_patient_id
+from pds_details import get_nhs_number_from_pds_resource, pds_get_patient_details
 
 
 class TestGetPdsPatientDetails(unittest.TestCase):
@@ -100,17 +100,13 @@ class TestGetPdsPatientDetails(unittest.TestCase):
         exception = context.exception
 
         # Assert
-        self.assertEqual(exception.inner_exception, mock_exception)
         self.assertEqual(
             exception.message,
-            f"Error getting PDS patient details for {self.test_patient_id}",
+            "Error retrieving patient details from PDS",
         )
-        self.assertEqual(exception.nhs_numbers, None)
 
         # Verify exception was logged
-        self.mock_logger.exception.assert_called_once_with(
-            f"Error getting PDS patient details for {self.test_patient_id}"
-        )
+        self.mock_logger.exception.assert_called_once_with("Error retrieving patient details from PDS")
 
         self.mock_pds_service_instance.get_patient_details.assert_called_once_with(self.test_patient_id)
 
@@ -127,14 +123,11 @@ class TestGetPdsPatientDetails(unittest.TestCase):
         exception = context.exception
         self.assertEqual(
             exception.message,
-            f"Error getting PDS patient details for {self.test_patient_id}",
+            "Error retrieving patient details from PDS",
         )
-        self.assertEqual(exception.nhs_numbers, None)
 
         # Verify exception was logged
-        self.mock_logger.exception.assert_called_once_with(
-            f"Error getting PDS patient details for {self.test_patient_id}"
-        )
+        self.mock_logger.exception.assert_called_once_with("Error retrieving patient details from PDS")
 
         self.mock_cache_class.assert_called_once()
 
@@ -151,14 +144,11 @@ class TestGetPdsPatientDetails(unittest.TestCase):
         exception = context.exception
         self.assertEqual(
             exception.message,
-            f"Error getting PDS patient details for {self.test_patient_id}",
+            "Error retrieving patient details from PDS",
         )
-        self.assertEqual(exception.nhs_numbers, None)
 
         # Verify exception was logged
-        self.mock_logger.exception.assert_called_once_with(
-            f"Error getting PDS patient details for {self.test_patient_id}"
-        )
+        self.mock_logger.exception.assert_called_once_with("Error retrieving patient details from PDS")
 
     def test_pds_get_patient_details_exception(self):
         """Test when logger.info throws an exception"""
@@ -173,14 +163,12 @@ class TestGetPdsPatientDetails(unittest.TestCase):
 
         exception = context.exception
         # Assert
-        self.assertEqual(exception.inner_exception, test_exception)
         self.assertEqual(
             exception.message,
-            f"Error getting PDS patient details for {test_nhs_number}",
+            "Error retrieving patient details from PDS",
         )
-        self.assertEqual(exception.nhs_numbers, None)
         # Verify logger.exception was called due to the caught exception
-        self.mock_logger.exception.assert_called_once_with(f"Error getting PDS patient details for {test_nhs_number}")
+        self.mock_logger.exception.assert_called_once_with("Error retrieving patient details from PDS")
 
     def test_pds_get_patient_details_different_patient_ids(self):
         """Test with different patient ID formats"""
@@ -220,53 +208,17 @@ class TestGetPdsPatientDetails(unittest.TestCase):
         self.assertEqual(result, mock_pds_response)
         self.mock_pds_service_instance.get_patient_details.assert_called_once_with(test_nhs_number)
 
-
-# test pds_get_patient_id function
-class TestGetPdsPatientId(unittest.TestCase):
-    def setUp(self):
-        """Set up test fixtures and mocks"""
-        self.test_nhs_number = "9912003888"
-
-        # Patch all external dependencies
-        self.logger_patcher = patch("pds_details.logger")
-        self.mock_logger = self.logger_patcher.start()
-
-        self.pds_get_patient_details_patcher = patch("pds_details.pds_get_patient_details")
-        self.mock_pds_get_patient_details = self.pds_get_patient_details_patcher.start()
-
-    def tearDown(self):
-        """Clean up patches"""
-        patch.stopall()
-
-    def test_pds_get_patient_id_success(self):
-        """Test successful retrieval of PDS patient ID"""
-        # Arrange
-        expected_id = "1234567890"
-        self.mock_pds_get_patient_details.return_value = {"identifier": [{"value": expected_id}]}
-
-        # Act
-        result = pds_get_patient_id(self.test_nhs_number)
-
-        # Assert
-        self.assertEqual(result, expected_id)
-
-    def test_pds_get_patient_id_empty_identifier_array(self):
-        """Test when identifier array is empty"""
-        # Arrange
-        patient_data_empty_identifier = {
-            "identifier": [],  # Empty array
-            "name": "John Doe",
+    def test_get_nhs_number_from_pds_resource(self):
+        """Test that the NHS Number is retrieved from a full PDS patient resource."""
+        mock_pds_resource = {
+            "identifier": [
+                {
+                    "system": "https://fhir.nhs.uk/Id/nhs-number",
+                    "value": "123456789012",
+                }
+            ]
         }
-        self.mock_pds_get_patient_details.return_value = patient_data_empty_identifier
 
-        # Act
-        with self.assertRaises(IdSyncException) as context:
-            pds_get_patient_id(self.test_nhs_number)
+        result = get_nhs_number_from_pds_resource(mock_pds_resource)
 
-        # Assert
-        exception = context.exception
-        self.assertEqual(
-            exception.message,
-            f"Error getting PDS patient ID for {self.test_nhs_number}",
-        )
-        self.assertEqual(exception.nhs_numbers, None)
+        self.assertEqual(result, "123456789012")

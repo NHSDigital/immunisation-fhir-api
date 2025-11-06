@@ -20,8 +20,7 @@ class PdsService:
 
         logger.info(f"PDS Service URL: {self.base_url}")
 
-    def get_patient_details(self, patient_id) -> dict | None:
-        logger.info(f"PDS. Get patient details for ID: {patient_id}")
+    def get_patient_details(self, patient_id: str) -> dict | None:
         access_token = self.authenticator.get_access_token()
         request_headers = {
             "Authorization": f"Bearer {access_token}",
@@ -33,7 +32,7 @@ class PdsService:
         if response.status_code == 200:
             return response.json()
         elif response.status_code == 404:
-            logger.info(f"PDS. Patient not found for ID: {patient_id}")
+            logger.info("Patient not found")
             return None
         else:
             logger.error(f"PDS. Error response: {response.status_code} - {response.text}")

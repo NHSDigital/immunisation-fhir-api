@@ -21,30 +21,15 @@ def get_ieds_table():
     return ieds_table
 
 
-def ieds_update_patient_id(old_id: str, new_id: str, items_to_update: list | None = None) -> dict:
+def ieds_update_patient_id(old_id: str, new_id: str, items_to_update: list) -> dict:
     """Update the patient ID (new NHS number) in the IEDS table."""
-    logger.info(f"ieds_update_patient_id. Update patient ID from {old_id} to {new_id}")
-    if not old_id or not new_id or not old_id.strip() or not new_id.strip():
-        return make_status("Old ID and New ID cannot be empty", old_id, "error")
+    if not items_to_update:
+        logger.info("No items found to update for patient NHS Number")
+        return make_status("No items found to update for patient ID")
 
-    if old_id == new_id:
-        return make_status(f"No change in patient ID: {old_id}", old_id)
+    logger.info(f"Items to update: {len(items_to_update)}")
 
     try:
-        logger.info(f"Updating patient ID in IEDS from {old_id} to {new_id}")
-
-        if items_to_update is None:
-            logger.info("Getting items to update in IEDS table...")
-            items_to_update = get_items_from_patient_id(old_id)
-        else:
-            logger.info("Using provided items_to_update list, size=%d", len(items_to_update))
-
-        if not items_to_update:
-            logger.warning(f"No items found to update for patient ID: {old_id}")
-            return make_status(f"No items found to update for patient ID: {old_id}", old_id)
-
-        logger.info(f"Items to update: {len(items_to_update)}")
-
         # Build transact items and execute them in batches via helpers to keep
         # the top-level function easy to read and test.
         transact_items = build_transact_items(old_id, new_id, items_to_update)
@@ -55,25 +40,18 @@ def ieds_update_patient_id(old_id: str, new_id: str, items_to_update: list | Non
         logger.info(f"All batches complete. Total batches: {total_batches}, All successful: {all_batches_successful}")
 
         if all_batches_successful:
-            return make_status(
-                f"IEDS update, patient ID: {old_id}=>{new_id}. {len(items_to_update)} updated {total_batches}.",
-                old_id,
-            )
+            return make_status(f"IEDS update. {len(items_to_update)} item(s) updated in {total_batches} batch(es).")
         else:
             return make_status(
-                f"Failed to update some batches for patient ID: {old_id}",
-                old_id,
-                "error",
+                "Failed to update some batches for patient ID",
+                status="error",
             )
 
     except Exception as e:
         logger.exception("Error updating patient ID")
-        logger.info("Error details: %s", e)
         raise IdSyncException(
-            message=f"Error updating patient Id from :{old_id} to {new_id}",
-            nhs_numbers=[old_id, new_id],
-            exception=e,
-        )
+            message="Error updating patient ID",
+        ) from e
 
 
 def get_items_from_patient_id(id: str) -> list:
@@ -82,18 +60,15 @@ def get_items_from_patient_id(id: str) -> list:
     Delegates actual paging to the internal helper `_paginate_items_for_patient_pk`.
     Raises IdSyncException on error.
     """
-    logger.info("Getting items for patient id: %s", id)
     patient_pk = f"Patient#{id}"
     try:
         return paginate_items_for_patient_pk(patient_pk)
     except IdSyncException:
         raise
-    except Exception as e:
-        logger.exception("Error querying items for patient PK: %s", patient_pk)
+    except Exception:
+        logger.exception("Error querying items for patient PK")
         raise IdSyncException(
-            message=f"Error querying items for patient PK: {patient_pk}",
-            nhs_numbers=[patient_pk],
-            exception=e,
+            message="Error querying items for patient PK",
         )
 
 
@@ -119,8 +94,6 @@ def paginate_items_for_patient_pk(patient_pk: str) -> list:
             logger.exception("Unexpected DynamoDB response: missing 'Items'")
             raise IdSyncException(
                 message="No Items in DynamoDB response",
-                nhs_numbers=[patient_pk],
-                exception=response,
             )
 
         items = response.get("Items", [])
@@ -131,7 +104,7 @@ def paginate_items_for_patient_pk(patient_pk: str) -> list:
             break
 
     if not all_items:
-        logger.warning("No items found for patient PK: %s", patient_pk)
+        logger.info("No items found for patient PK in VEDS database")
         return []
 
     return all_items
