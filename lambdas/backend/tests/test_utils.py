@@ -2,9 +2,9 @@
 
 import unittest
 from copy import deepcopy
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
-from models.utils.validation_utils import (
+from common.models.utils.validation_utils import (
     convert_disease_codes_to_vaccine_type,
     get_vaccine_type,
 )
@@ -17,12 +17,13 @@ class TestGenericUtils(unittest.TestCase):
     def setUp(self):
         """Set up for each test. This runs before every test"""
         self.json_data = load_json_data(filename="completed_mmr_immunization_event.json")
-        self.redis_patcher = patch("models.utils.validation_utils.redis_client")
-        self.mock_redis_client = self.redis_patcher.start()
+        self.mock_redis = Mock()
+        self.redis_getter_patcher = patch("common.models.utils.validation_utils.get_redis_client")
+        self.mock_redis_getter = self.redis_getter_patcher.start()
 
     def tearDown(self):
         """Tear down after each test. This runs after every test"""
-        self.redis_patcher.stop()
+        self.redis_getter_patcher.stop()
 
     def test_convert_disease_codes_to_vaccine_type_returns_vaccine_type(self):
         """
@@ -37,7 +38,7 @@ class TestGenericUtils(unittest.TestCase):
             (["36653000", "14189004", "36989005"], "MMR"),
             (["55735004"], "RSV"),
         ]
-        self.mock_redis_client.hget.side_effect = [
+        self.mock_redis.hget.side_effect = [
             "COVID",
             "FLU",
             "HPV",
@@ -46,6 +47,7 @@ class TestGenericUtils(unittest.TestCase):
             "MMR",
             "RSV",
         ]
+        self.mock_redis_getter.return_value = self.mock_redis
 
         for combination, vaccine_type in valid_combinations:
             self.assertEqual(convert_disease_codes_to_vaccine_type(combination), vaccine_type)
@@ -60,8 +62,9 @@ class TestGenericUtils(unittest.TestCase):
             ["14189004", "36989005"],
             ["14189004", "36989005", "36653000", "840539006"],
         ]
-        self.mock_redis_client.hget.side_effect = None
-        self.mock_redis_client.hget.return_value = None  # Simulate no match in Redis for invalid combinations
+        self.mock_redis.hget.side_effect = None
+        self.mock_redis.hget.return_value = None  # Simulate no match in Redis for invalid combinations
+        self.mock_redis_getter.return_value = self.mock_redis
         for invalid_combination in invalid_combinations:
             with self.assertRaises(ValueError):
                 convert_disease_codes_to_vaccine_type(invalid_combination)
@@ -71,14 +74,16 @@ class TestGenericUtils(unittest.TestCase):
         Test that get_vaccine_type returns the correct vaccine type when given valid json data with a
         valid combination of target disease code, or raises an appropriate error otherwise
         """
-        self.mock_redis_client.hget.return_value = "RSV"
+        self.mock_redis.hget.return_value = "RSV"
+        self.mock_redis_getter.return_value = self.mock_redis
         # TEST VALID DATA
         valid_json_data = load_json_data(filename="completed_rsv_immunization_event.json")
 
         vac_type = get_vaccine_type(valid_json_data)
         self.assertEqual(vac_type, "RSV")
 
-        self.mock_redis_client.hget.return_value = "FLU"
+        self.mock_redis.hget.return_value = "FLU"
+        self.mock_redis_getter.return_value = self.mock_redis
         # VALID DATA: coding field with multiple coding systems including SNOMED
         flu_json_data = load_json_data(filename="completed_flu_immunization_event.json")
         valid_target_disease_element = {
@@ -99,7 +104,8 @@ class TestGenericUtils(unittest.TestCase):
         self.assertEqual(get_vaccine_type(flu_json_data), "FLU")
 
         # TEST INVALID DATA FOR SINGLE TARGET DISEASE
-        self.mock_redis_client.hget.return_value = None  # Reset mock for invalid cases
+        self.mock_redis.hget.return_value = None  # Reset mock for invalid cases
+        self.mock_redis_getter.return_value = self.mock_redis
         covid_json_data = load_json_data(filename="completed_covid_immunization_event.json")
 
         # INVALID DATA, SINGLE TARGET DISEASE: No targetDisease field

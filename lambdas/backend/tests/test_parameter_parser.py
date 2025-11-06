@@ -3,7 +3,7 @@ import datetime
 import unittest
 from unittest.mock import create_autospec, patch
 
-from models.errors import ParameterException
+from common.models.errors import ParameterException
 from parameter_parser import (
     SearchParams,
     create_query_string,
@@ -25,8 +25,9 @@ class TestParameterParser(unittest.TestCase):
         self.date_to_key = "-date.to"
         self.logger_info_patcher = patch("logging.Logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
-        self.redis_patcher = patch("parameter_parser.redis_client")
-        self.mock_redis_client = self.redis_patcher.start()
+        self.mock_redis = Mock()
+        self.redis_getter_patcher = patch("parameter_parser.get_redis_client")
+        self.mock_redis_getter = self.redis_getter_patcher.start()
 
     def tearDown(self):
         patch.stopall()
@@ -104,7 +105,8 @@ class TestParameterParser(unittest.TestCase):
             '"https://fhir.nhs.uk/Id/nhs-number|{NHS number}" '
             'e.g. "https://fhir.nhs.uk/Id/nhs-number|9000000009"',
         )
-        self.mock_redis_client.hkeys.return_value = ["RSV"]
+        self.mock_redis.hkeys.return_value = ["RSV"]
+        self.mock_redis_getter.return_value = self.mock_redis
         process_search_params(
             {
                 self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
@@ -113,8 +115,8 @@ class TestParameterParser(unittest.TestCase):
         )
 
     def test_process_search_params_whitelists_immunization_target(self):
-        mock_redis_key = "RSV"
-        self.mock_redis_client.hkeys.return_value = [mock_redis_key]
+        self.mock_redis.hkeys.return_value = ["RSV"]
+        self.mock_redis_getter.return_value = self.mock_redis
         with self.assertRaises(ParameterException) as e:
             process_search_params(
                 {
@@ -133,8 +135,8 @@ class TestParameterParser(unittest.TestCase):
         )
 
     def test_process_search_params_immunization_target(self):
-        mock_redis_key = "RSV"
-        self.mock_redis_client.hkeys.return_value = [mock_redis_key]
+        self.mock_redis.hkeys.return_value = ["RSV"]
+        self.mock_redis_getter.return_value = self.mock_redis
         params = process_search_params(
             {
                 self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
@@ -145,7 +147,8 @@ class TestParameterParser(unittest.TestCase):
         self.assertIsNotNone(params)
 
     def test_search_params_date_from_must_be_before_date_to(self):
-        self.mock_redis_client.hkeys.return_value = ["RSV"]
+        self.mock_redis.hkeys.return_value = ["RSV"]
+        self.mock_redis_getter.return_value = self.mock_redis
         params = process_search_params(
             {
                 self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
@@ -184,7 +187,8 @@ class TestParameterParser(unittest.TestCase):
         )
 
     def test_process_search_params_immunization_target_is_mandatory(self):
-        self.mock_redis_client.hkeys.return_value = ["RSV"]
+        self.mock_redis.hkeys.return_value = ["RSV"]
+        self.mock_redis_getter.return_value = self.mock_redis
         with self.assertRaises(ParameterException) as e:
             _ = process_search_params(
                 {
@@ -238,7 +242,8 @@ class TestParameterParser(unittest.TestCase):
         self,
     ):
         """Ensure duplicate immunization targets are deduped and include is preserved."""
-        self.mock_redis_client.hkeys.return_value = ["RSV", "FLU"]
+        self.mock_redis.hkeys.return_value = ["RSV", "FLU"]
+        self.mock_redis_getter.return_value = self.mock_redis
 
         params = process_search_params(
             {
@@ -257,7 +262,8 @@ class TestParameterParser(unittest.TestCase):
 
     def test_process_search_params_aggregates_date_errors(self):
         """When multiple date-related errors occur they should be returned together."""
-        self.mock_redis_client.hkeys.return_value = ["RSV"]
+        self.mock_redis.hkeys.return_value = ["RSV"]
+        self.mock_redis_getter.return_value = self.mock_redis
 
         with self.assertRaises(ParameterException) as e:
             process_search_params(
@@ -278,7 +284,8 @@ class TestParameterParser(unittest.TestCase):
     def test_process_search_params_invalid_nhs_number_is_rejected(self):
         """If the NHS number fails mod11 check a ParameterException is raised."""
         # redis returns a valid vaccine type
-        self.mock_redis_client.hkeys.return_value = ["RSV"]
+        self.mock_redis.hkeys.return_value = ["RSV"]
+        self.mock_redis_getter.return_value = self.mock_redis
 
         with self.assertRaises(ParameterException) as e:
             process_search_params(
@@ -295,7 +302,8 @@ class TestParameterParser(unittest.TestCase):
 
     def test_process_search_params_invalid_include_value_is_rejected(self):
         """_include may only be 'Immunization:patient' if provided."""
-        self.mock_redis_client.hkeys.return_value = ["RSV"]
+        self.mock_redis.hkeys.return_value = ["RSV"]
+        self.mock_redis_getter.return_value = self.mock_redis
 
         with self.assertRaises(ParameterException) as e:
             process_search_params(

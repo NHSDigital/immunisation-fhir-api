@@ -3,14 +3,14 @@
 import unittest
 from copy import deepcopy
 from decimal import Decimal
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from jsonpath_ng.ext import parse
 
-from models.constants import Constants
-from models.fhir_immunization import ImmunizationValidator
-from models.fhir_immunization_pre_validators import PreValidators
-from models.utils.generic_utils import (
+from common.models.constants import Constants
+from common.models.fhir_immunization import ImmunizationValidator
+from common.models.fhir_immunization_pre_validators import PreValidators
+from common.models.utils.generic_utils import (
     get_generic_extension_value,
     patient_name_family_field_location,
     patient_name_given_field_location,
@@ -38,8 +38,9 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         """Set up for each test. This runs before every test"""
         self.json_data = load_json_data(filename="completed_covid_immunization_event.json")
         self.validator = ImmunizationValidator(add_post_validators=False)
-        self.redis_patcher = patch("models.utils.validation_utils.redis_client")
-        self.mock_redis_client = self.redis_patcher.start()
+        self.mock_redis = Mock()
+        self.redis_getter_patcher = patch("common.models.utils.validation_utils.get_redis_client")
+        self.mock_redis_getter = self.redis_getter_patcher.start()
 
     def tearDown(self):
         patch.stopall()
@@ -809,7 +810,8 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
 
     def test_pre_validate_missing_valueCodeableConcept3(self):
         # Test case: valid data (should not raise an exception)
-        self.mock_redis_client.hget.return_value = "COVID"
+        self.mock_redis.hget.return_value = "COVID"
+        self.mock_redis_getter.return_value = self.mock_redis
         valid_json_data = deepcopy(self.json_data)
         try:
             self.validator.validate(valid_json_data)

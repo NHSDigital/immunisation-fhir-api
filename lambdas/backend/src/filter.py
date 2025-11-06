@@ -1,7 +1,7 @@
 """Functions for filtering a FHIR Immunization Resource"""
 
 from constants import Urls
-from models.utils.generic_utils import (
+from common.models.utils.generic_utils import (
     get_contained_patient,
     get_contained_practitioner,
     is_actor_referencing_contained_resource,

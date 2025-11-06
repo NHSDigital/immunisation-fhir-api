@@ -2,7 +2,7 @@
 
 import unittest
 
-from models.utils.generic_utils import nhs_number_mod11_check
+from common.models.utils.generic_utils import nhs_number_mod11_check
 
 "test"
 

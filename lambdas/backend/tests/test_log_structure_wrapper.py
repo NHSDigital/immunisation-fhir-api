@@ -1,6 +1,6 @@
 import json
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from log_structure import function_info
 
@@ -9,8 +9,9 @@ from log_structure import function_info
 @patch("log_structure.logger")
 class TestFunctionInfoWrapper(unittest.TestCase):
     def setUp(self):
-        self.redis_patcher = patch("models.utils.validation_utils.redis_client")
-        self.mock_redis_client = self.redis_patcher.start()
+        self.mock_redis = Mock()
+        self.redis_getter_patcher = patch("common.models.utils.validation_utils.get_redis_client")
+        self.mock_redis_getter = self.redis_getter_patcher.start()
 
     def tearDown(self):
         patch.stopall()
@@ -39,7 +40,8 @@ class TestFunctionInfoWrapper(unittest.TestCase):
         test_actual_path = "/test"
         test_resource_path = "/test"
 
-        self.mock_redis_client.hget.return_value = "FLU"
+        self.mock_redis.hget.return_value = "FLU"
+        self.mock_redis_getter.return_value = self.mock_redis
         wrapped_function = function_info(self.mock_success_function)
         event = {
             "headers": {
@@ -82,7 +84,8 @@ class TestFunctionInfoWrapper(unittest.TestCase):
         test_actual_path = "/test"
         test_resource_path = "/test"
 
-        self.mock_redis_client.hget.return_value = "FLU"
+        self.mock_redis.hget.return_value = "FLU"
+        self.mock_redis_getter.return_value = self.mock_redis
         wrapped_function = function_info(self.mock_success_function)
         event = {
             "headers": {
@@ -112,7 +115,8 @@ class TestFunctionInfoWrapper(unittest.TestCase):
         test_actual_path = "/failed_test"
         test_resource_path = "/failed_test"
 
-        self.mock_redis_client.hget.return_value = "FLU"
+        self.mock_redis.hget.return_value = "FLU"
+        self.mock_redis_getter.return_value = self.mock_redis
 
         # Act
         decorated_function_raises = function_info(self.mock_function_raises)
@@ -232,7 +236,8 @@ class TestFunctionInfoWrapper(unittest.TestCase):
         test_actual_path = "/failed_test_invalid_identifier"
         test_resource_path = "/failed_test_invalid_identifier"
 
-        self.mock_redis_client.hget.return_value = "FLU"
+        self.mock_redis.hget.return_value = "FLU"
+        self.mock_redis_getter.return_value = self.mock_redis
 
         # Act
         decorated_function_raises = function_info(self.mock_function_raises)
@@ -273,7 +278,8 @@ class TestFunctionInfoWrapper(unittest.TestCase):
         test_actual_path = "/failed_test_invalid_protocol"
         test_resource_path = "/failed_test_invalid_protocol"
 
-        self.mock_redis_client.hget.return_value = "FLU"
+        self.mock_redis.hget.return_value = "FLU"
+        self.mock_redis_getter.return_value = self.mock_redis
 
         # Act
         decorated_function_raises = function_info(self.mock_function_raises)

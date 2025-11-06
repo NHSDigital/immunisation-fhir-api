@@ -156,6 +156,24 @@ class ResourceFoundError(RuntimeError):
 
 
 @dataclass
+class ResourceVersionNotProvided(RuntimeError):
+    """Return this error when client has failed to provide the FHIR resource version where required"""
+
+    resource_type: str
+
+    def __str__(self):
+        return f"Validation errors: {self.resource_type} resource version not specified in the request headers"
+
+    def to_operation_outcome(self) -> dict:
+        return create_operation_outcome(
+            resource_id=str(uuid.uuid4()),
+            severity=Severity.error,
+            code=Code.invariant,
+            diagnostics=self.__str__(),
+        )
+
+
+@dataclass
 class UnhandledResponseError(RuntimeError):
     """Use this error when the response from an external service (ex: dynamodb) can't be handled"""
 
