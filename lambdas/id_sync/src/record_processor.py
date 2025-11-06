@@ -4,6 +4,7 @@ from typing import Any, Dict
 from common.clients import logger
 from exceptions.id_sync_exception import IdSyncException
 from ieds_db_operations import (
+    IDENTIFIER_KEY,
     extract_patient_resource_from_item,
     get_items_from_patient_id,
     ieds_update_patient_id,
@@ -55,22 +56,26 @@ def process_nhs_number(nhs_number: str) -> Dict[str, Any]:
         logger.exception("process_nhs_number: failed to fetch ieds resources: %s", e)
         return make_status(str(e), status="error")
 
-    logger.info(
-        "Fetched IEDS resources. IEDS count: %d",
-        len(ieds_resources) if ieds_resources else 0,
-    )
-
     if not ieds_resources:
         logger.info("No IEDS records returned for NHS number")
         return make_status("No records returned for NHS Number")
 
+    logger.info("Fetched IEDS resources. IEDS count: %d", len(ieds_resources))
+
     # Compare demographics from PDS to each IEDS item, keep only matching records
     matching_records = []
     discarded_count = 0
+
     for detail in ieds_resources:
+        immunisation_identifier = detail.get(IDENTIFIER_KEY)
+
         if demographics_match(pds_patient_resource, detail):
+            logger.info("Update required for imms identifier: %s. Demographic data matched", immunisation_identifier)
             matching_records.append(detail)
         else:
+            logger.info(
+                "No update required for imms identifier: %s. Demographic data did not match", immunisation_identifier
+            )
             discarded_count += 1
 
     if not matching_records:

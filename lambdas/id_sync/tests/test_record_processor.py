@@ -1,6 +1,6 @@
 import json
 import unittest
-from unittest.mock import patch
+from unittest.mock import call, patch
 
 from exceptions.id_sync_exception import IdSyncException
 from record_processor import process_record
@@ -12,6 +12,7 @@ class TestRecordProcessor(unittest.TestCase):
         "gender": "male",
         "birthDate": "1980-01-01",
     }
+    MOCK_IMMUNISATION_IDENTIFIER_PK = {"IdentifierPK": "someSystem#12345"}
 
     def setUp(self):
         """Set up test fixtures and mocks"""
@@ -64,7 +65,10 @@ class TestRecordProcessor(unittest.TestCase):
         pds_id = "9000000008"
         nhs_number = "9000000009"
 
-        test_sqs_record = {"body": json.dumps({"subject": nhs_number})}
+        test_sqs_record = {
+            "body": json.dumps({"subject": nhs_number, "id": "test-mns-event-id"}),
+            "messageId": "test-sqs-message-id",
+        }
 
         # pds_get_patient_details should return details used by demographics_match
         self.mock_pds_get_patient_details.return_value = {
@@ -79,6 +83,7 @@ class TestRecordProcessor(unittest.TestCase):
 
         # Provide one IEDS item that will match demographics via demographics_match
         matching_item = {
+            **self.MOCK_IMMUNISATION_IDENTIFIER_PK,
             "Resource": {
                 "resourceType": "Immunization",
                 "contained": [
@@ -90,7 +95,7 @@ class TestRecordProcessor(unittest.TestCase):
                         "birthDate": "1980-01-01",
                     }
                 ],
-            }
+            },
         }
         self.mock_get_items_from_patient_id.return_value = [matching_item]
 
@@ -103,13 +108,25 @@ class TestRecordProcessor(unittest.TestCase):
         # Assert
         self.assertEqual(result, success_response)
         self.mock_pds_get_patient_details.assert_called_once_with(nhs_number)
+        self.mock_logger.info.assert_has_calls(
+            [
+                call("Processing record with SQS messageId: %s", "test-sqs-message-id"),
+                call("Processing MNS event with id: %s", "test-mns-event-id"),
+                call("NHS Number has changed. Performing updates on relevant IEDS records"),
+                call("Fetched IEDS resources. IEDS count: %d", 1),
+                call("Update required for imms identifier: %s. Demographic data matched", "someSystem#12345"),
+            ]
+        )
 
     def test_process_record_demographics_mismatch_skips_update(self):
         """If no IEDS item matches demographics, the update should be skipped"""
         # Arrange
         pds_id = "pds-1"
         nhs_number = "nhs-1"
-        test_sqs_record = {"body": json.dumps({"subject": nhs_number})}
+        test_sqs_record = {
+            "body": json.dumps({"subject": nhs_number, "id": "test-mns-event-id"}),
+            "messageId": "test-sqs-message-id",
+        }
 
         self.mock_pds_get_patient_details.return_value = {
             "name": [{"given": ["Alice"], "family": "Smith"}],
@@ -125,6 +142,7 @@ class TestRecordProcessor(unittest.TestCase):
 
         # IEDS items exist but do not match demographics
         non_matching_item = {
+            **self.MOCK_IMMUNISATION_IDENTIFIER_PK,
             "Resource": {
                 "resourceType": "Immunization",
                 "contained": [
@@ -136,7 +154,7 @@ class TestRecordProcessor(unittest.TestCase):
                         "birthDate": "1990-01-01",
                     }
                 ],
-            }
+            },
         }
         self.mock_get_items_from_patient_id.return_value = [non_matching_item]
 
@@ -146,6 +164,16 @@ class TestRecordProcessor(unittest.TestCase):
         # Assert
         self.assertEqual(result["status"], "success")
         self.assertEqual(result["message"], "No records matched PDS demographics; update skipped")
+        self.mock_logger.info.assert_has_calls(
+            [
+                call("Processing record with SQS messageId: %s", "test-sqs-message-id"),
+                call("Processing MNS event with id: %s", "test-mns-event-id"),
+                call("NHS Number has changed. Performing updates on relevant IEDS records"),
+                call("Fetched IEDS resources. IEDS count: %d", 1),
+                call("No update required for imms identifier: %s. Demographic data did not match", "someSystem#12345"),
+                call("No records matched PDS demographics: %d", 1),
+            ]
+        )
 
     def test_invalid_body_parsing_returns_error(self):
         """When body is a malformed string, process_record should return an error"""
