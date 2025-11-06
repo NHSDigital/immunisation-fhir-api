@@ -3,7 +3,7 @@
 import unittest
 from datetime import date, datetime
 
-from src.models.utils.generic_utils import form_json
+from common.models.utils.generic_utils import form_json
 
 from testing_utils.generic_utils import format_date_types, load_json_data
 
