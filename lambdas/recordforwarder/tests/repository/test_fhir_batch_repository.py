@@ -1,6 +1,6 @@
 import os
 import unittest
-from unittest.mock import ANY, Mock, MagicMock, patch
+from unittest.mock import ANY, MagicMock, Mock, patch
 from uuid import uuid4
 
 import boto3

@@ -10,10 +10,6 @@ import simplejson as json
 
 from batch.batch_filename_to_events_mapper import BatchFilenameToEventsMapper
 from common.clients import sqs_client
-from controller.fhir_batch_controller import (
-    ImmunizationBatchController,
-    make_batch_controller,
-)
 from common.models.errors import (
     CustomValidationError,
     IdentifierDuplicationError,
@@ -21,6 +17,10 @@ from common.models.errors import (
     RecordProcessorError,
     ResourceFoundError,
     ResourceNotFoundError,
+)
+from controller.fhir_batch_controller import (
+    ImmunizationBatchController,
+    make_batch_controller,
 )
 from repository.fhir_batch_repository import create_table
 

@@ -1,8 +1,8 @@
 "FHIR Immunization Pre Validators"
 
+from common.models.errors import MandatoryError
 from constants import Urls
 from models.constants import Constants
-from common.models.errors import MandatoryError
 from models.utils.generic_utils import (
     check_for_unknown_elements,
     generate_field_location_for_extension,

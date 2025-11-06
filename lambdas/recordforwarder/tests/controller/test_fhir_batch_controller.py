@@ -2,13 +2,13 @@ import unittest
 import uuid
 from unittest.mock import Mock, create_autospec
 
-from controller.fhir_batch_controller import ImmunizationBatchController
 from common.models.errors import (
     CustomValidationError,
     IdentifierDuplicationError,
     ResourceNotFoundError,
     UnhandledResponseError,
 )
+from controller.fhir_batch_controller import ImmunizationBatchController
 from repository.fhir_batch_repository import ImmunizationBatchRepository
 from service.fhir_batch_service import ImmunizationBatchService
 from testing_utils.immunization_utils import create_covid_immunization

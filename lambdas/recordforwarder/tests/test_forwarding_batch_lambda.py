@@ -5,7 +5,7 @@ import os
 import unittest
 from typing import Optional
 from unittest import TestCase
-from unittest.mock import ANY, Mock, MagicMock, patch
+from unittest.mock import ANY, MagicMock, Mock, patch
 
 from boto3 import resource as boto3_resource
 from moto import mock_aws
