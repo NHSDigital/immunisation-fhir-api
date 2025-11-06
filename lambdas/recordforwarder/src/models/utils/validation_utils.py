@@ -2,7 +2,7 @@
 
 import json
 
-from clients import redis_client
+from common.redis_client import get_redis_client
 from constants import Urls
 from models.constants import Constants
 from models.errors import MandatoryError
@@ -54,7 +54,7 @@ def convert_disease_codes_to_vaccine_type(
     otherwise raises a value error
     """
     key = ":".join(sorted(disease_codes_input))
-    vaccine_type = redis_client.hget(Constants.DISEASES_TO_VACCINE_TYPE_HASH_KEY, key)
+    vaccine_type = get_redis_client().hget(Constants.DISEASES_TO_VACCINE_TYPE_HASH_KEY, key)
 
     if not vaccine_type:
         raise ValueError(

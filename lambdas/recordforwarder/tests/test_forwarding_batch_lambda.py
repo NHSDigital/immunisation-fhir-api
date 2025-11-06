@@ -5,7 +5,7 @@ import os
 import unittest
 from typing import Optional
 from unittest import TestCase
-from unittest.mock import ANY, MagicMock, patch
+from unittest.mock import ANY, Mock, MagicMock, patch
 
 from boto3 import resource as boto3_resource
 from moto import mock_aws
@@ -67,12 +67,15 @@ class TestForwardLambdaHandler(TestCase):
                 },
             ],
         )
-        self.redis_patcher = patch("models.utils.validation_utils.redis_client")
-        self.mock_redis_client = self.redis_patcher.start()
+
         self.logger_info_patcher = patch("logging.Logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
         self.logger_error_patcher = patch("logging.Logger.error")
         self.mock_logger_error = self.logger_error_patcher.start()
+
+        self.mock_redis = Mock()
+        self.redis_getter_patcher = patch("models.utils.validation_utils.get_redis_client")
+        self.mock_redis_getter = self.redis_getter_patcher.start()
 
     def tearDown(self):
         """Tear down after each test. This runs after every test"""
@@ -208,7 +211,8 @@ class TestForwardLambdaHandler(TestCase):
                 "PatientSK": "RSV#4d2ac1eb-080f-4e54-9598-f2d53334681c",
             }
         )
-        self.mock_redis_client.hget.return_value = "RSV"
+        self.mock_redis.hget.return_value = "RSV"
+        self.mock_redis_getter.return_value = self.mock_redis
 
         test_cases = [
             {
@@ -443,7 +447,9 @@ class TestForwardLambdaHandler(TestCase):
         mock_send_message.reset_mock()
         event = self.generate_event(test_cases)
 
-        self.mock_redis_client.hget.return_value = "RSV"
+        self.mock_redis.hget.return_value = "RSV"
+        self.mock_redis_getter.return_value = self.mock_redis
+
         forward_lambda_handler(event, {})
 
         self.assert_dynamo_item(table_item)
@@ -474,7 +480,9 @@ class TestForwardLambdaHandler(TestCase):
             },
         ]
         mock_kinesis_event = self.generate_event(mock_records)
-        self.mock_redis_client.hget.return_value = "RSV"
+
+        self.mock_redis.hget.return_value = "RSV"
+        self.mock_redis_getter.return_value = self.mock_redis
 
         forward_lambda_handler(mock_kinesis_event, {})
 
@@ -532,7 +540,9 @@ class TestForwardLambdaHandler(TestCase):
             input: generates the kinesis row data for the event,
             expected_keys (list): expected output dictionary keys,
             expected_values (dict): expected output dictionary values"""
-        self.mock_redis_client.hget.return_value = "RSV"
+        self.mock_redis.hget.return_value = "RSV"
+        self.mock_redis_getter.return_value = self.mock_redis
+
         pk_test_update = "Immunization#4d2ac1eb-080f-4e54-9598-f2d53334687r"
         self.table.put_item(
             Item={

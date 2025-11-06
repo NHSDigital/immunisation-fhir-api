@@ -1,6 +1,6 @@
 import os
 import unittest
-from unittest.mock import ANY, MagicMock, patch
+from unittest.mock import ANY, Mock, MagicMock, patch
 from uuid import uuid4
 
 import boto3
@@ -36,8 +36,9 @@ class TestImmunizationBatchRepository(unittest.TestCase):
         self.table.query = MagicMock(return_value={})
         self.immunization = create_covid_immunization_dict(imms_id)
         self.table.update_item = MagicMock(return_value={"ResponseMetadata": {"HTTPStatusCode": 200}})
-        self.redis_patcher = patch("models.utils.validation_utils.redis_client")
-        self.mock_redis_client = self.redis_patcher.start()
+        self.mock_redis = Mock()
+        self.redis_getter_patcher = patch("models.utils.validation_utils.get_redis_client")
+        self.mock_redis_getter = self.redis_getter_patcher.start()
         self.logger_info_patcher = patch("logging.Logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()
 
@@ -56,7 +57,8 @@ class TestCreateImmunization(TestImmunizationBatchRepository):
 
     def create_immunization_test_logic(self, is_present, remove_nhs):
         """Common logic for testing immunization creation."""
-        self.mock_redis_client.hget.side_effect = ["COVID"]
+        self.mock_redis.hget.side_effect = ["COVID"]
+        self.mock_redis_getter.return_value = self.mock_redis
         self.modify_immunization(remove_nhs)
 
         self.repository.create_immunization(self.immunization, "supplier", "vax-type", self.table, is_present)

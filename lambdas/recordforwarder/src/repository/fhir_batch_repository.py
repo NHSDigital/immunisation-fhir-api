@@ -8,7 +8,7 @@ import botocore.exceptions
 import simplejson as json
 from boto3.dynamodb.conditions import Attr, Key
 
-from clients import logger
+from common.clients import logger
 from models.errors import (
     IdentifierDuplicationError,
     ResourceFoundError,
