@@ -2,13 +2,13 @@
 
 import json
 
-from common.models.errors import MandatoryError
-from common.redis_client import get_redis_client
-from constants import Urls
 from common.models.constants import Constants
+from common.models.errors import MandatoryError
 from common.models.field_names import FieldNames
 from common.models.obtain_field_value import ObtainFieldValue
 from common.models.utils.base_utils import obtain_field_location
+from common.redis_client import get_redis_client
+from constants import Urls
 
 from .generic_utils import create_diagnostics_error
 
