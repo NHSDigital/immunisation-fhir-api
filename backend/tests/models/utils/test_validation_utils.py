@@ -3,6 +3,7 @@ from copy import deepcopy
 
 from jsonpath_ng.ext import parse
 
+from models.errors import InconsistentIdentifierError, InconsistentResourceVersion
 from models.fhir_immunization import ImmunizationValidator
 from models.obtain_field_value import ObtainFieldValue
 from models.utils.generic_utils import (
@@ -11,6 +12,7 @@ from models.utils.generic_utils import (
     obtain_name_field_location,
     patient_and_practitioner_value_and_index,
 )
+from models.utils.validation_utils import validate_identifiers_match, validate_resource_versions_match
 from testing_utils.generic_utils import (
     load_json_data,
 )
@@ -18,7 +20,9 @@ from testing_utils.values_for_tests import InvalidValues, NameInstances, ValidVa
 
 
 class TestValidatorUtils(unittest.TestCase):
-    """Test immunization pre and post validation utils on the FHIR model"""
+    """Test immunization validation utils on the FHIR model"""
+
+    MOCK_LOCAL_IDENTIFIER = {"identifier": [{"system": "https://mock-identifier.co.uk/vaccs/", "value": "123"}]}
 
     def setUp(self):
         """Set up for each test. This runs before every test"""
@@ -275,6 +279,58 @@ class TestValidatorUtils(unittest.TestCase):
         for imms, name_value, resource_type, expected_location in test_cases:
             result = obtain_name_field_location(imms, resource_type, name_value)
             self.assertEqual(result, expected_location)
+
+    def test_validate_resource_versions_match_passes_when_version_matches(self):
+        """Tests validate_resource_versions_match passes when the resource versions match"""
+        self.assertIsNone(validate_resource_versions_match(3, 3, "12345-id"))
+
+    def test_validate_resource_versions_match_raises_error_when_versions_do_not_match(self):
+        """Tests validate_resource_versions_match raises a InconsistentResourceVersion when the versions do not
+        match"""
+        test_cases = [
+            (
+                2,
+                "Validation errors: The requested immunization resource 12345-id version is inconsistent with the "
+                "existing version.",
+            ),
+            (4, "Validation errors: The requested immunization resource 12345-id has changed since the last retrieve."),
+        ]
+
+        for actual_version, expected_error in test_cases:
+            with self.subTest(actual_version=actual_version, expected_error=expected_error):
+                with self.assertRaises(InconsistentResourceVersion) as error:
+                    validate_resource_versions_match(3, actual_version, "12345-id")
+
+                self.assertEqual(str(error.exception), expected_error)
+
+    def test_validate_identifiers_match_passes_when_identifiers_match(self):
+        """Tests validate_identifiers_match passes when the local identifiers match"""
+        self.assertIsNone(validate_identifiers_match(self.MOCK_LOCAL_IDENTIFIER, self.MOCK_LOCAL_IDENTIFIER))
+
+    def test_validate_identifiers_match_raises_error_when_versions_do_not_match(self):
+        """Tests validate_identifiers_match raises a InconsistentIdentifierError when the local identifiers do not
+        match"""
+        test_cases = [
+            (
+                {"identifier": [{"system": "https://mock-identifier.co.uk/vaccs/", "value": "different_val"}]},
+                "Validation errors: identifier[0].value doesn't match with the stored content",
+            ),
+            (
+                {"identifier": [{"system": "https://different-identifier.co.uk/vaccs/", "value": "123"}]},
+                "Validation errors: identifier[0].system doesn't match with the stored content",
+            ),
+            (
+                {"identifier": [{"system": "https://different-identifier.co.uk/vaccs/", "value": "different_val"}]},
+                "Validation errors: identifier[0].system and identifier[0].value doesn't match with the stored content",
+            ),
+        ]
+
+        for new_identifier, expected_error in test_cases:
+            with self.subTest(new_identifier=new_identifier, expected_error=expected_error):
+                with self.assertRaises(InconsistentIdentifierError) as error:
+                    validate_identifiers_match(new_identifier, self.MOCK_LOCAL_IDENTIFIER)
+
+                self.assertEqual(str(error.exception), expected_error)
 
 
 if __name__ == "__main__":
