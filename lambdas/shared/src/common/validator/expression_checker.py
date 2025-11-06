@@ -15,7 +15,7 @@ class ExpressionChecker:
     """
 
     def __init__(self, data_parser, summarise: bool, report_unexpected_exception: bool):
-        self.data_parser = data_parser  # FHIR data parser for additional functions
+        self.data_parser = data_parser
         self.data_look_up = LookUpData()
         self.key_data = KeyData()
         self.summarise = summarise

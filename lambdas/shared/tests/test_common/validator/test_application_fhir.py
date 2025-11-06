@@ -6,8 +6,6 @@ from pathlib import Path
 from common.validator.validator import Validator
 from tests.test_common.validator.testing_utils.csv_fhir_utils import parse_test_file
 
-# TODO this needs success and fail cases
-
 
 class TestApplication(unittest.TestCase):
     def setUp(self):

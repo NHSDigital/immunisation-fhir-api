@@ -14,7 +14,6 @@ Example:
     >>> parser = SchemaParser()
     >>> parser.parse_schema(schema)
     >>> parser.expression_count()
-    2
     >>> parser.get_expression(0)
     {'expression': 'LOOKUP', 'field': 'route'}
 """

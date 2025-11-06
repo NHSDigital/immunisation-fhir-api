@@ -15,16 +15,8 @@ from common.validator.reporter.dq_reporter import DQReporter
 
 
 class Validator:
-    def __init__(self, schema_file="", data_type: DataType = None, filepath=""):
-        self.filepath = filepath
-        self.json_data = {}
-        self.fhir_data = {}
+    def __init__(self, schema_file=""):
         self.schema_file = schema_file
-        self.csv_row = ""
-        self.csv_header = ""
-        self.data_type = data_type
-        self.data_parser = ""
-        self.error_records: list[ErrorReport] = []
 
     # Retrieve all the Parsers,
     def _get_csv_parser(self, filepath: str) -> CSVParser:
@@ -50,6 +42,7 @@ class Validator:
     # Collect and add error record to the list
     def _add_error_record(
         self,
+        error_records: list[ErrorReport],
         error_record: ErrorReport,
         expression_error_group: str,
         expression_name: str,
@@ -61,27 +54,27 @@ class Validator:
             error_record.name = expression_name
             error_record.id = expression_id
             error_record.error_level = error_level
-            self.error_records.append(error_record)
+            error_records.append(error_record)
 
     # Function to help identify a parent failure in the error list
-    def _check_error_record_for_fail(self, expression_identifier: str) -> bool:
-        for error_record in self.error_records:
+    def _check_error_record_for_fail(self, expression_identifier: str, error_records: list[ErrorReport]) -> bool:
+        for error_record in error_records:
             if error_record.id == expression_identifier:
                 return True
         return False
 
     #  validate a single expression against the data file
     def _validate_expression(
-        self, expression_validator: ExpressionChecker, expression: dict, inc_header_in_row_count: bool
+        self,
+        expression_validator: ExpressionChecker,
+        expression: dict,
+        data_parser,
+        error_records: list[ErrorReport],
+        inc_header_in_row_count: bool,
+        is_csv: bool,
     ) -> ErrorReport | int:
-        row = 1
-        if inc_header_in_row_count:
-            row = 2
-
-        if self.is_csv:
-            expression_fieldname = expression["fieldNameFlat"]
-        else:
-            expression_fieldname = expression["fieldNameFHIR"]
+        row = 2 if inc_header_in_row_count else 1
+        expression_fieldname = expression["fieldNameFlat"] if is_csv else expression["fieldNameFHIR"]
 
         expression_id = expression["expressionId"]
         error_level = expression["errorLevel"]
@@ -93,25 +86,25 @@ class Validator:
         # Check to see if the expression has a parent, if so did the parent validate
         if "parentExpression" in expression:
             parent_expression = expression["parentExpression"]
-            if self._check_error_record_for_fail(parent_expression):
+            if self._check_error_record_for_fail(parent_expression, error_records):
                 error_record = ErrorReport(
                     code=ExceptionLevels.PARENT_FAILED,
                     message=MESSAGES[ExceptionLevels.PARENT_FAILED] + ", Parent ID: " + parent_expression,
                 )
                 self._add_error_record(error_record, expression_error_group, expression_name, expression_id, error_level)
-                return error_record
+                error_records.append(error_record)
+                return
 
         try:
-            expression_values = self.data_parser.get_key_value(expression_fieldname)
+            expression_values = data_parser.get_key_value(expression_fieldname)
         except Exception as e:
             message = f"Data get values Unexpected exception [{e.__class__.__name__}]: {e}"
-            error_report = ErrorReport(code=ExceptionLevels.PARSING_ERROR, message=message)
+            error_record = ErrorReport(code=ExceptionLevels.PARSING_ERROR, message=message)
             # original code had self.CriticalErrorLevel. Replaced with error_level
-            self._add_error_record(error_report, expression_error_group, expression_name, expression_id, error_level)
-            return error_report
+            self._add_error_record(error_record, expression_error_group, expression_name, expression_id, error_level)
+            return error_records.append(error_record)
 
         for value in expression_values:
-            error_record: ErrorReport | None = None
             try:
                 error_record = expression_validator.validate_expression(
                     expression_type, expression_rule, expression_fieldname, value, row
@@ -132,20 +125,28 @@ class Validator:
         report_unexpected_exception: bool = True,
         inc_header_in_row_count: bool = True,
     ) -> list[ErrorReport]:
-        self.data_type = DataType.FHIR
-        self.fhir_data = fhir_data
-        return self.run_validation(summarise, report_unexpected_exception, inc_header_in_row_count)
+        return self.run_validation(
+            data_type=DataType.FHIR,
+            fhir_data=fhir_data,
+            summarise=summarise,
+            report_unexpected_exception=report_unexpected_exception,
+            inc_header_in_row_count=inc_header_in_row_count,
+        )
 
     def validate_csv(
         self,
-        filepath: str,
+        batch_filepath: str,
         summarise: bool = False,
         report_unexpected_exception: bool = True,
         inc_header_in_row_count: bool = True,
     ) -> list[ErrorReport]:
-        self.data_type = DataType.CSV
-        self.filepath = filepath
-        return self.run_validation(summarise, report_unexpected_exception, inc_header_in_row_count)
+        return self.run_validation(
+            data_type=DataType.CSV,
+            batch_filepath=batch_filepath,
+            summarise=summarise,
+            report_unexpected_exception=report_unexpected_exception,
+            inc_header_in_row_count=inc_header_in_row_count,
+        )
 
     def validate_csv_row(
         self,
@@ -155,72 +156,62 @@ class Validator:
         report_unexpected_exception: bool = True,
         inc_header_in_row_count: bool = True,
     ) -> list[ErrorReport]:
-        self.data_type = DataType.CSVROW
-        self.csv_row = csv_row
-        self.csv_header = csv_header
-        return self.run_validation(summarise, report_unexpected_exception, inc_header_in_row_count)
+        return self.run_validation(
+            data_type=DataType.CSVROW,
+            csv_row=csv_row,
+            csv_header=csv_header,
+            summarise=summarise,
+            report_unexpected_exception=report_unexpected_exception,
+            inc_header_in_row_count=inc_header_in_row_count,
+        )
 
     # run the validation against the data
     def run_validation(
-        self, summarise=False, report_unexpected_exception=True, inc_header_in_row_count=True
+        self,
+        data_type: DataType,
+        fhir_data: dict = None,
+        batch_filepath: str = None,
+        csv_row: str = None,
+        csv_header: list[str] = None,
+        summarise=False,
+        report_unexpected_exception=True,
+        inc_header_in_row_count=True,
     ) -> list[ErrorReport]:
-        try:
-            self.error_records.clear()
+        error_records: list[ErrorReport] = []
 
-            match self.data_type:
+        try:
+            match data_type:
                 case DataType.FHIR:
-                    self.data_parser = self._get_fhir_parser(self.fhir_data)
-                    self.is_csv = False
+                    data_parser = self._get_fhir_parser(fhir_data)
+                    is_csv = False
                 case DataType.CSV:
-                    self.data_parser = self._get_csv_parser(self.filepath)
-                    self.is_csv = True
+                    data_parser = self._get_csv_parser(batch_filepath)
+                    is_csv = True
                 case DataType.CSVROW:
-                    self.data_parser = self._get_csv_line_parser(self.csv_row, self.csv_header)
-                    self.is_csv = True
+                    data_parser = self._get_csv_line_parser(csv_row, csv_header)
+                    is_csv = True
 
         except Exception as e:
             if report_unexpected_exception:
                 message = f"Data Parser Unexpected exception [{e.__class__.__name__}]: {e}"
                 return [ErrorReport(code=0, message=message)]
 
-        try:
-            schema_parser = self._get_schema_parser(self.schema_file)
-        except Exception as e:
-            if report_unexpected_exception:
-                message = f"Schema Parser Unexpected exception [{e.__class__.__name__}]: {e}"
-                return [ErrorReport(code=0, message=message)]
-
-        try:
-            expression_validator = ExpressionChecker(self.data_parser, summarise, report_unexpected_exception)
-        except Exception as e:
-            if report_unexpected_exception:
-                message = f"Expression Checker Unexpected exception [{e.__class__.__name__}]: {e}"
-                return [ErrorReport(code=0, message=message)]
-
-        # get list of expressions
-        try:
-            expressions = schema_parser.get_expressions()
-        except Exception as e:
-            if report_unexpected_exception:
-                message = f"Expression Getter Unexpected exception [{e.__class__.__name__}]: {e}"
-                return [ErrorReport(code=0, message=message)]
+        schema_parser = self._get_schema_parser(self.schema_file)
+        expression_validator = ExpressionChecker(data_parser, summarise, report_unexpected_exception)
+        expressions = schema_parser.get_expressions()
 
         for expression in expressions:
-            self._validate_expression(expression_validator, expression, inc_header_in_row_count)
+            self._validate_expression(
+                expression_validator, expression, data_parser, error_records, inc_header_in_row_count, is_csv
+            )
 
-        return self.error_records
+        return error_records
 
     # Build the error Report
-    def build_error_report(self, event_id: str) -> dict:
-        occurrence_date_time = self.data_parser.get_fhir_value("occurrenceDateTime")
+    def build_error_report(self, event_id: str, data_parser, error_records: list[ErrorReport]) -> dict:
+        occurrence_date_time = data_parser.get_fhir_value("occurrenceDateTime")
         dq_reporter = DQReporter()
-        dq_report = dq_reporter.generate_error_report(event_id, occurrence_date_time, self.error_records)
+        return dq_reporter.generate_error_report(event_id, occurrence_date_time, error_records)
 
-        return dq_report
-
-    # Check all errors to see if we have a critical error that would fail the validation
-    def has_validation_failed(self) -> bool:
-        for error_record in self.error_records:
-            if error_record.error_level == ErrorLevels.CRITICAL_ERROR:
-                return True
-        return False
+    def has_validation_failed(self, error_records: list[ErrorReport]) -> bool:
+        return any(er.error_level == ErrorLevels.CRITICAL_ERROR for er in error_records)
