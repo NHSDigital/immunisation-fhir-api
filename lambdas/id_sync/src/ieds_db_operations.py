@@ -10,6 +10,8 @@ from utils import make_status
 
 ieds_table = None
 BATCH_SIZE = 25  # DynamoDB TransactWriteItems max batch size
+PATIENT_KEY = "PatientPK"
+IDENTIFIER_KEY = "IdentifierPK"
 
 
 def get_ieds_table():
@@ -82,7 +84,7 @@ def paginate_items_for_patient_pk(patient_pk: str) -> list:
     while True:
         query_args = {
             "IndexName": "PatientGSI",
-            "KeyConditionExpression": Key("PatientPK").eq(patient_pk),
+            "KeyConditionExpression": Key(PATIENT_KEY).eq(patient_pk),
         }
         if last_evaluated_key:
             query_args["ExclusiveStartKey"] = last_evaluated_key
@@ -146,7 +148,7 @@ def build_transact_items(old_id: str, new_id: str, items_to_update: list) -> lis
     new_patient_pk = f"Patient#{new_id}"
 
     for item in items_to_update:
-        old_patient_pk = item.get("PatientPK", f"Patient#{old_id}")
+        old_patient_pk = item.get(PATIENT_KEY, f"Patient#{old_id}")
 
         transact_items.append(
             {
@@ -155,8 +157,8 @@ def build_transact_items(old_id: str, new_id: str, items_to_update: list) -> lis
                     "Key": {
                         "PK": {"S": item["PK"]},
                     },
-                    "UpdateExpression": "SET PatientPK = :new_val",
-                    "ConditionExpression": "PatientPK = :expected_old",
+                    "UpdateExpression": f"SET {PATIENT_KEY} = :new_val",
+                    "ConditionExpression": f"{PATIENT_KEY} = :expected_old",
                     "ExpressionAttributeValues": {
                         ":new_val": {"S": new_patient_pk},
                         ":expected_old": {"S": old_patient_pk},
