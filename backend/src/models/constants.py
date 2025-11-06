@@ -56,3 +56,5 @@ class Constants:
     SUPPLIER_PERMISSIONS_KEY = "supplier_permissions"
     VACCINE_TYPE_TO_DISEASES_HASH_KEY = "vacc_to_diseases"
     DISEASES_TO_VACCINE_TYPE_HASH_KEY = "diseases_to_vacc"
+
+    REINSTATED_RECORD_STATUS = "reinstated"

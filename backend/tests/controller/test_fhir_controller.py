@@ -14,7 +14,6 @@ from controller.aws_apig_response_utils import create_response
 from controller.fhir_controller import FhirController
 from models.errors import (
     CustomValidationError,
-    IdentifierDuplicationError,
     ParameterException,
     ResourceNotFoundError,
     UnauthorizedVaxError,
@@ -931,6 +930,9 @@ class TestCreateImmunization(unittest.TestCase):
 
 
 class TestUpdateImmunization(unittest.TestCase):
+    mock_imms_id = "valid-id"
+    mock_imms_payload = {"id": "valid-id"}
+
     def setUp(self):
         self.service = create_autospec(FhirService)
         self.controller = FhirController(self.service)
@@ -943,431 +945,162 @@ class TestUpdateImmunization(unittest.TestCase):
     def test_update_immunization(self):
         """it should update Immunization"""
         # Given
-        imms_id = "valid-id"
-        imms = '{"id": "valid-id"}'
         aws_event = {
-            "headers": {"E-Tag": 1, "SupplierSystem": "Test"},
-            "body": imms,
-            "pathParameters": {"id": imms_id},
+            "headers": {"E-Tag": "1", "SupplierSystem": "Test"},
+            "body": json.dumps(self.mock_imms_payload),
+            "pathParameters": {"id": self.mock_imms_id},
         }
-        self.service.update_immunization.return_value = (
-            True,
-            "value doesn't matter",
-            2,
-        )
-        self.service.get_immunization_by_id_all.return_value = {
-            "resource": "new_value",
-            "Version": 1,
-            "DeletedAt": False,
-            "Reinstated": False,
-            "VaccineType": "COVID",
-        }
+        self.service.update_immunization.return_value = 2
         response = self.controller.update_immunization(aws_event)
 
-        self.service.update_immunization.assert_called_once_with(imms_id, json.loads(imms), 1, "COVID", "Test")
+        self.service.update_immunization.assert_called_once_with(self.mock_imms_id, self.mock_imms_payload, "Test", 1)
         self.assertEqual(response["statusCode"], 200)
         self.assertEqual(response["headers"]["E-Tag"], 2)
 
     def test_update_immunization_etag_missing(self):
-        """it should update Immunization"""
+        """it should raise an error if the E-Tag header is missing"""
         # Given
-        imms_id = "valid-id"
-        imms = {"id": "valid-id"}
-        self.service.get_immunization_by_id_all.return_value = {
-            "id": imms_id,
-            "Version": 1,
-            "VaccineType": "COVID",
-            "DeletedAt": False,
-        }
+        # E-Tag header missing from headers section
         aws_event = {
-            "headers": {"SupplierSystem": "Test", "operation_requested": "update"},
-            "body": json.dumps(imms),
-            "pathParameters": {"id": imms_id},
+            "headers": {"SupplierSystem": "Test"},
+            "body": json.dumps(self.mock_imms_payload),
+            "pathParameters": {"id": self.mock_imms_id},
         }
+
         response = self.controller.update_immunization(aws_event)
+
         self.assertEqual(response["statusCode"], 400)
-        self.assertIn(
-            "Validation errors: Immunization resource version not specified in the request headers",
+        self.assertEqual(
             json.loads(response["body"])["issue"][0]["diagnostics"],
+            "Validation errors: Immunization resource version not specified in the request headers",
         )
 
-    def test_update_immunization_duplicate(self):
-        """it should not update the Immunization record"""
-        # Given
-        imms_id = "valid-id"
-        imms = {"id": "valid-id"}
-        aws_event = {
-            "headers": {
-                "E-Tag": 1,
-                "SupplierSystem": "Test",
-                "operation_requested": "update",
-            },
-            "body": json.dumps(imms),
-            "pathParameters": {"id": imms_id},
-        }
-        self.service.update_immunization.side_effect = IdentifierDuplicationError(identifier="test")
-        self.service.get_immunization_by_id_all.return_value = {
-            "resource": "new_value",
-            "Version": 1,
-            "DeletedAt": False,
-            "Reinstated": False,
-            "VaccineType": "COVID",
-        }
-        response = self.controller.update_immunization(aws_event)
-        self.assertEqual(response["statusCode"], 422)
+    def test_update_immunization_returns_unauthorised_when_supplier_system_header_missing(self):
+        """it should return a 403 error when the supplier system header is missing"""
+        aws_event = {"body": {}, "header": {"missing": "supplier-system"}, "pathParameters": {"id": self.mock_imms_id}}
 
-    def test_update_immunization_UnauthorizedVaxError(self):
-        """it should not update the Immunization record"""
-        imms_id = "valid-id"
-        imms = {"id": "valid-id"}
+        response = self.controller.update_immunization(aws_event)
+
+        self.assertEqual(response["statusCode"], 403)
+        self.assertEqual(json.loads(response["body"])["issue"][0]["diagnostics"], "Unauthorized request")
+
+    def test_update_immunization_returns_unauthorised_when_client_does_not_have_required_permissions(self):
+        """it should return a 403 error when the service raises an UnauthorizedVaxError"""
         aws_event = {
-            "headers": {
-                "E-Tag": 1,
-                "SupplierSystem": "Test",
-                "operation_requested": "update",
-            },
-            "body": json.dumps(imms),
-            "pathParameters": {"id": imms_id},
+            "headers": {"E-Tag": "1", "SupplierSystem": "Test"},
+            "body": json.dumps(self.mock_imms_payload),
+            "pathParameters": {"id": self.mock_imms_id},
         }
         self.service.update_immunization.side_effect = UnauthorizedVaxError()
-        self.service.get_immunization_by_id_all.return_value = {
-            "resource": "new_value",
-            "Version": 1,
-            "DeletedAt": False,
-            "Reinstated": False,
-            "VaccineType": "COVID",
-        }
         response = self.controller.update_immunization(aws_event)
+
         self.assertEqual(response["statusCode"], 403)
 
-    def test_update_immunization_for_batch_existing_record_is_none(self):
-        """it should update Immunization"""
-
-        imms_id = "valid-id"
-        imms = {"id": "valid-id"}
-        aws_event = {
-            "headers": {
-                "E-Tag": 1,
-                "SupplierSystem": "Test",
-                "operation_requested": "update",
-            },
-            "body": json.dumps(imms),
-            "pathParameters": {"id": imms_id},
-        }
-        self.service.update_immunization.return_value = (
-            True,
-            "value doesn't matter",
-        )
-        self.service.get_immunization_by_id_all.return_value = None
-        response = self.controller.update_immunization(aws_event)
-
-        # self.service.update_immunization.assert_called_once_with(imms_id, json.loads(imms), 1, "COVID.CRUDS", "Test", False)
-        self.assertEqual(response["statusCode"], 404)
-        self.assertIn(
-            "The requested immunization resource with id:valid-id was not found.",
-            json.loads(response["body"])["issue"][0]["diagnostics"],
-        )
-
-    def test_unauthorised_update_immunization(self):
-        """it should return authorization error"""
-        aws_event = {"body": ()}
-        response = self.controller.update_immunization(aws_event)
-        self.assertEqual(response["statusCode"], 403)
-
-    def test_update_immunization_for_invalid_version(self):
+    def test_update_immunization_for_invalid_version_string(self):
         """it should not update Immunization"""
         # Given
-        imms = '{"id": "valid-id"}'
-        imms_id = "valid-id"
         aws_event = {
             "headers": {"E-Tag": "ajjsajj", "SupplierSystem": "Test"},
-            "body": json.dumps(imms),
-            "pathParameters": {"id": imms_id},
+            "body": json.dumps(self.mock_imms_payload),
+            "pathParameters": {"id": self.mock_imms_id},
         }
-        self.service.get_immunization_by_id_all.return_value = {
-            "resource": "new_value",
-            "Version": 1,
-            "DeletedAt": False,
-            "Reinstated": False,
-            "VaccineType": "COVID",
-        }
+
         response = self.controller.update_immunization(aws_event)
 
         self.assertEqual(response["statusCode"], 400)
-
-    def test_update_deletedat_immunization_with_version(self):
-        """it should reinstate deletedat Immunization"""
-        imms = '{"id": "valid-id"}'
-        imms_id = "valid-id"
-        aws_event = {
-            "headers": {"E-Tag": 1, "SupplierSystem": "Test"},
-            "body": imms,
-            "pathParameters": {"id": imms_id},
-        }
-        self.service.reinstate_immunization.return_value = True, {}, 2
-        self.service.get_immunization_by_id_all.return_value = {
-            "resource": "new_value",
-            "Version": 1,
-            "DeletedAt": True,
-            "Reinstated": False,
-            "VaccineType": "COVID",
-        }
-        response = self.controller.update_immunization(aws_event)
-
-        self.service.reinstate_immunization.assert_called_once_with(imms_id, json.loads(imms), 1, "COVID", "Test")
-        self.assertEqual(response["statusCode"], 200)
-        self.assertEqual(response["headers"]["E-Tag"], 2)
-
-    def test_update_deletedat_immunization_without_version(self):
-        """it should reinstate deletedat Immunization"""
-        # Given
-        imms = '{"id": "valid-id"}'
-        imms_id = "valid-id"
-        aws_event = {
-            "headers": {"SupplierSystem": "Test", "E-tag": 1},
-            "body": imms,
-            "pathParameters": {"id": imms_id},
-        }
-        self.service.reinstate_immunization.return_value = True, {}, 2
-        self.service.get_immunization_by_id_all.return_value = {
-            "resource": "new_value",
-            "Version": 1,
-            "DeletedAt": True,
-            "Reinstated": False,
-            "VaccineType": "COVID",
-        }
-        response = self.controller.update_immunization(aws_event)
-
-        self.service.reinstate_immunization.assert_called_once_with(imms_id, json.loads(imms), 1, "COVID", "Test")
-        self.assertEqual(response["statusCode"], 200)
-        self.assertEqual(response["headers"]["E-Tag"], 2)
-
-    def test_validation_error(self):
-        """it should return 400 if Immunization is invalid"""
-        # Given
-        imms = '{"id": "valid-id"}'
-        aws_event = {
-            "headers": {"E-Tag": 1, "SupplierSystem": "Test"},
-            "body": imms,
-            "pathParameters": {"id": "valid-id"},
-        }
-        self.service.update_immunization.side_effect = CustomValidationError(message="invalid")
-        self.service.get_immunization_by_id_all.return_value = {
-            "resource": "new_value",
-            "Version": 1,
-            "DeletedAt": False,
-            "Reinstated": False,
-            "VaccineType": "COVID",
-        }
-        response = self.controller.update_immunization(aws_event)
-
-        self.assertEqual(400, response["statusCode"])
-        body = json.loads(response["body"])
-        self.assertEqual(body["resourceType"], "OperationOutcome")
-
-    def test_validation_error_for_batch(self):
-        """it should return 400 if Immunization is invalid"""
-
-        imms = '{"id": 123}'
-        aws_event = {
-            "headers": {
-                "E-Tag": 1,
-                "SupplierSystem": "Test",
-                "operation_requested": "update",
-            },
-            "body": imms,
-            "pathParameters": {"id": "valid-id"},
-        }
-        self.service.update_immunization.side_effect = CustomValidationError(message="invalid")
-        self.service.get_immunization_by_id_all.return_value = {
-            "resource": "new_value",
-            "Version": 1,
-            "DeletedAt": False,
-            "Reinstated": False,
-            "VaccineType": "COVID",
-        }
-        response = self.controller.update_immunization(aws_event)
-        self.assertEqual(400, response["statusCode"])
-        body = json.loads(response["body"])
-        self.assertEqual(body["resourceType"], "OperationOutcome")
-
-    def test_validation_superseded_number_to_give_bad_request_for_update_immunization(
-        self,
-    ):
-        """it should return 400 if Immunization has superseded nhs number."""
-        update_result = {
-            "diagnostics": "Validation errors: contained[?(@.resourceType=='Patient')].identifier[0].value does not exists"
-        }
-        self.service.update_immunization.return_value = None, update_result, 2
-        req_imms = '{"id": "valid-id"}'
-        path_id = "valid-id"
-        aws_event = {
-            "headers": {"E-Tag": 1, "SupplierSystem": "Test"},
-            "body": req_imms,
-            "pathParameters": {"id": path_id},
-        }
-        self.service.get_immunization_by_id_all.return_value = {
-            "resource": "new_value",
-            "Version": 1,
-            "DeletedAt": False,
-            "Reinstated": False,
-            "VaccineType": "COVID",
-        }
-        # When
-        response = self.controller.update_immunization(aws_event)
-
-        self.assertEqual(response["statusCode"], 400)
-        body = json.loads(response["body"])
-        self.assertEqual(body["resourceType"], "OperationOutcome", 2)
-
-    def test_validation_identifier_to_give_bad_request_for_update_immunization(self):
-        """it should return 400 if Identifier system and value  doesn't match with the stored content."""
-
-        req_imms = '{"id": "valid-id"}'
-        path_id = "valid-id"
-        aws_event = {
-            "headers": {
-                "E-Tag": 1,
-                "VaccineTypePermissions": "COVID.CRUDS",
-                "SupplierSystem": "Test",
-            },
-            "body": req_imms,
-            "pathParameters": {"id": path_id},
-        }
-        self.service.get_immunization_by_id_all.return_value = {
-            "diagnostics": "Validation errors: identifier[0].system doesn't match with the stored content"
-        }
-        # When
-        response = self.controller.update_immunization(aws_event)
-
-        self.assertEqual(response["statusCode"], 400)
-        body = json.loads(response["body"])
-        self.assertEqual(body["resourceType"], "OperationOutcome")
-
-    def test_version_mismatch_for_update_immunization(self):
-        """it should return 400 if resource version mismatch"""
-        update_result = {
-            "diagnostics": "Validation errors: contained[?(@.resourceType=='Patient')].identifier[0].value does not exists"
-        }
-        self.service.update_immunization.return_value = None, update_result
-        req_imms = '{"id": "valid-id"}'
-        path_id = "valid-id"
-        aws_event = {
-            "headers": {"E-Tag": 1, "SupplierSystem": "Test"},
-            "body": req_imms,
-            "pathParameters": {"id": path_id},
-        }
-        self.service.get_immunization_by_id_all.return_value = {
-            "resource": "new_value",
-            "Version": 2,
-            "DeletedAt": False,
-            "VaccineType": "COVID",
-        }
-        # When
-        response = self.controller.update_immunization(aws_event)
-
-        self.assertEqual(response["statusCode"], 400)
-        body = json.loads(response["body"])
-        self.assertEqual(body["resourceType"], "OperationOutcome")
-
-    def test_update_immunization_for_batch(self):
-        """Immunization[id] should exist and be the same as request"""
-
-        bad_json = "{}"
-        aws_event = {
-            "headers": {"E-Tag": 1, "SupplierSystem": "Test"},
-            "body": bad_json,
-            "pathParameters": {"id": "an-id"},
-        }
-        response = self.controller.update_immunization(aws_event)
-        self.assertEqual(response["statusCode"], 400)
-        self.assertIn(
-            "The provided immunization id:an-id doesn't match with the content of the request body",
+        self.assertEqual(
             json.loads(response["body"])["issue"][0]["diagnostics"],
+            "Validation errors: Immunization resource version:ajjsajj in the request headers is invalid.",
         )
 
-    def test_update_immunization_for_batch_with_invalid_json(self):
-        """it should validate lambda's Immunization id"""
+    def test_update_immunization_for_invalid_version_negative_number(self):
+        """it should not update Immunization"""
+        # Given
+        aws_event = {
+            "headers": {"E-Tag": "-3", "SupplierSystem": "Test"},
+            "body": json.dumps(self.mock_imms_payload),
+            "pathParameters": {"id": self.mock_imms_id},
+        }
+
+        response = self.controller.update_immunization(aws_event)
+
+        self.assertEqual(response["statusCode"], 400)
+        self.assertEqual(
+            json.loads(response["body"])["issue"][0]["diagnostics"],
+            "Validation errors: Immunization resource version:-3 in the request headers is invalid.",
+        )
+
+    def test_update_immunization_returns_error_for_invalid_id(self):
+        """it should return a 400 error if the ID is invalid"""
 
         aws_event = {
-            "headers": {"E-Tag": 1, "SupplierSystem": "Test"},
+            "headers": {"E-Tag": "1", "SupplierSystem": "Test"},
             "pathParameters": {"id": "invalid %$ id"},
         }
 
         response = self.controller.update_immunization(aws_event)
 
-        self.assertEqual(self.service.update_immunization.call_count, 0)
         self.assertEqual(response["statusCode"], 400)
         outcome = json.loads(response["body"])
         self.assertEqual(outcome["resourceType"], "OperationOutcome")
-
-    def test_update_immunization_when_reinstated_true(self):
-        """it should update reinstated Immunization"""
-        imms_id = "valid-id"
-        imms = '{"id": "valid-id"}'
-        aws_event = {
-            "headers": {"E-Tag": 1, "SupplierSystem": "Test"},
-            "body": imms,
-            "pathParameters": {"id": imms_id},
-        }
-        self.service.update_reinstated_immunization.return_value = (
-            True,
-            {},
-            3,
+        self.assertEqual(
+            outcome["issue"][0]["diagnostics"],
+            "Validation errors: the provided event ID is either missing or not in the expected format.",
         )
-        self.service.get_immunization_by_id_all.return_value = {
-            "resource": "existing",
-            "Version": 1,
-            "DeletedAt": False,
-            "Reinstated": True,
-            "VaccineType": "COVID",
-        }
+        self.service.update_immunization.assert_not_called()
 
-        response = self.controller.update_immunization(aws_event)
-
-        self.service.update_reinstated_immunization.assert_called_once_with(
-            imms_id, json.loads(imms), 1, "COVID", "Test"
-        )
-        self.assertEqual(response["statusCode"], 200)
-        self.assertEqual(response["headers"]["E-Tag"], int("3"))
-
-    def test_update_immunization_missing_id(self):
-        """it should raise KeyError if pathParameters['id'] is missing"""
+    def test_update_immunization_returns_error_when_id_is_missing_from_path_params(self):
+        """it should return a 400 error if pathParameters['id'] is missing"""
         aws_event = {
-            "headers": {"E-Tag": 1, "SupplierSystem": "Test"},
+            "headers": {"E-Tag": "1", "SupplierSystem": "Test"},
             "body": '{"id": "valid-id"}',
             "pathParameters": {},  # 'id' is missing
         }
-        with self.assertRaises(KeyError):
-            self.controller.update_immunization(aws_event)
-
-    def test_update_reinstated_immunization_with_diagnostics_error(self):
-        """it should return 400 if patient validation error is present"""
-        imms_id = "valid-id"
-        imms = '{"id": "valid-id"}'
-        aws_event = {
-            "headers": {"E-Tag": 1, "SupplierSystem": "Test"},
-            "body": imms,
-            "pathParameters": {"id": imms_id},
-        }
-        # Simulate reinstated record
-        self.service.get_immunization_by_id_all.return_value = {
-            "resource": "existing",
-            "Version": 1,
-            "DeletedAt": True,
-            "Reinstated": False,
-            "VaccineType": "COVID",
-        }
-        self.service.reinstate_immunization.return_value = (
-            False,
-            {"diagnostics": "Patient NHS number has been superseded"},
-            None,
-        )
 
         response = self.controller.update_immunization(aws_event)
 
         self.assertEqual(response["statusCode"], 400)
-        self.assertIn("superseded", json.loads(response["body"])["issue"][0]["diagnostics"])
+        self.assertEqual(
+            json.loads(response["body"])["issue"][0]["diagnostics"],
+            "Validation errors: the provided event ID is either missing or not in the expected format.",
+        )
+        self.service.update_immunization.assert_not_called()
+
+    def test_update_immunization_returns_error_when_invalid_json_provided(self):
+        """it should return a 400 validation error if the body contains invalid JSON"""
+        # Given
+        aws_event = {
+            "headers": {"E-Tag": "2", "SupplierSystem": "Test"},
+            "body": '{"test": "broken}',
+            "pathParameters": {"id": self.mock_imms_id},
+        }
+
+        response = self.controller.update_immunization(aws_event)
+
+        self.assertEqual(response["statusCode"], 400)
+        self.assertEqual(
+            json.loads(response["body"])["issue"][0]["diagnostics"],
+            "Request's body contains malformed JSON: Unterminated string starting at: line 1 column 10 (char 9)",
+        )
+        self.service.update_immunization.assert_not_called()
+
+    def test_update_immunization_returns_error_when_id_in_body_does_not_match_path(self):
+        """it should return a 400 validation error if the Immunization resource body's ID does not match the path"""
+        # Given
+        aws_event = {
+            "headers": {"E-Tag": "2", "SupplierSystem": "Test"},
+            "body": json.dumps(self.mock_imms_payload),
+            "pathParameters": {"id": "a-different-id"},
+        }
+
+        response = self.controller.update_immunization(aws_event)
+
+        self.assertEqual(response["statusCode"], 400)
+        self.assertEqual(
+            json.loads(response["body"])["issue"][0]["diagnostics"],
+            "Validation errors: The provided immunization id:a-different-id doesn't match with the content of the request body",
+        )
+        self.service.update_immunization.assert_not_called()
 
 
 class TestDeleteImmunization(unittest.TestCase):
@@ -1520,7 +1253,7 @@ class TestSearchImmunizations(TestFhirControllerBase):
         "MMR",
         "HPV",
         "MMRV",
-        "PCV13",
+        "PNEUMOCOCCAL",
         "SHINGLES",
         "COVID",
         "FLU",

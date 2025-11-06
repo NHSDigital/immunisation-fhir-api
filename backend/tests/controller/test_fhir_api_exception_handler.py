@@ -6,8 +6,13 @@ from controller.fhir_api_exception_handler import fhir_api_exception_handler
 from models.errors import (
     CustomValidationError,
     IdentifierDuplicationError,
+    InconsistentIdentifierError,
+    InconsistentIdError,
+    InconsistentResourceVersion,
     InvalidJsonError,
+    InvalidResourceVersion,
     ResourceNotFoundError,
+    ResourceVersionNotProvided,
     UnauthorizedError,
     UnauthorizedVaxError,
     UnhandledResponseError,
@@ -35,8 +40,33 @@ class TestFhirApiExceptionHandler(unittest.TestCase):
     def test_exception_handler_handles_custom_exception_and_returns_fhir_response(self):
         """Test that custom exceptions are handled by the wrapper and a valid response is returned to the client"""
         test_cases = [
+            (
+                InconsistentResourceVersion("Resource versions do not match"),
+                400,
+                "invariant",
+                "Resource versions do not match",
+            ),
+            (
+                InconsistentIdError("123"),
+                400,
+                "invariant",
+                "Validation errors: The provided immunization id:123 doesn't match with the content of the request body",
+            ),
+            (InconsistentIdentifierError("Identifiers do not match"), 400, "invariant", "Identifiers do not match"),
             (InvalidJsonError("Invalid JSON provided"), 400, "invalid", "Invalid JSON provided"),
             (CustomValidationError("This field was invalid"), 400, "invariant", "This field was invalid"),
+            (
+                ResourceVersionNotProvided(resource_type="Immunization"),
+                400,
+                "invariant",
+                "Validation errors: Immunization resource version not specified in the request headers",
+            ),
+            (
+                InvalidResourceVersion(resource_version="badVersion"),
+                400,
+                "invariant",
+                "Validation errors: Immunization resource version:badVersion in the request headers is invalid.",
+            ),
             (UnauthorizedError(), 403, "forbidden", "Unauthorized request"),
             (
                 UnauthorizedVaxError(),
