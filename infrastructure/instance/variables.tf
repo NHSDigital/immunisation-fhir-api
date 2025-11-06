@@ -34,10 +34,6 @@ variable "pds_environment" {
   default = "int"
 }
 
-variable "pds_check_enabled" {
-  default = true
-}
-
 # Remember to switch off in PR envs after testing
 variable "batch_error_notifications_enabled" {
   default     = true

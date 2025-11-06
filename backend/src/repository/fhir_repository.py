@@ -1,7 +1,7 @@
 import os
 import time
 from dataclasses import dataclass
-from typing import Optional, Tuple
+from typing import Optional
 
 import boto3
 import botocore.exceptions
@@ -13,14 +13,14 @@ from fhir.resources.R4B.immunization import Immunization
 from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
 from responses import logger
 
+from models.constants import Constants
 from models.errors import (
-    IdentifierDuplicationError,
     ResourceNotFoundError,
     UnhandledResponseError,
 )
+from models.immunization_record_metadata import ImmunizationRecordMetadata
 from models.utils.generic_utils import get_contained_patient
 from models.utils.validation_utils import (
-    check_identifier_system_value,
     get_vaccine_type,
 )
 
@@ -108,50 +108,27 @@ class ImmunizationRepository:
         else:
             return None, None
 
-    def get_immunization_and_version_by_id(self, imms_id: str) -> tuple[Optional[dict], Optional[str]]:
+    def get_immunization_and_resource_meta_by_id(
+        self, imms_id: str, include_deleted: bool = False
+    ) -> tuple[Optional[dict], Optional[ImmunizationRecordMetadata]]:
+        """Retrieves the immunization and resource metadata from the VEDS table"""
         response = self.table.get_item(Key={"PK": _make_immunization_pk(imms_id)})
         item = response.get("Item")
 
         if not item:
             return None, None
 
-        if item.get("DeletedAt") and item["DeletedAt"] != "reinstated":
+        deleted_at_attr = item.get("DeletedAt")
+
+        is_deleted = deleted_at_attr is not None and deleted_at_attr != Constants.REINSTATED_RECORD_STATUS
+        is_reinstated = deleted_at_attr == Constants.REINSTATED_RECORD_STATUS
+
+        if is_deleted and not include_deleted:
             return None, None
 
-        return json.loads(item.get("Resource", {})), str(item.get("Version", ""))
+        imms_record_meta = ImmunizationRecordMetadata(int(item.get("Version")), is_deleted, is_reinstated)
 
-    def get_immunization_by_id_all(self, imms_id: str, imms: dict) -> Optional[dict]:
-        response = self.table.get_item(Key={"PK": _make_immunization_pk(imms_id)})
-        if "Item" in response:
-            diagnostics = check_identifier_system_value(response, imms)
-            if diagnostics:
-                return diagnostics
-
-            else:
-                resp = dict()
-                if "DeletedAt" in response["Item"]:
-                    if response["Item"]["DeletedAt"] != "reinstated":
-                        resp["Resource"] = json.loads(response["Item"]["Resource"])
-                        resp["Version"] = response["Item"]["Version"]
-                        resp["DeletedAt"] = True
-                        resp["VaccineType"] = self._vaccine_type(response["Item"]["PatientSK"])
-                        return resp
-                    else:
-                        resp["Resource"] = json.loads(response["Item"]["Resource"])
-                        resp["Version"] = response["Item"]["Version"]
-                        resp["DeletedAt"] = False
-                        resp["Reinstated"] = True
-                        resp["VaccineType"] = self._vaccine_type(response["Item"]["PatientSK"])
-                        return resp
-                else:
-                    resp["Resource"] = json.loads(response["Item"]["Resource"])
-                    resp["Version"] = response["Item"]["Version"]
-                    resp["DeletedAt"] = False
-                    resp["Reinstated"] = False
-                    resp["VaccineType"] = self._vaccine_type(response["Item"]["PatientSK"])
-                    return resp
-        else:
-            return None
+        return json.loads(item.get("Resource", {})), imms_record_meta
 
     def check_immunization_identifier_exists(self, system: str, unique_id: str) -> bool:
         """Checks whether an immunization with the given immunization identifier (system + local ID) exists."""
@@ -194,72 +171,28 @@ class ImmunizationRepository:
         self,
         imms_id: str,
         immunization: dict,
-        patient: any,
-        existing_resource_version: int,
+        existing_record_meta: ImmunizationRecordMetadata,
         supplier_system: str,
-    ) -> tuple[dict, int]:
+    ) -> int:
+        # VED-898 - consider refactoring to pass FHIR Immunization object rather than dict between Service -> Repository
+        patient = get_contained_patient(immunization)
         attr = RecordAttributes(immunization, patient)
-        update_exp = self._build_update_expression(is_reinstate=False)
+        reinstate_operation_required = existing_record_meta.is_deleted
 
-        self._check_duplicate_identifier(attr)
+        update_exp = self._build_update_expression(is_reinstate=reinstate_operation_required)
 
         return self._perform_dynamo_update(
             imms_id,
             update_exp,
             attr,
-            existing_resource_version,
+            existing_record_meta.resource_version,
             supplier_system,
-            deleted_at_required=False,
-            update_reinstated=False,
+            reinstate_operation_required=reinstate_operation_required,
+            record_contains_deletion_history=(reinstate_operation_required or existing_record_meta.is_reinstated),
         )
 
-    def reinstate_immunization(
-        self,
-        imms_id: str,
-        immunization: dict,
-        patient: any,
-        existing_resource_version: int,
-        supplier_system: str,
-    ) -> tuple[dict, int]:
-        attr = RecordAttributes(immunization, patient)
-        update_exp = self._build_update_expression(is_reinstate=True)
-
-        self._check_duplicate_identifier(attr)
-
-        return self._perform_dynamo_update(
-            imms_id,
-            update_exp,
-            attr,
-            existing_resource_version,
-            supplier_system,
-            deleted_at_required=True,
-            update_reinstated=False,
-        )
-
-    def update_reinstated_immunization(
-        self,
-        imms_id: str,
-        immunization: dict,
-        patient: any,
-        existing_resource_version: int,
-        supplier_system: str,
-    ) -> tuple[dict, int]:
-        attr = RecordAttributes(immunization, patient)
-        update_exp = self._build_update_expression(is_reinstate=False)
-
-        self._check_duplicate_identifier(attr)
-
-        return self._perform_dynamo_update(
-            imms_id,
-            update_exp,
-            attr,
-            existing_resource_version,
-            supplier_system,
-            deleted_at_required=True,
-            update_reinstated=True,
-        )
-
-    def _build_update_expression(self, is_reinstate: bool) -> str:
+    @staticmethod
+    def _build_update_expression(is_reinstate: bool) -> str:
         if is_reinstate:
             return (
                 "SET UpdatedAt = :timestamp, PatientPK = :patient_pk, "
@@ -273,15 +206,6 @@ class ImmunizationRepository:
                 "Operation = :operation, Version = :version, SupplierSystem = :supplier_system "
             )
 
-    def _check_duplicate_identifier(self, attr: RecordAttributes) -> dict:
-        queryresponse = _query_identifier(self.table, "IdentifierGSI", "IdentifierPK", attr.identifier)
-        if queryresponse is not None:
-            items = queryresponse.get("Items", [])
-            resource_dict = json.loads(items[0]["Resource"])
-            if resource_dict["id"] != attr.resource["id"]:
-                raise IdentifierDuplicationError(identifier=attr.identifier)
-        return queryresponse
-
     def _perform_dynamo_update(
         self,
         imms_id: str,
@@ -289,60 +213,56 @@ class ImmunizationRepository:
         attr: RecordAttributes,
         existing_resource_version: int,
         supplier_system: str,
-        deleted_at_required: bool,
-        update_reinstated: bool,
-    ) -> Tuple[dict, int]:
-        try:
-            updated_version = existing_resource_version + 1
-            condition_expression = Attr("PK").eq(attr.pk) & (
-                Attr("DeletedAt").exists()
-                if deleted_at_required
-                else Attr("PK").eq(attr.pk) & Attr("DeletedAt").not_exists()
-            )
-            if deleted_at_required and update_reinstated is False:
-                ExpressionAttributeValues = {
-                    ":timestamp": attr.timestamp,
-                    ":patient_pk": attr.patient_pk,
-                    ":patient_sk": attr.patient_sk,
-                    ":imms_resource_val": json.dumps(attr.resource, use_decimal=True),
-                    ":operation": "UPDATE",
-                    ":version": updated_version,
-                    ":supplier_system": supplier_system,
-                    ":respawn": "reinstated",
-                }
-            else:
-                ExpressionAttributeValues = {
-                    ":timestamp": attr.timestamp,
-                    ":patient_pk": attr.patient_pk,
-                    ":patient_sk": attr.patient_sk,
-                    ":imms_resource_val": json.dumps(attr.resource, use_decimal=True),
-                    ":operation": "UPDATE",
-                    ":version": updated_version,
-                    ":supplier_system": supplier_system,
-                }
+        reinstate_operation_required: bool,
+        record_contains_deletion_history: bool,
+    ) -> int:
+        updated_version = existing_resource_version + 1
+        condition_expression = Attr("PK").eq(attr.pk) & (
+            Attr("DeletedAt").exists()
+            if record_contains_deletion_history
+            else Attr("PK").eq(attr.pk) & Attr("DeletedAt").not_exists()
+        )
 
-            response = self.table.update_item(
+        if reinstate_operation_required:
+            expression_attribute_values = {
+                ":timestamp": attr.timestamp,
+                ":patient_pk": attr.patient_pk,
+                ":patient_sk": attr.patient_sk,
+                ":imms_resource_val": json.dumps(attr.resource, use_decimal=True),
+                ":operation": "UPDATE",
+                ":version": updated_version,
+                ":supplier_system": supplier_system,
+                ":respawn": "reinstated",
+            }
+        else:
+            expression_attribute_values = {
+                ":timestamp": attr.timestamp,
+                ":patient_pk": attr.patient_pk,
+                ":patient_sk": attr.patient_sk,
+                ":imms_resource_val": json.dumps(attr.resource, use_decimal=True),
+                ":operation": "UPDATE",
+                ":version": updated_version,
+                ":supplier_system": supplier_system,
+            }
+
+        try:
+            self.table.update_item(
                 Key={"PK": _make_immunization_pk(imms_id)},
                 UpdateExpression=update_exp,
                 ExpressionAttributeNames={
                     "#imms_resource": "Resource",
                 },
-                ExpressionAttributeValues=ExpressionAttributeValues,
-                ReturnValues="ALL_NEW",
+                ExpressionAttributeValues=expression_attribute_values,
                 ConditionExpression=condition_expression,
             )
         except botocore.exceptions.ClientError as error:
             # Either resource didn't exist or it has already been deleted. See ConditionExpression in the request
             if error.response["Error"]["Code"] == "ConditionalCheckFailedException":
                 raise ResourceNotFoundError(resource_type="Immunization", resource_id=imms_id)
-            else:
-                # VED-747: consider refactoring to simply re-raise the exception and handle in controller
-                raise UnhandledResponseError(
-                    message=f"Unhandled error from dynamodb: {error.response['Error']['Code']}",
-                    response=error.response,
-                )
 
-        return json.loads(response["Attributes"]["Resource"]), updated_version
+            raise error
+
+        return updated_version
 
     def delete_immunization(self, imms_id: str, supplier_system: str) -> None:
         now_timestamp = int(time.time())
