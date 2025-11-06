@@ -51,6 +51,8 @@ permissions:
   id-token: write
   contents: read
 
+run-name: Deploy Backend - ${{ inputs.environment }} ${{ inputs.sub_environment }}
+
 jobs:
   terraform-plan:
     runs-on: ubuntu-latest

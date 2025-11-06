@@ -1254,7 +1254,7 @@ class TestSearchImmunizations(TestFhirControllerBase):
         "MMR",
         "HPV",
         "MMRV",
-        "PCV13",
+        "PNEUMOCOCCAL",
         "SHINGLES",
         "COVID",
         "FLU",
