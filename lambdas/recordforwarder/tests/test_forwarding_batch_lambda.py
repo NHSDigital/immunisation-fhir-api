@@ -10,7 +10,7 @@ from unittest.mock import ANY, Mock, MagicMock, patch
 from boto3 import resource as boto3_resource
 from moto import mock_aws
 
-from models.errors import (
+from common.models.errors import (
     CustomValidationError,
     IdentifierDuplicationError,
     MessageNotSuccessfulError,

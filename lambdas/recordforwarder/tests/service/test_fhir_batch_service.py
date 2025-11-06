@@ -3,7 +3,7 @@ import uuid
 from copy import deepcopy
 from unittest.mock import Mock, create_autospec, patch
 
-from models.errors import CustomValidationError
+from common.models.errors import CustomValidationError
 from models.fhir_immunization import ImmunizationValidator
 from repository.fhir_batch_repository import ImmunizationBatchRepository
 from service.fhir_batch_service import ImmunizationBatchService

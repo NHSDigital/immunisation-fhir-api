@@ -8,7 +8,7 @@ import botocore.exceptions
 import simplejson as json
 from moto import mock_aws
 
-from models.errors import (
+from common.models.errors import (
     IdentifierDuplicationError,
     ResourceFoundError,
     ResourceNotFoundError,

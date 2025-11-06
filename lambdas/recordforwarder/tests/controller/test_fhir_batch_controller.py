@@ -3,7 +3,7 @@ import uuid
 from unittest.mock import Mock, create_autospec
 
 from controller.fhir_batch_controller import ImmunizationBatchController
-from models.errors import (
+from common.models.errors import (
     CustomValidationError,
     IdentifierDuplicationError,
     ResourceNotFoundError,

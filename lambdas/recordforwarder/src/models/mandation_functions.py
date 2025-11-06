@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-from models.errors import MandatoryError
+from common.models.errors import MandatoryError
 
 
 @dataclass

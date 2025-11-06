@@ -14,7 +14,7 @@ from controller.fhir_batch_controller import (
     ImmunizationBatchController,
     make_batch_controller,
 )
-from models.errors import (
+from common.models.errors import (
     CustomValidationError,
     IdentifierDuplicationError,
     MessageNotSuccessfulError,
