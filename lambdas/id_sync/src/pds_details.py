@@ -18,8 +18,6 @@ safe_tmp_dir = tempfile.mkdtemp(dir="/tmp")  # NOSONAR
 # Get Patient details from external service PDS using NHS number from MNS notification
 def pds_get_patient_details(nhs_number: str) -> dict:
     try:
-        logger.info(f"get patient details. nhs_number: {nhs_number}")
-
         cache = Cache(directory=safe_tmp_dir)
         authenticator = AppRestrictedAuth(
             service=Service.PDS,
@@ -31,26 +29,12 @@ def pds_get_patient_details(nhs_number: str) -> dict:
         patient = pds_service.get_patient_details(nhs_number)
         return patient
     except Exception as e:
-        msg = f"Error getting PDS patient details for {nhs_number}"
+        msg = "Error retrieving patient details from PDS"
         logger.exception(msg)
-        raise IdSyncException(message=msg, exception=e)
+        raise IdSyncException(message=msg) from e
 
 
-# Extract Patient identifier value from PDS patient details
-def pds_get_patient_id(nhs_number: str) -> str:
-    """
-    Get PDS patient ID from NHS number.
-    :param nhs_number: NHS number of the patient
-    :return: PDS patient ID
-    """
-    try:
-        patient_details = pds_get_patient_details(nhs_number)
-        if not patient_details:
-            return None
-
-        return patient_details["identifier"][0]["value"]
-
-    except Exception as e:
-        msg = f"Error getting PDS patient ID for {nhs_number}"
-        logger.exception(msg)
-        raise IdSyncException(message=msg, exception=e)
+def get_nhs_number_from_pds_resource(pds_resource: dict) -> str:
+    """Simple helper to get the NHS Number from a PDS Resource. No handling as this is a mandatory field in the PDS
+    response. Must only use where we have ensured an object has been returned."""
+    return pds_resource["identifier"][0]["value"]
