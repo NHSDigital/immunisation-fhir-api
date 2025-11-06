@@ -91,8 +91,9 @@ class Validator:
                     code=ExceptionLevels.PARENT_FAILED,
                     message=MESSAGES[ExceptionLevels.PARENT_FAILED] + ", Parent ID: " + parent_expression,
                 )
-                self._add_error_record(error_record, expression_error_group, expression_name, expression_id, error_level)
-                error_records.append(error_record)
+                self._add_error_record(
+                    error_records, error_record, expression_error_group, expression_name, expression_id, error_level
+                )
                 return
 
         try:
@@ -101,8 +102,10 @@ class Validator:
             message = f"Data get values Unexpected exception [{e.__class__.__name__}]: {e}"
             error_record = ErrorReport(code=ExceptionLevels.PARSING_ERROR, message=message)
             # original code had self.CriticalErrorLevel. Replaced with error_level
-            self._add_error_record(error_record, expression_error_group, expression_name, expression_id, error_level)
-            return error_records.append(error_record)
+            self._add_error_record(
+                error_records, error_record, expression_error_group, expression_name, expression_id, error_level
+            )
+            return
 
         for value in expression_values:
             try:
@@ -111,7 +114,7 @@ class Validator:
                 )
                 if error_record is not None:
                     self._add_error_record(
-                        error_record, expression_error_group, expression_name, expression_id, error_level
+                        error_records, error_record, expression_error_group, expression_name, expression_id, error_level
                     )
             except Exception:
                 print(f"Exception validating expression {expression_id} on row {row}: {error_record}")
