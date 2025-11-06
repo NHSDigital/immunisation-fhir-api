@@ -37,7 +37,7 @@ class TestImmunizationBatchRepository(unittest.TestCase):
         self.immunization = create_covid_immunization_dict(imms_id)
         self.table.update_item = MagicMock(return_value={"ResponseMetadata": {"HTTPStatusCode": 200}})
         self.mock_redis = Mock()
-        self.redis_getter_patcher = patch("models.utils.validation_utils.get_redis_client")
+        self.redis_getter_patcher = patch("common.models.utils.validation_utils.get_redis_client")
         self.mock_redis_getter = self.redis_getter_patcher.start()
         self.logger_info_patcher = patch("logging.Logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()

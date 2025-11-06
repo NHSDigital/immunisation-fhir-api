@@ -1,7 +1,7 @@
 """Functions for obtaining a field value from the FHIR immunization resource json data"""
 
 from constants import Urls
-from models.utils.generic_utils import (
+from common.models.utils.generic_utils import (
     get_contained_patient,
     get_contained_practitioner,
     get_generic_extension_value,

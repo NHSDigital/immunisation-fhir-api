@@ -4,7 +4,7 @@ from copy import deepcopy
 from unittest.mock import Mock, create_autospec, patch
 
 from common.models.errors import CustomValidationError
-from models.fhir_immunization import ImmunizationValidator
+from common.models.fhir_immunization import ImmunizationValidator
 from repository.fhir_batch_repository import ImmunizationBatchRepository
 from service.fhir_batch_service import ImmunizationBatchService
 from testing_utils.immunization_utils import create_covid_immunization_dict_no_id
@@ -16,7 +16,7 @@ class TestFhirBatchServiceBase(unittest.TestCase):
     def setUp(self):
         super().setUp()
         self.mock_redis = Mock()
-        self.redis_getter_patcher = patch("models.utils.validation_utils.get_redis_client")
+        self.redis_getter_patcher = patch("common.models.utils.validation_utils.get_redis_client")
         self.mock_redis_getter = self.redis_getter_patcher.start()
         self.logger_info_patcher = patch("logging.Logger.info")
         self.mock_logger_info = self.logger_info_patcher.start()

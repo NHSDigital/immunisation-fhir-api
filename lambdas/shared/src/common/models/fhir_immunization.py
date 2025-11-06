@@ -2,9 +2,9 @@
 
 from fhir.resources.R4B.immunization import Immunization
 
-from models.fhir_immunization_post_validators import PostValidators
-from models.fhir_immunization_pre_validators import PreValidators
-from models.utils.validation_utils import get_vaccine_type
+from common.models.fhir_immunization_post_validators import PostValidators
+from common.models.fhir_immunization_pre_validators import PreValidators
+from common.models.utils.validation_utils import get_vaccine_type
 
 
 class ImmunizationValidator:

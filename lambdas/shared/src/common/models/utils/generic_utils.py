@@ -17,7 +17,7 @@ from fhir.resources.R4B.bundle import (
 from fhir.resources.R4B.immunization import Immunization
 from stdnum.verhoeff import validate
 
-from models.constants import Constants
+from common.models.constants import Constants
 
 
 def get_contained_resource(imms: dict, resource: Literal["Patient", "Practitioner", "QuestionnaireResponse"]):

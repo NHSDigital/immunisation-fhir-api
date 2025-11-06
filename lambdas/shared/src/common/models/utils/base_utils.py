@@ -1,7 +1,7 @@
 """Utils for backend src code"""
 
-from models.field_locations import FieldLocations
-from models.obtain_field_value import ObtainFieldValue
+from common.models.field_locations import FieldLocations
+from common.models.obtain_field_value import ObtainFieldValue
 
 FIELD_LOCATIONS = FieldLocations()
 

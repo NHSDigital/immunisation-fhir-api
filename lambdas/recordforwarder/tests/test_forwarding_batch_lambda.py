@@ -74,7 +74,7 @@ class TestForwardLambdaHandler(TestCase):
         self.mock_logger_error = self.logger_error_patcher.start()
 
         self.mock_redis = Mock()
-        self.redis_getter_patcher = patch("models.utils.validation_utils.get_redis_client")
+        self.redis_getter_patcher = patch("common.models.utils.validation_utils.get_redis_client")
         self.mock_redis_getter = self.redis_getter_patcher.start()
 
     def tearDown(self):

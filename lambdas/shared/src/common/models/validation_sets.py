@@ -1,6 +1,6 @@
 """Validation sets for each vaccine type"""
 
-from models.mandation_functions import MandationRules
+from common.models.mandation_functions import MandationRules
 
 
 class ValidationSets:
