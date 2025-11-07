@@ -216,7 +216,7 @@ class MandatoryError(Exception):
         self.message = message
 
 
-class ValidationError(RuntimeError):
+class ApiValidationError(RuntimeError):
     def to_operation_outcome(self) -> dict:
         pass
 
@@ -238,7 +238,7 @@ class UnhandledSqsError(Exception):
 
 
 @dataclass
-class InvalidPatientId(ValidationError):
+class InvalidPatientId(ApiValidationError):
     """Use this when NHS Number is invalid or doesn't exist"""
 
     patient_identifier: str
@@ -256,7 +256,7 @@ class InvalidPatientId(ValidationError):
 
 
 @dataclass
-class InconsistentIdError(ValidationError):
+class InconsistentIdError(ApiValidationError):
     """Use this when the specified id in the message is inconsistent with the path
     see: http://hl7.org/fhir/R4/http.html#update"""
 
@@ -275,7 +275,7 @@ class InconsistentIdError(ValidationError):
 
 
 @dataclass
-class CustomValidationError(ValidationError):
+class CustomValidationError(ApiValidationError):
     """Custom validation error"""
 
     message: str

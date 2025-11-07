@@ -140,13 +140,13 @@ class MandatoryError(Exception):
         self.message = message
 
 
-class ValidationError(RuntimeError):
+class ApiValidationError(RuntimeError):
     def to_operation_outcome(self) -> dict:
         pass
 
 
 @dataclass
-class InvalidImmunizationId(ValidationError):
+class InvalidImmunizationId(ApiValidationError):
     """Use this when the unique Immunization ID is invalid"""
 
     def to_operation_outcome(self) -> dict:
@@ -159,7 +159,7 @@ class InvalidImmunizationId(ValidationError):
 
 
 @dataclass
-class InvalidPatientId(ValidationError):
+class InvalidPatientId(ApiValidationError):
     """Use this when NHS Number is invalid or doesn't exist"""
 
     patient_identifier: str
@@ -177,7 +177,7 @@ class InvalidPatientId(ValidationError):
 
 
 @dataclass
-class InvalidResourceVersion(ValidationError):
+class InvalidResourceVersion(ApiValidationError):
     """Use this when the resource version is invalid"""
 
     resource_version: Any
@@ -193,7 +193,7 @@ class InvalidResourceVersion(ValidationError):
 
 
 @dataclass
-class InconsistentIdentifierError(ValidationError):
+class InconsistentIdentifierError(ApiValidationError):
     """Use this when the local identifier in the payload does not match the existing identifier for the update."""
 
     msg: str
@@ -205,7 +205,7 @@ class InconsistentIdentifierError(ValidationError):
 
 
 @dataclass
-class InconsistentIdError(ValidationError):
+class InconsistentIdError(ApiValidationError):
     """Use this when the specified id in the message is inconsistent with the path
     see: http://hl7.org/fhir/R4/http.html#update"""
 
@@ -227,7 +227,7 @@ class InconsistentIdError(ValidationError):
 
 
 @dataclass
-class InconsistentResourceVersion(ValidationError):
+class InconsistentResourceVersion(ApiValidationError):
     """Use this when the resource version in the request and actual resource version do not match"""
 
     message: str
@@ -242,7 +242,7 @@ class InconsistentResourceVersion(ValidationError):
 
 
 @dataclass
-class CustomValidationError(ValidationError):
+class CustomValidationError(ApiValidationError):
     """Custom validation error"""
 
     message: str
