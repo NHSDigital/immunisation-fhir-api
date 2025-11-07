@@ -51,19 +51,6 @@ class TestErrors(unittest.TestCase):
         self.assertEqual(issue.get("code"), errors.Code.forbidden)
         self.assertEqual(issue.get("diagnostics"), "Unauthorized request")
 
-    def test_errors_unauthorized_error(self):
-        """Test correct operation of UnauthorizedError"""
-
-        with self.assertRaises(errors.UnauthorizedError) as context:
-            raise errors.UnauthorizedError()
-
-        outcome = context.exception.to_operation_outcome()
-        self.assert_operation_outcome(outcome)
-        issue = outcome.get("issue")[0]
-        self.assertEqual(issue.get("severity"), errors.Severity.error)
-        self.assertEqual(issue.get("code"), errors.Code.forbidden)
-        self.assertEqual(issue.get("diagnostics"), "Unauthorized request")
-
     def test_errors_unauthorized_vax_error(self):
         """Test correct operation of UnauthorizedVaxError"""
 
@@ -88,7 +75,9 @@ class TestErrors(unittest.TestCase):
         issue = outcome.get("issue")[0]
         self.assertEqual(issue.get("severity"), errors.Severity.error)
         self.assertEqual(issue.get("code"), errors.Code.forbidden)
-        self.assertEqual(issue.get("diagnostics"), "Unauthorized request for vaccine type present in the stored immunization resource")
+        self.assertEqual(
+            issue.get("diagnostics"), "Unauthorized request for vaccine type present in the stored immunization resource"
+        )
 
     def test_errors_invalid_immunization_id(self):
         """Test correct operation of InvalidImmunizationId"""
@@ -101,7 +90,10 @@ class TestErrors(unittest.TestCase):
         issue = outcome.get("issue")[0]
         self.assertEqual(issue.get("severity"), errors.Severity.error)
         self.assertEqual(issue.get("code"), errors.Code.invalid)
-        self.assertEqual(issue.get("diagnostics"), "Validation errors: the provided event ID is either missing or not in the expected format.")
+        self.assertEqual(
+            issue.get("diagnostics"),
+            "Validation errors: the provided event ID is either missing or not in the expected format.",
+        )
 
     def test_errors_invalid_patient_id(self):
         """Test correct operation of InvalidPatientId"""
@@ -222,4 +214,3 @@ class TestErrors(unittest.TestCase):
         self.assertEqual(issue.get("severity"), errors.Severity.error)
         self.assertEqual(issue.get("code"), errors.Code.server_error)
         self.assertEqual(issue.get("diagnostics"), f"{test_message}\n{test_response}")
-

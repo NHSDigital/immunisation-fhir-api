@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 
-from common.models.errors import Severity, create_operation_outcome, ApiValidationError
+from common.models.errors import ApiValidationError, Severity, create_operation_outcome
 
 
 class Code(str, Enum):

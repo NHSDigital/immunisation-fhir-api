@@ -14,8 +14,8 @@ from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
 from responses import logger
 
 from common.models.api_errors import UnhandledResponseError
-from common.models.errors import ResourceNotFoundError
 from common.models.constants import Constants
+from common.models.errors import ResourceNotFoundError
 from common.models.immunization_record_metadata import ImmunizationRecordMetadata
 from common.models.utils.generic_utils import get_contained_patient
 from common.models.utils.validation_utils import (
