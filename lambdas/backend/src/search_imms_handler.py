@@ -9,11 +9,11 @@ import uuid
 from aws_lambda_typing import context as context_
 from aws_lambda_typing import events
 
+from common.models.api_errors import Code, Severity, create_operation_outcome
 from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE, MAX_RESPONSE_SIZE_BYTES
 from controller.aws_apig_response_utils import create_response
 from controller.fhir_controller import FhirController, make_controller
 from log_structure import function_info
-from common.models.errors import Code, Severity, create_operation_outcome
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger()

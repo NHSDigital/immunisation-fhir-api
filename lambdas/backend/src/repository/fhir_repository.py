@@ -13,11 +13,11 @@ from fhir.resources.R4B.immunization import Immunization
 from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
 from responses import logger
 
-from common.models.constants import Constants
-from common.models.errors import (
+from common.models.api_errors import (
     ResourceNotFoundError,
     UnhandledResponseError,
 )
+from common.models.constants import Constants
 from common.models.immunization_record_metadata import ImmunizationRecordMetadata
 from common.models.utils.generic_utils import get_contained_patient
 from common.models.utils.validation_utils import (

@@ -3,9 +3,9 @@ import unittest
 from pathlib import Path
 from unittest.mock import create_autospec, patch
 
+from common.models.api_errors import Code, Severity, create_operation_outcome
 from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
 from controller.fhir_controller import FhirController
-from common.models.errors import Code, Severity, create_operation_outcome
 from search_imms_handler import search_imms
 
 script_location = Path(__file__).absolute().parent

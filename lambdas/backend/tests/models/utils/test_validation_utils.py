@@ -3,7 +3,7 @@ from copy import deepcopy
 
 from jsonpath_ng.ext import parse
 
-from common.models.errors import InconsistentIdentifierError, InconsistentResourceVersion
+from common.models.api_errors import InconsistentIdentifierError, InconsistentResourceVersion
 from common.models.fhir_immunization import ImmunizationValidator
 from common.models.obtain_field_value import ObtainFieldValue
 from common.models.utils.generic_utils import (

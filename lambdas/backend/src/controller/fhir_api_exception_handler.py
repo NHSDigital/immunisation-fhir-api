@@ -5,9 +5,7 @@ import uuid
 from typing import Callable, Type
 
 from clients import logger
-from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
-from controller.aws_apig_response_utils import create_response
-from common.models.errors import (
+from common.models.api_errors import (
     Code,
     CustomValidationError,
     IdentifierDuplicationError,
@@ -25,6 +23,8 @@ from common.models.errors import (
     UnhandledResponseError,
     create_operation_outcome,
 )
+from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
+from controller.aws_apig_response_utils import create_response
 
 _CUSTOM_EXCEPTION_TO_STATUS_MAP: dict[Type[Exception], int] = {
     InconsistentResourceVersion: 400,

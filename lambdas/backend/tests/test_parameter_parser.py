@@ -1,9 +1,9 @@
 import base64
 import datetime
 import unittest
-from unittest.mock import create_autospec, patch
+from unittest.mock import Mock, create_autospec, patch
 
-from common.models.errors import ParameterException
+from common.models.api_errors import ParameterException
 from parameter_parser import (
     SearchParams,
     create_query_string,
@@ -115,7 +115,8 @@ class TestParameterParser(unittest.TestCase):
         )
 
     def test_process_search_params_whitelists_immunization_target(self):
-        self.mock_redis.hkeys.return_value = ["RSV"]
+        mock_redis_key = "RSV"
+        self.mock_redis.hkeys.return_value = [mock_redis_key]
         self.mock_redis_getter.return_value = self.mock_redis
         with self.assertRaises(ParameterException) as e:
             process_search_params(

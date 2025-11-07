@@ -10,15 +10,7 @@ from typing import Optional
 
 from aws_lambda_typing.events import APIGatewayProxyEventV1
 
-from controller.aws_apig_event_utils import (
-    get_path_parameter,
-    get_resource_version_header,
-    get_supplier_system_header,
-)
-from controller.aws_apig_response_utils import create_response
-from controller.constants import E_TAG_HEADER_NAME
-from controller.fhir_api_exception_handler import fhir_api_exception_handler
-from common.models.errors import (
+from common.models.api_errors import (
     Code,
     InconsistentIdError,
     InvalidImmunizationId,
@@ -31,6 +23,14 @@ from common.models.errors import (
     create_operation_outcome,
 )
 from common.models.utils.generic_utils import check_keys_in_sources
+from controller.aws_apig_event_utils import (
+    get_path_parameter,
+    get_resource_version_header,
+    get_supplier_system_header,
+)
+from controller.aws_apig_response_utils import create_response
+from controller.constants import E_TAG_HEADER_NAME
+from controller.fhir_api_exception_handler import fhir_api_exception_handler
 from parameter_parser import create_query_string, process_params, process_search_params
 from repository.fhir_repository import ImmunizationRepository, create_table
 from service.fhir_service import FhirService, get_service_url

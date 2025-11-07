@@ -6,10 +6,10 @@ from urllib.parse import parse_qs, quote, urlencode
 
 from aws_lambda_typing.events import APIGatewayProxyEventV1
 
-from clients import redis_client
+from common.models.api_errors import ParameterException
 from common.models.constants import Constants
-from common.models.errors import ParameterException
 from common.models.utils.generic_utils import nhs_number_mod11_check
+from common.redis_client import get_redis_client
 
 ERROR_MESSAGE_DUPLICATED_PARAMETERS = 'Parameters may not be duplicated. Use commas for "or".'
 
@@ -77,7 +77,7 @@ def process_immunization_target(imms_params: ParamContainer) -> list[str]:
     if len(vaccine_types) < 1:
         raise ParameterException(f"Search parameter {immunization_target_key} must have one or more values.")
 
-    valid_vaccine_types = redis_client.hkeys(Constants.VACCINE_TYPE_TO_DISEASES_HASH_KEY)
+    valid_vaccine_types = get_redis_client().hkeys(Constants.VACCINE_TYPE_TO_DISEASES_HASH_KEY)
     if any(x not in valid_vaccine_types for x in vaccine_types):
         raise ParameterException(
             f"immunization-target must be one or more of the following: {', '.join(valid_vaccine_types)}"

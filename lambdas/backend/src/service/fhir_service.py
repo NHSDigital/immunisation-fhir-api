@@ -21,8 +21,7 @@ from pydantic import ValidationError
 import parameter_parser
 from authorisation.api_operation_code import ApiOperationCode
 from authorisation.authoriser import Authoriser
-from filter import Filter
-from common.models.errors import (
+from common.models.api_errors import (
     CustomValidationError,
     IdentifierDuplicationError,
     MandatoryError,
@@ -35,7 +34,12 @@ from common.models.utils.generic_utils import (
     get_contained_patient,
     get_occurrence_datetime,
 )
-from common.models.utils.validation_utils import get_vaccine_type, validate_identifiers_match, validate_resource_versions_match
+from common.models.utils.validation_utils import (
+    get_vaccine_type,
+    validate_identifiers_match,
+    validate_resource_versions_match,
+)
+from filter import Filter
 from repository.fhir_repository import ImmunizationRepository
 
 logging.basicConfig(level="INFO")

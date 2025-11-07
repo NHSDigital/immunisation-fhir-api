@@ -2,8 +2,7 @@ import json
 import unittest
 from unittest.mock import patch
 
-from controller.fhir_api_exception_handler import fhir_api_exception_handler
-from common.models.errors import (
+from common.models.api_errors import (
     CustomValidationError,
     IdentifierDuplicationError,
     InconsistentIdentifierError,
@@ -17,6 +16,7 @@ from common.models.errors import (
     UnauthorizedVaxError,
     UnhandledResponseError,
 )
+from controller.fhir_api_exception_handler import fhir_api_exception_handler
 
 
 class TestFhirApiExceptionHandler(unittest.TestCase):

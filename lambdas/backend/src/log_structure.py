@@ -4,8 +4,8 @@ import time
 from datetime import datetime
 from functools import wraps
 
-from log_firehose import FirehoseLogger
 from common.models.utils.validation_utils import get_vaccine_type
+from log_firehose import FirehoseLogger
 
 logging.basicConfig()
 logger = logging.getLogger()

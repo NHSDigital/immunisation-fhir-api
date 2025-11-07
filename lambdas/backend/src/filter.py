@@ -1,11 +1,11 @@
 """Functions for filtering a FHIR Immunization Resource"""
 
-from constants import Urls
 from common.models.utils.generic_utils import (
     get_contained_patient,
     get_contained_practitioner,
     is_actor_referencing_contained_resource,
 )
+from constants import Urls
 
 
 def remove_reference_to_contained_practitioner(imms: dict) -> dict:

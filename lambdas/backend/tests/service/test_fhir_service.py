@@ -5,7 +5,7 @@ import unittest
 import uuid
 from copy import deepcopy
 from decimal import Decimal
-from unittest.mock import create_autospec, patch
+from unittest.mock import Mock, create_autospec, patch
 
 from fhir.resources.R4B.bundle import Bundle as FhirBundle
 from fhir.resources.R4B.bundle import BundleEntry
@@ -13,8 +13,7 @@ from fhir.resources.R4B.immunization import Immunization
 
 from authorisation.api_operation_code import ApiOperationCode
 from authorisation.authoriser import Authoriser
-from constants import NHS_NUMBER_USED_IN_SAMPLE_DATA
-from common.models.errors import (
+from common.models.api_errors import (
     CustomValidationError,
     IdentifierDuplicationError,
     InconsistentIdentifierError,
@@ -24,6 +23,7 @@ from common.models.errors import (
 )
 from common.models.fhir_immunization import ImmunizationValidator
 from common.models.immunization_record_metadata import ImmunizationRecordMetadata
+from constants import NHS_NUMBER_USED_IN_SAMPLE_DATA
 from repository.fhir_repository import ImmunizationRepository
 from service.fhir_service import FhirService, get_service_url
 from testing_utils.generic_utils import load_json_data

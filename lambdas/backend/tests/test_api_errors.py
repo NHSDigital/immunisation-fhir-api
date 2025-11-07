@@ -1,6 +1,6 @@
 import unittest
 
-from common.models.errors import Code, Severity, create_operation_outcome
+from common.models.api_errors import Code, Severity, create_operation_outcome
 
 "test"
 

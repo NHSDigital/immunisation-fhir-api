@@ -1,14 +1,14 @@
 import time
 import unittest
 import uuid
-from unittest.mock import ANY, MagicMock, patch
+from unittest.mock import ANY, MagicMock, Mock, patch
 
 import botocore.exceptions
 import simplejson as json
 from boto3.dynamodb.conditions import Attr, Key
 from fhir.resources.R4B.immunization import Immunization
 
-from common.models.errors import (
+from common.models.api_errors import (
     ResourceNotFoundError,
     UnhandledResponseError,
 )
