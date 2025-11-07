@@ -100,7 +100,7 @@ jobs:
       - name: Run unittest with coverage-fhir-api
         working-directory: lambdas/backend
         env:
-          PYTHONPATH: ${{ env.LAMBDA_PATH }}/backend/src:${{ env.LAMBDA_PATH }}/backend/tests:${{ env.SHARED_PATH }}/src
+          PYTHONPATH: ${{ env.LAMBDA_PATH }}/backend/src:${{ env.LAMBDA_PATH }}/backend/tests:${{ env.SHARED_PATH }}/src:${{ env.SHARED_PATH }}/tests
         id: fhirapi
         continue-on-error: true
         run: |
@@ -188,7 +188,7 @@ jobs:
         working-directory: lambdas/recordforwarder
         id: recordforwarder
         env:
-          PYTHONPATH: ${{ env.LAMBDA_PATH }}/recordforwarder/src:${{ env.LAMBDA_PATH }}/recordforwarder/tests:${{ env.SHARED_PATH }}/src
+          PYTHONPATH: ${{ env.LAMBDA_PATH }}/recordforwarder/src:${{ env.LAMBDA_PATH }}/recordforwarder/tests:${{ env.SHARED_PATH }}/src:${{ env.SHARED_PATH }}/tests
         continue-on-error: true
         run: |
           poetry install
