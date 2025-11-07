@@ -197,10 +197,10 @@ class TestErrors(unittest.TestCase):
             raise errors.MandatoryError()
         self.assertIsNone(context.exception.message)
 
-    def test_errors_validation_error(self):
-        """Test correct operation of ValidationError"""
-        with self.assertRaises(errors.ValidationError) as context:
-            raise errors.ValidationError()
+    def test_errors_api_validation_error(self):
+        """Test correct operation of ApiValidationError"""
+        with self.assertRaises(errors.ApiValidationError) as context:
+            raise errors.ApiValidationError()
         outcome = context.exception.to_operation_outcome()
         self.assertIsNone(outcome)
 
