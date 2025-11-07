@@ -7,9 +7,9 @@ data_parser is the date parser object returned from the FetchParsers class which
 
 from common.validator.constants.enums import MESSAGES, DataType, ErrorLevels, ExceptionLevels
 from common.validator.error_report.error_reporter import add_error_record, check_error_record_for_fail
+from common.validator.error_report.record_error import ErrorReport
 from common.validator.expression_checker import ExpressionChecker
 from common.validator.parsers.fetch_parsers import FetchParsers
-from common.validator.record_error import ErrorReport
 
 
 class Validator:

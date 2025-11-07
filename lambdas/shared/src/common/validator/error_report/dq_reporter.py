@@ -4,8 +4,8 @@ import json
 from dateutil import parser
 
 from common.validator.constants.enums import ErrorLevels
-from common.validator.constants.error_report import error_report
-from common.validator.record_error import ErrorReport
+from src.common.validator.constants.error_schema import error_report
+from src.common.validator.error_report.record_error import ErrorReport
 
 
 class DQReporter:

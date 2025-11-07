@@ -4,9 +4,9 @@ import re
 import uuid
 
 from common.validator.constants.enums import MESSAGES, ExceptionLevels, MessageLabel
+from common.validator.error_report.record_error import ErrorReport, RecordError
 from common.validator.lookup_expressions.key_data import KeyData
 from common.validator.lookup_expressions.lookup_data import LookUpData
-from common.validator.record_error import ErrorReport, RecordError
 
 
 class ExpressionChecker:

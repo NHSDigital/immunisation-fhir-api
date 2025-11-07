@@ -2,8 +2,8 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from common.validator.constants.enums import ExceptionLevels
+from common.validator.error_report.record_error import ErrorReport
 from common.validator.expression_checker import ExpressionChecker
-from common.validator.record_error import ErrorReport
 
 
 class MockParser(unittest.TestCase):

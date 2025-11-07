@@ -1,6 +1,6 @@
 from common.validator.error_report.dq_reporter import DQReporter
-from common.validator.record_error import ErrorReport
 from src.common.validator.constants.enums import ErrorLevels
+from src.common.validator.error_report.record_error import ErrorReport
 
 
 # Collect and add error record to the list
