@@ -92,7 +92,7 @@
     ]
   },
   {
-    "vacc_type": "PCV13",
+    "vacc_type": "PNEUMOCOCCAL",
     "diseases": [
       {
         "code": "16814004",
