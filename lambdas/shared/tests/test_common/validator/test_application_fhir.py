@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock
 
+from common.validator.error_report.error_reporter import build_error_report
 from common.validator.validator import Validator
 from tests.test_common.validator.testing_utils.csv_fhir_utils import parse_test_file
 
@@ -25,7 +26,7 @@ class TestApplication(unittest.TestCase):
 
         validator = Validator(SchemaFile)  # FHIR File Path not needed
         error_list = validator.validate_fhir(self.fhir_resources, True, True, True)
-        error_report = validator.build_error_report(
+        error_report = build_error_report(
             "25a8cc4d-1875-4191-ac6d-2d63a0ebc64b", fhir_parser, error_list
         )  # include eventID if known
 

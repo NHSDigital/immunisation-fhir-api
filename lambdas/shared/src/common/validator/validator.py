@@ -6,40 +6,16 @@ data_parser is the date parser object returned from the FetchParsers class which
 """
 
 from common.validator.constants.enums import MESSAGES, DataType, ErrorLevels, ExceptionLevels
+from common.validator.error_report.error_reporter import add_error_record, check_error_record_for_fail
 from common.validator.expression_checker import ExpressionChecker
 from common.validator.parsers.fetch_parsers import FetchParsers
 from common.validator.record_error import ErrorReport
-from common.validator.reporter.dq_reporter import DQReporter
 
 
 class Validator:
     def __init__(self, schema_file=""):
         self.schema_file = schema_file
         self.get_data_from_parsers = FetchParsers()
-
-    # Collect and add error record to the list
-    def _add_error_record(
-        self,
-        error_records: list[ErrorReport],
-        error_record: ErrorReport,
-        expression_error_group: str,
-        expression_name: str,
-        expression_id: str,
-        error_level: ErrorLevels,
-    ) -> None:
-        if error_record is not None:
-            error_record.error_group = expression_error_group
-            error_record.name = expression_name
-            error_record.id = expression_id
-            error_record.error_level = error_level
-            error_records.append(error_record)
-
-    # Function to help identify a parent failure in the error list
-    def _check_error_record_for_fail(self, expression_identifier: str, error_records: list[ErrorReport]) -> bool:
-        for error_record in error_records:
-            if error_record.id == expression_identifier:
-                return True
-        return False
 
     #  validate a single expression against the data file
     def _validate_expression(
@@ -64,12 +40,12 @@ class Validator:
         # Check to see if the expression has a parent, if so did the parent validate
         if "parentExpression" in expression:
             parent_expression = expression["parentExpression"]
-            if self._check_error_record_for_fail(parent_expression, error_records):
+            if check_error_record_for_fail(parent_expression, error_records):
                 error_record = ErrorReport(
                     code=ExceptionLevels.PARENT_FAILED,
                     message=MESSAGES[ExceptionLevels.PARENT_FAILED] + ", Parent ID: " + parent_expression,
                 )
-                self._add_error_record(
+                add_error_record(
                     error_records, error_record, expression_error_group, expression_name, expression_id, error_level
                 )
                 return
@@ -80,7 +56,7 @@ class Validator:
             message = f"Data get values Unexpected exception [{e.__class__.__name__}]: {e}"
             error_record = ErrorReport(code=ExceptionLevels.PARSING_ERROR, message=message)
             # original code had self.CriticalErrorLevel. Replaced with error_level
-            self._add_error_record(
+            add_error_record(
                 error_records, error_record, expression_error_group, expression_name, expression_id, error_level
             )
             return
@@ -91,7 +67,7 @@ class Validator:
                     expression_type, expression_rule, expression_fieldname, value, row
                 )
                 if error_record is not None:
-                    self._add_error_record(
+                    add_error_record(
                         error_records, error_record, expression_error_group, expression_name, expression_id, error_level
                     )
             except Exception:
@@ -184,12 +160,6 @@ class Validator:
             )
 
         return error_records
-
-    # Build the error Report
-    def build_error_report(self, event_id: str, data_parser: dict, error_records: list[ErrorReport]) -> dict:
-        occurrence_date_time = data_parser.get_fhir_value("occurrenceDateTime")
-        dq_reporter = DQReporter()
-        return dq_reporter.generate_error_report(event_id, occurrence_date_time, error_records)
 
     def has_validation_failed(self, error_records: list[ErrorReport]) -> bool:
         return any(er.error_level == ErrorLevels.CRITICAL_ERROR for er in error_records)
