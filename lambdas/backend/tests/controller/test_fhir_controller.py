@@ -24,8 +24,8 @@ from controller.fhir_controller import FhirController
 from parameter_parser import patient_identifier_system, process_search_params
 from repository.fhir_repository import ImmunizationRepository
 from service.fhir_service import FhirService
-from testing_utils.generic_utils import load_json_data
-from testing_utils.immunization_utils import create_covid_immunization
+from test_common.testing_utils.generic_utils import load_json_data
+from test_common.testing_utils.immunization_utils import create_covid_immunization
 
 
 class TestFhirControllerBase(unittest.TestCase):

@@ -8,16 +8,16 @@ from jsonpath_ng.ext import parse
 from pydantic import ValidationError
 
 from common.models.fhir_immunization import ImmunizationValidator
-from testing_utils.generic_utils import (
+from test_common.testing_utils.generic_utils import (
     load_json_data,
     update_contained_resource_field,
 )
-from testing_utils.generic_utils import (
+from test_common.testing_utils.generic_utils import (
     # these have an underscore to avoid pytest collecting them as tests
     test_invalid_values_rejected as _test_invalid_values_rejected,
 )
-from testing_utils.mandation_test_utils import MandationTests
-from testing_utils.values_for_tests import NameInstances
+from test_common.testing_utils.mandation_test_utils import MandationTests
+from test_common.testing_utils.values_for_tests import NameInstances
 
 
 class TestImmunizationModelPostValidationRules(unittest.TestCase):

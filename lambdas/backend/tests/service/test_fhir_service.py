@@ -13,6 +13,7 @@ from fhir.resources.R4B.immunization import Immunization
 
 from authorisation.api_operation_code import ApiOperationCode
 from authorisation.authoriser import Authoriser
+from common.models.api_constants import NHS_NUMBER_USED_IN_SAMPLE_DATA
 from common.models.api_errors import (
     InconsistentIdentifierError,
     InconsistentResourceVersion,
@@ -25,11 +26,10 @@ from common.models.errors import (
 )
 from common.models.fhir_immunization import ImmunizationValidator
 from common.models.immunization_record_metadata import ImmunizationRecordMetadata
-from constants import NHS_NUMBER_USED_IN_SAMPLE_DATA
 from repository.fhir_repository import ImmunizationRepository
 from service.fhir_service import FhirService, get_service_url
-from testing_utils.generic_utils import load_json_data
-from testing_utils.immunization_utils import (
+from test_common.testing_utils.generic_utils import load_json_data
+from test_common.testing_utils.immunization_utils import (
     VALID_NHS_NUMBER,
     create_covid_immunization,
     create_covid_immunization_dict,

@@ -3,9 +3,9 @@ import uuid
 from datetime import datetime, timezone
 
 import pandas as pd
+from clients import logger
 from vax_suppliers import OdsVax, TestPair
 
-from clients import logger
 from constants import (
     ACK_BUCKET,
     RAVS_URI,

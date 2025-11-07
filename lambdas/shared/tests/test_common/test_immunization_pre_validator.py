@@ -17,18 +17,18 @@ from common.models.utils.generic_utils import (
     practitioner_name_family_field_location,
     practitioner_name_given_field_location,
 )
-from testing_utils.generic_utils import (
+from test_common.testing_utils.generic_utils import (
     load_json_data,
 )
-from testing_utils.generic_utils import (
+from test_common.testing_utils.generic_utils import (
     test_invalid_values_rejected as _test_invalid_values_rejected,
 )
-from testing_utils.generic_utils import (
+from test_common.testing_utils.generic_utils import (
     # these have an underscore to avoid pytest collecting them as tests
     test_valid_values_accepted as _test_valid_values_accepted,
 )
-from testing_utils.pre_validation_test_utils import ValidatorModelTests
-from testing_utils.values_for_tests import InvalidValues, ValidValues
+from test_common.testing_utils.pre_validation_test_utils import ValidatorModelTests
+from test_common.testing_utils.values_for_tests import InvalidValues, ValidValues
 
 
 class TestImmunizationModelPreValidationRules(unittest.TestCase):

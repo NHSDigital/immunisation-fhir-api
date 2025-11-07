@@ -1,18 +1,11 @@
 import json
-import logging
 import time
 from datetime import datetime
 from functools import wraps
 
+from common.clients import STREAM_NAME, logger
+from common.log_firehose import send_log_to_firehose
 from common.models.utils.validation_utils import get_vaccine_type
-from log_firehose import FirehoseLogger
-
-logging.basicConfig()
-logger = logging.getLogger()
-logger.setLevel("INFO")
-
-
-firehose_logger = FirehoseLogger()
 
 
 def _log_data_from_body(event) -> dict:
@@ -99,8 +92,7 @@ def function_info(func):
             log_data["operation_outcome"] = operation_outcome
             logger.info(json.dumps(log_data))
             firehose_log["event"] = log_data
-            firehose_logger.send_log(firehose_log)
-
+            send_log_to_firehose(STREAM_NAME, firehose_log)
             return result
 
         except Exception as e:
@@ -110,7 +102,7 @@ def function_info(func):
             log_data.update(_log_data_from_body(event))
             logger.exception(json.dumps(log_data))
             firehose_log["event"] = log_data
-            firehose_logger.send_log(firehose_log)
+            send_log_to_firehose(STREAM_NAME, firehose_log)
             raise
 
     return wrapper

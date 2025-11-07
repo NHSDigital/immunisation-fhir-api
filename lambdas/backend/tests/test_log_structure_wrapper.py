@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch
 from log_structure import function_info
 
 
-@patch("log_structure.firehose_logger")
+@patch("log_structure.send_log_to_firehose")
 @patch("log_structure.logger")
 class TestFunctionInfoWrapper(unittest.TestCase):
     def setUp(self):
@@ -32,7 +32,7 @@ class TestFunctionInfoWrapper(unittest.TestCase):
             + [args[0] for args, _ in mock_logger.error.call_args_list]
         )
 
-    def test_successful_execution(self, mock_logger, mock_firehose_logger):
+    def test_successful_execution(self, mock_logger, mock_send_log_to_firehose):
         # Arrange
         test_correlation = "test_correlation"
         test_request = "test_request"
@@ -60,7 +60,7 @@ class TestFunctionInfoWrapper(unittest.TestCase):
         # Assert
         self.assertEqual(result, "Success")
         mock_logger.info.assert_called()
-        mock_firehose_logger.send_log.assert_called()
+        mock_send_log_to_firehose.assert_called()
 
         args, kwargs = mock_logger.info.call_args
         logged_info = json.loads(args[0])
@@ -75,7 +75,7 @@ class TestFunctionInfoWrapper(unittest.TestCase):
         self.assertEqual(logged_info["local_id"], "12345^http://test")
         self.assertEqual(logged_info["vaccine_type"], "FLU")
 
-    def test_successful_execution_pii(self, mock_logger, mock_firehose_logger):
+    def test_successful_execution_pii(self, mock_logger, mock_send_log_to_firehose):
         """Pass personally identifiable information in an event, and ensure that it is not logged anywhere."""
         # Arrange
         test_correlation = "test_correlation"
@@ -107,7 +107,7 @@ class TestFunctionInfoWrapper(unittest.TestCase):
         for logger_info in self.extract_all_call_args_for_logger(mock_logger):
             self.assertNotIn("9693632109", str(logger_info))
 
-    def test_exception_handling(self, mock_logger, mock_firehose_logger):
+    def test_exception_handling(self, mock_logger, mock_send_log_to_firehose):
         # Arrange
         test_correlation = "failed_test_correlation"
         test_request = "failed_test_request"
@@ -139,7 +139,7 @@ class TestFunctionInfoWrapper(unittest.TestCase):
 
         # Assert
         mock_logger.exception.assert_called()
-        mock_firehose_logger.send_log.assert_called()
+        mock_send_log_to_firehose.assert_called()
 
         args, kwargs = mock_logger.exception.call_args
         logged_info = json.loads(args[0])
@@ -155,7 +155,7 @@ class TestFunctionInfoWrapper(unittest.TestCase):
         self.assertEqual(logged_info["local_id"], "12345^http://test")
         self.assertEqual(logged_info["vaccine_type"], "FLU")
 
-    def test_body_missing(self, mock_logger, mock_firehose_logger):
+    def test_body_missing(self, mock_logger, mock_send_log_to_firehose):
         # Arrange
         test_correlation = "failed_test_correlation_body_missing"
         test_request = "failed_test_request_body_missing"
@@ -189,7 +189,7 @@ class TestFunctionInfoWrapper(unittest.TestCase):
         self.assertNotIn("local_id", logged_info)
         self.assertNotIn("vaccine_type", logged_info)
 
-    def test_body_not_json(self, mock_logger, mock_firehose_logger):
+    def test_body_not_json(self, mock_logger, mock_send_log_to_firehose):
         # Arrange
         test_correlation = "failed_test_correlation_body_not_json"
         test_request = "failed_test_request_body_not_json"
@@ -228,7 +228,7 @@ class TestFunctionInfoWrapper(unittest.TestCase):
         self.assertNotIn("local_id", logged_info)
         self.assertNotIn("vaccine_type", logged_info)
 
-    def test_body_invalid_identifier(self, mock_logger, mock_firehose_logger):
+    def test_body_invalid_identifier(self, mock_logger, mock_send_log_to_firehose):
         # Arrange
         test_correlation = "failed_test_correlation_invalid_identifier"
         test_request = "failed_test_request_invalid_identifier"
@@ -270,7 +270,7 @@ class TestFunctionInfoWrapper(unittest.TestCase):
         self.assertNotIn("local_id", logged_info)
         self.assertEqual(logged_info["vaccine_type"], "FLU")
 
-    def test_body_invalid_protocol_applied(self, mock_logger, mock_firehose_logger):
+    def test_body_invalid_protocol_applied(self, mock_logger, mock_send_log_to_firehose):
         # Arrange
         test_correlation = "failed_test_correlation_invalid_protocol"
         test_request = "failed_test_request_invalid_protocol"

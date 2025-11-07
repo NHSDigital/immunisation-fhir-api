@@ -4,7 +4,8 @@ import functools
 import uuid
 from typing import Callable, Type
 
-from clients import logger
+from common.clients import logger
+from common.models.api_constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
 from common.models.api_errors import (
     Code,
     InconsistentIdentifierError,
@@ -25,7 +26,6 @@ from common.models.errors import (
     ResourceNotFoundError,
     ResourceVersionNotProvided,
 )
-from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
 from controller.aws_apig_response_utils import create_response
 
 _CUSTOM_EXCEPTION_TO_STATUS_MAP: dict[Type[Exception], int] = {

@@ -13,8 +13,8 @@ from common.models.errors import ResourceNotFoundError
 from common.models.immunization_record_metadata import ImmunizationRecordMetadata
 from common.models.utils.validation_utils import get_vaccine_type
 from repository.fhir_repository import ImmunizationRepository
-from testing_utils.generic_utils import update_target_disease_code
-from testing_utils.immunization_utils import VALID_NHS_NUMBER, create_covid_immunization_dict
+from test_common.testing_utils.generic_utils import update_target_disease_code
+from test_common.testing_utils.immunization_utils import VALID_NHS_NUMBER, create_covid_immunization_dict
 
 
 def _make_immunization_pk(_id):

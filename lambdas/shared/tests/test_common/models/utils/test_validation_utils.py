@@ -13,10 +13,10 @@ from common.models.utils.generic_utils import (
     patient_and_practitioner_value_and_index,
 )
 from common.models.utils.validation_utils import validate_identifiers_match, validate_resource_versions_match
-from testing_utils.generic_utils import (
+from test_common.testing_utils.generic_utils import (
     load_json_data,
 )
-from testing_utils.values_for_tests import InvalidValues, NameInstances, ValidValues
+from test_common.testing_utils.values_for_tests import InvalidValues, NameInstances, ValidValues
 
 
 class TestValidatorUtils(unittest.TestCase):

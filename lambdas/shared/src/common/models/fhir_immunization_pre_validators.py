@@ -1,5 +1,6 @@
 "FHIR Immunization Pre Validators"
 
+from common.models.api_constants import Urls
 from common.models.api_errors import MandatoryError
 from common.models.constants import Constants
 from common.models.utils.generic_utils import (
@@ -13,7 +14,6 @@ from common.models.utils.generic_utils import (
     practitioner_name_given_field_location,
 )
 from common.models.utils.pre_validator_utils import PreValidation
-from constants import Urls
 
 
 class PreValidators:
