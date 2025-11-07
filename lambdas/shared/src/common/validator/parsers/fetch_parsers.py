@@ -1,5 +1,4 @@
 from common.validator.parsers.csv_line_parser import CSVLineParser
-from common.validator.parsers.csv_parser import CSVParser
 from common.validator.parsers.fhir_parser import FHIRParser
 from common.validator.parsers.schema_parser import SchemaParser
 
@@ -12,12 +11,7 @@ class FetchParsers:
     def __init__(self):
         self.parsers = {}
 
-    # Retrieve all the Parsers,
-    def _get_csv_parser(self, batch_filepath: str) -> CSVParser:
-        csv_parser = CSVParser()
-        csv_parser.parse_csv_file(batch_filepath)
-        return csv_parser
-
+    # Retrieve all the Parsers, here we have CSVLineParser, CSVParser and FHIRParser
     def _get_csv_line_parser(self, csv_row, csv_header) -> CSVLineParser:
         csv_line_parser = CSVLineParser()
         csv_line_parser.parse_csv_line(csv_row, csv_header)

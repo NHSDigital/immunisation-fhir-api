@@ -2,12 +2,12 @@
 1. Runs the CSV and FHIR Parsers (where Extraction of the values occurs and collates extraction error reports)
 2. Runs the Expresssion Checker against each expression in the schema
 3. Collects all error records and builds the final error report
+data_parser is the date parser object returned from the FetchParsers class which contains the data to be validated either fhir or csv
 """
-
-from common.validator.fetch_parsers import CSVLineParser, CSVParser, FHIRParser, SchemaParser
 
 from common.validator.constants.enums import MESSAGES, DataType, ErrorLevels, ExceptionLevels
 from common.validator.expression_checker import ExpressionChecker
+from common.validator.parsers.fetch_parsers import FetchParsers
 from common.validator.record_error import ErrorReport
 from common.validator.reporter.dq_reporter import DQReporter
 
@@ -15,27 +15,7 @@ from common.validator.reporter.dq_reporter import DQReporter
 class Validator:
     def __init__(self, schema_file=""):
         self.schema_file = schema_file
-
-    # Retrieve all the Parsers,
-    def _get_csv_parser(self, filepath: str) -> CSVParser:
-        csv_parser = CSVParser()
-        csv_parser.parse_csv_file(filepath)
-        return csv_parser
-
-    def _get_csv_line_parser(self, csv_row, csv_header) -> CSVLineParser:
-        csv_line_parser = CSVLineParser()
-        csv_line_parser.parse_csv_line(csv_row, csv_header)
-        return csv_line_parser
-
-    def _get_fhir_parser(self, fhir_data: dict) -> FHIRParser:
-        fhir_parser = FHIRParser()
-        fhir_parser.parse_fhir_data(fhir_data)
-        return fhir_parser
-
-    def _get_schema_parser(self, schemafile: str) -> SchemaParser:
-        schema_parser = SchemaParser()
-        schema_parser.parse_schema(schemafile)
-        return schema_parser
+        self.get_data_from_parsers = FetchParsers()
 
     # Collect and add error record to the list
     def _add_error_record(
@@ -183,13 +163,10 @@ class Validator:
         try:
             match data_type:
                 case DataType.FHIR:
-                    data_parser = self._get_fhir_parser(fhir_data)
+                    data_parser = self.get_data_from_parsers._get_fhir_parser(fhir_data)
                     is_csv = False
-                case DataType.CSV:
-                    data_parser = self._get_csv_parser(batch_filepath)
-                    is_csv = True
                 case DataType.CSVROW:
-                    data_parser = self._get_csv_line_parser(csv_row, csv_header)
+                    data_parser = self.get_data_from_parsers._get_csv_line_parser(csv_row, csv_header)
                     is_csv = True
 
         except Exception as e:
@@ -197,7 +174,7 @@ class Validator:
                 message = f"Data Parser Unexpected exception [{e.__class__.__name__}]: {e}"
                 return [ErrorReport(code=0, message=message)]
 
-        schema_parser = SchemaParser()._get_schema_parser(self.schema_file)
+        schema_parser = self.get_data_from_parsers._get_schema_parser(self.schema_file)
         expression_validator = ExpressionChecker(data_parser, summarise, report_unexpected_exception)
         expressions = schema_parser.get_expressions()
 
@@ -209,7 +186,7 @@ class Validator:
         return error_records
 
     # Build the error Report
-    def build_error_report(self, event_id: str, data_parser, error_records: list[ErrorReport]) -> dict:
+    def build_error_report(self, event_id: str, data_parser: dict, error_records: list[ErrorReport]) -> dict:
         occurrence_date_time = data_parser.get_fhir_value("occurrenceDateTime")
         dq_reporter = DQReporter()
         return dq_reporter.generate_error_report(event_id, occurrence_date_time, error_records)

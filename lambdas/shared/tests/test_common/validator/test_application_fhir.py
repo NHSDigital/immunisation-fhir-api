@@ -24,7 +24,6 @@ class TestApplication(unittest.TestCase):
         fhir_parser.get_fhir_value.return_value = "2025-11-06T12:00:00Z"
 
         validator = Validator(SchemaFile)  # FHIR File Path not needed
-        print(f"FHIR Resources Loaded: {len(self.fhir_resources.get('entry', []))} entries")
         error_list = validator.validate_fhir(self.fhir_resources, True, True, True)
         error_report = validator.build_error_report(
             "25a8cc4d-1875-4191-ac6d-2d63a0ebc64b", fhir_parser, error_list
