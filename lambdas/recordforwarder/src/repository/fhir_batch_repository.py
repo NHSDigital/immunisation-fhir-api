@@ -171,7 +171,7 @@ class ImmunizationBatchRepository:
         self,
         immunization: any,
         supplier_system: str,
-        vax_type: str,
+        _: str,  # vax_type not used
         table: any,
         is_present: bool,
     ) -> dict:

@@ -36,6 +36,35 @@ def _log_data_from_body(event) -> dict:
     return log_data
 
 
+def _get_operation_outcome(result) -> dict:
+    operation_outcome = {}
+    status = "500"
+    status_code = "Exception"
+    diagnostics = str()
+    record = str()
+    if isinstance(result, dict):
+        status = str(result["statusCode"])
+        status_code = "Completed successfully"
+        if result.get("headers"):
+            result_headers = result["headers"]
+            if result_headers.get("Location"):
+                record = result_headers["Location"]
+        if result.get("body"):
+            ops_outcome = json.loads(result["body"])
+            logger.info(f"ops_outcome: {ops_outcome}")
+            if ops_outcome.get("issue"):
+                outcome_body = ops_outcome["issue"][0]
+                status_code = outcome_body["code"]
+                diagnostics = outcome_body["diagnostics"]
+    operation_outcome["status"] = status
+    operation_outcome["status_code"] = status_code
+    if len(diagnostics) > 1:
+        operation_outcome["diagnostics"] = diagnostics
+    if len(record) > 1:
+        operation_outcome["record"] = record
+    return operation_outcome
+
+
 def function_info(func):
     """This decorator prints the execution information for the decorated function."""
 
@@ -58,38 +87,15 @@ def function_info(func):
             "actual_path": actual_path,
             "resource_path": resource_path,
         }
-        operation_outcome = dict()
-        firehose_log = dict()
+        firehose_log = {}
         start = time.time()
         try:
             result = func(*args, **kwargs)
             end = time.time()
             log_data["time_taken"] = f"{round(end - start, 5)}s"
             log_data.update(_log_data_from_body(event))
-            status = "500"
-            status_code = "Exception"
-            diagnostics = str()
-            record = str()
-            if isinstance(result, dict):
-                status = str(result["statusCode"])
-                status_code = "Completed successfully"
-                if result.get("headers"):
-                    result_headers = result["headers"]
-                    if result_headers.get("Location"):
-                        record = result_headers["Location"]
-                if result.get("body"):
-                    ops_outcome = json.loads(result["body"])
-                    logger.info(f"ops_outcome: {ops_outcome}")
-                    if ops_outcome.get("issue"):
-                        outcome_body = ops_outcome["issue"][0]
-                        status_code = outcome_body["code"]
-                        diagnostics = outcome_body["diagnostics"]
-            operation_outcome["status"] = status
-            operation_outcome["status_code"] = status_code
-            if len(diagnostics) > 1:
-                operation_outcome["diagnostics"] = diagnostics
-            if len(record) > 1:
-                operation_outcome["record"] = record
+            operation_outcome = _get_operation_outcome(result)
+
             log_data["operation_outcome"] = operation_outcome
             logger.info(json.dumps(log_data))
             firehose_log["event"] = log_data

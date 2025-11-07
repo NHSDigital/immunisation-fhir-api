@@ -170,7 +170,7 @@ class FhirController:
         except ParameterException as e:
             return self._create_bad_request(e.message)
         if search_params is None:
-            raise Exception("Failed to parse parameters.")
+            raise ParameterException("Failed to parse parameters.")
 
         # Check vaxx type permissions- start
         try:

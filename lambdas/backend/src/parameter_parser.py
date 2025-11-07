@@ -162,7 +162,7 @@ def process_params(aws_event: APIGatewayProxyEventV1) -> ParamContainer:
     def parse_multi_value_query_parameters(
         multi_value_query_params: dict[str, list[str]],
     ) -> ParamContainer:
-        if any([len(v) > 1 for k, v in multi_value_query_params.items()]):
+        if any(len(v) > 1 for k, v in multi_value_query_params.items()):
             raise ParameterException(ERROR_MESSAGE_DUPLICATED_PARAMETERS)
         params = [(k, split_and_flatten(v)) for k, v in multi_value_query_params.items()]
 
@@ -176,9 +176,9 @@ def process_params(aws_event: APIGatewayProxyEventV1) -> ParamContainer:
             decoded_body = base64.b64decode(body).decode("utf-8")
             parsed_body = parse_qs(decoded_body)
 
-            if any([len(v) > 1 for k, v in parsed_body.items()]):
+            if any(len(v) > 1 for k, v in parsed_body.items()):
                 raise ParameterException(ERROR_MESSAGE_DUPLICATED_PARAMETERS)
-            items = dict((k, split_and_flatten(v)) for k, v in parsed_body.items())
+            items = {k: split_and_flatten(v) for k, v in parsed_body.items()}
             return items
         return {}
 
