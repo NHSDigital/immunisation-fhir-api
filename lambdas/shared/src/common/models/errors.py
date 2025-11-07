@@ -211,11 +211,6 @@ class BadRequestError(RuntimeError):
         )
 
 
-class MandatoryError(Exception):
-    def __init__(self, message=None):
-        self.message = message
-
-
 class ApiValidationError(RuntimeError):
     def to_operation_outcome(self) -> dict:
         pass
@@ -235,43 +230,6 @@ class InvalidFileKeyError(Exception):
 
 class UnhandledSqsError(Exception):
     """A custom exception for when an unexpected error occurs whilst sending a message to SQS."""
-
-
-@dataclass
-class InvalidPatientId(ApiValidationError):
-    """Use this when NHS Number is invalid or doesn't exist"""
-
-    patient_identifier: str
-
-    def __str__(self):
-        return f"NHS Number: {self.patient_identifier} is invalid or it doesn't exist."
-
-    def to_operation_outcome(self) -> dict:
-        return create_operation_outcome(
-            resource_id=str(uuid.uuid4()),
-            severity=Severity.error,
-            code=Code.exception,
-            diagnostics=self.__str__(),
-        )
-
-
-@dataclass
-class InconsistentIdError(ApiValidationError):
-    """Use this when the specified id in the message is inconsistent with the path
-    see: http://hl7.org/fhir/R4/http.html#update"""
-
-    imms_id: str
-
-    def __str__(self):
-        return f"The provided id:{self.imms_id} doesn't match with the content of the message"
-
-    def to_operation_outcome(self) -> dict:
-        return create_operation_outcome(
-            resource_id=str(uuid.uuid4()),
-            severity=Severity.error,
-            code=Code.exception,
-            diagnostics=self.__str__(),
-        )
 
 
 @dataclass

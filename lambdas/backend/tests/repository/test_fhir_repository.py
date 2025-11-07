@@ -8,10 +8,8 @@ import simplejson as json
 from boto3.dynamodb.conditions import Attr, Key
 from fhir.resources.R4B.immunization import Immunization
 
-from common.models.api_errors import (
-    ResourceNotFoundError,
-    UnhandledResponseError,
-)
+from common.models.api_errors import UnhandledResponseError
+from common.models.errors import ResourceNotFoundError
 from common.models.immunization_record_metadata import ImmunizationRecordMetadata
 from common.models.utils.validation_utils import get_vaccine_type
 from repository.fhir_repository import ImmunizationRepository

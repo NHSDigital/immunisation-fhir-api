@@ -1,4 +1,5 @@
-from common.models.errors import CustomValidationError, MandatoryError
+from common.models.api_errors import MandatoryError
+from common.models.errors import CustomValidationError
 from common.models.fhir_immunization import ImmunizationValidator
 from repository.fhir_batch_repository import ImmunizationBatchRepository
 

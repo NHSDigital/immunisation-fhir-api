@@ -14,13 +14,15 @@ from common.models.api_errors import (
     Code,
     InconsistentIdError,
     InvalidImmunizationId,
-    InvalidJsonError,
     InvalidResourceVersion,
-    ParameterException,
+    InvalidJsonError,
     Severity,
     UnauthorizedError,
     UnauthorizedVaxError,
     create_operation_outcome,
+)
+from common.models.errors import (
+    ParameterException,
 )
 from common.models.utils.generic_utils import check_keys_in_sources
 from controller.aws_apig_event_utils import (

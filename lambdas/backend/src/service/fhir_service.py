@@ -21,11 +21,13 @@ import parameter_parser
 from authorisation.api_operation_code import ApiOperationCode
 from authorisation.authoriser import Authoriser
 from common.models.api_errors import (
+    MandatoryError,
+    UnauthorizedVaxError,
+)
+from common.models.errors import (
     CustomValidationError,
     IdentifierDuplicationError,
-    MandatoryError,
     ResourceNotFoundError,
-    UnauthorizedVaxError,
 )
 from common.models.fhir_immunization import ImmunizationValidator
 from common.models.utils.generic_utils import (

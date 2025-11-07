@@ -9,11 +9,11 @@ import simplejson as json
 from boto3.dynamodb.conditions import Attr, Key
 
 from common.clients import logger
+from common.models.api_errors import UnhandledResponseError
 from common.models.errors import (
     IdentifierDuplicationError,
     ResourceFoundError,
     ResourceNotFoundError,
-    UnhandledResponseError,
 )
 
 

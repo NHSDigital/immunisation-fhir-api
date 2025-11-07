@@ -6,7 +6,7 @@ from urllib.parse import parse_qs, quote, urlencode
 
 from aws_lambda_typing.events import APIGatewayProxyEventV1
 
-from common.models.api_errors import ParameterException
+from common.models.errors import ParameterException
 from common.models.constants import Constants
 from common.models.utils.generic_utils import nhs_number_mod11_check
 from common.redis_client import get_redis_client

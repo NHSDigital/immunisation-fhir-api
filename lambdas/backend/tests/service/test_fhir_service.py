@@ -14,12 +14,14 @@ from fhir.resources.R4B.immunization import Immunization
 from authorisation.api_operation_code import ApiOperationCode
 from authorisation.authoriser import Authoriser
 from common.models.api_errors import (
-    CustomValidationError,
-    IdentifierDuplicationError,
     InconsistentIdentifierError,
     InconsistentResourceVersion,
-    ResourceNotFoundError,
     UnauthorizedVaxError,
+)
+from common.models.errors import (
+    CustomValidationError,
+    IdentifierDuplicationError,
+    ResourceNotFoundError,
 )
 from common.models.fhir_immunization import ImmunizationValidator
 from common.models.immunization_record_metadata import ImmunizationRecordMetadata

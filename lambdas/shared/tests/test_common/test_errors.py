@@ -182,69 +182,12 @@ class TestErrors(unittest.TestCase):
         self.assertEqual(issue.get("code"), errors.Code.incomplete)
         self.assertEqual(issue.get("diagnostics"), f"{test_message}\n{test_response}")
 
-    def test_errors_mandatory_error(self):
-        """Test correct operation of MandatoryError"""
-        test_message = "test_message"
-
-        with self.assertRaises(errors.MandatoryError) as context:
-            raise errors.MandatoryError(test_message)
-        self.assertEqual(str(context.exception.message), test_message)
-
-    def test_errors_mandatory_error_no_message(self):
-        """Test correct operation of MandatoryError with no message"""
-
-        with self.assertRaises(errors.MandatoryError) as context:
-            raise errors.MandatoryError()
-        self.assertIsNone(context.exception.message)
-
     def test_errors_api_validation_error(self):
         """Test correct operation of ApiValidationError"""
         with self.assertRaises(errors.ApiValidationError) as context:
             raise errors.ApiValidationError()
         outcome = context.exception.to_operation_outcome()
         self.assertIsNone(outcome)
-
-    def test_errors_invalid_patient_id(self):
-        """Test correct operation of InvalidPatientId"""
-        test_patient_identifier = "test_patient_identifier"
-
-        with self.assertRaises(errors.InvalidPatientId) as context:
-            raise errors.InvalidPatientId(test_patient_identifier)
-        self.assertEqual(context.exception.patient_identifier, test_patient_identifier)
-        self.assertEqual(
-            str(context.exception),
-            f"NHS Number: {test_patient_identifier} is invalid or it doesn't exist.",
-        )
-        outcome = context.exception.to_operation_outcome()
-        self.assert_operation_outcome(outcome)
-        issue = outcome.get("issue")[0]
-        self.assertEqual(issue.get("severity"), errors.Severity.error)
-        self.assertEqual(issue.get("code"), errors.Code.exception)
-        self.assertEqual(
-            issue.get("diagnostics"),
-            f"NHS Number: {test_patient_identifier} is invalid or it doesn't exist.",
-        )
-
-    def test_errors_inconsistent_id_error(self):
-        """Test correct operation of InconsistentIdError"""
-        test_imms_id = "test_imms_id"
-
-        with self.assertRaises(errors.InconsistentIdError) as context:
-            raise errors.InconsistentIdError(test_imms_id)
-        self.assertEqual(context.exception.imms_id, test_imms_id)
-        self.assertEqual(
-            str(context.exception),
-            f"The provided id:{test_imms_id} doesn't match with the content of the message",
-        )
-        outcome = context.exception.to_operation_outcome()
-        self.assert_operation_outcome(outcome)
-        issue = outcome.get("issue")[0]
-        self.assertEqual(issue.get("severity"), errors.Severity.error)
-        self.assertEqual(issue.get("code"), errors.Code.exception)
-        self.assertEqual(
-            issue.get("diagnostics"),
-            f"The provided id:{test_imms_id} doesn't match with the content of the message",
-        )
 
     def test_errors_custom_validation_error(self):
         """Test correct operation of CustomValidationError"""

@@ -7,21 +7,23 @@ from typing import Callable, Type
 from clients import logger
 from common.models.api_errors import (
     Code,
-    CustomValidationError,
-    IdentifierDuplicationError,
     InconsistentIdentifierError,
     InconsistentIdError,
     InconsistentResourceVersion,
     InvalidImmunizationId,
     InvalidJsonError,
     InvalidResourceVersion,
-    ResourceNotFoundError,
-    ResourceVersionNotProvided,
     Severity,
     UnauthorizedError,
     UnauthorizedVaxError,
     UnhandledResponseError,
     create_operation_outcome,
+)
+from common.models.errors import (
+    CustomValidationError,
+    IdentifierDuplicationError,
+    ResourceNotFoundError,
+    ResourceVersionNotProvided,
 )
 from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
 from controller.aws_apig_response_utils import create_response

@@ -3,7 +3,7 @@ import datetime
 import unittest
 from unittest.mock import Mock, create_autospec, patch
 
-from common.models.api_errors import ParameterException
+from common.models.errors import ParameterException
 from parameter_parser import (
     SearchParams,
     create_query_string,

@@ -11,11 +11,13 @@ from fhir.resources.R4B.bundle import Bundle
 from fhir.resources.R4B.immunization import Immunization
 
 from common.models.api_errors import (
+    UnauthorizedVaxError,
+    UnhandledResponseError,
+)
+from common.models.errors import (
     CustomValidationError,
     ParameterException,
     ResourceNotFoundError,
-    UnauthorizedVaxError,
-    UnhandledResponseError,
 )
 from controller.aws_apig_response_utils import create_response
 from controller.fhir_controller import FhirController

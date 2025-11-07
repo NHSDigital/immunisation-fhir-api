@@ -4,7 +4,8 @@ from typing import Optional
 
 from aws_lambda_typing.events import APIGatewayProxyEventV1
 
-from common.models.api_errors import ResourceVersionNotProvided, UnauthorizedError
+from common.models.api_errors import UnauthorizedError
+from common.models.errors import ResourceVersionNotProvided
 from controller.constants import E_TAG_HEADER_NAME, SUPPLIER_SYSTEM_HEADER_NAME
 from utils import dict_utils
 
