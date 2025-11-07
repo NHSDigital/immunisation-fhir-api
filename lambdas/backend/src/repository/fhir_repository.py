@@ -223,27 +223,21 @@ class ImmunizationRepository:
             else Attr("PK").eq(attr.pk) & Attr("DeletedAt").not_exists()
         )
 
+        expression_attribute_values = {
+            ":timestamp": attr.timestamp,
+            ":patient_pk": attr.patient_pk,
+            ":patient_sk": attr.patient_sk,
+            ":imms_resource_val": json.dumps(attr.resource, use_decimal=True),
+            ":operation": "UPDATE",
+            ":version": updated_version,
+            ":supplier_system": supplier_system,
+        }
         if reinstate_operation_required:
-            expression_attribute_values = {
-                ":timestamp": attr.timestamp,
-                ":patient_pk": attr.patient_pk,
-                ":patient_sk": attr.patient_sk,
-                ":imms_resource_val": json.dumps(attr.resource, use_decimal=True),
-                ":operation": "UPDATE",
-                ":version": updated_version,
-                ":supplier_system": supplier_system,
-                ":respawn": "reinstated",
-            }
-        else:
-            expression_attribute_values = {
-                ":timestamp": attr.timestamp,
-                ":patient_pk": attr.patient_pk,
-                ":patient_sk": attr.patient_sk,
-                ":imms_resource_val": json.dumps(attr.resource, use_decimal=True),
-                ":operation": "UPDATE",
-                ":version": updated_version,
-                ":supplier_system": supplier_system,
-            }
+            expression_attribute_values.update(
+                {
+                    ":respawn": "reinstated",
+                }
+            )
 
         try:
             self.table.update_item(
