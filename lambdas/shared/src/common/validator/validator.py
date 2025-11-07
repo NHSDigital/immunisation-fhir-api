@@ -4,12 +4,10 @@
 3. Collects all error records and builds the final error report
 """
 
+from common.validator.fetch_parsers import CSVLineParser, CSVParser, FHIRParser, SchemaParser
+
 from common.validator.constants.enums import MESSAGES, DataType, ErrorLevels, ExceptionLevels
 from common.validator.expression_checker import ExpressionChecker
-from common.validator.parsers.csv_line_parser import CSVLineParser
-from common.validator.parsers.csv_parser import CSVParser
-from common.validator.parsers.fhir_parser import FHIRParser
-from common.validator.parsers.schema_parser import SchemaParser
 from common.validator.record_error import ErrorReport
 from common.validator.reporter.dq_reporter import DQReporter
 
@@ -199,7 +197,7 @@ class Validator:
                 message = f"Data Parser Unexpected exception [{e.__class__.__name__}]: {e}"
                 return [ErrorReport(code=0, message=message)]
 
-        schema_parser = self._get_schema_parser(self.schema_file)
+        schema_parser = SchemaParser()._get_schema_parser(self.schema_file)
         expression_validator = ExpressionChecker(data_parser, summarise, report_unexpected_exception)
         expressions = schema_parser.get_expressions()
 

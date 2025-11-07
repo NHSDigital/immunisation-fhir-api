@@ -36,10 +36,7 @@ class TestApplication(unittest.TestCase):
             print(error_list)
         else:
             print("Validated Successfully")
-
-        print("-------------------------------------------------------------------")
         print(error_report)
-        print("-------------------------------------------------------------------")
 
         if failed_validation:
             print("Validation failed due to a critical validation failure...")
