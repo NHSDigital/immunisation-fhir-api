@@ -20,13 +20,10 @@ from fhir.resources.R4B.immunization import Immunization
 import parameter_parser
 from authorisation.api_operation_code import ApiOperationCode
 from authorisation.authoriser import Authoriser
-from common.models.api_errors import (
-    MandatoryError,
-    UnauthorizedVaxError,
-)
 from common.models.errors import (
     CustomValidationError,
     IdentifierDuplicationError,
+    MandatoryError,
     ResourceNotFoundError,
 )
 from common.models.fhir_immunization import ImmunizationValidator
@@ -41,6 +38,7 @@ from common.models.utils.validation_utils import (
     validate_resource_versions_match,
 )
 from filter import Filter
+from models.errors import UnauthorizedVaxError
 from repository.fhir_repository import ImmunizationRepository
 
 logging.basicConfig(level="INFO")

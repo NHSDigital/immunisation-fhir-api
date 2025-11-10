@@ -10,17 +10,17 @@ from urllib.parse import urlencode
 from fhir.resources.R4B.bundle import Bundle
 from fhir.resources.R4B.immunization import Immunization
 
-from common.models.api_errors import (
-    UnauthorizedVaxError,
-    UnhandledResponseError,
-)
 from common.models.errors import (
     CustomValidationError,
-    ParameterException,
     ResourceNotFoundError,
 )
 from controller.aws_apig_response_utils import create_response
 from controller.fhir_controller import FhirController
+from models.errors import (
+    ParameterException,
+    UnauthorizedVaxError,
+    UnhandledResponseError,
+)
 from parameter_parser import patient_identifier_system, process_search_params
 from repository.fhir_repository import ImmunizationRepository
 from service.fhir_service import FhirService

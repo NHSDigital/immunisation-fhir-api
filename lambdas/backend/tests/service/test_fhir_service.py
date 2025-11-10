@@ -13,19 +13,17 @@ from fhir.resources.R4B.immunization import Immunization
 
 from authorisation.api_operation_code import ApiOperationCode
 from authorisation.authoriser import Authoriser
-from common.models.api_errors import (
-    InconsistentIdentifierError,
-    InconsistentResourceVersion,
-    UnauthorizedVaxError,
-)
 from common.models.constants import NHS_NUMBER_USED_IN_SAMPLE_DATA
 from common.models.errors import (
     CustomValidationError,
     IdentifierDuplicationError,
+    InconsistentIdentifierError,
+    InconsistentResourceVersion,
     ResourceNotFoundError,
 )
 from common.models.fhir_immunization import ImmunizationValidator
 from common.models.immunization_record_metadata import ImmunizationRecordMetadata
+from models.errors import UnauthorizedVaxError
 from repository.fhir_repository import ImmunizationRepository
 from service.fhir_service import FhirService, get_service_url
 from test_common.testing_utils.generic_utils import load_json_data

@@ -41,42 +41,9 @@ class UnauthorizedError(RuntimeError):
         )
 
 
-@dataclass
-class UnauthorizedVaxError(RuntimeError):
-    response: dict | str
-    message: str
-
-    def __str__(self):
-        return f"{self.message}\n{self.response}"
-
-    @staticmethod
-    def to_operation_outcome() -> dict:
-        msg = "Unauthorized request for vaccine type"
-        return create_operation_outcome(
-            resource_id=str(uuid.uuid4()),
-            severity=Severity.error,
-            code=Code.forbidden,
-            diagnostics=msg,
-        )
-
-
-@dataclass
-class UnauthorizedVaxOnRecordError(RuntimeError):
-    response: dict | str
-    message: str
-
-    def __str__(self):
-        return f"{self.message}\n{self.response}"
-
-    @staticmethod
-    def to_operation_outcome() -> dict:
-        msg = "Unauthorized request for vaccine type present in the stored immunization resource"
-        return create_operation_outcome(
-            resource_id=str(uuid.uuid4()),
-            severity=Severity.error,
-            code=Code.forbidden,
-            diagnostics=msg,
-        )
+class MandatoryError(Exception):
+    def __init__(self, message=None):
+        self.message = message
 
 
 @dataclass
@@ -155,21 +122,35 @@ class ResourceFoundError(RuntimeError):
         )
 
 
+class ApiValidationError(RuntimeError):
+    def to_operation_outcome(self) -> dict:
+        pass
+
+
 @dataclass
-class ResourceVersionNotProvided(RuntimeError):
-    """Return this error when client has failed to provide the FHIR resource version where required"""
+class InconsistentIdentifierError(ApiValidationError):
+    """Use this when the local identifier in the payload does not match the existing identifier for the update."""
 
-    resource_type: str
+    msg: str
 
-    def __str__(self):
-        return f"Validation errors: {self.resource_type} resource version not specified in the request headers"
+    def to_operation_outcome(self) -> dict:
+        return create_operation_outcome(
+            resource_id=str(uuid.uuid4()), severity=Severity.error, code=Code.invariant, diagnostics=self.msg
+        )
+
+
+@dataclass
+class InconsistentResourceVersion(ApiValidationError):
+    """Use this when the resource version in the request and actual resource version do not match"""
+
+    message: str
 
     def to_operation_outcome(self) -> dict:
         return create_operation_outcome(
             resource_id=str(uuid.uuid4()),
             severity=Severity.error,
             code=Code.invariant,
-            diagnostics=self.__str__(),
+            diagnostics=self.message,
         )
 
 
@@ -209,11 +190,6 @@ class BadRequestError(RuntimeError):
             code=Code.incomplete,
             diagnostics=self.__str__(),
         )
-
-
-class ApiValidationError(RuntimeError):
-    def to_operation_outcome(self) -> dict:
-        pass
 
 
 class UnhandledAuditTableError(Exception):
@@ -285,28 +261,6 @@ class ServerError(RuntimeError):
             severity=Severity.error,
             code=Code.server_error,
             diagnostics=self.__str__(),
-        )
-
-
-@dataclass
-class ParameterException(RuntimeError):
-    message: str
-
-    def __str__(self):
-        return self.message
-
-
-class UnauthorizedSystemError(RuntimeError):
-    def __init__(self, message="Unauthorized system"):
-        super().__init__(message)
-        self.message = message
-
-    def to_operation_outcome(self) -> dict:
-        return create_operation_outcome(
-            resource_id=str(uuid.uuid4()),
-            severity=Severity.error,
-            code=Code.forbidden,
-            diagnostics=self.message,
         )
 
 

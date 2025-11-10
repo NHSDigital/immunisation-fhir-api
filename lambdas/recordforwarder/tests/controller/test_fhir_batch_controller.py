@@ -2,11 +2,11 @@ import unittest
 import uuid
 from unittest.mock import Mock, create_autospec
 
-from common.models.api_errors import UnhandledResponseError
 from common.models.errors import (
     CustomValidationError,
     IdentifierDuplicationError,
     ResourceNotFoundError,
+    UnhandledResponseError,
 )
 from controller.fhir_batch_controller import ImmunizationBatchController
 from repository.fhir_batch_repository import ImmunizationBatchRepository

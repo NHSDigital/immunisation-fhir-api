@@ -7,9 +7,9 @@ from urllib.parse import parse_qs, quote, urlencode
 from aws_lambda_typing.events import APIGatewayProxyEventV1
 
 from common.models.constants import Constants
-from common.models.errors import ParameterException
 from common.models.utils.generic_utils import nhs_number_mod11_check
 from common.redis_client import get_redis_client
+from models.errors import ParameterException
 
 ERROR_MESSAGE_DUPLICATED_PARAMETERS = 'Parameters may not be duplicated. Use commas for "or".'
 

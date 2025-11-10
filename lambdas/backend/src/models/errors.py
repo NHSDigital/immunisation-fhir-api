@@ -66,21 +66,29 @@ class UnauthorizedVaxError(RuntimeError):
 
 
 @dataclass
-class UnauthorizedVaxOnRecordError(RuntimeError):
-    @staticmethod
-    def to_operation_outcome() -> dict:
-        msg = "Unauthorized request for vaccine type present in the stored immunization resource"
+class ResourceVersionNotProvided(RuntimeError):
+    """Return this error when client has failed to provide the FHIR resource version where required"""
+
+    resource_type: str
+
+    def __str__(self):
+        return f"Validation errors: {self.resource_type} resource version not specified in the request headers"
+
+    def to_operation_outcome(self) -> dict:
         return create_operation_outcome(
             resource_id=str(uuid.uuid4()),
             severity=Severity.error,
-            code=Code.forbidden,
-            diagnostics=msg,
+            code=Code.invariant,
+            diagnostics=self.__str__(),
         )
 
 
-class MandatoryError(Exception):
-    def __init__(self, message=None):
-        self.message = message
+@dataclass
+class ParameterException(RuntimeError):
+    message: str
+
+    def __str__(self):
+        return self.message
 
 
 @dataclass
@@ -97,24 +105,6 @@ class InvalidImmunizationId(ApiValidationError):
 
 
 @dataclass
-class InvalidPatientId(ApiValidationError):
-    """Use this when NHS Number is invalid or doesn't exist"""
-
-    patient_identifier: str
-
-    def __str__(self):
-        return f"NHS Number: {self.patient_identifier} is invalid or it doesn't exist."
-
-    def to_operation_outcome(self) -> dict:
-        return create_operation_outcome(
-            resource_id=str(uuid.uuid4()),
-            severity=Severity.error,
-            code=Code.server_error,
-            diagnostics=self.__str__(),
-        )
-
-
-@dataclass
 class InvalidResourceVersion(ApiValidationError):
     """Use this when the resource version is invalid"""
 
@@ -127,18 +117,6 @@ class InvalidResourceVersion(ApiValidationError):
             code=Code.invariant,
             diagnostics=f"Validation errors: Immunization resource version:{self.resource_version} in the request "
             f"headers is invalid.",
-        )
-
-
-@dataclass
-class InconsistentIdentifierError(ApiValidationError):
-    """Use this when the local identifier in the payload does not match the existing identifier for the update."""
-
-    msg: str
-
-    def to_operation_outcome(self) -> dict:
-        return create_operation_outcome(
-            resource_id=str(uuid.uuid4()), severity=Severity.error, code=Code.invariant, diagnostics=self.msg
         )
 
 
@@ -161,21 +139,6 @@ class InconsistentIdError(ApiValidationError):
             severity=Severity.error,
             code=Code.invariant,
             diagnostics=self.__str__(),
-        )
-
-
-@dataclass
-class InconsistentResourceVersion(ApiValidationError):
-    """Use this when the resource version in the request and actual resource version do not match"""
-
-    message: str
-
-    def to_operation_outcome(self) -> dict:
-        return create_operation_outcome(
-            resource_id=str(uuid.uuid4()),
-            severity=Severity.error,
-            code=Code.invariant,
-            diagnostics=self.message,
         )
 
 

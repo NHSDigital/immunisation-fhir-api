@@ -1,6 +1,6 @@
 "FHIR Immunization Post Validators"
 
-from common.models.api_errors import MandatoryError
+from common.models.errors import MandatoryError
 from common.models.field_locations import FieldLocations
 from common.models.field_names import FieldNames
 from common.models.mandation_functions import MandationFunctions

@@ -2,23 +2,23 @@ import json
 import unittest
 from unittest.mock import patch
 
-from common.models.api_errors import (
+from common.models.errors import (
+    CustomValidationError,
+    IdentifierDuplicationError,
     InconsistentIdentifierError,
-    InconsistentIdError,
     InconsistentResourceVersion,
+    ResourceNotFoundError,
+)
+from controller.fhir_api_exception_handler import fhir_api_exception_handler
+from models.errors import (
+    InconsistentIdError,
     InvalidJsonError,
     InvalidResourceVersion,
+    ResourceVersionNotProvided,
     UnauthorizedError,
     UnauthorizedVaxError,
     UnhandledResponseError,
 )
-from common.models.errors import (
-    CustomValidationError,
-    IdentifierDuplicationError,
-    ResourceNotFoundError,
-    ResourceVersionNotProvided,
-)
-from controller.fhir_api_exception_handler import fhir_api_exception_handler
 
 
 class TestFhirApiExceptionHandler(unittest.TestCase):

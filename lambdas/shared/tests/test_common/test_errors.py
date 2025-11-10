@@ -39,40 +39,20 @@ class TestErrors(unittest.TestCase):
         self.assertEqual(issue.get("code"), errors.Code.forbidden)
         self.assertEqual(issue.get("diagnostics"), "Unauthorized request")
 
-    def test_errors_unauthorized_vax_error(self):
-        """Test correct operation of UnauthorizedVaxError"""
-        test_response = "test_response"
+    def test_errors_mandatory_error(self):
+        """Test correct operation of MandatoryError"""
         test_message = "test_message"
 
-        with self.assertRaises(errors.UnauthorizedVaxError) as context:
-            raise errors.UnauthorizedVaxError(test_response, test_message)
-        self.assert_response_message(context, test_response, test_message)
-        self.assertEqual(str(context.exception), f"{test_message}\n{test_response}")
-        outcome = context.exception.to_operation_outcome()
-        self.assert_operation_outcome(outcome)
-        issue = outcome.get("issue")[0]
-        self.assertEqual(issue.get("severity"), errors.Severity.error)
-        self.assertEqual(issue.get("code"), errors.Code.forbidden)
-        self.assertEqual(issue.get("diagnostics"), "Unauthorized request for vaccine type")
+        with self.assertRaises(errors.MandatoryError) as context:
+            raise errors.MandatoryError(test_message)
+        self.assertEqual(str(context.exception.message), test_message)
 
-    def test_errors_unauthorized_vax_on_record_error(self):
-        """Test correct operation of UnauthorizedVaxOnRecordError"""
-        test_response = "test_response"
-        test_message = "test_message"
+    def test_errors_mandatory_error_no_message(self):
+        """Test correct operation of MandatoryError with no message"""
 
-        with self.assertRaises(errors.UnauthorizedVaxOnRecordError) as context:
-            raise errors.UnauthorizedVaxOnRecordError(test_response, test_message)
-        self.assert_response_message(context, test_response, test_message)
-        self.assertEqual(str(context.exception), f"{test_message}\n{test_response}")
-        outcome = context.exception.to_operation_outcome()
-        self.assert_operation_outcome(outcome)
-        issue = outcome.get("issue")[0]
-        self.assertEqual(issue.get("severity"), errors.Severity.error)
-        self.assertEqual(issue.get("code"), errors.Code.forbidden)
-        self.assertEqual(
-            issue.get("diagnostics"),
-            "Unauthorized request for vaccine type present in the stored immunization resource",
-        )
+        with self.assertRaises(errors.MandatoryError) as context:
+            raise errors.MandatoryError()
+        self.assertIsNone(context.exception.message)
 
     def test_errors_token_validation_error(self):
         """Test correct operation of TokenValidationError"""
@@ -149,6 +129,36 @@ class TestErrors(unittest.TestCase):
             issue.get("diagnostics"),
             f"{test_resource_type} resource does exist. ID: {test_resource_id}",
         )
+
+    def test_errors_inconsistent_identifier_error(self):
+        """Test correct operation of InconsistentIdentifierError"""
+        test_imms_id = "test_imms_id"
+
+        with self.assertRaises(errors.InconsistentIdentifierError) as context:
+            raise errors.InconsistentIdentifierError(test_imms_id)
+        self.assertEqual(context.exception.msg, test_imms_id)
+
+        outcome = context.exception.to_operation_outcome()
+        self.assert_operation_outcome(outcome)
+        issue = outcome.get("issue")[0]
+        self.assertEqual(issue.get("severity"), errors.Severity.error)
+        self.assertEqual(issue.get("code"), errors.Code.invariant)
+        self.assertEqual(issue.get("diagnostics"), test_imms_id)
+
+    def test_errors_inconsistent_resource_version(self):
+        """Test correct operation of InconsistentResourceVersion"""
+        test_message = "test_message"
+
+        with self.assertRaises(errors.InconsistentResourceVersion) as context:
+            raise errors.InconsistentResourceVersion(test_message)
+        self.assertEqual(context.exception.message, test_message)
+
+        outcome = context.exception.to_operation_outcome()
+        self.assert_operation_outcome(outcome)
+        issue = outcome.get("issue")[0]
+        self.assertEqual(issue.get("severity"), errors.Severity.error)
+        self.assertEqual(issue.get("code"), errors.Code.invariant)
+        self.assertEqual(issue.get("diagnostics"), test_message)
 
     def test_errors_unhandled_response_error(self):
         """Test correct operation of UnhandledResponseError"""
@@ -240,44 +250,6 @@ class TestErrors(unittest.TestCase):
         self.assertEqual(issue.get("severity"), errors.Severity.error)
         self.assertEqual(issue.get("code"), errors.Code.server_error)
         self.assertEqual(issue.get("diagnostics"), f"{test_message}\n{test_response}")
-
-    def test_errors_parameter_exception(self):
-        """Test correct operation of ParameterException"""
-        test_message = "test_message"
-
-        with self.assertRaises(errors.ParameterException) as context:
-            raise errors.ParameterException(test_message)
-        self.assertEqual(context.exception.message, test_message)
-        self.assertEqual(str(context.exception), test_message)
-
-    def test_errors_unauthorized_system_error(self):
-        """Test correct operation of UnauthorizedSystemError"""
-        test_message = "test_message"
-
-        with self.assertRaises(errors.UnauthorizedSystemError) as context:
-            raise errors.UnauthorizedSystemError(test_message)
-        self.assertEqual(context.exception.message, test_message)
-        self.assertEqual(str(context.exception), test_message)
-        outcome = context.exception.to_operation_outcome()
-        self.assert_operation_outcome(outcome)
-        issue = outcome.get("issue")[0]
-        self.assertEqual(issue.get("severity"), errors.Severity.error)
-        self.assertEqual(issue.get("code"), errors.Code.forbidden)
-        self.assertEqual(issue.get("diagnostics"), test_message)
-
-    def test_errors_unauthorized_system_error_no_message(self):
-        """Test correct operation of UnauthorizedSystemError with no message"""
-
-        with self.assertRaises(errors.UnauthorizedSystemError) as context:
-            raise errors.UnauthorizedSystemError()
-        self.assertEqual(context.exception.message, "Unauthorized system")
-        self.assertEqual(str(context.exception), "Unauthorized system")
-        outcome = context.exception.to_operation_outcome()
-        self.assert_operation_outcome(outcome)
-        issue = outcome.get("issue")[0]
-        self.assertEqual(issue.get("severity"), errors.Severity.error)
-        self.assertEqual(issue.get("code"), errors.Code.forbidden)
-        self.assertEqual(issue.get("diagnostics"), "Unauthorized system")
 
     def test_errors_message_not_successful_error(self):
         """Test correct operation of MessageNotSuccessfulError"""

@@ -8,11 +8,11 @@ import botocore.exceptions
 import simplejson as json
 from moto import mock_aws
 
-from common.models.api_errors import UnhandledResponseError
 from common.models.errors import (
     IdentifierDuplicationError,
     ResourceFoundError,
     ResourceNotFoundError,
+    UnhandledResponseError,
 )
 from repository.fhir_batch_repository import ImmunizationBatchRepository, create_table
 from test_common.testing_utils.immunization_utils import create_covid_immunization_dict

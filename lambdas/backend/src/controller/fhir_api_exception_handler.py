@@ -5,28 +5,28 @@ import uuid
 from typing import Callable, Type
 
 from common.clients import logger
-from common.models.api_errors import (
-    Code,
+from common.models.constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
+from common.models.errors import (
+    CustomValidationError,
+    IdentifierDuplicationError,
     InconsistentIdentifierError,
-    InconsistentIdError,
     InconsistentResourceVersion,
+    ResourceNotFoundError,
+)
+from controller.aws_apig_response_utils import create_response
+from models.errors import (
+    Code,
+    InconsistentIdError,
     InvalidImmunizationId,
     InvalidJsonError,
     InvalidResourceVersion,
+    ResourceVersionNotProvided,
     Severity,
     UnauthorizedError,
     UnauthorizedVaxError,
     UnhandledResponseError,
     create_operation_outcome,
 )
-from common.models.constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
-from common.models.errors import (
-    CustomValidationError,
-    IdentifierDuplicationError,
-    ResourceNotFoundError,
-    ResourceVersionNotProvided,
-)
-from controller.aws_apig_response_utils import create_response
 
 _CUSTOM_EXCEPTION_TO_STATUS_MAP: dict[Type[Exception], int] = {
     InconsistentResourceVersion: 400,
