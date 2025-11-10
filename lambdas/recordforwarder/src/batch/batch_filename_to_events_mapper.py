@@ -1,6 +1,6 @@
 import copy
 
-from common.models.errors import MessageNotSuccessfulError
+from models.errors import MessageNotSuccessfulError
 
 
 class BatchFilenameToEventsMapper:

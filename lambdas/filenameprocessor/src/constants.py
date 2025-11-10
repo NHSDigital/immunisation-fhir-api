@@ -3,9 +3,9 @@
 import os
 from enum import StrEnum
 
-from common.models.errors import (
+from common.models.errors import UnhandledAuditTableError
+from models.errors import (
     InvalidFileKeyError,
-    UnhandledAuditTableError,
     UnhandledSqsError,
     VaccineTypePermissionsError,
 )

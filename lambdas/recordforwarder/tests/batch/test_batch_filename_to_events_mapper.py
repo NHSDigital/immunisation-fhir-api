@@ -1,7 +1,7 @@
 import unittest
 
 from batch.batch_filename_to_events_mapper import BatchFilenameToEventsMapper
-from common.models.errors import MessageNotSuccessfulError
+from models.errors import MessageNotSuccessfulError
 
 MOCK_SUPPLIER_ONE_RSV_EVENT_ONE = {
     "row_id": "row-1",

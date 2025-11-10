@@ -12,12 +12,7 @@ from uuid import uuid4
 from audit_table import upsert_audit_table
 from common.clients import STREAM_NAME, logger, s3_client
 from common.log_decorator import logging_decorator
-from common.models.errors import (
-    InvalidFileKeyError,
-    UnhandledAuditTableError,
-    UnhandledSqsError,
-    VaccineTypePermissionsError,
-)
+from common.models.errors import UnhandledAuditTableError
 from constants import (
     ERROR_TYPE_TO_STATUS_CODE_MAP,
     SOURCE_BUCKET_NAME,
@@ -26,6 +21,11 @@ from constants import (
 )
 from file_validation import is_file_in_directory_root, validate_file_key
 from make_and_upload_ack_file import make_and_upload_the_ack_file
+from models.errors import (
+    InvalidFileKeyError,
+    UnhandledSqsError,
+    VaccineTypePermissionsError,
+)
 from send_sqs_message import make_and_send_sqs_message
 from supplier_permissions import validate_vaccine_type_permissions
 from utils_for_filenameprocessor import get_creation_and_expiry_times, move_file

@@ -13,10 +13,12 @@ from moto import mock_aws
 from common.models.errors import (
     CustomValidationError,
     IdentifierDuplicationError,
-    MessageNotSuccessfulError,
-    RecordProcessorError,
     ResourceFoundError,
     ResourceNotFoundError,
+)
+from models.errors import (
+    MessageNotSuccessfulError,
+    RecordProcessorError,
 )
 from testing_utils.test_utils_for_batch import ForwarderValues, MockFhirImmsResources
 

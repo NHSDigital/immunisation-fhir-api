@@ -13,14 +13,16 @@ from common.clients import sqs_client
 from common.models.errors import (
     CustomValidationError,
     IdentifierDuplicationError,
-    MessageNotSuccessfulError,
-    RecordProcessorError,
     ResourceFoundError,
     ResourceNotFoundError,
 )
 from controller.fhir_batch_controller import (
     ImmunizationBatchController,
     make_batch_controller,
+)
+from models.errors import (
+    MessageNotSuccessfulError,
+    RecordProcessorError,
 )
 from repository.fhir_batch_repository import create_table
 
