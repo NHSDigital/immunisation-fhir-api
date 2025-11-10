@@ -135,7 +135,13 @@ class Validator:
                 message = f"Data Parser Unexpected exception [{e.__class__.__name__}]: {e}"
                 return [ErrorReport(code=0, message=message)]
 
-        schema_parser = self.schema_parser.parse_schema(self.schema_file)
+        try:
+            schema_parser = self.schema_parser.parse_schema(self.schema_file)
+        except Exception as e:
+            if report_unexpected_exception:
+                message = f"Schema Parser Unexpected exception [{e.__class__.__name__}]: {e}"
+                return [ErrorReport(code=0, message=message)]
+
         expression_validator = ExpressionChecker(data_parser, summarise, report_unexpected_exception)
         expressions_in_schema = schema_parser.get_expressions()
 
