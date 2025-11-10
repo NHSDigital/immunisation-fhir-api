@@ -4,7 +4,7 @@ import unittest
 from copy import deepcopy
 from uuid import uuid4
 
-from common.models.api_constants import Urls
+from common.models.constants import Urls
 from filter import (
     Filter,
     add_use_to_identifier,

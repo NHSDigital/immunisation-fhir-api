@@ -5,7 +5,7 @@ resource json data
 
 from dataclasses import dataclass, field
 
-from common.models.api_constants import Urls
+from common.models.constants import Urls
 from common.models.utils.generic_utils import (
     generate_field_location_for_extension,
     patient_name_family_field_location,

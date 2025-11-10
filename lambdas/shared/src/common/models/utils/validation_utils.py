@@ -1,8 +1,7 @@
 """Utils for backend folder"""
 
-from common.models.api_constants import Urls
 from common.models.api_errors import InconsistentIdentifierError, InconsistentResourceVersion, MandatoryError
-from common.models.constants import Constants
+from common.models.constants import Constants, Urls
 from common.models.field_names import FieldNames
 from common.models.obtain_field_value import ObtainFieldValue
 from common.models.utils.base_utils import obtain_field_location

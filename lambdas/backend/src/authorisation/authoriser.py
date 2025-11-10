@@ -4,7 +4,7 @@ import json
 
 from authorisation.api_operation_code import ApiOperationCode
 from common.clients import logger
-from common.models.api_constants import SUPPLIER_PERMISSIONS_HASH_KEY
+from common.models.constants import SUPPLIER_PERMISSIONS_HASH_KEY
 from common.redis_client import get_redis_client
 
 
