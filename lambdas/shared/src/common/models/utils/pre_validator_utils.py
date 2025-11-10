@@ -69,6 +69,18 @@ class PreValidation:
         if max_length is not None and len(field_value) > max_length:
             raise ValueError(f"{field_location} must be an array of maximum length {max_length}")
 
+        PreValidation.for_list_element_type(
+            field_value, field_location, elements_are_strings, string_element_max_length, elements_are_dicts
+        )
+
+    @staticmethod
+    def for_list_element_type(
+        field_value: str,
+        field_location: str,
+        elements_are_strings: bool = False,
+        string_element_max_length: Optional[int] = None,
+        elements_are_dicts: bool = False,
+    ):
         if elements_are_strings:
             for idx, element in enumerate(field_value):
                 PreValidation.for_string(element, f"{field_location}[{idx}]", max_length=string_element_max_length)
