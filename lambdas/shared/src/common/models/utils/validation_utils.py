@@ -1,5 +1,7 @@
 """Utils for backend folder"""
 
+from fhir.resources.R4B.identifier import Identifier
+
 from common.models.constants import Constants, Urls
 from common.models.errors import InconsistentIdentifierError, InconsistentResourceVersion, MandatoryError
 from common.models.field_names import FieldNames
@@ -78,26 +80,21 @@ def get_vaccine_type(immunization: dict):
     return convert_disease_codes_to_vaccine_type(target_diseases)
 
 
-def validate_identifiers_match(new_immunization: dict, existing_immunization: dict) -> None:
-    """Checks if the local identifier system and values match for an existing and new immunization record. Raises an
+def validate_identifiers_match(new_identifier: Identifier, existing_identifier: Identifier) -> None:
+    """Checks if the identifier system and values match for a new and existing Identifier. Raises an
     InconsistentIdentifierError if there is a mismatch. Use this function in the Update Imms journey"""
 
-    new_system = new_immunization["identifier"][0]["system"]
-    new_value = new_immunization["identifier"][0]["value"]
-    existing_system = existing_immunization["identifier"][0]["system"]
-    existing_value = existing_immunization["identifier"][0]["value"]
-
-    if new_system != existing_system and new_value != existing_value:
+    if new_identifier.system != existing_identifier.system and new_identifier.value != existing_identifier.value:
         raise InconsistentIdentifierError(
             "Validation errors: identifier[0].system and identifier[0].value doesn't match with the stored content"
         )
 
-    if new_system != existing_system:
+    if new_identifier.system != existing_identifier.system:
         raise InconsistentIdentifierError(
             "Validation errors: identifier[0].system doesn't match with the stored content"
         )
 
-    if new_value != existing_value:
+    if new_identifier.value != existing_identifier.value:
         raise InconsistentIdentifierError("Validation errors: identifier[0].value doesn't match with the stored content")
 
     return None

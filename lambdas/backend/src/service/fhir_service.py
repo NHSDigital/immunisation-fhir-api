@@ -105,7 +105,7 @@ class FhirService:
         """
         Get an Immunization by its ID. Returns the immunization entity and version number.
         """
-        resource, resource_metadata = self.immunization_repo.get_immunization_and_resource_meta_by_id(imms_id)
+        resource, immunization_metadata = self.immunization_repo.get_immunization_resource_and_metadata_by_id(imms_id)
 
         if resource is None:
             raise ResourceNotFoundError(resource_type="Immunization", resource_id=imms_id)
@@ -115,7 +115,7 @@ class FhirService:
         if not self.authoriser.authorise(supplier_system, ApiOperationCode.READ, {vaccination_type}):
             raise UnauthorizedVaxError()
 
-        return Immunization.parse_obj(resource), str(resource_metadata.resource_version)
+        return Immunization.parse_obj(resource), str(immunization_metadata.resource_version)
 
     def create_immunization(self, immunization: dict, supplier_system: str) -> Id:
         if immunization.get("id") is not None:
@@ -148,11 +148,11 @@ class FhirService:
         except (ValueError, MandatoryError) as error:
             raise CustomValidationError(message=str(error)) from error
 
-        existing_immunization, existing_resource_meta = self.immunization_repo.get_immunization_and_resource_meta_by_id(
-            imms_id, include_deleted=True
+        existing_immunization_resource, existing_immunization_meta = (
+            self.immunization_repo.get_immunization_resource_and_metadata_by_id(imms_id, include_deleted=True)
         )
 
-        if not existing_immunization:
+        if not existing_immunization_resource:
             raise ResourceNotFoundError(resource_type="Immunization", resource_id=imms_id)
 
         # If the user is updating the resource vaccination_type, they must have permissions for both the existing and
@@ -160,23 +160,28 @@ class FhirService:
         if not self.authoriser.authorise(
             supplier_system,
             ApiOperationCode.UPDATE,
-            {get_vaccine_type(immunization), get_vaccine_type(existing_immunization)},
+            {get_vaccine_type(immunization), get_vaccine_type(existing_immunization_resource)},
         ):
             raise UnauthorizedVaxError()
 
-        validate_identifiers_match(immunization, existing_immunization)
+        immunization_fhir_entity = Immunization.parse_obj(immunization)
+        identifier = cast(Identifier, immunization_fhir_entity.identifier[0])
 
-        if not existing_resource_meta.is_deleted:
-            validate_resource_versions_match(resource_version, existing_resource_meta.resource_version, imms_id)
+        validate_identifiers_match(identifier, existing_immunization_meta.identifier)
 
-        return self.immunization_repo.update_immunization(imms_id, immunization, existing_resource_meta, supplier_system)
+        if not existing_immunization_meta.is_deleted:
+            validate_resource_versions_match(resource_version, existing_immunization_meta.resource_version, imms_id)
+
+        return self.immunization_repo.update_immunization(
+            imms_id, immunization, existing_immunization_meta, supplier_system
+        )
 
     def delete_immunization(self, imms_id: str, supplier_system: str) -> None:
         """
         Delete an Immunization if it exists and return the ID back if successful. An exception will be raised if the
         resource does not exist.
         """
-        existing_immunisation, _ = self.immunization_repo.get_immunization_and_resource_meta_by_id(imms_id)
+        existing_immunisation, _ = self.immunization_repo.get_immunization_resource_and_metadata_by_id(imms_id)
 
         if not existing_immunisation:
             raise ResourceNotFoundError(resource_type="Immunization", resource_id=imms_id)

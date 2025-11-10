@@ -9,6 +9,7 @@ import simplejson as json
 from boto3.dynamodb.conditions import Attr, Key
 from botocore.config import Config
 from fhir.resources.R4B.fhirtypes import Id
+from fhir.resources.R4B.identifier import Identifier
 from fhir.resources.R4B.immunization import Immunization
 from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
 from responses import logger
@@ -48,6 +49,27 @@ def _query_identifier(table, index, pk, identifier):
     queryresponse = table.query(IndexName=index, KeyConditionExpression=Key(pk).eq(identifier), Limit=1)
     if queryresponse.get("Count", 0) > 0:
         return queryresponse
+
+
+def get_nhs_number(imms):
+    try:
+        nhs_number = [x for x in imms["contained"] if x["resourceType"] == "Patient"][0]["identifier"][0]["value"]
+    except (KeyError, IndexError):
+        nhs_number = "TBC"
+    return nhs_number
+
+
+def get_fhir_identifier_from_identifier_pk(identifier_pk: str) -> Identifier:
+    split_identifier = identifier_pk.split("#", 1)
+
+    if len(split_identifier) != 2:
+        # TODO: raise Internal Server Error - invalid data stored for record?
+        raise
+
+    supplier_code = split_identifier[0]
+    supplier_unique_id = split_identifier[1]
+
+    return Identifier(system=supplier_code, value=supplier_unique_id)
 
 
 @dataclass
@@ -101,10 +123,10 @@ class ImmunizationRepository:
         else:
             return None, None
 
-    def get_immunization_and_resource_meta_by_id(
+    def get_immunization_resource_and_metadata_by_id(
         self, imms_id: str, include_deleted: bool = False
     ) -> tuple[Optional[dict], Optional[ImmunizationRecordMetadata]]:
-        """Retrieves the immunization and resource metadata from the VEDS table"""
+        """Retrieves the immunization resource and metadata from the VEDS table"""
         response = self.table.get_item(Key={"PK": _make_immunization_pk(imms_id)})
         item = response.get("Item")
 
@@ -119,7 +141,12 @@ class ImmunizationRepository:
         if is_deleted and not include_deleted:
             return None, None
 
-        imms_record_meta = ImmunizationRecordMetadata(int(item.get("Version")), is_deleted, is_reinstated)
+        # The FHIR Identifier which is returned in the metadata is based on the IdentifierPK from the database because
+        # it is valid for the IdentifierPK and Resource system and value to mismatch due to the V2 to V5 data uplift.
+        # Please see VED-893 for more details.
+        identifier = get_fhir_identifier_from_identifier_pk(item.get("IdentifierPK"))
+
+        imms_record_meta = ImmunizationRecordMetadata(identifier, int(item.get("Version")), is_deleted, is_reinstated)
 
         return json.loads(item.get("Resource", {})), imms_record_meta
 
