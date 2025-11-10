@@ -1,4 +1,3 @@
-# Root and base type expression checker functions
 import datetime
 import re
 import uuid

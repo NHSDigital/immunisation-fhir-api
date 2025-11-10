@@ -15,7 +15,7 @@ class TestApplication(unittest.TestCase):
         self.FHIRFilePath = validation_folder / "sample_data/vaccination.json"
         self.schemaFilePath = validation_folder / "test_schemas/test_schema.json"
 
-    def test_validation(self):
+    def test_fhir_validation(self):
         start = time.time()
 
         SchemaFile = parse_test_file(self.schemaFilePath)

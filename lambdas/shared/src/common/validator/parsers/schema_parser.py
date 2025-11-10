@@ -25,7 +25,7 @@ class SchemaParser:
         self.schema_file = {}
         self.expressions = {}
 
-    def parse_schema(self, schema_file: dict) -> None:
+    def parse_schema(self, schema_file: dict) -> dict:
         """
         Loads a schema definition (JSON/dict) and extracts expressions.
         """

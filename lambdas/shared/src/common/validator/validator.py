@@ -10,7 +10,7 @@ from common.validator.error_report.error_reporter import add_error_record, check
 from common.validator.error_report.record_error import ErrorReport
 from common.validator.expression_checker import ExpressionChecker
 from common.validator.parsers.schema_parser import SchemaParser
-from src.common.validator.parsers.paser_interface import BatchInterface, FHIRInterface, PaserInterface
+from src.common.validator.parsers.base_parser import BaseParser, BatchInterface, FHIRInterface
 
 
 class Validator:
@@ -23,7 +23,7 @@ class Validator:
         self,
         expression_validator: ExpressionChecker,
         expression: dict,
-        data_parser: PaserInterface,
+        data_parser: BaseParser,
         error_records: list[ErrorReport],
         inc_header_in_row_count: bool,
     ) -> ErrorReport | int:
@@ -54,11 +54,9 @@ class Validator:
 
         try:
             expression_values = data_parser.extract_field_values(expression_fieldname)
-            print(f"Extracted values for field {expression_fieldname}: {expression_values}")
         except Exception as e:
             message = f"Data get values Unexpected exception [{e.__class__.__name__}]: {e}"
             error_record = ErrorReport(code=ExceptionLevels.PARSING_ERROR, message=message)
-            # original code had self.CriticalErrorLevel. Replaced with error_level
             add_error_record(
                 error_records, error_record, expression_error_group, expression_name, expression_id, error_level
             )

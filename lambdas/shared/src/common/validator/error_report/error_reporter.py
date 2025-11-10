@@ -1,7 +1,7 @@
+from common.validator.constants.enums import ErrorLevels
 from common.validator.error_report.dq_reporter import DQReporter
-from src.common.validator.constants.enums import ErrorLevels
-from src.common.validator.error_report.record_error import ErrorReport
-from src.common.validator.parsers.paser_interface import PaserInterface
+from common.validator.error_report.record_error import ErrorReport
+from src.common.validator.parsers.base_parser import BaseParser
 
 
 # Collect and add error record to the list
@@ -29,7 +29,7 @@ def check_error_record_for_fail(expression_identifier: str, error_records: list[
     return False
 
 
-def build_error_report(event_id: str, data_parser: PaserInterface, error_records: list[ErrorReport]) -> dict:
+def build_error_report(event_id: str, data_parser: BaseParser, error_records: list[ErrorReport]) -> dict:
     if data_parser.get_data_format() == "fhir":
         occurrence_date_time = data_parser.extract_field_value("occurrenceDateTime")
     else:
