@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 
 import pandas as pd
 from clients import logger
+from errors import DynamoDBMismatchError
 from vax_suppliers import OdsVax, TestPair
 
 from constants import (
@@ -15,7 +16,6 @@ from constants import (
     Operation,
     OperationOutcome,
 )
-from errors import DynamoDBMismatchError
 from utils import (
     aws_cleanup,
     create_row,
