@@ -13,12 +13,12 @@ from fhir.resources.R4B.immunization import Immunization
 
 from authorisation.api_operation_code import ApiOperationCode
 from authorisation.authoriser import Authoriser
-from common.models.constants import NHS_NUMBER_USED_IN_SAMPLE_DATA
 from common.models.api_errors import (
     InconsistentIdentifierError,
     InconsistentResourceVersion,
     UnauthorizedVaxError,
 )
+from common.models.constants import NHS_NUMBER_USED_IN_SAMPLE_DATA
 from common.models.errors import (
     CustomValidationError,
     IdentifierDuplicationError,

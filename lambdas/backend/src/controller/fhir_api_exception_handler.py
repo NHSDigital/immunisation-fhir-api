@@ -5,7 +5,6 @@ import uuid
 from typing import Callable, Type
 
 from common.clients import logger
-from common.models.constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
 from common.models.api_errors import (
     Code,
     InconsistentIdentifierError,
@@ -20,6 +19,7 @@ from common.models.api_errors import (
     UnhandledResponseError,
     create_operation_outcome,
 )
+from common.models.constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
 from common.models.errors import (
     CustomValidationError,
     IdentifierDuplicationError,
