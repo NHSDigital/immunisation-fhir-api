@@ -7,7 +7,7 @@ from common.models.errors import CustomValidationError
 from common.models.fhir_immunization import ImmunizationValidator
 from repository.fhir_batch_repository import ImmunizationBatchRepository
 from service.fhir_batch_service import ImmunizationBatchService
-from testing_utils.immunization_utils import create_covid_immunization_dict_no_id
+from test_common.testing_utils.immunization_utils import create_covid_immunization_dict_no_id
 
 
 class TestFhirBatchServiceBase(unittest.TestCase):

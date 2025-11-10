@@ -11,7 +11,7 @@ from common.models.errors import (
 from controller.fhir_batch_controller import ImmunizationBatchController
 from repository.fhir_batch_repository import ImmunizationBatchRepository
 from service.fhir_batch_service import ImmunizationBatchService
-from testing_utils.immunization_utils import create_covid_immunization
+from test_common.testing_utils.immunization_utils import create_covid_immunization
 
 
 class TestCreateImmunizationBatchController(unittest.TestCase):

@@ -1,4 +1,4 @@
-TEST_ENV := @PYTHONPATH=src:tests:../shared/src
+TEST_ENV := @PYTHONPATH=src:tests:../shared/src:../shared/tests
 
 build:
 	docker build -t recordforwarder-lambda-build -f Dockerfile .

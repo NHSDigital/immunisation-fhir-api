@@ -15,7 +15,7 @@ from common.models.errors import (
     ResourceNotFoundError,
 )
 from repository.fhir_batch_repository import ImmunizationBatchRepository, create_table
-from testing_utils.immunization_utils import create_covid_immunization_dict
+from test_common.testing_utils.immunization_utils import create_covid_immunization_dict
 
 imms_id = str(uuid4())
 
