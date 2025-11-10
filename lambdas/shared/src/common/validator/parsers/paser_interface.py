@@ -10,7 +10,7 @@ class PaserInterface(ABC):
     """Defines a common interface for all data extractors."""
 
     @abstractmethod
-    def extract_field_values(self, field_path: str, data) -> dict:
+    def extract_field_values(self, field_path: str) -> dict:
         pass
 
     @abstractmethod
@@ -26,7 +26,7 @@ class FHIRInterface(PaserInterface):
     def get_data_format(self) -> str:
         return "fhir"
 
-    def extract_field_values(self, field_path):
+    def extract_field_values(self, field_path) -> list[str]:
         fhir_value = self.fhir_parser.get_fhir_value_list(field_path)
         return fhir_value
 
@@ -39,6 +39,6 @@ class BatchInterface(PaserInterface):
     def get_data_format(self) -> str:
         return "batch"
 
-    def extract_field_values(self, field_path):
+    def extract_field_values(self, field_path) -> list[str]:
         csv_value = self.csv_line_parser.get_key_value(field_path)
         return csv_value

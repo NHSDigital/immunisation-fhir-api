@@ -93,21 +93,6 @@ class Validator:
             inc_header_in_row_count=inc_header_in_row_count,
         )
 
-    def validate_csv(
-        self,
-        batch_filepath: str,
-        summarise: bool = False,
-        report_unexpected_exception: bool = True,
-        inc_header_in_row_count: bool = True,
-    ) -> list[ErrorReport]:
-        return self.run_validation(
-            data_type=DataType.CSV,
-            batch_filepath=batch_filepath,
-            summarise=summarise,
-            report_unexpected_exception=report_unexpected_exception,
-            inc_header_in_row_count=inc_header_in_row_count,
-        )
-
     def validate_csv_row(
         self,
         csv_row: str,
