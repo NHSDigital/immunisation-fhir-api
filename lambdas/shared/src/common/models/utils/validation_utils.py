@@ -54,9 +54,8 @@ def convert_disease_codes_to_vaccine_type(
 
     if not vaccine_type:
         raise ValueError(
-            "Validation errors: protocolApplied[0].targetDisease[*].coding[?(@.system=='"
-            "http://snomed.info/sct"
-            f"')].code - {disease_codes_input} is not a valid combination of disease codes for this service"
+            f"Validation errors: protocolApplied[0].targetDisease[*].coding[?(@.system=='{Urls.snomed}')].code"
+            f" - {disease_codes_input} is not a valid combination of disease codes for this service"
         )
     return vaccine_type
 
