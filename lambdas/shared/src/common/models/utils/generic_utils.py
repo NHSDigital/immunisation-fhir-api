@@ -4,7 +4,7 @@ import base64
 import datetime
 import json
 import urllib.parse
-from typing import Any, Dict, Literal, Optional, Union
+from typing import Any, Dict, Literal, Optional
 
 from fhir.resources.R4B.bundle import (
     Bundle as FhirBundle,
@@ -37,7 +37,7 @@ def get_contained_practitioner(imms: dict):
 
 def get_generic_extension_value(
     json_data: dict, url: str, system: str, field_type: Literal["code", "display"]
-) -> Union[str, None]:
+) -> str | None:
     """Get the value of an extension field, given its url, field_type, and system"""
     value_codeable_concept = [x for x in json_data["extension"] if x.get("url") == url][0]["valueCodeableConcept"]
     value_codeable_concept_coding = value_codeable_concept["coding"]
@@ -67,7 +67,7 @@ def is_actor_referencing_contained_resource(element, contained_resource_id):
         return False
 
 
-def check_for_unknown_elements(resource, resource_type) -> Union[None, list]:
+def check_for_unknown_elements(resource, resource_type) -> list | None:
     """
     Checks each key in the resource to see if it is allowed. If any disallowed keys are found,
     returns a list containing an error message for each disallowed element
@@ -256,7 +256,7 @@ def obtain_current_name_period(period: dict, occurrence_date: datetime) -> bool:
     return True
 
 
-def get_current_name_instance(names: list, occurrence_date: datetime) -> dict:
+def get_current_name_instance(names: list, occurrence_date: datetime) -> dict | tuple:
     """Selects the correct "current" name instance based on the 'period' and 'use' criteria."""
 
     # DUE TO RUNNING PRE_VALIDATE_PATIENT_NAME AND PRE_VALIDATE_PRACTITIONER NAME BEFORE THE RESPECTIVE CHECKS
@@ -278,9 +278,10 @@ def get_current_name_instance(names: list, occurrence_date: datetime) -> dict:
     for index, name in valid_name_instances:
         try:
             # Check for 'period' and occurrence date
-            if isinstance(name, dict):
-                if "period" not in name or obtain_current_name_period(name.get("period", {}), occurrence_date):
-                    current_names.append((index, name))
+            if isinstance(name, dict) and (
+                "period" not in name or obtain_current_name_period(name.get("period", {}), occurrence_date)
+            ):
+                current_names.append((index, name))
         except (KeyError, ValueError):
             continue
 

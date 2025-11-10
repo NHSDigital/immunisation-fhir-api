@@ -13,9 +13,6 @@ from common.models.utils.generic_utils import (
 class ObtainFieldValue:
     """Functions for obtaining a field value from the FHIR immunization resource json data"""
 
-    def __init__(self) -> None:
-        pass
-
     @staticmethod
     def target_disease(imms: dict):
         return imms["protocolApplied"][0]["targetDisease"]

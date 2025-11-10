@@ -1,6 +1,6 @@
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional, Union
+from typing import Optional
 
 from .generic_utils import is_valid_simple_snomed, nhs_number_mod11_check
 
@@ -33,16 +33,13 @@ class PreValidation:
             if len(field_value) == 0:
                 raise ValueError(f"{field_location} must be a non-empty string")
 
-        if max_length:
-            if len(field_value) > max_length:
+        if max_length and len(field_value) > max_length:
                 raise ValueError(f"{field_location} must be {max_length} or fewer characters")
 
-        if predefined_values:
-            if field_value not in predefined_values:
+        if predefined_values and field_value not in predefined_values:
                 raise ValueError(f"{field_location} must be one of the following: " + str(", ".join(predefined_values)))
 
-        if not spaces_allowed:
-            if " " in field_value:
+        if not spaces_allowed and " " in field_value:
                 raise ValueError(f"{field_location} must not contain spaces")
 
     @staticmethod
@@ -192,12 +189,11 @@ class PreValidation:
         if field_value <= 0:
             raise ValueError(f"{field_location} must be a positive integer")
 
-        if max_value:
-            if field_value > max_value:
+        if max_value and field_value > max_value:
                 raise ValueError(f"{field_location} must be an integer in the range 1 to {max_value}")
 
     @staticmethod
-    def for_integer_or_decimal(field_value: Union[int, Decimal], field_location: str):
+    def for_integer_or_decimal(field_value: int | Decimal, field_location: str):
         """
         Apply pre-validation to a decimal field to ensure that it is an integer or decimal,
         which does not exceed the maximum allowed number of decimal places (if applicable)

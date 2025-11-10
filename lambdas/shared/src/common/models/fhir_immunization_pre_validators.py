@@ -111,14 +111,14 @@ class PreValidators:
             all_errors = "; ".join(self.errors)
             raise ValueError(f"Validation errors: {all_errors}")
 
-    def pre_validate_resource_type(self, values: dict) -> dict:
+    def pre_validate_resource_type(self, values: dict) -> None:
         """Pre-validate that resourceType is 'Immunization'"""
         if values.get("resourceType") != "Immunization":
             raise ValueError(
                 "This service only accepts FHIR Immunization Resources (i.e. resourceType must equal 'Immunization')"
             )
 
-    def pre_validate_contained_contents(self, values: dict) -> dict:
+    def pre_validate_contained_contents(self, values: dict) -> None:
         """
         Pre-validate that contained exists and there is exactly one patient resource in contained,
         a maximum of one practitioner resource, and no other resources
@@ -168,7 +168,7 @@ class PreValidators:
         if errors:
             raise ValueError("; ".join(errors))
 
-    def pre_validate_top_level_elements(self, values: dict) -> dict:
+    def pre_validate_top_level_elements(self, values: dict) -> None:
         """Pre-validate that disallowed top level elements are not present"""
         errors = []
 
@@ -184,7 +184,7 @@ class PreValidators:
         if errors:
             raise ValueError("; ".join(errors))
 
-    def pre_validate_patient_reference(self, values: dict) -> dict:
+    def pre_validate_patient_reference(self, values: dict) -> None:
         """
         Pre-validate that:
         - patient.reference exists and it is a reference
@@ -208,7 +208,7 @@ class PreValidators:
                 f"The reference '{patient_reference}' does not match the id of the contained Patient resource"
             )
 
-    def pre_validate_practitioner_reference(self, values: dict) -> dict:
+    def pre_validate_practitioner_reference(self, values: dict) -> None:
         """
         Pre-validate that, if there is a contained Practitioner resource, there is exactly one reference to it from
         the performer, and that the performer does not reference any other internal resources
@@ -261,7 +261,7 @@ class PreValidators:
         except (KeyError, IndexError):
             pass
 
-    def pre_validate_patient_identifier(self, values: dict) -> dict:
+    def pre_validate_patient_identifier(self, values: dict) -> None:
         """
         Pre-validate that, if contained[?(@.resourceType=='Patient')].identifier exists, then it is a list of length 1
         """
@@ -272,7 +272,7 @@ class PreValidators:
         except (KeyError, IndexError):
             pass
 
-    def pre_validate_patient_identifier_value(self, values: dict) -> dict:
+    def pre_validate_patient_identifier_value(self, values: dict) -> None:
         """
         Pre-validate that, if contained[?(@.resourceType=='Patient')].identifier[0].value (
         legacy CSV field name: NHS_NUMBER) exists, then it is a string of 10 characters
@@ -288,7 +288,7 @@ class PreValidators:
         except (KeyError, IndexError):
             pass
 
-    def pre_validate_patient_name(self, values: dict) -> dict:
+    def pre_validate_patient_name(self, values: dict) -> None:
         """
         Pre-validate that, if contained[?(@.resourceType=='Patient')].name exists, then it is an array of length 1
         """
@@ -331,7 +331,7 @@ class PreValidators:
         except (KeyError, IndexError, AttributeError):
             pass
 
-    def pre_validate_patient_birth_date(self, values: dict) -> dict:
+    def pre_validate_patient_birth_date(self, values: dict) -> None:
         """
         Pre-validate that, if contained[?(@.resourceType=='Patient')].birthDate (legacy CSV field name: PERSON_DOB)
         exists, then it is a string in the format YYYY-MM-DD, representing a valid date
@@ -343,7 +343,7 @@ class PreValidators:
         except (KeyError, IndexError):
             pass
 
-    def pre_validate_patient_gender(self, values: dict) -> dict:
+    def pre_validate_patient_gender(self, values: dict) -> None:
         """
         Pre-validate that, if contained[?(@.resourceType=='Patient')].gender (legacy CSV field name: PERSON_GENDER_CODE)
         exists, then it is a string, which is one of the following: male, female, other, unknown
@@ -355,7 +355,7 @@ class PreValidators:
         except (KeyError, IndexError):
             pass
 
-    def pre_validate_patient_address(self, values: dict) -> dict:
+    def pre_validate_patient_address(self, values: dict) -> None:
         """
         Pre-validate that, if contained[?(@.resourceType=='Patient')].address exists, then it is an array of length 1
         """
@@ -366,7 +366,7 @@ class PreValidators:
         except (KeyError, IndexError):
             pass
 
-    def pre_validate_patient_address_postal_code(self, values: dict) -> dict:
+    def pre_validate_patient_address_postal_code(self, values: dict) -> None:
         """
         Pre-validate that, if contained[?(@.resourceType=='Patient')].address[0].postalCode (legacy CSV field name:
         PERSON_POSTCODE) exists, then it is a non-empty string
@@ -386,7 +386,7 @@ class PreValidators:
         except (KeyError, IndexError):
             pass
 
-    def pre_validate_occurrence_date_time(self, values: dict) -> dict:
+    def pre_validate_occurrence_date_time(self, values: dict) -> None:
         """
         Pre-validate that, if occurrenceDateTime exists (legacy CSV field name: DATE_AND_TIME),
         then it is a string in the format "YYYY-MM-DDThh:mm:ss+zz:zz" or "YYYY-MM-DDThh:mm:ss-zz:zz"
@@ -403,7 +403,7 @@ class PreValidators:
         except KeyError:
             pass
 
-    def pre_validate_performer(self, values: dict) -> dict:
+    def pre_validate_performer(self, values: dict) -> None:
         """
         Pre-validate that there is exactly one performer instance where actor.type is 'Organization'.
         """
@@ -422,7 +422,7 @@ class PreValidators:
         except (KeyError, AttributeError):
             pass
 
-    def pre_validate_organization_identifier_value(self, values: dict) -> dict:
+    def pre_validate_organization_identifier_value(self, values: dict) -> None:
         """
         Pre-validate that, if performer[?(@.actor.type=='Organization').identifier.value]
         (legacy CSV field name: SITE_CODE) exists, then it is a non-empty string.
@@ -436,7 +436,7 @@ class PreValidators:
         except (KeyError, IndexError, AttributeError):
             pass
 
-    def pre_validate_identifier(self, values: dict) -> dict:
+    def pre_validate_identifier(self, values: dict) -> None:
         """Pre-validate that identifier exists and is a list of length 1 and are an array of objects"""
         try:
             field_value = values["identifier"]
@@ -445,7 +445,7 @@ class PreValidators:
         except KeyError as error:
             raise MandatoryError("Validation errors: identifier is a mandatory field") from error
 
-    def pre_validate_identifier_value(self, values: dict) -> dict:
+    def pre_validate_identifier_value(self, values: dict) -> None:
         """
         Pre-validate that, if identifier[0].value (legacy CSV field name: UNIQUE_ID) exists,
         then it is a non-empty string
@@ -456,7 +456,7 @@ class PreValidators:
         except (KeyError, IndexError):
             pass
 
-    def pre_validate_identifier_system(self, values: dict) -> dict:
+    def pre_validate_identifier_system(self, values: dict) -> None:
         """
         Pre-validate that, if identifier[0].system (legacy CSV field name: UNIQUE_ID_URI) exists,
         then it is a non-empty string
@@ -467,7 +467,7 @@ class PreValidators:
         except (KeyError, IndexError):
             pass
 
-    def pre_validate_status(self, values: dict) -> dict:
+    def pre_validate_status(self, values: dict) -> None:
         """
         Pre-validate that, if status exists, then its value is "completed"
 
@@ -480,7 +480,7 @@ class PreValidators:
         except KeyError:
             pass
 
-    def pre_validate_practitioner_name(self, values: dict) -> dict:
+    def pre_validate_practitioner_name(self, values: dict) -> None:
         """
         Pre-validate that, if contained[?(@.resourceType=='Practitioner')].name exists,
         then it is an array of length 1
@@ -492,7 +492,7 @@ class PreValidators:
         except (KeyError, IndexError, AttributeError):
             pass
 
-    def pre_validate_practitioner_name_given(self, values: dict) -> dict:
+    def pre_validate_practitioner_name_given(self, values: dict) -> None:
         """
         Pre-validate that, if contained[?(@.resourceType=='Practitioner')].name[{index}].given index dynamically
         determined (legacy CSV field name:PERSON_FORENAME) exists, then it is an array containing a single non-empty
@@ -505,7 +505,7 @@ class PreValidators:
         except (KeyError, IndexError, AttributeError):
             pass
 
-    def pre_validate_practitioner_name_family(self, values: dict) -> dict:
+    def pre_validate_practitioner_name_family(self, values: dict) -> None:
         """
         Pre-validate that, if contained[?(@.resourceType=='Practitioner')].name[{index}].family
         index dynamically determined (legacy CSV field name:PERSON_SURNAME) exists,
@@ -518,7 +518,7 @@ class PreValidators:
         except (KeyError, IndexError):
             pass
 
-    def pre_validate_recorded(self, values: dict) -> dict:
+    def pre_validate_recorded(self, values: dict) -> None:
         """
         Pre-validate that, if occurrenceDateTime exists (legacy CSV field name: RECORDED_DATE),
         then it is a string in the format "YYYY-MM-DDThh:mm:ss+zz:zz" or "YYYY-MM-DDThh:mm:ss-zz:zz"
@@ -531,7 +531,7 @@ class PreValidators:
         except KeyError:
             pass
 
-    def pre_validate_primary_source(self, values: dict) -> dict:
+    def pre_validate_primary_source(self, values: dict) -> None:
         """
         Pre-validate that, if primarySource (legacy CSV field name: PRIMARY_SOURCE) exists, then it is a boolean
         """
@@ -541,7 +541,7 @@ class PreValidators:
         except KeyError:
             pass
 
-    def pre_validate_value_codeable_concept(self, values: dict) -> dict:
+    def pre_validate_value_codeable_concept(self, values: dict) -> None:
         """Pre-validate that valueCodeableConcept with coding exists within extension"""
         if "extension" not in values:
             raise MandatoryError("Validation errors: extension is a mandatory field")
@@ -563,7 +563,7 @@ class PreValidators:
                     "')].valueCodeableConcept.coding is a mandatory field"
                 )
 
-    def pre_validate_extension_length(self, values: dict) -> dict:
+    def pre_validate_extension_length(self, values: dict) -> None:
         """Pre-validate that, if extension exists, then the length of the list should be 1"""
         try:
             field_value = values["extension"]
@@ -573,7 +573,7 @@ class PreValidators:
         except KeyError:
             pass
 
-    def pre_validate_extension_url(self, values: dict) -> dict:
+    def pre_validate_extension_url(self, values: dict) -> None:
         """Pre-validate that, if extension exists, then its url should be a valid one"""
         try:
             field_value = values["extension"][0]["url"]
@@ -585,7 +585,7 @@ class PreValidators:
         except KeyError:
             pass
 
-    def pre_validate_vaccination_procedure_code(self, values: dict) -> dict:
+    def pre_validate_vaccination_procedure_code(self, values: dict) -> None:
         """
         Pre-validate that, if extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-
         VaccinationProcedure')].valueCodeableConcept.coding[?(@.system=='http://snomed.info/sct')].code
@@ -602,7 +602,7 @@ class PreValidators:
         except (KeyError, IndexError):
             pass
 
-    def pre_validate_vaccination_procedure_display(self, values: dict) -> dict:
+    def pre_validate_vaccination_procedure_display(self, values: dict) -> None:
         """
         Pre-validate that, if extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-
         VaccinationProcedure')].valueCodeableConcept.coding[?(@.system=='http://snomed.info/sct')].display
@@ -618,7 +618,7 @@ class PreValidators:
         except (KeyError, IndexError):
             pass
 
-    def pre_validate_vaccination_situation_code(self, values: dict) -> dict:
+    def pre_validate_vaccination_situation_code(self, values: dict) -> None:
         """
         Pre-validate that, if extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-
         VaccinationSituation')].valueCodeableConcept.coding[?(@.system=='http://snomed.info/sct')].code
@@ -634,7 +634,7 @@ class PreValidators:
         except (KeyError, IndexError):
             pass
 
-    def pre_validate_vaccination_situation_display(self, values: dict) -> dict:
+    def pre_validate_vaccination_situation_display(self, values: dict) -> None:
         """
         Pre-validate that, if extension[?(@.url=='https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-
         VaccinationSituation')].valueCodeableConcept.coding[?(@.system=='http://snomed.info/sct')].display
@@ -650,7 +650,7 @@ class PreValidators:
         except (KeyError, IndexError):
             pass
 
-    def pre_validate_protocol_applied(self, values: dict) -> dict:
+    def pre_validate_protocol_applied(self, values: dict) -> None:
         """Pre-validate that, if protocolApplied exists, then it is a list of length 1"""
         try:
             field_value = values["protocolApplied"]
@@ -660,7 +660,7 @@ class PreValidators:
 
     DOSE_NUMBER_MAX_VALUE = 9
 
-    def pre_validate_dose_number_positive_int(self, values: dict) -> dict:
+    def pre_validate_dose_number_positive_int(self, values: dict) -> None:
         """
         Pre-validate that, if protocolApplied[0].doseNumberPositiveInt (legacy CSV field : dose_sequence)
         exists, then it is an integer from 1 to 9 (DOSE_NUMBER_MAX_VALUE)
@@ -672,7 +672,7 @@ class PreValidators:
         except (KeyError, IndexError):
             pass
 
-    def pre_validate_dose_number_string(self, values: dict) -> dict:
+    def pre_validate_dose_number_string(self, values: dict) -> None:
         """
         Pre-validate that, if protocolApplied[0].doseNumberString exists, then it
         is a non-empty string
@@ -684,7 +684,7 @@ class PreValidators:
         except (KeyError, IndexError):
             pass
 
-    def pre_validate_target_disease(self, values: dict) -> dict:
+    def pre_validate_target_disease(self, values: dict) -> None:
         """
         Pre-validate that protocolApplied[0].targetDisease exists, and each of its elements contains a coding field
         """
@@ -696,7 +696,7 @@ class PreValidators:
         except (KeyError, IndexError) as error:
             raise ValueError("protocolApplied[0].targetDisease is a mandatory field") from error
 
-    def pre_validate_target_disease_codings(self, values: dict) -> dict:
+    def pre_validate_target_disease_codings(self, values: dict) -> None:
         """
         Pre-validate that, if they exist, each protocolApplied[0].targetDisease[{index}].valueCodeableConcept.coding
         has exactly one element where the system is the snomed url
@@ -715,7 +715,7 @@ class PreValidators:
         except KeyError:
             pass
 
-    def pre_validate_disease_type_coding_codes(self, values: dict) -> dict:
+    def pre_validate_disease_type_coding_codes(self, values: dict) -> None:
         """
         Pre-validate that, if protocolApplied[0].targetDisease[{i}].coding[?(@.system=='http://snomed.info/sct')].code
         exists, then it is a non-empty string
@@ -733,7 +733,7 @@ class PreValidators:
         except KeyError:
             pass
 
-    def pre_validate_manufacturer_display(self, values: dict) -> dict:
+    def pre_validate_manufacturer_display(self, values: dict) -> None:
         """
         Pre-validate that, if manufacturer.display (legacy CSV field name: VACCINE_MANUFACTURER)
         exists, then it is a non-empty string
@@ -744,7 +744,7 @@ class PreValidators:
         except KeyError:
             pass
 
-    def pre_validate_lot_number(self, values: dict) -> dict:
+    def pre_validate_lot_number(self, values: dict) -> None:
         """
         Pre-validate that, if lotNumber (legacy CSV field name: BATCH_NUMBER) exists,
         then it is a non-empty string
@@ -755,7 +755,7 @@ class PreValidators:
         except KeyError:
             pass
 
-    def pre_validate_expiration_date(self, values: dict) -> dict:
+    def pre_validate_expiration_date(self, values: dict) -> None:
         """
         Pre-validate that, if expirationDate (legacy CSV field name: EXPIRY_DATE) exists,
         then it is a string in the format YYYY-MM-DD, representing a valid date
@@ -766,7 +766,7 @@ class PreValidators:
         except KeyError:
             pass
 
-    def pre_validate_site_coding(self, values: dict) -> dict:
+    def pre_validate_site_coding(self, values: dict) -> None:
         """Pre-validate that, if site.coding exists, then each code system is unique"""
         try:
             field_value = values["site"]["coding"]
@@ -774,7 +774,7 @@ class PreValidators:
         except KeyError:
             pass
 
-    def pre_validate_site_coding_code(self, values: dict) -> dict:
+    def pre_validate_site_coding_code(self, values: dict) -> None:
         """
         Pre-validate that, if site.coding[?(@.system=='http://snomed.info/sct')].code
         (legacy CSV field name: SITE_OF_VACCINATION_CODE) exists, then it is a non-empty string
@@ -787,7 +787,7 @@ class PreValidators:
         except (KeyError, IndexError):
             pass
 
-    def pre_validate_site_coding_display(self, values: dict) -> dict:
+    def pre_validate_site_coding_display(self, values: dict) -> None:
         """
         Pre-validate that, if site.coding[?(@.system=='http://snomed.info/sct')].display
         (legacy CSV field name: SITE_OF_VACCINATION_TERM) exists, then it is a non-empty string
@@ -800,7 +800,7 @@ class PreValidators:
         except (KeyError, IndexError):
             pass
 
-    def pre_validate_route_coding(self, values: dict) -> dict:
+    def pre_validate_route_coding(self, values: dict) -> None:
         """Pre-validate that, if route.coding exists, then each code system is unique"""
         try:
             field_value = values["route"]["coding"]
@@ -808,7 +808,7 @@ class PreValidators:
         except KeyError:
             pass
 
-    def pre_validate_route_coding_code(self, values: dict) -> dict:
+    def pre_validate_route_coding_code(self, values: dict) -> None:
         """
         Pre-validate that, if route.coding[?(@.system=='http://snomed.info/sct')].code
         (legacy CSV field name: ROUTE_OF_VACCINATION_CODE) exists, then it is a non-empty string
@@ -821,7 +821,7 @@ class PreValidators:
         except (KeyError, IndexError):
             pass
 
-    def pre_validate_route_coding_display(self, values: dict) -> dict:
+    def pre_validate_route_coding_display(self, values: dict) -> None:
         """
         Pre-validate that, if route.coding[?(@.system=='http://snomed.info/sct')].display
         (legacy CSV field name: ROUTE_OF_VACCINATION_TERM) exists, then it is a non-empty string
@@ -834,7 +834,7 @@ class PreValidators:
         except (KeyError, IndexError):
             pass
 
-    def pre_validate_dose_quantity_value(self, values: dict) -> dict:
+    def pre_validate_dose_quantity_value(self, values: dict) -> None:
         """
         Pre-validate that, if doseQuantity.value (legacy CSV field name: DOSE_AMOUNT) exists,
         then it is a number representing an integer or decimal
@@ -850,7 +850,7 @@ class PreValidators:
         except KeyError:
             pass
 
-    def pre_validate_dose_quantity_system(self, values: dict) -> dict:
+    def pre_validate_dose_quantity_system(self, values: dict) -> None:
         """
         Pre-validate that if doseQuantity.system exists then it is a non-empty string:
         If system exists, it must be a non-empty string.
@@ -861,7 +861,7 @@ class PreValidators:
         except KeyError:
             pass
 
-    def pre_validate_dose_quantity_code(self, values: dict) -> dict:
+    def pre_validate_dose_quantity_code(self, values: dict) -> None:
         """
         Pre-validate that, if doseQuantity.code (legacy CSV field name: DOSE_UNIT_CODE) exists,
         then it is a non-empty string
@@ -872,7 +872,7 @@ class PreValidators:
         except KeyError:
             pass
 
-    def pre_validate_dose_quantity_system_and_code(self, values: dict) -> dict:
+    def pre_validate_dose_quantity_system_and_code(self, values: dict) -> None:
         """
         Pre-validate doseQuantity.code and doseQuantity.system:
         1. If code exists, system MUST also exist (FHIR SimpleQuantity rule).
@@ -885,7 +885,7 @@ class PreValidators:
 
         return values
 
-    def pre_validate_dose_quantity_unit(self, values: dict) -> dict:
+    def pre_validate_dose_quantity_unit(self, values: dict) -> None:
         """
         Pre-validate that, if doseQuantity.unit (legacy CSV field name: DOSE_UNIT_TERM) exists,
         then it is a non-empty string
@@ -896,7 +896,7 @@ class PreValidators:
         except KeyError:
             pass
 
-    def pre_validate_reason_code_codings(self, values: dict) -> dict:
+    def pre_validate_reason_code_codings(self, values: dict) -> None:
         """
         Pre-validate that, if they exist, each reasonCode[{index}].coding is a list of length 1
         """
@@ -910,7 +910,7 @@ class PreValidators:
         except KeyError:
             pass
 
-    def pre_validate_reason_code_coding_codes(self, values: dict) -> dict:
+    def pre_validate_reason_code_coding_codes(self, values: dict) -> None:
         """
         Pre-validate that, if they exist, each reasonCode[{index}].coding[0].code
         (legacy CSV field name: INDICATION_CODE) is a non-empty string
@@ -925,7 +925,7 @@ class PreValidators:
         except KeyError:
             pass
 
-    def pre_validate_organization_identifier_system(self, values: dict) -> dict:
+    def pre_validate_organization_identifier_system(self, values: dict) -> None:
         """
         Pre-validate that, if performer[?(@.actor.type=='Organization').identifier.system]
         (legacy CSV field name: SITE_CODE_TYPE_URI) exists, then it is a non-empty string
@@ -939,7 +939,7 @@ class PreValidators:
         except (KeyError, IndexError, AttributeError):
             pass
 
-    def pre_validate_location_identifier_value(self, values: dict) -> dict:
+    def pre_validate_location_identifier_value(self, values: dict) -> None:
         """
         Pre-validate that, if location.identifier.value (legacy CSV field name: LOCATION_CODE) exists,
         then it is a non-empty string
@@ -950,7 +950,7 @@ class PreValidators:
         except KeyError:
             pass
 
-    def pre_validate_location_identifier_system(self, values: dict) -> dict:
+    def pre_validate_location_identifier_system(self, values: dict) -> None:
         """
         Pre-validate that, if location.identifier.system (legacy CSV field name: LOCATION_CODE_TYPE_URI) exists,
         then it is a non-empty string
@@ -961,7 +961,7 @@ class PreValidators:
         except KeyError:
             pass
 
-    def pre_validate_vaccine_code(self, values: dict) -> dict:
+    def pre_validate_vaccine_code(self, values: dict) -> None:
         """
         Pre-validate that, if vaccineCode.coding[?(@.system=='http://snomed.info/sct')].code
         (legacy CSV field : VACCINE_PRODUCT_CODE) exists, then it is a valid snomed code
@@ -978,7 +978,7 @@ class PreValidators:
         except (KeyError, IndexError):
             pass
 
-    def pre_validate_vaccine_display(self, values: dict) -> dict:
+    def pre_validate_vaccine_display(self, values: dict) -> None:
         """
         Pre-validate that, if vaccineCode.coding[?(@.system=='http://snomed.info/sct')].display
         (legacy CSV field : VACCINE_PRODUCT_TERM) exists, then it is a non-empty string

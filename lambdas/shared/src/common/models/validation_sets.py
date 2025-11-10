@@ -17,9 +17,6 @@ class ValidationSets:
     The validator will then automatically pick up the correct validation set.
     """
 
-    def __init__(self) -> None:
-        pass
-
     vaccine_type_agnostic = {
         "patient_identifier_value": MandationRules.required,
         "patient_name_given": MandationRules.mandatory,

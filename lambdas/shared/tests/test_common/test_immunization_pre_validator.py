@@ -593,7 +593,7 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
                 }
             ]
         }
-        result = self.validator.run_postalCode_validator(values)
+        result = self.validator.run_postal_code_validator(values)
         self.assertIsNone(result)
 
     def test_pre_validate_occurrence_date_time(self):
