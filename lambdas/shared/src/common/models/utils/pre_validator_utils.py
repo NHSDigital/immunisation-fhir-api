@@ -34,13 +34,13 @@ class PreValidation:
                 raise ValueError(f"{field_location} must be a non-empty string")
 
         if max_length and len(field_value) > max_length:
-                raise ValueError(f"{field_location} must be {max_length} or fewer characters")
+            raise ValueError(f"{field_location} must be {max_length} or fewer characters")
 
         if predefined_values and field_value not in predefined_values:
-                raise ValueError(f"{field_location} must be one of the following: " + str(", ".join(predefined_values)))
+            raise ValueError(f"{field_location} must be one of the following: " + str(", ".join(predefined_values)))
 
         if not spaces_allowed and " " in field_value:
-                raise ValueError(f"{field_location} must not contain spaces")
+            raise ValueError(f"{field_location} must not contain spaces")
 
     @staticmethod
     def for_list(
@@ -190,7 +190,7 @@ class PreValidation:
             raise ValueError(f"{field_location} must be a positive integer")
 
         if max_value and field_value > max_value:
-                raise ValueError(f"{field_location} must be an integer in the range 1 to {max_value}")
+            raise ValueError(f"{field_location} must be an integer in the range 1 to {max_value}")
 
     @staticmethod
     def for_integer_or_decimal(field_value: int | Decimal, field_location: str):
