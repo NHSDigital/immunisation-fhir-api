@@ -6,8 +6,8 @@ from unittest.mock import Mock
 
 from common.validator.error_report.error_reporter import build_error_report
 from common.validator.validator import Validator
-from test_common.validator.testing_utils.constants import CSV_HEADER, CSV_VALUES
-from tests.test_common.validator.testing_utils.csv_fhir_utils import build_row, parse_test_file
+from test_common.validator.testing_utils.constants import CSV_VALUES
+from tests.test_common.validator.testing_utils.csv_fhir_utils import parse_test_file
 
 schema_data_folder = Path(__file__).parent / "test_schemas"
 schemaFilePath = schema_data_folder / "test_schema.json"
@@ -23,13 +23,12 @@ class TestValidator(unittest.TestCase):
         self.maxDiff = None
 
     def test_run_validation_on_valid_csv_row(self):
-        valid_rows = build_row(CSV_HEADER, CSV_VALUES)
-        error_list = self.validator.validate_csv_row(valid_rows, CSV_HEADER, True, True, True)
+        error_list = self.validator.validate_csv_row(CSV_VALUES, True, True, True)
         self.assertEqual(error_list, [])
 
     def test_run_validation_on_invalid_csv_row(self):
-        invalid_rows = build_row(CSV_HEADER, {**CSV_VALUES, "NHS_NUMBER": ""})
-        error_list = self.validator.validate_csv_row(invalid_rows, CSV_HEADER, True, True, True)
+        invalid_rows = {**CSV_VALUES, "NHS_NUMBER": ""}
+        error_list = self.validator.validate_csv_row(invalid_rows, True, True, True)
 
         self.assertTrue(len(error_list) > 0)
         messages = [(e.name, e.message, e.details) for e in error_list]

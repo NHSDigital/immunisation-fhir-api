@@ -32,9 +32,9 @@ class FHIRInterface(PaserInterface):
 
 
 class BatchInterface(PaserInterface):
-    def __init__(self, csv_row: str, csv_header: str):
+    def __init__(self, csv_row: dict[str, str]):
         self.csv_line_parser = CSVLineParser()
-        self.csv_line_parser.parse_csv_line(csv_row, csv_header)
+        self.csv_line_parser.parse_csv_line(csv_row)
 
     def get_data_format(self) -> str:
         return "batch"

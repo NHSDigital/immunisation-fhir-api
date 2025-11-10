@@ -13,8 +13,6 @@ Example:
     {'nhs_number': '9011011', 'name': 'Tom', 'age': '32'}
 """
 
-import csv
-
 
 class CSVLineParser:
     # parser variables
@@ -22,11 +20,8 @@ class CSVLineParser:
         self.csv_file_data: dict[str, str] = {}
 
     # parse the CSV into a Dictionary
-    def parse_csv_line(self, csv_row: str, csv_header: str) -> None:
-        # create a key value mapping
-        keys = list(csv.reader([csv_header]))[0]
-        values = list(csv.reader([csv_row]))[0]
-        self.csv_file_data = dict(zip(keys, values, strict=False))
+    def parse_csv_line(self, csv_row: dict[str, str]) -> None:
+        self.csv_file_data = csv_row
 
     # Retrieves the value of a specific column name as a list.
     def get_key_value(self, field_name: str) -> list[str]:

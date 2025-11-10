@@ -95,8 +95,7 @@ class Validator:
 
     def validate_csv_row(
         self,
-        csv_row: str,
-        csv_header: list[str],
+        csv_row: dict[str, str],
         summarise: bool = False,
         report_unexpected_exception: bool = True,
         inc_header_in_row_count: bool = True,
@@ -104,7 +103,6 @@ class Validator:
         return self.run_validation(
             data_type=DataType.CSVROW,
             csv_row=csv_row,
-            csv_header=csv_header,
             summarise=summarise,
             report_unexpected_exception=report_unexpected_exception,
             inc_header_in_row_count=inc_header_in_row_count,
@@ -115,8 +113,7 @@ class Validator:
         self,
         data_type: DataType,
         fhir_data: dict = None,
-        csv_row: str = None,
-        csv_header: list[str] = None,
+        csv_row: dict[str, str] = None,
         summarise=False,
         report_unexpected_exception=True,
         inc_header_in_row_count=True,
@@ -128,7 +125,7 @@ class Validator:
                 case DataType.FHIR:
                     data_parser = FHIRInterface(fhir_data)
                 case DataType.CSVROW:
-                    data_parser = BatchInterface(csv_row, csv_header)
+                    data_parser = BatchInterface(csv_row)
 
         except Exception as e:
             if report_unexpected_exception:
