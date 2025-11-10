@@ -9,26 +9,28 @@ from common.validator.constants.enums import MESSAGES, DataType, ErrorLevels, Ex
 from common.validator.error_report.error_reporter import add_error_record, check_error_record_for_fail
 from common.validator.error_report.record_error import ErrorReport
 from common.validator.expression_checker import ExpressionChecker
-from common.validator.parsers.fetch_parsers import FetchParsers
+from common.validator.parsers.schema_parser import SchemaParser
+from src.common.validator.parsers.paser_interface import BatchInterface, FHIRInterface, PaserInterface
 
 
 class Validator:
     def __init__(self, schema_file=""):
         self.schema_file = schema_file
-        self.get_data_from_parsers = FetchParsers()
+        self.schema_parser = SchemaParser()
 
-    #  validate a single expression against the data file
+    #  validate expression against incoming data
     def _validate_expression(
         self,
         expression_validator: ExpressionChecker,
         expression: dict,
-        data_parser,
+        data_parser: PaserInterface,
         error_records: list[ErrorReport],
         inc_header_in_row_count: bool,
-        is_csv: bool,
     ) -> ErrorReport | int:
         row = 2 if inc_header_in_row_count else 1
-        expression_fieldname = expression["fieldNameFlat"] if is_csv else expression["fieldNameFHIR"]
+
+        data_format = data_parser.get_data_format()
+        expression_fieldname = expression["fieldNameFlat"] if data_format == "batch" else expression["fieldNameFHIR"]
 
         expression_id = expression["expressionId"]
         error_level = expression["errorLevel"]
@@ -51,7 +53,8 @@ class Validator:
                 return
 
         try:
-            expression_values = data_parser.get_key_value(expression_fieldname)
+            expression_values = data_parser.extract_field_values(expression_fieldname)
+            print(f"Extracted values for field {expression_fieldname}: {expression_values}")
         except Exception as e:
             message = f"Data get values Unexpected exception [{e.__class__.__name__}]: {e}"
             error_record = ErrorReport(code=ExceptionLevels.PARSING_ERROR, message=message)
@@ -127,7 +130,6 @@ class Validator:
         self,
         data_type: DataType,
         fhir_data: dict = None,
-        batch_filepath: str = None,
         csv_row: str = None,
         csv_header: list[str] = None,
         summarise=False,
@@ -139,24 +141,22 @@ class Validator:
         try:
             match data_type:
                 case DataType.FHIR:
-                    data_parser = self.get_data_from_parsers._get_fhir_parser(fhir_data)
-                    is_csv = False
+                    data_parser = FHIRInterface(fhir_data)
                 case DataType.CSVROW:
-                    data_parser = self.get_data_from_parsers._get_csv_line_parser(csv_row, csv_header)
-                    is_csv = True
+                    data_parser = BatchInterface(csv_row, csv_header)
 
         except Exception as e:
             if report_unexpected_exception:
                 message = f"Data Parser Unexpected exception [{e.__class__.__name__}]: {e}"
                 return [ErrorReport(code=0, message=message)]
 
-        schema_parser = self.get_data_from_parsers._get_schema_parser(self.schema_file)
+        schema_parser = self.schema_parser.parse_schema(self.schema_file)
         expression_validator = ExpressionChecker(data_parser, summarise, report_unexpected_exception)
-        expressions = schema_parser.get_expressions()
+        expressions_in_schema = schema_parser.get_expressions()
 
-        for expression in expressions:
+        for expression in expressions_in_schema:
             self._validate_expression(
-                expression_validator, expression, data_parser, error_records, inc_header_in_row_count, is_csv
+                expression_validator, expression, data_parser, error_records, inc_header_in_row_count
             )
 
         return error_records

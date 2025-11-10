@@ -14,7 +14,6 @@ class TestApplication(unittest.TestCase):
         validation_folder = Path(__file__).resolve().parent
         self.FHIRFilePath = validation_folder / "sample_data/vaccination2.json"
         self.schemaFilePath = validation_folder / "test_schemas/test_schema.json"
-        self.fhir_resources = None
 
     def test_validation(self):
         start = time.time()
@@ -22,9 +21,9 @@ class TestApplication(unittest.TestCase):
         SchemaFile = parse_test_file(self.schemaFilePath)
         self.fhir_resources = parse_test_file(self.FHIRFilePath)
         fhir_parser = Mock()
-        fhir_parser.get_fhir_value.return_value = "2025-11-06T12:00:00Z"
+        fhir_parser.extract_field_value.return_value = "2025-11-06T12:00:00Z"
 
-        validator = Validator(SchemaFile)  # FHIR File Path not needed
+        validator = Validator(SchemaFile)
         error_list = validator.validate_fhir(self.fhir_resources, True, True, True)
         error_report = build_error_report(
             "25a8cc4d-1875-4191-ac6d-2d63a0ebc64b", fhir_parser, error_list

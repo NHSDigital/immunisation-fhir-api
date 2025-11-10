@@ -31,6 +31,7 @@ class SchemaParser:
         """
         self.schema_file = schema_file
         self.expressions = self.schema_file["expressions"]
+        return self
 
     def expression_count(self) -> int:
         """Returns the number of expressions containing the 'expression' key."""

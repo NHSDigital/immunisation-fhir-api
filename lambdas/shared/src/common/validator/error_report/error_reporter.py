@@ -29,10 +29,6 @@ def check_error_record_for_fail(expression_identifier: str, error_records: list[
 
 
 def build_error_report(event_id: str, data_parser: dict, error_records: list[ErrorReport]) -> dict:
-    occurrence_date_time = data_parser.get_fhir_value("occurrenceDateTime")
+    occurrence_date_time = data_parser.extract_field_value("occurrenceDateTime")
     dq_reporter = DQReporter()
     return dq_reporter.generate_error_report(event_id, occurrence_date_time, error_records)
-
-
-def has_validation_failed(error_records: list[ErrorReport]) -> bool:
-    return any(er.error_level == ErrorLevels.CRITICAL_ERROR for er in error_records)

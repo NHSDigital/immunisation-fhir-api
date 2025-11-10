@@ -78,8 +78,8 @@
       "errorLevel": 2,
       "expression": {
         "expressionName": "Defaults to",
-        "expressionType": "",
-        "expressionRule": "NOTEMPTY"
+        "expressionType": "NOTEMPTY",
+        "expressionRule": ""
       },
       "errorGroup": "completeness"
     },
@@ -91,7 +91,7 @@
       "errorLevel": 0,
       "expression": {
         "expressionName": "Date Convert",
-        "expressionType": "",
+        "expressionType": "NOTEMPTY",
         "expressionRule": ""
       },
       "errorGroup": "consistency"
@@ -117,7 +117,7 @@
       "errorLevel": 1,
       "expression": {
         "expressionName": "Defaults to",
-        "expressionType": "DEFAULT",
+        "expressionType": "NOTEMPTY",
         "expressionRule": ""
       },
       "errorGroup": "consistency"
@@ -195,7 +195,7 @@
       "errorLevel": 1,
       "expression": {
         "expressionName": "Recorded Date Convert",
-        "expressionType": "DATECONVERT",
+        "expressionType": "NOTEMPTY",
         "expressionRule": ""
       },
       "errorGroup": "consistency"
@@ -442,7 +442,7 @@
       "errorLevel": 1,
       "expression": {
         "expressionName": "Location Code Type URI Default Check",
-        "expressionType": "DEFAULT",
+        "expressionType": "NOTEMPTY",
         "expressionRule": ""
       },
       "errorGroup": "consistency"
