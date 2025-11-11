@@ -21,6 +21,7 @@ from common.models.utils.generic_utils import (
     make_patient_pk,
 )
 
+
 def create_table(region_name="eu-west-2"):
     table_name = os.environ["DYNAMODB_TABLE_NAME"]
     dynamodb = boto3.resource("dynamodb", region_name=region_name)

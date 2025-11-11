@@ -20,7 +20,7 @@ from common.models.utils.generic_utils import (
     get_contained_patient,
     get_nhs_number,
     make_immunization_pk,
-    make_patient_pk
+    make_patient_pk,
 )
 from common.models.utils.validation_utils import (
     get_vaccine_type,
