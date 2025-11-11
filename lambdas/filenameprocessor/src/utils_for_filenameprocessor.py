@@ -2,7 +2,7 @@
 
 from datetime import timedelta
 
-from common.clients import logger, get_s3_client
+from common.clients import get_s3_client, logger
 from constants import AUDIT_TABLE_TTL_DAYS
 
 

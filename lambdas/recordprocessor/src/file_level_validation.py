@@ -6,7 +6,7 @@ Functions for completing file-level validation
 from csv import DictReader
 
 from audit_table import update_audit_table_status
-from common.clients import logger, get_s3_client
+from common.clients import get_s3_client, logger
 from constants import (
     ARCHIVE_DIR_NAME,
     EXPECTED_CSV_HEADERS,

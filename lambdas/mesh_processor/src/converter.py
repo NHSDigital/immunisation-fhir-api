@@ -1,15 +1,13 @@
-import logging
 import os
 from typing import BinaryIO
 
-import boto3
 from smart_open import open
+
+from common.clients import get_s3_client, logger
 
 EXPECTED_BUCKET_OWNER_ACCOUNT = os.getenv("ACCOUNT_ID")
 DESTINATION_BUCKET_NAME = os.getenv("DESTINATION_BUCKET_NAME")
 UNEXPECTED_EOF_ERROR = "Unexpected EOF"
-
-from common.clients import logger, get_s3_client
 
 
 def parse_headers(headers_str: str) -> dict[str, str]:
