@@ -15,6 +15,7 @@ from common.models.errors import (
     ResourceNotFoundError,
     UnhandledResponseError,
 )
+from common.models.utils.generic_utils import get_nhs_number
 
 
 def create_table(region_name="eu-west-2"):
@@ -54,14 +55,6 @@ def _query_identifier(table, index, pk, identifier, is_present):
 
         if queryresponse.get("Count", 0) > 0:
             return queryresponse
-
-
-def get_nhs_number(imms):
-    try:
-        nhs_number = [x for x in imms["contained"] if x["resourceType"] == "Patient"][0]["identifier"][0]["value"]
-    except (KeyError, IndexError):
-        nhs_number = "TBC"
-    return nhs_number
 
 
 @dataclass

@@ -20,6 +20,14 @@ from stdnum.verhoeff import validate
 from common.models.constants import Constants
 
 
+def get_nhs_number(imms: dict):
+    try:
+        nhs_number = [x for x in imms["contained"] if x["resourceType"] == "Patient"][0]["identifier"][0]["value"]
+    except (KeyError, IndexError):
+        nhs_number = "TBC"
+    return nhs_number
+
+
 def get_contained_resource(imms: dict, resource: Literal["Patient", "Practitioner", "QuestionnaireResponse"]):
     """Extract and return the requested contained resource from the FHIR Immunization Resource JSON data"""
     return [x for x in imms.get("contained") if x.get("resourceType") == resource][0]
