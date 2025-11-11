@@ -72,10 +72,14 @@ class Validator:
                 add_error_record(
                     error_records, error_record, expression_error_group, expression_name, expression_id, error_level
                 )
-        except Exception:
-            print(f"Exception validating expression {expression_id} on row {row}: {error_record}")
-        row += 1
-        return row
+        except Exception as e:
+            message = f"Expression Validation Unexpected exception [{e.__class__.__name__}]: {e}"
+            error_record = ErrorReport(code=ExceptionLevels.UNEXPECTED_EXCEPTION, message=message)
+            error_record = ErrorReport(code=ExceptionLevels.PARSING_ERROR, message=message)
+            add_error_record(
+                error_records, error_record, expression_error_group, expression_name, expression_id, error_level
+            )
+            return
 
     def validate_fhir(
         self,

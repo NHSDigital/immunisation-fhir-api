@@ -26,6 +26,8 @@ class ExpressionChecker:
         match expression_type:
             case "DATETIME":
                 return self._validate_datetime(expression_rule, field_name, field_value, row)
+            case "STRING":
+                return self._validate_for_string_values(expression_rule, field_name, field_value, row)
             case "DATE":
                 return self._validate_datetime(expression_rule, field_name, field_value, row)
             case "UUID":
@@ -421,6 +423,47 @@ class ExpressionChecker:
             if e.details is not None:
                 details = e.details
             return ErrorReport(code, message, row, field_name, details, self.summarise)
+        except Exception as e:
+            if self.report_unexpected_exception:
+                message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
+
+    # String Pre-Validation
+    def _validate_for_string_values(
+        self, _expression_rule: str, field_name: str, field_value: str, row: dict
+    ) -> ErrorReport:
+        """
+        Apply validation to a string field to ensure it is a non-empty string which meets
+        the length requirements and predefined values requirements
+        """
+        defined_length: int = (10,)
+        max_length: int = (None,)
+        predefined_values: list = (None,)
+        spaces_allowed: bool = False
+        try:
+            if not isinstance(field_value, str):
+                raise TypeError(f"{field_name} must be a string")
+
+            if field_value.isspace():
+                raise ValueError(f"{field_name} must be a non-empty string")
+
+            if defined_length:
+                if len(field_value) != defined_length:
+                    raise ValueError(f"{field_name} must be {defined_length} characters")
+            else:
+                if len(field_value) == 0:
+                    raise ValueError(f"{field_name} must be a non-empty string")
+
+            if max_length:
+                if len(field_value) > max_length:
+                    raise ValueError(f"{field_name} must be {max_length} or fewer characters")
+            if predefined_values:
+                if field_value not in predefined_values:
+                    raise ValueError(f"{field_name} must be one of the following: " + str(", ".join(predefined_values)))
+
+            if not spaces_allowed:
+                if " " in field_value:
+                    raise ValueError(f"{field_name} must not contain spaces")
         except Exception as e:
             if self.report_unexpected_exception:
                 message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)

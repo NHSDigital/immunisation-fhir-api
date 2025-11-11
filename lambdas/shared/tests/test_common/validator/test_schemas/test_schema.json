@@ -12,7 +12,7 @@
       "errorLevel": 0,
       "expression": {
         "expressionName": "NHS Number Not Empty Check",
-        "expressionType": "NOTEMPTY",
+        "expressionType": "STRING",
         "expressionRule": ""
       },
       "errorGroup": "validity"
