@@ -166,6 +166,8 @@ jobs:
       - name: Run unittest with coverage-mesh-processor
         working-directory: lambdas/mesh_processor
         id: meshprocessor
+        env:
+          PYTHONPATH: ${{ env.LAMBDA_PATH }}/mesh_processor/src:${{ env.LAMBDA_PATH }}/mesh_processor/tests:${{ env.SHARED_PATH }}/src
         continue-on-error: true
         run: |
           poetry install
