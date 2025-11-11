@@ -5,10 +5,13 @@ from unittest.mock import Mock, call, patch
 
 from batch_processor import process_csv_to_fhir
 from utils_for_recordprocessor_tests.utils_for_recordprocessor_tests import (
+    MOCK_ENVIRONMENT_DICT,
+    BucketNames,
     create_patch,
 )
 
 
+@patch.dict("os.environ", MOCK_ENVIRONMENT_DICT)
 class TestProcessorEdgeCases(unittest.TestCase):
     def setUp(self):
         self.mock_logger_info = create_patch("logging.Logger.info")
@@ -81,11 +84,10 @@ class TestProcessorEdgeCases(unittest.TestCase):
         self.mock_logger_warning.assert_called()
         warning_call_args = self.mock_logger_warning.call_args[0][0]
         self.assertTrue(warning_call_args.startswith("Encoding Error: 'utf-8' codec can't decode byte 0xe9"))
-        # TODO: when running standalone this expects BucketNames.SOURCE. not clear why.
         mock_s3.get_object.assert_has_calls(
             [
-                call(Bucket=None, Key="test-filename"),
-                call(Bucket=None, Key="processing/test-filename"),
+                call(Bucket=BucketNames.SOURCE, Key="test-filename"),
+                call(Bucket=BucketNames.SOURCE, Key="processing/test-filename"),
             ]
         )
 
