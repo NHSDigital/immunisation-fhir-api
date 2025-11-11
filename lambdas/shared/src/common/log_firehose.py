@@ -1,9 +1,6 @@
 import json
 
-from common.clients import (
-    firehose_client,
-    logger,
-)
+from common.clients import firehose_client, logger
 
 
 # Not keen on including blocking calls in function code to forward log data to Splunk (via Firehose)

@@ -1,5 +1,10 @@
+TEST_ENV := @PYTHONPATH=src:tests:src/common
+
 test:
-	@PYTHONPATH=src:../ python -m unittest discover -s tests -p "test_*.py" -v
+	$(TEST_ENV) python -m unittest discover -s tests -p "test_*.py" -v
+
+test-validator:
+	$(TEST_ENV) python -m unittest discover -s tests/test_common/validator -p "test_*.py" -v
 
 test-list:
 	@PYTHONPATH=src:tests python -m unittest discover -s tests -p "test_*.py" --verbose | grep test_
