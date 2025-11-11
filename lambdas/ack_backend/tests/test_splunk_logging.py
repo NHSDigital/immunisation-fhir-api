@@ -62,6 +62,7 @@ class TestLoggingDecorators(unittest.TestCase):
             # The logging_decorator.logger is patched individually in each test to allow for assertions to be made.
             # Any uses of the logger in other files will confound the tests and should be patched here.
             patch("update_ack_file.logger"),
+            patch("common.utils.logger"),
             # Time is incremented by 1.0 for each call to time.time for ease of testing.
             # Range is set to a large number (300) due to many calls being made to time.time for some tests.
             patch(

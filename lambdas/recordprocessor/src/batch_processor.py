@@ -9,6 +9,7 @@ from typing import Optional
 
 from audit_table import update_audit_table_status
 from common.clients import logger
+from common.utils import move_file
 from constants import (
     ARCHIVE_DIR_NAME,
     PROCESSING_DIR_NAME,
@@ -16,7 +17,7 @@ from constants import (
     FileNotProcessedReason,
     FileStatus,
 )
-from file_level_validation import file_is_empty, file_level_validation, move_file
+from file_level_validation import file_is_empty, file_level_validation
 from mappings import map_target_disease
 from process_row import process_row
 from send_to_kinesis import send_to_kinesis
