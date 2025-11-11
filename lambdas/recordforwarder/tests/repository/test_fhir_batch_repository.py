@@ -14,14 +14,11 @@ from common.models.errors import (
     ResourceNotFoundError,
     UnhandledResponseError,
 )
+from common.models.utils.generic_utils import make_immunization_pk
 from repository.fhir_batch_repository import ImmunizationBatchRepository, create_table
 from test_common.testing_utils.immunization_utils import create_covid_immunization_dict
 
 imms_id = str(uuid4())
-
-
-def _make_immunization_pk(_id):
-    return f"Immunization#{_id}"
 
 
 @mock_aws
@@ -150,7 +147,7 @@ class TestUpdateImmunization(TestImmunizationBatchRepository):
                     "Count": 1,
                     "Items": [
                         {
-                            "PK": _make_immunization_pk(imms_id),
+                            "PK": make_immunization_pk(imms_id),
                             "Resource": json.dumps(self.immunization),
                             "Version": 1,
                         }
@@ -164,7 +161,7 @@ class TestUpdateImmunization(TestImmunizationBatchRepository):
                     "Count": 1,
                     "Items": [
                         {
-                            "PK": _make_immunization_pk(imms_id),
+                            "PK": make_immunization_pk(imms_id),
                             "Resource": json.dumps(self.immunization),
                             "Version": 1,
                             "DeletedAt": "20210101",
@@ -179,7 +176,7 @@ class TestUpdateImmunization(TestImmunizationBatchRepository):
                     "Count": 1,
                     "Items": [
                         {
-                            "PK": _make_immunization_pk(imms_id),
+                            "PK": make_immunization_pk(imms_id),
                             "Resource": json.dumps(self.immunization),
                             "Version": 1,
                             "DeletedAt": "reinstated",
@@ -212,7 +209,7 @@ class TestUpdateImmunization(TestImmunizationBatchRepository):
                     expected_values.update(case["expected_extra_values"])
 
                     self.table.update_item.assert_called_with(
-                        Key={"PK": _make_immunization_pk(imms_id)},
+                        Key={"PK": make_immunization_pk(imms_id)},
                         UpdateExpression=ANY,
                         ExpressionAttributeNames={"#imms_resource": "Resource"},
                         ExpressionAttributeValues=expected_values,
@@ -239,7 +236,7 @@ class TestUpdateImmunization(TestImmunizationBatchRepository):
                 "Count": 1,
                 "Items": [
                     {
-                        "PK": _make_immunization_pk(imms_id),
+                        "PK": make_immunization_pk(imms_id),
                         "Resource": json.dumps(self.immunization),
                         "Version": 1,
                     }
@@ -265,7 +262,7 @@ class TestUpdateImmunization(TestImmunizationBatchRepository):
                         "Count": 1,
                         "Items": [
                             {
-                                "PK": _make_immunization_pk(imms_id),
+                                "PK": make_immunization_pk(imms_id),
                                 "Resource": json.dumps(self.immunization),
                                 "Version": 1,
                             }
@@ -291,7 +288,7 @@ class TestUpdateImmunization(TestImmunizationBatchRepository):
                         "Count": 1,
                         "Items": [
                             {
-                                "PK": _make_immunization_pk(imms_id),
+                                "PK": make_immunization_pk(imms_id),
                                 "Resource": json.dumps(self.immunization),
                                 "Version": 1,
                             }
@@ -310,7 +307,7 @@ class TestDeleteImmunization(TestImmunizationBatchRepository):
                 "Count": 1,
                 "Items": [
                     {
-                        "PK": _make_immunization_pk(imms_id),
+                        "PK": make_immunization_pk(imms_id),
                         "Resource": json.dumps(self.immunization),
                         "Version": 1,
                     }
@@ -322,7 +319,7 @@ class TestDeleteImmunization(TestImmunizationBatchRepository):
                 self.immunization, "supplier", "vax-type", self.table, is_present
             )
             self.table.update_item.assert_called_with(
-                Key={"PK": _make_immunization_pk(imms_id)},
+                Key={"PK": make_immunization_pk(imms_id)},
                 UpdateExpression="SET DeletedAt = :timestamp, Operation = :operation, SupplierSystem = :supplier_system",
                 ExpressionAttributeValues={
                     ":timestamp": ANY,
@@ -352,7 +349,7 @@ class TestDeleteImmunization(TestImmunizationBatchRepository):
                 "Count": 1,
                 "Items": [
                     {
-                        "PK": _make_immunization_pk(imms_id),
+                        "PK": make_immunization_pk(imms_id),
                         "Resource": json.dumps(self.immunization),
                         "Version": 1,
                     }
@@ -378,7 +375,7 @@ class TestDeleteImmunization(TestImmunizationBatchRepository):
                         "Count": 1,
                         "Items": [
                             {
-                                "PK": _make_immunization_pk(imms_id),
+                                "PK": make_immunization_pk(imms_id),
                                 "Resource": json.dumps(self.immunization),
                                 "Version": 1,
                             }
@@ -404,7 +401,7 @@ class TestDeleteImmunization(TestImmunizationBatchRepository):
                         "Count": 1,
                         "Items": [
                             {
-                                "PK": _make_immunization_pk(imms_id),
+                                "PK": make_immunization_pk(imms_id),
                                 "Resource": json.dumps(self.immunization),
                                 "Version": 1,
                             }

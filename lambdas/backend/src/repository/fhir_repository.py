@@ -16,7 +16,12 @@ from responses import logger
 from common.models.constants import Constants
 from common.models.errors import ResourceNotFoundError
 from common.models.immunization_record_metadata import ImmunizationRecordMetadata
-from common.models.utils.generic_utils import get_contained_patient, get_nhs_number
+from common.models.utils.generic_utils import (
+    get_contained_patient,
+    get_nhs_number,
+    make_immunization_pk,
+    make_patient_pk
+)
 from common.models.utils.validation_utils import (
     get_vaccine_type,
 )
@@ -31,14 +36,6 @@ def create_table(table_name=None, endpoint_url=None, region_name="eu-west-2"):
         "dynamodb", endpoint_url=endpoint_url, region_name=region_name, config=config
     )
     return db.Table(table_name)
-
-
-def _make_immunization_pk(_id: str):
-    return f"Immunization#{_id}"
-
-
-def _make_patient_pk(_id: str):
-    return f"Patient#{_id}"
 
 
 def _query_identifier(table, index, pk, identifier):
@@ -61,10 +58,10 @@ class RecordAttributes:
     def __init__(self, imms: dict, patient: any):
         """Create attributes that may be used in dynamodb table"""
         imms_id = imms["id"]
-        self.pk = _make_immunization_pk(imms_id)
+        self.pk = make_immunization_pk(imms_id)
         if patient or imms:
             nhs_number = get_nhs_number(imms)
-        self.patient_pk = _make_patient_pk(nhs_number)
+        self.patient_pk = make_patient_pk(nhs_number)
         self.patient = patient
         self.resource = imms
         self.timestamp = int(time.time())
@@ -102,7 +99,7 @@ class ImmunizationRepository:
         self, imms_id: str, include_deleted: bool = False
     ) -> tuple[Optional[dict], Optional[ImmunizationRecordMetadata]]:
         """Retrieves the immunization and resource metadata from the VEDS table"""
-        response = self.table.get_item(Key={"PK": _make_immunization_pk(imms_id)})
+        response = self.table.get_item(Key={"PK": make_immunization_pk(imms_id)})
         item = response.get("Item")
 
         if not item:
@@ -231,7 +228,7 @@ class ImmunizationRepository:
 
         try:
             self.table.update_item(
-                Key={"PK": _make_immunization_pk(imms_id)},
+                Key={"PK": make_immunization_pk(imms_id)},
                 UpdateExpression=update_exp,
                 ExpressionAttributeNames={
                     "#imms_resource": "Resource",
@@ -253,7 +250,7 @@ class ImmunizationRepository:
 
         try:
             self.table.update_item(
-                Key={"PK": _make_immunization_pk(imms_id)},
+                Key={"PK": make_immunization_pk(imms_id)},
                 UpdateExpression=(
                     "SET DeletedAt = :timestamp, Operation = :operation, SupplierSystem = :supplier_system"
                 ),
@@ -263,7 +260,7 @@ class ImmunizationRepository:
                     ":supplier_system": supplier_system,
                 },
                 ConditionExpression=(
-                    Attr("PK").eq(_make_immunization_pk(imms_id))
+                    Attr("PK").eq(make_immunization_pk(imms_id))
                     & (Attr("DeletedAt").not_exists() | Attr("DeletedAt").eq("reinstated"))
                 ),
             )
@@ -275,7 +272,7 @@ class ImmunizationRepository:
 
     def find_immunizations(self, patient_identifier: str, vaccine_types: set):
         """it should find all of the specified patient's Immunization events for all of the specified vaccine_types"""
-        condition = Key("PatientPK").eq(_make_patient_pk(patient_identifier))
+        condition = Key("PatientPK").eq(make_patient_pk(patient_identifier))
         is_not_deleted = Attr("DeletedAt").not_exists() | Attr("DeletedAt").eq("reinstated")
 
         raw_items = self.get_all_items(condition, is_not_deleted)

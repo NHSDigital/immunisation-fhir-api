@@ -15,21 +15,16 @@ from common.models.errors import (
     ResourceNotFoundError,
     UnhandledResponseError,
 )
-from common.models.utils.generic_utils import get_nhs_number
-
+from common.models.utils.generic_utils import (
+    get_nhs_number,
+    make_immunization_pk,
+    make_patient_pk,
+)
 
 def create_table(region_name="eu-west-2"):
     table_name = os.environ["DYNAMODB_TABLE_NAME"]
     dynamodb = boto3.resource("dynamodb", region_name=region_name)
     return dynamodb.Table(table_name)
-
-
-def _make_immunization_pk(_id: str):
-    return f"Immunization#{_id}"
-
-
-def _make_patient_pk(_id: str):
-    return f"Patient#{_id}"
 
 
 def _query_identifier(table, index, pk, identifier, is_present):
@@ -72,9 +67,9 @@ class RecordAttributes:
     def __init__(self, imms: dict, vax_type: str, supplier: str, version: int):
         """Create attributes that may be used in dynamodb table"""
         imms_id = imms["id"]
-        self.pk = _make_immunization_pk(imms_id)
+        self.pk = make_immunization_pk(imms_id)
         nhs_number = get_nhs_number(imms)
-        self.patient_pk = _make_patient_pk(nhs_number)
+        self.patient_pk = make_patient_pk(nhs_number)
         self.resource = imms
         self.timestamp = int(time.time())
         self.vaccine_type = vax_type
