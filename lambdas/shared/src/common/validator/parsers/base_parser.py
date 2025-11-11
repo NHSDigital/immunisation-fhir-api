@@ -25,8 +25,8 @@ class FHIRInterface(BaseParser):
     def get_data_format(self) -> str:
         return "fhir"
 
-    def extract_field_values(self, field_path) -> list[Any]:
-        fhir_value = self.fhir_parser.get_fhir_value_list(field_path)
+    def extract_field_values(self, field_path) -> Any:
+        fhir_value = self.fhir_parser.get_fhir_value(field_path)
         return fhir_value
 
 
@@ -38,6 +38,6 @@ class BatchInterface(BaseParser):
     def get_data_format(self) -> str:
         return "batch"
 
-    def extract_field_values(self, field_path) -> list[str]:
+    def extract_field_values(self, field_path) -> str:
         csv_value = self.csv_line_parser.get_key_value(field_path)
         return csv_value

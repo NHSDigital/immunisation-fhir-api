@@ -15,7 +15,7 @@ class TestCSVLineParser(unittest.TestCase):
         csv_parsers = CSVLineParser()
         csv_parsers.parse_csv_line(CSV_VALUES)
         self.assertEqual(csv_parsers.csv_file_data, CSV_VALUES)
-        self.assertEqual(csv_parsers.get_key_value("NHS_NUMBER"), ["9000000009"])
+        self.assertEqual(csv_parsers.get_key_value("NHS_NUMBER"), "9000000009")
 
     def test_extra_values_ignored(self):
         """
@@ -27,7 +27,7 @@ class TestCSVLineParser(unittest.TestCase):
             csv_parsers.csv_file_data,
             {"NHS_NUMBER": "9000000009", "PERSON_FORENAME": "Alex", "": "Trent"},
         )
-        self.assertEqual(csv_parsers.get_key_value("PERSON_FORENAME"), ["Alex"])
+        self.assertEqual(csv_parsers.get_key_value("PERSON_FORENAME"), "Alex")
 
     def test_fewer_values_than_keys(self):
         """

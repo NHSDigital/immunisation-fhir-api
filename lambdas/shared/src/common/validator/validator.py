@@ -5,6 +5,8 @@
 data_parser is the date parser object returned from the FetchParsers class which contains the data to be validated either fhir or csv
 """
 
+from typing import Optional
+
 from common.validator.constants.enums import MESSAGES, DataType, ErrorLevels, ExceptionLevels
 from common.validator.error_report.error_reporter import add_error_record, check_error_record_for_fail
 from common.validator.error_report.record_error import ErrorReport
@@ -14,7 +16,7 @@ from src.common.validator.parsers.base_parser import BaseParser, BatchInterface,
 
 
 class Validator:
-    def __init__(self, schema_file=""):
+    def __init__(self, schema_file: dict = {}):
         self.schema_file = schema_file
         self.schema_parser = SchemaParser()
 
@@ -26,7 +28,7 @@ class Validator:
         data_parser: BaseParser,
         error_records: list[ErrorReport],
         inc_header_in_row_count: bool,
-    ) -> ErrorReport | int:
+    ) -> Optional[int]:
         row = 2 if inc_header_in_row_count else 1
 
         data_format = data_parser.get_data_format()
@@ -62,18 +64,17 @@ class Validator:
             )
             return
 
-        for value in expression_values:
-            try:
-                error_record = expression_validator.validate_expression(
-                    expression_type, expression_rule, expression_fieldname, value, row
+        try:
+            error_record = expression_validator.validate_expression(
+                expression_type, expression_rule, expression_fieldname, expression_values, row
+            )
+            if error_record is not None:
+                add_error_record(
+                    error_records, error_record, expression_error_group, expression_name, expression_id, error_level
                 )
-                if error_record is not None:
-                    add_error_record(
-                        error_records, error_record, expression_error_group, expression_name, expression_id, error_level
-                    )
-            except Exception:
-                print(f"Exception validating expression {expression_id} on row {row}: {error_record}")
-            row += 1
+        except Exception:
+            print(f"Exception validating expression {expression_id} on row {row}: {error_record}")
+        row += 1
         return row
 
     def validate_fhir(
