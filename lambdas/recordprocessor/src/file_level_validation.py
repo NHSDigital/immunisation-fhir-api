@@ -6,7 +6,7 @@ Functions for completing file-level validation
 from csv import DictReader
 
 from audit_table import update_audit_table_status
-from common.clients import logger, s3_client
+from common.clients import logger, get_s3_client
 from constants import (
     ARCHIVE_DIR_NAME,
     EXPECTED_CSV_HEADERS,
@@ -63,6 +63,7 @@ def get_permitted_operations(supplier: str, vaccine_type: str, allowed_permissio
 
 def move_file(bucket_name: str, source_file_key: str, destination_file_key: str) -> None:
     """Moves a file from one location to another within a single S3 bucket by copying and then deleting the file."""
+    s3_client = get_s3_client()
     s3_client.copy_object(
         Bucket=bucket_name,
         CopySource={"Bucket": bucket_name, "Key": source_file_key},

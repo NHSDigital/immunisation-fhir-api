@@ -10,7 +10,7 @@ import argparse
 from uuid import uuid4
 
 from audit_table import upsert_audit_table
-from common.clients import STREAM_NAME, logger, s3_client
+from common.clients import STREAM_NAME, logger, get_s3_client
 from common.log_decorator import logging_decorator
 from common.models.errors import UnhandledAuditTableError
 from constants import (
@@ -73,7 +73,7 @@ def handle_record(record) -> dict:
 
     try:
         message_id = str(uuid4())
-        s3_response = s3_client.get_object(Bucket=bucket_name, Key=file_key)
+        s3_response = get_s3_client().get_object(Bucket=bucket_name, Key=file_key)
         created_at_formatted_string, expiry_timestamp = get_creation_and_expiry_times(s3_response)
 
         vaccine_type, supplier = validate_file_key(file_key)
