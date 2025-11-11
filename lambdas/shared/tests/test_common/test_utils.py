@@ -21,6 +21,9 @@ class TestUtils(unittest.TestCase):
         self.mock_logger_info = self.logger_info_patcher.start()
 
     def tearDown(self):
+        for obj in self.s3_client.list_objects_v2(Bucket=self.bucket_name).get("Contents", []):
+            self.s3_client.delete_object(Bucket=self.bucket_name, Key=obj["Key"])
+        self.s3_client.delete_bucket(Bucket=self.bucket_name)
         self.logger_info_patcher.stop()
 
     def test_move_file(self):
