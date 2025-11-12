@@ -5,8 +5,8 @@ from io import BytesIO, StringIO
 from botocore.exceptions import ClientError
 
 from audit_table import change_audit_table_status_to_processed
+from common.aws_s3_utils import move_file
 from common.clients import get_s3_client, logger
-from common.utils import move_file
 from constants import (
     ACK_HEADERS,
     BATCH_FILE_ARCHIVE_DIR,

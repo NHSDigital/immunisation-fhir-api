@@ -6,8 +6,8 @@ Functions for completing file-level validation
 from csv import DictReader
 
 from audit_table import update_audit_table_status
+from common.aws_s3_utils import move_file
 from common.clients import logger
-from common.utils import move_file
 from constants import (
     ARCHIVE_DIR_NAME,
     EXPECTED_CSV_HEADERS,

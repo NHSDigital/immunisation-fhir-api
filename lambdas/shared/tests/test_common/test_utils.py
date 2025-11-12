@@ -4,7 +4,7 @@ from unittest.mock import patch
 import boto3
 from moto import mock_aws
 
-from common.utils import move_file
+from common.aws_s3_utils import move_file
 
 
 @mock_aws

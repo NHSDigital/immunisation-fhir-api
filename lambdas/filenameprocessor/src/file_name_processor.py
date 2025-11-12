@@ -10,10 +10,10 @@ import argparse
 from uuid import uuid4
 
 from audit_table import upsert_audit_table
+from common.aws_s3_utils import move_file
 from common.clients import STREAM_NAME, get_s3_client, logger
 from common.log_decorator import logging_decorator
 from common.models.errors import UnhandledAuditTableError
-from common.utils import move_file
 from constants import (
     ERROR_TYPE_TO_STATUS_CODE_MAP,
     SOURCE_BUCKET_NAME,
