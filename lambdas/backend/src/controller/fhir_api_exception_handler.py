@@ -20,6 +20,8 @@ from models.errors import (
     InvalidImmunizationId,
     InvalidJsonError,
     InvalidResourceVersion,
+    InvalidStoredData,
+    ResourceNotFoundError,
     ResourceVersionNotProvided,
     Severity,
     UnauthorizedError,
@@ -42,6 +44,7 @@ _CUSTOM_EXCEPTION_TO_STATUS_MAP: dict[Type[Exception], int] = {
     ResourceNotFoundError: 404,
     IdentifierDuplicationError: 422,
     UnhandledResponseError: 500,
+    InvalidStoredData: 500,
 }
 
 

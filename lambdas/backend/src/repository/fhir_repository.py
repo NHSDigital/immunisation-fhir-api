@@ -15,7 +15,7 @@ from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
 from responses import logger
 
 from common.models.constants import Constants
-from common.models.errors import ResourceNotFoundError
+from common.models.errors import ResourceNotFoundError, InvalidStoredData
 from common.models.immunization_record_metadata import ImmunizationRecordMetadata
 from common.models.utils.generic_utils import (
     get_contained_patient,
@@ -63,8 +63,7 @@ def get_fhir_identifier_from_identifier_pk(identifier_pk: str) -> Identifier:
     split_identifier = identifier_pk.split("#", 1)
 
     if len(split_identifier) != 2:
-        # TODO: raise Internal Server Error - invalid data stored for record?
-        raise
+        raise InvalidStoredData(data_type="identifier")
 
     supplier_code = split_identifier[0]
     supplier_unique_id = split_identifier[1]
