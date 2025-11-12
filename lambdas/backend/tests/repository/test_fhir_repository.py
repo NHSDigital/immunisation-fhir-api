@@ -10,12 +10,19 @@ from fhir.resources.R4B.immunization import Immunization
 
 from common.models.errors import ResourceNotFoundError
 from common.models.immunization_record_metadata import ImmunizationRecordMetadata
-from common.models.utils.generic_utils import make_immunization_pk, make_patient_pk
 from common.models.utils.validation_utils import get_vaccine_type
 from models.errors import UnhandledResponseError
 from repository.fhir_repository import ImmunizationRepository
 from test_common.testing_utils.generic_utils import update_target_disease_code
 from test_common.testing_utils.immunization_utils import VALID_NHS_NUMBER, create_covid_immunization_dict
+
+
+def _make_immunization_pk(_id):
+    return f"Immunization#{_id}"
+
+
+def _make_patient_pk(_id):
+    return f"Patient#{_id}"
 
 
 class TestFhirRepositoryBase(unittest.TestCase):
@@ -151,7 +158,7 @@ class TestGetImmunization(unittest.TestCase):
         self.assertEqual(resource_meta.resource_version, expected_version)
         self.assertEqual(resource_meta.is_deleted, False)
         self.assertEqual(resource_meta.is_reinstated, False)
-        self.table.get_item.assert_called_once_with(Key={"PK": make_immunization_pk(imms_id)})
+        self.table.get_item.assert_called_once_with(Key={"PK": _make_immunization_pk(imms_id)})
 
     def test_get_immunization_by_id_returns_reinstated_records(self):
         """it should find an Immunization by id, including reinstated records by default"""
@@ -175,7 +182,7 @@ class TestGetImmunization(unittest.TestCase):
         self.assertEqual(resource_meta.resource_version, expected_version)
         self.assertEqual(resource_meta.is_deleted, False)
         self.assertEqual(resource_meta.is_reinstated, True)
-        self.table.get_item.assert_called_once_with(Key={"PK": make_immunization_pk(imms_id)})
+        self.table.get_item.assert_called_once_with(Key={"PK": _make_immunization_pk(imms_id)})
 
     def test_get_immunization_by_id_returns_deleted_records_when_flag_is_set(self):
         """it should find an Immunization by id, including deleted records when the include_deleted flag is set True"""
@@ -201,7 +208,7 @@ class TestGetImmunization(unittest.TestCase):
         self.assertEqual(resource_meta.resource_version, expected_version)
         self.assertEqual(resource_meta.is_deleted, True)
         self.assertEqual(resource_meta.is_reinstated, False)
-        self.table.get_item.assert_called_once_with(Key={"PK": make_immunization_pk(imms_id)})
+        self.table.get_item.assert_called_once_with(Key={"PK": _make_immunization_pk(imms_id)})
 
     def test_immunization_not_found(self):
         """it should return None if Immunization doesn't exist"""
@@ -351,12 +358,12 @@ class TestUpdateImmunization(TestFhirRepositoryBase):
         patient_sk = f"{vaccine_type}#{imms_id}"
 
         self.table.update_item.assert_called_once_with(
-            Key={"PK": make_immunization_pk(imms_id)},
+            Key={"PK": _make_immunization_pk(imms_id)},
             UpdateExpression=update_exp,
             ExpressionAttributeNames={"#imms_resource": "Resource"},
             ExpressionAttributeValues={
                 ":timestamp": ANY,
-                ":patient_pk": make_patient_pk(patient_id),
+                ":patient_pk": _make_patient_pk(patient_id),
                 ":patient_sk": patient_sk,
                 ":imms_resource_val": json.dumps(imms),
                 ":operation": "UPDATE",
@@ -390,12 +397,12 @@ class TestUpdateImmunization(TestFhirRepositoryBase):
         patient_sk = f"{vaccine_type}#{imms_id}"
 
         self.table.update_item.assert_called_once_with(
-            Key={"PK": make_immunization_pk(imms_id)},
+            Key={"PK": _make_immunization_pk(imms_id)},
             UpdateExpression=update_exp,
             ExpressionAttributeNames={"#imms_resource": "Resource"},
             ExpressionAttributeValues={
                 ":timestamp": ANY,
-                ":patient_pk": make_patient_pk(patient_id),
+                ":patient_pk": _make_patient_pk(patient_id),
                 ":patient_sk": patient_sk,
                 ":imms_resource_val": json.dumps(imms),
                 ":operation": "UPDATE",
@@ -454,7 +461,7 @@ class TestDeleteImmunization(unittest.TestCase):
 
         # Then
         self.table.update_item.assert_called_once_with(
-            Key={"PK": make_immunization_pk(imms_id)},
+            Key={"PK": _make_immunization_pk(imms_id)},
             UpdateExpression="SET DeletedAt = :timestamp, Operation = :operation, SupplierSystem = :supplier_system",
             ExpressionAttributeValues={
                 ":timestamp": now_epoch,
@@ -481,7 +488,7 @@ class TestDeleteImmunization(unittest.TestCase):
             Key=ANY,
             UpdateExpression=ANY,
             ExpressionAttributeValues=ANY,
-            ConditionExpression=Attr("PK").eq(make_immunization_pk(imms_id))
+            ConditionExpression=Attr("PK").eq(_make_immunization_pk(imms_id))
             & (Attr("DeletedAt").not_exists() | Attr("DeletedAt").eq("reinstated")),
         )
 
@@ -524,7 +531,7 @@ class TestFindImmunizations(unittest.TestCase):
         dynamo_response = {"ResponseMetadata": {"HTTPStatusCode": 200}, "Items": []}
         self.table.query = MagicMock(return_value=dynamo_response)
 
-        condition = Key("PatientPK").eq(make_patient_pk(nhs_number))
+        condition = Key("PatientPK").eq(_make_patient_pk(nhs_number))
 
         # When
         _ = self.repository.find_immunizations(nhs_number, vaccine_types={"COVID"})
@@ -656,12 +663,12 @@ class TestImmunizationDecimals(TestFhirRepositoryBase):
         patient_sk = f"{vaccine_type}#{imms_id}"
 
         self.table.update_item.assert_called_once_with(
-            Key={"PK": make_immunization_pk(imms_id)},
+            Key={"PK": _make_immunization_pk(imms_id)},
             UpdateExpression=update_exp,
             ExpressionAttributeNames={"#imms_resource": "Resource"},
             ExpressionAttributeValues={
                 ":timestamp": ANY,
-                ":patient_pk": make_patient_pk(patient_id),
+                ":patient_pk": _make_patient_pk(patient_id),
                 ":patient_sk": patient_sk,
                 ":imms_resource_val": json.dumps(imms, use_decimal=True),
                 ":operation": "UPDATE",

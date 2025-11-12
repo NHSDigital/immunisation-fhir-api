@@ -20,14 +20,6 @@ from stdnum.verhoeff import validate
 from common.models.constants import Constants
 
 
-def make_immunization_pk(id: str):
-    return f"Immunization#{id}"
-
-
-def make_patient_pk(id: str):
-    return f"Patient#{id}"
-
-
 def get_nhs_number(imms: dict):
     try:
         nhs_number = [x for x in imms["contained"] if x["resourceType"] == "Patient"][0]["identifier"][0]["value"]
