@@ -19,6 +19,6 @@ Note: Paths are relative to this directory, `recordforwarder`.
 
 4. Run `make test` to run unit tests or individual tests by running:
     ```
-    python -m unittest tests.test_fhir_controller.TestSearchImmunizations
-    python -m unittest tests.test_fhir_controller.TestSearchImmunizations.test_search_immunizations
+    python -m unittest tests.test_fhir_batch_controller.TestCreateImmunizationBatchController
+    python -m unittest tests.test_fhir_batch_controller.TestCreateImmunizationBatchController.test_send_request_to_dynamo_create_success
     ```

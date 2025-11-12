@@ -13,7 +13,6 @@ from fhir.resources.R4B.immunization import Immunization
 
 from authorisation.api_operation_code import ApiOperationCode
 from authorisation.authoriser import Authoriser
-from common.models.constants import NHS_NUMBER_USED_IN_SAMPLE_DATA
 from common.models.errors import (
     CustomValidationError,
     IdentifierDuplicationError,
@@ -33,6 +32,9 @@ from test_common.testing_utils.immunization_utils import (
     create_covid_immunization_dict,
     create_covid_immunization_dict_no_id,
 )
+
+# Constants for use within the tests
+NHS_NUMBER_USED_IN_SAMPLE_DATA = "9000000009"
 
 
 class TestFhirServiceBase(unittest.TestCase):
