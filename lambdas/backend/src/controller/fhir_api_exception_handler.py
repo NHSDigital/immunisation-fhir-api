@@ -5,7 +5,6 @@ import uuid
 from typing import Callable, Type
 
 from common.clients import logger
-from common.models.constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
 from common.models.errors import (
     CustomValidationError,
     IdentifierDuplicationError,
@@ -13,6 +12,7 @@ from common.models.errors import (
     InconsistentResourceVersion,
     ResourceNotFoundError,
 )
+from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
 from controller.aws_apig_response_utils import create_response
 from models.errors import (
     Code,

@@ -76,7 +76,4 @@ class Urls:
     urn_school_number = "https://fhir.hl7.org.uk/Id/urn-school-number"
 
 
-GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE = "Unable to process request. Issue may be transient."
 SUPPLIER_PERMISSIONS_HASH_KEY = "supplier_permissions"
-# Maximum response size for an AWS Lambda function
-MAX_RESPONSE_SIZE_BYTES = 6 * 1024 * 1024
