@@ -56,6 +56,7 @@ class Validator:
 
         try:
             expression_values = data_parser.extract_field_values(expression_fieldname)
+            print(f"Validating Expression ID {expression_fieldname} with values: {expression_values}")
         except Exception as e:
             message = f"Data get values Unexpected exception [{e.__class__.__name__}]: {e}"
             error_record = ErrorReport(code=ExceptionLevels.PARSING_ERROR, message=message)

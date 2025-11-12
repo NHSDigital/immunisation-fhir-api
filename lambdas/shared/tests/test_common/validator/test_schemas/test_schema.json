@@ -78,7 +78,7 @@
       "errorLevel": 2,
       "expression": {
         "expressionName": "Defaults to",
-        "expressionType": "NOTEMPTY",
+        "expressionType": "STRING",
         "expressionRule": ""
       },
       "errorGroup": "completeness"
@@ -91,7 +91,7 @@
       "errorLevel": 0,
       "expression": {
         "expressionName": "Date Convert",
-        "expressionType": "NOTEMPTY",
+        "expressionType": "DATETIME",
         "expressionRule": ""
       },
       "errorGroup": "consistency"
@@ -104,7 +104,7 @@
       "errorLevel": 0,
       "expression": {
         "expressionName": "Organisation Look Up Check",
-        "expressionType": "KEYCHECK",
+        "expressionType": "STRING",
         "expressionRule": "Organisation"
       },
       "errorGroup": "consistency"
@@ -117,7 +117,7 @@
       "errorLevel": 1,
       "expression": {
         "expressionName": "Defaults to",
-        "expressionType": "NOTEMPTY",
+        "expressionType": "STRING",
         "expressionRule": ""
       },
       "errorGroup": "consistency"
@@ -130,7 +130,7 @@
       "errorLevel": 0,
       "expression": {
         "expressionName": "Unique ID Not Empty Check",
-        "expressionType": "NOTEMPTY",
+        "expressionType": "STRING",
         "expressionRule": ""
       },
       "errorGroup": "validity"
@@ -143,14 +143,14 @@
       "errorLevel": 0,
       "expression": {
         "expressionName": "Unique ID URI Not Empty Check",
-        "expressionType": "NOTEMPTY",
+        "expressionType": "STRING",
         "expressionRule": ""
       },
       "errorGroup": "validity"
     },
     {
       "expressionId": "01K8S0Y0TN3NZA6VBB3HM1PDR1",
-      "fieldNameFHIR": "id",
+      "fieldNameFHIR": "",
       "fieldNameFlat": "ACTION_FLAG",
       "fieldNumber": 12,
       "errorLevel": 1,
@@ -169,7 +169,7 @@
       "errorLevel": 1,
       "expression": {
         "expressionName": "Practitioner Forename Not Empty Check",
-        "expressionType": "NOTEMPTY",
+        "expressionType": "LIST",
         "expressionRule": ""
       },
       "errorGroup": "completeness"
@@ -182,7 +182,7 @@
       "errorLevel": 1,
       "expression": {
         "expressionName": "Practitioner Surname Not Empty Check",
-        "expressionType": "NOTEMPTY",
+        "expressionType": "STRING",
         "expressionRule": ""
       },
       "errorGroup": "completeness"
@@ -195,8 +195,8 @@
       "errorLevel": 1,
       "expression": {
         "expressionName": "Recorded Date Convert",
-        "expressionType": "NOTEMPTY",
-        "expressionRule": ""
+        "expressionType": "DATETIME",
+        "expressionRule": "false-strict-timezone"
       },
       "errorGroup": "consistency"
     },
@@ -208,7 +208,7 @@
       "errorLevel": 0,
       "expression": {
         "expressionName": "Primary Source Not Empty Check",
-        "expressionType": "NOTEMPTY",
+        "expressionType": "BOOLEAN",
         "expressionRule": ""
       },
       "errorGroup": "completeness"
@@ -221,7 +221,7 @@
       "errorLevel": 0,
       "expression": {
         "expressionName": "Procedure Code Not Empty Check",
-        "expressionType": "NOTEMPTY",
+        "expressionType": "STRING",
         "expressionRule": ""
       },
       "errorGroup": "completeness"
@@ -234,7 +234,7 @@
       "errorLevel": 1,
       "expression": {
         "expressionName": "Procedure Term Not Empty Check",
-        "expressionType": "NOTEMPTY",
+        "expressionType": "STRING",
         "expressionRule": ""
       },
       "errorGroup": "completeness"
@@ -247,7 +247,7 @@
       "errorLevel": 1,
       "expression": {
         "expressionName": "Dose Sequence Not Empty Check",
-        "expressionType": "NOTEMPTY",
+        "expressionType": "POSITIVEINTEGER",
         "expressionRule": ""
       },
       "errorGroup": "completeness"
@@ -260,7 +260,7 @@
       "errorLevel": 0,
       "expression": {
         "expressionName": "Produce Code Not Empty Check",
-        "expressionType": "NOTEMPTY",
+        "expressionType": "STRING",
         "expressionRule": ""
       },
       "errorGroup": "completeness"
@@ -273,7 +273,7 @@
       "errorLevel": 1,
       "expression": {
         "expressionName": "Produce Term Not Empty Check",
-        "expressionType": "NOTEMPTY",
+        "expressionType": "STRING",
         "expressionRule": ""
       },
       "errorGroup": "completeness"
@@ -286,7 +286,7 @@
       "errorLevel": 0,
       "expression": {
         "expressionName": "Manufacturer Display Not Empty Check",
-        "expressionType": "NOTEMPTY",
+        "expressionType": "STRING",
         "expressionRule": ""
       },
       "errorGroup": "completeness"
@@ -299,7 +299,7 @@
       "errorLevel": 0,
       "expression": {
         "expressionName": "Batch Number Not Empty Check",
-        "expressionType": "NOTEMPTY",
+        "expressionType": "STRING",
         "expressionRule": ""
       },
       "errorGroup": "completeness"
@@ -312,7 +312,7 @@
       "errorLevel": 1,
       "expression": {
         "expressionName": "Date Convert",
-        "expressionType": "NOTEMPTY",
+        "expressionType": "DATE",
         "expressionRule": ""
       },
       "errorGroup": "consistency"
@@ -325,7 +325,7 @@
       "errorLevel": 0,
       "expression": {
         "expressionName": "Site of Vaccination Code Not Empty Check",
-        "expressionType": "NOTEMPTY",
+        "expressionType": "STRING",
         "expressionRule": ""
       },
       "errorGroup": "completeness"
@@ -338,7 +338,7 @@
       "errorLevel": 1,
       "expression": {
         "expressionName": "Site of Vaccination Term Lookup Check",
-        "expressionType": "NOTEMPTY",
+        "expressionType": "STRING",
         "expressionRule": ""
       },
       "errorGroup": "consistency"
@@ -351,8 +351,8 @@
       "errorLevel": 0,
       "expression": {
         "expressionName": "Route of Vaccination Code Not Empty Check",
-        "expressionType": "NOTEMPTY",
-        "expressionRule": ""
+        "expressionType": "STRING",
+        "expressionRule": "UniqueList"
       },
       "errorGroup": "completeness"
     },
@@ -364,7 +364,7 @@
       "errorLevel": 1,
       "expression": {
         "expressionName": "Route of Vaccination Term Lookup Check",
-        "expressionType": "NOTEMPTY",
+        "expressionType": "STRING",
         "expressionRule": ""
       },
       "errorGroup": "consistency"
@@ -377,7 +377,7 @@
       "errorLevel": 1,
       "expression": {
         "expressionName": "Dose Amount Default Check",
-        "expressionType": "NOTEMPTY",
+        "expressionType": "INTDECIMAL",
         "expressionRule": ""
       },
       "errorGroup": "completeness"
@@ -390,7 +390,7 @@
       "errorLevel": 1,
       "expression": {
         "expressionName": "Dose Unit Only If System Check",
-        "expressionType": "NOTEMPTY",
+        "expressionType": "STRING",
         "expressionRule": ""
       },
       "errorGroup": "consistency"
@@ -403,7 +403,7 @@
       "errorLevel": 0,
       "expression": {
         "expressionName": "Dose Unit Term Not Empty Check",
-        "expressionType": "NOTEMPTY",
+        "expressionType": "STRING",
         "expressionRule": ""
       },
       "errorGroup": "completeness"
@@ -416,7 +416,7 @@
       "errorLevel": 0,
       "expression": {
         "expressionName": "Indication Code Not Empty Check",
-        "expressionType": "NOTEMPTY",
+        "expressionType": "STRING",
         "expressionRule": ""
       },
       "errorGroup": "completeness"
@@ -429,7 +429,7 @@
       "errorLevel": 1,
       "expression": {
         "expressionName": "Location Code Default Check",
-        "expressionType": "NOTEMPTY",
+        "expressionType": "STRING",
         "expressionRule": ""
       },
       "errorGroup": "consistency"
@@ -442,7 +442,7 @@
       "errorLevel": 1,
       "expression": {
         "expressionName": "Location Code Type URI Default Check",
-        "expressionType": "NOTEMPTY",
+        "expressionType": "STRING",
         "expressionRule": ""
       },
       "errorGroup": "consistency"

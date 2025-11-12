@@ -1,7 +1,7 @@
 import datetime
 import re
 import uuid
-from typing import Optional
+from typing import Decimal, Optional, Union
 
 from common.validator.constants.enums import MESSAGES, ExceptionLevels, MessageLabel
 from common.validator.error_report.record_error import ErrorReport, RecordError
@@ -26,14 +26,22 @@ class ExpressionChecker:
         self, expression_type: str, expression_rule: str, field_name: str, field_value: str, row: dict
     ) -> ErrorReport:
         match expression_type:
-            case "DATETIME":
-                return self._validate_datetime(expression_rule, field_name, field_value, row)
             case "STRING":
-                return self._validate_for_string_values(expression_rule, field_name, field_value, row)
+                return self.validation_for_string_values(expression_rule, field_name, field_value, row)
             case "LIST":
-                return self._validate_for_list_values(expression_rule, field_name, field_value, row)
+                return self.validation_for_list(expression_rule, field_name, field_value, row)
             case "DATE":
-                return self.validate_for_date(expression_rule, field_name, field_value, row)
+                return self.validation_for_date(expression_rule, field_name, field_value, row)
+            case "DATETIME":
+                return self.validation_for_date_time(expression_rule, field_name, field_value, row)
+            case "POSITIVEINTEGER":
+                return self.validation_for_positive_integer(expression_rule, field_name, field_value, row)
+            case "UNIQUELIST":
+                return self.validation_for_unique_list(expression_rule, field_name, field_value, row)
+            case "BOOLEAN":
+                return self._validate_boolean(expression_rule, field_name, field_value, row)
+            case "INTDECIMAL":
+                return self.validation_for_integer_or_decimal(expression_rule, field_name, field_value, row)
             case "UUID":
                 return self._validate_uuid(expression_rule, field_name, field_value, row)
             case "INT":
@@ -86,22 +94,7 @@ class ExpressionChecker:
                 return "Schema expression not found! Check your expression type : " + expression_type
 
     # ISO 8601 date/datetime validate (currently date-only)
-    def _validate_datetime(self, _expression_rule, field_name, field_value, row) -> ErrorReport:
-        try:
-            # Current behavior expects date-only; datetime raises and is handled below
-            datetime.date.fromisoformat(field_value)
-        except RecordError as e:
-            code = e.code if e.code is not None else ExceptionLevels.RECORD_CHECK_FAILED
-            message = e.message if e.message is not None else MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
-            if e.details is not None:
-                details = e.details
-            return ErrorReport(code, message, row, field_name, details, self.summarise)
-        except Exception as e:
-            if self.report_unexpected_exception:
-                message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
-
-    def validate_for_date(self, _expression_rule, field_name, field_value, row, future_date_allowed: bool = False):
+    def validation_for_date(self, _expression_rule, field_name, field_value, row, future_date_allowed: bool = False):
         """
         Apply pre-validation to a date field to ensure that it is a string (JSON dates must be
         written as strings) containing a valid date in the format "YYYY-MM-DD"
@@ -133,53 +126,51 @@ class ExpressionChecker:
                 message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
                 return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
-    # Integer Validate
-    def _validate_integer(self, expression_rule: str, field_name: str, field_value: str, row: dict) -> ErrorReport:
-        try:
-            int(field_value)
-            if expression_rule:
-                check_value = int(expression_rule)
-                if int(field_value) != check_value:
-                    raise RecordError(
-                        ExceptionLevels.RECORD_CHECK_FAILED,
-                        "Value integer check failed",
-                        MessageLabel.VALUE_MISMATCH_MSG
-                        + MessageLabel.EXPECTED_LABEL
-                        + expression_rule
-                        + " "
-                        + MessageLabel.FOUND_LABEL
-                        + field_value,
-                    )
-        except RecordError as e:
-            code = e.code if e.code is not None else ExceptionLevels.RECORD_CHECK_FAILED
-            message = e.message if e.message is not None else MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
-            if e.details is not None:
-                details = e.details
-            return ErrorReport(code, message, row, field_name, details, self.summarise)
-        except Exception as e:
-            if self.report_unexpected_exception:
-                message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
+    def validation_for_positive_integer(field_value: int, field_name: str, max_value: int = None):
+        """
+        Apply pre-validation to an integer field to ensure that it is a positive integer,
+        which does not exceed the maximum allowed value (if applicable)
+        """
+        # This check uses type() instead of isinstance() because bool is a subclass of int.
+        if type(field_value) is not int:  # pylint: disable=unidiomatic-typecheck
+            raise TypeError(f"{field_name} must be a positive integer")
 
-    # Length Validate
-    def _validate_length(self, expression_rule: str, field_name: str, field_value: str, row: dict) -> ErrorReport:
-        try:
-            str_len = len(field_value)
-            check_length = int(expression_rule)
-            if str_len > check_length:
-                raise RecordError(
-                    ExceptionLevels.RECORD_CHECK_FAILED, "Value length check failed", "Value is longer than expected"
+        if field_value <= 0:
+            raise ValueError(f"{field_name} must be a positive integer")
+
+        if max_value:
+            if field_value > max_value:
+                raise ValueError(f"{field_name} must be an integer in the range 1 to {max_value}")
+
+    def validation_for_integer_or_decimal(field_value: Union[int, Decimal], field_location: str):
+        """
+        Apply pre-validation to a decimal field to ensure that it is an integer or decimal,
+        which does not exceed the maximum allowed number of decimal places (if applicable)
+        """
+        if not (
+            # This check uses type() instead of isinstance() because bool is a subclass of int.
+            type(field_value) is int  # pylint: disable=unidiomatic-typecheck
+            or type(field_value) is Decimal  # pylint: disable=unidiomatic-typecheck
+        ):
+            raise TypeError(f"{field_location} must be a number")
+
+    def validation_for_unique_list(
+        list_to_check: list,
+        unique_value_in_list: str,
+        field_location: str,
+    ):
+        """
+        Apply pre-validation to a list of dictionaries to ensure that a specified value in each
+        dictionary is unique across the list
+        """
+        found = []
+        for item in list_to_check:
+            if item[unique_value_in_list] in found:
+                raise ValueError(
+                    f"{field_location.replace('FIELD_TO_REPLACE', item[unique_value_in_list])}" + " must be unique"
                 )
-        except RecordError as e:
-            code = e.code if e.code is not None else ExceptionLevels.RECORD_CHECK_FAILED
-            message = e.message if e.message is not None else MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
-            if e.details is not None:
-                details = e.details
-            return ErrorReport(code, message, row, field_name, details, self.summarise)
-        except Exception as e:
-            if self.report_unexpected_exception:
-                message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
+
+            found.append(item[unique_value_in_list])
 
     # Regex Validate
     def _validate_regex(self, expression_rule: str, field_name: str, field_value: str, row: dict) -> ErrorReport:
@@ -202,32 +193,12 @@ class ExpressionChecker:
                 message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
                 return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
-    # Equal Validate
-    def _validate_equal(self, expression_rule: str, field_name: str, field_value: str, row: dict) -> ErrorReport:
-        try:
-            if field_value != expression_rule:
-                raise RecordError(
-                    ExceptionLevels.RECORD_CHECK_FAILED,
-                    "Value equals check failed",
-                    MessageLabel.VALUE_MISMATCH_MSG
-                    + MessageLabel.EXPECTED_LABEL
-                    + expression_rule
-                    + " "
-                    + MessageLabel.FOUND_LABEL
-                    + field_value,
-                )
-        except RecordError as e:
-            code = e.code if e.code is not None else ExceptionLevels.RECORD_CHECK_FAILED
-            message = e.message if e.message is not None else MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
-            if e.details is not None:
-                details = e.details
-            return ErrorReport(code, message, row, field_name, details, self.summarise)
-        except Exception as e:
-            if self.report_unexpected_exception:
-                message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
+    def validation_for_boolean(field_value: str, field_name: str):
+        """Apply pre-validation to a boolean field to ensure that it is a boolean"""
+        if not isinstance(field_value, bool):
+            raise TypeError(f"{field_name} must be a boolean")
 
-    def for_list(self, expression_rule: str, field_name: str, field_value: list, row: dict):
+    def validation_for_list(self, expression_rule: str, field_name: str, field_value: list, row: dict):
         """
         Apply validation to a list field to ensure it is a non-empty list which meets the length requirements and
         requirements, if applicable, for each list element to be a non-empty string or non-empty dictionary
@@ -262,6 +233,62 @@ class ExpressionChecker:
                     raise TypeError(f"{field_name} must be an array of objects")
                 if len(element) == 0:
                     raise ValueError(f"{field_name} must be an array of non-empty objects")
+
+    def validation_for_date_time(field_value: str, field_location: str, strict_timezone: bool = True):
+        """
+        Apply pre-validation to a datetime field to ensure that it is a string (JSON dates must be written as strings)
+        containing a valid datetime. Note that partial dates are valid for FHIR, but are not allowed for this API.
+        Valid formats are any of the following:
+        * 'YYYY-MM-DD' - Full date only
+        * 'YYYY-MM-DDThh:mm:ss%z' - Full date, time without milliseconds, timezone
+        * 'YYYY-MM-DDThh:mm:ss.f%z' - Full date, time with milliseconds (any level of precision), timezone
+        """
+
+        if not isinstance(field_value, str):
+            raise TypeError(f"{field_location} must be a string")
+
+        error_message = (
+            f"{field_location} must be a valid datetime in one of the following formats:"
+            "- 'YYYY-MM-DD' — Full date only"
+            "- 'YYYY-MM-DDThh:mm:ss%z' — Full date and time with timezone (e.g. +00:00 or +01:00)"
+            "- 'YYYY-MM-DDThh:mm:ss.f%z' — Full date and time with milliseconds and timezone"
+            "-  Date must not be in the future."
+        )
+        if strict_timezone:
+            error_message += (
+                "Only '+00:00' and '+01:00' are accepted as valid timezone offsets.\n"
+                f"Note that partial dates are not allowed for {field_location} in this service.\n"
+            )
+
+        allowed_suffixes = {
+            "+00:00",
+            "+01:00",
+            "+0000",
+            "+0100",
+        }
+
+        # List of accepted strict formats
+        formats = [
+            "%Y-%m-%d",
+            "%Y-%m-%dT%H:%M:%S%z",
+            "%Y-%m-%dT%H:%M:%S.%f%z",
+        ]
+
+        for fmt in formats:
+            try:
+                fhir_date = datetime.strptime(field_value, fmt)
+                # Enforce future-date rule using central checker after successful parse
+                if check_if_future_date(fhir_date):
+                    raise ValueError(f"{field_location} must not be in the future")
+                # After successful parse, enforce timezone and future-date rules
+                if strict_timezone and fhir_date.tzinfo is not None:
+                    if not any(field_value.endswith(suffix) for suffix in allowed_suffixes):
+                        raise ValueError(error_message)
+                return fhir_date.isoformat()
+            except ValueError:
+                continue
+
+        raise ValueError(error_message)
 
     # Not Equal Validate
     def _validate_not_equal(self, expression_rule: str, field_name: str, field_value: str, row: dict) -> ErrorReport:
@@ -471,7 +498,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # String Pre-Validation
-    def _validate_for_string_values(
+    def validation_for_string_values(
         self, _expression_rule: str, field_name: str, field_value: str, row: dict
     ) -> ErrorReport:
         """
