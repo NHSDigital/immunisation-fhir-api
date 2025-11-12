@@ -25,7 +25,7 @@
       "errorLevel": 0,
       "expression": {
         "expressionName": "Person Forname Not Empty Check",
-        "expressionType": "NOTEMPTY",
+        "expressionType": "LIST",
         "expressionRule": ""
       },
       "errorGroup": "completeness"
@@ -39,7 +39,7 @@
       "parentExpression": "01K5EGR0C7Y1WJ0BC803SQDWK4",
       "expression": {
         "expressionName": "Person Surname Not Empty Check",
-        "expressionType": "NOTEMPTY",
+        "expressionType": "STRING",
         "expressionRule": ""
       },
       "errorGroup": "completeness"
@@ -52,7 +52,7 @@
       "errorLevel": 1,
       "expression": {
         "expressionName": "Date of Birth Not Empty Check",
-        "expressionType": "NOTEMPTY",
+        "expressionType": "DATE",
         "expressionRule": ""
       },
       "errorGroup": "consistency"
@@ -65,7 +65,7 @@
       "errorLevel": 1,
       "expression": {
         "expressionName": "Gender Valid Check",
-        "expressionType": "NOTEMPTY",
+        "expressionType": "STRING",
         "expressionRule": ""
       },
       "errorGroup": "consistency"

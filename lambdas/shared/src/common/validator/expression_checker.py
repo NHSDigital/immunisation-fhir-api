@@ -1,11 +1,13 @@
 import datetime
 import re
 import uuid
+from typing import Optional
 
 from common.validator.constants.enums import MESSAGES, ExceptionLevels, MessageLabel
 from common.validator.error_report.record_error import ErrorReport, RecordError
 from common.validator.lookup_expressions.key_data import KeyData
 from common.validator.lookup_expressions.lookup_data import LookUpData
+from common.validator.validation_utils import check_if_future_date
 
 
 class ExpressionChecker:
@@ -28,8 +30,10 @@ class ExpressionChecker:
                 return self._validate_datetime(expression_rule, field_name, field_value, row)
             case "STRING":
                 return self._validate_for_string_values(expression_rule, field_name, field_value, row)
+            case "LIST":
+                return self._validate_for_list_values(expression_rule, field_name, field_value, row)
             case "DATE":
-                return self._validate_datetime(expression_rule, field_name, field_value, row)
+                return self.validate_for_date(expression_rule, field_name, field_value, row)
             case "UUID":
                 return self._validate_uuid(expression_rule, field_name, field_value, row)
             case "INT":
@@ -96,6 +100,23 @@ class ExpressionChecker:
             if self.report_unexpected_exception:
                 message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
                 return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
+
+    def validate_for_date(self, _expression_rule, field_name, field_value, row, future_date_allowed: bool = False):
+        """
+        Apply pre-validation to a date field to ensure that it is a string (JSON dates must be
+        written as strings) containing a valid date in the format "YYYY-MM-DD"
+        """
+        if not isinstance(field_value, str):
+            raise TypeError(f"{field_name} must be a string")
+
+        try:
+            parsed_date = datetime.strptime(field_value, "%Y-%m-%d").date()
+        except ValueError as value_error:
+            raise ValueError(f'{field_name} must be a valid date string in the format "YYYY-MM-DD"') from value_error
+
+        # Enforce future date rule using central checker after successful parse
+        if not future_date_allowed and check_if_future_date(parsed_date):
+            raise ValueError(f"{field_name} must not be in the future")
 
     # UUID validate
     def _validate_uuid(self, _expression_rule: str, field_name: str, field_value: str, row: dict) -> ErrorReport:
@@ -205,6 +226,42 @@ class ExpressionChecker:
             if self.report_unexpected_exception:
                 message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
                 return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
+
+    def for_list(self, expression_rule: str, field_name: str, field_value: list, row: dict):
+        """
+        Apply validation to a list field to ensure it is a non-empty list which meets the length requirements and
+        requirements, if applicable, for each list element to be a non-empty string or non-empty dictionary
+        """
+        defined_length: Optional[int] = (None,)
+        max_length: Optional[int] = (None,)
+        elements_are_strings: bool = (False,)
+        string_element_max_length: Optional[int] = (None,)
+        elements_are_dicts: bool = (False,)
+        if not isinstance(field_value, list):
+            raise TypeError(f"{field_name} must be an array")
+
+        if defined_length:
+            if len(field_value) != defined_length:
+                raise ValueError(f"{field_name} must be an array of length {defined_length}")
+        else:
+            if len(field_value) == 0:
+                raise ValueError(f"{field_name} must be a non-empty array")
+
+        if max_length is not None and len(field_value) > max_length:
+            raise ValueError(f"{field_name} must be an array of maximum length {max_length}")
+
+        if elements_are_strings:
+            for idx, element in enumerate(field_value):
+                self._validate_for_string_values.for_string(
+                    element, f"{field_name}[{idx}]", max_length=string_element_max_length
+                )
+
+        if elements_are_dicts:
+            for element in field_value:
+                if not isinstance(element, dict):
+                    raise TypeError(f"{field_name} must be an array of objects")
+                if len(element) == 0:
+                    raise ValueError(f"{field_name} must be an array of non-empty objects")
 
     # Not Equal Validate
     def _validate_not_equal(self, expression_rule: str, field_name: str, field_value: str, row: dict) -> ErrorReport:
