@@ -44,7 +44,6 @@ def _get_operation_outcome(result) -> dict:
                 record = result_headers["Location"]
         if result.get("body"):
             ops_outcome = json.loads(result["body"])
-            logger.info(f"ops_outcome: {ops_outcome}")
             if ops_outcome.get("issue"):
                 outcome_body = ops_outcome["issue"][0]
                 status_code = outcome_body["code"]
