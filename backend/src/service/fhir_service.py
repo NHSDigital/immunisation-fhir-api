@@ -1,6 +1,7 @@
 import datetime
 import logging
 import os
+import urllib.parse
 import uuid
 from typing import Optional, Union, cast
 from uuid import uuid4
@@ -241,18 +242,23 @@ class FhirService:
     @staticmethod
     def create_url_for_bundle_link(params, vaccine_types):
         """
-        Updates the immunization.target parameter to include the given vaccine types and returns the url for the search
-        bundle.
+        Updates the -immunization.target parameter to include the given vaccine types
+        and returns the url for the search bundle.
         """
-        base_url = f"{get_service_url()}/Immunization"
+        parsed_params = urllib.parse.parse_qsl(params)
 
-        # Update the immunization.target parameter
-        new_immunization_target_param = f"immunization.target={','.join(vaccine_types)}"
-        parameters = "&".join(
-            [(new_immunization_target_param if x.startswith("-immunization.target=") else x) for x in params.split("&")]
-        )
+        updated_params = []
+        for k, v in parsed_params:
+            if k == parameter_parser.immunization_target_key:
+                updated_v = ",".join(vaccine_types)
+                updated_params.append((k, updated_v))
+                # TODO - temporarily maintaining this for backwards compatibility, but we should remove it
+                updated_params.append(("immunization.target", updated_v))
+            else:
+                updated_params.append((k, v))
 
-        return f"{base_url}?{parameters}"
+        query = urllib.parse.urlencode(updated_params)
+        return f"{get_service_url()}/Immunization?{query}"
 
     def search_immunizations(
         self,
