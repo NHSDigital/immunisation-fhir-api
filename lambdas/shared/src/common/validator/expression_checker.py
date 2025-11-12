@@ -140,21 +140,6 @@ class ExpressionChecker:
                 message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
                 return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
-    #  Float Validate
-    def _validate_float(self, _expression_rule: str, field_name: str, field_value: str, row: dict) -> ErrorReport:
-        try:
-            float(field_value)
-        except RecordError as e:
-            code = e.code if e.code is not None else ExceptionLevels.RECORD_CHECK_FAILED
-            message = e.message if e.message is not None else MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
-            if e.details is not None:
-                details = e.details
-            return ErrorReport(code, message, row, field_name, details, self.summarise)
-        except Exception as e:
-            if self.report_unexpected_exception:
-                message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
-
     # Length Validate
     def _validate_length(self, expression_rule: str, field_name: str, field_value: str, row: dict) -> ErrorReport:
         try:
