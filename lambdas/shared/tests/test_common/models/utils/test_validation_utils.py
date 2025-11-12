@@ -1,6 +1,7 @@
 import unittest
 from copy import deepcopy
 
+from fhir.resources.R4B.identifier import Identifier
 from jsonpath_ng.ext import parse
 
 from common.models.errors import InconsistentIdentifierError, InconsistentResourceVersion
@@ -22,7 +23,7 @@ from test_common.testing_utils.values_for_tests import InvalidValues, NameInstan
 class TestValidatorUtils(unittest.TestCase):
     """Test immunization validation utils on the FHIR model"""
 
-    MOCK_LOCAL_IDENTIFIER = {"identifier": [{"system": "https://mock-identifier.co.uk/vaccs/", "value": "123"}]}
+    MOCK_LOCAL_IDENTIFIER = Identifier(system="https://mock-identifier.co.uk/vaccs/", value="123")
 
     def setUp(self):
         """Set up for each test. This runs before every test"""
@@ -312,15 +313,15 @@ class TestValidatorUtils(unittest.TestCase):
         match"""
         test_cases = [
             (
-                {"identifier": [{"system": "https://mock-identifier.co.uk/vaccs/", "value": "different_val"}]},
+                Identifier(system="https://mock-identifier.co.uk/vaccs/", value="different_val"),
                 "Validation errors: identifier[0].value doesn't match with the stored content",
             ),
             (
-                {"identifier": [{"system": "https://different-identifier.co.uk/vaccs/", "value": "123"}]},
+                Identifier(system="https://different-identifier.co.uk/vaccs/", value="123"),
                 "Validation errors: identifier[0].system doesn't match with the stored content",
             ),
             (
-                {"identifier": [{"system": "https://different-identifier.co.uk/vaccs/", "value": "different_val"}]},
+                Identifier(system="https://different-identifier.co.uk/vaccs/", value="different_val"),
                 "Validation errors: identifier[0].system and identifier[0].value doesn't match with the stored content",
             ),
         ]

@@ -6,6 +6,7 @@ from unittest.mock import ANY, MagicMock, Mock, patch
 import botocore.exceptions
 import simplejson as json
 from boto3.dynamodb.conditions import Attr, Key
+from fhir.resources.R4B.identifier import Identifier
 from fhir.resources.R4B.immunization import Immunization
 
 from common.models.errors import ResourceNotFoundError
@@ -141,33 +142,38 @@ class TestGetImmunization(unittest.TestCase):
         """it should find an Immunization by id"""
         imms_id = "an-id"
         expected_resource = {"foo": "bar"}
+        expected_identifier = Identifier(system="supplier", value="uid")
         expected_version = 1
         self.table.get_item = MagicMock(
             return_value={
                 "Item": {
+                    "IdentifierPK": "supplier#uid",
                     "Resource": json.dumps(expected_resource),
                     "Version": expected_version,
                     "PatientSK": "COVID#2516525251",
                 }
             }
         )
-        immunisation, resource_meta = self.repository.get_immunization_and_resource_meta_by_id(imms_id)
+        actual_resource, actual_metadata = self.repository.get_immunization_resource_and_metadata_by_id(imms_id)
 
         # Validate the results
-        self.assertDictEqual(expected_resource, immunisation)
-        self.assertEqual(resource_meta.resource_version, expected_version)
-        self.assertEqual(resource_meta.is_deleted, False)
-        self.assertEqual(resource_meta.is_reinstated, False)
+        self.assertDictEqual(expected_resource, actual_resource)
+        self.assertEqual(actual_metadata.identifier, expected_identifier)
+        self.assertEqual(actual_metadata.resource_version, expected_version)
+        self.assertEqual(actual_metadata.is_deleted, False)
+        self.assertEqual(actual_metadata.is_reinstated, False)
         self.table.get_item.assert_called_once_with(Key={"PK": _make_immunization_pk(imms_id)})
 
     def test_get_immunization_by_id_returns_reinstated_records(self):
         """it should find an Immunization by id, including reinstated records by default"""
         imms_id = "an-id"
         expected_resource = {"foo": "bar"}
+        expected_identifier = Identifier(system="supplier", value="uid")
         expected_version = 1
         self.table.get_item = MagicMock(
             return_value={
                 "Item": {
+                    "IdentifierPK": "supplier#uid",
                     "Resource": json.dumps(expected_resource),
                     "Version": expected_version,
                     "DeletedAt": "reinstated",
@@ -175,23 +181,26 @@ class TestGetImmunization(unittest.TestCase):
                 }
             }
         )
-        immunisation, resource_meta = self.repository.get_immunization_and_resource_meta_by_id(imms_id)
+        actual_resource, acutal_metadata = self.repository.get_immunization_resource_and_metadata_by_id(imms_id)
 
         # Validate the results
-        self.assertDictEqual(expected_resource, immunisation)
-        self.assertEqual(resource_meta.resource_version, expected_version)
-        self.assertEqual(resource_meta.is_deleted, False)
-        self.assertEqual(resource_meta.is_reinstated, True)
+        self.assertDictEqual(expected_resource, actual_resource)
+        self.assertEqual(acutal_metadata.identifier, expected_identifier)
+        self.assertEqual(acutal_metadata.resource_version, expected_version)
+        self.assertEqual(acutal_metadata.is_deleted, False)
+        self.assertEqual(acutal_metadata.is_reinstated, True)
         self.table.get_item.assert_called_once_with(Key={"PK": _make_immunization_pk(imms_id)})
 
     def test_get_immunization_by_id_returns_deleted_records_when_flag_is_set(self):
         """it should find an Immunization by id, including deleted records when the include_deleted flag is set True"""
         imms_id = "an-id"
         expected_resource = {"foo": "bar"}
+        expected_identifier = Identifier(system="supplier", value="uid")
         expected_version = 4
         self.table.get_item = MagicMock(
             return_value={
                 "Item": {
+                    "IdentifierPK": "supplier#uid",
                     "Resource": json.dumps(expected_resource),
                     "Version": expected_version,
                     "DeletedAt": time.time(),
@@ -199,15 +208,16 @@ class TestGetImmunization(unittest.TestCase):
                 }
             }
         )
-        immunisation, resource_meta = self.repository.get_immunization_and_resource_meta_by_id(
+        actual_resource, acutal_metadata = self.repository.get_immunization_resource_and_metadata_by_id(
             imms_id, include_deleted=True
         )
 
         # Validate the results
-        self.assertDictEqual(expected_resource, immunisation)
-        self.assertEqual(resource_meta.resource_version, expected_version)
-        self.assertEqual(resource_meta.is_deleted, True)
-        self.assertEqual(resource_meta.is_reinstated, False)
+        self.assertDictEqual(expected_resource, actual_resource)
+        self.assertEqual(acutal_metadata.identifier, expected_identifier)
+        self.assertEqual(acutal_metadata.resource_version, expected_version)
+        self.assertEqual(acutal_metadata.is_deleted, True)
+        self.assertEqual(acutal_metadata.is_reinstated, False)
         self.table.get_item.assert_called_once_with(Key={"PK": _make_immunization_pk(imms_id)})
 
     def test_immunization_not_found(self):
@@ -215,7 +225,7 @@ class TestGetImmunization(unittest.TestCase):
         imms_id = "non-existent-id"
         self.table.get_item = MagicMock(return_value={})
 
-        imms, version = self.repository.get_immunization_and_resource_meta_by_id(imms_id)
+        imms, version = self.repository.get_immunization_resource_and_metadata_by_id(imms_id)
         self.assertIsNone(imms)
         self.assertIsNone(version)
 
@@ -225,7 +235,7 @@ class TestGetImmunization(unittest.TestCase):
         imms_id = "a-deleted-id"
         self.table.get_item = MagicMock(return_value={"Item": {"Resource": "{}", "DeletedAt": time.time()}})
 
-        imms, version = self.repository.get_immunization_and_resource_meta_by_id(imms_id, include_deleted=False)
+        imms, version = self.repository.get_immunization_resource_and_metadata_by_id(imms_id, include_deleted=False)
         self.assertIsNone(imms)
         self.assertIsNone(version)
 
@@ -339,7 +349,10 @@ class TestUpdateImmunization(TestFhirRepositoryBase):
         """it should update the immunisation record"""
         imms_id = "an-imms-id"
         imms = create_covid_immunization_dict(imms_id, VALID_NHS_NUMBER)
-        existing_record_metadata = ImmunizationRecordMetadata(resource_version=1, is_deleted=False, is_reinstated=False)
+        identifier = Identifier(system=imms["identifier"][0]["system"], value=imms["identifier"][0]["value"])
+        existing_record_metadata = ImmunizationRecordMetadata(
+            identifier=identifier, resource_version=1, is_deleted=False, is_reinstated=False
+        )
 
         dynamo_response = {"ResponseMetadata": {"HTTPStatusCode": 200}}
         self.table.update_item = MagicMock(return_value=dynamo_response)
@@ -378,7 +391,10 @@ class TestUpdateImmunization(TestFhirRepositoryBase):
         """it should reinstate a deleted record when requested via the update operation"""
         imms_id = "an-imms-id"
         imms = create_covid_immunization_dict(imms_id, VALID_NHS_NUMBER)
-        existing_record_metadata = ImmunizationRecordMetadata(resource_version=2, is_deleted=True, is_reinstated=False)
+        identifier = Identifier(system=imms["identifier"][0]["system"], value=imms["identifier"][0]["value"])
+        existing_record_metadata = ImmunizationRecordMetadata(
+            identifier=identifier, resource_version=2, is_deleted=True, is_reinstated=False
+        )
 
         dynamo_response = {"ResponseMetadata": {"HTTPStatusCode": 200}}
         self.table.update_item = MagicMock(return_value=dynamo_response)
@@ -419,7 +435,10 @@ class TestUpdateImmunization(TestFhirRepositoryBase):
         condition, as a check is made first to retrieve the record."""
         imms_id = "an-id"
         imms = create_covid_immunization_dict(imms_id, VALID_NHS_NUMBER)
-        existing_record_metadata = ImmunizationRecordMetadata(resource_version=2, is_deleted=True, is_reinstated=False)
+        identifier = Identifier(system=imms["identifier"][0]["system"], value=imms["identifier"][0]["value"])
+        existing_record_metadata = ImmunizationRecordMetadata(
+            identifier=identifier, resource_version=2, is_deleted=True, is_reinstated=False
+        )
 
         error_res = {"Error": {"Code": "ConditionalCheckFailedException"}}
         self.table.update_item.side_effect = botocore.exceptions.ClientError(
@@ -647,7 +666,10 @@ class TestImmunizationDecimals(TestFhirRepositoryBase):
     def run_update_immunization_test(self, imms_id, imms, updated_dose_quantity=None):
         dynamo_response = {"ResponseMetadata": {"HTTPStatusCode": 200}}
         self.table.update_item = MagicMock(return_value=dynamo_response)
-        existing_record_metadata = ImmunizationRecordMetadata(resource_version=1, is_deleted=False, is_reinstated=False)
+        identifier = Identifier(system="supplier", value="uid")
+        existing_record_metadata = ImmunizationRecordMetadata(
+            identifier=identifier, resource_version=1, is_deleted=False, is_reinstated=False
+        )
 
         # When
         updated_version = self.repository.update_immunization(imms_id, imms, existing_record_metadata, "Test")
