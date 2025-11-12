@@ -143,7 +143,13 @@ class ImmunizationRepository:
         # The FHIR Identifier which is returned in the metadata is based on the IdentifierPK from the database because
         # it is valid for the IdentifierPK and Resource system and value to mismatch due to the V2 to V5 data uplift.
         # Please see VED-893 for more details.
-        identifier = get_fhir_identifier_from_identifier_pk(item.get("IdentifierPK"))
+
+        identifier_pk = item.get("IdentifierPK")
+
+        if identifier_pk is None:
+            raise InvalidStoredData(data_type="identifier")
+
+        identifier = get_fhir_identifier_from_identifier_pk(identifier_pk)
 
         imms_record_meta = ImmunizationRecordMetadata(identifier, int(item.get("Version")), is_deleted, is_reinstated)
 
