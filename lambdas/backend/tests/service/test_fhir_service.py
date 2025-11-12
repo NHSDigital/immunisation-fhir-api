@@ -150,13 +150,12 @@ class TestGetImmunization(TestFhirServiceBase):
         imms_id = "non_restricted_id"
 
         immunization_data = load_json_data("completed_covid_immunization_event.json")
-        self.mock_redis.hget.return_value = "COVID"
-        self.mock_redis_getter.return_value = self.mock_redis
-
         identifier = Identifier(
             system=immunization_data["identifier"][0]["system"], value=immunization_data["identifier"][0]["value"]
         )
-        self.mock_redis_client.hget.return_value = "COVID"
+        self.mock_redis.hget.return_value = "COVID"
+        self.mock_redis_getter.return_value = self.mock_redis
+
         self.authoriser.authorise.return_value = True
         self.imms_repo.get_immunization_resource_and_metadata_by_id.return_value = (
             immunization_data,
@@ -178,14 +177,13 @@ class TestGetImmunization(TestFhirServiceBase):
     def test_unauthorised_error_raised_when_user_lacks_permissions(self):
         """it should throw an exception when user lacks permissions"""
         imms_id = "an-id"
-        self.mock_redis.hget.return_value = "COVID"
-        self.mock_redis_getter.return_value = self.mock_redis
         immunisation_resource = create_covid_immunization(imms_id).dict()
         identifier = Identifier(
             system=immunisation_resource["identifier"][0]["system"],
             value=immunisation_resource["identifier"][0]["value"],
         )
-        self.mock_redis_client.hget.return_value = "COVID"
+        self.mock_redis.hget.return_value = "COVID"
+        self.mock_redis_getter.return_value = self.mock_redis
         self.authoriser.authorise.return_value = False
         self.imms_repo.get_immunization_resource_and_metadata_by_id.return_value = (
             immunisation_resource,
@@ -645,10 +643,9 @@ class TestDeleteImmunization(TestFhirServiceBase):
     def test_delete_immunization(self):
         """it should delete Immunization record"""
         imms = json.loads(create_covid_immunization(self.TEST_IMMUNISATION_ID).json())
+        identifier = Identifier(system=imms["identifier"][0]["system"], value=imms["identifier"][0]["value"])
         self.mock_redis.hget.return_value = "COVID"
         self.mock_redis_getter.return_value = self.mock_redis
-        identifier = Identifier(system=imms["identifier"][0]["system"], value=imms["identifier"][0]["value"])
-        self.mock_redis_client.hget.return_value = "COVID"
         self.authoriser.authorise.return_value = True
         self.imms_repo.get_immunization_resource_and_metadata_by_id.return_value = (
             imms,
@@ -681,10 +678,9 @@ class TestDeleteImmunization(TestFhirServiceBase):
     ):
         """it should raise an UnauthorizedVaxError when the client does not have permissions for the given vacc type"""
         imms = json.loads(create_covid_immunization(self.TEST_IMMUNISATION_ID).json())
+        identifier = Identifier(system=imms["identifier"][0]["system"], value=imms["identifier"][0]["value"])
         self.mock_redis.hget.return_value = "FLU"
         self.mock_redis_getter.return_value = self.mock_redis
-        identifier = Identifier(system=imms["identifier"][0]["system"], value=imms["identifier"][0]["value"])
-        self.mock_redis_client.hget.return_value = "FLU"
         self.authoriser.authorise.return_value = False
         self.imms_repo.get_immunization_resource_and_metadata_by_id.return_value = (
             imms,

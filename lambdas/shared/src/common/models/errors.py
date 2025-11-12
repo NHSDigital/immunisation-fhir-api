@@ -116,6 +116,24 @@ class UnhandledResponseError(RuntimeError):
         )
 
 
+@dataclass
+class InvalidStoredData(RuntimeError):
+    """Use this when a piece of stored data is invalid"""
+
+    data_type: str
+
+    def __str__(self):
+        return f"Invalid data stored for immunization record: {self.data_type}"
+
+    def to_operation_outcome(self) -> dict:
+        return create_operation_outcome(
+            resource_id=str(uuid.uuid4()),
+            severity=Severity.error,
+            code=Code.invariant,
+            diagnostics=self.__str__(),
+        )
+
+
 class UnhandledAuditTableError(Exception):
     """A custom exception for when an unexpected error occurs whilst adding the file to the audit table."""
 

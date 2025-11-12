@@ -9,7 +9,7 @@ from boto3.dynamodb.conditions import Attr, Key
 from fhir.resources.R4B.identifier import Identifier
 from fhir.resources.R4B.immunization import Immunization
 
-from common.models.errors import ResourceNotFoundError
+from common.models.errors import ResourceNotFoundError, InvalidStoredData
 from common.models.immunization_record_metadata import ImmunizationRecordMetadata
 from common.models.utils.validation_utils import get_vaccine_type
 from models.errors import UnhandledResponseError
@@ -138,8 +138,8 @@ class TestGetImmunization(unittest.TestCase):
     def tearDown(self):
         patch.stopall()
 
-    def test_get_immunization_by_id(self):
-        """it should find an Immunization by id"""
+    def test_get_immunization_resource_and_metadata_by_id(self):
+        """it should find an Immunization resource and metadata by id"""
         imms_id = "an-id"
         expected_resource = {"foo": "bar"}
         expected_identifier = Identifier(system="supplier", value="uid")
@@ -164,8 +164,8 @@ class TestGetImmunization(unittest.TestCase):
         self.assertEqual(actual_metadata.is_reinstated, False)
         self.table.get_item.assert_called_once_with(Key={"PK": _make_immunization_pk(imms_id)})
 
-    def test_get_immunization_by_id_returns_reinstated_records(self):
-        """it should find an Immunization by id, including reinstated records by default"""
+    def test_get_immunization_resource_and_metadata_by_id_returns_reinstated_records(self):
+        """it should find an Immunization resource and metadata by id, including reinstated records by default"""
         imms_id = "an-id"
         expected_resource = {"foo": "bar"}
         expected_identifier = Identifier(system="supplier", value="uid")
@@ -191,8 +191,8 @@ class TestGetImmunization(unittest.TestCase):
         self.assertEqual(acutal_metadata.is_reinstated, True)
         self.table.get_item.assert_called_once_with(Key={"PK": _make_immunization_pk(imms_id)})
 
-    def test_get_immunization_by_id_returns_deleted_records_when_flag_is_set(self):
-        """it should find an Immunization by id, including deleted records when the include_deleted flag is set True"""
+    def test_get_immunization_resource_and_metadata_by_id_returns_deleted_records_when_flag_is_set(self):
+        """it should find an Immunization resource and metadata by id, including deleted records when the include_deleted flag is set True"""
         imms_id = "an-id"
         expected_resource = {"foo": "bar"}
         expected_identifier = Identifier(system="supplier", value="uid")
@@ -219,6 +219,49 @@ class TestGetImmunization(unittest.TestCase):
         self.assertEqual(acutal_metadata.is_deleted, True)
         self.assertEqual(acutal_metadata.is_reinstated, False)
         self.table.get_item.assert_called_once_with(Key={"PK": _make_immunization_pk(imms_id)})
+
+    def test_get_immunization_resource_and_metadata_by_id_raises_invalid_stored_data_error_when_idpk_is_none(self):
+        """it should raise an InvalidStoredData error when stored IdentifierPK is none"""
+        imms_id = "an-id"
+        expected_resource = {"foo": "bar"}
+        expected_version = 1
+        self.table.get_item = MagicMock(
+            return_value={
+                "Item": {
+                    "Resource": json.dumps(expected_resource),
+                    "Version": expected_version,
+                    "PatientSK": "COVID19#2516525251",
+                }
+            }
+        )
+
+        with self.assertRaises(InvalidStoredData) as error:
+            # When
+            _, _ = self.repository.get_immunization_resource_and_metadata_by_id(imms_id)
+
+        self.assertEqual(str(error.exception), "Invalid data stored for immunization record: identifier")
+
+    def test_get_immunization_resource_and_metadata_by_id_raises_invalid_stored_data_error_when_idpk_is_invalid(self):
+        """it should raise an InvalidStoredData error when stored IdentifierPK is invalid"""
+        imms_id = "an-id"
+        expected_resource = {"foo": "bar"}
+        expected_version = 1
+        self.table.get_item = MagicMock(
+            return_value={
+                "Item": {
+                    "IdentifierPK": "bad-data",
+                    "Resource": json.dumps(expected_resource),
+                    "Version": expected_version,
+                    "PatientSK": "COVID19#2516525251",
+                }
+            }
+        )
+
+        with self.assertRaises(InvalidStoredData) as error:
+            # When
+            _, _ = self.repository.get_immunization_resource_and_metadata_by_id(imms_id)
+
+        self.assertEqual(str(error.exception), "Invalid data stored for immunization record: identifier")
 
     def test_immunization_not_found(self):
         """it should return None if Immunization doesn't exist"""

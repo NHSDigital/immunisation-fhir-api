@@ -10,6 +10,7 @@ from common.models.errors import (
     IdentifierDuplicationError,
     InconsistentIdentifierError,
     InconsistentResourceVersion,
+    InvalidStoredData,
     ResourceNotFoundError,
 )
 from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
@@ -20,8 +21,6 @@ from models.errors import (
     InvalidImmunizationId,
     InvalidJsonError,
     InvalidResourceVersion,
-    InvalidStoredData,
-    ResourceNotFoundError,
     ResourceVersionNotProvided,
     Severity,
     UnauthorizedError,
