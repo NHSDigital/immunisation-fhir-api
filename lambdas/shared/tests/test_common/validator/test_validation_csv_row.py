@@ -32,8 +32,9 @@ class TestValidator(unittest.TestCase):
 
         self.assertTrue(len(error_list) > 0)
         messages = [(e.name, e.message, e.details) for e in error_list]
-        expected_error = "NHS Number String Check"
-        self.assertIn(expected_error, messages)
+        expected_error = "NHS_NUMBER must be 10 characters"
+        print(f"test_messages {messages}")
+        self.assertTrue(any(expected_error in msg[2] for msg in messages))
 
         csv_parser = Mock()
         csv_parser.extract_field_value.return_value = "2025-11-06T12:00:00Z"

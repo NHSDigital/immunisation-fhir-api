@@ -30,13 +30,12 @@ class TestExpressionChecker(unittest.TestCase):
                 "NHS_NUMBER",
                 "contained|#:Patient|identifier|#:https://fhir.nhs.uk/Id/nhs-number|value",
                 "9876543210",
-                1,
             )
         )
         # Empty should fail NHS number string rule
         self.assertIsInstance(
             checker.validate_expression(
-                "STRING", "NHS_NUMBER", "contained|#:Patient|identifier|#:https://fhir.nhs.uk/Id/nhs-number|value", "", 1
+                "STRING", "NHS_NUMBER", "contained|#:Patient|identifier|#:https://fhir.nhs.uk/Id/nhs-number|value", ""
             ),
             ErrorReport,
         )
@@ -44,17 +43,15 @@ class TestExpressionChecker(unittest.TestCase):
     # LIST
     def test_list_valid_and_invalid(self):
         checker = self.make_checker()
-        self.assertIsNone(checker.validate_expression("LIST", "PERSON_NAME", "PERSON_NAME", ["Alice"], 1))
-        self.assertIsInstance(checker.validate_expression("LIST", "PERSON_NAME", "PERSON_NAME", [], 1), ErrorReport)
-        self.assertIsInstance(checker.validate_expression("LIST", "", "PERSON_NAME", "Alice", 1), ErrorReport)
+        self.assertIsNone(checker.validate_expression("LIST", "PERSON_NAME", "PERSON_NAME", ["Alice"]))
+        self.assertIsInstance(checker.validate_expression("LIST", "PERSON_NAME", "PERSON_NAME", []), ErrorReport)
+        self.assertIsInstance(checker.validate_expression("LIST", "", "PERSON_NAME", "Alice"), ErrorReport)
 
     # DATE
     def test_date_valid_and_invalid(self):
         checker = self.make_checker()
-        self.assertIsNone(checker.validate_expression("DATE", "", "date_field", "2025-01-01", 1))
-        with self.assertRaises(Exception):
-            # invalid month should raise ValueError internally
-            checker.validate_expression("DATE", "", "date_field", "2025-13-01", 1)
+        self.assertIsNone(checker.validate_expression("DATE", "", "date_field", "2025-01-01"))
+        self.assertIsInstance(checker.validate_expression("DATE", "", "date_field", "2025-13-01"), ErrorReport)
 
 
 #     # DATETIME

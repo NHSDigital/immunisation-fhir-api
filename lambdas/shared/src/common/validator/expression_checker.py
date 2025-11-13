@@ -24,50 +24,60 @@ class ExpressionChecker:
         self.report_unexpected_exception = report_unexpected_exception
 
     def validate_expression(
-        self, expression_type: str, expression_rule: str, field_name: str, field_value: str, row: dict
+        self, expression_type: str, expression_rule: str, field_name: str, field_value: str, row: dict = None
     ) -> ErrorReport:
         match expression_type:
             case "STRING":
-                return self.validation_for_string_values(expression_rule, field_name, field_value, row)
+                return self.validation_for_string_values(expression_rule, field_name, field_value)
             case "LIST":
-                return self.validation_for_list(expression_rule, field_name, field_value, row)
+                return self.validation_for_list(expression_rule, field_name, field_value)
             case "DATE":
-                return self.validation_for_date(expression_rule, field_name, field_value, row)
+                return self.validation_for_date(expression_rule, field_name, field_value)
             case "DATETIME":
-                return self.validation_for_date_time(expression_rule, field_name, field_value, row)
+                return self.validation_for_date_time(expression_rule, field_name, field_value)
             case "POSITIVEINTEGER":
-                return self.validation_for_positive_integer(expression_rule, field_name, field_value, row)
+                return self.validation_for_positive_integer(expression_rule, field_name, field_value)
             case "UNIQUELIST":
-                return self.validation_for_unique_list(expression_rule, field_name, field_value, row)
+                return self.validation_for_unique_list(expression_rule, field_name, field_value)
             case "BOOLEAN":
-                return self.validation_for_boolean(expression_rule, field_name, field_value, row)
+                return self.validation_for_boolean(expression_rule, field_name, field_value)
             case "INTDECIMAL":
-                return self.validation_for_integer_or_decimal(expression_rule, field_name, field_value, row)
+                return self.validation_for_integer_or_decimal(expression_rule, field_name, field_value)
             case "POSTCODE":
-                return self._validate_post_code(expression_rule, field_name, field_value, row)
+                return self._validate_post_code(expression_rule, field_name, field_value)
             case "GENDER":
-                return self._validate_gender(expression_rule, field_name, field_value, row)
+                return self._validate_gender(expression_rule, field_name, field_value)
             case _:
                 return "Schema expression not found! Check your expression type : " + expression_type
 
     # ISO 8601 date/datetime validate (currently date-only)
-    def validation_for_date(self, _expression_rule, field_name, field_value, row):
+    def validation_for_date(self, _expression_rule, field_name, field_value):
         """
         Apply pre-validation to a date field to ensure that it is a string (JSON dates must be
         written as strings) containing a valid date in the format "YYYY-MM-DD"
         """
-        future_date_allowed: bool = False
-        if not isinstance(field_value, str):
-            raise TypeError(f"{field_name} must be a string")
-
         try:
-            parsed_date = datetime.strptime(field_value, "%Y-%m-%d").date()
-        except ValueError as value_error:
-            raise ValueError(f'{field_name} must be a valid date string in the format "YYYY-MM-DD"') from value_error
+            future_date_allowed: bool = False
+            if not isinstance(field_value, str):
+                raise TypeError(f"{field_name} must be a string")
 
-        # Enforce future date rule using central checker after successful parse
-        if not future_date_allowed and check_if_future_date(parsed_date):
-            raise ValueError(f"{field_name} must not be in the future")
+            try:
+                parsed_date = datetime.strptime(field_value, "%Y-%m-%d").date()
+            except ValueError as value_error:
+                raise ValueError(f'{field_name} must be a valid date string in the format "YYYY-MM-DD"') from value_error
+
+            # Enforce future date rule using central checker after successful parse
+            if not future_date_allowed and check_if_future_date(parsed_date):
+                raise ValueError(f"{field_name} must not be in the future")
+        except (TypeError, ValueError) as e:
+            code = ExceptionLevels.RECORD_CHECK_FAILED
+            message = MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
+            details = str(e)
+            return ErrorReport(code, message, None, field_name, details)
+        except Exception as e:
+            if self.report_unexpected_exception:
+                message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, None, field_name)
 
     def validation_for_positive_integer(self, _expression_rule, field_name, field_value, row):
         """
@@ -144,7 +154,7 @@ class ExpressionChecker:
         if not isinstance(field_value, bool):
             raise TypeError(f"{field_name} must be a boolean")
 
-    def validation_for_list(self, expression_rule: str, field_name: str, field_value: list, row: dict):
+    def validation_for_list(self, expression_rule: str, field_name: str, field_value: list):
         """
         Apply validation to a list field to ensure it is a non-empty list which meets the length requirements and
         requirements, if applicable, for each list element to be a non-empty string or non-empty dictionary
@@ -185,7 +195,7 @@ class ExpressionChecker:
         except Exception as e:
             if self.report_unexpected_exception:
                 message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
+                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, field_name)
 
     def validation_for_date_time(
         self, expression_rule: str, field_name: str, field_value: str, row: dict, strict_timezone: bool = True
@@ -341,19 +351,17 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # String Pre-Validation
-    def validation_for_string_values(
-        self, expression_rule: str, field_name: str, field_value: str, row: dict
-    ) -> ErrorReport:
+    def validation_for_string_values(self, expression_rule: str, field_name: str, field_value: str) -> ErrorReport:
         """
         Apply validation to a string field to ensure it is a non-empty string which meets
         the length requirements and predefined values requirements
         """
-        if expression_rule is not None:
-            rules = expression_rule_per_field(expression_rule)
-            defined_length = rules.get("defined_length", None)
-            max_length = rules.get("max_length", None)
-            predefined_values = rules.get("predefined_values", None)
-            spaces_allowed = rules.get("spaces_allowed", None)
+
+        rules = expression_rule_per_field(expression_rule) if expression_rule else {}
+        defined_length = rules.get("defined_length", None)
+        max_length = rules.get("max_length", None)
+        predefined_values = rules.get("predefined_values", None)
+        spaces_allowed = rules.get("spaces_allowed", None)
 
         try:
             if not isinstance(field_value, str):
@@ -379,13 +387,18 @@ class ExpressionChecker:
             if not spaces_allowed:
                 if " " in field_value:
                     raise ValueError(f"{field_name} must not contain spaces")
+        except (ValueError, TypeError) as e:
+            code = ExceptionLevels.RECORD_CHECK_FAILED
+            message = MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
+            details = str(e)
+            return ErrorReport(code, message, None, field_name, details)
         except Exception as e:
             if self.report_unexpected_exception:
                 message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
+                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, None, field_name)
 
     # Not Empty Validate
-    def _validate_not_empty(self, _expression_rule: str, field_name: str, field_value: str, row: dict) -> ErrorReport:
+    def _validate_not_empty(self, _expression_rule: str, field_name: str, field_value: str) -> ErrorReport:
         try:
             if not field_value:
                 raise RecordError(
@@ -396,11 +409,11 @@ class ExpressionChecker:
             message = e.message if e.message is not None else MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
             if e.details is not None:
                 details = e.details
-            return ErrorReport(code, message, row, field_name, details, self.summarise)
+            return ErrorReport(code, message, None, field_name, details, self.summarise)
         except Exception as e:
             if self.report_unexpected_exception:
                 message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
+                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, None, field_name)
 
     # Positive Validate
     def _validate_positive(self, _expression_rule: str, field_name: str, field_value: str, row: dict) -> ErrorReport:
@@ -417,7 +430,7 @@ class ExpressionChecker:
             message = e.message if e.message is not None else MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
             if e.details is not None:
                 details = e.details
-            return ErrorReport(code, message, row, field_name, details, self.summarise)
+            return ErrorReport(code, message, None, field_name, details, self.summarise)
         except Exception as e:
             if self.report_unexpected_exception:
                 message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
@@ -446,7 +459,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # Gender Validate
-    def _validate_gender(self, _expression_rule: str, field_name: str, field_value: str, row: dict) -> ErrorReport:
+    def _validate_gender(self, _expression_rule: str, field_name: str, field_value: str) -> ErrorReport:
         try:
             rule_list = ["0", "1", "2", "9"]
 
@@ -461,14 +474,14 @@ class ExpressionChecker:
             message = e.message if e.message is not None else MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
             if e.details is not None:
                 details = e.details
-            return ErrorReport(code, message, row, field_name, details, self.summarise)
+            return ErrorReport(code, message, None, field_name, details, self.summarise)
         except Exception as e:
             if self.report_unexpected_exception:
                 message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
+                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, None, field_name)
 
     # PostCode Validate
-    def _validate_post_code(self, _expression_rule: str, field_name: str, field_value: str, row: dict) -> ErrorReport:
+    def _validate_post_code(self, _expression_rule: str, field_name: str, field_value: str) -> ErrorReport:
         try:
             # UK postcode regex (allows optional space)
             regex_rule = r"^[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}$"
@@ -482,82 +495,8 @@ class ExpressionChecker:
             message = e.message if e.message is not None else MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
             if e.details is not None:
                 details = e.details
-            return ErrorReport(code, message, row, field_name, details, self.summarise)
+            return ErrorReport(code, message, None, field_name, details, self.summarise)
         except Exception as e:
             if self.report_unexpected_exception:
                 message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
-
-    # Max Objects Validate
-    def _validate_max_objects(self, expression_rule: str, field_name: str, field_value: str, row: dict) -> ErrorReport:
-        try:
-            value = len(field_value)
-            if value > int(expression_rule):
-                raise RecordError(
-                    ExceptionLevels.RECORD_CHECK_FAILED,
-                    "Max Objects failure",
-                    "Number of objects is greater than expected",
-                )
-        except RecordError as e:
-            code = e.code if e.code is not None else ExceptionLevels.RECORD_CHECK_FAILED
-            message = e.message if e.message is not None else MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
-            if e.details is not None:
-                details = e.details
-            return ErrorReport(code, message, row, field_name, details, self.summarise)
-        except Exception as e:
-            if self.report_unexpected_exception:
-                message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
-
-    # Default to Validate
-    def _validate_only_if(self, expression_rule: str, field_name: str, _field_value: str, row: dict) -> ErrorReport:
-        try:
-            conversion_list = expression_rule.split("|")
-            location = conversion_list[0]
-            value_check = conversion_list[1]
-            data_value = self.data_parser.get_key_value(location)
-
-            if data_value[0] != value_check:
-                raise RecordError(
-                    ExceptionLevels.RECORD_CHECK_FAILED,
-                    "Validate Only If failure",
-                    "Value was not found at that position",
-                )
-        except RecordError as e:
-            code = e.code if e.code is not None else ExceptionLevels.RECORD_CHECK_FAILED
-            message = e.message if e.message is not None else MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
-            if e.details is not None:
-                details = e.details
-            return ErrorReport(code, message, row, field_name, details, self.summarise)
-        except Exception as e:
-            if self.report_unexpected_exception:
-                message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
-
-    # Check with Lookup
-    def _validate_against_lookup(
-        self, _expression_rule: str, field_name: str, field_value: str, row: dict
-    ) -> ErrorReport:
-        try:
-            result = self.data_look_up.find_lookup(field_value)
-            if not result:
-                raise RecordError(
-                    ExceptionLevels.RECORD_CHECK_FAILED,
-                    "Value lookup failure",
-                    "Value was not found in Lookup List, "
-                    + MessageLabel.EXPECTED_LABEL
-                    + field_value
-                    + " "
-                    + MessageLabel.FOUND_LABEL
-                    + "nothing",
-                )
-        except RecordError as e:
-            code = e.code if e.code is not None else ExceptionLevels.RECORD_CHECK_FAILED
-            message = e.message if e.message is not None else MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
-            if e.details is not None:
-                details = e.details
-            return ErrorReport(code, message, row, field_name, details, self.summarise)
-        except Exception as e:
-            if self.report_unexpected_exception:
-                message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
+                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, None, field_name, "", self.summarise)
