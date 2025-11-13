@@ -57,6 +57,19 @@
       "errorGroup": "consistency"
     },
     {
+      "expressionId": "01K8RW2ATXRM572BFG19S8TFJ2",
+      "fieldNameFHIR": "contained|#:Patient|gender",
+      "fieldNameFlat": "PERSON_GENDER_CODE",
+      "fieldNumber": 5,
+      "errorLevel": 1,
+      "expression": {
+        "expressionName": "Gender Valid Check",
+        "expressionType": "STRING",
+        "expressionRule": "GENDER"
+      },
+      "errorGroup": "consistency"
+    },
+    {
       "expressionId": "01K8RW2MYFNE6YZJ99RC8B3XES",
       "fieldNameFHIR": "contained|#:Patient|address|#:postalCode|postalCode",
       "fieldNameFlat": "PERSON_POSTCODE",
@@ -79,6 +92,97 @@
         "expressionName": "Date Time Conversion",
         "expressionType": "DATETIME",
         "expressionRule": "DATETIME"
+      },
+      "errorGroup": "consistency"
+    },
+    {
+      "expressionId": "01K5EGR0C8M1MVNKTQCE6MSG68",
+      "fieldNameFHIR": "performer|#:Organization|actor|identifier|value",
+      "fieldNameFlat": "SITE_CODE",
+      "fieldNumber": 8,
+      "errorLevel": 0,
+      "expression": {
+        "expressionName": "Organisation String Check",
+        "expressionType": "STRING",
+        "expressionRule": ""
+      },
+      "errorGroup": "consistency"
+    },
+    {
+      "expressionId": "01K8S0X5AJ9048PAFEN3XVZ7YC",
+      "fieldNameFHIR": "performer|#:Organization|actor|identifier|system",
+      "fieldNameFlat": "SITE_CODE_TYPE_URI",
+      "fieldNumber": 9,
+      "errorLevel": 1,
+      "expression": {
+        "expressionName": "Organisation Code Type URI Check",
+        "expressionType": "STRING",
+        "expressionRule": ""
+      },
+      "errorGroup": "consistency"
+    },
+    {
+      "expressionId": "01K8S0XF2Y2WP22017N9KE6VJA",
+      "fieldNameFHIR": "identifier|0|value",
+      "fieldNameFlat": "UNIQUE_ID",
+      "fieldNumber": 10,
+      "errorLevel": 0,
+      "expression": {
+        "expressionName": "Unique ID Not Empty Check",
+        "expressionType": "STRING",
+        "expressionRule": ""
+      },
+      "errorGroup": "validity"
+    },
+    {
+      "expressionId": "01K8S0XQYHDKMCA1P1GK4W5JHP",
+      "fieldNameFHIR": "identifier|0|system",
+      "fieldNameFlat": "UNIQUE_ID_URI",
+      "fieldNumber": 11,
+      "errorLevel": 0,
+      "expression": {
+        "expressionName": "Unique ID URI Not Empty Check",
+        "expressionType": "STRING",
+        "expressionRule": ""
+      },
+      "errorGroup": "validity"
+    },
+    {
+      "expressionId": "01K5EGR0C8SDQBTNCEP8TJNCCW",
+      "fieldNameFHIR": "contained|#:Practitioner|name|0|given|0",
+      "fieldNameFlat": "PERFORMING_PROFESSIONAL_FORENAME",
+      "fieldNumber": 13,
+      "errorLevel": 1,
+      "expression": {
+        "expressionName": "Practitioner Forename Not Empty Check",
+        "expressionType": "LIST",
+        "expressionRule": ""
+      },
+      "errorGroup": "completeness"
+    },
+    {
+      "expressionId": "01K5EGR0C8T3Z6X6h3W7D1F4VY",
+      "fieldNameFHIR": "contained|#:Practitioner|name|0|family",
+      "fieldNameFlat": "PERFORMING_PROFESSIONAL_SURNAME",
+      "fieldNumber": 14,
+      "errorLevel": 1,
+      "expression": {
+        "expressionName": "Practitioner Surname Not Empty Check",
+        "expressionType": "STRING",
+        "expressionRule": ""
+      },
+      "errorGroup": "completeness"
+    },
+    {
+      "expressionId": "01K8S0Y8TX8HTX6YGW61RDCATK",
+      "fieldNameFHIR": "recorded",
+      "fieldNameFlat": "RECORDED_DATE",
+      "fieldNumber": 15,
+      "errorLevel": 1,
+      "expression": {
+        "expressionName": "Recorded Date Convert",
+        "expressionType": "DATETIME",
+        "expressionRule": ""
       },
       "errorGroup": "consistency"
     }

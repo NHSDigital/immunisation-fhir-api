@@ -103,39 +103,120 @@ class TestExpressionChecker(unittest.TestCase):
             checker.validate_expression("DATETIME", "", "DATE_AND_TIME", "2026-01-01T10:00:00Z"), ErrorReport
         )
 
+    # STRING with SITE_CODE
+    def test_site_code_string_valid_and_invalid(self):
+        checker = self.make_checker()
+        field_path = "performer|#:Organization|actor|identifier|value"
+        # Valid: non-empty, no spaces
+        self.assertIsNone(checker.validate_expression("STRING", "", field_path, "RJ1"))
+        # Invalid: empty
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, ""), ErrorReport)
+        # Invalid: contains spaces
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, 1234), ErrorReport)
 
-#     # BOOLEAN
+    # STRING with SITE_CODE_TYPE_URI rule
+    def test_site_code_type_uri_string_valid_and_invalid(self):
+        checker = self.make_checker()
+        field_path = "performer|#:Organization|actor|identifier|system"
+        valid_uri = "https://fhir.nhs.uk/Id/ods-organization-code"
+        # Valid: non-empty, no spaces
+        self.assertIsNone(
+            checker.validate_expression("STRING", "", field_path, valid_uri),
+        )
+        # Invalid: empty
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, ""), ErrorReport)
+        # Invalid: contains spaces
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, 123), ErrorReport)
 
-# # STRING with GENDER rule on real field
-# def test_gender_string_rule_valid_and_invalid(self):
-#     checker = self.make_checker()
-#     field_path = "contained|#:Patient|gender"
-#     # Valid genders per schema constants (male, female, other, unknown)
-#     self.assertIsNone(checker.validate_expression("STRING", "GENDER", field_path, "male"))
-#     self.assertIsNone(checker.validate_expression("STRING", "GENDER", field_path, "female"))
-#     # Invalid values should error
-#     self.assertIsInstance(
-#         checker.validate_expression("STRING", "GENDER", field_path, "M"),
-#         ErrorReport,
-#     )
+    # BOOLEAN
 
-# # STRING with no rule for PERSON_POSTCODE on real field
-# def test_postcode_string_rule_valid_and_invalid(self):
-#     checker = self.make_checker()
-#     field_path = "contained|#:Patient|address|#:postalCode|postalCode"
-#     # With empty rule, generic string constraints apply: non-empty and no spaces
-#     self.assertIsNone(checker.validate_expression("STRING", "", field_path, "SW1A1AA"))
-#     # Real-world postcode with a space should fail as spaces are not allowed without a rule override
-#     field_path = "POST_CODE"
-#     self.assertIsInstance(
-#         checker.validate_expression("STRING", "", field_path, "AB12 3CD"),
-#         ErrorReport,
-#     )
-#     # Empty should also fail
-#     self.assertIsInstance(
-#         checker.validate_expression("STRING", "", field_path, ""),
-#         ErrorReport,
-#     )
+    # STRING with UNIQUE_ID rule (empty rule -> generic non-empty string)
+    def test_unique_id_string_valid_and_invalid(self):
+        checker = self.make_checker()
+        field_path = "identifier|0|value"
+        # Valid: non-empty string
+        self.assertIsNone(checker.validate_expression("STRING", "", field_path, "ABC-123-XYZ"))
+        # Invalid: empty string
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, ""), ErrorReport)
+        # Invalid: non-string value
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, 987654), ErrorReport)
+
+    # STRING with UNIQUE_ID_URI rule (empty rule -> generic non-empty string)
+    def test_unique_id_uri_string_valid_and_invalid(self):
+        checker = self.make_checker()
+        field_path = "identifier|0|system"
+        valid_system = "https://example.org/unique-id-system"
+        # Valid: non-empty string
+        self.assertIsNone(checker.validate_expression("STRING", "", field_path, valid_system))
+        # Invalid: empty string
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, ""), ErrorReport)
+        # Invalid: non-string value
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, 42), ErrorReport)
+
+    # STRING with GENDER rule on real field
+    def test_gender_string_rule_valid_and_invalid(self):
+        checker = self.make_checker()
+        field_path = "contained|#:Patient|gender"
+        # Valid genders per schema constants (male, female, other, unknown)
+        self.assertIsNone(checker.validate_expression("STRING", "GENDER", field_path, "male"))
+        self.assertIsNone(checker.validate_expression("STRING", "GENDER", field_path, "female"))
+        # Invalid values should error
+        self.assertIsInstance(checker.validate_expression("STRING", "GENDER", field_path, "M"), ErrorReport)
+
+    # LIST with PERFORMING_PROFESSIONAL_FORENAME (empty rule -> non-empty list)
+    def test_practitioner_forename_list_valid_and_invalid(self):
+        checker = self.make_checker()
+        field_path = "contained|#:Practitioner|name|0|given|0"
+        # Valid: non-empty list
+        self.assertIsNone(checker.validate_expression("LIST", "", field_path, ["Alice"]))
+        # Invalid: empty list
+        self.assertIsInstance(checker.validate_expression("LIST", "", field_path, []), ErrorReport)
+        # Invalid: non-list value
+        self.assertIsInstance(checker.validate_expression("LIST", "", field_path, "Alice"), ErrorReport)
+
+    # STRING with PERFORMING_PROFESSIONAL_SURNAME (empty rule -> non-empty string)
+    def test_practitioner_surname_string_valid_and_invalid(self):
+        checker = self.make_checker()
+        field_path = "contained|#:Practitioner|name|0|family"
+        # Valid: non-empty string
+        self.assertIsNone(checker.validate_expression("STRING", "", field_path, "Smith"))
+        # Invalid: empty string
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, ""), ErrorReport)
+        # Invalid: non-string
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, 123), ErrorReport)
+
+    # DATETIME with RECORDED_DATE (schema rule says 'false-strict-timezone' but we use default non-strict here)
+    def test_recorded_date_datetime_valid_and_invalid(self):
+        checker = self.make_checker()
+        field_path = "recorded"
+        # Valid: timezone offset other than +00:00 or +01:00 should be allowed when non-strict
+        self.assertIsNone(checker.validate_expression("DATETIME", "", field_path, "2025-01-01T10:00:00+02:00"))
+        # Valid: full date only also allowed per formats
+        self.assertIsNone(checker.validate_expression("DATETIME", "", field_path, "2025-01-01"))
+        # Invalid: Zulu timezone not in accepted formats
+        self.assertIsInstance(
+            checker.validate_expression("DATETIME", "", field_path, "2026-01-01T10:00:00Z"), ErrorReport
+        )
+
+    # STRING with no rule for PERSON_POSTCODE on real field
+    def test_postcode_string_rule_valid_and_invalid(self):
+        checker = self.make_checker()
+        field_path = "contained|#:Patient|address|#:postalCode|postalCode"
+        # With empty rule, generic string constraints apply: non-empty and no spaces
+        self.assertIsNone(checker.validate_expression("STRING", "", field_path, "SW1A 1AA"))
+        # Real-world postcode with a space should fail as spaces are not allowed without a rule override
+        field_path = "POST_CODE"
+        self.assertIsInstance(
+            checker.validate_expression("STRING", "", field_path, 123),
+            ErrorReport,
+        )
+        # Empty should also fail
+        self.assertIsInstance(
+            checker.validate_expression("STRING", "", field_path, ""),
+            ErrorReport,
+        )
+
+
 #     def test_boolean_valid_and_invalid(self):
 #         checker = self.make_checker()
 #         self.assertIsNone(checker.validate_expression("BOOLEAN", "", "bool_field", True, 1))
