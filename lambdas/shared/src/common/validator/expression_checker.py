@@ -80,36 +80,57 @@ class ExpressionChecker:
                 message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
                 return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, None, field_name)
 
-    def validation_for_positive_integer(self, _expression_rule, field_name, field_value, row):
+    def validation_for_positive_integer(self, expression_rule, field_name, field_value) -> ErrorReport:
+        rules = expression_rule_per_field(expression_rule) if expression_rule else {}
+        max_value = rules.get("max_value", None)
         """
         Apply pre-validation to an integer field to ensure that it is a positive integer,
         which does not exceed the maximum allowed value (if applicable)
         """
-        max_value: int = None
-        # This check uses type() instead of isinstance() because bool is a subclass of int.
-        if type(field_value) is not int:  # pylint: disable=unidiomatic-typecheck
-            raise TypeError(f"{field_name} must be a positive integer")
+        try:
+            # This check uses type() instead of isinstance() because bool is a subclass of int.
+            if type(field_value) is not int:  # pylint: disable=unidiomatic-typecheck
+                raise TypeError(f"{field_name} must be a positive integer")
 
-        if field_value <= 0:
-            raise ValueError(f"{field_name} must be a positive integer")
+            if field_value <= 0:
+                raise ValueError(f"{field_name} must be a positive integer")
 
-        if max_value:
-            if field_value > max_value:
-                raise ValueError(f"{field_name} must be an integer in the range 1 to {max_value}")
+            if max_value:
+                if field_value > max_value:
+                    raise ValueError(f"{field_name} must be an integer in the range 1 to {max_value}")
+        except (TypeError, ValueError) as e:
+            code = ExceptionLevels.RECORD_CHECK_FAILED
+            message = MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
+            details = str(e)
+            return ErrorReport(code, message, None, field_name, details)
+        except Exception as e:
+            if self.report_unexpected_exception:
+                message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, None, field_name)
 
     def validation_for_integer_or_decimal(
-        self, _expression_rule, field_value: Union[int, Decimal], field_name: str, row: dict
-    ):
+        self, _expression_rule, field_name: str, field_value: Union[int, Decimal]
+    ) -> ErrorReport:
         """
         Apply pre-validation to a decimal field to ensure that it is an integer or decimal,
         which does not exceed the maximum allowed number of decimal places (if applicable)
         """
-        if not (
-            # This check uses type() instead of isinstance() because bool is a subclass of int.
-            type(field_value) is int  # pylint: disable=unidiomatic-typecheck
-            or type(field_value) is Decimal  # pylint: disable=unidiomatic-typecheck
-        ):
-            raise TypeError(f"{field_name} must be a number")
+        try:
+            if not (
+                # This check uses type() instead of isinstance() because bool is a subclass of int.
+                type(field_value) is int  # pylint: disable=unidiomatic-typecheck
+                or type(field_value) is Decimal  # pylint: disable=unidiomatic-typecheck
+            ):
+                raise TypeError(f"{field_name} must be a number")
+        except (TypeError, ValueError) as e:
+            code = ExceptionLevels.RECORD_CHECK_FAILED
+            message = MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
+            details = str(e)
+            return ErrorReport(code, message, None, field_name, details)
+        except Exception as e:
+            if self.report_unexpected_exception:
+                message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, None, field_name)
 
     def validation_for_unique_list(
         list_to_check: list,
@@ -150,10 +171,20 @@ class ExpressionChecker:
                 message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
                 return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
-    def validation_for_boolean(self, expression_rule: str, field_name: str, field_value: str, row: dict):
+    def validation_for_boolean(self, expression_rule: str, field_name: str, field_value: str) -> ErrorReport:
         """Apply pre-validation to a boolean field to ensure that it is a boolean"""
-        if not isinstance(field_value, bool):
-            raise TypeError(f"{field_name} must be a boolean")
+        try:
+            if not isinstance(field_value, bool):
+                raise TypeError(f"{field_name} must be a boolean")
+        except (TypeError, ValueError) as e:
+            code = ExceptionLevels.RECORD_CHECK_FAILED
+            message = MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
+            details = str(e)
+            return ErrorReport(code, message, None, field_name, details)
+        except Exception as e:
+            if self.report_unexpected_exception:
+                message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, None, field_name, "")
 
     def validation_for_list(self, expression_rule: str, field_name: str, field_value: list):
         """
@@ -406,27 +437,6 @@ class ExpressionChecker:
             if self.report_unexpected_exception:
                 message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
                 return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, None, field_name)
-
-    # Positive Validate
-    def _validate_positive(self, _expression_rule: str, field_name: str, field_value: str, row: dict) -> ErrorReport:
-        try:
-            value = float(field_value)
-            if value < 0:
-                raise RecordError(
-                    ExceptionLevels.RECORD_CHECK_FAILED,
-                    "Value is not positive failure",
-                    "Value is not positive as expected, data- " + field_value,
-                )
-        except RecordError as e:
-            code = e.code if e.code is not None else ExceptionLevels.RECORD_CHECK_FAILED
-            message = e.message if e.message is not None else MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
-            if e.details is not None:
-                details = e.details
-            return ErrorReport(code, message, None, field_name, details, self.summarise)
-        except Exception as e:
-            if self.report_unexpected_exception:
-                message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, row, field_name, "", self.summarise)
 
     # NHSNumber Validate
     def _validate_nhs_number(self, _expression_rule: str, field_name: str, field_value: str, row: dict) -> ErrorReport:

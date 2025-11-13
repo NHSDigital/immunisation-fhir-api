@@ -185,6 +185,201 @@
         "expressionRule": ""
       },
       "errorGroup": "consistency"
+    },
+    {
+      "expressionId": "01K5EGR0C84CCDRR0VFSWQNFZP",
+      "fieldNameFHIR": "primarySource",
+      "fieldNameFlat": "PRIMARY_SOURCE",
+      "fieldNumber": 16,
+      "errorLevel": 0,
+      "expression": {
+        "expressionName": "Primary Source Not Empty Check",
+        "expressionType": "BOOLEAN",
+        "expressionRule": ""
+      },
+      "errorGroup": "completeness"
+    },
+    {
+      "expressionId": "01K8S0YYGDFWJXN2W3THYG24EZ",
+      "fieldNameFHIR": "extension|0|valueCodeableConcept|coding|0|code",
+      "fieldNameFlat": "VACCINATION_PROCEDURE_CODE",
+      "fieldNumber": 17,
+      "errorLevel": 0,
+      "expression": {
+        "expressionName": "Procedure Code Not Empty Check",
+        "expressionType": "STRING",
+        "expressionRule": ""
+      },
+      "errorGroup": "completeness"
+    },
+    {
+      "expressionId": "01K5EGR0C85HY6MDNN6TTR1K48",
+      "fieldNameFHIR": "extension|0|valueCodeableConcept|coding|0|display",
+      "fieldNameFlat": "VACCINATION_PROCEDURE_TERM",
+      "fieldNumber": 18,
+      "errorLevel": 1,
+      "expression": {
+        "expressionName": "Procedure Term Not Empty Check",
+        "expressionType": "STRING",
+        "expressionRule": ""
+      },
+      "errorGroup": "completeness"
+    },
+    {
+      "expressionId": "01K5EGR0C84DDGW567G14AYBC6",
+      "fieldNameFHIR": "protocolApplied|0|doseNumberPositiveInt",
+      "fieldNameFlat": "DOSE_SEQUENCE",
+      "fieldNumber": 19,
+      "errorLevel": 1,
+      "expression": {
+        "expressionName": "Dose Sequence Not Empty Check",
+        "expressionType": "POSITIVEINTEGER",
+        "expressionRule": "DOSE_NUMBER"
+      },
+      "errorGroup": "completeness"
+    },
+    {
+      "expressionId": "01K5EGR0C8W3HXFYR80ENW73SS",
+      "fieldNameFHIR": "vaccineCode|coding|#:http://snomed.info/sct|code",
+      "fieldNameFlat": "VACCINE_PRODUCT_CODE",
+      "fieldNumber": 20,
+      "errorLevel": 0,
+      "expression": {
+        "expressionName": "Produce Code Not Empty Check",
+        "expressionType": "STRING",
+        "expressionRule": ""
+      },
+      "errorGroup": "completeness"
+    },
+    {
+      "expressionId": "01K5EGR0C885N7MMW2J5JKHTT2",
+      "fieldNameFHIR": "vaccineCode|coding|#:http://snomed.info/sct|display",
+      "fieldNameFlat": "VACCINE_PRODUCT_TERM",
+      "fieldNumber": 21,
+      "errorLevel": 1,
+      "expression": {
+        "expressionName": "Produce Term Not Empty Check",
+        "expressionType": "STRING",
+        "expressionRule": ""
+      },
+      "errorGroup": "completeness"
+    },
+    {
+      "expressionId": "01K5EGR0C86XN0AF0M9DJYFGCD",
+      "fieldNameFHIR": "manufacturer|display",
+      "fieldNameFlat": "VACCINE_MANUFACTURER",
+      "fieldNumber": 22,
+      "errorLevel": 0,
+      "expression": {
+        "expressionName": "Manufacturer Display Not Empty Check",
+        "expressionType": "STRING",
+        "expressionRule": ""
+      },
+      "errorGroup": "completeness"
+    },
+    {
+      "expressionId": "01K5EGR0C89M4CV68B7XAKDCHG",
+      "fieldNameFHIR": "lotNumber",
+      "fieldNameFlat": "BATCH_NUMBER",
+      "fieldNumber": 23,
+      "errorLevel": 0,
+      "expression": {
+        "expressionName": "Batch Number String Check",
+        "expressionType": "STRING",
+        "expressionRule": ""
+      },
+      "errorGroup": "completeness"
+    },
+    {
+      "expressionId": "01K8S2AG0CR7S28QB29XY14J71",
+      "fieldNameFHIR": "expirationDate",
+      "fieldNameFlat": "EXPIRY_DATE",
+      "fieldNumber": 24,
+      "errorLevel": 1,
+      "expression": {
+        "expressionName": "Date Convert",
+        "expressionType": "DATE",
+        "expressionRule": ""
+      },
+      "errorGroup": "consistency"
+    },
+    {
+      "expressionId": "01K8S2AS6TD0146EZN8ZDM9AGD",
+      "fieldNameFHIR": "site|coding|#:http://snomed.info/sct|code",
+      "fieldNameFlat": "SITE_OF_VACCINATION_CODE",
+      "fieldNumber": 25,
+      "errorLevel": 0,
+      "expression": {
+        "expressionName": "Site of Vaccination Code String Check",
+        "expressionType": "STRING",
+        "expressionRule": ""
+      },
+      "errorGroup": "completeness"
+    },
+    {
+      "expressionId": "01K8S2AZQ7XXTTF2AF7ZMM609C",
+      "fieldNameFHIR": "site|coding|#:http://snomed.info/sct|display",
+      "fieldNameFlat": "SITE_OF_VACCINATION_TERM",
+      "fieldNumber": 26,
+      "errorLevel": 1,
+      "expression": {
+        "expressionName": "Site of Vaccination Term String Check",
+        "expressionType": "STRING",
+        "expressionRule": ""
+      },
+      "errorGroup": "consistency"
+    },
+    {
+      "expressionId": "01K8S2B78X58EB9XAZYX3M4VPP",
+      "fieldNameFHIR": "route|coding|#:http://snomed.info/sct|code",
+      "fieldNameFlat": "ROUTE_OF_VACCINATION_CODE",
+      "fieldNumber": 27,
+      "errorLevel": 0,
+      "expression": {
+        "expressionName": "Route of Vaccination Code String Check",
+        "expressionType": "STRING",
+        "expressionRule": ""
+      },
+      "errorGroup": "completeness"
+    },
+    {
+      "expressionId": "01K8S2BEP9C9KHNJTKPP6SH1G0",
+      "fieldNameFHIR": "route|coding|#:http://snomed.info/sct|display",
+      "fieldNameFlat": "ROUTE_OF_VACCINATION_TERM",
+      "fieldNumber": 28,
+      "errorLevel": 1,
+      "expression": {
+        "expressionName": "Route of Vaccination Term String Check",
+        "expressionType": "STRING",
+        "expressionRule": ""
+      },
+      "errorGroup": "consistency"
+    },
+    {
+      "expressionId": "01K8S2BNT5MET8E29GBT83AP0P",
+      "fieldNameFHIR": "doseQuantity|value",
+      "fieldNameFlat": "DOSE_AMOUNT",
+      "fieldNumber": 29,
+      "errorLevel": 1,
+      "expression": {
+        "expressionName": "Dose Amount Int-decimal Check",
+        "expressionType": "INTDECIMAL",
+        "expressionRule": ""
+      },
+      "errorGroup": "completeness"
+    },
+    {
+      "expressionId": "01K8S2BY1S0TXETJY78H418XQG",
+      "fieldNameFHIR": "doseQuantity|code",
+      "fieldNameFlat": "DOSE_UNIT_CODE",
+      "fieldNumber": 30,
+      "errorLevel": 1,
+      "expression": {
+        "expressionName": "Dose Unit String Check",
+        "expressionType": "STRING",
+        "expressionRule": ""
+      },
+      "errorGroup": "consistency"
     }
   ]
 }

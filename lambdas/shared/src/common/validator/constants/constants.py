@@ -27,3 +27,4 @@ class Constants:
         "Only '+00:00' and '+01:00' are accepted as valid timezone offsets.\n"
         f"Note that partial dates are not allowed for {field_name} in this service.\n"
     )
+    MAXIMUM_DOSE_NUMBER_VALUE = 9

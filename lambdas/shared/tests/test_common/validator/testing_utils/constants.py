@@ -1,4 +1,5 @@
 # Comma-separated header string for building CSV test rows
+from decimal import Decimal
 
 CSV_HEADER = (
     "NHS_NUMBER,PERSON_FORENAME,PERSON_SURNAME,PERSON_DOB,PERSON_GENDER_CODE,PERSON_POSTCODE,DATE_AND_TIME,SITE_CODE,"
@@ -26,20 +27,20 @@ CSV_VALUES = {
     "PERFORMING_PROFESSIONAL_FORENAME": ["ALICE"],
     "PERFORMING_PROFESSIONAL_SURNAME": "SMITH",
     "RECORDED_DATE": "2025-03-06",
-    "PRIMARY_SOURCE": "true",
+    "PRIMARY_SOURCE": True,
     "VACCINATION_PROCEDURE_CODE": "PROC123",
     "VACCINATION_PROCEDURE_TERM": "Procedure Term",
-    "DOSE_SEQUENCE": "1",
+    "DOSE_SEQUENCE": 1,
     "VACCINE_PRODUCT_CODE": "VACC123",
     "VACCINE_PRODUCT_TERM": "Vaccine Term",
     "VACCINE_MANUFACTURER": "Manufacturer XYZ",
     "BATCH_NUMBER": "BATCH001",
-    "EXPIRY_DATE": "20250702",
+    "EXPIRY_DATE": "2025-07-02",
     "SITE_OF_VACCINATION_CODE": "368208006",
     "SITE_OF_VACCINATION_TERM": "Left upper arm structure (body structure)",
     "ROUTE_OF_VACCINATION_CODE": "78421000",
     "ROUTE_OF_VACCINATION_TERM": "Intramuscular route (qualifier value)",
-    "DOSE_AMOUNT": "0.5",
+    "DOSE_AMOUNT": Decimal("0.5"),
     "DOSE_UNIT_CODE": "ml",
     "DOSE_UNIT_TERM": "milliliter",
     "INDICATION_CODE": "443684005",
