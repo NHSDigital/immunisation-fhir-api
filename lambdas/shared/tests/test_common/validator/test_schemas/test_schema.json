@@ -11,9 +11,9 @@
       "fieldNumber": 1,
       "errorLevel": 0,
       "expression": {
-        "expressionName": "NHS Number Not Empty Check",
+        "expressionName": "NHS Number String Check",
         "expressionType": "STRING",
-        "expressionRule": ""
+        "expressionRule": "NHS_NUMBER"
       },
       "errorGroup": "validity"
     },
@@ -24,9 +24,9 @@
       "fieldNumber": 2,
       "errorLevel": 0,
       "expression": {
-        "expressionName": "Person Forname Not Empty Check",
+        "expressionName": "Person Forname List Check",
         "expressionType": "LIST",
-        "expressionRule": ""
+        "expressionRule": "PERSON_NAME"
       },
       "errorGroup": "completeness"
     },
@@ -40,7 +40,7 @@
       "expression": {
         "expressionName": "Person Surname Not Empty Check",
         "expressionType": "STRING",
-        "expressionRule": ""
+        "expressionRule": "PERSON_SURNAME"
       },
       "errorGroup": "completeness"
     },
@@ -66,7 +66,7 @@
       "expression": {
         "expressionName": "Gender Valid Check",
         "expressionType": "STRING",
-        "expressionRule": ""
+        "expressionRule": "GENDER"
       },
       "errorGroup": "consistency"
     },

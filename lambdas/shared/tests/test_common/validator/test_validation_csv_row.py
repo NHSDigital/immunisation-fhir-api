@@ -32,11 +32,7 @@ class TestValidator(unittest.TestCase):
 
         self.assertTrue(len(error_list) > 0)
         messages = [(e.name, e.message, e.details) for e in error_list]
-        expected_error = (
-            "NHS Number Not Empty Check",
-            "Value not empty failure",
-            "Value is empty, not as expected",
-        )
+        expected_error = "NHS Number String Check"
         self.assertIn(expected_error, messages)
 
         csv_parser = Mock()

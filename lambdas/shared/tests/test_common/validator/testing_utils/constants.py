@@ -12,7 +12,7 @@ CSV_HEADER = (
 # Sample CSV values for testing
 CSV_VALUES = {
     "NHS_NUMBER": "9000000009",
-    "PERSON_FORENAME": "JOHN",
+    "PERSON_FORENAME": ["JOHN"],
     "PERSON_SURNAME": "DOE",
     "PERSON_DOB": "19800101",
     "PERSON_GENDER_CODE": "M",
