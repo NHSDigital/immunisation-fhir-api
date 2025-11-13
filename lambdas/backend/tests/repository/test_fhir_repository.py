@@ -9,7 +9,7 @@ from boto3.dynamodb.conditions import Attr, Key
 from fhir.resources.R4B.identifier import Identifier
 from fhir.resources.R4B.immunization import Immunization
 
-from common.models.errors import ResourceNotFoundError, InvalidStoredData
+from common.models.errors import InvalidStoredData, ResourceNotFoundError
 from common.models.immunization_record_metadata import ImmunizationRecordMetadata
 from common.models.utils.validation_utils import get_vaccine_type
 from models.errors import UnhandledResponseError
