@@ -2,13 +2,13 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Optional, Union
 
+from common.validator.constants.constants import Constants
 from common.validator.constants.enums import MESSAGES, ExceptionLevels
 from common.validator.error_report.record_error import ErrorReport
 from common.validator.expression_rule import expression_rule_per_field
 from common.validator.lookup_expressions.key_data import KeyData
 from common.validator.lookup_expressions.lookup_data import LookUpData
-from common.validator.validation_utils import check_if_future_date
-from src.common.validator.constants.constants import Constants
+from common.validator.validation_utils import check_if_future_date, nhs_number_mod11_check
 
 
 class ExpressionChecker:
@@ -31,6 +31,8 @@ class ExpressionChecker:
                 return self.validation_for_string_values(expression_rule, field_name, field_value)
             case "LIST":
                 return self.validation_for_list(expression_rule, field_name, field_value)
+            case "NHS_NUMBER":
+                return self.validation_for_nhs_number(expression_rule, field_name, field_value)
             case "DATE":
                 return self.validation_for_date(expression_rule, field_name, field_value)
             case "DATETIME":
@@ -289,6 +291,23 @@ class ExpressionChecker:
             if not spaces_allowed:
                 if " " in field_value:
                     raise ValueError(f"{field_name} must not contain spaces")
+        except (ValueError, TypeError) as e:
+            code = ExceptionLevels.RECORD_CHECK_FAILED
+            message = MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
+            details = str(e)
+            return ErrorReport(code, message, None, field_name, details)
+        except Exception as e:
+            if self.report_unexpected_exception:
+                message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, None, field_name)
+
+    def validation_for_nhs_number(self, expression_rule: str, field_name: str, field_value: str) -> ErrorReport:
+        """
+        Apply pre-validation to an NHS number to ensure that it is a valid NHS number
+        """
+        try:
+            if not nhs_number_mod11_check(field_value):
+                raise ValueError(f"{field_name} is not a valid NHS number")
         except (ValueError, TypeError) as e:
             code = ExceptionLevels.RECORD_CHECK_FAILED
             message = MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]

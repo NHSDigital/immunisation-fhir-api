@@ -64,6 +64,17 @@ class TestExpressionChecker(unittest.TestCase):
             ErrorReport,
         )
 
+    # NHS_NUMBER expression type (MOD 11 check)
+    def test_nhs_number_mod11_valid_and_invalid(self):
+        checker = self.make_checker()
+        field_path = "contained|#:Patient|identifier|#:https://fhir.nhs.uk/Id/nhs-number|value"
+        # Known valid NHS number
+        self.assertIsNone(checker.validate_expression("NHS_NUMBER", "", field_path, "9736592677"))
+        # Invalid: wrong check digit
+        self.assertIsInstance(checker.validate_expression("NHS_NUMBER", "", field_path, "9434765918"), ErrorReport)
+        # Invalid: non-digit / wrong length
+        self.assertIsInstance(checker.validate_expression("NHS_NUMBER", "", field_path, "123456789A"), ErrorReport)
+
     # LIST PERSON_FORENAME
     def test_list_valid_and_invalid(self):
         checker = self.make_checker()
@@ -245,193 +256,86 @@ class TestExpressionChecker(unittest.TestCase):
     def test_site_of_vaccination_code_string_valid_and_invalid(self):
         checker = self.make_checker()
         field_path = "site|coding|#:http://snomed.info/sct|code"
-        self.assertIsNone(
-            checker.validate_expression("STRING", "", field_path, "123456"),
-            msg=f"fieldPath={field_path}",
-        )
-        self.assertIsInstance(
-            checker.validate_expression("STRING", "", field_path, ""),
-            ErrorReport,
-            msg=f"fieldPath={field_path}",
-        )
-        self.assertIsInstance(
-            checker.validate_expression("STRING", "", field_path, 123456),
-            ErrorReport,
-            msg=f"fieldPath={field_path}",
-        )
+        self.assertIsNone(checker.validate_expression("STRING", "", field_path, "123456"))
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, ""), ErrorReport)
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, 123456), ErrorReport)
 
     # STRING with SITE_OF_VACCINATION_TERM
     def test_site_of_vaccination_term_string_valid_and_invalid(self):
         checker = self.make_checker()
         field_path = "site|coding|#:http://snomed.info/sct|display"
-        self.assertIsNone(
-            checker.validate_expression("STRING", "", field_path, "Left deltoid"),
-            msg=f"fieldPath={field_path}",
-        )
-        self.assertIsInstance(
-            checker.validate_expression("STRING", "", field_path, ""),
-            ErrorReport,
-            msg=f"fieldPath={field_path}",
-        )
-        self.assertIsInstance(
-            checker.validate_expression("STRING", "", field_path, 999),
-            ErrorReport,
-            msg=f"fieldPath={field_path}",
-        )
+        self.assertIsNone(checker.validate_expression("STRING", "", field_path, "Left deltoid"))
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, ""), ErrorReport)
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, 999), ErrorReport)
 
     # STRING with ROUTE_OF_VACCINATION_CODE
     def test_route_of_vaccination_code_string_valid_and_invalid(self):
         checker = self.make_checker()
         field_path = "route|coding|#:http://snomed.info/sct|code"
-        self.assertIsNone(
-            checker.validate_expression("STRING", "", field_path, "1234"),
-            msg=f"fieldPath={field_path}",
-        )
-        self.assertIsInstance(
-            checker.validate_expression("STRING", "", field_path, ""),
-            ErrorReport,
-            msg=f"fieldPath={field_path}",
-        )
-        self.assertIsInstance(
-            checker.validate_expression("STRING", "", field_path, 1234),
-            ErrorReport,
-            msg=f"fieldPath={field_path}",
-        )
+        self.assertIsNone(checker.validate_expression("STRING", "", field_path, "1234"))
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, ""), ErrorReport)
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, 1234), ErrorReport)
 
     # STRING with ROUTE_OF_VACCINATION_TERM
     def test_route_of_vaccination_term_string_valid_and_invalid(self):
         checker = self.make_checker()
         field_path = "route|coding|#:http://snomed.info/sct|display"
-        self.assertIsNone(
-            checker.validate_expression("STRING", "", field_path, "Intramuscular"),
-            msg=f"fieldPath={field_path}",
-        )
-        self.assertIsInstance(
-            checker.validate_expression("STRING", "", field_path, ""),
-            ErrorReport,
-            msg=f"fieldPath={field_path}",
-        )
-        self.assertIsInstance(
-            checker.validate_expression("STRING", "", field_path, 12),
-            ErrorReport,
-            msg=f"fieldPath={field_path}",
-        )
+        self.assertIsNone(checker.validate_expression("STRING", "", field_path, "Intramuscular"))
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, ""), ErrorReport)
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, 12), ErrorReport)
 
     # INTDECIMAL with DOSE_AMOUNT
     def test_dose_amount_intdecimal_valid_and_invalid(self):
         checker = self.make_checker()
         field_path = "doseQuantity|value"
         # Valid: int
-        self.assertIsNone(
-            checker.validate_expression("INTDECIMAL", "", field_path, 1),
-            msg=f"fieldPath={field_path}",
-        )
+        self.assertIsNone(checker.validate_expression("INTDECIMAL", "", field_path, 1))
         # Valid: Decimal
-        self.assertIsNone(
-            checker.validate_expression("INTDECIMAL", "", field_path, Decimal("0.5")),
-            msg=f"fieldPath={field_path}",
-        )
+        self.assertIsNone(checker.validate_expression("INTDECIMAL", "", field_path, Decimal("0.5")))
         # Invalid: string
-        self.assertIsInstance(
-            checker.validate_expression("INTDECIMAL", "", field_path, "0.5"),
-            ErrorReport,
-            msg=f"fieldPath={field_path}",
-        )
+        self.assertIsInstance(checker.validate_expression("INTDECIMAL", "", field_path, "0.5"), ErrorReport)
 
     # STRING with DOSE_UNIT_CODE
     def test_dose_unit_code_string_valid_and_invalid(self):
         checker = self.make_checker()
         field_path = "doseQuantity|code"
-        self.assertIsNone(
-            checker.validate_expression("STRING", "", field_path, "ml"),
-            msg=f"fieldPath={field_path}",
-        )
-        self.assertIsInstance(
-            checker.validate_expression("STRING", "", field_path, ""),
-            ErrorReport,
-            msg=f"fieldPath={field_path}",
-        )
-        self.assertIsInstance(
-            checker.validate_expression("STRING", "", field_path, 1),
-            ErrorReport,
-            msg=f"fieldPath={field_path}",
-        )
+        self.assertIsNone(checker.validate_expression("STRING", "", field_path, "ml"))
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, ""), ErrorReport)
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, 1), ErrorReport)
 
     # STRING with DOSE_UNIT_TERM
     def test_dose_unit_term_string_valid_and_invalid(self):
         checker = self.make_checker()
         field_path = "doseQuantity|unit"
-        self.assertIsNone(
-            checker.validate_expression("STRING", "", field_path, "milliliter"),
-            msg=f"fieldPath={field_path}",
-        )
-        self.assertIsInstance(
-            checker.validate_expression("STRING", "", field_path, ""),
-            ErrorReport,
-            msg=f"fieldPath={field_path}",
-        )
-        self.assertIsInstance(
-            checker.validate_expression("STRING", "", field_path, 1),
-            ErrorReport,
-            msg=f"fieldPath={field_path}",
-        )
+        self.assertIsNone(checker.validate_expression("STRING", "", field_path, "milliliter"))
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, ""), ErrorReport)
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, 1), ErrorReport)
 
     # STRING with INDICATION_CODE
     def test_indication_code_string_valid_and_invalid(self):
         checker = self.make_checker()
         field_path = "reasonCode|#:http://snomed.info/sct|coding|#:http://snomed.info/sct|code"
-        self.assertIsNone(
-            checker.validate_expression("STRING", "", field_path, "987654"),
-            msg=f"fieldPath={field_path}",
-        )
-        self.assertIsInstance(
-            checker.validate_expression("STRING", "", field_path, ""),
-            ErrorReport,
-            msg=f"fieldPath={field_path}",
-        )
-        self.assertIsInstance(
-            checker.validate_expression("STRING", "", field_path, 987654),
-            ErrorReport,
-            msg=f"fieldPath={field_path}",
-        )
+        self.assertIsNone(checker.validate_expression("STRING", "", field_path, "987654"))
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, ""), ErrorReport)
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, 987654), ErrorReport)
 
     # STRING with LOCATION_CODE
     def test_location_code_string_valid_and_invalid(self):
         checker = self.make_checker()
         field_path = "location|identifier|value"
-        self.assertIsNone(
-            checker.validate_expression("STRING", "", field_path, "LOC-123"),
-            msg=f"fieldPath={field_path}",
-        )
-        self.assertIsInstance(
-            checker.validate_expression("STRING", "", field_path, ""),
-            ErrorReport,
-            msg=f"fieldPath={field_path}",
-        )
-        self.assertIsInstance(
-            checker.validate_expression("STRING", "", field_path, 321),
-            ErrorReport,
-            msg=f"fieldPath={field_path}",
-        )
+        self.assertIsNone(checker.validate_expression("STRING", "", field_path, "LOC-123"))
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, ""), ErrorReport)
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, 321), ErrorReport)
 
     # STRING with LOCATION_CODE_TYPE_URI
     def test_location_code_type_uri_string_valid_and_invalid(self):
         checker = self.make_checker()
         field_path = "location|identifier|system"
         self.assertIsNone(
-            checker.validate_expression("STRING", "", field_path, "https://example.org/location-code-system"),
-            msg=f"fieldPath={field_path}",
+            checker.validate_expression("STRING", "", field_path, "https://example.org/location-code-system")
         )
-        self.assertIsInstance(
-            checker.validate_expression("STRING", "", field_path, ""),
-            ErrorReport,
-            msg=f"fieldPath={field_path}",
-        )
-        self.assertIsInstance(
-            checker.validate_expression("STRING", "", field_path, 0),
-            ErrorReport,
-            msg=f"fieldPath={field_path}",
-        )
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, ""), ErrorReport)
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, 0), ErrorReport)
 
     # LIST with PERFORMING_PROFESSIONAL_FORENAME (empty rule -> non-empty list)
     def test_practitioner_forename_list_valid_and_invalid(self):
