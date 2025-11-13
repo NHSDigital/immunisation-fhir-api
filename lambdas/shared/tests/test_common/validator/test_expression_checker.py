@@ -357,6 +357,82 @@ class TestExpressionChecker(unittest.TestCase):
             msg=f"fieldPath={field_path}",
         )
 
+    # STRING with DOSE_UNIT_TERM
+    def test_dose_unit_term_string_valid_and_invalid(self):
+        checker = self.make_checker()
+        field_path = "doseQuantity|unit"
+        self.assertIsNone(
+            checker.validate_expression("STRING", "", field_path, "milliliter"),
+            msg=f"fieldPath={field_path}",
+        )
+        self.assertIsInstance(
+            checker.validate_expression("STRING", "", field_path, ""),
+            ErrorReport,
+            msg=f"fieldPath={field_path}",
+        )
+        self.assertIsInstance(
+            checker.validate_expression("STRING", "", field_path, 1),
+            ErrorReport,
+            msg=f"fieldPath={field_path}",
+        )
+
+    # STRING with INDICATION_CODE
+    def test_indication_code_string_valid_and_invalid(self):
+        checker = self.make_checker()
+        field_path = "reasonCode|#:http://snomed.info/sct|coding|#:http://snomed.info/sct|code"
+        self.assertIsNone(
+            checker.validate_expression("STRING", "", field_path, "987654"),
+            msg=f"fieldPath={field_path}",
+        )
+        self.assertIsInstance(
+            checker.validate_expression("STRING", "", field_path, ""),
+            ErrorReport,
+            msg=f"fieldPath={field_path}",
+        )
+        self.assertIsInstance(
+            checker.validate_expression("STRING", "", field_path, 987654),
+            ErrorReport,
+            msg=f"fieldPath={field_path}",
+        )
+
+    # STRING with LOCATION_CODE
+    def test_location_code_string_valid_and_invalid(self):
+        checker = self.make_checker()
+        field_path = "location|identifier|value"
+        self.assertIsNone(
+            checker.validate_expression("STRING", "", field_path, "LOC-123"),
+            msg=f"fieldPath={field_path}",
+        )
+        self.assertIsInstance(
+            checker.validate_expression("STRING", "", field_path, ""),
+            ErrorReport,
+            msg=f"fieldPath={field_path}",
+        )
+        self.assertIsInstance(
+            checker.validate_expression("STRING", "", field_path, 321),
+            ErrorReport,
+            msg=f"fieldPath={field_path}",
+        )
+
+    # STRING with LOCATION_CODE_TYPE_URI
+    def test_location_code_type_uri_string_valid_and_invalid(self):
+        checker = self.make_checker()
+        field_path = "location|identifier|system"
+        self.assertIsNone(
+            checker.validate_expression("STRING", "", field_path, "https://example.org/location-code-system"),
+            msg=f"fieldPath={field_path}",
+        )
+        self.assertIsInstance(
+            checker.validate_expression("STRING", "", field_path, ""),
+            ErrorReport,
+            msg=f"fieldPath={field_path}",
+        )
+        self.assertIsInstance(
+            checker.validate_expression("STRING", "", field_path, 0),
+            ErrorReport,
+            msg=f"fieldPath={field_path}",
+        )
+
     # LIST with PERFORMING_PROFESSIONAL_FORENAME (empty rule -> non-empty list)
     def test_practitioner_forename_list_valid_and_invalid(self):
         checker = self.make_checker()

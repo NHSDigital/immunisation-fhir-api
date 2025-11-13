@@ -380,6 +380,58 @@
         "expressionRule": ""
       },
       "errorGroup": "consistency"
+    },
+    {
+      "expressionId": "01K8S2C3XTDW9RK9Y2FQ9YM5WJ",
+      "fieldNameFHIR": "doseQuantity|unit",
+      "fieldNameFlat": "DOSE_UNIT_TERM",
+      "fieldNumber": 31,
+      "errorLevel": 0,
+      "expression": {
+        "expressionName": "Dose Unit Term Not Empty Check",
+        "expressionType": "STRING",
+        "expressionRule": ""
+      },
+      "errorGroup": "completeness"
+    },
+    {
+      "expressionId": "01K8S2CANK2PFNDANX3D04W2NR",
+      "fieldNameFHIR": "reasonCode|#:http://snomed.info/sct|coding|#:http://snomed.info/sct|code",
+      "fieldNameFlat": "INDICATION_CODE",
+      "fieldNumber": 32,
+      "errorLevel": 0,
+      "expression": {
+        "expressionName": "Indication Code Not Empty Check",
+        "expressionType": "STRING",
+        "expressionRule": ""
+      },
+      "errorGroup": "completeness"
+    },
+    {
+      "expressionId": "01K8S2CKK8FCVJ6049EW5G563P",
+      "fieldNameFHIR": "location|identifier|value",
+      "fieldNameFlat": "LOCATION_CODE",
+      "fieldNumber": 33,
+      "errorLevel": 1,
+      "expression": {
+        "expressionName": "Location Code Default Check",
+        "expressionType": "STRING",
+        "expressionRule": ""
+      },
+      "errorGroup": "consistency"
+    },
+    {
+      "expressionId": "01K8S2CSWYXJ5WDS7K59A045JR",
+      "fieldNameFHIR": "location|identifier|system",
+      "fieldNameFlat": "LOCATION_CODE_TYPE_URI",
+      "fieldNumber": 34,
+      "errorLevel": 1,
+      "expression": {
+        "expressionName": "Location Code Type URI Default Check",
+        "expressionType": "STRING",
+        "expressionRule": ""
+      },
+      "errorGroup": "consistency"
     }
   ]
 }
