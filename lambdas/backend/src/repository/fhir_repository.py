@@ -15,7 +15,7 @@ from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
 from responses import logger
 
 from common.models.constants import Constants
-from common.models.errors import ResourceNotFoundError, InvalidStoredData
+from common.models.errors import InvalidStoredData, ResourceNotFoundError
 from common.models.immunization_record_metadata import ImmunizationRecordMetadata
 from common.models.utils.generic_utils import (
     get_contained_patient,
@@ -49,14 +49,6 @@ def _query_identifier(table, index, pk, identifier):
     queryresponse = table.query(IndexName=index, KeyConditionExpression=Key(pk).eq(identifier), Limit=1)
     if queryresponse.get("Count", 0) > 0:
         return queryresponse
-
-
-def get_nhs_number(imms):
-    try:
-        nhs_number = [x for x in imms["contained"] if x["resourceType"] == "Patient"][0]["identifier"][0]["value"]
-    except (KeyError, IndexError):
-        nhs_number = "TBC"
-    return nhs_number
 
 
 def get_fhir_identifier_from_identifier_pk(identifier_pk: str) -> Identifier:
