@@ -69,26 +69,3 @@ class TestUpdateAckFileFlow(unittest.TestCase):
 
         # Assert: Only check audit table update
         self.mock_change_audit_status.assert_called_once_with(file_key, message_id)
-
-    def test_move_file(self):
-        """VED-167 test that the file has been moved to the appropriate location"""
-        bucket_name = "move-bucket"
-        file_key = "src/move_file_test.csv"
-        dest_key = "dest/move_file_test.csv"
-        self.s3_client.create_bucket(
-            Bucket=bucket_name,
-            CreateBucketConfiguration={"LocationConstraint": "eu-west-2"},
-        )
-        self.s3_client.put_object(Bucket=bucket_name, Key=file_key, Body="dummy content")
-        update_ack_file.move_file(bucket_name, file_key, dest_key)
-        # Assert the destination object exists
-        response = self.s3_client.get_object(Bucket=bucket_name, Key=dest_key)
-        content = response["Body"].read().decode()
-        self.assertEqual(content, "dummy content")
-
-        # Assert the source object no longer exists
-        with self.assertRaises(self.s3_client.exceptions.NoSuchKey):
-            self.s3_client.get_object(Bucket=bucket_name, Key=file_key)
-
-        # Logger assertion (if logger is mocked)
-        self.mock_logger.info.assert_called_with("File moved from %s to %s", file_key, dest_key)

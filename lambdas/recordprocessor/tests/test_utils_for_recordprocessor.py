@@ -23,7 +23,6 @@ from tests.utils_for_recordprocessor_tests.values_for_recordprocessor_tests impo
 )
 
 with patch("os.environ", MOCK_ENVIRONMENT_DICT):
-    from file_level_validation import move_file
     from utils_for_recordprocessor import (
         create_diagnostics_dictionary,
         get_csv_content_dict_reader,
@@ -86,23 +85,6 @@ class TestUtilsForRecordprocessor(unittest.TestCase):
                 "error_message": "test error message",
             },
         )
-
-    def test_move_file(self):
-        """Tests that move_file correctly moves a file from one location to another within a single S3 bucket"""
-        source_file_key = "test_file_key"
-        destination_file_key = "archive/test_file_key"
-        source_file_content = "test_content"
-        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=source_file_key, Body=source_file_content)
-
-        move_file(BucketNames.SOURCE, source_file_key, destination_file_key)
-
-        keys_of_objects_in_bucket = [
-            obj["Key"] for obj in s3_client.list_objects_v2(Bucket=BucketNames.SOURCE).get("Contents")
-        ]
-        self.assertNotIn(source_file_key, keys_of_objects_in_bucket)
-        self.assertIn(destination_file_key, keys_of_objects_in_bucket)
-        destination_file_content = s3_client.get_object(Bucket=BucketNames.SOURCE, Key=destination_file_key)
-        self.assertEqual(destination_file_content["Body"].read().decode("utf-8"), source_file_content)
 
 
 if __name__ == "__main__":

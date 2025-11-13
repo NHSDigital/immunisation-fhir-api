@@ -1,6 +1,7 @@
 import time
 import unittest
 
+from clients import logger
 from scenarios import (
     TestCase,
     create_test_cases,
@@ -9,7 +10,6 @@ from scenarios import (
     scenarios,
 )
 
-from clients import logger
 from constants import (
     ACK_BUCKET,
     INPUT_PREFIX,

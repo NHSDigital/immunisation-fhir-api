@@ -4,7 +4,7 @@ import os
 from csv import writer
 from io import BytesIO, StringIO
 
-from common.clients import s3_client
+from common.clients import get_s3_client
 
 
 def make_the_ack_data(message_id: str, message_delivered: bool, created_at_formatted_string: str) -> dict:
@@ -43,7 +43,7 @@ def upload_ack_file(file_key: str, ack_data: dict, created_at_formatted_string: 
     csv_buffer.seek(0)
     csv_bytes = BytesIO(csv_buffer.getvalue().encode("utf-8"))
     ack_bucket_name = os.getenv("ACK_BUCKET_NAME")
-    s3_client.upload_fileobj(csv_bytes, ack_bucket_name, ack_filename)
+    get_s3_client().upload_fileobj(csv_bytes, ack_bucket_name, ack_filename)
 
 
 def make_and_upload_the_ack_file(
