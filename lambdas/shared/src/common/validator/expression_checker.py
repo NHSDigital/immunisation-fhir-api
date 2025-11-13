@@ -9,6 +9,7 @@ from common.validator.expression_rule import expression_rule_per_field
 from common.validator.lookup_expressions.key_data import KeyData
 from common.validator.lookup_expressions.lookup_data import LookUpData
 from common.validator.validation_utils import check_if_future_date
+from src.common.validator.constants.constants import Constants
 
 
 class ExpressionChecker:
@@ -51,7 +52,7 @@ class ExpressionChecker:
                 return "Schema expression not found! Check your expression type : " + expression_type
 
     # ISO 8601 date/datetime validate (currently date-only)
-    def validation_for_date(self, _expression_rule, field_name, field_value):
+    def validation_for_date(self, _expression_rule, field_name, field_value) -> ErrorReport:
         """
         Apply pre-validation to a date field to ensure that it is a string (JSON dates must be
         written as strings) containing a valid date in the format "YYYY-MM-DD"
@@ -201,63 +202,50 @@ class ExpressionChecker:
                 message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
                 return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, None, field_name, "")
 
-    def validation_for_date_time(
-        self, expression_rule: str, field_name: str, field_value: str, row: dict, strict_timezone: bool = True
-    ):
+    def validation_for_date_time(self, expression_rule: str, field_name: str, field_value: str) -> ErrorReport:
         """
         Apply pre-validation to a datetime field to ensure that it is a string (JSON dates must be written as strings)
         containing a valid datetime. Note that partial dates are valid for FHIR, but are not allowed for this API.
-        Valid formats are any of the following:
-        * 'YYYY-MM-DD' - Full date only
-        * 'YYYY-MM-DDThh:mm:ss%z' - Full date, time without milliseconds, timezone
+        Valid formats are any of the following: * 'YYYY-MM-DD' - Full date only * 'YYYY-MM-DDThh:mm:ss%z' - Full date, time without milliseconds, timezone
         * 'YYYY-MM-DDThh:mm:ss.f%z' - Full date, time with milliseconds (any level of precision), timezone
         """
+        rules = expression_rule_per_field(expression_rule) if expression_rule else {}
+        strict_timezone = rules.get("strict_time_zone", False)
+        try:
+            if not isinstance(field_value, str):
+                raise TypeError(f"{field_name} must be a string")
 
-        if not isinstance(field_value, str):
-            raise TypeError(f"{field_name} must be a string")
+            error_message = Constants.DATETIME_ERROR_MESSAGE.replace("FIELD_TO_REPLACE", field_name)
+            if strict_timezone:
+                error_message += Constants.STRICT_DATETIME_ERROR_MESSAGE.replace("FIELD_TO_REPLACE", field_name)
 
-        error_message = (
-            f"{field_name} must be a valid datetime in one of the following formats:"
-            "- 'YYYY-MM-DD' — Full date only"
-            "- 'YYYY-MM-DDThh:mm:ss%z' — Full date and time with timezone (e.g. +00:00 or +01:00)"
-            "- 'YYYY-MM-DDThh:mm:ss.f%z' — Full date and time with milliseconds and timezone"
-            "-  Date must not be in the future."
-        )
-        if strict_timezone:
-            error_message += (
-                "Only '+00:00' and '+01:00' are accepted as valid timezone offsets.\n"
-                f"Note that partial dates are not allowed for {field_name} in this service.\n"
-            )
+            # List of accepted strict formats and suffixes
+            allowed_suffixes = Constants.ALLOWED_SUFFIXES
+            formats = Constants.DATETIME_FORMAT
 
-        allowed_suffixes = {
-            "+00:00",
-            "+01:00",
-            "+0000",
-            "+0100",
-        }
-
-        # List of accepted strict formats
-        formats = [
-            "%Y-%m-%d",
-            "%Y-%m-%dT%H:%M:%S%z",
-            "%Y-%m-%dT%H:%M:%S.%f%z",
-        ]
-
-        for fmt in formats:
-            try:
-                fhir_date = datetime.strptime(field_value, fmt)
-                # Enforce future-date rule using central checker after successful parse
-                if check_if_future_date(fhir_date):
-                    raise ValueError(f"{field_name} must not be in the future")
-                # After successful parse, enforce timezone and future-date rules
-                if strict_timezone and fhir_date.tzinfo is not None:
-                    if not any(field_value.endswith(suffix) for suffix in allowed_suffixes):
-                        raise ValueError(error_message)
-                return fhir_date.isoformat()
-            except ValueError:
-                continue
-
-        raise ValueError(error_message)
+            for fmt in formats:
+                try:
+                    fhir_date = datetime.strptime(field_value, fmt)
+                    # Enforce future-date rule using central checker after successful parse
+                    if check_if_future_date(fhir_date):
+                        raise ValueError(f"{field_name} must not be in the future")
+                    # After successful parse, enforce timezone and future-date rules
+                    if strict_timezone and fhir_date.tzinfo is not None:
+                        if not any(field_value.endswith(suffix) for suffix in allowed_suffixes):
+                            raise ValueError(error_message)
+                    return None
+                except ValueError:
+                    continue
+            raise ValueError(error_message)
+        except (TypeError, ValueError) as e:
+            code = ExceptionLevels.RECORD_CHECK_FAILED
+            message = MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
+            details = str(e)
+            return ErrorReport(code, message, None, field_name, details)
+        except Exception as e:
+            if self.report_unexpected_exception:
+                message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
+                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, None, field_name)
 
     # Not Equal Validate
     def _validate_not_equal(self, expression_rule: str, field_name: str, field_value: str, row: dict) -> ErrorReport:
@@ -365,7 +353,7 @@ class ExpressionChecker:
         defined_length = rules.get("defined_length", None)
         max_length = rules.get("max_length", None)
         predefined_values = rules.get("predefined_values", None)
-        spaces_allowed = rules.get("spaces_allowed", None)
+        spaces_allowed = rules.get("spaces_allowed", True)
 
         try:
             if not isinstance(field_value, str):

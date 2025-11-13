@@ -75,24 +75,67 @@ class TestExpressionChecker(unittest.TestCase):
         self.assertIsInstance(checker.validate_expression("LIST", "PERSON_NAME", "PERSON_FORENAME", []), ErrorReport)
         self.assertIsInstance(checker.validate_expression("LIST", "", "PERSON_FORENAME", "Alice"), ErrorReport)
 
-    # # DATE
-    # def test_date_valid_and_invalid(self):
-    #     checker = self.make_checker()
-    #     self.assertIsNone(checker.validate_expression("DATE", "", "contained|#:Patient|name|#:official|given|0", "2025-01-01"))
-    #     self.assertIsInstance(checker.validate_expression("DATE", "", "date_field", "2025-13-01"), ErrorReport)
+    # DATE
+    def test_date_valid_and_invalid(self):
+        checker = self.make_checker()
+        self.assertIsNone(checker.validate_expression("DATE", "", "contained|#:Patient|birthDate", "2025-01-01"))
+        self.assertIsNone(checker.validate_expression("DATE", "", "PERSON_DOB", "2025-01-01"))
+        self.assertIsInstance(
+            checker.validate_expression("DATE", "", "contained|#:Patient|birthDate", "2025-13-01"), ErrorReport
+        )
+        self.assertIsInstance(checker.validate_expression("DATE", "", "PERSON_DOB", "2025-02-30"), ErrorReport)
 
-
-#     # DATETIME
-#     def test_datetime_valid_and_invalid(self):
-#         checker = self.make_checker()
-#         # Full date only allowed
-#         self.assertIsNone(checker.validate_expression("DATETIME", "", "dt_field", "2025-01-01", 1))
-#         # Bad format should raise
-#         with self.assertRaises(Exception):
-#             checker.validate_expression("DATETIME", "", "dt_field", "2025-01-01T10:00:00Z", 1)
+    # DATETIME
+    def test_datetime_valid_and_invalid(self):
+        checker = self.make_checker()
+        # Full date only allowed
+        self.assertIsNone(
+            checker.validate_expression("DATETIME", "DATETIME", "occurrenceDateTime", "2025-01-01T05:00:00+00:00")
+        )
+        self.assertIsNone(
+            checker.validate_expression("DATETIME", "DATETIME", "DATE_AND_TIME", "2025-01-01T05:00:00+00:00")
+        )
+        # Bad format should raise
+        self.assertIsInstance(
+            checker.validate_expression("DATETIME", "", "occurrenceDateTime", "2026-01-01T10:00:00Z"), ErrorReport
+        )
+        self.assertIsInstance(
+            checker.validate_expression("DATETIME", "", "DATE_AND_TIME", "2026-01-01T10:00:00Z"), ErrorReport
+        )
 
 
 #     # BOOLEAN
+
+# # STRING with GENDER rule on real field
+# def test_gender_string_rule_valid_and_invalid(self):
+#     checker = self.make_checker()
+#     field_path = "contained|#:Patient|gender"
+#     # Valid genders per schema constants (male, female, other, unknown)
+#     self.assertIsNone(checker.validate_expression("STRING", "GENDER", field_path, "male"))
+#     self.assertIsNone(checker.validate_expression("STRING", "GENDER", field_path, "female"))
+#     # Invalid values should error
+#     self.assertIsInstance(
+#         checker.validate_expression("STRING", "GENDER", field_path, "M"),
+#         ErrorReport,
+#     )
+
+# # STRING with no rule for PERSON_POSTCODE on real field
+# def test_postcode_string_rule_valid_and_invalid(self):
+#     checker = self.make_checker()
+#     field_path = "contained|#:Patient|address|#:postalCode|postalCode"
+#     # With empty rule, generic string constraints apply: non-empty and no spaces
+#     self.assertIsNone(checker.validate_expression("STRING", "", field_path, "SW1A1AA"))
+#     # Real-world postcode with a space should fail as spaces are not allowed without a rule override
+#     field_path = "POST_CODE"
+#     self.assertIsInstance(
+#         checker.validate_expression("STRING", "", field_path, "AB12 3CD"),
+#         ErrorReport,
+#     )
+#     # Empty should also fail
+#     self.assertIsInstance(
+#         checker.validate_expression("STRING", "", field_path, ""),
+#         ErrorReport,
+#     )
 #     def test_boolean_valid_and_invalid(self):
 #         checker = self.make_checker()
 #         self.assertIsNone(checker.validate_expression("BOOLEAN", "", "bool_field", True, 1))

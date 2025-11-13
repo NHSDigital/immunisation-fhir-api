@@ -55,6 +55,32 @@
         "expressionRule": ""
       },
       "errorGroup": "consistency"
+    },
+    {
+      "expressionId": "01K8RW2MYFNE6YZJ99RC8B3XES",
+      "fieldNameFHIR": "contained|#:Patient|address|#:postalCode|postalCode",
+      "fieldNameFlat": "PERSON_POSTCODE",
+      "fieldNumber": 6,
+      "errorLevel": 2,
+      "expression": {
+        "expressionName": "Postcode String Check",
+        "expressionType": "STRING",
+        "expressionRule": ""
+      },
+      "errorGroup": "completeness"
+    },
+    {
+      "expressionId": "01K8S0WRNSPQ42RBD8420Q9G7Y",
+      "fieldNameFHIR": "occurrenceDateTime",
+      "fieldNameFlat": "DATE_AND_TIME",
+      "fieldNumber": 7,
+      "errorLevel": 0,
+      "expression": {
+        "expressionName": "Date Time Conversion",
+        "expressionType": "DATETIME",
+        "expressionRule": "DATETIME"
+      },
+      "errorGroup": "consistency"
     }
   ]
 }

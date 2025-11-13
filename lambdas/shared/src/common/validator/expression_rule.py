@@ -15,5 +15,7 @@ def expression_rule_per_field(expression_type: str) -> dict:
             return {"max_length": Constants.PERSON_NAME_ELEMENT_MAX_LENGTH}
         case "GENDER":
             return {"predefined_values": Constants.GENDERS}
+        case "DATETIME":
+            return {"strict_time_zone": True}
         case _:
             raise ValueError(f"Expression rule not found for type: {expression_type}")
