@@ -22,12 +22,12 @@ class TestCSVLineParser(unittest.TestCase):
         Ignore values that do not have a corresponding key
         """
         csv_parsers = CSVLineParser()
-        csv_parsers.parse_csv_line({"NHS_NUMBER": "9000000009", "PERSON_FORENAME": "Alex", "": "Trent"})
+        csv_parsers.parse_csv_line({"NHS_NUMBER": "9000000009", "PERSON_FORENAME": ["Alex"], "": "Trent"})
         self.assertEqual(
             csv_parsers.csv_file_data,
-            {"NHS_NUMBER": "9000000009", "PERSON_FORENAME": "Alex", "": "Trent"},
+            {"NHS_NUMBER": "9000000009", "PERSON_FORENAME": ["Alex"], "": "Trent"},
         )
-        self.assertEqual(csv_parsers.get_key_value("PERSON_FORENAME"), "Alex")
+        self.assertEqual(csv_parsers.get_key_value("PERSON_FORENAME"), ["Alex"])
 
     def test_fewer_values_than_keys(self):
         """
@@ -35,7 +35,7 @@ class TestCSVLineParser(unittest.TestCase):
         raises an error when accessing key without value
         """
         csv_parsers = CSVLineParser()
-        csv_parsers.parse_csv_line({"NHS_NUMBER": "9000000009", "PERSON_FORENAME": "Alex"})
+        csv_parsers.parse_csv_line({"NHS_NUMBER": "9000000009", "PERSON_FORENAME": ["Alex"]})
         self.assertIn("NHS_NUMBER", csv_parsers.csv_file_data)
         self.assertIn("PERSON_FORENAME", csv_parsers.csv_file_data)
         self.assertNotIn("PERSON_SURNAME", csv_parsers.csv_file_data)
@@ -46,7 +46,7 @@ class TestCSVLineParser(unittest.TestCase):
         """
         Test that accessing a non-existent key raises KeyError"""
         csv_parsers = CSVLineParser()
-        csv_parsers.parse_csv_line({"NHS_NUMBER": "9000000009", "PERSON_FORENAME": "Alex"})
+        csv_parsers.parse_csv_line({"NHS_NUMBER": "9000000009", "PERSON_FORENAME": ["Alex"]})
         with self.assertRaises(KeyError):
             _ = csv_parsers.get_key_value("VACCINE_TYPE")
 

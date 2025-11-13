@@ -161,9 +161,8 @@ class ExpressionChecker:
         """
         rules = expression_rule_per_field(expression_rule) if expression_rule else {}
         defined_length: Optional[int] = rules.get("defined_length", None)
-        max_length: Optional[int] = rules.get("max_length", None)
+        array_max_length: Optional[int] = rules.get("array_max_length", None)
         elements_are_strings: bool = rules.get("elements_are_strings", False)
-        string_element_max_length: Optional[int] = rules.get("string_element_max_length", None)
         elements_are_dicts: bool = rules.get("elements_are_dicts", False)
 
         try:
@@ -177,14 +176,14 @@ class ExpressionChecker:
                 if len(field_value) == 0:
                     raise ValueError(f"{field_name} must be a non-empty array")
 
-            if max_length is not None and len(field_value) > max_length:
-                raise ValueError(f"{field_name} must be an array of maximum length {max_length}")
+            if array_max_length is not None and len(field_value) > array_max_length:
+                raise ValueError(f"{field_name} must be an array of maximum length {array_max_length}")
 
             if elements_are_strings:
                 for idx, element in enumerate(field_value):
-                    self._validate_for_string_values.for_string(
-                        element, f"{field_name}[{idx}]", max_length=string_element_max_length
-                    )
+                    error_report = self.validation_for_string_values(expression_rule, f"{field_name}[{idx}]", element)
+                    if error_report is not None:
+                        return error_report
 
             if elements_are_dicts:
                 for element in field_value:
@@ -192,10 +191,15 @@ class ExpressionChecker:
                         raise TypeError(f"{field_name} must be an array of objects")
                     if len(element) == 0:
                         raise ValueError(f"{field_name} must be an array of non-empty objects")
+        except (TypeError, ValueError) as e:
+            code = ExceptionLevels.RECORD_CHECK_FAILED
+            message = MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
+            details = str(e)
+            return ErrorReport(code, message, None, field_name, details)
         except Exception as e:
             if self.report_unexpected_exception:
                 message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
-                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, field_name)
+                return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, None, field_name, "")
 
     def validation_for_date_time(
         self, expression_rule: str, field_name: str, field_value: str, row: dict, strict_timezone: bool = True

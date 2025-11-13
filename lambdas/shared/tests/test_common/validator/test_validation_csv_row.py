@@ -24,6 +24,7 @@ class TestValidator(unittest.TestCase):
 
     def test_run_validation_on_valid_csv_row(self):
         error_list = self.validator.validate_csv_row(CSV_VALUES, True, True, True)
+        print(f"Run Validation Errors for valid CSV row: {error_list}")
         self.assertEqual(error_list, [])
 
     def test_run_validation_on_invalid_csv_row(self):

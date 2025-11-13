@@ -24,11 +24,37 @@
       "fieldNumber": 2,
       "errorLevel": 0,
       "expression": {
-        "expressionName": "Person Forname List Check",
+        "expressionName": "Person Forename List Check",
         "expressionType": "LIST",
         "expressionRule": "PERSON_NAME"
       },
       "errorGroup": "completeness"
+    },
+    {
+      "expressionId": "01K5EGR0C7RRG9F6FVHJ8HE4QX",
+      "fieldNameFHIR": "contained|#:Patient|name|#:official|family",
+      "fieldNameFlat": "PERSON_SURNAME",
+      "fieldNumber": 3,
+      "errorLevel": 0,
+      "expression": {
+        "expressionName": "Person Surname String Check",
+        "expressionType": "STRING",
+        "expressionRule": "PERSON_SURNAME"
+      },
+      "errorGroup": "completeness"
+    },
+    {
+      "expressionId": "01K8RW1DF635S4FRZ1WF9GDS1T",
+      "fieldNameFHIR": "contained|#:Patient|birthDate",
+      "fieldNameFlat": "PERSON_DOB",
+      "fieldNumber": 4,
+      "errorLevel": 1,
+      "expression": {
+        "expressionName": "Date of Birth Not Empty Check",
+        "expressionType": "DATE",
+        "expressionRule": ""
+      },
+      "errorGroup": "consistency"
     }
   ]
 }
