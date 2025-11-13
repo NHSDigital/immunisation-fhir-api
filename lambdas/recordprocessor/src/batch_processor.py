@@ -143,7 +143,6 @@ def process_rows(
                 send_to_kinesis(supplier, outgoing_message_body, vaccine)
                 total_rows_processed_count += 1
     except UnicodeDecodeError as error:  # pylint: disable=broad-exception-caught
-        logger.error("Error processing row %s: %s", row_count, error)
         return total_rows_processed_count, error
 
     return total_rows_processed_count, None
