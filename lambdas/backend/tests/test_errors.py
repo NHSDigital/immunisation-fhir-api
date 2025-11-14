@@ -177,3 +177,18 @@ class TestErrors(unittest.TestCase):
         self.assertEqual(issue.get("severity"), errors.Severity.error)
         self.assertEqual(issue.get("code"), errors.Code.server_error)
         self.assertEqual(issue.get("diagnostics"), f"{test_message}\n{test_response}")
+
+    def test_errors_invalid_stored_data_error(self):
+        """Test correct operation of UnhandledResponseError"""
+        test_data_type = "test_data_type"
+
+        with self.assertRaises(errors.InvalidStoredDataError) as context:
+            raise errors.InvalidStoredDataError(test_data_type)
+
+        self.assertEqual(str(context.exception), f"Invalid data stored for immunization record: {test_data_type}")
+        outcome = context.exception.to_operation_outcome()
+        self.assert_operation_outcome(outcome)
+        issue = outcome.get("issue")[0]
+        self.assertEqual(issue.get("severity"), errors.Severity.error)
+        self.assertEqual(issue.get("code"), errors.Code.server_error)
+        self.assertEqual(issue.get("diagnostics"), f"Invalid data stored for immunization record: {test_data_type}")

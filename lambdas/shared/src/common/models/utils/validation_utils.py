@@ -3,7 +3,7 @@
 from fhir.resources.R4B.identifier import Identifier
 
 from common.models.constants import Constants, Urls
-from common.models.errors import InconsistentIdentifierError, InconsistentResourceVersion, MandatoryError
+from common.models.errors import InconsistentIdentifierError, InconsistentResourceVersionError, MandatoryError
 from common.models.field_names import FieldNames
 from common.models.obtain_field_value import ObtainFieldValue
 from common.models.utils.base_utils import obtain_field_location
@@ -106,12 +106,12 @@ def validate_resource_versions_match(
     """Checks if the resource version in the request and the resource version of the actual Immunization record matches.
     Raises a InconsistentResourceVersion if they do not match."""
     if actual_resource_version > resource_version_in_request:
-        raise InconsistentResourceVersion(
+        raise InconsistentResourceVersionError(
             f"Validation errors: The requested immunization resource {imms_id} has changed since the last retrieve."
         )
 
     if actual_resource_version < resource_version_in_request:
-        raise InconsistentResourceVersion(
+        raise InconsistentResourceVersionError(
             f"Validation errors: The requested immunization resource {imms_id} version is inconsistent with the "
             f"existing version."
         )

@@ -9,7 +9,7 @@ from common.models.errors import (
     CustomValidationError,
     IdentifierDuplicationError,
     InconsistentIdentifierError,
-    InconsistentResourceVersion,
+    InconsistentResourceVersionError,
     ResourceNotFoundError,
 )
 from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
@@ -30,7 +30,7 @@ from models.errors import (
 )
 
 _CUSTOM_EXCEPTION_TO_STATUS_MAP: dict[Type[Exception], int] = {
-    InconsistentResourceVersion: 400,
+    InconsistentResourceVersionError: 400,
     InconsistentIdentifierError: 400,  # Identifier refers to the local FHIR identifier composed of system and value.
     InconsistentIdError: 400,  # ID refers to the top-level ID of the FHIR resource.
     InvalidImmunizationIdError: 400,

@@ -6,7 +6,7 @@ from common.models.errors import (
     CustomValidationError,
     IdentifierDuplicationError,
     InconsistentIdentifierError,
-    InconsistentResourceVersion,
+    InconsistentResourceVersionError,
     ResourceNotFoundError,
 )
 from controller.fhir_api_exception_handler import fhir_api_exception_handler
@@ -44,7 +44,7 @@ class TestFhirApiExceptionHandler(unittest.TestCase):
         """Test that custom exceptions are handled by the wrapper and a valid response is returned to the client"""
         test_cases = [
             (
-                InconsistentResourceVersion("Resource versions do not match"),
+                InconsistentResourceVersionError("Resource versions do not match"),
                 400,
                 "invariant",
                 "Resource versions do not match",

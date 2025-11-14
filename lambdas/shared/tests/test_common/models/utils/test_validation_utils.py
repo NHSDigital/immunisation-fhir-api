@@ -4,7 +4,7 @@ from copy import deepcopy
 from fhir.resources.R4B.identifier import Identifier
 from jsonpath_ng.ext import parse
 
-from common.models.errors import InconsistentIdentifierError, InconsistentResourceVersion
+from common.models.errors import InconsistentIdentifierError, InconsistentResourceVersionError
 from common.models.fhir_immunization import ImmunizationValidator
 from common.models.obtain_field_value import ObtainFieldValue
 from common.models.utils.generic_utils import (
@@ -299,7 +299,7 @@ class TestValidatorUtils(unittest.TestCase):
 
         for actual_version, expected_error in test_cases:
             with self.subTest(actual_version=actual_version, expected_error=expected_error):
-                with self.assertRaises(InconsistentResourceVersion) as error:
+                with self.assertRaises(InconsistentResourceVersionError) as error:
                     validate_resource_versions_match(3, actual_version, "12345-id")
 
                 self.assertEqual(str(error.exception), expected_error)

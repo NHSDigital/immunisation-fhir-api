@@ -101,8 +101,8 @@ class TestErrors(unittest.TestCase):
         """Test correct operation of InconsistentResourceVersion"""
         test_message = "test_message"
 
-        with self.assertRaises(errors.InconsistentResourceVersion) as context:
-            raise errors.InconsistentResourceVersion(test_message)
+        with self.assertRaises(errors.InconsistentResourceVersionError) as context:
+            raise errors.InconsistentResourceVersionError(test_message)
         self.assertEqual(context.exception.message, test_message)
 
         outcome = context.exception.to_operation_outcome()

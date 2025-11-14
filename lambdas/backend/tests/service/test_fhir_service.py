@@ -18,7 +18,7 @@ from common.models.errors import (
     CustomValidationError,
     IdentifierDuplicationError,
     InconsistentIdentifierError,
-    InconsistentResourceVersion,
+    InconsistentResourceVersionError,
     ResourceNotFoundError,
 )
 from common.models.fhir_immunization import ImmunizationValidator
@@ -612,7 +612,7 @@ class TestUpdateImmunization(TestFhirServiceBase):
         self.authoriser.authorise.return_value = True
 
         # When
-        with self.assertRaises(InconsistentResourceVersion) as error:
+        with self.assertRaises(InconsistentResourceVersionError) as error:
             self.fhir_service.update_immunization(imms_id, updated_immunisation, "Test", 2)
 
         # Then
