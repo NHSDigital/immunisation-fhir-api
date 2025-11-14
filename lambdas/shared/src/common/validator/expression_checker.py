@@ -1,6 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional, Union
+from typing import Optional
 
 from common.validator.constants.constants import Constants
 from common.validator.constants.enums import MESSAGES, ExceptionLevels
@@ -37,8 +37,6 @@ class ExpressionChecker:
                 return self.validation_for_date_time(expression_rule, field_name, field_value)
             case "POSITIVEINTEGER":
                 return self.validation_for_positive_integer(expression_rule, field_name, field_value)
-            case "UNIQUELIST":
-                return self.validation_for_unique_list(expression_rule, field_name, field_value)
             case "BOOLEAN":
                 return self.validation_for_boolean(expression_rule, field_name, field_value)
             case "INTDECIMAL":
@@ -108,7 +106,7 @@ class ExpressionChecker:
                 return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, None, field_name)
 
     def validation_for_integer_or_decimal(
-        self, _expression_rule, field_name: str, field_value: Union[int, Decimal]
+        self, _expression_rule, field_name: str, field_value: int | Decimal
     ) -> ErrorReport:
         """
         Apply pre-validation to a decimal field to ensure that it is an integer or decimal,
@@ -130,24 +128,6 @@ class ExpressionChecker:
             if self.report_unexpected_exception:
                 message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
                 return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, None, field_name)
-
-    def validation_for_unique_list(
-        list_to_check: list,
-        unique_value_in_list: str,
-        field_location: str,
-    ):
-        """
-        Apply pre-validation to a list of dictionaries to ensure that a specified value in each
-        dictionary is unique across the list
-        """
-        found = []
-        for item in list_to_check:
-            if item[unique_value_in_list] in found:
-                raise ValueError(
-                    f"{field_location.replace('FIELD_TO_REPLACE', item[unique_value_in_list])}" + " must be unique"
-                )
-
-            found.append(item[unique_value_in_list])
 
     def validation_for_boolean(self, expression_rule: str, field_name: str, field_value: str) -> ErrorReport:
         """Apply pre-validation to a boolean field to ensure that it is a boolean"""
@@ -303,7 +283,7 @@ class ExpressionChecker:
                 message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
                 return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, None, field_name)
 
-    def validation_for_nhs_number(self, expression_rule: str, field_name: str, field_value: str) -> ErrorReport:
+    def validation_for_nhs_number(self, _expression_rule: str, field_name: str, field_value: str) -> ErrorReport:
         """
         Apply pre-validation to an NHS number to ensure that it is a valid NHS number
         """
@@ -320,7 +300,7 @@ class ExpressionChecker:
                 message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
                 return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, None, field_name)
 
-    def validation_for_snomed_code(self, expression_rule: str, field_location: str, field_value: str):
+    def validation_for_snomed_code(self, _expression_rule: str, field_location: str, field_value: str):
         """
         Apply prevalidation to snomed code to ensure that its a valid one.
         """

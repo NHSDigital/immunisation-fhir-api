@@ -16,7 +16,7 @@ from src.common.validator.parsers.base_parser import BaseParser, BatchInterface,
 
 
 class Validator:
-    def __init__(self, schema_file: dict = {}):
+    def __init__(self, schema_file: dict = None):
         self.schema_file = schema_file
         self.schema_parser = SchemaParser()
 
