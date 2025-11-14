@@ -1,6 +1,6 @@
 SHELL=/usr/bin/env bash -euo pipefail
 
-PYTHON_PROJECT_DIRS_WITH_UNIT_TESTS = backend lambdas/ack_backend lambdas/batch_processor_filter lambdas/delta_backend lambdas/filenameprocessor lambdas/id_sync lambdas/mesh_processor lambdas/mns_subscription lambdas/recordprocessor lambdas/redis_sync lambdas/shared
+PYTHON_PROJECT_DIRS_WITH_UNIT_TESTS = lambdas/backend lambdas/ack_backend lambdas/batch_processor_filter lambdas/delta_backend lambdas/filenameprocessor lambdas/id_sync lambdas/mesh_processor lambdas/mns_subscription lambdas/recordforwarder lambdas/recordprocessor lambdas/redis_sync lambdas/shared
 PYTHON_PROJECT_DIRS = tests/e2e tests/e2e_batch quality_checks $(PYTHON_PROJECT_DIRS_WITH_UNIT_TESTS)
 
 .PHONY: install lint format format-check clean publish build-proxy release initialise-all-python-venvs update-all-python-dependencies run-all-python-unit-tests build-all-docker-images
