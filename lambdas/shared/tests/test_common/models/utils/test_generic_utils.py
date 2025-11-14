@@ -3,7 +3,7 @@
 import unittest
 from datetime import date, datetime
 
-from test_common.testing_utils.generic_utils import format_date_types, load_json_data
+from test_common.testing_utils.generic_utils import format_date_types
 
 
 class TestFormatFutureDates(unittest.TestCase):

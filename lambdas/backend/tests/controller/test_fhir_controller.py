@@ -20,13 +20,11 @@ from controller.aws_apig_response_utils import create_response
 from controller.fhir_controller import FhirController
 from controller.parameter_parser import PATIENT_IDENTIFIER_SYSTEM
 from models.errors import (
-    ParameterExceptionError,
     UnauthorizedVaxError,
     UnhandledResponseError,
 )
 from repository.fhir_repository import ImmunizationRepository
 from service.fhir_service import FhirService
-from test_common.testing_utils.generic_utils import load_json_data
 from test_common.testing_utils.immunization_utils import create_covid_immunization
 
 

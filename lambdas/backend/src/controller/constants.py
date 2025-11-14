@@ -5,10 +5,7 @@ from enum import StrEnum
 SUPPLIER_SYSTEM_HEADER_NAME = "SupplierSystem"
 E_TAG_HEADER_NAME = "E-Tag"
 
-SEARCH_USING_POST_PATH = "/Immunization/_search"
-
-# TODO - could create string enum for different parameters
-# Once parameter parser is tidier, consider moving it there
+SEARCH_IMMS_POST_PATH = "/Immunization/_search"
 
 
 class IdentifierSearchParameterName(StrEnum):

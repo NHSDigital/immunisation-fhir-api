@@ -21,9 +21,6 @@ from fhir.resources.R4B.operationoutcome import OperationOutcome
 
 from authorisation.api_operation_code import ApiOperationCode
 from authorisation.authoriser import Authoriser
-from controller.constants import IMMUNIZATION_TARGET_LEGACY_KEY_NAME, ImmunizationSearchParameterName
-from controller.parameter_parser import PATIENT_IDENTIFIER_SYSTEM
-from filter import Filter
 from common.models.constants import Constants
 from common.models.errors import (
     Code,
@@ -46,6 +43,8 @@ from common.models.utils.validation_utils import (
     validate_identifiers_match,
     validate_resource_versions_match,
 )
+from controller.constants import IMMUNIZATION_TARGET_LEGACY_KEY_NAME, ImmunizationSearchParameterName
+from controller.parameter_parser import PATIENT_IDENTIFIER_SYSTEM
 from filter import Filter
 from models.errors import UnauthorizedVaxError
 from repository.fhir_repository import ImmunizationRepository

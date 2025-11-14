@@ -2,10 +2,10 @@ import datetime
 from dataclasses import dataclass
 from typing import Optional
 
-from controller.constants import IdentifierSearchElement, IdentifierSearchParameterName, ImmunizationSearchParameterName
 from common.models.constants import Constants
 from common.models.utils.generic_utils import nhs_number_mod11_check
 from common.redis_client import get_redis_client
+from controller.constants import IdentifierSearchElement, IdentifierSearchParameterName, ImmunizationSearchParameterName
 from models.errors import ParameterExceptionError
 
 DUPLICATED_PARAMETERS_ERROR_MESSAGE = 'Parameters may not be duplicated. Use commas for "or".'

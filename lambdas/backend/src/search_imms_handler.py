@@ -5,7 +5,7 @@ import pprint
 from aws_lambda_typing.context import Context
 from aws_lambda_typing.events import APIGatewayProxyEventV1
 
-from controller.constants import SEARCH_USING_POST_PATH
+from controller.constants import SEARCH_IMMS_POST_PATH
 from controller.fhir_controller import FhirController, make_controller
 from log_structure import function_info
 
@@ -16,7 +16,7 @@ def search_imms_handler(event: APIGatewayProxyEventV1, _context: Context):
 
 
 def search_imms(event: APIGatewayProxyEventV1, controller: FhirController):
-    return controller.search_immunizations(event, is_post_endpoint_req=event.get("path") == SEARCH_USING_POST_PATH)
+    return controller.search_immunizations(event, is_post_endpoint_req=event.get("path") == SEARCH_IMMS_POST_PATH)
 
 
 if __name__ == "__main__":

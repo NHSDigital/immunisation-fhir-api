@@ -126,7 +126,7 @@ class InvalidResourceVersionError(ApiValidationError):
             diagnostics=f"Validation errors: Immunization resource version:{self.resource_version} in the request "
             f"headers is invalid.",
         )
-    
+
 
 @dataclass
 class TooManyResultsError(ApiValidationError):

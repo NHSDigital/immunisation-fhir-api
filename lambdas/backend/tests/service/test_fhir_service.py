@@ -3,7 +3,6 @@ import json
 import os
 import unittest
 from copy import deepcopy
-from decimal import Decimal
 from unittest.mock import Mock, create_autospec, patch
 
 from fhir.resources.R4B.bundle import BundleLink
