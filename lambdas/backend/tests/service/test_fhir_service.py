@@ -202,8 +202,9 @@ class TestGetImmunizationByIdentifier(TestFhirServiceBase):
 
     MOCK_SUPPLIER_NAME = "TestSupplier"
     test_identifier = Identifier.construct(system="some-system", value="some-value")
-    mock_resource_meta = ImmunizationRecordMetadata(test_identifier, resource_version=1, is_deleted=False,
-                                                    is_reinstated=False)
+    mock_resource_meta = ImmunizationRecordMetadata(
+        test_identifier, resource_version=1, is_deleted=False, is_reinstated=False
+    )
 
     def setUp(self):
         super().setUp()
