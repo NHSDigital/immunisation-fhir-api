@@ -83,7 +83,7 @@ class InconsistentIdentifierError(ApiValidationError):
 
 
 @dataclass
-class InconsistentResourceVersion(ApiValidationError):
+class InconsistentResourceVersionError(ApiValidationError):
     """Use this when the resource version in the request and actual resource version do not match"""
 
     message: str

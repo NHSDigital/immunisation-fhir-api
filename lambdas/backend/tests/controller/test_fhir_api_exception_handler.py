@@ -6,15 +6,16 @@ from common.models.errors import (
     CustomValidationError,
     IdentifierDuplicationError,
     InconsistentIdentifierError,
-    InconsistentResourceVersion,
+    InconsistentResourceVersionError,
     ResourceNotFoundError,
 )
 from controller.fhir_api_exception_handler import fhir_api_exception_handler
 from models.errors import (
     InconsistentIdError,
     InvalidJsonError,
-    InvalidResourceVersion,
-    ResourceVersionNotProvided,
+    InvalidResourceVersionError,
+    InvalidStoredDataError,
+    ResourceVersionNotProvidedError,
     UnauthorizedError,
     UnauthorizedVaxError,
     UnhandledResponseError,
@@ -43,7 +44,7 @@ class TestFhirApiExceptionHandler(unittest.TestCase):
         """Test that custom exceptions are handled by the wrapper and a valid response is returned to the client"""
         test_cases = [
             (
-                InconsistentResourceVersion("Resource versions do not match"),
+                InconsistentResourceVersionError("Resource versions do not match"),
                 400,
                 "invariant",
                 "Resource versions do not match",
@@ -58,13 +59,13 @@ class TestFhirApiExceptionHandler(unittest.TestCase):
             (InvalidJsonError("Invalid JSON provided"), 400, "invalid", "Invalid JSON provided"),
             (CustomValidationError("This field was invalid"), 400, "invariant", "This field was invalid"),
             (
-                ResourceVersionNotProvided(resource_type="Immunization"),
+                ResourceVersionNotProvidedError(resource_type="Immunization"),
                 400,
                 "invariant",
                 "Validation errors: Immunization resource version not specified in the request headers",
             ),
             (
-                InvalidResourceVersion(resource_version="badVersion"),
+                InvalidResourceVersionError(resource_version="badVersion"),
                 400,
                 "invariant",
                 "Validation errors: Immunization resource version:badVersion in the request headers is invalid.",
@@ -93,6 +94,12 @@ class TestFhirApiExceptionHandler(unittest.TestCase):
                 500,
                 "exception",
                 "Critical error\n{'outcome': 'critical error'}",
+            ),
+            (
+                InvalidStoredDataError("data_type"),
+                500,
+                "exception",
+                "Invalid data stored for immunization record: data_type",
             ),
         ]
 

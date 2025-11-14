@@ -1,9 +1,10 @@
 import unittest
 from copy import deepcopy
 
+from fhir.resources.R4B.identifier import Identifier
 from jsonpath_ng.ext import parse
 
-from common.models.errors import InconsistentIdentifierError, InconsistentResourceVersion
+from common.models.errors import InconsistentIdentifierError, InconsistentResourceVersionError
 from common.models.fhir_immunization import ImmunizationValidator
 from common.models.obtain_field_value import ObtainFieldValue
 from common.models.utils.generic_utils import (
@@ -22,7 +23,7 @@ from test_common.testing_utils.values_for_tests import InvalidValues, NameInstan
 class TestValidatorUtils(unittest.TestCase):
     """Test immunization validation utils on the FHIR model"""
 
-    MOCK_LOCAL_IDENTIFIER = {"identifier": [{"system": "https://mock-identifier.co.uk/vaccs/", "value": "123"}]}
+    MOCK_LOCAL_IDENTIFIER = Identifier(system="https://mock-identifier.co.uk/vaccs/", value="123")
 
     def setUp(self):
         """Set up for each test. This runs before every test"""
@@ -298,7 +299,7 @@ class TestValidatorUtils(unittest.TestCase):
 
         for actual_version, expected_error in test_cases:
             with self.subTest(actual_version=actual_version, expected_error=expected_error):
-                with self.assertRaises(InconsistentResourceVersion) as error:
+                with self.assertRaises(InconsistentResourceVersionError) as error:
                     validate_resource_versions_match(3, actual_version, "12345-id")
 
                 self.assertEqual(str(error.exception), expected_error)
@@ -312,15 +313,15 @@ class TestValidatorUtils(unittest.TestCase):
         match"""
         test_cases = [
             (
-                {"identifier": [{"system": "https://mock-identifier.co.uk/vaccs/", "value": "different_val"}]},
+                Identifier(system="https://mock-identifier.co.uk/vaccs/", value="different_val"),
                 "Validation errors: identifier[0].value doesn't match with the stored content",
             ),
             (
-                {"identifier": [{"system": "https://different-identifier.co.uk/vaccs/", "value": "123"}]},
+                Identifier(system="https://different-identifier.co.uk/vaccs/", value="123"),
                 "Validation errors: identifier[0].system doesn't match with the stored content",
             ),
             (
-                {"identifier": [{"system": "https://different-identifier.co.uk/vaccs/", "value": "different_val"}]},
+                Identifier(system="https://different-identifier.co.uk/vaccs/", value="different_val"),
                 "Validation errors: identifier[0].system and identifier[0].value doesn't match with the stored content",
             ),
         ]

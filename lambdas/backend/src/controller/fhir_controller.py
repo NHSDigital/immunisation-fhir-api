@@ -22,10 +22,10 @@ from controller.fhir_api_exception_handler import fhir_api_exception_handler
 from models.errors import (
     Code,
     InconsistentIdError,
-    InvalidImmunizationId,
+    InvalidImmunizationIdError,
     InvalidJsonError,
-    InvalidResourceVersion,
-    ParameterException,
+    InvalidResourceVersionError,
+    ParameterExceptionError,
     Severity,
     UnauthorizedError,
     UnauthorizedVaxError,
@@ -100,7 +100,7 @@ class FhirController:
         imms_id = get_path_parameter(aws_event, "id")
 
         if not self._is_valid_immunization_id(imms_id):
-            raise InvalidImmunizationId()
+            raise InvalidImmunizationIdError()
 
         supplier_system = get_supplier_system_header(aws_event)
 
@@ -132,10 +132,10 @@ class FhirController:
         resource_version = get_resource_version_header(aws_event)
 
         if not self._is_valid_immunization_id(imms_id):
-            raise InvalidImmunizationId()
+            raise InvalidImmunizationIdError()
 
         if not self._is_valid_resource_version(resource_version):
-            raise InvalidResourceVersion(resource_version=resource_version)
+            raise InvalidResourceVersionError(resource_version=resource_version)
 
         try:
             immunization = json.loads(aws_event["body"], parse_float=Decimal)
@@ -156,7 +156,7 @@ class FhirController:
         imms_id = get_path_parameter(aws_event, "id")
 
         if not self._is_valid_immunization_id(imms_id):
-            raise InvalidImmunizationId()
+            raise InvalidImmunizationIdError()
 
         supplier_system = get_supplier_system_header(aws_event)
 
@@ -167,10 +167,10 @@ class FhirController:
     def search_immunizations(self, aws_event: APIGatewayProxyEventV1) -> dict:
         try:
             search_params = process_search_params(process_params(aws_event))
-        except ParameterException as e:
+        except ParameterExceptionError as e:
             return self._create_bad_request(e.message)
         if search_params is None:
-            raise ParameterException("Failed to parse parameters.")
+            raise ParameterExceptionError("Failed to parse parameters.")
 
         # Check vaxx type permissions- start
         try:

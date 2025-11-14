@@ -17,7 +17,7 @@ from common.models.errors import (
 from controller.aws_apig_response_utils import create_response
 from controller.fhir_controller import FhirController
 from models.errors import (
-    ParameterException,
+    ParameterExceptionError,
     UnauthorizedVaxError,
     UnhandledResponseError,
 )
@@ -1570,7 +1570,7 @@ class TestSearchImmunizations(TestFhirControllerBase):
             }
         }
 
-        process_search_params.side_effect = ParameterException("Test")
+        process_search_params.side_effect = ParameterExceptionError("Test")
         response = self.controller.search_immunizations(lambda_event)
 
         # Then

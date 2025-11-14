@@ -9,7 +9,7 @@ from aws_lambda_typing.events import APIGatewayProxyEventV1
 from common.models.constants import Constants
 from common.models.utils.generic_utils import nhs_number_mod11_check
 from common.redis_client import get_redis_client
-from models.errors import ParameterException
+from models.errors import ParameterExceptionError
 
 ERROR_MESSAGE_DUPLICATED_PARAMETERS = 'Parameters may not be duplicated. Use commas for "or".'
 
@@ -48,12 +48,12 @@ def process_patient_identifier(identifier_params: ParamContainer) -> str:
     patient_identifier = patient_identifiers[0] if len(patient_identifiers) == 1 else None
 
     if patient_identifier is None:
-        raise ParameterException(f"Search parameter {patient_identifier_key} must have one value.")
+        raise ParameterExceptionError(f"Search parameter {patient_identifier_key} must have one value.")
 
     patient_identifier_parts = patient_identifier.split("|")
     identifier_system = patient_identifier_parts[0]
     if len(patient_identifier_parts) != 2 or identifier_system != patient_identifier_system:
-        raise ParameterException(
+        raise ParameterExceptionError(
             "patient.identifier must be in the format of "
             f'"{patient_identifier_system}|{{NHS number}}" '
             f'e.g. "{patient_identifier_system}|9000000009"'
@@ -61,7 +61,7 @@ def process_patient_identifier(identifier_params: ParamContainer) -> str:
 
     nhs_number = patient_identifier_parts[1]
     if not nhs_number_mod11_check(nhs_number):
-        raise ParameterException("Search parameter patient.identifier must be a valid NHS number.")
+        raise ParameterExceptionError("Search parameter patient.identifier must be a valid NHS number.")
 
     return nhs_number
 
@@ -75,11 +75,11 @@ def process_immunization_target(imms_params: ParamContainer) -> list[str]:
         vaccine_type for vaccine_type in set(imms_params.get(immunization_target_key, [])) if vaccine_type is not None
     ]
     if len(vaccine_types) < 1:
-        raise ParameterException(f"Search parameter {immunization_target_key} must have one or more values.")
+        raise ParameterExceptionError(f"Search parameter {immunization_target_key} must have one or more values.")
 
     valid_vaccine_types = get_redis_client().hkeys(Constants.VACCINE_TYPE_TO_DISEASES_HASH_KEY)
     if any(x not in valid_vaccine_types for x in vaccine_types):
-        raise ParameterException(
+        raise ParameterExceptionError(
             f"immunization-target must be one or more of the following: {', '.join(valid_vaccine_types)}"
         )
 
@@ -148,7 +148,7 @@ def process_search_params(params: ParamContainer) -> SearchParams:
         errors.append(f"Search parameter {date_from_key} must be before {date_to_key}")
 
     if errors:
-        raise ParameterException("; ".join(errors))
+        raise ParameterExceptionError("; ".join(errors))
 
     return SearchParams(patient_identifier, vaccine_types, date_from, date_to, include)
 
@@ -163,7 +163,7 @@ def process_params(aws_event: APIGatewayProxyEventV1) -> ParamContainer:
         multi_value_query_params: dict[str, list[str]],
     ) -> ParamContainer:
         if any(len(v) > 1 for k, v in multi_value_query_params.items()):
-            raise ParameterException(ERROR_MESSAGE_DUPLICATED_PARAMETERS)
+            raise ParameterExceptionError(ERROR_MESSAGE_DUPLICATED_PARAMETERS)
         params = [(k, split_and_flatten(v)) for k, v in multi_value_query_params.items()]
 
         return dict(params)
@@ -177,7 +177,7 @@ def process_params(aws_event: APIGatewayProxyEventV1) -> ParamContainer:
             parsed_body = parse_qs(decoded_body)
 
             if any(len(v) > 1 for k, v in parsed_body.items()):
-                raise ParameterException(ERROR_MESSAGE_DUPLICATED_PARAMETERS)
+                raise ParameterExceptionError(ERROR_MESSAGE_DUPLICATED_PARAMETERS)
             items = {k: split_and_flatten(v) for k, v in parsed_body.items()}
             return items
         return {}
@@ -186,7 +186,7 @@ def process_params(aws_event: APIGatewayProxyEventV1) -> ParamContainer:
     body_params = parse_body_params(aws_event)
 
     if len(set(query_params.keys()) & set(body_params.keys())) > 0:
-        raise ParameterException(ERROR_MESSAGE_DUPLICATED_PARAMETERS)
+        raise ParameterExceptionError(ERROR_MESSAGE_DUPLICATED_PARAMETERS)
 
     parsed_params = {
         key: sorted(query_params.get(key, []) + body_params.get(key, []))

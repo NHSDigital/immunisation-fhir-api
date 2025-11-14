@@ -1,7 +1,9 @@
 """Utils for backend folder"""
 
+from fhir.resources.R4B.identifier import Identifier
+
 from common.models.constants import Constants, Urls
-from common.models.errors import InconsistentIdentifierError, InconsistentResourceVersion, MandatoryError
+from common.models.errors import InconsistentIdentifierError, InconsistentResourceVersionError, MandatoryError
 from common.models.field_names import FieldNames
 from common.models.obtain_field_value import ObtainFieldValue
 from common.models.utils.base_utils import obtain_field_location
@@ -78,26 +80,21 @@ def get_vaccine_type(immunization: dict):
     return convert_disease_codes_to_vaccine_type(target_diseases)
 
 
-def validate_identifiers_match(new_immunization: dict, existing_immunization: dict) -> None:
-    """Checks if the local identifier system and values match for an existing and new immunization record. Raises an
+def validate_identifiers_match(new_identifier: Identifier, existing_identifier: Identifier) -> None:
+    """Checks if the identifier system and values match for a new and existing Identifier. Raises an
     InconsistentIdentifierError if there is a mismatch. Use this function in the Update Imms journey"""
 
-    new_system = new_immunization["identifier"][0]["system"]
-    new_value = new_immunization["identifier"][0]["value"]
-    existing_system = existing_immunization["identifier"][0]["system"]
-    existing_value = existing_immunization["identifier"][0]["value"]
-
-    if new_system != existing_system and new_value != existing_value:
+    if new_identifier.system != existing_identifier.system and new_identifier.value != existing_identifier.value:
         raise InconsistentIdentifierError(
             "Validation errors: identifier[0].system and identifier[0].value doesn't match with the stored content"
         )
 
-    if new_system != existing_system:
+    if new_identifier.system != existing_identifier.system:
         raise InconsistentIdentifierError(
             "Validation errors: identifier[0].system doesn't match with the stored content"
         )
 
-    if new_value != existing_value:
+    if new_identifier.value != existing_identifier.value:
         raise InconsistentIdentifierError("Validation errors: identifier[0].value doesn't match with the stored content")
 
     return None
@@ -109,12 +106,12 @@ def validate_resource_versions_match(
     """Checks if the resource version in the request and the resource version of the actual Immunization record matches.
     Raises a InconsistentResourceVersion if they do not match."""
     if actual_resource_version > resource_version_in_request:
-        raise InconsistentResourceVersion(
+        raise InconsistentResourceVersionError(
             f"Validation errors: The requested immunization resource {imms_id} has changed since the last retrieve."
         )
 
     if actual_resource_version < resource_version_in_request:
-        raise InconsistentResourceVersion(
+        raise InconsistentResourceVersionError(
             f"Validation errors: The requested immunization resource {imms_id} version is inconsistent with the "
             f"existing version."
         )
