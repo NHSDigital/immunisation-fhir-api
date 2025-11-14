@@ -242,6 +242,98 @@ class ValidValues:
         {"use": "old", "family": "Tray", "given": ["Florence"]},
     ]
 
+    # Search output removes contained array and produces a reference to the patient
+    expected_resource_in_search = {
+        "resourceType": "Immunization",
+        "id": "1234-some-id",
+        "extension": [
+            {
+                "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure",
+                "valueCodeableConcept": {
+                    "coding": [
+                        {
+                            "system": "http://snomed.info/sct",
+                            "code": "1324681000000101",
+                            "display": "Administration of first dose of severe acute respiratory syndrome coronavirus 2 vaccine (procedure)",
+                        }
+                    ]
+                },
+            }
+        ],
+        "identifier": [
+            {"use": "official", "system": "https://supplierABC/identifiers/vacc", "value": "ACME-vacc123456"},
+        ],
+        "status": "completed",
+        "vaccineCode": {
+            "coding": [
+                {
+                    "system": "http://snomed.info/sct",
+                    "code": "39114911000001105",
+                    "display": "COVID-19 Vaccine Vaxzevria (ChAdOx1 S [recombinant]) not less than 2.5x100,000,000 infectious units/0.5ml dose suspension for injection multidose vials (AstraZeneca UK Ltd) (product)",
+                }
+            ]
+        },
+        "patient": {
+            "reference": "urn:uuid:123456789-12",
+            "type": "Patient",
+            "identifier": {"system": "https://fhir.nhs.uk/Id/nhs-number", "value": "9990548609"},
+        },
+        "occurrenceDateTime": "2021-02-07T13:28:17+00:00",
+        "recorded": "2021-02-07T13:28:17+00:00",
+        "primarySource": True,
+        "location": {
+            "type": "Location",
+            "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "X99999"},
+        },
+        "manufacturer": {"display": "AstraZeneca Ltd"},
+        "lotNumber": "4120Z001",
+        "expirationDate": "2021-07-02",
+        "site": {
+            "coding": [
+                {
+                    "system": "http://snomed.info/sct",
+                    "code": "368208006",
+                    "display": "Left upper arm structure (body structure)",
+                }
+            ]
+        },
+        "route": {
+            "coding": [
+                {
+                    "system": "http://snomed.info/sct",
+                    "code": "78421000",
+                    "display": "Intramuscular route (qualifier value)",
+                }
+            ]
+        },
+        "doseQuantity": {"value": 0.5, "unit": "milliliter", "system": "http://unitsofmeasure.org", "code": "ml"},
+        "performer": [
+            {
+                "actor": {
+                    "type": "Organization",
+                    "identifier": {"system": "https://fhir.nhs.uk/Id/ods-organization-code", "value": "B0C4P"},
+                }
+            }
+        ],
+        "reasonCode": [{"coding": [{"system": "http://snomed.info/sct", "code": "443684005"}]}],
+        "protocolApplied": [
+            {
+                "targetDisease": [
+                    {
+                        "coding": [
+                            {
+                                "system": "http://snomed.info/sct",
+                                "code": "840539006",
+                                "display": "Disease caused by severe acute respiratory syndrome coronavirus 2",
+                            }
+                        ]
+                    }
+                ],
+                "doseNumberPositiveInt": 1,
+            }
+        ],
+    }
+
 
 class NameInstances:
     """Class containing example name instances."""
