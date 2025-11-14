@@ -90,6 +90,14 @@ class ParameterExceptionError(RuntimeError):
     def __str__(self):
         return self.message
 
+    def to_operation_outcome(self) -> dict:
+        return create_operation_outcome(
+            resource_id=str(uuid.uuid4()),
+            severity=Severity.error,
+            code=Code.invalid,
+            diagnostics=self.message,
+        )
+
 
 @dataclass
 class InvalidImmunizationIdError(ApiValidationError):
@@ -117,6 +125,21 @@ class InvalidResourceVersionError(ApiValidationError):
             code=Code.invariant,
             diagnostics=f"Validation errors: Immunization resource version:{self.resource_version} in the request "
             f"headers is invalid.",
+        )
+    
+
+@dataclass
+class TooManyResultsError(ApiValidationError):
+    """Use this when there are too many results returned"""
+
+    message: str
+
+    def to_operation_outcome(self) -> dict:
+        return create_operation_outcome(
+            resource_id=str(uuid.uuid4()),
+            severity=Severity.error,
+            code=Code.invalid,
+            diagnostics=self.message,
         )
 
 

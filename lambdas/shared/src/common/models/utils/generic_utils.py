@@ -1,10 +1,10 @@
 """Generic utilities"""
 
 import base64
+import copy
 import datetime
-import json
 import urllib.parse
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Literal, Optional
 
 from fhir.resources.R4B.bundle import (
     Bundle as FhirBundle,
@@ -14,6 +14,7 @@ from fhir.resources.R4B.bundle import (
     BundleEntrySearch,
     BundleLink,
 )
+from fhir.resources.R4B.identifier import Identifier
 from fhir.resources.R4B.immunization import Immunization
 from stdnum.verhoeff import validate
 
@@ -154,56 +155,55 @@ def create_diagnostics_error(value):
     return exp_error
 
 
-def make_empty_bundle(self_url: str) -> Dict[str, Any]:
-    return {
-        "resourceType": "Bundle",
-        "type": "searchset",
-        "link": [{"relation": "self", "url": self_url}],
-        "entry": [],
-        "total": 0,
-    }
+def make_empty_search_bundle(searched_url: str) -> FhirBundle:
+    # May need to adjust - FHIR Bundle might not like this link (could use Link and remove type in controller)
+    return FhirBundle(entry=[], link=[BundleLink(relation="self", url=searched_url)], type="searchset", total=0)
 
 
-def form_json(response, _elements, identifier, baseurl):
-    self_url = f"{baseurl}?identifier={identifier}" + (f"&_elements={_elements}" if _elements else "")
-
-    if not response:
-        return make_empty_bundle(self_url)
-
-    meta = {"versionId": response["version"]} if "version" in response else {}
-
-    # Full Immunization payload to be returned if only the identifier parameter was provided and truncated
-    # when _elements is used
-    if _elements:
-        elements = {e.strip().lower() for e in _elements.split(",") if e.strip()}
-        resource = {"resourceType": "Immunization"}
-        if "id" in elements:
-            resource["id"] = response["id"]
-        if "meta" in elements and meta:
-            resource["meta"] = meta
-
-    else:
-        resource = response["resource"]
-        resource["meta"] = meta
-
-    entry = BundleEntry(
-        fullUrl=f"{baseurl}/{response['id']}",
-        resource=(Immunization.construct(**resource) if _elements else Immunization.parse_obj(resource)),
-        search=BundleEntrySearch.construct(mode="match") if not _elements else None,
+# A lot of stuff in here is not very generic. Consider moving to relevant lambdas
+def make_search_bundle(
+    resource: Optional[dict],
+    version_id: Optional[int],
+    elements: Optional[set[str]],
+    identifier: Identifier,
+    base_url: str,
+) -> FhirBundle:
+    searched_url = f"{base_url}?identifier={identifier.system}|{identifier.value}" + (
+        f"&_elements={','.join(sorted(elements))}" if elements else ""
     )
 
-    fhir_bundle = FhirBundle(
-        resourceType="Bundle",
+    if not resource:
+        return make_empty_search_bundle(searched_url)
+
+    meta = {"versionId": str(version_id)}
+
+    # Full Immunization payload to be returned if only the identifier parameter was provided and truncated when
+    # _elements is used
+    if elements is not None:
+        resource_for_bundle: dict[str, Any] = {"resourceType": "Immunization"}
+        if "id" in elements:
+            resource_for_bundle["id"] = resource["id"]
+        if "meta" in elements:
+            resource_for_bundle["meta"] = meta
+
+    else:
+        resource_for_bundle = copy.deepcopy(resource)
+        resource_for_bundle["meta"] = meta
+
+    entry = BundleEntry.construct(
+        fullUrl=f"{base_url}/{resource['id']}",
+        resource=(
+            Immunization.construct(**resource_for_bundle) if elements else Immunization.parse_obj(resource_for_bundle)
+        ),
+        search=BundleEntrySearch.construct(mode="match") if not elements else None,
+    )
+
+    return FhirBundle(
         type="searchset",
-        link=[BundleLink(relation="self", url=self_url)],
+        link=[BundleLink(relation="self", url=searched_url)],
         entry=[entry],
         total=1,
     )
-
-    # Reassigned total to ensure it appears last in the response to match expected output
-    data = json.loads(fhir_bundle.json(by_alias=True))
-    data["total"] = data.pop("total")
-    return data
 
 
 def check_keys_in_sources(event, not_required_keys):

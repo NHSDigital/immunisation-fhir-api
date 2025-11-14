@@ -2,13 +2,11 @@ import datetime
 import json
 import os
 import unittest
-import uuid
 from copy import deepcopy
 from decimal import Decimal
 from unittest.mock import Mock, create_autospec, patch
 
-from fhir.resources.R4B.bundle import Bundle as FhirBundle
-from fhir.resources.R4B.bundle import BundleEntry
+from fhir.resources.R4B.bundle import BundleLink
 from fhir.resources.R4B.identifier import Identifier
 from fhir.resources.R4B.immunization import Immunization
 
@@ -33,6 +31,7 @@ from test_common.testing_utils.immunization_utils import (
     create_covid_immunization_dict,
     create_covid_immunization_dict_no_id,
 )
+from test_common.testing_utils.values_for_tests import ValidValues
 
 # Constants for use within the tests
 NHS_NUMBER_USED_IN_SAMPLE_DATA = "9000000009"
@@ -199,12 +198,16 @@ class TestGetImmunization(TestFhirServiceBase):
         self.imms_repo.get_immunization_resource_and_metadata_by_id.assert_called_once_with(imms_id)
 
 
-class TestGetImmunizationIdentifier(unittest.TestCase):
+class TestGetImmunizationByIdentifier(TestFhirServiceBase):
     """Tests for FhirService.get_immunization_by_id"""
 
     MOCK_SUPPLIER_NAME = "TestSupplier"
+    test_identifier = Identifier.construct(system="some-system", value="some-value")
+    mock_resource_meta = ImmunizationRecordMetadata(test_identifier, resource_version=1, is_deleted=False,
+                                                    is_reinstated=False)
 
     def setUp(self):
+        super().setUp()
         self.authoriser = create_autospec(Authoriser)
         self.imms_repo = create_autospec(ImmunizationRepository)
         self.validator = create_autospec(ImmunizationValidator)
@@ -216,78 +219,104 @@ class TestGetImmunizationIdentifier(unittest.TestCase):
         patch.stopall()
 
     def test_get_immunization_by_identifier(self):
-        """it should find an Immunization by id"""
-        imms_id = "an-id#an-id"
-        identifier = "test"
-        element = "id,mEta,DDD"
-
-        mock_resource = create_covid_immunization_dict(identifier)
+        """it should find an Immunization by identifier"""
+        mock_resource = create_covid_immunization_dict("1234-some-id")
+        self.mock_redis.hget.return_value = "COVID"
+        self.mock_redis_getter.return_value = self.mock_redis
         self.authoriser.authorise.return_value = True
-        self.imms_repo.get_immunization_by_identifier.return_value = (
-            {
-                "resource": mock_resource,
-                "id": imms_id,
-                "version": 1,
-            },
-            "covid",
-        )
+        self.imms_repo.get_immunization_by_identifier.return_value = mock_resource, self.mock_resource_meta
 
         # When
-        service_resp = self.fhir_service.get_immunization_by_identifier(
-            imms_id, self.MOCK_SUPPLIER_NAME, identifier, element
-        )
+        result = self.fhir_service.get_immunization_by_identifier(self.test_identifier, self.MOCK_SUPPLIER_NAME, None)
 
         # Then
-        self.imms_repo.get_immunization_by_identifier.assert_called_once_with(imms_id)
-        self.authoriser.authorise.assert_called_once_with(self.MOCK_SUPPLIER_NAME, ApiOperationCode.SEARCH, {"covid"})
-        self.assertEqual(service_resp["resourceType"], "Bundle")
-        self.assertEqual(service_resp.get("type"), "searchset")
-        self.assertIn("entry", service_resp)
-        self.assertEqual(len(service_resp["entry"]), 1)
-        self.assertIn("total", service_resp)
-        self.assertEqual(service_resp["total"], 1)
-        res = service_resp["entry"][0]["resource"]
-        self.assertEqual(res["resourceType"], "Immunization")
-        self.assertEqual(res["id"], imms_id)
+        self.imms_repo.get_immunization_by_identifier.assert_called_once_with(self.test_identifier)
+        self.authoriser.authorise.assert_called_once_with(self.MOCK_SUPPLIER_NAME, ApiOperationCode.SEARCH, {"COVID"})
+
+        self.assertEqual(result.type, "searchset")
+        self.assertEqual(result.total, 1)
+        self.assertEqual(
+            result.link[0],
+            BundleLink.construct(
+                relation="self",
+                url="https://internal-dev.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization?identifier=some-"
+                "system|some-value",
+            ),
+        )
+
+        # Search function adds meta to the resource
+        mock_resource["meta"] = {"versionId": "1"}
+        self.assertEqual(result.entry[0].resource, Immunization.parse_obj(mock_resource))
 
     def test_get_immunization_by_identifier_raises_error_when_not_authorised(self):
-        """it should find an Immunization by id"""
-        imms = "an-id#an-id"
-        identifier = "test"
-        element = "id,mEta,DDD"
+        """it should return an unauthorized error when the client does not have authorization for the vacc type"""
+        mock_resource = create_covid_immunization_dict("1234-some-id")
+        self.mock_redis.hget.return_value = "COVID"
+        self.mock_redis_getter.return_value = self.mock_redis
         self.authoriser.authorise.return_value = False
-        self.imms_repo.get_immunization_by_identifier.return_value = (
-            {
-                "id": "foo",
-                "version": 1,
-            },
-            "covid",
-        )
+        self.imms_repo.get_immunization_by_identifier.return_value = mock_resource, self.mock_resource_meta
 
         with self.assertRaises(UnauthorizedVaxError):
             # When
-            self.fhir_service.get_immunization_by_identifier(imms, self.MOCK_SUPPLIER_NAME, identifier, element)
+            self.fhir_service.get_immunization_by_identifier(self.test_identifier, self.MOCK_SUPPLIER_NAME, None)
 
         # Then
-        self.imms_repo.get_immunization_by_identifier.assert_called_once_with(imms)
-        self.authoriser.authorise.assert_called_once_with(self.MOCK_SUPPLIER_NAME, ApiOperationCode.SEARCH, {"covid"})
+        self.imms_repo.get_immunization_by_identifier.assert_called_once_with(self.test_identifier)
+        self.authoriser.authorise.assert_called_once_with(self.MOCK_SUPPLIER_NAME, ApiOperationCode.SEARCH, {"COVID"})
 
-    def test_immunization_not_found(self):
-        """it should return None if Immunization doesn't exist"""
-        imms_id = "none"
-        identifier = "test"
-        element = "id"
+    def test_get_immunization_by_identifier_returns_empty_search_when_not_found(self):
+        """it should return an empty search bundle when the resource is not found"""
         self.imms_repo.get_immunization_by_identifier.return_value = None, None
 
         # When
-        act_imms = self.fhir_service.get_immunization_by_identifier(
-            imms_id, self.MOCK_SUPPLIER_NAME, identifier, element
+        result = self.fhir_service.get_immunization_by_identifier(self.test_identifier, self.MOCK_SUPPLIER_NAME, None)
+
+        # Then
+        self.imms_repo.get_immunization_by_identifier.assert_called_once_with(self.test_identifier)
+
+        self.assertEqual(result.type, "searchset")
+        self.assertEqual(result.total, 0)
+        self.assertEqual(
+            result.link[0],
+            BundleLink.construct(
+                relation="self",
+                url="https://internal-dev.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization?identifier=some-"
+                "system|some-value",
+            ),
+        )
+        self.assertEqual(result.entry, [])
+
+    def test_get_immunization_by_identifier_when_elements_parameter_provided(self):
+        """it should return a subset of the resource when the _elements parameter is provided"""
+        mock_resource = create_covid_immunization_dict("1234-some-id")
+        self.mock_redis.hget.return_value = "COVID"
+        self.mock_redis_getter.return_value = self.mock_redis
+        self.authoriser.authorise.return_value = True
+        self.imms_repo.get_immunization_by_identifier.return_value = mock_resource, self.mock_resource_meta
+
+        # When
+        result = self.fhir_service.get_immunization_by_identifier(
+            self.test_identifier, self.MOCK_SUPPLIER_NAME, {"id", "meta"}
         )
 
         # Then
-        self.imms_repo.get_immunization_by_identifier.assert_called_once_with(imms_id)
+        self.imms_repo.get_immunization_by_identifier.assert_called_once_with(self.test_identifier)
+        self.authoriser.authorise.assert_called_once_with(self.MOCK_SUPPLIER_NAME, ApiOperationCode.SEARCH, {"COVID"})
 
-        self.assertEqual(act_imms["entry"], [])
+        self.assertEqual(result.type, "searchset")
+        self.assertEqual(result.total, 1)
+        self.assertEqual(
+            result.link[0],
+            BundleLink.construct(
+                relation="self",
+                url="https://internal-dev.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization?identifier=some-"
+                "system|some-value&_elements=id,meta",
+            ),
+        )
+        self.assertEqual(
+            result.entry[0].resource,
+            Immunization.construct(**{"resourceType": "Immunization", "id": "1234-some-id", "meta": {"versionId": "1"}}),
+        )
 
 
 class TestCreateImmunization(TestFhirServiceBase):
@@ -695,12 +724,13 @@ class TestDeleteImmunization(TestFhirServiceBase):
         self.authoriser.authorise.assert_called_once_with("Test", ApiOperationCode.DELETE, {"FLU"})
 
 
-class TestSearchImmunizations(unittest.TestCase):
+class TestSearchImmunizations(TestFhirServiceBase):
     """Tests for FhirService.search_immunizations"""
 
     MOCK_SUPPLIER_SYSTEM_NAME = "Test"
 
     def setUp(self):
+        super().setUp()
         os.environ["IMMUNIZATION_ENV"] = "internal-dev"
         os.environ["IMMUNIZATION_BASE_PATH"] = "immunisation-fhir-api/FHIR/R4"
         self.authoriser = create_autospec(Authoriser)
@@ -709,452 +739,212 @@ class TestSearchImmunizations(unittest.TestCase):
         self.fhir_service = FhirService(self.imms_repo, self.authoriser, self.validator)
         self.nhs_search_param = "patient.identifier"
         self.vaccine_type_search_param = "-immunization.target"
-        self.sample_patient_resource = load_json_data("bundle_patient_resource.json")
 
-    def test_vaccine_type_search(self):
-        """It should search for the correct vaccine type"""
-        nhs_number = VALID_NHS_NUMBER
+    @patch("service.fhir_service.uuid4", return_value="123456789-12")
+    def test_search_immunizations_returns_results_as_a_search_bundle(self, mock_uuid):
+        """it should return the retrieved immunization resources within a search bundle"""
+        mock_resource = create_covid_immunization_dict("1234-some-id")
         vaccine_type = "COVID"
-        params = f"{self.nhs_search_param}={nhs_number}&{self.vaccine_type_search_param}={vaccine_type}"
+        self.authoriser.filter_permitted_vacc_types.return_value = {vaccine_type}
+        self.imms_repo.find_immunizations.return_value = [mock_resource]
 
+        # When
+        result = self.fhir_service.search_immunizations(
+            VALID_NHS_NUMBER, {vaccine_type}, self.MOCK_SUPPLIER_SYSTEM_NAME, None, None, None
+        )
+
+        # Then
+        self.imms_repo.find_immunizations.assert_called_once_with(VALID_NHS_NUMBER, {vaccine_type})
+        mock_uuid.assert_called_once()
+        self.authoriser.filter_permitted_vacc_types.assert_called_once_with(
+            self.MOCK_SUPPLIER_SYSTEM_NAME, ApiOperationCode.SEARCH, {"COVID"}
+        )
+
+        self.assertEqual(result.type, "searchset")
+        self.assertEqual(result.total, 1)
+        self.assertEqual(
+            result.link[0],
+            BundleLink.construct(
+                relation="self",
+                url="https://internal-dev.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization?immunization-target"
+                "=COVID&patient.identifier=https://fhir.nhs.uk/Id/nhs-number|9990548609",
+            ),
+        )
+        # Will contain the matched immunization and then the referenced patient resource
+        self.assertEqual(len(result.entry), 2)
+        self.assertEqual(result.entry[0].resource.json(), json.dumps(ValidValues.expected_resource_in_search))
+        self.assertEqual(result.entry[-1].resource.resource_type, "Patient")
+
+    @patch("service.fhir_service.uuid4", return_value="123456789-12")
+    def test_search_immunizations_filters_by_date_and_status(self, mock_uuid):
+        """it should only return the resources which occurred within the date filters and have a status of completed"""
+        mock_resource = create_covid_immunization_dict("1234-some-id", occurrence_date_time="2021-02-07T13:28:17+00:00")
+        mock_resource_filtered_date_from = create_covid_immunization_dict(
+            "1235-some-id", occurrence_date_time="2021-02-01T13:28:17+00:00"
+        )
+        mock_resource_filtered_date_to = create_covid_immunization_dict(
+            "1236-some-id", occurrence_date_time="2023-02-07T13:28:17+00:00"
+        )
+        mock_resource_filtered_status = create_covid_immunization_dict("1237-some-id", status="entered-in-error")
+
+        vaccine_type = "COVID"
+        self.authoriser.filter_permitted_vacc_types.return_value = {vaccine_type}
+        self.imms_repo.find_immunizations.return_value = [
+            mock_resource_filtered_date_from,
+            mock_resource,
+            mock_resource_filtered_date_to,
+            mock_resource_filtered_status,
+        ]
+
+        # When
+        result = self.fhir_service.search_immunizations(
+            VALID_NHS_NUMBER,
+            {vaccine_type},
+            self.MOCK_SUPPLIER_SYSTEM_NAME,
+            datetime.date(2021, 2, 6),
+            datetime.date(2023, 1, 1),
+            None,
+        )
+
+        # Then
+        self.imms_repo.find_immunizations.assert_called_once_with(VALID_NHS_NUMBER, {vaccine_type})
+        mock_uuid.assert_called_once()
+        self.authoriser.filter_permitted_vacc_types.assert_called_once_with(
+            self.MOCK_SUPPLIER_SYSTEM_NAME, ApiOperationCode.SEARCH, {"COVID"}
+        )
+
+        self.assertEqual(result.type, "searchset")
+        self.assertEqual(result.total, 1)
+        self.assertEqual(
+            result.link[0],
+            BundleLink.construct(
+                relation="self",
+                url="https://internal-dev.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization?-date.from=2021"
+                "-02-06&-date.to=2023-01-01&immunization-target=COVID&patient.identifier="
+                "https://fhir.nhs.uk/Id/nhs-number|9990548609",
+            ),
+        )
+        # Will contain the matched immunization and then the referenced patient resource
+        # And will filter out any additional resources
+        self.assertEqual(len(result.entry), 2)
+        self.assertEqual(result.entry[0].resource.json(), json.dumps(ValidValues.expected_resource_in_search))
+        self.assertEqual(result.entry[-1].resource.resource_type, "Patient")
+
+    @patch("service.fhir_service.uuid4", return_value="123456789-12")
+    def test_search_immunizations_adds_include_to_searched_url(self, mock_uuid):
+        """it should add the _include parameter into the returned url when the client provides it. Currently, it has no
+        effect on the resources returned as we always include the patient resource anyway"""
+        mock_resource = create_covid_immunization_dict("1234-some-id")
+        vaccine_type = "COVID"
+        self.authoriser.filter_permitted_vacc_types.return_value = {vaccine_type}
+        self.imms_repo.find_immunizations.return_value = [mock_resource]
+
+        # When
+        result = self.fhir_service.search_immunizations(
+            VALID_NHS_NUMBER, {vaccine_type}, self.MOCK_SUPPLIER_SYSTEM_NAME, None, None, "Patient.identifier"
+        )
+
+        # Then
+        self.imms_repo.find_immunizations.assert_called_once_with(VALID_NHS_NUMBER, {vaccine_type})
+        mock_uuid.assert_called_once()
+        self.authoriser.filter_permitted_vacc_types.assert_called_once_with(
+            self.MOCK_SUPPLIER_SYSTEM_NAME, ApiOperationCode.SEARCH, {"COVID"}
+        )
+
+        self.assertEqual(result.type, "searchset")
+        self.assertEqual(result.total, 1)
+        self.assertEqual(
+            result.link[0],
+            BundleLink.construct(
+                relation="self",
+                url="https://internal-dev.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization?immunization-target"
+                "=COVID&_include=Patient.identifier&patient.identifier=https://fhir.nhs.uk/Id/nhs-number|9990548609",
+            ),
+        )
+        # Will contain the matched immunization and then the referenced patient resource
+        self.assertEqual(len(result.entry), 2)
+        self.assertEqual(result.entry[0].resource.json(), json.dumps(ValidValues.expected_resource_in_search))
+        self.assertEqual(result.entry[-1].resource.resource_type, "Patient")
+
+    def test_search_immunizations_returns_empty_bundle_when_no_results_found(self):
+        """it should return an empty search bundle when no results are found"""
+        vaccine_type = "FLU"
         self.authoriser.filter_permitted_vacc_types.return_value = {vaccine_type}
         self.imms_repo.find_immunizations.return_value = []
 
         # When
-        _ = self.fhir_service.search_immunizations(nhs_number, [vaccine_type], params, self.MOCK_SUPPLIER_SYSTEM_NAME)
+        result = self.fhir_service.search_immunizations(
+            VALID_NHS_NUMBER, {vaccine_type}, self.MOCK_SUPPLIER_SYSTEM_NAME, None, None, None
+        )
 
         # Then
+        self.imms_repo.find_immunizations.assert_called_once_with(VALID_NHS_NUMBER, {vaccine_type})
         self.authoriser.filter_permitted_vacc_types.assert_called_once_with(
             self.MOCK_SUPPLIER_SYSTEM_NAME, ApiOperationCode.SEARCH, {vaccine_type}
         )
-        self.imms_repo.find_immunizations.assert_called_once_with(nhs_number, {vaccine_type})
 
-    def test_make_fhir_bundle_from_search_result(self):
-        """It should return a FHIR Bundle resource"""
-        imms_ids = ["imms-1", "imms-2"]
-        imms_list = [create_covid_immunization_dict(imms_id) for imms_id in imms_ids]
-        self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
-        nhs_number = NHS_NUMBER_USED_IN_SAMPLE_DATA
-        vaccine_types = ["COVID"]
-        params = f"{self.nhs_search_param}={nhs_number}&{self.vaccine_type_search_param}={vaccine_types}"
-        self.authoriser.filter_permitted_vacc_types.return_value = set(vaccine_types)
-        # When
-        result, contains_unauthorised_vaccs = self.fhir_service.search_immunizations(
-            nhs_number, vaccine_types, params, self.MOCK_SUPPLIER_SYSTEM_NAME
-        )
-        searched_imms = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
-        # Then
-        self.assertIsInstance(result, FhirBundle)
         self.assertEqual(result.type, "searchset")
-        self.assertEqual(len(imms_ids), len(searched_imms))
-        self.assertFalse(contains_unauthorised_vaccs)
-        # Assert each entry in the bundle
-        for i, entry in enumerate(searched_imms):
-            self.assertIsInstance(entry, BundleEntry)
-            self.assertEqual(entry.resource.resource_type, "Immunization")
-            self.assertEqual(entry.resource.id, imms_ids[i])
-        # Assert self link
-        self.assertEqual(len(result.link), 1)
-        self.assertEqual(result.link[0].relation, "self")
-
-    def test_date_from_is_used_to_filter(self):
-        """It should return only Immunizations after date_from"""
-        # Arrange
-        imms = [
-            ("imms-1", "2021-02-07T13:28:17.271+00:00"),
-            ("imms-2", "2021-02-08T13:28:17.271+00:00"),
-        ]
-        imms_list = [
-            create_covid_immunization_dict(imms_id, occurrence_date_time=occcurrence_date_time)
-            for (imms_id, occcurrence_date_time) in imms
-        ]
-        imms_ids = [imms[0] for imms in imms]
-        nhs_number = NHS_NUMBER_USED_IN_SAMPLE_DATA
-        vaccine_types = ["COVID"]
-        self.authoriser.filter_permitted_vacc_types.return_value = set(vaccine_types)
-
-        # CASE: Day before.
-        self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
-
-        # When
-        result, _ = self.fhir_service.search_immunizations(
-            nhs_number,
-            vaccine_types,
-            "",
-            self.MOCK_SUPPLIER_SYSTEM_NAME,
-            date_from=datetime.date(2021, 2, 6),
+        self.assertEqual(result.total, 0)
+        self.assertEqual(
+            result.link[0],
+            BundleLink.construct(
+                relation="self",
+                url="https://internal-dev.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization?immunization-target"
+                "=FLU&patient.identifier=https://fhir.nhs.uk/Id/nhs-number|9990548609",
+            ),
         )
-        searched_imms = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
+        self.assertEqual(len(result.entry), 0)
 
-        # Then
-        self.assertEqual(2, len(searched_imms))
-        for i, entry in enumerate(searched_imms):
-            self.assertEqual(imms_ids[i], entry.resource.id)
-
-        # CASE:Day of first, inclusive search.
-        self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
+    @patch("service.fhir_service.uuid4", return_value="123456789-12")
+    def test_search_immunizations_includes_an_error_outcome_within_results_if_client_requests_unauthorised_vacc_types(
+        self, mock_uuid
+    ):
+        """it should return any vaccinations that the client is authorised to retrieve but also include an Operation
+        Outcome with an error if the requested anything they were not permitted to handle"""
+        mock_resource = create_covid_immunization_dict("1234-some-id")
+        vaccine_type = "COVID"
+        self.authoriser.filter_permitted_vacc_types.return_value = {vaccine_type}
+        self.imms_repo.find_immunizations.return_value = [mock_resource]
 
         # When
-        result, _ = self.fhir_service.search_immunizations(
-            nhs_number,
-            vaccine_types,
-            "",
-            self.MOCK_SUPPLIER_SYSTEM_NAME,
-            date_from=datetime.date(2021, 2, 7),
+        result = self.fhir_service.search_immunizations(
+            VALID_NHS_NUMBER, {vaccine_type, "FLU"}, self.MOCK_SUPPLIER_SYSTEM_NAME, None, None, None
         )
-        searched_imms = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
 
         # Then
-        self.assertEqual(2, len(searched_imms))
-        for i, entry in enumerate(searched_imms):
-            self.assertEqual(imms_ids[i], entry.resource.id)
-
-        # CASE: Day of second, inclusive search.
-        self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
-
-        # When
-        result, _ = self.fhir_service.search_immunizations(
-            nhs_number,
-            vaccine_types,
-            "",
-            self.MOCK_SUPPLIER_SYSTEM_NAME,
-            date_from=datetime.date(2021, 2, 8),
+        # Does not pass FLU in as client is only permitted to retrieve COVID vaccinations
+        self.imms_repo.find_immunizations.assert_called_once_with(VALID_NHS_NUMBER, {vaccine_type})
+        mock_uuid.assert_called_once()
+        self.authoriser.filter_permitted_vacc_types.assert_called_once_with(
+            self.MOCK_SUPPLIER_SYSTEM_NAME, ApiOperationCode.SEARCH, {"COVID", "FLU"}
         )
-        searched_imms = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
 
-        # Then
-        self.assertEqual(1, len(searched_imms))
-        self.assertEqual(imms_ids[1], searched_imms[0].resource.id)
-
-        # CASE: Day after.
-        self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
-
-        # When
-        result, _ = self.fhir_service.search_immunizations(
-            nhs_number,
-            vaccine_types,
-            "",
-            self.MOCK_SUPPLIER_SYSTEM_NAME,
-            date_from=datetime.date(2021, 2, 9),
+        self.assertEqual(result.type, "searchset")
+        self.assertEqual(result.total, 1)
+        self.assertEqual(
+            result.link[0],
+            BundleLink.construct(
+                relation="self",
+                url="https://internal-dev.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization?immunization-target"
+                "=COVID&patient.identifier=https://fhir.nhs.uk/Id/nhs-number|9990548609",
+            ),
         )
-        searched_imms = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
-
-        # Then
-        self.assertEqual(0, len(searched_imms))
-
-    def test_date_from_is_optional(self):
-        """It should return everything when no date_from is specified"""
-        # Arrange
-        imms_ids = ["imms-1", "imms-2"]
-        imms_list = [create_covid_immunization_dict(imms_id) for imms_id in imms_ids]
-        nhs_number = NHS_NUMBER_USED_IN_SAMPLE_DATA
-        vaccine_types = ["COVID"]
-        self.authoriser.filter_permitted_vacc_types.return_value = set(vaccine_types)
-
-        # CASE: Without date_from
-        self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
-
-        # When
-        result, _ = self.fhir_service.search_immunizations(nhs_number, vaccine_types, "", self.MOCK_SUPPLIER_SYSTEM_NAME)
-        searched_imms = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
-
-        # Then
-        for i, entry in enumerate(searched_imms):
-            self.assertEqual(entry.resource.id, imms_ids[i])
-
-        # CASE: With date_from
-        self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
-
-        # When
-        result, _ = self.fhir_service.search_immunizations(
-            nhs_number,
-            vaccine_types,
-            "",
-            self.MOCK_SUPPLIER_SYSTEM_NAME,
-            date_from=datetime.date(2021, 3, 6),
-        )
-        searched_imms = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
-
-        # Then
-        for i, entry in enumerate(searched_imms):
-            self.assertEqual(entry.resource.id, imms_ids[i])
-
-    def test_date_to_is_used_to_filter(self):
-        """It should return only Immunizations before date_to"""
-        # Arrange
-        imms = [
-            ("imms-1", "2021-02-07T13:28:17.271+00:00"),
-            ("imms-2", "2021-02-08T13:28:17.271+00:00"),
-        ]
-        imms_list = [
-            create_covid_immunization_dict(imms_id, occurrence_date_time=occcurrence_date_time)
-            for (imms_id, occcurrence_date_time) in imms
-        ]
-        imms_ids = [imms[0] for imms in imms]
-        nhs_number = NHS_NUMBER_USED_IN_SAMPLE_DATA
-        vaccine_types = ["COVID"]
-        self.authoriser.filter_permitted_vacc_types.return_value = set(vaccine_types)
-
-        # CASE: Day after.
-        self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
-
-        # When
-        result, _ = self.fhir_service.search_immunizations(
-            nhs_number,
-            vaccine_types,
-            "",
-            self.MOCK_SUPPLIER_SYSTEM_NAME,
-            date_to=datetime.date(2021, 2, 9),
-        )
-        searched_imms = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
-
-        # Then
-        self.assertEqual(len(searched_imms), 2)
-        for i, entry in enumerate(searched_imms):
-            self.assertEqual(entry.resource.id, imms_ids[i])
-
-        # CASE: Day of second, inclusive search.
-        self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
-
-        # When
-        result, _ = self.fhir_service.search_immunizations(
-            nhs_number,
-            vaccine_types,
-            "",
-            self.MOCK_SUPPLIER_SYSTEM_NAME,
-            date_to=datetime.date(2021, 2, 8),
-        )
-        searched_imms = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
-
-        # Then
-        self.assertEqual(len(searched_imms), 2)
-        for i, entry in enumerate(searched_imms):
-            self.assertEqual(entry.resource.id, imms_ids[i])
-
-        # CASE: Day of first, inclusive search.
-        self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
-
-        # When
-        result, _ = self.fhir_service.search_immunizations(
-            nhs_number,
-            vaccine_types,
-            "",
-            self.MOCK_SUPPLIER_SYSTEM_NAME,
-            date_to=datetime.date(2021, 2, 7),
-        )
-        searched_imms = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
-
-        # Then
-        self.assertEqual(len(searched_imms), 1)
-        self.assertEqual(searched_imms[0].resource.id, imms_ids[0])
-
-        # CASE: Day before.
-        self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
-
-        # When
-        result, _ = self.fhir_service.search_immunizations(
-            nhs_number,
-            vaccine_types,
-            "",
-            self.MOCK_SUPPLIER_SYSTEM_NAME,
-            date_to=datetime.date(2021, 2, 6),
-        )
-        searched_imms = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
-
-        # Then
-        self.assertEqual(len(searched_imms), 0)
-
-    def test_date_to_is_optional(self):
-        """It should return everything when no date_to is specified"""
-        # Arrange
-        imms_ids = ["imms-1", "imms-2"]
-        imms_list = [create_covid_immunization_dict(imms_id) for imms_id in imms_ids]
-        nhs_number = NHS_NUMBER_USED_IN_SAMPLE_DATA
-        vaccine_types = ["COVID"]
-        self.authoriser.filter_permitted_vacc_types.return_value = set(vaccine_types)
-
-        # CASE 1: Without date_to argument
-        self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
-
-        # When
-        result, _ = self.fhir_service.search_immunizations(nhs_number, vaccine_types, "", self.MOCK_SUPPLIER_SYSTEM_NAME)
-        searched_imms = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
-
-        # Then
-        for i, entry in enumerate(searched_imms):
-            self.assertEqual(entry.resource.id, imms_ids[i])
-
-        # CASE 2: With date_to argument
-        self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
-
-        # When
-        result, _ = self.fhir_service.search_immunizations(
-            nhs_number,
-            vaccine_types,
-            "",
-            self.MOCK_SUPPLIER_SYSTEM_NAME,
-            date_to=datetime.date(2021, 3, 8),
-        )
-        searched_imms = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
-
-        # Then
-        for i, entry in enumerate(searched_imms):
-            self.assertEqual(entry.resource.id, imms_ids[i])
-
-    def test_immunization_resources_are_filtered_for_search(self):
-        """
-        Test that each immunization resource returned is filtered to include only the appropriate fields for a search
-        response when the patient is Unrestricted
-        """
-        # Arrange
-        imms_ids = ["imms-1", "imms-2"]
-        imms_list = [
-            create_covid_immunization_dict(
-                imms_id,
-                NHS_NUMBER_USED_IN_SAMPLE_DATA,
-                occurrence_date_time="2021-02-07T13:28:17+00:00",
-            )
-            for imms_id in imms_ids
-        ]
-
-        vaccine_types = ["COVID"]
-        self.authoriser.filter_permitted_vacc_types.return_value = set(vaccine_types)
-        self.imms_repo.find_immunizations.return_value = deepcopy(imms_list)
-
-        # When
-        result, _ = self.fhir_service.search_immunizations(
-            NHS_NUMBER_USED_IN_SAMPLE_DATA,
-            vaccine_types,
-            "",
-            self.MOCK_SUPPLIER_SYSTEM_NAME,
-        )
-        searched_imms = [
-            json.loads(entry.json(), parse_float=Decimal)
-            for entry in result.entry
-            if entry.resource.resource_type == "Immunization"
-        ]
-        searched_patient = [
-            json.loads(entry.json()) for entry in result.entry if entry.resource.resource_type == "Patient"
-        ][0]
-
-        # Then
-        expected_output_resource = load_json_data(
-            "completed_covid_immunization_event_filtered_for_search_using_bundle_patient_resource.json"
-        )
-        expected_output_resource["patient"]["reference"] = searched_patient["fullUrl"]
-
-        for i, entry in enumerate(searched_imms):
-            # Check that entry has correct resource id
-            self.assertEqual(entry["resource"]["id"], imms_ids[i])
-
-            # Check that output is as expected (filtered, with id added)
-            expected_output_resource["id"] = imms_ids[i]
-            self.assertEqual(entry["resource"], expected_output_resource)
-
-    def test_matches_contain_fullUrl(self):
-        """All matches must have a fullUrl consisting of their id.
-        See http://hl7.org/fhir/R4B/bundle-definitions.html#Bundle.entry.fullUrl.
-        Tested because fhir.resources validation doesn't check this as mandatory."""
-        imms_ids = ["imms-1", "imms-2"]
-        imms_list = [create_covid_immunization_dict(imms_id) for imms_id in imms_ids]
-        self.imms_repo.find_immunizations.return_value = imms_list
-        nhs_number = NHS_NUMBER_USED_IN_SAMPLE_DATA
-        vaccine_types = ["COVID"]
-        self.authoriser.filter_permitted_vacc_types.return_value = set(vaccine_types)
-
-        # When
-        result, _ = self.fhir_service.search_immunizations(nhs_number, vaccine_types, "", self.MOCK_SUPPLIER_SYSTEM_NAME)
-        entries = [entry for entry in result.entry if entry.resource.resource_type == "Immunization"]
-
-        # Then
-        for i, entry in enumerate(entries):
-            self.assertEqual(
-                entry.fullUrl,
-                f"https://internal-dev.api.service.nhs.uk/immunisation-fhir-api/FHIR/R4/Immunization/{imms_ids[i]}",
-            )
-
-    def test_patient_contains_fullUrl(self):
-        """Patient must have a fullUrl consisting of its id.
-        See http://hl7.org/fhir/R4B/bundle-definitions.html#Bundle.entry.fullUrl.
-        Tested because fhir.resources validation doesn't check this as mandatory."""
-        imms_ids = ["imms-1", "imms-2"]
-        imms_list = [create_covid_immunization_dict(imms_id) for imms_id in imms_ids]
-        self.imms_repo.find_immunizations.return_value = imms_list
-        nhs_number = NHS_NUMBER_USED_IN_SAMPLE_DATA
-        vaccine_types = ["COVID"]
-        self.authoriser.filter_permitted_vacc_types.return_value = set(vaccine_types)
-
-        # When
-        result, _ = self.fhir_service.search_immunizations(nhs_number, vaccine_types, "", self.MOCK_SUPPLIER_SYSTEM_NAME)
-
-        # Then
-        patient_entry = next(
-            (entry for entry in result.entry if entry.resource.resource_type == "Patient"),
-            None,
-        )
-        patient_full_url = patient_entry.fullUrl
-        self.assertTrue(patient_full_url.startswith("urn:uuid:"))
-
-        # Check that final part of fullUrl is a uuid
-        patient_full_url_uuid = patient_full_url.split(":")[2]
-        self.assertTrue(uuid.UUID(patient_full_url_uuid))
-
-    def test_patient_included(self):
-        """Patient is included in the results."""
-
-        imms_ids = ["imms-1", "imms-2"]
-        imms_list = [create_covid_immunization_dict(imms_id) for imms_id in imms_ids]
-        self.imms_repo.find_immunizations.return_value = imms_list
-        nhs_number = VALID_NHS_NUMBER
-        vaccine_types = ["COVID"]
-        self.authoriser.filter_permitted_vacc_types.return_value = set(vaccine_types)
-
-        # When
-        result, _ = self.fhir_service.search_immunizations(nhs_number, vaccine_types, "", self.MOCK_SUPPLIER_SYSTEM_NAME)
-
-        # Then
-        patient_entry = next((entry for entry in result.entry if entry.resource.resource_type == "Patient"))
-        self.assertIsNotNone(patient_entry)
-
-    def test_patient_is_stripped(self):
-        """The included Patient is a subset of the data."""
-
-        imms_ids = ["imms-1", "imms-2"]
-        imms_list = [create_covid_immunization_dict(imms_id) for imms_id in imms_ids]
-        self.imms_repo.find_immunizations.return_value = imms_list
-        nhs_number = VALID_NHS_NUMBER
-        vaccine_types = ["COVID"]
-        self.authoriser.filter_permitted_vacc_types.return_value = set(vaccine_types)
-
-        # When
-        result, _ = self.fhir_service.search_immunizations(nhs_number, vaccine_types, "", self.MOCK_SUPPLIER_SYSTEM_NAME)
-
-        # Then
-        patient_entry = next((entry for entry in result.entry if entry.resource.resource_type == "Patient"))
-        patient_entry_resource = patient_entry.resource
-        fields_to_keep = ["id", "resource_type", "identifier"]
-        # self.assertListEqual(sorted(vars(patient_entry.resource).keys()), sorted(fields_to_keep))
-        # self.assertGreater(len(patient), len(fields_to_keep))
-        for field in fields_to_keep:
-            self.assertTrue(hasattr(patient_entry_resource, field), f"{field} in Patient")
-            self.assertIsNotNone(getattr(patient_entry_resource, field))
-
-        for k, v in vars(patient_entry_resource).items():
-            if k not in fields_to_keep:
-                self.assertIsNone(v)
+        # Will contain the matched immunization, the referenced patient resource and an OperationOutcome
+        self.assertEqual(len(result.entry), 3)
+        self.assertEqual(result.entry[0].resource.json(), json.dumps(ValidValues.expected_resource_in_search))
+        self.assertEqual(result.entry[1].resource.resource_type, "Patient")
+        self.assertEqual(result.entry[2].resource.resource_type, "OperationOutcome")
 
     def test_search_raises_unauthorised_error_if_no_permissions(self):
-        """It should raise an UnauthorisedVaxError if the supplier does not have permissions for ANY of the requested
+        """it should raise an UnauthorisedVaxError if the supplier does not have permissions for ANY of the requested
         vaccination types"""
         vaccine_type = "COVID"
-        params = f"{self.nhs_search_param}={VALID_NHS_NUMBER}&{self.vaccine_type_search_param}={vaccine_type}"
-
         self.authoriser.filter_permitted_vacc_types.return_value = {}
 
         # When
         with self.assertRaises(UnauthorizedVaxError):
             self.fhir_service.search_immunizations(
-                VALID_NHS_NUMBER, [vaccine_type], params, self.MOCK_SUPPLIER_SYSTEM_NAME
+                VALID_NHS_NUMBER, {vaccine_type}, self.MOCK_SUPPLIER_SYSTEM_NAME, None, None, None
             )
 
         # Then
@@ -1162,28 +952,3 @@ class TestSearchImmunizations(unittest.TestCase):
             self.MOCK_SUPPLIER_SYSTEM_NAME, ApiOperationCode.SEARCH, {vaccine_type}
         )
         self.imms_repo.find_immunizations.assert_not_called()
-
-    def test_search_returns_successfully_but_flags_if_supplier_requests_vacc_types_without_perms(
-        self,
-    ):
-        """It should return a boolean indicating if the supplier has requested one or more vaccination types which
-        they do not have permission to search. This is a more permissive model and ensures that results are still
-        returned for the vacc types that they can handle"""
-        vaccine_types = ["COVID", "FLU"]
-        params = f"{self.nhs_search_param}={VALID_NHS_NUMBER}&{self.vaccine_type_search_param}={vaccine_types}"
-
-        # Supplier only has permission for Covid
-        self.authoriser.filter_permitted_vacc_types.return_value = {"COVID"}
-
-        # When
-        _, request_has_unauthorised_vacc_types = self.fhir_service.search_immunizations(
-            VALID_NHS_NUMBER, vaccine_types, params, self.MOCK_SUPPLIER_SYSTEM_NAME
-        )
-
-        # Then
-        self.authoriser.filter_permitted_vacc_types.assert_called_once_with(
-            self.MOCK_SUPPLIER_SYSTEM_NAME, ApiOperationCode.SEARCH, set(vaccine_types)
-        )
-        # Only calls the repository for vacc types it is authorised for
-        self.imms_repo.find_immunizations.assert_called_once_with(VALID_NHS_NUMBER, {"COVID"})
-        self.assertTrue(request_has_unauthorised_vacc_types)
