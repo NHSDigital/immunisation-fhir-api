@@ -1,6 +1,6 @@
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Union
+from typing import Optional, Union
 
 from .generic_utils import is_valid_simple_snomed, nhs_number_mod11_check
 
@@ -22,6 +22,9 @@ class PreValidation:
 
         if not isinstance(field_value, str):
             raise TypeError(f"{field_location} must be a string")
+
+        if field_value.isspace():
+            raise ValueError(f"{field_location} must be a non-empty string")
 
         if defined_length:
             if len(field_value) != defined_length:
@@ -46,14 +49,15 @@ class PreValidation:
     def for_list(
         field_value: list,
         field_location: str,
-        defined_length: int = None,
+        defined_length: Optional[int] = None,
+        max_length: Optional[int] = None,
         elements_are_strings: bool = False,
+        string_element_max_length: Optional[int] = None,
         elements_are_dicts: bool = False,
     ):
         """
-        Apply pre-validation to a list field to ensure it is a non-empty list which meets the length
-        requirements and requirements, if applicable, for each list element to be a non-empty string
-        or non-empty dictionary
+        Apply pre-validation to a list field to ensure it is a non-empty list which meets the length requirements and
+        requirements, if applicable, for each list element to be a non-empty string or non-empty dictionary
         """
         if not isinstance(field_value, list):
             raise TypeError(f"{field_location} must be an array")
@@ -65,12 +69,12 @@ class PreValidation:
             if len(field_value) == 0:
                 raise ValueError(f"{field_location} must be a non-empty array")
 
+        if max_length is not None and len(field_value) > max_length:
+            raise ValueError(f"{field_location} must be an array of maximum length {max_length}")
+
         if elements_are_strings:
-            for element in field_value:
-                if not isinstance(element, str):
-                    raise TypeError(f"{field_location} must be an array of strings")
-                if len(element) == 0:
-                    raise ValueError(f"{field_location} must be an array of non-empty strings")
+            for idx, element in enumerate(field_value):
+                PreValidation.for_string(element, f"{field_location}[{idx}]", max_length=string_element_max_length)
 
         if elements_are_dicts:
             for element in field_value:
@@ -181,6 +185,7 @@ class PreValidation:
         Apply pre-validation to an integer field to ensure that it is a positive integer,
         which does not exceed the maximum allowed value (if applicable)
         """
+        # This check uses type() instead of isinstance() because bool is a subclass of int.
         if type(field_value) is not int:  # pylint: disable=unidiomatic-typecheck
             raise TypeError(f"{field_location} must be a positive integer")
 
@@ -198,6 +203,7 @@ class PreValidation:
         which does not exceed the maximum allowed number of decimal places (if applicable)
         """
         if not (
+            # This check uses type() instead of isinstance() because bool is a subclass of int.
             type(field_value) is int  # pylint: disable=unidiomatic-typecheck
             or type(field_value) is Decimal  # pylint: disable=unidiomatic-typecheck
         ):
