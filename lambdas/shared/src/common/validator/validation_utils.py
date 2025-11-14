@@ -16,20 +16,6 @@ def check_if_future_date(parsed_value: date | datetime):
     return False
 
 
-def is_valid_simple_snomed(simple_snomed: str) -> bool:
-    "check the snomed code valid or not."
-    min_snomed_length = 6
-    max_snomed_length = 18
-    return (
-        simple_snomed is not None
-        and simple_snomed.isdigit()
-        and simple_snomed[0] != "0"
-        and min_snomed_length <= len(simple_snomed) <= max_snomed_length
-        and validate(simple_snomed)
-        and (simple_snomed[-3:-1] in ("00", "10"))
-    )
-
-
 def nhs_number_mod11_check(nhs_number: str) -> bool:
     """
     Parameters:-
@@ -56,3 +42,17 @@ def nhs_number_mod11_check(nhs_number: str) -> bool:
         is_mod11 = check_digit == int(nhs_number[-1])
 
     return is_mod11
+
+
+def is_valid_simple_snomed(simple_snomed: str) -> bool:
+    "check the snomed code valid or not."
+    min_snomed_length = 6
+    max_snomed_length = 18
+    return (
+        simple_snomed is not None
+        and simple_snomed.isdigit()
+        and simple_snomed[0] != "0"
+        and min_snomed_length <= len(simple_snomed) <= max_snomed_length
+        and validate(simple_snomed)
+        and (simple_snomed[-3:-1] in ("00", "10"))
+    )

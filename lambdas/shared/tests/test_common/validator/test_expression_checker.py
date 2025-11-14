@@ -195,6 +195,19 @@ class TestExpressionChecker(unittest.TestCase):
         # Invalid: non-string value
         self.assertIsInstance(checker.validate_expression("STRING", "", field_path, 123456), ErrorReport)
 
+    # After parent check succeeds - SNOMED_CODE for VACCINATION_PROCEDURE_CODE
+    def test_vaccination_procedure_snomed_code_valid_and_invalid(self):
+        checker = self.make_checker()
+        field_path = "extension|0|valueCodeableConcept|coding|0|code"
+        # Valid SNOMED example (passes Verhoeff, doesn't start with 0, length ok, suffix rule)
+        self.assertIsNone(checker.validate_expression("SNOMED_CODE", "", field_path, "1119349007"))
+        # Invalid: empty
+        self.assertIsInstance(checker.validate_expression("SNOMED_CODE", "", field_path, ""), ErrorReport)
+        # Invalid: non-digit
+        self.assertIsInstance(checker.validate_expression("SNOMED_CODE", "", field_path, "ABC123"), ErrorReport)
+        # Invalid: starts with 0
+        self.assertIsInstance(checker.validate_expression("SNOMED_CODE", "", field_path, "012345"), ErrorReport)
+
     # STRING with VACCINATION_PROCEDURE_TERM
     def test_vaccination_procedure_term_string_valid_and_invalid(self):
         checker = self.make_checker()
@@ -386,17 +399,6 @@ class TestExpressionChecker(unittest.TestCase):
         )
         # Empty should also fail
         self.assertIsInstance(checker.validate_expression("STRING", "", field_path, ""), ErrorReport)
-
-
-# class DummyParserEx:
-#     def __init__(self, data=None, raise_on_get=False):
-#         self._data = data or {}
-#         self._raise_on_get = raise_on_get
-
-#     def get_key_value(self, field_name):
-#         if self._raise_on_get:
-#             raise RuntimeError("boom")
-#         return [self._data.get(field_name, "")]
 
 
 if __name__ == "__main__":

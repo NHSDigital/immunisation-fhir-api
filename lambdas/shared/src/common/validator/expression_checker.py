@@ -8,7 +8,7 @@ from common.validator.error_report.record_error import ErrorReport
 from common.validator.expression_rule import expression_rule_per_field
 from common.validator.lookup_expressions.key_data import KeyData
 from common.validator.lookup_expressions.lookup_data import LookUpData
-from common.validator.validation_utils import check_if_future_date, nhs_number_mod11_check
+from common.validator.validation_utils import check_if_future_date, is_valid_simple_snomed, nhs_number_mod11_check
 
 
 class ExpressionChecker:
@@ -31,8 +31,6 @@ class ExpressionChecker:
                 return self.validation_for_string_values(expression_rule, field_name, field_value)
             case "LIST":
                 return self.validation_for_list(expression_rule, field_name, field_value)
-            case "NHS_NUMBER":
-                return self.validation_for_nhs_number(expression_rule, field_name, field_value)
             case "DATE":
                 return self.validation_for_date(expression_rule, field_name, field_value)
             case "DATETIME":
@@ -45,6 +43,10 @@ class ExpressionChecker:
                 return self.validation_for_boolean(expression_rule, field_name, field_value)
             case "INTDECIMAL":
                 return self.validation_for_integer_or_decimal(expression_rule, field_name, field_value)
+            case "NHS_NUMBER":
+                return self.validation_for_nhs_number(expression_rule, field_name, field_value)
+            case "SNOMED_CODE":
+                return self.validation_for_snomed_code(expression_rule, field_name, field_value)
             case _:
                 return "Schema expression not found! Check your expression type : " + expression_type
 
@@ -317,3 +319,20 @@ class ExpressionChecker:
             if self.report_unexpected_exception:
                 message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
                 return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, None, field_name)
+
+    def validation_for_snomed_code(self, expression_rule: str, field_location: str, field_value: str):
+        """
+        Apply prevalidation to snomed code to ensure that its a valid one.
+        """
+
+        error_message = f"{field_location} is not a valid snomed code"
+
+        try:
+            is_valid = is_valid_simple_snomed(field_value)
+            if not is_valid:
+                raise ValueError(error_message)
+        except ValueError as e:
+            code = ExceptionLevels.RECORD_CHECK_FAILED
+            message = MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
+            details = str(e)
+            return ErrorReport(code, message, None, field_location, details)

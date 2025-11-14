@@ -227,6 +227,20 @@
       "errorGroup": "completeness"
     },
     {
+      "expressionId": "01K9ZR2QZ6D9MTX3T7SQMK37C7",
+      "parentExpressionId": "01K8S0YYGDFWJXN2W3THYG24EZ",
+      "fieldNameFHIR": "extension|0|valueCodeableConcept|coding|0|code",
+      "fieldNameFlat": "VACCINATION_PROCEDURE_CODE",
+      "fieldNumber": 17,
+      "errorLevel": 0,
+      "expression": {
+        "expressionName": "Procedure Code Not Empty Check",
+        "expressionType": "SNOMED_CODE",
+        "expressionRule": ""
+      },
+      "errorGroup": "completeness"
+    },
+    {
       "expressionId": "01K5EGR0C85HY6MDNN6TTR1K48",
       "fieldNameFHIR": "extension|0|valueCodeableConcept|coding|0|display",
       "fieldNameFlat": "VACCINATION_PROCEDURE_TERM",
