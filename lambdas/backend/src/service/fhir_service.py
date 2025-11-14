@@ -164,8 +164,10 @@ class FhirService:
         ):
             raise UnauthorizedVaxError()
 
-        immunization_fhir_entity = Immunization.parse_obj(immunization)
-        identifier = cast(Identifier, immunization_fhir_entity.identifier[0])
+        identifier = Identifier.construct(
+            system=immunization["identifier"][0]["system"],
+            value=immunization["identifier"][0]["value"],
+        )
 
         validate_identifiers_match(identifier, existing_immunization_meta.identifier)
 

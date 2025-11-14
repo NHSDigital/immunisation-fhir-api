@@ -15,7 +15,7 @@ from mypy_boto3_dynamodb.service_resource import DynamoDBServiceResource, Table
 from responses import logger
 
 from common.models.constants import Constants
-from common.models.errors import InvalidStoredData, ResourceNotFoundError
+from common.models.errors import ResourceNotFoundError
 from common.models.immunization_record_metadata import ImmunizationRecordMetadata
 from common.models.utils.generic_utils import (
     get_contained_patient,
@@ -24,7 +24,7 @@ from common.models.utils.generic_utils import (
 from common.models.utils.validation_utils import (
     get_vaccine_type,
 )
-from models.errors import UnhandledResponseError
+from models.errors import InvalidStoredDataError, UnhandledResponseError
 
 
 def create_table(table_name=None, endpoint_url=None, region_name="eu-west-2"):
@@ -55,7 +55,7 @@ def get_fhir_identifier_from_identifier_pk(identifier_pk: str) -> Identifier:
     split_identifier = identifier_pk.split("#", 1)
 
     if len(split_identifier) != 2:
-        raise InvalidStoredData(data_type="identifier")
+        raise InvalidStoredDataError(data_type="identifier")
 
     supplier_code = split_identifier[0]
     supplier_unique_id = split_identifier[1]
@@ -133,13 +133,13 @@ class ImmunizationRepository:
             return None, None
 
         # The FHIR Identifier which is returned in the metadata is based on the IdentifierPK from the database because
-        # it is valid for the IdentifierPK and Resource system and value to mismatch due to the V2 to V5 data uplift.
-        # Please see VED-893 for more details.
+        # we keep this attribute up to date in case of any changes rather than modifying the JSON resource. For example,
+        # when we performed the V2 to V5 data migration as part of issue VED-893.
 
         identifier_pk = item.get("IdentifierPK")
 
         if identifier_pk is None:
-            raise InvalidStoredData(data_type="identifier")
+            raise InvalidStoredDataError(data_type="identifier")
 
         identifier = get_fhir_identifier_from_identifier_pk(identifier_pk)
 

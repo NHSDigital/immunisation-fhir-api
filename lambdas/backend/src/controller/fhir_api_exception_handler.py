@@ -10,7 +10,6 @@ from common.models.errors import (
     IdentifierDuplicationError,
     InconsistentIdentifierError,
     InconsistentResourceVersion,
-    InvalidStoredData,
     ResourceNotFoundError,
 )
 from constants import GENERIC_SERVER_ERROR_DIAGNOSTICS_MESSAGE
@@ -18,10 +17,11 @@ from controller.aws_apig_response_utils import create_response
 from models.errors import (
     Code,
     InconsistentIdError,
-    InvalidImmunizationId,
+    InvalidImmunizationIdError,
     InvalidJsonError,
-    InvalidResourceVersion,
-    ResourceVersionNotProvided,
+    InvalidResourceVersionError,
+    InvalidStoredDataError,
+    ResourceVersionNotProvidedError,
     Severity,
     UnauthorizedError,
     UnauthorizedVaxError,
@@ -33,17 +33,17 @@ _CUSTOM_EXCEPTION_TO_STATUS_MAP: dict[Type[Exception], int] = {
     InconsistentResourceVersion: 400,
     InconsistentIdentifierError: 400,  # Identifier refers to the local FHIR identifier composed of system and value.
     InconsistentIdError: 400,  # ID refers to the top-level ID of the FHIR resource.
-    InvalidImmunizationId: 400,
+    InvalidImmunizationIdError: 400,
     InvalidJsonError: 400,
-    InvalidResourceVersion: 400,
+    InvalidResourceVersionError: 400,
     CustomValidationError: 400,
-    ResourceVersionNotProvided: 400,
+    ResourceVersionNotProvidedError: 400,
     UnauthorizedError: 403,
     UnauthorizedVaxError: 403,
     ResourceNotFoundError: 404,
     IdentifierDuplicationError: 422,
     UnhandledResponseError: 500,
-    InvalidStoredData: 500,
+    InvalidStoredDataError: 500,
 }
 
 

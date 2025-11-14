@@ -3,7 +3,7 @@ import datetime
 import unittest
 from unittest.mock import Mock, create_autospec, patch
 
-from models.errors import ParameterException
+from models.errors import ParameterExceptionError
 from parameter_parser import (
     SearchParams,
     create_query_string,
@@ -91,13 +91,13 @@ class TestParameterParser(unittest.TestCase):
             "httpMethod": "POST",
         }
 
-        with self.assertRaises(ParameterException) as e:
+        with self.assertRaises(ParameterExceptionError) as e:
             process_params(lambda_event)
 
         self.assertEqual(str(e.exception), 'Parameters may not be duplicated. Use commas for "or".')
 
     def test_process_search_params_checks_patient_identifier_format(self):
-        with self.assertRaises(ParameterException) as e:
+        with self.assertRaises(ParameterExceptionError) as e:
             _ = process_search_params({self.patient_identifier_key: ["9000000009"]})
         self.assertEqual(
             str(e.exception),
@@ -118,7 +118,7 @@ class TestParameterParser(unittest.TestCase):
         mock_redis_key = "RSV"
         self.mock_redis.hkeys.return_value = [mock_redis_key]
         self.mock_redis_getter.return_value = self.mock_redis
-        with self.assertRaises(ParameterException) as e:
+        with self.assertRaises(ParameterExceptionError) as e:
             process_search_params(
                 {
                     self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
@@ -172,7 +172,7 @@ class TestParameterParser(unittest.TestCase):
 
         self.assertIsNotNone(params)
 
-        with self.assertRaises(ParameterException) as e:
+        with self.assertRaises(ParameterExceptionError) as e:
             _ = process_search_params(
                 {
                     self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
@@ -190,7 +190,7 @@ class TestParameterParser(unittest.TestCase):
     def test_process_search_params_immunization_target_is_mandatory(self):
         self.mock_redis.hkeys.return_value = ["RSV"]
         self.mock_redis_getter.return_value = self.mock_redis
-        with self.assertRaises(ParameterException) as e:
+        with self.assertRaises(ParameterExceptionError) as e:
             _ = process_search_params(
                 {
                     self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
@@ -202,7 +202,7 @@ class TestParameterParser(unittest.TestCase):
         )
 
     def test_process_search_params_patient_identifier_is_mandatory(self):
-        with self.assertRaises(ParameterException) as e:
+        with self.assertRaises(ParameterExceptionError) as e:
             _ = process_search_params(
                 {
                     self.immunization_target_key: ["a-disease-type"],
@@ -266,7 +266,7 @@ class TestParameterParser(unittest.TestCase):
         self.mock_redis.hkeys.return_value = ["RSV"]
         self.mock_redis_getter.return_value = self.mock_redis
 
-        with self.assertRaises(ParameterException) as e:
+        with self.assertRaises(ParameterExceptionError) as e:
             process_search_params(
                 {
                     self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],
@@ -288,7 +288,7 @@ class TestParameterParser(unittest.TestCase):
         self.mock_redis.hkeys.return_value = ["RSV"]
         self.mock_redis_getter.return_value = self.mock_redis
 
-        with self.assertRaises(ParameterException) as e:
+        with self.assertRaises(ParameterExceptionError) as e:
             process_search_params(
                 {
                     self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|1234567890"],  # invalid mod11
@@ -306,7 +306,7 @@ class TestParameterParser(unittest.TestCase):
         self.mock_redis.hkeys.return_value = ["RSV"]
         self.mock_redis_getter.return_value = self.mock_redis
 
-        with self.assertRaises(ParameterException) as e:
+        with self.assertRaises(ParameterExceptionError) as e:
             process_search_params(
                 {
                     self.patient_identifier_key: ["https://fhir.nhs.uk/Id/nhs-number|9000000009"],

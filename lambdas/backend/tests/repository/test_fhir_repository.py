@@ -9,10 +9,10 @@ from boto3.dynamodb.conditions import Attr, Key
 from fhir.resources.R4B.identifier import Identifier
 from fhir.resources.R4B.immunization import Immunization
 
-from common.models.errors import InvalidStoredData, ResourceNotFoundError
+from common.models.errors import ResourceNotFoundError
 from common.models.immunization_record_metadata import ImmunizationRecordMetadata
 from common.models.utils.validation_utils import get_vaccine_type
-from models.errors import UnhandledResponseError
+from models.errors import InvalidStoredDataError, UnhandledResponseError
 from repository.fhir_repository import ImmunizationRepository
 from test_common.testing_utils.generic_utils import update_target_disease_code
 from test_common.testing_utils.immunization_utils import VALID_NHS_NUMBER, create_covid_immunization_dict
@@ -181,14 +181,14 @@ class TestGetImmunization(unittest.TestCase):
                 }
             }
         )
-        actual_resource, acutal_metadata = self.repository.get_immunization_resource_and_metadata_by_id(imms_id)
+        actual_resource, actual_metadata = self.repository.get_immunization_resource_and_metadata_by_id(imms_id)
 
         # Validate the results
         self.assertDictEqual(expected_resource, actual_resource)
-        self.assertEqual(acutal_metadata.identifier, expected_identifier)
-        self.assertEqual(acutal_metadata.resource_version, expected_version)
-        self.assertEqual(acutal_metadata.is_deleted, False)
-        self.assertEqual(acutal_metadata.is_reinstated, True)
+        self.assertEqual(actual_metadata.identifier, expected_identifier)
+        self.assertEqual(actual_metadata.resource_version, expected_version)
+        self.assertEqual(actual_metadata.is_deleted, False)
+        self.assertEqual(actual_metadata.is_reinstated, True)
         self.table.get_item.assert_called_once_with(Key={"PK": _make_immunization_pk(imms_id)})
 
     def test_get_immunization_resource_and_metadata_by_id_returns_deleted_records_when_flag_is_set(self):
@@ -208,16 +208,16 @@ class TestGetImmunization(unittest.TestCase):
                 }
             }
         )
-        actual_resource, acutal_metadata = self.repository.get_immunization_resource_and_metadata_by_id(
+        actual_resource, actual_metadata = self.repository.get_immunization_resource_and_metadata_by_id(
             imms_id, include_deleted=True
         )
 
         # Validate the results
         self.assertDictEqual(expected_resource, actual_resource)
-        self.assertEqual(acutal_metadata.identifier, expected_identifier)
-        self.assertEqual(acutal_metadata.resource_version, expected_version)
-        self.assertEqual(acutal_metadata.is_deleted, True)
-        self.assertEqual(acutal_metadata.is_reinstated, False)
+        self.assertEqual(actual_metadata.identifier, expected_identifier)
+        self.assertEqual(actual_metadata.resource_version, expected_version)
+        self.assertEqual(actual_metadata.is_deleted, True)
+        self.assertEqual(actual_metadata.is_reinstated, False)
         self.table.get_item.assert_called_once_with(Key={"PK": _make_immunization_pk(imms_id)})
 
     def test_get_immunization_resource_and_metadata_by_id_raises_invalid_stored_data_error_when_idpk_is_none(self):
@@ -235,7 +235,7 @@ class TestGetImmunization(unittest.TestCase):
             }
         )
 
-        with self.assertRaises(InvalidStoredData) as error:
+        with self.assertRaises(InvalidStoredDataError) as error:
             # When
             _, _ = self.repository.get_immunization_resource_and_metadata_by_id(imms_id)
 
@@ -257,7 +257,7 @@ class TestGetImmunization(unittest.TestCase):
             }
         )
 
-        with self.assertRaises(InvalidStoredData) as error:
+        with self.assertRaises(InvalidStoredDataError) as error:
             # When
             _, _ = self.repository.get_immunization_resource_and_metadata_by_id(imms_id)
 

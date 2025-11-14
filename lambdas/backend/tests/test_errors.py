@@ -71,8 +71,8 @@ class TestErrors(unittest.TestCase):
         """Test correct operation of ResourceVersionNotProvided"""
         test_resource_type = "test_resource_type"
 
-        with self.assertRaises(errors.ResourceVersionNotProvided) as context:
-            raise errors.ResourceVersionNotProvided(test_resource_type)
+        with self.assertRaises(errors.ResourceVersionNotProvidedError) as context:
+            raise errors.ResourceVersionNotProvidedError(test_resource_type)
         self.assertEqual(context.exception.resource_type, test_resource_type)
         outcome = context.exception.to_operation_outcome()
         self.assert_operation_outcome(outcome)
@@ -88,16 +88,16 @@ class TestErrors(unittest.TestCase):
         """Test correct operation of ParameterException"""
         test_message = "test_message"
 
-        with self.assertRaises(errors.ParameterException) as context:
-            raise errors.ParameterException(test_message)
+        with self.assertRaises(errors.ParameterExceptionError) as context:
+            raise errors.ParameterExceptionError(test_message)
         self.assertEqual(context.exception.message, test_message)
         self.assertEqual(str(context.exception), test_message)
 
     def test_errors_invalid_immunization_id(self):
         """Test correct operation of InvalidImmunizationId"""
 
-        with self.assertRaises(errors.InvalidImmunizationId) as context:
-            raise errors.InvalidImmunizationId()
+        with self.assertRaises(errors.InvalidImmunizationIdError) as context:
+            raise errors.InvalidImmunizationIdError()
 
         outcome = context.exception.to_operation_outcome()
         self.assert_operation_outcome(outcome)
@@ -113,8 +113,8 @@ class TestErrors(unittest.TestCase):
         """Test correct operation of InvalidResourceVersion"""
         test_resource_version = "test_resource_version"
 
-        with self.assertRaises(errors.InvalidResourceVersion) as context:
-            raise errors.InvalidResourceVersion(test_resource_version)
+        with self.assertRaises(errors.InvalidResourceVersionError) as context:
+            raise errors.InvalidResourceVersionError(test_resource_version)
         self.assertEqual(context.exception.resource_version, test_resource_version)
         outcome = context.exception.to_operation_outcome()
         self.assert_operation_outcome(outcome)

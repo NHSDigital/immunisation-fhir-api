@@ -66,7 +66,7 @@ class UnauthorizedVaxError(RuntimeError):
 
 
 @dataclass
-class ResourceVersionNotProvided(RuntimeError):
+class ResourceVersionNotProvidedError(RuntimeError):
     """Return this error when client has failed to provide the FHIR resource version where required"""
 
     resource_type: str
@@ -84,7 +84,7 @@ class ResourceVersionNotProvided(RuntimeError):
 
 
 @dataclass
-class ParameterException(RuntimeError):
+class ParameterExceptionError(RuntimeError):
     message: str
 
     def __str__(self):
@@ -92,7 +92,7 @@ class ParameterException(RuntimeError):
 
 
 @dataclass
-class InvalidImmunizationId(ApiValidationError):
+class InvalidImmunizationIdError(ApiValidationError):
     """Use this when the unique Immunization ID is invalid"""
 
     def to_operation_outcome(self) -> dict:
@@ -105,7 +105,7 @@ class InvalidImmunizationId(ApiValidationError):
 
 
 @dataclass
-class InvalidResourceVersion(ApiValidationError):
+class InvalidResourceVersionError(ApiValidationError):
     """Use this when the resource version is invalid"""
 
     resource_version: Any
@@ -154,4 +154,22 @@ class InvalidJsonError(RuntimeError):
             severity=Severity.error,
             code=Code.invalid,
             diagnostics=self.message,
+        )
+
+
+@dataclass
+class InvalidStoredDataError(RuntimeError):
+    """Use this when a piece of stored data is invalid and the operation cannot be completed"""
+
+    data_type: str
+
+    def __str__(self):
+        return f"Invalid data stored for immunization record: {self.data_type}"
+
+    def to_operation_outcome(self) -> dict:
+        return create_operation_outcome(
+            resource_id=str(uuid.uuid4()),
+            severity=Severity.error,
+            code=Code.server_error,
+            diagnostics=self.__str__(),
         )

@@ -566,26 +566,24 @@ class TestUpdateImmunization(TestFhirServiceBase):
         self.imms_repo.update_immunization.assert_not_called()
 
     def test_update_immunization_raises_invalid_error_if_identifiers_do_not_match(self):
-        """it should raise an InconsistentIdentifierError if the local identifier in the update does not match that in
-        the stored resource"""
+        """it should raise an InconsistentIdentifierError if the local identifier in the update does not match the
+        IdentifierPK stored in the database"""
         imms_id = "test-id"
-        original_immunisation = create_covid_immunization_dict(imms_id, VALID_NHS_NUMBER)
-        original_immunisation["identifier"][0]["system"] = "legacyUri.com"
+        immunisation_resource = create_covid_immunization_dict(imms_id, VALID_NHS_NUMBER)
         identifier = Identifier(
-            system=original_immunisation["identifier"][0]["system"],
-            value=original_immunisation["identifier"][0]["value"],
+            system="legacyUri.com",
+            value=immunisation_resource["identifier"][0]["value"],
         )
-        updated_immunisation = create_covid_immunization_dict(imms_id, VALID_NHS_NUMBER, "2021-02-07T13:28:00+00:00")
 
         self.imms_repo.get_immunization_resource_and_metadata_by_id.return_value = (
-            original_immunisation,
+            immunisation_resource,
             ImmunizationRecordMetadata(identifier=identifier, resource_version=1, is_deleted=False, is_reinstated=False),
         )
         self.authoriser.authorise.return_value = True
 
         # When
         with self.assertRaises(InconsistentIdentifierError) as error:
-            self.fhir_service.update_immunization(imms_id, updated_immunisation, "Test", 1)
+            self.fhir_service.update_immunization(imms_id, immunisation_resource, "Test", 1)
 
         # Then
         self.imms_repo.get_immunization_resource_and_metadata_by_id.assert_called_once_with(
