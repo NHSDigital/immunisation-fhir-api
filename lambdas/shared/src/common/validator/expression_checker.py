@@ -92,9 +92,8 @@ class ExpressionChecker:
             if field_value <= 0:
                 raise ValueError(f"{field_name} must be a positive integer")
 
-            if max_value:
-                if field_value > max_value:
-                    raise ValueError(f"{field_name} must be an integer in the range 1 to {max_value}")
+            if max_value and field_value > max_value:
+                raise ValueError(f"{field_name} must be an integer in the range 1 to {max_value}")
         except (TypeError, ValueError) as e:
             code = ExceptionLevels.RECORD_CHECK_FAILED
             message = MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
@@ -129,7 +128,7 @@ class ExpressionChecker:
                 message = MESSAGES[ExceptionLevels.UNEXPECTED_EXCEPTION] % (e.__class__.__name__, e)
                 return ErrorReport(ExceptionLevels.UNEXPECTED_EXCEPTION, message, None, field_name)
 
-    def validation_for_boolean(self, expression_rule: str, field_name: str, field_value: str) -> ErrorReport:
+    def validation_for_boolean(self, _expression_rule: str, field_name: str, field_value: str) -> ErrorReport:
         """Apply pre-validation to a boolean field to ensure that it is a boolean"""
         try:
             if not isinstance(field_value, bool):
@@ -259,20 +258,17 @@ class ExpressionChecker:
             if defined_length:
                 if len(field_value) != defined_length:
                     raise ValueError(f"{field_name} must be {defined_length} characters")
-            else:
-                if len(field_value) == 0:
-                    raise ValueError(f"{field_name} must be a non-empty string")
+            elif len(field_value) == 0:
+                raise ValueError(f"{field_name} must be a non-empty string")
 
-            if max_length:
-                if len(field_value) > max_length:
-                    raise ValueError(f"{field_name} must be {max_length} or fewer characters")
-            if predefined_values:
-                if field_value not in predefined_values:
-                    raise ValueError(f"{field_name} must be one of the following: " + str(", ".join(predefined_values)))
+            if max_length and len(field_value) > max_length:
+                raise ValueError(f"{field_name} must be {max_length} or fewer characters")
 
-            if not spaces_allowed:
-                if " " in field_value:
-                    raise ValueError(f"{field_name} must not contain spaces")
+            if predefined_values and field_value not in predefined_values:
+                raise ValueError(f"{field_name} must be one of the following: " + str(", ".join(predefined_values)))
+
+            if not spaces_allowed and " " in field_value:
+                raise ValueError(f"{field_name} must not contain spaces")
         except (ValueError, TypeError) as e:
             code = ExceptionLevels.RECORD_CHECK_FAILED
             message = MESSAGES[ExceptionLevels.RECORD_CHECK_FAILED]
