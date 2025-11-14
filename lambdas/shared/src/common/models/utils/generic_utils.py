@@ -174,7 +174,7 @@ def make_search_bundle(
     if not resource:
         return make_empty_search_bundle(searched_url)
 
-    meta = {"versionId": str(version_id)}
+    meta = {"versionId": version_id}
 
     # Full Immunization payload to be returned if only the identifier parameter was provided and truncated when
     # _elements is used

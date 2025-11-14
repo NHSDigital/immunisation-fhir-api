@@ -214,7 +214,13 @@ class FhirController:
         """Simple helper function to retrieve the search params from the relevant part of the AWS event, depending on
         which search endpoint is being used"""
         if not is_post_endpoint_req:
-            return get_multi_value_query_params(aws_event)
+            multi_value_params = get_multi_value_query_params(aws_event)
+            return multi_value_params if multi_value_params is not None else {}
 
-        decoded_body = base64.b64decode(aws_event.get("body", "")).decode("utf-8")
+        form_body = aws_event.get("body")
+
+        if not form_body:
+            return {}
+
+        decoded_body = base64.b64decode(form_body).decode("utf-8")
         return parse_qs(decoded_body)

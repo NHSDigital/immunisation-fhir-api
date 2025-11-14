@@ -379,7 +379,7 @@ class TestSearchImmunization(ImmunizationBaseTest):
         imms_obj_id = self.store_records(imms_obj)
 
         response = self.default_imms_api.search_immunizations_full(
-            "POST",
+            "GET",
             f"patient.identifier={valid_patient_identifier1}&-immunization.target={VaccineTypes.mmr}"
             + "&_include=Immunization:patient",
             body=None,

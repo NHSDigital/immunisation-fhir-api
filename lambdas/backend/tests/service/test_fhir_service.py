@@ -315,7 +315,7 @@ class TestGetImmunizationByIdentifier(TestFhirServiceBase):
         )
         self.assertEqual(
             result.entry[0].resource,
-            Immunization.construct(**{"resourceType": "Immunization", "id": "1234-some-id", "meta": {"versionId": "1"}}),
+            Immunization.construct(**{"resourceType": "Immunization", "id": "1234-some-id", "meta": {"versionId": 1}}),
         )
 
 
