@@ -21,6 +21,9 @@ class ErrorReport:
         self.id = None
         self.error_level = error_level
 
+    def __repr__(self):
+        return f"<ErrorReport code={self.code}, field={self.field}, message={self.message!r}, details={self.details!r}>"
+
     # function to return the object as a dictionary
     def to_dict(self):
         ret = {"code": self.code, "message": self.message}

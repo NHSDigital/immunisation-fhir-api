@@ -18,27 +18,13 @@
       "errorGroup": "validity"
     },
     {
-      "expressionId": "01K9ZMX49TKDKQB36ENJTGJT6J",
-      "parentExpressionId": "01K5EGR0C7Y1WJ0BC803SQDWK4",
-      "fieldNameFHIR": "contained|#:Patient|identifier|#:https://fhir.nhs.uk/Id/nhs-number|value",
-      "fieldNameFlat": "NHS_NUMBER",
-      "fieldNumber": 1,
-      "errorLevel": 0,
-      "expression": {
-        "expressionName": "NHS Number MOD 11 Check",
-        "expressionType": "NHS_NUMBER",
-        "expressionRule": ""
-      },
-      "errorGroup": "validity"
-    },
-    {
       "expressionId": "01K5EGR0C7QCEJMWH1R4MBPGQA",
       "fieldNameFHIR": "contained|#:Patient|name|#:official|given|0",
       "fieldNameFlat": "PERSON_FORENAME",
       "fieldNumber": 2,
       "errorLevel": 0,
       "expression": {
-        "expressionName": "Person Forename List Check",
+        "expressionName": "Person Forname List Check",
         "expressionType": "LIST",
         "expressionRule": "PERSON_NAME"
       },
@@ -50,8 +36,9 @@
       "fieldNameFlat": "PERSON_SURNAME",
       "fieldNumber": 3,
       "errorLevel": 0,
+      "parentExpression": "01K5EGR0C7Y1WJ0BC803SQDWK4",
       "expression": {
-        "expressionName": "Person Surname String Check",
+        "expressionName": "Person Surname Not Empty Check",
         "expressionType": "STRING",
         "expressionRule": "PERSON_SURNAME"
       },
@@ -90,7 +77,7 @@
       "fieldNumber": 6,
       "errorLevel": 2,
       "expression": {
-        "expressionName": "Postcode String Check",
+        "expressionName": "Defaults to",
         "expressionType": "STRING",
         "expressionRule": ""
       },
@@ -103,9 +90,9 @@
       "fieldNumber": 7,
       "errorLevel": 0,
       "expression": {
-        "expressionName": "Date Time Conversion",
+        "expressionName": "Date Convert",
         "expressionType": "DATETIME",
-        "expressionRule": "DATETIME"
+        "expressionRule": ""
       },
       "errorGroup": "consistency"
     },
@@ -116,9 +103,9 @@
       "fieldNumber": 8,
       "errorLevel": 0,
       "expression": {
-        "expressionName": "Organisation String Check",
+        "expressionName": "Organisation Look Up Check",
         "expressionType": "STRING",
-        "expressionRule": ""
+        "expressionRule": "Organisation"
       },
       "errorGroup": "consistency"
     },
@@ -129,7 +116,7 @@
       "fieldNumber": 9,
       "errorLevel": 1,
       "expression": {
-        "expressionName": "Organisation Code Type URI Check",
+        "expressionName": "Defaults to",
         "expressionType": "STRING",
         "expressionRule": ""
       },
@@ -157,6 +144,19 @@
       "expression": {
         "expressionName": "Unique ID URI Not Empty Check",
         "expressionType": "STRING",
+        "expressionRule": ""
+      },
+      "errorGroup": "validity"
+    },
+    {
+      "expressionId": "01K8S0Y0TN3NZA6VBB3HM1PDR1",
+      "fieldNameFHIR": "",
+      "fieldNameFlat": "ACTION_FLAG",
+      "fieldNumber": 12,
+      "errorLevel": 1,
+      "expression": {
+        "expressionName": "Action Flag Not Empty Check",
+        "expressionType": "NOTEMPTY",
         "expressionRule": ""
       },
       "errorGroup": "validity"
@@ -196,7 +196,7 @@
       "expression": {
         "expressionName": "Recorded Date Convert",
         "expressionType": "DATETIME",
-        "expressionRule": ""
+        "expressionRule": "false-strict-timezone"
       },
       "errorGroup": "consistency"
     },
@@ -227,20 +227,6 @@
       "errorGroup": "completeness"
     },
     {
-      "expressionId": "01K9ZR2QZ6D9MTX3T7SQMK37C7",
-      "parentExpressionId": "01K8S0YYGDFWJXN2W3THYG24EZ",
-      "fieldNameFHIR": "extension|0|valueCodeableConcept|coding|0|code",
-      "fieldNameFlat": "VACCINATION_PROCEDURE_CODE",
-      "fieldNumber": 17,
-      "errorLevel": 0,
-      "expression": {
-        "expressionName": "Procedure Code Not Empty Check",
-        "expressionType": "SNOMED_CODE",
-        "expressionRule": ""
-      },
-      "errorGroup": "completeness"
-    },
-    {
       "expressionId": "01K5EGR0C85HY6MDNN6TTR1K48",
       "fieldNameFHIR": "extension|0|valueCodeableConcept|coding|0|display",
       "fieldNameFlat": "VACCINATION_PROCEDURE_TERM",
@@ -262,7 +248,7 @@
       "expression": {
         "expressionName": "Dose Sequence Not Empty Check",
         "expressionType": "POSITIVEINTEGER",
-        "expressionRule": "DOSE_NUMBER"
+        "expressionRule": ""
       },
       "errorGroup": "completeness"
     },
@@ -312,7 +298,7 @@
       "fieldNumber": 23,
       "errorLevel": 0,
       "expression": {
-        "expressionName": "Batch Number String Check",
+        "expressionName": "Batch Number Not Empty Check",
         "expressionType": "STRING",
         "expressionRule": ""
       },
@@ -338,7 +324,7 @@
       "fieldNumber": 25,
       "errorLevel": 0,
       "expression": {
-        "expressionName": "Site of Vaccination Code String Check",
+        "expressionName": "Site of Vaccination Code Not Empty Check",
         "expressionType": "STRING",
         "expressionRule": ""
       },
@@ -351,7 +337,7 @@
       "fieldNumber": 26,
       "errorLevel": 1,
       "expression": {
-        "expressionName": "Site of Vaccination Term String Check",
+        "expressionName": "Site of Vaccination Term Lookup Check",
         "expressionType": "STRING",
         "expressionRule": ""
       },
@@ -364,9 +350,9 @@
       "fieldNumber": 27,
       "errorLevel": 0,
       "expression": {
-        "expressionName": "Route of Vaccination Code String Check",
+        "expressionName": "Route of Vaccination Code Not Empty Check",
         "expressionType": "STRING",
-        "expressionRule": ""
+        "expressionRule": "UniqueList"
       },
       "errorGroup": "completeness"
     },
@@ -377,7 +363,7 @@
       "fieldNumber": 28,
       "errorLevel": 1,
       "expression": {
-        "expressionName": "Route of Vaccination Term String Check",
+        "expressionName": "Route of Vaccination Term Lookup Check",
         "expressionType": "STRING",
         "expressionRule": ""
       },
@@ -390,7 +376,7 @@
       "fieldNumber": 29,
       "errorLevel": 1,
       "expression": {
-        "expressionName": "Dose Amount Int-decimal Check",
+        "expressionName": "Dose Amount Default Check",
         "expressionType": "INTDECIMAL",
         "expressionRule": ""
       },
@@ -403,7 +389,7 @@
       "fieldNumber": 30,
       "errorLevel": 1,
       "expression": {
-        "expressionName": "Dose Unit String Check",
+        "expressionName": "Dose Unit Only If System Check",
         "expressionType": "STRING",
         "expressionRule": ""
       },

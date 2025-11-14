@@ -16,7 +16,7 @@ from src.common.validator.parsers.base_parser import BaseParser, BatchInterface,
 
 
 class Validator:
-    def __init__(self, schema_file: dict = {}):
+    def __init__(self, schema_file: dict = None):
         self.schema_file = schema_file
         self.schema_parser = SchemaParser()
 
@@ -56,6 +56,7 @@ class Validator:
 
         try:
             expression_values = data_parser.extract_field_values(expression_fieldname)
+            print(f"Validating Expression ID {expression_fieldname} with values: {expression_values}")
         except Exception as e:
             message = f"Data get values Unexpected exception [{e.__class__.__name__}]: {e}"
             error_record = ErrorReport(code=ExceptionLevels.PARSING_ERROR, message=message)
@@ -72,10 +73,14 @@ class Validator:
                 add_error_record(
                     error_records, error_record, expression_error_group, expression_name, expression_id, error_level
                 )
-        except Exception:
-            print(f"Exception validating expression {expression_id} on row {row}: {error_record}")
-        row += 1
-        return row
+        except Exception as e:
+            message = f"Expression Validation Unexpected exception [{e.__class__.__name__}]: {e}"
+            error_record = ErrorReport(code=ExceptionLevels.UNEXPECTED_EXCEPTION, message=message)
+            error_record = ErrorReport(code=ExceptionLevels.PARSING_ERROR, message=message)
+            add_error_record(
+                error_records, error_record, expression_error_group, expression_name, expression_id, error_level
+            )
+            return
 
     def validate_fhir(
         self,

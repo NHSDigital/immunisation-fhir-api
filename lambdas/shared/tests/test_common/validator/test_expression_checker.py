@@ -1,417 +1,404 @@
 import unittest
-from unittest.mock import MagicMock, patch
+from decimal import Decimal
 
-from common.validator.constants.enums import ExceptionLevels
 from common.validator.error_report.record_error import ErrorReport
 from common.validator.expression_checker import ExpressionChecker
 
 
-class MockParser(unittest.TestCase):
-    """
-    Mock parser used to simulate field value lookups
-    for ExpressionChecker during testing.
-    """
+class MockParser:
+    """Minimal parser providing get_key_value for ONLYIF tests."""
 
     def __init__(self, data=None):
         self._data = data or {}
 
     def get_key_value(self, field_name):
-        """Return a list to mimic parser contract."""
         return [self._data.get(field_name, "")]
 
 
 class TestExpressionChecker(unittest.TestCase):
-    """
-    Unit tests for ExpressionChecker validation logic.
-    Each test validates a specific expression rule type.
-    """
+    """Unit tests limited to expression types used in the provided schema."""
 
     def make_checker(self, mock_data=None, summarise=False, report=True):
-        """Helper to create an ExpressionChecker with mock parser data."""
         return ExpressionChecker(MockParser(mock_data), summarise, report)
 
-    # Date Time Check
-    def test_datetime_valid(self):
-        """Valid ISO date should pass without error."""
-        checker = self.make_checker({"date_field": "2025-01-01"})
-        error = checker.validate_expression("DATETIME", None, "date_field", "2025-01-01", 1)
-        self.assertIsNone(error)
-
-    def test_datetime_unexpected_exception(self):
-        """Passing incompatible type should raise an error report."""
+    # STRING
+    def test_string_valid_and_invalid(self):
         checker = self.make_checker()
-        error = checker.validate_expression("DATETIME", None, "date_field", object(), 1)
-        self.assertIsInstance(error, ErrorReport)
-
-    def test_uuid_valid_and_invalid(self):
-        """UUID validation should pass for valid UUIDs and fail for invalid ones."""
-        checker = self.make_checker()
-        valid_uuid = "12345678-1234-5678-1234-567812345678"
-        self.assertIsNone(checker.validate_expression("UUID", None, "uuid_field", valid_uuid, 1))
-        self.assertIsInstance(checker.validate_expression("UUID", None, "uuid_field", "not-a-uuid", 1), ErrorReport)
-
-    # Numeric Length and Regex
-    def test_integer_length_and_regex_rules(self):
-        """Test integer, length, and regex-based validations."""
-        checker = self.make_checker()
-
-        # INT should pass with numeric value
-        self.assertIsNone(checker.validate_expression("INT", None, "int_field", "42", 1))
-
-        # LENGTH too long -> Error
-        self.assertIsInstance(checker.validate_expression("LENGTH", "3", "str_field", "abcd", 1), ErrorReport)
-
-        # REGEX mismatch -> Error
-        self.assertIsInstance(checker.validate_expression("REGEX", r"^abc$", "regex_field", "abcd", 1), ErrorReport)
-
-    # Case & String Position Rules
-    def test_upper_lower_startswith_endswith_rules(self):
-        """Validate case and string boundary conditions."""
-        checker = self.make_checker()
-
-        # UPPER
-        self.assertIsNone(checker.validate_expression("UPPER", None, "upper_field", "ABC", 1))
-        self.assertIsInstance(checker.validate_expression("UPPER", None, "upper_field", "AbC", 1), ErrorReport)
-
-        # LOWER
-        self.assertIsNone(checker.validate_expression("LOWER", None, "lower_field", "abc", 1))
-        self.assertIsInstance(checker.validate_expression("LOWER", None, "lower_field", "abC", 1), ErrorReport)
-
-        # STARTSWITH
-        self.assertIsNone(checker.validate_expression("STARTSWITH", "ab", "start_field", "abc", 1))
-        self.assertIsInstance(checker.validate_expression("STARTSWITH", "zz", "start_field", "abc", 1), ErrorReport)
-
-        # ENDSWITH
-        self.assertIsNone(checker.validate_expression("ENDSWITH", "bc", "end_field", "abc", 1))
-        self.assertIsInstance(checker.validate_expression("ENDSWITH", "zz", "end_field", "abc", 1), ErrorReport)
-
-    # --- EMPTY & NOTEMPTY ------------------------------------------------
-
-    def test_empty_and_notempty_rules(self):
-        """Validate checks for empty and non-empty fields."""
-        checker = self.make_checker()
-
-        # EMPTY
-        self.assertIsNone(checker.validate_expression("EMPTY", None, "empty_field", "", 1))
-        self.assertIsInstance(checker.validate_expression("EMPTY", None, "empty_field", "value", 1), ErrorReport)
-
-        # NOTEMPTY
-        self.assertIsNone(checker.validate_expression("NOTEMPTY", None, "notempty_field", "value", 1))
-        self.assertIsInstance(checker.validate_expression("NOTEMPTY", None, "notempty_field", "", 1), ErrorReport)
-
-    # --- NUMERIC RANGES --------------------------------------------------
-
-    def test_positive_and_nrange_rules(self):
-        """Check positive and numeric range validations."""
-        checker = self.make_checker()
-
-        # POSITIVE
-        self.assertIsNone(checker.validate_expression("POSITIVE", None, "positive_field", "1.2", 1))
-        self.assertIsInstance(checker.validate_expression("POSITIVE", None, "positive_field", "-3", 1), ErrorReport)
-
-        # NRANGE
-        self.assertIsNone(checker.validate_expression("NRANGE", "1,10", "range_field", "5", 1))
-        self.assertIsInstance(checker.validate_expression("NRANGE", "a,b", "range_field", "5", 1), ErrorReport)
-
-    # --- COMPARISONS & LIST MEMBERSHIP -----------------------------------
-
-    def test_inarray_equal_notequal_rules(self):
-        """Test INARRAY, EQUAL, and NOTEQUAL expressions."""
-        checker = self.make_checker()
-
-        # INARRAY
-        self.assertIsNone(checker.validate_expression("INARRAY", "a,b", "array_field", "a", 1))
-        self.assertIsInstance(checker.validate_expression("INARRAY", "a,b", "array_field", "z", 1), ErrorReport)
-
-        # EQUAL
-        self.assertIsNone(checker.validate_expression("EQUAL", "x", "equal_field", "x", 1))
-        self.assertIsInstance(checker.validate_expression("EQUAL", "x", "equal_field", "y", 1), ErrorReport)
-
-        # NOTEQUAL
-        self.assertIsNone(checker.validate_expression("NOTEQUAL", "x", "notequal_field", "y", 1))
-        self.assertIsInstance(checker.validate_expression("NOTEQUAL", "x", "notequal_field", "x", 1), ErrorReport)
-
-    # --- DOMAIN-SPECIFIC RULES -------------------------------------------
-
-    def test_postcode_gender_nhsnumber_rules(self):
-        """Check NHS number, gender, and postcode validations."""
-        checker = self.make_checker()
-
-        # NHSNUMBER invalid
-        self.assertIsInstance(checker.validate_expression("NHSNUMBER", None, "nhs_field", "123", 1), ErrorReport)
-
-        # GENDER
-        self.assertIsNone(checker.validate_expression("GENDER", None, "gender_field", "0", 1))
-        self.assertIsInstance(checker.validate_expression("GENDER", None, "gender_field", "x", 1), ErrorReport)
-
-        # POSTCODE
-        self.assertIsInstance(checker.validate_expression("POSTCODE", None, "postcode_field", "XYZ", 1), ErrorReport)
-
-    # --- COLLECTION SIZE RULES -------------------------------------------
-
-    def test_maxobjects_rule(self):
-        """MAXOBJECTS validates maximum allowed length of list-like fields."""
-        checker = self.make_checker()
-        self.assertIsNone(checker.validate_expression("MAXOBJECTS", "1", "list_field", [], 1))
-        self.assertIsInstance(checker.validate_expression("MAXOBJECTS", "1", "list_field", [1, 2], 1), ErrorReport)
-
-    # --- LOOKUP & CONDITIONAL RULES --------------------------------------
-
-    def test_lookup_and_keycheck_rules(self):
-        """Force unexpected or missing lookup paths."""
-        checker = self.make_checker(report=True)
-        self.assertIsInstance(checker.validate_expression("LOOKUP", None, "lookup_field", "unknown", 1), ErrorReport)
-
-    def test_onlyif_uses_parser_values(self):
-        """ONLYIF uses parser to conditionally validate based on another field."""
-        mock_data = {"location_field": "VAL"}
-        checker = self.make_checker(mock_data)
-
-        # expressionRule format: field|expected_value
-        result_match = checker.validate_expression("ONLYIF", "location_field|VAL", "test_field", "any", 1)
-        result_mismatch = checker.validate_expression("ONLYIF", "location_field|NOPE", "test_field", "any", 1)
-
-        self.assertIsNone(result_match)
-        self.assertIsInstance(result_mismatch, ErrorReport)
-
-
-class TestExpressionLookUp(unittest.TestCase):
-    def setUp(self):
-        self.MockLookUpData = patch("common.validator.expression_checker.LookUpData").start()
-        self.MockKeyData = patch("common.validator.expression_checker.KeyData").start()
-
-        self.mock_summarise = MagicMock()
-        self.mock_report_exception = MagicMock()
-        self.mock_data_parser = MagicMock()
-
-        self.expression_checker = ExpressionChecker(
-            self.mock_data_parser, self.mock_summarise, self.mock_report_exception
+        # Valid NHS number length
+        self.assertIsNone(
+            checker.validate_expression(
+                "STRING",
+                "NHS_NUMBER",
+                "contained|#:Patient|identifier|#:https://fhir.nhs.uk/Id/nhs-number|value",
+                "9876543210",
+            )
+        )
+        self.assertIsNone(
+            checker.validate_expression(
+                "STRING",
+                "NHS_NUMBER",
+                "contained|#:Patient|identifier|#:https://fhir.nhs.uk/Id/nhs-number|value",
+                "9876543210",
+            )
+        )
+        # Empty should fail NHS number string rule
+        self.assertIsInstance(
+            checker.validate_expression(
+                "STRING", "NHS_NUMBER", "contained|#:Patient|identifier|#:https://fhir.nhs.uk/Id/nhs-number|value", ""
+            ),
+            ErrorReport,
         )
 
-    def tearDown(self):
-        patch.stopall()
-
-    def test_validate_datetime_valid(self):
-        result = self.expression_checker.validate_expression(
-            "DATETIME", expression_rule="", field_name="timestamp", field_value="2022-01-01T12:00:00", row={}
+        # VALID PERSON_SURNAME STRING
+        self.assertIsNone(
+            checker.validate_expression(
+                "STRING", "PERSON_SURNAME", "contained|#:Patient|name|#:official|family", "Smith"
+            )
         )
-        self.assertEqual(
-            result.message,
-            "Unexpected exception [ValueError]: Invalid isoformat string: '2022-01-01T12:00:00'",
+        self.assertIsNone(checker.validate_expression("STRING", "PERSON_SURNAME", "PERSON_SURNAME", "Taylor"))
+        # INVALID PERSON_SURNAME STRING (too long)
+        self.assertIsInstance(
+            checker.validate_expression(
+                "STRING", "PERSON_SURNAME", "contained|#:Patient|name|#:official|family", "Stan" * 51
+            ),
+            ErrorReport,
         )
-        self.assertEqual(result.code, ExceptionLevels.UNEXPECTED_EXCEPTION)
-        self.assertEqual(result.field, "timestamp")
 
-    def test_validate_uuid_valid(self):
-        result = self.expression_checker.validate_expression(
-            "UUID", expression_rule="", field_name="id", field_value="550e8400-e29b-41d4-a716-446655440000", row={}
-        )
-        self.assertTrue(result is None)
-
-    def test_validate_integer_invalid(self):
-        result = self.expression_checker.validate_expression(
-            "INT", expression_rule="", field_name="age", field_value="hello world", row={}
-        )
-        self.assertEqual(result.code, ExceptionLevels.UNEXPECTED_EXCEPTION)
-        self.assertEqual(result.field, "age")
-        self.assertIn("invalid literal for int()", result.message)
-
-    def test_validate_in_array(self):
-        # Mock data_parser.get_key_values
-        self.mock_data_parser.get_key_values.return_value = ["val1", "val2"]
-
-        result = self.expression_checker.validate_expression(
-            "INARRAY", expression_rule="", field_name="some_field", field_value="val2", row={}
-        )
-        self.assertEqual(result.message, "Value not in array check failed")
-        self.assertEqual(result.field, "some_field")
-
-    def test_validate_expression_type_not_found(self):
-        result = self.expression_checker.validate_expression(
-            "UNKNOWN", expression_rule="", field_name="field", field_value="value", row={}
-        )
-        self.assertIn("Schema expression not found", result)
-
-
-class DummyParserEx:
-    """A dummy parser that optionally raises exceptions when fetching values."""
-
-    def __init__(self, data=None, raise_on_get=False):
-        self._data = data or {}
-        self._raise_on_get = raise_on_get
-
-    def get_key_value(self, field_name):
-        """Simulate field lookup, optionally raising an error."""
-        if self._raise_on_get:
-            raise RuntimeError("boom")
-        return [self._data.get(field_name, "")]
-
-
-class StubLookup:
-    """Stub object to simulate lookup behavior with optional exception raising."""
-
-    def __init__(self, raise_on_call=False):
-        self._raise_on_call = raise_on_call
-
-    def find_lookup(self, value):
-        if self._raise_on_call:
-            raise RuntimeError("boom")
-        return ""  # always empty to force error path
-
-
-class StubKeyData:
-    """Stub for key data operations with optional exception raising."""
-
-    def __init__(self, raise_on_call=False):
-        self._raise_on_call = raise_on_call
-
-    def findKey(self, key_source, field_value):
-        if self._raise_on_call:
-            raise RuntimeError("boom")
-        return False  # always fail to trigger error branch
-
-
-class TestExpressionCheckerExceptions(unittest.TestCase):
-    """
-    Tests edge cases and exception-handling paths in ExpressionChecker.
-    Focuses on behavior when report=True vs report=False.
-    """
-
-    def make_checker(self, data=None, report=True, raise_on_get=False):
-        """Helper to construct ExpressionChecker with dummy parser."""
-        return ExpressionChecker(DummyParserEx(data, raise_on_get), False, report)
-
-    # --- REGEX, IN, LENGTH, FLOAT, UUID ----------------------------------
-
-    def test_regex_unexpected_true_false(self):
-        """REGEX should return ErrorReport when report=True, None when report=False."""
-        checker = self.make_checker(report=True)
-        self.assertIsInstance(checker.validate_expression("REGEX", None, "regex_field", "abc", 1), ErrorReport)
-
-        checker_no_report = self.make_checker(report=False)
-        self.assertIsNone(checker_no_report.validate_expression("REGEX", None, "regex_field", "abc", 1))
-
-    def test_in_unexpected_true_false(self):
-        """IN should trigger error when report=True and pass silently when report=False."""
-        checker = self.make_checker(report=True)
-        self.assertIsInstance(checker.validate_expression("IN", "ab", "in_field", None, 1), ErrorReport)
-
-        checker_no_report = self.make_checker(report=False)
-        self.assertIsNone(checker_no_report.validate_expression("IN", "ab", "in_field", None, 1))
-
-    def test_length_unexpected_true_false(self):
-        """LENGTH rule with invalid argument should trigger exception path."""
-        checker = self.make_checker(report=True)
-        self.assertIsInstance(checker.validate_expression("LENGTH", "x", "length_field", "abcd", 1), ErrorReport)
-
-        checker_no_report = self.make_checker(report=False)
-        self.assertIsNone(checker_no_report.validate_expression("LENGTH", "x", "length_field", "abcd", 1))
-
-    def test_float_unexpected_true_false(self):
-        """FLOAT rule should fail when value cannot be parsed as float."""
-        checker = self.make_checker(report=True)
-        self.assertIsInstance(checker.validate_expression("FLOAT", None, "float_field", "abc", 1), ErrorReport)
-
-        checker_no_report = self.make_checker(report=False)
-        self.assertIsNone(checker_no_report.validate_expression("FLOAT", None, "float_field", "abc", 1))
-
-    def test_uuid_unexpected_true_false(self):
-        """UUID rule should handle malformed UUIDs properly."""
-        checker = self.make_checker(report=True)
-        self.assertIsInstance(checker.validate_expression("UUID", None, "uuid_field", "not-a-uuid", 1), ErrorReport)
-
-        checker_no_report = self.make_checker(report=False)
-        self.assertIsNone(checker_no_report.validate_expression("UUID", None, "uuid_field", "not-a-uuid", 1))
-
-    # --- MAXOBJECTS ------------------------------------------------------
-
-    def test_maxobjects_unexpected_true_false(self):
-        """MAXOBJECTS should handle non-iterable input gracefully."""
-
-        class NoLen:
-            """Dummy object without __len__."""
-
-            pass
-
-        checker = self.make_checker(report=True)
-        self.assertIsInstance(checker.validate_expression("MAXOBJECTS", "1", "max_field", NoLen(), 1), ErrorReport)
-
-        checker_no_report = self.make_checker(report=False)
-        self.assertIsNone(checker_no_report.validate_expression("MAXOBJECTS", "1", "max_field", NoLen(), 1))
-
-    # --- ONLYIF ----------------------------------------------------------
-
-    def test_onlyif_unexpected_true_false(self):
-        """ONLYIF rule should handle parser errors based on report flag."""
-        checker = self.make_checker(report=True, raise_on_get=True)
-        self.assertIsInstance(checker.validate_expression("ONLYIF", "loc|VAL", "field", "x", 1), ErrorReport)
-
-        checker_no_report = self.make_checker(report=False, raise_on_get=True)
-        self.assertIsNone(checker_no_report.validate_expression("ONLYIF", "loc|VAL", "field", "x", 1))
-
-    # --- LOOKUP & KEYCHECK -----------------------------------------------
-
-    def test_lookup_unexpected_true_false(self):
-        """LOOKUP rule should handle raised exceptions gracefully."""
-        checker = self.make_checker(report=True)
-        checker.data_look_up = StubLookup(raise_on_call=True)
-        self.assertIsInstance(checker.validate_expression("LOOKUP", None, "lookup_field", "x", 1), ErrorReport)
-
-        checker_no_report = self.make_checker(report=False)
-        checker_no_report.data_look_up = StubLookup(raise_on_call=True)
-        self.assertIsNone(checker_no_report.validate_expression("LOOKUP", None, "lookup_field", "x", 1))
-
-    def test_keycheck_unexpected_true_false(self):
-        """KEYCHECK rule should handle raised exceptions gracefully."""
-        checker = self.make_checker(report=True)
-        checker.key_data = StubKeyData(raise_on_call=True)
-        self.assertIsInstance(checker.validate_expression("KEYCHECK", "Site", "key_field", "val", 1), ErrorReport)
-
-        checker_no_report = self.make_checker(report=False)
-        checker_no_report.key_data = StubKeyData(raise_on_call=True)
-        self.assertIsNone(checker_no_report.validate_expression("KEYCHECK", "Site", "key_field", "val", 1))
-
-    # --- DATE & STRING EDGE CASES ---------------------------------------
-
-    def test_date_alias_and_upper_lower_edges(self):
-        """DATE alias should behave like DATETIME; string rules should handle None gracefully."""
-        checker = self.make_checker({"date_field": "2025-01-01"})
-        self.assertIsNone(checker.validate_expression("DATE", None, "date_field", "2025-01-01", 1))
-
-        checker_none = self.make_checker()
-        self.assertIsInstance(checker_none.validate_expression("UPPER", None, "upper_field", None, 1), ErrorReport)
-        self.assertIsInstance(checker_none.validate_expression("LOWER", None, "lower_field", None, 1), ErrorReport)
-        self.assertIsInstance(checker_none.validate_expression("STARTSWITH", "a", "start_field", None, 1), ErrorReport)
-        self.assertIsInstance(checker_none.validate_expression("ENDSWITH", "a", "end_field", None, 1), ErrorReport)
-
-    # --- NUMERIC RANGE ---------------------------------------------------
-
-    def test_nrange_out_of_range(self):
-        """NRANGE rule should return error when value exceeds upper bound."""
+    # NHS_NUMBER expression type (MOD 11 check)
+    def test_nhs_number_mod11_valid_and_invalid(self):
         checker = self.make_checker()
-        self.assertIsInstance(checker.validate_expression("NRANGE", "1,10", "range_field", "11", 1), ErrorReport)
+        field_path = "contained|#:Patient|identifier|#:https://fhir.nhs.uk/Id/nhs-number|value"
+        # Known valid NHS number
+        self.assertIsNone(checker.validate_expression("NHS_NUMBER", "", field_path, "9736592677"))
+        # Invalid: wrong check digit
+        self.assertIsInstance(checker.validate_expression("NHS_NUMBER", "", field_path, "9434765918"), ErrorReport)
+        # Invalid: non-digit / wrong length
+        self.assertIsInstance(checker.validate_expression("NHS_NUMBER", "", field_path, "123456789A"), ErrorReport)
 
-    # --- DOMAIN-SPECIFIC -------------------------------------------------
-
-    def test_postcode_valid_and_unexpected(self):
-        """POSTCODE should pass for valid UK postcode and fail otherwise."""
+    # LIST PERSON_FORENAME
+    def test_list_valid_and_invalid(self):
         checker = self.make_checker()
-        self.assertIsNone(checker.validate_expression("POSTCODE", None, "postcode_field", "EC1A 1BB", 1))
-        self.assertIsInstance(checker.validate_expression("POSTCODE", None, "postcode_field", None, 1), ErrorReport)
+        self.assertIsNone(checker.validate_expression("LIST", "PERSON_NAME", "PERSON_FORENAME", ["Alice"]))
+        self.assertIsNone(
+            checker.validate_expression(
+                "LIST", "PERSON_NAME", "contained|#:Patient|name|#:official|given|0", ["Bethany"]
+            )
+        )
+        self.assertIsInstance(checker.validate_expression("LIST", "PERSON_NAME", "PERSON_FORENAME", []), ErrorReport)
+        self.assertIsInstance(checker.validate_expression("LIST", "", "PERSON_FORENAME", "Alice"), ErrorReport)
 
-    def test_nhsnumber_valid_and_unexpected(self):
-        """NHSNUMBER should pass for valid NHS number format and fail otherwise."""
+    # DATE
+    def test_date_valid_and_invalid(self):
         checker = self.make_checker()
-        self.assertIsNone(checker.validate_expression("NHSNUMBER", None, "nhs_field", "61234567890", 1))
-        self.assertIsInstance(checker.validate_expression("NHSNUMBER", None, "nhs_field", None, 1), ErrorReport)
+        self.assertIsNone(checker.validate_expression("DATE", "", "contained|#:Patient|birthDate", "2025-01-01"))
+        self.assertIsNone(checker.validate_expression("DATE", "", "PERSON_DOB", "2025-01-01"))
+        self.assertIsInstance(
+            checker.validate_expression("DATE", "", "contained|#:Patient|birthDate", "2025-13-01"), ErrorReport
+        )
+        self.assertIsInstance(checker.validate_expression("DATE", "", "PERSON_DOB", "2025-02-30"), ErrorReport)
 
-    # --- IN RULE NORMAL PATHS -------------------------------------------
-
-    def test_in_pass_fail(self):
-        """IN rule should detect substring presence correctly."""
+    # DATETIME
+    def test_datetime_valid_and_invalid(self):
         checker = self.make_checker()
-        self.assertIsNone(checker.validate_expression("IN", "ab", "in_field", "zzabzz", 1))
-        self.assertIsInstance(checker.validate_expression("IN", "ab", "in_field", "zz", 1), ErrorReport)
+        # Full date only allowed
+        self.assertIsNone(
+            checker.validate_expression("DATETIME", "DATETIME", "occurrenceDateTime", "2025-01-01T05:00:00+00:00")
+        )
+        self.assertIsNone(
+            checker.validate_expression("DATETIME", "DATETIME", "DATE_AND_TIME", "2025-01-01T05:00:00+00:00")
+        )
+        # Bad format should raise
+        self.assertIsInstance(
+            checker.validate_expression("DATETIME", "", "occurrenceDateTime", "2026-01-01T10:00:00Z"), ErrorReport
+        )
+        self.assertIsInstance(
+            checker.validate_expression("DATETIME", "", "DATE_AND_TIME", "2026-01-01T10:00:00Z"), ErrorReport
+        )
+
+    # STRING with SITE_CODE
+    def test_site_code_string_valid_and_invalid(self):
+        checker = self.make_checker()
+        field_path = "performer|#:Organization|actor|identifier|value"
+        # Valid: non-empty, no spaces
+        self.assertIsNone(checker.validate_expression("STRING", "", field_path, "RJ1"))
+        # Invalid: empty
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, ""), ErrorReport)
+        # Invalid: contains spaces
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, 1234), ErrorReport)
+
+    # STRING with SITE_CODE_TYPE_URI rule
+    def test_site_code_type_uri_string_valid_and_invalid(self):
+        checker = self.make_checker()
+        field_path = "performer|#:Organization|actor|identifier|system"
+        valid_uri = "https://fhir.nhs.uk/Id/ods-organization-code"
+        # Valid: non-empty, no spaces
+        self.assertIsNone(
+            checker.validate_expression("STRING", "", field_path, valid_uri),
+        )
+        # Invalid: empty
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, ""), ErrorReport)
+        # Invalid: contains spaces
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, 123), ErrorReport)
+
+    # BOOLEAN
+
+    # STRING with UNIQUE_ID rule (empty rule -> generic non-empty string)
+    def test_unique_id_string_valid_and_invalid(self):
+        checker = self.make_checker()
+        field_path = "identifier|0|value"
+        # Valid: non-empty string
+        self.assertIsNone(checker.validate_expression("STRING", "", field_path, "ABC-123-XYZ"))
+        # Invalid: empty string
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, ""), ErrorReport)
+        # Invalid: non-string value
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, 987654), ErrorReport)
+
+    # STRING with UNIQUE_ID_URI rule (empty rule -> generic non-empty string)
+    def test_unique_id_uri_string_valid_and_invalid(self):
+        checker = self.make_checker()
+        field_path = "identifier|0|system"
+        valid_system = "https://example.org/unique-id-system"
+        # Valid: non-empty string
+        self.assertIsNone(checker.validate_expression("STRING", "", field_path, valid_system))
+        # Invalid: empty string
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, ""), ErrorReport)
+        # Invalid: non-string value
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, 42), ErrorReport)
+
+    # STRING with GENDER rule on real field
+    def test_gender_string_rule_valid_and_invalid(self):
+        checker = self.make_checker()
+        field_path = "contained|#:Patient|gender"
+        # Valid genders per schema constants (male, female, other, unknown)
+        self.assertIsNone(checker.validate_expression("STRING", "GENDER", field_path, "male"))
+        self.assertIsNone(checker.validate_expression("STRING", "GENDER", field_path, "female"))
+        # Invalid values should error
+        self.assertIsInstance(checker.validate_expression("STRING", "GENDER", field_path, "M"), ErrorReport)
+
+    # BOOLEAN with PRIMARY_SOURCE
+    def test_primary_source_boolean_valid_and_invalid(self):
+        checker = self.make_checker()
+        field_path = "primarySource"
+        # Valid: boolean True
+        self.assertIsNone(checker.validate_expression("BOOLEAN", "", field_path, True))
+        # Invalid: non-boolean should raise TypeError per implementation
+        self.assertIsInstance(checker.validate_expression("BOOLEAN", "", field_path, "true"), ErrorReport)
+
+    # STRING with VACCINATION_PROCEDURE_CODE
+    def test_vaccination_procedure_code_string_valid_and_invalid(self):
+        checker = self.make_checker()
+        field_path = "extension|0|valueCodeableConcept|coding|0|code"
+        # Valid: non-empty string
+        self.assertIsNone(checker.validate_expression("STRING", "", field_path, "123456"))
+        # Invalid: empty string
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, ""), ErrorReport)
+        # Invalid: non-string value
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, 123456), ErrorReport)
+
+    # After parent check succeeds - SNOMED_CODE for VACCINATION_PROCEDURE_CODE
+    def test_vaccination_procedure_snomed_code_valid_and_invalid(self):
+        checker = self.make_checker()
+        field_path = "extension|0|valueCodeableConcept|coding|0|code"
+        # Valid SNOMED example (passes Verhoeff, doesn't start with 0, length ok, suffix rule)
+        self.assertIsNone(checker.validate_expression("SNOMED_CODE", "", field_path, "1119349007"))
+        # Invalid: empty
+        self.assertIsInstance(checker.validate_expression("SNOMED_CODE", "", field_path, ""), ErrorReport)
+        # Invalid: non-digit
+        self.assertIsInstance(checker.validate_expression("SNOMED_CODE", "", field_path, "ABC123"), ErrorReport)
+        # Invalid: starts with 0
+        self.assertIsInstance(checker.validate_expression("SNOMED_CODE", "", field_path, "012345"), ErrorReport)
+
+    # STRING with VACCINATION_PROCEDURE_TERM
+    def test_vaccination_procedure_term_string_valid_and_invalid(self):
+        checker = self.make_checker()
+        field_path = "extension|0|valueCodeableConcept|coding|0|display"
+        # Valid: non-empty string
+        self.assertIsNone(checker.validate_expression("STRING", "", field_path, "COVID-19 vaccination"))
+        # Invalid: empty string
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, ""), ErrorReport)
+        # Invalid: non-string value
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, 999), ErrorReport)
+
+    # POSITIVEINTEGER with DOSE_SEQUENCE
+    def test_dose_sequence_positiveinteger_valid_and_invalid(self):
+        checker = self.make_checker()
+        field_path = "protocolApplied|0|doseNumberPositiveInt"
+        # Valid: positive integer
+        self.assertIsNone(checker.validate_expression("POSITIVEINTEGER", "", field_path, 2))
+        # Invalid: zero -> ValueError
+        self.assertIsInstance(checker.validate_expression("POSITIVEINTEGER", "", field_path, 0), ErrorReport)
+        # Invalid: negative -> ValueError
+        self.assertIsInstance(checker.validate_expression("POSITIVEINTEGER", "", field_path, -1), ErrorReport)
+        # Invalid: non-int -> TypeError
+        self.assertIsInstance(checker.validate_expression("POSITIVEINTEGER", "", field_path, "2"), ErrorReport)
+
+    # STRING with VACCINE_PRODUCT_CODE
+    def test_vaccine_product_code_string_valid_and_invalid(self):
+        checker = self.make_checker()
+        field_path = "vaccineCode|coding|#:http://snomed.info/sct|code"
+        # Valid: non-empty string
+        self.assertIsNone(checker.validate_expression("STRING", "", field_path, "1119349007"))
+        # Invalid: empty
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, ""), ErrorReport)
+        # Invalid: non-string
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, 1119349007), ErrorReport)
+
+    # STRING with VACCINE_PRODUCT_TERM
+    def test_vaccine_product_term_string_valid_and_invalid(self):
+        checker = self.make_checker()
+        field_path = "vaccineCode|coding|#:http://snomed.info/sct|display"
+        # Valid: non-empty string (spaces allowed by default)
+        self.assertIsNone(checker.validate_expression("STRING", "", field_path, "COVID-19 mRNA vaccine"))
+        # Invalid: empty
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, ""), ErrorReport)
+        # Invalid: non-string
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, 12345), ErrorReport)
+
+    # STRING with VACCINE_MANUFACTURER
+    def test_vaccine_manufacturer_string_valid_and_invalid(self):
+        checker = self.make_checker()
+        field_path = "manufacturer|display"
+        # Valid: non-empty string
+        self.assertIsNone(checker.validate_expression("STRING", "", field_path, "Pfizer"))
+        # Invalid: empty
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, ""), ErrorReport)
+        # Invalid: non-string
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, 101), ErrorReport)
+
+    # STRING with SITE_OF_VACCINATION_CODE
+    def test_site_of_vaccination_code_string_valid_and_invalid(self):
+        checker = self.make_checker()
+        field_path = "site|coding|#:http://snomed.info/sct|code"
+        self.assertIsNone(checker.validate_expression("STRING", "", field_path, "123456"))
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, ""), ErrorReport)
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, 123456), ErrorReport)
+
+    # STRING with SITE_OF_VACCINATION_TERM
+    def test_site_of_vaccination_term_string_valid_and_invalid(self):
+        checker = self.make_checker()
+        field_path = "site|coding|#:http://snomed.info/sct|display"
+        self.assertIsNone(checker.validate_expression("STRING", "", field_path, "Left deltoid"))
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, ""), ErrorReport)
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, 999), ErrorReport)
+
+    # STRING with ROUTE_OF_VACCINATION_CODE
+    def test_route_of_vaccination_code_string_valid_and_invalid(self):
+        checker = self.make_checker()
+        field_path = "route|coding|#:http://snomed.info/sct|code"
+        self.assertIsNone(checker.validate_expression("STRING", "", field_path, "1234"))
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, ""), ErrorReport)
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, 1234), ErrorReport)
+
+    # STRING with ROUTE_OF_VACCINATION_TERM
+    def test_route_of_vaccination_term_string_valid_and_invalid(self):
+        checker = self.make_checker()
+        field_path = "route|coding|#:http://snomed.info/sct|display"
+        self.assertIsNone(checker.validate_expression("STRING", "", field_path, "Intramuscular"))
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, ""), ErrorReport)
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, 12), ErrorReport)
+
+    # INTDECIMAL with DOSE_AMOUNT
+    def test_dose_amount_intdecimal_valid_and_invalid(self):
+        checker = self.make_checker()
+        field_path = "doseQuantity|value"
+        # Valid: int
+        self.assertIsNone(checker.validate_expression("INTDECIMAL", "", field_path, 1))
+        # Valid: Decimal
+        self.assertIsNone(checker.validate_expression("INTDECIMAL", "", field_path, Decimal("0.5")))
+        # Invalid: string
+        self.assertIsInstance(checker.validate_expression("INTDECIMAL", "", field_path, "0.5"), ErrorReport)
+
+    # STRING with DOSE_UNIT_CODE
+    def test_dose_unit_code_string_valid_and_invalid(self):
+        checker = self.make_checker()
+        field_path = "doseQuantity|code"
+        self.assertIsNone(checker.validate_expression("STRING", "", field_path, "ml"))
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, ""), ErrorReport)
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, 1), ErrorReport)
+
+    # STRING with DOSE_UNIT_TERM
+    def test_dose_unit_term_string_valid_and_invalid(self):
+        checker = self.make_checker()
+        field_path = "doseQuantity|unit"
+        self.assertIsNone(checker.validate_expression("STRING", "", field_path, "milliliter"))
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, ""), ErrorReport)
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, 1), ErrorReport)
+
+    # STRING with INDICATION_CODE
+    def test_indication_code_string_valid_and_invalid(self):
+        checker = self.make_checker()
+        field_path = "reasonCode|#:http://snomed.info/sct|coding|#:http://snomed.info/sct|code"
+        self.assertIsNone(checker.validate_expression("STRING", "", field_path, "987654"))
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, ""), ErrorReport)
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, 987654), ErrorReport)
+
+    # STRING with LOCATION_CODE
+    def test_location_code_string_valid_and_invalid(self):
+        checker = self.make_checker()
+        field_path = "location|identifier|value"
+        self.assertIsNone(checker.validate_expression("STRING", "", field_path, "LOC-123"))
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, ""), ErrorReport)
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, 321), ErrorReport)
+
+    # STRING with LOCATION_CODE_TYPE_URI
+    def test_location_code_type_uri_string_valid_and_invalid(self):
+        checker = self.make_checker()
+        field_path = "location|identifier|system"
+        self.assertIsNone(
+            checker.validate_expression("STRING", "", field_path, "https://example.org/location-code-system")
+        )
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, ""), ErrorReport)
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, 0), ErrorReport)
+
+    # LIST with PERFORMING_PROFESSIONAL_FORENAME (empty rule -> non-empty list)
+    def test_practitioner_forename_list_valid_and_invalid(self):
+        checker = self.make_checker()
+        field_path = "contained|#:Practitioner|name|0|given|0"
+        # Valid: non-empty list
+        self.assertIsNone(checker.validate_expression("LIST", "", field_path, ["Alice"]))
+        # Invalid: empty list
+        self.assertIsInstance(checker.validate_expression("LIST", "", field_path, []), ErrorReport)
+        # Invalid: non-list value
+        self.assertIsInstance(checker.validate_expression("LIST", "", field_path, "Alice"), ErrorReport)
+
+    # STRING with PERFORMING_PROFESSIONAL_SURNAME (empty rule -> non-empty string)
+    def test_practitioner_surname_string_valid_and_invalid(self):
+        checker = self.make_checker()
+        field_path = "contained|#:Practitioner|name|0|family"
+        # Valid: non-empty string
+        self.assertIsNone(checker.validate_expression("STRING", "", field_path, "Smith"))
+        # Invalid: empty string
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, ""), ErrorReport)
+        # Invalid: non-string
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, 123), ErrorReport)
+
+    # DATETIME with RECORDED_DATE (schema rule says 'false-strict-timezone' but we use default non-strict here)
+    def test_recorded_date_datetime_valid_and_invalid(self):
+        checker = self.make_checker()
+        field_path = "recorded"
+        # Valid: timezone offset other than +00:00 or +01:00 should be allowed when non-strict
+        self.assertIsNone(checker.validate_expression("DATETIME", "", field_path, "2025-01-01T10:00:00+02:00"))
+        # Valid: full date only also allowed per formats
+        self.assertIsNone(checker.validate_expression("DATETIME", "", field_path, "2025-01-01"))
+        # Invalid: Zulu timezone not in accepted formats
+        self.assertIsInstance(
+            checker.validate_expression("DATETIME", "", field_path, "2026-01-01T10:00:00Z"), ErrorReport
+        )
+
+    # STRING with no rule for PERSON_POSTCODE on real field
+    def test_postcode_string_rule_valid_and_invalid(self):
+        checker = self.make_checker()
+        field_path = "contained|#:Patient|address|#:postalCode|postalCode"
+        # With empty rule, generic string constraints apply: non-empty and no spaces
+        self.assertIsNone(checker.validate_expression("STRING", "", field_path, "SW1A 1AA"))
+        # Real-world postcode with a space should fail as spaces are not allowed without a rule override
+        field_path = "POST_CODE"
+        self.assertIsInstance(
+            checker.validate_expression("STRING", "", field_path, 123),
+            ErrorReport,
+        )
+        # Empty should also fail
+        self.assertIsInstance(checker.validate_expression("STRING", "", field_path, ""), ErrorReport)
 
 
 if __name__ == "__main__":

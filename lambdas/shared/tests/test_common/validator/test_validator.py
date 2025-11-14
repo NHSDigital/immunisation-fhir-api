@@ -27,6 +27,7 @@ class TestValidator(unittest.TestCase):
 
         self.assertIsInstance(result, list)
         self.assertTrue(all(isinstance(err, ErrorReport) for err in result))
+        print(f"CSV Validation Errors: {result}")
         self.assertEqual(len(result), 0, "Expected no validation errors for valid CSV row")
 
     def test_has_validation_failed_detects_critical_error(self):
