@@ -7,6 +7,7 @@ from json import JSONDecodeError
 from urllib.parse import parse_qs
 
 from aws_lambda_typing.events import APIGatewayProxyEventV1
+from fhir.resources.R4B.bundle import Bundle
 from fhir.resources.R4B.identifier import Identifier
 
 from constants import MAX_RESPONSE_SIZE_BYTES
@@ -147,7 +148,7 @@ class FhirController:
         identifier = Identifier.construct(system=identifier_components[0], value=identifier_components[1])
 
         search_bundle = self.fhir_service.get_immunization_by_identifier(identifier, supplier_system, element)
-        prepared_search_bundle = self._prepare_search_bundle(search_bundle.dict())
+        prepared_search_bundle = self._prepare_search_bundle(search_bundle)
 
         return create_response(200, prepared_search_bundle)
 
@@ -162,12 +163,11 @@ class FhirController:
             validated_search_params.date_to,
             validated_search_params.include,
         )
-        search_bundle_dict: dict = search_bundle.dict()
 
-        if self._has_too_many_search_results(search_bundle_dict):
+        if self._has_too_many_search_results(search_bundle):
             raise TooManyResultsError("Search returned too many results. Please narrow down the search")
 
-        prepared_search_bundle = self._prepare_search_bundle(search_bundle.dict())
+        prepared_search_bundle = self._prepare_search_bundle(search_bundle)
 
         return create_response(200, prepared_search_bundle)
 
@@ -176,15 +176,17 @@ class FhirController:
         return False if not re.match(self._IMMUNIZATION_ID_PATTERN, immunization_id) else True
 
     @staticmethod
-    def _prepare_search_bundle(search_response: dict) -> dict:
+    def _prepare_search_bundle(search_response: Bundle) -> dict:
         """Workaround for fhir.resources dict() or json() removing the empty "entry" list. Team also specified that
         total should be the final key in the object. Should investigate if this can be resolved with later version of
         the library."""
-        if "entry" not in search_response:
-            search_response["entry"] = []
+        search_response_dict = json.loads(search_response.json())
 
-        search_response["total"] = search_response.pop("total")
-        return search_response
+        if "entry" not in search_response_dict:
+            search_response_dict["entry"] = []
+
+        search_response_dict["total"] = search_response_dict.pop("total")
+        return search_response_dict
 
     @staticmethod
     def _is_valid_resource_version(resource_version: str) -> bool:
@@ -199,11 +201,11 @@ class FhirController:
         )
 
     @staticmethod
-    def _has_too_many_search_results(search_response: dict) -> bool:
+    def _has_too_many_search_results(search_response: Bundle) -> bool:
         """Checks whether the response is too large - 6MB Lambda limit. Note: this condition should never happen as it
         would require a very large number of vaccs for a single patient. It is also very rudimentary and all it does is
         ensure we can raise and return a nice looking error. Consider using pagination as a more robust approach."""
-        return len(json.dumps(search_response)) > MAX_RESPONSE_SIZE_BYTES
+        return len(search_response.json(use_decimal=True)) > MAX_RESPONSE_SIZE_BYTES
 
     @staticmethod
     def _get_search_params_from_request(

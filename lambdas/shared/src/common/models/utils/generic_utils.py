@@ -156,7 +156,6 @@ def create_diagnostics_error(value):
 
 
 def make_empty_search_bundle(searched_url: str) -> FhirBundle:
-    # May need to adjust - FHIR Bundle might not like this link (could use Link and remove type in controller)
     return FhirBundle(entry=[], link=[BundleLink(relation="self", url=searched_url)], type="searchset", total=0)
 
 
