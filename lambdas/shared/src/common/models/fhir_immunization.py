@@ -2,10 +2,13 @@
 
 from fhir.resources.R4B.immunization import Immunization
 
+from common.models.constants import VALIDATION_SCHEMA_HASH_KEY
+from common.models.errors import ValidatorError
 from common.models.fhir_immunization_post_validators import PostValidators
-from common.models.fhir_immunization_pre_validators import PreValidators
+#from common.models.fhir_immunization_pre_validators import PreValidators
 from common.models.utils.validation_utils import get_vaccine_type
-
+from common.redis_client import get_redis_client
+from common.validator.validator import Validator
 
 class ImmunizationValidator:
     """
@@ -16,11 +19,25 @@ class ImmunizationValidator:
     def __init__(self, add_post_validators: bool = True) -> None:
         self.add_post_validators = add_post_validators
 
+    # VED-798 : replace with validation engine
+    
+    # NB: we don't know yet whether the post-validation is also going to be rolled into the
+    # validation engine. either way, we have a bit of work to do when putting it in batch;
+    # it has to move from ImmunizationValidator, as batch is supposed to call it before it
+    # gets here
+    
     @staticmethod
     def run_pre_validators(immunization: dict) -> None:
         """Run pre validation on the FHIR Immunization Resource JSON data"""
-        if error := PreValidators(immunization).validate():
-            raise ValueError(error)
+        #if error := PreValidators(immunization).validate():
+        #    raise ValueError(error)
+
+        schema_file = get_redis_client().hget(VALIDATION_SCHEMA_HASH_KEY, "schema_file")
+        validator = Validator(schema_file)
+        errors = validator.validate_fhir(immunization)
+        if errors:
+            # this is going to be a list of ErrorReport
+            raise ValidatorError(errors)
 
     @staticmethod
     def run_fhir_validators(immunization: dict) -> None:

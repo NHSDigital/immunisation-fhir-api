@@ -2,7 +2,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from src.common.validator.validator import Validator
+from common.validator.validator import Validator
 
 from common.validator.constants.enums import DataType, ErrorLevels, ExceptionLevels
 from common.validator.error_report.record_error import ErrorReport
@@ -151,9 +151,9 @@ class TestRunValidation(unittest.TestCase):
         self.fhir_data = {"recorded": "2025-01-10T10:00:00Z"}
         self.csv_row = {"nhs_number": "1234567890", "recorded": "2025-01-10"}
 
-    @patch("src.common.validator.validator.FHIRInterface")
-    @patch("src.common.validator.validator.SchemaParser.parse_schema")
-    @patch("src.common.validator.validator.ExpressionChecker")
+    @patch("common.validator.validator.FHIRInterface")
+    @patch("common.validator.validator.SchemaParser.parse_schema")
+    @patch("common.validator.validator.ExpressionChecker")
     def test_run_validation_fhir_success(self, mock_expr_checker, mock_schema_parser, mock_fhir_interface):
         """Ensure successful FHIR validation completes and returns empty error list."""
         mock_schema = MagicMock()
@@ -175,7 +175,7 @@ class TestRunValidation(unittest.TestCase):
             mock_validate.assert_called_once()
             self.assertEqual(result, [])
 
-    @patch("src.common.validator.validator.FHIRInterface", side_effect=Exception("Parser init failed"))
+    @patch("common.validator.validator.FHIRInterface", side_effect=Exception("Parser init failed"))
     def test_run_validation_parser_failure(self, mock_fhir_interface):
         """Return ErrorReport if FHIR parser creation fails."""
         result = self.validator.run_validation(DataType.FHIR, fhir_data=self.fhir_data)
@@ -183,8 +183,8 @@ class TestRunValidation(unittest.TestCase):
         self.assertIsInstance(result[0], ErrorReport)
         self.assertIn("Data Parser Unexpected exception", result[0].message)
 
-    @patch("src.common.validator.validator.SchemaParser.parse_schema", side_effect=Exception("Schema load error"))
-    @patch("src.common.validator.validator.FHIRInterface")
+    @patch("common.validator.validator.SchemaParser.parse_schema", side_effect=Exception("Schema load error"))
+    @patch("common.validator.validator.FHIRInterface")
     def test_run_validation_schema_parse_failure(self, mock_fhir_interface, mock_parse_schema):
         """Return ErrorReport if schema parsing fails."""
         mock_fhir_interface.return_value = MagicMock()
@@ -234,7 +234,7 @@ def test_extracts_correct_field_based_on_data_format(self):
     fhir_parser.extract_field_values.assert_called_once_with("recorded")
 
 
-@patch("src.common.validator.validator.add_error_record")
+@patch("common.validator.validator.add_error_record")
 def test_handles_extract_field_values_exception(self, mock_add_error_record):
     mock_expr_checker = MagicMock()
     data_parser = MagicMock()

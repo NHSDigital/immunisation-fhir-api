@@ -21,6 +21,7 @@ import parameter_parser
 from authorisation.api_operation_code import ApiOperationCode
 from authorisation.authoriser import Authoriser
 from common.models.errors import (
+    ValidatorError,
     CustomValidationError,
     IdentifierDuplicationError,
     MandatoryError,
@@ -123,7 +124,7 @@ class FhirService:
 
         try:
             self.validator.validate(immunization)
-        except (ValueError, MandatoryError) as error:
+        except (ValidatorError, ValueError, MandatoryError) as error:
             raise CustomValidationError(message=str(error)) from error
 
         vaccination_type = get_vaccine_type(immunization)

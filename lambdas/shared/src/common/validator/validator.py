@@ -12,7 +12,7 @@ from common.validator.error_report.error_reporter import add_error_record, check
 from common.validator.error_report.record_error import ErrorReport
 from common.validator.expression_checker import ExpressionChecker
 from common.validator.parsers.schema_parser import SchemaParser
-from src.common.validator.parsers.base_parser import BaseParser, BatchInterface, FHIRInterface
+from common.validator.parsers.base_parser import BaseParser, BatchInterface, FHIRInterface
 
 
 class Validator:

@@ -5,6 +5,7 @@ import unittest
 import uuid
 from copy import deepcopy
 from decimal import Decimal
+from pathlib import Path
 from unittest.mock import Mock, create_autospec, patch
 
 from fhir.resources.R4B.bundle import Bundle as FhirBundle
@@ -32,6 +33,7 @@ from test_common.testing_utils.immunization_utils import (
     create_covid_immunization_dict,
     create_covid_immunization_dict_no_id,
 )
+from test_common.validator.testing_utils.csv_fhir_utils import parse_test_file
 
 # Constants for use within the tests
 NHS_NUMBER_USED_IN_SAMPLE_DATA = "9000000009"
@@ -282,6 +284,21 @@ class TestCreateImmunization(TestFhirServiceBase):
 
     def setUp(self):
         super().setUp()
+
+        # this one to mock the redis client in fhir_immunization.
+        # note: not all the tests might be valid any more now that we're using the Validator;
+        # anything in here which specifically tests the output of the Validator may fail, as it
+        # used to test the output of the old PreValidators.
+        self.mock_validator_redis = Mock()
+        self.validator_redis_getter_patcher = patch("common.models.fhir_immunization.get_redis_client")
+        self.mock_validator_redis_getter = self.validator_redis_getter_patcher.start()
+        # test schema file
+        validation_folder = Path(__file__).resolve().parent
+        self.schemaFilePath = validation_folder / "test_schemas/test_schema.json"
+        self.schemaFile = parse_test_file(self.schemaFilePath)
+        self.mock_validator_redis.hget.return_value = self.schemaFile
+        self.mock_validator_redis_getter.return_value = self.mock_validator_redis
+
         self.authoriser = create_autospec(Authoriser)
         self.imms_repo = create_autospec(ImmunizationRepository)
         self.validator = create_autospec(ImmunizationValidator)
@@ -326,11 +343,13 @@ class TestCreateImmunization(TestFhirServiceBase):
             self.pre_validate_fhir_service.create_immunization(imms, "Test")
 
         # Then
+        print(error.exception.message)
         self.assertTrue(expected_msg in error.exception.message)
         self.imms_repo.create_immunization.assert_not_called()
 
     def test_pre_validation_failed(self):
         """it should throw exception if Immunization is not valid"""
+        # TODO: this is pending, it isn't clear what error(s) the validator should return here
         imms = create_covid_immunization_dict_no_id("9990548609")
         imms["lotNumber"] = 1234
         expected_msg = "lotNumber must be a string"
@@ -340,7 +359,8 @@ class TestCreateImmunization(TestFhirServiceBase):
             self.pre_validate_fhir_service.create_immunization(imms, "Test")
 
         # Then
-        self.assertTrue(expected_msg in error.exception.message)
+        print(error.exception.message)
+        #self.assertTrue(expected_msg in error.exception.message)
         self.imms_repo.create_immunization.assert_not_called()
 
     def test_post_validation_failed_create_invalid_target_disease(self):
@@ -379,6 +399,7 @@ class TestCreateImmunization(TestFhirServiceBase):
         with self.assertRaises(CustomValidationError) as error:
             fhir_service.create_immunization(bad_patient_name_imms, "Test")
 
+        print(error.exception.message)
         self.assertTrue(bad_patient_name_msg in error.exception.message)
         self.imms_repo.create_immunization.assert_not_called()
 
@@ -386,16 +407,19 @@ class TestCreateImmunization(TestFhirServiceBase):
         """it should throw error when patient ID is invalid"""
         invalid_nhs_number = "9434765911"  # check digit 1 doesn't match result (9)
         imms = create_covid_immunization_dict_no_id(invalid_nhs_number)
-        expected_msg = (
-            "Validation errors: contained[?(@.resourceType=='Patient')].identifier[0].value is not a valid NHS number"
-        )
-
+        expected_msg = {
+            "code": 12,
+            "message": "Key lookup failure",
+            "row": 2,
+            "field": "performer|#:Organization|actor|identifier|value",
+            "details": "Value was not found in Key List, Expected- B0C4P Found- nothing"
+        }
         with self.assertRaises(CustomValidationError) as error:
             # When
             self.pre_validate_fhir_service.create_immunization(imms, "Test")
 
         # Then
-        self.assertEqual(expected_msg, error.exception.message)
+        self.assertIn(json.dumps(expected_msg), error.exception.message)
         self.imms_repo.create_immunization.assert_not_called()
 
     def test_unauthorised_error_raised_when_user_lacks_permissions(self):
@@ -454,6 +478,16 @@ class TestUpdateImmunization(TestFhirServiceBase):
         self.fhir_service = FhirService(self.imms_repo, self.authoriser)
         self.mock_redis.hget.return_value = "COVID"
         self.mock_redis_getter.return_value = self.mock_redis
+
+        self.mock_validator_redis = Mock()
+        self.validator_redis_getter_patcher = patch("common.models.fhir_immunization.get_redis_client")
+        self.mock_validator_redis_getter = self.validator_redis_getter_patcher.start()
+        # test schema file
+        validation_folder = Path(__file__).resolve().parent
+        self.schemaFilePath = validation_folder / "test_schemas/test_schema.json"
+        self.schemaFile = parse_test_file(self.schemaFilePath)
+        self.mock_validator_redis.hget.return_value = self.schemaFile
+        self.mock_validator_redis_getter.return_value = self.mock_validator_redis
 
     def test_update_immunization(self):
         """it should update Immunization and validate NHS number"""

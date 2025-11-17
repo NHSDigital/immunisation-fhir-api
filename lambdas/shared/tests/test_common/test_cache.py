@@ -3,7 +3,7 @@ import os
 import tempfile
 import unittest
 
-from src.common.cache import Cache
+from common.cache import Cache
 
 
 class TestCache(unittest.TestCase):

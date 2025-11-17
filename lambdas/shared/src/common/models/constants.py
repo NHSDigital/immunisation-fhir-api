@@ -77,3 +77,4 @@ class Urls:
 
 
 SUPPLIER_PERMISSIONS_HASH_KEY = "supplier_permissions"
+VALIDATION_SCHEMA_HASH_KEY = "validation_schema"

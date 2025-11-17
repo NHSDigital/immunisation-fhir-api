@@ -1,6 +1,9 @@
+import json
 import uuid
 from dataclasses import dataclass
 from enum import Enum
+
+from common.validator.error_report.record_error import ErrorReport
 
 
 class Code(str, Enum):
@@ -118,6 +121,27 @@ class UnhandledResponseError(RuntimeError):
 
 class UnhandledAuditTableError(Exception):
     """A custom exception for when an unexpected error occurs whilst adding the file to the audit table."""
+
+
+@dataclass
+class ValidatorError(ApiValidationError):
+    """Custom validation error"""
+
+    errors: list[ErrorReport]
+
+    def __str__(self):
+        errors_list = []
+        for error_report in self.errors:
+            errors_list.append(error_report.to_dict())
+        return json.dumps(errors_list)
+
+    def to_operation_outcome(self) -> dict:
+        return create_operation_outcome(
+            resource_id=str(uuid.uuid4()),
+            severity=Severity.error,
+            code=Code.invariant,
+            diagnostics=self.__str__(),
+        )
 
 
 @dataclass

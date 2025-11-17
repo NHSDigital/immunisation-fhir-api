@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
 
-import src.common.models.errors as errors
+import common.models.errors as errors
 
 
 class TestErrors(unittest.TestCase):

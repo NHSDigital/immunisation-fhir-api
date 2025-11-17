@@ -44,6 +44,11 @@ class TestImmunizationModelPostValidationRules(unittest.TestCase):
         self.redis_getter_patcher = patch("common.models.utils.validation_utils.get_redis_client")
         self.mock_redis_getter = self.redis_getter_patcher.start()
 
+        # mock the schema for the ValidationEngine to None, so that it passes through the pre-validation
+        self.mock_validator_redis = Mock()
+        self.validator_redis_getter_patcher = patch("common.models.fhir_immunization.get_redis_client")
+        self.mock_validator_redis_getter = self.validator_redis_getter_patcher.start()
+
     def tearDown(self):
         """Tear down after each test. This runs after every test"""
         self.redis_getter_patcher.stop()
