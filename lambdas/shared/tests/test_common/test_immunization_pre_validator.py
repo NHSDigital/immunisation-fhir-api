@@ -42,6 +42,14 @@ class TestImmunizationModelPreValidationRules(unittest.TestCase):
         self.redis_getter_patcher = patch("common.models.utils.validation_utils.get_redis_client")
         self.mock_redis_getter = self.redis_getter_patcher.start()
 
+        # mock the schema for the ValidationEngine to None, so that it passes through the pre-validation.
+        # NB we're eventually going to remove this test suite. This is just so it doesn't freeze trying to contact redis.
+        # Now that fhir_immunization is pointing to the ValidationEngine instead of pre_validators, most of these
+        # tests will fail anyway.
+        self.mock_validator_redis = Mock()
+        self.validator_redis_getter_patcher = patch("common.models.fhir_immunization.get_redis_client")
+        self.mock_validator_redis_getter = self.validator_redis_getter_patcher.start()
+
     def tearDown(self):
         patch.stopall()
 
