@@ -9,6 +9,7 @@ from common.models.fhir_immunization_post_validators import PostValidators
 from common.models.utils.validation_utils import get_vaccine_type
 from common.redis_client import get_redis_client
 from common.validator.validator import Validator
+from common.validator.constants.enums import DataType
 
 class ImmunizationValidator:
     """
@@ -26,15 +27,21 @@ class ImmunizationValidator:
     # it has to move from ImmunizationValidator, as batch is supposed to call it before it
     # gets here
     
+    # batch will require us to call validator.validate_csvrow()
+    # We add a parameter to the incoming validate() call
+
     @staticmethod
-    def run_pre_validators(immunization: dict) -> None:
+    def run_pre_validators(immunization: dict, data_type: DataType = DataType.FHIR) -> None:
         """Run pre validation on the FHIR Immunization Resource JSON data"""
         #if error := PreValidators(immunization).validate():
         #    raise ValueError(error)
 
         schema_file = get_redis_client().hget(VALIDATION_SCHEMA_HASH_KEY, "schema_file")
         validator = Validator(schema_file)
-        errors = validator.validate_fhir(immunization)
+        if data_type == DataType.FHIR:
+            errors = validator.validate_fhir(immunization)
+        else:
+            errors = validator.validate_csvrow(immunization)
         if errors:
             # this is going to be a list of ErrorReport
             raise ValidatorError(errors)
@@ -56,7 +63,7 @@ class ImmunizationValidator:
         """Identify if reduced validation applies (default to false if no reduce validation information is given)"""
         return False
 
-    def validate(self, immunization_json_data: dict) -> Immunization:
+    def validate(self, immunization_json_data: dict, data_type: DataType = DataType.FHIR) -> Immunization:
         """
         Generate the Immunization model. Note that run_pre_validators, run_fhir_validators, get_vaccine_type and
         run_post_validators will each raise errors if validation is failed.
@@ -65,7 +72,7 @@ class ImmunizationValidator:
         reduce_validation = self.is_reduce_validation()
 
         # Pre-FHIR validations
-        self.run_pre_validators(immunization_json_data)
+        self.run_pre_validators(immunization_json_data, data_type)
 
         # FHIR validations
         self.run_fhir_validators(immunization_json_data)

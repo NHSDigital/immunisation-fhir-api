@@ -149,19 +149,6 @@
       "errorGroup": "validity"
     },
     {
-      "expressionId": "01K8S0Y0TN3NZA6VBB3HM1PDR1",
-      "fieldNameFHIR": "id",
-      "fieldNameFlat": "ACTION_FLAG",
-      "fieldNumber": 12,
-      "errorLevel": 1,
-      "expression": {
-        "expressionName": "Action Flag Not Empty Check",
-        "expressionType": "NOTEMPTY",
-        "expressionRule": ""
-      },
-      "errorGroup": "validity"
-    },
-    {
       "expressionId": "01K5EGR0C8SDQBTNCEP8TJNCCW",
       "fieldNameFHIR": "contained|#:Practitioner|name|0|given|0",
       "fieldNameFlat": "PERFORMING_PROFESSIONAL_FORENAME",

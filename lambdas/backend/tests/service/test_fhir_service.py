@@ -384,6 +384,7 @@ class TestCreateImmunization(TestFhirServiceBase):
         self.assertEqual(bad_target_disease_msg, error.exception.message)
         self.imms_repo.create_immunization.assert_not_called()
 
+    # NB this is picked up in the validator now i.e. in pre-validation.
     def test_post_validation_failed_create_missing_patient_name(self):
         """it should raise CustomValidationError for missing patient name on create"""
         self.mock_redis.hget.return_value = "COVID"
@@ -392,15 +393,23 @@ class TestCreateImmunization(TestFhirServiceBase):
 
         bad_patient_name_imms = deepcopy(valid_imms)
         del bad_patient_name_imms["contained"][1]["name"][0]["given"]
-        bad_patient_name_msg = "contained[?(@.resourceType=='Patient')].name[0].given is a mandatory field"
 
+        bad_patient_name_msg = [
+            {
+                "code": 5,
+                "message": "Value not empty failure",
+                "row": 2,
+                "field": "contained|#:Patient|name|#:official|given|0",
+                "details": "Value is empty, not as expected"
+            }
+        ]
         fhir_service = FhirService(self.imms_repo)
-
         with self.assertRaises(CustomValidationError) as error:
             fhir_service.create_immunization(bad_patient_name_imms, "Test")
 
+        # Then
         print(error.exception.message)
-        self.assertTrue(bad_patient_name_msg in error.exception.message)
+        self.assertEqual(json.dumps(bad_patient_name_msg), error.exception.message)
         self.imms_repo.create_immunization.assert_not_called()
 
     def test_patient_error(self):
