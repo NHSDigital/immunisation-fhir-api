@@ -1688,6 +1688,182 @@
         }
       }
     },
+    "/Immunization/$search-by-identifier": {
+      "get": {
+        "summary": "Search immunisations by record identifier",
+        "operationId": "searchImmunizationByIdentifier",
+        "description": "Use this interaction to find Immunization records by their unique identifier assigned by the submitting system. Provide the composite FHIR search parameter `identifier` as `<system>|<value>`, for example: `identifier=https://supplierABC/identifiers/vacc|e2154d29-1ead-4830-a513-0d59705078fa`. This returns a Bundle of matching Immunization resources",
+        "parameters": [
+          { "$ref": "#/components/parameters/CorrelationID" },
+          { "$ref": "#/components/parameters/RequestID" },
+          { "$ref": "#/components/parameters/Identifier" },
+          { "$ref": "#/components/parameters/Include" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search immunisation operation successful",
+            "content": {
+              "application/fhir+json": {
+                "example": {
+                  "resourceType": "Bundle",
+                  "type": "searchset",
+                  "link": [
+                    {
+                      "relation": "self",
+                      "url": "https://sandbox.api.service.nhs.uk/immunisation-fhir-api/Immunization?identifier=https%3A%2F%2FsupplierABC%2Fidentifiers%2Fvacc%7Ce2154d29-1ead-4830-a513-0d59705078fa&_include=Immunization%3Apatient"
+                    }
+                  ],
+                  "entry": [
+                    {
+                      "fullUrl": "https://sandbox.api.service.nhs.uk/immunisation-fhir-api/Immunization/191f288a-17f3-4cd5-a33c-a52aade6473c",
+                      "resource": {
+                        "resourceType": "Immunization",
+                        "id": "191f288a-17f3-4cd5-a33c-a52aade6473c",
+                        "meta": { "versionId": "1" },
+                        "extension": [
+                          {
+                            "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure",
+                            "valueCodeableConcept": {
+                              "coding": [
+                                {
+                                  "system": "http://snomed.info/sct",
+                                  "code": "1303503001",
+                                  "display": "Administration of RSV (respiratory syncytial virus) vaccine"
+                                }
+                              ]
+                            }
+                          }
+                        ],
+                        "identifier": [
+                          {
+                            "use": "official",
+                            "system": "https://supplierABC/identifiers/vacc",
+                            "value": "e2154d29-1ead-4830-a513-0d59705078fa"
+                          }
+                        ],
+                        "status": "completed",
+                        "vaccineCode": {
+                          "coding": [
+                            {
+                              "system": "http://snomed.info/sct",
+                              "code": "42605811000001109",
+                              "display": "Abrysvo vaccine powder and solvent for solution for injection 0.5ml vials (Pfizer Ltd)"
+                            }
+                          ]
+                        },
+                        "patient": {
+                          "reference": "urn:uuid:a7a5bc28-5831-4158-8a73-0d3e6e43c1ac",
+                          "type": "Patient",
+                          "identifier": {
+                            "system": "https://fhir.nhs.uk/Id/nhs-number",
+                            "value": "9449306206"
+                          }
+                        },
+                        "occurrenceDateTime": "2021-02-07T13:28:17.271000+00:00",
+                        "recorded": "2021-02-07T13:28:17.271000+00:00",
+                        "primarySource": true,
+                        "location": {
+                          "identifier": {
+                            "system": "urn:iso:std:iso:3166",
+                            "value": "GB"
+                          }
+                        },
+                        "manufacturer": { "display": "AstraZeneca Ltd" },
+                        "lotNumber": "4120Z001",
+                        "expirationDate": "2021-07-02",
+                        "site": {
+                          "coding": [
+                            {
+                              "system": "http://snomed.info/sct",
+                              "code": "368208006",
+                              "display": "Left upper arm structure (body structure)"
+                            }
+                          ]
+                        },
+                        "route": {
+                          "coding": [
+                            {
+                              "system": "http://snomed.info/sct",
+                              "code": "78421000",
+                              "display": "Intramuscular route (qualifier value)"
+                            }
+                          ]
+                        },
+                        "doseQuantity": {
+                          "value": 0.5,
+                          "unit": "milliliter",
+                          "system": "http://unitsofmeasure.org",
+                          "code": "ml"
+                        },
+                        "performer": [
+                          {
+                            "actor": {
+                              "type": "Organization",
+                              "identifier": {
+                                "system": "https://fhir.nhs.uk/Id/ods-organization-code",
+                                "value": "B0C4P"
+                              },
+                              "display": "UNIVERSITY HOSPITAL OF WALES"
+                            }
+                          }
+                        ],
+                        "reasonCode": [
+                          {
+                            "coding": [
+                              {
+                                "system": "http://snomed.info/sct",
+                                "code": "443684005",
+                                "display": "Disease outbreak (event)"
+                              }
+                            ]
+                          }
+                        ],
+                        "protocolApplied": [
+                          {
+                            "targetDisease": [
+                              {
+                                "coding": [
+                                  {
+                                    "system": "http://snomed.info/sct",
+                                    "code": "55735004",
+                                    "display": "Respiratory syncytial virus infection (disorder)"
+                                  }
+                                ]
+                              }
+                            ],
+                            "doseNumberPositiveInt": 1
+                          }
+                        ]
+                      },
+                      "search": { "mode": "match" }
+                    },
+                    {
+                      "fullUrl": "urn:uuid:a7a5bc28-5831-4158-8a73-0d3e6e43c1ac",
+                      "resource": {
+                        "resourceType": "Patient",
+                        "id": "9449306206",
+                        "identifier": [
+                          {
+                            "system": "https://fhir.nhs.uk/Id/nhs-number",
+                            "value": "9449306206"
+                          }
+                        ],
+                        "birthDate": "2014-03-25"
+                      },
+                      "search": { "mode": "include" }
+                    }
+                  ],
+                  "total": 1
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/4XX-imms-search"
+          }
+        }
+      }
+    },
     "/Immunization/{id}": {
       "get": {
         "summary": "Retrieve a record of an immunisation by its unique identifier",
@@ -3723,6 +3899,16 @@
         "schema": {
           "type": "string",
           "default": "Immunization:patient"
+        }
+      },
+      "Identifier": {
+        "in": "query",
+        "name": "identifier",
+        "description": "Search by Immunization resource identifier. Expressed as `<system>|<value>` per FHIR search, for example `https://supplierABC/identifiers/vacc|e2154d29-1ead-4830-a513-0d59705078fa`. When using this parameter, other search parameters such as `patient.identifier` and `-immunization.target` are not required.",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "example": "https://supplierABC/identifiers/vacc|e2154d29-1ead-4830-a513-0d59705078fa"
         }
       },
       "E-Tag": {
