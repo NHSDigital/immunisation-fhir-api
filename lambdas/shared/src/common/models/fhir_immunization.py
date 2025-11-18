@@ -1,4 +1,5 @@
 """Immunization FHIR R4B validator"""
+#import json
 
 from fhir.resources.R4B.immunization import Immunization
 
@@ -44,6 +45,13 @@ class ImmunizationValidator:
             errors = validator.validate_csvrow(immunization)
         if errors:
             # this is going to be a list of ErrorReport
+            '''
+            errors_list = []
+            for error_report in errors:
+                errors_list.append(error_report.to_dict())
+            errors_json = json.dumps(errors_list)
+            print(f"\nValidator errors: {errors_json}")
+            '''
             raise ValidatorError(errors)
 
     @staticmethod

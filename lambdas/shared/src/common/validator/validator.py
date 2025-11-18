@@ -72,6 +72,8 @@ class Validator:
                 add_error_record(
                     error_records, error_record, expression_error_group, expression_name, expression_id, error_level
                 )
+                #error_json = json.dumps(error_records[-1].to_dict())
+                print(f"\nvalidate_expression error: {error_records[-1]}")
         except Exception:
             print(f"Exception validating expression {expression_id} on row {row}: {error_record}")
         row += 1
@@ -142,6 +144,7 @@ class Validator:
         expressions_in_schema = schema_parser.get_expressions()
 
         for expression in expressions_in_schema:
+            print(f"\nValidating expression: {expression}")
             self._validate_expression(
                 expression_validator, expression, data_parser, error_records, inc_header_in_row_count
             )

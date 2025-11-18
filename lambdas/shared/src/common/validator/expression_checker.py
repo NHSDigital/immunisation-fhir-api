@@ -23,6 +23,9 @@ class ExpressionChecker:
     def validate_expression(
         self, expression_type: str, expression_rule: str, field_name: str, field_value: str, row: dict
     ) -> ErrorReport:
+        print(f"**** Validating: {expression_rule} type: {expression_type}")
+        print(f"     field_name: {field_name} field_value: {field_value} row: {row}")
+        
         match expression_type:
             case "DATETIME":
                 return self._validate_datetime(expression_rule, field_name, field_value, row)
