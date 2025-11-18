@@ -46,6 +46,7 @@
     "permissions": [
       "3IN1.CRUDS",
       "COVID.CRUDS",
+      "FLU.CRUDS",
       "HPV.CRUDS",
       "MENACWY.CRUDS",
       "MMR.CRUDS",
