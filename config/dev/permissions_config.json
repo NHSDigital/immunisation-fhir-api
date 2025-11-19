@@ -48,7 +48,19 @@
   },
   {
     "supplier": "RAVS",
-    "permissions": ["MMR.CRUDS", "RSV.CRUDS"],
+    "permissions": [
+      "3IN1.CRUDS",
+      "COVID.CRUDS",
+      "FLU.CRUDS",
+      "HPV.CRUDS",
+      "MENACWY.CRUDS",
+      "MMR.CRUDS",
+      "MMRV.CRUDS",
+      "PNEUMOCOCCAL.CRUDS",
+      "PERTUSSIS.CRUDS",
+      "RSV.CRUDS",
+      "SHINGLES.CRUDS"
+    ],
     "ods_codes": ["X26", "X8E5B"]
   },
   {
@@ -56,6 +68,7 @@
     "permissions": [
       "3IN1.CRUDS",
       "COVID.CRUDS",
+      "FLU.CRUDS",
       "HPV.CRUDS",
       "MENACWY.CRUDS",
       "MMR.CRUDS",
