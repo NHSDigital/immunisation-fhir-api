@@ -12,8 +12,15 @@ EMIS_V5_SUPPLIER_IDENTIFIER_SYSTEM = "https://emishealth.com/identifiers/vacc"
 
 def uplift_legacy_identifier(immunization: dict):
     # This code the above constants can be safely removed once DPS carries out it's data migration to update legacy
-    # identifiers as it will become redundant. Please see issue VED-904 for more information.
-    identifier_system = immunization["identifier"][0]["system"]
+    # identifiers as it should become redundant. However, it may be worth keeping in case legacy format identifiers are
+    # received for some reason. Please see issue VED-904 for more information.
+    identifier = immunization.get("identifier")
+
+    if identifier is None or len(identifier) == 0:
+        # Return here to allow validation to raise appropriate error
+        return
+
+    identifier_system = immunization.get("identifier")[0].get("system")
 
     if identifier_system == TPP_V2_SUPPLIER_IDENTIFIER_SYSTEM:
         immunization["identifier"][0]["system"] = TPP_V5_SUPPLIER_IDENTIFIER_SYSTEM
