@@ -10,7 +10,7 @@ EMIS_V2_SUPPLIER_IDENTIFIER_SYSTEM = "YGJ"
 EMIS_V5_SUPPLIER_IDENTIFIER_SYSTEM = "https://emishealth.com/identifiers/vacc"
 
 
-def _uplift_legacy_identifier(immunization: dict):
+def uplift_legacy_identifier(immunization: dict):
     # This code the above constants can be safely removed once DPS carries out it's data migration to update legacy
     # identifiers as it will become redundant. Please see issue VED-904 for more information.
     identifier_system = immunization["identifier"][0]["system"]
@@ -46,7 +46,7 @@ class ImmunizationBatchService:
         """
 
         # TODO: Remove after DPS data migration to new identifiers
-        _uplift_legacy_identifier(immunization)
+        uplift_legacy_identifier(immunization)
 
         try:
             self.validator.validate(immunization)
@@ -70,7 +70,7 @@ class ImmunizationBatchService:
         """
 
         # TODO: Remove after DPS data migration to new identifiers
-        _uplift_legacy_identifier(immunization)
+        uplift_legacy_identifier(immunization)
 
         try:
             self.validator.validate(immunization)
@@ -94,6 +94,6 @@ class ImmunizationBatchService:
         """
 
         # TODO: Remove after DPS data migration to new identifiers
-        _uplift_legacy_identifier(immunization)
+        uplift_legacy_identifier(immunization)
 
         return self.immunization_repo.delete_immunization(immunization, supplier_system, vax_type, table, is_present)
