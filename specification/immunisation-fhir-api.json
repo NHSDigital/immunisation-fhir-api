@@ -1692,18 +1692,29 @@
       "get": {
         "summary": "Search immunisations by record identifier",
         "operationId": "searchImmunizationByIdentifier",
-        "description": "Use this interaction to find Immunization records by their unique identifier assigned by the submitting system. Provide the composite FHIR search parameter `identifier` as `<system>|<value>`, for example: `identifier=https://supplierABC/identifiers/vacc|e2154d29-1ead-4830-a513-0d59705078fa`. This returns a Bundle of matching Immunization resources",
+        "description": "Use this interaction to find Immunization records by their unique identifier assigned by the submitting system. Provide the composite FHIR search parameter `identifier` as `<system>|<value>`, for example: `identifier=https://supplierABC/identifiers/vacc|e2154d29-1ead-4830-a513-0d59705078fa`. This returns a Bundle of matching Immunization resources.",
         "parameters": [
-          { "$ref": "#/components/parameters/CorrelationID" },
-          { "$ref": "#/components/parameters/RequestID" },
-          { "$ref": "#/components/parameters/Identifier" },
-          { "$ref": "#/components/parameters/Include" }
+          {
+            "$ref": "#/components/parameters/CorrelationID"
+          },
+          {
+            "$ref": "#/components/parameters/RequestID"
+          },
+          {
+            "$ref": "#/components/parameters/Identifier"
+          },
+          {
+            "$ref": "#/components/parameters/Include"
+          }
         ],
         "responses": {
           "200": {
-            "description": "Search immunisation operation successful",
+            "description": "Search immunisation by identifier operation successful",
             "content": {
               "application/fhir+json": {
+                "schema": {
+                  "$ref": "#/paths/~1Immunization/get/responses/200/content/application~1fhir+json/schema"
+                },
                 "example": {
                   "resourceType": "Bundle",
                   "type": "searchset",
@@ -1719,7 +1730,9 @@
                       "resource": {
                         "resourceType": "Immunization",
                         "id": "191f288a-17f3-4cd5-a33c-a52aade6473c",
-                        "meta": { "versionId": "1" },
+                        "meta": {
+                          "versionId": "1"
+                        },
                         "extension": [
                           {
                             "url": "https://fhir.hl7.org.uk/StructureDefinition/Extension-UKCore-VaccinationProcedure",
@@ -1836,21 +1849,6 @@
                         ]
                       },
                       "search": { "mode": "match" }
-                    },
-                    {
-                      "fullUrl": "urn:uuid:a7a5bc28-5831-4158-8a73-0d3e6e43c1ac",
-                      "resource": {
-                        "resourceType": "Patient",
-                        "id": "9449306206",
-                        "identifier": [
-                          {
-                            "system": "https://fhir.nhs.uk/Id/nhs-number",
-                            "value": "9449306206"
-                          }
-                        ],
-                        "birthDate": "2014-03-25"
-                      },
-                      "search": { "mode": "include" }
                     }
                   ],
                   "total": 1
@@ -1859,7 +1857,7 @@
             }
           },
           "4XX": {
-            "$ref": "#/components/responses/4XX-imms-search"
+            "$ref": "#/components/responses/400-imms-search-by-identifier"
           }
         }
       }
@@ -3598,6 +3596,40 @@
                     ]
                   },
                   "diagnostics": "The sender has not provided a token or it has expired or is otherwise invalid."
+                }
+              ]
+            }
+          }
+        }
+      },
+      "400-imms-search-by-identifier": {
+        "description": "Below are examples of potential HTTP 400 responses specific to the search-by-identifier interaction.\n\n| HTTP status | Error code | Description | Example |\n| ----------- | ---------- | ----------- | ------- |\n| 400 | Bad Request | Missing identifier parameter | {\"resourceType\":\"OperationOutcome\",\"id\":\"2d4b2d7c-6c5e-4e3a-8f0d-4e6d9bdc3e5a\",\"meta\":{\"profile\":[\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]},\"issue\":[{\"severity\":\"error\",\"code\":\"invalid\",\"details\":{\"coding\":[{\"system\":\"https://fhir.nhs.uk/Codesystem/http-error-codes\",\"code\":\"INVALID\"}]},\"diagnostics\":\"Search parameter identifier must have one value.\"}]} |\n| 400 | Bad Request | Invalid value for identifier | {\"resourceType\":\"OperationOutcome\",\"id\":\"3c5e8a1f-2f61-4a9c-8f5e-615e8ea5d9a0\",\"meta\":{\"profile\":[\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]},\"issue\":[{\"severity\":\"error\",\"code\":\"invalid\",\"details\":{\"coding\":[{\"system\":\"https://fhir.nhs.uk/Codesystem/http-error-codes\",\"code\":\"INVALID\"}]},\"diagnostics\":\"identifier must be in the format of \\\"<system>|<value>\\\" e.g. \\\"https://supplierABC/identifiers/vacc|e2154d29-1ead-4830-a513-0d59705078fa\\\"\"}]} |\n| 400 | Bad Request | Conflicting search parameters | {\"resourceType\":\"OperationOutcome\",\"id\":\"1a7f4b9c-54b0-4a4d-8b2a-9f3f6a2b7cde\",\"meta\":{\"profile\":[\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]},\"issue\":[{\"severity\":\"error\",\"code\":\"invalid\",\"details\":{\"coding\":[{\"system\":\"https://fhir.nhs.uk/Codesystem/http-error-codes\",\"code\":\"INVALID\"}]},\"diagnostics\":\"When using 'identifier', do not supply patient.identifier, -immunization.target, -date.from or -date.to.\"}]} |\n",
+        "content": {
+          "application/fhir+json": {
+            "schema": {
+              "$ref": "#/components/schemas/OperationOutcome"
+            },
+            "example": {
+              "resourceType": "OperationOutcome",
+              "id": "3c5e8a1f-2f61-4a9c-8f5e-615e8ea5d9a0",
+              "meta": {
+                "profile": [
+                  "https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome"
+                ]
+              },
+              "issue": [
+                {
+                  "severity": "error",
+                  "code": "invalid",
+                  "details": {
+                    "coding": [
+                      {
+                        "system": "https://fhir.nhs.uk/Codesystem/http-error-codes",
+                        "code": "INVALID"
+                      }
+                    ]
+                  },
+                  "diagnostics": "identifier must be in the format of \"<system>|<value>\" e.g. \"https://supplierABC/identifiers/vacc|e2154d29-1ead-4830-a513-0d59705078fa\""
                 }
               ]
             }
