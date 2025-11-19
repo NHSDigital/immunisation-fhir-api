@@ -1857,7 +1857,7 @@
             }
           },
           "4XX": {
-            "$ref": "#/components/responses/400-imms-search-by-identifier"
+            "$ref": "#/components/responses/4XX-imms-search-by-identifier"
           }
         }
       }
@@ -3602,7 +3602,7 @@
           }
         }
       },
-      "400-imms-search-by-identifier": {
+      "4XX-imms-search-by-identifier": {
         "description": "Below are examples of potential HTTP 400 responses specific to the search-by-identifier interaction.\n\n| HTTP status | Error code | Description | Example |\n| ----------- | ---------- | ----------- | ------- |\n| 400 | Bad Request | Missing identifier parameter | {\"resourceType\":\"OperationOutcome\",\"id\":\"2d4b2d7c-6c5e-4e3a-8f0d-4e6d9bdc3e5a\",\"meta\":{\"profile\":[\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]},\"issue\":[{\"severity\":\"error\",\"code\":\"invalid\",\"details\":{\"coding\":[{\"system\":\"https://fhir.nhs.uk/Codesystem/http-error-codes\",\"code\":\"INVALID\"}]},\"diagnostics\":\"Search parameter identifier must have one value.\"}]} |\n| 400 | Bad Request | Invalid value for identifier | {\"resourceType\":\"OperationOutcome\",\"id\":\"3c5e8a1f-2f61-4a9c-8f5e-615e8ea5d9a0\",\"meta\":{\"profile\":[\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]},\"issue\":[{\"severity\":\"error\",\"code\":\"invalid\",\"details\":{\"coding\":[{\"system\":\"https://fhir.nhs.uk/Codesystem/http-error-codes\",\"code\":\"INVALID\"}]},\"diagnostics\":\"identifier must be in the format of \\\"<system>|<value>\\\" e.g. \\\"https://supplierABC/identifiers/vacc|e2154d29-1ead-4830-a513-0d59705078fa\\\"\"}]} |\n| 400 | Bad Request | Conflicting search parameters | {\"resourceType\":\"OperationOutcome\",\"id\":\"1a7f4b9c-54b0-4a4d-8b2a-9f3f6a2b7cde\",\"meta\":{\"profile\":[\"https://simplifier.net/guide/UKCoreDevelopment2/ProfileUKCore-OperationOutcome\"]},\"issue\":[{\"severity\":\"error\",\"code\":\"invalid\",\"details\":{\"coding\":[{\"system\":\"https://fhir.nhs.uk/Codesystem/http-error-codes\",\"code\":\"INVALID\"}]},\"diagnostics\":\"When using 'identifier', do not supply patient.identifier, -immunization.target, -date.from or -date.to.\"}]} |\n",
         "content": {
           "application/fhir+json": {
