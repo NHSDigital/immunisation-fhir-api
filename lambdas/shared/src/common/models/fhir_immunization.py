@@ -1,11 +1,11 @@
 """Immunization FHIR R4B validator"""
-#import json
+import json
 
 from fhir.resources.R4B.immunization import Immunization
 
 from common.models.constants import VALIDATION_SCHEMA_HASH_KEY
 from common.models.errors import ValidatorError
-from common.models.fhir_immunization_post_validators import PostValidators
+#from common.models.fhir_immunization_post_validators import PostValidators
 #from common.models.fhir_immunization_pre_validators import PreValidators
 from common.models.utils.validation_utils import get_vaccine_type
 from common.redis_client import get_redis_client
@@ -18,16 +18,10 @@ class ImmunizationValidator:
     and Immunization FHIR profile
     """
 
-    def __init__(self, add_post_validators: bool = True) -> None:
-        self.add_post_validators = add_post_validators
-
     # VED-798 : replace with validation engine
-    
-    # NB: we don't know yet whether the post-validation is also going to be rolled into the
-    # validation engine. either way, we have a bit of work to do when putting it in batch;
-    # it has to move from ImmunizationValidator, as batch is supposed to call it before it
-    # gets here
-    
+    # NB pre- and post- will be replaced, whichever model we use.
+    # not sure about the FHIR validator yet.
+
     # batch will require us to call validator.validate_csvrow()
     # We add a parameter to the incoming validate() call
 
@@ -38,6 +32,7 @@ class ImmunizationValidator:
         #    raise ValueError(error)
 
         schema_file = get_redis_client().hget(VALIDATION_SCHEMA_HASH_KEY, "schema_file")
+        #print("*** *** Schema File: " + str(schema_file))
         validator = Validator(schema_file)
         if data_type == DataType.FHIR:
             errors = validator.validate_fhir(immunization)
@@ -45,13 +40,11 @@ class ImmunizationValidator:
             errors = validator.validate_csvrow(immunization)
         if errors:
             # this is going to be a list of ErrorReport
-            '''
             errors_list = []
             for error_report in errors:
                 errors_list.append(error_report.to_dict())
             errors_json = json.dumps(errors_list)
             print(f"\nValidator errors: {errors_json}")
-            '''
             raise ValidatorError(errors)
 
     @staticmethod
@@ -77,7 +70,7 @@ class ImmunizationValidator:
         run_post_validators will each raise errors if validation is failed.
         """
         # Identify whether to apply reduced validation
-        reduce_validation = self.is_reduce_validation()
+        #reduce_validation = self.is_reduce_validation()
 
         # Pre-FHIR validations
         self.run_pre_validators(immunization_json_data, data_type)
@@ -86,13 +79,14 @@ class ImmunizationValidator:
         self.run_fhir_validators(immunization_json_data)
 
         # Identify and validate vaccine type
-        vaccine_type = get_vaccine_type(immunization_json_data)
+        #vaccine_type = get_vaccine_type(immunization_json_data)
 
-        # Post-FHIR validations
-        if self.add_post_validators and not reduce_validation:
-            self.run_post_validators(immunization_json_data, vaccine_type)
+        # Post-FHIR validations - don't run any more - see above
+        #if self.add_post_validators and not reduce_validation:
+        #    self.run_post_validators(immunization_json_data, vaccine_type)
 
     def run_postal_code_validator(self, values: dict) -> None:
         """Run pre validation on the FHIR Immunization Resource JSON data"""
+        # NB this is no longer used
         if error := PreValidators.pre_validate_patient_address_postal_code(self, values):
             raise ValueError(error)
