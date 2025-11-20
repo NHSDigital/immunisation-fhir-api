@@ -119,7 +119,7 @@
         "type": "Organization",
         "identifier": {
           "system": "https://fhir.nhs.uk/Id/ods-organization-code",
-          "value": "RJC02"
+          "value": "B0C4P"
         }
       }
     }
