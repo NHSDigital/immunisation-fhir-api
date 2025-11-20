@@ -27,7 +27,7 @@ class TestValidatorUtils(unittest.TestCase):
     def setUp(self):
         """Set up for each test. This runs before every test"""
         self.json_data = load_json_data(filename="completed_rsv_immunization_event.json")
-        self.validator = ImmunizationValidator(add_post_validators=False)
+        self.validator = ImmunizationValidator()
         self.updated_json_data = parse("contained[?(@.resourceType=='Patient')].name").update(
             deepcopy(self.json_data), ValidValues.valid_name_4_instances
         )

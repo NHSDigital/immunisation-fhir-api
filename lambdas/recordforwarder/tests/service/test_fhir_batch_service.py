@@ -34,9 +34,7 @@ class TestCreateImmunizationBatchService(TestFhirBatchServiceBase):
         self.mock_validator = create_autospec(ImmunizationValidator)
         self.mock_table = Mock()
         self.service = ImmunizationBatchService(self.mock_repo, self.mock_validator)
-        self.pre_validate_fhir_service = ImmunizationBatchService(
-            self.mock_repo, ImmunizationValidator(add_post_validators=False)
-        )
+        self.pre_validate_fhir_service = ImmunizationBatchService(self.mock_repo, ImmunizationValidator())
 
     def tearDown(self):
         super().tearDown()
@@ -105,9 +103,7 @@ class TestUpdateImmunizationBatchService(TestFhirBatchServiceBase):
         self.mock_validator = create_autospec(ImmunizationValidator)
         self.mock_table = Mock()
         self.service = ImmunizationBatchService(self.mock_repo, self.mock_validator)
-        self.pre_validate_fhir_service = ImmunizationBatchService(
-            self.mock_repo, ImmunizationValidator(add_post_validators=False)
-        )
+        self.pre_validate_fhir_service = ImmunizationBatchService(self.mock_repo, ImmunizationValidator())
 
     def tearDown(self):
         super().tearDown()
@@ -176,9 +172,7 @@ class TestDeleteImmunizationBatchService(unittest.TestCase):
         self.mock_validator = create_autospec(ImmunizationValidator)
         self.mock_table = Mock()
         self.service = ImmunizationBatchService(self.mock_repo, self.mock_validator)
-        self.pre_validate_fhir_service = ImmunizationBatchService(
-            self.mock_repo, ImmunizationValidator(add_post_validators=False)
-        )
+        self.pre_validate_fhir_service = ImmunizationBatchService(self.mock_repo, ImmunizationValidator())
 
     def test_delete_immunization_valid(self):
         """it should delete Immunization and return imms id"""
