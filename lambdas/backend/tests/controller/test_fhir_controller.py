@@ -230,7 +230,7 @@ class TestFhirControllerGetImmunizationByIdentifier(unittest.TestCase):
         self.assertEqual(response["statusCode"], 400)
         self.assertEqual(
             json.loads(response["body"])["issue"][0]["diagnostics"],
-            "No parameter provided. Search using either identifier or patient.identifier.",
+            "No parameter provided. Search using either identifier or patient.identifier",
         )
         self.service.get_immunization_by_identifier.assert_not_called()
 

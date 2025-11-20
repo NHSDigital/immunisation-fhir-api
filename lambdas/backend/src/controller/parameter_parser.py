@@ -13,7 +13,10 @@ INVALID_IDENTIFIER_ERROR_MESSAGE = (
     'Search parameter identifier must have one value and must be in the format of "iden'
     'tifier.system|identifier.value" "http://xyz.org/vaccs|2345-gh3s-r53h7-12ny"'
 )
-NO_PARAMETERS_ERROR_MESSAGE = "No parameter provided. Search using either identifier or patient.identifier."
+NO_PARAMETERS_ERROR_MESSAGE = (
+    f"No parameter provided. Search using either {IdentifierSearchParameterName.IDENTIFIER} or "
+    f"{ImmunizationSearchParameterName.PATIENT_IDENTIFIER}"
+)
 
 PATIENT_IDENTIFIER_SYSTEM = "https://fhir.nhs.uk/Id/nhs-number"
 
