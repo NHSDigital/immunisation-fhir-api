@@ -217,6 +217,23 @@ class TestFhirControllerGetImmunizationByIdentifier(unittest.TestCase):
 
         self.assertEqual(response["statusCode"], 403)
 
+    def test_get_imms_by_identifier_returns_validation_error_when_no_params_provided(self):
+        """it should return a 400 status error if the client provides no search parameters"""
+        # Given
+        lambda_event = {
+            "headers": {"SupplierSystem": "test"},
+            "multiValueQueryStringParameters": {},
+            "body": None,
+        }
+        response = self.controller.search_immunizations(lambda_event)
+
+        self.assertEqual(response["statusCode"], 400)
+        self.assertEqual(
+            json.loads(response["body"])["issue"][0]["diagnostics"],
+            "No parameter provided. Search using either identifier or patient.identifier.",
+        )
+        self.service.get_immunization_by_identifier.assert_not_called()
+
     def test_get_imms_by_identifier_returns_validation_error_when_params_are_duplicated(self):
         """it should return a 400 status error if the client provides the same parameter key multiple times"""
         # Given

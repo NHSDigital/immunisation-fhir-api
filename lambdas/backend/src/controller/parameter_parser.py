@@ -13,6 +13,7 @@ INVALID_IDENTIFIER_ERROR_MESSAGE = (
     'Search parameter identifier must have one value and must be in the format of "iden'
     'tifier.system|identifier.value" "http://xyz.org/vaccs|2345-gh3s-r53h7-12ny"'
 )
+NO_PARAMETERS_ERROR_MESSAGE = "No parameter provided. Search using either identifier or patient.identifier."
 
 PATIENT_IDENTIFIER_SYSTEM = "https://fhir.nhs.uk/Id/nhs-number"
 
@@ -177,6 +178,9 @@ def parse_search_params(search_params_in_req: dict[str, list[str]]) -> dict[str,
             continue
 
         parsed_params[key] = [param.strip() for param_str in param_values for param in param_str.split(",")]
+
+    if len(parsed_params) == 0:
+        raise ParameterExceptionError(message=NO_PARAMETERS_ERROR_MESSAGE)
 
     return parsed_params
 
