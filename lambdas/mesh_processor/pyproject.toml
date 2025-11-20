@@ -8,10 +8,10 @@ packages    = [{include = "src"}]
 
 [tool.poetry.dependencies]
 python = "~3.11"
-boto3 = "~1.40.72"
-mypy-boto3-dynamodb = "^1.40.44"
-moto = {extras = ["s3"], version = "^5.1.16"}
-coverage = "^7.11.3"
+boto3 = "~1.41.0"
+mypy-boto3-dynamodb = "^1.41.0"
+moto = {extras = ["s3"], version = "^5.1.17"}
+coverage = "^7.12.0"
 smart-open = {extras = ["s3"], version = "^7.5.0"}
 
 [build-system]

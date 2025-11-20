@@ -2,18 +2,18 @@
 
 [[package]]
 name = "boto3"
-version = "1.40.72"
+version = "1.41.0"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "boto3-1.40.72-py3-none-any.whl", hash = "sha256:1063a295712f2605d3e463e4dc1fe32fce17cf77a0f4d3bb14249d68533ee856"},
-    {file = "boto3-1.40.72.tar.gz", hash = "sha256:58d30dd5e046789a760db7a49f817650b8ff08d8d169e127976a61f44b7c59ad"},
+    {file = "boto3-1.41.0-py3-none-any.whl", hash = "sha256:d5c454bb23655b052073c8dc6703dda5360825b72b1691822ae7709050b96390"},
+    {file = "boto3-1.41.0.tar.gz", hash = "sha256:73bf7f63152406404c0359c013a692e884b98a3b297160058a38f00ef19e375b"},
 ]
 
 [package.dependencies]
-botocore = ">=1.40.72,<1.41.0"
+botocore = ">=1.41.0,<1.42.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.14.0,<0.15.0"
 
@@ -22,14 +22,14 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.40.72"
+version = "1.41.0"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "botocore-1.40.72-py3-none-any.whl", hash = "sha256:4f859e5aaf871fe59aac431d6bba59cc0c8ed8a38da2a6a5345700bdc5c74b32"},
-    {file = "botocore-1.40.72.tar.gz", hash = "sha256:f69199ff6570695556e733fa052f2739e01e0c592c9b60f843f84c77ba3bcdf3"},
+    {file = "botocore-1.41.0-py3-none-any.whl", hash = "sha256:a5018d6268eee358dfc5d86e596c3062b4e225690acaf946f54c00063b804bf8"},
+    {file = "botocore-1.41.0.tar.gz", hash = "sha256:555afbf86a644bfa4ebd7bd98d717b53b792e6bbb2c49f2b308fb06964cf1655"},
 ]
 
 [package.dependencies]
@@ -38,7 +38,7 @@ python-dateutil = ">=2.1,<3.0.0"
 urllib3 = {version = ">=1.25.4,<2.2.0 || >2.2.0,<3", markers = "python_version >= \"3.10\""}
 
 [package.extras]
-crt = ["awscrt (==0.27.6)"]
+crt = ["awscrt (==0.28.4)"]
 
 [[package]]
 name = "certifi"
@@ -488,14 +488,14 @@ source = ["Cython (==0.29.37)"]
 
 [[package]]
 name = "mypy-boto3-dynamodb"
-version = "1.40.56"
-description = "Type annotations for boto3 DynamoDB 1.40.56 service generated with mypy-boto3-builder 8.11.0"
+version = "1.41.0"
+description = "Type annotations for boto3 DynamoDB 1.41.0 service generated with mypy-boto3-builder 8.12.0"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "mypy_boto3_dynamodb-1.40.56-py3-none-any.whl", hash = "sha256:3bf3f541a0d21c249109dd65f18c61b3e6a0fe7124b3afe989877d5cca42b65a"},
-    {file = "mypy_boto3_dynamodb-1.40.56.tar.gz", hash = "sha256:576dd12fe1125754066e7fa480f92c123220970a9d69f7663a56d701f2978ac5"},
+    {file = "mypy_boto3_dynamodb-1.41.0-py3-none-any.whl", hash = "sha256:6ce91ab1b8ca2caa5ff0cae75cdfc8af477727aaa9c963c26d11bb333d3c6a0f"},
+    {file = "mypy_boto3_dynamodb-1.41.0.tar.gz", hash = "sha256:e16b04bca9de1f6ea729c8e8bca14d0d14b29cb56b4c1fd626b6745a07a72ea4"},
 ]
 
 [package.dependencies]
@@ -764,4 +764,4 @@ zstd = ["zstandard (>=0.18.0)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "~3.11"
-content-hash = "c98a1c816223bb9757590e5deaae225606f6d47163b7dc6a2f2f98b863e61ca7"
+content-hash = "69b8228378e3fdea7b39ad3f86ff5a9b99ed7f75bbb050b23e422afd866806f3"
