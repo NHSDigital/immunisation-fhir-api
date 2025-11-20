@@ -21,11 +21,11 @@ import parameter_parser
 from authorisation.api_operation_code import ApiOperationCode
 from authorisation.authoriser import Authoriser
 from common.models.errors import (
-    ValidatorError,
     CustomValidationError,
     IdentifierDuplicationError,
     MandatoryError,
     ResourceNotFoundError,
+    ValidatorError,
 )
 from common.models.fhir_immunization import ImmunizationValidator
 from common.models.utils.generic_utils import (

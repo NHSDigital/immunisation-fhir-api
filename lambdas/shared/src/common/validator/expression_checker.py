@@ -25,7 +25,7 @@ class ExpressionChecker:
     ) -> ErrorReport:
         print(f"**** Validating: {expression_rule} type: {expression_type}")
         print(f"     field_name: {field_name} field_value: {field_value} row: {row}")
-        
+
         match expression_type:
             case "DATETIME":
                 return self._validate_datetime(expression_rule, field_name, field_value, row)

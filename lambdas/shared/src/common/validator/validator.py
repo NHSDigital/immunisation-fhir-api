@@ -11,8 +11,8 @@ from common.validator.constants.enums import MESSAGES, DataType, ErrorLevels, Ex
 from common.validator.error_report.error_reporter import add_error_record, check_error_record_for_fail
 from common.validator.error_report.record_error import ErrorReport
 from common.validator.expression_checker import ExpressionChecker
-from common.validator.parsers.schema_parser import SchemaParser
 from common.validator.parsers.base_parser import BaseParser, BatchInterface, FHIRInterface
+from common.validator.parsers.schema_parser import SchemaParser
 
 
 class Validator:
@@ -72,7 +72,7 @@ class Validator:
                 add_error_record(
                     error_records, error_record, expression_error_group, expression_name, expression_id, error_level
                 )
-                #error_json = json.dumps(error_records[-1].to_dict())
+                # error_json = json.dumps(error_records[-1].to_dict())
                 print(f"\nvalidate_expression error: {error_records[-1]}")
         except Exception:
             print(f"Exception validating expression {expression_id} on row {row}: {error_record}")

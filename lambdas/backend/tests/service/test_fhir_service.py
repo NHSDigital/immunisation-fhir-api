@@ -56,21 +56,18 @@ class TestFhirServiceBase(unittest.TestCase):
         patch.stopall()
 
     def create_covid_immunization_dict(
-        self,
-        imms_id=None,
-        nhs_number=VALID_NHS_NUMBER,
-        occurrence_date_time="2021-02-07T13:28:17+00:00",
-        code=None
+        self, imms_id=None, nhs_number=VALID_NHS_NUMBER, occurrence_date_time="2021-02-07T13:28:17+00:00", code=None
     ):
         if imms_id is not None:
             imms = create_covid_immunization_dict(imms_id, nhs_number, occurrence_date_time)
         else:
             imms = create_covid_immunization_dict_no_id(nhs_number, occurrence_date_time)
         if code:
-            [x for x in imms["performer"] if x["actor"].get("type") == "Organization"][0]["actor"]["identifier"]["value"] = (
-                code
-            )
+            [x for x in imms["performer"] if x["actor"].get("type") == "Organization"][0]["actor"]["identifier"][
+                "value"
+            ] = code
         return imms
+
 
 class TestServiceUrl(unittest.TestCase):
     def setUp(self):
@@ -370,7 +367,7 @@ class TestCreateImmunization(TestFhirServiceBase):
                 "message": "Value not empty failure",
                 "row": 2,
                 "field": "lotNumber",
-                "details": "Value is empty, not as expected"
+                "details": "Value is empty, not as expected",
             }
         ]
 
@@ -421,7 +418,7 @@ class TestCreateImmunization(TestFhirServiceBase):
                 "message": "Value not empty failure",
                 "row": 2,
                 "field": "contained|#:Patient|name|#:official|given|0",
-                "details": "Value is empty, not as expected"
+                "details": "Value is empty, not as expected",
             }
         ]
         with self.assertRaises(CustomValidationError) as error:
@@ -454,7 +451,7 @@ class TestCreateImmunization(TestFhirServiceBase):
         self.assertIn(json.dumps(expected_msg), error.exception.message)
         self.imms_repo.create_immunization.assert_not_called()
     '''
-    
+
     def test_unauthorised_error_raised_when_user_lacks_permissions(self):
         """it should raise error when user lacks permissions"""
         self.mock_redis.hget.return_value = "COVID"
@@ -523,9 +520,7 @@ class TestUpdateImmunization(TestFhirServiceBase):
         imms_id = "an-id"
         original_immunisation = self.create_covid_immunization_dict(imms_id=imms_id, code=VALID_ODS_ORGANIZATION_CODE)
         updated_immunisation = self.create_covid_immunization_dict(
-            imms_id=imms_id,
-            occurrence_date_time="2021-02-07T13:28:00+00:00",
-            code=VALID_ODS_ORGANIZATION_CODE
+            imms_id=imms_id, occurrence_date_time="2021-02-07T13:28:00+00:00", code=VALID_ODS_ORGANIZATION_CODE
         )
         existing_resource_meta = ImmunizationRecordMetadata(resource_version=1, is_deleted=False, is_reinstated=False)
 
@@ -589,9 +584,7 @@ class TestUpdateImmunization(TestFhirServiceBase):
         imms_id = "test-id"
         original_immunisation = self.create_covid_immunization_dict(imms_id=imms_id, code=VALID_ODS_ORGANIZATION_CODE)
         updated_immunisation = self.create_covid_immunization_dict(
-            imms_id=imms_id,
-            occurrence_date_time="2021-02-07T13:28:00+00:00",
-            code=VALID_ODS_ORGANIZATION_CODE
+            imms_id=imms_id, occurrence_date_time="2021-02-07T13:28:00+00:00", code=VALID_ODS_ORGANIZATION_CODE
         )
 
         self.imms_repo.get_immunization_and_resource_meta_by_id.return_value = (
@@ -615,9 +608,7 @@ class TestUpdateImmunization(TestFhirServiceBase):
         original_immunisation = self.create_covid_immunization_dict(imms_id=imms_id, code=VALID_ODS_ORGANIZATION_CODE)
         original_immunisation["identifier"][0]["system"] = "legacyUri.com"
         updated_immunisation = self.create_covid_immunization_dict(
-            imms_id=imms_id,
-            occurrence_date_time="2021-02-07T13:28:00+00:00",
-            code=VALID_ODS_ORGANIZATION_CODE
+            imms_id=imms_id, occurrence_date_time="2021-02-07T13:28:00+00:00", code=VALID_ODS_ORGANIZATION_CODE
         )
 
         self.imms_repo.get_immunization_and_resource_meta_by_id.return_value = (
@@ -643,9 +634,7 @@ class TestUpdateImmunization(TestFhirServiceBase):
         imms_id = "test-id"
         original_immunisation = self.create_covid_immunization_dict(imms_id=imms_id, code=VALID_ODS_ORGANIZATION_CODE)
         updated_immunisation = self.create_covid_immunization_dict(
-            imms_id=imms_id,
-            occurrence_date_time="2021-02-07T13:28:00+00:00",
-            code=VALID_ODS_ORGANIZATION_CODE
+            imms_id=imms_id, occurrence_date_time="2021-02-07T13:28:00+00:00", code=VALID_ODS_ORGANIZATION_CODE
         )
 
         self.imms_repo.get_immunization_and_resource_meta_by_id.return_value = (
@@ -1046,7 +1035,7 @@ class TestSearchImmunizations(unittest.TestCase):
         response when the patient is Unrestricted
         """
         self.maxDiff = None
-        
+
         # Arrange
         imms_ids = ["imms-1", "imms-2"]
         imms_list = [

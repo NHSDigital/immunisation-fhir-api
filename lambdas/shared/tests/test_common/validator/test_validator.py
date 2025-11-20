@@ -2,10 +2,9 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from common.validator.validator import Validator
-
 from common.validator.constants.enums import DataType, ErrorLevels, ExceptionLevels
 from common.validator.error_report.record_error import ErrorReport
+from common.validator.validator import Validator
 from tests.test_common.validator.testing_utils.constants import CSV_VALUES
 from tests.test_common.validator.testing_utils.csv_fhir_utils import parse_test_file
 

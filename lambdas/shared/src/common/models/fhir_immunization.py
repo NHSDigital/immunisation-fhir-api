@@ -1,14 +1,13 @@
 """Immunization FHIR R4B validator"""
-import json
 
 from fhir.resources.R4B.immunization import Immunization
 
 from common.models.constants import VALIDATION_SCHEMA_HASH_KEY
 from common.models.errors import ValidatorError
-from common.models.utils.validation_utils import get_vaccine_type
 from common.redis_client import get_redis_client
-from common.validator.validator import Validator
 from common.validator.constants.enums import DataType
+from common.validator.validator import Validator
+
 
 class ImmunizationValidator:
     """
@@ -19,7 +18,7 @@ class ImmunizationValidator:
     @staticmethod
     def run_validator(immunization: dict, data_type: DataType = DataType.FHIR) -> None:
         """Run generic validation on the FHIR Immunization Resource data"""
-        #if error := PreValidators(immunization).validate():
+        # if error := PreValidators(immunization).validate():
         #    raise ValueError(error)
 
         # TODO: raise an error if there is no schema file
@@ -30,13 +29,13 @@ class ImmunizationValidator:
         else:
             errors = validator.validate_csvrow(immunization)
         if errors:
-            '''
+            """
             errors_list = []
             for error_report in errors:
                 errors_list.append(error_report.to_dict())
             errors_json = json.dumps(errors_list)
             print(f"\nValidator errors: {errors_json}")
-            '''
+            """
             raise ValidatorError(errors)
 
     @staticmethod
@@ -46,7 +45,7 @@ class ImmunizationValidator:
 
     def validate(self, immunization_json_data: dict, data_type: DataType = DataType.FHIR) -> Immunization:
         """
-        Generate the Immunization model. Note that run_validator and run_post_validators will each raise 
+        Generate the Immunization model. Note that run_validator and run_post_validators will each raise
         errors if validation is failed.
         """
         # Generic validator
