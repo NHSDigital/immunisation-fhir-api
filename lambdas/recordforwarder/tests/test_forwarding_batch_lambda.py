@@ -79,6 +79,10 @@ class TestForwardLambdaHandler(TestCase):
         self.redis_getter_patcher = patch("common.models.utils.validation_utils.get_redis_client")
         self.mock_redis_getter = self.redis_getter_patcher.start()
 
+        self.mock_validator_redis = Mock()
+        self.validator_redis_getter_patcher = patch("common.models.fhir_immunization.get_redis_client")
+        self.mock_validator_redis_getter = self.validator_redis_getter_patcher.start()
+
     def tearDown(self):
         """Tear down after each test. This runs after every test"""
         patch.stopall()
