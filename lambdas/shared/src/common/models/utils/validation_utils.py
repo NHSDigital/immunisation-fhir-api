@@ -117,3 +117,7 @@ def validate_resource_versions_match(
         )
 
     return None
+
+
+def validate_has_status(immunization: dict, status: str) -> bool:
+    return immunization.get("status") == status

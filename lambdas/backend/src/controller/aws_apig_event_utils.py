@@ -9,6 +9,10 @@ from models.errors import ResourceVersionNotProvidedError, UnauthorizedError
 from utils import dict_utils
 
 
+def get_multi_value_query_params(event: APIGatewayProxyEventV1) -> dict:
+    return dict_utils.get_field(dict(event), "multiValueQueryStringParameters", default={})
+
+
 def get_path_parameter(event: APIGatewayProxyEventV1, param_name: str) -> str:
     return dict_utils.get_field(event["pathParameters"], param_name, default="")
 

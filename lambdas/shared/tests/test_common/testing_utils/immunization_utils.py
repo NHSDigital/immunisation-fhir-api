@@ -14,9 +14,10 @@ def create_covid_immunization(imms_id, nhs_number=VALID_NHS_NUMBER) -> Immunizat
 
 
 def create_covid_immunization_dict(
-    imms_id,
-    nhs_number=VALID_NHS_NUMBER,
-    occurrence_date_time="2021-02-07T13:28:17+00:00",
+    imms_id: str,
+    nhs_number: str = VALID_NHS_NUMBER,
+    occurrence_date_time: str = "2021-02-07T13:28:17+00:00",
+    status: str = "completed",
 ):
     immunization_json = load_json_data("completed_covid_immunization_event.json")
     immunization_json["id"] = imms_id
@@ -26,6 +27,7 @@ def create_covid_immunization_dict(
     )
 
     immunization_json["occurrenceDateTime"] = occurrence_date_time
+    immunization_json["status"] = status
 
     return immunization_json
 
