@@ -1,4 +1,8 @@
-from common.models.errors import CustomValidationError, MandatoryError
+from common.models.errors import (
+    CustomValidationError,
+    MandatoryError,
+    ValidatorError,
+)
 from common.models.fhir_immunization import ImmunizationValidator
 from repository.fhir_batch_repository import ImmunizationBatchRepository
 
@@ -29,7 +33,7 @@ class ImmunizationBatchService:
         """
         try:
             self.validator.validate(immunization)
-        except (ValueError, MandatoryError) as error:
+        except (ValidatorError, ValueError, MandatoryError) as error:
             raise CustomValidationError(message=str(error)) from error
 
         return self.immunization_repo.create_immunization(immunization, supplier_system, vax_type, table, is_present)
@@ -49,7 +53,7 @@ class ImmunizationBatchService:
         """
         try:
             self.validator.validate(immunization)
-        except (ValueError, MandatoryError) as error:
+        except (ValidatorError, ValueError, MandatoryError) as error:
             raise CustomValidationError(message=str(error)) from error
 
         return self.immunization_repo.update_immunization(immunization, supplier_system, vax_type, table, is_present)
