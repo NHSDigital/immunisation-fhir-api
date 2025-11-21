@@ -10,14 +10,10 @@ import argparse
 from uuid import uuid4
 
 from audit_table import upsert_audit_table
-from common.clients import STREAM_NAME, logger, s3_client
+from common.aws_s3_utils import move_file
+from common.clients import STREAM_NAME, get_s3_client, logger
 from common.log_decorator import logging_decorator
-from common.models.errors import (
-    InvalidFileKeyError,
-    UnhandledAuditTableError,
-    UnhandledSqsError,
-    VaccineTypePermissionsError,
-)
+from common.models.errors import UnhandledAuditTableError
 from constants import (
     ERROR_TYPE_TO_STATUS_CODE_MAP,
     SOURCE_BUCKET_NAME,
@@ -26,9 +22,14 @@ from constants import (
 )
 from file_validation import is_file_in_directory_root, validate_file_key
 from make_and_upload_ack_file import make_and_upload_the_ack_file
+from models.errors import (
+    InvalidFileKeyError,
+    UnhandledSqsError,
+    VaccineTypePermissionsError,
+)
 from send_sqs_message import make_and_send_sqs_message
 from supplier_permissions import validate_vaccine_type_permissions
-from utils_for_filenameprocessor import get_creation_and_expiry_times, move_file
+from utils_for_filenameprocessor import get_creation_and_expiry_times
 
 
 # NOTE: logging_decorator is applied to handle_record function, rather than lambda_handler, because
@@ -73,7 +74,7 @@ def handle_record(record) -> dict:
 
     try:
         message_id = str(uuid4())
-        s3_response = s3_client.get_object(Bucket=bucket_name, Key=file_key)
+        s3_response = get_s3_client().get_object(Bucket=bucket_name, Key=file_key)
         created_at_formatted_string, expiry_timestamp = get_creation_and_expiry_times(s3_response)
 
         vaccine_type, supplier = validate_file_key(file_key)

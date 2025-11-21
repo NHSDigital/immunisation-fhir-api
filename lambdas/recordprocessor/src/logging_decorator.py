@@ -6,7 +6,7 @@ from datetime import datetime
 from functools import wraps
 
 from common.log_decorator import generate_and_send_logs
-from errors import InvalidHeaders, NoOperationPermissions
+from models.errors import InvalidHeaders, NoOperationPermissions
 
 STREAM_NAME = os.getenv("SPLUNK_FIREHOSE_NAME", "immunisation-fhir-api-internal-dev-splunk-firehose")
 

@@ -3,9 +3,10 @@ import uuid
 from datetime import datetime, timezone
 
 import pandas as pd
+from clients import logger
+from errors import DynamoDBMismatchError
 from vax_suppliers import OdsVax, TestPair
 
-from clients import logger
 from constants import (
     ACK_BUCKET,
     RAVS_URI,
@@ -15,7 +16,6 @@ from constants import (
     Operation,
     OperationOutcome,
 )
-from errors import DynamoDBMismatchError
 from utils import (
     aws_cleanup,
     create_row,

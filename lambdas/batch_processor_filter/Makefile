@@ -1,11 +1,11 @@
 TEST_ENV := @PYTHONPATH=src:tests:../shared/src
 
 build:
-	docker build -t imms-lambda-build -f Dockerfile .
+	docker build -t batchprocessor-lambda-build -f Dockerfile .
 
 package: build
 	mkdir -p build
-	docker run --rm -v $(shell pwd)/build:/build imms-lambda-build
+	docker run --rm -v $(shell pwd)/build:/build batchprocessor-lambda-build
 
 test:
 	$(TEST_ENV) python -m unittest

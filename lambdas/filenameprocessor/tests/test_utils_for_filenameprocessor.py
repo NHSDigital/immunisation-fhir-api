@@ -9,7 +9,6 @@ from moto import mock_s3
 
 from utils_for_tests.mock_environment_variables import (
     MOCK_ENVIRONMENT_DICT,
-    BucketNames,
 )
 from utils_for_tests.utils_for_filenameprocessor_tests import (
     GenericSetUp,
@@ -20,7 +19,7 @@ from utils_for_tests.utils_for_filenameprocessor_tests import (
 with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from common.clients import REGION_NAME
     from constants import AUDIT_TABLE_TTL_DAYS
-    from utils_for_filenameprocessor import get_creation_and_expiry_times, move_file
+    from utils_for_filenameprocessor import get_creation_and_expiry_times
 
 s3_client = boto3_client("s3", region_name=REGION_NAME)
 
@@ -50,20 +49,3 @@ class TestUtilsForFilenameprocessor(TestCase):
 
         self.assertEqual(created_at_formatted_string, expected_result_created_at)
         self.assertEqual(expires_at, expected_result_expires_at)
-
-    def test_move_file(self):
-        """Tests that move_file correctly moves a file from one location to another within a single S3 bucket"""
-        source_file_key = "test_file_key"
-        destination_file_key = "destination/test_file_key"
-        source_file_content = "test_content"
-        s3_client.put_object(Bucket=BucketNames.SOURCE, Key=source_file_key, Body=source_file_content)
-
-        move_file(BucketNames.SOURCE, source_file_key, destination_file_key)
-
-        keys_of_objects_in_bucket = [
-            obj["Key"] for obj in s3_client.list_objects_v2(Bucket=BucketNames.SOURCE).get("Contents")
-        ]
-        self.assertNotIn(source_file_key, keys_of_objects_in_bucket)
-        self.assertIn(destination_file_key, keys_of_objects_in_bucket)
-        destination_file_content = s3_client.get_object(Bucket=BucketNames.SOURCE, Key=destination_file_key)
-        self.assertEqual(destination_file_content["Body"].read().decode("utf-8"), source_file_content)
