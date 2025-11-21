@@ -88,7 +88,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--immunization.target",
-        help="http://hl7.org/fhir/ValueSet/immunization-target-disease",
+        help="http://hl7.org/fhir/ValueSet/immunization-target-disease",  # NOSONAR(S5332)
         type=str,
         required=True,
         nargs="+",
