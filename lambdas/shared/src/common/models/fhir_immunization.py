@@ -46,7 +46,6 @@ class ImmunizationValidator:
         Generate the Immunization model. Note that run_validator and run_post_validators will each raise
         errors if validation is failed.
         """
-        print("WWWQWQWQwqwqwq")
         # Generic validator
         self.run_validator(immunization_json_data, data_type)
 
