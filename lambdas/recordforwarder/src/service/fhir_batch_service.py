@@ -27,6 +27,7 @@ class ImmunizationBatchService:
         Exception will be raised if resource exits. Multiple calls to this method won't change
         the record in the database.
         """
+
         try:
             self.validator.validate(immunization)
         except (ValueError, MandatoryError) as error:
@@ -47,6 +48,7 @@ class ImmunizationBatchService:
         Exception will be raised if resource didn't exist.Multiple calls to this method won't change
         the record in the database.
         """
+
         try:
             self.validator.validate(immunization)
         except (ValueError, MandatoryError) as error:
@@ -67,4 +69,5 @@ class ImmunizationBatchService:
         Exception will be raised if resource didn't exist.Multiple calls to this method won't change
         the record in the database.
         """
+
         return self.immunization_repo.delete_immunization(immunization, supplier_system, vax_type, table, is_present)
