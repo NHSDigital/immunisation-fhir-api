@@ -32,17 +32,15 @@ class TestFhirBatchServiceBase(unittest.TestCase):
         patch.stopall()
 
     def create_covid_immunization_dict(
-        self, imms_id=None, nhs_number=VALID_NHS_NUMBER, occurrence_date_time="2021-02-07T13:28:17+00:00", code=None
+        self, nhs_number=VALID_NHS_NUMBER, occurrence_date_time="2021-02-07T13:28:17+00:00", code=None
     ):
-        if imms_id is not None:
-            imms = create_covid_immunization_dict(imms_id, nhs_number, occurrence_date_time)
-        else:
-            imms = create_covid_immunization_dict_no_id(nhs_number, occurrence_date_time)
+        imms = create_covid_immunization_dict_no_id(nhs_number, occurrence_date_time)
         if code:
             [x for x in imms["performer"] if x["actor"].get("type") == "Organization"][0]["actor"]["identifier"][
                 "value"
             ] = code
         return imms
+
 
 class TestCreateImmunizationBatchService(TestFhirBatchServiceBase):
     def setUp(self):
@@ -92,8 +90,8 @@ class TestCreateImmunizationBatchService(TestFhirBatchServiceBase):
                 "details": "Value is empty, not as expected",
             }
         ]
-        #imms["status"] = "not-completed"
-        #expected_msg = "Validation errors: status must be one of the following: completed"
+        # imms["status"] = "not-completed"
+        # expected_msg = "Validation errors: status must be one of the following: completed"
 
         with self.assertRaises(CustomValidationError) as error:
             self.fhir_service.create_immunization(
@@ -123,8 +121,8 @@ class TestCreateImmunizationBatchService(TestFhirBatchServiceBase):
                 "details": "Value is empty, not as expected",
             }
         ]
-        #bad_target_disease_imms["protocolApplied"][0]["targetDisease"][0]["coding"][0]["code"] = "bad-code"
-        #expected_msg = "protocolApplied[0].targetDisease[*].coding[?(@.system=='http://snomed.info/sct')].code - ['bad-code'] is not a valid combination of disease codes for this service"
+        # bad_target_disease_imms["protocolApplied"][0]["targetDisease"][0]["coding"][0]["code"] = "bad-code"
+        # expected_msg = "protocolApplied[0].targetDisease[*].coding[?(@.system=='http://snomed.info/sct')].code - ['bad-code'] is not a valid combination of disease codes for this service"
 
         self.mock_redis.hget.return_value = None  # Reset mock for invalid cases
         self.mock_redis_getter.return_value = self.mock_redis
@@ -192,8 +190,8 @@ class TestUpdateImmunizationBatchService(TestFhirBatchServiceBase):
                 "details": "Value is empty, not as expected",
             }
         ]
-        #imms["status"] = "not-completed"
-        #expected_msg = "Validation errors: status must be one of the following: completed"
+        # imms["status"] = "not-completed"
+        # expected_msg = "Validation errors: status must be one of the following: completed"
 
         with self.assertRaises(CustomValidationError) as error:
             self.fhir_service.update_immunization(
@@ -226,8 +224,8 @@ class TestUpdateImmunizationBatchService(TestFhirBatchServiceBase):
                 "details": "Value is empty, not as expected",
             }
         ]
-        #bad_target_disease_imms["protocolApplied"][0]["targetDisease"][0]["coding"][0]["code"] = "bad-code"
-        #expected_msg = "protocolApplied[0].targetDisease[*].coding[?(@.system=='http://snomed.info/sct')].code - ['bad-code'] is not a valid combination of disease codes for this service"
+        # bad_target_disease_imms["protocolApplied"][0]["targetDisease"][0]["coding"][0]["code"] = "bad-code"
+        # expected_msg = "protocolApplied[0].targetDisease[*].coding[?(@.system=='http://snomed.info/sct')].code - ['bad-code'] is not a valid combination of disease codes for this service"
 
         with self.assertRaises(CustomValidationError) as error:
             self.fhir_service.update_immunization(
