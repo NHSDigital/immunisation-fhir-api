@@ -18,10 +18,10 @@ with patch.dict("os.environ", MOCK_ENVIRONMENT_DICT):
     from csv import DictReader
 
     from common.clients import REGION_NAME
+    from common.models.constants import SUPPLIER_PERMISSIONS_HASH_KEY
     from constants import (
         AUDIT_TABLE_NAME,
         ODS_CODE_TO_SUPPLIER_SYSTEM_HASH_KEY,
-        SUPPLIER_PERMISSIONS_HASH_KEY,
         AuditTableKeys,
         FileStatus,
     )

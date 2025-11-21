@@ -8,6 +8,7 @@ from json import JSONDecodeError
 from typing import Optional
 
 from audit_table import update_audit_table_status
+from common.aws_s3_utils import move_file
 from common.clients import logger
 from constants import (
     ARCHIVE_DIR_NAME,
@@ -16,7 +17,7 @@ from constants import (
     FileNotProcessedReason,
     FileStatus,
 )
-from file_level_validation import file_is_empty, file_level_validation, move_file
+from file_level_validation import file_is_empty, file_level_validation
 from mappings import map_target_disease
 from process_row import process_row
 from send_to_kinesis import send_to_kinesis
@@ -142,7 +143,6 @@ def process_rows(
                 send_to_kinesis(supplier, outgoing_message_body, vaccine)
                 total_rows_processed_count += 1
     except UnicodeDecodeError as error:  # pylint: disable=broad-exception-caught
-        logger.error("Error processing row %s: %s", row_count, error)
         return total_rows_processed_count, error
 
     return total_rows_processed_count, None

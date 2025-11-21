@@ -1,7 +1,7 @@
 from common.validator.constants.enums import ErrorLevels
 from common.validator.error_report.dq_reporter import DQReporter
 from common.validator.error_report.record_error import ErrorReport
-from src.common.validator.parsers.base_parser import BaseParser
+from common.validator.parsers.base_parser import BaseParser
 
 
 # Collect and add error record to the list

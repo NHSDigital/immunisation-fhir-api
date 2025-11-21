@@ -14,9 +14,6 @@ CONFIG_BUCKET_NAME = os.getenv("CONFIG_BUCKET_NAME", "variconfig-bucketable-not-
 
 REGION_NAME = os.getenv("AWS_REGION", "eu-west-2")
 
-s3_client = boto3_client("s3", region_name=REGION_NAME)
-
-# for lambdas which require a global s3_client
 global_s3_client = None
 
 

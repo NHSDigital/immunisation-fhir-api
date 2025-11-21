@@ -6,7 +6,8 @@ Functions for completing file-level validation
 from csv import DictReader
 
 from audit_table import update_audit_table_status
-from common.clients import logger, s3_client
+from common.aws_s3_utils import move_file
+from common.clients import logger
 from constants import (
     ARCHIVE_DIR_NAME,
     EXPECTED_CSV_HEADERS,
@@ -17,9 +18,9 @@ from constants import (
     Permission,
     permission_to_operation_map,
 )
-from errors import InvalidHeaders, NoOperationPermissions
 from logging_decorator import file_level_validation_logging_decorator
 from make_and_upload_ack_file import make_and_upload_ack_file
+from models.errors import InvalidHeaders, NoOperationPermissions
 from utils_for_recordprocessor import get_csv_content_dict_reader
 
 
@@ -59,17 +60,6 @@ def get_permitted_operations(supplier: str, vaccine_type: str, allowed_permissio
         raise NoOperationPermissions(f"{supplier} does not have permissions to perform any of the requested actions.")
 
     return permitted_operations_for_vaccine_type
-
-
-def move_file(bucket_name: str, source_file_key: str, destination_file_key: str) -> None:
-    """Moves a file from one location to another within a single S3 bucket by copying and then deleting the file."""
-    s3_client.copy_object(
-        Bucket=bucket_name,
-        CopySource={"Bucket": bucket_name, "Key": source_file_key},
-        Key=destination_file_key,
-    )
-    s3_client.delete_object(Bucket=bucket_name, Key=source_file_key)
-    logger.info("File moved from %s to %s", source_file_key, destination_file_key)
 
 
 @file_level_validation_logging_decorator

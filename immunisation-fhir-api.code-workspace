@@ -4,7 +4,7 @@
             "path": ".",
         },
         {
-            "path": "backend",
+            "path": "lambdas/backend",
         },
         {
             "path": "lambdas/ack_backend",
@@ -26,6 +26,9 @@
         },
         {
             "path": "lambdas/mns_subscription",
+        },
+        {
+            "path": "lambdas/recordforwarder",
         },
         {
             "path": "lambdas/recordprocessor",

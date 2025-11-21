@@ -4,14 +4,16 @@ from unittest.mock import MagicMock, Mock, create_autospec, patch
 
 from common.authentication import AppRestrictedAuth
 from common.models.errors import (
-    BadRequestError,
     ResourceNotFoundError,
-    ServerError,
-    TokenValidationError,
-    UnauthorizedError,
     UnhandledResponseError,
 )
 from mns_service import MNS_URL, MnsService
+from models.errors import (
+    BadRequestError,
+    ServerError,
+    TokenValidationError,
+    UnauthorizedError,
+)
 
 SQS_ARN = "arn:aws:sqs:eu-west-2:123456789012:my-queue"
 

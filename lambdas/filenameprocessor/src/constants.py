@@ -3,9 +3,9 @@
 import os
 from enum import StrEnum
 
-from common.models.errors import (
+from common.models.errors import UnhandledAuditTableError
+from models.errors import (
     InvalidFileKeyError,
-    UnhandledAuditTableError,
     UnhandledSqsError,
     VaccineTypePermissionsError,
 )
@@ -15,7 +15,6 @@ AUDIT_TABLE_NAME = os.getenv("AUDIT_TABLE_NAME")
 AUDIT_TABLE_TTL_DAYS = os.getenv("AUDIT_TABLE_TTL_DAYS")
 VALID_VERSIONS = ["V5"]
 
-SUPPLIER_PERMISSIONS_HASH_KEY = "supplier_permissions"
 VACCINE_TYPE_TO_DISEASES_HASH_KEY = "vacc_to_diseases"
 ODS_CODE_TO_SUPPLIER_SYSTEM_HASH_KEY = "ods_code_to_supplier"
 
