@@ -97,38 +97,6 @@ class TestCreateImmunizationBatchService(TestFhirBatchServiceBase):
         self.assertTrue(expected_msg in error.exception.message)
         self.mock_repo.create_immunization.assert_not_called()
 
-    def test_create_immunization_uplifts_legacy_identifier_system_tpp(self):
-        """it should recognise a legacy TPP identifier system and use the new style identifier"""
-
-        immunisation = create_covid_immunization_dict_no_id()
-        immunisation["identifier"][0]["system"] = "YGA"
-
-        _ = self.service.create_immunization(
-            immunization=immunisation,
-            supplier_system="test_supplier",
-            vax_type="test_vax",
-            table=self.mock_table,
-            is_present=True,
-        )
-
-        self.assertEqual(immunisation["identifier"][0]["system"], "https://tpp-uk.com/Id/ve/vacc")
-
-    def test_create_immunization_uplifts_legacy_identifier_system_emis(self):
-        """it should recognise a legacy EMIS identifier system and use the new style identifier"""
-
-        immunisation = create_covid_immunization_dict_no_id()
-        immunisation["identifier"][0]["system"] = "YGJ"
-
-        _ = self.service.create_immunization(
-            immunization=immunisation,
-            supplier_system="test_supplier",
-            vax_type="test_vax",
-            table=self.mock_table,
-            is_present=True,
-        )
-
-        self.assertEqual(immunisation["identifier"][0]["system"], "https://emishealth.com/identifiers/vacc")
-
 
 class TestUpdateImmunizationBatchService(TestFhirBatchServiceBase):
     def setUp(self):
@@ -201,38 +169,6 @@ class TestUpdateImmunizationBatchService(TestFhirBatchServiceBase):
         self.assertTrue(expected_msg in error.exception.message)
         self.mock_repo.update_immunization.assert_not_called()
 
-    def test_update_immunization_uplifts_legacy_identifier_system_tpp(self):
-        """it should recognise a legacy TPP identifier system and use the new style identifier"""
-
-        immunisation = create_covid_immunization_dict_no_id()
-        immunisation["identifier"][0]["system"] = "YGA"
-
-        _ = self.service.update_immunization(
-            immunization=immunisation,
-            supplier_system="test_supplier",
-            vax_type="test_vax",
-            table=self.mock_table,
-            is_present=True,
-        )
-
-        self.assertEqual(immunisation["identifier"][0]["system"], "https://tpp-uk.com/Id/ve/vacc")
-
-    def test_update_immunization_uplifts_legacy_identifier_system_emis(self):
-        """it should recognise a legacy EMIS identifier system and use the new style identifier"""
-
-        immunisation = create_covid_immunization_dict_no_id()
-        immunisation["identifier"][0]["system"] = "YGJ"
-
-        _ = self.service.update_immunization(
-            immunization=immunisation,
-            supplier_system="test_supplier",
-            vax_type="test_vax",
-            table=self.mock_table,
-            is_present=True,
-        )
-
-        self.assertEqual(immunisation["identifier"][0]["system"], "https://emishealth.com/identifiers/vacc")
-
 
 class TestDeleteImmunizationBatchService(unittest.TestCase):
     def setUp(self):
@@ -257,38 +193,6 @@ class TestDeleteImmunizationBatchService(unittest.TestCase):
             is_present=True,
         )
         self.assertEqual(result, imms_id)
-
-    def test_delete_immunization_uplifts_legacy_identifier_system_tpp(self):
-        """it should recognise a legacy TPP identifier system and use the new style identifier"""
-
-        immunisation = create_covid_immunization_dict_no_id()
-        immunisation["identifier"][0]["system"] = "YGA"
-
-        _ = self.service.delete_immunization(
-            immunization=immunisation,
-            supplier_system="test_supplier",
-            vax_type="test_vax",
-            table=self.mock_table,
-            is_present=True,
-        )
-
-        self.assertEqual(immunisation["identifier"][0]["system"], "https://tpp-uk.com/Id/ve/vacc")
-
-    def test_delete_immunization_uplifts_legacy_identifier_system_emis(self):
-        """it should recognise a legacy EMIS identifier system and use the new style identifier"""
-
-        immunisation = create_covid_immunization_dict_no_id()
-        immunisation["identifier"][0]["system"] = "YGJ"
-
-        _ = self.service.delete_immunization(
-            immunization=immunisation,
-            supplier_system="test_supplier",
-            vax_type="test_vax",
-            table=self.mock_table,
-            is_present=True,
-        )
-
-        self.assertEqual(immunisation["identifier"][0]["system"], "https://emishealth.com/identifiers/vacc")
 
 
 if __name__ == "__main__":

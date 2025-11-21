@@ -17,6 +17,11 @@ from common.models.errors import (
 )
 from common.models.utils.generic_utils import get_nhs_number
 
+TPP_V2_SUPPLIER_IDENTIFIER_SYSTEM = "YGA"
+TPP_V5_SUPPLIER_IDENTIFIER_SYSTEM = "https://tpp-uk.com/Id/ve/vacc"
+EMIS_V2_SUPPLIER_IDENTIFIER_SYSTEM = "YGJ"
+EMIS_V5_SUPPLIER_IDENTIFIER_SYSTEM = "https://emishealth.com/identifiers/vacc"
+
 
 def create_table(region_name="eu-west-2"):
     table_name = os.environ["DYNAMODB_TABLE_NAME"]
@@ -99,7 +104,8 @@ class ImmunizationBatchRepository:
         immunization["id"] = new_id
         attr = RecordAttributes(immunization, vax_type, supplier_system, 0)
 
-        query_response = _query_identifier(table, "IdentifierGSI", "IdentifierPK", attr.identifier, is_present)
+        identifier_pk = self._get_identifier_pk_from_immunization(immunization)
+        query_response = _query_identifier(table, "IdentifierGSI", "IdentifierPK", identifier_pk, is_present)
 
         if query_response is not None:
             raise IdentifierDuplicationError(identifier=attr.identifier)
@@ -111,7 +117,7 @@ class ImmunizationBatchRepository:
                     "PatientPK": attr.patient_pk,
                     "PatientSK": attr.patient_sk,
                     "Resource": json.dumps(attr.resource, use_decimal=True),
-                    "IdentifierPK": attr.identifier,
+                    "IdentifierPK": identifier_pk,
                     "Operation": "CREATE",
                     "Version": attr.version,
                     "SupplierSystem": attr.supplier,
@@ -140,10 +146,10 @@ class ImmunizationBatchRepository:
         table: any,
         is_present: bool,
     ) -> dict:
-        identifier = self._identifier_response(immunization)
-        query_response = _query_identifier(table, "IdentifierGSI", "IdentifierPK", identifier, is_present)
+        identifier_pk = self._get_identifier_pk_from_immunization(immunization)
+        query_response = _query_identifier(table, "IdentifierGSI", "IdentifierPK", identifier_pk, is_present)
         if query_response is None:
-            raise ResourceNotFoundError(resource_type="Immunization", resource_id=identifier)
+            raise ResourceNotFoundError(resource_type="Immunization", resource_id=identifier_pk)
         old_id, version = self._get_id_version(query_response)
         deleted_at_required, update_reinstated, is_reinstate = self._get_record_status(query_response)
 
@@ -168,10 +174,10 @@ class ImmunizationBatchRepository:
         table: any,
         is_present: bool,
     ) -> dict:
-        identifier = self._identifier_response(immunization)
-        query_response = _query_identifier(table, "IdentifierGSI", "IdentifierPK", identifier, is_present)
+        identifier_pk = self._get_identifier_pk_from_immunization(immunization)
+        query_response = _query_identifier(table, "IdentifierGSI", "IdentifierPK", identifier_pk, is_present)
         if query_response is None:
-            raise ResourceNotFoundError(resource_type="Immunization", resource_id=identifier)
+            raise ResourceNotFoundError(resource_type="Immunization", resource_id=identifier_pk)
         try:
             now_timestamp = int(time.time())
             imms_id = self._get_pk(query_response)
@@ -207,9 +213,19 @@ class ImmunizationBatchRepository:
             raise UnhandledResponseError(message="Non-200 response from dynamodb", response=response)
 
     @staticmethod
-    def _identifier_response(immunization: any):
+    def _get_identifier_pk_from_immunization(immunization: any):
         system_id = immunization["identifier"][0]["system"]
         system_value = immunization["identifier"][0]["value"]
+
+        # The below checks can be safely removed once DPS carries out it's data migration to update legacy
+        # identifiers as it should become redundant. However, it may be worth keeping in case legacy format identifiers
+        # are received for some reason. Please see issue VED-904 for more information.
+        if system_id == TPP_V2_SUPPLIER_IDENTIFIER_SYSTEM:
+            system_id = TPP_V5_SUPPLIER_IDENTIFIER_SYSTEM
+
+        if system_id == EMIS_V2_SUPPLIER_IDENTIFIER_SYSTEM:
+            system_id = EMIS_V5_SUPPLIER_IDENTIFIER_SYSTEM
+
         return f"{system_id}#{system_value}"
 
     @staticmethod
