@@ -18,8 +18,6 @@ class ImmunizationValidator:
     @staticmethod
     def run_validator(immunization: dict, data_type: DataType = DataType.FHIR) -> None:
         """Run generic validation on the FHIR Immunization Resource data"""
-        # if error := PreValidators(immunization).validate():
-        #    raise ValueError(error)
 
         # TODO: raise an error if there is no schema file
         schema_file = get_redis_client().hget(VALIDATION_SCHEMA_HASH_KEY, "schema_file")
@@ -48,6 +46,7 @@ class ImmunizationValidator:
         Generate the Immunization model. Note that run_validator and run_post_validators will each raise
         errors if validation is failed.
         """
+        print("WWWQWQWQwqwqwq")
         # Generic validator
         self.run_validator(immunization_json_data, data_type)
 
