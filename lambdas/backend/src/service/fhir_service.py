@@ -146,7 +146,7 @@ class FhirService:
     def update_immunization(self, imms_id: str, immunization: dict, supplier_system: str, resource_version: int) -> int:
         try:
             self.validator.validate(immunization)
-        except (ValueError, MandatoryError) as error:
+        except (ValidatorError, ValueError, MandatoryError) as error:
             raise CustomValidationError(message=str(error)) from error
 
         existing_immunization, existing_resource_meta = self.immunization_repo.get_immunization_and_resource_meta_by_id(
