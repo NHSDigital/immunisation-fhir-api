@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 import pandas as pd
 from clients import logger
 from errors import DynamoDBMismatchError
+from tests.e2e_batch.constants import EMIS_V5_SUPPLIER_IDENTIFIER_SYSTEM, TPP_V5_SUPPLIER_IDENTIFIER_SYSTEM
 from vax_suppliers import OdsVax, TestPair
 
 from constants import (
@@ -93,6 +94,14 @@ class TestCase:
     def get_identifier_pk(self):
         if not self.identifier:
             raise Exception("Identifier not set. Generate the CSV file first.")
+
+        # Identifier PK will be different to Identifier in the resource due to data uplift as part of VED-893. This
+        # only affects TPP and EMIS
+        if self.ods == "YGA":
+            return f"{TPP_V5_SUPPLIER_IDENTIFIER_SYSTEM}#{self.identifier}"
+        if self.ods == "YGJ":
+            return f"{EMIS_V5_SUPPLIER_IDENTIFIER_SYSTEM}#{self.identifier}"
+
         return f"{RAVS_URI}#{self.identifier}"
 
     def check_bus_file_content(self):
