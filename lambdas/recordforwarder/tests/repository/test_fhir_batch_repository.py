@@ -396,11 +396,13 @@ class TestUpdateImmunization(TestImmunizationBatchRepository):
         )
 
     def test_update_immunization_uses_separate_identifier_pk_for_legacy_identifiers_tpp(self):
+        """it should use a V5 identifier_pk for a legacy TPP identifier"""
         self.update_immunization_uses_separate_identifier_pk_for_legacy_identifiers_test_logic(
             "YGA", "https://tpp-uk.com/Id/ve/vacc"
         )
 
     def test_update_immunization_uses_separate_identifier_pk_for_legacy_identifiers_emis(self):
+        """it should use a V5 identifier_pk for a legacy EMIS identifier"""
         self.update_immunization_uses_separate_identifier_pk_for_legacy_identifiers_test_logic(
             "YGJ", "https://emishealth.com/identifiers/vacc"
         )
@@ -561,11 +563,13 @@ class TestDeleteImmunization(TestImmunizationBatchRepository):
         self.assertEqual(response, f"Immunization#{self.immunization['id']}")
 
     def test_delete_immunization_uses_separate_identifier_pk_for_legacy_identifiers_tpp(self):
+        """it should use a V5 identifier_pk for a legacy TPP identifier"""
         self.delete_immunization_uses_separate_identifier_pk_for_legacy_identifiers_test_logic(
             "YGA", "https://tpp-uk.com/Id/ve/vacc"
         )
 
     def test_delete_immunization_uses_separate_identifier_pk_for_legacy_identifiers_emis(self):
+        """it should use a V5 identifier_pk for a legacy EMIS identifier"""
         self.delete_immunization_uses_separate_identifier_pk_for_legacy_identifiers_test_logic(
             "YGJ", "https://emishealth.com/identifiers/vacc"
         )
